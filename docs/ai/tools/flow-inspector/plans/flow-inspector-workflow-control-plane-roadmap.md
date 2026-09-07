@@ -351,9 +351,11 @@ Factory flows, conditional preflight, five negative demonstrations, explicit
 mapping decisions, and versioned local evidence on the original canvas. Its
 mapping policy permits test-name changes only. Its
 [Phase 3 completed record](completed/flow-inspector-phase-3-core-proof-closeout.md) records PR #165
-and the verified merged evidence. Phase 4 remains the next candidate;
-protected accepted-base CI, broader flow evolution, and shared viewing are not
-implied by the local proof or its passing CI commands.
+and the verified merged evidence. Phase 4 is now an active bounded operational
+trial with explicit evolution/retirement, common actions, raw CI evidence
+admission and shared snapshots. Mandatory protected accepted-base CI remains
+unverified; the live rules have no required status check. Passing trial commands
+cannot close Phase 4 or activate Phase 5. The combined plan remains active.
 
 The preliminary estimate is 2-4 engineering person-weeks for the core proof,
 another 6-10 for an operational trial, and another 8-14 for a bounded agent and

@@ -8,11 +8,14 @@ implementation steps and executable flow contracts to manage human and AI
 development risk. Open-source usefulness, reproducibility, and controlled
 delegation are the success criteria.
 
-## Next Implementation Candidate
+## Active Implementation
 
 1. [Contract Verification and CI Plan](plans/flow-inspector-control-plane-evidence-and-ci-plan.md)
-   - Remaining Phase 4: an operational step board, common API/CLI, contract evolution,
-     mandatory all-flow CI within the declared supported set, and shared viewing.
+   - Phase 4 is active: version review/retirement, common local operations, raw CI
+     ingestion, aggregate trial, and baseline snapshots are implemented for the
+     two-flow boundary. Protected mandatory CI remains a delivery blocker.
+   - [Operational trial and enforcement gap](../../../../tools/flow-inspector/control-plane/README.md#phase-4-operational-trial)
+     defines reproduction, trust inputs, and required external setup.
    - Extend the [Core Proof contract](CORE_PROOF.md) without treating its local
      two-flow coverage or test-name mapping policy as general project protection.
 

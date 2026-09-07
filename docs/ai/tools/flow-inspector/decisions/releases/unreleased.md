@@ -56,3 +56,24 @@
   Required CI enforcement is still unproven: the effective GitHub main rules
   have no required status checks. Phase 4 must address that explicit gap.
 - Release boundary: this closeout changes no version, Changeset, tag, or release.
+
+
+## 2026-09-07 - Activate Phase 4 with an explicit delivery blocker
+
+- Context: the merged Phase 3 proof remains limited to two Factory flows and six
+  behavioral obligations. Its completed record and prior decisions stay intact.
+- Decision: extend the living contract with immutable version history, explicit
+  split/merge/retirement review, accepted-base CI evidence admission, common
+  local actions, and baseline/time-bound manager snapshots on the original board.
+  Actual negative runtime cases prove rejection and recovery; provider success
+  cannot replace assertions or source provenance.
+- Consequences: changed versions invalidate prior results; reported work,
+  execution, verification and delivery remain separate. The effective GitHub
+  `protect-main` ruleset lacks required status checks and independent verifier
+  protection. The CI command is explicitly a trial and full Phase 4 remains open.
+- Closeout decision: do not create a Phase 4 completed record or move this combined
+  plan while mandatory enforcement is unverified. Follow the
+  [operational guide](../../../../../../tools/flow-inspector/control-plane/README.md#github-enforcement-gap)
+  for the necessary external setup and remaining acceptance evidence.
+- Release boundary: no package version, dependency, tag, release, deployment, or
+  Phase 5/6 capability is introduced.

@@ -297,6 +297,7 @@ function admitContract(manifest, architecture) {
   return freeze({
     version: manifest.version,
     definition: structuredClone(manifest),
+    architectureDefinition: structuredClone(architecture),
     mappingVersion: digest(manifest),
     architectureVersion: digest(architecture),
     scenarios,

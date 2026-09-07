@@ -320,7 +320,7 @@ test(
         canvas.locator('.proof-badge[data-status="passed"]')
       ).toHaveCount(3)
       await page.goto(server.origin + '/core-proof')
-      await expect(canvas.locator('.step-card')).toHaveCount(6)
+      await expect(canvas.locator('.step-card')).toHaveCount(8)
       await expect(canvas.locator('.proof-badge')).toHaveCount(0)
       await expect(canvas.locator('#run-all')).toHaveCount(0)
       await expect(canvas.locator('#proof-unavailable')).toContainText(
@@ -513,8 +513,11 @@ test(
             if (destinations.has(resource) && (!url.hash || fragmentClicked))
               continue
             const anchor = anchors.nth(record.index)
-            if (!(await anchor.isVisible()))
-              await canvas.getByText('Full contract', { exact: true }).click()
+            for (const disclosure of await anchor
+              .locator('xpath=ancestor::details')
+              .all())
+              if ((await disclosure.getAttribute('open')) === null)
+                await disclosure.locator(':scope > summary').click()
             const graph = await canvas.locator('#flow').elementHandle()
             const viewport = canvas.locator('.flow-viewport')
             const before = await viewport.evaluate((node) => ({
@@ -786,6 +789,173 @@ test(
       await server.close()
       if (previousTemporary === undefined) delete process.env.TMPDIR
       else process.env.TMPDIR = previousTemporary
+    }
+  }
+)
+
+test(
+  'Phase 4 actions preserve the original cards while exposing evolution, CI blockers and shared baseline',
+  { timeout: 60000 },
+  async () => {
+    const root = path.resolve(__dirname, '../../../..'),
+      parent = path.join(root, 'tmp/flow-inspector/visual-review')
+    fs.mkdirSync(parent, { recursive: true })
+    const artifacts = fs.mkdtempSync(path.join(parent, 'phase4-')),
+      temporary = path.join(artifacts, 'browser-tmp')
+    fs.mkdirSync(temporary)
+    const prior = process.env.TMPDIR
+    process.env.TMPDIR = temporary
+    const server = await startServer(root, {
+      serviceOptions: { directory: path.join(artifacts, 'runs') }
+    })
+    let browser
+    try {
+      browser = await chromium.launch({
+        channel: process.env.FLOW_PROOF_BROWSER_CHANNEL || undefined,
+        downloadsPath: temporary
+      })
+      const page = await browser.newPage({
+        viewport: { width: 1600, height: 1100 }
+      })
+      await page.goto(server.origin + '/transaction-atomicity')
+      const canvas = page.frameLocator('iframe')
+      await expect(canvas.locator('.step-card')).toHaveCount(7)
+      await canvas.locator('#proof-controls > summary').click()
+      await canvas
+        .getByText('Contract versions and CI', { exact: true })
+        .click()
+      const original = await canvas
+        .locator('.step-card')
+        .first()
+        .elementHandle()
+      const geometry = await canvas
+        .locator('.step-card')
+        .evaluateAll((nodes) =>
+          nodes.map((n) => [
+            n.dataset.stepId,
+            n.style.left,
+            n.style.top,
+            n.offsetWidth,
+            n.offsetHeight
+          ])
+        )
+      await canvas.locator('#run-candidate').click()
+      await expect(canvas.locator('#run-state')).toHaveText('Ready to verify', {
+        timeout: 15000
+      })
+      await expect(canvas.locator('#result-context')).toContainText('Candidate')
+      await expect(
+        canvas.locator('.proof-badge[data-status="passed"]')
+      ).toHaveCount(0)
+      await canvas.locator('#contract-prepare').click()
+      await expect(canvas.locator('#contract-diff')).toContainText('pending')
+      await canvas.locator('#contract-reason').fill('Reviewed current baseline')
+      await canvas.locator('#contract-accept').click()
+      await expect(canvas.locator('#contract-baseline')).toContainText(
+        'revision 2'
+      )
+      await canvas.locator('#run-ci-demo').click()
+      await expect(canvas.locator('#run-state')).toHaveText('Ready to verify', {
+        timeout: 15000
+      })
+      await expect(canvas.locator('#ci-result')).toContainText('failed')
+      await expect(canvas.locator('#ci-result')).toContainText('blocked')
+      await canvas.locator('#run-ci').click()
+      await expect(canvas.locator('#ci-result')).toContainText('blocked', {
+        timeout: 15000
+      })
+      await expect(canvas.locator('#ci-result')).toContainText('required-check')
+      await expect(canvas.locator('#ci-envelope-link')).toHaveAttribute(
+        'target',
+        '_blank'
+      )
+      const id = server.service.state().runs[0].id
+      await canvas.locator('#retry-run').click()
+      await expect.poll(() => server.service.state().runs[0].id).not.toBe(id)
+      await expect(canvas.locator('#run-state')).toHaveText('Ready to verify', {
+        timeout: 15000
+      })
+      await canvas.getByText('Shared baseline view', { exact: true }).click()
+      await expect(canvas.locator('#manager-view')).toContainText(
+        'Delivery: blocked'
+      )
+      await expect(canvas.locator('#shared-link')).toHaveAttribute(
+        'href',
+        '/api/shared'
+      )
+      await canvas
+        .locator('#work-step')
+        .selectOption('finalize-transaction-state')
+      await canvas.locator('#work-status').selectOption('in-progress')
+      await canvas
+        .locator('#work-reason')
+        .fill('Remaining implementation reviewed')
+      await canvas.locator('#work-save').click()
+      await expect(canvas.locator('#manager-view')).toContainText(
+        'Work: in-progress'
+      )
+      await expect(canvas.locator('#manager-view')).toContainText(
+        'Delivery: blocked'
+      )
+
+      assert.deepEqual(
+        await canvas
+          .locator('.step-card')
+          .evaluateAll((nodes) =>
+            nodes.map((n) => [
+              n.dataset.stepId,
+              n.style.left,
+              n.style.top,
+              n.offsetWidth,
+              n.offsetHeight
+            ])
+          ),
+        geometry
+      )
+      assert.equal(
+        await original.evaluate(
+          (n) => n === document.querySelector('.step-card')
+        ),
+        true
+      )
+      await page.screenshot({
+        path: path.join(artifacts, 'phase4-board.png'),
+        fullPage: true
+      })
+      await canvas
+        .locator('#phase4-controls')
+        .screenshot({ path: path.join(artifacts, 'phase4-controls.png') })
+      await canvas
+        .locator('#manager-view')
+        .evaluate((element) =>
+          element.scrollIntoView({ behavior: 'instant', block: 'start' })
+        )
+      await page.screenshot({
+        path: path.join(artifacts, 'phase4-shared.png'),
+        fullPage: true
+      })
+      fs.writeFileSync(
+        path.join(artifacts, 'metadata.json'),
+        JSON.stringify(
+          {
+            url: page.url(),
+            viewport: page.viewportSize(),
+            snapshot: server.service.shared(),
+            screenshots: [
+              'phase4-board.png',
+              'phase4-controls.png',
+              'phase4-shared.png'
+            ]
+          },
+          null,
+          2
+        )
+      )
+    } finally {
+      await browser?.close()
+      await server.close()
+      if (prior === undefined) delete process.env.TMPDIR
+      else process.env.TMPDIR = prior
     }
   }
 )

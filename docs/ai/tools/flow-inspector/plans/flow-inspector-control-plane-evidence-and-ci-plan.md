@@ -5,7 +5,11 @@
 Phase 3 completed and merged on 2026-09-07; its
 [completed record](completed/flow-inspector-phase-3-core-proof-closeout.md) retains the final decision
 and verified evidence. The [Core Proof contract](../CORE_PROOF.md) remains live.
-Phase 4 remains open, so this combined plan is not DONE.
+Phase 4 is implemented as a bounded operational trial and remains open: live
+required-check enforcement and an independently protected verifier are unproven.
+This combined plan is not DONE and must not move to completed.
+See the [operational trial](../../../../../tools/flow-inspector/control-plane/README.md#phase-4-operational-trial)
+for commands, capabilities, and the concrete external blocker.
 Static Workspace `v0.2.0` is complete. The proof selects two Factory flows,
 Vitest, GitHub Actions, and a local-only action/evidence boundary. It covers
 case-backed conditional handoffs, five isolated negative scenarios, versioned

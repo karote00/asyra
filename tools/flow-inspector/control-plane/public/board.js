@@ -27,6 +27,9 @@
       let recordSignature = ''
       let historySignature = ''
       let selectedFlow
+      let operationState
+      let operationSignature = ''
+      let selectedContractReview = ''
       let mappingState
       let selectedReviewId = null
       let mappingSignature = ''
@@ -254,9 +257,24 @@
         if (record?.snapshot && !record.matchesCurrentContract)
           context =
             'Historical contract differs. Current cards remain unverified; original evidence stays in its artifacts.'
+        if (record?.mode === 'candidate')
+          context =
+            'Candidate proof - acceptance requires an explicit version decision; current cards remain unverified.'
         if (evidence?.issues.length) context += ' ' + evidence.issues.join(' ')
         if (record?.error) context += ' ' + record.error
         byId('result-context').textContent = context
+        byId('ci-result').textContent = record?.ci
+          ? 'Verification: ' +
+            record.ci.verificationStatus +
+            ' - Delivery: ' +
+            record.ci.deliveryStatus +
+            '\n' +
+            record.ci.blockers.join('\n')
+          : 'No CI aggregate selected'
+        const ciLink = byId('ci-envelope-link')
+        ciLink.hidden = !record?.ciEnvelopeDigest
+        if (record?.ciEnvelopeDigest)
+          ciLink.href = '/api/runs/' + record.id + '/artifacts/ci-envelope'
         byId('source-digest').textContent =
           record?.snapshot?.digest ?? 'No snapshot yet'
         byId('source-head').textContent = record?.snapshot?.head ?? '-'
@@ -405,12 +423,169 @@
           if (!disposed) controls()
         }
       }
+      function renderOperations(state) {
+        operationState = state
+        const signature =
+          state.shared.fingerprint +
+          JSON.stringify(state.evolution.reviews) +
+          selectedContractReview
+        if (operationSignature === signature) return
+        operationSignature = signature
+        byId('contract-baseline').textContent =
+          'Accepted contract revision ' +
+          state.evolution.revision +
+          ' - ' +
+          state.evolution.versions.length +
+          ' retained versions'
+        const select = byId('contract-review')
+        select.replaceChildren()
+        for (const review of state.evolution.reviews) {
+          const option = node(
+            'option',
+            review.id.slice(0, 10) + ' - ' + review.status
+          )
+          option.value = review.id
+          select.append(option)
+        }
+        if (
+          !state.evolution.reviews.some((r) => r.id === selectedContractReview)
+        )
+          selectedContractReview = state.evolution.reviews.at(-1)?.id ?? ''
+        select.value = selectedContractReview
+        const review = state.evolution.reviews.find(
+          (r) => r.id === selectedContractReview
+        )
+        byId('contract-diff').textContent = review
+          ? JSON.stringify(
+              {
+                status: review.status,
+                changes: review.changes,
+                blockers: review.blockers
+              },
+              null,
+              2
+            )
+          : 'Verify a candidate, then prepare its exact version diff.'
+        const workSelect = byId('work-step'),
+          previousStep = workSelect.value
+        workSelect.replaceChildren()
+        for (const item of state.work) {
+          const step = contract.flows
+            .flatMap((flow) => flow.steps)
+            .find((step) => step.id === item.stepId)
+          const option = node(
+            'option',
+            (step?.title ?? item.stepId) + ' - ' + item.status
+          )
+          option.value = item.stepId
+          workSelect.append(option)
+        }
+        if (state.work.some((item) => item.stepId === previousStep))
+          workSelect.value = previousStep
+        const shared = state.shared
+        const manager = byId('manager-view')
+        manager.replaceChildren()
+        for (const text of [
+          shared.scope,
+          'Work: ' + shared.workStatus,
+          'Execution: ' + shared.executionStatus,
+          'Verification: ' + shared.verificationStatus,
+          'Delivery: ' + shared.deliveryStatus,
+          'Observed: ' + shared.observedAt,
+          'Baseline: ' + JSON.stringify(shared.baseline),
+          ...shared.goals.map((flow) => 'Goal: ' + flow.goal),
+          'Remaining work: ' +
+            (shared.remainingWork
+              .map((item) => item.stepId + ' (' + item.status + ')')
+              .join(', ') || 'All steps reported complete'),
+          'Remaining verification obligations: ' +
+            (shared.remaining.map((c) => c.id).join(', ') ||
+              'None in this verified snapshot'),
+          'Confirmed failures: ' +
+            (shared.confirmedFailures.map((c) => c.id).join(', ') ||
+              'None observed'),
+          'Potential downstream impact: ' + shared.potentialImpact.join(', '),
+          ...shared.blockers.map((b) => 'Blocker: ' + b)
+        ])
+          manager.append(node('p', text))
+      }
+      async function contractAction(decision) {
+        if (acting || activeId || !capability) return
+        acting = true
+        controls()
+        try {
+          const body = decision
+            ? {
+                id: selectedContractReview,
+                decision,
+                reason: byId('contract-reason').value,
+                retirement: byId('contract-retirement')
+                  .value.split(',')
+                  .map((s) => s.trim())
+                  .filter(Boolean)
+              }
+            : {
+                attemptId: selectedId,
+                relations:
+                  byId('contract-relation-kind').value === 'none'
+                    ? []
+                    : [
+                        {
+                          kind: byId('contract-relation-kind').value,
+                          before: byId('contract-predecessors')
+                            .value.split(',')
+                            .map((id) => id.trim())
+                            .filter(Boolean),
+                          after: byId('contract-successors')
+                            .value.split(',')
+                            .map((id) => id.trim())
+                            .filter(Boolean)
+                        }
+                      ]
+              }
+          await api('/api/contracts/' + (decision ? 'decide' : 'prepare'), body)
+          revision++
+          await refresh()
+        } catch (error) {
+          showError(error)
+        } finally {
+          acting = false
+          if (!disposed) controls()
+        }
+      }
       function controls() {
         byId('run-state').textContent = activeId
           ? 'Verification running - isolated source'
           : 'Ready to verify'
         byId('run-all').disabled =
           !capability || !compatible || Boolean(activeId) || acting
+        for (const id of [
+          'run-ci',
+          'run-ci-demo',
+          'run-candidate',
+          'retry-run',
+          'contract-prepare'
+        ])
+          byId(id).disabled =
+            !capability ||
+            Boolean(activeId) ||
+            acting ||
+            (id === 'retry-run' && !record)
+        const contractReview = operationState?.evolution.reviews.find(
+          (r) => r.id === selectedContractReview
+        )
+        for (const id of ['contract-accept', 'contract-reject'])
+          byId(id).disabled =
+            !capability ||
+            Boolean(activeId) ||
+            acting ||
+            contractReview?.status !== 'pending' ||
+            !byId('contract-reason').value.trim()
+        byId('work-save').disabled =
+          !capability ||
+          Boolean(activeId) ||
+          acting ||
+          !byId('work-reason').value.trim()
         byId('scenario').disabled = Boolean(activeId) || acting
         byId('cancel').disabled = !activeId || acting
         const review = mappingState?.reviews.find(
@@ -440,6 +615,7 @@
           const state = await api('/api/state')
           setContract(state.contract)
           renderMapping(state.mapping)
+          renderOperations(state)
           activeId = state.activeRunId
           if (!selectedId && state.runs.length) selectedId = state.runs[0].id
           const id = selectedId
@@ -457,15 +633,28 @@
             timer = window.setTimeout(refresh, 500)
         }
       }
-      async function start(flowIds) {
-        if (!capability || !compatible || acting || activeId || disposed) return
+      async function start(flowIds, mode = 'verify', retryScenario) {
+        if (
+          !capability ||
+          (mode !== 'candidate' && !compatible) ||
+          acting ||
+          activeId ||
+          disposed
+        )
+          return
         acting = true
         controls()
         menu.hidden = true
         panel.open = true
         try {
           if (byId('proof-error')) byId('proof-error').hidden = true
-          const request = { scenario: byId('scenario').value }
+          const request = {
+            mode,
+            scenario:
+              mode === 'ci' || mode === 'candidate'
+                ? 'baseline'
+                : (retryScenario ?? byId('scenario').value)
+          }
           if (flowIds) request.flowIds = flowIds
           const result = await api('/api/runs', request)
           selectedId = result.id
@@ -533,6 +722,19 @@
           <p id="run-state" role="status">Ready to verify</p>
           <p>Required checks: <strong id="checks">0 / 6</strong></p><p id="result-context"></p>
           <div id="proof-failures"></div>
+          <details id="phase4-controls"><summary>Contract versions and CI</summary>
+            <p id="contract-baseline"></p>
+            <div class="proof-actions"><button id="run-candidate" type="button">Verify candidate</button><button id="run-ci" type="button">Run CI aggregate</button><button id="run-ci-demo" type="button">Demonstrate CI rejection</button><button id="retry-run" type="button">Retry selected run</button></div>
+            <p>Local CI trial uses the accepted Git base. External required-check protection is reported separately.</p>
+            <pre id="ci-result">No CI aggregate selected</pre><a id="ci-envelope-link" target="_blank" rel="noopener noreferrer" hidden>Open CI envelope</a>
+            <label>Successor relation<select id="contract-relation-kind"><option value="none">No split or merge</option><option value="split">Split one obligation</option><option value="merge">Merge obligations</option></select></label><label>Previous obligation ids<input id="contract-predecessors" /></label><label>Successor obligation ids<input id="contract-successors" /></label>
+            <button id="contract-prepare" type="button">Review candidate</button>
+            <label>Contract review<select id="contract-review"></select></label><pre id="contract-diff"></pre>
+            <label>Decision reason<input id="contract-reason" maxlength="1000" /></label>
+            <label>Explicit retirement (removed obligation ids, comma-separated)<input id="contract-retirement" /></label>
+            <div class="proof-actions"><button id="contract-accept" type="button">Accept version</button><button id="contract-reject" type="button">Reject version</button></div>
+          </details>
+          <details><summary>Shared baseline view</summary><label>Implementation step<select id="work-step"></select></label><label>Reported work status<select id="work-status"><option value="not-started">Not started</option><option value="in-progress">In progress</option><option value="complete">Complete</option><option value="blocked">Blocked</option></select></label><label>Work update reason<input id="work-reason" maxlength="1000" /></label><button id="work-save" type="button">Record work status</button><p>Work reports do not grant verification or delivery.</p><div id="manager-view"></div><a id="shared-link" href="/api/shared" target="_blank" rel="noopener noreferrer">Open read-only snapshot</a></details>
           <details><summary>Mapping review</summary>
             <p id="mapping-baseline"></p><p>Review test-name changes for existing obligations. Flow goals and required steps stay fixed.</p>
             <button id="mapping-prepare" type="button">Prepare mapping diff</button>
@@ -587,6 +789,51 @@
         listen(byId('mapping-review'), 'change', (event) => {
           selectedReviewId = event.target.value
           renderMapping(mappingState)
+          controls()
+        })
+        listen(byId('work-reason'), 'input', controls)
+        listen(byId('work-save'), 'click', async () => {
+          if (acting || activeId || !capability) return
+          acting = true
+          controls()
+          try {
+            await api('/api/work', {
+              stepId: byId('work-step').value,
+              status: byId('work-status').value,
+              reason: byId('work-reason').value
+            })
+            revision++
+            await refresh()
+          } catch (error) {
+            showError(error)
+          } finally {
+            acting = false
+            if (!disposed) controls()
+          }
+        })
+        listen(byId('run-candidate'), 'click', () =>
+          start(undefined, 'candidate')
+        )
+        listen(byId('run-ci'), 'click', () => start(undefined, 'ci'))
+        listen(byId('run-ci-demo'), 'click', () =>
+          start(
+            undefined,
+            'ci-demo',
+            byId('scenario').value === 'baseline'
+              ? contract.defaultNegativeScenario
+              : byId('scenario').value
+          )
+        )
+        listen(byId('retry-run'), 'click', () =>
+          start(record?.flowIds, record?.mode ?? 'verify', record?.scenario)
+        )
+        listen(byId('contract-prepare'), 'click', () => contractAction())
+        listen(byId('contract-accept'), 'click', () => contractAction('accept'))
+        listen(byId('contract-reject'), 'click', () => contractAction('reject'))
+        listen(byId('contract-reason'), 'input', controls)
+        listen(byId('contract-review'), 'change', (event) => {
+          selectedContractReview = event.target.value
+          renderOperations(operationState)
           controls()
         })
         listen(byId('run-all'), 'click', () => start())

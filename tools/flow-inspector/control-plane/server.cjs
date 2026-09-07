@@ -26,18 +26,18 @@ function parseLocalUrl(value) {
     )
   return url
 }
-const readBody = async (request) => {
+const readBody = async (request, limit = 4096) => {
   if (
     request.headers['content-type']?.split(';')[0].trim() !== 'application/json'
   )
     throw new ActionError(415, 'JSON body required')
-  if (Number(request.headers['content-length']) > 4096)
+  if (Number(request.headers['content-length']) > limit)
     throw new ActionError(413, 'Request too large')
   const chunks = []
   let size = 0
   for await (const chunk of request) {
     size += chunk.length
-    if (size > 4096) throw new ActionError(413, 'Request too large')
+    if (size > limit) throw new ActionError(413, 'Request too large')
     chunks.push(chunk)
   }
   try {
@@ -127,7 +127,9 @@ async function startServer(
       )
       if (
         !file.startsWith(repositoryRoot + path.sep) ||
-        !['.md', '.cjs', '.js', '.ts'].includes(path.extname(file)) ||
+        !['.md', '.cjs', '.js', '.ts', '.yml', '.yaml'].includes(
+          path.extname(file)
+        ) ||
         !fs.existsSync(file) ||
         fs.realpathSync(file) !== file ||
         !fs.statSync(file).isFile()
@@ -185,8 +187,20 @@ async function startServer(
           if (route.pathname === '/api/session')
             return send(200, { capability })
           if (route.pathname === '/api/state') return send(200, service.state())
+          if (route.pathname === '/api/shared')
+            return send(200, service.shared())
+          const ciArtifact = route.pathname.match(
+            /^\/api\/ci\/([a-f0-9-]{36})\/artifacts\/(report|envelope)$/
+          )
+          if (ciArtifact) {
+            const bytes = service.readCIArtifact(ciArtifact[1], ciArtifact[2])
+            response.writeHead(200, {
+              'Content-Type': 'application/json; charset=utf-8'
+            })
+            return response.end(bytes)
+          }
           const artifact = route.pathname.match(
-            /^\/api\/runs\/([a-f0-9-]{36})\/artifacts\/(report|source-manifest)$/
+            /^\/api\/runs\/([a-f0-9-]{36})\/artifacts\/(report|source-manifest|ci-envelope)$/
           )
           if (artifact) {
             const bytes = service.readArtifact(artifact[1], artifact[2])
@@ -249,7 +263,18 @@ async function startServer(
           !timingSafeEqual(Buffer.from(provided), Buffer.from(capability))
         )
           throw new ActionError(403, 'Action is not authorized')
-        const body = await readBody(request)
+        const body = await readBody(
+          request,
+          route.pathname === '/api/ci/ingest' ? 2097152 : 4096
+        )
+        if (route.pathname === '/api/work')
+          return send(200, service.setWork(body, LOCAL_ACTOR))
+        if (route.pathname === '/api/contracts/prepare')
+          return send(200, service.prepareEvolution(body, LOCAL_ACTOR))
+        if (route.pathname === '/api/contracts/decide')
+          return send(200, service.decideEvolution(body, LOCAL_ACTOR))
+        if (route.pathname === '/api/ci/ingest')
+          return send(200, service.ingestCI(body, LOCAL_ACTOR))
         if (route.pathname === '/api/mapping/prepare')
           return send(200, service.prepareMapping(body, LOCAL_ACTOR))
         if (route.pathname === '/api/mapping/decide')
