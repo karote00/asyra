@@ -27,6 +27,7 @@
   width: 100%;
   margin-top: 5px;
 }
+.proof-run-failure button,
 .proof-controls button,
 .proof-controls select,
 .proof-controls input,
@@ -38,10 +39,12 @@
   background: var(--bg);
   font: inherit;
 }
+.proof-run-failure button,
 .proof-controls button,
 .proof-menu button {
   cursor: pointer;
 }
+.proof-run-failure button:focus-visible,
 .proof-controls button:focus-visible,
 .proof-menu button:focus-visible,
 .proof-controls select:focus-visible,
@@ -122,4 +125,16 @@
 }
 #history [aria-pressed='true'] {
   border-color: var(--accent);
+}
+
+.proof-run-failure:not([hidden]) {
+  border: 2px solid #f87171;
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 10px;
+  background: #401c25;
+  color: #fecaca;
+}
+.step-card.proof-failed {
+  box-shadow: inset 0 0 0 3px #f87171;
 }

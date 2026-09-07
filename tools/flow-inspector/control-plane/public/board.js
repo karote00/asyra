@@ -97,6 +97,7 @@
         for (const [id, value] of cards) {
           const item = cases.get(id)
           badge(value.badge, item?.status ?? 'unknown')
+          value.card.classList.toggle('proof-failed', item?.status === 'failed')
           value.badge.title =
             selectedFlow.title +
             ' - ' +
@@ -239,6 +240,42 @@
         record = value
         const evidence =
           compatible && record?.matchesCurrentContract ? record.evidence : null
+        const failures =
+          evidence?.cases.filter((item) => item.status === 'failed') ?? []
+        const notice = byId('proof-run-failure')
+        notice.replaceChildren()
+        notice.hidden = failures.length === 0
+        if (failures.length) {
+          if (!failures.some((item) => item.flowId === selectedFlow.id)) {
+            selectedFlow = contract.flows.find(
+              (flow) => flow.id === failures[0].flowId
+            )
+            byId('proof-flow').value = selectedFlow.id
+          }
+          notice.append(node('strong', `${failures.length} failed obligations`))
+          for (const failure of failures) {
+            const flow = contract.flows.find(
+              (item) => item.id === failure.flowId
+            )
+            const step = architectureSteps.get(failure.stepId)
+            const button = node(
+              'button',
+              `Show ${step?.title ?? failure.stepId}`
+            )
+            button.type = 'button'
+            button.addEventListener('click', () => {
+              selectedFlow = flow
+              byId('proof-flow').value = flow.id
+              projectEvidence()
+              const card = cards.get(failure.stepId)?.card
+              card?.click()
+              card?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+              panel.open = true
+              renderSelected()
+            })
+            notice.append(node('p', flow.title), button)
+          }
+        }
         badge(byId('overall'), evidence?.status ?? 'unknown')
         byId('checks').textContent =
           (evidence?.passedCount ?? 0) +
@@ -748,7 +785,11 @@
             <div id="history" aria-label="Recent attempts"></div>
           </details>
         </div>`
-        detail.prepend(panel)
+        const failureNotice = node('div', undefined, 'proof-run-failure')
+        failureNotice.id = 'proof-run-failure'
+        failureNotice.setAttribute('role', 'alert')
+        failureNotice.hidden = true
+        detail.prepend(failureNotice, panel)
         menu = node('div', undefined, 'proof-menu')
         menu.id = 'proof-menu'
         menu.hidden = true

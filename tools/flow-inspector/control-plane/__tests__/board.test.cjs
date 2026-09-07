@@ -176,9 +176,16 @@ test(
         view
       )
       const negative = await run('inverse-regression', 'failed')
-      await expect(
-        canvas.locator('.proof-badge[data-status="passed"]')
-      ).toHaveCount(3)
+      await expect(canvas.locator('#proof-flow')).toHaveValue(
+        'immediate-cancellation'
+      )
+      await expect(canvas.locator('#proof-run-failure')).toBeVisible()
+      await expect(canvas.locator('#proof-run-failure')).toContainText(
+        '2 failed obligations'
+      )
+      await expect(canvas.locator('.step-card.proof-failed')).toHaveCount(2)
+      await canvas.locator('#proof-flow').selectOption('deferred-publication')
+      await expect(canvas.locator('#proof-run-failure')).toBeVisible()
       await canvas.locator('#proof-flow').selectOption('immediate-cancellation')
       await expect(
         canvas.locator('.proof-badge[data-status="failed"]')
@@ -218,6 +225,8 @@ test(
         true
       )
       const recovery = await run('baseline', 'passed')
+      await expect(canvas.locator('#proof-run-failure')).toBeHidden()
+      await expect(canvas.locator('.step-card.proof-failed')).toHaveCount(0)
       await expect(canvas.locator('#source-digest')).toHaveText(baselineDigest)
       await canvas
         .getByRole('button', { name: /Regression demo - failed/ })
@@ -227,6 +236,30 @@ test(
         canvas.locator('.proof-badge[data-status="failed"]')
       ).toHaveCount(2)
       await canvas.locator('[data-reset-zoom]').click()
+      await canvas.locator('#proof-controls > summary').click()
+      await expect(canvas.locator('#proof-run-failure')).toBeVisible()
+      await canvas
+        .getByRole('button', {
+          name: 'Show Settle local shared projection',
+          exact: true
+        })
+        .click()
+      await expect(
+        canvas.locator('[data-step-id="settle-local-shared-projection"]')
+      ).toHaveClass(/is-selected/)
+      await expect(canvas.locator('#proof-failures')).toContainText(
+        'cancel.delivery - failed'
+      )
+      await canvas
+        .getByRole('button', {
+          name: 'Show Finalize transaction state',
+          exact: true
+        })
+        .click()
+      await expect(owner).toHaveClass(/is-selected/)
+      await expect(canvas.locator('#proof-failures')).toContainText(
+        'cancel.outcome - failed'
+      )
       await capture('canvas-negative')
       // Inspect the complete original graph at 100%, using a large viewport
       // rather than shrinking cards or capturing clipped offscreen content.
