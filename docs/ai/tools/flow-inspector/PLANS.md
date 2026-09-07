@@ -31,6 +31,10 @@ dependency, license, or publication change is implied by the planning revision.
 
 ## Roadmap and Baseline References
 
+- [Phase 3 completed record](plans/completed/flow-inspector-phase-3-core-proof-closeout.md)
+  retains merged proof evidence. The combined plan above tracks only remaining
+  Phase 4 work; the living `CORE_PROOF.md` has not moved.
+
 - [Workflow Control Plane Roadmap](plans/flow-inspector-workflow-control-plane-roadmap.md)
   owns cross-phase direction, boundaries, activation decisions, and provisional
   effort ranges. The phase plans own their delivery cases and DoD.

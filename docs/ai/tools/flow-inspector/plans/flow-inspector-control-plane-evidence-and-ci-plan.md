@@ -2,8 +2,10 @@
 
 ## Status and Objective
 
-Phase 3 is implemented under the [Core Proof contract](../CORE_PROOF.md) on
-2026-09-07. Phase 4 remains deferred, so this combined plan remains open.
+Phase 3 completed and merged on 2026-09-07; its
+[completed record](completed/flow-inspector-phase-3-core-proof-closeout.md) retains the final decision
+and verified evidence. The [Core Proof contract](../CORE_PROOF.md) remains live.
+Phase 4 remains open, so this combined plan is not DONE.
 Static Workspace `v0.2.0` is complete. The proof selects two Factory flows,
 Vitest, GitHub Actions, and a local-only action/evidence boundary. It covers
 case-backed conditional handoffs, five isolated negative scenarios, versioned

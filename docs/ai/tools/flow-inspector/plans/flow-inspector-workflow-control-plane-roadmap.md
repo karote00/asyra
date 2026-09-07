@@ -349,7 +349,9 @@ Phase 6 hardens and expands proven controls rather than first introducing them.
 As of 2026-09-07, the bounded [Phase 3 proof](../CORE_PROOF.md) implements two
 Factory flows, conditional preflight, five negative demonstrations, explicit
 mapping decisions, and versioned local evidence on the original canvas. Its
-mapping policy permits test-name changes only. Phase 4 remains the next candidate;
+mapping policy permits test-name changes only. Its
+[Phase 3 completed record](completed/flow-inspector-phase-3-core-proof-closeout.md) records PR #165
+and the verified merged evidence. Phase 4 remains the next candidate;
 protected accepted-base CI, broader flow evolution, and shared viewing are not
 implied by the local proof or its passing CI commands.
 

@@ -44,3 +44,15 @@
 - Extend direct CI and permanent browser coverage to the full proof and mapping
   review. No new dependencies, Framework runtime changes, package version,
   remote hosting, source-writing agent, or connector is introduced.
+
+## 2026-09-07 - Close Phase 3 independently of Phase 4
+
+- Context: PR #165 merged the bounded Core Proof; all eight checks on its exact
+  pre-merge HEAD succeeded. The existing plan also owns unfinished Phase 4.
+- Decision: close only Phase 3 in
+  [its completed record](../../plans/completed/flow-inspector-phase-3-core-proof-closeout.md).
+  Retain the combined plan as active and `CORE_PROOF.md` as the living contract.
+- Consequences: preserve all prior decisions and local-proof limitations.
+  Required CI enforcement is still unproven: the effective GitHub main rules
+  have no required status checks. Phase 4 must address that explicit gap.
+- Release boundary: this closeout changes no version, Changeset, tag, or release.
