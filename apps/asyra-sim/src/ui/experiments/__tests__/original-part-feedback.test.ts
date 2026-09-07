@@ -9,10 +9,10 @@ import { completeAnalysisResult } from '../../../analysis/result'
 import { playbackFeedback } from '../playback-feedback'
 import { RecordedPlaybackEvidence } from '../recorded-playback-evidence'
 
-it('uses original geometry to retain simultaneous gripper contact and workpiece clearance in live and recorded poses', async () => {
+it('keeps original workpiece clearance distinct from penetration in live and recorded poses', async () => {
   const snapshot = await collisionStarterSnapshot()
 
-  for (const time of [3.84, 4]) {
+  for (const time of [3.84, 3.856, 4]) {
     const pose = sampleSnapshot(snapshot, time)
     const evidence = runOriginalPartMethod(pose)
     const sample = validateLiveEvidence(snapshot, time, evidence)
@@ -34,12 +34,12 @@ it('uses original geometry to retain simultaneous gripper contact and workpiece 
       { name: 'gripper - fixture table', kind: 'collision' },
       {
         name: 'workpiece - fixture table',
-        kind: time === 4 ? 'collision' : 'clearance'
+        kind: time === 3.84 ? 'clearance' : 'collision'
       }
     ])
     expect(feedback.highlight?.colors.get('example:gripper')).toBe(0xff625e)
     expect(feedback.highlight?.colors.get('example:workpiece')).toBe(
-      time === 4 ? 0xff625e : 0xffbd59
+      time === 3.84 ? 0xffbd59 : 0xff625e
     )
     expect(recorded?.issues).toEqual(feedback.issues)
     expect(recorded?.highlight).toEqual(feedback.highlight)

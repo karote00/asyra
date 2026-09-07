@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { IDENTITY_POSE, axisAngle, type Vec3 } from '../../../domain/math'
 import {
   intervalAlgebra,
@@ -9,6 +9,8 @@ import { MechanicalMesh } from '../../../../samples/mechanical-mesh'
 import { decodeRestrictedGlb } from '../../../engine/glb/decode'
 import { resolvePart } from '../../../domain/part-geometry'
 import { MeshWorkLimit, OriginalMeshQuery } from '../original-mesh-query'
+import * as convexQuery from '../convex-query'
+import { boundsGap, shapeBounds } from '../mesh-index'
 
 const ops = poseOperations(intervalAlgebra)
 async function ring(segments = 16): Promise<MeshGeometry> {
@@ -57,6 +59,39 @@ const sphere = (position: Vec3, radius = 0.1) => ({
 })
 
 describe('original mesh solid certificates', () => {
+  it('stops refining positively separated regions after a warning witness while preserving the hole', async () => {
+    const geometry = await ring()
+    const distance = convexQuery.convexDistance
+    let warningObserved = false
+    let redundantQueries = 0
+    const query = vi
+      .spyOn(convexQuery, 'convexDistance')
+      .mockImplementation((a, b, ...settings) => {
+        if (warningObserved && boundsGap(shapeBounds(a), shapeBounds(b)) > 0)
+          redundantQueries++
+
+        const result = distance(a, b, ...settings)
+        warningObserved ||= result.upper < 0.5
+        return result
+      })
+
+    try {
+      const result = new OriginalMeshQuery().distance(
+        shape(geometry),
+        sphere([0, 0, 0]),
+        0.5,
+        1e-6,
+        48
+      )
+      expect(result.penetration).toBe(false)
+      expect(result.upper).toBeLessThan(0.5)
+      expect(result.lower).toBeGreaterThan(0)
+      expect(warningObserved).toBe(true)
+      expect(redundantQueries).toBe(0)
+    } finally {
+      query.mockRestore()
+    }
+  })
   it('charges and checkpoints cached whole-part rejection queries', () => {
     const frozen = Object.freeze({
       ...solid,
@@ -136,38 +171,41 @@ describe('original mesh solid certificates', () => {
       ).penetration
     ).toBe(true)
   })
-  it('proves crossing surfaces when neither solid has a vertex inside the other', async () => {
-    const bars = await Promise.all(
-      [
-        [2, 0.1, 0.1],
-        [0.1, 2, 0.1]
-      ].map(async (size) => {
-        const mesh = new MechanicalMesh()
-        mesh.block(0xffffff, [0, 0, 0], size as unknown as Vec3)
-        const asset = await decodeRestrictedGlb(mesh.toGlb('crossing-bar'))
-        const part = resolvePart(
-          {
-            version: 1,
-            id: 'bar',
-            assetId: asset.source.sha256,
-            pose: IDENTITY_POSE,
-            scale: [1, 1, 1]
-          },
-          asset
-        )
-        if (part.geometry.kind !== 'mesh') throw new Error('Missing bar')
-        return part.geometry
-      })
-    )
-    const result = new OriginalMeshQuery().distance(
-      shape(bars[0]),
-      shape(bars[1]),
-      0,
-      1e-6,
-      48
-    )
-    expect(result.penetration).toBe(true)
-  })
+  it.each([0, 0.02, 0.2])(
+    'proves crossing surfaces independently of clearance threshold %s when neither solid has a vertex inside the other',
+    async (threshold) => {
+      const bars = await Promise.all(
+        [
+          [2, 0.1, 0.1],
+          [0.1, 2, 0.1]
+        ].map(async (size) => {
+          const mesh = new MechanicalMesh()
+          mesh.block(0xffffff, [0, 0, 0], size as unknown as Vec3)
+          const asset = await decodeRestrictedGlb(mesh.toGlb('crossing-bar'))
+          const part = resolvePart(
+            {
+              version: 1,
+              id: 'bar',
+              assetId: asset.source.sha256,
+              pose: IDENTITY_POSE,
+              scale: [1, 1, 1]
+            },
+            asset
+          )
+          if (part.geometry.kind !== 'mesh') throw new Error('Missing bar')
+          return part.geometry
+        })
+      )
+      const result = new OriginalMeshQuery().distance(
+        shape(bars[0]),
+        shape(bars[1]),
+        threshold,
+        1e-6,
+        48
+      )
+      expect(result.penetration).toBe(true)
+    }
+  )
   it('profiles complete disjoint mesh pairs with overlapping bounds and retains the hole', async () => {
     const outer = await ring(32),
       inner = {

@@ -45,7 +45,7 @@ export const ORIGINAL_PART_METHOD: InstalledMethodDescriptor = {
     applicability:
       'Machine-scale rigid parts. Closed oriented manifold components interpreted as a union of solids using nonzero signed winding per component. Every source triangle is retained; unsupported topology blocks analysis. Not manufacturer CAD certification, dynamics, metrology or physical-safety approval.',
     numericalSemantics:
-      'Outward binary64 kinematics, original-triangle support certificates and signed ray membership. Conservative hierarchy rejection only. Complete time intervals or explicit unresolved coverage; sampled frames never prove clearance. Bounds, not requested precision, are evidence.',
+      'Outward binary64 kinematics, original-triangle support certificates and signed ray membership. A clearance witness never terminates the same-pose search for penetration elsewhere in the original part. Conservative hierarchy rejection only. Complete time intervals or explicit unresolved coverage; sampled frames never prove clearance. Bounds, not requested precision, are evidence.',
     controls:
       'distanceTolerance bounds requested search width, timeTolerance stops time subdivision, maxIterations bounds each triangle/primitive convex search. Uncertain boundary predicates remain unresolved.',
     reproducibility:

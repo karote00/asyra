@@ -130,6 +130,7 @@ export class OriginalMeshQuery {
       [ai?.root, bi?.root]
     ]
     let lower = Infinity
+    let searchThreshold = result.upper < threshold ? 0 : threshold
     while (pending.length) {
       this.tick()
       const pair = pending.pop()
@@ -139,7 +140,7 @@ export class OriginalMeshQuery {
         an ? worldBounds(an.bounds, a.pose) : shapeBounds(a),
         bn ? worldBounds(bn.bounds, b.pose) : shapeBounds(b)
       )
-      if (bound > threshold) {
+      if (bound > searchThreshold) {
         lower = Math.min(lower, bound)
         continue
       }
@@ -157,7 +158,7 @@ export class OriginalMeshQuery {
           const ab = at ? worldBounds(at.bounds, a.pose) : shapeBounds(a),
             bb = bt ? worldBounds(bt.bounds, b.pose) : shapeBounds(b)
           const triangleGap = boundsGap(ab, bb)
-          if (triangleGap > threshold) {
+          if (triangleGap > searchThreshold) {
             lower = Math.min(lower, triangleGap)
             continue
           }
@@ -177,8 +178,12 @@ export class OriginalMeshQuery {
           lower = Math.min(lower, evidence.lower)
           if (evidence.penetration || evidence.upper < result.upper)
             result = evidence
-          if (result.penetration || result.upper < threshold)
-            return { ...result, lower: 0 }
+          // A warning witness settles the clearance question, not penetration.
+          // Continue all possibly intersecting regions; positively separated
+          // regions cannot change that remaining classification. Keep the
+          // witnessed upper bound rather than recomputing an optional minimum.
+          if (result.upper < threshold) searchThreshold = 0
+          if (result.penetration) return { ...result, lower: 0 }
         }
     }
     if (lower > result.upper)

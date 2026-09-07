@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-test('full-workcell manual preview preserves clearance beside collision and exposes every pair issue', async ({
+test('full-workcell manual preview changes clearance to collision at a penetrating pose and exposes every pair issue', async ({
   page
 }, info) => {
   await page.goto('/')
@@ -43,8 +43,23 @@ test('full-workcell manual preview preserves clearance beside collision and expo
   await page.mouse.wheel(0, -1400)
   await page.mouse.wheel(0, -1400)
   await page.mouse.wheel(0, -1400)
+  await page.mouse.wheel(0, -1400)
+  await page.mouse.wheel(0, -1400)
+  await page.mouse.wheel(0, -1400)
+  await page.mouse.wheel(0, -1400)
   await page.screenshot({
     path: info.outputPath('mixed-pairs-closeup-dark.png')
+  })
+
+  await slider.fill('3.856')
+  await expect(feedback).toContainText('Checked 3.8560 s')
+  await expect(feedback).toHaveAttribute('data-pose-matches', 'true')
+  await expect(pair('workpiece - fixture table')).toHaveAttribute(
+    'data-pair-kind',
+    'collision'
+  )
+  await page.screenshot({
+    path: info.outputPath('workpiece-penetration-dark.png')
   })
 
   await slider.fill('4')
@@ -75,6 +90,16 @@ test('full-workcell manual preview preserves clearance beside collision and expo
   ).toHaveText(observations ?? '')
   await expect(page.getByTestId('analysis-result')).toHaveCount(0)
 
+  await slider.fill('3.856')
+  await expect(feedback).toContainText('Checked 3.8560 s')
+  await expect(pair('workpiece - fixture table')).toHaveAttribute(
+    'data-pair-kind',
+    'collision'
+  )
+  await expect(
+    page.getByTestId('live-observations').locator('summary')
+  ).toHaveText(observations ?? '')
+
   await page.getByRole('button', { name: 'Return to editing pose' }).click()
   await page.getByLabel('Minimum clearance (mm)').fill('200')
   await page
@@ -102,11 +127,11 @@ test('full-workcell manual preview preserves clearance beside collision and expo
       url: page.url(),
       viewport: page.viewportSize(),
       dpr: 1,
-      times: [3.84, 4],
+      times: [3.84, 3.856, 4],
       scope: 'all 11 modeled parts - 46 explicit pairs',
       geometry: 'unmodified original sample geometry',
       camera:
-        'default, scroll -400, Shift-pan (-190, -110), three scrolls -1400',
+        'default, scroll -400, Shift-pan (-190, -110), seven scrolls -1400',
       selection: null,
       overlays: 'default grid and whole-part highlights',
       pipeline:
@@ -114,6 +139,7 @@ test('full-workcell manual preview preserves clearance beside collision and expo
       screenshots: [
         'mixed-pairs-light.png',
         'mixed-pairs-closeup-dark.png',
+        'workpiece-penetration-dark.png',
         'both-parts-contact.png',
         'all-pair-issues.png'
       ]

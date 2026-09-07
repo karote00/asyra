@@ -156,7 +156,7 @@ test('a focused interval keeps all workcell parts, reports real findings and rep
   )
   await pair.getByRole('button', { name: 'Replay pair', exact: true }).click()
   await expect(page.locator('.viewport-summary')).toContainText(
-    'Historical run replay - 3.9000 s'
+    'Historical run replay - 3.8000 s'
   )
   await expect(page.getByTestId('history-depth')).toHaveText(history ?? '')
   await page.screenshot({ path: info.outputPath('collision-replay.png') })
@@ -170,7 +170,7 @@ test('a focused interval keeps all workcell parts, reports real findings and rep
       dpr: 1,
       camera: 'default',
       interval: [3.8, 4.2],
-      replayTime: 3.9,
+      replayTime: 3.8,
       highlightedBodies: ['gripper', 'fixture table'],
       overlays: 'default grid and historical pair highlights',
       result: await result.innerText(),

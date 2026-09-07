@@ -54,6 +54,19 @@ checks. A bounding hierarchy may reject only regions proved separated; it never
 supplies replacement contact geometry. Boundary uncertainty is not collision
 proof or a clear result.
 
+At a checked static pose, finding a surface pair within the warning distance
+does not end the search for penetration elsewhere in the same original parts.
+The warning distance must not downgrade an established intersection to a
+clearance-only finding. A witnessed upper distance may tighten conservative
+hierarchy rejection, but cannot reject an intersecting region. Existing work
+and uncertainty limits remain in force; unfinished checks never imply clearance.
+
+Method version `1.0.1` corrects the early clearance-witness exit in `1.0.0`.
+New studies select the corrected version. Saved studies and immutable reports
+keep their original method version; explicitly select the installed version and
+save the study before rerunning. The old implementation is not installed or
+silently aliased, and old reports are not relabeled as corrected evidence.
+
 When original triangle bounding boxes overlap, interval support queries may
 still certify a separating direction using the complete original triangles and
 the user's declared search controls. Bounding-box overlap alone never proves
@@ -85,6 +98,10 @@ invariant under this shared rigid change of frame.
 - Table-leg-only collision, small features, concave gaps and through holes.
 - Disjoint surfaces, penetrating surfaces, complete solid containment, contact
   uncertainty and invalid topology; no convex-hull substitution.
+- The original collision starter workpiece is still above the tabletop at
+  3.840 s, but penetrates it at 3.856 s. Nonzero warning distances, reversed
+  pair order and exhaustive versus hierarchical traversal must retain that
+  penetration; live, cached and recorded feedback must agree.
 - Fast translation and rotation between clear endpoint frames; full interval
   coverage, finite resource termination, cancellation and Worker parity.
 - Save/open, duplication, Undo/Redo, immutable historical records, generic
