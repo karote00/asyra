@@ -7,9 +7,9 @@ import {
   sampleSnapshot,
   validateLiveEvidence
 } from '../../../analysis/live/sample'
-import { playbackFeedback } from '../playback-feedback'
+import { feedbackFromIssues, playbackFeedback } from '../playback-feedback'
 
-it('does not mark clearance-only pairs red when another pair collides', () => {
+it('shows collision and clearance pairs together, with red precedence only on a shared body', () => {
   const input = liveFixture()
   const sample = structuredClone(
     validateLiveEvidence(
@@ -39,10 +39,70 @@ it('does not mark clearance-only pairs red when another pair collides', () => {
 
   const feedback = playbackFeedback(input, { ...sample, pairs })
   const source = input.pairs[0]
+  const clearance = input.pairs[1]
+  const colors = new Map([
+    [clearance.a.bodyId, 0xffbd59],
+    [clearance.b.bodyId, 0xffbd59],
+    [source.a.bodyId, 0xff625e],
+    [source.b.bodyId, 0xff625e]
+  ])
 
   expect(feedback.kind).toBe('collision')
-  expect(feedback.bodyIds).toEqual([source.a.bodyId, source.b.bodyId])
-  expect(feedback.pairNames).toHaveLength(1)
+  expect(feedback).toMatchObject({
+    issues: [
+      { pairId: source.id, kind: 'collision' },
+      { pairId: clearance.id, kind: 'clearance' }
+    ],
+    highlight: { colors }
+  })
+  expect(
+    playbackFeedback(input, { ...sample, pairs: [...pairs].reverse() })
+  ).toMatchObject({ highlight: { colors } })
+})
+
+it('keeps unresolved pairs visible alongside known findings without inventing their contact color', () => {
+  const feedback = feedbackFromIssues(
+    {
+      checkedTime: 4,
+      complete: false,
+      totalPairCount: 3,
+      message: 'Partial evidence'
+    },
+    [
+      {
+        pairId: 'contact',
+        kind: 'collision',
+        bodyIds: ['tool', 'table'],
+        name: 'tool - table'
+      },
+      {
+        pairId: 'near',
+        kind: 'clearance',
+        bodyIds: ['part', 'table'],
+        name: 'part - table'
+      },
+      {
+        pairId: 'unknown',
+        kind: 'unresolved',
+        bodyIds: ['arm', 'post'],
+        name: 'arm - post'
+      }
+    ]
+  )
+
+  expect(feedback.issues.map((issue) => issue.kind)).toEqual([
+    'collision',
+    'clearance',
+    'unresolved'
+  ])
+  expect(feedback.complete).toBe(false)
+  expect(feedback.highlight?.colors).toEqual(
+    new Map([
+      ['tool', 0xff625e],
+      ['table', 0xff625e],
+      ['part', 0xffbd59]
+    ])
+  )
 })
 
 it('keeps the last checked parts highlighted during forward playback without applying future evidence', () => {
@@ -53,39 +113,68 @@ it('keeps the last checked parts highlighted during forward playback without app
     time: 4,
     historical: false,
     bodyIds: [],
-    feedback: {
-      kind: 'collision',
-      checkedTime: 4,
-      bodyIds: ['a', 'b'],
-      pairNames: [],
-      complete: true,
-      totalPairCount: 1,
-      message: ''
-    }
+    feedback: feedbackFromIssues(
+      {
+        checkedTime: 4,
+        complete: true,
+        totalPairCount: 1,
+        message: ''
+      },
+      [
+        {
+          pairId: 'contact',
+          kind: 'collision',
+          bodyIds: ['a', 'b'],
+          name: 'a - b'
+        }
+      ]
+    )
   }
 
-  expect(playbackHighlight(view)).toEqual({
-    bodyIds: ['a', 'b'],
-    color: 0xff625e
-  })
-  expect(playbackHighlight({ ...view, time: 4.01 })).toEqual({
-    bodyIds: ['a', 'b'],
-    color: 0xff625e
-  })
+  const highlight = view.feedback?.highlight
+
+  expect(highlight?.colors).toEqual(
+    new Map([
+      ['a', 0xff625e],
+      ['b', 0xff625e]
+    ])
+  )
+
+  for (let frame = 0; frame < 120; frame += 1) {
+    expect(playbackHighlight({ ...view, time: 4 + frame / 60 })).toBe(highlight)
+  }
+
   expect(playbackHighlight({ ...view, time: 3.99 })).toBeUndefined()
 
   if (!view.feedback) throw new Error('Missing fixture feedback')
   expect(
     playbackHighlight({
       ...view,
-      feedback: { ...view.feedback, kind: 'unresolved' }
+      feedback: feedbackFromIssues({ ...view.feedback, complete: false }, [])
     })
   ).toBeUndefined()
   expect(
     playbackHighlight({
       ...view,
-      feedback: { ...view.feedback, kind: 'clearance' }
-    })?.color
+      feedback: feedbackFromIssues(view.feedback, [
+        {
+          pairId: 'near',
+          kind: 'clearance',
+          bodyIds: ['a', 'b'],
+          name: 'a - b'
+        }
+      ])
+    })?.colors.get('a')
   ).toBe(0xffbd59)
   expect(playbackHighlight(null)).toBeUndefined()
+
+  const historical = {
+    ...view,
+    historical: true,
+    feedback: undefined,
+    historicalHighlight: { colors: new Map([['a', 0x62e6c1]]) }
+  }
+
+  for (let frame = 0; frame < 120; frame += 1)
+    expect(playbackHighlight(historical)).toBe(historical.historicalHighlight)
 })

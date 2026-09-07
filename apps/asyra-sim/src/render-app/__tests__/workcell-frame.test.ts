@@ -10,15 +10,19 @@ import { SpatialLayer } from '../spatial-layer'
 import { compose } from '../../domain/math'
 import { forwardKinematics } from '../../domain/workcell'
 
-it('highlights both complete parts without replacing their shapes and restores selection afterward', () => {
+it('projects independent whole-part colors without replacing shapes and restores selection afterward', () => {
   const { workcell } = createSyntheticExample()
   const ids = workcell.bodies.slice(0, 2).map((body) => body.id)
   const project = prepareWorkcellProjection(workcell, new Map())
   const view = { camera: DEFAULT_CAMERA, selectedId: ids[0], grid: false }
   const original = project(view)
+  const colors = new Map([
+    [ids[0], 0xff625e],
+    [ids[1], 0xffbd59]
+  ])
   const highlighted = project({
     ...view,
-    highlight: { bodyIds: ids, color: 0xff625e }
+    highlight: { colors }
   })
 
   for (const mesh of highlighted.meshes) {
@@ -30,7 +34,7 @@ it('highlights both complete parts without replacing their shapes and restores s
     expect(mesh.descriptor.position).toEqual(source.descriptor.position)
     expect(mesh.descriptor.color).toBe(
       mesh.elementId && ids.includes(mesh.elementId)
-        ? 0xff625e
+        ? colors.get(mesh.elementId)
         : source.descriptor.color
     )
   }

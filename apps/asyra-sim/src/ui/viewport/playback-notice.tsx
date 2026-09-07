@@ -1,5 +1,6 @@
 import { useWorkbenchValue } from '../shell/workbench-context'
 import type { PlaybackFeedback } from '../experiments/playback-feedback'
+import { FeedbackDetails } from './feedback-details'
 
 const titles: Record<PlaybackFeedback['kind'], string> = {
   collision: 'Collision detected',
@@ -74,47 +75,5 @@ export function PlaybackNotice() {
         <FeedbackDetails feedback={feedback} matches={matches} />
       </details>
     </aside>
-  )
-}
-
-function FeedbackDetails({
-  feedback,
-  matches
-}: {
-  feedback: PlaybackFeedback
-  matches: boolean
-}) {
-  const highlighted =
-    feedback.bodyIds.length > 0 &&
-    (feedback.kind === 'collision' || feedback.kind === 'clearance')
-
-  return (
-    <>
-      {feedback.pairNames.slice(0, 2).map((name) => (
-        <p key={name} className="mt-1 text-[10px] wrap-anywhere">
-          {name}
-        </p>
-      ))}
-
-      {feedback.pairNames.length > 2 && (
-        <p className="text-[10px]">
-          +{feedback.pairNames.length - 2} more pairs
-        </p>
-      )}
-
-      <p className="mt-2 text-[10px] leading-relaxed text-sim-muted">
-        {highlighted
-          ? 'Last checked parts highlighted - not a precise contact region. '
-          : ''}
-        {highlighted && !matches && 'Current pose is not yet checked. '}
-        {feedback.message}
-      </p>
-
-      {!feedback.complete && feedback.kind !== 'checking' && (
-        <p className="mt-1 text-[10px] text-sim-muted">
-          Incomplete coverage - other contacts may be unobserved.
-        </p>
-      )}
-    </>
   )
 }

@@ -111,33 +111,13 @@ export function createSyntheticExperimentPresets(example: SyntheticExample) {
   const table = study(
     'Tool and table sweep',
     [{}, { 1: 0.35, 2: -1.2, 3: 0.8 }, { 1: -0.35, 2: -0.9, 3: 1.2 }],
-    'Local study of the gripper and workpiece against the table. Robot links and the fixture post are not checked; this is not whole-workcell clearance evidence.'
+    'Sweep the tool past the table while checking the complete modeled workcell, including every robot part and both fixtures. Explicit mounting exclusions remain visible.'
   )
-  table.draft.scope.primaryBodyIds = example.workcell.bodies
-    .filter((body) => body.role === 'tool' || body.role === 'workpiece')
-    .map((body) => body.id)
-  table.draft.scope.influencingBodyIds = example.workcell.bodies
-    .filter((body) => body.id.endsWith(':fixture-table'))
-    .map((body) => body.id)
-  const selected = new Set([
-    ...table.draft.scope.primaryBodyIds,
-    ...table.draft.scope.influencingBodyIds
-  ])
-  table.draft.scope.excludedPairs = table.draft.scope.excludedPairs.filter(
-    (pair) => selected.has(pair.a) && selected.has(pair.b)
-  )
-  table.draft.scope.acknowledgedExcludedVisibleBodyIds = example.workcell.bodies
-    .filter((body) => body.visible && !selected.has(body.id))
-    .map((body) => body.id)
   const collision = study(
     'Tool and table collision',
     [{}, { 2: -0.3, 3: -2.1, 5: 0 }, {}],
-    'Deliberately lower the gripper and workpiece into the table at 4 s, then return. This local collision demonstration uses original parts; robot links and the fixture post are not checked. Run formal analysis for evidence, not a predefined verdict.'
+    'Deliberately lower the gripper and workpiece into the table at 4 s, then return. Check every modeled workcell part with the visible mounting exclusions. Other contacts remain independent; no impact removes or deforms geometry. Run formal analysis for evidence, not a predefined verdict.'
   )
-  collision.draft.scope = {
-    ...structuredClone(table.draft.scope),
-    backgroundNote: collision.draft.scope.backgroundNote
-  }
   return [
     {
       name: 'Synthetic clearance study',

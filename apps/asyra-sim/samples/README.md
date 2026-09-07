@@ -40,13 +40,12 @@ A fresh workcell contains six independently editable eight-second studies:
 | Shoulder reach study | J2 reach variation with all other joints fixed. |
 | Elbow folding study | J3 folding/extension with all other joints fixed. |
 | Wrist orientation study | J4/J5/J6 orientation changes with the first three axes fixed. |
-| Tool and table sweep | Combined J1/J2/J3 motion; gripper and workpiece against the table only. |
-| Tool and table collision | Deliberate descent into the table at 4 s and return; the same local tool/table scope. |
+| Tool and table sweep | Combined J1/J2/J3 motion; every modeled workcell part participates. |
+| Tool and table collision | Deliberate descent into the table at 4 s and return; every modeled workcell part participates. |
 
-The first four retain the full workcell scope and the existing explicit mounting
-exclusions. Both local table studies acknowledge every omitted visible body and
-retain only their selected mounting exclusion. They cannot establish clearance for
-the omitted robot links or post. All trajectories contain every actuated joint
+All six retain the full workcell scope and the existing explicit mounting
+exclusions. Every robot part, the tool, workpiece and both fixtures participate;
+no visible body is pre-acknowledged as omitted. All trajectories contain every actuated joint
 in radians and use ordinary piecewise-linear interpolation. The normal App
 selects the original-part method for every study, with the existing 20 mm
 clearance threshold and bounded resource defaults. Names describe test intent,
@@ -55,16 +54,25 @@ same complete source geometry, not mutable experiment inputs or historical runs.
 
 ### Viewing a collision
 
-Select **Tool and table collision**, run **Run preflight**, then **Run formal
-analysis**. With the unchanged example inputs, original-part analysis establishes
-penetration for both the gripper/table and workpiece/table pairs at 4 s; both
-trajectory endpoints are clear. The result shows **Issue found**, **does not
-meet**, execution **completed**, and two finding pairs with no unresolved pairs.
-This is a successful analysis of a failing geometric experiment, not an execution
-failure or a real-world safety certification.
+Select **Tool and table collision** and move the preview slider to **3.8400 s**.
+The gripper/table pair has established penetration, while the workpiece/table
+pair has a clearance warning: the gripper is red and the workpiece is amber.
+At **4 s**, both pairs have established penetration and both parts are red.
+Other workcell pairs retain their own collision, clearance or unresolved evidence.
+The complete original geometry stays present after every contact.
+
+For a focused report, set the interval to **3.8-4.2 s**, save the experiment,
+run **Run preflight**, then **Run formal analysis**. All **11 parts / 46 pairs**
+remain included; only the inspected time interval changes. The unmodified
+full **0-8 s** study can exhaust the original-triangle work budget and return
+partial coverage. That is not a clear result: inspect its unresolved evidence
+or explicitly narrow the interval without omitting parts. Counts and coverage
+come from the method and its unchanged limits, never a predefined verdict.
+Neither a finding nor completed execution certifies real-world safety.
 
 Expand **gripper - fixture table** in **Pair evidence and replay**, then choose
-**Replay pair** to display the retained collision witness at 4 s and highlight
-those bodies. The method does not enumerate every contact or certify the first
+**Replay pair** to display the pair's retained collision witness and highlight
+those bodies. For this focused interval, the gripper pair replays 3.9 s, not a
+forced 4 s keyframe. The method does not enumerate every contact or certify the first
 contact time. Edited geometry, trajectories, rules or scope must be analyzed
 again; the sample name never forces a result.

@@ -10403,6 +10403,7 @@
             ],
             "conditions": [
               "Finite, supported dimensions and units; parent membership comes from Scene Tree.",
+              "Official starter studies include every modeled workcell part in their configured checks, retaining only explicit mounting-pair exclusions. No table-focused study silently omits robot links or other fixtures; contacts never remove or deform geometry. Saved authored scopes and historical results are not rewritten.",
               "Interpolate unwrapped joints and compute poses once for renderer and methods.",
               "Produce pair poses in the nearest shared ancestor body frame using the same local-pose algebra; common rigid motion cancels exactly. Separate roots use world coordinates. No retained pose cache or alternate hierarchy is introduced.",
               "Resolve every bound original source into complete indexed part geometry with source identity and explicit positive scale; a binding replaces legacy surrogate colliders for analysis.",
@@ -10429,7 +10430,8 @@
               "#1-supported-workcell",
               "#2-visual-and-analysis-geometry",
               "#3-coordinates-units-and-support-envelope",
-              "#4-trajectories-and-motion-semantics"
+              "#4-trajectories-and-motion-semantics",
+              "#5-analysis-scope-and-pair-policy"
             ],
             "failureOwnerStepId": "domain"
           },
@@ -10515,7 +10517,7 @@
               "Retain complete admitted local shapes only for one detached workcell/source projection. Pose, selection and display updates reuse those shapes; replacement inputs create a fresh projection. Camera-only submission updates its spatial container without validating or updating mesh descriptors; accepted pending model and camera submissions preserve call order and share the existing demanded frame.",
               "Project visual vertices using explicit binding scale and body-local pose through the shared body world pose; missing source references fail even when display is hidden.",
               "Project only original bound parts or explicitly authored native parts, never legacy surrogates beneath imported surfaces. Domain placement is shared with analysis; wireframe and visibility are display-only.",
-              "Register through Core; findings are projections of accepted evidence."
+              "Register through Core; findings are projections of accepted evidence. Apply each accepted body color to all of that body's original material sections, preserving admitted shapes and poses. The projection does not classify pairs or replace mixed findings with one global color."
             ],
             "bypasses": [
               "No result is required for ordinary editing. Live sampled checks are independent of formal runs; projection only consumes their accepted feedback and never invokes a solver."
@@ -10929,6 +10931,7 @@
             ],
             "conditions": [
               "Dispatch intent through Features; UI is never canonical model or solver authority.",
+              "Preserve all accepted pair issues in live, cached and recorded feedback. Overall severity never removes clearance or unresolved pairs. Prepare whole-part appearance once per evidence update and reuse it during display frames; red wins only for a body that also participates in a colliding pair. List each pair with its own state and expose every issue through compact expandable details; do not infer damage, contact regions or structural response.",
               "Forward live sampling protects crossed canonical trajectory keyframes until checked, then coalesces optional intermediate times toward the current playhead. Keep only the latest playhead and accepted sample progress, never a queue of display frames. A seek resets the sampling anchor. Narrow viewport feedback is compact until the user expands Details.",
               "During continuous Play, project validated provisional collision feedback immediately while the live owner is still checking other pairs. Do not advance completed-sample progress, infer full scope, or wait for sample recording; terminal evidence alone advances the protected sampling anchor. Manual seeking computes the next state and replaces the current presentation only on completed sample or recorded-evidence lookup, not intermediate pair progress.",
               "One playback controller reuses compatible exact formal witnesses and all-pair clear certificates without a Worker, requesting missing poses from the live owner even before later witnesses. Finding intervals are not continuous contact and witnesses are not first-contact times. Collision feedback never pauses or seeks the clock. Explicit Pause freezes the current frame and requests its exact pose. Keep latest checked parts highlighted during forward motion until newer feedback supersedes them, identifying checked time and earlier-pose evidence without claiming exact current contact. Never apply future evidence to an earlier displayed pose. Manual seeks keep the existing displayed pose and its feedback paired while naming the latest pending target separately; only completed latest-target evidence switches pose and feedback together, without an intermediate reset. Before any accepted feedback, preview the target as checking; failure displays the target as error. Cached targets use the same atomic handoff. Present scope and unknown/error states and matching sampled observations. Cancel stale work on seek, edits, replacement, hidden page, formal analysis or leaving playback. Preserve fixed panels, property-level subscriptions and unchanged history/report data.",
@@ -11389,7 +11392,7 @@
             "from": "live",
             "to": "project",
             "kind": "normal",
-            "predicate": "Accepted sample identities describe the latest checked parts in this current playback lifetime. Forward motion may retain their highlight with an explicit earlier-pose label until superseded. Manual seeking retains the existing displayed pose and its feedback together while the target is pending, then switches both on completed latest-target evidence; held evidence never colors newly requested geometry. No current-contact or contact-region geometry is inferred.",
+            "predicate": "Accepted sample identities describe the latest checked parts in this current playback lifetime. Preserve simultaneous per-body collision and clearance colors from accepted pair issues; other contacts never suppress a pair. Forward motion may retain their highlight with an explicit earlier-pose label until superseded. Manual seeking retains the existing displayed pose and its feedback together while the target is pending, then switches both on completed latest-target evidence; held evidence never colors newly requested geometry. No current-contact or contact-region geometry is inferred.",
             "producedArtifacts": [
               "artifact:live-feedback"
             ]

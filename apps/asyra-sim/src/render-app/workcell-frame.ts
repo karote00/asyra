@@ -17,8 +17,7 @@ export interface WorkcellView {
 }
 
 export interface PartHighlight {
-  bodyIds: readonly string[]
-  color: number
+  colors: ReadonlyMap<string, number>
 }
 export const DEFAULT_CAMERA: SpatialCamera = {
   kind: 'camera',
@@ -68,9 +67,10 @@ function projectWorkcellFrame(
   const poses = forwardKinematics(workcell, view.joints),
     meshes: SpatialFrame['meshes'][number][] = []
   const bodies = new Map(workcell.bodies.map((body) => [body.id, body]))
-  const highlighted = new Set(view.highlight?.bodyIds)
   const colorFor = (body: Body, original: number) => {
-    if (highlighted.has(body.id) && view.highlight) return view.highlight.color
+    const color = view.highlight?.colors.get(body.id)
+
+    if (color !== undefined) return color
 
     return body.id === view.selectedId ? 0x62e6c1 : original
   }

@@ -119,6 +119,14 @@ not a path that a particular vendor controller is guaranteed to execute.
 
 ## 5. Analysis Scope and Pair Policy
 
+The MVP performs rigid geometric checks, not structural analysis or impact
+response. Every modeled part in the selected workcell must participate in its
+configured checks, regardless of another pair's result. Earlier contacts never
+remove material or modify a later pair's geometry. Official starter studies
+include every workcell body; a table-focused trajectory is not permission to
+omit robot links or other fixtures. Existing saved experiments retain their
+authored scope and immutable history rather than being silently broadened.
+
 Each Experiment must explicitly specify:
 
 1. Primary objects: robot parts, tool, workpiece, or other objects being checked.
@@ -244,7 +252,18 @@ canonical edit or Undo entry.
 
 Established colliding bodies use a dedicated red highlight distinct from
 selection. Clearance findings use an amber highlight; unresolved output must
-not be presented as collision or safety. Whole-body highlights identify the
+not be presented as collision or safety. Preserve every pair's own finding:
+collision, clearance and unresolved issues coexist in the same feedback. The
+overall warning title may use the highest severity, but must not filter other
+issues or their highlights. A body participating in both a collision and a
+clearance pair is red; clearance-only bodies remain amber. The pair list keeps
+both relationships and their labels. Unresolved pairs stay explicitly unknown,
+not contact-colored. Live, cached and recorded evidence use the same presentation
+rule. Detailed pair information remains accessible without requiring a formal
+report, including when a compact notice only previews some pairs.
+
+Whole-part highlighting is the MVP output. It is not a damage model, computed
+contact patch, or structural simulation. Whole-body highlights identify the
 parts from the latest accepted sample, not a computed contact region or proof
 of contact at every intervening frame. During forward motion the highlight
 remains visible until newer feedback supersedes it; the notice identifies the
@@ -266,6 +285,8 @@ does not place a full text card over the contact area.
 
 Formal cases cover a collision during Play before any run, clear endpoints,
 clearance versus penetration versus unresolved, uninterrupted collision playback,
+simultaneous collision/clearance/unresolved pairs, severity precedence only on a
+shared body, all-pair detail access, and live/cached/recorded presentation parity,
 explicit Pause without snapping, latest-sample highlighting and exact-pose checks,
 cold forward/backward manual seeks through continuous clearance and collision,
 atomic pose/feedback handoff without normal-color gaps, latest-target/error
@@ -320,12 +341,19 @@ results.
 
 A newly initialized example provides six independent starter experiments:
 base-yaw clearance, shoulder reach, elbow folding, wrist orientation, and a
-local tool/table sweep plus a deliberate tool/table collision. They use complete
-original parts and the ordinary preflight, playback and analysis paths.
+tool/table sweep plus a deliberate tool/table collision. Every starter checks
+the complete modeled workcell, with explicit mounting-pair exclusions and no
+omitted visible bodies. They use complete original parts and the ordinary
+preflight, playback and analysis paths.
 Their names describe intent, not a
 hardcoded verdict. The collision example demonstrates an established penetration
-finding between clear endpoint poses and replay through frozen evidence. Both
-local studies explicitly acknowledge omitted visible bodies. Loading a saved
+finding for the tool/table pair between that pair's clear endpoint poses and
+replay through frozen evidence; other pairs retain their own findings. At
+3.8400 s, original geometry establishes gripper/table penetration alongside
+workpiece/table clearance; at 4 s, both pairs establish penetration. The full
+11-part, 46-pair path may exhaust the unchanged geometry-work budget and must
+retain partial coverage. A user-authored 3.8-4.2 s report demonstrates complete
+focused evidence without omitting parts or relaxing limits. Loading a saved
 project preserves its own experiments without adding
 or replacing starter data. See the
 [sample catalog](../../../../../apps/asyra-sim/samples/README.md).

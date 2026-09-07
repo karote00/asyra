@@ -238,7 +238,10 @@ export function useExperimentController({
       joints: jointValuesAt(snapshot.trajectory, value),
       time: value,
       historical: true,
-      bodyIds
+      bodyIds,
+      historicalHighlight: {
+        colors: new Map(bodyIds.map((id) => [id, 0x62e6c1]))
+      }
     })
   }
 

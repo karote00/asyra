@@ -1,4 +1,4 @@
-import { expect, it } from 'vitest'
+import { expect, it, vi } from 'vitest'
 import { liveFixture } from '../../../analysis/live/__tests__/fixtures'
 import { runOfficialClearanceMethod } from '../../../analysis/methods/official-method'
 import { completeAnalysisResult } from '../../../analysis/result'
@@ -53,7 +53,32 @@ it('reuses an exact witness without treating earlier unclassified poses as known
     ]
   })
 
+  Object.assign(result.pairEvidence[2].evidence, {
+    coverage: 'partial',
+    leaves: [
+      {
+        start: 0,
+        end: 8,
+        lower: 0,
+        upper: null,
+        witnessTime: null,
+        penetration: false,
+        state: 'unresolved',
+        reason: 'budget'
+      }
+    ]
+  })
+
+  const unknown = result.pairEvidence[2].evidence
+  const leaves = unknown.leaves
+  const readLeaves = vi.fn(() => leaves)
+
+  Object.defineProperty(unknown, 'leaves', { get: readLeaves })
+
   const evidence = new RecordedPlaybackEvidence({ snapshot, result })
+
+  // Index finding witnesses once, without expanding every pair at every time.
+  expect(readLeaves).toHaveBeenCalledOnce()
 
   expect(evidence.at(0)).toBeUndefined()
   expect(evidence.at(3.888)).toBeUndefined()
@@ -61,9 +86,32 @@ it('reuses an exact witness without treating earlier unclassified poses as known
     checkedTime: 4,
     origin: 'recorded',
     kind: 'collision',
-    bodyIds: [snapshot.pairs[0].a.bodyId, snapshot.pairs[0].b.bodyId]
+    issues: [
+      { pairId: snapshot.pairs[0].id, kind: 'collision' },
+      { pairId: snapshot.pairs[1].id, kind: 'clearance' },
+      { pairId: snapshot.pairs[2].id, kind: 'unresolved' }
+    ],
+    highlight: {
+      colors: new Map([
+        [snapshot.pairs[1].a.bodyId, 0xffbd59],
+        [snapshot.pairs[1].b.bodyId, 0xffbd59],
+        [snapshot.pairs[0].a.bodyId, 0xff625e],
+        [snapshot.pairs[0].b.bodyId, 0xff625e]
+      ])
+    }
   })
+  expect(evidence.at(4)?.complete).toBe(false)
   expect(evidence.at(4.1)).toBeUndefined()
+  const appearance = evidence.at(4)?.highlight
+  const lookups = readLeaves.mock.calls.length
+
+  expect(appearance).toBeDefined()
+
+  for (let request = 0; request < 120; request += 1)
+    expect(evidence.at(4)?.highlight).toBe(appearance)
+
+  expect(readLeaves).toHaveBeenCalledTimes(lookups)
+
   expect(evidence.nextWitness(3.888, 4.1)).toBe(4)
   expect(evidence.nextWitness(4, 8)).toBeUndefined()
   expect(evidence.nextWitness(null, 8)).toBeUndefined()

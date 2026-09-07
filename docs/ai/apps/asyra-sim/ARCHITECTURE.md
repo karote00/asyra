@@ -253,6 +253,15 @@ semantics. This is one transient presentation, not another sample cache or
 analysis authority. Precise contact regions and region picking remain planned.
 
 The feedback banner and sampled-observation section own narrow subscriptions.
+The UI evidence projection retains each pair's issue and prepares whole-part
+appearance once per accepted evidence update, not once per display frame. Live
+samples and exact recorded witnesses share this reducer. The overall severity
+does not filter pair evidence: collision and clearance colors coexist, with
+red precedence only on bodies shared with a colliding pair. Unknown pairs remain
+explicitly listed without invented contact color. This is a transient projection
+of admitted evidence, not another solver, sample cache or editable model.
+Recorded lookup expands unresolved pairs only for its current witness and reuses
+that presentation on repeated reads; it never retains a pair-by-witness matrix.
 Seeking fences late responses; leaving playback, hiding the page, formal
 analysis, input replacement and runtime disposal retire owned work. No new
 Framework render layer, component memo wrapper, solver geometry, or persistent

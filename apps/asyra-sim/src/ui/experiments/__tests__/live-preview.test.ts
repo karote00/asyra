@@ -73,8 +73,8 @@ it.each(['checking', 'ready'] as const)(
     expect(publish.mock.lastCall?.[0].time).toBe(3.37)
     expect(publish.mock.lastCall?.[0].feedback?.checkedTime).toBe(3.2)
     expect(
-      playbackHighlight(publish.mock.lastCall?.[0] ?? null)?.bodyIds
-    ).toHaveLength(2)
+      playbackHighlight(publish.mock.lastCall?.[0] ?? null)?.colors.size
+    ).toBe(2)
     expect(signal?.aborted).toBe(false)
     expect(options.onCollision).not.toHaveBeenCalled()
 

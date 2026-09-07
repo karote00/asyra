@@ -78,7 +78,7 @@ it('tints the complete original source without replacing or simplifying its geom
   const original = project(view).meshes[0]
   const changed = project({
     ...view,
-    highlight: { bodyIds: ['tool'], color: 0xff625e }
+    highlight: { colors: new Map([['tool', 0xff625e]]) }
   }).meshes[0]
 
   expect(changed.descriptor.color).toBe(0xff625e)
@@ -86,6 +86,38 @@ it('tints the complete original source without replacing or simplifying its geom
   expect(changed.descriptor.position).toEqual(original.descriptor.position)
   expect(changed.descriptor.rotation).toEqual(original.descriptor.rotation)
   expect(project(view).meshes[0]).toEqual(original)
+})
+
+it('colors every original material section by its own body without leaking another body color', () => {
+  const workcell = model()
+  workcell.bodies = [...workcell.bodies, { ...workcell.bodies[1], id: 'part' }]
+  const multiMaterial = {
+    ...asset,
+    meshes: [
+      asset.meshes[0],
+      { ...asset.meshes[0], name: 'Dark stripes', color: 0x101010 }
+    ]
+  }
+  const project = prepareWorkcellProjection(
+    workcell,
+    new Map([[assetId, multiMaterial]])
+  )
+  const original = project(view)
+  const colors = new Map([
+    ['tool', 0xff625e],
+    ['part', 0xffbd59]
+  ])
+  const highlighted = project({ ...view, highlight: { colors } })
+
+  expect(highlighted.meshes).toHaveLength(4)
+  highlighted.meshes.forEach((mesh, index) => {
+    expect(mesh.descriptor.color).toBe(colors.get(mesh.elementId ?? ''))
+    expect(mesh.descriptor.shape).toBe(original.meshes[index].descriptor.shape)
+    expect(mesh.descriptor.position).toEqual(
+      original.meshes[index].descriptor.position
+    )
+  })
+  expect(project(view)).toEqual(original)
 })
 
 it('retains complete placed triangles across pose/appearance frames and replaces them for new source inputs', () => {

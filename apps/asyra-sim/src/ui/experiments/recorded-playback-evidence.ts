@@ -1,60 +1,88 @@
 import type { PresentedRun } from '../results/run-freshness'
-import type { PlaybackFeedback } from './playback-feedback'
+import {
+  feedbackFromIssues,
+  type PlaybackFeedback,
+  type PlaybackIssue
+} from './playback-feedback'
 import type { IntervalEvidence } from '../../analysis/methods/continuous-query'
 
 /** Query accepted proofs only; missing times must go to the live sampling owner. */
 export class RecordedPlaybackEvidence {
   private readonly cues = new Map<number, PlaybackFeedback>()
   private readonly times: number[]
+  private readonly sources: ReadonlyMap<
+    string,
+    Pick<PlaybackIssue, 'bodyIds' | 'name'>
+  >
+  private readonly evidence: ReadonlyMap<
+    string,
+    PresentedRun['result']['pairEvidence'][number]['evidence']
+  >
+  private currentCue?: PlaybackFeedback
 
   constructor(private readonly run: PresentedRun) {
     const bodies = new Map(
       run.snapshot.workcell.bodies.map((body) => [body.id, body])
     )
-    const pairs = new Map(run.snapshot.pairs.map((pair) => [pair.id, pair]))
+    const sources = new Map(
+      run.snapshot.pairs.map((pair) => {
+        const a = bodies.get(pair.a.bodyId)
+        const b = bodies.get(pair.b.bodyId)
+
+        if (!a || !b) throw new Error('Recorded evidence is missing its body')
+
+        return [
+          pair.id,
+          { bodyIds: [a.id, b.id] as const, name: `${a.name} - ${b.name}` }
+        ] as const
+      })
+    )
+    const evidence = new Map(
+      run.result.pairEvidence.map((pair) => [pair.pairId, pair.evidence])
+    )
+    this.sources = sources
+    this.evidence = evidence
+    const witnesses = new Map<number, Map<string, PlaybackIssue>>()
 
     for (const pair of run.result.pairEvidence) {
-      const source = pairs.get(pair.pairId)
+      const source = sources.get(pair.pairId)
 
       if (!source) throw new Error('Recorded evidence is missing its pair')
-
-      const a = bodies.get(source.a.bodyId)
-      const b = bodies.get(source.b.bodyId)
-
-      if (!a || !b) throw new Error('Recorded evidence is missing its body')
 
       for (const leaf of pair.evidence.leaves) {
         if (leaf.state !== 'finding' || leaf.witnessTime === null) continue
 
-        const previous = this.cues.get(leaf.witnessTime)
+        let issues = witnesses.get(leaf.witnessTime)
 
-        if (previous?.kind === 'collision' && !leaf.penetration) continue
+        if (!issues) {
+          issues = new Map()
+          witnesses.set(leaf.witnessTime, issues)
+        }
 
-        const matching =
-          previous?.kind === 'collision' || !leaf.penetration
-            ? previous
-            : undefined
-        const kind =
-          leaf.penetration || previous?.kind === 'collision'
-            ? 'collision'
-            : 'clearance'
+        if (issues.get(pair.pairId)?.kind === 'collision') continue
 
-        this.cues.set(leaf.witnessTime, {
-          origin: 'recorded',
-          kind,
-          checkedTime: leaf.witnessTime,
-          bodyIds: [...new Set([...(matching?.bodyIds ?? []), a.id, b.id])],
-          pairNames: [
-            ...new Set([
-              ...(matching?.pairNames ?? []),
-              `${a.name} - ${b.name}`
-            ])
-          ],
-          totalPairCount: run.result.totalPairCount,
-          complete: false,
-          message: 'Recorded witness - no new geometry calculation.'
+        issues.set(pair.pairId, {
+          pairId: pair.pairId,
+          kind: leaf.penetration ? 'collision' : 'clearance',
+          ...source
         })
       }
+    }
+
+    for (const [time, issues] of witnesses) {
+      this.cues.set(
+        time,
+        feedbackFromIssues(
+          {
+            origin: 'recorded',
+            checkedTime: time,
+            totalPairCount: run.result.totalPairCount,
+            complete: false,
+            message: 'Recorded witness - no new geometry calculation.'
+          },
+          [...issues.values()]
+        )
+      )
     }
 
     this.times = [...this.cues.keys()].sort((a, b) => a - b)
@@ -69,15 +97,35 @@ export class RecordedPlaybackEvidence {
 
     const cue = this.cues.get(time)
 
-    if (cue) return { ...cue, complete: this.covers(time, true) }
+    if (cue) {
+      if (this.currentCue?.checkedTime === time) return this.currentCue
+
+      const issues = [...cue.issues]
+      const known = new Set(issues.map((issue) => issue.pairId))
+      let complete = true
+
+      for (const [pairId, source] of this.sources) {
+        const pair = this.evidence.get(pairId)
+
+        if (pair && coversTime(pair.leaves, time, true)) continue
+
+        complete = false
+
+        if (!known.has(pairId))
+          issues.push({ pairId, kind: 'unresolved', ...source })
+      }
+
+      // Only the current cue expands unknowns; never retain pairs × witnesses.
+      this.currentCue = { ...cue, issues, complete }
+      return this.currentCue
+    }
     if (!this.covers(time, false)) return
 
     return {
       origin: 'recorded',
       kind: 'clear',
       checkedTime: time,
-      bodyIds: [],
-      pairNames: [],
+      issues: [],
       totalPairCount: this.run.result.totalPairCount,
       complete: true,
       message:

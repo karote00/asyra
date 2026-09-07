@@ -13,7 +13,9 @@ it.each(['clearance', 'collision'] as const)(
       await Promise.resolve()
       f.deliver(3.6, kind)
       const first = f.latest()
-      const color = playbackHighlight(first)?.color
+      const colors = playbackHighlight(first)?.colors
+
+      expect(colors?.size).toBeGreaterThan(0)
 
       for (const target of [3.65, 3.7, 3.75, 3.55]) {
         const previous = f.latest()
@@ -43,7 +45,7 @@ it.each(['clearance', 'collision'] as const)(
 
         for (const [view] of f.publish.mock.calls.slice(before)) {
           expect(view.feedback?.checkedTime).toBe(view.time)
-          expect(playbackHighlight(view)?.color).toBe(color)
+          expect(playbackHighlight(view)?.colors).toEqual(colors)
         }
       }
 

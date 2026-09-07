@@ -83,17 +83,23 @@ for (const name of names) {
   })
 }
 
-test('the collision starter reports real findings and replays the table penetration', async ({
+test('a focused interval keeps all workcell parts, reports real findings and replays the table penetration', async ({
   page
 }, info) => {
   test.setTimeout(45_000)
   await page.goto('/')
   await expect(page.getByRole('status')).toHaveText('Local runtime ready')
-  const history = await page.getByTestId('history-depth').textContent()
   await page.getByRole('button', { name: 'Experiments', exact: true }).click()
   await page.getByLabel('Experiment', { exact: true }).selectOption({
     label: 'Tool and table collision - r1'
   })
+  await page.getByLabel('Start time (s)').fill('3.8')
+  await page.getByLabel('End time (s)').fill('4.2')
+  await page
+    .getByRole('button', { name: 'Save experiment', exact: true })
+    .click()
+  const history = await page.getByTestId('history-depth').textContent()
+
   await page.getByRole('button', { name: 'Run preflight', exact: true }).click()
   await expect(page.getByTestId('preflight-report')).toContainText(
     'Ready for formal local analysis'
@@ -119,18 +125,38 @@ test('the collision starter reports real findings and replays the table penetrat
   await expect(field('Witness upper bound')).toHaveText('0.000 mm')
   await heading.scrollIntoViewIfNeeded()
   await page.screenshot({ path: info.outputPath('collision-result.png') })
-  await expect(result.locator('.evidence-pair > summary')).toHaveText([
+  await expect(field('Pairs with evidence')).toHaveText('46/46')
+  // The retained-evidence section starts expanded; navigate its ordinary pages.
+  const summaries: string[] = []
+
+  for (let pageIndex = 0; pageIndex < 3; pageIndex += 1) {
+    summaries.push(
+      ...(await result.locator('.evidence-pair > summary').allTextContents())
+    )
+
+    if (pageIndex < 2)
+      await result.getByRole('button', { name: 'Next pairs' }).click()
+  }
+
+  expect(summaries).toHaveLength(46)
+  expect(
+    summaries.filter((text) =>
+      /^(gripper|workpiece) - fixture table/.test(text)
+    )
+  ).toEqual([
     'gripper - fixture tablecomplete',
     'workpiece - fixture tablecomplete'
   ])
-  const pair = result.locator('.evidence-pair').first()
+  const pair = result.locator('.evidence-pair').filter({
+    has: page.locator('summary').filter({ hasText: /^gripper - fixture table/ })
+  })
   await pair.locator('summary').click()
   await expect(pair.locator('.interval-evidence').first()).toContainText(
     'finding'
   )
   await pair.getByRole('button', { name: 'Replay pair', exact: true }).click()
   await expect(page.locator('.viewport-summary')).toContainText(
-    'Historical run replay - 4.0000 s'
+    'Historical run replay - 3.9000 s'
   )
   await expect(page.getByTestId('history-depth')).toHaveText(history ?? '')
   await page.screenshot({ path: info.outputPath('collision-replay.png') })
@@ -143,7 +169,8 @@ test('the collision starter reports real findings and replays the table penetrat
       viewport: page.viewportSize(),
       dpr: 1,
       camera: 'default',
-      replayTime: 4,
+      interval: [3.8, 4.2],
+      replayTime: 3.9,
       highlightedBodies: ['gripper', 'fixture table'],
       overlays: 'default grid and historical pair highlights',
       result: await result.innerText(),

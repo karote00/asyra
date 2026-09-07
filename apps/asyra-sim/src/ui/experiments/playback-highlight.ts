@@ -12,15 +12,10 @@ export function playbackHighlight(
     feedback.checkedTime !== null &&
     feedback.checkedTime <= view.time
   ) {
-    if (feedback.kind === 'collision')
-      return { bodyIds: feedback.bodyIds, color: 0xff625e }
-
-    if (feedback.kind === 'clearance')
-      return { bodyIds: feedback.bodyIds, color: 0xffbd59 }
+    return feedback.highlight
   }
 
-  if (view?.historical && view.bodyIds.length)
-    return { bodyIds: view.bodyIds, color: 0x62e6c1 }
+  if (view?.historical) return view.historicalHighlight
 
   return undefined
 }

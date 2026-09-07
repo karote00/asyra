@@ -33,6 +33,22 @@ R0 does not claim to serve safety-certification bodies, live production-line
 control, or teams requiring complete TCAD. They may become future collaborators,
 but those capabilities are not first-release promises.
 
+## MVP Boundary
+
+The MVP answers which modeled rigid parts may collide or violate a clearance
+threshold, and when users need to inspect their workflow. It does not simulate
+the structural consequences of impact. Earlier contact never damages, removes,
+deforms or exempts geometry from later checks. Every part of the selected
+workcell participates in the configured pair checks; official starter studies
+must not silently narrow this to only the tool and table. Explicit background
+scope and declared mounting-pair exclusions remain visible assumptions, not
+proof that excluded interactions are safe.
+
+Use whole-part highlights for the MVP. Simultaneous collision and clearance
+findings remain visible independently. Precise contact regions, structural
+analysis, fracture, deformation, contact response and richer contact-policy
+authoring belong to later product work, not this delivery.
+
 ## What Users Gain
 
 | User question                                           | How Asyra Sim helps                                                                                                     | What users must still supply or verify                                        |
@@ -54,8 +70,8 @@ labor, or external solvers free.
 
 1. Open the local workbench without an account and load the official synthetic
    example.
-2. Inspect the robot, tool, workpiece, fixtures, and analysis geometry, which may
-   differ from visual geometry.
+2. Inspect the robot, tool, workpiece and fixtures, using the same complete
+   supplied part geometry for display and analysis.
 3. Modify the example with their own dimensions and configuration, or create a
    new workcell.
 4. Create joint keyframes or map CSV columns to joints and time.

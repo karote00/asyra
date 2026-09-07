@@ -137,7 +137,18 @@ for (const kind of ['clearance', 'collision']) {
     })
 
     await slider.fill('0')
-    await expect(feedback).toHaveAttribute('data-kind', 'clear')
     await expect(feedback).toContainText('Checked 0.0000 s')
+    await expect(feedback).toHaveAttribute('data-pose-matches', 'true')
+    await expect(feedback.locator('[data-pair-kind="collision"]')).toHaveCount(
+      0
+    )
+    // A wide authored threshold still warns about other robot parts at rest.
+    await expect(feedback).toHaveAttribute(
+      'data-kind',
+      kind === 'clearance' ? 'clearance' : 'clear'
+    )
+    await expect(
+      feedback.locator('[data-pair-id]').filter({ hasText: 'fixture table' })
+    ).toHaveCount(0)
   })
 }
