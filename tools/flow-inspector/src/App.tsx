@@ -201,7 +201,7 @@ export function WorkspaceApp({
                       >
                         <span>{entry.title}</span>
                         <small>
-                          {entry.subgroup} · {entry.kind}
+                          {entry.subgroup} - {entry.kind}
                         </small>
                       </button>
                     ))}

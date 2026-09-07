@@ -41,6 +41,10 @@ module.exports = Object.freeze({
       group: 'Tools',
       subgroup: 'Flow Inspector'
     }),
+    'asyra-sim-r0': Object.freeze({
+      group: 'Apps',
+      subgroup: 'Asyra Sim'
+    }),
     'asyra-design-ai-conversational-drawing-performance': Object.freeze({
       group: 'Apps',
       subgroup: 'Asyra Design'

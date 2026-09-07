@@ -6,9 +6,10 @@ Current apps:
 
 - `asyra-design/`
 
-Planned apps:
-
-- `asyra-cad/`
+- [Asyra Sim](asyra-sim/README.md) - free, pluggable simulation and experiment
+  workbench; first product slice: local robot-workcell collision and clearance
+  experiments. The development workbench is implemented and hosted; independent
+  R0 release gates remain open. See its app-scoped closeout and release contracts.
 
 Each app folder documents:
 
@@ -24,6 +25,13 @@ Project-owned development-tool contracts remain in `docs/ai/tools/*`.
 
 All apps, including future app folders under `docs/ai/apps/*`, inherit the
 framework hard rules in `docs/ai/framework/rules/*`.
+
+Before implementing a new app or an app feature/refactor, follow
+[App Optimization and Maintainability](../framework/rules/app-optimization-and-maintainability.md).
+Plan responsibility and update boundaries from the first slice, separate views
+from runtime/API orchestration, use Tailwind for web component styling, keep
+TSX readable, and prove the affected work counts and behavior. Borrow concepts
+from existing apps, never their entire architecture by default.
 
 In particular, app bug fixes must follow
 `docs/ai/framework/rules/bugfix-test-first.md`: before implementation, verify
