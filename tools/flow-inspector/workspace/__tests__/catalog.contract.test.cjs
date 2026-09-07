@@ -178,3 +178,70 @@ test('Inspector artifacts and contract tests are tool-owned, not plan-owned', ()
     []
   )
 })
+
+test('catalog owns unique stable short slugs without changing Inspector identities', () => {
+  const sandbox = {}
+  vm.runInNewContext(fs.readFileSync(bundlePath, 'utf8'), sandbox)
+  const entries = sandbox.FLOW_INSPECTOR_WORKSPACE_BUNDLE.entries
+  assert.equal(
+    entries.find(
+      (entry) =>
+        entry.id === 'asyra-design-ai-conversational-drawing-performance'
+    ).slug,
+    'ai-drawing-performance'
+  )
+  assert.equal(
+    entries.find((entry) => entry.id === 'transaction-atomicity').slug,
+    'transaction-atomicity'
+  )
+  assert.equal(new Set(entries.map((entry) => entry.slug)).size, entries.length)
+  const policy = require(catalogPath)
+  for (const entry of entries)
+    assert.equal(entry.slug, policy.routeSlugs[entry.id] ?? entry.id)
+  for (const entry of entries)
+    assert.match(entry.slug, /^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+})
+
+test('generator rejects colliding, reserved, malformed, and orphaned slug declarations before output', () => {
+  const { createRequire } = require('node:module')
+  const localRequire = createRequire(generatorPath)
+  const original = require(catalogPath)
+  const source = fs.readFileSync(generatorPath, 'utf8')
+  for (const overrides of [
+    { 'transaction-atomicity': 'stroke' },
+    { 'transaction-atomicity': 'api' },
+    { 'transaction-atomicity': '../private' },
+    { 'transaction-atomicity': 'Upper Case' },
+    { 'transaction-atomicity': '' },
+    { 'unknown-inspector': 'unknown' }
+  ]) {
+    let writes = 0
+    const policy = {
+      ...original,
+      routeSlugs: { ...original.routeSlugs, ...overrides }
+    }
+    assert.throws(
+      () =>
+        vm.runInNewContext(source, {
+          __dirname: workspaceRoot,
+          require: Object.assign(
+            (name) => {
+              if (name === './catalog.cjs') return policy
+              if (name === 'node:fs')
+                return {
+                  ...fs,
+                  writeFileSync() {
+                    writes++
+                  }
+                }
+              return localRequire(name)
+            },
+            { resolve: localRequire.resolve, cache: require.cache }
+          ),
+          console: { log: () => undefined }
+        }),
+      /slug/i
+    )
+    assert.equal(writes, 0)
+  }
+})

@@ -5,7 +5,7 @@
 The Static Workspace is one directly openable browser surface for discovering
 and navigating the Flow Inspectors that still describe the current Asyra
 project. A persistent sidebar lists the current catalog; selecting an entry
-loads that Inspector in an isolated main frame and updates a stable hash route.
+loads that Inspector in an isolated main frame and updates its stable public route.
 
 The workspace is a static documentation tool. It does not report runtime
 health, execute commands, ingest test results, or decide CI acceptance.
@@ -20,7 +20,7 @@ The current independently versioned workspace artifact is `0.2.0`.
   discovery, source loading, catalog validation, and generated browser bundle
   output.
 - `tools/flow-inspector/src/` owns the React sidebar, search, group collapse,
-  Overview, hash-route parsing, selection, and keyed target-frame navigation.
+  Overview, public path/hash-route parsing, selection, and keyed target-frame navigation.
 - `tools/flow-inspector/vite.config.ts` owns the classic-script static build
   emitted under `tools/flow-inspector/workspace/generated/`.
 - `tools/flow-inspector/workspace/target.js` owns selected-target lookup and
@@ -66,7 +66,7 @@ inclusion makes a plan active.
 
 Each generated catalog entry contains only discovery and presentation data:
 
-- stable catalog `id`;
+- stable catalog `id` and a unique public `slug`;
 - schema kind: `flow-v2`, `legacy-v1`, or `plan-contract`;
 - source data path and optional existing standalone HTML path;
 - title, group, subgroup, lifecycle label, order, and search labels; and
@@ -77,13 +77,32 @@ deterministically derived from the source filename unless the catalog declares
 an explicit stable override. Catalog entries must never duplicate authored
 steps, routes, artifacts, invariants, or acceptance semantics.
 
+Slugs are presentation routes, separate from Inspector and evidence identities.
+The catalog owns explicit `routeSlugs` overrides; entries without an override use
+their stable id. Titles never derive routes. Slugs use lowercase ASCII words and
+digits separated by single hyphens; `api`, `tools`, `docs`, and `apps` are reserved
+server namespaces. Duplicate, malformed, reserved, or orphaned declarations fail
+generation before output.
+
 Generated browser data must match the current source objects exactly after
 JSON-safe serialization. Generator drift is a formal failure.
 
 ## Routing and Isolation
 
-- Overview route: `workspace.html`
-- Inspector route: `workspace.html#inspector=<catalog-id>`
+- Hosted Overview route: `/`; Inspector route: `/<catalog-slug>` with no
+  `flows` prefix. The server explicitly enables path navigation through
+  `data-workspace-routing="path"` and supplies the existing workspace asset base.
+- Direct-open static and Vite entries retain `workspace.html#inspector=<catalog-id>`
+  hash navigation and their relative assets; path routing is never inferred merely
+  from HTTP hosting.
+- On the path-enabled host, legacy `workspace.html#inspector=<catalog-id>` and
+  `/#inspector=<catalog-id>` links resolve the original id and replace the address
+  with its canonical short route without adding history. The server cannot read
+  fragments; the workspace performs this conversion. Unknown ids stay errors.
+- Path routes consume the exact generated slug, while the target frame and
+  evidence retain the original catalog id. An unknown path cannot select a flow
+  through a hash. Selecting a flow pushes one history entry; reselecting it does
+  not. Back, forward, direct opening, and reload restore the matching selection.
 - Search and group-collapse state are presentation state and do not alter the
   route or target data.
 - Unknown, excluded, or malformed ids render an explicit error and never fall
@@ -138,11 +157,12 @@ JSON-safe serialization. Generator drift is a formal failure.
 
 ## Product Cases
 
-1. Opening the workspace without a hash shows Overview and the complete current
+1. Opening the static workspace without a hash or hosted `/` shows Overview and the complete current
    catalog without claiming runtime status.
 2. Selecting Framework, App, Release, and Tool entries updates the route and
    renders the selected target in the same main region.
-3. A deep link opened directly restores the selected Inspector.
+3. A short hosted deep link, legacy hash link, reload, and browser back/forward
+   restore the selected Inspector. Legacy conversion adds no history entry.
 4. Search filters sidebar entries without changing selection or catalog truth.
 5. Rapidly switching targets cannot retain the previous target's title, flow,
    details, links, or globals.

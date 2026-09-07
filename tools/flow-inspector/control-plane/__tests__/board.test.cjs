@@ -43,7 +43,7 @@ test(
           return original.call(this, selector)
         }
       })
-      await page.goto(server.origin)
+      await page.goto(server.origin + '/transaction-atomicity')
       await expect(page.locator('iframe[title]')).toHaveCount(1)
       const canvas = page.frameLocator('iframe')
       await expect(canvas.locator('.step-card')).toHaveCount(7)
@@ -295,17 +295,14 @@ test(
       await expect(
         canvas.locator('.proof-badge[data-status="passed"]')
       ).toHaveCount(3)
-      const workspaceUrl = new URL(page.url())
-      workspaceUrl.hash = 'inspector=flow-inspector-core-proof'
-      await page.goto(workspaceUrl.href)
+      await page.goto(server.origin + '/core-proof')
       await expect(canvas.locator('.step-card')).toHaveCount(6)
       await expect(canvas.locator('.proof-badge')).toHaveCount(0)
       await expect(canvas.locator('#run-all')).toHaveCount(0)
       await expect(canvas.locator('#proof-unavailable')).toContainText(
         'No verification contract'
       )
-      workspaceUrl.hash = 'inspector=transaction-atomicity'
-      await page.goto(workspaceUrl.href)
+      await page.goto(server.origin + '/transaction-atomicity')
       await expect(
         canvas.locator('.proof-badge[data-status="passed"]')
       ).toHaveCount(3)
@@ -394,10 +391,11 @@ test(
         if (response.status() >= 400)
           errors.push(response.status() + ' ' + response.url())
       })
-      await page.goto(server.origin)
+      await page.goto(server.origin + '/transaction-atomicity')
       const entries = await page.evaluate(() =>
         window.FLOW_INSPECTOR_WORKSPACE_BUNDLE.entries.map((entry) => ({
           id: entry.id,
+          slug: entry.slug,
           kind: entry.kind,
           steps:
             entry.kind === 'flow-v2'
@@ -405,17 +403,66 @@ test(
               : []
         }))
       )
+      // The public address is independent of the target iframe's stable id.
+      const legacy =
+        server.origin +
+        '/tools/flow-inspector/workspace/workspace.html#inspector=asyra-design-ai-conversational-drawing-performance'
+      await page.goto(legacy)
+      await expect(page).toHaveURL(server.origin + '/ai-drawing-performance')
+      await expect(page.frameLocator('iframe').locator('html')).toHaveAttribute(
+        'data-target-state',
+        'rendered'
+      )
+      const targetSource = await page.locator('iframe').getAttribute('src')
+      assert.match(
+        targetSource,
+        /inspector=asyra-design-ai-conversational-drawing-performance/
+      )
+      await page.reload()
+      await expect(page).toHaveURL(server.origin + '/ai-drawing-performance')
+      await expect(page.locator('iframe')).toHaveAttribute('src', targetSource)
+      await page.getByRole('button', { name: 'Overview', exact: true }).click()
+      await expect(page).toHaveURL(server.origin + '/')
+      await expect(page.locator('iframe')).toHaveCount(0)
+      await page
+        .getByTestId('inspector-entry')
+        .filter({ hasText: 'Transaction Atomicity Inspector Flow' })
+        .click()
+      await expect(page).toHaveURL(server.origin + '/transaction-atomicity')
+      await expect(
+        page.frameLocator('iframe').locator('.step-card')
+      ).toHaveCount(7)
+      const historyLength = await page.evaluate(() => window.history.length)
+      await page
+        .getByTestId('inspector-entry')
+        .filter({ hasText: 'Transaction Atomicity Inspector Flow' })
+        .click()
+      assert.equal(
+        await page.evaluate(() => window.history.length),
+        historyLength
+      )
+      await page.goBack()
+      await expect(page).toHaveURL(server.origin + '/')
+      await expect(page.locator('iframe')).toHaveCount(0)
+      await page.goBack()
+      await expect(page).toHaveURL(server.origin + '/ai-drawing-performance')
+      await expect(page.locator('iframe')).toHaveAttribute('src', targetSource)
+      await page.goForward()
+      await expect(page).toHaveURL(server.origin + '/')
+      await page.goForward()
+      await expect(page).toHaveURL(server.origin + '/transaction-atomicity')
+      await expect(
+        page.frameLocator('iframe').locator('.step-card')
+      ).toHaveCount(7)
       const links = new Set()
       const destinations = new Map()
       let selectedSteps = 0
       let fragmentClicked = false
       const screenshots = []
       for (const entry of entries) {
-        await page.goto(
-          server.origin +
-            '/tools/flow-inspector/workspace/workspace.html#inspector=' +
-            encodeURIComponent(entry.id)
-        )
+        const response = await page.goto(server.origin + '/' + entry.slug)
+        assert.equal(response.status(), 200)
+        await expect(page).toHaveURL(server.origin + '/' + entry.slug)
         const canvas = page.frameLocator('iframe')
         await expect(canvas.locator('html')).toHaveAttribute(
           'data-target-state',
@@ -465,14 +512,11 @@ test(
                 await expect(
                   popup.frameLocator('iframe').locator('html')
                 ).toHaveAttribute('data-target-state', 'rendered')
-                const linkedId = await popup
+                const linkedSlug = await popup
                   .frameLocator('iframe')
                   .locator('html')
-                  .evaluate(() => window.FLOW_INSPECTOR_WORKSPACE_ENTRY.id)
-                assert.equal(
-                  new URL(popup.url()).hash,
-                  '#inspector=' + linkedId
-                )
+                  .evaluate(() => window.FLOW_INSPECTOR_WORKSPACE_ENTRY.slug)
+                assert.equal(new URL(popup.url()).pathname, '/' + linkedSlug)
               } else assert.equal(popup.url(), record.href)
               assert.equal(
                 await graph.evaluate((node) => node.isConnected),
@@ -521,7 +565,20 @@ test(
       assert.ok(fragmentClicked)
       assert.ok(destinations.size > 0)
       assert.deepEqual(errors, [])
-      await page.goto(server.origin)
+      for (const pathname of [
+        '/missing-inspector',
+        '/asyra-executable-examples'
+      ]) {
+        const response = await page.goto(
+          server.origin + pathname + '#inspector=transaction-atomicity'
+        )
+        assert.equal(response.status(), 404)
+        await expect(page.locator('iframe')).toHaveCount(0)
+        await expect(
+          page.getByRole('heading', { name: /is not available/ })
+        ).toBeVisible()
+      }
+      await page.goto(server.origin + '/transaction-atomicity')
       await expect(
         page.frameLocator('iframe').locator('.step-card')
       ).toHaveCount(7)

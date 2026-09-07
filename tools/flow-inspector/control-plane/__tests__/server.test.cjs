@@ -37,21 +37,37 @@ test('HTTP preserves canvas assets and rejects unauthorized, cross-origin, and a
   })
   try {
     const entry = await fetch(server.origin, { redirect: 'manual' })
-    assert.equal(entry.status, 302)
+    assert.equal(entry.status, 200)
+    assert.equal(entry.headers.get('location'), null)
+    const rootPage = await entry.text()
+    assert.match(rootPage, /data-workspace-routing="path"/)
+    assert.match(rootPage, /<base href="\/tools\/flow-inspector\/workspace\/"/)
+    for (const pathname of [
+      '/transaction-atomicity',
+      '/ai-drawing-performance',
+      '/tools/flow-inspector/workspace/workspace.html'
+    ]) {
+      const response = await fetch(server.origin + pathname)
+      assert.equal(response.status, 200, pathname)
+      assert.equal(await response.text(), rootPage)
+    }
+    const trailingSlash = await fetch(
+      server.origin + '/ai-drawing-performance/',
+      { redirect: 'manual' }
+    )
+    assert.equal(trailingSlash.status, 308)
     assert.equal(
-      entry.headers.get('location'),
-      '/tools/flow-inspector/workspace/workspace.html#inspector=transaction-atomicity'
+      trailingSlash.headers.get('location'),
+      '/ai-drawing-performance'
     )
-    const workspace = await fetch(
-      server.origin + '/tools/flow-inspector/workspace/workspace.html'
-    )
-    assert.equal(
-      await workspace.text(),
-      fs.readFileSync(
-        path.join(root, 'tools/flow-inspector/workspace/workspace.html'),
-        'utf8'
-      )
-    )
+    for (const pathname of [
+      '/missing-inspector',
+      '/asyra-executable-examples'
+    ]) {
+      const missing = await fetch(server.origin + pathname)
+      assert.equal(missing.status, 404)
+      assert.match(await missing.text(), /data-workspace-routing="path"/)
+    }
     for (const asset of [
       'viewer.js',
       'viewer.css',
@@ -118,24 +134,15 @@ test('HTTP preserves canvas assets and rejects unauthorized, cross-origin, and a
     }
     for (const [name, id] of [
       ['transaction-flow-inspector', 'transaction-atomicity'],
-      [
-        'group-interaction-mvp-flow-inspector',
-        'asyra-design-group-interaction-mvp'
-      ],
-      [
-        'group-component-and-hierarchy-flow-inspector',
-        'group-component-and-hierarchy'
-      ]
+      ['group-interaction-mvp-flow-inspector', 'group-interaction'],
+      ['group-component-and-hierarchy-flow-inspector', 'group-hierarchy']
     ]) {
       const linked = await fetch(
         server.origin + '/tools/flow-inspector/inspectors/' + name + '.html',
         { redirect: 'manual' }
       )
       assert.equal(linked.status, 302, name)
-      assert.equal(
-        linked.headers.get('location'),
-        '/tools/flow-inspector/workspace/workspace.html#inspector=' + id
-      )
+      assert.equal(linked.headers.get('location'), '/' + id)
       assert.match(
         linked.headers.get('content-security-policy'),
         /frame-ancestors 'none'/

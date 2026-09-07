@@ -7,6 +7,7 @@ const groups: InspectorGroup[] = ['Apps', 'Framework', 'Release', 'Tools']
 interface WorkspaceAppProps {
   bundle: WorkspaceBundle
   initialHash?: string
+  routingMode?: 'hash' | 'path'
 }
 
 const searchableText = (entry: WorkspaceEntry) =>
@@ -14,10 +15,17 @@ const searchableText = (entry: WorkspaceEntry) =>
     .join(' ')
     .toLocaleLowerCase()
 
-export function WorkspaceApp({ bundle, initialHash }: WorkspaceAppProps) {
-  const [browserHash, setBrowserHash] = useState(() =>
-    typeof window === 'undefined' ? '' : window.location.hash
-  )
+const readBrowserLocation = () => ({
+  hash: typeof window === 'undefined' ? '' : window.location.hash,
+  pathname: typeof window === 'undefined' ? '/' : window.location.pathname
+})
+
+export function WorkspaceApp({
+  bundle,
+  initialHash,
+  routingMode = 'hash'
+}: WorkspaceAppProps) {
+  const [browserLocation, setBrowserLocation] = useState(readBrowserLocation)
   const [query, setQuery] = useState('')
   const [catalogVisible, setCatalogVisible] = useState(true)
   const [headerVisible, setHeaderVisible] = useState(true)
@@ -26,18 +34,36 @@ export function WorkspaceApp({ bundle, initialHash }: WorkspaceAppProps) {
   const [collapsedGroups, setCollapsedGroups] = useState<Set<InspectorGroup>>(
     new Set()
   )
-  const activeHash = initialHash ?? browserHash
+  const activeHash = initialHash ?? browserLocation.hash
   const route = useMemo(
-    () => parseWorkspaceRoute(activeHash, bundle),
-    [activeHash, bundle]
+    () =>
+      parseWorkspaceRoute(
+        activeHash,
+        bundle,
+        routingMode === 'path' ? browserLocation.pathname : undefined
+      ),
+    [activeHash, browserLocation.pathname, routingMode, bundle]
   )
 
   useEffect(() => {
     if (initialHash !== undefined) return
-    const updateHash = () => setBrowserHash(window.location.hash)
-    window.addEventListener('hashchange', updateHash)
-    return () => window.removeEventListener('hashchange', updateHash)
+    const updateLocation = () => setBrowserLocation(readBrowserLocation())
+    window.addEventListener('hashchange', updateLocation)
+    window.addEventListener('popstate', updateLocation)
+    return () => {
+      window.removeEventListener('hashchange', updateLocation)
+      window.removeEventListener('popstate', updateLocation)
+    }
   }, [initialHash])
+
+  useEffect(() => {
+    if (routingMode !== 'path' || route.kind === 'error') return
+    const href = route.kind === 'selected' ? `/${route.entry.slug}` : '/'
+    if (window.location.pathname + window.location.hash !== href) {
+      window.history.replaceState(null, '', href)
+      setBrowserLocation(readBrowserLocation())
+    }
+  }, [route, routingMode])
 
   useEffect(() => {
     const receivePanelVisibility = (event: MessageEvent) => {
@@ -53,9 +79,13 @@ export function WorkspaceApp({ bundle, initialHash }: WorkspaceAppProps) {
     return () => window.removeEventListener('message', receivePanelVisibility)
   }, [])
 
-  const navigate = (id: string | null) => {
-    window.location.hash = id ? workspaceHash(id) : ''
-    setBrowserHash(window.location.hash)
+  const navigate = (entry: WorkspaceEntry | null) => {
+    if (routingMode === 'path') {
+      const href = entry ? `/${entry.slug}` : '/'
+      if (window.location.pathname + window.location.hash !== href)
+        window.history.pushState(null, '', href)
+    } else window.location.hash = entry ? workspaceHash(entry.id) : ''
+    setBrowserLocation(readBrowserLocation())
   }
 
   const normalizedQuery = query.trim().toLocaleLowerCase()
@@ -167,7 +197,7 @@ export function WorkspaceApp({ bundle, initialHash }: WorkspaceAppProps) {
                             : undefined
                         }
                         key={entry.id}
-                        onClick={() => navigate(entry.id)}
+                        onClick={() => navigate(entry)}
                       >
                         <span>{entry.title}</span>
                         <small>

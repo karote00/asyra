@@ -3,6 +3,7 @@ export type InspectorGroup = 'Apps' | 'Framework' | 'Release' | 'Tools'
 
 export interface WorkspaceEntry {
   id: string
+  slug: string
   title: string
   kind: InspectorKind
   group: InspectorGroup

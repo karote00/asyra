@@ -16,9 +16,16 @@ yarn install --immutable
 FLOW_PROOF_URL=http://127.0.0.1:4318 node tools/flow-inspector/control-plane/cli.cjs serve
 ```
 
-Open <a href="http://127.0.0.1:4318" target="_blank" rel="noopener noreferrer">the local canvas</a>.
-It opens the original workspace at Transaction Atomicity, with its catalog,
+Open <a href="http://127.0.0.1:4318" target="_blank" rel="noopener noreferrer">the local catalog</a>.
+Open <a href="http://127.0.0.1:4318/transaction-atomicity" target="_blank" rel="noopener noreferrer">Transaction Atomicity</a> to see its catalog,
 seven architecture cards, connections, zoom, filters, and detail panel intact.
+
+Short routes such as `/transaction-atomicity` and `/ai-drawing-performance` support
+direct opening and reload. Old workspace hash links convert to their corresponding
+short route; static files opened directly retain hash navigation. The Control Plane remains loopback-only. A future deployment can retain these
+root-mounted routes by supplying the documented workspace base/path-routing
+marker and route handling; uploading the static files alone does not enable
+path routing. Public hosting and access control are outside this local proof.
 
 1. Expand **Flow verification** in the existing detail panel. Select
    **Current source** and click **Run all flows**. Expect both flows and

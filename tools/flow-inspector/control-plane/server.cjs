@@ -103,17 +103,15 @@ async function startServer(
   )
   const localBase = new URL('http://catalog.local/')
   const standaloneRoutes = new Map()
+  const workspaceAsset = assets.get(workspacePath + 'workspace.html')
+  assets.set('/', workspaceAsset)
   for (const entry of workspaceSnapshot.FLOW_INSPECTOR_WORKSPACE_BUNDLE
     .entries) {
+    assets.set('/' + entry.slug, workspaceAsset)
     if (entry.standalonePath) {
       const standalone = new URL(entry.standalonePath, localBase)
       if (standalone.origin === localBase.origin)
-        standaloneRoutes.set(
-          standalone.pathname,
-          workspacePath +
-            'workspace.html#inspector=' +
-            encodeURIComponent(entry.id)
-        )
+        standaloneRoutes.set(standalone.pathname, '/' + entry.slug)
     }
     const source = new URL(entry.sourcePath, localBase)
     const resources = [
@@ -171,13 +169,12 @@ async function startServer(
         if (route.search && !targetQuery)
           throw new ActionError(400, 'Query parameters are unsupported')
         if (request.method === 'GET') {
-          if (route.pathname === '/') {
-            response.writeHead(302, {
-              Location:
-                workspacePath +
-                'workspace.html#inspector=' +
-                encodeURIComponent(service.contract().targetId)
-            })
+          if (
+            route.pathname.endsWith('/') &&
+            route.pathname !== '/' &&
+            assets.get(route.pathname.slice(0, -1)) === workspaceAsset
+          ) {
+            response.writeHead(308, { Location: route.pathname.slice(0, -1) })
             return response.end()
           }
           const standaloneRoute = standaloneRoutes.get(route.pathname)
@@ -190,7 +187,18 @@ async function startServer(
           if (route.pathname === '/api/state') return send(200, service.state())
           const match = route.pathname.match(/^\/api\/runs\/([a-f0-9-]{36})$/)
           if (match) return send(200, service.get(match[1]))
-          const asset = assets.get(route.pathname)
+          let asset = assets.get(route.pathname)
+          let status = 200
+          if (
+            !asset &&
+            /^\/[a-z0-9]+(?:-[a-z0-9]+)*$/.test(route.pathname) &&
+            !['/api', '/tools', '/docs', '/apps'].includes(route.pathname)
+          ) {
+            // Unknown public pages render the workspace's explicit route error,
+            // with a real 404 response and no selected Inspector or target frame.
+            asset = workspaceAsset
+            status = 404
+          }
           if (!asset) throw new ActionError(404, 'Route not found')
           // Existing canvas geometry uses style attributes; target.js owns a
           // same-origin base URL. Scripts remain external and same-origin only.
@@ -201,6 +209,15 @@ async function startServer(
               "; object-src 'none'; base-uri 'self'"
           )
           let content = fs.readFileSync(asset[0])
+          if (asset === workspaceAsset) {
+            content = content
+              .toString()
+              .replace(
+                '<html lang="en">',
+                '<html lang="en" data-workspace-routing="path">'
+              )
+              .replace('<head>', '<head><base href="' + workspacePath + '" />')
+          }
           if (route.pathname === targetPath) {
             content = content
               .toString()
@@ -210,7 +227,7 @@ async function startServer(
               )
               .replace('</body>', '<script src="/board.js"></script></body>')
           }
-          response.writeHead(200, { 'Content-Type': asset[1] })
+          response.writeHead(status, { 'Content-Type': asset[1] })
           return response.end(content)
         }
         if (request.method !== 'POST')

@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { WorkspaceApp } from '../App'
 import { parseWorkspaceRoute, targetHref } from '../routing'
 import type { WorkspaceBundle } from '../types'
@@ -13,6 +13,7 @@ const bundle: WorkspaceBundle = {
   entries: [
     {
       id: 'app-flow',
+      slug: 'app',
       title: 'App Flow',
       kind: 'flow-v2',
       group: 'Apps',
@@ -25,6 +26,7 @@ const bundle: WorkspaceBundle = {
     },
     {
       id: 'framework-flow',
+      slug: 'framework',
       title: 'Framework Flow',
       kind: 'legacy-v1',
       group: 'Framework',
@@ -37,6 +39,7 @@ const bundle: WorkspaceBundle = {
     },
     {
       id: 'release-flow',
+      slug: 'release',
       title: 'Release Flow',
       kind: 'plan-contract',
       group: 'Release',
@@ -49,6 +52,7 @@ const bundle: WorkspaceBundle = {
     },
     {
       id: 'tool-flow',
+      slug: 'tool',
       title: 'Tool Flow',
       kind: 'flow-v2',
       group: 'Tools',
@@ -186,5 +190,69 @@ describe('React workspace', () => {
     expect(
       screen.queryByRole('complementary', { name: 'Inspector catalog' })
     ).toBeNull()
+  })
+})
+
+afterEach(() => window.history.replaceState(null, '', '/'))
+
+describe('hosted short routes', () => {
+  it('selects short slugs while preserving exact target identities', () => {
+    expect(parseWorkspaceRoute('', bundle, '/app')).toMatchObject({
+      kind: 'selected',
+      entry: bundle.entries[0]
+    })
+    expect(parseWorkspaceRoute('', bundle, '/')).toEqual({ kind: 'overview' })
+    for (const pathname of ['/missing', '/retired', '/app/extra', '/%2Fapp']) {
+      expect(
+        parseWorkspaceRoute('#inspector=app-flow', bundle, pathname)
+      ).toMatchObject({ kind: 'error' })
+    }
+    expect(
+      parseWorkspaceRoute(
+        '#inspector=app-flow',
+        bundle,
+        '/tools/flow-inspector/workspace/workspace.html'
+      )
+    ).toMatchObject({ kind: 'selected', entry: bundle.entries[0] })
+  })
+
+  it('navigates, restores history, and retains the selected frame during search', () => {
+    window.history.replaceState(null, '', '/app')
+    render(<WorkspaceApp bundle={bundle} routingMode="path" />)
+    const original = screen.getByTitle('Selected Flow Inspector')
+    expect(original.getAttribute('src')).toBe(targetHref('app-flow'))
+    fireEvent.change(screen.getByRole('searchbox'), {
+      target: { value: 'app' }
+    })
+    expect(screen.getByTitle('Selected Flow Inspector')).toBe(original)
+    fireEvent.change(screen.getByRole('searchbox'), { target: { value: '' } })
+    fireEvent.click(screen.getByRole('button', { name: /Framework Flow/ }))
+    expect(window.location.pathname).toBe('/framework')
+    expect(window.location.hash).toBe('')
+    expect(screen.getByTitle('Selected Flow Inspector')).not.toBe(original)
+    window.history.replaceState(null, '', '/app')
+    fireEvent.popState(window)
+    expect(
+      screen.getByTitle('Selected Flow Inspector').getAttribute('src')
+    ).toBe(targetHref('app-flow'))
+    fireEvent.click(screen.getByRole('button', { name: 'Overview' }))
+    expect(window.location.pathname).toBe('/')
+    expect(screen.queryByTitle('Selected Flow Inspector')).toBeNull()
+  })
+
+  it('replaces legacy hash URLs without adding a history entry', () => {
+    window.history.replaceState(
+      null,
+      '',
+      '/tools/flow-inspector/workspace/workspace.html#inspector=app-flow'
+    )
+    const length = window.history.length
+    render(<WorkspaceApp bundle={bundle} routingMode="path" />)
+    expect(window.location.pathname).toBe('/app')
+    expect(window.location.hash).toBe('')
+    expect(window.history.length).toBe(length)
+    expect(
+      screen.getByTitle('Selected Flow Inspector').getAttribute('src')
+    ).toBe(targetHref('app-flow'))
   })
 })

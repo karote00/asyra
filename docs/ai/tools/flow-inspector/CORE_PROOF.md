@@ -120,11 +120,19 @@ identify confirmed violations. This proof protects only its declared obligations
 
 The server URL is owned by `FLOW_PROOF_URL`, shared by the server and browser tests.
 The server serves the existing committed workspace assets from an explicit
-allowlist and loads the proof adapter only in its target documents. It
+allowlist and loads the proof adapter only in its target documents. `/` serves
+Overview; `/<catalog-slug>` serves the selected Inspector with the same workspace
+shell and a server-supplied asset base and explicit path-routing marker. The
+catalog route table is prepared once per server lifetime. Known trailing-slash
+routes redirect to the canonical path. Unknown single-segment public pages return
+HTTP 404 and the explicit workspace route error, never a default selected flow.
+API and source/resource namespaces retain their existing request restrictions.
+Legacy workspace hash links load the same shell and are canonicalized by the
+workspace, since URL fragments are not sent to the server. It
 preserves catalog-declared local source and documentation links as plain-text
 read-only resources (including declared TypeScript test sources), without exposing
 arbitrary repository files. Catalog-declared standalone HTML paths redirect to
-the exact corresponding workspace Inspector. Document and source links open in a
+the exact corresponding short workspace route. Document and source links open in a
 new tab, so their restrictive frame policy does not replace or block the canvas. The adapter
 uses the existing tool's theme; it does not own canvas geometry or rendering.
 It observes completed graph DOM replacement to bind current cards, then updates
@@ -149,6 +157,8 @@ cache or workspace watcher is added.
   baseline, negative failure details, recovery, retained attempt identity, unsupported
   targets, and narrow layouts pass a permanent test and screenshot review.
   Verification updates cause zero graph replacements or binding reconstruction.
+  Hosted root/short routes, legacy hash conversion, reload, back/forward, and
+  explicit unknown-route errors preserve target identities and source links.
 - CI runs the focused tests, baseline gate, and exact negative proof as failing
   commands inside `validate`; existing static compatibility checks remain green.
 - The PR's checks pass and the README provides reproducible local commands.

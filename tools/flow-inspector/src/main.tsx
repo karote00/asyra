@@ -11,6 +11,13 @@ if (!bundle) throw new Error('Missing Flow Inspector workspace bundle.')
 
 createRoot(root).render(
   <StrictMode>
-    <WorkspaceApp bundle={bundle} />
+    <WorkspaceApp
+      bundle={bundle}
+      routingMode={
+        document.documentElement.dataset.workspaceRouting === 'path'
+          ? 'path'
+          : 'hash'
+      }
+    />
   </StrictMode>
 )

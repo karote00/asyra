@@ -60,6 +60,7 @@
   "entries": [
     {
       "id": "asyra-design-ai-conversational-drawing-performance",
+      "slug": "ai-drawing-performance",
       "title": "Asyra Design Conversational AI Drawing Performance Inspector",
       "kind": "flow-v2",
       "group": "Apps",
@@ -2825,6 +2826,7 @@
     },
     {
       "id": "asyra-design-group-context-menu",
+      "slug": "group-context-menu",
       "title": "Asyra Design Group Context Menu Inspector",
       "kind": "flow-v2",
       "group": "Apps",
@@ -3650,6 +3652,7 @@
     },
     {
       "id": "asyra-design-group-interaction-mvp",
+      "slug": "group-interaction",
       "title": "Asyra Design Group Interaction MVP Inspector",
       "kind": "flow-v2",
       "group": "Apps",
@@ -4868,6 +4871,7 @@
     },
     {
       "id": "asyra-design-layer-tree-reparent-reorder",
+      "slug": "layer-tree-reorder",
       "title": "Asyra Design Layer Tree Reparent and Reorder Inspector",
       "kind": "flow-v2",
       "group": "Apps",
@@ -5904,6 +5908,7 @@
     },
     {
       "id": "asyra-design-socket-authoritative-document-persistence",
+      "slug": "document-persistence",
       "title": "Asyra Design Socket-Authoritative Persistence Inspector",
       "kind": "flow-v2",
       "group": "Apps",
@@ -7459,6 +7464,7 @@
     },
     {
       "id": "vector-render-geometry-cache-transform",
+      "slug": "vector-render-cache",
       "title": "Asyra Design Vector Render Geometry Cache Inspector",
       "kind": "flow-v2",
       "group": "Apps",
@@ -8101,6 +8107,7 @@
     },
     {
       "id": "remote-subtree-restore-snapshot",
+      "slug": "remote-subtree-restore-snapshot",
       "title": "Remote Subtree Restore Snapshot Inspector",
       "kind": "flow-v2",
       "group": "Apps",
@@ -9563,6 +9570,7 @@
     },
     {
       "id": "ai-agent-runtime",
+      "slug": "ai-agent-runtime",
       "title": "AI Agent Runtime Flow Inspector",
       "kind": "flow-v2",
       "group": "Framework",
@@ -11637,6 +11645,7 @@
     },
     {
       "id": "app-level-migration",
+      "slug": "app-level-migration",
       "title": "App-level Migration Inspector",
       "kind": "flow-v2",
       "group": "Framework",
@@ -12770,6 +12779,7 @@
     },
     {
       "id": "canonical-projection-and-collaboration-contract-realignment",
+      "slug": "projection-and-collaboration",
       "title": "Canonical Projection and Collaboration Contract Inspector",
       "kind": "flow-v2",
       "group": "Framework",
@@ -14330,6 +14340,7 @@
     },
     {
       "id": "canvas-pipeline-debugger",
+      "slug": "canvas-pipeline-debugger",
       "title": "Canvas Pipeline Debugger Inspector",
       "kind": "flow-v2",
       "group": "Framework",
@@ -14949,6 +14960,7 @@
     },
     {
       "id": "extendable-preset",
+      "slug": "extendable-preset",
       "title": "Extendable Preset Relation and Unregister Flow",
       "kind": "legacy-v1",
       "group": "Framework",
@@ -15943,6 +15955,7 @@
     },
     {
       "id": "group-component-and-hierarchy",
+      "slug": "group-hierarchy",
       "title": "Group Component and Hierarchy Inspector",
       "kind": "flow-v2",
       "group": "Framework",
@@ -17212,6 +17225,7 @@
     },
     {
       "id": "input-system-environment-neutrality",
+      "slug": "input-environments",
       "title": "Input System Environment Neutrality Flow",
       "kind": "legacy-v1",
       "group": "Framework",
@@ -17571,6 +17585,7 @@
     },
     {
       "id": "network-collaboration-transport",
+      "slug": "collaboration-transport",
       "title": "Network Collaboration Transport Inspector",
       "kind": "flow-v2",
       "group": "Framework",
@@ -18577,6 +18592,7 @@
     },
     {
       "id": "preset-profile-selectable-defaults",
+      "slug": "preset-profiles",
       "title": "Preset Profile and Selectable Defaults Flow",
       "kind": "legacy-v1",
       "group": "Framework",
@@ -19497,6 +19513,7 @@
     },
     {
       "id": "property-type-redefinition",
+      "slug": "property-type-redefinition",
       "title": "Property Type Redefinition Inspector",
       "kind": "flow-v2",
       "group": "Framework",
@@ -20294,6 +20311,7 @@
     },
     {
       "id": "render-delta-update",
+      "slug": "render-delta-update",
       "title": "Render Delta Update Pipeline Inspector",
       "kind": "flow-v2",
       "group": "Framework",
@@ -21516,6 +21534,7 @@
     },
     {
       "id": "render-engine-boundary",
+      "slug": "render-engine-boundary",
       "title": "Render-Engine Boundary Inspector Flow",
       "kind": "flow-v2",
       "group": "Framework",
@@ -22780,6 +22799,7 @@
     },
     {
       "id": "stroke-engine",
+      "slug": "stroke",
       "title": "Stroke Engine Inspector Flow",
       "kind": "flow-v2",
       "group": "Framework",
@@ -23682,6 +23702,7 @@
     },
     {
       "id": "transaction-atomicity",
+      "slug": "transaction-atomicity",
       "title": "Transaction Atomicity Inspector Flow",
       "kind": "flow-v2",
       "group": "Framework",
@@ -24500,6 +24521,7 @@
     },
     {
       "id": "create-asyra-design-app-release",
+      "slug": "app-release",
       "title": "create-asyra-design-app Release Inspector",
       "kind": "flow-v2",
       "group": "Release",
@@ -25731,6 +25753,7 @@
     },
     {
       "id": "framework-package-release",
+      "slug": "framework-package-release",
       "title": "Framework Package Release Inspector",
       "kind": "flow-v2",
       "group": "Release",
@@ -27155,6 +27178,7 @@
     },
     {
       "id": "framework-release-readiness",
+      "slug": "framework-release-readiness",
       "title": "Framework Release Readiness Flow Inspector",
       "kind": "flow-v2",
       "group": "Release",
@@ -28366,6 +28390,7 @@
     },
     {
       "id": "node-24-runtime-upgrade",
+      "slug": "node-24-runtime-upgrade",
       "title": "Node.js 24 Runtime Upgrade Flow Inspector",
       "kind": "flow-v2",
       "group": "Release",
@@ -29898,6 +29923,7 @@
     },
     {
       "id": "asyra-public-package-documentation",
+      "slug": "public-docs",
       "title": "Asyra Public Package Documentation",
       "kind": "plan-contract",
       "group": "Release",
@@ -30496,6 +30522,7 @@
     },
     {
       "id": "asyra-public-readme-and-entrypoint-alignment",
+      "slug": "public-entrypoints",
       "title": "Asyra Public Readme And Entrypoint Alignment",
       "kind": "plan-contract",
       "group": "Release",
@@ -31095,6 +31122,7 @@
     },
     {
       "id": "asyra-runtime-atlas",
+      "slug": "runtime-atlas",
       "title": "Asyra Runtime Atlas",
       "kind": "plan-contract",
       "group": "Release",
@@ -31572,6 +31600,7 @@
     },
     {
       "id": "asyra-website-landing",
+      "slug": "website-landing",
       "title": "Asyra Website Landing",
       "kind": "plan-contract",
       "group": "Release",
@@ -31964,6 +31993,7 @@
     },
     {
       "id": "asyra-website-launch-and-operations",
+      "slug": "website-operations",
       "title": "Asyra Website Launch And Operations",
       "kind": "plan-contract",
       "group": "Release",
@@ -32404,6 +32434,7 @@
     },
     {
       "id": "asyra-website-platform",
+      "slug": "website-platform",
       "title": "Asyra Website Platform",
       "kind": "plan-contract",
       "group": "Release",
@@ -32951,6 +32982,7 @@
     },
     {
       "id": "flow-inspector-core-proof",
+      "slug": "core-proof",
       "title": "Flow Inspector Core Proof",
       "kind": "flow-v2",
       "group": "Tools",
@@ -33175,7 +33207,7 @@
             ],
             "conditions": [
               "Authorize before work, admit one run, durably record state with audit, and expose immutable snapshot-bound evidence; restart interrupts incomplete attempts.",
-              "Serve allowlisted existing workspace assets and compose the proof adapter into target documents; preserve static paths, target routing, and same-origin isolation. Catalog-declared standalone HTML paths redirect to their exact workspace target, and declared documentation/source links remain readable in a separate tab."
+              "Serve allowlisted existing workspace assets and compose the proof adapter into target documents; preserve static paths, target routing, and same-origin isolation. Serve Overview at root and catalog-slug pages with an explicit path-routing marker and workspace asset base; unknown public paths return a 404 route error without a selected target. Catalog-declared standalone HTML paths redirect to their exact short workspace target, and declared documentation/source links remain readable in a separate tab."
             ],
             "bypasses": [
               "Unauthorized, conflicting, oversized, malformed, or unknown actions have no runner side effects."
@@ -33446,6 +33478,7 @@
     },
     {
       "id": "flow-inspector-static-workspace",
+      "slug": "static-workspace",
       "title": "Flow Inspector Static Workspace",
       "kind": "flow-v2",
       "group": "Tools",
@@ -33567,7 +33600,7 @@
             ],
             "conditions": [
               "Every discovered candidate is classified once.",
-              "Flow v2 ids equal target ids."
+              "Flow v2 ids equal target ids; catalog-owned short slugs are unique, valid, non-reserved presentation identities. Invalid or orphaned slug declarations reject generation."
             ],
             "bypasses": [
               "Exclusion requires a stable catalog reason."
@@ -33634,19 +33667,20 @@
             "laneId": "workspace",
             "title": "Route workspace selection",
             "ownerPackage": "tools/flow-inspector/workspace",
-            "purpose": "Render Overview and sidebar navigation, then resolve selection through one stable hash route.",
+            "purpose": "Render Overview and sidebar navigation, then resolve catalog-owned hosted slugs or direct-open static hashes without changing target identities.",
             "inputs": [
               "artifact:workspace-browser-snapshot",
-              "location hash"
+              "browser pathname and hash",
+              "explicit host routing mode"
             ],
             "outputs": [
               "artifact:selected-workspace-route"
             ],
             "conditions": [
-              "Known ids select exactly one entry."
+              "Known slugs or static ids select exactly one entry. Hosted legacy hash links replace the address without adding history; selection pushes only a changed destination and back/forward restores it. Unknown paths cannot fall back to hash-selected content."
             ],
             "bypasses": [
-              "Missing hash selects Overview only."
+              "Hosted root or an empty direct-open static hash selects Overview only; unknown selections remain errors."
             ],
             "allowedContributors": [
               "catalog summaries",

@@ -80,7 +80,7 @@ const data = {
       outputs: ['artifact:classified-workspace-catalog'],
       conditions: [
         'Every discovered candidate is classified once.',
-        'Flow v2 ids equal target ids.'
+        'Flow v2 ids equal target ids; catalog-owned short slugs are unique, valid, non-reserved presentation identities. Invalid or orphaned slug declarations reject generation.'
       ],
       bypasses: ['Exclusion requires a stable catalog reason.'],
       allowedContributors: [
@@ -127,11 +127,11 @@ const data = {
       title: 'Route workspace selection',
       ownerPackage: 'tools/flow-inspector/workspace',
       purpose:
-        'Render Overview and sidebar navigation, then resolve selection through one stable hash route.',
-      inputs: ['artifact:workspace-browser-snapshot', 'location hash'],
+        'Render Overview and sidebar navigation, then resolve catalog-owned hosted slugs or direct-open static hashes without changing target identities.',
+      inputs: ['artifact:workspace-browser-snapshot', 'browser pathname and hash', 'explicit host routing mode'],
       outputs: ['artifact:selected-workspace-route'],
-      conditions: ['Known ids select exactly one entry.'],
-      bypasses: ['Missing hash selects Overview only.'],
+      conditions: ['Known slugs or static ids select exactly one entry. Hosted legacy hash links replace the address without adding history; selection pushes only a changed destination and back/forward restores it. Unknown paths cannot fall back to hash-selected content.'],
+      bypasses: ['Hosted root or an empty direct-open static hash selects Overview only; unknown selections remain errors.'],
       allowedContributors: ['catalog summaries', 'browser location'],
       forbiddenContributors: [
         'target semantic reconstruction',
