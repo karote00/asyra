@@ -27,14 +27,12 @@ export function useTrajectoryImport({
     return {
       kind: 'csv' as 'csv' | 'json',
       text,
-      csv: prepareTrajectoryCsv(text),
-      requiresDeclaration: false
+      csv: prepareTrajectoryCsv(text)
     }
   })
   const [mapping, updateMapping] = useState<TrajectoryCsvMappingDraft>(() =>
     canonicalCsvMapping(workcell)
   )
-  const declarations = useRef({ time: false, joints: new Set<string>() })
   const [receipt, setReceipt] = useState<{
     result: TrajectoryImportPreview
     source: typeof source
@@ -72,41 +70,12 @@ export function useTrajectoryImport({
       ? receipt.result
       : null
 
-  const unitsNeedConfirmation =
-    source.kind === 'csv' &&
-    source.requiresDeclaration &&
-    ((mapping.time.unit !== '' && !declarations.current.time) ||
-      Object.entries(mapping.joints).some(
-        ([id, entry]) =>
-          entry.unit !== '' && !declarations.current.joints.has(id)
-      ))
-
   const inspect = () => {
     if (reading) return null
     if (preview) return preview
-    // Displayed choices are not declarations until the user confirms them.
-    const declaredMapping = source.requiresDeclaration
-      ? {
-          time: {
-            ...mapping.time,
-            unit: declarations.current.time ? mapping.time.unit : ('' as const)
-          },
-          joints: Object.fromEntries(
-            Object.entries(mapping.joints).map(([id, entry]) => [
-              id,
-              {
-                ...entry,
-                unit: declarations.current.joints.has(id)
-                  ? entry.unit
-                  : ('' as const)
-              }
-            ])
-          )
-        }
-      : mapping
     const result =
       source.kind === 'csv'
-        ? previewTrajectoryCsv(source.csv, workcell, declaredMapping)
+        ? previewTrajectoryCsv(source.csv, workcell, mapping)
         : previewTrajectoryJson(source.text, workcell)
     setReceipt({
       result,
@@ -126,7 +95,7 @@ export function useTrajectoryImport({
   const setText = (text: string) => {
     discard()
     const csv = source.kind === 'csv' ? prepareTrajectoryCsv(text) : source.csv
-    setSource({ ...source, text, csv, requiresDeclaration: true })
+    setSource({ ...source, text, csv })
     // Incomplete syntax cannot prove that a mapped column was removed.
     // Keep choices until parsing can establish the edited header.
     if (source.kind === 'csv' && csv.columns.length) {
@@ -134,13 +103,11 @@ export function useTrajectoryImport({
       const next = { ...suggested, joints: { ...suggested.joints } }
       if (csv.columns.includes(mapping.time.column))
         next.time = { ...mapping.time }
-      else declarations.current.time = false
       for (const body of workcell.bodies) {
         if (body.joint.kind === 'fixed') continue
         const entry = mapping.joints[body.id]
         if (entry && csv.columns.includes(entry.column))
           next.joints[body.id] = { ...entry }
-        else declarations.current.joints.delete(body.id)
       }
       updateMapping(next)
     }
@@ -151,18 +118,7 @@ export function useTrajectoryImport({
     updateMapping(next)
   }
 
-  const confirmDisplayedUnits = () => {
-    declarations.current.time = mapping.time.unit !== ''
-    declarations.current.joints = new Set(
-      Object.entries(mapping.joints)
-        .filter(([, entry]) => entry.unit !== '')
-        .map(([id]) => id)
-    )
-    setMapping({ ...mapping })
-  }
-
   const setTimeUnit = (unit: TrajectoryCsvMappingDraft['time']['unit']) => {
-    declarations.current.time = unit !== ''
     setMapping((current) => ({ ...current, time: { ...current.time, unit } }))
   }
 
@@ -170,8 +126,6 @@ export function useTrajectoryImport({
     id: string,
     unit: TrajectoryCsvMappingDraft['joints'][string]['unit']
   ) => {
-    if (unit) declarations.current.joints.add(id)
-    else declarations.current.joints.delete(id)
     setMapping((current) => ({
       ...current,
       joints: {
@@ -206,8 +160,7 @@ export function useTrajectoryImport({
     }
     if (token !== generation.current) return
     const csv = nextKind === 'csv' ? prepareTrajectoryCsv(text) : source.csv
-    declarations.current = { time: false, joints: new Set<string>() }
-    setSource({ kind: nextKind, text, csv, requiresDeclaration: true })
+    setSource({ kind: nextKind, text, csv })
     if (nextKind === 'csv')
       updateMapping(guessCsvMapping(csv.columns, workcell))
   }
@@ -227,8 +180,6 @@ export function useTrajectoryImport({
     setText,
     mapping,
     setMapping,
-    unitsNeedConfirmation,
-    confirmDisplayedUnits,
     setTimeUnit,
     setJointUnit,
     preview,

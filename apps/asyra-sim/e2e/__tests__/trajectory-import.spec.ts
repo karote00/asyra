@@ -284,7 +284,7 @@ for (const [width, theme] of [
   })
 }
 
-test('editing initial canonical text retains all displayed units and offers one confirmation', async ({
+test('editing initial canonical text retains units without a confirmation prompt', async ({
   page
 }, info) => {
   await page.goto('/')
@@ -302,18 +302,8 @@ test('editing initial canonical text retains all displayed units and offers one 
   for (const unit of await units.all()) await expect(unit).toHaveValue('rad')
   await expect(
     page.getByRole('button', { name: 'Confirm displayed units', exact: true })
-  ).toBeVisible()
-  await page.locator('.unit-confirmation').screenshot({
-    path: info.outputPath('confirm-retained-units.png'),
-    animations: 'disabled'
-  })
-  await preview(page)
-  await expect(
-    page.getByRole('button', { name: 'Accept into draft', exact: true })
   ).toHaveCount(0)
-  await page
-    .getByRole('button', { name: 'Confirm displayed units', exact: true })
-    .click()
+  await expect(page.locator('.unit-confirmation')).toHaveCount(0)
   await preview(page)
   await expect(
     page.getByRole('button', { name: 'Accept into draft', exact: true })

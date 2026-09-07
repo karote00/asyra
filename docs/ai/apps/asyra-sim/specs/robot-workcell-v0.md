@@ -69,20 +69,15 @@ independently interpret axes or parent-child transforms.
 
 - Length inputs explicitly support mm/m; angles support deg/rad; time uses
   seconds or explicitly declared milliseconds.
-- Import previews show conversions and preserve source units. Do not guess
-  units for unspecified columns. External CSV and pasted/replaced CSV text
-  require explicit time and joint unit declarations, even when values fit the
-  joint limits or headers resemble canonical names. Column suggestions are not
-  unit declarations. Only unchanged App-generated canonical data starts with
-  known s/rad/m units; strict JSON retains its declared units. Explicit user
-  declarations survive subsequent numeric edits to the same source, including
-  confirmation of a canonical unit. Editing never promotes unconfirmed App
-  defaults to source declarations. First edits retain displayed canonical unit
-  choices with an explicit confirmation notice; one Confirm displayed units
-  action declares the selected units without previewing or saving. Until then,
-  those retained choices cannot authorize acceptance. Retain valid column mappings; removing a
-  mapped source column retires only its declaration. Loading another CSV requires
-  fresh declarations. Workcell changes still validate joint/unit compatibility.
+- Import previews show conversions and preserve source units. External CSV files
+  require explicit time and joint unit declarations, even when values fit joint
+  limits or headers resemble canonical names. Column suggestions do not declare
+  units. App-generated data starts with known s/rad/m units; strict JSON retains
+  its declared units. Editing the current source text retains existing units and
+  valid column mappings without an additional notice or confirmation action.
+  Invalid or incomplete values still block acceptance. Removing a mapped column
+  retires only its mapping and unit; loading another CSV requires fresh units.
+  Workcell changes still validate joint/unit compatibility.
 - Before acceptance, show source fields, units and representative values beside
   their canonical values and units, from the same validated conversion result.
   Bound review to first, middle and last keyframes. Changed source, mapping,

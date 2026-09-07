@@ -108,10 +108,11 @@ rejected before the current runtime retires.
 Choose **Experiments** to configure a saved study or create a new one. Expand
 **Analysis scope** to select primary and influencing bodies and describe any
 excluded pairs. Edit clearance thresholds and time ranges, or preview a CSV or
-versioned JSON trajectory before accepting it into the draft. External or
-edited/pasted CSV requires an explicit time unit and each joint's angle or length
-unit, even when suggested columns and values appear valid. Unchanged App-generated
-CSV already has known canonical units; strict JSON keeps its declared units.
+versioned JSON trajectory before accepting it into the draft. External CSV files
+require an explicit time unit and each joint's angle or length unit, even when
+suggested columns and values appear valid. App-generated CSV has known canonical
+units; strict JSON keeps its declared units. Editing the current text retains
+existing units without an additional notice or confirmation.
 Review the source fields, units and first/middle/last values against their
 canonical conversions before acceptance. The scrollable review shares the
 validated result with acceptance, which changes only the draft. Source,

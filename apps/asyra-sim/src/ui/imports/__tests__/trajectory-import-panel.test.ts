@@ -330,7 +330,7 @@ it('discards an import without acceptance or stale read delivery', async () => {
   expect(accepted).not.toHaveBeenCalled()
 })
 
-it('revokes canonical unit assumptions and the old preview after pasted source changes', async () => {
+it('retires the old preview but retains known units after source edits', async () => {
   await preview()
   const input = present(host.querySelector('textarea'))
   const next = input.value.replace('\n0,', '\n1,')
@@ -343,9 +343,8 @@ it('revokes canonical unit assumptions and the old preview after pasted source c
   })
   expect(input.value).toBe(next)
   expect(button('Accept into draft')).toBeUndefined()
-  await act(() => button('Preview trajectory')?.click())
-  expect(button('Accept into draft')).toBeUndefined()
-  expect(host.textContent).toContain('explicit supported time unit')
+  expect(button('Confirm displayed units')).toBeUndefined()
+  await preview()
 })
 
 it('invalidates column mapping and current workcell previews without reparsing source', async () => {
@@ -448,7 +447,7 @@ it('retains declared units across numeric edits but recomputes and accepts only 
   }
 })
 
-it('preserves explicit confirmation of canonical units while dropping unconfirmed defaults', async () => {
+it('preserves known joint units when only the time unit is selected', async () => {
   await select('Time unit', 's')
   const text = present(host.querySelector('textarea')).value.replace(
     '\n4,',
@@ -457,7 +456,7 @@ it('preserves explicit confirmation of canonical units while dropping unconfirme
   await editSource(text)
   await act(() => button('Preview trajectory')?.click())
   expect(host.textContent).not.toContain('explicit supported time unit')
-  expect(button('Accept into draft')).toBeUndefined()
+  expect(button('Accept into draft')).toBeDefined()
   const example = createSyntheticExample()
   for (const body of example.workcell.bodies)
     if (body.joint.kind !== 'fixed')
@@ -527,7 +526,7 @@ it('retains unaffected units when the workcell changes joint type', async () => 
   expect(button('Accept into draft')).toBeUndefined()
 })
 
-it('keeps displayed canonical units during first edits and requires one explicit confirmation', async () => {
+it('keeps known units during first edits without prompting for confirmation', async () => {
   const input = present(host.querySelector('textarea'))
   const original = input.value
   const units = () =>
@@ -543,8 +542,7 @@ it('keeps displayed canonical units during first edits and requires one explicit
   await editSource(original.replace('\n8,', '\nㄉㄢ,'))
   expect(units()).toEqual(initialUnits)
   expect(button('Accept into draft')).toBeUndefined()
-  expect(button('Confirm displayed units')).toBeDefined()
-  await act(() => button('Confirm displayed units')?.click())
+  expect(button('Confirm displayed units')).toBeUndefined()
   await act(() => button('Preview trajectory')?.click())
   expect(button('Accept into draft')).toBeUndefined()
   await editSource(original.replace('\n8,', '\n9,'))
@@ -555,22 +553,19 @@ it('keeps displayed canonical units during first edits and requires one explicit
   expect(accepted.mock.calls[0][0].trajectory.keyframes.at(-1).time).toBe(9)
 })
 
-it('cannot accept retained display defaults before confirming them', async () => {
+it('previews edits in known units without an extra confirmation step', async () => {
   const original = present(host.querySelector('textarea')).value
   await editSource(original.replace('\n8,', '\n9,'))
-  expect(button('Confirm displayed units')).toBeDefined()
-  await act(() => button('Preview trajectory')?.click())
-  expect(button('Accept into draft')).toBeUndefined()
-  expect(accepted).not.toHaveBeenCalled()
-  await act(() => button('Confirm displayed units')?.click())
+  expect(button('Confirm displayed units')).toBeUndefined()
+  expect(host.querySelector('.unit-confirmation')).toBeNull()
   expect(button('Accept into draft')).toBeUndefined()
   await preview()
+  expect(accepted).not.toHaveBeenCalled()
 })
 
 it('retains unit choices through an unfinished CSV quoted value', async () => {
   const original = present(host.querySelector('textarea')).value
   await editSource(original.replace('\n8,', '\n9,'))
-  await act(() => button('Confirm displayed units')?.click())
   await editSource(original.replace('\n8,', '\n"8,'))
   expect(
     [

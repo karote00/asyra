@@ -176,3 +176,10 @@ require one explicit confirmation before validation can admit edited data.
 Confirmation does not validate numbers, accept a draft, or save a project.
 The regression starts from untouched App data, types invalid text, confirms units,
 and corrects the value without reselecting units.
+
+### 2026-09-08 - Remove the additional unit confirmation flow
+
+User direction supersedes the confirmation interaction above. Editing current
+source text retains its existing units without a notice or extra confirmation.
+External CSV file loading still starts with undeclared units. Preview invalidation,
+numeric validation, and the existing draft/save boundary are unchanged.

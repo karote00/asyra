@@ -17,8 +17,6 @@ export function TrajectoryImportPanel({
     setText,
     mapping,
     setMapping,
-    unitsNeedConfirmation,
-    confirmDisplayedUnits,
     setTimeUnit,
     setJointUnit,
     preview,
@@ -40,8 +38,8 @@ export function TrajectoryImportPanel({
       </summary>
 
       <p className="hint text-[10px] leading-[1.6] text-sim-muted font-normal">
-        External CSV and pasted data require explicit source units. Column
-        suggestions do not declare units. JSON must use the strict
+        External CSV files require explicit source units. Column suggestions do
+        not declare units. JSON must use the strict
         <code> sim-trajectory v1</code> envelope. Preview never edits the
         project.
       </p>
@@ -213,21 +211,6 @@ export function TrajectoryImportPanel({
               </div>
             )
           })}
-        </div>
-      )}
-
-      {unitsNeedConfirmation && (
-        <div
-          className="unit-confirmation grid gap-2 mb-3 text-[11px]"
-          role="status"
-        >
-          <p>
-            Existing unit choices are retained. Confirm that they describe your
-            edited source data, or change the units before previewing.
-          </p>
-          <button className="wide w-full" onClick={confirmDisplayedUnits}>
-            Confirm displayed units
-          </button>
         </div>
       )}
 

@@ -236,8 +236,9 @@ App contracts. The separately requested M1 closeout and worktree-location rule
 are complete. Solver algorithms, complete original geometry, Framework,
 dependencies, packaging and publication were excluded.
 
-External CSV and edited/pasted CSV now suggest columns with undeclared units;
-only unchanged App-generated canonical data starts with s/rad/m. Strict JSON
+External CSV files suggest columns with undeclared units; App-generated data
+starts with s/rad/m. The 2026-09-08 user-requested correction retains existing
+units during text edits without an extra notice or confirmation. Strict JSON
 retains declared units. Storage produces bounded source-to-canonical review
 values from the same admitted rows used for draft acceptance. Parsing is reused
 across mappings; unchanged review/acceptance does not repeat normalization.
