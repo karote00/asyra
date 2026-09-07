@@ -34,6 +34,25 @@
 
 ## Completed Work
 
+- **Automatic persistence and editing consistency (2026-09-08).**
+  - Valid completed object, experiment and observation edits persist locally
+    without Save controls. New experiment creation, import Apply, attachment
+    acceptance, copy/export and failure retry remain explicit actions.
+  - One bounded storage queue coalesces captures/writes, drains changes arriving
+    during writes or copies, flushes before replacement, and restores the same
+    project identity on reload. Missing-target retry cannot overwrite its URL
+    identity with the startup example. Failures remain unacknowledged/retryable.
+  - Terminal formal results retain automatically; progress stays noncanonical.
+    Import parsing/conversion reuse, edited-source lifetime, field write ordering,
+    Undo/Redo, opaque attachments and full original geometry remain covered.
+  - Verified: 612 App tests, 53 distinct affected UI/E2E cases in bounded batches
+    at `http://127.0.0.1:3020`, reviewed project/observation/import/toolbar images,
+    App lint/build/typecheck, naming, Inspector/catalog and test-placement gates.
+    The initial combined browser run reached its unchanged three-minute limit;
+    remaining and corrected cases passed in focused batches.
+  - This is an editing/persistence follow-up to accepted M2, not M3-M6 acceptance.
+    The next milestone remains the separately bounded M3 review in the roadmap.
+
 - [M2 experiments and import acceptance](plans/asyra-sim-roadmap.md#5-m2-executable-experiments-and-data-import)
   - Completed 2026-09-07: explicit external units, bounded conversion review,
     valid-result reuse and invalidation, and all five M2 owner exit criteria.

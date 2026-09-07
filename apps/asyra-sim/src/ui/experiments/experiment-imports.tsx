@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import {
   useExperimentField,
   useExperimentValue,
@@ -17,10 +18,24 @@ export function ExperimentTrajectory() {
 
   const trajectory = useExperimentValue((state) => state.draft.trajectory)
 
+  const sourceIdentity = useMemo(
+    () =>
+      JSON.stringify({
+        id: canonical?.id ?? 'new',
+        trajectory: canonical?.definition.trajectory,
+        sourceUnits: canonical?.definition.sourceUnits
+      }),
+    [
+      canonical?.id,
+      canonical?.definition.trajectory,
+      canonical?.definition.sourceUnits
+    ]
+  )
+
   return (
     <>
       <TrajectoryImportPanel
-        key={`${canonical?.id ?? 'new'}:${canonical?.definition.revision ?? 0}`}
+        key={sourceIdentity}
         workcell={workcell}
         trajectory={canonical?.definition.trajectory ?? trajectory}
         saving={saving}

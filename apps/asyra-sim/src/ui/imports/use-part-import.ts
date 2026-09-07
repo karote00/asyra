@@ -232,9 +232,7 @@ export function usePartImport({
 
       setError('')
 
-      setNotice(
-        'Original part accepted - one Undo action. Save the project to retain it locally.'
-      )
+      setNotice('Original part accepted - one Undo action.')
     } catch (reason) {
       if (live.current && current.current(runtime))
         setError(reason instanceof Error ? reason.message : String(reason))

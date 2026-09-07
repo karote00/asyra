@@ -5,9 +5,17 @@ The App lifecycle owner replaces a project runtime; the editing owner applies
 canonical data through Core. A database operation never opens or extends a
 canonical transaction.
 
-## Save and Open
+## Automatic Persistence and Open
 
-An explicit save captures the canonical document and unresolved load diagnostics.
+One app-lifetime storage session automatically persists committed document changes,
+Undo/Redo, project names and retained results. A fixed 300 ms window coalesces a
+burst before canonical capture and encoding. Writes are serialized; edits during
+an outstanding write remain pending and are captured afterward. Copy/export busy
+periods must not discard queued changes. New projects receive an identity on the
+first acknowledgement; the UI records it in the current URL and restores it on
+reload. Ordinary editing exposes no Save action.
+
+A persistence capture includes the canonical document and unresolved load diagnostics.
 The versioned envelope is JSON data, not executable code. Reject unsupported
 format versions, malformed envelopes, nonfinite serialized values, and data above
 the 64 MiB project limit. Native Core load validation remains responsible for
@@ -37,8 +45,8 @@ must reject rather than silently overwrite it. New projects receive new IDs.
 
 The presentation states are unsaved, saving, saved, and error; opening is a
 separate busy operation. Editing during a save is allowed. Completion acknowledges
-only the captured revision, so newer edits remain unsaved. Repeated overlapping
-save/open operations reject. Save failures and pre-retirement open failures
+only the captured revision, so newer edits remain unsaved. The queue drains pending edits before explicit project replacement. Other overlapping
+low-level operations reject. Save failures and pre-retirement open failures
 retain the editable model and support retry. Post-retirement failure instead
 retains detached recovery with no editable runtime. Persistence status and
 project identity are not a second editable workcell or Undo stack.
@@ -47,8 +55,7 @@ The user selects a saved summary and explicitly accepts replacement. Opening
 reads and validates a detached envelope before the App replacement boundary.
 Check that the document has not changed since the open request before accepting
 replacement; otherwise
-reject and ask the user to retry. Confirm replacement when current edits are not
-saved. Opening uses the complete runtime reset below, not load plus an isolated
+reject and ask the user to retry. Flush pending edits before replacement; a persistence failure blocks replacement. Opening uses the complete runtime reset below, not load plus an isolated
 history clear. The user approved this lifecycle extension; normal Open requires
 the integration gates below. Closing the App aborts owned database work and
 ignores late responses.
@@ -282,10 +289,12 @@ Deleting projects and automatic migration are outside this initial slice.
 
 ## Privacy and Recovery
 
-The workbench presents explicit Save, Save copy, and Open controls in a local
-project dialog. It displays persistence acknowledgement independently from model
-editing, lists saved names/times, discloses the 100-item limit, and confirms
-replacement (including an unsaved-change warning). No project opens automatically.
+The workbench presents project names, Copy project, Open, portable import/export,
+and failure retry in a local project dialog. Valid name edits persist automatically;
+the list reflects acknowledged names/times and discloses the 100-item limit.
+Explicit switching confirms replacement and flushes pending edits. Reload restores
+the project identified in the current URL. A failed restore cannot acknowledge the
+startup example as the requested project; retry uses the original target.
 Model editing remains available during save or storage unavailability. Editing
 controls stop accepting input while the runtime controller is replacing a
 document. A new lifetime resets candidate selection, object selection, camera,
@@ -315,5 +324,5 @@ Browser semantics follow the
 <a href="https://developer.mozilla.org/en-US/docs/Web/API/IDBTransaction/complete_event" target="_blank" rel="noopener noreferrer">IndexedDB transaction-completion contract</a>.
 Formal cases cover actual native commit/abort, cross-connection conflicts,
 malformed or missing documents, unavailable storage, edit-during-save freshness,
-load repair retention, disposal, and normal UI save/reopen. These tests do not
+load repair retention, disposal, and normal UI automatic persistence/reopen. These tests do not
 replace the later portable-bundle, assets, run-integrity, or backup gates.

@@ -287,3 +287,158 @@ describe('project persistence acknowledgement', () => {
     expect(repository.close).toHaveBeenCalledOnce()
   })
 })
+
+describe('automatic project persistence', () => {
+  it('coalesces a burst before capturing and persists edits arriving during a write', async () => {
+    vi.useFakeTimers()
+    const { session, document, repository } = fixture()
+    try {
+      await session.start()
+      vi.mocked(document.capture).mockClear()
+      vi.mocked(repository.write).mockClear()
+      const pending = deferred<undefined>()
+      vi.mocked(repository.write).mockImplementationOnce(() => pending.promise)
+      for (let i = 0; i < 20; i++) session.markEdited()
+      expect(document.capture).not.toHaveBeenCalled()
+      await vi.advanceTimersByTimeAsync(300)
+      expect(document.capture).toHaveBeenCalledOnce()
+      expect(repository.write).toHaveBeenCalledOnce()
+      session.markEdited()
+      pending.resolve(undefined)
+      await session.flush()
+      expect(repository.write).toHaveBeenCalledTimes(2)
+      expect(document.capture).toHaveBeenCalledTimes(2)
+      expect(session.getState().dirty).toBe(false)
+    } finally {
+      session.close()
+      vi.useRealTimers()
+    }
+  })
+
+  it('keeps failure retryable and closes without a scheduled write', async () => {
+    vi.useFakeTimers()
+    const { session, repository } = fixture()
+    try {
+      await session.start()
+      vi.mocked(repository.write).mockRejectedValueOnce(new Error('quota'))
+      session.markEdited()
+      await vi.advanceTimersByTimeAsync(300)
+      expect(session.getState()).toMatchObject({
+        dirty: true,
+        status: 'error',
+        error: 'quota'
+      })
+      await session.flush()
+      expect(session.getState().status).toBe('saved')
+      const count = vi.mocked(repository.write).mock.calls.length
+      session.markEdited()
+      session.close()
+      await vi.advanceTimersByTimeAsync(1000)
+      expect(repository.write).toHaveBeenCalledTimes(count)
+    } finally {
+      session.close()
+      vi.useRealTimers()
+    }
+  })
+
+  it('restores an existing identity without rewriting it or creating a replacement on failure', async () => {
+    const { session, repository, document } = fixture()
+    await session.save('Existing')
+    const id = session.getState().project?.id
+    if (!id) throw new Error('Missing project')
+    session.close()
+    const restored = new ProjectSession(repository, document)
+    await restored.start(id)
+    expect(restored.getState().project?.id).toBe(id)
+    expect(repository.write).toHaveBeenCalledOnce()
+    restored.close()
+    const missing = new ProjectSession(repository, document)
+    await expect(missing.start('missing')).rejects.toThrow('missing')
+    expect(repository.write).toHaveBeenCalledOnce()
+    expect(missing.getState().status).toBe('error')
+    missing.close()
+  })
+
+  it('does not replace the document when pending persistence fails', async () => {
+    const { session, repository, document } = fixture()
+    await session.start()
+    const original = session.getState().project
+    session.markEdited()
+    vi.mocked(repository.write).mockRejectedValueOnce(
+      new Error('revision conflict')
+    )
+    await expect(session.open('another-project', true)).rejects.toThrow(
+      'revision conflict'
+    )
+    expect(document.apply).not.toHaveBeenCalled()
+    expect(session.getState()).toMatchObject({
+      project: original,
+      dirty: true,
+      status: 'error'
+    })
+    session.close()
+  })
+
+  it('automatically acknowledges a reopened document that preserves load diagnostics', async () => {
+    vi.useFakeTimers()
+    const { session, document, repository } = fixture()
+    try {
+      await session.start()
+      const id = session.getState().project?.id
+      if (!id) throw new Error('Missing project')
+      vi.mocked(document.apply).mockResolvedValueOnce([
+        { path: 'source', message: 'Needs review' }
+      ])
+      await session.open(id, true)
+      expect(session.getState().dirty).toBe(true)
+      await vi.advanceTimersByTimeAsync(300)
+      expect(session.getState().status).toBe('saved')
+      expect(repository.write).toHaveBeenCalledTimes(2)
+    } finally {
+      session.close()
+      vi.useRealTimers()
+    }
+  })
+
+  it('keeps a rename made while copying queued until the copy is acknowledged', async () => {
+    vi.useFakeTimers()
+    const { session, repository } = fixture()
+    try {
+      await session.start()
+      const pending = deferred<undefined>()
+      vi.mocked(repository.write).mockImplementationOnce(() => pending.promise)
+      const copying = session.copy('Copied project')
+      await vi.advanceTimersByTimeAsync(0)
+      session.rename('Renamed during copy')
+      await vi.advanceTimersByTimeAsync(500)
+      expect(repository.write).toHaveBeenCalledTimes(2)
+      pending.resolve(undefined)
+      await copying
+      await vi.advanceTimersByTimeAsync(300)
+      expect(session.getState()).toMatchObject({
+        dirty: false,
+        project: { name: 'Renamed during copy' }
+      })
+      expect(repository.write).toHaveBeenCalledTimes(3)
+    } finally {
+      session.close()
+      vi.useRealTimers()
+    }
+  })
+
+  it('flushes before switching and renames without requiring manual save', async () => {
+    const { session, repository } = fixture()
+    await session.start()
+    const first = session.getState().project
+    if (!first) throw new Error('Missing project')
+    await session.save('Copy', true)
+    session.markEdited()
+    await session.open(first.id, true)
+    expect(session.getState().project?.id).toBe(first.id)
+    session.rename('Renamed')
+    await session.flush()
+    expect(session.getState().project?.name).toBe('Renamed')
+    expect(repository.write).toHaveBeenCalledTimes(4)
+    session.close()
+  })
+})

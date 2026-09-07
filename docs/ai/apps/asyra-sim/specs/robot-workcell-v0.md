@@ -83,9 +83,9 @@ independently interpret axes or parent-child transforms.
   Bound review to first, middle and last keyframes. Changed source, mapping,
   units or workcell retires the old preview and acceptance eligibility; repeated
   preview and acceptance of unchanged input do not repeat parsing/conversion.
-  Preview and discard are noncanonical. Apply and save merges the validated
-  trajectory into the latest experiment draft and saves through the existing
-  Feature transaction as one Undo action. Pending saves block repeat submission. Never reinterpret
+  Preview and discard are noncanonical. Apply merges the validated
+  trajectory into the latest experiment draft and commits through the existing
+  Feature transaction as one Undo action. Pending commits block repeat submission. Never reinterpret
   existing project units, values or historical evidence.
 - Joint axes must be finite and nonzero and normalized according to the
   contract. Reject nonfinite positions, dimensions, and times.
@@ -459,8 +459,11 @@ Replacement defaults must not masquerade as original experiment inputs.
   Do not claim that an ordinary Promise can always be forcibly stopped.
 - Timeout and cancellation preserve explicitly partial evidence, or state that
   no evidence could be retained. They do not produce a success summary.
-- Saving partial runs uses an explicit acceptance/save action. Failed analysis
-  must not damage the original project.
+- Terminal runs, including explicitly partial/cancelled records, are retained
+  automatically through the existing Feature and persisted with the project.
+  Failed retention keeps the immutable result available for retry. In-progress
+  evidence is never retained automatically. Failed analysis must not damage the
+  original project.
 - Closing, restarting, and switching methods must prevent late results from
   mutating a new session.
 - Project replacement uses the complete App runtime termination/reconstruction
@@ -499,3 +502,23 @@ and visual behavior.
 This scope is complete only when the full PRODUCT journey works through normal
 UI/import/API paths and all first-release gates pass. One animation or one
 correct collision does not satisfy this contract.
+
+## Automatic Persistence and Editing Consistency
+
+Valid document edits and Undo/Redo automatically persist to the local project.
+Ordinary editing has no Save action. Incomplete or invalid field text remains
+transient until a complete valid edit can be applied through its existing Feature;
+one completed editing gesture remains one Undo action. Imports still require
+preview and explicit Apply. Completed formal results automatically belong to the
+project; previews and incomplete analysis progress do not become saved evidence.
+
+One storage owner coalesces bursts before capture/encoding and serializes writes.
+Changes arriving during a write remain pending and are persisted afterward.
+Only acknowledged writes may report Saved. Failures and cross-tab revision
+conflicts preserve local changes and expose retry/recovery; no blind overwrites.
+Project switches flush outstanding work before retiring the current document.
+New/imported projects receive their own identity; reload restores the same project.
+Project names persist automatically. Copy and portable export remain explicit.
+The first implementation uses existing IndexedDB and source formats, with bounded
+capture/encode/write work per burst rather than per UI keystroke; it does not
+introduce the Asyra Design socket backend.

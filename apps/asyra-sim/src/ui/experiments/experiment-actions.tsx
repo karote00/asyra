@@ -4,34 +4,19 @@ import {
   useExperimentView
 } from './experiment-context'
 
-export function ExperimentSave() {
+export function ExperimentCreation() {
   const view = useExperimentView()
   const saving = useExperimentField('saving')
-
-  const dirty = useExperimentField('dirty')
-
   const canonical = useExperimentValue((state) => !!state.canonical)
-
+  if (canonical) return null
   return (
-    <>
-      <div
-        className="draft-actions flex items-center justify-between gap-[10px] py-3 px-0
-            border-t border-t-sim-divider border-b border-b-sim-divider
-            [&_span]:text-[10px] [&_span]:text-sim-muted"
-      >
-        <span>
-          {dirty ? 'Unsaved experiment draft' : 'Experiment unchanged'}
-        </span>
-
-        <button
-          className="primary bg-sim-accent text-[#fff] border-sim-accent [&:hover]:bg-sim-accent-hover"
-          disabled={!dirty || saving}
-          onClick={() => void view.getSnapshot().save()}
-        >
-          {canonical ? 'Save experiment' : 'Create experiment'}
-        </button>
-      </div>
-    </>
+    <button
+      className="primary bg-sim-accent text-[#fff] border-sim-accent [&:hover]:bg-sim-accent-hover"
+      disabled={saving}
+      onClick={() => void view.getSnapshot().save()}
+    >
+      Create experiment
+    </button>
   )
 }
 

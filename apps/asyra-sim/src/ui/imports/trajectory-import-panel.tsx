@@ -290,7 +290,7 @@ export function TrajectoryImportPanel({
             disabled={saving}
             onClick={() => accept(onAccept)}
           >
-            Apply and save
+            Apply
           </button>
         </div>
       )}

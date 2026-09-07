@@ -4,6 +4,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { createSyntheticExperimentDraft } from '../../../../samples/synthetic-experiment'
 import { createSyntheticExample } from '../../../../samples/synthetic-workcell'
+import * as importer from '../../../storage/trajectory-import'
 import type { SimRuntime } from '../../../init/bootstrap'
 import { TrajectoryImportPanel } from '../../imports/trajectory-import-panel'
 import { ExperimentPanel } from '../experiment-panel'
@@ -237,7 +238,7 @@ it('shows mapped canonical columns before preview and invalidates acceptance aft
 
   await act(() => button('Preview trajectory')?.click())
 
-  expect(button('Apply and save')).toBeDefined()
+  expect(button('Apply')).toBeDefined()
 
   const unit = host.querySelectorAll('select')[1]
 
@@ -247,7 +248,7 @@ it('shows mapped canonical columns before preview and invalidates acceptance aft
     unit.dispatchEvent(new Event('change', { bubbles: true }))
   })
 
-  expect(button('Apply and save')).toBeUndefined()
+  expect(button('Apply')).toBeUndefined()
 })
 
 it('initializes imported source text from the same canonical revision during save and replay', async () => {
@@ -292,14 +293,15 @@ it('initializes imported source text from the same canonical revision during sav
   expect(lastTime()).toBe('8')
 })
 
-it('applies the validated trajectory and latest draft settings through one save', async () => {
+it('applies the validated trajectory after a completed field edit without duplicate submission', async () => {
   let finishSave: () => void = () => undefined
-  const updateExperiment = vi.fn(
-    () =>
-      new Promise<void>((resolve) => {
-        finishSave = resolve
-      })
-  )
+  let count = 0
+  const updateExperiment = vi.fn(() => {
+    if (++count === 1) return Promise.resolve()
+    return new Promise<void>((resolve) => {
+      finishSave = resolve
+    })
+  })
   const savingRuntime = {
     ...runtime,
     features: { ...runtime.features, edit: { updateExperiment } }
@@ -337,6 +339,9 @@ it('applies the validated trajectory and latest draft settings through one save'
     )?.set?.call(field, '30')
     field.dispatchEvent(new Event('input', { bubbles: true }))
   })
+  await act(async () => {
+    field.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))
+  })
   const input = host.querySelector(
     'textarea[aria-label="Trajectory source data"]'
   ) as HTMLTextAreaElement
@@ -348,17 +353,17 @@ it('applies the validated trajectory and latest draft settings through one save'
     input.dispatchEvent(new Event('input', { bubbles: true }))
   })
   await act(() => button('Preview trajectory')?.click())
-  expect(updateExperiment).not.toHaveBeenCalled()
-  expect(button('Apply and save')).toBeDefined()
-  await act(() => button('Apply and save')?.click())
-  expect(button('Apply and save')?.disabled).toBe(true)
-  expect(button('Save experiment')?.disabled).toBe(true)
-  await act(() => button('Apply and save')?.click())
   expect(updateExperiment).toHaveBeenCalledOnce()
+  expect(button('Apply')).toBeDefined()
+  await act(() => button('Apply')?.click())
+  expect(button('Apply')?.disabled).toBe(true)
+  expect(button('Save experiment')).toBeUndefined()
+  await act(() => button('Apply')?.click())
+  expect(updateExperiment).toHaveBeenCalledTimes(2)
   await act(async () => finishSave())
-  expect(perform).toHaveBeenCalledOnce()
-  expect(updateExperiment).toHaveBeenCalledOnce()
-  const saved = updateExperiment.mock.calls[0] as unknown as [
+  expect(perform).toHaveBeenCalledTimes(2)
+  expect(updateExperiment).toHaveBeenCalledTimes(2)
+  const saved = updateExperiment.mock.calls[1] as unknown as [
     string,
     number,
     typeof draft
@@ -367,4 +372,224 @@ it('applies the validated trajectory and latest draft settings through one save'
   expect(saved[2].trajectory.keyframes.at(-1)?.time).toBe(9)
   expect(saved[2].interval).toEqual([0, 9])
   expect(saved[2].rule.minimumClearance).toBe(0.03)
+})
+
+it('commits a completed valid field edit without Save and leaves intermediate text transient', async () => {
+  const updateExperiment = vi.fn(async () => undefined)
+  const editingRuntime = {
+    ...runtime,
+    features: { ...runtime.features, edit: { updateExperiment } }
+  } as unknown as SimRuntime
+  await act(() =>
+    renderExperiment({
+      runtime: editingRuntime,
+      candidateId: 'candidate',
+      workcell: example.workcell,
+      revision: 1,
+      perform: async (action) => {
+        await action(() => undefined)
+      },
+      onPlayback: vi.fn(),
+      runs: [],
+      retainedIds: new Set<string>(),
+      onRun: vi.fn(),
+      onOpenRuns: vi.fn(),
+      onVisualPreview: vi.fn(),
+      isCurrent: () => true,
+      visualImportActive: true
+    })
+  )
+  const field = host.querySelector<HTMLInputElement>(
+    '[aria-label="Minimum clearance (mm)"]'
+  )
+  if (!field) throw new Error('Missing clearance field')
+  const input = async (text: string) =>
+    act(() => {
+      Object.getOwnPropertyDescriptor(
+        HTMLInputElement.prototype,
+        'value'
+      )?.set?.call(field, text)
+      field.dispatchEvent(new Event('input', { bubbles: true }))
+    })
+  await input('3')
+  await input('35')
+  expect(updateExperiment).not.toHaveBeenCalled()
+  await act(() =>
+    field.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))
+  )
+  expect(updateExperiment).toHaveBeenCalledOnce()
+  expect(updateExperiment.mock.calls[0]).toEqual([
+    'study',
+    1,
+    expect.objectContaining({
+      rule: expect.objectContaining({ minimumClearance: 0.035 })
+    })
+  ])
+  expect(button('Save experiment')).toBeUndefined()
+  await input('-1')
+  await act(() =>
+    field.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))
+  )
+  expect(updateExperiment).toHaveBeenCalledOnce()
+  await input('')
+  await act(() =>
+    field.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))
+  )
+  const budget = host.querySelector<HTMLInputElement>(
+    '[aria-label="Wall-time budget (ms)"]'
+  )
+  if (!budget) throw new Error('Missing budget')
+  await act(() => {
+    Object.getOwnPropertyDescriptor(
+      HTMLInputElement.prototype,
+      'value'
+    )?.set?.call(budget, '60000')
+    budget.dispatchEvent(new Event('input', { bubbles: true }))
+  })
+  await act(() =>
+    budget.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))
+  )
+  expect(updateExperiment).toHaveBeenCalledTimes(2)
+  expect(updateExperiment.mock.calls[1]).toEqual([
+    'study',
+    1,
+    expect.objectContaining({
+      rule: expect.objectContaining({ minimumClearance: 0.035 })
+    })
+  ])
+})
+
+it('serializes completed edits arriving during a Feature action against the next canonical revision', async () => {
+  let current = structuredClone(experiment)
+  let finish: () => void = () => undefined
+  let finishSecond: () => void = () => undefined
+  const updateExperiment = vi.fn(
+    async (_id: string, revision: number, next: typeof draft) => {
+      if (revision === 1)
+        await new Promise<void>((resolve) => {
+          finish = resolve
+        })
+      if (revision === 2)
+        await new Promise<void>((resolve) => {
+          finishSecond = resolve
+        })
+      current = {
+        ...current,
+        definition: {
+          ...next,
+          revision: revision + 1,
+          rule: { ...next.rule, revision: revision + 1 }
+        }
+      }
+      if (inputSource)
+        inputSource.publish({
+          ...inputSource.getSnapshot(),
+          revision: revision + 1
+        })
+    }
+  )
+  const editingRuntime = {
+    ...runtime,
+    getExperiments: () => [current],
+    features: { ...runtime.features, edit: { updateExperiment } }
+  } as unknown as SimRuntime
+  await act(() =>
+    renderExperiment({
+      runtime: editingRuntime,
+      candidateId: 'candidate',
+      workcell: example.workcell,
+      revision: 1,
+      perform: async (action) => {
+        await action(() => undefined)
+      },
+      onPlayback: vi.fn(),
+      runs: [],
+      retainedIds: new Set<string>(),
+      onRun: vi.fn(),
+      onOpenRuns: vi.fn(),
+      onVisualPreview: vi.fn(),
+      isCurrent: () => true,
+      visualImportActive: true
+    })
+  )
+  const field = host.querySelector<HTMLInputElement>(
+    '[aria-label="Minimum clearance (mm)"]'
+  )
+  if (!field) throw new Error('Missing clearance')
+  const edit = async (value: string) => {
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(
+        HTMLInputElement.prototype,
+        'value'
+      )?.set?.call(field, value)
+      field.dispatchEvent(new Event('input', { bubbles: true }))
+    })
+    await act(async () => {
+      field.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))
+    })
+  }
+  await edit('30')
+  await edit('40')
+  expect(updateExperiment).toHaveBeenCalledOnce()
+  await act(async () => finish())
+  expect(updateExperiment).toHaveBeenCalledTimes(2)
+  expect(
+    updateExperiment.mock.calls.map((call) => [
+      call[1],
+      call[2].rule.minimumClearance
+    ])
+  ).toEqual([
+    [1, 0.03],
+    [2, 0.04]
+  ])
+  expect(field.value).toBe('40')
+  await act(async () => finishSecond())
+  expect(field.value).toBe('40')
+})
+
+it('reuses an edited import source across a non-trajectory canonical revision without parsing again', async () => {
+  let current = structuredClone(experiment)
+  const inputs: ExperimentInputs = {
+    runtime: { ...runtime, getExperiments: () => [current] },
+    candidateId: 'candidate',
+    workcell: example.workcell,
+    revision: 1,
+    perform: vi.fn(),
+    onPlayback: vi.fn(),
+    runs: [],
+    retainedIds: new Set<string>(),
+    onRun: vi.fn(),
+    onOpenRuns: vi.fn(),
+    onVisualPreview: vi.fn(),
+    isCurrent: () => true,
+    visualImportActive: true
+  }
+  const parse = vi.spyOn(importer, 'prepareTrajectoryCsv')
+  try {
+    await act(() => renderExperiment(inputs))
+    const source = host.querySelector<HTMLTextAreaElement>(
+      '[aria-label="Trajectory source data"]'
+    )
+    if (!source) throw new Error('Missing source')
+    const text = source.value.replace('\n8,', '\n9,')
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(
+        HTMLTextAreaElement.prototype,
+        'value'
+      )?.set?.call(source, text)
+      source.dispatchEvent(new Event('input', { bubbles: true }))
+    })
+    parse.mockClear()
+    current = structuredClone(current)
+    current.definition.revision++
+    current.definition.rule.minimumClearance = 0.035
+    await act(() => renderExperiment({ ...inputs, revision: 2 }))
+    expect(host.querySelector('[aria-label="Trajectory source data"]')).toBe(
+      source
+    )
+    expect(source.value).toBe(text)
+    expect(parse).not.toHaveBeenCalled()
+  } finally {
+    parse.mockRestore()
+  }
 })

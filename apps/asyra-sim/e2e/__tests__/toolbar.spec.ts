@@ -13,7 +13,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
       if (width > 1100) await expect(modelToggle).toBeHidden()
       else await expect(modelToggle).toBeVisible()
       const buttons = page.locator('.topbar button, .commandbar button')
-      await expect(buttons).toHaveCount(9)
+      await expect(buttons).toHaveCount(8)
       for (const button of await buttons.all()) {
         await expect(button).toHaveAttribute('aria-label', /\S/)
         await expect(button).toHaveAttribute('title', /\S/)
@@ -82,15 +82,15 @@ test('icon actions preserve accessible focus, inspector selection and local proj
   await expect(dialog).toBeVisible()
   await expect(
     dialog.getByRole('button', { name: 'Save project', exact: true })
-  ).toBeVisible()
+  ).toHaveCount(0)
   await expect(
-    dialog.getByRole('button', { name: 'Save copy', exact: true })
+    dialog.getByRole('button', { name: 'Copy project', exact: true })
   ).toBeVisible()
   await page.getByRole('button', { name: 'Close projects' }).click()
   await expect(projects).toHaveAttribute('aria-expanded', 'false')
-  await page.getByRole('button', { name: 'Save', exact: true }).click()
-  await expect(dialog).toBeVisible()
-  await page.getByRole('button', { name: 'Close projects' }).click()
+  await expect(
+    page.getByRole('button', { name: 'Save', exact: true })
+  ).toHaveCount(0)
 
   const experiments = page.getByRole('button', {
     name: 'Experiments',

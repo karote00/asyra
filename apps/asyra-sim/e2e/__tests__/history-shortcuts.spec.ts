@@ -74,7 +74,7 @@ test('project replacement binds shortcuts to the successor exactly once', async 
   await page
     .getByLabel('Project name', { exact: true })
     .fill('Shortcut lifecycle')
-  await page.getByRole('button', { name: 'Save project', exact: true }).click()
+  await page.getByLabel('Project name', { exact: true }).press('Enter')
   await expect(page.getByTestId('persistence-status')).toHaveText(
     'Saved locally - Shortcut lifecycle'
   )

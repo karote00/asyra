@@ -66,30 +66,30 @@ termination. Any known missed collision blocks the affected method's release.
 These IDs are stable names for formal tests, not an additional assertion
 registry. Owner tests belong in `__tests__/`; UI cases belong in App `e2e/`.
 
-| Case                                 | Given / when                                                            | Required result                                                                       |
-| ------------------------------------ | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| SIM-01 Basic clearance               | Known sphere/box/capsule geometry, queried statically                   | All supported pairs meet independent oracles and method error bounds                  |
-| SIM-02 High-speed crossing           | An object passes through a thin plate between keyframes                 | A finding or explicit unresolved interval, never complete clear                       |
-| SIM-03 Rotational sweep              | An endpoint follows a joint arc through an obstacle                     | Analyze the actual joint path, not a straight line between endpoints                  |
-| SIM-04 Self-collision and exclusions | Different rigid links intersect; another pair is explicitly excluded    | Check nonexcluded pairs and preserve exclusion reasons in the report                  |
-| SIM-05 Units and hierarchy           | Convert units, move a parent, reopen the project                        | Equivalent pose/geometry conclusions without accumulating drift                       |
-| SIM-06 Empty scope                   | No pairs, no trajectory, or background only                             | No-valid-scope or static-mode feedback, not a fabricated motion pass                  |
-| SIM-07 Invalid import                | NaN, duplicate times, missing units/joints, wrong version               | Structured errors, no partial state, no silently skipped rows                         |
+| Case                                 | Given / when                                                                                                               | Required result                                                                                                       |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| SIM-01 Basic clearance               | Known sphere/box/capsule geometry, queried statically                                                                      | All supported pairs meet independent oracles and method error bounds                                                  |
+| SIM-02 High-speed crossing           | An object passes through a thin plate between keyframes                                                                    | A finding or explicit unresolved interval, never complete clear                                                       |
+| SIM-03 Rotational sweep              | An endpoint follows a joint arc through an obstacle                                                                        | Analyze the actual joint path, not a straight line between endpoints                                                  |
+| SIM-04 Self-collision and exclusions | Different rigid links intersect; another pair is explicitly excluded                                                       | Check nonexcluded pairs and preserve exclusion reasons in the report                                                  |
+| SIM-05 Units and hierarchy           | Convert units, move a parent, reopen the project                                                                           | Equivalent pose/geometry conclusions without accumulating drift                                                       |
+| SIM-06 Empty scope                   | No pairs, no trajectory, or background only                                                                                | No-valid-scope or static-mode feedback, not a fabricated motion pass                                                  |
+| SIM-07 Invalid import                | NaN, duplicate times, missing units/joints, wrong version                                                                  | Structured errors, no partial state, no silently skipped rows                                                         |
 | SIM-08 Original-part geometry        | A supplied mesh has omitted table legs, holes or small features in a surrogate; visibility changes or a rerun is attempted | Never execute the surrogate as the original part; block unsupported input, preserve old evidence for read-only review |
-| SIM-09 Unresolved/error band         | Clearance is too close to a threshold or an interval cannot be resolved | Preserve uncertainty/unresolved state; do not label it safe                           |
-| SIM-10 Execution failure             | Cancellation, timeout, worker crash, invalid result                     | Correct terminal state, partial scope, cleanup, and no false success                  |
-| SIM-11 Uncooperative method          | An adapter ignores abort                                                | Terminate the owned worker at the deadline; UI remains usable; no late mutation       |
-| SIM-12 Editing during a run          | Geometry changes to B while run A executes                              | A retains its original snapshot and is distinguished from B; no mixed input           |
-| SIM-13 Stale results                 | Change trajectory/threshold/method, or only the camera                  | Input changes affect freshness; camera changes do not                                 |
-| SIM-14 Candidate comparison          | A/B/C use different scopes, methods, or exclusions                      | Differences are visible; incompatible results are not silently ranked                 |
-| SIM-15 Persistence and recovery      | Save failure, quota exhaustion, missing asset, corrupt bundle           | No false saved state or damage to the original project; actionable recovery/rejection |
-| SIM-16 Method replacement            | Replace a method with an independent example module and rerun           | No Core changes, same lifecycle, old results retain their version                     |
-| SIM-17 Missing version               | Import a project referencing an unavailable method                      | Historical data remains readable; rerun is blocked; no automatic upgrade              |
-| SIM-18 Load repair                   | Joint/dimension fields trigger Framework fallback                       | Show the repair and block analysis under the original assumptions                     |
-| SIM-19 Output parity                 | Use one run in UI, JSON, CSV, HTML, and replay                          | Same source result, units, unknowns, scope, and versions                              |
-| SIM-20 Offline/private data          | Launch the distribution without a network, import private data, rerun   | Core journey succeeds with no default exfiltration or required remote assets          |
-| SIM-21 Injection and large files     | Malicious CSV/HTML strings, remote assets, oversized/corrupt input      | No content execution or unexpected traffic; size/resource limits apply                |
-| SIM-22 User journey                  | A new user follows the docs through three candidates and reopening      | No code changes or maintainer data repair; user can explain limitations               |
+| SIM-09 Unresolved/error band         | Clearance is too close to a threshold or an interval cannot be resolved                                                    | Preserve uncertainty/unresolved state; do not label it safe                                                           |
+| SIM-10 Execution failure             | Cancellation, timeout, worker crash, invalid result                                                                        | Correct terminal state, partial scope, cleanup, and no false success                                                  |
+| SIM-11 Uncooperative method          | An adapter ignores abort                                                                                                   | Terminate the owned worker at the deadline; UI remains usable; no late mutation                                       |
+| SIM-12 Editing during a run          | Geometry changes to B while run A executes                                                                                 | A retains its original snapshot and is distinguished from B; no mixed input                                           |
+| SIM-13 Stale results                 | Change trajectory/threshold/method, or only the camera                                                                     | Input changes affect freshness; camera changes do not                                                                 |
+| SIM-14 Candidate comparison          | A/B/C use different scopes, methods, or exclusions                                                                         | Differences are visible; incompatible results are not silently ranked                                                 |
+| SIM-15 Persistence and recovery      | Save failure, quota exhaustion, missing asset, corrupt bundle                                                              | No false saved state or damage to the original project; actionable recovery/rejection                                 |
+| SIM-16 Method replacement            | Replace a method with an independent example module and rerun                                                              | No Core changes, same lifecycle, old results retain their version                                                     |
+| SIM-17 Missing version               | Import a project referencing an unavailable method                                                                         | Historical data remains readable; rerun is blocked; no automatic upgrade                                              |
+| SIM-18 Load repair                   | Joint/dimension fields trigger Framework fallback                                                                          | Show the repair and block analysis under the original assumptions                                                     |
+| SIM-19 Output parity                 | Use one run in UI, JSON, CSV, HTML, and replay                                                                             | Same source result, units, unknowns, scope, and versions                                                              |
+| SIM-20 Offline/private data          | Launch the distribution without a network, import private data, rerun                                                      | Core journey succeeds with no default exfiltration or required remote assets                                          |
+| SIM-21 Injection and large files     | Malicious CSV/HTML strings, remote assets, oversized/corrupt input                                                         | No content execution or unexpected traffic; size/resource limits apply                                                |
+| SIM-22 User journey                  | A new user follows the docs through three candidates and reopening                                                         | No code changes or maintainer data repair; user can explain limitations                                               |
 
 ## 4. Test Layers and Order
 
@@ -220,7 +220,6 @@ the local SwiftShader timing is not reference-hardware evidence. Independent
 numerical review, larger workload qualification and a rebuilt packaged release
 are not implied by these local passes.
 
-
 ### M2 import-contract acceptance
 
 Local acceptance on 2026-09-07 uses the isolated worktree
@@ -269,10 +268,27 @@ Local artifacts are under `apps/asyra-sim/.artifacts/`. Import review contains
 directories, plus source/accepted-definition and viewport/theme attachments.
 Agent screenshot inspection verified source/canonical labels and values,
 scrollable rows and reachable acceptance controls; automated cases separately
-verify unchanged pre-acceptance history, one Save action, Undo/Redo, stored units
+verify unchanged pre-acceptance history, one Apply action, Undo/Redo, stored units
 and reopening. App/test logs are retained in the worktree's root `.artifacts/`.
 The existing large-bundle build warning remains a later delivery consideration;
 no dependency or runtime upgrade was introduced.
 
 This evidence closes M2 only. It does not certify M3 numerical-method guarantees,
 M4 acceptance, M5 packaging/resource profiles, independent pilots or R0 release.
+
+## Automatic Persistence Regression Gates
+
+Completed object, experiment and observation field gestures must produce one
+intended Feature edit; incomplete numerical text remains transient. Import Apply
+reuses the current conversion receipt, and unrelated experiment revisions must
+not reparse or replace edited source text. Exercise queued field writes and
+canonical Undo/Redo acknowledgements independently.
+
+Project-session tests count captures/writes for bursts and changes during pending
+writes, preserve revision-conflict/quota failures, flush before replacement, and
+cover copy/rename and disposal races. Browser gates restore the same URL project
+identity after edits and reload, retain terminal results automatically, preserve
+observation/source bytes through portable reopening, and reject a missing reload
+target without acknowledging the startup example under its identity. There is no
+ordinary Save or Retain button; creation, import Apply, copy/export and failure
+retry remain explicit actions.

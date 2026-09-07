@@ -307,7 +307,9 @@ test('keeps a historical-only visual source available for replay after portable 
   await expect(page.getByTestId('analysis-result')).toBeVisible({
     timeout: 20000
   })
-  await page.getByRole('button', { name: 'Retain result', exact: true }).click()
+  await expect(page.locator('.retention-actions')).toContainText(
+    'Retained in this project'
+  )
   await page
     .getByRole('treeitem', { name: '◇ fixture post', exact: true })
     .click()

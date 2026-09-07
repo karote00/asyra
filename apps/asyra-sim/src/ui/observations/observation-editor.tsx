@@ -23,6 +23,7 @@ type Props = Pick<
   | 'reset'
   | 'begin'
   | 'save'
+  | 'error'
 >
 
 export function ObservationEditor({
@@ -41,7 +42,8 @@ export function ObservationEditor({
   draft,
   reset,
   begin,
-  save
+  save,
+  error
 }: Props) {
   return (
     <>
@@ -56,6 +58,14 @@ export function ObservationEditor({
             [&_textarea]:border-sim-border [&_textarea]:rounded-[4px]
             [&_textarea]:resize-y"
           disabled={saving}
+          onBlur={(event) => {
+            if (
+              (event.target instanceof HTMLInputElement &&
+                event.target.type !== 'file') ||
+              event.target instanceof HTMLTextAreaElement
+            )
+              if (!files.prepared) void save()
+          }}
         >
           <legend>
             {editing ? 'Edit field observation' : 'New field observation'}
@@ -98,13 +108,13 @@ export function ObservationEditor({
               <AttachmentDetails reference={reference} />
 
               <button
-                onClick={() =>
-                  setExisting(
-                    existing.filter(
-                      (item) => item.sourceId !== reference.sourceId
-                    )
+                onClick={() => {
+                  const attachments = existing.filter(
+                    (item) => item.sourceId !== reference.sourceId
                   )
-                }
+                  setExisting(attachments)
+                  if (!files.prepared) void save({ ...draft, attachments })
+                }}
               >
                 Remove attachment {reference.filename}
               </button>
@@ -195,20 +205,23 @@ export function ObservationEditor({
           )}
 
           <div className="run-detail-actions flex flex-wrap gap-2 my-3 mx-0 [&_button]:text-[11px]">
-            <button
-              className="primary bg-sim-accent text-[#fff] border-sim-accent [&:hover]:bg-sim-accent-hover"
-              disabled={
-                !validObservationDraft(draft) ||
-                stale ||
-                files.busy ||
-                !!files.error
-              }
-              onClick={() => void save()}
-            >
-              Save observation
-            </button>
+            {(files.prepared || error) && (
+              <button
+                disabled={
+                  !validObservationDraft(draft) ||
+                  stale ||
+                  files.busy ||
+                  !!files.error
+                }
+                onClick={() => void save()}
+              >
+                {files.prepared ? 'Apply attachments' : 'Retry change'}
+              </button>
+            )}
 
-            <button onClick={reset}>Discard draft</button>
+            <button onClick={reset}>
+              {editing ? 'Close observation' : 'Discard draft'}
+            </button>
           </div>
         </fieldset>
       )}

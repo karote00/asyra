@@ -5,10 +5,10 @@ robot workcell: geometric interference and clearance, not equipment control or
 industrial safety certification.
 
 **Development checkpoint, not R0.** The current workbench can edit a synthetic
-six-axis model with complete original parts, navigate in 3D, Undo/Redo, and explicitly
-save and reopen local projects. The experiment panel accepts explicitly mapped
+six-axis model with complete original parts, navigate in 3D, Undo/Redo, and automatically
+persist and reopen local projects. The experiment panel accepts explicitly mapped
 trajectories, runs preflight and isolated continuous-time analysis, and replays
-frozen evidence. Runs can be explicitly retained, compared, exported, and reopened
+frozen evidence. Completed runs are retained automatically, and can be compared, exported, and reopened
 with portable projects. Independent A/B/C workcells can be duplicated and compared.
 Restricted GLB parts can be previewed, attached, edited, and preserved with
 historical runs. Run-linked field observations and opaque attachments preserve
@@ -87,21 +87,21 @@ for the owner map and render-boundary contracts.
 
 ## Local projects
 
-Use **Projects** to name and save a project, save a separate copy, or explicitly
-open a stored project. Browser-local IndexedDB is not a backup; clearing site
-data removes saves. Save acknowledgement is separate from editing, and a failed
-save never claims persistence. Opening starts a fresh App/Core lifetime with
-empty Undo/Redo and reset selection/camera; it does not clear history inside
-ordinary `Core.load()`. Invalid targets leave the current document intact.
-Failure after retirement stops editing and offers a detached native JSON
-recovery download. Load-review diagnostics remain visible and retained.
+Valid completed edits and Undo/Redo persist automatically in browser-local IndexedDB.
+Use **Projects** to rename the current project, **Copy project** to create a separate
+project before making independent edits, or open another project. The URL preserves
+the current project identity across reload. Clearing site data removes projects;
+use **Export project** for a portable backup. Only acknowledged writes report Saved.
+Failures remain visible and retryable. Pending changes are flushed before replacement.
+Opening starts a fresh App/Core lifetime with empty Undo/Redo and reset selection/camera.
+Invalid targets preserve the current document; failure after runtime retirement
+provides a detached recovery download. Load-review diagnostics remain visible.
 
-Use **Export project** for a portable JSON backup. **Choose project file** validates
-and previews a file before explicit replacement acceptance. Imported projects start
-unsaved under a new storage identity; importing never overwrites a local saved
-project automatically. Portable projects include explicitly retained runs, not
-temporary results or private method binaries. Invalid historical evidence is
-rejected before the current runtime retires.
+**Choose project file** validates and previews a portable file before replacement
+acceptance. Accepted imports persist automatically under a new identity. They do
+not overwrite another project. Portable projects include retained runs and original
+sources, but no private method binaries. Invalid historical evidence is rejected
+before the current runtime retires.
 
 ## Experiments
 
@@ -115,13 +115,14 @@ units; strict JSON keeps its declared units. Editing the current text retains
 existing units without an additional notice or confirmation.
 Review the source fields, units and first/middle/last values against their
 canonical conversions before acceptance. The scrollable review shares the
-validated result with Apply and save, which saves the trajectory and current
-experiment settings together as one undoable action. Source,
+validated result with **Apply**, which commits the trajectory through one Feature
+transaction and automatically persists it. Source,
 mapping, unit or workcell changes invalidate it; Discard preview makes no edit.
-Save experiment remains available for other draft edits. CSV accepts up to 8 MiB and JSON
+Other valid study fields apply when editing completes (blur or Enter), with one Undo
+action per edit. Incomplete numerical text stays in the field. CSV accepts up to 8 MiB and JSON
 up to 1 MiB; both require 1–2,000 keyframes. CSV parsing stops at 256 columns or
 2,000 data rows. Selecting another file invalidates the previous preview
-immediately, including when the new file cannot be read. Save the draft before preflight
+immediately, including when the new file cannot be read. Finish valid edits before preflight
 or formal analysis.
 
 Expand **GLB original part**, choose a self-contained static GLB, and verify its
@@ -176,11 +177,11 @@ deadline; cancellation permits at most 250 ms of cooperative grace before owned
 Worker termination. Contradictory terminal evidence fails without replacing
 previously validated findings.
 Replay consumes the run's frozen model and trajectory, including after edits.
-New results are temporary until **Retain result** is chosen. Retaining adds one
-Undo action; the immutable evidence remains available for Redo during the document
-lifetime. Save the project separately for durable local storage. Unretained results
-are excluded from project saves/exports and are lost on document replacement or
-page close; the UI warns before replacement and navigation.
+Terminal results are retained automatically through one Undo action and persisted
+with the project. Partial or cancelled records keep their explicit status. If
+retention fails, the same immutable result remains available for **Retry retention**;
+unretained evidence is excluded from portable exports and replacement warns before
+losing it. Undoing retention does not automatically reapply it.
 
 Admission enforces 16 colliders per body, 256 per workcell, 4,096 expanded pairs,
 and 500,000 pair/segment combinations in the requested interval. Larger scopes
@@ -202,8 +203,8 @@ pairs only; it is not a replacement for the continuous method. **Method capabili
 and trust** shows origin, units, bounds, limits, declared validation and services.
 Registration is not numerical validation or a safety endorsement.
 
-Select a method, review its parameter defaults and edit the draft, then **Save
-experiment**. Switching methods resets method-specific parameters, not historical
+Select a method and review its parameter defaults. Completed valid parameter
+edits apply automatically. Switching methods resets method-specific parameters, not historical
 results. The sphere example's `additionalError` widens its distance bounds; it
 does not estimate measurement error or improve accuracy. Numerical uncertainty
 and unsupported inputs remain visible. A new empty-workcell draft may still have
@@ -222,9 +223,9 @@ No hot swapping, plugin marketplace or untrusted-code sandbox is provided.
 Open **User acceptance rules** in Experiments to add minimum-clearance or
 penetration-evidence conditions and combine them with nested AND/OR groups.
 Thresholds are shown in millimeters; stored inputs use meters. Groups allow
-two to eight children, up to four levels and 31 total nodes. Save the draft
-through **Create experiment** or **Save experiment**; the complete edit is one
-Undo action. **Use baseline verdict only** removes the optional expression.
+two to eight children, up to four levels and 31 total nodes. Use **Create
+experiment** for a new study; completed edits to existing studies apply
+automatically, with one Undo action per edit. **Use baseline verdict only** removes the optional expression.
 
 The ordinary minimum-clearance field still controls the method's baseline
 finding/refinement threshold. Extra conditions do not silently retune the solver.
@@ -317,10 +318,12 @@ available in the expanded evidence.
 
 ## Field observations
 
-In **Runs & compare**, retain a result and scroll to **Field observations**.
+In **Runs & compare**, select a retained result and scroll to **Field observations**.
 Choose **Add field observation**, describe what was actually measured, include
 units and context, and optionally select supporting files. Review the filenames,
-declared types, byte lengths and SHA-256 identities before **Save observation**.
+declared types, byte lengths and SHA-256 identities before **Apply attachments**.
+Valid title/text edits apply when editing finishes; the same note remains open
+for further edits.
 The note is a user report, not a validation certificate or automatic calibration.
 It never changes the experiment's original findings, uncertainty or verdict.
 
@@ -336,8 +339,9 @@ reading. Identical contents cannot appear twice in one note.
 **Edit observation** keeps its identity and advances its revision for material
 changes. Stale drafts cannot overwrite a changed note. **Remove observation**
 requires confirmation. These metadata changes use the ordinary Undo/Redo owner;
-accepted source bytes remain available for Undo within the runtime limit. Save
-the project separately: an accepted note is not a durable save or a backup.
+accepted source bytes remain available for Undo within the runtime limit. The
+project session persists changes automatically and reports acknowledgement
+separately. Browser storage is not a backup.
 
 Native projects carry only currently referenced observation sources. Every
 source is integrity-checked before an imported project can replace the current

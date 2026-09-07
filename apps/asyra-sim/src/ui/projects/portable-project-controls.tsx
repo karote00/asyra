@@ -25,9 +25,8 @@ export function PortableProjectControls({
       <h3>Portable project files</h3>
 
       <p className="hint text-[10px] leading-[1.6] text-sim-muted font-normal">
-        Back up models, experiments and explicitly retained results. Private
-        method code is not included. Import validates before replacing the
-        current document.
+        Back up models, experiments and retained results. Private method code is
+        not included. Import validates before replacing the current document.
       </p>
 
       {unsavedRunCount > 0 && (

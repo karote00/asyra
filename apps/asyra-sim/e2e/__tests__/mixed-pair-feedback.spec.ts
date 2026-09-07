@@ -102,9 +102,7 @@ test('full-workcell manual preview changes clearance to collision at a penetrati
 
   await page.getByRole('button', { name: 'Return to editing pose' }).click()
   await page.getByLabel('Minimum clearance (mm)').fill('200')
-  await page
-    .getByRole('button', { name: 'Save experiment', exact: true })
-    .click()
+  await page.keyboard.press('Tab')
   await slider.fill('3.84')
   await expect(feedback).toContainText('Checked 3.8400 s')
   await feedback

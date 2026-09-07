@@ -9,7 +9,7 @@ import {
   ExperimentOriginalImport
 } from './experiment-imports'
 import {
-  ExperimentSave,
+  ExperimentCreation,
   ExperimentPreflightAction,
   ExperimentRunAction
 } from './experiment-actions'
@@ -58,13 +58,63 @@ function ExperimentLayout() {
 
         <ExperimentPlayback />
 
-        <ExperimentFields source={view.fields} />
+        <div
+          className="contents"
+          onBlur={(event) => {
+            const target = event.target
+            if (
+              (target instanceof HTMLInputElement ||
+                target instanceof HTMLTextAreaElement) &&
+              (!target.checkValidity() ||
+                (target instanceof HTMLInputElement &&
+                  target.type === 'number' &&
+                  target.value.trim() === ''))
+            )
+              return
+            queueMicrotask(() => {
+              if (view.getSnapshot().canonical && view.getSnapshot().dirty)
+                void view.getSnapshot().save()
+            })
+          }}
+          onKeyDown={(event) => {
+            if (
+              event.key === 'Enter' &&
+              event.target instanceof HTMLInputElement
+            ) {
+              event.preventDefault()
+              event.target.blur()
+            }
+          }}
+          onChange={(event) => {
+            if (
+              event.target instanceof HTMLSelectElement ||
+              (event.target instanceof HTMLInputElement &&
+                event.target.type === 'checkbox')
+            )
+              queueMicrotask(() => {
+                if (view.getSnapshot().canonical && view.getSnapshot().dirty)
+                  void view.getSnapshot().save()
+              })
+          }}
+          onClick={(event) => {
+            if (
+              event.target instanceof Element &&
+              event.target.closest('button')
+            )
+              queueMicrotask(() => {
+                if (view.getSnapshot().canonical && view.getSnapshot().dirty)
+                  void view.getSnapshot().save()
+              })
+          }}
+        >
+          <ExperimentFields source={view.fields} />
+        </div>
 
         <ExperimentTrajectory />
 
         <ExperimentOriginalImport />
 
-        <ExperimentSave />
+        <ExperimentCreation />
 
         <ExperimentPreflightAction />
 

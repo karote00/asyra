@@ -122,8 +122,7 @@ export function useWorkbenchActions({
 
       await runtime.features.storage.retain(run)
 
-      if (isCurrent(runtime))
-        setStatus('Result retained - save the project for durable storage')
+      if (isCurrent(runtime)) setStatus('Result retained in project')
     },
     [runtime, isCurrent, setStatus]
   )

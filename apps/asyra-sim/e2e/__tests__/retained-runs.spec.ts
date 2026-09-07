@@ -24,11 +24,7 @@ test('retains runs with Undo, compares evidence, exports reports, and reopens po
   await page.getByRole('button', { name: 'Experiments', exact: true }).click()
   for (const threshold of ['20', '35']) {
     await page.getByLabel('Minimum clearance (mm)').fill(threshold)
-    const save = page.getByRole('button', {
-      name: 'Save experiment',
-      exact: true
-    })
-    if (await save.isEnabled()) await save.click()
+    await page.keyboard.press('Tab')
     await page
       .getByRole('button', { name: 'Run formal analysis', exact: true })
       .click()
@@ -36,22 +32,22 @@ test('retains runs with Undo, compares evidence, exports reports, and reopens po
       page.getByRole('button', { name: 'Cancel analysis', exact: true })
     ).toHaveCount(0, { timeout: 20000 })
     await expect(page.getByTestId('analysis-result')).toBeVisible()
-    const before = await page.getByTestId('history-depth').innerText()
-    await page
-      .getByRole('button', { name: 'Retain result', exact: true })
-      .click()
-    await expect(
-      page.getByRole('button', { name: 'Retain result', exact: true })
-    ).toBeDisabled()
+    const retainedDepth = Number(
+      (await page.getByTestId('history-depth').innerText()).match(/\d+/)?.[0]
+    )
+    const before = `Undo steps: ${retainedDepth - 1}`
+    await expect(page.locator('.retention-actions')).toContainText(
+      'Retained in this project'
+    )
     await page.getByRole('button', { name: 'Undo', exact: true }).click()
     await expect(page.getByTestId('history-depth')).toHaveText(before)
     await expect(
-      page.getByRole('button', { name: 'Retain result', exact: true })
+      page.getByRole('button', { name: 'Retry retention', exact: true })
     ).toBeEnabled()
     await page.getByRole('button', { name: 'Redo', exact: true }).click()
     await expect(
-      page.getByRole('button', { name: 'Retain result', exact: true })
-    ).toBeDisabled()
+      page.getByRole('button', { name: 'Retry retention', exact: true })
+    ).toHaveCount(0)
   }
   await page
     .getByRole('button', { name: 'Runs & compare', exact: true })
@@ -80,7 +76,7 @@ test('retains runs with Undo, compares evidence, exports reports, and reopens po
   await page
     .getByLabel('Project name', { exact: true })
     .fill('Traceable experiment')
-  await page.getByRole('button', { name: 'Save project', exact: true }).click()
+  await page.getByLabel('Project name', { exact: true }).press('Enter')
   await expect(page.getByTestId('persistence-status')).toHaveText(
     'Saved locally - Traceable experiment'
   )
@@ -127,8 +123,8 @@ test('retains runs with Undo, compares evidence, exports reports, and reopens po
     page.getByRole('dialog', { name: 'Local projects' })
   ).toHaveCount(0)
   await expect(page.getByTestId('history-depth')).toHaveText('Undo steps: 0')
-  await expect(page.getByTestId('persistence-status')).toHaveText(
-    'Unsaved changes'
+  await expect(page.getByTestId('persistence-status')).toContainText(
+    'Saved locally'
   )
   await page
     .getByRole('button', { name: 'Runs & compare', exact: true })
@@ -137,8 +133,8 @@ test('retains runs with Undo, compares evidence, exports reports, and reopens po
   const reopened = JSON.parse(await download(page, 'Export JSON'))
   expect(reopened.run).toEqual(report.run)
   await expect(
-    library.getByRole('button', { name: 'Retain selected result' })
-  ).toBeDisabled()
+    library.getByRole('button', { name: 'Retry retention' })
+  ).toHaveCount(0)
   await library.locator('.evidence-pair > summary').first().click()
   await library
     .getByRole('button', { name: 'Replay pair', exact: true })

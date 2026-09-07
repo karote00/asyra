@@ -85,12 +85,29 @@ export function useProjectRuntime(
 
     window.addEventListener('beforeunload', beforeUnload)
 
+    const projectId = new URL(window.location.href).searchParams.get(
+      'projectId'
+    )
+    const unsubscribePersistence = session.subscribe(() => {
+      const project = session.getState().project
+      if (!project) return
+      const url = new URL(window.location.href)
+      if (url.searchParams.get('projectId') === project.id) return
+      url.searchParams.set('projectId', project.id)
+      window.history.replaceState(window.history.state, '', url)
+    })
+
     setResources({ controller, session })
     // The controller publishes startup failures as ordinary UI state.
-    void controller.start().catch(() => undefined)
+    void controller
+      .start()
+      .then(() => session.start(projectId ?? undefined))
+      .catch(() => undefined)
 
     return () => {
       window.removeEventListener('beforeunload', beforeUnload)
+
+      unsubscribePersistence()
 
       unsubscribe()
 

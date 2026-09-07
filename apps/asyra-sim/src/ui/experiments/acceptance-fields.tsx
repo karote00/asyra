@@ -1,3 +1,4 @@
+import { CommittedInput } from '../shared/fields'
 import {
   ACCEPTANCE_LIMITS,
   validateAcceptanceExpression,
@@ -88,7 +89,7 @@ export function AcceptanceFields({
           className="inline-error text-sim-error-text bg-sim-error p-[11px] rounded-[5px]
             text-[11px] leading-[1.6] wrap-anywhere"
         >
-          {error}. Save and preflight will reject this draft.
+          {error}. This draft cannot be applied or used for preflight.
         </p>
       )}
     </details>
@@ -184,20 +185,18 @@ function AcceptanceNode({
 
           <label>
             Threshold (mm)
-            <input
+            <CommittedInput
+              validateOnCommit
               aria-label={`Condition ${path} threshold (mm)`}
               type="number"
               min="0"
               max="20000"
               step="any"
               value={Number.isFinite(value.value) ? value.value * 1000 : ''}
-              onChange={(event) =>
+              onCommit={(text) =>
                 onChange({
                   ...value,
-                  value:
-                    event.target.value === ''
-                      ? NaN
-                      : Number(event.target.value) / 1000
+                  value: text === '' ? NaN : Number(text) / 1000
                 })
               }
             />

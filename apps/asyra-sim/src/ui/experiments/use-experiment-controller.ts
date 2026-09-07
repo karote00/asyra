@@ -75,7 +75,10 @@ export function useExperimentController({
 
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
-  const saveInFlight = useRef(false)
+  const pendingWrites = useRef(0)
+  const writeQueue = useRef(Promise.resolve())
+  const expectedCanonical = useRef('')
+  const requestedWrite = useRef('')
 
   const live = useRef(true)
 
@@ -102,7 +105,9 @@ export function useExperimentController({
   }, [])
 
   useEffect(() => {
-    if (canonical) {
+    const acknowledgedWrite = canonicalKey === expectedCanonical.current
+    expectedCanonical.current = ''
+    if (canonical && !acknowledgedWrite) {
       setDraft(definitionToDraft(canonical.definition))
 
       setExclusions(formatExclusions(canonical.definition.scope.excludedPairs))
@@ -153,20 +158,34 @@ export function useExperimentController({
   }
 
   const save = async (input: ExperimentDraft = draft) => {
-    if (saveInFlight.current) return
-    saveInFlight.current = true
-    setSaving(true)
+    let next: ExperimentDraft
     try {
-      const next = {
+      next = {
         ...input,
         scope: { ...input.scope, excludedPairs: parseExclusions(exclusions) }
       }
-
+    } catch (reason) {
+      fail(reason)
+      return
+    }
+    setDraft(next)
+    const key = JSON.stringify(next)
+    if (pendingWrites.current && requestedWrite.current === key)
+      return writeQueue.current
+    requestedWrite.current = key
+    pendingWrites.current++
+    setSaving(true)
+    const write = async () => {
+      if (!live.current) return
       await perform(async (assertCurrent) => {
-        if (canonical)
+        const current = runtime
+          .getExperiments(candidateId)
+          .find((item) => item.id === experimentId)
+        expectedCanonical.current = key
+        if (current)
           await runtime.features.edit.updateExperiment(
-            canonical.id,
-            canonical.definition.revision,
+            current.id,
+            current.definition.revision,
             next
           )
         else {
@@ -175,21 +194,22 @@ export function useExperimentController({
             name,
             next
           )
-
           assertCurrent()
-
           if (live.current) setExperimentId(id)
         }
-
         assertCurrent()
-      }, 'Experiment saved - one Undo action')
-
+      }, 'Experiment updated - one Undo action')
+    }
+    const pending = writeQueue.current.then(write)
+    writeQueue.current = pending.catch(() => undefined)
+    try {
+      await pending
       if (live.current) setError('')
     } catch (reason) {
       fail(reason)
     } finally {
-      saveInFlight.current = false
-      if (live.current) setSaving(false)
+      pendingWrites.current--
+      if (live.current) setSaving(pendingWrites.current > 0)
     }
   }
 
@@ -209,7 +229,7 @@ export function useExperimentController({
 
   const inspect = () => {
     if (!canonical || dirty)
-      throw new Error('Save the experiment draft before preflight.')
+      throw new Error('Complete valid experiment edits before preflight.')
 
     const report = runtime.preflightExperiment(canonical.id)
 
@@ -291,16 +311,22 @@ export function useExperimentController({
         signal: controller.signal
       })
 
-      if (live.current)
-        onRun({
-          version: 1,
-          name: runName,
-          retainedAt: new Date().toISOString(),
-          environment,
-          snapshot,
-          result,
-          ...(lineage ? { lineage } : {})
-        })
+      if (!live.current) return
+      const record: RunRecord = {
+        version: 1,
+        name: runName,
+        retainedAt: new Date().toISOString(),
+        environment,
+        snapshot,
+        result,
+        ...(lineage ? { lineage } : {})
+      }
+      try {
+        await runtime.features.storage.retain(record)
+      } catch (reason) {
+        fail(reason)
+      }
+      if (live.current) onRun(record)
     } catch (reason) {
       fail(reason)
     } finally {
@@ -322,7 +348,7 @@ export function useExperimentController({
     selectedRun &&
     void perform(
       () => runtime.features.storage.retain(selectedRun),
-      'Result retained - save the project for durable storage'
+      'Result retained in project'
     )
 
   return {

@@ -4,6 +4,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import {
   OBSERVATION_LIMITS,
+  type ObservationDraft,
   type FieldObservation
 } from '../../../common-apis/observation-contract'
 import type { PreparedObservationAttachments } from '../../../storage/observation-archive'
@@ -71,11 +72,27 @@ beforeEach(async () => {
 
   prepare.mockResolvedValue(receipt)
 
-  retain.mockResolvedValue('note')
-
-  add.mockResolvedValue('note')
-
-  update.mockResolvedValue(undefined)
+  const acknowledge = (draft: ObservationDraft, id = 'note') => {
+    const previous = notes.find((note) => note.id === id)
+    const timestamp = '2026-09-08T00:00:00.000Z'
+    const next: FieldObservation = {
+      ...draft,
+      version: 1,
+      id,
+      revision: (previous?.revision ?? 0) + 1,
+      createdAt: previous?.createdAt ?? timestamp,
+      updatedAt: timestamp
+    }
+    notes = [...notes.filter((note) => note.id !== id), next]
+    return id
+  }
+  retain.mockImplementation(async (_receipt, intent) =>
+    acknowledge(intent.draft, intent.edit?.id)
+  )
+  add.mockImplementation(async (_run, draft) => acknowledge(draft))
+  update.mockImplementation(async (_run, id, _revision, draft) => {
+    acknowledge(draft, id)
+  })
 
   remove.mockResolvedValue(undefined)
 
@@ -127,6 +144,19 @@ async function fill(label: string, value: string) {
   })
 }
 
+async function commit() {
+  const apply = [...host.querySelectorAll('button')].find(
+    (node) => node.textContent === 'Apply attachments'
+  )
+  await act(async () => {
+    if (apply) apply.click()
+    else
+      host
+        .querySelector('[aria-label="Observation text"]')
+        ?.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))
+  })
+}
+
 async function begin() {
   await act(() => button('Add field observation').click())
 
@@ -166,7 +196,7 @@ it('accepts text only through the canonical Feature and makes no promise of dura
 
   expect(add).not.toHaveBeenCalled()
 
-  await act(async () => button('Save observation').click())
+  await commit()
 
   expect(add).toHaveBeenCalledWith('run-a', {
     title: 'Site check',
@@ -174,7 +204,7 @@ it('accepts text only through the canonical Feature and makes no promise of dura
     attachments: []
   })
 
-  expect(host.textContent).toContain('save the project')
+  expect(host.textContent).toContain('Observation updated')
 
   expect(retain).not.toHaveBeenCalled()
 
@@ -198,7 +228,7 @@ it('shows inert attachment identity for review and retains only after explicit a
 
   expect(retain).not.toHaveBeenCalled()
 
-  await act(async () => button('Save observation').click())
+  await commit()
 
   expect(retain).toHaveBeenCalledWith(receipt, {
     runId: 'run-a',
@@ -219,13 +249,13 @@ it('keeps failed acceptance retryable and removes an existing attachment only th
 
   retain.mockRejectedValueOnce(new Error('Acceptance rejected'))
 
-  await act(async () => button('Save observation').click())
+  await commit()
 
   expect(host.textContent).toContain('Acceptance rejected')
 
   expect(host.textContent).toContain(receipt.attachments[0].sourceId)
 
-  await act(async () => button('Save observation').click())
+  await commit()
 
   expect(retain).toHaveBeenCalledTimes(2)
 
@@ -248,7 +278,7 @@ it('keeps failed acceptance retryable and removes an existing attachment only th
 
   await act(() => button('Remove attachment field.txt').click())
 
-  await act(async () => button('Save observation').click())
+  await commit()
 
   expect(update).toHaveBeenCalledWith(
     'run-a',
@@ -359,7 +389,7 @@ it('preserves expected revisions, rejects stale drafts, renders hostile text ine
 
   await fill('Observation text', 'Changed')
 
-  await act(async () => button('Save observation').click())
+  await commit()
 
   expect(update).toHaveBeenCalledWith(
     'run-a',
@@ -374,11 +404,15 @@ it('preserves expected revisions, rejects stale drafts, renders hostile text ine
 
   await act(() => render())
 
-  expect(button('Save observation').disabled).toBe(true)
+  expect(
+    [...host.querySelectorAll('button')].some(
+      (node) => node.textContent === 'Save observation'
+    )
+  ).toBe(false)
 
   expect(host.textContent).toContain('changed since this draft')
 
-  await act(() => button('Discard draft').click())
+  await act(() => button('Close observation').click())
 
   const confirm = vi.fn(() => false)
 
@@ -393,4 +427,57 @@ it('preserves expected revisions, rejects stale drafts, renders hostile text ine
   await act(async () => button('Remove observation').click())
 
   expect(remove).toHaveBeenCalledWith('run-a', 'note', 2)
+})
+
+it('automatically applies completed text edits to the same observation without a Save action', async () => {
+  const timestamp = '2026-09-08T00:00:00.000Z'
+  add.mockImplementation(async (_run, draft) => {
+    notes = [
+      {
+        ...draft,
+        version: 1,
+        id: 'note',
+        revision: 1,
+        createdAt: timestamp,
+        updatedAt: timestamp
+      }
+    ]
+    return 'note'
+  })
+  update.mockImplementation(async (_run, id, revision, draft) => {
+    notes = notes.map((note) =>
+      note.id === id ? { ...note, ...draft, revision: revision + 1 } : note
+    )
+  })
+  await begin()
+  expect(add).not.toHaveBeenCalled()
+  const field = host.querySelector<HTMLTextAreaElement>(
+    '[aria-label="Observation text"]'
+  )
+  if (!field) throw new Error('Missing observation text')
+  await act(async () => {
+    field.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))
+  })
+  expect(add).toHaveBeenCalledOnce()
+  expect(host.querySelector('[aria-label="Observation text"]')).toBe(field)
+  await act(async () => {
+    field.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))
+  })
+  expect(update).not.toHaveBeenCalled()
+  await fill('Observation text', 'Reported gap: 26 mm')
+  await act(async () => {
+    field.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))
+  })
+  expect(update).toHaveBeenCalledWith(
+    'run-a',
+    'note',
+    1,
+    expect.objectContaining({ text: 'Reported gap: 26 mm' })
+  )
+  expect(add).toHaveBeenCalledOnce()
+  expect(
+    [...host.querySelectorAll('button')].some(
+      (node) => node.textContent === 'Save observation'
+    )
+  ).toBe(false)
 })

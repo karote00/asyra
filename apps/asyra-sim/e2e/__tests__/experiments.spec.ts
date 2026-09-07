@@ -14,7 +14,7 @@ test('ordinary experiment controls run, replay frozen evidence, preserve edits, 
     .count()
   await expect(
     page.getByRole('button', { name: 'Save experiment', exact: true })
-  ).toBeDisabled()
+  ).toHaveCount(0)
   const depth = await page.getByTestId('history-depth').textContent()
   await page.getByLabel('Sampled trajectory preview time').press('End')
   await expect(page.locator('.viewport-summary')).toContainText(
@@ -45,13 +45,11 @@ test('ordinary experiment controls run, replay frozen evidence, preserve edits, 
   )
   await page.screenshot({ path: info.outputPath('experiment-replay.png') })
   await page.getByLabel('Minimum clearance (mm)').fill('30')
-  await page
-    .getByRole('button', { name: 'Save experiment', exact: true })
-    .click()
+  await page.keyboard.press('Tab')
   await expect(result).toContainText('Historical inputs differ')
   await expect(
     page.getByRole('button', { name: 'Save experiment', exact: true })
-  ).toBeDisabled()
+  ).toHaveCount(0)
   await page
     .getByRole('button', { name: 'Run formal analysis', exact: true })
     .click()
@@ -99,16 +97,14 @@ test('invalid trajectory mapping and empty scope are actionable without mutating
     .click()
   await expect(page.locator('.diagnostic-list')).toBeVisible()
   await expect(
-    page.getByRole('button', { name: 'Apply and save', exact: true })
+    page.getByRole('button', { name: 'Apply', exact: true })
   ).toHaveCount(0)
   await expect(page.getByRole('treeitem')).toHaveCount(11)
   await page.locator('summary').filter({ hasText: 'Analysis scope' }).click()
   await page.getByLabel('Self-collision between primary bodies').uncheck()
   await page.getByLabel('Primary-to-influencing collision').uncheck()
   await page.getByLabel('Excluded pairs', { exact: true }).fill('')
-  await page
-    .getByRole('button', { name: 'Save experiment', exact: true })
-    .click()
+  await page.keyboard.press('Tab')
   await page.getByRole('button', { name: 'Run preflight', exact: true }).click()
   await expect(page.getByTestId('preflight-report')).toContainText('no-pairs')
   await page

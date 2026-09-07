@@ -99,16 +99,19 @@ test('ordinary nested acceptance editing preserves findings, versions, compariso
   await expect(result.locator('.rule-evaluation')).toContainText(
     'Condition 1.2.2 - false'
   )
-  await page.getByRole('button', { name: 'Retain result', exact: true }).click()
+  await expect(page.locator('.retention-actions')).toContainText(
+    'Retained in this project'
+  )
 
   await page.locator('.acceptance-fields > summary').click()
+  const before = await page.getByTestId('history-depth').textContent()
   await page
     .getByLabel('Condition 1.1 expected penetration')
     .selectOption('absent')
-  const before = await page.getByTestId('history-depth').textContent()
-  await page
-    .getByRole('button', { name: 'Save experiment', exact: true })
-    .click()
+  await expect(page.getByTestId('history-depth')).toHaveText(
+    `Undo steps: ${Number(before?.match(/\d+/)?.[0]) + 1}`
+  )
+  await page.keyboard.press('Tab')
   await page.getByRole('button', { name: 'Undo', exact: true }).click()
   await expect(page.getByTestId('history-depth')).toHaveText(before ?? '')
   await expect(
@@ -126,7 +129,9 @@ test('ordinary nested acceptance editing preserves findings, versions, compariso
     'User: does not meet'
   )
   await expect(result).toContainText('rule r2')
-  await page.getByRole('button', { name: 'Retain result', exact: true }).click()
+  await expect(page.locator('.retention-actions')).toContainText(
+    'Retained in this project'
+  )
   await page
     .getByRole('button', { name: 'Runs & compare', exact: true })
     .click()

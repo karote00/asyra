@@ -4,10 +4,12 @@ import type { Vec3 } from '../../domain/math'
 export function CommittedInput({
   value,
   onCommit,
+  validateOnCommit = false,
   ...props
 }: Omit<ComponentProps<'input'>, 'value' | 'onChange'> & {
   value: string | number
   onCommit: (value: string) => void
+  validateOnCommit?: boolean
 }) {
   const [draft, setDraft] = useState<{
     source: string | number
@@ -25,7 +27,15 @@ export function CommittedInput({
       onChange={(event) =>
         setDraft({ source: value, text: event.target.value })
       }
-      onBlur={() => {
+      onBlur={(event) => {
+        if (
+          !cancelled.current &&
+          validateOnCommit &&
+          (!event.currentTarget.checkValidity() ||
+            (props.type === 'number' &&
+              event.currentTarget.value.trim() === ''))
+        )
+          return
         if (
           !cancelled.current &&
           draft?.source === value &&

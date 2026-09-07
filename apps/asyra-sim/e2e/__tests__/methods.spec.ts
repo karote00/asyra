@@ -23,10 +23,10 @@ test('method capabilities block an unsupported ordinary experiment without runni
   await expect(page.getByLabel('Method parameter additionalError')).toHaveValue(
     '0'
   )
-  await expect(page.getByTestId('history-depth')).toHaveText(depth ?? '')
-  await page
-    .getByRole('button', { name: 'Save experiment', exact: true })
-    .click()
+  await expect(page.getByTestId('history-depth')).toHaveText(
+    `Undo steps: ${Number(depth?.match(/\d+/)?.[0]) + 1}`
+  )
+  await page.keyboard.press('Tab')
   await page.getByRole('button', { name: 'Run preflight', exact: true }).click()
   await expect(page.getByTestId('preflight-report')).toContainText(
     'method-capability'
@@ -105,7 +105,9 @@ test('a user builds spheres, selects an independent method, edits uncertainty, a
   const result = page.getByTestId('analysis-result')
   await expect(result).toContainText('No issue found within scope')
   await expect(result).toContainText(MethodIds.STATIC_SPHERES)
-  await page.getByRole('button', { name: 'Retain result', exact: true }).click()
+  await expect(page.locator('.retention-actions')).toContainText(
+    'Retained in this project'
+  )
   await page
     .getByRole('button', { name: 'Runs & compare', exact: true })
     .click()

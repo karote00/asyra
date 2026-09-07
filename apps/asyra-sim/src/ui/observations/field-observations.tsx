@@ -158,6 +158,7 @@ export function FieldObservations({
                 reset={reset}
                 begin={begin}
                 save={save}
+                error={error}
               />
             </>
           )}

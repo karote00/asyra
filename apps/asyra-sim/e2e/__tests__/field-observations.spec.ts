@@ -41,13 +41,12 @@ test('ordinary field observations preserve immutable evidence, opaque files and 
     .click()
   const library = page.getByRole('dialog', { name: 'Runs and comparison' })
   const panel = library.getByRole('region', { name: 'Field observations' })
-  await expect(panel).toContainText('Retain this result first')
+  await expect(
+    panel.getByRole('button', { name: 'Add field observation', exact: true })
+  ).toBeEnabled()
   const beforeReport = JSON.parse(
     (await download(page, 'Export JSON')).toString('utf8')
   )
-  await library
-    .getByRole('button', { name: 'Retain selected result', exact: true })
-    .click()
   await panel
     .getByRole('button', { name: 'Add field observation', exact: true })
     .click()
@@ -80,7 +79,7 @@ test('ordinary field observations preserve immutable evidence, opaque files and 
     path: info.outputPath('field-observation-editor.png')
   })
   await panel
-    .getByRole('button', { name: 'Save observation', exact: true })
+    .getByRole('button', { name: 'Apply attachments', exact: true })
     .scrollIntoViewIfNeeded()
   await page.screenshot({
     path: info.outputPath('field-observation-files.png')
@@ -89,7 +88,7 @@ test('ordinary field observations preserve immutable evidence, opaque files and 
     (await page.getByTestId('history-depth').innerText()).match(/\d+/)?.[0]
   )
   await panel
-    .getByRole('button', { name: 'Save observation', exact: true })
+    .getByRole('button', { name: 'Apply attachments', exact: true })
     .click()
   await expect(page.getByTestId('history-depth')).toHaveText(
     `Undo steps: ${initialDepth + 1}`
@@ -110,9 +109,7 @@ test('ordinary field observations preserve immutable evidence, opaque files and 
     .fill(
       'Second check: 24 mm. Same measurement files; a revised user interpretation.'
     )
-  await panel
-    .getByRole('button', { name: 'Save observation', exact: true })
-    .click()
+  await panel.getByLabel('Observation text').press('Tab')
   await expect(note).toContainText('revision 2')
   const bundle = JSON.parse(
     (await download(page, 'Export field observations')).toString('utf8')
@@ -162,7 +159,7 @@ test('ordinary field observations preserve immutable evidence, opaque files and 
   await page
     .getByLabel('Project name', { exact: true })
     .fill('Field validation pilot')
-  await page.getByRole('button', { name: 'Save project', exact: true }).click()
+  await page.getByLabel('Project name', { exact: true }).press('Enter')
   await expect(page.getByTestId('persistence-status')).toHaveText(
     'Saved locally - Field validation pilot'
   )
@@ -231,9 +228,7 @@ test('ordinary field observations preserve immutable evidence, opaque files and 
   await panel
     .getByLabel('Observation text')
     .fill('No attachments. A user-reported observation only.')
-  await panel
-    .getByRole('button', { name: 'Save observation', exact: true })
-    .click()
+  await panel.getByLabel('Observation text').press('Tab')
   const finalBundle = JSON.parse(
     (await download(page, 'Export field observations')).toString('utf8')
   )

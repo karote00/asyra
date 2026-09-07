@@ -117,8 +117,23 @@ export function useObservationController({
     }
   }
 
-  const save = async () => {
-    if (!validObservationDraft(draft) || stale || files.busy || files.error)
+  const save = async (input = draft) => {
+    if (
+      !validObservationDraft(input) ||
+      stale ||
+      saving ||
+      files.busy ||
+      files.error
+    )
+      return
+
+    if (
+      editing &&
+      !files.prepared &&
+      input.title === editing.title &&
+      input.text === editing.text &&
+      JSON.stringify(input.attachments) === JSON.stringify(editing.attachments)
+    )
       return
 
     const ticket = generation.current
@@ -133,10 +148,11 @@ export function useObservationController({
     setError('')
 
     try {
+      let id = editing?.id
       if (files.prepared) {
-        await runtime.features.observations.retain(files.prepared, {
+        id = await runtime.features.observations.retain(files.prepared, {
           runId,
-          draft,
+          draft: input,
           ...(editing
             ? { edit: { id: editing.id, expectedRevision: editing.revision } }
             : {})
@@ -146,15 +162,21 @@ export function useObservationController({
           runId,
           editing.id,
           editing.revision,
-          draft
+          input
         )
-      else await runtime.features.edit.addObservation(runId, draft)
+      else id = await runtime.features.edit.addObservation(runId, input)
 
       if (active()) {
-        reset()
-
+        const acknowledged = runtime
+          .getObservations(runId)
+          .find((note) => note.id === id)
+        if (!acknowledged)
+          throw new Error('The observation acknowledgement is unavailable')
+        setEditing(structuredClone(acknowledged))
+        setExisting(structuredClone(acknowledged.attachments))
+        files.clear()
         setStatus(
-          'Observation retained - save the project for durable storage. One Undo action for a material change.'
+          'Observation updated - one Undo action for a material change.'
         )
       }
     } catch (reason) {
@@ -187,9 +209,7 @@ export function useObservationController({
       if (mounted.current && ticket === generation.current && isCurrent()) {
         reset()
 
-        setStatus(
-          'Observation removed - Undo can restore it. Save the project to persist this change.'
-        )
+        setStatus('Observation removed - Undo can restore it.')
       }
     } catch (reason) {
       if (mounted.current && isCurrent()) setError(errorMessage(reason))

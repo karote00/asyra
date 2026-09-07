@@ -6,7 +6,7 @@ yield, or calibrate a model automatically. An observation is not a certification
 
 ## Records and Ownership
 
-Only an explicitly retained run can receive observations. Each observation
+Only a retained run can receive observations. Each observation
 belongs to its canonical run reference, not the immutable `RunRecord` or its
 snapshot. The existing editing Feature and common API create, update or remove
 one observation in one Core transaction. Undo/Redo restores the complete metadata
@@ -27,6 +27,13 @@ Limits: title 1–120 characters, observation text 1–8,000 characters, at most
 observation. Reject invalid shapes, duplicate observation IDs, inconsistent
 timestamps, stale writes, and unsupported versions. Load recovery of malformed
 canonical properties remains visible and never fabricates an observation.
+
+Completed valid title/text edits apply automatically through the existing Feature,
+without Save. Keep the editor on the same canonical observation after acknowledgement;
+incomplete text stays transient and stale edits remain rejected. The project session
+persists committed changes. New attachment receipts still require Apply attachments
+following metadata review; preview/discard never writes canonical state. Removing
+an accepted attachment is an ordinary metadata edit with one Undo action.
 
 ## Opaque Attachments
 
