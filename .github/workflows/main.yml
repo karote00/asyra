@@ -55,7 +55,8 @@ jobs:
 
       - name: Test
         if: success()
-        run: yarn test:ci
+        # Each workspace also owns test workers; avoid multiplying both pools.
+        run: yarn test:ci --concurrency=2
 
       - name: Verify Flow Inspector core proof
         run: |
