@@ -74,6 +74,8 @@ export function useExperimentController({
   )
 
   const [error, setError] = useState('')
+  const [saving, setSaving] = useState(false)
+  const saveInFlight = useRef(false)
 
   const live = useRef(true)
 
@@ -150,11 +152,14 @@ export function useExperimentController({
       setError(reason instanceof Error ? reason.message : String(reason))
   }
 
-  const save = async () => {
+  const save = async (input: ExperimentDraft = draft) => {
+    if (saveInFlight.current) return
+    saveInFlight.current = true
+    setSaving(true)
     try {
       const next = {
-        ...draft,
-        scope: { ...draft.scope, excludedPairs: parseExclusions(exclusions) }
+        ...input,
+        scope: { ...input.scope, excludedPairs: parseExclusions(exclusions) }
       }
 
       await perform(async (assertCurrent) => {
@@ -182,6 +187,9 @@ export function useExperimentController({
       if (live.current) setError('')
     } catch (reason) {
       fail(reason)
+    } finally {
+      saveInFlight.current = false
+      if (live.current) setSaving(false)
     }
   }
 
@@ -343,6 +351,7 @@ export function useExperimentController({
     dirty,
     fail,
     save,
+    saving,
     freshDraft,
     inspect,
     replayCurrent,

@@ -246,7 +246,8 @@ Source, mapping, units, workcell, discard and lifetime changes retire acceptance
 and late reads. Saved/replayed source text initializes from the same canonical
 definition as its revision, rather than an asynchronously resetting draft.
 No existing project units, numbers, source geometry or historical evidence are
-rewritten. Acceptance changes a draft; saving remains one existing Feature action.
+rewritten. Apply and save combines trajectory acceptance and the current draft
+into one existing save Feature action, per the 2026-09-08 user workflow change.
 
 The existing owner implementations were verified rather than rebuilt:
 

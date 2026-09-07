@@ -50,6 +50,11 @@
     import browser cases, and the same build/lint/naming/Inspector gates; the
     actual Chrome 3020 view was checked with the user-reported invalid value.
 
+  - Apply and save follow-up: a valid trajectory and the latest experiment draft
+    now save in one Feature action. Verified with 57 related UI tests and eight
+    scoped browser cases, including combined setting/trajectory Undo and Redo,
+    plus build/typecheck, lint, naming and Inspector contracts.
+
 - [M1 workcell foundations](plans/completed/m1-workcell-foundations.md)
   - Closed 2026-09-07: canonical editing, acknowledged save/reopen and safe
     replacement; existing recorded evidence is preserved without a new release.

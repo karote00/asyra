@@ -71,7 +71,7 @@ async function choose(file: File, kind = 'CSV') {
 async function preview() {
   await act(() => button('Preview trajectory')?.click())
 
-  expect(button('Accept into draft')).toBeDefined()
+  expect(button('Apply and save')).toBeDefined()
 }
 
 it.each([
@@ -94,7 +94,7 @@ it.each([
 
     expect(read).not.toHaveBeenCalled()
 
-    expect(button('Accept into draft')).toBeUndefined()
+    expect(button('Apply and save')).toBeUndefined()
 
     expect(host.textContent).toContain(`${limit / 1024 / 1024} MiB`)
 
@@ -136,7 +136,7 @@ it('cannot preview stale text while reading and preserves the next selection aga
 
   await choose(pending)
 
-  expect(button('Accept into draft')).toBeUndefined()
+  expect(button('Apply and save')).toBeUndefined()
 
   expect(button('Preview trajectory')?.disabled).toBe(true)
 
@@ -164,7 +164,7 @@ it('invalidates prior acceptance on read failure and exposes the failure', async
 
   await choose(file)
 
-  expect(button('Accept into draft')).toBeUndefined()
+  expect(button('Apply and save')).toBeUndefined()
 
   expect(host.textContent).toContain('File read failed')
 
@@ -199,11 +199,11 @@ async function externalCsv() {
 it('blocks external CSV with canonical headers until every source unit is declared', async () => {
   const example = await externalCsv()
   await act(() => button('Preview trajectory')?.click())
-  expect(button('Accept into draft')).toBeUndefined()
+  expect(button('Apply and save')).toBeUndefined()
   expect(host.textContent).toContain('explicit supported time unit')
   await select('Time unit', 's')
   await act(() => button('Preview trajectory')?.click())
-  expect(button('Accept into draft')).toBeUndefined()
+  expect(button('Apply and save')).toBeUndefined()
   for (const body of example.workcell.bodies) {
     if (body.joint.kind !== 'fixed')
       await select(`${body.name} CSV unit`, 'rad')
@@ -213,7 +213,7 @@ it('blocks external CSV with canonical headers until every source unit is declar
     host.querySelector('[aria-label="Trajectory conversion preview"]')
       ?.textContent
   ).toContain('rad')
-  await act(() => button('Accept into draft')?.click())
+  await act(() => button('Apply and save')?.click())
   expect(accepted).toHaveBeenCalledOnce()
   expect(accepted.mock.calls[0][0].trajectory).toEqual(example.trajectory)
 })
@@ -236,12 +236,12 @@ it('reuses source parsing and the exact validated preview on repeated review and
     const work = normalize.mock.calls.length
     expect(work).toBe(example.trajectory.keyframes.length)
     await preview()
-    await act(() => button('Accept into draft')?.click())
+    await act(() => button('Apply and save')?.click())
     expect(normalize).toHaveBeenCalledTimes(work)
     expect(parse).toHaveBeenCalledOnce()
     expect(accepted.mock.calls[0][0]).toBe(result.value)
     await select('Time unit', 'ms')
-    expect(button('Accept into draft')).toBeUndefined()
+    expect(button('Apply and save')).toBeUndefined()
     await preview()
     expect(normalize).toHaveBeenCalledTimes(work * 2)
     expect(parse).toHaveBeenCalledOnce()
@@ -285,7 +285,7 @@ it('preserves strict JSON declarations and displays source-to-canonical conversi
   expect(review?.textContent).toContain('2500 ms')
   expect(review?.textContent).toContain('2.5 s')
   expect(review?.textContent).toContain('0 deg')
-  await act(() => button('Accept into draft')?.click())
+  await act(() => button('Apply and save')?.click())
   expect(accepted.mock.calls[0][0].sourceUnits.time).toBe('ms')
 })
 
@@ -316,7 +316,7 @@ it('retires an existing preview and late file read when its workcell changes', a
       })
     )
   )
-  expect(button('Accept into draft')).toBeUndefined()
+  expect(button('Apply and save')).toBeUndefined()
   await act(async () => resolve('time\n99'))
   expect(present(host.querySelector('textarea')).value).toBe(before)
   expect(accepted).not.toHaveBeenCalled()
@@ -326,7 +326,7 @@ it('discards an import without acceptance or stale read delivery', async () => {
   await preview()
   expect(button('Discard preview')).toBeDefined()
   await act(() => button('Discard preview')?.click())
-  expect(button('Accept into draft')).toBeUndefined()
+  expect(button('Apply and save')).toBeUndefined()
   expect(accepted).not.toHaveBeenCalled()
 })
 
@@ -342,7 +342,7 @@ it('retires the old preview but retains known units after source edits', async (
     input.dispatchEvent(new Event('input', { bubbles: true }))
   })
   expect(input.value).toBe(next)
-  expect(button('Accept into draft')).toBeUndefined()
+  expect(button('Apply and save')).toBeUndefined()
   expect(button('Confirm displayed units')).toBeUndefined()
   await preview()
 })
@@ -352,7 +352,7 @@ it('invalidates column mapping and current workcell previews without reparsing s
   try {
     await preview()
     await select('Time column', '')
-    expect(button('Accept into draft')).toBeUndefined()
+    expect(button('Apply and save')).toBeUndefined()
     await select('Time column', 'time')
     await preview()
     const example = createSyntheticExample()
@@ -370,9 +370,9 @@ it('invalidates column mapping and current workcell previews without reparsing s
         })
       )
     )
-    expect(button('Accept into draft')).toBeUndefined()
+    expect(button('Apply and save')).toBeUndefined()
     await act(() => button('Preview trajectory')?.click())
-    expect(button('Accept into draft')).toBeUndefined()
+    expect(button('Apply and save')).toBeUndefined()
     expect(host.textContent).toContain('out-of-limit')
     expect(parse).not.toHaveBeenCalled()
   } finally {
@@ -427,7 +427,7 @@ it('retains declared units across numeric edits but recomputes and accepts only 
       '\n5,'
     )
     await editSource(text)
-    expect(button('Accept into draft')).toBeUndefined()
+    expect(button('Apply and save')).toBeUndefined()
     expect(parse).toHaveBeenCalledOnce()
     expect(inspect).not.toHaveBeenCalled()
     await preview()
@@ -436,11 +436,11 @@ it('retains declared units across numeric edits but recomputes and accepts only 
     expect(parse).toHaveBeenCalledOnce()
     const result = inspect.mock.results[0].value
     expect(result.value.trajectory.keyframes[1].time).toBe(0.005)
-    await act(() => button('Accept into draft')?.click())
+    await act(() => button('Apply and save')?.click())
     expect(accepted.mock.calls[0][0]).toBe(result.value)
     await externalCsv()
     await act(() => button('Preview trajectory')?.click())
-    expect(button('Accept into draft')).toBeUndefined()
+    expect(button('Apply and save')).toBeUndefined()
   } finally {
     parse.mockRestore()
     inspect.mockRestore()
@@ -456,7 +456,7 @@ it('preserves known joint units when only the time unit is selected', async () =
   await editSource(text)
   await act(() => button('Preview trajectory')?.click())
   expect(host.textContent).not.toContain('explicit supported time unit')
-  expect(button('Accept into draft')).toBeDefined()
+  expect(button('Apply and save')).toBeDefined()
   const example = createSyntheticExample()
   for (const body of example.workcell.bodies)
     if (body.joint.kind !== 'fixed')
@@ -492,7 +492,7 @@ it('preserves unaffected declarations when one source column is removed', async 
     ''
   ])
   await act(() => button('Preview trajectory')?.click())
-  expect(button('Accept into draft')).toBeUndefined()
+  expect(button('Apply and save')).toBeUndefined()
 })
 
 it('retains unaffected units when the workcell changes joint type', async () => {
@@ -523,7 +523,7 @@ it('retains unaffected units when the workcell changes joint type', async () => 
     ].map((unit) => unit.value)
   ).toEqual(['', 'rad', 'rad', 'rad', 'rad', 'rad'])
   await act(() => button('Preview trajectory')?.click())
-  expect(button('Accept into draft')).toBeUndefined()
+  expect(button('Apply and save')).toBeUndefined()
 })
 
 it('keeps known units during first edits without prompting for confirmation', async () => {
@@ -541,15 +541,15 @@ it('keeps known units during first edits without prompting for confirmation', as
   await preview()
   await editSource(original.replace('\n8,', '\nㄉㄢ,'))
   expect(units()).toEqual(initialUnits)
-  expect(button('Accept into draft')).toBeUndefined()
+  expect(button('Apply and save')).toBeUndefined()
   expect(button('Confirm displayed units')).toBeUndefined()
   await act(() => button('Preview trajectory')?.click())
-  expect(button('Accept into draft')).toBeUndefined()
+  expect(button('Apply and save')).toBeUndefined()
   await editSource(original.replace('\n8,', '\n9,'))
   expect(units()).toEqual(initialUnits)
   expect(button('Confirm displayed units')).toBeUndefined()
   await preview()
-  await act(() => button('Accept into draft')?.click())
+  await act(() => button('Apply and save')?.click())
   expect(accepted.mock.calls[0][0].trajectory.keyframes.at(-1).time).toBe(9)
 })
 
@@ -558,7 +558,7 @@ it('previews edits in known units without an extra confirmation step', async () 
   await editSource(original.replace('\n8,', '\n9,'))
   expect(button('Confirm displayed units')).toBeUndefined()
   expect(host.querySelector('.unit-confirmation')).toBeNull()
-  expect(button('Accept into draft')).toBeUndefined()
+  expect(button('Apply and save')).toBeUndefined()
   await preview()
   expect(accepted).not.toHaveBeenCalled()
 })
@@ -575,7 +575,7 @@ it('retains unit choices through an unfinished CSV quoted value', async () => {
     ].map((unit) => unit.value)
   ).toEqual(Array(6).fill('rad'))
   await act(() => button('Preview trajectory')?.click())
-  expect(button('Accept into draft')).toBeUndefined()
+  expect(button('Apply and save')).toBeUndefined()
   await editSource(original.replace('\n8,', '\n9,'))
   expect(button('Confirm displayed units')).toBeUndefined()
   await preview()

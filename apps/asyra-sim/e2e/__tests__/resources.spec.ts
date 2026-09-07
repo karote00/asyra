@@ -12,7 +12,7 @@ test('a rejected trajectory selection invalidates the old preview without changi
     .getByRole('button', { name: 'Preview trajectory', exact: true })
     .click()
   await expect(
-    page.getByRole('button', { name: 'Accept into draft', exact: true })
+    page.getByRole('button', { name: 'Apply and save', exact: true })
   ).toBeVisible()
   await page.getByLabel('Load trajectory CSV').setInputFiles({
     name: 'oversized.csv',
@@ -22,7 +22,7 @@ test('a rejected trajectory selection invalidates the old preview without changi
   const panel = page.locator('.trajectory-import')
   await expect(panel).toContainText('CSV exceeds the 8 MiB import limit')
   await expect(
-    page.getByRole('button', { name: 'Accept into draft', exact: true })
+    page.getByRole('button', { name: 'Apply and save', exact: true })
   ).toHaveCount(0)
   await expect(page.getByTestId('history-depth')).toHaveText(depth ?? '')
   await panel.scrollIntoViewIfNeeded()

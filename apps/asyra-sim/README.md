@@ -115,9 +115,10 @@ units; strict JSON keeps its declared units. Editing the current text retains
 existing units without an additional notice or confirmation.
 Review the source fields, units and first/middle/last values against their
 canonical conversions before acceptance. The scrollable review shares the
-validated result with acceptance, which changes only the draft. Source,
+validated result with Apply and save, which saves the trajectory and current
+experiment settings together as one undoable action. Source,
 mapping, unit or workcell changes invalidate it; Discard preview makes no edit.
-Save experiment applies the draft through one undoable action. CSV accepts up to 8 MiB and JSON
+Save experiment remains available for other draft edits. CSV accepts up to 8 MiB and JSON
 up to 1 MiB; both require 1–2,000 keyframes. CSV parsing stops at 256 columns or
 2,000 data rows. Selecting another file invalidates the previous preview
 immediately, including when the new file cannot be read. Save the draft before preflight

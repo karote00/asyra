@@ -5,11 +5,13 @@ import { useTrajectoryImport } from './use-trajectory-import'
 export function TrajectoryImportPanel({
   workcell,
   trajectory,
-  onAccept
+  onAccept,
+  saving = false
 }: {
   workcell: Workcell
   trajectory: Trajectory
   onAccept: (value: NormalizedTrajectorySource) => void
+  saving?: boolean
 }) {
   const {
     kind,
@@ -285,9 +287,10 @@ export function TrajectoryImportPanel({
 
           <button
             className="primary bg-sim-accent text-[#fff] border-sim-accent [&:hover]:bg-sim-accent-hover"
+            disabled={saving}
             onClick={() => accept(onAccept)}
           >
-            Accept into draft
+            Apply and save
           </button>
         </div>
       )}

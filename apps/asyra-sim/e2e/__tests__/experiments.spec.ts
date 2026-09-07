@@ -99,7 +99,7 @@ test('invalid trajectory mapping and empty scope are actionable without mutating
     .click()
   await expect(page.locator('.diagnostic-list')).toBeVisible()
   await expect(
-    page.getByRole('button', { name: 'Accept into draft', exact: true })
+    page.getByRole('button', { name: 'Apply and save', exact: true })
   ).toHaveCount(0)
   await expect(page.getByRole('treeitem')).toHaveCount(11)
   await page.locator('summary').filter({ hasText: 'Analysis scope' }).click()

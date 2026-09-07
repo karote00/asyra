@@ -13,6 +13,8 @@ export function ExperimentTrajectory() {
 
   const workcell = useExperimentField('workcell')
 
+  const saving = useExperimentField('saving')
+
   const trajectory = useExperimentValue((state) => state.draft.trajectory)
 
   return (
@@ -21,6 +23,7 @@ export function ExperimentTrajectory() {
         key={`${canonical?.id ?? 'new'}:${canonical?.definition.revision ?? 0}`}
         workcell={workcell}
         trajectory={canonical?.definition.trajectory ?? trajectory}
+        saving={saving}
         onAccept={(value) => {
           const first = value.trajectory.keyframes[0]
 
@@ -29,7 +32,7 @@ export function ExperimentTrajectory() {
           if (!first || !last)
             throw new Error('Accepted trajectory has no keyframes')
 
-          view.getSnapshot().changed({
+          void view.getSnapshot().save({
             ...view.getSnapshot().draft,
             trajectory: value.trajectory,
             sourceUnits: value.sourceUnits,

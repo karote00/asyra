@@ -83,8 +83,9 @@ independently interpret axes or parent-child transforms.
   Bound review to first, middle and last keyframes. Changed source, mapping,
   units or workcell retires the old preview and acceptance eligibility; repeated
   preview and acceptance of unchanged input do not repeat parsing/conversion.
-  Preview and discard are noncanonical; acceptance edits only the experiment
-  draft and saving uses the existing Feature transaction. Never reinterpret
+  Preview and discard are noncanonical. Apply and save merges the validated
+  trajectory into the latest experiment draft and saves through the existing
+  Feature transaction as one Undo action. Pending saves block repeat submission. Never reinterpret
   existing project units, values or historical evidence.
 - Joint axes must be finite and nonzero and normalized according to the
   contract. Reject nonfinite positions, dimensions, and times.

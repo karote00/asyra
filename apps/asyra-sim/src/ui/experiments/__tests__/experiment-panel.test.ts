@@ -237,7 +237,7 @@ it('shows mapped canonical columns before preview and invalidates acceptance aft
 
   await act(() => button('Preview trajectory')?.click())
 
-  expect(button('Accept into draft')).toBeDefined()
+  expect(button('Apply and save')).toBeDefined()
 
   const unit = host.querySelectorAll('select')[1]
 
@@ -247,7 +247,7 @@ it('shows mapped canonical columns before preview and invalidates acceptance aft
     unit.dispatchEvent(new Event('change', { bubbles: true }))
   })
 
-  expect(button('Accept into draft')).toBeUndefined()
+  expect(button('Apply and save')).toBeUndefined()
 })
 
 it('initializes imported source text from the same canonical revision during save and replay', async () => {
@@ -290,4 +290,81 @@ it('initializes imported source text from the same canonical revision during sav
   current = structuredClone(experiment)
   await act(() => renderExperiment({ ...inputs, revision: 3 }))
   expect(lastTime()).toBe('8')
+})
+
+it('applies the validated trajectory and latest draft settings through one save', async () => {
+  let finishSave: () => void = () => undefined
+  const updateExperiment = vi.fn(
+    () =>
+      new Promise<void>((resolve) => {
+        finishSave = resolve
+      })
+  )
+  const savingRuntime = {
+    ...runtime,
+    features: { ...runtime.features, edit: { updateExperiment } }
+  } as unknown as SimRuntime
+  const perform = vi.fn(
+    async (action: (assertCurrent: () => void) => Promise<unknown>) => {
+      await action(() => undefined)
+    }
+  )
+  await act(() =>
+    renderExperiment({
+      runtime: savingRuntime,
+      candidateId: 'candidate',
+      workcell: example.workcell,
+      revision: 1,
+      perform,
+      onPlayback: vi.fn(),
+      runs: [],
+      retainedIds: new Set<string>(),
+      onRun: vi.fn(),
+      onOpenRuns: vi.fn(),
+      onVisualPreview: vi.fn(),
+      isCurrent: () => true,
+      visualImportActive: true
+    })
+  )
+  const field = host.querySelector<HTMLInputElement>(
+    '[aria-label="Minimum clearance (mm)"]'
+  )
+  if (!field) throw new Error('Missing clearance input')
+  await act(() => {
+    Object.getOwnPropertyDescriptor(
+      HTMLInputElement.prototype,
+      'value'
+    )?.set?.call(field, '30')
+    field.dispatchEvent(new Event('input', { bubbles: true }))
+  })
+  const input = host.querySelector(
+    'textarea[aria-label="Trajectory source data"]'
+  ) as HTMLTextAreaElement
+  await act(() => {
+    Object.getOwnPropertyDescriptor(
+      HTMLTextAreaElement.prototype,
+      'value'
+    )?.set?.call(input, input.value.replace('\n8,', '\n9,'))
+    input.dispatchEvent(new Event('input', { bubbles: true }))
+  })
+  await act(() => button('Preview trajectory')?.click())
+  expect(updateExperiment).not.toHaveBeenCalled()
+  expect(button('Apply and save')).toBeDefined()
+  await act(() => button('Apply and save')?.click())
+  expect(button('Apply and save')?.disabled).toBe(true)
+  expect(button('Save experiment')?.disabled).toBe(true)
+  await act(() => button('Apply and save')?.click())
+  expect(updateExperiment).toHaveBeenCalledOnce()
+  await act(async () => finishSave())
+  expect(perform).toHaveBeenCalledOnce()
+  expect(updateExperiment).toHaveBeenCalledOnce()
+  const saved = updateExperiment.mock.calls[0] as unknown as [
+    string,
+    number,
+    typeof draft
+  ]
+  expect(saved[0]).toBe('study')
+  expect(saved[2].trajectory.keyframes.at(-1)?.time).toBe(9)
+  expect(saved[2].interval).toEqual([0, 9])
+  expect(saved[2].rule.minimumClearance).toBe(0.03)
 })

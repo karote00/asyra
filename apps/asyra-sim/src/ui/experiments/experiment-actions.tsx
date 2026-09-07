@@ -6,6 +6,7 @@ import {
 
 export function ExperimentSave() {
   const view = useExperimentView()
+  const saving = useExperimentField('saving')
 
   const dirty = useExperimentField('dirty')
 
@@ -24,7 +25,7 @@ export function ExperimentSave() {
 
         <button
           className="primary bg-sim-accent text-[#fff] border-sim-accent [&:hover]:bg-sim-accent-hover"
-          disabled={!dirty}
+          disabled={!dirty || saving}
           onClick={() => void view.getSnapshot().save()}
         >
           {canonical ? 'Save experiment' : 'Create experiment'}

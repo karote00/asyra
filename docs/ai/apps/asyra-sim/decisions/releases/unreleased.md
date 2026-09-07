@@ -183,3 +183,12 @@ User direction supersedes the confirmation interaction above. Editing current
 source text retains its existing units without a notice or extra confirmation.
 External CSV file loading still starts with undeclared units. Preview invalidation,
 numeric validation, and the existing draft/save boundary are unchanged.
+
+### 2026-09-08 - Apply and save a trajectory in one action
+
+The successful import preview now offers Apply and save. It merges the same
+validated trajectory artifact into the latest experiment draft and passes that
+complete input directly to the existing save Feature, avoiding a React state
+update followed by a stale save closure. Other settings and exclusions are saved
+in the same transaction; one Undo/Redo reverses/restores the complete change.
+Pending saves disable both save entry points and guard duplicate dispatch.

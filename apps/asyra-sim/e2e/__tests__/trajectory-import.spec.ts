@@ -69,6 +69,7 @@ test('external CSV declaration, conversion review, acceptance, Undo/Redo and reo
   const [header] = initial.split('\n')
   const csv = `${header}\n0,1,0,0,0,0,0\n2000,2,0,0,0,0,0`
   const depth = await readHistoryDepth(page)
+  await page.getByLabel('Minimum clearance (mm)', { exact: true }).fill('30')
   await page.getByLabel('Load trajectory CSV').setInputFiles({
     name: 'external.csv',
     mimeType: 'text/csv',
@@ -79,14 +80,14 @@ test('external CSV declaration, conversion review, acceptance, Undo/Redo and reo
     'explicit supported time unit'
   )
   await expect(
-    page.getByRole('button', { name: 'Accept into draft', exact: true })
+    page.getByRole('button', { name: 'Apply and save', exact: true })
   ).toHaveCount(0)
   await page
     .getByRole('combobox', { name: 'Time unit', exact: true })
     .selectOption('ms')
   await preview(page)
   await expect(
-    page.getByRole('button', { name: 'Accept into draft', exact: true })
+    page.getByRole('button', { name: 'Apply and save', exact: true })
   ).toHaveCount(0)
   const units = page.locator('select[aria-label$=" CSV unit"]')
   await expect(units).toHaveCount(6)
@@ -99,7 +100,7 @@ test('external CSV declaration, conversion review, acceptance, Undo/Redo and reo
     .getByLabel('Trajectory source data')
     .fill(csv.replace('2000,', '3000,'))
   await expect(
-    page.getByRole('button', { name: 'Accept into draft', exact: true })
+    page.getByRole('button', { name: 'Apply and save', exact: true })
   ).toHaveCount(0)
   await expect(
     page.getByRole('combobox', { name: 'Time unit', exact: true })
@@ -116,7 +117,7 @@ test('external CSV declaration, conversion review, acceptance, Undo/Redo and reo
   await expect(review).toContainText('2000 ms → 2 s')
 
   await page
-    .getByRole('button', { name: 'Accept into draft', exact: true })
+    .getByRole('button', { name: 'Apply and save', exact: true })
     .click({ trial: true })
   await page.locator('.accepted-preview').screenshot({
     path: info.outputPath('csv-conversion-first.png'),
@@ -134,16 +135,7 @@ test('external CSV declaration, conversion review, acceptance, Undo/Redo and reo
     `Undo steps: ${depth}`
   )
   await page
-    .getByRole('button', { name: 'Accept into draft', exact: true })
-    .click()
-  await expect(
-    page.getByRole('button', { name: 'Save experiment', exact: true })
-  ).toBeEnabled()
-  await expect(page.getByTestId('history-depth')).toHaveText(
-    `Undo steps: ${depth}`
-  )
-  await page
-    .getByRole('button', { name: 'Save experiment', exact: true })
+    .getByRole('button', { name: 'Apply and save', exact: true })
     .click()
   await expect(page.getByTestId('history-depth')).toHaveText(
     `Undo steps: ${depth + 1}`
@@ -151,16 +143,23 @@ test('external CSV declaration, conversion review, acceptance, Undo/Redo and reo
   await page.getByRole('button', { name: 'Undo', exact: true }).click()
   await openImport(page)
   await expect(page.getByLabel('Trajectory source data')).toHaveValue(initial)
+  await expect(
+    page.getByLabel('Minimum clearance (mm)', { exact: true })
+  ).toHaveValue('20')
   await page.getByRole('button', { name: 'Redo', exact: true }).click()
   await openImport(page)
   const canonical = await page.getByLabel('Trajectory source data').inputValue()
   expect(canonical).not.toBe(initial)
+  await expect(
+    page.getByLabel('Minimum clearance (mm)', { exact: true })
+  ).toHaveValue('30')
   await page.getByRole('button', { name: 'Run preflight', exact: true }).click()
   await expect(page.getByTestId('preflight-report')).toContainText(
     'Ready for formal local analysis'
   )
   await saveProject(page, 'Declared source units')
   const definition = await savedDefinition(page, experimentId)
+  expect(definition.rule.minimumClearance).toBe(0.03)
   expect(definition.sourceUnits.time).toBe('ms')
   expect(Object.values(definition.sourceUnits.joints)).toEqual(
     Array(6).fill('deg')
@@ -226,10 +225,10 @@ for (const [width, theme] of [
     await expect(review).toContainText('2500 ms → 2.5 s')
     await expect(review).toContainText('0 deg → 0 rad')
     await expect(
-      page.getByRole('button', { name: 'Accept into draft', exact: true })
+      page.getByRole('button', { name: 'Apply and save', exact: true })
     ).toBeVisible()
     await page
-      .getByRole('button', { name: 'Accept into draft', exact: true })
+      .getByRole('button', { name: 'Apply and save', exact: true })
       .click({ trial: true })
     await expect(page.locator('html')).toHaveAttribute('data-theme', theme)
     await page.screenshot({
@@ -254,7 +253,7 @@ for (const [width, theme] of [
       .getByRole('button', { name: 'Discard preview', exact: true })
       .click()
     await expect(
-      page.getByRole('button', { name: 'Accept into draft', exact: true })
+      page.getByRole('button', { name: 'Apply and save', exact: true })
     ).toHaveCount(0)
     await expect(page.getByTestId('history-depth')).toHaveText(
       `Undo steps: ${depth}`
@@ -306,7 +305,7 @@ test('editing initial canonical text retains units without a confirmation prompt
   await expect(page.locator('.unit-confirmation')).toHaveCount(0)
   await preview(page)
   await expect(
-    page.getByRole('button', { name: 'Accept into draft', exact: true })
+    page.getByRole('button', { name: 'Apply and save', exact: true })
   ).toHaveCount(0)
   await input.fill(original.replace('\n8,', '\n9,'))
   await expect(timeUnit).toHaveValue('s')
