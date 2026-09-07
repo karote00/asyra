@@ -249,3 +249,45 @@ it('shows mapped canonical columns before preview and invalidates acceptance aft
 
   expect(button('Accept into draft')).toBeUndefined()
 })
+
+it('initializes imported source text from the same canonical revision during save and replay', async () => {
+  let current = structuredClone(experiment)
+  const replayRuntime = { ...runtime, getExperiments: () => [current] }
+  const inputs: ExperimentInputs = {
+    runtime: replayRuntime,
+    candidateId: 'candidate',
+    workcell: example.workcell,
+    revision: 1,
+    perform: vi.fn(),
+    onPlayback: vi.fn(),
+    runs: [],
+    retainedIds: new Set<string>(),
+    onRun: vi.fn(),
+    onOpenRuns: vi.fn(),
+    onVisualPreview: vi.fn(),
+    isCurrent: () => true,
+    visualImportActive: true
+  }
+  const lastTime = () =>
+    host
+      .querySelector<HTMLTextAreaElement>(
+        '[aria-label="Trajectory source data"]'
+      )
+      ?.value.split('\n')
+      .at(-1)
+      ?.split(',')[0]
+  await act(() => renderExperiment(inputs))
+  expect(lastTime()).toBe('8')
+  current = structuredClone(experiment)
+  current.definition.revision = 2
+  current.definition.trajectory.keyframes =
+    current.definition.trajectory.keyframes.map((frame, index) => ({
+      ...frame,
+      time: index
+    }))
+  await act(() => renderExperiment({ ...inputs, revision: 2 }))
+  expect(lastTime()).toBe('2')
+  current = structuredClone(experiment)
+  await act(() => renderExperiment({ ...inputs, revision: 3 }))
+  expect(lastTime()).toBe('8')
+})

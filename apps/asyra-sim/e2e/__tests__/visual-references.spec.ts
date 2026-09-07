@@ -200,6 +200,7 @@ test('previews, accepts, edits, undoes and reopens complete original part geomet
     '11 analysis parts'
   )
   await page.getByRole('button', { name: 'Redo', exact: true }).click()
+  await expect.poll(() => readHistoryDepth(page)).toBe(initialDepth + 1)
   await expect(page.locator('.viewport-summary')).toContainText(
     '12 analysis parts'
   )

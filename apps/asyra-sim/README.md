@@ -108,8 +108,15 @@ rejected before the current runtime retires.
 Choose **Experiments** to configure a saved study or create a new one. Expand
 **Analysis scope** to select primary and influencing bodies and describe any
 excluded pairs. Edit clearance thresholds and time ranges, or preview a CSV or
-versioned JSON trajectory before accepting it into the draft. Each CSV joint
-column has an explicit angle or length unit. CSV accepts up to 8 MiB and JSON
+versioned JSON trajectory before accepting it into the draft. External or
+edited/pasted CSV requires an explicit time unit and each joint's angle or length
+unit, even when suggested columns and values appear valid. Unchanged App-generated
+CSV already has known canonical units; strict JSON keeps its declared units.
+Review the source fields, units and first/middle/last values against their
+canonical conversions before acceptance. The scrollable review shares the
+validated result with acceptance, which changes only the draft. Source,
+mapping, unit or workcell changes invalidate it; Discard preview makes no edit.
+Save experiment applies the draft through one undoable action. CSV accepts up to 8 MiB and JSON
 up to 1 MiB; both require 1–2,000 keyframes. CSV parsing stops at 256 columns or
 2,000 data rows. Selecting another file invalidates the previous preview
 immediately, including when the new file cannot be read. Save the draft before preflight

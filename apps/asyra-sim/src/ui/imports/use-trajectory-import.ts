@@ -1,10 +1,12 @@
-import { useEffect, useRef, useState } from 'react'
+import { useLayoutEffect, useRef, useState, type SetStateAction } from 'react'
+import type { NormalizedTrajectorySource } from '../../domain/trajectory-source'
 import type { Trajectory, Workcell } from '../../domain/workcell'
 import {
+  prepareTrajectoryCsv,
   previewTrajectoryCsv,
   previewTrajectoryJson,
   TRAJECTORY_IMPORT_LIMITS,
-  type TrajectoryCsvMapping,
+  type TrajectoryCsvMappingDraft,
   type TrajectoryImportPreview
 } from '../../storage/trajectory-import'
 import {
@@ -20,114 +22,123 @@ export function useTrajectoryImport({
   workcell: Workcell
   trajectory: Trajectory
 }) {
-  const [kind, setKind] = useState<'csv' | 'json'>('csv')
-
-  const [text, setText] = useState(() => trajectoryToCsv(workcell, trajectory))
-
-  const [mapping, setMapping] = useState<TrajectoryCsvMapping>(() =>
+  const [source, setSource] = useState(() => {
+    const text = trajectoryToCsv(workcell, trajectory)
+    return {
+      kind: 'csv' as 'csv' | 'json',
+      text,
+      csv: prepareTrajectoryCsv(text)
+    }
+  })
+  const [mapping, updateMapping] = useState<TrajectoryCsvMappingDraft>(() =>
     canonicalCsvMapping(workcell)
   )
-
-  const [preview, setPreview] = useState<TrajectoryImportPreview | null>(null)
-
-  const [columns, setColumns] = useState<readonly string[]>(
-    () => previewTrajectoryCsv(text, workcell, mapping).columns
-  )
-
+  const [receipt, setReceipt] = useState<{
+    result: TrajectoryImportPreview
+    source: typeof source
+    mapping: TrajectoryCsvMappingDraft
+    workcell: Workcell
+    generation: number
+  } | null>(null)
   const [error, setError] = useState('')
-
   const [reading, setReading] = useState(false)
-
   const generation = useRef(0)
 
-  const workcellKey = JSON.stringify(workcell)
+  const discard = () => {
+    generation.current++
+    setReceipt(null)
+    setReading(false)
+    setError('')
+  }
 
-  useEffect(() => {
-    setPreview(null)
-  }, [mapping, workcellKey])
-
-  useEffect(
-    () => () => {
+  // The workbench owns a stable read projection until canonical inputs change.
+  // Retire reads at that boundary, without serializing the workcell on renders.
+  useLayoutEffect(() => {
+    discard()
+    return () => {
       generation.current++
-    },
-    []
-  )
+    }
+  }, [workcell])
 
-  const actuated = workcell.bodies.filter((body) => body.joint.kind !== 'fixed')
+  const preview =
+    receipt &&
+    receipt.source === source &&
+    receipt.mapping === mapping &&
+    receipt.workcell === workcell &&
+    receipt.generation === generation.current &&
+    !reading
+      ? receipt.result
+      : null
 
-  const inspect = (nextText = text, nextKind = kind, nextMapping = mapping) => {
-    const next =
-      nextKind === 'csv'
-        ? previewTrajectoryCsv(nextText, workcell, nextMapping)
-        : previewTrajectoryJson(nextText, workcell)
+  const inspect = () => {
+    if (reading) return null
+    if (preview) return preview
+    const result =
+      source.kind === 'csv'
+        ? previewTrajectoryCsv(source.csv, workcell, mapping)
+        : previewTrajectoryJson(source.text, workcell)
+    setReceipt({
+      result,
+      source,
+      mapping,
+      workcell,
+      generation: generation.current
+    })
+    return result
+  }
 
-    setPreview(next)
+  const accept = (onAccept: (value: NormalizedTrajectorySource) => void) => {
+    if (preview?.value && receipt?.generation === generation.current)
+      onAccept(preview.value)
+  }
 
-    setColumns(next.columns)
+  const setText = (text: string) => {
+    discard()
+    const csv = source.kind === 'csv' ? prepareTrajectoryCsv(text) : source.csv
+    setSource({ ...source, text, csv })
+    // Edited or pasted bytes no longer carry the App-generated unit guarantee.
+    if (source.kind === 'csv')
+      updateMapping(guessCsvMapping(csv.columns, workcell))
+  }
 
-    return next
+  const setMapping = (next: SetStateAction<TrajectoryCsvMappingDraft>) => {
+    discard()
+    updateMapping(next)
   }
 
   const load = async (file: File, nextKind: 'csv' | 'json') => {
-    const token = ++generation.current
-
-    setError('')
-
-    setPreview(null)
-
-    setReading(false)
-
+    discard()
+    const token = generation.current
     const limit =
       nextKind === 'csv'
         ? TRAJECTORY_IMPORT_LIMITS.csvBytes
         : TRAJECTORY_IMPORT_LIMITS.jsonBytes
-
     if (file.size > limit) {
       setError(
         `Trajectory ${nextKind.toUpperCase()} exceeds the ${limit / 1024 / 1024} MiB import limit.`
       )
-
       return
     }
-
     setReading(true)
-
-    let nextText: string
-
+    let text: string
     try {
-      nextText = await file.text()
+      text = await file.text()
     } catch (reason) {
       if (token === generation.current) setError(String(reason))
-
       return
     } finally {
       if (token === generation.current) setReading(false)
     }
-
     if (token !== generation.current) return
-
-    setText(nextText)
-
-    setKind(nextKind)
-
-    setPreview(null)
-
-    if (nextKind === 'csv') {
-      const columns = previewTrajectoryCsv(
-        nextText,
-        workcell,
-        canonicalCsvMapping(workcell)
-      ).columns
-
-      setColumns(columns)
-
-      setMapping(guessCsvMapping(columns, workcell))
-    }
+    const csv = nextKind === 'csv' ? prepareTrajectoryCsv(text) : source.csv
+    setSource({ kind: nextKind, text, csv })
+    if (nextKind === 'csv')
+      updateMapping(guessCsvMapping(csv.columns, workcell))
   }
 
   const setJointMapping = (
     id: string,
-    value: TrajectoryCsvMapping['joints'][string]
+    value: TrajectoryCsvMappingDraft['joints'][string]
   ) =>
     setMapping((current) => ({
       ...current,
@@ -135,21 +146,19 @@ export function useTrajectoryImport({
     }))
 
   return {
-    kind,
-    text,
+    kind: source.kind,
+    text: source.text,
     setText,
     mapping,
     setMapping,
     preview,
-    setPreview,
-    columns,
+    columns: source.csv.columns,
     error,
-    setError,
     reading,
-    setReading,
-    generation,
-    actuated,
+    actuated: workcell.bodies.filter((body) => body.joint.kind !== 'fixed'),
     inspect,
+    accept,
+    discard,
     load,
     setJointMapping
   }

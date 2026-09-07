@@ -20,7 +20,7 @@ export function ExperimentTrajectory() {
       <TrajectoryImportPanel
         key={`${canonical?.id ?? 'new'}:${canonical?.definition.revision ?? 0}`}
         workcell={workcell}
-        trajectory={trajectory}
+        trajectory={canonical?.definition.trajectory ?? trajectory}
         onAccept={(value) => {
           const first = value.trajectory.keyframes[0]
 

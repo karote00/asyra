@@ -18,15 +18,13 @@ export function TrajectoryImportPanel({
     mapping,
     setMapping,
     preview,
-    setPreview,
     columns,
     error,
-    setError,
     reading,
-    setReading,
-    generation,
     actuated,
     inspect,
+    accept,
+    discard,
     load,
     setJointMapping
   } = useTrajectoryImport({ workcell, trajectory })
@@ -38,7 +36,8 @@ export function TrajectoryImportPanel({
       </summary>
 
       <p className="hint text-[10px] leading-[1.6] text-sim-muted font-normal">
-        CSV units are mapped explicitly. JSON must use the strict
+        External CSV and pasted data require explicit source units. Column
+        suggestions do not declare units. JSON must use the strict
         <code> sim-trajectory v1</code> envelope. Preview never edits the
         project.
       </p>
@@ -106,17 +105,7 @@ export function TrajectoryImportPanel({
           rows={7}
           value={text}
           spellCheck={false}
-          onChange={(event) => {
-            generation.current++
-
-            setReading(false)
-
-            setError('')
-
-            setText(event.target.value)
-
-            setPreview(null)
-          }}
+          onChange={(event) => setText(event.target.value)}
         />
       </label>
 
@@ -150,11 +139,13 @@ export function TrajectoryImportPanel({
                   ...current,
                   time: {
                     ...current.time,
-                    unit: event.target.value as 'ms' | 's'
+                    unit: event.target.value as '' | 'ms' | 's'
                   }
                 }))
               }
             >
+              <option value="">Choose unit</option>
+
               <option value="s">seconds</option>
 
               <option value="ms">milliseconds</option>
@@ -164,7 +155,7 @@ export function TrajectoryImportPanel({
           {actuated.map((body) => {
             const entry = mapping.joints[body.id] ?? {
               column: '',
-              unit: body.joint.kind === 'revolute' ? 'rad' : 'm'
+              unit: '' as const
             }
 
             return (
@@ -204,6 +195,8 @@ export function TrajectoryImportPanel({
                       })
                     }
                   >
+                    <option value="">Choose unit</option>
+
                     {body.joint.kind === 'revolute' ? (
                       <>
                         <option value="rad">radians</option>
@@ -239,6 +232,12 @@ export function TrajectoryImportPanel({
         Preview trajectory
       </button>
 
+      {(preview || reading) && (
+        <button className="wide w-full mt-2" onClick={discard}>
+          Discard preview
+        </button>
+      )}
+
       {preview && preview.diagnostics.length > 0 && (
         <ul
           className="diagnostic-list text-[11px] leading-[1.7] pl-[18px] text-sim-error-text"
@@ -264,9 +263,36 @@ export function TrajectoryImportPanel({
             {preview.value.trajectory.keyframes.at(-1)?.time ?? 0}s
           </span>
 
+          <div
+            aria-label="Trajectory conversion preview"
+            className="grid gap-2 max-h-48 min-[700px]:max-h-72 overflow-y-auto"
+          >
+            <p className="text-sim-muted">
+              First, middle and last keyframes - source → canonical. Values are
+              rounded for display; acceptance uses the full validated precision.
+            </p>
+            {preview.conversions.map((sample) => (
+              <div
+                key={`${sample.frameIndex}:${sample.sourceField}`}
+                className="min-w-0 border-t border-sim-border pt-2 wrap-anywhere"
+              >
+                <div>
+                  Keyframe {sample.frameIndex + 1} - {sample.sourceField}
+                </div>
+                <div className="font-mono">
+                  {Number(sample.sourceValue.toPrecision(10))}{' '}
+                  {sample.sourceUnit}
+                  {' → '}
+                  {Number(sample.canonicalValue.toPrecision(10))}{' '}
+                  {sample.canonicalUnit}
+                </div>
+              </div>
+            ))}
+          </div>
+
           <button
             className="primary bg-sim-accent text-[#fff] border-sim-accent [&:hover]:bg-sim-accent-hover"
-            onClick={() => preview.value && onAccept(preview.value)}
+            onClick={() => accept(onAccept)}
           >
             Accept into draft
           </button>

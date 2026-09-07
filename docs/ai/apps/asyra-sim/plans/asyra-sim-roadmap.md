@@ -224,6 +224,72 @@ This completion does not establish M2-M4 or R0 acceptance.
 
 ## 5. M2: Executable Experiments and Data Import
 
+### Acceptance - 2026-09-07
+
+M2 meets all five milestone owner exit criteria under the current local App
+profile. This acceptance closes the import-contract gaps; it does not equate
+PR #156 with acceptance of M2-M4 or authorize subsequent milestones.
+
+This task was based on `origin/main` at `d3b50e91d`, with changes limited to
+trajectory import storage/UI and direct consumers, permanent tests, and current
+App contracts. The separately requested M1 closeout and worktree-location rule
+are complete. Solver algorithms, complete original geometry, Framework,
+dependencies, packaging and publication were excluded.
+
+External CSV and edited/pasted CSV now suggest columns with undeclared units;
+only unchanged App-generated canonical data starts with s/rad/m. Strict JSON
+retains declared units. Storage produces bounded source-to-canonical review
+values from the same admitted rows used for draft acceptance. Parsing is reused
+across mappings; unchanged review/acceptance does not repeat normalization.
+Source, mapping, units, workcell, discard and lifetime changes retire acceptance
+and late reads. Saved/replayed source text initializes from the same canonical
+definition as its revision, rather than an asynchronously resetting draft.
+No existing project units, numbers, source geometry or historical evidence are
+rewritten. Acceptance changes a draft; saving remains one existing Feature action.
+
+The existing owner implementations were verified rather than rebuilt:
+
+- **Trajectory:** `domain/__tests__/trajectory-source.test.ts`,
+  `kinematics.test.ts` and workcell validation prove explicit units, limits,
+  ordered timestamps, unwrapped intermediate rotation, shared kinematics and
+  static/motion boundaries.
+- **Import:** storage and UI trajectory tests prove unknown-unit rejection,
+  equivalent ms/s, deg/rad and mm/m conversion, once-per-row conversion work,
+  source parsing reuse, bounded first/middle/last review, malformed input,
+  cancellation and stale-read rejection. `trajectory-import.spec.ts` and
+  `visual-references.spec.ts` verify ordinary CSV/JSON and restricted GLB
+  acceptance, complete sources, Undo/Redo and local/portable reopening.
+- **Experiment:** existing editing and experiment-panel tests verify versioned
+  definitions, scope, method, interval and thresholds. Browser acceptance adds
+  no history before Save, Save adds one action, and replay/reopening preserve
+  declared source units and full canonical precision.
+- **Snapshot/preflight:** `preflight.test.ts`, original-part snapshot and
+  snapshot-history tests verify detached inputs, missing geometry, empty pairs,
+  background acknowledgements, explicit exclusions and distinct resource risks.
+  Ordinary experiment and original-part-admission E2E verify visible blockers
+  and the supported route.
+- **Preview:** playback clock/control and kinematics tests plus ordinary
+  workcell/experiment E2E verify sampled seeking without canonical writes and
+  distinguish preview from formal evidence. Conversion screenshots were
+  inspected at 1440/960/600 CSS px, DPR 1, light/dark themes, with scrollable
+  review and reachable acceptance controls.
+
+Final evidence: 593 App unit/integration tests; 22 distinct browser cases
+(8 trajectory/GLB import, 7 workcell/experiment/admission, 7 projects);
+App typecheck, lint and production build; 11 naming checks and 10 Inspector
+catalog/test-placement checks. The old GLB browser test could observe transient
+viewport text before Redo settled; it now waits for the existing History depth,
+and the complete import/GLB group passes. No GLB production change was needed.
+Commands and local artifact paths are in
+[TEST_STRATEGY.md](../validation/TEST_STRATEGY.md#m2-import-contract-acceptance).
+
+No unresolved M2 blocker remains in this bounded evidence set. Next: freeze an
+M3 task and review existing official static/continuous/clearance method evidence
+against its numerical contract before changing the first unproven owner.
+Do not redo implemented methods by default or skip to M4/M5. Independent
+numerical review, reference-hardware/resource qualification, distribution,
+pilots and public-release gates retain their separate requirements.
+
 ### User Outcome
 
 Create joint trajectories through the UI or CSV, select the geometry analysis

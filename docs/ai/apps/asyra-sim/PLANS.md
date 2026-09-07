@@ -2,8 +2,7 @@
 
 ## Current Status
 
-- **Development workbench implementation: complete for PR #156 review
-  (2026-09-07).** Original-part geometry, six starter experiments, live collision
+- **Development workbench implementation: merged as PR #156.** Original-part geometry, six starter experiments, live collision
   feedback, formal analysis, comparison, local/portable projects, extensions,
   and the hosted development workbench are implemented. The bounded completion
   record is [development-workbench.md](plans/completed/development-workbench.md).
@@ -22,10 +21,10 @@
 ## Active Work
 
 1. [Asyra Sim first-release roadmap](plans/asyra-sim-roadmap.md)
-   - M1 is closed; M2 Import Contract Completion is active. Complete explicit
-     external source-unit admission and conversion review, then verify all five
-     M2 owner exit criteria before advancing to M3. A completed PR is not
-     acceptance of M2-M4.
+   - M1 is closed and M2 Import Contract Completion passed milestone acceptance
+     on 2026-09-07. Next is a separately bounded M3 review of the existing
+     static/continuous/clearance method contracts and evidence, starting with
+     the first unproven owner. A completed PR is not acceptance of M2-M4.
    - M5 packaging and M6 independent pilot/release review remain later work.
      Historical packaging evidence remains in roadmap section 1.2 and
      [LOCAL_CANDIDATE.md](release/LOCAL_CANDIDATE.md).
@@ -34,6 +33,11 @@
      of this PR. No new Framework 3D profile is enabled by closeout.
 
 ## Completed Work
+
+- [M2 experiments and import acceptance](plans/asyra-sim-roadmap.md#5-m2-executable-experiments-and-data-import)
+  - Completed 2026-09-07: explicit external units, bounded conversion review,
+    valid-result reuse and invalidation, and all five M2 owner exit criteria.
+    593 App tests and 22 scoped browser cases pass; M3-M6 remain separate.
 
 - [M1 workcell foundations](plans/completed/m1-workcell-foundations.md)
   - Closed 2026-09-07: canonical editing, acknowledged save/reopen and safe

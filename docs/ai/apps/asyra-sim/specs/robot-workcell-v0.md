@@ -70,7 +70,19 @@ independently interpret axes or parent-child transforms.
 - Length inputs explicitly support mm/m; angles support deg/rad; time uses
   seconds or explicitly declared milliseconds.
 - Import previews show conversions and preserve source units. Do not guess
-  units for unspecified columns.
+  units for unspecified columns. External CSV and pasted/replaced CSV text
+  require explicit time and joint unit declarations, even when values fit the
+  joint limits or headers resemble canonical names. Column suggestions are not
+  unit declarations. Only unchanged App-generated canonical data starts with
+  known s/rad/m units; strict JSON retains its declared units.
+- Before acceptance, show source fields, units and representative values beside
+  their canonical values and units, from the same validated conversion result.
+  Bound review to first, middle and last keyframes. Changed source, mapping,
+  units or workcell retires the old preview and acceptance eligibility; repeated
+  preview and acceptance of unchanged input do not repeat parsing/conversion.
+  Preview and discard are noncanonical; acceptance edits only the experiment
+  draft and saving uses the existing Feature transaction. Never reinterpret
+  existing project units, values or historical evidence.
 - Joint axes must be finite and nonzero and normalized according to the
   contract. Reject nonfinite positions, dimensions, and times.
 - Analysis dimensions must be valid. Negative scale or hidden nonuniform

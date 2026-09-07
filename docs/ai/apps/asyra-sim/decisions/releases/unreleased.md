@@ -138,3 +138,22 @@ as superseding entries; do not overwrite released history.
 - Consequences: No product code, historical units or evidence are changed.
   M3-M6 and first-release gates remain separate. Closeout adds no Changeset,
   version bump, tag, package publication or deployment.
+
+
+## 2026-09-07 - Complete M2 Source Units and Conversion Review
+
+- Context: External CSV mapping assigned canonical units without a source
+  declaration, and acceptance preview omitted converted joint values. Prior
+  helper tests encoded guessed units instead of the product contract.
+- Decision: Suggest columns only for external/edited CSV, preserve explicit
+  JSON and known App-generated canonical units, and share storage-owned parsed
+  rows and validated conversion review with draft acceptance. Canonical replay
+  initializes import text from its matching definition/revision.
+- Outcome: M2's five owner exit criteria pass the bounded formal and browser
+  evidence in [the roadmap](../../plans/asyra-sim-roadmap.md#5-m2-executable-experiments-and-data-import).
+  No source units, canonical numbers or historical evidence are migrated.
+- Consequences: Save retains the existing one-action Feature transaction;
+  previews and discard remain noncanonical. Next work starts with a bounded M3
+  contract/evidence review, not M4/M5 or automatic method reimplementation.
+  No push, PR, merge, tag, version bump, publication or deployment is part of
+  this acceptance.

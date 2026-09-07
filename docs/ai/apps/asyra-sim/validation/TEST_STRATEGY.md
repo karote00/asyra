@@ -219,3 +219,60 @@ Remaining differences: the sample is authored, not manufacturer-certified;
 the local SwiftShader timing is not reference-hardware evidence. Independent
 numerical review, larger workload qualification and a rebuilt packaged release
 are not implied by these local passes.
+
+
+### M2 import-contract acceptance
+
+Local acceptance on 2026-09-07 uses the isolated worktree
+`.worktrees/asyra-sim-m2-import-contract`, branch
+`codex/asyra-sim-m2-import-contract`, Node 24.13.0, Yarn 4.3.1, installed Chrome,
+and the ordinary Core/CUSTOM App. Its `.env` sets
+`APP_URL=http://127.0.0.1:3034`; server and Playwright share that origin. Browser
+cases use DPR 1 and default camera; conversion review covers 1440/960/600 CSS px
+at 960 px height with light and dark themes. No reference-GPU performance claim
+is made.
+
+Permanent regression tests first failed on guessed source units, missing
+conversion review, repeated normalization, stale reads and canonical/draft
+replay initialization. The final App suite passes 593 tests. The storage
+work-count oracle observes both normalization and actual angle/length conversion;
+the UI caller proves parsing reuse, zero conversion during source loading, no
+extra work during repeat preview/acceptance, and correct dependency invalidation.
+The two-row case converts each angle and length twice total, rather than twice
+per row. The 2,000-row case exposes only first/middle/last review values.
+
+Final commands, from this worktree root:
+
+```sh
+yarn workspace @asyra/asyra-sim test:local
+yarn workspace @asyra/asyra-sim typecheck
+yarn workspace @asyra/asyra-sim lint
+yarn workspace @asyra/asyra-sim build
+yarn lint:naming
+node --test tools/flow-inspector/workspace/__tests__/catalog.contract.test.cjs scripts/__tests__/test-file-placement.test.mjs
+yarn workspace @asyra/asyra-sim test:e2e e2e/__tests__/trajectory-import.spec.ts e2e/__tests__/visual-references.spec.ts --output=.artifacts/m2-import-final
+yarn workspace @asyra/asyra-sim test:e2e e2e/__tests__/experiments.spec.ts e2e/__tests__/workcell.spec.ts e2e/__tests__/original-part-admission.spec.ts --output=.artifacts/m2-workbench
+yarn workspace @asyra/asyra-sim test:e2e e2e/__tests__/projects.spec.ts --output=.artifacts/m2-projects
+```
+
+The browser set contains 22 distinct passing cases. The final import/GLB group
+passes all eight; the workbench group passes seven. All seven project cases
+also passed in the combined project/GLB run retained under `.artifacts/m2-storage`.
+One GLB case in that earlier run observed viewport text before Redo completion;
+its permanent test now awaits History depth before inspecting restored bindings.
+The focused replay and final complete import/GLB gates pass without changing GLB
+production code. This synchronization does not weaken geometry or replay oracles.
+
+Local artifacts are under `apps/asyra-sim/.artifacts/`. Import review contains
+`csv-conversion-first.png`, `csv-conversion-last.png`, `conversion-overview.png`,
+`conversion-detail.png` and `conversion-last-joints.png` in their Playwright case
+directories, plus source/accepted-definition and viewport/theme attachments.
+Agent screenshot inspection verified source/canonical labels and values,
+scrollable rows and reachable acceptance controls; automated cases separately
+verify unchanged pre-acceptance history, one Save action, Undo/Redo, stored units
+and reopening. App/test logs are retained in the worktree's root `.artifacts/`.
+The existing large-bundle build warning remains a later delivery consideration;
+no dependency or runtime upgrade was introduced.
+
+This evidence closes M2 only. It does not certify M3 numerical-method guarantees,
+M4 acceptance, M5 packaging/resource profiles, independent pilots or R0 release.

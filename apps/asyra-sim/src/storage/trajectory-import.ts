@@ -2,6 +2,7 @@ import { hasExactOwnKeys } from '../domain/records'
 import {
   normalizeTrajectorySource,
   type NormalizedTrajectorySource,
+  type TrajectorySourceKeyframe,
   type TrajectoryJointUnit,
   type TrajectoryTimeUnit
 } from '../domain/trajectory-source'
@@ -16,6 +17,23 @@ export interface TrajectoryCsvMapping {
   >
 }
 
+/** Empty units are unfinished user declarations, never canonical metadata. */
+export interface TrajectoryCsvMappingDraft {
+  time: { column: string; unit: TrajectoryTimeUnit | '' }
+  joints: Readonly<
+    Record<string, { column: string; unit: TrajectoryJointUnit | '' }>
+  >
+}
+
+export interface TrajectoryConversionSample {
+  frameIndex: number
+  sourceField: string
+  sourceUnit: TrajectoryTimeUnit | TrajectoryJointUnit
+  sourceValue: number
+  canonicalValue: number
+  canonicalUnit: 's' | 'rad' | 'm'
+}
+
 export interface TrajectoryImportDiagnostic {
   severity: 'error'
   code: string
@@ -25,6 +43,7 @@ export interface TrajectoryImportDiagnostic {
 }
 
 export interface TrajectoryImportPreview {
+  conversions: readonly TrajectoryConversionSample[]
   value: NormalizedTrajectorySource | null
   diagnostics: readonly TrajectoryImportDiagnostic[]
   columns: readonly string[]
@@ -62,6 +81,7 @@ const emptyPreview = (
   item: TrajectoryImportDiagnostic,
   columns: readonly string[] = []
 ): TrajectoryImportPreview => ({
+  conversions: [],
   value: null,
   diagnostics: [item],
   columns,
@@ -205,20 +225,28 @@ function parseDecimal(value: string): number | null {
   return Number.isFinite(parsed) ? parsed : null
 }
 
-export function previewTrajectoryCsv(
-  text: string,
-  workcell: Workcell,
-  mapping: TrajectoryCsvMapping
-): TrajectoryImportPreview {
+export interface PreparedTrajectoryCsv {
+  readonly columns: readonly string[]
+  readonly rows: readonly CsvRow[]
+  readonly diagnostics: readonly TrajectoryImportDiagnostic[]
+}
+
+const rejectedCsv = (
+  item: TrajectoryImportDiagnostic,
+  columns: readonly string[] = []
+): PreparedTrajectoryCsv => ({ columns, rows: [], diagnostics: [item] })
+
+/** One source-read artifact; mapping and unit changes reuse these parsed rows. */
+export function prepareTrajectoryCsv(text: string): PreparedTrajectoryCsv {
   if (byteLength(text) > TRAJECTORY_IMPORT_LIMITS.csvBytes)
-    return emptyPreview(
+    return rejectedCsv(
       diagnostic('file-too-large', 'Trajectory CSV exceeds the 8 MiB limit.')
     )
   let rows: CsvRow[]
   try {
     rows = parseCsv(text.replace(/^\uFEFF/, ''))
   } catch (error) {
-    return emptyPreview(
+    return rejectedCsv(
       diagnostic(
         error instanceof CsvResourceError ? error.code : 'csv-syntax',
         error instanceof Error ? error.message : 'Invalid CSV syntax'
@@ -228,36 +256,95 @@ export function previewTrajectoryCsv(
   const headerRow = rows.shift(),
     columns = headerRow?.cells ?? []
   if (!headerRow || !columns.length || columns.some((column) => !column))
-    return emptyPreview(
+    return rejectedCsv(
       diagnostic('missing-header', 'CSV requires a header row.')
     )
   if (new Set(columns).size !== columns.length)
-    return emptyPreview(
+    return rejectedCsv(
       diagnostic('duplicate-header', 'CSV column names must be unique.'),
       columns
     )
   if (!rows.length)
-    return emptyPreview(
+    return rejectedCsv(
       diagnostic('empty-trajectory', 'CSV requires at least one data row.'),
       columns
     )
-  const mappingError = validateMapping(mapping, workcell, columns)
+  return { columns, rows, diagnostics: [] }
+}
+
+function conversionSamples(
+  value: NormalizedTrajectorySource,
+  sources: readonly TrajectorySourceKeyframe[],
+  mapping?: TrajectoryCsvMapping
+): TrajectoryConversionSample[] {
+  const indices = [
+    ...new Set([0, Math.floor(sources.length / 2), sources.length - 1])
+  ]
+  return indices.flatMap((frameIndex) => {
+    const source = sources[frameIndex]
+    const canonical = value.trajectory.keyframes[frameIndex]
+    const samples: TrajectoryConversionSample[] = [
+      {
+        frameIndex,
+        sourceField: mapping?.time.column ?? 'time',
+        sourceUnit: value.sourceUnits.time,
+        sourceValue: source.time,
+        canonicalValue: canonical.time,
+        canonicalUnit: 's'
+      }
+    ]
+    for (const [id, unit] of Object.entries(value.sourceUnits.joints)) {
+      samples.push({
+        frameIndex,
+        sourceField: mapping?.joints[id].column ?? `joints.${id}`,
+        sourceUnit: unit,
+        sourceValue: source.joints[id],
+        canonicalValue: canonical.joints[id],
+        canonicalUnit: unit === 'deg' || unit === 'rad' ? 'rad' : 'm'
+      })
+    }
+    return samples
+  })
+}
+
+export function previewTrajectoryCsv(
+  source: string | PreparedTrajectoryCsv,
+  workcell: Workcell,
+  draftMapping: TrajectoryCsvMappingDraft
+): TrajectoryImportPreview {
+  const prepared =
+    typeof source === 'string' ? prepareTrajectoryCsv(source) : source
+  const { columns, rows, diagnostics: sourceDiagnostics } = prepared
+  if (sourceDiagnostics.length)
+    return {
+      value: null,
+      conversions: [],
+      columns,
+      previewRows: [],
+      diagnostics: sourceDiagnostics
+    }
+  const mappingError = validateMapping(draftMapping, workcell, columns)
   if (mappingError)
     return emptyPreview(diagnostic('invalid-mapping', mappingError), columns)
+  // The exact mapping shape and every compatible unit have been validated above.
+  const mapping = draftMapping as TrajectoryCsvMapping
 
   const columnIndex = new Map(columns.map((column, index) => [column, index])),
     diagnostics: TrajectoryImportDiagnostic[] = [],
-    sourceFrames: { time: number; joints: Record<string, number> }[] = [],
+    sourceFrames: TrajectorySourceKeyframe[] = [],
+    normalizedFrames: TrajectorySourceKeyframe[] = [],
     previewRows: Readonly<Record<string, string>>[] = [],
     jointUnits: Record<string, TrajectoryJointUnit> = {},
     jointMappings = Object.entries(mapping.joints)
   for (const [id, entry] of jointMappings) jointUnits[id] = entry.unit
   let previous = -Infinity
   for (const row of rows) {
-    const display = Object.fromEntries(
-      columns.map((column, index) => [column, row.cells[index] ?? ''])
-    )
-    if (previewRows.length < 20) previewRows.push(display)
+    if (previewRows.length < 20)
+      previewRows.push(
+        Object.fromEntries(
+          columns.map((column, index) => [column, row.cells[index] ?? ''])
+        )
+      )
     if (row.cells.length !== columns.length) {
       diagnostics.push(
         diagnostic(
@@ -306,7 +393,7 @@ export function previewTrajectoryCsv(
         keyframes: [frame]
       }).trajectory.keyframes[0]
       if (!normalized) throw new Error('Missing normalized row')
-      if (normalized.time - previous < 0.000001) {
+      if (normalized.time - previous < GEOMETRY_PROFILE.minSegmentDuration) {
         diagnostics.push(
           diagnostic(
             'time-order',
@@ -318,6 +405,7 @@ export function previewTrajectoryCsv(
       }
       previous = normalized.time
       sourceFrames.push(frame)
+      normalizedFrames.push(normalized)
     } catch (error) {
       diagnostics.push(
         diagnostic(
@@ -329,31 +417,19 @@ export function previewTrajectoryCsv(
     }
   }
   if (diagnostics.length)
-    return { value: null, diagnostics, columns, previewRows }
-  try {
-    return {
-      value: normalizeTrajectorySource(workcell, {
-        version: 1,
-        timeUnit: mapping.time.unit,
-        jointUnits,
-        keyframes: sourceFrames
-      }),
-      diagnostics: [],
-      columns,
-      previewRows
-    }
-  } catch (error) {
-    return {
-      value: null,
-      diagnostics: [
-        diagnostic(
-          'invalid-trajectory',
-          error instanceof Error ? error.message : 'Invalid trajectory'
-        )
-      ],
-      columns,
-      previewRows
-    }
+    return { value: null, conversions: [], diagnostics, columns, previewRows }
+  // Each row is domain-admitted exactly once; the parser and time-order check
+  // above enforce the aggregate row-count and cross-frame contracts.
+  const value: NormalizedTrajectorySource = {
+    trajectory: { version: 1, keyframes: normalizedFrames },
+    sourceUnits: { time: mapping.time.unit, joints: jointUnits }
+  }
+  return {
+    value,
+    conversions: conversionSamples(value, sourceFrames, mapping),
+    diagnostics: [],
+    columns,
+    previewRows
   }
 }
 
@@ -386,8 +462,14 @@ export function previewTrajectoryJson(
       )
     )
   try {
+    const value = normalizeTrajectorySource(workcell, data.source)
+    // The domain has admitted the exact envelope before any display projection.
+    const source = data.source as {
+      keyframes: readonly TrajectorySourceKeyframe[]
+    }
     return {
-      value: normalizeTrajectorySource(workcell, data.source),
+      value,
+      conversions: conversionSamples(value, source.keyframes),
       diagnostics: [],
       columns: [],
       previewRows: []
