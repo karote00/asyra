@@ -2,91 +2,14 @@
 
 ## 1. Status and Task Contract
 
-### 1.1 Original-part geometry refactor (local implementation complete)
+### 1.1 Development workbench closeout (2026-09-07)
 
-The user's corrected requirement supersedes the earlier proxy-based R0 scope.
-The product contract section 2 is authoritative. Scope: Sim domain, assets,
-editing, snapshots, methods, worker/results/storage, render/UI, permanent tests,
-App docs and its Inspector. No Framework changes, new dependencies, equipment
-control, publishing or unrelated cleanup are authorized by this refactor.
-Preserve panel layout, themes, canonical transactions, kinematics, explicit
-analysis scope, cancellation and immutable historical evidence.
-
-The bounded refactor is implemented and locally verified; PLANS.md records the
-current evidence and user-review handoff. The owner sequence below remains the
-scope and design record, not an assertion that external R0 gates are complete.
-
-Work one Inspector owner at a time:
-
-1. **Snapshot admission:** reject new execution when a selected body has legacy
-   visual bindings whose complete geometry is absent from the method input.
-   Primitive colliders, hidden state, warning acknowledgement, direct runner or
-   Worker entry, and historical rerun cannot bypass rejection. Preserve old
-   result validation independently. Gates: preflight/snapshot/admission unit
-   regressions, runner/Worker no-execution proof and ordinary UI blocked-state
-   test. This is a protective intermediate state, not a mesh solver.
-2. **Domain and asset source, then edit/storage/render consumers:** introduce
-   bounded canonical indexed geometry and explicit topology/solid semantics.
-   Preserve original triangles, conversion and provenance; material/color data
-   cannot change collision coverage. Freeze source identities and complete
-   resolved geometry into new-version run inputs. Reject incomplete migration;
-   never promote old proxies to equivalent original parts. Update the matching
-   Inspector handoffs before each consumer. Gates: source-space parity,
-   transforms/units, missing/corrupt geometry, Undo/Redo, duplication and portable
-   projects. The maintained table-leg case must use ordinary accepted data.
-3. **Method, then runner/results:** implement original-triangle static contact,
-   clearance and containment under the declared topology, followed by complete
-   joint-space continuous-time bounds. No mesh convexification, decimation or
-   sampled-clear conclusion. Boundary/ill-conditioned cases remain unresolved.
-   New method/version and snapshot identity must not reinterpret old evidence.
-   Gates: independent triangles/closed solids, disjoint concave regions and
-   holes, containment, grazing/degenerate input, feature-only contact, fast and
-   rotational crossing, resource termination, Worker parity and report identity.
-4. **UI and closure:** present one part geometry with optional diagnostic
-   overlays, not an unrelated visual shell over a surrogate. Restore the full
-   ordinary example/run/replay/compare journey only through the mesh route.
-   Gates: App unit/type/lint/build, affected browser and synchronized visual
-   cases, resource profiling and cancellation. Spatial acceleration requires
-   a measured owner plan and an equivalence oracle; resource limits cannot
-   authorize loss of geometry. Rebuild independent delivery only afterward.
-
-The user canceled the one-turn account-usage stop line. Stop only for new
-dependency requirements or unresolved product/Inspector conflicts outside this scope.
-Record the completed owner and next gate in PLANS.md; do not label the entire
-refactor complete because the admission block or viewport works.
-
-Bounded numerical usability iteration (2026-09-05): the normal full-source
-browser run reached 46 pairs but exhausted mesh work at the nineteenth pair,
-leaving 28 unresolved. Preserve the budget and all source geometry. The domain
-owner now exposes exact shared-ancestor-relative pair poses; only the new method
-consumes them. Permanent interval enclosure proofs and full-triangle separating
-certificates reduced the ordinary example to 112 interval evaluations, with
-all 46 pairs resolved and no triangle-work exhaustion at the unchanged budget.
-The full-suite Node run measured about 1.5 seconds; this is development-host
-evidence, not a reference-hardware guarantee. This does
-not authorize unrelated optimization, new dependencies or changed tolerances.
-
-Browser oracle correction: the original-part import journey passed source
-acceptance and history restoration but failed whole-viewport PNG byte equality
-twice, including after waiting for settled frames. The UI owner must prove Undo/
-Redo against exported canonical source bindings and original bytes, not treat
-GPU pixels (including diagnostic overlays) as geometry authority. Keep the
-wireframe visual difference, add explicit restored part count/source/placement
-assertions, and retain both rendered views for inspection. Scope is the existing
-import E2E case only; projection source-space parity tests remain mandatory.
-This replaces screenshot-byte equality, not the product restoration contract.
-
-Final method-owner review: retain a valid static witness when a later triangle
-query or interval-bound query exhausts the mesh budget. Inputs are the validated
-pair and the existing kernel's evidence/exhaustion response; outputs remain the
-complete interval partition. A zero lower bound after exhaustion is conservative,
-not proof of clearance. A proven issue remains a finding, other sampled bounds
-remain unresolved, and all unvisited intervals remain explicitly unknown.
-This changes only `continuous-query.ts` and its method-owner regressions under
-the Inspector's method step and product sections 7-8; no renderer, state, scope,
-threshold, historical method identity or external contributor is allowed.
-Gate: three red witness-retention cases, focused/full App tests and the affected
-Worker/browser workflows. Stop for any unsatisfied evidence-owner contract.
+The bounded implementation and original-part refactor are complete for PR #156.
+Their owner sequence, completion evidence and limits have moved to
+[the completed development-workbench record](completed/development-workbench.md).
+This includes the permanent `asyra-sim.vercel.app` development deployment, not
+R0 Public Alpha certification. The remaining roadmap and first-release gates
+stay active; the historical checkpoints below are not current release claims.
 
 ### 1.2 Earlier implementation checkpoint (not mesh readiness)
 

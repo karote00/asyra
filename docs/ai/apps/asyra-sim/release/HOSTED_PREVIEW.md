@@ -12,6 +12,8 @@ remain separate. This deployment does not authorize real equipment operation.
 ## Project Configuration
 
 - Git repository: `karote00/asyra`.
+- Vercel team: `karote00s-projects`; project ID:
+  `prj_6BMRMmYpGwroBa4v5k9i0chTtN44`.
 - Project root: `apps/asyra-sim`.
 - Include files outside the root directory so Yarn can resolve the monorepo.
 - Framework: Vite; Node.js: `24.x`; Yarn: the repository's declared `4.3.1`.
@@ -23,6 +25,15 @@ remain separate. This deployment does not authorize real equipment operation.
   production branch is `main`; PR review and merge remain human decisions.
 - No required runtime environment variable, Vercel Function, database service,
   account system, analytics, or cloud solver is added.
+- Keep the Vercel Toolbar disabled for both environments: the app intentionally
+  allows only same-origin scripts. Project model-improvement data sharing is off.
+
+The first deployment on 2026-09-07 serves PR checkpoint
+`78694410b1c8f0372f42349c12196f90a50071ef` at the production alias, without merging
+the PR. Production branch tracking remains `main`; future merges update that
+same domain. Subsequent feature-branch pushes produce previews, not automatic
+production promotion. Deployment IDs and source commits, rather than the mutable
+alias alone, identify the build under review.
 
 ## Data and Browser Boundaries
 

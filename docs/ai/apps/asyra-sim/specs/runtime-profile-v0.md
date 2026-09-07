@@ -40,6 +40,11 @@ Portable backups remain required. `file://` is not the supported launch route.
 M5 must prove offline startup and the clean-consumer artifact, including its
 exact source commit, dependency notices, and checksums.
 
+The separately authorized [hosted development workbench](../release/HOSTED_PREVIEW.md)
+uses the same browser-local runtime at `asyra-sim.vercel.app`. It needs network
+access to obtain its assets and does not replace these offline delivery gates.
+Its HTTPS origin has separate browser storage from the local candidate.
+
 The launcher serves only its sibling `site` directory at
 `http://127.0.0.1:3020`. It accepts an explicit `--port=1024..65535` override,
 never a remote bind address, and fails if that port is occupied. It never opens

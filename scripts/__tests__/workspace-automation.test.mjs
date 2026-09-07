@@ -103,6 +103,14 @@ test('GitHub Actions use least privilege and immutable action revisions', () => 
   assert.match(dependabot, /interval: ['"]weekly['"]/)
 })
 
+test('CI bounds workspace test concurrency without dropping test owners', () => {
+  const workflow = readText('.github/workflows/main.yml')
+  const scripts = readJSON('package.json').scripts
+
+  assert.match(workflow, /^\s+run: yarn test:ci --concurrency=2$/m)
+  assert.equal(scripts['test:ci'], 'yarn test:scripts && turbo run test:ci')
+})
+
 test('Dependabot separates routine, major, and security update lanes', () => {
   const dependabot = readText('.github/dependabot.yml')
 

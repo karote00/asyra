@@ -104,3 +104,25 @@ as superseding entries; do not overwrite released history.
   successful reset.
 - The first implementation slice adds Feature quiescence. Complete Core/App
   replacement and the normal storage UI remain unfinished M1 work.
+
+## 2026-09-07 - Close the Development Workbench and Keep One Durable Hosted Product Name
+
+- Context: The user requested Vercel deployment using the final product name,
+  followed by development closeout and current-head CI validation for PR review.
+- Decision: Use the separate Vercel project and permanent domain
+  `asyra-sim.vercel.app`. Keep `main` as the production branch and Git-connected
+  PR previews for review. The initial production alias serves the reviewed PR
+  implementation without merging it; later merges update the same domain.
+- Outcome: The bounded workbench, approved complete runtime replacement,
+  original-part analysis and live collision feedback are implemented. Move the
+  completed refactor record out of the active roadmap into
+  [development-workbench.md](../../plans/completed/development-workbench.md).
+  This supersedes earlier unfinished-development status, not historical evidence.
+- Consequences: Hosting delivers static assets; experiments, geometry, runs and
+  local saves remain browser-local. Origins have separate storage and require
+  portable export/import for transfer. Disable deployment toolbar injection and
+  project model-improvement sharing. Do not create cloud-analysis obligations.
+- Release boundary: This is development closeout, not completion or waiver of
+  the independent numerical, resource, offline distribution, pilot or support
+  gates in `release/FIRST_RELEASE.md`. No version bump, release record, package
+  publication, tag or merge is authorized by closeout.

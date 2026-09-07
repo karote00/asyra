@@ -8,7 +8,8 @@ Current apps:
 
 - [Asyra Sim](asyra-sim/README.md) - free, pluggable simulation and experiment
   workbench; first product slice: local robot-workcell collision and clearance
-  experiments. Implementation is active; no R0 product release is available yet.
+  experiments. The development workbench is implemented and hosted; independent
+  R0 release gates remain open. See its app-scoped closeout and release contracts.
 
 Each app folder documents:
 

@@ -12,8 +12,11 @@ single robot workcell**, not a complete factory simulator.
   supplied triangles, closed-solid admission and continuous evidence share one
   domain source. See [the method contract](specs/original-part-method-v1.md)
   and PLANS.md for implementation evidence and remaining public-release gates.
-- Implementation is active. M0 feasibility and M1 foundations are complete. The R0
-  release gates are not complete.
+- The development workbench implementation is complete for PR #156 review. See
+  [the completed plan](plans/completed/development-workbench.md). The R0 release
+  gates remain open; this is not a released product.
+- The hosted workbench uses the permanent domain `asyra-sim.vercel.app` and
+  production branch `main`. See [hosting and browser-local data boundaries](release/HOSTED_PREVIEW.md).
 - App workspace: `apps/asyra-sim/`, alongside `apps/asyra-design/`.
 - The normal CUSTOM workbench renders and edits a synthetic six-axis model.
   Canonical editing, analytical numerical kernels, and basic browser proofs

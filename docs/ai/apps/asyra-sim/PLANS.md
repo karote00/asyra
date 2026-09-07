@@ -2,95 +2,46 @@
 
 ## Current Status
 
-- Original-part geometry refactor (2026-09-05): implemented for local review.
-  Rendering and version-2 analysis use complete original triangles and source
-  placement. No surrogate geometry, hole filling, decimation or convex-hull
-  replacement is used. Closed-solid admission, static containment, continuous
-  interval evidence, bounded hierarchy acceleration and per-run immutable
-  indices are implemented. Missing/unsupported/ambiguous inputs cannot become
-  successful substitutes; version-1 history retains its original meaning.
-  Normal composition selects `original-part-clearance-v1@1.0.0`; source edits,
-  Undo/Redo, project replacement, immutable runs, comparison, reports and source
-  integrity use their existing owners. No Framework or dependency changes.
-  Local gates: 413 App unit/integration tests; all 52 browser cases, split into
-  bounded data (14), behavior (13), runtime (17) and visual (8) groups; App
-  typecheck/lint/production build and four scoped Inspector checks. The complete
-  23,028-triangle example resolves 46 pairs with 112 interval evaluations and
-  no mesh-work exhaustion at the unchanged budget. Node full-suite execution
-  measured about 1.5 seconds. Normal in-app review on port 3020 also shows
-  46/46 complete pair records with zero unresolved pairs. Screenshots of source
-  acceptance/restoration, historical replay, three-candidate comparison,
-  trajectory poses, closer views, panel layouts and both themes were inspected.
-  SwiftShader playback at 1600x1000 recorded 50 ms median / 66.7 ms p95 over
-  90 frames, not a hardware-GPU or reference-machine certification.
-  Independent numerical review, larger release resource profiles and packaged
-  delivery remain separate gates; this completes the bounded geometry refactor,
-  not R0 release approval.
-  Final method review additionally proved three budget-boundary regressions:
-  established penetration/clearance-issue witnesses and unresolved sampled
-  bounds survive later kernel exhaustion; all unvisited intervals remain unknown.
-- Product planning baseline: approved for implementation.
-- App implementation: authorized through the first local candidate; not complete.
-- M0 technical feasibility: established; initial environment/resource choices
-  are frozen in the runtime profile. This is not a full workflow or release gate.
-- M1 workcell foundations: complete through local save/reopen and complete App
-  runtime replacement, including owner cleanup and empty successor history.
-- Earlier visual-only review refresh (superseded by the geometry refactor): original mechanical main-body GLB sources,
-  explicit sample naming and compound gripper proxies, concise responsive UI,
-  transient Play/Pause/Restart, persistent light/dark themes, pose-stable GPU
-  resource ownership and bounded studio shadows are implemented. Source checks
-  pass 367 unit tests, 45 browser tests, typecheck, lint and production build.
-  Live review uses `http://127.0.0.1:3020/`; overview, three trajectory times,
-  closer views, narrow layouts and theme screenshots were inspected. The
-  software-rendered 1600x1000 playback check recorded 50 ms median / 66.7 ms
-  p95 with shadows, not a hardware-GPU or release performance guarantee.
-  This refresh has not rebuilt or revalidated the older packaged candidate.
-- M2-M4 implementation: in progress. Experiment authoring, mapped trajectory
-  import, preflight, Worker execution, immutable run retention/comparison,
-  reports, portable project reopening, and independent candidate duplication with
-  lineage-aware comparison are implemented. Restricted visual attachment and trusted
-  pre-start method extensions, including an independent analytical example and
-  retained method provenance, are implemented. Typed acceptance groups preserve
-  raw findings and unknowns across the same result/report/history path. Run-linked
-  field observations, bounded opaque attachments, independent feedback export,
-  and integrity-checked reopening are implemented. Full resource gates remain. Admission,
-  retained-evidence caps, Worker deadlines/cancellation, and bounded visible
-  progress now have focused regressions and ordinary browser coverage.
-- M5 delivery checkpoint: `125a09c0e` passes the clean exact-source producer:
-  19 rebuilt/validated Framework tarballs, 348 unchanged registry inputs, 360 App
-  tests, type and main/Worker input isolation, and versioned local candidate
-  assembly with original notices, source SDK, guides and checksums. The launcher
-  and packaging guards pass 18 permanent tests; normal startup/editing passes
-  three browser tests. This is assembly evidence, not packaged offline or R0
-  acceptance. Candidate artifacts are retained under the App's
-  `.artifacts/consumers/125a09c0e3a2-qGNQsL/`.
-- R0 first public release: not ready; no gate is claimed to have passed.
-
-This index is a concise checkpoint, not a replacement for the roadmap or product contract.
+- **Development workbench implementation: complete for PR #156 review
+  (2026-09-07).** Original-part geometry, six starter experiments, live collision
+  feedback, formal analysis, comparison, local/portable projects, extensions,
+  and the hosted development workbench are implemented. The bounded completion
+  record is [development-workbench.md](plans/completed/development-workbench.md).
+- Normal composition uses `original-part-clearance-v1@1.0.1`. Complete supplied
+  geometry is shared by rendering and analysis. Clearance witnesses cannot hide
+  later established penetration; historical method evidence is not rewritten.
+- **Hosting:** the permanent product domain is `asyra-sim.vercel.app`.
+  PRs receive Vercel checks/previews; `main` is the production branch. See
+  [HOSTED_PREVIEW.md](release/HOSTED_PREVIEW.md) for configuration, browser-local
+  data boundaries and verification.
+- **R0 Public Alpha: not released.** Independent numerical review, representative
+  resource/reference-hardware evidence, refreshed offline distribution,
+  independent pilots and public maintenance/support policy remain open.
+  Hosting and this PR closeout do not waive any first-release gate.
 
 ## Active Work
 
 1. [Asyra Sim first-release roadmap](plans/asyra-sim-roadmap.md)
-   - Order: M0 contracts and feasibility -> M1 workbench -> M2 experiments and
-     trajectories -> M3 formal geometric methods -> M4 comparison and
-     extensions -> M5 quality and delivery -> M6 independent pilot and R0
-     release review.
-   - The first release requires M0-M6. It does not wait for M7 domain expansion.
-   - The bounded original-part refactor in roadmap section 1.1 is ready for
-     user inspection. It does not authorize publishing or silently rebuilding
-     the older packaged candidate. Remaining delivery work includes a new
-     exact-source package, production-package offline browser workflows and inspected
-     screenshots; the permanent six-axis / 30-fixed-shape / 200-keyframe /
-     three-candidate resource benchmark; then the remaining local candidate
-     closeout gates. Work is paused at the validated delivery checkpoint, not
-     marked complete. Reference M1/8 GB hardware, two independent pilots and
-     public reporting/maintenance policy still require external evidence or
-     user decisions; do not substitute this development host or self-review.
-     The approved reset scope and owner sequence are recorded in the roadmap.
-     The user approved Three.js, its types and necessary dependencies, and the
-     necessary Framework lifecycle extensions.
-   - Keep the engine App-owned for now. Future extraction of generic defaults
-     into Preset is a separate task; do not enable the official 3D profile here.
+   - The remaining sequence is M5 quality/delivery and M6 independent pilot/release
+     review, including any M2-M4 acceptance gaps identified by those gates.
+   - The earlier `125a09c0e` exact-source package is a historical assembly
+     checkpoint, not an offline package of this completed workbench. Its record
+     remains in roadmap section 1.2 and [LOCAL_CANDIDATE.md](release/LOCAL_CANDIDATE.md).
+   - Next work requires its own bounded task: a refreshed exact-source package,
+     packaged offline workflows, the permanent six-axis / 30-fixed-shape /
+     200-keyframe / three-candidate benchmark, then the remaining release gates.
+     Reference M1/8 GB hardware, independent pilots and public policy need
+     external evidence or user decisions; development-host tests are not substitutes.
+   - Keep the engine App-owned. Extracting generic 3D defaults into Preset and
+     precise contact-region inspection are separate tasks, not unfinished scope
+     of this PR. No new Framework 3D profile is enabled by closeout.
+
+## Completed Work
+
+- [Development workbench and original-part refactor](plans/completed/development-workbench.md)
+  - Completed 2026-09-07: one executable local/hosted experiment workbench, with
+    source-faithful rigid geometry and immutable evidence. Ready for PR review
+    after the current-head CI gates pass; not an R0 release approval.
 
 ## Unscheduled Directions
 
