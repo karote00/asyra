@@ -38,10 +38,7 @@ export function TrajectoryImportPanel({
       </summary>
 
       <p className="hint text-[10px] leading-[1.6] text-sim-muted font-normal">
-        External CSV files require explicit source units. Column suggestions do
-        not declare units. JSON must use the strict
-        <code> sim-trajectory v1</code> envelope. Preview never edits the
-        project.
+        Choose source units for imported CSV files, then preview the conversion.
       </p>
 
       <div className="file-row flex items-center gap-2 my-3 mx-0">
@@ -264,8 +261,8 @@ export function TrajectoryImportPanel({
             className="grid gap-2 max-h-48 min-[700px]:max-h-72 overflow-y-auto"
           >
             <p className="text-sim-muted">
-              First, middle and last keyframes - source → canonical. Values are
-              rounded for display; acceptance uses the full validated precision.
+              Source → converted values. Showing first, middle and last
+              keyframes. Displayed values are rounded.
             </p>
             {preview.conversions.map((sample) => (
               <div
