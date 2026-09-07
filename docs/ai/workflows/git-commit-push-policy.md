@@ -11,6 +11,23 @@ tasks.
 - Verify the current branch before staging or committing.
 - Preserve unrelated user changes in a dirty worktree.
 
+## Worktree Location
+
+- Create new linked worktrees at `<main-repository>/.worktrees/<task-name>`.
+  Do not place working files under `.git/`, including `.git/agent-worktrees/`:
+  development servers such as Vite intentionally block Git-internal paths.
+- Git manages linked-worktree metadata under `.git/worktrees/` itself. That
+  metadata directory is distinct from the working files and must not be moved
+  or edited manually.
+- Inspect registered worktrees, branch names, destination paths and uncommitted
+  changes before creating one. If a name or path is occupied, choose a fresh
+  name; never overwrite, reset or delete existing work.
+- Reuse a task's existing suitable worktree after verifying its branch and
+  state. This rule does not authorize relocating other tasks' worktrees.
+- When an existing task's relocation is authorized, use `git worktree move`
+  and verify the branch, changes and registration afterward. Preserve server
+  ownership and stop only processes belonging to that task before relocation.
+
 ## Commit Authority
 
 An agent may create local commits without requesting separate approval for each
