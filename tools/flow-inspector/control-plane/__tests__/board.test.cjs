@@ -66,6 +66,46 @@ test(
       await expect(
         canvas.locator('.step-card [role="button"], .step-card button')
       ).toHaveCount(0)
+      const fitViewport = canvas.locator('.flow-viewport')
+      for (const delta of [-500, 1000]) {
+        await fitViewport.evaluate((node, delta) => {
+          node.dispatchEvent(
+            new WheelEvent('wheel', {
+              deltaY: delta,
+              ctrlKey: true,
+              bubbles: true,
+              cancelable: true
+            })
+          )
+        }, delta)
+        await fitViewport.press('Meta+1')
+        const gaps = await canvas.locator('.step-card').evaluateAll((cards) => {
+          const view = cards[0]
+            .closest('.flow-viewport')
+            .getBoundingClientRect()
+          const bounds = cards.map((card) => card.getBoundingClientRect())
+          return [
+            Math.min(...bounds.map((r) => r.left)) - view.left,
+            view.right - Math.max(...bounds.map((r) => r.right)),
+            Math.min(...bounds.map((r) => r.top)) - view.top,
+            view.bottom - Math.max(...bounds.map((r) => r.bottom))
+          ]
+        })
+        assert.ok(
+          gaps.every((gap) => gap >= 23.5),
+          `all cards need 24 screen px of padding: ${gaps}`
+        )
+        assert.ok(
+          Math.abs(Math.min(...gaps) - 24) < 0.5,
+          `fit must use the available bounds: ${gaps}`
+        )
+      }
+      await canvas
+        .getByRole('button', { name: 'Boundary', exact: true })
+        .click()
+      await fitViewport.press('Meta+1')
+      await expect(canvas.locator('.step-card')).toHaveCount(7)
+      await canvas.locator('[data-reset-zoom]').click()
       const owner = canvas.locator(
         '[data-step-id="finalize-transaction-state"]'
       )

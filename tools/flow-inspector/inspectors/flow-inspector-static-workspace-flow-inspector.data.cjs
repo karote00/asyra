@@ -198,6 +198,7 @@ const data = {
       outputs: ['artifact:rendered-static-inspector'],
       conditions: [
         'Renderer kind follows catalog classification.',
+        'Command+1 restores All lanes and fits every card with at least 24 screen CSS pixels to the viewport outer border, exact on the limiting axis; fit-all may exceed manual scale limits. Editable controls are excluded. Command+0 clears fit translation and resets scale. Card geometry stays unchanged.',
         'Fit requests frame rendered cards through the existing zoom owner with padding and reveal the canvas, bounded from 20% to 100%; absent cards do not change the viewport. Manual zoom and reset remain available. No execution state enters this owner.',
         'Document, source, and related Inspector links preserve authored destinations and open in an isolated new tab without replacing the canvas.'
       ],

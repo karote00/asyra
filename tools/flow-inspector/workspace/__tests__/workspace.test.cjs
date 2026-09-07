@@ -613,3 +613,35 @@ test('v2 viewer fits requested cards through its existing zoom owner', () => {
   assert.equal(viewport.dataset.zoomScale, '1')
   dom.window.close()
 })
+
+test('Command+1 fits all bounds below manual zoom limits and respects editable focus', () => {
+  const dom = createRenderedTarget(
+    loadBundle().entries.find((entry) => entry.kind === 'flow-v2')
+  )
+  const { document, KeyboardEvent } = dom.window
+  const viewport = document.querySelector('.flow-viewport')
+  Object.defineProperty(viewport, 'offsetWidth', { value: 600 })
+  Object.defineProperty(viewport, 'offsetHeight', { value: 400 })
+  Object.defineProperty(viewport, 'clientWidth', { value: 598 })
+  Object.defineProperty(viewport, 'clientHeight', { value: 398 })
+  for (const card of document.querySelectorAll('.step-card')) {
+    Object.defineProperty(card, 'offsetLeft', { value: 0 })
+    Object.defineProperty(card, 'offsetTop', { value: 0 })
+    Object.defineProperty(card, 'offsetWidth', { value: 10000 })
+    Object.defineProperty(card, 'offsetHeight', { value: 10000 })
+  }
+  const input = document.createElement('input')
+  document.body.append(input)
+  input.dispatchEvent(
+    new KeyboardEvent('keydown', { key: '1', metaKey: true, bubbles: true })
+  )
+  assert.equal(viewport.dataset.zoomScale, '1')
+  viewport.dispatchEvent(
+    new KeyboardEvent('keydown', { key: '1', metaKey: true, bubbles: true })
+  )
+  assert.equal(Number(viewport.dataset.zoomScale), (400 - 48) / 10000)
+  document.querySelector('[data-reset-zoom]').click()
+  assert.equal(viewport.dataset.zoomScale, '1')
+  assert.equal(document.querySelector('#flow').style.transform, 'scale(1)')
+  dom.window.close()
+})

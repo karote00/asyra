@@ -1042,6 +1042,8 @@ code {
     const minimumScale = 0.2
     const maximumScale = 2.5
     let scale = 1
+    let originX = 0
+    let originY = 0
     const surface = flow.parentElement
     const controls = document.createElement('div')
     const reset = document.createElement('button')
@@ -1050,6 +1052,8 @@ code {
     reset.dataset.resetZoom = ''
     reset.title = 'Reset flow zoom to 100% (⌘0)'
     viewport.tabIndex = 0
+    viewport.setAttribute('aria-keyshortcuts', 'Meta+1 Meta+0')
+    viewport.title = '⌘1 - Fit all cards with 24px padding; ⌘0 - Reset zoom'
     viewport.setAttribute(
       'aria-label',
       'Zoomable and scrollable Inspector flow'
@@ -1064,30 +1068,36 @@ code {
     const syncSurfaceSize = () => {
       const baseWidth = Number(flow.dataset.baseWidth)
       const baseHeight = Number(flow.dataset.baseHeight)
-      if (baseWidth > 0) surface.style.width = `${baseWidth * scale}px`
-      if (baseHeight > 0) surface.style.height = `${baseHeight * scale}px`
+      if (baseWidth > 0)
+        surface.style.width = `${baseWidth * scale + originX}px`
+      if (baseHeight > 0)
+        surface.style.height = `${baseHeight * scale + originY}px`
     }
 
-    const setScale = (nextScale, anchor) => {
-      const boundedScale = Math.min(
-        maximumScale,
-        Math.max(minimumScale, nextScale)
-      )
+    const setScale = (nextScale, anchor, fitOrigin) => {
+      const boundedScale = fitOrigin
+        ? nextScale
+        : Math.min(maximumScale, Math.max(minimumScale, nextScale))
       const anchorX = anchor?.x ?? viewport.clientWidth / 2
       const anchorY = anchor?.y ?? viewport.clientHeight / 2
-      const contentX = (viewport.scrollLeft + anchorX) / scale
-      const contentY = (viewport.scrollTop + anchorY) / scale
+      const contentX = (viewport.scrollLeft + anchorX - originX) / scale
+      const contentY = (viewport.scrollTop + anchorY - originY) / scale
+      originX = fitOrigin?.x ?? originX
+      originY = fitOrigin?.y ?? originY
       scale = boundedScale
       viewport.dataset.zoomScale = String(scale)
       flow.style.transformOrigin = '0 0'
-      flow.style.transform = `scale(${scale})`
+      flow.style.transform =
+        originX || originY
+          ? `translate(${originX}px, ${originY}px) scale(${scale})`
+          : `scale(${scale})`
       syncSurfaceSize()
-      viewport.scrollLeft = contentX * scale - anchorX
-      viewport.scrollTop = contentY * scale - anchorY
+      viewport.scrollLeft = contentX * scale + originX - anchorX
+      viewport.scrollTop = contentY * scale + originY - anchorY
       updateResetLabel()
     }
 
-    const resetZoom = () => setScale(1)
+    const resetZoom = () => setScale(1, undefined, { x: 0, y: 0 })
 
     viewport.addEventListener(
       'wheel',
@@ -1107,10 +1117,72 @@ code {
     )
     reset.addEventListener('click', resetZoom)
     document.addEventListener('keydown', (event) => {
-      if (!event.metaKey || event.key !== '0') return
-      event.preventDefault()
-      resetZoom()
+      if (!event.metaKey || event.altKey || event.shiftKey) return
+      if (event.key === '0') {
+        event.preventDefault()
+        resetZoom()
+      } else if (event.key === '1') {
+        if (
+          event.target.closest?.(
+            'input, textarea, select, [contenteditable="true"]'
+          )
+        )
+          return
+        event.preventDefault()
+        if (selectedLaneId !== 'All') {
+          selectedLaneId = 'All'
+          render()
+        }
+        fitCards(
+          [...flow.children].filter((element) =>
+            element.classList.contains('step-card')
+          ),
+          24,
+          true
+        )
+      }
     })
+    const fitCards = (selectedCards, padding, fitAll = false) => {
+      if (!selectedCards.length) return
+      const left = Math.min(...selectedCards.map((card) => card.offsetLeft))
+      const top = Math.min(...selectedCards.map((card) => card.offsetTop))
+      const right = Math.max(
+        ...selectedCards.map((card) => card.offsetLeft + card.offsetWidth)
+      )
+      const bottom = Math.max(
+        ...selectedCards.map((card) => card.offsetTop + card.offsetHeight)
+      )
+      if (fitAll) {
+        const width = viewport.offsetWidth
+        const height = viewport.offsetHeight
+        if (width <= padding * 2 || height <= padding * 2) return
+        const fittedScale = Math.min(
+          (width - padding * 2) / Math.max(1, right - left),
+          (height - padding * 2) / Math.max(1, bottom - top)
+        )
+        const centerX = width / 2 - viewport.clientLeft
+        const centerY = height / 2 - viewport.clientTop
+        const x = Math.max(0, centerX - ((left + right) * fittedScale) / 2)
+        const y = Math.max(0, centerY - ((top + bottom) * fittedScale) / 2)
+        setScale(fittedScale, undefined, { x, y })
+        viewport.scrollLeft = ((left + right) * scale) / 2 + originX - centerX
+        viewport.scrollTop = ((top + bottom) * scale) / 2 + originY - centerY
+        viewport.scrollIntoView?.({ block: 'center', inline: 'nearest' })
+        return
+      }
+      setScale(
+        Math.min(
+          1,
+          (viewport.clientWidth - padding * 2) / Math.max(1, right - left),
+          (viewport.clientHeight - padding * 2) / Math.max(1, bottom - top)
+        )
+      )
+      viewport.scrollLeft =
+        ((left + right) * scale) / 2 + originX - viewport.clientWidth / 2
+      viewport.scrollTop =
+        ((top + bottom) * scale) / 2 + originY - viewport.clientHeight / 2
+      viewport.scrollIntoView?.({ block: 'center', inline: 'nearest' })
+    }
     flow.addEventListener('flowfitrequest', (event) => {
       const ids = event.detail?.stepIds
       if (
@@ -1123,28 +1195,7 @@ code {
       const selectedCards = [...flow.children].filter((element) =>
         requested.has(element.dataset.stepId)
       )
-      if (!selectedCards.length) return
-      const left = Math.min(...selectedCards.map((card) => card.offsetLeft))
-      const top = Math.min(...selectedCards.map((card) => card.offsetTop))
-      const right = Math.max(
-        ...selectedCards.map((card) => card.offsetLeft + card.offsetWidth)
-      )
-      const bottom = Math.max(
-        ...selectedCards.map((card) => card.offsetTop + card.offsetHeight)
-      )
-      const padding = 40
-      setScale(
-        Math.min(
-          1,
-          (viewport.clientWidth - padding * 2) / Math.max(1, right - left),
-          (viewport.clientHeight - padding * 2) / Math.max(1, bottom - top)
-        )
-      )
-      viewport.scrollLeft =
-        ((left + right) * scale) / 2 - viewport.clientWidth / 2
-      viewport.scrollTop =
-        ((top + bottom) * scale) / 2 - viewport.clientHeight / 2
-      viewport.scrollIntoView?.({ block: 'center', inline: 'nearest' })
+      fitCards(selectedCards, 40)
     })
     flow.addEventListener('flowboundschange', syncSurfaceSize)
     setScale(1, { x: 0, y: 0 })

@@ -140,6 +140,12 @@ JSON-safe serialization. Generator drift is a formal failure.
   padding through the same zoom owner and reveal the canvas (20% minimum, at most
   100% for fit); absent
   cards are ignored, and reset/manual zoom remain authoritative afterward;
+- `Command+1` in the canvas document restores All lanes and fits the union of
+  every card, centered with at least 24 CSS pixels from the viewport's outer
+  border; the limiting axis has exactly 24 pixels per side (subpixel rounding
+  allowed). Padding is measured after zoom, not in graph coordinates. Fit-all
+  may exceed manual zoom limits to keep all cards visible. Editable controls
+  retain their keys; `Command+0` resets scale and fit translation;
 - stable deep links and reload restoration;
 - schema version 2 rendering through the shared renderer;
 - concise step-detail summaries with clearly separated categories and a
