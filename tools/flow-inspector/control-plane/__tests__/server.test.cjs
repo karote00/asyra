@@ -105,7 +105,8 @@ test('HTTP preserves canvas assets and rejects unauthorized, cross-origin, and a
     )
     for (const relative of [
       'docs/ai/framework/plans/completed/transaction-atomicity-and-rollback-plan.md',
-      'tools/flow-inspector/inspectors/transaction-flow-inspector.data.cjs'
+      'tools/flow-inspector/inspectors/transaction-flow-inspector.data.cjs',
+      'apps/asyra-design/e2e/render-delta-performance.spec.ts'
     ]) {
       const linked = await fetch(server.origin + '/' + relative)
       assert.equal(linked.status, 200)
@@ -114,6 +115,37 @@ test('HTTP preserves canvas assets and rejects unauthorized, cross-origin, and a
         await linked.text(),
         fs.readFileSync(path.join(root, relative), 'utf8')
       )
+    }
+    for (const [name, id] of [
+      ['transaction-flow-inspector', 'transaction-atomicity'],
+      [
+        'group-interaction-mvp-flow-inspector',
+        'asyra-design-group-interaction-mvp'
+      ],
+      [
+        'group-component-and-hierarchy-flow-inspector',
+        'group-component-and-hierarchy'
+      ]
+    ]) {
+      const linked = await fetch(
+        server.origin + '/tools/flow-inspector/inspectors/' + name + '.html',
+        { redirect: 'manual' }
+      )
+      assert.equal(linked.status, 302, name)
+      assert.equal(
+        linked.headers.get('location'),
+        '/tools/flow-inspector/workspace/workspace.html#inspector=' + id
+      )
+      assert.match(
+        linked.headers.get('content-security-policy'),
+        /frame-ancestors 'none'/
+      )
+    }
+    for (const privatePath of [
+      '/apps/asyra-design/e2e/unknown.spec.ts',
+      '/tools/flow-inspector/inspectors/unknown.html'
+    ]) {
+      assert.equal((await fetch(server.origin + privatePath)).status, 404)
     }
     const session = await fetch(server.origin + '/api/session').then(
       (response) => response.json()

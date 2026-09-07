@@ -5945,7 +5945,7 @@
             "id": "implementation-plan",
             "kind": "plan",
             "label": "Trusted publication and CRDT 7,076 realignment plan",
-            "href": "./completed/trusted-publication-and-crdt-7076-flow-realignment-plan.md"
+            "href": "../../../docs/ai/apps/asyra-design/plans/completed/trusted-publication-and-crdt-7076-flow-realignment-plan.md"
           },
           {
             "id": "factory-collaboration-inspector",
@@ -20454,9 +20454,9 @@
               "docs/ai/framework/plans/completed/render-delta-update-plan.md"
             ],
             "specRefs": [
-              "#committed-delta-semantics",
-              "#ordering-duplicates-and-missing-delivery",
-              "#load-undo-redo-replay-remove-and-cleanup"
+              "#1-committed-delta-semantics",
+              "#3-ordering-duplicates-and-missing-delivery",
+              "#6-load-undo-redo-replay-remove-and-cleanup"
             ],
             "failureOwnerStepId": "commit-scene-tree-delta"
           },
@@ -20508,8 +20508,8 @@
               "docs/ai/framework/plans/completed/render-delta-update-plan.md"
             ],
             "specRefs": [
-              "#ordering-duplicates-and-missing-delivery",
-              "#load-undo-redo-replay-remove-and-cleanup"
+              "#3-ordering-duplicates-and-missing-delivery",
+              "#6-load-undo-redo-replay-remove-and-cleanup"
             ],
             "failureOwnerStepId": "deliver-ordered-delta"
           },
@@ -20559,9 +20559,9 @@
               "docs/ai/framework/plans/completed/render-delta-update-plan.md"
             ],
             "specRefs": [
-              "#snapshot-ownership-and-initial-source",
-              "#explicit-resync-and-failure",
-              "#load-undo-redo-replay-remove-and-cleanup"
+              "#2-snapshot-ownership-and-initial-source",
+              "#4-explicit-resync-and-failure",
+              "#6-load-undo-redo-replay-remove-and-cleanup"
             ],
             "failureOwnerStepId": "route-render-delta"
           },
@@ -20635,9 +20635,9 @@
               "docs/ai/framework/plans/completed/render-delta-update-plan.md"
             ],
             "specRefs": [
-              "#snapshot-ownership-and-initial-source",
+              "#2-snapshot-ownership-and-initial-source",
               "#profiling-and-cache-decision",
-              "#equivalence-and-stale-output-oracle"
+              "#7-equivalence-and-stale-output-oracle"
             ],
             "failureOwnerStepId": "seed-render-snapshot"
           },
@@ -20704,10 +20704,10 @@
               "docs/ai/framework/plans/completed/render-delta-update-plan.md"
             ],
             "specRefs": [
-              "#committed-delta-semantics",
-              "#ordering-duplicates-and-missing-delivery",
-              "#frame-ordering-and-strategy-input",
-              "#equivalence-and-stale-output-oracle"
+              "#1-committed-delta-semantics",
+              "#3-ordering-duplicates-and-missing-delivery",
+              "#5-frame-ordering-and-strategy-input",
+              "#7-equivalence-and-stale-output-oracle"
             ],
             "failureOwnerStepId": "apply-render-delta"
           },
@@ -20772,8 +20772,8 @@
               "docs/ai/framework/plans/completed/render-delta-update-plan.md"
             ],
             "specRefs": [
-              "#explicit-resync-and-failure",
-              "#equivalence-and-stale-output-oracle"
+              "#4-explicit-resync-and-failure",
+              "#7-equivalence-and-stale-output-oracle"
             ],
             "failureOwnerStepId": "resync-render-snapshot"
           },
@@ -20835,8 +20835,8 @@
               "docs/ai/framework/plans/completed/render-delta-update-plan.md"
             ],
             "specRefs": [
-              "#frame-ordering-and-strategy-input",
-              "#equivalence-and-stale-output-oracle"
+              "#5-frame-ordering-and-strategy-input",
+              "#7-equivalence-and-stale-output-oracle"
             ],
             "failureOwnerStepId": "flush-render-snapshot"
           },
@@ -20891,9 +20891,9 @@
               "docs/ai/framework/plans/completed/render-delta-update-plan.md"
             ],
             "specRefs": [
-              "#frame-ordering-and-strategy-input",
+              "#5-frame-ordering-and-strategy-input",
               "#profiling-and-cache-decision",
-              "#equivalence-and-stale-output-oracle"
+              "#7-equivalence-and-stale-output-oracle"
             ],
             "failureOwnerStepId": "execute-render-strategy"
           },
@@ -20945,7 +20945,7 @@
             ],
             "specRefs": [
               "#profiling-and-cache-decision",
-              "#equivalence-and-stale-output-oracle",
+              "#7-equivalence-and-stale-output-oracle",
               "#definition-of-done"
             ],
             "failureOwnerStepId": "handoff-engine-commands"
@@ -21025,7 +21025,7 @@
               "docs/ai/framework/plans/completed/render-delta-update-plan.md"
             ],
             "specRefs": [
-              "#load-undo-redo-replay-remove-and-cleanup",
+              "#6-load-undo-redo-replay-remove-and-cleanup",
               "#profiling-and-cache-decision",
               "#definition-of-done"
             ],
@@ -21337,7 +21337,7 @@
             ],
             "specRefs": [
               "#authority-and-baseline",
-              "#snapshot-ownership-and-initial-source"
+              "#2-snapshot-ownership-and-initial-source"
             ]
           },
           {
@@ -21356,8 +21356,8 @@
               "artifact:complete-strategy-request"
             ],
             "specRefs": [
-              "#committed-delta-semantics",
-              "#equivalence-and-stale-output-oracle"
+              "#1-committed-delta-semantics",
+              "#7-equivalence-and-stale-output-oracle"
             ]
           },
           {
@@ -21374,7 +21374,7 @@
               "artifact:render-projection-cleanup"
             ],
             "specRefs": [
-              "#explicit-resync-and-failure"
+              "#4-explicit-resync-and-failure"
             ]
           },
           {
@@ -21428,8 +21428,8 @@
               "cleanup-render-projection"
             ],
             "specRefs": [
-              "#committed-delta-semantics",
-              "#equivalence-and-stale-output-oracle"
+              "#1-committed-delta-semantics",
+              "#7-equivalence-and-stale-output-oracle"
             ],
             "assertions": [
               "accepted scalar, atomic batch, record set/remove patch, direct property, mixed raw/computed same-name ownership, mixed batch, and coalesced frame output deep-equals fresh authoritative snapshot output"
@@ -21445,8 +21445,8 @@
               "cleanup-render-projection"
             ],
             "specRefs": [
-              "#ordering-duplicates-and-missing-delivery",
-              "#explicit-resync-and-failure"
+              "#3-ordering-duplicates-and-missing-delivery",
+              "#4-explicit-resync-and-failure"
             ],
             "assertions": [
               "Factory prevents duplicate/out-of-order delivery; detectable mismatch performs one explicit resync; missing or invalid canonical state removes stale output",
@@ -21470,7 +21470,7 @@
               "cleanup-render-projection"
             ],
             "specRefs": [
-              "#load-undo-redo-replay-remove-and-cleanup"
+              "#6-load-undo-redo-replay-remove-and-cleanup"
             ],
             "assertions": [
               "all state transitions use the canonical committed route or explicit registration/load rebuild and leave no orphaned snapshot, pending update, removed Render node, or prior-engine handle",
@@ -21489,7 +21489,7 @@
               "execute-render-strategy"
             ],
             "specRefs": [
-              "#frame-ordering-and-strategy-input"
+              "#5-frame-ordering-and-strategy-input"
             ],
             "assertions": [
               "non-vector strategies receive the unchanged complete RenderElementData signature and rerun without a dependency migration"
@@ -33175,7 +33175,7 @@
             ],
             "conditions": [
               "Authorize before work, admit one run, durably record state with audit, and expose immutable snapshot-bound evidence; restart interrupts incomplete attempts.",
-              "Serve allowlisted existing workspace assets and compose the proof adapter into target documents; preserve static paths, target routing, and same-origin isolation."
+              "Serve allowlisted existing workspace assets and compose the proof adapter into target documents; preserve static paths, target routing, and same-origin isolation. Catalog-declared standalone HTML paths redirect to their exact workspace target, and declared documentation/source links remain readable in a separate tab."
             ],
             "bypasses": [
               "Unauthorized, conflicting, oversized, malformed, or unknown actions have no runner side effects."
@@ -33729,7 +33729,8 @@
               "artifact:rendered-static-inspector"
             ],
             "conditions": [
-              "Renderer kind follows catalog classification."
+              "Renderer kind follows catalog classification.",
+              "Document, source, and related Inspector links preserve authored destinations and open in an isolated new tab without replacing the canvas."
             ],
             "bypasses": [
               "Invalid targets render an explicit error instead of fallback."

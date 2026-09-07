@@ -102,8 +102,19 @@ async function startServer(
     { timeout: 1000 }
   )
   const localBase = new URL('http://catalog.local/')
+  const standaloneRoutes = new Map()
   for (const entry of workspaceSnapshot.FLOW_INSPECTOR_WORKSPACE_BUNDLE
     .entries) {
+    if (entry.standalonePath) {
+      const standalone = new URL(entry.standalonePath, localBase)
+      if (standalone.origin === localBase.origin)
+        standaloneRoutes.set(
+          standalone.pathname,
+          workspacePath +
+            'workspace.html#inspector=' +
+            encodeURIComponent(entry.id)
+        )
+    }
     const source = new URL(entry.sourcePath, localBase)
     const resources = [
       source,
@@ -118,7 +129,7 @@ async function startServer(
       )
       if (
         !file.startsWith(repositoryRoot + path.sep) ||
-        !['.md', '.cjs', '.js'].includes(path.extname(file)) ||
+        !['.md', '.cjs', '.js', '.ts'].includes(path.extname(file)) ||
         !fs.existsSync(file) ||
         fs.realpathSync(file) !== file ||
         !fs.statSync(file).isFile()
@@ -167,6 +178,11 @@ async function startServer(
                 'workspace.html#inspector=' +
                 encodeURIComponent(service.contract().targetId)
             })
+            return response.end()
+          }
+          const standaloneRoute = standaloneRoutes.get(route.pathname)
+          if (standaloneRoute) {
+            response.writeHead(302, { Location: standaloneRoute })
             return response.end()
           }
           if (route.pathname === '/api/session')

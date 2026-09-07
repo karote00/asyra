@@ -195,7 +195,10 @@ const data = {
         'artifact:workspace-browser-snapshot'
       ],
       outputs: ['artifact:rendered-static-inspector'],
-      conditions: ['Renderer kind follows catalog classification.'],
+      conditions: [
+        'Renderer kind follows catalog classification.',
+        'Document, source, and related Inspector links preserve authored destinations and open in an isolated new tab without replacing the canvas.'
+      ],
       bypasses: [
         'Invalid targets render an explicit error instead of fallback.'
       ],

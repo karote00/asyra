@@ -184,7 +184,7 @@ const data = {
       outputs: ['artifact:proof-board-state'],
       conditions: [
         'Authorize before work, admit one run, durably record state with audit, and expose immutable snapshot-bound evidence; restart interrupts incomplete attempts.',
-        'Serve allowlisted existing workspace assets and compose the proof adapter into target documents; preserve static paths, target routing, and same-origin isolation.'
+        'Serve allowlisted existing workspace assets and compose the proof adapter into target documents; preserve static paths, target routing, and same-origin isolation. Catalog-declared standalone HTML paths redirect to their exact workspace target, and declared documentation/source links remain readable in a separate tab.'
       ],
       bypasses: [
         'Unauthorized, conflicting, oversized, malformed, or unknown actions have no runner side effects.'

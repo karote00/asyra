@@ -360,3 +360,194 @@ test(
     }
   }
 )
+
+test(
+  'every catalog card link is valid and each destination opens without replacing its canvas',
+  { timeout: 180000 },
+  async () => {
+    const root = path.resolve(__dirname, '../../../..')
+    const parent = path.join(root, 'tmp/flow-inspector/visual-review')
+    fs.mkdirSync(parent, { recursive: true })
+    const artifacts = fs.mkdtempSync(path.join(parent, 'links-'))
+    const temporary = path.join(artifacts, 'browser-tmp')
+    fs.mkdirSync(temporary)
+    const previousTemporary = process.env.TMPDIR
+    process.env.TMPDIR = temporary
+    const server = await startServer(root, {
+      serviceOptions: { directory: path.join(artifacts, 'runs') }
+    })
+    let browser
+    try {
+      browser = await chromium.launch({
+        channel: process.env.FLOW_PROOF_BROWSER_CHANNEL || undefined,
+        downloadsPath: temporary
+      })
+      const context = await browser.newContext({
+        viewport: { width: 1600, height: 1100 }
+      })
+      const page = await context.newPage()
+      const errors = []
+      context.on('page', (tab) =>
+        tab.on('pageerror', (error) => errors.push(error.message))
+      )
+      context.on('response', (response) => {
+        if (response.status() >= 400)
+          errors.push(response.status() + ' ' + response.url())
+      })
+      await page.goto(server.origin)
+      const entries = await page.evaluate(() =>
+        window.FLOW_INSPECTOR_WORKSPACE_BUNDLE.entries.map((entry) => ({
+          id: entry.id,
+          kind: entry.kind,
+          steps:
+            entry.kind === 'flow-v2'
+              ? entry.data.steps.map((step) => step.id)
+              : []
+        }))
+      )
+      const links = new Set()
+      const destinations = new Map()
+      let selectedSteps = 0
+      let fragmentClicked = false
+      const screenshots = []
+      for (const entry of entries) {
+        await page.goto(
+          server.origin +
+            '/tools/flow-inspector/workspace/workspace.html#inspector=' +
+            encodeURIComponent(entry.id)
+        )
+        const canvas = page.frameLocator('iframe')
+        await expect(canvas.locator('html')).toHaveAttribute(
+          'data-target-state',
+          'rendered'
+        )
+        const collectAndClick = async () => {
+          const anchors = canvas.locator('a[href]')
+          const records = await anchors.evaluateAll((nodes) =>
+            nodes.map((node, index) => ({
+              href: node.href,
+              target: node.target,
+              rel: node.rel,
+              index
+            }))
+          )
+          for (const record of records) {
+            links.add(record.href)
+            assert.equal(record.target, '_blank', entry.id + ': ' + record.href)
+            assert.ok(record.rel.split(/\s+/).includes('noopener'))
+            assert.ok(record.rel.split(/\s+/).includes('noreferrer'))
+            const url = new URL(record.href)
+            assert.equal(url.origin, server.origin)
+            const resource = url.origin + url.pathname + url.search
+            if (destinations.has(resource) && (!url.hash || fragmentClicked))
+              continue
+            const anchor = anchors.nth(record.index)
+            if (!(await anchor.isVisible()))
+              await canvas.getByText('Full contract', { exact: true }).click()
+            const graph = await canvas.locator('#flow').elementHandle()
+            const viewport = canvas.locator('.flow-viewport')
+            const before = await viewport.evaluate((node) => ({
+              left: node.scrollLeft,
+              top: node.scrollTop
+            }))
+            const selected = await canvas
+              .locator('.detail-heading h2')
+              .textContent()
+            const popupPromise = context.waitForEvent('page')
+            await anchor.click()
+            const popup = await popupPromise
+            try {
+              await popup.waitForLoadState('domcontentloaded')
+              await expect(popup).not.toHaveURL('about:blank')
+              await expect(popup.locator('body')).not.toBeEmpty()
+              assert.equal(await popup.evaluate(() => window.opener), null)
+              if (url.pathname.endsWith('.html')) {
+                await expect(
+                  popup.frameLocator('iframe').locator('html')
+                ).toHaveAttribute('data-target-state', 'rendered')
+                const linkedId = await popup
+                  .frameLocator('iframe')
+                  .locator('html')
+                  .evaluate(() => window.FLOW_INSPECTOR_WORKSPACE_ENTRY.id)
+                assert.equal(
+                  new URL(popup.url()).hash,
+                  '#inspector=' + linkedId
+                )
+              } else assert.equal(popup.url(), record.href)
+              assert.equal(
+                await graph.evaluate((node) => node.isConnected),
+                true
+              )
+              assert.deepEqual(
+                await viewport.evaluate((node) => ({
+                  left: node.scrollLeft,
+                  top: node.scrollTop
+                })),
+                before
+              )
+              assert.equal(
+                await canvas.locator('.detail-heading h2').textContent(),
+                selected
+              )
+              destinations.set(resource, popup.url())
+              if (url.hash) fragmentClicked = true
+              if (
+                screenshots.length === 0 ||
+                (url.pathname.endsWith('.html') && screenshots.length === 1)
+              ) {
+                const screenshot = path.join(
+                  artifacts,
+                  'destination-' + screenshots.length + '.png'
+                )
+                await popup.screenshot({ path: screenshot })
+                screenshots.push(screenshot)
+              }
+            } finally {
+              await popup.close()
+            }
+          }
+        }
+        await collectAndClick()
+        for (const step of entry.steps) {
+          await canvas.locator(`[data-step-id="${step}"]`).click()
+          selectedSteps++
+          await collectAndClick()
+        }
+      }
+      assert.equal(
+        selectedSteps,
+        entries.reduce((count, entry) => count + entry.steps.length, 0)
+      )
+      assert.ok(fragmentClicked)
+      assert.ok(destinations.size > 0)
+      assert.deepEqual(errors, [])
+      await page.goto(server.origin)
+      await expect(
+        page.frameLocator('iframe').locator('.step-card')
+      ).toHaveCount(7)
+      const retainedCanvas = path.join(artifacts, 'retained-canvas.png')
+      await page.screenshot({ path: retainedCanvas })
+      screenshots.push(retainedCanvas)
+      const report = {
+        url: server.origin,
+        entries: entries.length,
+        selectedSteps,
+        links: links.size,
+        destinations: Object.fromEntries(destinations),
+        screenshots
+      }
+      fs.writeFileSync(
+        path.join(artifacts, 'review.json'),
+        JSON.stringify(report, null, 2) + '\n'
+      )
+      process.stdout.write(
+        `Link review: ${entries.length} entries, ${selectedSteps} cards, ${links.size} URLs, ${destinations.size} destinations. Artifacts: ${artifacts}\n`
+      )
+    } finally {
+      await browser?.close()
+      await server.close()
+      if (previousTemporary === undefined) delete process.env.TMPDIR
+      else process.env.TMPDIR = previousTemporary
+    }
+  }
+)

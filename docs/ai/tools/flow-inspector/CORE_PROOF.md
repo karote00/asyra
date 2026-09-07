@@ -122,7 +122,10 @@ The server URL is owned by `FLOW_PROOF_URL`, shared by the server and browser te
 The server serves the existing committed workspace assets from an explicit
 allowlist and loads the proof adapter only in its target documents. It
 preserves catalog-declared local source and documentation links as plain-text
-read-only resources, without exposing arbitrary repository files. The adapter
+read-only resources (including declared TypeScript test sources), without exposing
+arbitrary repository files. Catalog-declared standalone HTML paths redirect to
+the exact corresponding workspace Inspector. Document and source links open in a
+new tab, so their restrictive frame policy does not replace or block the canvas. The adapter
 uses the existing tool's theme; it does not own canvas geometry or rendering.
 It observes completed graph DOM replacement to bind current cards, then updates
 only evidence badges and its detail controls. Polling never rebuilds the graph

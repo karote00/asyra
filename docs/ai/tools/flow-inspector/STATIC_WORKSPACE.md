@@ -96,6 +96,8 @@ JSON-safe serialization. Generator drift is a formal failure.
 - The target frame reads only the generated bundle entry selected by the hash.
   It clears no parent state and cannot mutate catalog membership.
 - Rapid switching must leave only the final selected target visible.
+- Document, source, specification, and related Inspector links open in a new
+  tab without replacing the selected target frame or losing canvas state.
 
 ## Supported Behavior
 

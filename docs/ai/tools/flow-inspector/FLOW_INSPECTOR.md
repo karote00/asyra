@@ -146,6 +146,9 @@ The shared renderer must:
   only from target data;
 - avoid target-name conditionals and target-specific field access;
 - render specification references as links when an authority link exists;
+- open document, source, and related Inspector links in a new tab with
+  `target="_blank"` and `rel="noopener noreferrer"`, preserving the current
+  canvas, selected step, and viewport; retain each authored destination and fragment;
 - report structural errors without fabricating missing target data;
 - remain read-only and independent of product runtime code.
 
