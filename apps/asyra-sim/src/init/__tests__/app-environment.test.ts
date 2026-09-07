@@ -16,6 +16,29 @@ it('uses one explicit local origin for server/test configuration', () => {
   ).toThrow('local HTTP')
 })
 
+describe('explicit hosted browser verification', () => {
+  it('accepts HTTPS only when a browser runner opts in', () => {
+    expect(
+      resolveAppEnvironment(
+        { APP_URL: 'https://example.com' },
+        { allowHosted: true }
+      )
+    ).toEqual({ url: 'https://example.com', host: 'example.com', port: 443 })
+  })
+
+  it.each([
+    'http://example.com',
+    'https://user:password@example.com',
+    'https://example.com/path',
+    'https://example.com/?token=private',
+    'https://example.com/#fragment'
+  ])('rejects unsafe hosted targets (%s)', (url) => {
+    expect(() =>
+      resolveAppEnvironment({ APP_URL: url }, { allowHosted: true })
+    ).toThrow()
+  })
+})
+
 describe('Vite configuration origin ownership', () => {
   beforeEach(() => vi.resetModules())
   afterEach(() => vi.unstubAllEnvs())
@@ -67,6 +90,34 @@ describe('Vite configuration origin ownership', () => {
       const server = { host: '127.0.0.1', port: 3020, strictPort: true }
       expect(config.server).toEqual(server)
       expect(config.preview).toEqual(server)
+    })
+  })
+})
+
+describe('Playwright server ownership', () => {
+  beforeEach(() => vi.resetModules())
+  afterEach(() => vi.unstubAllEnvs())
+
+  it('checks an HTTPS deployment without launching a local server', async () => {
+    vi.stubEnv('APP_URL', 'https://example.com')
+    const { default: config } = await import('../../../playwright.config')
+
+    expect(config.use?.baseURL).toBe('https://example.com')
+    expect(config.webServer).toBeUndefined()
+    expect(config.retries).toBe(0)
+    expect(config.workers).toBe(1)
+  })
+
+  it('retains the ordinary loopback server for local browser tests', async () => {
+    vi.stubEnv('APP_URL', 'http://127.0.0.1:3020')
+    const { default: config } = await import('../../../playwright.config')
+
+    expect(config.use?.baseURL).toBe('http://127.0.0.1:3020')
+    expect(config.webServer).toEqual({
+      command: 'yarn exec vite',
+      url: 'http://127.0.0.1:3020',
+      reuseExistingServer: true,
+      timeout: 60_000
     })
   })
 })

@@ -1,8 +1,10 @@
 import { defineConfig } from '@playwright/test'
 import { fileURLToPath, URL } from 'node:url'
+import process from 'node:process'
 import { resolveAppEnvironment } from './app-environment.mjs'
 
-const environment = resolveAppEnvironment()
+const environment = resolveAppEnvironment(process.env, { allowHosted: true })
+const hosted = new URL(environment.url).protocol === 'https:'
 export default defineConfig({
   testDir: '.',
   testMatch: ['**/e2e/**/*.spec.ts', '**/src/**/__tests__/*.browser.spec.ts'],
@@ -32,10 +34,12 @@ export default defineConfig({
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure'
   },
-  webServer: {
-    command: 'yarn exec vite',
-    url: environment.url,
-    reuseExistingServer: true,
-    timeout: 60_000
-  }
+  webServer: hosted
+    ? undefined
+    : {
+        command: 'yarn exec vite',
+        url: environment.url,
+        reuseExistingServer: true,
+        timeout: 60_000
+      }
 })

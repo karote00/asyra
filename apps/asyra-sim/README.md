@@ -32,7 +32,9 @@ Use the repository's declared Node.js 24 and Yarn 4.3.1 environment. Set
 `APP_URL` in this App's `.env` from `.env.example`, or explicitly export it,
 before starting a dev or preview server or running browser tests. These use
 the same local origin; there is no parallel test URL. Static production builds
-do not require `.env` or `APP_URL` and retain relative asset URLs.
+do not require `.env` or `APP_URL` and retain relative asset URLs. For deployment
+verification only, the browser runner also accepts an explicit HTTPS `APP_URL`
+without starting a local server.
 
 From the repository root:
 
@@ -55,6 +57,19 @@ are written to `test-results/` and are not committed. The JSON report at
 visual-state metadata. Browser proofs complement rather than replace complete
 product E2E. See the [initial runtime profile](../../docs/ai/apps/asyra-sim/specs/runtime-profile-v0.md)
 for the unverified ordinary-hardware target and delivery limits.
+
+## Hosted development workbench
+
+The permanent product domain is
+<a href="https://asyra-sim.vercel.app" target="_blank" rel="noopener noreferrer">asyra-sim.vercel.app</a>.
+It names the evolving product, not this milestone or an R0 release. See the
+[hosted deployment contract](../../docs/ai/apps/asyra-sim/release/HOSTED_PREVIEW.md)
+for Vercel configuration, PR verification and the release boundary.
+
+Analysis and project storage remain browser-local. Hosted access downloads the
+app; it is not the packaged offline distribution. Localhost, PR previews and
+the permanent domain have separate browser storage. Transfer projects through
+portable export/import and keep backups; changing the URL does not move saves.
 
 ## UI development boundaries
 
