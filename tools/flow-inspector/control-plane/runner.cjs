@@ -3,6 +3,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const { spawn } = require('node:child_process')
 const { createRequire } = require('node:module')
+const { createHash } = require('node:crypto')
 const { setInterval, clearInterval } = require('node:timers')
 
 function runProcess({
@@ -112,7 +113,7 @@ async function runVerification({
   timeoutMs,
   onSpawn
 }) {
-  if (!['baseline', 'inverse-regression'].includes(scenario))
+  if (!contract.scenarios.some((item) => item.id === scenario))
     throw new Error('Unknown proof scenario')
   const requireFromRepository = createRequire(
     path.join(repositoryRoot, 'package.json')
@@ -147,14 +148,39 @@ async function runVerification({
   })
   let report = null
   let reportError = null
+  let reportDigest = null
   try {
     if (fs.statSync(reportPath).size > 2097152)
       throw new Error('Runner report exceeds size limit')
-    report = JSON.parse(fs.readFileSync(reportPath, 'utf8'))
+    const bytes = fs.readFileSync(reportPath)
+    reportDigest = createHash('sha256').update(bytes).digest('hex')
+    report = JSON.parse(bytes.toString())
   } catch (error) {
     reportError = error.message
   }
-  return { ...result, version, report, reportError, reportPath }
+  return {
+    ...result,
+    version,
+    report,
+    reportError,
+    reportPath,
+    reportDigest,
+    environment: {
+      node: process.version,
+      platform: process.platform,
+      architecture: process.arch,
+      vitest: version
+    },
+    identity: {
+      sourceDigest: snapshot.digest,
+      contractDigest: contract.digest,
+      mappingVersion: contract.mappingVersion,
+      architectureVersion: contract.architectureVersion,
+      configurationDigest: snapshot.configurationDigest,
+      scenario,
+      flowIds: [...flowIds]
+    }
+  }
 }
 
 module.exports = { runProcess, runVerification, runnerEnvironment }

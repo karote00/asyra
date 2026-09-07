@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "negativeCaseIds": ["cancel.outcome", "cancel.delivery"],
   "targetId": "transaction-atomicity",
   "architecturePath": "tools/flow-inspector/inspectors/transaction-flow-inspector.data.cjs",
@@ -37,6 +37,38 @@
           "stepId": "settle-local-shared-projection",
           "testName": "Factory flow proof deferred delivery"
         }
+      ],
+      "handoffs": [
+        {
+          "routeId": "boundary-to-journal",
+          "decision": "required",
+          "caseIds": ["deferred.snapshot"]
+        },
+        {
+          "routeId": "journal-to-finalize",
+          "decision": "required",
+          "caseIds": ["deferred.outcome"]
+        },
+        {
+          "routeId": "decision-to-finalize",
+          "decision": "required",
+          "caseIds": ["deferred.outcome"]
+        },
+        {
+          "routeId": "validation-to-finalize",
+          "decision": "required",
+          "caseIds": ["deferred.outcome"]
+        },
+        {
+          "routeId": "journal-to-shared",
+          "decision": "required",
+          "caseIds": ["deferred.delivery"]
+        },
+        {
+          "routeId": "finalize-to-shared",
+          "decision": "required",
+          "caseIds": ["deferred.delivery"]
+        }
       ]
     },
     {
@@ -64,7 +96,98 @@
           "stepId": "settle-local-shared-projection",
           "testName": "Factory flow proof cancel delivery"
         }
+      ],
+      "handoffs": [
+        {
+          "routeId": "boundary-to-journal",
+          "decision": "required",
+          "caseIds": ["cancel.snapshot"]
+        },
+        {
+          "routeId": "journal-to-finalize",
+          "decision": "required",
+          "caseIds": ["cancel.outcome"]
+        },
+        {
+          "routeId": "decision-to-finalize",
+          "decision": "required",
+          "caseIds": ["cancel.outcome"]
+        },
+        {
+          "routeId": "validation-to-finalize",
+          "decision": "bypassed",
+          "caseIds": ["cancel.outcome"],
+          "reason": "Direct rollback does not request commit validation; the outcome case proves inverse replay and zero History."
+        },
+        {
+          "routeId": "journal-to-shared",
+          "decision": "required",
+          "caseIds": ["cancel.delivery"]
+        },
+        {
+          "routeId": "finalize-to-shared",
+          "decision": "required",
+          "caseIds": ["cancel.delivery"]
+        }
       ]
+    }
+  ],
+  "defaultNegativeScenario": "inverse-regression",
+  "scenarios": [
+    {
+      "id": "baseline",
+      "title": "Current source",
+      "expectedFailedCaseIds": []
+    },
+    {
+      "id": "inverse-regression",
+      "title": "Inverse regression demo",
+      "expectedFailedCaseIds": ["cancel.outcome", "cancel.delivery"],
+      "mutation": {
+        "file": "packages/factory/src/data-transact.ts",
+        "from": "inversePayload.after = (payload as { before?: unknown }).before",
+        "to": "inversePayload.after = (payload as { after?: unknown }).after"
+      }
+    },
+    {
+      "id": "omitted-replay",
+      "title": "Omitted replay demo",
+      "expectedFailedCaseIds": ["cancel.outcome"],
+      "mutation": {
+        "file": "packages/factory/src/data-transact.ts",
+        "from": "...this.rollbackJournal(),",
+        "to": "...[],"
+      }
+    },
+    {
+      "id": "premature-publication",
+      "title": "Premature publication demo",
+      "expectedFailedCaseIds": ["deferred.delivery"],
+      "mutation": {
+        "file": "packages/factory/src/data-transact.ts",
+        "from": "sharedDelivery: event.options?.sharedDelivery ?? 'transaction-end',",
+        "to": "sharedDelivery: 'immediate',"
+      }
+    },
+    {
+      "id": "forbidden-commit",
+      "title": "Forbidden commit demo",
+      "expectedFailedCaseIds": ["cancel.outcome", "cancel.delivery"],
+      "mutation": {
+        "file": "packages/factory/src/data-transact.ts",
+        "from": "if (options.outcome === 'rollback') {",
+        "to": "if (options.outcome === 'rollback' && false) {"
+      }
+    },
+    {
+      "id": "omitted-compensation",
+      "title": "Omitted compensation demo",
+      "expectedFailedCaseIds": ["cancel.delivery"],
+      "mutation": {
+        "file": "packages/factory/src/data-transact.ts",
+        "from": "...this.rollbackJournal(),\n      ...this.compensateImmediateSharedChanges()",
+        "to": "...this.rollbackJournal()"
+      }
     }
   ]
 }

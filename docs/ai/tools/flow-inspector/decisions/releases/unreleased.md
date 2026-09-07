@@ -24,3 +24,23 @@
   independent. Evidence updates must not rebuild the graph or reset its viewport.
 - Prove geometry, selection, filtering, target isolation, retained evidence,
   contract mismatch rejection, and negative/recovery behavior in the real canvas.
+
+## 2026-09-07 - Complete the bounded Phase 3 proof
+
+- Admit explicit case-backed conditional handoffs before execution. Extend the
+  existing six Factory obligations with five configuration-only negative
+  transformations of captured production source and an exact recovery proof.
+- Bind format-2 attempts to source/mapping/architecture/configuration versions,
+  runner environment, and artifact fingerprints. Keep historical format-1
+  records without inventing stronger provenance. Admit retained evidence once;
+  repeated reads do not recapture source or recompute inventory/history ordering.
+- Require explicit, exact-base review for test-name mapping changes; preserve
+  all obligations and atomically retain each decision with its accepted revision.
+  The first local baseline remains trusted. General evolution and protected CI
+  accepted-base policy stay in Phase 4.
+- Share actions and evidence between the original canvas and an attached CLI.
+  Retain retry identities across restart, and verify named artifact contents
+  before serving. Preserve all existing canvas geometry and static compatibility.
+- Extend direct CI and permanent browser coverage to the full proof and mapping
+  review. No new dependencies, Framework runtime changes, package version,
+  remote hosting, source-writing agent, or connector is introduced.

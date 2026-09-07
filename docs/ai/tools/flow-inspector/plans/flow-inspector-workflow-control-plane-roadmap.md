@@ -346,6 +346,13 @@ consistency are implemented in Phase 3-4. Phase 5 extends that foundation; its
 entry criteria cannot depend on agent controls that it has yet to build.
 Phase 6 hardens and expands proven controls rather than first introducing them.
 
+As of 2026-09-07, the bounded [Phase 3 proof](../CORE_PROOF.md) implements two
+Factory flows, conditional preflight, five negative demonstrations, explicit
+mapping decisions, and versioned local evidence on the original canvas. Its
+mapping policy permits test-name changes only. Phase 4 remains the next candidate;
+protected accepted-base CI, broader flow evolution, and shared viewing are not
+implied by the local proof or its passing CI commands.
+
 The preliminary estimate is 2-4 engineering person-weeks for the core proof,
 another 6-10 for an operational trial, and another 8-14 for a bounded agent and
 small-team trial. These are low-confidence planning ranges, not calendar

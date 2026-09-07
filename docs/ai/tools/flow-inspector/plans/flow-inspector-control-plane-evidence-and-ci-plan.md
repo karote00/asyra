@@ -2,11 +2,13 @@
 
 ## Status and Objective
 
-The first bounded Phase 3 checkpoint is activated by the
-[Core Proof contract](../CORE_PROOF.md) on 2026-09-07. The remaining work in this
-plan is deferred. Static Workspace `v0.2.0` is complete. The checkpoint selects
-two Factory flows, Vitest, GitHub Actions, and the local-only action/evidence
-boundary; it does not claim this complete phase plan has been implemented.
+Phase 3 is implemented under the [Core Proof contract](../CORE_PROOF.md) on
+2026-09-07. Phase 4 remains deferred, so this combined plan remains open.
+Static Workspace `v0.2.0` is complete. The proof selects two Factory flows,
+Vitest, GitHub Actions, and a local-only action/evidence boundary. It covers
+case-backed conditional handoffs, five isolated negative scenarios, versioned
+evidence, replay-safe requests, and explicit test-name mapping review. General
+contract evolution and protected delivery policy belong to Phase 4.
 
 Prove that a concrete implementation Plan can be checked before work, verified
 against real behavior, and retained as a mandatory regression contract. Deliver
@@ -89,6 +91,16 @@ Proof checkpoint: a shared-owner violation must fail a real flow gate and
 explain the affected step; a missing result or unauthorized action must also
 fail safely. Review adapter effort and execution cost here before widening UI
 or integration work.
+
+The implemented mapping policy preserves the six obligation ids, their owners,
+and all flow semantics; only their test-name bindings may be explicitly accepted
+or rejected. A first local store trusts the checked-in baseline. This is not the
+protected accepted-base policy required in Slice 5. The existing Factory adapter
+uses six public-boundary tests and five configuration-only transforms of captured
+production source; no new Framework runtime adapter or dependency was needed.
+The seven-run baseline/negative/recovery proof takes approximately 8 seconds in
+the local Node.js 24 / Vitest 3.2.7 environment. This measures this proof only;
+arbitrary flow migration and remote CI costs remain unmeasured.
 
 ## Phase 4 - Usable Board and Mandatory CI
 

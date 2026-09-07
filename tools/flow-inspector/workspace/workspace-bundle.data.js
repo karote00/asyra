@@ -35335,13 +35335,14 @@
             "purpose": "Admission",
             "inputs": [
               "product-owned proof manifest",
-              "target architecture Inspector"
+              "target architecture Inspector",
+              "accepted mapping for explicit candidate comparison"
             ],
             "outputs": [
               "artifact:admitted-proof-contract"
             ],
             "conditions": [
-              "Every required case resolves to a concrete selected step; selected handoffs have explicit producers or declared external inputs."
+              "Every required case resolves to a concrete selected step; all incoming artifact routes have explicit, case-backed required or bypassed decisions. Producers, consumers, predicates, and external inputs resolve without contradictory ownership."
             ],
             "bypasses": [
               "No missing, ambiguous, empty, or contradictory contract may be bypassed."
@@ -35356,6 +35357,7 @@
             ],
             "cacheDimensions": [],
             "implementationBoundary": [
+              "packages/factory/flow-contracts.json",
               "tools/flow-inspector/control-plane/contracts.cjs",
               "tools/flow-inspector/control-plane/__tests__/contracts.test.cjs"
             ],
@@ -35380,7 +35382,7 @@
               "artifact:proof-source-snapshot"
             ],
             "conditions": [
-              "Copy regular source files into one attempt-owned tree, bind file bytes and Git metadata to a digest, and reject symlinks."
+              "Copy regular source files once into one attempt-owned tree, retain the immutable file manifest, bind source, mapping, architecture, configuration and lockfile digests, and reject symlinks."
             ],
             "bypasses": [
               "No previous snapshot or mutable checkout may replace the captured runtime source."
@@ -35434,6 +35436,7 @@
             ],
             "cacheDimensions": [],
             "implementationBoundary": [
+              "packages/factory/src/__tests__/flow-proof.config.ts",
               "tools/flow-inspector/control-plane/runner.cjs",
               "tools/flow-inspector/control-plane/__tests__/runner.test.cjs"
             ],
@@ -35458,7 +35461,7 @@
               "artifact:assessed-proof-evidence"
             ],
             "conditions": [
-              "Exactly one passing observation per required case, successful exit, and no runner errors are necessary for pass; preserve observed step failures and source identity."
+              "Exactly one passing observation per required case, successful exit, and no runner errors are necessary for pass; preserve observed step failures and verify source, contract, mapping, architecture, scenario, configuration, runner environment, and report identity. Retained current-contract evidence must preserve that inventory and version identity before admission."
             ],
             "bypasses": [
               "Missing or invalid reports produce an explicit non-pass, never inferred completion."
@@ -35498,7 +35501,7 @@
               "artifact:proof-board-state"
             ],
             "conditions": [
-              "Authorize before work, admit one run, durably record state with audit, and expose immutable snapshot-bound evidence; restart interrupts incomplete attempts.",
+              "Authorize before work, admit one run against the explicitly accepted mapping, durably record state with audit, and expose immutable snapshot-bound evidence; restart interrupts incomplete attempts. Mapping prepare and decide actions bind the exact base revision and candidate digest, preserve all obligations, and atomically retain the decision with the accepted mapping. Duplicate request identities do not repeat execution; repeated reads consume already admitted evidence.",
               "Serve allowlisted existing workspace assets and compose the proof adapter into target documents; preserve static paths, target routing, and same-origin isolation. Serve Overview at root and catalog-slug pages with an explicit path-routing marker and workspace asset base; unknown public paths return a 404 route error without a selected target. Catalog-declared standalone HTML paths redirect to their exact short workspace target, and declared documentation/source links remain readable in a separate tab."
             ],
             "bypasses": [
@@ -35522,6 +35525,8 @@
               "tools/flow-inspector/control-plane/server.cjs",
               "tools/flow-inspector/control-plane/cli.cjs",
               "tools/flow-inspector/control-plane/__tests__/service.test.cjs",
+              "tools/flow-inspector/control-plane/__tests__/mapping.test.cjs",
+              "tools/flow-inspector/control-plane/__tests__/cli.test.cjs",
               "tools/flow-inspector/control-plane/__tests__/store.test.cjs",
               "tools/flow-inspector/control-plane/__tests__/server.test.cjs"
             ],
@@ -35549,7 +35554,7 @@
             "conditions": [
               "Preserve the existing canvas cards, routes, geometry, controls, and details; project exact selected-flow results and actions into that surface without replacing the graph.",
               "Bind cards only after graph DOM replacement; unchanged polling rebuilds neither graph nor bindings and performs no source capture. Target retirement disconnects observers and aborts reads.",
-              "Show negative scope, snapshot identity, and retained attempts; unsupported targets and untested steps receive no successful evidence.",
+              "Show every registered negative scenario, snapshot and version identity, runner environment, named artifact links, and retained attempts; unsupported targets and untested steps receive no successful evidence. Prepare and decide mapping reviews through the action service with an explicit reason; never accept mapping changes in the client.",
               "Loaded canvas step contracts must match admitted verification steps before projecting evidence or enabling launch."
             ],
             "bypasses": [
@@ -35758,8 +35763,8 @@
               "render-proof-board"
             ],
             "assertions": [
-              "Baseline passes both flows, the isolated inverse violation fails only its observed obligations, and a new baseline recovers.",
-              "Incomplete evidence and unauthorized actions cannot pass or execute."
+              "Baseline passes both flows, all five registered isolated violations fail exactly their declared obligations, and a new baseline recovers.",
+              "Incomplete or inconsistent evidence and unauthorized actions cannot pass or execute; exact-base mapping decisions preserve obligations and request retries preserve attempt identity."
             ],
             "specRefs": [
               "#cases-and-completion"

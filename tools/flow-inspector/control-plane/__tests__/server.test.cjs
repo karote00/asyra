@@ -157,6 +157,28 @@ test('HTTP preserves canvas assets and rejects unauthorized, cross-origin, and a
     const session = await fetch(server.origin + '/api/session').then(
       (response) => response.json()
     )
+    for (const endpoint of ['/api/mapping/prepare', '/api/mapping/decide']) {
+      assert.equal(
+        (
+          await fetch(server.origin + endpoint, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: '{}'
+          })
+        ).status,
+        403
+      )
+    }
+    const mapping = await fetch(server.origin + '/api/mapping/prepare', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-proof-capability': session.capability
+      },
+      body: '{}'
+    })
+    assert.equal(mapping.status, 200)
+    assert.equal((await mapping.json()).status, 'unchanged')
     const post = (body, headers = {}) =>
       fetch(server.origin + '/api/runs', {
         method: 'POST',
@@ -224,6 +246,27 @@ test('HTTP preserves canvas assets and rejects unauthorized, cross-origin, and a
       (response) => response.json()
     )
     assert.equal(saved.snapshot.digest, record.snapshot.digest)
+    for (const name of ['report', 'source-manifest']) {
+      const artifact = await fetch(
+        server.origin + '/api/runs/' + id + '/artifacts/' + name
+      )
+      assert.equal(artifact.status, 200)
+      assert.match(artifact.headers.get('content-type'), /application\/json/)
+      const bytes = Buffer.from(await artifact.arrayBuffer())
+      const digest = require('node:crypto')
+        .createHash('sha256')
+        .update(bytes)
+        .digest('hex')
+      assert.equal(
+        digest,
+        name === 'report' ? record.runner.reportDigest : record.snapshot.digest
+      )
+    }
+    assert.equal(
+      (await fetch(server.origin + '/api/runs/' + id + '/artifacts/record'))
+        .status,
+      404
+    )
     assert.equal(
       catalogLoads,
       1,

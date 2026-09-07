@@ -18,8 +18,8 @@ workspace at `tools/flow-inspector/workspace/`. The workspace provides one
 sidebar-driven surface for all current-project Inspectors while retaining
 direct-open standalone HTML compatibility. The bounded local
 [Core Proof](CORE_PROOF.md) at `tools/flow-inspector/control-plane/` adds real
-Factory flow verification, snapshot-bound evidence, controlled actions, and a
-verification actions on the existing canvas cards. Full CI comparison, agent execution, and integrations remain in the
+Factory flow verification, snapshot-bound evidence, explicit mapping review, and
+controlled actions on the existing canvas cards. Full CI comparison, agent execution, and integrations remain in the
 phase plans. The static Inspector's schema version 2 contract is unchanged.
 
 The tool may inspect Framework and App contracts, but neither Framework nor an
@@ -34,8 +34,8 @@ do not store Inspector implementation artifacts.
 ## Documentation Structure
 
 - `FLOW_INSPECTOR.md` - current static Inspector contract.
-- `PLANS.md` - active, completed, and future Flow Inspector planning index.
-- `CORE_PROOF.md` - first bounded dynamic verification contract and completion cases.
+- `PLANS.md` - active and future Flow Inspector planning index.
+- `CORE_PROOF.md` - bounded Phase 3 dynamic verification contract and completion cases.
 - `plans/` - detailed roadmap and active phase plans.
 - `plans/completed/` - completed plan records.
 - `decisions/releases/` - append-only tool release decision history.

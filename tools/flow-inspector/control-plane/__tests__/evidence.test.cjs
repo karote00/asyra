@@ -2,15 +2,39 @@
 const assert = require('node:assert/strict')
 const path = require('node:path')
 const test = require('node:test')
-const { assessEvidence } = require('../evidence.cjs')
+const { assessEvidence, validateStoredEvidence } = require('../evidence.cjs')
 const { loadContract } = require('../contracts.cjs')
 const contract = loadContract(path.resolve(__dirname, '../../../..'))
-const snapshot = { sourceRoot: '/captured', contractDigest: contract.digest }
+const snapshot = {
+  sourceRoot: '/captured',
+  digest: '1'.repeat(64),
+  configurationDigest: '2'.repeat(64),
+  contractDigest: contract.digest,
+  mappingVersion: contract.mappingVersion,
+  architectureVersion: contract.architectureVersion
+}
 const flowIds = contract.flows.map((flow) => flow.id)
 function result() {
   return {
     code: 0,
     reason: null,
+    identity: {
+      sourceDigest: snapshot.digest,
+      configurationDigest: snapshot.configurationDigest,
+      contractDigest: contract.digest,
+      mappingVersion: contract.mappingVersion,
+      architectureVersion: contract.architectureVersion,
+      scenario: 'baseline',
+      flowIds
+    },
+    environment: {
+      node: process.version,
+      platform: process.platform,
+      architecture: process.arch,
+      vitest: '3.2.6'
+    },
+    version: '3.2.6',
+    reportDigest: '3'.repeat(64),
     report: {
       success: true,
       numTotalTests: 6,
@@ -38,6 +62,54 @@ test('accepts only the complete six-case baseline', () => {
   assert.deepEqual(evidence.issues, [])
 })
 for (const [name, corrupt] of [
+  [
+    'missing execution identity',
+    (runner) => {
+      delete runner.identity
+    }
+  ],
+  [
+    'wrong mapping version',
+    (runner) => {
+      runner.identity.mappingVersion = 'old'
+    }
+  ],
+  [
+    'wrong source fingerprint',
+    (runner) => {
+      runner.identity.sourceDigest = '0'.repeat(64)
+    }
+  ],
+  [
+    'wrong runner configuration',
+    (runner) => {
+      runner.identity.configurationDigest = '0'.repeat(64)
+    }
+  ],
+  [
+    'missing runner environment',
+    (runner) => {
+      delete runner.environment
+    }
+  ],
+  [
+    'wrong runner version',
+    (runner) => {
+      runner.environment.vitest = 'other'
+    }
+  ],
+  [
+    'missing report fingerprint',
+    (runner) => {
+      delete runner.reportDigest
+    }
+  ],
+  [
+    'wrong selected flow identity',
+    (runner) => {
+      runner.identity.flowIds = []
+    }
+  ],
   [
     'missing report',
     (runner) => {
@@ -162,3 +234,36 @@ test('rejects mismatched contract provenance and empty selection', () => {
     'passed'
   )
 })
+
+test('durable evidence admission checks the required inventory before consumers can read it', () => {
+  const record = {
+    phase: 'completed',
+    snapshot,
+    flowIds,
+    evidence: assess(result())
+  }
+  assert.doesNotThrow(() => validateStoredEvidence(contract, record))
+  const truncated = structuredClone(record)
+  truncated.evidence.cases.pop()
+  truncated.evidence.expectedCount--
+  truncated.evidence.passedCount--
+  assert.throws(
+    () => validateStoredEvidence(contract, truncated),
+    /Stored evidence inventory/
+  )
+})
+
+for (const key of ['mappingVersion', 'architectureVersion'])
+  test('durable evidence rejects a mismatched ' + key, () => {
+    const record = {
+      format: 2,
+      phase: 'completed',
+      snapshot: { ...snapshot, [key]: '0'.repeat(64) },
+      flowIds,
+      evidence: assess(result())
+    }
+    assert.throws(
+      () => validateStoredEvidence(contract, record),
+      /Stored evidence provenance/
+    )
+  })

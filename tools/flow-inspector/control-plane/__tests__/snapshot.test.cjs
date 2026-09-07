@@ -24,6 +24,20 @@ test('captures exact source bytes once and preserves them independently of the c
   assert.equal(snapshot.fileCount, snapshot.files.length)
   assert.equal(snapshot.fileCount, snapshot.readCount)
   assert.equal(snapshot.contractDigest, contract.digest)
+  assert.equal(snapshot.mappingVersion, contract.mappingVersion)
+  assert.equal(snapshot.architectureVersion, contract.architectureVersion)
+  assert.equal(
+    snapshot.configurationDigest,
+    snapshot.files.find((item) => item.path === contract.configFile).digest
+  )
+  assert.equal(
+    snapshot.lockfileDigest,
+    snapshot.files.find((item) => item.path === 'yarn.lock').digest
+  )
+  assert.deepEqual(
+    JSON.parse(fs.readFileSync(path.join(root, snapshot.manifestPath))),
+    snapshot.files
+  )
   const source = 'packages/factory/src/data-transact.ts'
   assert.equal(
     fs.readFileSync(path.join(snapshot.sourceRoot, source), 'utf8'),

@@ -2,7 +2,7 @@
 
 ## Scope
 
-This is the first bounded checkpoint of Phase 3, activated on 2026-09-07.
+Phase 3 is implemented on 2026-09-07, extending its completed first checkpoint.
 It verifies two real Factory flows in this repository and exposes their concrete
 steps on a local board. It does not complete the full Control Plane roadmap.
 Static schema version 2 and the static workspace remain read-only.
@@ -28,6 +28,25 @@ to the slice must be declared. Unknown steps, missing producers, contradictory
 ownership, duplicate cases, empty requirements, and broken routes reject admission.
 Preflight establishes structural readiness only, not behavioral correctness.
 
+Mapping format 2 declares every incoming artifact route of the selected steps.
+Each handoff identifies its architecture route, a `required` or `bypassed`
+decision, and the same flow's behavioral cases that prove the decision. A bypass
+also needs an explicit reason and a consumer with a declared bypass contract.
+Unknown decisions, missing routes, inconsistent artifact producers/consumers,
+duplicate routes, and unproved assumptions reject admission. Route predicates
+remain architecture-owned; the tool does not interpret natural language as code
+or claim to prove arbitrary plan feasibility. The selected commit flow requires
+validation; direct rollback bypasses commit validation with its outcome case.
+
+The admitted contract identifies the mapping and architecture by separate content
+digests. It retains resolved route predicates and their case references, so
+consumers do not reconstruct handoffs. The product-owned manifest also registers
+the baseline and negative scenarios, exact expected failing case ids, and isolated
+runtime transformations. Transformations may affect only the declared Factory
+runtime source, never assertions or test discovery. All required case identities,
+owners, goals, routes, scenarios, and source boundaries stay fixed during the
+Phase 3 mapping-review action.
+
 Each flow has three independent obligations: mutation-time journal isolation,
 commit or inverse-replay outcome, and publication timing/compensation. Formal
 Factory tests exercise its real public API and channel, observing outputs and
@@ -51,6 +70,14 @@ The digest identifies the exact copied inputs, including uncommitted content;
 Git HEAD alone is never presented as the tested source. Results describe that
 snapshot, not deployment status or a continuously current working tree.
 
+The source snapshot writes an immutable `source-manifest.json` containing each
+copied path, size, and digest. Evidence also carries mapping, architecture,
+runner-configuration, and lockfile digests. The runner records its Node version,
+platform, architecture, and Vitest version; no environment secrets are copied.
+The report artifact receives a content digest. Missing or mismatched provenance
+cannot grant conformance. Reads and UI refreshes consume admitted records and
+do not recapture source or revalidate the accumulated history inventory.
+
 One invocation runs the required cases together. Results require exactly one
 recognized observation per expected case, successful runner exit, and no suite
 or runner error. Missing, duplicate, skipped, pending, malformed, unexpected,
@@ -65,14 +92,44 @@ retained cancellation flow must fail its inverse/compensation obligations.
 A subsequent baseline run must pass unchanged assertions. Negative proof is
 successful only when those precise outcomes are observed, not on any error.
 
+Phase 3 retains five applicable negative scenarios against these same assertions:
+omitted inverse replay fails `cancel.outcome`; corrupt inverse handoff fails
+`cancel.outcome` and `cancel.delivery`; premature immediate delivery fails
+`deferred.delivery`; taking commit instead of rollback fails `cancel.outcome`
+and `cancel.delivery`; omitted compensation fails `cancel.delivery`. Each runs
+both flows, requires the exact failure set with no evidence/infrastructure error,
+and preserves the unaffected obligations. The proof ends with a baseline on the
+same captured input digest. Scenario names and expected failures are owned by the
+manifest; runner, CLI, and board consume that registration.
+
 ## Controlled Actions and Retention
 
-Only registered baseline verification, negative demonstration, and cancellation
-are supported. CLI and HTTP use the same action service and verifier. Unknown
+Registered verification, negative demonstrations, cancellation, mapping-diff
+preparation, and explicit mapping acceptance/rejection are supported. CLI and HTTP
+use the same action service and verifier. Unknown
 actions, flows, scenarios, malformed bodies, and unauthorized requests are rejected
 before creating a run or child process. The local server binds only to loopback,
 checks Host and Origin, and requires a per-start capability for mutations.
 It has no arbitrary command, path, upload, or external delivery endpoint.
+
+The first opening of a new local store imports the trusted repository mapping as
+its explicit initial baseline. Thereafter, verification requires the working
+mapping and architecture to equal the accepted contract. Preparing a diff reads
+only the registered mapping path and admits its candidate against the architecture.
+Phase 3 permits test-name changes for existing obligation ids only. Deleting,
+moving, adding, or changing an obligation, owner, route, goal, scenario, or source
+boundary requires later contract-evolution work and is rejected here.
+
+A review records its base revision, candidate digest, exact before/after mapping,
+actor, and decision reason. Accept checks permission, the current base revision,
+the exact candidate still on disk, and absence of an active runner. It atomically
+persists the accepted mapping and decision together, then invalidates current
+evidence projections. Reject preserves the accepted mapping. Neither action edits
+the user's source or test file. Repeating the same decision is idempotent; a
+conflicting or stale acceptance has no effect. A restart preserves accepted
+mapping and pending/final decisions; incomplete temporary writes cannot accept a
+candidate. This is local explicit review, not protected-main policy or a security
+boundary against code running with the user's OS authority.
 
 The service admits one run at a time. Every run has a bounded deadline and output
 size. Cancellation and shutdown terminate the owned process group and await
@@ -82,11 +139,17 @@ the runner leader terminates its group if its service owner abruptly dies.
 trusted tests still execute with the user's OS authority. Source-writing agents,
 network containment, token budgets, tickets, and PR mutation are unsupported.
 
+New format-2 attempt records bind their request, mapping revision, contract,
+source and runner provenance. Format-1 historical records remain readable with
+their original values; they do not acquire the new provenance guarantees.
 An attempt record contains its state and audit events in one atomically replaced
 JSON file. A final record is immutable. Interrupted records are marked interrupted
 when the store is reopened after obtaining exclusive ownership; restart cannot
 turn them green. Late completion cannot overwrite another attempt. Persisted
-records are validated on read. Raw reports and the captured source are local
+records are validated when admitted from disk, not recomputed on every board read.
+Versioned passes require a successful runner exit with no interruption, and
+current-contract evidence must match its mapping and architecture versions.
+Raw reports and the captured source are local
 artifacts, never committed test results. Only explicit local cleanup removes them.
 
 ## Board
@@ -118,6 +181,20 @@ cancelled. A failed run can be followed by a baseline verification from the boar
 The linked flow selector identifies potential cross-flow impact; failed assertions
 identify confirmed violations. This proof protects only its declared obligations.
 
+The scenario selector exposes all registered demonstrations. A collapsed mapping
+review section prepares the current diff, selects retained reviews, and accepts
+or rejects with an explicit reason through the action service. The source section
+shows mapping revision and version, architecture/configuration versions, runner
+environment, and named report/source-manifest links. These links open in a new
+tab and verify the artifact digest before serving only that attempt's registered
+file. No arbitrary filesystem URL is accepted. Work completion and delivery
+remain explicitly untracked/not assessed; a verification pass cannot set them.
+
+CLI commands may attach to a running loopback service with `--url`, sharing the
+same requests and evidence instead of opening a competing store. An optional
+UUID `requestId` makes a verification retry return its original attempt; conflicting
+reuse is rejected, and caller-owned arrays are detached before asynchronous work.
+
 The server URL is owned by `FLOW_PROOF_URL`, shared by the server and browser tests.
 The server serves the existing committed workspace assets from an explicit
 allowlist and loads the proof adapter only in its target documents. `/` serves
@@ -145,25 +222,36 @@ cache or workspace watcher is added.
 ## Cases and Completion
 
 - Baseline: both real flows and all six obligations pass.
-- Negative: commit remains passing, cancellation fails at the declared inverse
-  and compensation obligations, then a baseline passes.
+- Negative: all five registered scenarios fail their exact declared obligations
+  with no infrastructure errors; unaffected cases pass and a baseline recovers.
 - Preflight: missing input producers, invalid owners/routes, unknown steps,
   duplicate/empty requirements, and missing case mappings reject admission.
+  Every incoming conditional handoff requires a case-backed decision; bypasses
+  need an explicit reason and unresolved routes cannot silently disappear.
 - Evidence: zero-match, missing, duplicate, skipped, runner error, malformed
-  report, and successful wrapper around failing cases reject completion.
+  report, mismatched provenance/environment, and successful wrappers or report
+  summaries around failing cases reject completion. Persisted evidence cannot
+  shrink the required inventory or conceal an unsuccessful execution.
 - Actions: denial has no execution side effect; one request starts one runner;
   duplicate admission, timeout, cancellation, restart, and late completion are safe.
+- Mapping: prepare has no acceptance side effect; explicit acceptance binds the
+  exact base and candidate, rejection retains the accepted contract, stale review
+  and obligation weakening are refused, and decisions survive interrupted writes.
+- Retention: request retries reuse their original attempt across restart; repeated
+  reads perform zero source/history reads, inventory recomputations, or history
+  sorts. Named artifact routes verify the retained file's fingerprint.
 - Browser: original canvas geometry, routes, controls and selection are retained;
-  baseline, negative failure details, recovery, retained attempt identity, unsupported
+  baseline, negative failure details, recovery, mapping acceptance/rejection,
+  retained attempt identity, unsupported
   targets, and narrow layouts pass a permanent test and screenshot review.
   Verification updates cause zero graph replacements or binding reconstruction.
   Hosted root/short routes, legacy hash conversion, reload, back/forward, and
   explicit unknown-route errors preserve target identities and source links.
-- CI runs the focused tests, baseline gate, and exact negative proof as failing
+- CI runs the focused tests, baseline gate, and all five negative proofs as failing
   commands inside `validate`; existing static compatibility checks remain green.
 - The PR's checks pass and the README provides reproducible local commands.
 
 Remote required-check policy is a repository setting, not implied by this code.
-Full Phase 3/4 mapping evolution, accepted-base policy, arbitrary-flow onboarding,
+Phase 4 general mapping evolution, protected accepted-base policy, arbitrary-flow onboarding,
 remote CI ingestion, team sharing, and broader retained-flow coverage remain future
 work. No completion claim extends to those features.

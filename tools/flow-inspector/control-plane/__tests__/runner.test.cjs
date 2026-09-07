@@ -4,6 +4,11 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { spawn } = require('node:child_process')
 const path = require('node:path')
+const fs = require('node:fs')
+const { loadContract } = require('../contracts.cjs')
+const { captureSource } = require('../snapshot.cjs')
+const { assessEvidence } = require('../evidence.cjs')
+const { runVerification } = require('../runner.cjs')
 const { runProcess, runnerEnvironment } = require('../runner.cjs')
 const execute = (code, options = {}) =>
   runProcess({
@@ -112,3 +117,63 @@ test('the owned runner group settles when its service abruptly dies', async () =
     }
   }
 })
+
+test(
+  'every registered negative scenario fails its exact real obligations and preserves unaffected cases',
+  { timeout: 30000 },
+  async (t) => {
+    const root = path.resolve(__dirname, '../../../..')
+    const parent = path.join(root, 'tmp/flow-inspector/runner-proofs')
+    fs.mkdirSync(parent, { recursive: true })
+    const dir = fs.mkdtempSync(path.join(parent, 'proof-'))
+    t.after(() => fs.rmSync(dir, { recursive: true, force: true }))
+    const contract = loadContract(root)
+    const flowIds = contract.flows.map((flow) => flow.id)
+    let baselineDigest
+    for (const scenario of [...contract.scenarios, contract.scenarios[0]]) {
+      const runDirectory = fs.mkdtempSync(path.join(dir, 'run-'))
+      const snapshot = captureSource(root, runDirectory, contract)
+      baselineDigest ??= snapshot.digest
+      assert.equal(snapshot.digest, baselineDigest)
+      const result = await runVerification({
+        repositoryRoot: root,
+        runDirectory,
+        snapshot,
+        contract,
+        scenario: scenario.id,
+        flowIds
+      })
+      assert.equal(result.identity.sourceDigest, snapshot.digest)
+      assert.equal(result.identity.mappingVersion, contract.mappingVersion)
+      assert.equal(result.environment.node, process.version)
+      assert.equal(result.environment.vitest, result.version)
+      assert.match(result.reportDigest, /^[a-f0-9]{64}$/)
+      const evidence = assessEvidence(
+        contract,
+        snapshot,
+        result,
+        flowIds,
+        scenario.id
+      )
+      assert.deepEqual(
+        evidence.issues,
+        [],
+        scenario.id + ': ' + JSON.stringify(result)
+      )
+      assert.deepEqual(
+        evidence.cases
+          .filter((item) => item.status === 'failed')
+          .map((item) => item.id)
+          .sort(),
+        scenario.expectedFailedCaseIds.slice().sort(),
+        scenario.id
+      )
+      assert.equal(
+        evidence.passedCount,
+        contract.cases.length - scenario.expectedFailedCaseIds.length,
+        scenario.id
+      )
+      assert.equal(result.code === 0, scenario.id === 'baseline', scenario.id)
+    }
+  }
+)

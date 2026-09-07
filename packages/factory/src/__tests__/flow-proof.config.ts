@@ -1,16 +1,33 @@
 import { resolve } from 'node:path'
+import { readFileSync } from 'node:fs'
 import { defineConfig } from 'vitest/config'
 
 const sourceRoot =
   process.env.FLOW_PROOF_SOURCE ?? resolve(import.meta.dirname, '../../../..')
 const scenario = process.env.FLOW_PROOF_SCENARIO ?? 'baseline'
-if (!['baseline', 'inverse-regression'].includes(scenario))
-  throw new Error('Unknown proof scenario')
+const manifest = JSON.parse(
+  readFileSync(
+    resolve(sourceRoot, 'packages/factory/flow-contracts.json'),
+    'utf8'
+  )
+) as {
+  scenarios: {
+    id: string
+    mutation?: { file: string; from: string; to: string }
+  }[]
+}
+const selected = manifest.scenarios.find((item) => item.id === scenario)
+if (!selected) throw new Error('Unknown proof scenario')
+const mutation = selected.mutation
+if (mutation && mutation.file !== 'packages/factory/src/data-transact.ts')
+  throw new Error(
+    'Negative proof may transform only its declared runtime owner'
+  )
 
 export default defineConfig({
   plugins: [
     {
-      name: 'proof-inverse-regression',
+      name: 'proof-runtime-scenario',
       enforce: 'pre',
       resolveId(id) {
         // Declared aliases run before this hook. Never fall through to a
@@ -19,20 +36,12 @@ export default defineConfig({
           throw new Error('Uncaptured source dependency: ' + id)
       },
       transform(code, id) {
-        if (
-          scenario !== 'inverse-regression' ||
-          !id.endsWith('/packages/factory/src/data-transact.ts')
-        )
-          return
-        const original =
-          'inversePayload.after = (payload as { before?: unknown }).before'
+        if (!mutation || id !== resolve(sourceRoot, mutation.file)) return
+        const original = mutation.from
         if (code.split(original).length !== 2)
           throw new Error('Negative proof mutation site changed')
         return {
-          code: code.replace(
-            original,
-            'inversePayload.after = (payload as { after?: unknown }).after'
-          ),
+          code: code.replace(original, mutation.to),
           map: null
         }
       }

@@ -27,6 +27,10 @@
       let recordSignature = ''
       let historySignature = ''
       let selectedFlow
+      let mappingState
+      let selectedReviewId = null
+      let mappingSignature = ''
+      let mappingNotice = 'Prepare a diff to inspect the working mapping.'
       const linkedFlows = new Map()
       const cards = new Map()
       const architectureSteps = new Map(
@@ -187,6 +191,15 @@
         }
         compatible = true
         contract = value
+        const previousScenario = byId('scenario').value
+        byId('scenario').replaceChildren()
+        for (const scenario of contract.scenarios) {
+          const option = node('option', scenario.title)
+          option.value = scenario.id
+          byId('scenario').append(option)
+        }
+        if (contract.scenarios.some((item) => item.id === previousScenario))
+          byId('scenario').value = previousScenario
         linkedFlows.clear()
         const previous = selectedFlow?.id
         const select = byId('proof-flow')
@@ -232,8 +245,11 @@
           'No verified snapshot selected. Results cover only declared obligations, not task completion or deployment.'
         if (record)
           context =
-            record.scenario === 'inverse-regression'
-              ? 'NEGATIVE DEMONSTRATION - isolated inverse regression. Cancellation failure is expected.'
+            record.scenario !== 'baseline'
+              ? 'NEGATIVE DEMONSTRATION - ' +
+                (contract.scenarios.find((item) => item.id === record.scenario)
+                  ?.title ?? record.scenario) +
+                '. Only the captured demonstration is shown.'
               : 'Captured source evidence - limited to the selected flow obligations.'
         if (record?.snapshot && !record.matchesCurrentContract)
           context =
@@ -246,6 +262,32 @@
         byId('source-head').textContent = record?.snapshot?.head ?? '-'
         byId('attempt-id').textContent = record?.id ?? '-'
         byId('artifacts').textContent = record?.artifactDirectory ?? '-'
+        byId('mapping-version').textContent =
+          record?.snapshot?.mappingVersion ?? '-'
+        byId('architecture-version').textContent =
+          record?.snapshot?.architectureVersion ?? '-'
+        byId('configuration-version').textContent =
+          record?.snapshot?.configurationDigest ?? '-'
+        const environment = record?.runner?.environment
+        byId('runner-environment').textContent = environment
+          ? environment.node +
+            ' - ' +
+            environment.platform +
+            ' - ' +
+            environment.architecture +
+            ' - Vitest ' +
+            environment.vitest
+          : 'No runner environment recorded'
+        for (const [id, name, available] of [
+          ['report-link', 'report', record?.runner?.reportDigest],
+          ['manifest-link', 'source-manifest', record?.snapshot?.manifestPath]
+        ]) {
+          const link = byId(id)
+          link.hidden = !available
+          if (available)
+            link.href = '/api/runs/' + record.id + '/artifacts/' + name
+          else link.removeAttribute('href')
+        }
         projectEvidence()
       }
       function renderHistory(state) {
@@ -272,6 +314,97 @@
           byId('history').append(button)
         }
       }
+      function renderMapping(value) {
+        mappingState = value
+        if (selectedReviewId === null)
+          selectedReviewId = value.reviews[0]?.id ?? ''
+        const signature =
+          value.revision +
+          ':' +
+          value.reviews.map((review) => review.id + review.status).join(':') +
+          ':' +
+          selectedReviewId +
+          ':' +
+          mappingNotice
+        if (signature === mappingSignature) return
+        mappingSignature = signature
+        byId('mapping-baseline').textContent =
+          'Accepted mapping revision ' +
+          value.revision +
+          ' - ' +
+          value.acceptedVersion
+        const select = byId('mapping-review')
+        select.replaceChildren()
+        const empty = node('option', 'Select a retained review')
+        empty.value = ''
+        select.append(empty)
+        for (const review of value.reviews) {
+          const option = node('option', review.status + ' - ' + review.id)
+          option.value = review.id
+          select.append(option)
+        }
+        select.value = selectedReviewId
+        const review = value.reviews.find(
+          (item) => item.id === selectedReviewId
+        )
+        const diff = byId('mapping-diff')
+        diff.replaceChildren()
+        if (!review) diff.append(node('p', mappingNotice))
+        else {
+          diff.append(
+            node(
+              'p',
+              'Review ' +
+                review.status +
+                ' - base revision ' +
+                review.baseRevision
+            )
+          )
+          for (const change of review.changes) {
+            const item = node('div', undefined, 'proof-mapping-change')
+            item.append(
+              node('strong', change.caseId + ' - ' + change.stepId),
+              node('p', 'Before: ' + change.before),
+              node('p', 'After: ' + change.after)
+            )
+            diff.append(item)
+          }
+          if (review.reason)
+            diff.append(node('p', review.decidedBy + ' - ' + review.reason))
+        }
+      }
+      async function mappingAction(decision) {
+        if (acting || activeId || !capability || !compatible) return
+        acting = true
+        controls()
+        try {
+          if (byId('proof-error')) byId('proof-error').hidden = true
+          const body = decision
+            ? {
+                id: selectedReviewId,
+                decision,
+                reason: byId('mapping-reason').value
+              }
+            : {}
+          const result = await api(
+            '/api/mapping/' + (decision ? 'decide' : 'prepare'),
+            body
+          )
+          selectedReviewId = result.id ?? ''
+          mappingNotice =
+            result.status === 'unchanged'
+              ? 'No mapping changes. The working mapping matches the accepted baseline.'
+              : ''
+          if (decision) byId('mapping-reason').value = ''
+          revision++
+          await refresh()
+        } catch (error) {
+          showError(error)
+        } finally {
+          acting = false
+          if (!disposed) controls()
+        }
+      }
       function controls() {
         byId('run-state').textContent = activeId
           ? 'Verification running - isolated source'
@@ -280,6 +413,19 @@
           !capability || !compatible || Boolean(activeId) || acting
         byId('scenario').disabled = Boolean(activeId) || acting
         byId('cancel').disabled = !activeId || acting
+        const review = mappingState?.reviews.find(
+          (item) => item.id === selectedReviewId
+        )
+        byId('mapping-prepare').disabled =
+          !capability || !compatible || Boolean(activeId) || acting
+        for (const id of ['mapping-accept', 'mapping-reject'])
+          byId(id).disabled =
+            !capability ||
+            !compatible ||
+            Boolean(activeId) ||
+            acting ||
+            review?.status !== 'pending' ||
+            !byId('mapping-reason').value.trim()
         for (const button of menu.querySelectorAll('button'))
           button.disabled =
             !capability || !compatible || Boolean(activeId) || acting
@@ -293,6 +439,7 @@
         try {
           const state = await api('/api/state')
           setContract(state.contract)
+          renderMapping(state.mapping)
           activeId = state.activeRunId
           if (!selectedId && state.runs.length) selectedId = state.runs[0].id
           const id = selectedId
@@ -381,13 +528,21 @@
           <label>Evidence on canvas<select id="proof-flow"></select></label>
           <p id="proof-goal"></p><p>Selected flow: <strong id="flow-status">Unknown</strong></p>
           <p id="proof-step"></p>
-          <label>Source scenario<select id="scenario"><option value="baseline">Current source</option><option value="inverse-regression">Inverse regression demo</option></select></label>
+          <label>Source scenario<select id="scenario"></select></label>
           <div class="proof-actions"><button id="run-linked" type="button">Verify linked flow</button><button id="run-all" type="button">Run all flows</button><button id="cancel" type="button" disabled>Cancel run</button><button id="refresh" type="button">Refresh results</button></div>
           <p id="run-state" role="status">Ready to verify</p>
           <p>Required checks: <strong id="checks">0 / 6</strong></p><p id="result-context"></p>
           <div id="proof-failures"></div>
+          <details><summary>Mapping review</summary>
+            <p id="mapping-baseline"></p><p>Review test-name changes for existing obligations. Flow goals and required steps stay fixed.</p>
+            <button id="mapping-prepare" type="button">Prepare mapping diff</button>
+            <label>Retained review<select id="mapping-review"></select></label><div id="mapping-diff"></div>
+            <label>Decision reason<input id="mapping-reason" maxlength="1000" autocomplete="off" /></label>
+            <div class="proof-actions"><button id="mapping-accept" type="button" disabled>Accept mapping</button><button id="mapping-reject" type="button" disabled>Reject mapping</button></div>
+          </details>
           <details><summary>Captured source and recent attempts</summary>
-            <dl><dt>Source digest</dt><dd id="source-digest">No snapshot yet</dd><dt>Git HEAD</dt><dd id="source-head">-</dd><dt>Attempt</dt><dd id="attempt-id">-</dd><dt>Local artifacts</dt><dd id="artifacts">-</dd></dl>
+            <dl><dt>Source digest</dt><dd id="source-digest">No snapshot yet</dd><dt>Git HEAD</dt><dd id="source-head">-</dd><dt>Attempt</dt><dd id="attempt-id">-</dd><dt>Local artifacts</dt><dd id="artifacts">-</dd><dt>Mapping version</dt><dd id="mapping-version">-</dd><dt>Architecture version</dt><dd id="architecture-version">-</dd><dt>Runner configuration</dt><dd id="configuration-version">-</dd><dt>Runner environment</dt><dd id="runner-environment">-</dd></dl>
+            <p><a id="report-link" target="_blank" rel="noopener noreferrer" hidden>Open test report</a> <a id="manifest-link" target="_blank" rel="noopener noreferrer" hidden>Open source manifest</a></p>
             <div id="history" aria-label="Recent attempts"></div>
           </details>
         </div>`
@@ -424,6 +579,15 @@
             (flow) => flow.id === event.target.value
           )
           projectEvidence()
+        })
+        listen(byId('mapping-prepare'), 'click', () => mappingAction())
+        listen(byId('mapping-accept'), 'click', () => mappingAction('accept'))
+        listen(byId('mapping-reject'), 'click', () => mappingAction('reject'))
+        listen(byId('mapping-reason'), 'input', controls)
+        listen(byId('mapping-review'), 'change', (event) => {
+          selectedReviewId = event.target.value
+          renderMapping(mappingState)
+          controls()
         })
         listen(byId('run-all'), 'click', () => start())
         listen(byId('run-linked'), 'click', () => start([selectedFlow.id]))
