@@ -126,3 +126,15 @@ as superseding entries; do not overwrite released history.
   the independent numerical, resource, offline distribution, pilot or support
   gates in `release/FIRST_RELEASE.md`. No version bump, release record, package
   publication, tag or merge is authorized by closeout.
+
+## 2026-09-07 - Close M1 Workcell Foundations
+
+- Context: M1 had passed its bounded exit gates but lacked milestone closeout.
+- Decision: Archive the existing owner scope and evidence in
+  [M1 workcell foundations](../../plans/completed/m1-workcell-foundations.md).
+  Keep the first-release roadmap active and resume at M2 import-contract
+  acceptance, not M5. This supersedes active-M1 wording without rewriting old
+  decisions or claiming PR completion proves M2-M4.
+- Consequences: No product code, historical units or evidence are changed.
+  M3-M6 and first-release gates remain separate. Closeout adds no Changeset,
+  version bump, tag, package publication or deployment.

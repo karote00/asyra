@@ -22,21 +22,22 @@
 ## Active Work
 
 1. [Asyra Sim first-release roadmap](plans/asyra-sim-roadmap.md)
-   - The remaining sequence is M5 quality/delivery and M6 independent pilot/release
-     review, including any M2-M4 acceptance gaps identified by those gates.
-   - The earlier `125a09c0e` exact-source package is a historical assembly
-     checkpoint, not an offline package of this completed workbench. Its record
-     remains in roadmap section 1.2 and [LOCAL_CANDIDATE.md](release/LOCAL_CANDIDATE.md).
-   - Next work requires its own bounded task: a refreshed exact-source package,
-     packaged offline workflows, the permanent six-axis / 30-fixed-shape /
-     200-keyframe / three-candidate benchmark, then the remaining release gates.
-     Reference M1/8 GB hardware, independent pilots and public policy need
-     external evidence or user decisions; development-host tests are not substitutes.
+   - M1 is closed; M2 Import Contract Completion is active. Complete explicit
+     external source-unit admission and conversion review, then verify all five
+     M2 owner exit criteria before advancing to M3. A completed PR is not
+     acceptance of M2-M4.
+   - M5 packaging and M6 independent pilot/release review remain later work.
+     Historical packaging evidence remains in roadmap section 1.2 and
+     [LOCAL_CANDIDATE.md](release/LOCAL_CANDIDATE.md).
    - Keep the engine App-owned. Extracting generic 3D defaults into Preset and
      precise contact-region inspection are separate tasks, not unfinished scope
      of this PR. No new Framework 3D profile is enabled by closeout.
 
 ## Completed Work
+
+- [M1 workcell foundations](plans/completed/m1-workcell-foundations.md)
+  - Closed 2026-09-07: canonical editing, acknowledged save/reopen and safe
+    replacement; existing recorded evidence is preserved without a new release.
 
 - [Development workbench and original-part refactor](plans/completed/development-workbench.md)
   - Completed 2026-09-07: one executable local/hosted experiment workbench, with
