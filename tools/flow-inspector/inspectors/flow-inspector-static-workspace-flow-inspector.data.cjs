@@ -192,11 +192,13 @@ const data = {
         'Render v2 targets with the shared viewer and label legacy compatibility data without inventing semantics.',
       inputs: [
         'artifact:isolated-target-document',
-        'artifact:workspace-browser-snapshot'
+        'artifact:workspace-browser-snapshot',
+        'optional flowfitrequest with rendered step IDs'
       ],
       outputs: ['artifact:rendered-static-inspector'],
       conditions: [
         'Renderer kind follows catalog classification.',
+        'Fit requests frame rendered cards through the existing zoom owner with padding and reveal the canvas, bounded from 20% to 100%; absent cards do not change the viewport. Manual zoom and reset remain available. No execution state enters this owner.',
         'Document, source, and related Inspector links preserve authored destinations and open in an isolated new tab without replacing the canvas.'
       ],
       bypasses: [

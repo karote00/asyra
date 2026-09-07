@@ -172,7 +172,11 @@ Cards launch the related flow's verification and show its outcome and failures.
 The all-flow button runs the complete supported set of two flows. A negative run
 is prominently labeled and never counted as current successful evidence.
 A newly selected failed attempt selects the first failing flow when the current
-flow has no failures. Subsequent manual flow selection remains respected.
+flow has no failures. It requests the viewer to fit that flow's failed cards
+with padding through the existing bounded zoom owner. This happens once per
+changed result; unchanged polling or refresh does not override subsequent manual
+pan or zoom. Success and unknown evidence do not move the viewport.
+Subsequent manual flow selection remains respected.
 Confirmed failed cards are highlighted without changing their geometry. A
 run-level failure alert remains visible independently of the selected card,
 flow, or collapsed verification controls, with named actions to locate each

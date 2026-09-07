@@ -175,7 +175,12 @@ test(
         })),
         view
       )
+      await page.setViewportSize({ width: 1600, height: 720 })
       const negative = await run('inverse-regression', 'failed')
+      assert.ok(
+        Number(await viewport.getAttribute('data-zoom-scale')) < 1,
+        'short viewports zoom out to fit both failed cards'
+      )
       await expect(canvas.locator('#proof-flow')).toHaveValue(
         'immediate-cancellation'
       )
@@ -184,6 +189,49 @@ test(
         '2 failed obligations'
       )
       await expect(canvas.locator('.step-card.proof-failed')).toHaveCount(2)
+      assert.equal(
+        await canvas.locator('.step-card.proof-failed').evaluateAll((cards) =>
+          cards.every((card) => {
+            const bounds = card.getBoundingClientRect()
+            const view = card.closest('.flow-viewport').getBoundingClientRect()
+            return (
+              bounds.left >= view.left &&
+              bounds.right <= view.right &&
+              bounds.top >= view.top &&
+              bounds.bottom <= view.bottom
+            )
+          })
+        ),
+        true,
+        'new failure automatically frames every failing card'
+      )
+      await capture('canvas-auto-fit')
+      await viewport.evaluate((node) => {
+        node.dispatchEvent(
+          new WheelEvent('wheel', {
+            deltaY: -30,
+            ctrlKey: true,
+            bubbles: true,
+            cancelable: true
+          })
+        )
+      })
+      const manualView = await viewport.evaluate((node) => [
+        node.dataset.zoomScale,
+        node.scrollLeft,
+        node.scrollTop
+      ])
+      await canvas.locator('#refresh').click()
+      await expect(canvas.locator('#refresh')).toBeEnabled()
+      assert.deepEqual(
+        await viewport.evaluate((node) => [
+          node.dataset.zoomScale,
+          node.scrollLeft,
+          node.scrollTop
+        ]),
+        manualView
+      )
+
       await canvas.locator('#proof-flow').selectOption('deferred-publication')
       await expect(canvas.locator('#proof-run-failure')).toBeVisible()
       await canvas.locator('#proof-flow').selectOption('immediate-cancellation')

@@ -563,3 +563,53 @@ test('every rendered link resolves to an existing file and specification section
   }
   assert.deepEqual([...new Set(invalid)], [])
 })
+
+test('v2 viewer fits requested cards through its existing zoom owner', () => {
+  const entry = loadBundle().entries.find(
+    (candidate) => candidate.kind === 'flow-v2'
+  )
+  const dom = createRenderedTarget(entry)
+  const { document, CustomEvent } = dom.window
+  const viewport = document.querySelector('.flow-viewport')
+  const flow = document.querySelector('#flow')
+  let revealCount = 0
+  viewport.scrollIntoView = () => {
+    revealCount++
+  }
+  Object.defineProperty(viewport, 'clientWidth', { value: 600 })
+  Object.defineProperty(viewport, 'clientHeight', { value: 400 })
+  const cards = [...flow.querySelectorAll('.step-card')].slice(0, 2)
+  cards.forEach((card, index) => {
+    Object.defineProperty(card, 'offsetLeft', { value: 800 })
+    Object.defineProperty(card, 'offsetTop', { value: 600 + index * 300 })
+    Object.defineProperty(card, 'offsetWidth', { value: 300 })
+    Object.defineProperty(card, 'offsetHeight', { value: 180 })
+  })
+  flow.dispatchEvent(
+    new CustomEvent('flowfitrequest', {
+      detail: { stepIds: cards.map((card) => card.dataset.stepId) }
+    })
+  )
+  assert.equal(revealCount, 1)
+  const scale = Number(viewport.dataset.zoomScale)
+  assert.ok(scale < 1 && scale >= 0.2)
+  assert.ok(viewport.scrollLeft > 0 && viewport.scrollTop > 0)
+  assert.ok(800 * scale >= viewport.scrollLeft)
+  assert.ok(1080 * scale <= viewport.scrollTop + 400)
+  const before = [scale, viewport.scrollLeft, viewport.scrollTop]
+  flow.dispatchEvent(
+    new CustomEvent('flowfitrequest', { detail: { stepIds: ['missing'] } })
+  )
+  assert.deepEqual(
+    [
+      Number(viewport.dataset.zoomScale),
+      viewport.scrollLeft,
+      viewport.scrollTop
+    ],
+    before
+  )
+  assert.equal(revealCount, 1, 'missing cards never reveal the viewport')
+  document.querySelector('[data-reset-zoom]').click()
+  assert.equal(viewport.dataset.zoomScale, '1')
+  dom.window.close()
+})

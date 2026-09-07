@@ -1,4 +1,4 @@
-/* global document, window, fetch, AbortController, MutationObserver */
+/* global document, window, fetch, AbortController, MutationObserver, CustomEvent */
 ;(function () {
   'use strict'
 
@@ -347,6 +347,17 @@
           else link.removeAttribute('href')
         }
         projectEvidence()
+        if (failures.length) {
+          graph.dispatchEvent(
+            new CustomEvent('flowfitrequest', {
+              detail: {
+                stepIds: failures
+                  .filter((item) => item.flowId === selectedFlow.id)
+                  .map((item) => item.stepId)
+              }
+            })
+          )
+        }
       }
       function renderHistory(state) {
         const signature = JSON.stringify(state.runs) + selectedId

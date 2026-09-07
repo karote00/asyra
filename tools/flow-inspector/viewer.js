@@ -355,6 +355,41 @@
       event.preventDefault()
       resetZoom()
     })
+    flow.addEventListener('flowfitrequest', (event) => {
+      const ids = event.detail?.stepIds
+      if (
+        !Array.isArray(ids) ||
+        !viewport.clientWidth ||
+        !viewport.clientHeight
+      )
+        return
+      const requested = new Set(ids)
+      const selectedCards = [...flow.children].filter((element) =>
+        requested.has(element.dataset.stepId)
+      )
+      if (!selectedCards.length) return
+      const left = Math.min(...selectedCards.map((card) => card.offsetLeft))
+      const top = Math.min(...selectedCards.map((card) => card.offsetTop))
+      const right = Math.max(
+        ...selectedCards.map((card) => card.offsetLeft + card.offsetWidth)
+      )
+      const bottom = Math.max(
+        ...selectedCards.map((card) => card.offsetTop + card.offsetHeight)
+      )
+      const padding = 40
+      setScale(
+        Math.min(
+          1,
+          (viewport.clientWidth - padding * 2) / Math.max(1, right - left),
+          (viewport.clientHeight - padding * 2) / Math.max(1, bottom - top)
+        )
+      )
+      viewport.scrollLeft =
+        ((left + right) * scale) / 2 - viewport.clientWidth / 2
+      viewport.scrollTop =
+        ((top + bottom) * scale) / 2 - viewport.clientHeight / 2
+      viewport.scrollIntoView?.({ block: 'center', inline: 'nearest' })
+    })
     flow.addEventListener('flowboundschange', syncSurfaceSize)
     setScale(1, { x: 0, y: 0 })
   }

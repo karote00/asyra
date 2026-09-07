@@ -136,6 +136,10 @@ JSON-safe serialization. Generator drift is a formal failure.
 - trackpad pinch zoom from 20% through 250% inside the v2 flow viewport, with
   scale-matched scroll bounds, a visible reset control, and `Command+0`
   restoration to 100%;
+- explicit `flowfitrequest` DOM requests with step IDs fit rendered cards with
+  padding through the same zoom owner and reveal the canvas (20% minimum, at most
+  100% for fit); absent
+  cards are ignored, and reset/manual zoom remain authoritative afterward;
 - stable deep links and reload restoration;
 - schema version 2 rendering through the shared renderer;
 - concise step-detail summaries with clearly separated categories and a

@@ -35652,7 +35652,7 @@
             ],
             "conditions": [
               "Preserve the existing canvas cards, routes, geometry, controls, and details; project exact selected-flow results and actions into that surface without replacing the graph.",
-              "On a newly selected failed attempt, select the first failing flow if the current flow has no failures; preserve subsequent manual selection. Show a persistent run-level failure alert with named owner navigation and geometry-preserving failed card highlights; clear them on recovery.",
+              "On a newly selected failed attempt, select the first failing flow if the current flow has no failures; request viewer-owned framing of that flow’s failed step IDs once per changed result; preserve subsequent manual selection, pan and zoom on unchanged refresh. Success and unknown results do not move the viewport. Show a persistent run-level failure alert with named owner navigation and geometry-preserving failed card highlights; clear them on recovery.",
               "Bind cards only after graph DOM replacement; unchanged polling rebuilds neither graph nor bindings and performs no source capture. Target retirement disconnects observers and aborts reads.",
               "Project explicit work reports separately from verification and delivery. Project candidate verification, exact version review with retirement, all-flow CI blockers and artifacts, retry, and baseline/time-labeled shared viewing through the same action service. Show every registered negative scenario, snapshot and version identity, runner environment, named artifact links, and retained attempts; unsupported targets and untested steps receive no successful evidence. Prepare and decide mapping reviews through the action service with an explicit reason; never accept mapping changes in the client.",
               "Loaded canvas step contracts must match admitted verification steps before projecting evidence or enabling launch."
@@ -36192,13 +36192,15 @@
             "purpose": "Render v2 targets with the shared viewer and label legacy compatibility data without inventing semantics.",
             "inputs": [
               "artifact:isolated-target-document",
-              "artifact:workspace-browser-snapshot"
+              "artifact:workspace-browser-snapshot",
+              "optional flowfitrequest with rendered step IDs"
             ],
             "outputs": [
               "artifact:rendered-static-inspector"
             ],
             "conditions": [
               "Renderer kind follows catalog classification.",
+              "Fit requests frame rendered cards through the existing zoom owner with padding and reveal the canvas, bounded from 20% to 100%; absent cards do not change the viewport. Manual zoom and reset remain available. No execution state enters this owner.",
               "Document, source, and related Inspector links preserve authored destinations and open in an isolated new tab without replacing the canvas."
             ],
             "bypasses": [
