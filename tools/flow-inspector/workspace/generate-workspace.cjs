@@ -114,6 +114,9 @@ const entries = candidates
     }
     return {
       id,
+      slug: Object.hasOwn(catalogPolicy.routeSlugs, id)
+        ? catalogPolicy.routeSlugs[id]
+        : id,
       title: data?.target?.title || titleFromId(derivedId),
       kind,
       group: owner.group,
@@ -132,10 +135,25 @@ const entries = candidates
   )
 
 const ids = new Set()
+const slugs = new Set()
+const reservedSlugs = new Set(['api', 'tools', 'docs', 'apps'])
 for (const entry of entries) {
   if (ids.has(entry.id))
     throw new Error(`Duplicate workspace catalog id: ${entry.id}`)
   ids.add(entry.id)
+  if (
+    typeof entry.slug !== 'string' ||
+    !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(entry.slug) ||
+    reservedSlugs.has(entry.slug)
+  )
+    throw new Error(`Invalid or reserved workspace slug: ${entry.slug}`)
+  if (slugs.has(entry.slug))
+    throw new Error(`Duplicate workspace slug: ${entry.slug}`)
+  slugs.add(entry.slug)
+}
+for (const id of Object.keys(catalogPolicy.routeSlugs)) {
+  if (!ids.has(id))
+    throw new Error(`Workspace slug has no included Inspector: ${id}`)
 }
 
 const bundle = {

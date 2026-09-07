@@ -12,8 +12,27 @@ const excludedId = (sourcePath: string) =>
 
 export const parseWorkspaceRoute = (
   hash: string,
-  bundle: WorkspaceBundle
+  bundle: WorkspaceBundle,
+  pathname?: string
 ): WorkspaceRoute => {
+  if (
+    pathname !== undefined &&
+    pathname !== '/' &&
+    pathname !== '/tools/flow-inspector/workspace/workspace.html'
+  ) {
+    const entry = bundle.entries.find(
+      (candidate) => pathname === `/${candidate.slug}`
+    )
+    if (entry) return { kind: 'selected', entry }
+    const id = pathname.slice(1)
+    return {
+      kind: 'error',
+      id,
+      excluded: bundle.exclusions.some(
+        (candidate) => excludedId(candidate.path) === id
+      )
+    }
+  }
   const id = new URLSearchParams(hash.replace(/^#/, '')).get('inspector')
   if (!id) return { kind: 'overview' }
   const entry = bundle.entries.find((candidate) => candidate.id === id)

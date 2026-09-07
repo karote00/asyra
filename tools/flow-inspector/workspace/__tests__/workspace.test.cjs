@@ -4,6 +4,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const vm = require('node:vm')
+const { URL, fileURLToPath } = require('node:url')
 const { JSDOM, VirtualConsole } = require('jsdom')
 
 const workspaceRoot = path.resolve(__dirname, '..')
@@ -492,4 +493,73 @@ test('rendered targets omit redundant metadata and standalone navigation', () =>
     assert.equal(document.querySelector('.target-meta'), null)
     assert.equal(document.querySelector('[data-standalone-link]'), null)
   }
+})
+
+// Read the actual shared-renderer DOM for every selectable card, including
+// links inside collapsed contract details. This catches distinct header/detail
+// producers even when they point to the same document.
+const collectRenderedLinks = () => {
+  const links = new Map()
+  for (const entry of loadBundle().entries) {
+    const dom = createRenderedTarget(entry)
+    const document = dom.window.document
+    const collect = () => {
+      for (const anchor of document.querySelectorAll('a[href]')) {
+        const link = {
+          entry: entry.id,
+          href: anchor.href,
+          target: anchor.target,
+          rel: anchor.rel
+        }
+        links.set(JSON.stringify(link), link)
+      }
+    }
+    collect()
+    for (const step of entry.kind === 'flow-v2' ? entry.data.steps : []) {
+      document.querySelector(`[data-step-id="${step.id}"]`).click()
+      collect()
+    }
+    dom.window.close()
+  }
+  return [...links.values()]
+}
+const renderedLinks = collectRenderedLinks()
+
+test('every rendered link opens a separate document without replacing the canvas', () => {
+  assert.ok(renderedLinks.length > 0)
+  const invalid = renderedLinks.filter(
+    (link) =>
+      link.target !== '_blank' ||
+      !link.rel.split(/\s+/).includes('noopener') ||
+      !link.rel.split(/\s+/).includes('noreferrer')
+  )
+  assert.equal(invalid.length, 0, JSON.stringify(invalid.slice(0, 4), null, 2))
+})
+
+test('every rendered link resolves to an existing file and specification section', () => {
+  const invalid = []
+  for (const link of renderedLinks) {
+    const url = new URL(link.href)
+    if (url.protocol !== 'file:') continue
+    const file = fileURLToPath(url)
+    if (!fs.existsSync(file)) {
+      invalid.push(link.href)
+      continue
+    }
+    if (path.extname(file) !== '.md' || !url.hash) continue
+    const headings = [
+      ...fs.readFileSync(file, 'utf8').matchAll(/^#{1,6}\s+(.+)$/gm)
+    ].map((match) =>
+      match[1]
+        .toLowerCase()
+        .replaceAll('`', '')
+        .replace(/[^\p{L}\p{N}\s-]/gu, '')
+        .trim()
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+    )
+    if (!headings.includes(decodeURIComponent(url.hash.slice(1))))
+      invalid.push(link.href)
+  }
+  assert.deepEqual([...new Set(invalid)], [])
 })

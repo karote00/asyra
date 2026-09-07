@@ -744,11 +744,11 @@ code {
 
   const formatItem = (value) => {
     if (value && typeof value === 'object' && value.href && value.label) {
-      return `<a href="${escapeHtml(value.href)}">${escapeHtml(value.label)}</a>`
+      return `<a target="_blank" rel="noopener noreferrer" href="${escapeHtml(value.href)}">${escapeHtml(value.label)}</a>`
     }
     const text = String(value)
     if (text.startsWith('#') && specLink) {
-      return `<a href="${escapeHtml(`${specLink.href}${text}`)}"><code>${escapeHtml(text)}</code></a>`
+      return `<a target="_blank" rel="noopener noreferrer" href="${escapeHtml(`${specLink.href}${text}`)}"><code>${escapeHtml(text)}</code></a>`
     }
     return escapeHtml(text).replace(/`([^`]+)`/g, '<code>$1</code>')
   }
@@ -1163,7 +1163,7 @@ code {
     headerLinks.innerHTML = links
       .map(
         (link) =>
-          `<a class="header-link" href="${escapeHtml(link.href)}" data-link-kind="${escapeHtml(link.kind)}">${escapeHtml(link.label)}</a>`
+          `<a target="_blank" rel="noopener noreferrer" class="header-link" href="${escapeHtml(link.href)}" data-link-kind="${escapeHtml(link.kind)}">${escapeHtml(link.label)}</a>`
       )
       .join('')
     targetSummary.innerHTML = [

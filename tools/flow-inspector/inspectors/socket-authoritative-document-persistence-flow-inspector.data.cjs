@@ -1453,7 +1453,7 @@
         kind: 'plan',
         label: 'Trusted publication and CRDT 7,076 realignment plan',
         href:
-          './completed/trusted-publication-and-crdt-7076-flow-realignment-plan.md'
+          '../../../docs/ai/apps/asyra-design/plans/completed/trusted-publication-and-crdt-7076-flow-realignment-plan.md'
       },
       {
         id: 'factory-collaboration-inspector',

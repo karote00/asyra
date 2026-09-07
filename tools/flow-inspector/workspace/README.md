@@ -42,6 +42,8 @@ The React source lives in `tools/flow-inspector/src/`. Vite emits the committed
 classic JavaScript and CSS under `workspace/generated/`; the catalog generator
 emits `workspace-bundle.data.js` from the current Inspector sources.
 
-The workspace is intentionally read-only. Dynamic evidence, CI state,
-commands, actions, and permissions belong to the future sibling under
-`tools/flow-inspector/control-plane/`.
+Direct-open and Vite workspace entries remain read-only. The sibling
+`tools/flow-inspector/control-plane/` serves this same committed workspace and
+composes its verification adapter into the target document. That server owns
+actions and evidence; the static renderer continues to own the original canvas,
+cards, connections, selection, and zoom.

@@ -1,0 +1,113 @@
+/* DOM integration with the existing static viewer: inherit its theme and keep
+   all canvas/card geometry in viewer.css. No separate dashboard layout. */
+.proof-controls,
+.proof-unavailable,
+.proof-error {
+  margin: 14px 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+  color: var(--text);
+  background: var(--panel);
+  font-size: 12px;
+}
+.proof-controls summary {
+  cursor: pointer;
+}
+.proof-body {
+  padding-top: 10px;
+}
+.proof-body label {
+  display: block;
+  margin-block: 10px;
+}
+.proof-body select {
+  display: block;
+  width: 100%;
+  margin-top: 5px;
+}
+.proof-controls button,
+.proof-controls select,
+.proof-menu button {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 6px 8px;
+  color: var(--text);
+  background: var(--bg);
+  font: inherit;
+}
+.proof-controls button,
+.proof-menu button {
+  cursor: pointer;
+}
+.proof-controls button:focus-visible,
+.proof-menu button:focus-visible,
+.proof-controls select:focus-visible {
+  outline: 2px solid var(--accent);
+}
+.proof-controls button:disabled,
+.proof-menu button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.proof-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.proof-controls dd {
+  margin: 4px 0 10px;
+  overflow-wrap: anywhere;
+  color: var(--muted);
+}
+.proof-controls pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.proof-controls [data-status='passed'],
+.proof-badge[data-status='passed'] {
+  color: #86efac;
+}
+.proof-controls [data-status='failed'],
+.proof-badge[data-status='failed'],
+.proof-error {
+  color: #fca5a5;
+}
+.proof-controls [data-status='unknown'],
+.proof-badge[data-status='unknown'] {
+  color: var(--muted);
+}
+.proof-badge {
+  flex: none;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 2px 6px;
+  font-size: 10px;
+}
+.proof-menu {
+  position: fixed;
+  z-index: 100;
+  display: grid;
+  gap: 6px;
+  max-width: calc(100vw - 16px);
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: 0 8px 30px #0008;
+}
+.proof-menu[hidden] {
+  display: none;
+}
+.proof-menu button {
+  text-align: left;
+}
+#history {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+}
+#history [aria-pressed='true'] {
+  border-color: var(--accent);
+}

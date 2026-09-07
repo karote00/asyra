@@ -25,6 +25,7 @@
       "tools/flow-inspector/inspectors/canvas-pipeline-debugger-flow-inspector.data.cjs",
       "tools/flow-inspector/inspectors/create-asyra-design-app-release-flow-inspector.data.cjs",
       "tools/flow-inspector/inspectors/extendable-preset-flow-inspector.data.cjs",
+      "tools/flow-inspector/inspectors/flow-inspector-core-proof-flow-inspector.data.cjs",
       "tools/flow-inspector/inspectors/flow-inspector-static-workspace-flow-inspector.data.cjs",
       "tools/flow-inspector/inspectors/framework-package-release-flow-inspector.data.cjs",
       "tools/flow-inspector/inspectors/framework-release-readiness-flow-inspector.data.cjs",
@@ -59,6 +60,7 @@
   "entries": [
     {
       "id": "asyra-design-ai-conversational-drawing-performance",
+      "slug": "ai-drawing-performance",
       "title": "Asyra Design Conversational AI Drawing Performance Inspector",
       "kind": "flow-v2",
       "group": "Apps",
@@ -2824,6 +2826,7 @@
     },
     {
       "id": "asyra-design-group-context-menu",
+      "slug": "group-context-menu",
       "title": "Asyra Design Group Context Menu Inspector",
       "kind": "flow-v2",
       "group": "Apps",
@@ -3649,6 +3652,7 @@
     },
     {
       "id": "asyra-design-group-interaction-mvp",
+      "slug": "group-interaction",
       "title": "Asyra Design Group Interaction MVP Inspector",
       "kind": "flow-v2",
       "group": "Apps",
@@ -4867,6 +4871,7 @@
     },
     {
       "id": "asyra-design-layer-tree-reparent-reorder",
+      "slug": "layer-tree-reorder",
       "title": "Asyra Design Layer Tree Reparent and Reorder Inspector",
       "kind": "flow-v2",
       "group": "Apps",
@@ -5903,6 +5908,7 @@
     },
     {
       "id": "asyra-design-socket-authoritative-document-persistence",
+      "slug": "document-persistence",
       "title": "Asyra Design Socket-Authoritative Persistence Inspector",
       "kind": "flow-v2",
       "group": "Apps",
@@ -5944,7 +5950,7 @@
             "id": "implementation-plan",
             "kind": "plan",
             "label": "Trusted publication and CRDT 7,076 realignment plan",
-            "href": "./completed/trusted-publication-and-crdt-7076-flow-realignment-plan.md"
+            "href": "../../../docs/ai/apps/asyra-design/plans/completed/trusted-publication-and-crdt-7076-flow-realignment-plan.md"
           },
           {
             "id": "factory-collaboration-inspector",
@@ -7458,6 +7464,7 @@
     },
     {
       "id": "vector-render-geometry-cache-transform",
+      "slug": "vector-render-cache",
       "title": "Asyra Design Vector Render Geometry Cache Inspector",
       "kind": "flow-v2",
       "group": "Apps",
@@ -8100,6 +8107,7 @@
     },
     {
       "id": "remote-subtree-restore-snapshot",
+      "slug": "remote-subtree-restore-snapshot",
       "title": "Remote Subtree Restore Snapshot Inspector",
       "kind": "flow-v2",
       "group": "Apps",
@@ -9562,6 +9570,7 @@
     },
     {
       "id": "ai-agent-runtime",
+      "slug": "ai-agent-runtime",
       "title": "AI Agent Runtime Flow Inspector",
       "kind": "flow-v2",
       "group": "Framework",
@@ -11636,6 +11645,7 @@
     },
     {
       "id": "app-level-migration",
+      "slug": "app-level-migration",
       "title": "App-level Migration Inspector",
       "kind": "flow-v2",
       "group": "Framework",
@@ -12769,6 +12779,7 @@
     },
     {
       "id": "canonical-projection-and-collaboration-contract-realignment",
+      "slug": "projection-and-collaboration",
       "title": "Canonical Projection and Collaboration Contract Inspector",
       "kind": "flow-v2",
       "group": "Framework",
@@ -14329,6 +14340,7 @@
     },
     {
       "id": "canvas-pipeline-debugger",
+      "slug": "canvas-pipeline-debugger",
       "title": "Canvas Pipeline Debugger Inspector",
       "kind": "flow-v2",
       "group": "Framework",
@@ -14948,6 +14960,7 @@
     },
     {
       "id": "extendable-preset",
+      "slug": "extendable-preset",
       "title": "Extendable Preset Relation and Unregister Flow",
       "kind": "legacy-v1",
       "group": "Framework",
@@ -15942,6 +15955,7 @@
     },
     {
       "id": "group-component-and-hierarchy",
+      "slug": "group-hierarchy",
       "title": "Group Component and Hierarchy Inspector",
       "kind": "flow-v2",
       "group": "Framework",
@@ -17211,6 +17225,7 @@
     },
     {
       "id": "input-system-environment-neutrality",
+      "slug": "input-environments",
       "title": "Input System Environment Neutrality Flow",
       "kind": "legacy-v1",
       "group": "Framework",
@@ -17570,6 +17585,7 @@
     },
     {
       "id": "network-collaboration-transport",
+      "slug": "collaboration-transport",
       "title": "Network Collaboration Transport Inspector",
       "kind": "flow-v2",
       "group": "Framework",
@@ -18576,6 +18592,7 @@
     },
     {
       "id": "preset-profile-selectable-defaults",
+      "slug": "preset-profiles",
       "title": "Preset Profile and Selectable Defaults Flow",
       "kind": "legacy-v1",
       "group": "Framework",
@@ -19496,6 +19513,7 @@
     },
     {
       "id": "property-type-redefinition",
+      "slug": "property-type-redefinition",
       "title": "Property Type Redefinition Inspector",
       "kind": "flow-v2",
       "group": "Framework",
@@ -20293,6 +20311,7 @@
     },
     {
       "id": "render-delta-update",
+      "slug": "render-delta-update",
       "title": "Render Delta Update Pipeline Inspector",
       "kind": "flow-v2",
       "group": "Framework",
@@ -20453,9 +20472,9 @@
               "docs/ai/framework/plans/completed/render-delta-update-plan.md"
             ],
             "specRefs": [
-              "#committed-delta-semantics",
-              "#ordering-duplicates-and-missing-delivery",
-              "#load-undo-redo-replay-remove-and-cleanup"
+              "#1-committed-delta-semantics",
+              "#3-ordering-duplicates-and-missing-delivery",
+              "#6-load-undo-redo-replay-remove-and-cleanup"
             ],
             "failureOwnerStepId": "commit-scene-tree-delta"
           },
@@ -20507,8 +20526,8 @@
               "docs/ai/framework/plans/completed/render-delta-update-plan.md"
             ],
             "specRefs": [
-              "#ordering-duplicates-and-missing-delivery",
-              "#load-undo-redo-replay-remove-and-cleanup"
+              "#3-ordering-duplicates-and-missing-delivery",
+              "#6-load-undo-redo-replay-remove-and-cleanup"
             ],
             "failureOwnerStepId": "deliver-ordered-delta"
           },
@@ -20558,9 +20577,9 @@
               "docs/ai/framework/plans/completed/render-delta-update-plan.md"
             ],
             "specRefs": [
-              "#snapshot-ownership-and-initial-source",
-              "#explicit-resync-and-failure",
-              "#load-undo-redo-replay-remove-and-cleanup"
+              "#2-snapshot-ownership-and-initial-source",
+              "#4-explicit-resync-and-failure",
+              "#6-load-undo-redo-replay-remove-and-cleanup"
             ],
             "failureOwnerStepId": "route-render-delta"
           },
@@ -20634,9 +20653,9 @@
               "docs/ai/framework/plans/completed/render-delta-update-plan.md"
             ],
             "specRefs": [
-              "#snapshot-ownership-and-initial-source",
+              "#2-snapshot-ownership-and-initial-source",
               "#profiling-and-cache-decision",
-              "#equivalence-and-stale-output-oracle"
+              "#7-equivalence-and-stale-output-oracle"
             ],
             "failureOwnerStepId": "seed-render-snapshot"
           },
@@ -20703,10 +20722,10 @@
               "docs/ai/framework/plans/completed/render-delta-update-plan.md"
             ],
             "specRefs": [
-              "#committed-delta-semantics",
-              "#ordering-duplicates-and-missing-delivery",
-              "#frame-ordering-and-strategy-input",
-              "#equivalence-and-stale-output-oracle"
+              "#1-committed-delta-semantics",
+              "#3-ordering-duplicates-and-missing-delivery",
+              "#5-frame-ordering-and-strategy-input",
+              "#7-equivalence-and-stale-output-oracle"
             ],
             "failureOwnerStepId": "apply-render-delta"
           },
@@ -20771,8 +20790,8 @@
               "docs/ai/framework/plans/completed/render-delta-update-plan.md"
             ],
             "specRefs": [
-              "#explicit-resync-and-failure",
-              "#equivalence-and-stale-output-oracle"
+              "#4-explicit-resync-and-failure",
+              "#7-equivalence-and-stale-output-oracle"
             ],
             "failureOwnerStepId": "resync-render-snapshot"
           },
@@ -20834,8 +20853,8 @@
               "docs/ai/framework/plans/completed/render-delta-update-plan.md"
             ],
             "specRefs": [
-              "#frame-ordering-and-strategy-input",
-              "#equivalence-and-stale-output-oracle"
+              "#5-frame-ordering-and-strategy-input",
+              "#7-equivalence-and-stale-output-oracle"
             ],
             "failureOwnerStepId": "flush-render-snapshot"
           },
@@ -20890,9 +20909,9 @@
               "docs/ai/framework/plans/completed/render-delta-update-plan.md"
             ],
             "specRefs": [
-              "#frame-ordering-and-strategy-input",
+              "#5-frame-ordering-and-strategy-input",
               "#profiling-and-cache-decision",
-              "#equivalence-and-stale-output-oracle"
+              "#7-equivalence-and-stale-output-oracle"
             ],
             "failureOwnerStepId": "execute-render-strategy"
           },
@@ -20944,7 +20963,7 @@
             ],
             "specRefs": [
               "#profiling-and-cache-decision",
-              "#equivalence-and-stale-output-oracle",
+              "#7-equivalence-and-stale-output-oracle",
               "#definition-of-done"
             ],
             "failureOwnerStepId": "handoff-engine-commands"
@@ -21024,7 +21043,7 @@
               "docs/ai/framework/plans/completed/render-delta-update-plan.md"
             ],
             "specRefs": [
-              "#load-undo-redo-replay-remove-and-cleanup",
+              "#6-load-undo-redo-replay-remove-and-cleanup",
               "#profiling-and-cache-decision",
               "#definition-of-done"
             ],
@@ -21336,7 +21355,7 @@
             ],
             "specRefs": [
               "#authority-and-baseline",
-              "#snapshot-ownership-and-initial-source"
+              "#2-snapshot-ownership-and-initial-source"
             ]
           },
           {
@@ -21355,8 +21374,8 @@
               "artifact:complete-strategy-request"
             ],
             "specRefs": [
-              "#committed-delta-semantics",
-              "#equivalence-and-stale-output-oracle"
+              "#1-committed-delta-semantics",
+              "#7-equivalence-and-stale-output-oracle"
             ]
           },
           {
@@ -21373,7 +21392,7 @@
               "artifact:render-projection-cleanup"
             ],
             "specRefs": [
-              "#explicit-resync-and-failure"
+              "#4-explicit-resync-and-failure"
             ]
           },
           {
@@ -21427,8 +21446,8 @@
               "cleanup-render-projection"
             ],
             "specRefs": [
-              "#committed-delta-semantics",
-              "#equivalence-and-stale-output-oracle"
+              "#1-committed-delta-semantics",
+              "#7-equivalence-and-stale-output-oracle"
             ],
             "assertions": [
               "accepted scalar, atomic batch, record set/remove patch, direct property, mixed raw/computed same-name ownership, mixed batch, and coalesced frame output deep-equals fresh authoritative snapshot output"
@@ -21444,8 +21463,8 @@
               "cleanup-render-projection"
             ],
             "specRefs": [
-              "#ordering-duplicates-and-missing-delivery",
-              "#explicit-resync-and-failure"
+              "#3-ordering-duplicates-and-missing-delivery",
+              "#4-explicit-resync-and-failure"
             ],
             "assertions": [
               "Factory prevents duplicate/out-of-order delivery; detectable mismatch performs one explicit resync; missing or invalid canonical state removes stale output",
@@ -21469,7 +21488,7 @@
               "cleanup-render-projection"
             ],
             "specRefs": [
-              "#load-undo-redo-replay-remove-and-cleanup"
+              "#6-load-undo-redo-replay-remove-and-cleanup"
             ],
             "assertions": [
               "all state transitions use the canonical committed route or explicit registration/load rebuild and leave no orphaned snapshot, pending update, removed Render node, or prior-engine handle",
@@ -21488,7 +21507,7 @@
               "execute-render-strategy"
             ],
             "specRefs": [
-              "#frame-ordering-and-strategy-input"
+              "#5-frame-ordering-and-strategy-input"
             ],
             "assertions": [
               "non-vector strategies receive the unchanged complete RenderElementData signature and rerun without a dependency migration"
@@ -21515,6 +21534,7 @@
     },
     {
       "id": "render-engine-boundary",
+      "slug": "render-engine-boundary",
       "title": "Render-Engine Boundary Inspector Flow",
       "kind": "flow-v2",
       "group": "Framework",
@@ -22779,6 +22799,7 @@
     },
     {
       "id": "stroke-engine",
+      "slug": "stroke",
       "title": "Stroke Engine Inspector Flow",
       "kind": "flow-v2",
       "group": "Framework",
@@ -23681,6 +23702,7 @@
     },
     {
       "id": "transaction-atomicity",
+      "slug": "transaction-atomicity",
       "title": "Transaction Atomicity Inspector Flow",
       "kind": "flow-v2",
       "group": "Framework",
@@ -24499,6 +24521,7 @@
     },
     {
       "id": "create-asyra-design-app-release",
+      "slug": "app-release",
       "title": "create-asyra-design-app Release Inspector",
       "kind": "flow-v2",
       "group": "Release",
@@ -25730,6 +25753,7 @@
     },
     {
       "id": "framework-package-release",
+      "slug": "framework-package-release",
       "title": "Framework Package Release Inspector",
       "kind": "flow-v2",
       "group": "Release",
@@ -27154,6 +27178,7 @@
     },
     {
       "id": "framework-release-readiness",
+      "slug": "framework-release-readiness",
       "title": "Framework Release Readiness Flow Inspector",
       "kind": "flow-v2",
       "group": "Release",
@@ -28365,6 +28390,7 @@
     },
     {
       "id": "node-24-runtime-upgrade",
+      "slug": "node-24-runtime-upgrade",
       "title": "Node.js 24 Runtime Upgrade Flow Inspector",
       "kind": "flow-v2",
       "group": "Release",
@@ -29897,6 +29923,7 @@
     },
     {
       "id": "asyra-public-package-documentation",
+      "slug": "public-docs",
       "title": "Asyra Public Package Documentation",
       "kind": "plan-contract",
       "group": "Release",
@@ -30495,6 +30522,7 @@
     },
     {
       "id": "asyra-public-readme-and-entrypoint-alignment",
+      "slug": "public-entrypoints",
       "title": "Asyra Public Readme And Entrypoint Alignment",
       "kind": "plan-contract",
       "group": "Release",
@@ -31094,6 +31122,7 @@
     },
     {
       "id": "asyra-runtime-atlas",
+      "slug": "runtime-atlas",
       "title": "Asyra Runtime Atlas",
       "kind": "plan-contract",
       "group": "Release",
@@ -31571,6 +31600,7 @@
     },
     {
       "id": "asyra-website-landing",
+      "slug": "website-landing",
       "title": "Asyra Website Landing",
       "kind": "plan-contract",
       "group": "Release",
@@ -31963,6 +31993,7 @@
     },
     {
       "id": "asyra-website-launch-and-operations",
+      "slug": "website-operations",
       "title": "Asyra Website Launch And Operations",
       "kind": "plan-contract",
       "group": "Release",
@@ -32403,6 +32434,7 @@
     },
     {
       "id": "asyra-website-platform",
+      "slug": "website-platform",
       "title": "Asyra Website Platform",
       "kind": "plan-contract",
       "group": "Release",
@@ -32949,7 +32981,504 @@
       }
     },
     {
+      "id": "flow-inspector-core-proof",
+      "slug": "core-proof",
+      "title": "Flow Inspector Core Proof",
+      "kind": "flow-v2",
+      "group": "Tools",
+      "subgroup": "Flow Inspector",
+      "lifecycle": "current",
+      "sourcePath": "tools/flow-inspector/inspectors/flow-inspector-core-proof-flow-inspector.data.cjs",
+      "standalonePath": null,
+      "labels": [
+        "flow-inspector-core-proof",
+        "Tools",
+        "Flow Inspector",
+        "flow-v2"
+      ],
+      "data": {
+        "schema": {
+          "id": "flow-inspector",
+          "version": 2
+        },
+        "target": {
+          "id": "flow-inspector-core-proof",
+          "kind": "tool",
+          "title": "Flow Inspector Core Proof",
+          "subtitle": "Two real Factory flows with controlled local verification"
+        },
+        "authority": {
+          "specPath": "docs/ai/tools/flow-inspector/CORE_PROOF.md",
+          "inspectorPath": "tools/flow-inspector/inspectors/flow-inspector-core-proof-flow-inspector.data.cjs",
+          "semanticOwner": "Flow Inspector Core Proof",
+          "inspectorOwner": "Flow Inspector Tool"
+        },
+        "links": [
+          {
+            "id": "product-contract",
+            "kind": "authority",
+            "label": "Core Proof Contract",
+            "href": "../../../docs/ai/tools/flow-inspector/CORE_PROOF.md"
+          }
+        ],
+        "lanes": [
+          {
+            "id": "proof",
+            "title": "Contract and Execution",
+            "order": 1
+          },
+          {
+            "id": "interaction",
+            "title": "Actions and Board",
+            "order": 2
+          }
+        ],
+        "steps": [
+          {
+            "id": "admit-proof-contract",
+            "order": 1,
+            "laneId": "proof",
+            "title": "Admit proof contract",
+            "ownerPackage": "tools/flow-inspector/control-plane",
+            "purpose": "Admission",
+            "inputs": [
+              "product-owned proof manifest",
+              "target architecture Inspector"
+            ],
+            "outputs": [
+              "artifact:admitted-proof-contract"
+            ],
+            "conditions": [
+              "Every required case resolves to a concrete selected step; selected handoffs have explicit producers or declared external inputs."
+            ],
+            "bypasses": [
+              "No missing, ambiguous, empty, or contradictory contract may be bypassed."
+            ],
+            "allowedContributors": [
+              "packages/factory/flow-contracts.json",
+              "tools/flow-inspector/inspectors/transaction-flow-inspector.data.cjs"
+            ],
+            "forbiddenContributors": [
+              "runtime result guessing",
+              "UI-authored step semantics"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "tools/flow-inspector/control-plane/contracts.cjs",
+              "tools/flow-inspector/control-plane/__tests__/contracts.test.cjs"
+            ],
+            "specRefs": [
+              "#admission"
+            ],
+            "failureOwnerStepId": "admit-proof-contract"
+          },
+          {
+            "id": "capture-proof-source",
+            "order": 2,
+            "laneId": "proof",
+            "title": "Capture proof source",
+            "ownerPackage": "tools/flow-inspector/control-plane",
+            "purpose": "Source and Evidence",
+            "inputs": [
+              "artifact:admitted-proof-contract",
+              "authorized run identity",
+              "declared source roots and dependency metadata"
+            ],
+            "outputs": [
+              "artifact:proof-source-snapshot"
+            ],
+            "conditions": [
+              "Copy regular source files into one attempt-owned tree, bind file bytes and Git metadata to a digest, and reject symlinks."
+            ],
+            "bypasses": [
+              "No previous snapshot or mutable checkout may replace the captured runtime source."
+            ],
+            "allowedContributors": [
+              "filesystem reads inside declared repository roots"
+            ],
+            "forbiddenContributors": [
+              "arbitrary paths",
+              "ambient secret files"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "tools/flow-inspector/control-plane/snapshot.cjs",
+              "tools/flow-inspector/control-plane/__tests__/snapshot.test.cjs"
+            ],
+            "specRefs": [
+              "#source-and-evidence"
+            ],
+            "failureOwnerStepId": "capture-proof-source"
+          },
+          {
+            "id": "execute-proof-run",
+            "order": 3,
+            "laneId": "proof",
+            "title": "Execute proof run",
+            "ownerPackage": "tools/flow-inspector/control-plane",
+            "purpose": "Controlled Actions and Retention",
+            "inputs": [
+              "artifact:proof-source-snapshot",
+              "registered scenario",
+              "deadline and cancellation signal"
+            ],
+            "outputs": [
+              "artifact:proof-runner-result"
+            ],
+            "conditions": [
+              "Run one registered Vitest process group against captured source; await settlement on success, error, deadline, or cancellation."
+            ],
+            "bypasses": [
+              "Denied requests never reach execution; a process failure produces a non-passing runner result."
+            ],
+            "allowedContributors": [
+              "installed Vitest",
+              "product-owned Factory proof tests and negative transform"
+            ],
+            "forbiddenContributors": [
+              "shell command input",
+              "source writes outside the attempt directory",
+              "unbounded output"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "tools/flow-inspector/control-plane/runner.cjs",
+              "tools/flow-inspector/control-plane/__tests__/runner.test.cjs"
+            ],
+            "specRefs": [
+              "#controlled-actions-and-retention"
+            ],
+            "failureOwnerStepId": "execute-proof-run"
+          },
+          {
+            "id": "assess-proof-evidence",
+            "order": 4,
+            "laneId": "proof",
+            "title": "Assess proof evidence",
+            "ownerPackage": "tools/flow-inspector/control-plane",
+            "purpose": "Source and Evidence",
+            "inputs": [
+              "artifact:admitted-proof-contract",
+              "artifact:proof-source-snapshot",
+              "artifact:proof-runner-result"
+            ],
+            "outputs": [
+              "artifact:assessed-proof-evidence"
+            ],
+            "conditions": [
+              "Exactly one passing observation per required case, successful exit, and no runner errors are necessary for pass; preserve observed step failures and source identity."
+            ],
+            "bypasses": [
+              "Missing or invalid reports produce an explicit non-pass, never inferred completion."
+            ],
+            "allowedContributors": [
+              "validated Vitest JSON result"
+            ],
+            "forbiddenContributors": [
+              "test-file existence as behavioral evidence",
+              "exit code alone"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "tools/flow-inspector/control-plane/evidence.cjs",
+              "tools/flow-inspector/control-plane/__tests__/evidence.test.cjs"
+            ],
+            "specRefs": [
+              "#source-and-evidence"
+            ],
+            "failureOwnerStepId": "assess-proof-evidence"
+          },
+          {
+            "id": "serve-proof-actions",
+            "order": 5,
+            "laneId": "interaction",
+            "title": "Serve proof actions",
+            "ownerPackage": "tools/flow-inspector/control-plane",
+            "purpose": "Controlled Actions and Retention",
+            "inputs": [
+              "artifact:admitted-proof-contract",
+              "artifact:assessed-proof-evidence",
+              "registered local request",
+              "attempt store",
+              "existing static workspace and catalog-declared local resources"
+            ],
+            "outputs": [
+              "artifact:proof-board-state"
+            ],
+            "conditions": [
+              "Authorize before work, admit one run, durably record state with audit, and expose immutable snapshot-bound evidence; restart interrupts incomplete attempts.",
+              "Serve allowlisted existing workspace assets and compose the proof adapter into target documents; preserve static paths, target routing, and same-origin isolation. Serve Overview at root and catalog-slug pages with an explicit path-routing marker and workspace asset base; unknown public paths return a 404 route error without a selected target. Catalog-declared standalone HTML paths redirect to their exact short workspace target, and declared documentation/source links remain readable in a separate tab."
+            ],
+            "bypasses": [
+              "Unauthorized, conflicting, oversized, malformed, or unknown actions have no runner side effects."
+            ],
+            "allowedContributors": [
+              "local CLI",
+              "loopback HTTP capability",
+              "atomic filesystem attempt records",
+              "generated workspace bundle and its declared local documentation/source links"
+            ],
+            "forbiddenContributors": [
+              "external providers",
+              "arbitrary commands",
+              "implicit current-source or deployment claims"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "tools/flow-inspector/control-plane/service.cjs",
+              "tools/flow-inspector/control-plane/store.cjs",
+              "tools/flow-inspector/control-plane/server.cjs",
+              "tools/flow-inspector/control-plane/cli.cjs",
+              "tools/flow-inspector/control-plane/__tests__/service.test.cjs",
+              "tools/flow-inspector/control-plane/__tests__/store.test.cjs",
+              "tools/flow-inspector/control-plane/__tests__/server.test.cjs"
+            ],
+            "specRefs": [
+              "#controlled-actions-and-retention",
+              "#board"
+            ],
+            "failureOwnerStepId": "serve-proof-actions"
+          },
+          {
+            "id": "render-proof-board",
+            "order": 6,
+            "laneId": "interaction",
+            "title": "Render proof board",
+            "ownerPackage": "tools/flow-inspector/control-plane",
+            "purpose": "Board",
+            "inputs": [
+              "artifact:proof-board-state",
+              "existing workspace canvas DOM and selected architecture target",
+              "user-selected flow and scenario"
+            ],
+            "outputs": [
+              "artifact:proof-board-view"
+            ],
+            "conditions": [
+              "Preserve the existing canvas cards, routes, geometry, controls, and details; project exact selected-flow results and actions into that surface without replacing the graph.",
+              "Bind cards only after graph DOM replacement; unchanged polling rebuilds neither graph nor bindings and performs no source capture. Target retirement disconnects observers and aborts reads.",
+              "Show negative scope, snapshot identity, and retained attempts; unsupported targets and untested steps receive no successful evidence.",
+              "Loaded canvas step contracts must match admitted verification steps before projecting evidence or enabling launch."
+            ],
+            "bypasses": [
+              "Untested or failed data never renders as passed; absent data shows an error or unknown state."
+            ],
+            "allowedContributors": [
+              "same-origin proof HTTP API",
+              "existing static workspace and native browser DOM"
+            ],
+            "forbiddenContributors": [
+              "static architecture data or renderer mutation",
+              "duplicate canvas model or replacement dashboard",
+              "client-side conformance decisions"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "tools/flow-inspector/control-plane/public/board.js",
+              "tools/flow-inspector/control-plane/public/board.css",
+              "tools/flow-inspector/control-plane/__tests__/board.test.cjs"
+            ],
+            "specRefs": [
+              "#board"
+            ],
+            "failureOwnerStepId": "render-proof-board"
+          }
+        ],
+        "routes": [
+          {
+            "id": "admit-proof-contract-to-capture-proof-source",
+            "from": "admit-proof-contract",
+            "to": "capture-proof-source",
+            "kind": "handoff",
+            "predicate": "The producer completed its declared boundary.",
+            "producedArtifacts": [
+              "artifact:admitted-proof-contract"
+            ]
+          },
+          {
+            "id": "admit-proof-contract-to-assess-proof-evidence",
+            "from": "admit-proof-contract",
+            "to": "assess-proof-evidence",
+            "kind": "handoff",
+            "predicate": "The producer completed its declared boundary.",
+            "producedArtifacts": [
+              "artifact:admitted-proof-contract"
+            ]
+          },
+          {
+            "id": "admit-proof-contract-to-serve-proof-actions",
+            "from": "admit-proof-contract",
+            "to": "serve-proof-actions",
+            "kind": "handoff",
+            "predicate": "The producer completed its declared boundary.",
+            "producedArtifacts": [
+              "artifact:admitted-proof-contract"
+            ]
+          },
+          {
+            "id": "capture-proof-source-to-execute-proof-run",
+            "from": "capture-proof-source",
+            "to": "execute-proof-run",
+            "kind": "handoff",
+            "predicate": "The producer completed its declared boundary.",
+            "producedArtifacts": [
+              "artifact:proof-source-snapshot"
+            ]
+          },
+          {
+            "id": "capture-proof-source-to-assess-proof-evidence",
+            "from": "capture-proof-source",
+            "to": "assess-proof-evidence",
+            "kind": "handoff",
+            "predicate": "The producer completed its declared boundary.",
+            "producedArtifacts": [
+              "artifact:proof-source-snapshot"
+            ]
+          },
+          {
+            "id": "execute-proof-run-to-assess-proof-evidence",
+            "from": "execute-proof-run",
+            "to": "assess-proof-evidence",
+            "kind": "handoff",
+            "predicate": "The producer completed its declared boundary.",
+            "producedArtifacts": [
+              "artifact:proof-runner-result"
+            ]
+          },
+          {
+            "id": "assess-proof-evidence-to-serve-proof-actions",
+            "from": "assess-proof-evidence",
+            "to": "serve-proof-actions",
+            "kind": "handoff",
+            "predicate": "The producer completed its declared boundary.",
+            "producedArtifacts": [
+              "artifact:assessed-proof-evidence"
+            ]
+          },
+          {
+            "id": "serve-proof-actions-to-render-proof-board",
+            "from": "serve-proof-actions",
+            "to": "render-proof-board",
+            "kind": "handoff",
+            "predicate": "The producer completed its declared boundary.",
+            "producedArtifacts": [
+              "artifact:proof-board-state"
+            ]
+          },
+          {
+            "id": "render-proof-board-terminal",
+            "from": "render-proof-board",
+            "kind": "terminal",
+            "predicate": "The board has rendered the selected attempt.",
+            "producedArtifacts": [
+              "artifact:proof-board-view"
+            ]
+          }
+        ],
+        "artifacts": [
+          {
+            "id": "artifact:admitted-proof-contract",
+            "title": "Admit proof contract output",
+            "ownerStepId": "admit-proof-contract",
+            "channel": "local-proof",
+            "consumerStepIds": [
+              "capture-proof-source",
+              "assess-proof-evidence",
+              "serve-proof-actions"
+            ]
+          },
+          {
+            "id": "artifact:proof-source-snapshot",
+            "title": "Capture proof source output",
+            "ownerStepId": "capture-proof-source",
+            "channel": "local-proof",
+            "consumerStepIds": [
+              "execute-proof-run",
+              "assess-proof-evidence"
+            ]
+          },
+          {
+            "id": "artifact:proof-runner-result",
+            "title": "Execute proof run output",
+            "ownerStepId": "execute-proof-run",
+            "channel": "local-proof",
+            "consumerStepIds": [
+              "assess-proof-evidence"
+            ]
+          },
+          {
+            "id": "artifact:assessed-proof-evidence",
+            "title": "Assess proof evidence output",
+            "ownerStepId": "assess-proof-evidence",
+            "channel": "local-proof",
+            "consumerStepIds": [
+              "serve-proof-actions"
+            ]
+          },
+          {
+            "id": "artifact:proof-board-state",
+            "title": "Serve proof actions output",
+            "ownerStepId": "serve-proof-actions",
+            "channel": "local-proof",
+            "consumerStepIds": [
+              "render-proof-board"
+            ]
+          },
+          {
+            "id": "artifact:proof-board-view",
+            "title": "Render proof board output",
+            "ownerStepId": "render-proof-board",
+            "channel": "local-proof",
+            "consumerStepIds": [],
+            "terminal": true
+          }
+        ],
+        "invariants": [
+          {
+            "id": "snapshot-bound-pass",
+            "statement": "A pass describes complete observed obligations for one captured source, never a deployment or an untested flow.",
+            "stepIds": [
+              "admit-proof-contract",
+              "capture-proof-source",
+              "execute-proof-run",
+              "assess-proof-evidence",
+              "serve-proof-actions",
+              "render-proof-board"
+            ],
+            "artifactIds": [
+              "artifact:assessed-proof-evidence"
+            ],
+            "specRefs": [
+              "#source-and-evidence"
+            ]
+          }
+        ],
+        "acceptanceContracts": [
+          {
+            "id": "bounded-core-proof",
+            "title": "Core proof cases and completion",
+            "stepIds": [
+              "admit-proof-contract",
+              "capture-proof-source",
+              "execute-proof-run",
+              "assess-proof-evidence",
+              "serve-proof-actions",
+              "render-proof-board"
+            ],
+            "assertions": [
+              "Baseline passes both flows, the isolated inverse violation fails only its observed obligations, and a new baseline recovers.",
+              "Incomplete evidence and unauthorized actions cannot pass or execute."
+            ],
+            "specRefs": [
+              "#cases-and-completion"
+            ]
+          }
+        ]
+      }
+    },
+    {
       "id": "flow-inspector-static-workspace",
+      "slug": "static-workspace",
       "title": "Flow Inspector Static Workspace",
       "kind": "flow-v2",
       "group": "Tools",
@@ -33071,7 +33600,7 @@
             ],
             "conditions": [
               "Every discovered candidate is classified once.",
-              "Flow v2 ids equal target ids."
+              "Flow v2 ids equal target ids; catalog-owned short slugs are unique, valid, non-reserved presentation identities. Invalid or orphaned slug declarations reject generation."
             ],
             "bypasses": [
               "Exclusion requires a stable catalog reason."
@@ -33138,19 +33667,20 @@
             "laneId": "workspace",
             "title": "Route workspace selection",
             "ownerPackage": "tools/flow-inspector/workspace",
-            "purpose": "Render Overview and sidebar navigation, then resolve selection through one stable hash route.",
+            "purpose": "Render Overview and sidebar navigation, then resolve catalog-owned hosted slugs or direct-open static hashes without changing target identities.",
             "inputs": [
               "artifact:workspace-browser-snapshot",
-              "location hash"
+              "browser pathname and hash",
+              "explicit host routing mode"
             ],
             "outputs": [
               "artifact:selected-workspace-route"
             ],
             "conditions": [
-              "Known ids select exactly one entry."
+              "Known slugs or static ids select exactly one entry. Hosted legacy hash links replace the address without adding history; selection pushes only a changed destination and back/forward restores it. Unknown paths cannot fall back to hash-selected content."
             ],
             "bypasses": [
-              "Missing hash selects Overview only."
+              "Hosted root or an empty direct-open static hash selects Overview only; unknown selections remain errors."
             ],
             "allowedContributors": [
               "catalog summaries",
@@ -33233,7 +33763,8 @@
               "artifact:rendered-static-inspector"
             ],
             "conditions": [
-              "Renderer kind follows catalog classification."
+              "Renderer kind follows catalog classification.",
+              "Document, source, and related Inspector links preserve authored destinations and open in an isolated new tab without replacing the canvas."
             ],
             "bypasses": [
               "Invalid targets render an explicit error instead of fallback."

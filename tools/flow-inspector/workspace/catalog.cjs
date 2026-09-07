@@ -10,7 +10,37 @@ module.exports = Object.freeze({
       reason: 'replaced-historical-visual-direction'
     })
   ]),
+  routeSlugs: Object.freeze({
+    'asyra-design-ai-conversational-drawing-performance':
+      'ai-drawing-performance',
+    'asyra-design-group-context-menu': 'group-context-menu',
+    'asyra-design-group-interaction-mvp': 'group-interaction',
+    'asyra-design-layer-tree-reparent-reorder': 'layer-tree-reorder',
+    'asyra-design-socket-authoritative-document-persistence':
+      'document-persistence',
+    'canonical-projection-and-collaboration-contract-realignment':
+      'projection-and-collaboration',
+    'vector-render-geometry-cache-transform': 'vector-render-cache',
+    'group-component-and-hierarchy': 'group-hierarchy',
+    'input-system-environment-neutrality': 'input-environments',
+    'network-collaboration-transport': 'collaboration-transport',
+    'preset-profile-selectable-defaults': 'preset-profiles',
+    'stroke-engine': 'stroke',
+    'create-asyra-design-app-release': 'app-release',
+    'asyra-public-package-documentation': 'public-docs',
+    'asyra-public-readme-and-entrypoint-alignment': 'public-entrypoints',
+    'asyra-runtime-atlas': 'runtime-atlas',
+    'asyra-website-landing': 'website-landing',
+    'asyra-website-launch-and-operations': 'website-operations',
+    'asyra-website-platform': 'website-platform',
+    'flow-inspector-core-proof': 'core-proof',
+    'flow-inspector-static-workspace': 'static-workspace'
+  }),
   groupOverrides: Object.freeze({
+    'flow-inspector-core-proof': Object.freeze({
+      group: 'Tools',
+      subgroup: 'Flow Inspector'
+    }),
     'asyra-design-ai-conversational-drawing-performance': Object.freeze({
       group: 'Apps',
       subgroup: 'Asyra Design'

@@ -2,10 +2,11 @@
 
 ## Status and Objective
 
-Deferred implementation candidate, revised on 2026-09-07. Static Workspace
-`v0.2.0` is complete; activation now depends on the decisions and readiness
-below, not on unfinished static work. This revision authorizes no runtime or
-CI changes by itself. The existing filename is retained for incoming links.
+The first bounded Phase 3 checkpoint is activated by the
+[Core Proof contract](../CORE_PROOF.md) on 2026-09-07. The remaining work in this
+plan is deferred. Static Workspace `v0.2.0` is complete. The checkpoint selects
+two Factory flows, Vitest, GitHub Actions, and the local-only action/evidence
+boundary; it does not claim this complete phase plan has been implemented.
 
 Prove that a concrete implementation Plan can be checked before work, verified
 against real behavior, and retained as a mandatory regression contract. Deliver
@@ -129,6 +130,9 @@ bounded process cleanup before claiming this gate reliable.
 ### Slice 6 - In-board actions and a reproducible trial
 
 Expose the same state and actions through the API, CLI, and one workspace UI.
+Retain the existing canvas, connections, concrete cards, navigation, and detail
+panel. Compose actions and evidence into that surface; this plan does not
+authorize a replacement dashboard or a duplicate graph per verification flow.
 Step cards provide test/CI launch, execution progress, artifact and error
 inspection, and retry through the established action owner. Results return to
 the initiating card. Mapping review is an explicit action through that owner.
