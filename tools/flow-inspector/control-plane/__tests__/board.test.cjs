@@ -66,6 +66,11 @@ test(
       await expect(
         canvas.locator('.step-card [role="button"], .step-card button')
       ).toHaveCount(0)
+      await canvas.locator('body').evaluate((body) => {
+        const style = document.createElement('style')
+        style.textContent = '::-webkit-scrollbar { width: 15px; height: 15px; }'
+        body.append(style)
+      })
       const fitViewport = canvas.locator('.flow-viewport')
       for (const delta of [-500, 1000]) {
         await fitViewport.evaluate((node, delta) => {

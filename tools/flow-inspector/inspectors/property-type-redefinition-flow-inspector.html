@@ -1074,8 +1074,17 @@ code {
     const syncSurfaceSize = () => {
       const baseWidth = Number(flow.dataset.baseWidth)
       const baseHeight = Number(flow.dataset.baseHeight)
+      // Reserved scrollbar gutters reduce usable scroll travel; retain their screen-space extent.
+      const viewportStyle = window.getComputedStyle(viewport)
+      const gutterWidth = Math.max(
+        0,
+        viewport.offsetWidth -
+          viewport.clientWidth -
+          parseFloat(viewportStyle.borderLeftWidth || '0') -
+          parseFloat(viewportStyle.borderRightWidth || '0')
+      )
       if (baseWidth > 0)
-        surface.style.width = `${baseWidth * scale + originX}px`
+        surface.style.width = `${baseWidth * scale + originX + gutterWidth}px`
       if (baseHeight > 0)
         surface.style.height = `${baseHeight * scale + originY}px`
     }
