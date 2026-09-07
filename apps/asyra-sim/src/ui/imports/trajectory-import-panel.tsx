@@ -17,6 +17,8 @@ export function TrajectoryImportPanel({
     setText,
     mapping,
     setMapping,
+    setTimeUnit,
+    setJointUnit,
     preview,
     columns,
     error,
@@ -135,13 +137,7 @@ export function TrajectoryImportPanel({
             <select
               value={mapping.time.unit}
               onChange={(event) =>
-                setMapping((current) => ({
-                  ...current,
-                  time: {
-                    ...current.time,
-                    unit: event.target.value as '' | 'ms' | 's'
-                  }
-                }))
+                setTimeUnit(event.target.value as '' | 'ms' | 's')
               }
             >
               <option value="">Choose unit</option>
@@ -189,10 +185,10 @@ export function TrajectoryImportPanel({
                     aria-label={`${body.name} CSV unit`}
                     value={entry.unit}
                     onChange={(event) =>
-                      setJointMapping(body.id, {
-                        ...entry,
-                        unit: event.target.value as typeof entry.unit
-                      })
+                      setJointUnit(
+                        body.id,
+                        event.target.value as typeof entry.unit
+                      )
                     }
                   >
                     <option value="">Choose unit</option>

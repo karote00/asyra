@@ -38,6 +38,11 @@
   - Completed 2026-09-07: explicit external units, bounded conversion review,
     valid-result reuse and invalidation, and all five M2 owner exit criteria.
     593 App tests and 22 scoped browser cases pass; M3-M6 remain separate.
+  - Follow-up 2026-09-08: retain explicit source-unit declarations during numeric
+    edits while retiring old previews. Verified with 22 focused UI tests, four
+    import browser cases at localhost port 3020, inspected conversion screenshots,
+    build/typecheck, lint, naming and Inspector contracts. This is an M2 usability
+    correction, not another milestone acceptance.
 
 - [M1 workcell foundations](plans/completed/m1-workcell-foundations.md)
   - Closed 2026-09-07: canonical editing, acknowledged save/reopen and safe

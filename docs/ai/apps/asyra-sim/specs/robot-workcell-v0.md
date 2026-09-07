@@ -74,7 +74,12 @@ independently interpret axes or parent-child transforms.
   require explicit time and joint unit declarations, even when values fit the
   joint limits or headers resemble canonical names. Column suggestions are not
   unit declarations. Only unchanged App-generated canonical data starts with
-  known s/rad/m units; strict JSON retains its declared units.
+  known s/rad/m units; strict JSON retains its declared units. Explicit user
+  declarations survive subsequent numeric edits to the same source, including
+  confirmation of a canonical unit. Editing never promotes unconfirmed App
+  defaults to source declarations. Retain valid column mappings; removing a
+  mapped source column retires only its declaration. Loading another CSV requires
+  fresh declarations. Workcell changes still validate joint/unit compatibility.
 - Before acceptance, show source fields, units and representative values beside
   their canonical values and units, from the same validated conversion result.
   Bound review to first, middle and last keyframes. Changed source, mapping,

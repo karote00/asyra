@@ -401,3 +401,128 @@ it('discard and unmount retire in-flight reads without late updates', async () =
   expect(host.textContent).toBe('')
   expect(accepted).not.toHaveBeenCalled()
 })
+
+async function editSource(text: string) {
+  const input = present(host.querySelector('textarea'))
+  await act(() => {
+    present(
+      Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')
+        ?.set
+    ).call(input, text)
+    input.dispatchEvent(new Event('input', { bubbles: true }))
+  })
+}
+
+it('retains declared units across numeric edits but recomputes and accepts only the current preview', async () => {
+  const example = await externalCsv()
+  await select('Time unit', 'ms')
+  for (const body of example.workcell.bodies)
+    if (body.joint.kind !== 'fixed')
+      await select(`${body.name} CSV unit`, 'deg')
+  await preview()
+  const parse = vi.spyOn(importer, 'prepareTrajectoryCsv')
+  const inspect = vi.spyOn(importer, 'previewTrajectoryCsv')
+  try {
+    const text = present(host.querySelector('textarea')).value.replace(
+      '\n4,',
+      '\n5,'
+    )
+    await editSource(text)
+    expect(button('Accept into draft')).toBeUndefined()
+    expect(parse).toHaveBeenCalledOnce()
+    expect(inspect).not.toHaveBeenCalled()
+    await preview()
+    await preview()
+    expect(inspect).toHaveBeenCalledOnce()
+    expect(parse).toHaveBeenCalledOnce()
+    const result = inspect.mock.results[0].value
+    expect(result.value.trajectory.keyframes[1].time).toBe(0.005)
+    await act(() => button('Accept into draft')?.click())
+    expect(accepted.mock.calls[0][0]).toBe(result.value)
+    await externalCsv()
+    await act(() => button('Preview trajectory')?.click())
+    expect(button('Accept into draft')).toBeUndefined()
+  } finally {
+    parse.mockRestore()
+    inspect.mockRestore()
+  }
+})
+
+it('preserves explicit confirmation of canonical units while dropping unconfirmed defaults', async () => {
+  await select('Time unit', 's')
+  const text = present(host.querySelector('textarea')).value.replace(
+    '\n4,',
+    '\n5,'
+  )
+  await editSource(text)
+  await act(() => button('Preview trajectory')?.click())
+  expect(host.textContent).not.toContain('explicit supported time unit')
+  expect(button('Accept into draft')).toBeUndefined()
+  const example = createSyntheticExample()
+  for (const body of example.workcell.bodies)
+    if (body.joint.kind !== 'fixed')
+      await select(`${body.name} CSV unit`, 'rad')
+  await editSource(text.replace('\n5,', '\n6,'))
+  await preview()
+})
+
+it('preserves unaffected declarations when one source column is removed', async () => {
+  const example = await externalCsv()
+  await select('Time unit', 's')
+  for (const body of example.workcell.bodies)
+    if (body.joint.kind !== 'fixed')
+      await select(`${body.name} CSV unit`, 'rad')
+  const text = present(host.querySelector('textarea')).value
+  await editSource(
+    text
+      .split('\n')
+      .map((line) => line.split(',').slice(0, -1).join(','))
+      .join('\n')
+  )
+  const units = [
+    ...host.querySelectorAll<HTMLSelectElement>(
+      'select[aria-label$=" CSV unit"]'
+    )
+  ]
+  expect(units.map((unit) => unit.value)).toEqual([
+    'rad',
+    'rad',
+    'rad',
+    'rad',
+    'rad',
+    ''
+  ])
+  await act(() => button('Preview trajectory')?.click())
+  expect(button('Accept into draft')).toBeUndefined()
+})
+
+it('retains unaffected units when the workcell changes joint type', async () => {
+  const example = await externalCsv()
+  await select('Time unit', 's')
+  for (const body of example.workcell.bodies)
+    if (body.joint.kind !== 'fixed')
+      await select(`${body.name} CSV unit`, 'rad')
+  const workcell = structuredClone(example.workcell)
+  const joint = present(
+    workcell.bodies.find((body) => body.joint.kind === 'revolute')
+  )
+  joint.joint = { ...joint.joint, kind: 'prismatic' }
+  await act(() =>
+    root.render(
+      createElement(TrajectoryImportPanel, {
+        workcell,
+        trajectory: example.trajectory,
+        onAccept: accepted
+      })
+    )
+  )
+  expect(
+    [
+      ...host.querySelectorAll<HTMLSelectElement>(
+        'select[aria-label$=" CSV unit"]'
+      )
+    ].map((unit) => unit.value)
+  ).toEqual(['', 'rad', 'rad', 'rad', 'rad', 'rad'])
+  await act(() => button('Preview trajectory')?.click())
+  expect(button('Accept into draft')).toBeUndefined()
+})

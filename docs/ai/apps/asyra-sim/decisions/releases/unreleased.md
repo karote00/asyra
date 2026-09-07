@@ -157,3 +157,12 @@ as superseding entries; do not overwrite released history.
   contract/evidence review, not M4/M5 or automatic method reimplementation.
   No push, PR, merge, tag, version bump, publication or deployment is part of
   this acceptance.
+
+### 2026-09-08 - Retain explicit import unit declarations during editing
+
+Numeric source edits retain user-declared units and valid column mappings while
+retiring the conversion preview and acceptance eligibility. Initial App canonical
+units remain distinct from explicit declarations; a new CSV requires fresh units,
+and a removed source column retires its own declaration. No saved source evidence
+or Feature/History boundary changes. Permanent UI and browser regressions cover
+retention, conversion reuse, invalidation, and unchanged save/replay behavior.

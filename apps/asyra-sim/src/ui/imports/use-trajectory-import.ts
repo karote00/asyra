@@ -33,6 +33,7 @@ export function useTrajectoryImport({
   const [mapping, updateMapping] = useState<TrajectoryCsvMappingDraft>(() =>
     canonicalCsvMapping(workcell)
   )
+  const declarations = useRef({ time: false, joints: new Set<string>() })
   const [receipt, setReceipt] = useState<{
     result: TrajectoryImportPreview
     source: typeof source
@@ -96,14 +97,53 @@ export function useTrajectoryImport({
     discard()
     const csv = source.kind === 'csv' ? prepareTrajectoryCsv(text) : source.csv
     setSource({ ...source, text, csv })
-    // Edited or pasted bytes no longer carry the App-generated unit guarantee.
-    if (source.kind === 'csv')
-      updateMapping(guessCsvMapping(csv.columns, workcell))
+    // Source edits retire computed evidence, not explicit unit declarations.
+    if (source.kind === 'csv') {
+      const suggested = guessCsvMapping(csv.columns, workcell)
+      const next = { ...suggested, joints: { ...suggested.joints } }
+      if (csv.columns.includes(mapping.time.column))
+        next.time = {
+          ...mapping.time,
+          unit: declarations.current.time ? mapping.time.unit : ''
+        }
+      else declarations.current.time = false
+      for (const body of workcell.bodies) {
+        if (body.joint.kind === 'fixed') continue
+        const entry = mapping.joints[body.id]
+        if (entry && csv.columns.includes(entry.column))
+          next.joints[body.id] = {
+            ...entry,
+            unit: declarations.current.joints.has(body.id) ? entry.unit : ''
+          }
+        else declarations.current.joints.delete(body.id)
+      }
+      updateMapping(next)
+    }
   }
 
   const setMapping = (next: SetStateAction<TrajectoryCsvMappingDraft>) => {
     discard()
     updateMapping(next)
+  }
+
+  const setTimeUnit = (unit: TrajectoryCsvMappingDraft['time']['unit']) => {
+    declarations.current.time = unit !== ''
+    setMapping((current) => ({ ...current, time: { ...current.time, unit } }))
+  }
+
+  const setJointUnit = (
+    id: string,
+    unit: TrajectoryCsvMappingDraft['joints'][string]['unit']
+  ) => {
+    if (unit) declarations.current.joints.add(id)
+    else declarations.current.joints.delete(id)
+    setMapping((current) => ({
+      ...current,
+      joints: {
+        ...current.joints,
+        [id]: { ...current.joints[id], unit }
+      }
+    }))
   }
 
   const load = async (file: File, nextKind: 'csv' | 'json') => {
@@ -131,6 +171,7 @@ export function useTrajectoryImport({
     }
     if (token !== generation.current) return
     const csv = nextKind === 'csv' ? prepareTrajectoryCsv(text) : source.csv
+    declarations.current = { time: false, joints: new Set<string>() }
     setSource({ kind: nextKind, text, csv })
     if (nextKind === 'csv')
       updateMapping(guessCsvMapping(csv.columns, workcell))
@@ -151,6 +192,8 @@ export function useTrajectoryImport({
     setText,
     mapping,
     setMapping,
+    setTimeUnit,
+    setJointUnit,
     preview,
     columns: source.csv.columns,
     error,

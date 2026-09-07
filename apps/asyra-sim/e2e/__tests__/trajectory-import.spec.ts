@@ -96,6 +96,26 @@ test('external CSV declaration, conversion review, acceptance, Undo/Redo and reo
   await expect(review).toContainText('2000 ms → 2 s')
   await expect(review).toContainText('1 deg → 0.01745329252 rad')
   await page
+    .getByLabel('Trajectory source data')
+    .fill(csv.replace('2000,', '3000,'))
+  await expect(
+    page.getByRole('button', { name: 'Accept into draft', exact: true })
+  ).toHaveCount(0)
+  await expect(
+    page.getByRole('combobox', { name: 'Time unit', exact: true })
+  ).toHaveValue('ms')
+  for (const unit of await units.all()) await expect(unit).toHaveValue('deg')
+  await preview(page)
+  await expect(review).toContainText('3000 ms → 3 s')
+  await page.locator('.accepted-preview').screenshot({
+    path: info.outputPath('retained-units-after-edit.png'),
+    animations: 'disabled'
+  })
+  await page.getByLabel('Trajectory source data').fill(csv)
+  await preview(page)
+  await expect(review).toContainText('2000 ms → 2 s')
+
+  await page
     .getByRole('button', { name: 'Accept into draft', exact: true })
     .click({ trial: true })
   await page.locator('.accepted-preview').screenshot({
