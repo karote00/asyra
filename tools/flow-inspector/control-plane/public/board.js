@@ -269,7 +269,10 @@
               projectEvidence()
               const card = cards.get(failure.stepId)?.card
               card?.click()
-              card?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+              // Native selection replaces graph DOM synchronously. Navigate its new card.
+              graph
+                .querySelector('.is-selected')
+                ?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
               panel.open = true
               renderSelected()
             })

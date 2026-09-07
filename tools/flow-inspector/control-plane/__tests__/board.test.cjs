@@ -257,6 +257,20 @@ test(
         })
         .click()
       await expect(owner).toHaveClass(/is-selected/)
+      assert.equal(
+        await owner.evaluate((card) => {
+          const rect = card.getBoundingClientRect()
+          const view = card.closest('.flow-viewport').getBoundingClientRect()
+          return (
+            rect.left >= view.left &&
+            rect.right <= view.right &&
+            rect.top >= view.top &&
+            rect.bottom <= view.bottom
+          )
+        }),
+        true,
+        'failure navigation brings the rebuilt owner card into the canvas viewport'
+      )
       await expect(canvas.locator('#proof-failures')).toContainText(
         'cancel.outcome - failed'
       )
