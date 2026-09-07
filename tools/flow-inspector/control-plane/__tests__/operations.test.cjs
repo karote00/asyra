@@ -65,46 +65,57 @@ test(
     }
   }
 )
-test(
-  'CI uses all flows, retains raw report and explicit external blockers, and request retry never executes twice',
-  { timeout: 30000 },
-  async (t) => {
-    const service = createService(root, { directory: directory(t) })
-    try {
-      assert.throws(
-        () =>
-          service.start(
-            { mode: 'ci' },
-            { id: 'viewer', capabilities: ['verify'] }
-          ),
-        /authorized/
-      )
-      assert.throws(
-        () =>
-          service.start(
-            { mode: 'ci', flowIds: ['deferred-publication'] },
-            LOCAL_ACTOR
-          ),
-        /all/
-      )
-      const request = { mode: 'ci', requestId: randomUUID() }
-      const id = service.start(request, LOCAL_ACTOR),
-        record = await service.wait(id)
-      assert.equal(record.evidence.cases.length, 6)
-      assert.ok(record.ci.blockers.length)
-      assert.equal(record.ci.deliveryStatus, 'blocked')
-      assert.equal(service.start(request, LOCAL_ACTOR), id)
-      assert.equal(service.state().runs.length, 1)
-      assert.match(
-        service.readArtifact(id, 'ci-envelope').toString(),
-        /local-ci-trial/
-      )
-      assert.equal(service.shared().deliveryStatus, 'blocked')
-    } finally {
-      await service.close()
+for (const [githubActions, provider] of [
+  ['false', 'local-ci-trial'],
+  ['true', 'github-actions']
+])
+  test(
+    'CI uses all flows, retains raw report and explicit external blockers, and request retry never executes twice - ' +
+      provider,
+    { timeout: 30000 },
+    async (t) => {
+      const previous = process.env.GITHUB_ACTIONS
+      process.env.GITHUB_ACTIONS = githubActions
+      t.after(() => {
+        if (previous === undefined) delete process.env.GITHUB_ACTIONS
+        else process.env.GITHUB_ACTIONS = previous
+      })
+      const service = createService(root, { directory: directory(t) })
+      try {
+        assert.throws(
+          () =>
+            service.start(
+              { mode: 'ci' },
+              { id: 'viewer', capabilities: ['verify'] }
+            ),
+          /authorized/
+        )
+        assert.throws(
+          () =>
+            service.start(
+              { mode: 'ci', flowIds: ['deferred-publication'] },
+              LOCAL_ACTOR
+            ),
+          /all/
+        )
+        const request = { mode: 'ci', requestId: randomUUID() }
+        const id = service.start(request, LOCAL_ACTOR),
+          record = await service.wait(id)
+        assert.equal(record.evidence.cases.length, 6)
+        assert.ok(record.ci.blockers.length)
+        assert.equal(record.ci.deliveryStatus, 'blocked')
+        assert.equal(service.start(request, LOCAL_ACTOR), id)
+        assert.equal(service.state().runs.length, 1)
+        assert.equal(
+          JSON.parse(service.readArtifact(id, 'ci-envelope')).provider,
+          provider
+        )
+        assert.equal(service.shared().deliveryStatus, 'blocked')
+      } finally {
+        await service.close()
+      }
     }
-  }
-)
+  )
 test('unknown or denied evolution decisions have no version side effects', async (t) => {
   const service = createService(root, { directory: directory(t) })
   try {
