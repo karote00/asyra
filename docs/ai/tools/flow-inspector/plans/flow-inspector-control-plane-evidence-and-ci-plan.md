@@ -130,6 +130,9 @@ bounded process cleanup before claiming this gate reliable.
 ### Slice 6 - In-board actions and a reproducible trial
 
 Expose the same state and actions through the API, CLI, and one workspace UI.
+Retain the existing canvas, connections, concrete cards, navigation, and detail
+panel. Compose actions and evidence into that surface; this plan does not
+authorize a replacement dashboard or a duplicate graph per verification flow.
 Step cards provide test/CI launch, execution progress, artifact and error
 inspection, and retry through the established action owner. Results return to
 the initiating card. Mapping review is an explicit action through that owner.

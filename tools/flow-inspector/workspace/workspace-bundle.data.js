@@ -33167,13 +33167,15 @@
               "artifact:admitted-proof-contract",
               "artifact:assessed-proof-evidence",
               "registered local request",
-              "attempt store"
+              "attempt store",
+              "existing static workspace and catalog-declared local resources"
             ],
             "outputs": [
               "artifact:proof-board-state"
             ],
             "conditions": [
-              "Authorize before work, admit one run, durably record state with audit, and expose immutable snapshot-bound evidence; restart interrupts incomplete attempts."
+              "Authorize before work, admit one run, durably record state with audit, and expose immutable snapshot-bound evidence; restart interrupts incomplete attempts.",
+              "Serve allowlisted existing workspace assets and compose the proof adapter into target documents; preserve static paths, target routing, and same-origin isolation."
             ],
             "bypasses": [
               "Unauthorized, conflicting, oversized, malformed, or unknown actions have no runner side effects."
@@ -33181,7 +33183,8 @@
             "allowedContributors": [
               "local CLI",
               "loopback HTTP capability",
-              "atomic filesystem attempt records"
+              "atomic filesystem attempt records",
+              "generated workspace bundle and its declared local documentation/source links"
             ],
             "forbiddenContributors": [
               "external providers",
@@ -33199,7 +33202,8 @@
               "tools/flow-inspector/control-plane/__tests__/server.test.cjs"
             ],
             "specRefs": [
-              "#controlled-actions-and-retention"
+              "#controlled-actions-and-retention",
+              "#board"
             ],
             "failureOwnerStepId": "serve-proof-actions"
           },
@@ -33212,28 +33216,32 @@
             "purpose": "Board",
             "inputs": [
               "artifact:proof-board-state",
+              "existing workspace canvas DOM and selected architecture target",
               "user-selected flow and scenario"
             ],
             "outputs": [
               "artifact:proof-board-view"
             ],
             "conditions": [
-              "Render selected architecture steps and exact attempt results, run checks from cards, and show negative scope and snapshot identity; unchanged polling performs no source capture."
+              "Preserve the existing canvas cards, routes, geometry, controls, and details; project exact selected-flow results and actions into that surface without replacing the graph.",
+              "Bind cards only after graph DOM replacement; unchanged polling rebuilds neither graph nor bindings and performs no source capture. Target retirement disconnects observers and aborts reads.",
+              "Show negative scope, snapshot identity, and retained attempts; unsupported targets and untested steps receive no successful evidence.",
+              "Loaded canvas step contracts must match admitted verification steps before projecting evidence or enabling launch."
             ],
             "bypasses": [
               "Untested or failed data never renders as passed; absent data shows an error or unknown state."
             ],
             "allowedContributors": [
               "same-origin proof HTTP API",
-              "native browser DOM"
+              "existing static workspace and native browser DOM"
             ],
             "forbiddenContributors": [
-              "static viewer mutation",
+              "static architecture data or renderer mutation",
+              "duplicate canvas model or replacement dashboard",
               "client-side conformance decisions"
             ],
             "cacheDimensions": [],
             "implementationBoundary": [
-              "tools/flow-inspector/control-plane/public/index.html",
               "tools/flow-inspector/control-plane/public/board.js",
               "tools/flow-inspector/control-plane/public/board.css",
               "tools/flow-inspector/control-plane/__tests__/board.test.cjs"

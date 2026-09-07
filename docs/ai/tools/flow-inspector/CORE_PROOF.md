@@ -91,9 +91,20 @@ artifacts, never committed test results. Only explicit local cleanup removes the
 
 ## Board
 
-The board displays each flow's goal, three concrete step cards, declared shared
-owners, required case counts, and verification results. Architecture details come
-from the selected Inspector; the board does not author a duplicate step model.
+The existing workspace canvas is the board. Preserve its catalog, architecture
+cards, routes, positions, zoom, lane filters, selection, and detail panel. Do not
+replace it with a separate dashboard or duplicate cards for each test flow.
+The control-plane server composes verification into that same workspace;
+direct-open static entries remain read-only and independent of the server.
+
+Supported cards expose a context menu and verification badges; the existing
+detail panel shows linked flow goals, required cases, results, and actions.
+The adapter projects only the selected flow's assessed cases onto matching
+architecture steps. Other steps and other targets remain unverified. Selecting a
+different flow, attempt, card, or target must not leak evidence across identities.
+If the loaded canvas's selected step contracts differ from the admitted
+verification steps, clear successful badges and disable launch until the
+workspace is regenerated and reloaded.
 Cards launch the related flow's verification and show its outcome and failures.
 The all-flow button runs the complete supported set of two flows. A negative run
 is prominently labeled and never counted as current successful evidence.
@@ -104,14 +115,21 @@ changing selection does not mutate or reinterpret evidence. Historical evidence
 with a different contract digest stays in its original artifacts and cannot mark
 the current cards as passed. A pending run can be
 cancelled. A failed run can be followed by a baseline verification from the board.
-The shared step links identify potential cross-flow impact; failed assertions
+The linked flow selector identifies potential cross-flow impact; failed assertions
 identify confirmed violations. This proof protects only its declared obligations.
 
 The server URL is owned by `FLOW_PROOF_URL`, shared by the server and browser tests.
-The public page and its scripts are served by the same server without a build or
-new dependency. Static tool CSS conventions apply to this separate tool surface.
-UI polling only reads existing attempt records; source capture and test execution
-occur once per admitted action. No computation cache or workspace watcher is added.
+The server serves the existing committed workspace assets from an explicit
+allowlist and loads the proof adapter only in its target documents. It
+preserves catalog-declared local source and documentation links as plain-text
+read-only resources, without exposing arbitrary repository files. The adapter
+uses the existing tool's theme; it does not own canvas geometry or rendering.
+It observes completed graph DOM replacement to bind current cards, then updates
+only evidence badges and its detail controls. Polling never rebuilds the graph
+or its bindings, resets the viewport, or captures source. Target replacement
+disconnects observers and cancels pending reads and timers. Idle views do not poll.
+Source capture and test execution occur once per admitted action. No computation
+cache or workspace watcher is added.
 
 ## Cases and Completion
 
@@ -124,8 +142,10 @@ occur once per admitted action. No computation cache or workspace watcher is add
   report, and successful wrapper around failing cases reject completion.
 - Actions: denial has no execution side effect; one request starts one runner;
   duplicate admission, timeout, cancellation, restart, and late completion are safe.
-- Browser: baseline, negative failure details, recovery, retained attempt identity,
-  and readable desktop/mobile layouts pass a permanent test and screenshot review.
+- Browser: original canvas geometry, routes, controls and selection are retained;
+  baseline, negative failure details, recovery, retained attempt identity, unsupported
+  targets, and narrow layouts pass a permanent test and screenshot review.
+  Verification updates cause zero graph replacements or binding reconstruction.
 - CI runs the focused tests, baseline gate, and exact negative proof as failing
   commands inside `validate`; existing static compatibility checks remain green.
 - The PR's checks pass and the README provides reproducible local commands.

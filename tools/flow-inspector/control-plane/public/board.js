@@ -1,312 +1,453 @@
-/* global document, fetch, setTimeout, clearTimeout */
-const element = (tag, className, text) => {
-  const node = document.createElement(tag)
-  if (className) node.className = className
-  if (text !== undefined) node.textContent = text
-  return node
-}
-const byId = (id) => document.getElementById(id)
-const cards = new Map()
-const flowBadges = new Map()
-let capability
-let contractDigest
-let selectedId = null
-let activeId = null
-let revision = 0
-let refreshing = false
-let timer
-let historySignature = ''
-let recordSignature = ''
+/* global document, window, fetch, AbortController, MutationObserver */
+;(function () {
+  'use strict'
 
-async function api(route, body) {
-  const options = {}
-  if (body !== undefined) {
-    options.method = 'POST'
-    options.headers = {
-      'Content-Type': 'application/json',
-      'X-Proof-Capability': capability
-    }
-    options.body = JSON.stringify(body)
-  }
-  const response = await fetch(route, options)
-  const value = await response.json()
-  if (!response.ok) throw new Error(value.error ?? 'Request failed')
-  return value
-}
-function showError(error) {
-  byId('error').textContent = error.message
-  byId('error').hidden = false
-}
-async function start(flowIds) {
-  try {
-    byId('error').hidden = true
-    const request = { scenario: byId('scenario').value }
-    if (flowIds) request.flowIds = flowIds
-    const { id } = await api('/api/runs', request)
-    selectedId = id
-    revision++
-    recordSignature = ''
-    await refresh()
-  } catch (error) {
-    showError(error)
-  }
-}
-function buildFlows(contract) {
-  if (contract.digest === contractDigest) return
-  contractDigest = contract.digest
-  cards.clear()
-  flowBadges.clear()
-  byId('flows').replaceChildren()
-  contract.flows.forEach((flow, index) => {
-    const column = element('section', 'flow-column')
-    column.dataset.flow = flow.id
-    const heading = element('div', 'flow-heading')
-    const label = element(
-      'div',
-      'flow-index',
-      'FLOW ' + String(index + 1).padStart(2, '0')
-    )
-    const badge = element('span', 'badge', 'Unknown')
-    label.append(badge)
-    flowBadges.set(flow.id, badge)
-    heading.append(
-      label,
-      element('h2', '', flow.title),
-      element('p', 'flow-goal', flow.goal)
-    )
-    column.append(heading)
-    flow.steps.forEach((step, stepIndex) => {
-      const card = element('article', 'step-card')
-      card.dataset.step = step.id
-      const top = element('div', 'step-top')
-      const status = element('span', 'badge', 'Unknown')
-      top.append(
-        element(
-          'span',
-          'step-number',
-          'STEP ' + String(stepIndex + 1).padStart(2, '0')
-        ),
-        status
+  // Compose with the existing target document. The static renderer owns every
+  // card, route, selection, filter, and viewport; this adapter owns only proof UI.
+  window.addEventListener(
+    'load',
+    async () => {
+      const graph = document.getElementById('flow')
+      const detail = document.getElementById('detail')
+      const target = globalThis.FLOW_INSPECTOR_WORKSPACE_ENTRY
+      if (!graph || !detail || !target) return
+      const lifetime = new AbortController()
+      let disposed = false
+      let observer
+      let timer
+      let capability
+      let contract
+      let record
+      let selectedId = null
+      let activeId = null
+      let revision = 0
+      let refreshing = false
+      let acting = false
+      let compatible = false
+      let recordSignature = ''
+      let historySignature = ''
+      let selectedFlow
+      const linkedFlows = new Map()
+      const cards = new Map()
+      const architectureSteps = new Map(
+        target.data.steps.map((step) => [step.id, step])
       )
-      card.append(
-        top,
-        element('h3', '', step.title),
-        element('p', 'owner', step.ownerPackage)
-      )
-      const shared = element(
-        'button',
-        'shared',
-        'Shared responsibility in both flows'
-      )
-      shared.type = 'button'
-      shared.addEventListener('click', () => {
-        for (const value of cards.values())
-          value.card.dataset.highlight = String(value.stepId === step.id)
-      })
-      card.append(shared)
-      const details = element('details')
-      details.append(element('summary', '', 'Inspect contract'))
-      const content = element('div', 'contract-body')
-      content.append(element('p', '', step.purpose))
-      for (const [label, values] of [
-        ['Inputs', step.inputs],
-        ['Outputs', step.outputs],
-        ['Conditions', step.conditions],
-        ['Bypasses', step.bypasses],
-        ['Allowed contributors', step.allowedContributors],
-        ['Forbidden contributors', step.forbiddenContributors],
-        ['Implementation boundary', step.implementationBoundary],
-        ['Specification references', step.specRefs],
-        ['Failure owner', [step.failureOwnerStepId]]
-      ]) {
-        content.append(element('p', '', label))
-        const list = element('ul')
-        values.forEach((value) => list.append(element('li', '', value)))
-        content.append(list)
+      let cases = new Map()
+      let panel
+      let menu
+      const byId = (id) => document.getElementById(id)
+      const node = (tag, text, className) => {
+        const value = document.createElement(tag)
+        if (text !== undefined) value.textContent = text
+        if (className) value.className = className
+        return value
       }
-      details.append(content)
-      card.append(details)
-      const failure = element('div', 'failure')
-      failure.hidden = true
-      card.append(failure)
-      const bottom = element('div', 'step-bottom')
-      const count = element('span', 'case-count', 'Not verified')
-      const run = element('button', 'step-run', 'Verify linked flow')
-      run.type = 'button'
-      run.setAttribute(
-        'aria-label',
-        'Verify ' + flow.title + ' - ' + step.title
+      const listen = (element, type, callback) =>
+        element.addEventListener(type, callback, { signal: lifetime.signal })
+      window.addEventListener(
+        'pagehide',
+        () => {
+          disposed = true
+          observer?.disconnect()
+          window.clearTimeout(timer)
+          lifetime.abort()
+        },
+        { once: true }
       )
-      run.addEventListener('click', () => start([flow.id]))
-      bottom.append(count, run)
-      card.append(bottom)
-      column.append(card)
-      cards.set(flow.id + ':' + step.id, {
-        card,
-        status,
-        count,
-        failure,
-        run,
-        stepId: step.id,
-        flowId: flow.id
-      })
-    })
-    byId('flows').append(column)
-  })
-}
-function paintBadge(node, status) {
-  node.dataset.status = status
-  node.textContent = status[0].toUpperCase() + status.slice(1)
-}
-function renderRecord(record) {
-  const signature = record
-    ? record.id +
-      record.phase +
-      record.snapshot?.digest +
-      record.matchesCurrentContract
-    : 'empty'
-  if (signature === recordSignature) return
-  recordSignature = signature
-  const evidence = record?.matchesCurrentContract ? record.evidence : null
-  paintBadge(byId('overall'), evidence?.status ?? 'unknown')
-  byId('checks').textContent =
-    (evidence?.passedCount ?? 0) + ' / ' + (evidence?.expectedCount ?? 6)
-  let context =
-    'No verified snapshot selected. Run the supported flow set to establish a baseline.'
-  if (record)
-    context =
-      record.scenario === 'inverse-regression'
-        ? 'NEGATIVE DEMONSTRATION - isolated inverse regression. A failed cancellation flow is the expected demonstration outcome.'
-        : 'Evidence for the captured current source. Coverage is limited to the selected flow obligations.'
-  if (record?.snapshot && !record.matchesCurrentContract)
-    context =
-      'Historical contract differs from these cards. Its original evidence remains in the local artifacts; current steps are unverified.'
-  if (evidence?.issues.length) context += ' ' + evidence.issues.join(' ')
-  if (record?.error) context += ' ' + record.error
-  byId('result-context').textContent = context
-  byId('source-digest').textContent =
-    record?.snapshot?.digest ?? 'No snapshot yet'
-  byId('source-head').textContent = record?.snapshot?.head ?? '-'
-  byId('attempt-id').textContent = record?.id ?? '-'
-  byId('artifacts').textContent = record?.artifactDirectory ?? '-'
-  for (const [id, badge] of flowBadges)
-    paintBadge(
-      badge,
-      evidence?.flows.find((flow) => flow.id === id)?.status ?? 'unknown'
-    )
-  for (const value of cards.values()) {
-    const cases =
-      evidence?.cases.filter(
-        (item) => item.flowId === value.flowId && item.stepId === value.stepId
-      ) ?? []
-    const item = cases[0]
-    const status =
-      evidence?.issues.length && item?.status !== 'failed'
-        ? 'unknown'
-        : (item?.status ?? 'unknown')
-    paintBadge(value.status, status)
-    value.card.dataset.status = status
-    value.count.textContent = 'Not verified'
-    if (item)
-      value.count.textContent =
-        status === 'passed' ? '1 / 1 check passed' : '0 / 1 check passed'
-    value.failure.replaceChildren()
-    value.failure.hidden = !item || status !== 'failed'
-    if (item && status === 'failed') {
-      value.failure.append(element('strong', '', item.id + ' - failed'))
-      item.failures.forEach((message) =>
-        value.failure.append(
-          element(
-            'pre',
-            '',
-            message.replace(
-              new RegExp(String.fromCharCode(27) + '\\[[0-9;]*m', 'g'),
-              ''
+
+      async function api(route, body) {
+        const options = { signal: lifetime.signal }
+        if (body !== undefined) {
+          options.method = 'POST'
+          options.headers = {
+            'Content-Type': 'application/json',
+            'X-Proof-Capability': capability
+          }
+          options.body = JSON.stringify(body)
+        }
+        const response = await fetch(route, options)
+        const value = await response.json()
+        if (!response.ok) throw new Error(value.error ?? 'Request failed')
+        return value
+      }
+      function showError(error) {
+        if (disposed) return
+        let message = byId('proof-error')
+        if (!message) {
+          message = node('p', '', 'proof-error')
+          message.id = 'proof-error'
+          message.setAttribute('role', 'alert')
+          detail.prepend(message)
+        }
+        message.textContent = error.message
+        message.hidden = false
+      }
+      function badge(element, status) {
+        element.dataset.status = status
+        element.textContent = status[0].toUpperCase() + status.slice(1)
+      }
+      function paintCards() {
+        for (const [id, value] of cards) {
+          const item = cases.get(id)
+          badge(value.badge, item?.status ?? 'unknown')
+          value.badge.title =
+            selectedFlow.title +
+            ' - ' +
+            (item?.status ?? 'unknown') +
+            ' - captured attempt only'
+        }
+      }
+      function renderSelected() {
+        const id = graph.querySelector('.is-selected')?.dataset.stepId
+        const linked = linkedFlows.get(id) ?? []
+        const item = cases.get(id)
+        byId('proof-step').textContent = linked.length
+          ? linked.length +
+            ' linked flows for this step. Right-click its card for actions.'
+          : 'This step has no verification obligations in the current proof.'
+        byId('run-linked').disabled =
+          !capability ||
+          !compatible ||
+          Boolean(activeId) ||
+          acting ||
+          !linked.some((flow) => flow.id === selectedFlow.id)
+        const failures = byId('proof-failures')
+        failures.replaceChildren()
+        if (item?.status === 'failed') {
+          failures.append(node('strong', item.id + ' - failed'))
+          for (const failure of item.failures)
+            failures.append(
+              node(
+                'pre',
+                failure.replace(
+                  new RegExp(String.fromCharCode(27) + '\\[[0-9;]*m', 'g'),
+                  ''
+                )
+              )
+            )
+        }
+      }
+      function projectEvidence() {
+        const evidence =
+          compatible && record?.matchesCurrentContract ? record.evidence : null
+        cases = new Map()
+        for (const item of evidence?.cases ?? []) {
+          if (item.flowId !== selectedFlow.id) continue
+          // An invalid report cannot grant successful evidence to a card.
+          const status =
+            evidence.issues.length && item.status !== 'failed'
+              ? 'unknown'
+              : item.status
+          cases.set(item.stepId, { ...item, status })
+        }
+        byId('proof-goal').textContent = selectedFlow.goal
+        badge(
+          byId('flow-status'),
+          evidence?.flows.find((flow) => flow.id === selectedFlow.id)?.status ??
+            'unknown'
+        )
+        paintCards()
+        renderSelected()
+      }
+      function bindCards() {
+        // Observe direct graph replacement, never evidence changes inside cards.
+        // Selection/filter renders retire the old DOM; polling does not call here.
+        cards.clear()
+        menu.hidden = true
+        for (const card of graph.querySelectorAll('.step-card')) {
+          if (!linkedFlows.has(card.dataset.stepId)) continue
+          const status = node('span', 'Unknown', 'proof-badge')
+          card.querySelector('.badge-row').prepend(status)
+          cards.set(card.dataset.stepId, { card, badge: status })
+        }
+        paintCards()
+        renderSelected()
+      }
+      function setContract(value) {
+        if (contract?.digest === value.digest) return
+        if (
+          value.targetId !== target.id ||
+          value.flows.some((flow) =>
+            flow.steps.some(
+              (step) =>
+                JSON.stringify(step) !==
+                JSON.stringify(architectureSteps.get(step.id))
             )
           )
-        )
-      )
-    }
-  }
-}
-function renderHistory(state) {
-  const signature = JSON.stringify(state.runs) + selectedId
-  if (signature === historySignature) return
-  historySignature = signature
-  byId('history').replaceChildren()
-  if (!state.runs.length)
-    byId('history').append(
-      element('p', 'muted', 'Your verification history will appear here.')
-    )
-  state.runs.forEach((run) => {
-    const button = element(
-      'button',
-      '',
-      (run.scenario === 'baseline' ? 'Current source' : 'Regression demo') +
-        ' - ' +
-        run.status
-    )
-    button.type = 'button'
-    button.setAttribute('aria-pressed', String(run.id === selectedId))
-    button.append(
-      element(
-        'small',
-        '',
-        new Date(run.startedAt).toLocaleTimeString() + ' - ' + run.phase
-      )
-    )
-    button.addEventListener('click', () => {
-      selectedId = run.id
-      revision++
-      recordSignature = ''
-      refresh()
-    })
-    byId('history').append(button)
-  })
-}
-async function refresh() {
-  if (refreshing) return
-  refreshing = true
-  clearTimeout(timer)
-  const requestRevision = revision
-  try {
-    const state = await api('/api/state')
-    buildFlows(state.contract)
-    activeId = state.activeRunId
-    if (!selectedId && state.runs.length) selectedId = state.runs[0].id
-    const id = selectedId
-    const record = id ? await api('/api/runs/' + id) : null
-    if (requestRevision !== revision || id !== selectedId) return
-    renderRecord(record)
-    renderHistory(state)
-    byId('run-state').textContent = activeId
-      ? 'Verification running - isolated source'
-      : 'Ready to verify'
-    byId('run-all').disabled = Boolean(activeId)
-    byId('scenario').disabled = Boolean(activeId)
-    byId('cancel').disabled = !activeId
-    for (const value of cards.values()) value.run.disabled = Boolean(activeId)
-  } catch (error) {
-    showError(error)
-  } finally {
-    refreshing = false
-    if (activeId || requestRevision !== revision)
-      timer = setTimeout(refresh, 500)
-  }
-}
-byId('run-all').addEventListener('click', () => start())
-byId('refresh').addEventListener('click', () => refresh())
-byId('cancel').addEventListener('click', async () => {
-  try {
-    await api('/api/runs/' + activeId + '/cancel', {})
-    await refresh()
-  } catch (error) {
-    showError(error)
-  }
-})
-api('/api/session')
-  .then((session) => {
-    capability = session.capability
-    return refresh()
-  })
-  .catch(showError)
+        ) {
+          compatible = false
+          recordSignature = ''
+          if (selectedFlow) renderRecord(null)
+          for (const button of panel.querySelectorAll('button'))
+            button.disabled = true
+          menu.hidden = true
+          throw new Error(
+            'The canvas step contracts differ from the verification contract. Regenerate the workspace and reload before running work.'
+          )
+        }
+        compatible = true
+        contract = value
+        linkedFlows.clear()
+        const previous = selectedFlow?.id
+        const select = byId('proof-flow')
+        select.replaceChildren()
+        for (const flow of contract.flows) {
+          const option = node('option', flow.title)
+          option.value = flow.id
+          select.append(option)
+          for (const step of flow.steps) {
+            const linked = linkedFlows.get(step.id) ?? []
+            linked.push(flow)
+            linkedFlows.set(step.id, linked)
+          }
+        }
+        selectedFlow =
+          contract.flows.find((flow) => flow.id === previous) ??
+          contract.flows[0]
+        select.value = selectedFlow.id
+        cases.clear()
+        // Invalidation is explicit on contract replacement, separate from polling.
+        for (const { badge: status } of cards.values()) status.remove()
+        recordSignature = ''
+        bindCards()
+      }
+      function renderRecord(value) {
+        const signature = value
+          ? value.id +
+            value.phase +
+            value.snapshot?.digest +
+            value.matchesCurrentContract
+          : 'empty'
+        if (signature === recordSignature) return
+        recordSignature = signature
+        record = value
+        const evidence =
+          compatible && record?.matchesCurrentContract ? record.evidence : null
+        badge(byId('overall'), evidence?.status ?? 'unknown')
+        byId('checks').textContent =
+          (evidence?.passedCount ?? 0) +
+          ' / ' +
+          (evidence?.expectedCount ?? contract.cases.length)
+        let context =
+          'No verified snapshot selected. Results cover only declared obligations, not task completion or deployment.'
+        if (record)
+          context =
+            record.scenario === 'inverse-regression'
+              ? 'NEGATIVE DEMONSTRATION - isolated inverse regression. Cancellation failure is expected.'
+              : 'Captured source evidence - limited to the selected flow obligations.'
+        if (record?.snapshot && !record.matchesCurrentContract)
+          context =
+            'Historical contract differs. Current cards remain unverified; original evidence stays in its artifacts.'
+        if (evidence?.issues.length) context += ' ' + evidence.issues.join(' ')
+        if (record?.error) context += ' ' + record.error
+        byId('result-context').textContent = context
+        byId('source-digest').textContent =
+          record?.snapshot?.digest ?? 'No snapshot yet'
+        byId('source-head').textContent = record?.snapshot?.head ?? '-'
+        byId('attempt-id').textContent = record?.id ?? '-'
+        byId('artifacts').textContent = record?.artifactDirectory ?? '-'
+        projectEvidence()
+      }
+      function renderHistory(state) {
+        const signature = JSON.stringify(state.runs) + selectedId
+        if (historySignature === signature) return
+        historySignature = signature
+        byId('history').replaceChildren()
+        for (const run of state.runs) {
+          const button = node(
+            'button',
+            (run.scenario === 'baseline'
+              ? 'Current source'
+              : 'Regression demo') +
+              ' - ' +
+              run.status
+          )
+          button.type = 'button'
+          button.setAttribute('aria-pressed', String(run.id === selectedId))
+          button.addEventListener('click', () => {
+            selectedId = run.id
+            revision++
+            refresh()
+          })
+          byId('history').append(button)
+        }
+      }
+      function controls() {
+        byId('run-state').textContent = activeId
+          ? 'Verification running - isolated source'
+          : 'Ready to verify'
+        byId('run-all').disabled =
+          !capability || !compatible || Boolean(activeId) || acting
+        byId('scenario').disabled = Boolean(activeId) || acting
+        byId('cancel').disabled = !activeId || acting
+        for (const button of menu.querySelectorAll('button'))
+          button.disabled =
+            !capability || !compatible || Boolean(activeId) || acting
+        renderSelected()
+      }
+      async function refresh() {
+        if (refreshing || disposed) return
+        refreshing = true
+        window.clearTimeout(timer)
+        const requestRevision = revision
+        try {
+          const state = await api('/api/state')
+          setContract(state.contract)
+          activeId = state.activeRunId
+          if (!selectedId && state.runs.length) selectedId = state.runs[0].id
+          const id = selectedId
+          const value = id ? await api('/api/runs/' + id) : null
+          if (disposed || requestRevision !== revision || id !== selectedId)
+            return
+          renderRecord(value)
+          renderHistory(state)
+          controls()
+        } catch (error) {
+          showError(error)
+        } finally {
+          refreshing = false
+          if (!disposed && (activeId || requestRevision !== revision))
+            timer = window.setTimeout(refresh, 500)
+        }
+      }
+      async function start(flowIds) {
+        if (!capability || !compatible || acting || activeId || disposed) return
+        acting = true
+        controls()
+        menu.hidden = true
+        panel.open = true
+        try {
+          if (byId('proof-error')) byId('proof-error').hidden = true
+          const request = { scenario: byId('scenario').value }
+          if (flowIds) request.flowIds = flowIds
+          const result = await api('/api/runs', request)
+          selectedId = result.id
+          revision++
+          await refresh()
+        } catch (error) {
+          showError(error)
+        } finally {
+          acting = false
+          if (!disposed) controls()
+        }
+      }
+      function openMenu(event) {
+        const card = event.target.closest('.step-card')
+        const linked = linkedFlows.get(card?.dataset.stepId)
+        if (!linked || !compatible) return
+        event.preventDefault()
+        menu.replaceChildren(node('strong', 'Verify linked flow'))
+        for (const flow of linked) {
+          const button = node('button', flow.title)
+          button.type = 'button'
+          button.disabled = !capability || Boolean(activeId) || acting
+          button.addEventListener('click', () => {
+            selectedFlow = flow
+            byId('proof-flow').value = flow.id
+            projectEvidence()
+            start([flow.id])
+          })
+          menu.append(button)
+        }
+        menu.hidden = false
+        const rect = card.getBoundingClientRect()
+        const x = event.type === 'contextmenu' ? event.clientX : rect.left
+        const y = event.type === 'contextmenu' ? event.clientY : rect.bottom
+        menu.style.left =
+          Math.max(8, Math.min(x, window.innerWidth - menu.offsetWidth - 8)) +
+          'px'
+        menu.style.top =
+          Math.max(8, Math.min(y, window.innerHeight - menu.offsetHeight - 8)) +
+          'px'
+        menu.querySelector('button').focus()
+      }
+
+      try {
+        const state = await api('/api/state')
+        if (state.contract.targetId !== target.id) {
+          const message = node(
+            'p',
+            'No verification contract for this Inspector. Architecture remains read-only.',
+            'proof-unavailable'
+          )
+          message.id = 'proof-unavailable'
+          detail.prepend(message)
+          return
+        }
+        panel = node('details', undefined, 'proof-controls')
+        panel.id = 'proof-controls'
+        panel.innerHTML = `<summary>Flow verification <span id="overall" data-status="unknown">Unknown</span></summary>
+        <div class="proof-body">
+          <label>Evidence on canvas<select id="proof-flow"></select></label>
+          <p id="proof-goal"></p><p>Selected flow: <strong id="flow-status">Unknown</strong></p>
+          <p id="proof-step"></p>
+          <label>Source scenario<select id="scenario"><option value="baseline">Current source</option><option value="inverse-regression">Inverse regression demo</option></select></label>
+          <div class="proof-actions"><button id="run-linked" type="button">Verify linked flow</button><button id="run-all" type="button">Run all flows</button><button id="cancel" type="button" disabled>Cancel run</button><button id="refresh" type="button">Refresh results</button></div>
+          <p id="run-state" role="status">Ready to verify</p>
+          <p>Required checks: <strong id="checks">0 / 6</strong></p><p id="result-context"></p>
+          <div id="proof-failures"></div>
+          <details><summary>Captured source and recent attempts</summary>
+            <dl><dt>Source digest</dt><dd id="source-digest">No snapshot yet</dd><dt>Git HEAD</dt><dd id="source-head">-</dd><dt>Attempt</dt><dd id="attempt-id">-</dd><dt>Local artifacts</dt><dd id="artifacts">-</dd></dl>
+            <div id="history" aria-label="Recent attempts"></div>
+          </details>
+        </div>`
+        detail.prepend(panel)
+        menu = node('div', undefined, 'proof-menu')
+        menu.id = 'proof-menu'
+        menu.hidden = true
+        menu.setAttribute('role', 'group')
+        menu.setAttribute('aria-label', 'Step verification actions')
+        document.body.append(menu)
+        setContract(state.contract)
+        controls()
+        observer = new MutationObserver(bindCards)
+        observer.observe(graph, { childList: true })
+        listen(graph, 'contextmenu', openMenu)
+        listen(graph, 'keydown', (event) => {
+          if (
+            event.key === 'ContextMenu' ||
+            (event.shiftKey && event.key === 'F10')
+          )
+            openMenu(event)
+        })
+        listen(document, 'keydown', (event) => {
+          if (event.key === 'Escape') {
+            menu.hidden = true
+            graph.querySelector('.is-selected')?.focus()
+          }
+        })
+        listen(document, 'click', (event) => {
+          if (!menu.contains(event.target)) menu.hidden = true
+        })
+        listen(byId('proof-flow'), 'change', (event) => {
+          selectedFlow = contract.flows.find(
+            (flow) => flow.id === event.target.value
+          )
+          projectEvidence()
+        })
+        listen(byId('run-all'), 'click', () => start())
+        listen(byId('run-linked'), 'click', () => start([selectedFlow.id]))
+        listen(byId('refresh'), 'click', refresh)
+        listen(byId('cancel'), 'click', async () => {
+          if (acting || !activeId) return
+          acting = true
+          controls()
+          try {
+            await api('/api/runs/' + activeId + '/cancel', {})
+            await refresh()
+          } catch (error) {
+            showError(error)
+          } finally {
+            acting = false
+            if (!disposed) controls()
+          }
+        })
+        capability = (await api('/api/session')).capability
+        await refresh()
+      } catch (error) {
+        showError(error)
+      }
+    },
+    { once: true }
+  )
+})()

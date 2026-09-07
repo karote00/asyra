@@ -1,6 +1,6 @@
 # Flow Inspector Core Proof
 
-This local board verifies two real Factory flows: deferred publication and
+The existing Flow Inspector canvas verifies two real Factory flows: deferred publication and
 cancellation after immediate publication. Six formal obligations map to three
 concrete architecture steps shared by both flows. The first bounded Phase 3
 checkpoint is defined in [CORE_PROOF.md](../../../docs/ai/tools/flow-inspector/CORE_PROOF.md).
@@ -16,17 +16,24 @@ yarn install --immutable
 FLOW_PROOF_URL=http://127.0.0.1:4318 node tools/flow-inspector/control-plane/cli.cjs serve
 ```
 
-Open <a href="http://127.0.0.1:4318" target="_blank" rel="noopener noreferrer">the local board</a>.
+Open <a href="http://127.0.0.1:4318" target="_blank" rel="noopener noreferrer">the local canvas</a>.
+It opens the original workspace at Transaction Atomicity, with its catalog,
+seven architecture cards, connections, zoom, filters, and detail panel intact.
 
-1. Select **Current source** and click **Run all flows**. Expect both flows and
+1. Expand **Flow verification** in the existing detail panel. Select
+   **Current source** and click **Run all flows**. Expect both flows and
    all six checks to pass.
 2. Select **Inverse regression demo** and run again. Expect the commit flow to
    pass while cancellation fails `cancel.outcome` and `cancel.delivery`.
+   Choose **Cancel an already visible change** under **Evidence on canvas** to
+   see the two failed owner cards on the same graph.
 3. Inspect a failed card and its contract, then select **Current source** and
    run again. All checks should recover. Earlier attempts remain selectable.
-4. A card's **Verify linked flow** runs that flow's three obligations. The other
-   flow remains unverified for that attempt. Shared responsibility buttons
-   highlight the corresponding card in both flows.
+4. Right-click a mapped card (or use `Shift+F10`) and choose a linked flow to run
+   its three obligations. The detail panel also provides **Verify linked flow**.
+   Select the other flow to confirm it remains unverified for that attempt.
+5. Expand **Captured source and recent attempts** to inspect source identity and
+   select retained results. Targets without a verification contract stay read-only.
 
 The negative demonstration transforms the isolated copy of the real Factory
 implementation; it never edits your working source or weakens the assertions.
@@ -89,6 +96,9 @@ arbitrary flow onboarding, accepted-base comparison, remote CI ingestion, agent
 execution/token controls, Jira/GitHub actions, and shared team hosting remain in
 the later plans.
 
-The static viewer and React workspace remain separately owned by
+The static viewer and React workspace remain owned by
 `tools/flow-inspector/workspace/`. Framework and App runtimes do not depend on this
-tool, and this checkpoint does not change their package versions.
+tool, and this checkpoint does not change their package versions. The local
+server composes its adapter into the existing target document; static and
+standalone files do not load the adapter or require a server. No separate board
+or replacement canvas is introduced.

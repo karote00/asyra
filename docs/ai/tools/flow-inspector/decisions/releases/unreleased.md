@@ -13,3 +13,14 @@
   of tool dependencies. No new package, runtime, license, or publication change.
 - Add direct CI negative proof and permanent browser verification; keep local
   evidence artifacts out of release packages and Git history.
+
+## 2026-09-07 - Preserve the existing canvas
+
+- Correct the checkpoint's separate-board decision: the existing workspace
+  canvas remains the primary UI. Retain its renderer, cards, routes, navigation,
+  controls, and detail panel; compose verification through card context actions
+  and a collapsible detail section.
+- The server loads the adapter only in its target documents. Static files remain
+  independent. Evidence updates must not rebuild the graph or reset its viewport.
+- Prove geometry, selection, filtering, target isolation, retained evidence,
+  contract mismatch rejection, and negative/recovery behavior in the real canvas.

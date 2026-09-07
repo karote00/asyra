@@ -19,7 +19,7 @@ sidebar-driven surface for all current-project Inspectors while retaining
 direct-open standalone HTML compatibility. The bounded local
 [Core Proof](CORE_PROOF.md) at `tools/flow-inspector/control-plane/` adds real
 Factory flow verification, snapshot-bound evidence, controlled actions, and a
-step board. Full CI comparison, agent execution, and integrations remain in the
+verification actions on the existing canvas cards. Full CI comparison, agent execution, and integrations remain in the
 phase plans. The static Inspector's schema version 2 contract is unchanged.
 
 The tool may inspect Framework and App contracts, but neither Framework nor an

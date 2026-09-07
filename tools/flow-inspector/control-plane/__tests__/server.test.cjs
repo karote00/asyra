@@ -5,6 +5,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const http = require('node:http')
 const test = require('node:test')
+const vm = require('node:vm')
 const { startServer, parseLocalUrl } = require('../server.cjs')
 const root = path.resolve(__dirname, '../../../..')
 test('URL contract rejects remote hosts and missing configuration', () => {
@@ -16,7 +17,17 @@ test('URL contract rejects remote hosts and missing configuration', () => {
   ])
     assert.throws(() => parseLocalUrl(url))
 })
-test('HTTP rejects unauthorized, cross-origin, and arbitrary commands before execution', async () => {
+test('HTTP preserves canvas assets and rejects unauthorized, cross-origin, and arbitrary commands before execution', async (context) => {
+  const originalEvaluate = vm.runInNewContext
+  let catalogLoads = 0
+  vm.runInNewContext = (...args) => {
+    const result = originalEvaluate(...args)
+    if (args[1]?.FLOW_INSPECTOR_WORKSPACE_BUNDLE) catalogLoads++
+    return result
+  }
+  context.after(() => {
+    vm.runInNewContext = originalEvaluate
+  })
   const parent = path.join(root, 'tmp/flow-inspector/server-tests')
   fs.mkdirSync(parent, { recursive: true })
   const directory = fs.mkdtempSync(path.join(parent, 'store-'))
@@ -25,6 +36,85 @@ test('HTTP rejects unauthorized, cross-origin, and arbitrary commands before exe
     serviceOptions: { directory }
   })
   try {
+    const entry = await fetch(server.origin, { redirect: 'manual' })
+    assert.equal(entry.status, 302)
+    assert.equal(
+      entry.headers.get('location'),
+      '/tools/flow-inspector/workspace/workspace.html#inspector=transaction-atomicity'
+    )
+    const workspace = await fetch(
+      server.origin + '/tools/flow-inspector/workspace/workspace.html'
+    )
+    assert.equal(
+      await workspace.text(),
+      fs.readFileSync(
+        path.join(root, 'tools/flow-inspector/workspace/workspace.html'),
+        'utf8'
+      )
+    )
+    for (const asset of [
+      'viewer.js',
+      'viewer.css',
+      'workspace/target.js',
+      'workspace/generated/flow-inspector-workspace.js',
+      'workspace/generated/flow-inspector-workspace.css'
+    ]) {
+      const response = await fetch(
+        server.origin + '/tools/flow-inspector/' + asset
+      )
+      assert.equal(response.status, 200)
+      assert.equal(
+        await response.text(),
+        fs.readFileSync(path.join(root, 'tools/flow-inspector', asset), 'utf8')
+      )
+    }
+    const target = await fetch(
+      server.origin +
+        '/tools/flow-inspector/workspace/target.html?inspector=transaction-atomicity'
+    )
+    assert.equal(target.status, 200)
+    assert.match(await target.text(), /src="\/board.js"/)
+    assert.match(
+      target.headers.get('content-security-policy'),
+      /frame-ancestors 'self'/
+    )
+    assert.match(
+      target.headers.get('content-security-policy'),
+      /script-src 'self'/
+    )
+    assert.equal(
+      (await fetch(server.origin + '/api/state?inspector=x')).status,
+      400
+    )
+    assert.equal(
+      (
+        await fetch(
+          server.origin +
+            '/tools/flow-inspector/workspace/target.html?inspector=x&inspector=y'
+        )
+      ).status,
+      400
+    )
+    assert.equal(
+      (
+        await fetch(
+          server.origin + '/tools/flow-inspector/control-plane/service.cjs'
+        )
+      ).status,
+      404
+    )
+    for (const relative of [
+      'docs/ai/framework/plans/completed/transaction-atomicity-and-rollback-plan.md',
+      'tools/flow-inspector/inspectors/transaction-flow-inspector.data.cjs'
+    ]) {
+      const linked = await fetch(server.origin + '/' + relative)
+      assert.equal(linked.status, 200)
+      assert.match(linked.headers.get('content-type'), /^text\/plain/)
+      assert.equal(
+        await linked.text(),
+        fs.readFileSync(path.join(root, relative), 'utf8')
+      )
+    }
     const session = await fetch(server.origin + '/api/session').then(
       (response) => response.json()
     )
@@ -95,6 +185,11 @@ test('HTTP rejects unauthorized, cross-origin, and arbitrary commands before exe
       (response) => response.json()
     )
     assert.equal(saved.snapshot.digest, record.snapshot.digest)
+    assert.equal(
+      catalogLoads,
+      1,
+      'Repeated HTTP reads reuse the server-lifetime catalog allowlist'
+    )
   } finally {
     await server.close()
     fs.rmSync(directory, { recursive: true, force: true })

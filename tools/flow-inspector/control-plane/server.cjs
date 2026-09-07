@@ -3,6 +3,7 @@ const http = require('node:http')
 const { URL } = require('node:url')
 const fs = require('node:fs')
 const path = require('node:path')
+const vm = require('node:vm')
 const { randomBytes, timingSafeEqual } = require('node:crypto')
 const { createService, LOCAL_ACTOR, ActionError } = require('./service.cjs')
 
@@ -51,13 +52,82 @@ async function startServer(
   { url = process.env.FLOW_PROOF_URL, serviceOptions } = {}
 ) {
   const address = parseLocalUrl(url)
-  const service = createService(repositoryRoot, serviceOptions)
   const capability = randomBytes(32).toString('hex')
+  const workspacePath = '/tools/flow-inspector/workspace/'
+  const targetPath = workspacePath + 'target.html'
   const assets = new Map([
-    ['/', ['index.html', 'text/html; charset=utf-8']],
-    ['/board.js', ['board.js', 'text/javascript; charset=utf-8']],
-    ['/board.css', ['board.css', 'text/css; charset=utf-8']]
+    [
+      '/board.js',
+      [
+        path.join(__dirname, 'public/board.js'),
+        'text/javascript; charset=utf-8'
+      ]
+    ],
+    [
+      '/board.css',
+      [path.join(__dirname, 'public/board.css'), 'text/css; charset=utf-8']
+    ]
   ])
+  for (const relative of [
+    'viewer.js',
+    'viewer.css',
+    'workspace/workspace.html',
+    'workspace/target.html',
+    'workspace/target.js',
+    'workspace/legacy-viewer.js',
+    'workspace/workspace-bundle.data.js',
+    'workspace/generated/flow-inspector-workspace.js',
+    'workspace/generated/flow-inspector-workspace.css'
+  ]) {
+    const extension = path.extname(relative)
+    const type = {
+      '.html': 'text/html',
+      '.js': 'text/javascript',
+      '.css': 'text/css'
+    }[extension]
+    assets.set('/tools/flow-inspector/' + relative, [
+      path.join(__dirname, '..', relative),
+      type + '; charset=utf-8'
+    ])
+  }
+  // Load the committed catalog once for this server lifetime. Only resources
+  // explicitly linked by that artifact are readable; this is not a file server.
+  const workspaceSnapshot = {}
+  vm.runInNewContext(
+    fs.readFileSync(
+      path.join(__dirname, '../workspace/workspace-bundle.data.js'),
+      'utf8'
+    ),
+    workspaceSnapshot,
+    { timeout: 1000 }
+  )
+  const localBase = new URL('http://catalog.local/')
+  for (const entry of workspaceSnapshot.FLOW_INSPECTOR_WORKSPACE_BUNDLE
+    .entries) {
+    const source = new URL(entry.sourcePath, localBase)
+    const resources = [
+      source,
+      ...(entry.data?.links ?? []).map((link) => new URL(link.href, source))
+    ]
+    for (const resource of resources) {
+      if (resource.origin !== localBase.origin || assets.has(resource.pathname))
+        continue
+      const file = path.resolve(
+        repositoryRoot,
+        decodeURIComponent(resource.pathname.slice(1))
+      )
+      if (
+        !file.startsWith(repositoryRoot + path.sep) ||
+        !['.md', '.cjs', '.js'].includes(path.extname(file)) ||
+        !fs.existsSync(file) ||
+        fs.realpathSync(file) !== file ||
+        !fs.statSync(file).isFile()
+      )
+        continue
+      assets.set(resource.pathname, [file, 'text/plain; charset=utf-8'])
+    }
+  }
+  const service = createService(repositoryRoot, serviceOptions)
   let origin
   let closing = false
   const server = http.createServer(
@@ -83,9 +153,22 @@ async function startServer(
         )
           throw new ActionError(403, 'Origin is not authorized')
         const route = new URL(request.url, origin)
-        if (route.search)
+        const targetQuery =
+          route.pathname === targetPath &&
+          [...route.searchParams.keys()].length === 1 &&
+          Boolean(route.searchParams.get('inspector'))
+        if (route.search && !targetQuery)
           throw new ActionError(400, 'Query parameters are unsupported')
         if (request.method === 'GET') {
+          if (route.pathname === '/') {
+            response.writeHead(302, {
+              Location:
+                workspacePath +
+                'workspace.html#inspector=' +
+                encodeURIComponent(service.contract().targetId)
+            })
+            return response.end()
+          }
           if (route.pathname === '/api/session')
             return send(200, { capability })
           if (route.pathname === '/api/state') return send(200, service.state())
@@ -93,10 +176,26 @@ async function startServer(
           if (match) return send(200, service.get(match[1]))
           const asset = assets.get(route.pathname)
           if (!asset) throw new ActionError(404, 'Route not found')
-          response.writeHead(200, { 'Content-Type': asset[1] })
-          return response.end(
-            fs.readFileSync(path.join(__dirname, 'public', asset[0]))
+          // Existing canvas geometry uses style attributes; target.js owns a
+          // same-origin base URL. Scripts remain external and same-origin only.
+          response.setHeader(
+            'Content-Security-Policy',
+            "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; frame-ancestors " +
+              (route.pathname === targetPath ? "'self'" : "'none'") +
+              "; object-src 'none'; base-uri 'self'"
           )
+          let content = fs.readFileSync(asset[0])
+          if (route.pathname === targetPath) {
+            content = content
+              .toString()
+              .replace(
+                '</head>',
+                '<link rel="stylesheet" href="/board.css" /></head>'
+              )
+              .replace('</body>', '<script src="/board.js"></script></body>')
+          }
+          response.writeHead(200, { 'Content-Type': asset[1] })
+          return response.end(content)
         }
         if (request.method !== 'POST')
           throw new ActionError(405, 'Method not allowed')

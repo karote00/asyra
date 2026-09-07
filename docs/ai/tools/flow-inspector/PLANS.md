@@ -11,7 +11,7 @@ delegation are the success criteria.
 ## Active Target
 
 The [Core Proof](CORE_PROOF.md) is the bounded Phase 3 checkpoint: two real Factory
-flows, isolated behavioral verification, a controlled local step board, and CI
+flows, isolated behavioral verification, controlled actions on the existing canvas, and CI
 negative proof. It does not activate the rest of Phase 3/4 or agent execution.
 
 ## Next Implementation Candidate
