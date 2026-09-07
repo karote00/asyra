@@ -4,14 +4,18 @@ import { originalWorkcellSnapshot } from '../../methods/__tests__/workcell-fixtu
 import * as meshIndex from '../../methods/mesh-index'
 import { runOriginalPartMethod } from '../../methods/original-part-method'
 import { LiveWorkerHost } from '../worker-host'
-import { LiveMessages, type LiveResponse } from '../protocol'
+import { LIVE_LIMITS, LiveMessages, type LiveResponse } from '../protocol'
 import { sampleSnapshot } from '../sample'
 
 it('reuses complete original preparation through the installed live Worker and isolates successor Workers', async () => {
   const snapshot = await originalWorkcellSnapshot()
   const messages: LiveResponse[] = []
-  const host = new LiveWorkerHost(INSTALLED_METHOD_CATALOG, (message) =>
-    messages.push(message)
+  // This proves preparation ownership, not a shared CI machine's 500 ms SLA.
+  // Profile real elapsed time separately; deadline behavior is tested below.
+  const host = new LiveWorkerHost(
+    INSTALLED_METHOD_CATALOG,
+    (message) => messages.push(message),
+    () => 0
   )
   const build = vi.spyOn(meshIndex, 'buildMeshIndex')
   const durations: number[] = []
@@ -39,7 +43,8 @@ it('reuses complete original preparation through the installed live Worker and i
 
     const successor = new LiveWorkerHost(
       INSTALLED_METHOD_CATALOG,
-      () => undefined
+      () => undefined,
+      () => 0
     )
     await successor.handle({ type: LiveMessages.OPEN, snapshot })
     await successor.handle({ type: LiveMessages.SAMPLE, id: 1, time: 4 })
@@ -54,4 +59,39 @@ it('reuses complete original preparation through the installed live Worker and i
         runOriginalPartMethod(sampleSnapshot(snapshot, message.time))
       )
   }
+}, 20000)
+
+it('reports installed original-method deadline exhaustion and gives the next sample a fresh budget', async () => {
+  const snapshot = await originalWorkcellSnapshot()
+  const messages: LiveResponse[] = []
+  let ticks = 0
+  const now = vi.fn(() => ticks++ * (LIVE_LIMITS.sampleDurationMs + 1))
+  const host = new LiveWorkerHost(
+    INSTALLED_METHOD_CATALOG,
+    (message) => messages.push(message),
+    now
+  )
+
+  await host.handle({ type: LiveMessages.OPEN, snapshot })
+  await host.handle({ type: LiveMessages.SAMPLE, id: 1, time: 4 })
+
+  expect(messages.at(-1)).toEqual({
+    type: LiveMessages.ERROR,
+    id: 1,
+    time: 4,
+    pairs: []
+  })
+  expect(messages.some((message) => message.type === LiveMessages.RESULT)).toBe(
+    false
+  )
+
+  now.mockReturnValue(ticks * (LIVE_LIMITS.sampleDurationMs + 1))
+  await host.handle({ type: LiveMessages.SAMPLE, id: 2, time: 4 })
+
+  expect(messages.at(-1)).toEqual({
+    type: LiveMessages.RESULT,
+    id: 2,
+    time: 4,
+    evidence: runOriginalPartMethod(sampleSnapshot(snapshot, 4))
+  })
 }, 20000)

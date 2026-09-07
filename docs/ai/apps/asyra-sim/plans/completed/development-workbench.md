@@ -46,7 +46,7 @@ unknown. Whole-part highlights are not precise intersection regions.
 - Deployment implementation checkpoint: `78694410b1c8f0372f42349c12196f90a50071ef`.
   Vercel project `asyra-sim` is connected to the repository; the durable domain
   is assigned and `main` production tracking is verified.
-- App unit/integration gate: 578 tests across 112 files passed. Deployment and
+- App unit/integration gate: 579 tests across 112 files passed. Deployment and
   HTTPS environment regressions include test-first failing proofs.
 - App lint, typecheck, the exact Vercel build command and 11 naming checks passed.
   The build completed all 17 required tasks.
@@ -59,6 +59,10 @@ unknown. Whole-part highlights are not precise intersection regions.
 - CI workspace scheduling is bounded to two concurrent tasks, retaining every
   existing test owner, timeout and assertion. Its permanent automation test and
   the 23-task workspace CI stage passed locally.
+- The installed live Worker preparation test uses a controlled deadline clock
+  for work-count and result-equivalence proof, while profiling real elapsed time
+  separately. A full-method exhaustion/recovery case preserves deadline behavior;
+  production limits and the ordinary browser latency gate are unchanged.
 - Current-head repository CI, both existing Vercel projects and the new Sim
   Vercel check must all pass before the final user-review handoff. The PR checks
   are the source of remote status; this file does not certify a future commit.
