@@ -9571,6 +9571,7 @@
     },
     {
       "id": "asyra-sim-r0",
+      "slug": "asyra-sim-r0",
       "title": "Asyra Sim R0",
       "kind": "flow-v2",
       "group": "Apps",
