@@ -185,6 +185,16 @@ async function startServer(
           if (route.pathname === '/api/session')
             return send(200, { capability })
           if (route.pathname === '/api/state') return send(200, service.state())
+          const artifact = route.pathname.match(
+            /^\/api\/runs\/([a-f0-9-]{36})\/artifacts\/(report|source-manifest)$/
+          )
+          if (artifact) {
+            const bytes = service.readArtifact(artifact[1], artifact[2])
+            response.writeHead(200, {
+              'Content-Type': 'application/json; charset=utf-8'
+            })
+            return response.end(bytes)
+          }
           const match = route.pathname.match(/^\/api\/runs\/([a-f0-9-]{36})$/)
           if (match) return send(200, service.get(match[1]))
           let asset = assets.get(route.pathname)
@@ -240,6 +250,10 @@ async function startServer(
         )
           throw new ActionError(403, 'Action is not authorized')
         const body = await readBody(request)
+        if (route.pathname === '/api/mapping/prepare')
+          return send(200, service.prepareMapping(body, LOCAL_ACTOR))
+        if (route.pathname === '/api/mapping/decide')
+          return send(200, service.decideMapping(body, LOCAL_ACTOR))
         if (route.pathname === '/api/runs')
           return send(202, { id: service.start(body, LOCAL_ACTOR) })
         const cancel = route.pathname.match(

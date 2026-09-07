@@ -1,7 +1,13 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 const path = require('node:path')
 
-function assessEvidence(contract, snapshot, runner, flowIds) {
+function assessEvidence(
+  contract,
+  snapshot,
+  runner,
+  flowIds,
+  scenario = 'baseline'
+) {
   const expected = contract.cases.filter((item) =>
     flowIds.includes(item.flowId)
   )
@@ -18,6 +24,37 @@ function assessEvidence(contract, snapshot, runner, flowIds) {
     issues.push('Invalid or empty selected flow set')
   if (snapshot.contractDigest !== contract.digest)
     issues.push('Contract provenance mismatch')
+  const identity = runner.identity
+  const fingerprint = (value) =>
+    typeof value === 'string' && /^[a-f0-9]{64}$/.test(value)
+  if (
+    !identity ||
+    identity.sourceDigest !== snapshot.digest ||
+    identity.contractDigest !== contract.digest ||
+    identity.mappingVersion !== contract.mappingVersion ||
+    snapshot.mappingVersion !== contract.mappingVersion ||
+    identity.architectureVersion !== contract.architectureVersion ||
+    snapshot.architectureVersion !== contract.architectureVersion ||
+    identity.configurationDigest !== snapshot.configurationDigest ||
+    !fingerprint(snapshot.digest) ||
+    !fingerprint(snapshot.configurationDigest) ||
+    identity.scenario !== scenario ||
+    !contract.scenarios.some((item) => item.id === scenario) ||
+    !Array.isArray(identity.flowIds) ||
+    JSON.stringify(identity.flowIds) !== JSON.stringify(flowIds)
+  )
+    issues.push('Execution provenance mismatch')
+  if (
+    !runner.environment ||
+    ['node', 'platform', 'architecture', 'vitest'].some(
+      (key) =>
+        typeof runner.environment[key] !== 'string' || !runner.environment[key]
+    ) ||
+    runner.environment.vitest !== runner.version
+  )
+    issues.push('Missing or inconsistent runner environment')
+  if (!fingerprint(runner.reportDigest))
+    issues.push('Missing report fingerprint')
   if (runner.reason) issues.push('Runner stopped: ' + runner.reason)
   if (runner.reportError)
     issues.push('Report unavailable: ' + runner.reportError)
@@ -76,6 +113,8 @@ function assessEvidence(contract, snapshot, runner, flowIds) {
       }
       if (suite.status === 'failed' && !suiteFailures)
         issues.push('Suite failed without a required assertion failure')
+      if (suiteFailures && suite.status !== 'failed')
+        issues.push('Suite status masks failed assertions')
     }
     if (
       report.numTotalTests !== observedCount ||
@@ -87,6 +126,8 @@ function assessEvidence(contract, snapshot, runner, flowIds) {
       issues.push('Runner reported runtime errors')
     if (!report.success && failedCount === 0)
       issues.push('Runner reported unsuccessful execution')
+    if (report.success && failedCount > 0)
+      issues.push('Runner success masks failed assertions')
   }
   if (runner.code !== 0 && failedCount === 0)
     issues.push('Unsuccessful runner exit')
@@ -140,4 +181,69 @@ function assessEvidence(contract, snapshot, runner, flowIds) {
   }
 }
 
-module.exports = { assessEvidence }
+function validateStoredEvidence(contract, record) {
+  if (
+    record.phase !== 'completed' ||
+    record.snapshot?.contractDigest !== contract.digest
+  )
+    return
+  if (
+    record.format === 2 &&
+    ['mappingVersion', 'architectureVersion'].some(
+      (key) => record.snapshot[key] !== contract[key]
+    )
+  )
+    throw new Error(
+      'Stored evidence provenance disagrees with the current contract'
+    )
+  const expected = contract.cases.filter((item) =>
+    record.flowIds.includes(item.flowId)
+  )
+  const evidence = record.evidence
+  const statusFor = (items) => {
+    if (items.some((item) => item.status === 'failed')) return 'failed'
+    if (
+      evidence.issues.length ||
+      !items.length ||
+      items.some((item) => item.status !== 'passed')
+    )
+      return 'unknown'
+    return 'passed'
+  }
+  if (
+    !expected.length ||
+    new Set(record.flowIds).size !== record.flowIds.length ||
+    record.flowIds.some(
+      (id) => !contract.flows.some((flow) => flow.id === id)
+    ) ||
+    !evidence ||
+    evidence.expectedCount !== expected.length ||
+    evidence.cases.length !== expected.length ||
+    expected.some(
+      (item) =>
+        evidence.cases.filter((observed) =>
+          ['id', 'flowId', 'stepId', 'testName'].every(
+            (key) => observed[key] === item[key]
+          )
+        ).length !== 1
+    ) ||
+    evidence.passedCount !==
+      evidence.cases.filter((item) => item.status === 'passed').length ||
+    evidence.flows.length !== record.flowIds.length ||
+    record.flowIds.some(
+      (id) =>
+        evidence.flows.filter(
+          (flow) =>
+            flow.id === id &&
+            flow.status ===
+              statusFor(evidence.cases.filter((item) => item.flowId === id))
+        ).length !== 1
+    ) ||
+    evidence.status !== statusFor(evidence.cases)
+  )
+    throw new Error(
+      'Stored evidence inventory disagrees with the current contract'
+    )
+}
+
+module.exports = { assessEvidence, validateStoredEvidence }

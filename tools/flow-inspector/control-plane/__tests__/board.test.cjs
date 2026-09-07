@@ -6,6 +6,8 @@ const path = require('node:path')
 const test = require('node:test')
 const { chromium, expect } = require('@playwright/test')
 const { startServer } = require('../server.cjs')
+const { loadContract, MANIFEST_PATH } = require('../contracts.cjs')
+const { captureSource } = require('../snapshot.cjs')
 
 test(
   'the original canvas retains geometry and controls while card verification fails, recovers, and restores history',
@@ -49,6 +51,7 @@ test(
       await expect(canvas.locator('.step-card')).toHaveCount(7)
       await expect(canvas.locator('[data-route-id]')).toHaveCount(10)
       await expect(canvas.locator('#proof-controls')).toBeVisible()
+      await expect(canvas.locator('#scenario option')).toHaveCount(6)
       await canvas
         .getByText('Flow verification', { exact: false })
         .first()
@@ -135,6 +138,27 @@ test(
         return canvas.locator('#attempt-id').textContent()
       }
       const baseline = await run('baseline', 'passed')
+      await expect(canvas.locator('#mapping-version')).toHaveText(
+        server.service.contract().mappingVersion
+      )
+      await expect(canvas.locator('#runner-environment')).toContainText(
+        'Vitest'
+      )
+      await expect(canvas.locator('#report-link')).toHaveAttribute(
+        'target',
+        '_blank'
+      )
+      await expect(canvas.locator('#report-link')).toHaveAttribute(
+        'rel',
+        'noopener noreferrer'
+      )
+      await canvas.getByText('Mapping review', { exact: true }).click()
+      await canvas.locator('#mapping-prepare').click()
+      await expect(canvas.locator('#mapping-diff')).toContainText(
+        'No mapping changes'
+      )
+      await expect(canvas.locator('#mapping-accept')).toBeDisabled()
+      await canvas.getByText('Mapping review', { exact: true }).click()
       await expect(canvas.locator('#checks')).toHaveText('6 / 6')
       await expect(
         canvas.locator('.proof-badge[data-status="passed"]')
@@ -600,6 +624,163 @@ test(
       process.stdout.write(
         `Link review: ${entries.length} entries, ${selectedSteps} cards, ${links.size} URLs, ${destinations.size} destinations. Artifacts: ${artifacts}\n`
       )
+    } finally {
+      await browser?.close()
+      await server.close()
+      if (previousTemporary === undefined) delete process.env.TMPDIR
+      else process.env.TMPDIR = previousTemporary
+    }
+  }
+)
+
+test(
+  'mapping review accepts and rejects exact candidates on the existing canvas with retained source evidence',
+  { timeout: 45000 },
+  async () => {
+    const root = path.resolve(__dirname, '../../../..')
+    const parent = path.join(root, 'tmp/flow-inspector/visual-review')
+    fs.mkdirSync(parent, { recursive: true })
+    const artifacts = fs.mkdtempSync(path.join(parent, 'mapping-'))
+    const snapshot = captureSource(root, artifacts, loadContract(root))
+    const repository = snapshot.sourceRoot
+    const mappingPath = path.join(repository, MANIFEST_PATH)
+    fs.chmodSync(mappingPath, 0o644)
+    const temporary = path.join(artifacts, 'browser-tmp')
+    fs.mkdirSync(temporary)
+    const previousTemporary = process.env.TMPDIR
+    process.env.TMPDIR = temporary
+    const server = await startServer(repository, {
+      serviceOptions: { directory: path.join(repository, 'runs') }
+    })
+    let browser
+    try {
+      browser = await chromium.launch({
+        channel: process.env.FLOW_PROOF_BROWSER_CHANNEL || undefined,
+        downloadsPath: temporary
+      })
+      const page = await browser.newPage({
+        viewport: { width: 1600, height: 1100 }
+      })
+      const errors = []
+      page.on('pageerror', (error) => errors.push(error.message))
+      await page.goto(server.origin + '/transaction-atomicity')
+      const canvas = page.frameLocator('iframe')
+      await canvas.locator('#proof-controls > summary').click()
+      await canvas.locator('#run-all').click()
+      await expect(canvas.locator('#overall')).toHaveAttribute(
+        'data-status',
+        'passed',
+        { timeout: 15000 }
+      )
+      const geometry = await canvas.locator('.step-card').evaluateAll((nodes) =>
+        nodes.map((node) => ({
+          id: node.dataset.stepId,
+          left: node.style.left,
+          top: node.style.top,
+          width: node.offsetWidth,
+          height: node.offsetHeight
+        }))
+      )
+      const manifest = JSON.parse(fs.readFileSync(mappingPath, 'utf8'))
+      manifest.flows[0].cases[0].testName =
+        'Factory flow proof deferred captured snapshot'
+      fs.writeFileSync(mappingPath, JSON.stringify(manifest))
+      await canvas.getByText('Mapping review', { exact: true }).click()
+      await canvas.locator('#mapping-prepare').click()
+      await expect(canvas.locator('#mapping-diff')).toContainText(
+        'After: Factory flow proof deferred captured snapshot'
+      )
+      await expect(canvas.locator('#mapping-accept')).toBeDisabled()
+      await canvas
+        .locator('#mapping-reason')
+        .fill(
+          'Rename the existing snapshot assertion; preserve its obligation.'
+        )
+      const pending = path.join(artifacts, 'mapping-pending.png')
+      await canvas.locator('#proof-controls').screenshot({ path: pending })
+      await canvas.locator('#mapping-accept').click()
+      await expect(canvas.locator('#mapping-baseline')).toContainText(
+        'revision 2'
+      )
+      await expect(canvas.locator('#overall')).toHaveAttribute(
+        'data-status',
+        'unknown'
+      )
+      assert.deepEqual(
+        await canvas.locator('.step-card').evaluateAll((nodes) =>
+          nodes.map((node) => ({
+            id: node.dataset.stepId,
+            left: node.style.left,
+            top: node.style.top,
+            width: node.offsetWidth,
+            height: node.offsetHeight
+          }))
+        ),
+        geometry
+      )
+      const file = path.join(repository, manifest.testFile)
+      fs.chmodSync(file, 0o644)
+      fs.writeFileSync(
+        file,
+        fs
+          .readFileSync(file, 'utf8')
+          .replace("it('snapshot',", "it('captured snapshot',")
+      )
+      await canvas.locator('#run-all').click()
+      await expect(canvas.locator('#overall')).toHaveAttribute(
+        'data-status',
+        'passed',
+        { timeout: 15000 }
+      )
+      await canvas
+        .getByText('Captured source and recent attempts', { exact: true })
+        .click()
+      await expect(canvas.locator('#mapping-version')).toHaveText(
+        server.service.contract().mappingVersion
+      )
+      const [report] = await Promise.all([
+        page.waitForEvent('popup'),
+        canvas.locator('#report-link').click()
+      ])
+      await report.waitForLoadState()
+      assert.match(report.url(), /\/artifacts\/report$/)
+      await report.close()
+      const accepted = path.join(artifacts, 'mapping-accepted.png')
+      await canvas.locator('#proof-controls').screenshot({ path: accepted })
+      manifest.flows[0].cases[0].testName += ' another change'
+      fs.writeFileSync(mappingPath, JSON.stringify(manifest))
+      await canvas.locator('#mapping-prepare').click()
+      await expect(canvas.locator('#mapping-diff')).toContainText(
+        'another change'
+      )
+      await canvas.locator('#mapping-reason').fill('Keep the verified mapping.')
+      await canvas.locator('#mapping-reject').click()
+      await expect(canvas.locator('#mapping-diff')).toContainText(
+        'Review rejected'
+      )
+      await expect(canvas.locator('#mapping-baseline')).toContainText(
+        'revision 2'
+      )
+      await page.reload()
+      assert.equal(server.service.state().mapping.revision, 2)
+      assert.equal(server.service.state().mapping.reviews[0].status, 'rejected')
+      assert.deepEqual(errors, [])
+      fs.writeFileSync(
+        path.join(artifacts, 'metadata.json'),
+        JSON.stringify(
+          {
+            url: server.origin,
+            viewport: page.viewportSize(),
+            scenario: 'mapping-review',
+            revision: 2,
+            screenshots: [pending, accepted],
+            retainedRuns: server.service.state().runs
+          },
+          null,
+          2
+        )
+      )
+      console.log('Mapping review artifacts: ' + artifacts)
     } finally {
       await browser?.close()
       await server.close()

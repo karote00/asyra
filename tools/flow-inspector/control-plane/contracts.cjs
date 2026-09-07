@@ -18,9 +18,18 @@ const unique = (values, label) => {
     label + ' is invalid or duplicated'
   )
 }
+const digest = (value) =>
+  createHash('sha256').update(JSON.stringify(value)).digest('hex')
+const freeze = (value) => {
+  if (value && typeof value === 'object' && !Object.isFrozen(value)) {
+    Object.values(value).forEach(freeze)
+    Object.freeze(value)
+  }
+  return value
+}
 
 function admitContract(manifest, architecture) {
-  requireCondition(manifest?.version === 1, 'unsupported mapping version')
+  requireCondition(manifest?.version === 2, 'unsupported mapping version')
   requireCondition(
     architecture?.schema?.version === 2 &&
       architecture.target.id === manifest.targetId,
@@ -45,10 +54,20 @@ function admitContract(manifest, architecture) {
   for (const artifact of artifacts.values()) {
     requireCondition(steps.has(artifact.ownerStepId), 'missing artifact owner')
     requireCondition(
-      artifact.consumerStepIds.every((id) => steps.has(id)),
+      steps.get(artifact.ownerStepId).outputs.includes(artifact.id),
+      'missing artifact producer output'
+    )
+    requireCondition(
+      artifact.consumerStepIds.every(
+        (id) => steps.has(id) && steps.get(id).inputs.includes(artifact.id)
+      ),
       'missing artifact consumer'
     )
   }
+  unique(
+    architecture.routes.map((route) => route.id),
+    'route ids'
+  )
   for (const route of architecture.routes) {
     requireCondition(
       steps.has(route.from) && (!route.to || steps.has(route.to)),
@@ -58,6 +77,20 @@ function admitContract(manifest, architecture) {
       route.producedArtifacts.every((id) => artifacts.has(id)),
       'missing route artifact'
     )
+    requireCondition(nonempty(route.predicate), 'missing route predicate')
+    for (const id of route.producedArtifacts) {
+      const artifact = artifacts.get(id)
+      requireCondition(
+        artifact.ownerStepId === route.from,
+        'incorrect route producer'
+      )
+      requireCondition(
+        route.to
+          ? artifact.consumerStepIds.includes(route.to)
+          : artifact.terminal === true,
+        'incorrect route consumer'
+      )
+    }
   }
   const cases = []
   const flows = manifest.flows.map((flow) => {
@@ -141,7 +174,52 @@ function admitContract(manifest, architecture) {
       )
       cases.push({ ...item, flowId: flow.id })
     }
-    return { id: flow.id, title: flow.title, goal: flow.goal, steps: resolved }
+    unique(
+      flow.handoffs?.map((item) => item.routeId),
+      'handoff ids'
+    )
+    const incoming = architecture.routes.filter(
+      (route) => selected.has(route.to) && route.producedArtifacts.length
+    )
+    requireCondition(
+      incoming.length === flow.handoffs.length &&
+        incoming.every((route) =>
+          flow.handoffs.some((item) => item.routeId === route.id)
+        ),
+      'missing or unrelated incoming handoff'
+    )
+    const handoffs = flow.handoffs.map((item) => {
+      const route = incoming.find((value) => value.id === item.routeId)
+      requireCondition(
+        ['required', 'bypassed'].includes(item.decision),
+        'unresolved handoff decision'
+      )
+      unique(item.caseIds, 'handoff evidence')
+      requireCondition(
+        item.caseIds.every((id) => flow.cases.some((value) => value.id === id)),
+        'unknown handoff evidence'
+      )
+      if (item.decision === 'bypassed') {
+        requireCondition(nonempty(item.reason), 'missing bypass reason')
+        requireCondition(
+          steps.get(route.to).bypasses.length > 0,
+          'consumer has no bypass contract'
+        )
+      }
+      return {
+        ...structuredClone(route),
+        decision: item.decision,
+        reason: item.reason ?? null,
+        caseIds: [...item.caseIds]
+      }
+    })
+    return {
+      id: flow.id,
+      title: flow.title,
+      goal: flow.goal,
+      steps: resolved,
+      handoffs
+    }
   })
   unique(
     cases.map((item) => item.id),
@@ -158,6 +236,51 @@ function admitContract(manifest, architecture) {
     ),
     'unknown negative proof case'
   )
+  unique(
+    manifest.scenarios?.map((scenario) => scenario.id),
+    'scenario ids'
+  )
+  const scenarios = manifest.scenarios.map((scenario) => {
+    requireCondition(
+      nonempty(scenario.title) && Array.isArray(scenario.expectedFailedCaseIds),
+      'invalid scenario'
+    )
+    if (scenario.id === 'baseline') {
+      requireCondition(
+        !scenario.mutation && !scenario.expectedFailedCaseIds.length,
+        'baseline cannot mutate runtime'
+      )
+    } else {
+      unique(scenario.expectedFailedCaseIds, 'scenario obligations')
+      requireCondition(
+        scenario.expectedFailedCaseIds.every((id) =>
+          cases.some((item) => item.id === id)
+        ),
+        'unknown scenario obligations'
+      )
+      requireCondition(
+        scenario.mutation?.file === 'packages/factory/src/data-transact.ts' &&
+          nonempty(scenario.mutation.from) &&
+          nonempty(scenario.mutation.to) &&
+          scenario.mutation.from !== scenario.mutation.to,
+        'invalid runtime mutation'
+      )
+    }
+    return {
+      id: scenario.id,
+      title: scenario.title,
+      expectedFailedCaseIds: [...scenario.expectedFailedCaseIds]
+    }
+  })
+  requireCondition(
+    scenarios.some((scenario) => scenario.id === 'baseline') &&
+      scenarios.some(
+        (scenario) =>
+          scenario.id === manifest.defaultNegativeScenario &&
+          scenario.id !== 'baseline'
+      ),
+    'missing registered scenario'
+  )
   for (const key of [
     'testFile',
     'configFile',
@@ -171,27 +294,63 @@ function admitContract(manifest, architecture) {
       'invalid ' + key
     )
   }
-  return {
+  return freeze({
     version: manifest.version,
-    negativeCaseIds: manifest.negativeCaseIds,
+    definition: structuredClone(manifest),
+    mappingVersion: digest(manifest),
+    architectureVersion: digest(architecture),
+    scenarios,
+    defaultNegativeScenario: manifest.defaultNegativeScenario,
+    negativeCaseIds: [...manifest.negativeCaseIds],
     targetId: manifest.targetId,
     manifestPath: MANIFEST_PATH,
     architecturePath: manifest.architecturePath,
     specPath: manifest.specPath,
     testFile: manifest.testFile,
     configFile: manifest.configFile,
-    digest: createHash('sha256')
-      .update(JSON.stringify({ manifest, architecture }))
-      .digest('hex'),
+    digest: digest({ manifest, architecture }),
     flows,
     cases
-  }
+  })
 }
 
-function loadContract(repositoryRoot) {
-  const manifest = JSON.parse(
-    fs.readFileSync(path.join(repositoryRoot, MANIFEST_PATH), 'utf8')
+function mappingDiff(accepted, candidate) {
+  requireCondition(
+    accepted.architectureVersion === candidate.architectureVersion,
+    'mapping review cannot change architecture'
   )
+  const withoutTestNames = (contract) => {
+    const definition = structuredClone(contract.definition)
+    for (const flow of definition.flows)
+      for (const item of flow.cases) delete item.testName
+    return definition
+  }
+  requireCondition(
+    digest(withoutTestNames(accepted)) === digest(withoutTestNames(candidate)),
+    'mapping review permits only test-name changes'
+  )
+  return candidate.cases.flatMap((item) => {
+    const before = accepted.cases.find((value) => value.id === item.id).testName
+    return before === item.testName
+      ? []
+      : [
+          {
+            caseId: item.id,
+            flowId: item.flowId,
+            stepId: item.stepId,
+            before,
+            after: item.testName
+          }
+        ]
+  })
+}
+
+function loadContract(repositoryRoot, acceptedDefinition) {
+  const manifest =
+    acceptedDefinition ??
+    JSON.parse(
+      fs.readFileSync(path.join(repositoryRoot, MANIFEST_PATH), 'utf8')
+    )
   // This proof executes trusted repository-owned contracts, never uploaded code.
   const inspector = path.resolve(repositoryRoot, manifest.architecturePath)
   requireCondition(
@@ -202,4 +361,4 @@ function loadContract(repositoryRoot) {
   return admitContract(manifest, require(inspector))
 }
 
-module.exports = { admitContract, loadContract, MANIFEST_PATH }
+module.exports = { admitContract, loadContract, mappingDiff, MANIFEST_PATH }

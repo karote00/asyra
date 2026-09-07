@@ -8,21 +8,13 @@ implementation steps and executable flow contracts to manage human and AI
 development risk. Open-source usefulness, reproducibility, and controlled
 delegation are the success criteria.
 
-## Active Target
-
-The [Core Proof](CORE_PROOF.md) is the bounded Phase 3 checkpoint: two real Factory
-flows, isolated behavioral verification, controlled actions on the existing canvas, and CI
-negative proof. It does not activate the rest of Phase 3/4 or agent execution.
-
 ## Next Implementation Candidate
 
 1. [Contract Verification and CI Plan](plans/flow-inspector-control-plane-evidence-and-ci-plan.md)
-   - Phase 3: two related real flows, preflight checks, behavioral conformance,
-     negative proofs, and minimal controlled actions with attributable evidence.
-   - Phase 4: an operational step board, common API/CLI, contract evolution,
+   - Remaining Phase 4: an operational step board, common API/CLI, contract evolution,
      mandatory all-flow CI within the declared supported set, and shared viewing.
-   - First checkpoint: a shared-owner change breaks a retained flow, the real
-     gate rejects it at the correct step, and a conforming correction passes.
+   - Extend the [Core Proof contract](CORE_PROOF.md) without treating its local
+     two-flow coverage or test-name mapping policy as general project protection.
 
 ## Dependent Implementation Candidate
 

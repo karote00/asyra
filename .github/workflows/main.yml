@@ -59,7 +59,7 @@ jobs:
 
       - name: Verify Flow Inspector core proof
         run: |
-          node --test tools/flow-inspector/control-plane/__tests__/{contracts,snapshot,runner,evidence,store,service,server}.test.cjs
+          node --test --test-concurrency=1 tools/flow-inspector/control-plane/__tests__/{contracts,snapshot,runner,evidence,store,service,server,mapping,cli}.test.cjs
           node tools/flow-inspector/control-plane/cli.cjs prove
 
   framework-release-readiness:

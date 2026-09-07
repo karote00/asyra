@@ -21,13 +21,15 @@
   display: block;
   margin-block: 10px;
 }
-.proof-body select {
+.proof-body select,
+.proof-body input {
   display: block;
   width: 100%;
   margin-top: 5px;
 }
 .proof-controls button,
 .proof-controls select,
+.proof-controls input,
 .proof-menu button {
   border: 1px solid var(--line);
   border-radius: 6px;
@@ -42,7 +44,8 @@
 }
 .proof-controls button:focus-visible,
 .proof-menu button:focus-visible,
-.proof-controls select:focus-visible {
+.proof-controls select:focus-visible,
+.proof-controls input:focus-visible {
   outline: 2px solid var(--accent);
 }
 .proof-controls button:disabled,
@@ -63,6 +66,15 @@
 .proof-controls pre {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+.proof-controls p,
+.proof-mapping-change {
+  overflow-wrap: anywhere;
+}
+.proof-mapping-change {
+  margin-block: 10px;
+  border-left: 2px solid var(--line);
+  padding-left: 8px;
 }
 .proof-controls [data-status='passed'],
 .proof-badge[data-status='passed'] {

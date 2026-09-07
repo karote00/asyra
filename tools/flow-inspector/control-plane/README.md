@@ -2,8 +2,8 @@
 
 The existing Flow Inspector canvas verifies two real Factory flows: deferred publication and
 cancellation after immediate publication. Six formal obligations map to three
-concrete architecture steps shared by both flows. The first bounded Phase 3
-checkpoint is defined in [CORE_PROOF.md](../../../docs/ai/tools/flow-inspector/CORE_PROOF.md).
+concrete architecture steps shared by both flows. The bounded Phase 3 contract
+is defined in [CORE_PROOF.md](../../../docs/ai/tools/flow-inspector/CORE_PROOF.md).
 
 ## Run Locally
 
@@ -40,17 +40,40 @@ path routing. Public hosting and access control are outside this local proof.
    its three obligations. The detail panel also provides **Verify linked flow**.
    Select the other flow to confirm it remains unverified for that attempt.
 5. Expand **Captured source and recent attempts** to inspect source identity and
-   select retained results. Targets without a verification contract stay read-only.
+   select retained results. Mapping/architecture/configuration versions and the
+   runner environment identify each attempt. Report and source-manifest links
+   open the exact retained artifacts in another tab. Targets without a verification
+   contract stay read-only.
+6. Expand **Mapping review** and choose **Prepare mapping diff**. An unchanged
+   checkout reports no changes. For a real test rename, update its `testName` in
+   `packages/factory/flow-contracts.json` and the corresponding formal test title,
+   then prepare again. Inspect the old/new binding, enter a reason, and accept or
+   reject it. Verification refuses an unaccepted mapping. Acceptance starts a new
+   mapping revision and requires fresh evidence; rejection keeps the previous
+   accepted revision. Revert the proposed source edits before running that old
+   revision again. Reviews and reasons remain available after reload.
 
-The negative demonstration transforms the isolated copy of the real Factory
+All registered negative demonstrations run against the same six assertions:
+
+| Scenario                | Deliberate violation        | Expected failed obligations         |
+| ----------------------- | --------------------------- | ----------------------------------- |
+| `inverse-regression`    | Corrupt inverse handoff     | `cancel.outcome`, `cancel.delivery` |
+| `omitted-replay`        | Omit rollback replay        | `cancel.outcome`                    |
+| `premature-publication` | Publish deferred data early | `deferred.delivery`                 |
+| `forbidden-commit`      | Commit after cancellation   | `cancel.outcome`, `cancel.delivery` |
+| `omitted-compensation`  | Omit shared compensation    | `cancel.delivery`                   |
+
+Each negative demonstration transforms the isolated copy of the real Factory
 implementation; it never edits your working source or weakens the assertions.
 Each attempt has its own scenario, source digest, Git HEAD, audit, and raw report.
 The digest includes uncommitted source and identifies a captured snapshot, not a
 continuously watched checkout or deployed environment.
 
 Use **Cancel run** to stop active verification and `Ctrl+C` to stop the server.
-Stop the server before running CLI verification: the board and CLI deliberately
-require exclusive ownership of the same local attempt store.
+To use the CLI while the board is open, prefix a command with
+`--url http://127.0.0.1:4318`. Both clients then use that server's action service
+and store. Without `--url`, the CLI requires exclusive local store ownership.
+Choose a free port for this tool; do not terminate another application's server.
 
 ## CLI and CI Proof
 
@@ -64,9 +87,23 @@ node tools/flow-inspector/control-plane/cli.cjs verify deferred-publication
 # Deliberately fail cancellation. An exit code of 1 is expected here.
 node tools/flow-inspector/control-plane/cli.cjs negative
 
-# Require baseline pass, the precise regression failure, and baseline recovery.
+# Run a particular registered demonstration (expected exit code: 1).
+node tools/flow-inspector/control-plane/cli.cjs scenario premature-publication
+
+# Require baseline, all five precise negative failures, and baseline recovery.
 # This command exits 0 only when the entire negative proof succeeds.
 node tools/flow-inspector/control-plane/cli.cjs prove
+
+# Attach to a running board without opening a second store.
+node tools/flow-inspector/control-plane/cli.cjs --url http://127.0.0.1:4318 status
+node tools/flow-inspector/control-plane/cli.cjs --url http://127.0.0.1:4318 verify
+
+# The same prefix also works for these commands; replace ids with returned UUIDs.
+node tools/flow-inspector/control-plane/cli.cjs show <attempt-id>
+node tools/flow-inspector/control-plane/cli.cjs cancel <attempt-id>
+node tools/flow-inspector/control-plane/cli.cjs mapping-diff
+node tools/flow-inspector/control-plane/cli.cjs mapping-accept <review-id> "Reviewed test rename"
+node tools/flow-inspector/control-plane/cli.cjs mapping-reject <review-id> "Keep current mapping"
 ```
 
 The command exits nonzero for missing or malformed evidence, unknown mappings,
@@ -78,14 +115,15 @@ They are local artifacts and are not committed or published.
 ## Formal Tests
 
 ```bash
-node --test tools/flow-inspector/control-plane/__tests__/{contracts,snapshot,runner,evidence,store,service,server}.test.cjs
+node --test --test-concurrency=1 tools/flow-inspector/control-plane/__tests__/{contracts,snapshot,runner,evidence,store,service,server,mapping,cli}.test.cjs
 FLOW_PROOF_URL=http://127.0.0.1:4318 node --test tools/flow-inspector/control-plane/__tests__/board.test.cjs
 ```
 
 The browser test uses the repository's existing Playwright harness and installed
 Chromium. To use an already installed Chrome locally, add
 `FLOW_PROOF_BROWSER_CHANNEL=chrome` to that command. No browser or dependency is
-downloaded by the test. Stop any board using its configured port first.
+downloaded by the test. Use a free `FLOW_PROOF_URL` port for tests; they never
+stop an existing listener. For example, use port 4319 while a board runs on 4318.
 The test starts the actual server, runs real Factory checks, exercises the page,
 and records desktop/mobile screenshots plus source identities under
 `tmp/flow-inspector/visual-review/`.
@@ -99,9 +137,15 @@ Required-check enforcement itself remains a repository setting.
 This is a trusted local development tool, with one bounded runner process group,
 loopback access, per-start mutation capability, explicit cancellation, and durable
 attempt identity. It does not sandbox hostile code. It supports these two flows;
-arbitrary flow onboarding, accepted-base comparison, remote CI ingestion, agent
+arbitrary flow onboarding, protected accepted-base CI comparison, remote CI ingestion, agent
 execution/token controls, Jira/GitHub actions, and shared team hosting remain in
 the later plans.
+
+The first local store trusts the checked-in mapping. Later test-name changes
+require explicit review against the accepted revision. This policy cannot add,
+remove, or weaken obligations, alter flow semantics, or accept a changed target
+architecture. Such evolution needs the separately scoped Phase 4 policy. Format-1
+historical attempts remain readable but do not gain format-2 provenance guarantees.
 
 The static viewer and React workspace remain owned by
 `tools/flow-inspector/workspace/`. Framework and App runtimes do not depend on this

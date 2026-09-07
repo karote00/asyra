@@ -99,11 +99,22 @@ function captureSource(repositoryRoot, runDirectory, contract) {
     cwd: repositoryRoot,
     encoding: 'utf8'
   }).trim()
+  const manifestPath = path.join(runDirectory, 'source-manifest.json')
+  fs.writeFileSync(manifestPath, JSON.stringify(files), {
+    flag: 'wx',
+    mode: 0o444
+  })
   return {
     kind: 'worktree-snapshot',
     sourceRoot,
     digest: sha256(JSON.stringify(files)),
     contractDigest: contract.digest,
+    mappingVersion: contract.mappingVersion,
+    architectureVersion: contract.architectureVersion,
+    configurationDigest: files.find((item) => item.path === contract.configFile)
+      .digest,
+    lockfileDigest: files.find((item) => item.path === 'yarn.lock').digest,
+    manifestPath: path.relative(repositoryRoot, manifestPath),
     head,
     files,
     fileCount: files.length,
