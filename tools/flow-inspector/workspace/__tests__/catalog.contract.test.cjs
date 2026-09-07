@@ -213,6 +213,8 @@ test('generator rejects colliding, reserved, malformed, and orphaned slug declar
     { 'transaction-atomicity': '../private' },
     { 'transaction-atomicity': 'Upper Case' },
     { 'transaction-atomicity': '' },
+    { 'transaction-atomicity': 123 },
+    { 'transaction-atomicity': null },
     { 'unknown-inspector': 'unknown' }
   ]) {
     let writes = 0

@@ -114,7 +114,9 @@ const entries = candidates
     }
     return {
       id,
-      slug: catalogPolicy.routeSlugs[id] ?? id,
+      slug: Object.hasOwn(catalogPolicy.routeSlugs, id)
+        ? catalogPolicy.routeSlugs[id]
+        : id,
       title: data?.target?.title || titleFromId(derivedId),
       kind,
       group: owner.group,
@@ -140,6 +142,7 @@ for (const entry of entries) {
     throw new Error(`Duplicate workspace catalog id: ${entry.id}`)
   ids.add(entry.id)
   if (
+    typeof entry.slug !== 'string' ||
     !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(entry.slug) ||
     reservedSlugs.has(entry.slug)
   )
