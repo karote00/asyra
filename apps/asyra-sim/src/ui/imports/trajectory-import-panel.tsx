@@ -17,6 +17,8 @@ export function TrajectoryImportPanel({
     setText,
     mapping,
     setMapping,
+    unitsNeedConfirmation,
+    confirmDisplayedUnits,
     setTimeUnit,
     setJointUnit,
     preview,
@@ -211,6 +213,21 @@ export function TrajectoryImportPanel({
               </div>
             )
           })}
+        </div>
+      )}
+
+      {unitsNeedConfirmation && (
+        <div
+          className="unit-confirmation grid gap-2 mb-3 text-[11px]"
+          role="status"
+        >
+          <p>
+            Existing unit choices are retained. Confirm that they describe your
+            edited source data, or change the units before previewing.
+          </p>
+          <button className="wide w-full" onClick={confirmDisplayedUnits}>
+            Confirm displayed units
+          </button>
         </div>
       )}
 

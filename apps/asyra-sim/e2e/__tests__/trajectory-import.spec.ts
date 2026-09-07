@@ -283,3 +283,53 @@ for (const [width, theme] of [
     })
   })
 }
+
+test('editing initial canonical text retains all displayed units and offers one confirmation', async ({
+  page
+}, info) => {
+  await page.goto('/')
+  await expect(page.getByRole('status')).toHaveText('Local runtime ready')
+  await openImport(page)
+  const input = page.getByLabel('Trajectory source data')
+  const original = await input.inputValue()
+  const timeUnit = page.getByRole('combobox', {
+    name: 'Time unit',
+    exact: true
+  })
+  const units = page.locator('select[aria-label$=" CSV unit"]')
+  await input.fill(original.replace('\n8,', '\nㄉㄢ,'))
+  await expect(timeUnit).toHaveValue('s')
+  for (const unit of await units.all()) await expect(unit).toHaveValue('rad')
+  await expect(
+    page.getByRole('button', { name: 'Confirm displayed units', exact: true })
+  ).toBeVisible()
+  await page.locator('.unit-confirmation').screenshot({
+    path: info.outputPath('confirm-retained-units.png'),
+    animations: 'disabled'
+  })
+  await preview(page)
+  await expect(
+    page.getByRole('button', { name: 'Accept into draft', exact: true })
+  ).toHaveCount(0)
+  await page
+    .getByRole('button', { name: 'Confirm displayed units', exact: true })
+    .click()
+  await preview(page)
+  await expect(
+    page.getByRole('button', { name: 'Accept into draft', exact: true })
+  ).toHaveCount(0)
+  await input.fill(original.replace('\n8,', '\n9,'))
+  await expect(timeUnit).toHaveValue('s')
+  for (const unit of await units.all()) await expect(unit).toHaveValue('rad')
+  await expect(
+    page.getByRole('button', { name: 'Confirm displayed units', exact: true })
+  ).toHaveCount(0)
+  await preview(page)
+  await expect(page.getByLabel('Trajectory conversion preview')).toContainText(
+    '9 s → 9 s'
+  )
+  await page.locator('.accepted-preview').screenshot({
+    path: info.outputPath('confirmed-edited-preview.png'),
+    animations: 'disabled'
+  })
+})

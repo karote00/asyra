@@ -526,3 +526,62 @@ it('retains unaffected units when the workcell changes joint type', async () => 
   await act(() => button('Preview trajectory')?.click())
   expect(button('Accept into draft')).toBeUndefined()
 })
+
+it('keeps displayed canonical units during first edits and requires one explicit confirmation', async () => {
+  const input = present(host.querySelector('textarea'))
+  const original = input.value
+  const units = () =>
+    [...host.querySelectorAll<HTMLSelectElement>('select')]
+      .filter(
+        (node) =>
+          node.closest('label')?.textContent?.trim().startsWith('Time unit') ||
+          node.getAttribute('aria-label')?.endsWith(' CSV unit')
+      )
+      .map((node) => node.value)
+  const initialUnits = units()
+  await preview()
+  await editSource(original.replace('\n8,', '\nㄉㄢ,'))
+  expect(units()).toEqual(initialUnits)
+  expect(button('Accept into draft')).toBeUndefined()
+  expect(button('Confirm displayed units')).toBeDefined()
+  await act(() => button('Confirm displayed units')?.click())
+  await act(() => button('Preview trajectory')?.click())
+  expect(button('Accept into draft')).toBeUndefined()
+  await editSource(original.replace('\n8,', '\n9,'))
+  expect(units()).toEqual(initialUnits)
+  expect(button('Confirm displayed units')).toBeUndefined()
+  await preview()
+  await act(() => button('Accept into draft')?.click())
+  expect(accepted.mock.calls[0][0].trajectory.keyframes.at(-1).time).toBe(9)
+})
+
+it('cannot accept retained display defaults before confirming them', async () => {
+  const original = present(host.querySelector('textarea')).value
+  await editSource(original.replace('\n8,', '\n9,'))
+  expect(button('Confirm displayed units')).toBeDefined()
+  await act(() => button('Preview trajectory')?.click())
+  expect(button('Accept into draft')).toBeUndefined()
+  expect(accepted).not.toHaveBeenCalled()
+  await act(() => button('Confirm displayed units')?.click())
+  expect(button('Accept into draft')).toBeUndefined()
+  await preview()
+})
+
+it('retains unit choices through an unfinished CSV quoted value', async () => {
+  const original = present(host.querySelector('textarea')).value
+  await editSource(original.replace('\n8,', '\n9,'))
+  await act(() => button('Confirm displayed units')?.click())
+  await editSource(original.replace('\n8,', '\n"8,'))
+  expect(
+    [
+      ...host.querySelectorAll<HTMLSelectElement>(
+        'select[aria-label$=" CSV unit"]'
+      )
+    ].map((unit) => unit.value)
+  ).toEqual(Array(6).fill('rad'))
+  await act(() => button('Preview trajectory')?.click())
+  expect(button('Accept into draft')).toBeUndefined()
+  await editSource(original.replace('\n8,', '\n9,'))
+  expect(button('Confirm displayed units')).toBeUndefined()
+  await preview()
+})

@@ -27,7 +27,8 @@ export function useTrajectoryImport({
     return {
       kind: 'csv' as 'csv' | 'json',
       text,
-      csv: prepareTrajectoryCsv(text)
+      csv: prepareTrajectoryCsv(text),
+      requiresDeclaration: false
     }
   })
   const [mapping, updateMapping] = useState<TrajectoryCsvMappingDraft>(() =>
@@ -71,12 +72,41 @@ export function useTrajectoryImport({
       ? receipt.result
       : null
 
+  const unitsNeedConfirmation =
+    source.kind === 'csv' &&
+    source.requiresDeclaration &&
+    ((mapping.time.unit !== '' && !declarations.current.time) ||
+      Object.entries(mapping.joints).some(
+        ([id, entry]) =>
+          entry.unit !== '' && !declarations.current.joints.has(id)
+      ))
+
   const inspect = () => {
     if (reading) return null
     if (preview) return preview
+    // Displayed choices are not declarations until the user confirms them.
+    const declaredMapping = source.requiresDeclaration
+      ? {
+          time: {
+            ...mapping.time,
+            unit: declarations.current.time ? mapping.time.unit : ('' as const)
+          },
+          joints: Object.fromEntries(
+            Object.entries(mapping.joints).map(([id, entry]) => [
+              id,
+              {
+                ...entry,
+                unit: declarations.current.joints.has(id)
+                  ? entry.unit
+                  : ('' as const)
+              }
+            ])
+          )
+        }
+      : mapping
     const result =
       source.kind === 'csv'
-        ? previewTrajectoryCsv(source.csv, workcell, mapping)
+        ? previewTrajectoryCsv(source.csv, workcell, declaredMapping)
         : previewTrajectoryJson(source.text, workcell)
     setReceipt({
       result,
@@ -96,25 +126,20 @@ export function useTrajectoryImport({
   const setText = (text: string) => {
     discard()
     const csv = source.kind === 'csv' ? prepareTrajectoryCsv(text) : source.csv
-    setSource({ ...source, text, csv })
-    // Source edits retire computed evidence, not explicit unit declarations.
-    if (source.kind === 'csv') {
+    setSource({ ...source, text, csv, requiresDeclaration: true })
+    // Incomplete syntax cannot prove that a mapped column was removed.
+    // Keep choices until parsing can establish the edited header.
+    if (source.kind === 'csv' && csv.columns.length) {
       const suggested = guessCsvMapping(csv.columns, workcell)
       const next = { ...suggested, joints: { ...suggested.joints } }
       if (csv.columns.includes(mapping.time.column))
-        next.time = {
-          ...mapping.time,
-          unit: declarations.current.time ? mapping.time.unit : ''
-        }
+        next.time = { ...mapping.time }
       else declarations.current.time = false
       for (const body of workcell.bodies) {
         if (body.joint.kind === 'fixed') continue
         const entry = mapping.joints[body.id]
         if (entry && csv.columns.includes(entry.column))
-          next.joints[body.id] = {
-            ...entry,
-            unit: declarations.current.joints.has(body.id) ? entry.unit : ''
-          }
+          next.joints[body.id] = { ...entry }
         else declarations.current.joints.delete(body.id)
       }
       updateMapping(next)
@@ -124,6 +149,16 @@ export function useTrajectoryImport({
   const setMapping = (next: SetStateAction<TrajectoryCsvMappingDraft>) => {
     discard()
     updateMapping(next)
+  }
+
+  const confirmDisplayedUnits = () => {
+    declarations.current.time = mapping.time.unit !== ''
+    declarations.current.joints = new Set(
+      Object.entries(mapping.joints)
+        .filter(([, entry]) => entry.unit !== '')
+        .map(([id]) => id)
+    )
+    setMapping({ ...mapping })
   }
 
   const setTimeUnit = (unit: TrajectoryCsvMappingDraft['time']['unit']) => {
@@ -172,7 +207,7 @@ export function useTrajectoryImport({
     if (token !== generation.current) return
     const csv = nextKind === 'csv' ? prepareTrajectoryCsv(text) : source.csv
     declarations.current = { time: false, joints: new Set<string>() }
-    setSource({ kind: nextKind, text, csv })
+    setSource({ kind: nextKind, text, csv, requiresDeclaration: true })
     if (nextKind === 'csv')
       updateMapping(guessCsvMapping(csv.columns, workcell))
   }
@@ -192,6 +227,8 @@ export function useTrajectoryImport({
     setText,
     mapping,
     setMapping,
+    unitsNeedConfirmation,
+    confirmDisplayedUnits,
     setTimeUnit,
     setJointUnit,
     preview,

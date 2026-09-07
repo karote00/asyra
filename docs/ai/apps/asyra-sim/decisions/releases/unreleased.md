@@ -166,3 +166,13 @@ units remain distinct from explicit declarations; a new CSV requires fresh units
 and a removed source column retires its own declaration. No saved source evidence
 or Feature/History boundary changes. Permanent UI and browser regressions cover
 retention, conversion reuse, invalidation, and unchanged save/replay behavior.
+
+### 2026-09-08 - Keep initial unit choices visible during source edits
+
+The first retention correction covered explicitly selected units but still cleared
+initial App unit choices. User verification caught that missing product case.
+Retain those choices visibly, distinguish them from source declarations, and
+require one explicit confirmation before validation can admit edited data.
+Confirmation does not validate numbers, accept a draft, or save a project.
+The regression starts from untouched App data, types invalid text, confirms units,
+and corrects the value without reselecting units.

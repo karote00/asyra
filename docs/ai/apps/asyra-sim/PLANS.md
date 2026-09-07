@@ -43,6 +43,11 @@
     import browser cases at localhost port 3020, inspected conversion screenshots,
     build/typecheck, lint, naming and Inspector contracts. This is an M2 usability
     correction, not another milestone acceptance.
+  - User verification exposed an initial-App-data case omitted above. The final
+    correction retains displayed defaults with a single explicit confirmation,
+    including invalid/incomplete edits. Verified with 25 focused UI tests, five
+    import browser cases, and the same build/lint/naming/Inspector gates; the
+    actual Chrome 3020 view was checked with the user-reported invalid value.
 
 - [M1 workcell foundations](plans/completed/m1-workcell-foundations.md)
   - Closed 2026-09-07: canonical editing, acknowledged save/reopen and safe
