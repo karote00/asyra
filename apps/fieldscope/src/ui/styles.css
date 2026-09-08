@@ -1,0 +1,40 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans:
+    'Inter', 'Noto Sans TC', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    sans-serif;
+}
+
+:root {
+  color: #22382f;
+  background: #f5f6f1;
+  font-family: var(--font-sans);
+  font-synthesis: none;
+}
+body {
+  margin: 0;
+  min-width: 360px;
+}
+button,
+input,
+summary {
+  accent-color: #285744;
+}
+button,
+summary {
+  cursor: pointer;
+}
+button:focus-visible,
+input:focus-visible,
+summary:focus-visible {
+  outline: 2px solid #71983a;
+  outline-offset: 4px;
+}
+canvas {
+  display: block;
+  touch-action: none;
+}
+::selection {
+  background: #d4e5a7;
+}

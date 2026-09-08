@@ -1,0 +1,167 @@
+# 田巡 FieldScope
+
+田巡 FieldScope 是採收機器人的田區建模、離線模擬與實機監控工作站。
+「田巡」表達田區巡行與持續觀察；FieldScope 的範圍包括栽培環境、採收動作及
+作業證據，不限定某種作物或某一台採收器。這是產品命名提案，未宣稱商標可用性。
+
+## 本階段契約
+
+在 `apps/fieldscope` 以 Asyra CUSTOM provider + Three.js 建立四連棟溫室。
+完成條件為等比例幾何、可操作的四種視角、圖層顯示、尺寸剖面與正式測試。
+修改範圍包括新 app、本文及必要的 Yarn workspace / Turbo 接線。
+既有 apps、框架 API、其他 Inspector 與既有 active plans 不變。
+
+本階段不執行採收模擬、不產生機器人安全判定、不連線實機；
+沒有虛構即時遙測、收成數字、植株損傷或穩定度分數。
+以下分期是後續實作建議，不代表已完成或自動啟動那些功能。
+
+## 尺寸與假設
+
+全場座標為公尺，X 跨棟、Y 向上、Z 沿棟長，原點位於左前方地面。
+四棟各寬 7m、長 50m、最高點 5m，總占地 28 × 50 = 1,400m²。
+
+使用者已釐清原列數字總和：土壤與水溝實為 6.3m，不是 6.6m。
+最終每棟 X 向配置為：
+
+`0.35 留白 + 0.9 土壤 + 0.3 水溝 + 1.8 土壤 + 0.3 水溝 + 1.8 土壤 + 0.3 水溝 + 0.9 土壤 + 0.35 留白 = 7m`
+
+- 16 條土壤區共 1,080m²、12 條水溝共 180m²、全部邊界留白共 140m²。
+- 內部相鄰留白合併為 3 條 0.7m 走道；無黑色隔板或跨越走道的側牆斜撐。
+- 黑色硬質防水擋板僅沿 X=0 與 X=28 的外邊界配置。
+- 共用立柱位於 X=7、14、21 的走道中心線；0.7m 是土壤間毛寬，
+  **不是扣除立柱後的連續機器人淨寬**。未提供機器人規格，通行尚未驗證。
+- 水溝有實際低於畦面 0.25m 的底面和土壤側壁，不是貼在地上的藍線，
+  不假設目前有積水；尚未加入坡度、排水出口、端部轉向區或地形沉陷。
+
+未經現地丈量的建模假設：簷高 3m、拱架每 1m、立柱每 5m、拱管直徑
+48mm、柱徑 76mm、柱埋深 0.4m、水溝深 0.25m、擋板高 0.35m 且厚 20mm、
+每棟前後開口各寬 2m、高 2.5m。開口是覆膜與門框的開放部分，未模擬門扇。
+
+圓拱半跨 a=3.5m、起拱高 h=2m，半徑 `R=(a²+h²)/(2h)=4.0625m`。
+圓心高度 `5-R=0.9375m`；由同一圓弧公式計算拱管與覆膜截面。
+每棟有 51 道拱架，共 204 道；五條共用柱線各有 11 支立柱，共 55 支。
+構造包括拱管、肩部及屋脊／屋面縱向桁條、水平繫樑、屋面斜撐、外牆 X 撐、
+前後門框、連棟上方 U 型天溝。未細分螺栓、扣件、管壁厚度及基礎工程。
+這是依構造原理建立的參數模型，並非某張核定施工圖的逐件復刻或耐風計算書。
+
+參考來源：
+
+- <a href="https://www.moa.gov.tw/ws.php?id=13673" target="_blank" rel="noopener noreferrer">農業部 - 訂定農業用溫室標準圖樣及其結構計算書簡介</a>：
+  以柱、樑、屋頂構材及斜撐形成模組，區分圓頂與塑膠覆膜。本文採構造分類，
+  不將舊公告的法規、抗風條件或標準尺寸套用為本模型的認證。
+- <a href="https://book.tndais.gov.tw/Brochure/tech171.pdf" target="_blank" rel="noopener noreferrer">臺南區農業改良場 - 技術專刊 108-1（No.171）</a>：
+  搜尋索引可見鋼管塑膠布溫室名稱圖、單棟／連棟圖及縱向桁條位置；
+  本次來源站 PDF 讀取失敗，未宣稱已逐圖核對其施工細節。
+- <a href="https://www.agriharvest.tw/archives/18812/" target="_blank" rel="noopener noreferrer">農傳媒 - 溫室要合宜耐用，魔鬼藏在細節裡</a>：
+  提供設施規模、連棟排水與簡易／加強型結構的現場背景。
+
+## 實作所有權與更新邊界
+
+`domain/greenhouse.ts` 擁有本階段固定尺寸與結構公式。
+`domain/mesh.ts` 生成引擎中立三角網格；`render-app/site-projection.ts` 在
+每次 runtime 啟動產生一次完整場景，並將幾何凍結為 admitted descriptor。
+本階段不提供尺寸編輯或儲存，因此沒有第二份可編輯場景、遷移格式或偽裝的復原操作。
+
+`runtime/bootstrap.ts` 透過 Core 註冊 view 與 camera Features、managed runtime
+properties、CUSTOM provider、`core.registerRenderLayer` 及尺寸觀察者。
+圖層切換走 `Feature -> 最新 view state -> Core system property -> SpatialLayer`；
+不透明度與同時到達的圖層修改在 Feature 佇列內讀取最新狀態。
+相機屬暫態呈現資料，camera Feature 只提交相機投影，不改幾何或文件。
+這些檢視操作不寫入文件歷史。
+
+Three.js 只存在 app-owned `engine/`；`@asyra/render` 和它以
+`@asyra/render-engine` 公開契約相接，不直接依賴彼此。
+自訂 provider 的通用命令實作、空間 descriptor 與契約測試改編自專案既有
+Asyra Sim 的 Three.js adapter；沒有複製其產品資料模型、分析 pipeline 或工作站架構，
+也沒有新增跨 app 執行期 import。未來若另有使用者需要共用引擎，另行評估抽取套件。
+
+場景層 zIndex=0。Core 的 demand-driven scheduler 合併呈現請求；沒有常駐動畫 loop。
+相機操作不通知控制面板、重讀整份 canonical document 或重建三角幾何。
+圖層與材質更新沿用 admitted shape；銷毀時取消 frame、退訂 observable、
+清除 ResizeObserver、unregister layer、釋放 GPU resources，再 reset Core runtime。
+控制面板在使用點以 `useSyncExternalStore` 訂閱 view；沒有 React.memo。
+
+## 後續實作順序
+
+### 1. 可編輯田區與可替換栽培
+
+下一個可交付範圍：將固定配置升級為有版本的 FarmDocument，加入尺寸、畦溝、
+植株行列、支架與通行偏好；Core SceneTree 管身分／階層，Props 管驗證後的 domain
+資料。所有新增、調整、替換經 Feature 和 app API，以一次使用者操作對應一次 undo。
+儲存與載入採 app-owned 版本遷移，幾何仍是衍生輸出。
+
+PlantingSystem 以 registry 註冊攀藤網、竹竿、彎曲鐵架等策略，輸入畦面、行距、
+支點及植株錨點，輸出栽培構件與碰撞幾何。植株身分不因更換支架而消失。
+將「靠水溝側種植／靠走道側種植」分為植株位置與作業通行策略，
+不把土壤、水溝或留白的材質硬編碼成可走／不可走。
+
+1914 小胡瓜與玉女小蕃茄先有獨立作物 profile：株型、支架需求、株距、成熟果實位置、
+允許採收動作及待測力學參數。資料須有來源與不確定度，不能用通用藤蔓數值冒充品種實測。
+驗收：替換三種支架、調整種植側、Undo/Redo、無效尺寸拒絕、存檔往返、
+只重建受影響棟／行，且能顯示最窄有效通行截面。
+
+### 2. 機器人運動與離線採收流程
+
+先建立 RobotDefinition：底盤外形、輪距、輪徑、質量、重心、手臂關節軸／限制、
+夾具、刀具與採收箱。GLB 僅作外觀；碰撞殼、質量與關節不由外觀自動臆測。
+所有姿態採明確座標轉換：田區 -> 底盤 -> 手臂 -> 工具；保留模型版本。
+
+由路徑規劃器產生候選路徑，運動學解算器產生手臂姿態，再經碰撞與通行檢查。
+選擇走道或水溝時同時檢查寬度、高差、轉彎空間及立柱，而非僅檢查中心線。
+採收順序為接近、觀測、定位、伸臂、夾持／剪切、收回、置入容器、離開；
+每步有輸入、退出條件、失敗原因與可重播事件。
+
+Worker 擁有固定步長的模擬時間與計算，UI 只取最新顯示 frame；場景靜態幾何及空間索引
+依幾何 revision 生成一次，姿態變化只更新動態碰撞包圍體。取消和文件替換淘汰舊結果。
+驗收：無實機仍能完整執行一趟、停止／重播、關節限制拒絕、柱碰撞與窄水溝拒絕、
+可重現相同種子／版本的運動結果。此階段只宣稱運動與幾何接觸結果。
+
+### 3. 植株損傷、土壤與採收箱動力學
+
+在運動模型通過後，再評估物理引擎；新增依賴需另獲使用者批准。
+先將莖、枝、葉柄建成節點與彈性連接，量測彎曲剛度、摩擦及斷裂閾值，
+再評估軟體／有限元素的必要性。檢查連續運動中的接觸與拉扯，不只看兩端姿態。
+
+地面 profile 包括坡度、含水量、摩擦及輪下沉陷；底盤動力學計算支撐區域、
+重心投影、加速度與傾覆。採收箱建模固定方式、容器邊緣、有效載荷及移動中的
+果實／箱體作用；不能用靜態重心測試宣稱滿載轉彎不會打翻。
+
+驗收以實驗校正為主：枝條拉斷試驗、夾持損傷、不同土壤輪跡／下陷、載荷轉向與
+緊急停止。未校正的結果明確標示為風險估計；缺參數時回報不可判定。
+
+### 4. 實機監控與模擬對照
+
+以 app adapter 接收 robot ID、schema version、時間戳、座標框架、序號與品質旗標，
+將 ROS 2 或設備 WebSocket 的訊息轉為中立遙測；具體協定待硬體選定。
+實機觀測與離線預測分開保留，使用相同場景及姿態投影，不互相覆蓋。
+過期、掉序、斷線、時間不同步與定位不可信均有清楚狀態。
+
+先上線只讀監控、事件時間軸、故障位置與重播，再獨立設計設備命令授權、
+互鎖與確認。瀏覽器模擬不能取代硬體急停。警報依實測門檻與來源可追溯事件產生。
+驗收：斷線與重連、過期 frame、亂序資料、版本不合、重播對齊、模擬／實測偏差。
+
+## 驗證與啟動
+
+由 worktree 根目錄執行：
+
+```bash
+yarn workspace @asyra/fieldscope dev
+yarn workspace @asyra/fieldscope test:local
+yarn workspace @asyra/fieldscope typecheck
+yarn workspace @asyra/fieldscope build
+yarn workspace @asyra/fieldscope lint
+yarn workspace @asyra/fieldscope test:e2e
+yarn lint:naming
+yarn gen:turbo:check
+```
+
+先依 monorepo 既有流程安裝鎖檔依賴並建立 Framework packages。
+首次啟動將 `.env.example` 複製為 app 內 `.env`；`APP_URL` 是 Vite 與 Playwright
+共用的唯一 origin 設定，範例使用 `http://127.0.0.1:5178`。不得自動另找埠號。
+E2E 使用已安裝 Chrome，不下載瀏覽器；測試由一個 worker 執行，全域限時 180 秒，
+測試 server 由 Playwright 管理生命週期。若已有服務，先核對它是本 worktree。
+
+正式測試覆蓋尺寸閉合、拱頂／端點、構件數、下凹深度、外側擋板範圍、
+CUSTOM 引擎契約、幾何 admission、正常 runtime 下相機不通知 UI 且只 build 一次、
+連續修改不覆蓋、非法值拒絕及 disposal。E2E 使用真實 app 路徑，
+保存透視、端面、俯視、內部與窄螢幕畫面；數值正確性以 source-space 測試為準。
