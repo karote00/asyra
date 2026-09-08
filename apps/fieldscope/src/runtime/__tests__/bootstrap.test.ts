@@ -8,6 +8,7 @@ import * as navigation from '../../render-app/camera-navigation'
 it('keeps one geometry construction through navigation and queued display changes, then retires it', async () => {
   const build = vi.spyOn(projection, 'buildSiteMeshes')
   const measure = vi.spyOn(navigation, 'measureScene')
+  const pan = vi.spyOn(navigation, 'panCamera')
   const driver: GraphicsDriver = {
     domElement: document.createElement('canvas'),
     autoClear: true,
@@ -53,6 +54,31 @@ it('keeps one geometry construction through navigation and queued display change
     flush()
     const notify = vi.fn(),
       unsubscribe = runtime.subscribe(notify)
+    await runtime.setCamera('joint')
+    runtime.pan(20, 10)
+    const firstPan = pan.mock.results.at(-1)?.value
+    const firstInput = pan.mock.calls.at(-1)?.[0]
+    runtime.zoom(-10000)
+    expect.soft(runtime.getZoom()).toBe(10000)
+    runtime.pan(20, 10)
+    const secondPan = pan.mock.results.at(-1)?.value
+    const secondInput = pan.mock.calls.at(-1)?.[0]
+    if (!firstInput || !secondInput) throw new Error('Missing camera commands')
+    expect(secondInput.position).toEqual(firstPan.position)
+    for (let axis = 0; axis < 3; axis++) {
+      expect
+        .soft(secondPan.target[axis] - secondInput.target[axis])
+        .toBeCloseTo(firstPan.target[axis] - firstInput.target[axis], 8)
+    }
+    runtime.orbit(40, -12)
+    runtime.pan(0, 0)
+    const rotated = pan.mock.calls.at(-1)?.[0]
+    expect(rotated?.target).toEqual(secondPan.target)
+    expect(rotated?.position).not.toEqual(secondPan.position)
+    runtime.actualSize()
+    expect(runtime.getZoom()).toBe(100)
+    await runtime.setCamera('overview')
+    notify.mockClear()
     const initial = runtime.getView()
     for (let i = 0; i < 20; i++) {
       runtime.orbit(2, 1)
@@ -151,6 +177,7 @@ it('keeps one geometry construction through navigation and queued display change
     await runtime.dispose()
     build.mockRestore()
     measure.mockRestore()
+    pan.mockRestore()
     vi.unstubAllGlobals()
   }
 }, 15000)

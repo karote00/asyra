@@ -104,12 +104,18 @@ export async function bootstrap(
     core.setSystemProperty(RuntimeKeys.FRAME, ++revision)
   )
   core.registerRenderLayer(layer.registration)
+  const readZoom = (next: SpatialCamera) => {
+    const reference = cameraPreset(view.camera, config)
+    return (
+      (100 *
+        cameraDistance(reference) *
+        Math.tan((reference.fov * Math.PI) / 360)) /
+      (cameraDistance(next) * Math.tan((next.fov * Math.PI) / 360))
+    )
+  }
   const publishCamera = (next: SpatialCamera) => {
     camera = next
-    const percent = Math.round(
-      (100 * cameraDistance(cameraPreset(view.camera, config))) /
-        cameraDistance(next)
-    )
+    const percent = Math.round(readZoom(next))
     if (percent !== zoomPercent) {
       zoomPercent = percent
       zoomListeners.forEach((listener) => listener())
@@ -272,32 +278,53 @@ export async function bootstrap(
       zoom: (delta: number) => {
         assertLive()
         if (!Number.isFinite(delta)) return
-        const vector = camera.position.map((v, i) => v - camera.target[i])
-        const distance = Math.hypot(...vector)
+        const current = readZoom(camera)
         const next = Math.max(
-          0.05,
-          Math.min(180, distance * Math.exp(delta * 0.001))
+          1,
+          Math.min(10000, current * Math.exp(-delta * 0.001))
         )
+        // Optical magnification keeps the camera outside the inspected surfaces.
         publishCamera({
           ...camera,
-          position: vector.map(
-            (v, i) => camera.target[i] + (v / distance) * next
-          ) as [number, number, number]
+          fov: Math.min(
+            150,
+            (360 / Math.PI) *
+              Math.atan(
+                (Math.tan((camera.fov * Math.PI) / 360) * current) / next
+              )
+          )
         })
       },
       pan: (dx: number, dy: number) => {
         assertLive()
-        publishCamera(panCamera(camera, dx, dy, width, height))
+        publishCamera(
+          panCamera(
+            camera,
+            dx,
+            dy,
+            width,
+            height,
+            cameraDistance(cameraPreset(view.camera, config)),
+            cameraPreset(view.camera, config).fov
+          )
+        )
       },
       fit: () => {
         assertLive()
-        publishCamera(fitScene(camera, sceneBounds, width, height))
+        publishCamera(
+          fitScene(
+            { ...camera, fov: cameraPreset(view.camera, config).fov },
+            sceneBounds,
+            width,
+            height
+          )
+        )
       },
       actualSize: () => {
         assertLive()
         publishCamera(
           setCameraDistance(
-            camera,
+            { ...camera, fov: cameraPreset(view.camera, config).fov },
             cameraDistance(cameraPreset(view.camera, config))
           )
         )

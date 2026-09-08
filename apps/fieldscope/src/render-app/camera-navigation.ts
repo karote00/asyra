@@ -69,12 +69,15 @@ export function panCamera(
   dx: number,
   dy: number,
   width: number,
-  height: number
+  height: number,
+  referenceDistance = cameraDistance(camera),
+  referenceFov = camera.fov
 ): SpatialCamera {
   if (
-    ![dx, dy, width, height].every(Number.isFinite) ||
+    ![dx, dy, width, height, referenceDistance].every(Number.isFinite) ||
     width <= 0 ||
-    height <= 0
+    height <= 0 ||
+    referenceDistance <= 0
   )
     throw new Error('Invalid pan input')
   const back = normalize(difference(camera.position, camera.target))
@@ -82,8 +85,12 @@ export function panCamera(
     up = cross(back, right)
   const unitsPerPixel =
     (2 *
-      cameraDistance(camera) *
-      Math.tan((fitCamera(camera, width / height).fov * Math.PI) / 360)) /
+      referenceDistance *
+      Math.tan(
+        (fitCamera({ ...camera, fov: referenceFov }, width / height).fov *
+          Math.PI) /
+          360
+      )) /
     height
   const offset = right.map(
     (value, i) => (-dx * value + dy * up[i]) * unitsPerPixel

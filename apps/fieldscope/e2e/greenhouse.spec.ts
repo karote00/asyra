@@ -303,3 +303,30 @@ test('trellis net and top cable ties are visible and independently controlled', 
     contentType: 'application/json'
   })
 })
+
+test('joint inspection reaches 10000 percent and restores the baseline', async ({
+  page
+}, testInfo) => {
+  await page.goto('/')
+  await expect(page.getByText('空間模型已就緒')).toBeVisible()
+  await page.getByRole('button', { name: '夾具近看', exact: true }).click()
+  const scene = page.getByTestId('scene')
+  await scene.hover()
+  await page.mouse.wheel(0, -Math.log(10) * 1000)
+  await expect(page.getByTestId('zoom-percent')).toHaveText('1000%')
+  await page.screenshot({
+    path: testInfo.outputPath('joint-1000.png'),
+    fullPage: true
+  })
+  await page.mouse.wheel(0, -10000)
+  await expect(page.getByTestId('zoom-percent')).toHaveText('10000%')
+  await page.mouse.wheel(0, -500)
+  await expect(page.getByTestId('zoom-percent')).toHaveText('10000%')
+  await page.screenshot({
+    path: testInfo.outputPath('joint-10000.png'),
+    fullPage: true
+  })
+  await scene.focus()
+  await page.keyboard.press('Meta+0')
+  await expect(page.getByTestId('zoom-percent')).toHaveText('100%')
+})
