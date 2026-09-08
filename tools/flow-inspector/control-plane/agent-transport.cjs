@@ -149,7 +149,8 @@ function providerProfile(directory, executable, credentialFile = null) {
 (allow file-read-metadata)
 (allow file-read* (subpath "/System") (subpath "/usr/lib") (subpath "/Library/Apple") (subpath "/private/etc") (subpath "/dev") (literal ${literal(executable)}) (subpath ${literal(directory)}))
 ${credentialFile ? '(allow file-read* (literal ' + literal(credentialFile) + '))' : ''}
-(allow file-write* (subpath ${literal(directory)}) (literal "/dev/null"))`
+(allow file-write* (subpath ${literal(directory)}) (literal "/dev/null"))
+(deny file-write* (literal ${JSON.stringify(path.join(fs.realpathSync(directory), 'auth.json'))}))`
 }
 
 function openLocalTransport({

@@ -199,13 +199,18 @@ test(
     const directory = fs.mkdtempSync(path.join(parent, 'run-'))
     const credential = path.join(parent, 'fake-auth.json')
     fs.writeFileSync(credential, 'formal-test-marker')
+    const reference = path.join(directory, 'auth.json')
+    fs.symlinkSync(credential, reference)
     const script = `const fs=require('node:fs');const cp=require('node:child_process');
     let denied=0;
     try{fs.readFileSync(${JSON.stringify(path.join(repositoryRoot, 'AGENTS.md'))})}catch{denied++}
     try{fs.writeFileSync(${JSON.stringify(credential)},'changed')}catch{denied++}
+    fs.writeFileSync('replacement.json','replacement');
+    try{fs.renameSync('replacement.json','auth.json')}catch{denied++}
+    try{fs.unlinkSync('auth.json')}catch{denied++}
     if(cp.spawnSync(process.execPath,['-e','process.exit(0)']).error)denied++;
     if(fs.readFileSync(${JSON.stringify(credential)},'utf8')!=='formal-test-marker')process.exit(2);
-    process.exit(denied===3?0:1)`
+    process.exit(denied===5?0:1)`
     const result = spawnSync(
       '/usr/bin/sandbox-exec',
       [
@@ -223,6 +228,7 @@ test(
     )
     assert.equal(result.status, 0)
     assert.equal(fs.readFileSync(credential, 'utf8'), 'formal-test-marker')
+    assert.equal(fs.lstatSync(reference).isSymbolicLink(), true)
   }
 )
 test(
