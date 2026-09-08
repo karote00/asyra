@@ -525,3 +525,7 @@ readable source/status blocks. This presentation does not alter operation
 permissions, evidence, task state or baseline acceptance. The formal Board
 readability case checks desktop and narrow panels and visits every catalog
 entry; it never dispatches a model request.
+
+Disclosure titles remain unfilled on pointer hover. Keyboard focus retains a
+visible outline; current-page, selected-card and failure indicators continue to
+communicate their existing states. Standalone entries embed the same viewer style.

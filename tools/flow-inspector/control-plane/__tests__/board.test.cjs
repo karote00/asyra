@@ -1683,6 +1683,52 @@ test(
             node.open = true
           })
         )
+        for (const summary of await frame
+          .locator('#proof-controls summary')
+          .all()) {
+          await page.mouse.move(0, 0)
+          const background = await summary.evaluate(
+            (node) => getComputedStyle(node).backgroundColor
+          )
+          await summary.hover()
+          assert.equal(
+            await summary.evaluate(
+              (node) => getComputedStyle(node).backgroundColor
+            ),
+            background,
+            'pointer hover must not paint a disclosure highlight'
+          )
+        }
+        const title = frame.locator('#proof-controls > summary')
+        await title.focus()
+        await page.keyboard.press('Tab')
+        await page.keyboard.press('Shift+Tab')
+        assert.equal(
+          await title.evaluate((node) => node.matches(':focus-visible')),
+          true
+        )
+        assert.equal(
+          await title.evaluate((node) => getComputedStyle(node).outlineWidth),
+          '2px'
+        )
+        const group = page.locator('.group-toggle').first()
+        await group.hover()
+        assert.equal(
+          await group.evaluate((node) => getComputedStyle(node).outlineStyle),
+          'none',
+          'pointer hover must not mimic keyboard focus'
+        )
+        await group.focus()
+        await page.keyboard.press('Tab')
+        await page.keyboard.press('Shift+Tab')
+        assert.equal(
+          await group.evaluate((node) => node.matches(':focus-visible')),
+          true
+        )
+        assert.equal(
+          await group.evaluate((node) => getComputedStyle(node).outlineWidth),
+          '2px'
+        )
         const metrics = await frame
           .locator('#proof-controls')
           .evaluate((panel) => {

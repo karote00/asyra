@@ -13,3 +13,6 @@ settlement, and show persistent cancellation investigation and handoff guidance.
 
 Improve shared verification panel readability with separated disclosures,
 responsive action groups, readable status text and wrapped source metadata.
+
+Remove decorative disclosure hover fills and pointer-only catalog focus rings,
+while preserving keyboard focus, current navigation and meaningful result states.
