@@ -192,3 +192,17 @@ complete input directly to the existing save Feature, avoiding a React state
 update followed by a stale save closure. Other settings and exclusions are saved
 in the same transaction; one Undo/Redo reverses/restores the complete change.
 Pending saves disable both save entry points and guard duplicate dispatch.
+
+### 2026-09-08 - Close M2 and its accepted editing follow-ups
+
+- Context: M2 import acceptance was followed by user-requested automatic
+  persistence, registered Core integration and independently editable authored
+  input. Their completed evidence must no longer appear as active work.
+- Decision: close M2 with all five owner exit criteria accepted and no in-scope
+  blocker. Archive the acceptance and final 647 App / 17 affected E2E results in
+  `docs/ai/apps/asyra-sim/plans/completed/m2-import-contract.md`.
+- Consequences: this supersedes the earlier manual Save/Apply and transient-only
+  invalid-input limitations. Core publications/history own completed edits;
+  execution validity remains separate. The roadmap stays active for M3-M6.
+  User-authorized push and PR review follow closeout; no merge, Changeset,
+  version bump, tag, publication or deployment is authorized by this decision.

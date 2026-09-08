@@ -20,39 +20,6 @@
 
 ## Active Work
 
-- **Editable input and immediate validation (completed, 2026-09-08).**
-  - Scope: durable trajectory source/mapping/units and exclusion text; independent
-    observation content; immediate field diagnostics, including finite interval
-    endpoints whose temporary order/coverage errors must not block other settings. Completed gestures use the
-    existing editing Features and Core history/publications. No manual Save.
-  - Storage owns a bounded current document/edit pair (at most two source parses
-    and two conversion results) per runtime, reused by editor
-    validation, review and executable input resolution. Exact source text/kind,
-    mapping and joint IDs/kinds/limits determine validity; metadata and geometry
-    unrelated to joint validation do not repeat conversion.
-  - Domain/schema guards bound authored text without claiming executable validity.
-    Composition resolves authored input before snapshot/preflight; UI never plays
-    the previous trajectory while current input is invalid. Legacy projects remain
-    readable and historical snapshots stay immutable.
-  - Owner sequence: domain/schema and edit, storage resolver, composition/snapshot,
-    UI/observations. Gates: permanent red/green regressions, work counts/reuse,
-    invalidation, canonical replay/reload/duplication, UI/E2E and screenshot review,
-    App tests/build/typecheck/lint, naming and Inspector contracts.
-  - Exclusions: solver changes, geometry simplification, storage transport,
-    Framework/Preset refactors, dependencies, M3-M6 and remote/release operations.
-    Stop if the bounded source model cannot isolate validity without a new owner
-    or if a required schema migration cannot preserve prior evidence.
-  - Verified: 647 App tests, 17 affected E2E cases at `http://127.0.0.1:3020`,
-    App build/typecheck/lint, 11 naming checks, 97 Inspector checks and two test
-    placement checks. Inspected live source/error, repaired conversion, interval,
-    object numeric and incomplete observation screenshots. The pending observation
-    creation race was reproduced permanently and fixed; later completed fields
-    serialize against acknowledged identity/revision even when the editor closes.
-  - No in-scope blocker remains. M1 stays closed; M2 acceptance remains complete.
-    This follow-up does not complete M3-M4 or authorize M3-M6 implementation.
-    Next milestone work starts with the separately bounded M3 review below.
-
-
 1. [Asyra Sim first-release roadmap](plans/asyra-sim-roadmap.md)
    - M1 is closed and M2 Import Contract Completion passed milestone acceptance
      on 2026-09-07. Next is a separately bounded M3 review of the existing
@@ -67,6 +34,11 @@
 
 ## Completed Work
 
+- [M2 executable experiments and import contract](plans/completed/m2-import-contract.md)
+  - Closed 2026-09-08, including Core integration, automatic persistence and
+    independent authored-input validation. All five M2 owners are accepted;
+    no in-scope blocker remains. M3-M6 retain separate gates.
+
 - **History feedback correction (2026-09-08).**
   - The user's open page contained an out-of-limit J6 value of 100 radians and
     zero Undo entries. Empty History actions incorrectly reported applied.
@@ -75,7 +47,7 @@
   - Permanent browser tests cover direct edit-to-toolbar replay for trajectory,
     clearance and object name, plus an invalid source alongside independent valid
     field edits. The empty-history test failed before the fix; valid replay passed.
-    The authored-input follow-up above subsequently identified and corrected
+    The authored-input follow-up in the completed M2 record subsequently identified and corrected
     trajectory, exclusions, interval and observation coupling; this earlier
     slice alone did not resolve those input semantics.
   - Verified: 11 affected browser cases at port 3020 and inspected empty-history
@@ -92,7 +64,7 @@
   - Inline trajectory text, mapping and unit edits now validate and commit on
     field blur through the existing Feature. Review reuses the exact conversion
     result. Own acknowledgements preserve edited text and units; invalid input
-    was transient in that slice; the authored-input follow-up above supersedes
+    was transient in that slice; the authored-input follow-up in the completed M2 record supersedes
     this limitation and preserves invalid input in Core. New file
     imports still require explicit Import trajectory acceptance.
   - Observation text and accepted attachment removal commit independently of
@@ -130,7 +102,7 @@
 
 - **Automatic persistence and editing consistency (2026-09-08).**
   - This completed UX slice removed manual Save, but its snapshot-based storage
-    was not incremental Core integration. The completed follow-up above replaces
+    was not incremental Core integration. The completed follow-up in the completed M2 record replaces
     that transport while preserving the accepted editing UX.
   - Valid completed object, experiment and observation edits persist locally
     without Save controls. New experiment creation, import Apply, attachment
@@ -151,7 +123,7 @@
   - This is an editing/persistence follow-up to accepted M2, not M3-M6 acceptance.
     The next milestone remains the separately bounded M3 review in the roadmap.
 
-- [M2 experiments and import acceptance](plans/asyra-sim-roadmap.md#5-m2-executable-experiments-and-data-import)
+- [M2 experiments and import acceptance](plans/completed/m2-import-contract.md)
   - Completed 2026-09-07: explicit external units, bounded conversion review,
     valid-result reuse and invalidation, and all five M2 owner exit criteria.
     593 App tests and 22 scoped browser cases pass; M3-M6 remain separate.

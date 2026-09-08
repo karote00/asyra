@@ -41,9 +41,10 @@ single robot workcell**, not a complete factory simulator.
 ## Reading Guide
 
 Before resuming implementation, read the requested
-[Core integration review](validation/CORE_INTEGRATION_REVIEW.md). It identifies
-remaining publication/persistence and upstream projection gaps at `a379a0ee2`;
-the earlier UI organization and M2 import acceptance do not close those gaps.
+[Core integration review](validation/CORE_INTEGRATION_REVIEW.md). It records the publication/persistence and upstream projection gaps found at
+`a379a0ee2` and their completed corrections. See the
+[M2 closeout](plans/completed/m2-import-contract.md) for final acceptance;
+new implementation starts from the separately bounded M3 review.
 
 | Question                                                                         | Document                                                        |
 | -------------------------------------------------------------------------------- | --------------------------------------------------------------- |
