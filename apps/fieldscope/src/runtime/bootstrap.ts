@@ -1,3 +1,4 @@
+import { moveCamera, lookCamera } from '../render-app/camera-flight'
 import {
   DEFAULT_CONFIGURATION,
   validateConfiguration,
@@ -59,7 +60,8 @@ export async function bootstrap(
   let configurationId = ''
   const configListeners = new Set<() => void>()
   let view = INITIAL_VIEW
-  let camera = cameraPreset(view.camera, config)
+  let referenceCamera = cameraPreset(view.camera, config)
+  let camera = referenceCamera
   const initialBounds = host.getBoundingClientRect()
   let width = Math.max(1, initialBounds.width),
     height = Math.max(1, initialBounds.height)
@@ -105,7 +107,7 @@ export async function bootstrap(
   )
   core.registerRenderLayer(layer.registration)
   const readZoom = (next: SpatialCamera) => {
-    const reference = cameraPreset(view.camera, config)
+    const reference = referenceCamera
     return (
       (100 *
         cameraDistance(reference) *
@@ -139,7 +141,8 @@ export async function bootstrap(
     config = next
     meshes = prepared
     sceneBounds = measureScene(meshes)
-    camera = cameraPreset(view.camera, config)
+    referenceCamera = cameraPreset(view.camera, config)
+    camera = referenceCamera
     layer.submit({
       meshes: projectView(meshes, view),
       camera: fitCamera(camera, aspect)
@@ -256,6 +259,14 @@ export async function bootstrap(
     exclusive: true,
     // Presentation-only camera commands consume no editable document state.
     api: {
+      move: (right: number, up: number, forward: number) => {
+        assertLive()
+        publishCamera(moveCamera(camera, right, up, forward))
+      },
+      look: (dx: number, dy: number) => {
+        assertLive()
+        publishCamera(lookCamera(camera, dx, dy))
+      },
       orbit: (dx: number, dy: number) => {
         assertLive()
         if (!Number.isFinite(dx) || !Number.isFinite(dy)) return
@@ -264,7 +275,7 @@ export async function bootstrap(
         const theta = Math.atan2(x, z) - dx * 0.006
         const phi = Math.max(
           0.02,
-          Math.min(Math.PI / 2 - 0.015, Math.acos(y / radius) - dy * 0.006)
+          Math.min(Math.PI - 0.015, Math.acos(y / radius) - dy * 0.006)
         )
         publishCamera({
           ...camera,
@@ -304,8 +315,8 @@ export async function bootstrap(
             dy,
             width,
             height,
-            cameraDistance(cameraPreset(view.camera, config)),
-            cameraPreset(view.camera, config).fov
+            cameraDistance(referenceCamera),
+            referenceCamera.fov
           )
         )
       },
@@ -313,7 +324,7 @@ export async function bootstrap(
         assertLive()
         publishCamera(
           fitScene(
-            { ...camera, fov: cameraPreset(view.camera, config).fov },
+            { ...camera, fov: referenceCamera.fov },
             sceneBounds,
             width,
             height
@@ -324,14 +335,14 @@ export async function bootstrap(
         assertLive()
         publishCamera(
           setCameraDistance(
-            { ...camera, fov: cameraPreset(view.camera, config).fov },
-            cameraDistance(cameraPreset(view.camera, config))
+            { ...camera, fov: referenceCamera.fov },
+            cameraDistance(referenceCamera)
           )
         )
       },
-      reset: (mode: CameraMode) => {
+      reset: () => {
         assertLive()
-        publishCamera(cameraPreset(mode, config))
+        publishCamera(referenceCamera)
       }
     }
   })
@@ -341,8 +352,10 @@ export async function bootstrap(
       if (closed) return
       const previous = view
       view = next
-      if (previous.camera !== next.camera)
-        camera = cameraPreset(next.camera, config)
+      if (previous.camera !== next.camera) {
+        referenceCamera = cameraPreset(next.camera, config)
+        camera = referenceCamera
+      }
       layer.submit({
         meshes: projectView(meshes, next),
         camera: fitCamera(camera, aspect)
@@ -438,8 +451,10 @@ export async function bootstrap(
         viewFeature.api.change({ filmOpacity }),
       setCamera: async (mode: CameraMode) => {
         await viewFeature.api.change({ camera: mode })
-        cameraFeature.api.reset(mode)
+        cameraFeature.api.reset()
       },
+      move: cameraFeature.api.move,
+      look: cameraFeature.api.look,
       pan: cameraFeature.api.pan,
       fit: cameraFeature.api.fit,
       actualSize: cameraFeature.api.actualSize,

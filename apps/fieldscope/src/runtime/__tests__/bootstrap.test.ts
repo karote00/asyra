@@ -7,6 +7,7 @@ import * as navigation from '../../render-app/camera-navigation'
 
 it('keeps one geometry construction through navigation and queued display changes, then retires it', async () => {
   const build = vi.spyOn(projection, 'buildSiteMeshes')
+  const preset = vi.spyOn(projection, 'cameraPreset')
   const measure = vi.spyOn(navigation, 'measureScene')
   const pan = vi.spyOn(navigation, 'panCamera')
   const driver: GraphicsDriver = {
@@ -80,7 +81,10 @@ it('keeps one geometry construction through navigation and queued display change
     await runtime.setCamera('overview')
     notify.mockClear()
     const initial = runtime.getView()
+    const presetCount = preset.mock.calls.length
     for (let i = 0; i < 20; i++) {
+      runtime.move(0.01, -0.01, 0.02)
+      runtime.look(1, -1)
       runtime.orbit(2, 1)
       runtime.zoom(1)
       runtime.pan(4, -2)
@@ -91,6 +95,7 @@ it('keeps one geometry construction through navigation and queued display change
     runtime.actualSize()
     flush()
     expect(runtime.getZoom()).toBe(100)
+    expect(preset).toHaveBeenCalledTimes(presetCount)
     expect(measure).toHaveBeenCalledTimes(1)
     expect(notify).not.toHaveBeenCalled()
     expect(runtime.getView()).toBe(initial)
@@ -133,8 +138,10 @@ it('keeps one geometry construction through navigation and queued display change
         { kind: 'soil' as const, width: 2 }
       ]
     }
+    const configurationPresetCount = preset.mock.calls.length
     await runtime.setConfiguration(changedConfig)
     flush()
+    expect(preset).toHaveBeenCalledTimes(configurationPresetCount + 1)
     expect(runtime.getConfiguration()).toEqual(changedConfig)
     expect(runtime.getUndoDepth()).toBe(depth + 1)
     expect(build).toHaveBeenCalledTimes(2)
@@ -148,10 +155,12 @@ it('keeps one geometry construction through navigation and queued display change
     flush()
     expect(runtime.getConfiguration()).toEqual(originalConfig)
     expect(runtime.getUndoDepth()).toBe(depth)
+    expect(preset).toHaveBeenCalledTimes(configurationPresetCount + 2)
     expect(build).toHaveBeenCalledTimes(3)
     await runtime.redo()
     flush()
     expect(runtime.getConfiguration()).toEqual(changedConfig)
+    expect(preset).toHaveBeenCalledTimes(configurationPresetCount + 3)
     expect(build).toHaveBeenCalledTimes(4)
     await expect(
       runtime.setConfiguration({ ...changedConfig, netBottom: 4 })
@@ -176,6 +185,7 @@ it('keeps one geometry construction through navigation and queued display change
     expect(() => runtime.orbit(1, 1)).toThrow()
     await runtime.dispose()
     build.mockRestore()
+    preset.mockRestore()
     measure.mockRestore()
     pan.mockRestore()
     vi.unstubAllGlobals()

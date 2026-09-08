@@ -169,6 +169,9 @@ test('film is visible by default and Shift drag, Command 1 and Command 0 operate
   const fitted = await canvas.screenshot()
   await page.mouse.wheel(0, -300)
   await page.getByTitle('適合畫面（⌘1）').click()
+  // Compare both routes with the same canvas focus outline.
+  await scene.focus()
+  await page.keyboard.press('Shift')
   await settle()
   const refitted = await canvas.screenshot()
   // Re-solving the perspective fit can change subpixel edge rounding, not the view.

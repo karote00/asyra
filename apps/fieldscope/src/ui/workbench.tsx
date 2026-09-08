@@ -1,3 +1,4 @@
+import { useCameraFlight } from './use-camera-flight'
 import {
   ConfigurationRuntime,
   ConfigurationEditor,
@@ -273,7 +274,13 @@ function SceneWorkspace({
       window.removeEventListener('keydown', shortcut, true)
     }
   }, [runtime])
-  const previous = useRef<{ x: number; y: number; id: number } | null>(null)
+  useCameraFlight(host, runtime)
+  const previous = useRef<{
+    x: number
+    y: number
+    id: number
+    button: number
+  } | null>(null)
   return (
     <div
       className="scene-workspace"
@@ -289,7 +296,12 @@ function SceneWorkspace({
             if (window.innerWidth < 1100) setRightOpen(false)
           }}
         />
-        <span className="text-[11px] text-[#718268]">溫室工作區</span>
+        <span
+          className="text-[11px] text-[#718268]"
+          title="點擊 canvas 後：W/S 前後、A/D 左右、E/Q 上下；按住 Shift 加速"
+        >
+          WASD 移動 - Q/E 升降 - Shift 加速
+        </span>
         <PanelToggle
           side="right"
           open={rightOpen}
@@ -345,22 +357,28 @@ function SceneWorkspace({
             if (event.key === '-') runtime.zoom(100)
           }}
           onPointerDown={(event) => {
-            if (event.button !== 0) return
+            if (event.button !== 0 && event.button !== 2) return
+            event.preventDefault()
+            event.currentTarget.focus({ preventScroll: true })
             event.currentTarget.setPointerCapture(event.pointerId)
             previous.current = {
               x: event.clientX,
               y: event.clientY,
-              id: event.pointerId
+              id: event.pointerId,
+              button: event.button
             }
           }}
           onPointerMove={(event) => {
             const p = previous.current
             if (!p || p.id !== event.pointerId || !runtime) return
-            if (event.shiftKey)
+            if (p.button === 2)
+              runtime.look(event.clientX - p.x, event.clientY - p.y)
+            else if (event.shiftKey)
               runtime.pan(event.clientX - p.x, event.clientY - p.y)
             else runtime.orbit(event.clientX - p.x, event.clientY - p.y)
             previous.current = { ...p, x: event.clientX, y: event.clientY }
           }}
+          onContextMenu={(event) => event.preventDefault()}
           onPointerUp={() => {
             previous.current = null
           }}
@@ -386,8 +404,8 @@ function SceneWorkspace({
         )}
         {runtime && <CameraToolbar runtime={runtime} onError={setError} />}
         {runtime && <ZoomControls runtime={runtime} />}
-        <div className="pointer-events-none absolute bottom-5 left-5 text-[10px] text-[#7b8873]">
-          拖曳旋轉 - Shift 拖曳平移 - 滾輪縮放
+        <div className="pointer-events-none absolute bottom-5 left-5 max-w-[calc(100%-10rem)] text-[10px] text-[#7b8873]">
+          左拖旋轉 - Shift 左拖平移 - 右拖轉頭 - 滾輪縮放
         </div>
         <div className="pointer-events-none absolute bottom-5 right-5 flex items-center gap-2 rounded-full bg-white/60 px-3 py-1 text-[10px] text-[#607350]">
           <span className="h-1.5 w-1.5 rounded-full bg-[#819c4d]" />
