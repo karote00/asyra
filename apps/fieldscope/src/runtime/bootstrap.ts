@@ -261,7 +261,21 @@ export async function bootstrap(
     api: {
       move: (right: number, up: number, forward: number) => {
         assertLive()
-        publishCamera(moveCamera(camera, right, up, forward))
+        // Keyboard units scale with the visible span at the current target.
+        // At the 1.5 units/s input rate this crosses 30% of that span per second.
+        const movementScale =
+          (2 *
+            cameraDistance(camera) *
+            Math.tan((camera.fov * Math.PI) / 360)) /
+          5
+        publishCamera(
+          moveCamera(
+            camera,
+            right * movementScale,
+            up * movementScale,
+            forward * movementScale
+          )
+        )
       },
       look: (dx: number, dy: number) => {
         assertLive()

@@ -79,6 +79,27 @@ it('keeps one geometry construction through navigation and queued display change
     runtime.actualSize()
     expect(runtime.getZoom()).toBe(100)
     await runtime.setCamera('overview')
+    // Keyboard motion must cover scene-scale distances and shrink with zoom.
+    const movementDistance = () => {
+      runtime.pan(0, 0)
+      const before = pan.mock.calls.at(-1)?.[0]
+      runtime.move(0, 0, 1.5) // One second at the keyboard's base rate.
+      runtime.pan(0, 0)
+      const after = pan.mock.calls.at(-1)?.[0]
+      if (!before || !after) throw new Error('Missing movement camera')
+      expect(after.fov).toBe(before.fov)
+      return Math.hypot(...after.position.map((v, i) => v - before.position[i]))
+    }
+    const overviewSpeed = movementDistance()
+    expect.soft(overviewSpeed).toBeGreaterThan(10)
+    runtime.zoom(-10000)
+    const detailSpeed = movementDistance()
+    expect.soft(detailSpeed).toBeCloseTo(overviewSpeed / 100, 8)
+    runtime.actualSize()
+    expect.soft(movementDistance()).toBeCloseTo(overviewSpeed, 8)
+    await runtime.setCamera('joint')
+    expect.soft(movementDistance()).toBeLessThan(0.1)
+    await runtime.setCamera('overview')
     notify.mockClear()
     const initial = runtime.getView()
     const presetCount = preset.mock.calls.length
