@@ -210,8 +210,12 @@ acknowledgements remain accessible. Changes invalidate previous admission and
 resource acknowledgements; confirmation never waives a blocker.
 
 The right experiment inspector has keyboard-accessible **Setup**, **Preview**
-and **Results** tabs. Candidate and experiment context remain above them;
-Run, cancellation and progress remain outside the scrolling tab content.
+and **Results** tabs. Candidate and experiment context remain above them.
+Context, Run, cancellation, progress, tabs and tab content share one naturally
+scrolling experiment panel. Run has a consistent position near the experiment
+selector, without a fixed footer. Short viewports must not constrain tab content
+to a separate residual-height scroll aperture; upper workbench dimensions remain
+independent of the panel content.
 Setup holds experiment, scope, trajectory and clearance inputs. Advanced settings
 hold method details, numerical precision and budgets without changing values or
 hiding blocking diagnostics. Preview explains sampled feedback and holds playback

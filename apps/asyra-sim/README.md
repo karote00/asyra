@@ -199,7 +199,10 @@ targets; these input caps are not a total-memory guarantee.
 owned playback. **Results** contains the formal verdict, execution, coverage,
 evidence and replay. Use arrow keys, Home and End within the tab list. Tabs keep
 unfinished text and completed edits; navigation alone creates no Undo action.
-Candidate/experiment context and Run/cancel/progress remain in stable panel areas.
+The entire experiment panel scrolls together, including candidate/experiment
+context, Run/cancel/progress, tabs and content. Run stays near the experiment
+selector in document order; there is no fixed footer. Preflight remains below
+the tabs so completing an edit does not move a tab during activation.
 Object inspection remains available by selecting a body or choosing **Object**.
 
 Press **Run analysis** once. Current-input preflight runs automatically. Errors
@@ -243,7 +246,8 @@ To review this milestone in the ordinary App:
    **100**. Complete the edit, press Run analysis: a persistent error must block
    execution. Review input focuses the source. Undo restores the valid source.
    Changing Time unit to its empty choice similarly persists and focuses that unit.
-6. Review at **600x960** as well as desktop. Scroll Results to inspect verdict,
+6. Review at **576x690**, **600x960** and desktop. Scroll within the experiment
+   panel: its heading and Run must move with content while the scene stays put. Scroll Results to inspect verdict,
    pair details, historical return and saving status; Run remains reachable.
    **Synthetic clearance study** demonstrates a complete no-issue result. Cancel
    a run to inspect explicit partial cancellation. Worker/storage fault and

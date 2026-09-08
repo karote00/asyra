@@ -214,7 +214,7 @@ Desktop and narrow result/replay and terminal screenshots were inspected.
 The normal in-app browser also ran Tool and table collision at 3.8–4.2 seconds
 on this service, with the same completed/complete finding result.
 
-All implementation and agent-validation conditions are met; **user acceptance
+The earlier agent-validation checkpoint did not cover the short embedded viewport; **user acceptance
 is still outstanding**, so M3.5 is not closed. This service authorization is not
 product acceptance. No push, PR, merge, tag, publication or deployment was
 performed. M3 stays closed. M4 comparison/extensions, M5 packaging and M6
@@ -223,3 +223,54 @@ user's hands-on review, followed only by explicitly confirmed closeout/remote wo
 
 The ordinary operation guide is
 [Understandable workflow review](../../../../../apps/asyra-sim/README.md#understandable-workflow-review).
+
+
+### UI scroll correction - 2026-09-09
+
+User review rejected the fixed regions that reduced the content aperture to
+approximately 40 px. The earlier 600 x 960 minimum-height check did not establish
+usable scrolling. Replace the padding-based approach with one panel scroll owner.
+
+Step Execution Card: `ui` (failure owner `ui`), Inspector order 11, conditions,
+inputs/outputs, bypasses and implementation boundary reread in full.
+Product source: robot-workcell-v0.md, Understandable Experiment Workflow.
+Inputs remain registered runtime/model/result/progress/session projections;
+output is the ordinary workbench. Ordinary UI controls are allowed contributors;
+solver changes, fixture paths, new state/history, caches and persistence are
+forbidden. Startup failure remains the existing actionable-error bypass.
+Scope is experiment-panel.tsx, direct permanent E2E consumers, thin product
+contract, exact UI Inspector and generated bundle, this plan and operation guide.
+Context, Run, status, tabs and content share natural panel scrolling, with no
+fixed footer or separately constrained tab aperture. Preserve current upper
+workbench dimensions, editor lifetime, focus and canonical gestures.
+Regression first: 576 x 690 and 1440 x 960 normal App cases must prove scrolling
+moves context and Run with content, leaves scene bounds unchanged, reaches Setup,
+Preview and Results, and adds no Undo entry. Existing formal outcomes and workflow
+cases cover replay, completion focus, invalid input, history and durability.
+Gates: focused owner tests, affected E2E, full App tests, build/typecheck/lint,
+naming, Inspector and test placement; synchronized 3020 screenshot review.
+Stop for required work outside this UI slice, any contract conflict, or repeated
+focused failure requiring a new bounded plan. Self-review: the revised product
+and Inspector clauses below replace the stale fixed-controls interpretation;
+no upstream owner or new derived data is required. User acceptance remains open.
+
+
+The correction now uses one natural outer-panel scroll region. Run sits below
+the selector; preflight is below the tab list, since the existing workflow E2E
+caught tab movement during blur-driven admission invalidation when it was above
+the tabs. That permanent edit-and-click regression passes with the corrected
+ordering. No controller, solver, transaction or persistence code changed.
+
+Validation: 661 App tests (118 files), 10 workflow/layout E2E plus 5 formal outcome
+E2E on 3020, build/typecheck, App lint, naming, 25 Inspector workspace/catalog
+contracts and 5 executable-example/placement contracts passed. The new short
+viewport test failed before production changes and passed afterward. Layout
+screenshots at 576 x 690 and 1440 x 960 were inspected, including expanded source
+editing with context/Run scrolled away and unchanged scene bounds.
+Commands use the existing `test:e2e` runner with workbench-review.spec.ts,
+workbench-flow.spec.ts and formal-outcomes.spec.ts, `APP_URL=http://127.0.0.1:3020`.
+Logs and screenshots: `.artifacts/m3-5-scroll-{red,corrected,outcomes}*`;
+unit/build/lint/naming/contract logs use `.artifacts/m3-5-scroll-*`.
+Bounded review rechecked the complete UI contract, direct consumers and diff:
+only presentation layout, permanent regression and current documentation changed.
+M3.5 remains open for user acceptance; no remote or closeout action is authorized.

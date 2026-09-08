@@ -153,3 +153,59 @@ test('trajectory playback advances, pauses, restarts and stops when leaving expe
   await expect(page.getByTestId('history-depth')).toHaveText(history ?? '')
   await expect(page.getByTestId('analysis-result')).toHaveCount(0)
 })
+
+for (const viewport of [
+  { width: 576, height: 690 },
+  { width: 1440, height: 960 }
+]) {
+  test(`experiment panel scrolls context and actions with its content at ${viewport.width}x${viewport.height}`, async ({
+    page
+  }, info) => {
+    await page.setViewportSize(viewport)
+    await page.goto('/')
+    await expect(page.getByRole('status')).toHaveText('Local runtime ready')
+    await page.getByRole('button', { name: 'Experiments', exact: true }).click()
+    const history = await page.getByTestId('history-depth').textContent()
+    const scene = await page.locator('.viewport-panel').boundingBox()
+    const panel = page.locator('.experiment-panel')
+    const run = page.getByRole('button', { name: 'Run analysis', exact: true })
+    const heading = panel.locator('.panel-heading')
+    await page.locator('.trajectory-import > summary').click()
+    await panel.evaluate((node) => {
+      node.scrollTop = 0
+    })
+    const before = {
+      run: await run.boundingBox(),
+      heading: await heading.boundingBox()
+    }
+    await expect
+      .poll(() => panel.evaluate((node) => getComputedStyle(node).overflowY))
+      .toMatch(/auto|scroll/)
+    await panel.evaluate((node) => {
+      node.scrollTop = 160
+    })
+    await expect.poll(() => panel.evaluate((node) => node.scrollTop)).toBe(160)
+    const after = {
+      run: await run.boundingBox(),
+      heading: await heading.boundingBox()
+    }
+    if (!before.run || !before.heading || !after.run || !after.heading)
+      throw new Error(
+        'Experiment context and Run must remain mounted while scrolling'
+      )
+    expect(after.run.y).toBeCloseTo(before.run.y - 160, 0)
+    expect(after.heading.y).toBeCloseTo(before.heading.y - 160, 0)
+    await page.locator('.trajectory-import textarea').scrollIntoViewIfNeeded()
+    await page.screenshot({ path: info.outputPath('setup-scrolled.png') })
+    for (const name of ['Preview', 'Results', 'Setup']) {
+      await page.getByRole('tab', { name, exact: true }).click()
+      await expect(page.getByRole('tabpanel')).toBeVisible()
+    }
+    expect(await page.locator('.viewport-panel').boundingBox()).toEqual(scene)
+    await expect(page.getByTestId('history-depth')).toHaveText(history ?? '')
+    await panel.evaluate((node) => {
+      node.scrollTop = 0
+    })
+    await page.screenshot({ path: info.outputPath('panel-top.png') })
+  })
+}

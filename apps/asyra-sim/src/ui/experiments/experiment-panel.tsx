@@ -38,7 +38,7 @@ function ExperimentLayout() {
 
   return (
     <div
-      className="experiment-panel h-full flex flex-col [&_>_.panel-heading]:flex-none
+      className="experiment-panel h-full min-h-0 overflow-y-auto overflow-x-hidden [&_>_.panel-heading]:flex-none
         [&_>_.panel-heading]:border-b [&_>_.panel-heading]:border-b-sim-divider
         [&_>_.panel-heading]:pt-[19px] max-[720px]:[&_>_.panel-heading]:py-1"
     >
@@ -46,19 +46,26 @@ function ExperimentLayout() {
       <div className="px-4 py-3 max-[720px]:py-2 shrink-0">
         <ExperimentPicker />
       </div>
+      <div className="px-4 pb-3 grid gap-2">
+        <ExperimentRunAction />
+        <ExperimentCompletion />
+        <ExperimentProgress />
+        <ExperimentError />
+      </div>
       <ExperimentTabs />
 
       <div
-        className="experiment-scroll flex-1 overflow-auto p-[18px] flex flex-col gap-[17px]
+        className="experiment-scroll p-[18px] flex flex-col gap-[17px]
           min-h-0 [&_>_*]:shrink-0 [&_button]:text-[11px] [&_textarea]:resize-y
           [&_textarea]:text-[11px] [&_textarea]:leading-[1.6] [&_summary]:flex
           [&_summary]:flex-wrap [&_summary]:justify-between
           [&_summary]:items-baseline [&_summary]:[gap:5px_8px]
           [&_summary_>_span]:float-none [&_summary_>_span]:text-right
-          overflow-x-hidden [&_label]:wrap-anywhere [&_button]:wrap-anywhere
+          [&_label]:wrap-anywhere [&_button]:wrap-anywhere
           [&_summary]:wrap-anywhere [&_.section-heading]:flex-wrap
           [&_.section-heading]:gap-2 [&_.preview-time]:tabular-nums"
       >
+        <ExperimentPreflight />
         <ExperimentTabPanel tab="setup">
           <div
             className="contents"
@@ -128,13 +135,6 @@ function ExperimentLayout() {
         <ExperimentTabPanel tab="results">
           <ExperimentEvidence />
         </ExperimentTabPanel>
-      </div>
-      <div className="shrink-0 border-t border-sim-border p-3 grid gap-2 max-h-[45%] overflow-auto">
-        <ExperimentRunAction />
-        <ExperimentCompletion />
-        <ExperimentProgress />
-        <ExperimentError />
-        <ExperimentPreflight />
       </div>
     </div>
   )
