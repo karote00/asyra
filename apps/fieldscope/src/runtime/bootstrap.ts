@@ -261,13 +261,14 @@ export async function bootstrap(
     api: {
       move: (right: number, up: number, forward: number) => {
         assertLive()
-        // Keyboard units scale with the visible span at the current target.
-        // At the 1.5 units/s input rate this crosses 30% of that span per second.
+        // Preserve travel speed at high optical zoom without losing the
+        // separate metre-scale overview and centimetre-scale joint presets.
+        const referenceSpan =
+          2 *
+          cameraDistance(referenceCamera) *
+          Math.tan((referenceCamera.fov * Math.PI) / 360)
         const movementScale =
-          (2 *
-            cameraDistance(camera) *
-            Math.tan((camera.fov * Math.PI) / 360)) /
-          5
+          (referenceSpan / 5) * Math.max(0.3, Math.sqrt(100 / readZoom(camera)))
         publishCamera(
           moveCamera(
             camera,
