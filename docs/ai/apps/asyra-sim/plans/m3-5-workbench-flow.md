@@ -311,3 +311,12 @@ APP_URL 3020. Inspected desktop and short-viewport mapping/clearance screenshots
 Bounded review confirms existing change/blur handlers, accessible names, values,
 transaction and input-reader ownership are preserved; no runtime or solver edit.
 User acceptance remains outstanding and no remote operation was performed.
+
+
+User presentation refinement: omit the visible mapping heading row. Bounded UI
+step card: same `ui` owner, input/output, failure owner and contributor contract;
+only mapping presentation, its existing layout regression and current contract
+wording change. Preserve three columns, row names, accessible select names and
+values. No behavior or ownership change. Gate: both existing compact-row E2E
+cases and App lint; no broader scope. This supersedes visible shared headings
+in the preceding review record, without changing its historical test evidence.

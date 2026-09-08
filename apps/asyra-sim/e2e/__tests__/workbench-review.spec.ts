@@ -247,8 +247,8 @@ for (const width of [576, 1440]) {
     await expect(target).toHaveValue('example:joint-1')
     await expect(unit).toHaveValue('rad')
     await expect(
-      page.getByRole('columnheader', { name: 'Target', exact: true })
-    ).toBeVisible()
+      page.locator('.mapping-grid').getByRole('columnheader')
+    ).toHaveCount(0)
     await expect
       .poll(() =>
         page

@@ -185,17 +185,6 @@ export function TrajectoryImportPanel({
             <col className="w-[42%]" />
             <col className="w-[27%]" />
           </colgroup>
-          <thead>
-            <tr>
-              <th scope="col">Name</th>
-              <th scope="col" className="pl-2" title="Source CSV column">
-                Target
-              </th>
-              <th scope="col" className="pl-2">
-                Unit
-              </th>
-            </tr>
-          </thead>
           <tbody>
             <tr>
               <th scope="row" className="wrap-anywhere">

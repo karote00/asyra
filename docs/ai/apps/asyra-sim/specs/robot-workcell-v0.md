@@ -217,7 +217,8 @@ selector, without a fixed footer. Short viewports must not constrain tab content
 to a separate residual-height scroll aperture; upper workbench dimensions remain
 independent of the panel content.
 Setup holds experiment, scope, trajectory and clearance inputs. CSV mapping
-uses shared Name / Target / Unit headers with one row for time and each actuated
+uses name, target and unit columns without a visible heading row, with one row
+for time and each actuated
 body; Target denotes the source CSV column. Preserve full accessible field names
 and option values, wrapping long model names. Clearance uses an inline label and
 input rather than an otherwise empty half-width row. Advanced settings

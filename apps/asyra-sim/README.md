@@ -203,8 +203,8 @@ The entire experiment panel scrolls together, including candidate/experiment
 context, Run/cancel/progress, tabs and content. Run stays near the experiment
 selector in document order; there is no fixed footer. Preflight remains below
 the tabs so completing an edit does not move a tab during activation.
-Trajectory CSV mapping uses shared **Name**, **Target** (source CSV column) and
-**Unit** headers. Time and each joint occupy one row; longer names wrap. Minimum
+Trajectory CSV mapping uses name, target CSV column and unit columns without a
+visible heading row. Time and each joint occupy one row; longer names wrap. Minimum
 clearance uses an inline label/input. Keyboard field names and completed-edit
 semantics are unchanged.
 Object inspection remains available by selecting a body or choosing **Object**.
