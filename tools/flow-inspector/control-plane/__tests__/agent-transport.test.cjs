@@ -267,9 +267,9 @@ test(
       assert.equal(fs.existsSync(path.join(directory, 'auth.json')), false)
       const thread = await protocol.request(
         'thread/start',
-        threadRequest(directory, 'gpt-5.4-mini')
+        threadRequest(directory, 'gpt-5.6-sol')
       )
-      assert.equal(thread.model, 'gpt-5.4-mini')
+      assert.equal(thread.model, 'gpt-5.6-sol')
       assert.deepEqual(thread.runtimeWorkspaceRoots, [])
       assert.deepEqual(thread.instructionSources, [])
     } finally {

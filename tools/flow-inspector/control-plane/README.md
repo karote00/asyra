@@ -290,13 +290,15 @@ workflow enforcement, version, tag or release is changed by closeout.
 
 ## Phase 5 Local Agent Trial
 
-### Optional real-provider integration - acceptance pending
+### Optional real-provider integration - bounded Sol acceptance
 
 The board now distinguishes deterministic demonstration from an explicitly
 authorized provider. An existing login alone never enables the provider option.
 Offline adapter tests and no-model app-server preflight are reproducible without
-consuming subscription quota. Actual provider acceptance remains pending until
-the operator explicitly selects the model, credential source and usage allowance.
+consuming subscription quota. The user-authorized `gpt-5.6-sol` trial is recorded
+in the [bounded completed record](../../../docs/ai/tools/flow-inspector/plans/completed/flow-inspector-phase-5-sol-local-integration-closeout.md).
+Future provider execution still requires an explicit model, credential source
+and usage allowance.
 
 After that decision, create a non-secret authorization JSON inside the checkout:
 
@@ -476,3 +478,25 @@ FLOW_PROOF_URL=http://127.0.0.1:4319 FLOW_PROOF_BROWSER_CHANNEL=chrome node --te
 Browser artifacts include exact task state, regression/recovery details and narrow
 handoff screenshots under `tmp/flow-inspector/visual-review/`. There is no claim
 of saved supervision time or reduced cost without a measured comparison period.
+
+
+### Replay retained real-provider acceptance without model usage
+
+After the authorized task has completed its failure/correction and cancellation
+checkpoints, the formal browser replay reads retained server evidence only:
+
+```bash
+FLOW_PROOF_URL=http://127.0.0.1:64225 \
+FLOW_PROOF_BROWSER_CHANNEL=chrome \
+FLOW_LIVE_PROVIDER_TASK_ID=4ef0b75b-ac23-43a0-8de7-4d4900daa007 \
+FLOW_LIVE_PROVIDER_CANCEL_ID=34586650-4fc6-4fb9-9368-f2a3e41b74ca \
+node --test --test-name-pattern='retained live provider evidence' tools/flow-inspector/control-plane/__tests__/board.test.cjs
+```
+
+This requires the original retained task store and a running local server; fresh
+clones do not contain live records or credentials. The test validates the two
+attempts, all six obligations, review-only candidate source, unknown cancelled
+usage, Board/API/CLI identity and unchanged request counts, then saves screenshots
+and `review.json` beneath `tmp/flow-inspector/visual-review/provider-live-*`.
+It does not dispatch, retry, reconcile or cancel provider requests. Ordinary CI
+skips this explicitly selected live-record replay and runs offline contracts.

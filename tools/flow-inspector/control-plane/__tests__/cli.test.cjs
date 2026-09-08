@@ -17,7 +17,7 @@ test('offline provider contract uses identical CLI, HTTP and service task eviden
     id: randomUUID(),
     actor: 'local-developer',
     adapter: 'codex-app-server',
-    model: 'gpt-5.4-mini',
+    model: 'gpt-5.6-sol',
     billing: 'chatgpt-subscription',
     maxRequests: 1,
     expiresAt: '2099-01-01T00:00:00.000Z'

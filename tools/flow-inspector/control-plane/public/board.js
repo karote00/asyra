@@ -699,7 +699,9 @@
         const matching = taskRecord?.task.stepId === stepId ? taskRecord : null
         const busy = matching?.phase === 'running'
         const unresolved = matching?.providerRequests?.some(
-          (request) => request.state !== 'settled' || !request.usage
+          (request) =>
+            request.state === 'unresolved' ||
+            (request.state === 'settled' && !request.usage)
         )
         for (const action of ['cancel', 'stop', 'handoff', 'revoke'])
           byId('agent-' + action).disabled =
@@ -777,6 +779,13 @@
                         (request.usage ? '' : ' - usage unknown')
                     )
                     .join(', '),
+                ...(matching.providerRequests.some(
+                  (request) => request.state === 'reserved'
+                )
+                  ? [
+                      'Provider turn pending; reservation retained while awaiting a terminal response.'
+                    ]
+                  : []),
                 unresolved
                   ? 'Reconciliation required. No further provider requests; local stop does not prove remote billing stopped.'
                   : 'Local evidence retained; provider usage is not an independent meter.'

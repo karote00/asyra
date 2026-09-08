@@ -21,17 +21,14 @@ delegation are the success criteria.
 
 ## Pending Provider Acceptance and Future Integration
 
-Active continuation: local real-provider adapter integration starts from merged
-PR #167 (`5c7af4d0b`) in a separate worktree. Admission, transport containment,
-request reservations and shared surfaces are under implementation and offline
-verification. Provider selection, explicit usage authorization and live acceptance
-are still required before this continuation can close. No completed record is
-created for unperformed provider acceptance.
+The bounded Sol local integration is recorded in the
+[completed local integration record](plans/completed/flow-inspector-phase-5-sol-local-integration-closeout.md).
+Its real-provider trial does not complete the full Phase 5/6 plan.
 
 2. [Agent Execution and Integrations Plan](plans/flow-inspector-control-plane-actions-and-integrations-plan.md)
-   - Remaining Phase 5: select and authorize a real agent backend, credentials,
-     usage/cost contract and executable provider acceptance. Deterministic local
-     adapter proof does not satisfy these requirements or the full original DoD.
+   - Remaining Phase 5: independently verifiable remote reconciliation and any
+     additional provider/resource capabilities beyond the accepted macOS Sol trial.
+     Full original protection and delivery requirements remain open.
    - Phase 6: small-team operations, selected ticket/PR integrations, hardening,
      and reproducible open-source adoption remain unactivated.
 

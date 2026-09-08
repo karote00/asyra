@@ -4,10 +4,10 @@
 
 The bounded deterministic local execution scope is completed in the
 [local closeout record](completed/flow-inspector-phase-5-local-execution-closeout.md).
-Real provider selection and acceptance remain pending; full Phase 5 is not closed.
-The next local continuation implements an explicitly authorized provider path
-behind the same broker, with offline contract tests separated from live model
-evidence. Its bounded scope and remaining selection gate are defined in
+The [Sol local integration record](completed/flow-inspector-phase-5-sol-local-integration-closeout.md)
+closes the selected macOS provider trial. Full Phase 5 is not closed. Offline
+contract tests remain separate from live model evidence; supported limits and
+remote uncertainty rules remain in
 [Local Agent Execution](../AGENT_EXECUTION.md#real-provider-contract---active-implementation).
 Phase 5 local isolated execution was activated by the user on 2026-09-08 under
 [Local Agent Execution](../AGENT_EXECUTION.md). GitHub enforcement remains
@@ -232,3 +232,14 @@ a later explicit operation after the selected open-source readiness work.
 - [Workflow Control Plane Roadmap](flow-inspector-workflow-control-plane-roadmap.md)
 - [Contract Verification and CI Plan](flow-inspector-control-plane-evidence-and-ci-plan.md)
 - [Flow Inspector contract](../FLOW_INSPECTOR.md)
+
+
+## Sol Local Integration Checkpoint - 2026-09-08
+
+The user selected `gpt-5.6-sol` through ChatGPT subscription authentication.
+The [bounded completed record](completed/flow-inspector-phase-5-sol-local-integration-closeout.md)
+separates actual source regression/correction, cancellation, handoff and restart
+from reproducible offline contracts. Nine of twelve authorized adapter turns
+were reserved; one remains unresolved after cancellation and blocks further
+provider dispatch. This closes the selected local integration checkpoint only.
+The original full Phase 5/6 DoD and deferred protected delivery remain open.

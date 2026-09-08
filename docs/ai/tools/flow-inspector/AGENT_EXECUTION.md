@@ -34,8 +34,11 @@ that identity and cannot supply credentials, endpoints, commands or policy.
 Unsupported hard token, cost, CPU and memory requirements still reject.
 The provider capability is inert unless the trusted service registers it.
 The initial implementation targets the already installed Codex app-server
-interface with ChatGPT subscription authentication. Its real-provider acceptance
-is pending, and no user selection or paid execution is implied by implementation.
+interface with ChatGPT subscription authentication. On 2026-09-08 the user
+selected Sol (`gpt-5.6-sol`) and authorized the bounded subscription trial.
+[Actual local acceptance](plans/completed/flow-inspector-phase-5-sol-local-integration-closeout.md)
+records real source regression/correction and cancellation/handoff evidence.
+Authorization remains explicit for future execution; existing login alone is insufficient.
 
 Adapter turns are reserved durably before dispatch and never refunded on
 missing usage, transport error, cancellation or restart. Turn reservations, elapsed time,
@@ -70,9 +73,9 @@ transport fixtures prove protocol handling only and are recorded separately.
 The bounded DoD additionally requires authorization denial, dispatch reservation,
 provider errors, malformed/oversized output, absent usage, unresolved cancellation,
 restart/retry/handoff accounting, secret exclusion and board/API/CLI parity in
-permanent tests. Live acceptance is still pending until the human selects and
-authorizes a provider and its actual evidence exists. Full Phase 5 and deferred
-protected delivery requirements are not closed by this contract.
+permanent tests. The selected Sol local trial is recorded separately from offline
+contract tests; its read-only evidence replay never dispatches a model. Full
+Phase 5 and deferred protected delivery requirements are not closed by this trial.
 
 A request binds UUID, actor, target/step, objective, explicit allowed files,
 accepted contract digest and revision, captured source identity, adapter identity,

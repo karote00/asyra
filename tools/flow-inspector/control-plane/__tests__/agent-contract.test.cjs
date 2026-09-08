@@ -64,7 +64,7 @@ test('real provider admission binds trusted authorization without accepting call
     id: randomUUID(),
     actor: 'local-developer',
     adapter: 'codex-app-server',
-    model: 'gpt-5.4-mini',
+    model: 'gpt-5.6-sol',
     billing: 'chatgpt-subscription',
     maxRequests: 12,
     expiresAt: '2099-01-01T00:00:00.000Z'
@@ -80,7 +80,7 @@ test('real provider admission binds trusted authorization without accepting call
   assert.deepEqual(task.provider, authorization)
   assert.equal(task.obligations.length, 6)
   authorization.model = 'changed'
-  assert.equal(task.provider.model, 'gpt-5.4-mini')
+  assert.equal(task.provider.model, 'gpt-5.6-sol')
   for (const change of [
     { id: randomUUID() },
     { actor: 'different' },

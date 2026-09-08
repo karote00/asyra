@@ -18,7 +18,7 @@ test('provider capability is service-owned and state reports the same retained r
     id: randomUUID(),
     actor: LOCAL_ACTOR.id,
     adapter: 'codex-app-server',
-    model: 'gpt-5.4-mini',
+    model: 'gpt-5.6-sol',
     billing: 'chatgpt-subscription',
     maxRequests: 1,
     expiresAt: '2099-01-01T00:00:00.000Z'
