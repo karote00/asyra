@@ -1,3 +1,4 @@
+import { viewResults } from '../workflow'
 import { expect, test } from '@playwright/test'
 
 test('automatically persists committed edits and Undo across reload with one project identity', async ({
@@ -76,14 +77,13 @@ test('automatically retains completed evidence and reloads it without Retain or 
     'Saved locally'
   )
   await page.getByRole('button', { name: 'Experiments', exact: true }).click()
-  await page
-    .getByRole('button', { name: 'Run formal analysis', exact: true })
-    .click()
+  await page.getByRole('button', { name: 'Run analysis', exact: true }).click()
+  await viewResults(page)
   await expect(page.getByTestId('analysis-result')).toBeVisible({
     timeout: 20000
   })
   await expect(page.locator('.retention-actions')).toContainText(
-    'Retained in this project'
+    'Saved to this project'
   )
   await expect(
     page.getByRole('button', { name: 'Retain result', exact: true })
@@ -96,9 +96,10 @@ test('automatically retains completed evidence and reloads it without Retain or 
     'Saved locally'
   )
   await page.getByRole('button', { name: 'Experiments', exact: true }).click()
+  await viewResults(page)
   await expect(page.getByTestId('analysis-result')).toBeVisible()
   await expect(page.locator('.retention-actions')).toContainText(
-    'Retained in this project'
+    'Saved to this project'
   )
 })
 

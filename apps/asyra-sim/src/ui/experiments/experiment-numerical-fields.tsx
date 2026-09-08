@@ -11,8 +11,6 @@ interface Props {
 export function ThresholdFields({ source }: Props) {
   useViewValue(source, (value) => value.draft.rule.minimumClearance)
 
-  useViewValue(source, (value) => value.draft.budget.maxDurationMs)
-
   const draft = source.getSnapshot().draft
 
   return (
@@ -38,28 +36,34 @@ export function ThresholdFields({ source }: Props) {
           }
         />
       </label>
-
-      <label>
-        Wall-time budget (ms)
-        <CommittedInput
-          validateOnCommit
-          aria-label="Wall-time budget (ms)"
-          type="number"
-          min={EXPERIMENT_RESOURCE_PROFILE.minDurationMs}
-          max={EXPERIMENT_RESOURCE_PROFILE.maxDurationMs}
-          value={draft.budget.maxDurationMs}
-          onCommit={(text) =>
-            source.changeDraft((draft) => ({
-              ...draft,
-              budget: {
-                ...draft.budget,
-                maxDurationMs: Number(text)
-              }
-            }))
-          }
-        />
-      </label>
     </div>
+  )
+}
+
+export function DurationFields({ source }: Props) {
+  useViewValue(source, (value) => value.draft.budget.maxDurationMs)
+  const draft = source.getSnapshot().draft
+  return (
+    <label>
+      Wall-time budget (ms)
+      <CommittedInput
+        validateOnCommit
+        aria-label="Wall-time budget (ms)"
+        type="number"
+        min={EXPERIMENT_RESOURCE_PROFILE.minDurationMs}
+        max={EXPERIMENT_RESOURCE_PROFILE.maxDurationMs}
+        value={draft.budget.maxDurationMs}
+        onCommit={(text) =>
+          source.changeDraft((draft) => ({
+            ...draft,
+            budget: {
+              ...draft.budget,
+              maxDurationMs: Number(text)
+            }
+          }))
+        }
+      />
+    </label>
   )
 }
 

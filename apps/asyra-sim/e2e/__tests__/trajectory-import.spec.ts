@@ -1,3 +1,4 @@
+import { showSetup } from '../workflow'
 import { expect, test, type Page } from '@playwright/test'
 import type { ExperimentDefinition } from '../../src/analysis/contracts'
 import { readHistoryDepth } from '../history-depth'
@@ -70,6 +71,7 @@ test('external CSV declaration, conversion review, acceptance, Undo/Redo and reo
   const [header] = initial.split('\n')
   const csv = `${header}\n0,1,0,0,0,0,0\n2000,2,0,0,0,0,0`
   const depth = await readHistoryDepth(page)
+  await showSetup(page)
   await page.getByLabel('Minimum clearance (mm)', { exact: true }).fill('30')
   await page.getByLabel('Load trajectory CSV').setInputFiles({
     name: 'external.csv',
@@ -154,7 +156,7 @@ test('external CSV declaration, conversion review, acceptance, Undo/Redo and reo
   await expect(
     page.getByLabel('Minimum clearance (mm)', { exact: true })
   ).toHaveValue('30')
-  await page.getByRole('button', { name: 'Run preflight', exact: true }).click()
+  await page.getByRole('button', { name: 'Run analysis', exact: true }).click()
   await expect(page.getByTestId('preflight-report')).toContainText(
     'Ready for formal local analysis'
   )

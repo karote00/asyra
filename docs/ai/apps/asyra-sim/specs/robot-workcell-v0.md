@@ -192,6 +192,57 @@ The UI may configure lower budgets but must not bypass hard limits.
 Without sufficient profiling, show workload indicators and "no reliable time
 estimate yet" rather than inventing an execution time.
 
+### Understandable experiment workflow
+
+**Run analysis** is the single ordinary execution action. It invokes the existing
+current-input preflight and snapshot admission, then starts one detached analysis
+only after blockers and required acknowledgements are resolved. A separate
+preflight click is never required. Duplicate activation and pending completed
+edits cannot launch another job. Invalid authored or unfinished scalar input
+must not execute a previous valid value or allocate a Worker.
+
+Admission errors remain visible until corrected or superseded by current
+admission. Each input error offers navigation to its Setup section and owning
+field; expand advanced/import sections when necessary. Geometry or load-recovery
+errors identify the relevant object or recovery action rather than guessing a
+replacement. Resource estimates, actual budgets, scope assumptions and required
+acknowledgements remain accessible. Changes invalidate previous admission and
+resource acknowledgements; confirmation never waives a blocker.
+
+The right experiment inspector has keyboard-accessible **Setup**, **Preview**
+and **Results** tabs. Candidate and experiment context remain above them;
+Run, cancellation and progress remain outside the scrolling tab content.
+Setup holds experiment, scope, trajectory and clearance inputs. Advanced settings
+hold method details, numerical precision and budgets without changing values or
+hiding blocking diagnostics. Preview explains sampled feedback and holds playback
+and time controls. Object inspection remains available through ordinary selection.
+Tabs preserve completed edits, unfinished text and selected evidence without
+canonical writes or Undo entries. Leaving Preview suspends its owned playback.
+
+Terminal completion offers **View results** without changing tabs, selection or
+editing focus. Results prioritizes the retained verdict, execution and coverage,
+then finding and unresolved pairs; every pair and full declarations remain
+available through disclosure. Ordering only projects the canonical records: no
+pair is lost or duplicated and no finding, bound or verdict is recalculated.
+Replay keeps Results and the selected evidence visible while displaying the exact
+frozen snapshot and witness time centrally. Label **Historical run replay** and
+provide **Return to current preview**. Input changes mark previous results as
+historical and offer rerun; camera, tabs and selection do not stale evidence.
+
+Automatic retention is secondary status: **Saving to this project**, **Saved to
+this project** only after the existing storage owner's durable acknowledgement,
+or explicit retryable failure. Canonical retention alone is not a durable save.
+Results opens existing run history; comparison is unchanged by this milestone.
+Saved snapshots, sources, method/version and findings remain immutable.
+
+Acceptance requires single-run/invalid-current-input and duplicate-click cases,
+warning acknowledgement and correction, tab keyboard/focus and narrow layout,
+completed edits with Undo/Redo/refresh, collision/clearance/clear/unknown outcomes,
+timeout/cancel/Worker failure, mixed pair completeness, historical replay and
+freshness, and saving/failure/retry without focus theft. Permanent owner and
+normal-App browser tests plus inspected desktop/narrow views establish workflow
+completion; M3.5 user acceptance precedes closeout and does not accept M4–M6.
+
 ## 7. Methods and Completeness
 
 R0 official methods cover:

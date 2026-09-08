@@ -274,14 +274,15 @@ owner conclusions and operational acceptance are archived in
 [M3 formal analysis](completed/m3-formal-analysis.md).
 M4-M6 and independent release gates remain separate.
 
-## 6.5. M3.5: Understandable Experiment Workflow - Planned
+## 6.5. M3.5: Understandable Experiment Workflow - Local validation
 
 User acceptance of M3 was confirmed on 2026-09-09 after the live demonstration.
 The next bounded milestone addresses a single Run action with automatic
 preflight, Setup/Preview/Results tabs, stable controls and clearer retained
 results/replay. See [the M3.5 plan](m3-5-workbench-flow.md) for owner sequence,
-permanent product cases, gates and exclusions. No M3.5 implementation is claimed;
-first reconcile its thin product contract and exact UI Inspector route.
+permanent product cases, gates and exclusions. Implementation and permanent tests
+now cover this UI flow. Final port 3020 coordination and user acceptance remain
+pending; M3.5 is not closed.
 M3 numerical acceptance remains closed. M4-M6 are not completed by this plan.
 
 ## 7. M4: Variant Comparison, Versions, and Private Extensions

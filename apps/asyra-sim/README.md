@@ -122,8 +122,8 @@ Other valid study fields apply when editing completes (blur or Enter), with one 
 action per edit. Incomplete numerical text stays in the field. CSV accepts up to 8 MiB and JSON
 up to 1 MiB; both require 1–2,000 keyframes. CSV parsing stops at 256 columns or
 2,000 data rows. Selecting another file invalidates the previous preview
-immediately, including when the new file cannot be read. Finish valid edits before preflight
-or formal analysis.
+immediately, including when the new file cannot be read. Complete edits before
+**Run analysis**; invalid current inputs remain saveable but cannot execute.
 
 Expand **GLB original part**, choose a self-contained static GLB, and verify its
 dimensions, source units, digest, and appearance limitations. Select the target
@@ -136,8 +136,8 @@ directly. The viewport's **Wireframe** switch shows the same original triangles.
 Acceptance retires previous primitive shapes in one Undo action. Removing the
 last source leaves an empty body; it does not revive a simplified substitute.
 Formal solid analysis requires closed, consistently oriented manifold components;
-open surfaces may be displayed but cannot pass **Run preflight**. The same checks
-protect **Run formal analysis** before Worker allocation and at Worker entry.
+open surfaces may be displayed but block **Run analysis** during its automatic
+preflight admission, before Worker allocation and again at Worker entry.
 Sources above 8 MiB require explicit memory-warning acknowledgement before
 placement preview and acceptance. Another source resets that acknowledgement;
 hard byte, geometry and instance limits cannot be overridden.
@@ -190,6 +190,68 @@ globally, including partial progress; reaching a resource limit never means clea
 GLB preview rejects files above 16 MiB before reading and terminates decoding
 after its five-second deadline. See the runtime profile for remaining validation
 targets; these input caps are not a total-memory guarantee.
+
+## Understandable workflow review
+
+**Setup** contains authored inputs, scope, trajectory and clearance requirements.
+**Advanced settings** holds the unchanged method, precision and budgets.
+**Preview** contains sampled playback/time and feedback; leaving it stops its
+owned playback. **Results** contains the formal verdict, execution, coverage,
+evidence and replay. Use arrow keys, Home and End within the tab list. Tabs keep
+unfinished text and completed edits; navigation alone creates no Undo action.
+Candidate/experiment context and Run/cancel/progress remain in stable panel areas.
+Object inspection remains available by selecting a body or choosing **Object**.
+
+Press **Run analysis** once. Current-input preflight runs automatically. Errors
+remain visible with **Review input** or a blocker-specific review action that
+opens Setup and the relevant field/section. Required assumptions and resource
+warnings still need acknowledgement; changed inputs invalidate admission and
+resource acknowledgements. Successful preflight without warnings becomes an
+expandable resource summary after execution, preserving narrow-screen reading space.
+
+Completion offers **View results** without switching tabs or taking editor focus.
+Read verdict, execution and coverage separately: partial/unknown does not pass.
+Finding/unresolved pairs appear first; **Show all pairs** and pagination expose
+every original record. Missing-evidence pairs are explicitly listed. Replay keeps
+Results and the selected evidence open while changing the central scene/time.
+**Historical run replay** uses frozen inputs; **Return to current preview** leaves
+that history view. Changed authored inputs mark old results as historical and
+expose **Rerun analysis with current inputs** through the same admission action.
+**Browse run history** opens the existing history library; comparison is unchanged.
+
+Results distinguish **Saving to this project**, **Saved to this project** only
+after the existing storage session acknowledges, and **Saving failed** with
+**Retry saving**. A failed canonical retention has **Retry retention** instead.
+Retry uses the original owner and preserves snapshot, method, sources and findings.
+
+To review this milestone in the ordinary App:
+
+1. Open Experiments and select **Tool and table collision** (revision depends on
+   existing edits). In Setup set Start time to **3.8**, End time to **4.2**, and
+   leave clearance at **20 mm**. Complete each field with Enter.
+2. Press Run analysis, then keep editing/focus in Setup. Completion must not
+   switch tabs. Choose View results: expect **Issue found**, **does not meet**,
+   **completed**, **complete**, and two finding pairs among 46 total records.
+3. Expand **gripper - fixture table**, choose Replay pair, and expect historical
+   time **3.8000 s** with the selected pair still open in Results. Show all pairs
+   to inspect all 46 identities. Return to current preview restores current inputs.
+4. Change minimum clearance to **30 mm**, complete the edit, and return to Results.
+   Expect **Historical inputs differ** and rerun. Undo/Redo restores the old/new
+   input and freshness state. Wait for Saved locally, refresh, and select the same
+   experiment to verify the authored value survived.
+5. In Setup expand Trajectory input and replace the final CSV joint value with
+   **100**. Complete the edit, press Run analysis: a persistent error must block
+   execution. Review input focuses the source. Undo restores the valid source.
+   Changing Time unit to its empty choice similarly persists and focuses that unit.
+6. Review at **600x960** as well as desktop. Scroll Results to inspect verdict,
+   pair details, historical return and saving status; Run remains reachable.
+   **Synthetic clearance study** demonstrates a complete no-issue result. Cancel
+   a run to inspect explicit partial cancellation. Worker/storage fault and
+   timeout proofs are permanent E2E cases, not alternative product controls.
+
+Browser gates must use the same explicit APP_URL as the running service. Put
+trace outputs outside the App's watched root, for example
+`--output=../../.artifacts/m3-5-review`, to avoid Vite reloading on generated HTML.
 
 ## Installed methods and trust
 
@@ -247,10 +309,10 @@ See the [typed acceptance contract](../../docs/ai/apps/asyra-sim/specs/decision-
 Fresh startup includes six experiments: the original base-yaw clearance study,
 shoulder reach, elbow folding, wrist orientation, a local tool/table sweep, and
 a deliberate tool/table collision.
-Choose one from **Experiment** after opening **Experiments**, then use **Play**,
-**Run preflight**, or **Run formal analysis**. Each has an independent eight-second
-trajectory and explicit scope. Both local studies omit robot links and the post;
-their results cannot establish whole-workcell clearance. The collision study
+Choose one from **Experiment** after opening **Experiments**, then use **Preview**
+for sampled playback or **Run analysis** for formal evidence. Each has an independent
+eight-second trajectory and explicit scope. Current starter studies retain the
+complete modeled workcell scope; inspect the saved scope of an existing project. The collision study
 demonstrates **Issue found** and **does not meet** with a replayable penetration
 witness at 4 s, calculated from unchanged original parts. Existing saved projects
 retain their own experiments unchanged. See the [sample catalog](samples/README.md).

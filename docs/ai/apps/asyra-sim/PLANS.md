@@ -23,8 +23,9 @@
 1. [Asyra Sim first-release roadmap](plans/asyra-sim-roadmap.md)
    - M1-M3 are closed. M3 passed all six owner exit criteria on 2026-09-08;
      see [the M3 completion record](plans/completed/m3-formal-analysis.md).
-     Next is [M3.5 workflow usability](plans/m3-5-workbench-flow.md), planned
-     after user acceptance of M3 on 2026-09-09. M3.5 is not implemented.
+     Current work is [M3.5 workflow usability](plans/m3-5-workbench-flow.md),
+     implemented locally after user acceptance of M3 on 2026-09-09.
+     Port 3020 coordination and user acceptance remain pending; no closeout.
      M4 follows with its own bounded contract/evidence review.
    - M5 packaging and M6 independent pilot/release review remain later work.
      Historical packaging evidence remains in roadmap section 1.2 and

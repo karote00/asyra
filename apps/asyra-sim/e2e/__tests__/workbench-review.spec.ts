@@ -31,6 +31,7 @@ for (const width of [1440, 960, 600]) {
     await page.locator('.trajectory-import > summary').click()
     await expect.poll(bounds).toEqual(baseline)
     await page.screenshot({ path: info.outputPath('experiment-panel.png') })
+    await page.getByRole('tab', { name: 'Preview', exact: true }).click()
     await page
       .getByRole('button', { name: 'Play trajectory', exact: true })
       .click()
@@ -73,6 +74,7 @@ test('workbench controls fit desktop and narrow review panes without clipped tex
   for (const width of [1440, 960, 600]) {
     await page.setViewportSize({ width, height: 960 })
     await page.getByRole('button', { name: 'Experiments', exact: true }).click()
+    await page.getByRole('tab', { name: 'Preview', exact: true }).click()
     await expect
       .poll(() =>
         page.evaluate(() => {
@@ -118,6 +120,7 @@ test('trajectory playback advances, pauses, restarts and stops when leaving expe
   await expect(page.getByRole('status')).toHaveText('Local runtime ready')
   const history = await page.getByTestId('history-depth').textContent()
   await page.getByRole('button', { name: 'Experiments', exact: true }).click()
+  await page.getByRole('tab', { name: 'Preview', exact: true }).click()
   await page
     .getByRole('button', { name: 'Play trajectory', exact: true })
     .click()
@@ -143,6 +146,7 @@ test('trajectory playback advances, pauses, restarts and stops when leaving expe
     'Sampled preview'
   )
   await page.getByRole('button', { name: 'Experiments', exact: true }).click()
+  await page.getByRole('tab', { name: 'Preview', exact: true }).click()
   await expect(
     page.getByRole('button', { name: 'Play trajectory', exact: true })
   ).toBeVisible()

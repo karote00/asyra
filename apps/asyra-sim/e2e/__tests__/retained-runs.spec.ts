@@ -1,3 +1,4 @@
+import { showSetup, viewResults } from '../workflow'
 import { expect, test, type Download, type Page } from '@playwright/test'
 
 async function downloadText(download: Download): Promise<string> {
@@ -23,21 +24,24 @@ test('retains runs with Undo, compares evidence, exports reports, and reopens po
   await expect(page.getByRole('status')).toHaveText('Local runtime ready')
   await page.getByRole('button', { name: 'Experiments', exact: true }).click()
   for (const threshold of ['20', '35']) {
+    await showSetup(page)
+    await showSetup(page)
     await page.getByLabel('Minimum clearance (mm)').fill(threshold)
     await page.keyboard.press('Tab')
     await page
-      .getByRole('button', { name: 'Run formal analysis', exact: true })
+      .getByRole('button', { name: 'Run analysis', exact: true })
       .click()
     await expect(
       page.getByRole('button', { name: 'Cancel analysis', exact: true })
     ).toHaveCount(0, { timeout: 20000 })
+    await viewResults(page)
     await expect(page.getByTestId('analysis-result')).toBeVisible()
     const retainedDepth = Number(
       (await page.getByTestId('history-depth').innerText()).match(/\d+/)?.[0]
     )
     const before = `Undo steps: ${retainedDepth - 1}`
     await expect(page.locator('.retention-actions')).toContainText(
-      'Retained in this project'
+      'Saved to this project'
     )
     await page.getByRole('button', { name: 'Undo', exact: true }).click()
     await expect(page.getByTestId('history-depth')).toHaveText(before)

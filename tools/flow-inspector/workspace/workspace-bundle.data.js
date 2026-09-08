@@ -10939,6 +10939,10 @@
             ],
             "conditions": [
               "Dispatch intent through Features; UI is never canonical model or solver authority.",
+              "One Run analysis action invokes current-input runtime preflight and snapshot admission. Synchronously guard repeat activation and pending completed writes; invalid current authored or scalar input cannot allocate a Worker or reuse old executable values. Present persistent owner diagnostics with Setup field/section navigation, preserving required scope/resource acknowledgement and invalidating admission after input changes.",
+              "Setup, Preview and Results are transient keyboard-accessible tabs with persistent candidate/experiment context and stable Run/cancel/progress controls. Preserve completed edits, unfinished text and selected evidence without canonical writes. Suspend Preview work on departure. Completion offers View results without switching tabs or stealing focus; ordinary Object inspection stays available.",
+              "Results presents existing verdict/execution/coverage independently, then finding and unresolved records before remaining pairs. Consume canonical pair identities and records without loss, duplication or conclusion recomputation. Frozen replay updates the central scene/time while retaining Results/evidence, explicitly labels history and offers return to current preview. Input changes disclose historical results with rerun; tabs/camera do not invalidate evidence.",
+              "Present automatic retention separately from durable acknowledgement: saving, saved only when the existing project session acknowledges, or retryable failure. Consume the storage session observation and existing retry API; never add per-Feature persistence or another saved-state authority. Results opens existing history without expanding comparison.",
               "Retain terminal formal run records through the existing storage Feature before presenting normal completion. Preserve terminal partial/cancelled status without reinterpreting evidence. Failed retention keeps the same immutable result available for retry; previews and in-progress results are never retained automatically.",
               "Pending observation acknowledgements never disable text fields or drop later completed gestures; UI awaits prior identity/revision acknowledgements before dispatch, while the editing Feature owns transactions. Completed gestures survive editor closure within the current document. Completed bounded observation text edits apply through the existing editing Feature and keep the editor on the acknowledged observation identity. Empty title/body content persists independently; competing unfinished local edits reject stale publications, while clean fields follow canonical replay. Existing text edits, including blank title or body, and accepted attachment removal commit independently of pending source preparation without retaining or discarding it. Prepared attachments require Apply attachments before source retention and the separate metadata transaction.",
               "Ordinary experiment field edits apply through the existing editing Feature when the edit gesture completes. Incomplete scalar input remains transient with immediate validity feedback; bounded authored trajectory/exclusion text persists regardless of executable validity. Serialize pending field actions against the latest canonical revision without dropping later edits or replacing them with an older acknowledgement. External Undo/Redo restores the canonical projection. New file import previews remain noncanonical until explicit acceptance.",
@@ -10996,6 +11000,7 @@
               "apps/asyra-sim/README.md"
             ],
             "specRefs": [
+              "#understandable-experiment-workflow",
               "#12-representative-product-cases-and-definition-of-done"
             ],
             "failureOwnerStepId": "ui"
@@ -11445,7 +11450,7 @@
             "from": "run",
             "to": "ui",
             "kind": "normal",
-            "predicate": "The owner has produced the validated result artifact required by the selected consumer route.",
+            "predicate": "Validated terminal evidence is presented without changing editing focus; replay consumes its exact frozen inputs and pair records.",
             "producedArtifacts": [
               "artifact:result"
             ]
@@ -11455,7 +11460,7 @@
             "from": "storage",
             "to": "ui",
             "kind": "normal",
-            "predicate": "The owner has produced the validated retained-data artifact required by the selected consumer route.",
+            "predicate": "Immutable run references and storage-session acknowledgement remain distinct; UI presents saving, acknowledged durability or retryable failure.",
             "producedArtifacts": [
               "artifact:retained-data"
             ]

@@ -1,6 +1,7 @@
 # M3.5: Understandable Experiment Workflow
 
-Status: planned on 2026-09-09; implementation has not started.
+Status: implemented and locally validated on 2026-09-09; port 3020 coordination,
+user acceptance and closeout remain pending.
 M3 is accepted and closed. This bounded usability milestone precedes M4.
 
 ## User outcome and scope
@@ -10,12 +11,11 @@ formal evidence, understand the result, and replay its witnesses without losing
 context. The observed problem is the crowded right panel and unclear transitions
 between preflight, playback, retained results and replay, not a solver defect.
 
-This plan records the requested direction, not an already implemented contract.
-Before code edits, update the thin behavior contract in
+Product behavior is owned by the thin contract in
 [robot-workcell-v0.md](../specs/robot-workcell-v0.md) and the matching `ui` route in
 the [R0 Inspector](../../../../../tools/flow-inspector/inspectors/asyra-sim-r0-flow-inspector.html).
-Read each full affected owner contract and produce a Step Execution Card before
-its tests or implementation. Preserve `snapshot`, `run`, storage and rendering
+Each implementation slice followed the full UI owner contract and a Step Execution
+Card before its tests or implementation. Preserve `snapshot`, `run`, storage and rendering
 ownership; change their contracts only if a concrete necessary handoff requires
 an independently bounded owner step.
 
@@ -120,3 +120,90 @@ product decision not covered here. Do not expand from new review discoveries.
 M4 starts only after this separately tracked usability work is accepted; M4-M6
 and independent release gates remain open. Planning/closeout does not authorize
 merge, tag, publish or deploy.
+
+## Current bounded execution
+
+Baseline: PR #171 is merged; fetched origin/main is
+`1c6893a8576172ec4e36dd76da63597670570406`. Worktree
+`.worktrees/asyra-sim-m3-5-workbench-flow`, branch
+`codex/asyra-sim-m3-5-workbench-flow`. Existing worktrees and the main checkout's
+untracked reports remain untouched. Port 3020 initially belongs to M3 PID 46794;
+replacement requires the current user's explicit coordination.
+
+Discovery follows current UI callers, their direct owner APIs and permanent tests.
+Mutation is limited to UI orchestration/presentation, direct UI/E2E tests and
+current M3.5 product/Inspector/operation documentation. Snapshot, run, storage,
+solver, geometry and persistence formats retain their existing ownership. The
+existing Run already invokes preflight; the two-action UI, inaccessible invalid
+Run, crowded panel and reference-only retention label are presentation gaps.
+
+The UI admission, navigation and result slices were implemented separately, test-first.
+Run focused tests before advancement, then full App tests, affected bounded E2E,
+build/typecheck/lint, naming, Inspector contracts and placement. Inspect normal
+3020 desktop/narrow views and terminal outcomes. Stop for necessary out-of-scope
+owner changes; no new cache, dependency, solver work or M4–M6 acceptance.
+The product workflow and UI routes define behavior; passing evidence is recorded
+below, independently of the planning text.
+
+### Owner validation and local implementation checkpoint
+
+The UI owner is the only changed implementation owner. Its admission slice uses
+existing runtime preflight/snapshot/Feature calls, a synchronous duplicate guard,
+and persistent source/unit/scope/method/GLB review navigation. Its navigation
+slice preserves mounted editors/evidence and uses transient accessible tabs,
+registered projections, stable execution controls and focus-safe completion.
+Its result slice projects the immutable records, retains frozen replay, exposes
+freshness/rerun, and observes the original storage session for durable status/retry.
+Snapshot, solver, run, storage, source geometry and transaction owners are unchanged.
+
+Permanent tests first exposed missing single-entry/duplicate/error behavior,
+tab retention/focus gaps, result ordering/durable-state distinctions, unit/GLB
+focus and narrow Results reading space. The bounded visual correction measured
+36px, then 83px/119px before the final 127px reading area passed the unchanged
+120px regression at 600x960. Only warning-free completed preflight is collapsed;
+all blocking or warning acknowledgements remain visible. The existing hidden GLB
+file input now remains keyboard-focusable without changing source acceptance.
+No solver output, numerical default, precision, budget or saved evidence changed.
+
+Validated locally using the normal App at explicit APP_URL
+`http://127.0.0.1:3035` while 3020 remains owned by the previous M3 task:
+
+- 661 App tests in 118 files; full build including typecheck; App lint.
+- 63 distinct affected E2E cases in 24 files across bounded one-worker batches:
+  admission and imported/authored fields; automatic storage and history; all seven
+  formal terminal scenarios; complete starter scope; mixed evidence/replay;
+  portable history, methods and existing comparison/observation consumers;
+  responsive Object/workbench, playback continuity and navigation/latency gates.
+- 100 Inspector contracts, 11 naming checks and two test-placement checks.
+- Permanent result-index work-count tests cover repeated view operations and
+  replacement-result invalidation; warning acknowledgement resets on changed inputs.
+  Full input/storage tests retain existing parsing/conversion ownership proofs.
+- Inspected normal desktop/narrow screenshots, collision closeup/pair evidence,
+  clear/clearance/unresolved, timeout/cancellation/Worker failure and storage
+  failure/retry. A live in-app browser also exercised the normal collision Run
+  and historical replay without changing Results or selected evidence.
+
+Logs/screenshots remain local under `.artifacts/m3-5-*` (early batches used the
+App's `.artifacts`). Put subsequent trace output outside the watched App root;
+generated trace HTML caused an early Vite reload and that affected case was rerun.
+No known in-scope functional test failure remains. Build retains its existing
+large-chunk advisory; this checkpoint makes no new hardware or release claim.
+
+This is a coherent, locally reviewable implementation checkpoint eligible for a
+local commit after scoped diff review. Its gates are the completed tests above;
+it is not final M3.5 acceptance. The remaining service/acceptance checkpoint must:
+
+1. Obtain current coordination to stop the verified old M3 Vite PID 46794 on 3020,
+   then start this worktree there and record its new PID/cwd/commit.
+2. Repeat the normal workflow/visual review at 3020 and provide that exact entry
+   for the user's hands-on acceptance. The temporary 3035 PID 76438 is retained
+   only as an interim review surface and must be retired after coordinated takeover.
+3. Receive explicit user acceptance before final plan closeout or any remote flow.
+
+Therefore **M3.5 does not yet meet all completion conditions**: 3020 review and
+user acceptance are outstanding. No push, PR, merge, tag, publication or deployment
+was performed. M3 stays closed. M4 comparison/extensions, M5 packaging and M6
+pilot/release work remain separate and have not advanced.
+
+The ordinary operation guide is
+[Understandable workflow review](../../../../../apps/asyra-sim/README.md#understandable-workflow-review).

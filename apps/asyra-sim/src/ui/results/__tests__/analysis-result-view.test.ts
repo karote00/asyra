@@ -1,3 +1,4 @@
+import * as pairProjection from '../result-pairs'
 import { ExperimentInputReader } from '../../../storage/experiment-input'
 import * as importer from '../../../storage/trajectory-import'
 import {
@@ -373,6 +374,7 @@ it('distinguishes retained penetration, clearance and unresolved intervals with 
     }
   )
   const before = JSON.stringify({ snapshot, result })
+  const projection = vi.spyOn(pairProjection, 'projectResultPairs')
   const host = document.createElement('div')
   const root = createRoot(host)
   const replay = vi.fn()
@@ -411,6 +413,125 @@ it('distinguishes retained penetration, clearance and unresolved intervals with 
       )
     }
     expect(JSON.stringify({ snapshot, result })).toBe(before)
+    expect(projection).toHaveBeenCalledOnce()
+    projection.mockRestore()
+  } finally {
+    await act(() => root.unmount())
+    vi.unstubAllGlobals()
+  }
+})
+
+it('prioritizes finding and unresolved pairs, discloses all records exactly once and preserves replay evidence', async () => {
+  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
+  const example = createSyntheticExample()
+  const draft = createSyntheticExperimentDraft(example)
+  const snapshot = createExperimentSnapshot({
+    snapshotId: 'priority',
+    candidateId: 'candidate',
+    experimentId: 'study',
+    workcell: example.workcell,
+    definition: { ...draft, revision: 1, rule: { ...draft.rule, revision: 1 } },
+    methods: INSTALLED_METHOD_CATALOG.descriptors,
+    acknowledgedWarningCodes: []
+  })
+  const states = ['clear', 'clear', 'finding', 'unresolved'] as const
+  const records = snapshot.pairs.map((pair, index) => ({
+    pairId: pair.id,
+    evidence: {
+      coverage: index === 3 ? ('partial' as const) : ('complete' as const),
+      lower: index === 2 || index === 3 ? 0 : 1,
+      upper: index === 2 ? 0 : 1,
+      evaluations: 1,
+      leaves: [
+        {
+          start: 0,
+          end: 8,
+          lower: index === 2 || index === 3 ? 0 : 1,
+          upper: index === 2 ? 0 : 1,
+          witnessTime: 4,
+          penetration: index === 2,
+          state: states[index] ?? 'clear',
+          reason: 'Retained test evidence'
+        }
+      ]
+    }
+  }))
+  const result = terminalAnalysisResult(snapshot, records, {
+    runId: 'priority-run',
+    startedAt: 0,
+    endedAt: 1,
+    execution: 'cancelled',
+    error: 'Cancelled after evidence'
+  })
+  const before = JSON.stringify({ snapshot, result })
+  const projection = vi.spyOn(pairProjection, 'projectResultPairs')
+  const host = document.createElement('div')
+  const root = createRoot(host)
+  const replay = vi.fn()
+  try {
+    await act(() =>
+      root.render(
+        createElement(AnalysisResultView, {
+          run: { snapshot, result },
+          stale: false,
+          onReplay: replay
+        })
+      )
+    )
+    const pairs = () => [
+      ...host.querySelectorAll<HTMLElement>('.evidence-pair')
+    ]
+    expect(pairs().map((node) => node.dataset.pairId)).toEqual([
+      records[2].pairId,
+      records[3].pairId
+    ])
+    const showAll = [...host.querySelectorAll('button')].find(
+      (node) => node.textContent === 'Show all pairs'
+    )
+    expect(showAll).toBeDefined()
+    await act(() => showAll?.click())
+    const seen: string[] = []
+    for (;;) {
+      seen.push(...pairs().map((node) => node.dataset.pairId ?? ''))
+      const next = [...host.querySelectorAll('button')].find(
+        (node) => node.textContent === 'Next pairs'
+      )
+      if (!next || next.disabled) break
+      await act(() => next.click())
+    }
+    expect(new Set(seen).size).toBe(records.length)
+    expect([...seen].sort()).toEqual(records.map((pair) => pair.pairId).sort())
+    expect(JSON.stringify({ snapshot, result })).toBe(before)
+    expect(projection).toHaveBeenCalledOnce()
+    const replacement = {
+      ...result,
+      runId: 'replacement-run',
+      pairEvidence: [records[2]]
+    }
+    await act(() =>
+      root.render(
+        createElement(AnalysisResultView, {
+          run: { snapshot, result: replacement },
+          stale: false,
+          onReplay: replay
+        })
+      )
+    )
+    const unresolved = [...host.querySelectorAll('summary')].find((node) =>
+      node.textContent?.includes('Unresolved pairs without evidence')
+    )
+    const evidence = host.querySelector('.evidence-list')
+    if (!unresolved || !evidence) throw new Error('Missing pair sections')
+    expect(
+      unresolved.compareDocumentPosition(evidence) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy()
+    expect(projection).toHaveBeenCalledTimes(2)
+    expect(pairs().map((node) => node.dataset.pairId)).toEqual([
+      records[2].pairId
+    ])
+    expect(JSON.stringify({ snapshot, result })).toBe(before)
+    projection.mockRestore()
   } finally {
     await act(() => root.unmount())
     vi.unstubAllGlobals()

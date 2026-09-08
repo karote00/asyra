@@ -1,3 +1,4 @@
+import { expectAnalysisBlocked } from '../workflow'
 import { expect, test } from '@playwright/test'
 import { readHistoryDepth } from '../history-depth'
 
@@ -81,16 +82,12 @@ test('erroneous authored inputs persist independently, replay and reload, with i
     'out-of-limit joint'
   )
   expect(await readHistoryDepth(page)).toBe(0)
-  const analysis = page.getByRole('button', {
-    name: 'Run formal analysis',
-    exact: true
-  })
   const preflight = page.getByRole('button', {
-    name: 'Run preflight',
+    name: 'Run analysis',
     exact: true
   })
-  await expect(analysis).toBeDisabled()
-  await expect(preflight).toBeDisabled()
+  await expectAnalysisBlocked(page)
+  await expectAnalysisBlocked(page)
   await source.press('Tab')
   await expect.poll(() => readHistoryDepth(page)).toBe(1)
   await expect(source).toHaveValue(invalid)
@@ -138,10 +135,10 @@ test('erroneous authored inputs persist independently, replay and reload, with i
   await expect(source).toHaveValue(invalid)
   await expect(exclusions).toHaveValue('unfinished exclusion')
   await expect(clearance).toHaveValue('35')
-  await expect(analysis).toBeDisabled()
+  await expectAnalysisBlocked(page)
   await source.fill(initial)
   await source.press('Tab')
-  await expect(analysis).toBeDisabled()
+  await expectAnalysisBlocked(page)
   await exclusions.fill('')
   await exclusions.press('Tab')
   await expect(preflight).toBeEnabled()
@@ -188,14 +185,14 @@ test('undeclared units are undoable authored data and survive reopening without 
   await page.locator('.trajectory-import > summary').click()
   await expect(unit).toHaveValue('')
   await expect(source).toHaveValue(text)
-  await expect(
-    page.getByRole('button', { name: 'Run formal analysis', exact: true })
-  ).toBeDisabled()
+  await expectAnalysisBlocked(page)
+  await page.getByRole('button', { name: 'Review input', exact: true }).click()
+  await expect(unit).toBeFocused()
   await unit.selectOption('s')
   await unit.press('Enter')
   await unit.press('Tab')
   await expect(
-    page.getByRole('button', { name: 'Run preflight', exact: true })
+    page.getByRole('button', { name: 'Run analysis', exact: true })
   ).toBeEnabled()
 })
 
@@ -216,9 +213,7 @@ test('finite interval edits persist independently while timing errors are immedi
   )
   await start.press('Enter')
   await expect.poll(() => readHistoryDepth(page)).toBe(depth + 1)
-  await expect(
-    page.getByRole('button', { name: 'Run formal analysis', exact: true })
-  ).toBeDisabled()
+  await expectAnalysisBlocked(page)
   const clearance = page.getByLabel('Minimum clearance (mm)', { exact: true })
   await clearance.fill('25')
   await clearance.press('Enter')
@@ -240,13 +235,11 @@ test('finite interval edits persist independently while timing errors are immedi
   await expect(start).toHaveValue('9')
   await expect(end).toHaveValue('10')
   await expect(
-    page.getByRole('button', { name: 'Run preflight', exact: true })
+    page.getByRole('button', { name: 'Run analysis', exact: true })
   ).toBeEnabled()
   await page.getByRole('button', { name: 'Undo', exact: true }).click()
   await expect(source).toHaveValue(original)
-  await expect(
-    page.getByRole('button', { name: 'Run preflight', exact: true })
-  ).toBeDisabled()
+  await expectAnalysisBlocked(page)
 
   await page.reload()
   await expect(page.getByTestId('persistence-status')).toContainText(
@@ -261,11 +254,9 @@ test('finite interval edits persist independently while timing errors are immedi
   await end.fill('8')
   await end.press('Enter')
   await expect(
-    page.getByRole('button', { name: 'Run preflight', exact: true })
+    page.getByRole('button', { name: 'Run analysis', exact: true })
   ).toBeEnabled()
   await page.getByRole('button', { name: 'Undo', exact: true }).click()
   await expect(end).toHaveValue('10')
-  await expect(
-    page.getByRole('button', { name: 'Run preflight', exact: true })
-  ).toBeDisabled()
+  await expectAnalysisBlocked(page)
 })

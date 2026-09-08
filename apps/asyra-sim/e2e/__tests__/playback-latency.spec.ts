@@ -7,6 +7,7 @@ test('first-pass Play presents original-part collision feedback near its checked
   await page.goto('/')
   await expect(page.getByRole('status')).toHaveText('Local runtime ready')
   await page.getByRole('button', { name: 'Experiments', exact: true }).click()
+  await page.getByRole('tab', { name: 'Preview', exact: true }).click()
   await page
     .getByLabel('Experiment', { exact: true })
     .selectOption({ label: 'Tool and table collision - r1' })
