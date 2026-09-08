@@ -68,6 +68,7 @@ export function ExperimentEvidence() {
   const view = useExperimentView()
 
   const canonicalDraft = useExperimentField('canonicalDraft')
+  const runtime = useExperimentField('runtime')
 
   const selectedRun = useExperimentField('selectedRun')
 
@@ -79,6 +80,7 @@ export function ExperimentEvidence() {
     <>
       <ExperimentResult
         canonicalDraft={canonicalDraft}
+        inputReader={runtime.experimentInputs}
         replayRun={(...args) => view.getSnapshot().replayRun(...args)}
         selectedRun={selectedRun}
         retainSelectedRun={(...args) =>

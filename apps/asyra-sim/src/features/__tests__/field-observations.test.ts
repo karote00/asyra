@@ -140,7 +140,10 @@ it('rejects absent retained runs, stale updates, invalid metadata and failed att
     'revision'
   )
   await expect(
-    features.edit.addObservation('run-a', { ...draft(), text: '' })
+    features.edit.addObservation('run-a', {
+      ...draft(),
+      text: 'x'.repeat(8001)
+    })
   ).rejects.toThrow('observation')
   admit.mockImplementation(() => {
     throw new Error('Missing attachment bytes')
@@ -286,4 +289,33 @@ it('enforces per-run and project limits and project-wide observation identity be
   expect(() => readCapturedRunReferences(saved)).toThrow('review')
   firstValue.observations[1] = { ...note, id: 'note-1-0' }
   expect(() => readCapturedRunReferences(saved)).toThrow('Duplicate')
+})
+
+it('commits incomplete observation fields independently and preserves them through history and reload', async () => {
+  await retain()
+  const depth = core.getUndoHistoryDepth()
+  const id = await features.edit.addObservation('run-a', {
+    title: 'Gap',
+    text: '',
+    attachments: []
+  })
+  await features.edit.updateObservation('run-a', id, 1, {
+    title: '',
+    text: '25 mm',
+    attachments: []
+  })
+  expect(core.getUndoHistoryDepth()).toBe(depth + 2)
+  await features.history.undo()
+  expect(readFieldObservations(core, 'run-a')[0]).toMatchObject({
+    title: 'Gap',
+    text: ''
+  })
+  await features.history.redo()
+  const saved = await core.save()
+  loadCanonicalDocument(core, saved)
+  expect(readFieldObservations(core, 'run-a')[0]).toMatchObject({
+    title: '',
+    text: '25 mm',
+    revision: 2
+  })
 })

@@ -60,7 +60,6 @@ export function ObservationEditor({
             [&_textarea]:leading-[1.6] [&_textarea]:p-2 [&_textarea]:border
             [&_textarea]:border-sim-border [&_textarea]:rounded-[4px]
             [&_textarea]:resize-y"
-          disabled={saving}
           onBlur={(event) => {
             // The explicit action submits these same fields with its attachments.
             if (submit.current && event.relatedTarget === submit.current) return
@@ -81,9 +80,21 @@ export function ObservationEditor({
             <input
               aria-label="Observation title"
               value={title}
+              aria-invalid={!title.trim()}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault()
+                  event.currentTarget.blur()
+                }
+              }}
               maxLength={OBSERVATION_LIMITS.title}
               onChange={(event) => setTitle(event.target.value)}
             />
+            {!title.trim() && (
+              <span role="alert" className="text-sim-error-text">
+                Enter a title.
+              </span>
+            )}
           </label>
 
           <label>
@@ -92,10 +103,16 @@ export function ObservationEditor({
               aria-label="Observation text"
               rows={4}
               value={text}
+              aria-invalid={!text.trim()}
               maxLength={OBSERVATION_LIMITS.text}
               onChange={(event) => setText(event.target.value)}
               placeholder="What was measured or observed, under which real-world conditions?"
             />
+            {!text.trim() && (
+              <span role="alert" className="text-sim-error-text">
+                Add observation details.
+              </span>
+            )}
           </label>
 
           <span className="hint text-[10px] leading-[1.6] text-sim-muted font-normal">
@@ -214,6 +231,7 @@ export function ObservationEditor({
               <button
                 ref={submit}
                 disabled={
+                  saving ||
                   !validObservationDraft(draft) ||
                   stale ||
                   files.busy ||
@@ -225,7 +243,7 @@ export function ObservationEditor({
               </button>
             )}
 
-            <button onClick={reset}>
+            <button disabled={saving} onClick={reset}>
               {editing ? 'Close observation' : 'Discard draft'}
             </button>
           </div>

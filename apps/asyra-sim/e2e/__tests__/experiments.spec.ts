@@ -84,13 +84,16 @@ test('ordinary experiment controls run, replay frozen evidence, preserve edits, 
   expect(errors).toEqual([])
 })
 
-test('invalid trajectory mapping and empty scope are actionable without mutating the model', async ({
+test('invalid trajectory input persists without changing geometry and empty scope remains actionable', async ({
   page
 }) => {
   await page.goto('/')
   await expect(page.getByRole('status')).toHaveText('Local runtime ready')
   await page.getByRole('button', { name: 'Experiments', exact: true }).click()
   await page.locator('.trajectory-import > summary').click()
+  const validSource = await page
+    .getByLabel('Trajectory source data')
+    .inputValue()
   await page.getByLabel('Trajectory source data').fill('time,wrong\n0,abc')
   await page
     .getByRole('button', { name: 'Preview trajectory', exact: true })
@@ -100,6 +103,13 @@ test('invalid trajectory mapping and empty scope are actionable without mutating
     page.getByRole('button', { name: 'Apply', exact: true })
   ).toHaveCount(0)
   await expect(page.getByRole('treeitem')).toHaveCount(11)
+  await expect(
+    page.getByRole('button', { name: 'Run preflight', exact: true })
+  ).toBeDisabled()
+  await page.getByRole('button', { name: 'Undo', exact: true }).click()
+  await expect(page.getByLabel('Trajectory source data')).toHaveValue(
+    validSource
+  )
   await page.locator('summary').filter({ hasText: 'Analysis scope' }).click()
   await page.getByLabel('Self-collision between primary bodies').uncheck()
   await page.getByLabel('Primary-to-influencing collision').uncheck()

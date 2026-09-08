@@ -14,7 +14,7 @@ stay active; the historical checkpoints below are not current release claims.
 ### 1.2 Earlier implementation checkpoint (not mesh readiness)
 
 Implementation is authorized; M0 feasibility and the bounded M1 local-workcell
-slice are complete. M2-M4 are in progress. No milestone or release gate is
+slice are complete. M2 is accepted under Section 5; M3-M4 remain in progress. No milestone or release gate is
 claimed complete merely because its contract or source files exist.
 
 The current implementation includes canonical experiment drafts, mapped
@@ -229,6 +229,19 @@ This completion does not establish M2-M4 or R0 acceptance.
 M2 meets all five milestone owner exit criteria under the current local App
 profile. This acceptance closes the import-contract gaps; it does not equate
 PR #156 with acceptance of M2-M4 or authorize subsequent milestones.
+
+The 2026-09-08 authored-input follow-up preserves bounded trajectory text,
+mapping/unit declarations, exclusion text and finite interval endpoints through
+Core publications/history even when execution validation fails. Observation
+content commits independently, including incomplete notes and fast consecutive
+edits. Diagnostics are immediate; invalid current inputs block execution rather
+than falling back to older normalized fields. Storage-owned parse/conversion
+results are reused for preview, execution and result freshness. No historical
+source, geometry, solver or release scope changed. Acceptance evidence: 647 App
+tests, 17 affected E2E cases on port 3020, inspected live screenshots, App
+build/typecheck/lint, naming, Inspector and test-placement gates. See the
+[authored-input regression gate](../validation/TEST_STRATEGY.md#authored-input-independence-regression-gate).
+This supersedes the earlier transient-invalid-input limitation, not M3-M6 gates.
 
 This task was based on `origin/main` at `d3b50e91d`, with changes limited to
 trajectory import storage/UI and direct consumers, permanent tests, and current

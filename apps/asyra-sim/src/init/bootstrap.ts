@@ -1,3 +1,4 @@
+import { ExperimentInputReader } from '../storage/experiment-input'
 import {
   publicationReferences,
   type JournalEntry
@@ -82,6 +83,7 @@ export async function bootstrap(
   snapshot?: ProjectSnapshot,
   prepared?: VisualAssetArchive
 ) {
+  const experimentInputs = new ExperimentInputReader()
   const core = currentCore
   if (!core.isCompositionOpen()) throw new Error('Runtime already started')
   let rendering: ReturnType<typeof installCustomRenderer> | undefined
@@ -114,6 +116,7 @@ export async function bootstrap(
           errors.push(error)
         }
       }
+      attempt(() => experimentInputs.dispose())
       attempt(() => observer?.disconnect())
       subscriptions.forEach(attempt)
       subscriptions.clear()
@@ -527,17 +530,22 @@ export async function bootstrap(
         assertLive()
         return structuredClone(INSTALLED_METHOD_CATALOG.descriptors)
       },
+      experimentInputs,
       preflightExperiment: (experimentId: string) => {
         assertLive()
         const experiment = readExperiment(core, experimentId)
         const workcell = readWorkcell(core, experiment.candidateId)
+        const definition = experimentInputs.resolve(
+          experiment.definition,
+          workcell
+        )
         const resolved = resolvePartWorkcell(
           workcell,
           visuals.resolveWorkcell(workcell)
         )
         const report = checkExperiment(
           resolved,
-          experiment.definition,
+          definition,
           INSTALLED_METHOD_CATALOG.descriptors
         )
         if (!loadIssues.length) return report
@@ -564,6 +572,10 @@ export async function bootstrap(
           )
         const experiment = readExperiment(core, experimentId)
         const workcell = readWorkcell(core, experiment.candidateId)
+        const definition = experimentInputs.resolve(
+          experiment.definition,
+          workcell
+        )
         const resolved = resolvePartWorkcell(
           workcell,
           visuals.resolveWorkcell(workcell)
@@ -573,7 +585,7 @@ export async function bootstrap(
           candidateId: experiment.candidateId,
           experimentId,
           workcell: resolved,
-          definition: experiment.definition,
+          definition,
           methods: INSTALLED_METHOD_CATALOG.descriptors,
           acknowledgedWarningCodes
         })

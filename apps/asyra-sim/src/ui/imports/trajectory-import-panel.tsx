@@ -1,18 +1,35 @@
+import { useEffect } from 'react'
+import type { TrajectoryInput } from '../../domain/trajectory-input'
+import type { ExperimentInputReader } from '../../storage/experiment-input'
+import type { TrajectoryImportPreview } from '../../storage/trajectory-import'
 import type { NormalizedTrajectorySource } from '../../domain/trajectory-source'
 import type { Trajectory, Workcell } from '../../domain/workcell'
 import { useTrajectoryImport } from './use-trajectory-import'
 
 export function TrajectoryImportPanel({
   workcell,
+  open,
+  onOpen,
   trajectory,
   onAccept,
   onEdit,
+  input,
+  reader,
+  onValidity,
   saving = false
 }: {
   workcell: Workcell
+  open?: boolean
+  onOpen?: (open: boolean) => void
   trajectory: Trajectory
-  onAccept: (value: NormalizedTrajectorySource) => void
-  onEdit?: (value: NormalizedTrajectorySource) => Promise<boolean>
+  onAccept: (value: NormalizedTrajectorySource, input: TrajectoryInput) => void
+  onEdit?: (
+    input: TrajectoryInput,
+    result: TrajectoryImportPreview
+  ) => Promise<boolean>
+  input?: TrajectoryInput
+  reader?: ExperimentInputReader
+  onValidity?: (valid: boolean) => void
   saving?: boolean
 }) {
   const {
@@ -26,6 +43,9 @@ export function TrajectoryImportPanel({
     setTimeUnit,
     setJointUnit,
     preview,
+    diagnostics,
+    valid,
+    executable,
     columns,
     error,
     reading,
@@ -35,11 +55,26 @@ export function TrajectoryImportPanel({
     discard,
     load,
     setJointMapping
-  } = useTrajectoryImport({ workcell, trajectory })
+  } = useTrajectoryImport({ workcell, trajectory, input, reader })
+
+  useEffect(() => {
+    onValidity?.(importPending || executable)
+  }, [onValidity, importPending, executable])
 
   return (
     <details
       className="trajectory-import"
+      open={open}
+      onToggle={(event) => onOpen?.(event.currentTarget.open)}
+      onKeyDown={(event) => {
+        if (
+          event.key === 'Enter' &&
+          event.target instanceof HTMLSelectElement
+        ) {
+          event.preventDefault()
+          event.target.blur()
+        }
+      }}
       onBlur={(event) => {
         if (
           event.target instanceof HTMLTextAreaElement ||
@@ -47,8 +82,8 @@ export function TrajectoryImportPanel({
         )
           void complete(
             onEdit ??
-              (async (value) => {
-                onAccept(value)
+              (async (_input, result) => {
+                if (result.value) onAccept(result.value, _input)
                 return true
               })
           )
@@ -121,17 +156,34 @@ export function TrajectoryImportPanel({
         <textarea
           aria-label="Trajectory source data"
           rows={7}
+          aria-invalid={!valid}
+          maxLength={kind === 'csv' ? 8 * 1024 * 1024 : 1024 * 1024}
           value={text}
           spellCheck={false}
           onChange={(event) => setText(event.target.value)}
         />
       </label>
 
+      {diagnostics.length > 0 && (
+        <ul
+          className="diagnostic-list text-[11px] leading-[1.7] pl-[18px] text-sim-error-text"
+          role="alert"
+        >
+          {diagnostics.slice(0, 20).map((item, index) => (
+            <li key={`${item.code}:${item.row ?? 0}:${index}`}>
+              {item.row ? `Row ${item.row}: ` : ''}
+              {item.message}
+            </li>
+          ))}
+        </ul>
+      )}
+
       {kind === 'csv' && (
         <div className="mapping-grid grid grid-cols-[1fr_1fr] gap-[10px] mb-3 [&_select]:text-[10px]">
           <label>
             Time column
             <select
+              aria-label="Time column"
               value={mapping.time.column}
               onChange={(event) =>
                 setMapping((current) => ({
@@ -151,6 +203,7 @@ export function TrajectoryImportPanel({
           <label>
             Time unit
             <select
+              aria-label="Time unit"
               value={mapping.time.unit}
               onChange={(event) =>
                 setTimeUnit(event.target.value as '' | 'ms' | 's')
@@ -248,20 +301,6 @@ export function TrajectoryImportPanel({
         <button className="wide w-full mt-2" onClick={discard}>
           Discard preview
         </button>
-      )}
-
-      {preview && preview.diagnostics.length > 0 && (
-        <ul
-          className="diagnostic-list text-[11px] leading-[1.7] pl-[18px] text-sim-error-text"
-          role="alert"
-        >
-          {preview.diagnostics.slice(0, 20).map((item, index) => (
-            <li key={`${item.code}:${item.row ?? 0}:${index}`}>
-              {item.row ? `Row ${item.row}: ` : ''}
-              {item.message}
-            </li>
-          ))}
-        </ul>
       )}
 
       {preview?.value && (

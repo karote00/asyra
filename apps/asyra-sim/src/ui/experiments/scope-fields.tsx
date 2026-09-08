@@ -122,17 +122,25 @@ function ScopeNote({ source }: Props) {
 
 function ScopeExclusions({ source }: Props) {
   const exclusions = useViewValue(source.scope, (value) => value.exclusions)
+  const error = useViewValue(source.scope, (value) => value.exclusionsError)
 
   return (
     <label>
       Excluded pairs (body-a TAB body-b TAB reason)
       <textarea
         aria-label="Excluded pairs"
+        aria-invalid={!!error}
+        maxLength={262144}
         rows={4}
         value={exclusions}
         spellCheck={false}
         onChange={(event) => source.changeExclusions(event.target.value)}
       />
+      {error && (
+        <span role="alert" className="text-sim-error-text">
+          {error}
+        </span>
+      )}
     </label>
   )
 }

@@ -17,13 +17,8 @@ export interface TrajectoryCsvMapping {
   >
 }
 
-/** Empty units are unfinished user declarations, never canonical metadata. */
-export interface TrajectoryCsvMappingDraft {
-  time: { column: string; unit: TrajectoryTimeUnit | '' }
-  joints: Readonly<
-    Record<string, { column: string; unit: TrajectoryJointUnit | '' }>
-  >
-}
+import type { TrajectoryCsvMappingDraft } from '../domain/trajectory-input'
+export type { TrajectoryCsvMappingDraft } from '../domain/trajectory-input'
 
 export interface TrajectoryConversionSample {
   frameIndex: number

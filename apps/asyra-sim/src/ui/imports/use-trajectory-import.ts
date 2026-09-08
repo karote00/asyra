@@ -1,10 +1,15 @@
-import { useLayoutEffect, useRef, useState, type SetStateAction } from 'react'
+import {
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type SetStateAction
+} from 'react'
+import type { TrajectoryInput } from '../../domain/trajectory-input'
+import { ExperimentInputReader } from '../../storage/experiment-input'
 import type { NormalizedTrajectorySource } from '../../domain/trajectory-source'
 import type { Trajectory, Workcell } from '../../domain/workcell'
 import {
-  prepareTrajectoryCsv,
-  previewTrajectoryCsv,
-  previewTrajectoryJson,
   TRAJECTORY_IMPORT_LIMITS,
   type TrajectoryCsvMappingDraft,
   type TrajectoryImportPreview
@@ -17,21 +22,31 @@ import {
 
 export function useTrajectoryImport({
   workcell,
-  trajectory
+  trajectory,
+  input,
+  reader: suppliedReader
 }: {
   workcell: Workcell
   trajectory: Trajectory
+  input?: TrajectoryInput
+  reader?: ExperimentInputReader
 }) {
-  const [source, setSource] = useState(() => {
-    const text = trajectoryToCsv(workcell, trajectory)
-    return {
-      kind: 'csv' as 'csv' | 'json',
-      text,
-      csv: prepareTrajectoryCsv(text)
-    }
-  })
-  const [mapping, updateMapping] = useState<TrajectoryCsvMappingDraft>(() =>
-    canonicalCsvMapping(workcell)
+  const [ownedReader] = useState(() => new ExperimentInputReader())
+  const reader = suppliedReader ?? ownedReader
+  const [source, setSource] = useState(() => ({
+    kind: input?.kind ?? 'csv',
+    text: input?.text ?? trajectoryToCsv(workcell, trajectory)
+  }))
+  const [mapping, updateMapping] = useState<TrajectoryCsvMappingDraft>(
+    () => input?.mapping ?? canonicalCsvMapping(workcell)
+  )
+  const authored = useMemo<TrajectoryInput>(
+    () => ({ version: 1, ...source, mapping }),
+    [source, mapping]
+  )
+  const current = useMemo(
+    () => reader.previewTrajectory(authored, workcell),
+    [reader, authored, workcell]
   )
   const [receipt, setReceipt] = useState<{
     result: TrajectoryImportPreview
@@ -42,6 +57,7 @@ export function useTrajectoryImport({
   } | null>(null)
   const [importPending, setImportPending] = useState(false)
   const pendingEdit = useRef(false)
+  const [settled, setSettled] = useState(true)
   const [error, setError] = useState('')
   const [reading, setReading] = useState(false)
   const generation = useRef(0)
@@ -75,10 +91,7 @@ export function useTrajectoryImport({
   const inspect = () => {
     if (reading) return null
     if (preview) return preview
-    const result =
-      source.kind === 'csv'
-        ? previewTrajectoryCsv(source.csv, workcell, mapping)
-        : previewTrajectoryJson(source.text, workcell)
+    const result = current
     setReceipt({
       result,
       source,
@@ -89,25 +102,33 @@ export function useTrajectoryImport({
     return result
   }
 
-  const accept = (onAccept: (value: NormalizedTrajectorySource) => void) => {
+  const accept = (
+    onAccept: (
+      value: NormalizedTrajectorySource,
+      input: TrajectoryInput
+    ) => void
+  ) => {
     if (preview?.value && receipt?.generation === generation.current)
-      onAccept(preview.value)
+      onAccept(preview.value, authored)
   }
 
   const complete = async (
-    onEdit: (value: NormalizedTrajectorySource) => Promise<boolean>
+    onEdit: (
+      input: TrajectoryInput,
+      result: TrajectoryImportPreview
+    ) => Promise<boolean>
   ) => {
     if (importPending || reading || !pendingEdit.current) return
     const result = inspect()
-    if (!result?.value) return
+    if (!result) return
     const token = generation.current
     pendingEdit.current = false
     try {
-      if (
-        (await onEdit(result.value)) === false &&
-        token === generation.current
-      )
-        pendingEdit.current = true
+      const saved = await onEdit(authored, result)
+      if (token === generation.current) {
+        if (saved === false) pendingEdit.current = true
+        else setSettled(true)
+      }
     } catch (reason) {
       if (token === generation.current) {
         pendingEdit.current = true
@@ -118,9 +139,10 @@ export function useTrajectoryImport({
 
   const setText = (text: string) => {
     pendingEdit.current = true
+    setSettled(false)
     discard()
-    const csv = source.kind === 'csv' ? prepareTrajectoryCsv(text) : source.csv
-    setSource({ ...source, text, csv })
+    const csv = source.kind === 'csv' ? reader.readCsv(text) : current
+    setSource({ ...source, text })
     // Incomplete syntax cannot prove that a mapped column was removed.
     // Keep choices until parsing can establish the edited header.
     if (source.kind === 'csv' && csv.columns.length) {
@@ -140,6 +162,7 @@ export function useTrajectoryImport({
 
   const setMapping = (next: SetStateAction<TrajectoryCsvMappingDraft>) => {
     pendingEdit.current = true
+    setSettled(false)
     discard()
     updateMapping(next)
   }
@@ -187,8 +210,8 @@ export function useTrajectoryImport({
       if (token === generation.current) setReading(false)
     }
     if (token !== generation.current) return
-    const csv = nextKind === 'csv' ? prepareTrajectoryCsv(text) : source.csv
-    setSource({ kind: nextKind, text, csv })
+    const csv = nextKind === 'csv' ? reader.readCsv(text) : current
+    setSource({ kind: nextKind, text })
     if (nextKind === 'csv')
       updateMapping(guessCsvMapping(csv.columns, workcell))
   }
@@ -213,7 +236,10 @@ export function useTrajectoryImport({
     setTimeUnit,
     setJointUnit,
     preview,
-    columns: source.csv.columns,
+    columns: current.columns,
+    diagnostics: current.diagnostics,
+    valid: !!current.value,
+    executable: !!current.value && settled,
     error,
     reading,
     actuated: workcell.bodies.filter((body) => body.joint.kind !== 'fixed'),

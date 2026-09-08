@@ -51,9 +51,24 @@ test('ordinary field observations preserve immutable evidence, opaque files and 
     .getByRole('button', { name: 'Add field observation', exact: true })
     .click()
   await panel.getByLabel('Observation title').fill('Bench measurement')
+  await panel.getByLabel('Observation title').press('Enter')
+  await expect(panel.locator('.observation-note').first()).toContainText(
+    'revision 1'
+  )
+  await expect(panel.getByLabel('Observation text')).toHaveAttribute(
+    'aria-invalid',
+    'true'
+  )
+  await panel
+    .locator('.observation-editor')
+    .screenshot({ path: info.outputPath('incomplete-observation.png') })
   const firstText =
     'Fixture offset measured: 25 mm. Operator note: <img src=x onerror=alert(1)> is untrusted text.'
   await panel.getByLabel('Observation text').fill(firstText)
+  await panel.getByLabel('Observation text').press('Tab')
+  await expect(panel.locator('.observation-note').first()).toContainText(
+    'revision 2'
+  )
   const csv = Buffer.from('point,clearance_mm\nfixture,25\n', 'utf8')
   const opaque = Buffer.from(
     '<script>Evidence text, never execute.</script>',
@@ -94,7 +109,7 @@ test('ordinary field observations preserve immutable evidence, opaque files and 
     `Undo steps: ${initialDepth + 1}`
   )
   const note = panel.locator('.observation-note').first()
-  await expect(note).toContainText('revision 1')
+  await expect(note).toContainText('revision 3')
   expect(await download(page, 'Download measurement.csv')).toEqual(csv)
   expect(await download(page, 'Download operator-note.txt')).toEqual(opaque)
   expect(await panel.locator('img,script').count()).toBe(0)
@@ -110,7 +125,7 @@ test('ordinary field observations preserve immutable evidence, opaque files and 
       'Second check: 24 mm. Same measurement files; a revised user interpretation.'
     )
   await panel.getByLabel('Observation text').press('Tab')
-  await expect(note).toContainText('revision 2')
+  await expect(note).toContainText('revision 4')
   const bundle = JSON.parse(
     (await download(page, 'Export field observations')).toString('utf8')
   )
@@ -119,11 +134,11 @@ test('ordinary field observations preserve immutable evidence, opaque files and 
   expect(
     bundle.sources.map((source: { sourceId: string }) => source.sourceId)
   ).toEqual(expectedSources)
-  expect(bundle.observations[0].revision).toBe(2)
+  expect(bundle.observations[0].revision).toBe(4)
   expect(bundle).not.toHaveProperty('result')
   for (const [action, revision] of [
-    ['Undo', 1],
-    ['Redo', 2]
+    ['Undo', 3],
+    ['Redo', 4]
   ] as const) {
     await library
       .getByRole('button', { name: 'Close runs', exact: true })
@@ -149,7 +164,7 @@ test('ordinary field observations preserve immutable evidence, opaque files and 
   await page
     .getByRole('button', { name: 'Runs & compare', exact: true })
     .click()
-  await expect(note).toContainText('revision 2')
+  await expect(note).toContainText('revision 4')
   await panel.scrollIntoViewIfNeeded()
   await page.screenshot({
     path: info.outputPath('retained-field-observation.png')

@@ -105,7 +105,8 @@ export function useWorkbenchActions({
           isPresentedRunStale(
             run,
             runtime.getWorkcell(run.snapshot.source.candidateId),
-            definitionToDraft(experiment.definition)
+            definitionToDraft(experiment.definition),
+            runtime.experimentInputs
           )
         )
       } catch {

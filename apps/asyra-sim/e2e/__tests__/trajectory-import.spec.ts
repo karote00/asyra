@@ -177,10 +177,10 @@ test('external CSV declaration, conversion review, acceptance, Undo/Redo and reo
   await openImport(page)
   await expect(page.getByLabel('Trajectory source data')).toHaveValue(canonical)
   await expect(page.getByTestId('history-depth')).toHaveText('Undo steps: 0')
-  // Unchanged App-generated text is canonical even though persisted provenance is ms/deg.
+  // Reopening preserves the authored source and its ms/deg declarations.
   await preview(page)
   await expect(page.getByLabel('Trajectory conversion preview')).toContainText(
-    '2 s → 2 s'
+    '2000 ms → 2 s'
   )
   await saveProject(page, 'Declared source units')
   expect(await savedDefinition(page, experimentId)).toEqual(definition)
@@ -371,10 +371,10 @@ test('completed inline trajectory edits preserve source units through acknowledg
   })
   await page.getByRole('button', { name: 'Undo', exact: true }).click()
   await openImport(page)
-  await expect(input).toHaveValue(/\n0\.009,/)
+  await expect(input).toHaveValue(/\n9,/)
   await page.getByRole('button', { name: 'Redo', exact: true }).click()
   await openImport(page)
-  await expect(input).toHaveValue(/\n0\.01,/)
+  await expect(input).toHaveValue(/\n10,/)
   await saveProject(page, 'Inline trajectory')
   const definition = await savedDefinition(page, id)
   expect(definition.sourceUnits.time).toBe('ms')

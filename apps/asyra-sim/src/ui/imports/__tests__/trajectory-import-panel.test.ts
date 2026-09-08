@@ -241,7 +241,7 @@ it('reuses source parsing and the exact validated preview on repeated review and
   const inspect = vi.spyOn(importer, 'previewTrajectoryCsv')
   try {
     const example = await externalCsv()
-    expect(parse).toHaveBeenCalledOnce()
+    expect(parse).not.toHaveBeenCalled()
     expect(normalize).not.toHaveBeenCalled()
     await select('Time unit', 's')
     for (const body of example.workcell.bodies) {
@@ -255,7 +255,7 @@ it('reuses source parsing and the exact validated preview on repeated review and
     await preview()
     await act(() => button('Import trajectory')?.click())
     expect(normalize).toHaveBeenCalledTimes(work)
-    expect(parse).toHaveBeenCalledOnce()
+    expect(parse).not.toHaveBeenCalled()
     expect(accepted.mock.calls[0][0]).toBe(result.value)
     await select('Time unit', 'ms')
     expect(button('Import trajectory')).toBeUndefined()
@@ -264,7 +264,7 @@ it('reuses source parsing and the exact validated preview on repeated review and
     ).toBeNull()
     await preview()
     expect(normalize).toHaveBeenCalledTimes(work * 2)
-    expect(parse).toHaveBeenCalledOnce()
+    expect(parse).not.toHaveBeenCalled()
     expect(
       inspect.mock.results.at(-1)?.value.value.trajectory.keyframes.at(-1).time
     ).toBe(present(example.trajectory.keyframes.at(-1)).time / 1000)
@@ -470,7 +470,7 @@ it('retains declared units across numeric edits but recomputes and accepts only 
       host.querySelector('[aria-label="Trajectory conversion preview"]')
     ).toBeNull()
     expect(parse).toHaveBeenCalledOnce()
-    expect(inspect).not.toHaveBeenCalled()
+    expect(inspect).toHaveBeenCalledOnce()
     await preview()
     await preview()
     expect(inspect).toHaveBeenCalledOnce()
@@ -675,5 +675,61 @@ it('commits completed inline trajectory edits once without Apply and reuses thei
     expect(host.querySelector('[role="alert"]')).not.toBeNull()
   } finally {
     inspect.mockRestore()
+  }
+})
+
+it('reports invalid authored input while typing and commits it on blur without requiring a valid conversion', async () => {
+  const edit = vi.fn(
+    async (
+      _input: import('../../../domain/trajectory-input').TrajectoryInput,
+      _result: importer.TrajectoryImportPreview
+    ) => true
+  )
+  const example = createSyntheticExample()
+  await act(() =>
+    root.render(
+      createElement(TrajectoryImportPanel, {
+        workcell: example.workcell,
+        trajectory: example.trajectory,
+        onAccept: accepted,
+        onEdit: edit
+      })
+    )
+  )
+  const field = present(host.querySelector('textarea'))
+  await editSource('time,broken\nnope,value')
+  expect(host.querySelector('[role="alert"]')).not.toBeNull()
+  expect(edit).not.toHaveBeenCalled()
+  await act(() =>
+    field.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))
+  )
+  expect(edit).toHaveBeenCalledOnce()
+  expect(edit.mock.calls[0][0]).toMatchObject({
+    version: 1,
+    kind: 'csv',
+    text: 'time,broken\nnope,value'
+  })
+  expect(edit.mock.calls[0][1].value).toBeNull()
+  expect(button('Apply trajectory')).toBeUndefined()
+})
+
+it('reads new external CSV columns without converting under the previous source units', async () => {
+  const parse = vi.spyOn(importer, 'prepareTrajectoryCsv')
+  const normalize = vi.spyOn(sourceDomain, 'normalizeTrajectorySource')
+  try {
+    const file = new File([], 'different.csv')
+    file.text = vi.fn(async () =>
+      present(host.querySelector('textarea')).value.replace('\n8,', '\n9,')
+    )
+    await choose(file)
+    expect(parse).toHaveBeenCalledOnce()
+    expect(normalize).not.toHaveBeenCalled()
+    expect(host.querySelector('[role="alert"]')).not.toBeNull()
+    await act(() => button('Preview trajectory')?.click())
+    expect(normalize).not.toHaveBeenCalled()
+    expect(parse).toHaveBeenCalledOnce()
+  } finally {
+    parse.mockRestore()
+    normalize.mockRestore()
   }
 })

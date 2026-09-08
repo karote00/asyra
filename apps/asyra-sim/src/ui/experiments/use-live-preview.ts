@@ -31,7 +31,7 @@ export function useLivePreview(active: boolean, identity: string) {
 
       const state = view.getSnapshot()
 
-      if (!state.canonical) return
+      if (!state.canonical || !state.resolvedInput || !state.executable) return
 
       if (!current.current) {
         const run = state.selectedRun
@@ -41,15 +41,20 @@ export function useLivePreview(active: boolean, identity: string) {
         if (
           run &&
           state.canonicalDraft &&
-          !isPresentedRunStale(run, state.workcell, state.canonicalDraft)
+          !isPresentedRunStale(
+            run,
+            state.workcell,
+            state.canonicalDraft,
+            state.runtime.experimentInputs
+          )
         ) {
           recorded = new RecordedPlaybackEvidence(run)
         }
 
         current.current = new LivePreview(
           state.workcell,
-          state.canonical.definition.trajectory,
-          state.canonical.definition.interval,
+          state.resolvedInput.trajectory,
+          state.resolvedInput.interval,
           () =>
             state.runtime.features.live.prepare(identity, () =>
               state.runtime.createExperimentSnapshot(

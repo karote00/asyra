@@ -75,7 +75,8 @@ independently interpret axes or parent-child transforms.
   units. App-generated data starts with known s/rad/m units; strict JSON retains
   its declared units. Editing the current source text retains existing units and
   valid column mappings without an additional notice or confirmation action.
-  Invalid or incomplete values still block acceptance. Removing a mapped column
+  Invalid or incomplete values block new-file acceptance and execution, not
+  preservation of authored input. Removing a mapped column
   retires only its mapping and unit; loading another CSV requires fresh units.
   Workcell changes still validate joint/unit compatibility.
 - Before acceptance, show source fields, units and representative values beside
@@ -84,8 +85,10 @@ independently interpret axes or parent-child transforms.
   units or workcell retires the old preview and acceptance eligibility; repeated
   preview and acceptance of unchanged input do not repeat parsing/conversion.
   Preview and discard are noncanonical. Completing an inline text, mapping or
-  unit edit validates once and commits through the existing Feature as one Undo
-  action, reusing that conversion result for review. Its own acknowledgement
+  unit edit commits bounded authored text and declarations through the existing
+  Feature as one Undo action, including invalid or incomplete input. Show current
+  diagnostics immediately beside the source. Reuse the same conversion result
+  for review and execution; never execute an older normalized trajectory. Its own acknowledgement
   preserves edited source text and units; external Undo/Redo resets the projection.
   New file imports require explicit Import trajectory acceptance of the valid
   preview. Both paths merge into the latest experiment draft. Pending commits
@@ -525,9 +528,14 @@ correct collision does not satisfy this contract.
 ## Automatic Persistence and Editing Consistency
 
 Valid document edits and Undo/Redo automatically persist to the local project.
-Ordinary editing has no Save action. Incomplete or invalid field text remains
-transient until a complete valid edit can be applied through its existing Feature;
-one completed editing gesture remains one Undo action. Inline trajectory edits
+Ordinary editing has no Save action. Bounded trajectory source, mapping, units
+and exclusion text are authored document data even when incomplete or invalid.
+Observation title and text commit independently, including blank content. Display
+errors while typing; block execution on current trajectory/exclusion errors, not
+unrelated edits. Finite interval endpoints persist independently; ordering/coverage errors
+block execution with immediate feedback. Numeric model fields retain finite/type/range guards with inline
+validity feedback; unfinished scalar text stays local. One completed editing
+gesture remains one Undo action. Inline trajectory edits
 commit on field blur; Enter remains a newline in multiline source text. New file
 imports still require preview and explicit acceptance. Completed formal results automatically belong to the
 project; previews and incomplete analysis progress do not become saved evidence.
@@ -545,3 +553,8 @@ newly referenced immutable resources, then applies prepared slices through Core
 without history or publication echo. Copy/export materialize complete snapshots;
 a copy can recover a rejected tail into a new project. Existing snapshot-only
 projects remain readable. No Asyra Design socket backend is introduced.
+
+Inline trajectory edits preserve the authored analysis interval. They never
+reset a custom interval to the source endpoints; changed coverage produces an
+immediate timing diagnostic. Explicit new-file acceptance may initialize its
+new interval as part of that import intent.

@@ -304,3 +304,64 @@ rejection, preservation of edited text/units across own acknowledgements, and
 canonical Undo/Redo plus reload. Observation metadata edits and accepted
 attachment removal must commit while new files remain prepared; prove no source
 retention until explicit attachment acceptance, with Undo/Redo and reload.
+
+
+### Authored-input independence regression gate
+
+- `editing.test.ts`: erroneous trajectory/exclusion text persists with independent
+  settings, Core Undo/Redo, reload and candidate reference remapping.
+- `experiment-input.test.ts` and `bootstrap.test.ts`: assert parse/conversion
+  counts and exact result reuse through review, acknowledgement, preflight and
+  snapshot; joint/source changes invalidate, unresolved/invalid inputs cannot
+  execute prior normalized data.
+- `trajectory-import-panel.test.ts`: errors appear while typing, completed raw
+  edits persist without Apply, mapping/unit choices survive edits, and external
+  file reads do not convert using previous-source units. Existing receipt,
+  cancellation, late-read, JSON and bounded conversion-preview cases remain.
+- Observation contract, Feature and UI suites: incomplete title/text independently
+  commits and replays; pending creation/update acknowledgements do not lose
+  later completed fields, even on editor closure. Attachment admission and stale
+  local edits remain guarded.
+- `fields.test.ts`: native numeric validity appears during input, unsafe scalar
+  text stays local, and a corrected value commits on Enter.
+- `history-editing.spec.ts`: enter an out-of-limit final joint value (`100 rad`),
+  see the error before blur, complete the gesture, replay it and edit independent
+  settings; persist a malformed exclusion, reload both exact inputs, repair each,
+  and verify execution only resumes after errors clear. Empty unit declarations
+  also survive replay/reload without inferred defaults. Finite interval endpoints
+  persist independently of ordering and coverage, and numeric error text remains
+  visible in object vector fields. Capture source/error and
+  repaired conversion states on the same live `APP_URL`.
+- Run trajectory-import, experiments, automatic-persistence and field-observations
+  E2E suites alongside the regression flow. Inspect emitted live-app screenshots;
+  parser-only tests do not close this gate.
+
+
+Verified 2026-09-08 in `codex/asyra-sim-m2-import-contract`: 647 App tests,
+17 E2E cases (one worker, no retries), App build including typecheck, App lint,
+11 naming checks, 97 Inspector contract checks and two test-placement checks.
+Live-app screenshots were inspected separately from automated assertions.
+The production build retains its existing large-chunk advisory; no dependency,
+bundling or release work was included.
+
+Commands (repository worktree root):
+
+```sh
+yarn workspace @asyra/asyra-sim test:local
+APP_URL=http://127.0.0.1:3020 yarn workspace @asyra/asyra-sim test:e2e e2e/__tests__/history-editing.spec.ts e2e/__tests__/trajectory-import.spec.ts e2e/__tests__/experiments.spec.ts e2e/__tests__/automatic-persistence.spec.ts e2e/__tests__/field-observations.spec.ts --workers=1 --retries=0 --reporter=line
+yarn workspace @asyra/asyra-sim build
+yarn workspace @asyra/asyra-sim lint
+yarn lint:naming
+yarn workspace @asyra/flow-inspector test:contracts
+node --test scripts/__tests__/test-file-placement.test.mjs
+```
+
+Local logs: `.artifacts/editable-input-{full,e2e,build,lint,naming,inspector,placement}-final.log`.
+Browser artifacts: `apps/asyra-sim/test-results/`, including
+`authored-input-errors.png`, `authored-input-repaired.png`,
+`interval-diagnostics.png`, `object-field-diagnostic.png` and
+`incomplete-observation.png`. E2E uses 1440 × 960 at default browser zoom for the
+editing flows; the strict JSON review additionally covers 960/600-pixel layouts
+and light/dark themes. Screenshots retain the ordinary viewport/panel overlays,
+selected fixture where applicable, and the exact test-asserted field values.
+The local Vite server remains on port 3020 (PID 13928 for this invocation).

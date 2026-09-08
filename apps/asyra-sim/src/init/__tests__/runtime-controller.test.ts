@@ -1,3 +1,4 @@
+import { ExperimentInputReader } from '../../storage/experiment-input'
 import { describe, expect, it, vi } from 'vitest'
 import type { SimRuntime } from '../bootstrap'
 import { RuntimeController } from '../runtime-controller'
@@ -23,6 +24,7 @@ const deferred = <T>() => {
 function runtime() {
   const resume = vi.fn()
   const value: SimRuntime = {
+    experimentInputs: new ExperimentInputReader(),
     publicationEntry: vi.fn(),
     views: {
       getSnapshot: vi.fn(() => ({

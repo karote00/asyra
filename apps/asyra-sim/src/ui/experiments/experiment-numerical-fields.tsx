@@ -1,3 +1,4 @@
+import { trajectoryIntervalError } from '../../domain/trajectory-interval'
 import { CommittedInput } from '../shared/fields'
 import { EXPERIMENT_RESOURCE_PROFILE } from '../../analysis/contracts'
 import { useViewValue } from '../shared/use-view-value'
@@ -66,6 +67,7 @@ export function IntervalFields({ source }: Props) {
   useViewValue(source, (value) => value.draft.interval[0])
 
   useViewValue(source, (value) => value.draft.interval[1])
+  useViewValue(source, (value) => value.draft.trajectory)
 
   const draft = source.getSnapshot().draft
 
@@ -81,6 +83,11 @@ export function IntervalFields({ source }: Props) {
             min="0"
             step="any"
             value={draft.interval[index]}
+            diagnose={(text) => {
+              const interval: [number, number] = [...draft.interval]
+              interval[index] = Number(text)
+              return trajectoryIntervalError(interval, draft.trajectory)
+            }}
             onCommit={(text) => {
               const interval: [number, number] = [
                 ...source.getSnapshot().draft.interval

@@ -1,3 +1,4 @@
+import { ExperimentInputReader } from '../../../storage/experiment-input'
 // @vitest-environment jsdom
 import { act, createElement } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
@@ -89,6 +90,7 @@ const experiment = {
 }
 
 const runtime = {
+  experimentInputs: new ExperimentInputReader(),
   features: {
     live: { subscribe: () => () => undefined, getRecords: () => emptyRecords }
   },
@@ -387,7 +389,7 @@ it('applies the validated trajectory after a completed field edit without duplic
   ]
   expect(saved[0]).toBe('study')
   expect(saved[2].trajectory.keyframes.at(-1)?.time).toBe(9)
-  expect(saved[2].interval).toEqual([0, 9])
+  expect(saved[2].interval).toEqual([0, 8])
   expect(saved[2].rule.minimumClearance).toBe(0.03)
 })
 
@@ -642,4 +644,107 @@ it('keeps preview playback across unrelated publications and invalidates it for 
     })
   )
   expect(onPlayback).toHaveBeenCalledWith(null)
+})
+
+it('does not acknowledge a failed edit when the shell reports and consumes the Feature error', async () => {
+  const updateExperiment = vi.fn(async () => {
+    throw new Error('Write rejected')
+  })
+  await act(() =>
+    renderExperiment({
+      runtime: {
+        ...runtime,
+        features: { ...runtime.features, edit: { updateExperiment } }
+      } as unknown as SimRuntime,
+      candidateId: 'candidate',
+      workcell: example.workcell,
+      revision: 1,
+      perform: async (action) => {
+        try {
+          await action(() => undefined)
+        } catch {
+          /* Shell presents the error. */
+        }
+      },
+      onPlayback: vi.fn(),
+      runs: [],
+      retainedIds: new Set<string>(),
+      onRun: vi.fn(),
+      onOpenRuns: vi.fn(),
+      onVisualPreview: vi.fn(),
+      isCurrent: () => true,
+      visualImportActive: true
+    })
+  )
+  const field = host.querySelector<HTMLInputElement>(
+    '[aria-label="Minimum clearance (mm)"]'
+  )
+  if (!field) throw new Error('Missing clearance')
+  await act(() => {
+    Object.getOwnPropertyDescriptor(
+      HTMLInputElement.prototype,
+      'value'
+    )?.set?.call(field, '25')
+    field.dispatchEvent(new Event('input', { bubbles: true }))
+  })
+  await act(() =>
+    field.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))
+  )
+  expect(updateExperiment).toHaveBeenCalledOnce()
+  expect(host.textContent).toContain('Experiment edit was not committed')
+  expect(field.value).toBe('25')
+  expect(button('Run preflight')?.disabled).toBe(true)
+})
+
+it('preserves the authored analysis interval when an inline trajectory edit completes', async () => {
+  const updateExperiment = vi.fn(async () => undefined)
+  const custom = {
+    ...experiment,
+    definition: {
+      ...experiment.definition,
+      interval: [2, 5] as [number, number]
+    }
+  }
+  await act(() =>
+    renderExperiment({
+      runtime: {
+        ...runtime,
+        getExperiments: () => [custom],
+        features: { ...runtime.features, edit: { updateExperiment } }
+      } as unknown as SimRuntime,
+      candidateId: 'candidate',
+      workcell: example.workcell,
+      revision: 1,
+      perform: async (action) => {
+        await action(() => undefined)
+      },
+      onPlayback: vi.fn(),
+      runs: [],
+      retainedIds: new Set<string>(),
+      onRun: vi.fn(),
+      onOpenRuns: vi.fn(),
+      onVisualPreview: vi.fn(),
+      isCurrent: () => true,
+      visualImportActive: true
+    })
+  )
+  const field = host.querySelector<HTMLTextAreaElement>(
+    '[aria-label="Trajectory source data"]'
+  )
+  if (!field) throw new Error('Missing source')
+  await act(() => {
+    Object.getOwnPropertyDescriptor(
+      HTMLTextAreaElement.prototype,
+      'value'
+    )?.set?.call(field, field.value.replace('\n8,', '\n9,'))
+    field.dispatchEvent(new Event('input', { bubbles: true }))
+  })
+  await act(() =>
+    field.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))
+  )
+  expect(updateExperiment).toHaveBeenCalledWith(
+    'study',
+    1,
+    expect.objectContaining({ interval: [2, 5] })
+  )
 })

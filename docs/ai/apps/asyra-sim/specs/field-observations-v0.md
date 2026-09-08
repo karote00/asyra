@@ -22,16 +22,23 @@ Removing a run reference or candidate removes its observations from the current
 document, not from that runtime's replay-retained attachment storage. Candidate
 duplication does not copy historical run references or their field observations.
 
-Limits: title 1–120 characters, observation text 1–8,000 characters, at most
+Limits: title 0–120 characters, observation text 0–8,000 characters, at most
 20 observations per run and 200 per project, and at most four attachments per
 observation. Reject invalid shapes, duplicate observation IDs, inconsistent
 timestamps, stale writes, and unsupported versions. Load recovery of malformed
 canonical properties remains visible and never fabricates an observation.
 
-Completed valid title/text edits apply automatically through the existing Feature,
+Completed bounded title/text edits apply automatically through the existing Feature,
 without Save. Keep the editor on the same canonical observation after acknowledgement;
-incomplete text stays transient and stale edits remain rejected. The project session
-persists committed changes. New attachment receipts still require Apply attachments
+blank title or body persists independently with immediate field guidance.
+Enter completes the title; Enter in multiline text inserts a newline. External
+canonical replay refreshes clean fields; a competing update during an unfinished
+local gesture remains a visible stale-edit rejection. An untouched empty new
+editor creates no note. A pending acknowledgement never disables text fields or
+drops later completed gestures. Await preceding acknowledgements to dispatch
+the next edit with the current note identity/revision; the existing Feature owns
+each transaction. Completed gestures survive editor closure within the same
+current document. The project session persists committed changes. New attachment receipts still require Apply attachments
 following metadata review; preview/discard never writes canonical state. Removing
 an accepted attachment is an ordinary metadata edit with one Undo action. Title/text
 edits and accepted attachment removal are independent of pending file preparation,

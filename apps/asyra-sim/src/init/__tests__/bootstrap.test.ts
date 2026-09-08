@@ -1,3 +1,9 @@
+import * as trajectoryImport from '../../storage/trajectory-import'
+import {
+  canonicalCsvMapping,
+  definitionToDraft,
+  trajectoryToCsv
+} from '../../ui/experiments/experiment-draft'
 // @vitest-environment jsdom
 import { expect, it, onTestFinished, vi } from 'vitest'
 import core, { runTransaction } from '@asyra/core'
@@ -117,6 +123,53 @@ it('composes the normal workcell runtime and cleans up surface subscriptions and
   expect(preflight.blockers).toEqual([])
   expect(preflight.pairs.length).toBeGreaterThan(0)
   const frozen = runtime.createExperimentSnapshot(experiment.id, [])
+  const authored = {
+    version: 1 as const,
+    kind: 'csv' as const,
+    text: trajectoryToCsv(model, experiment.definition.trajectory),
+    mapping: canonicalCsvMapping(model)
+  }
+  const parseInput = vi.spyOn(trajectoryImport, 'prepareTrajectoryCsv')
+  const convertInput = vi.spyOn(trajectoryImport, 'previewTrajectoryCsv')
+  try {
+    const preview = runtime.experimentInputs.previewTrajectory(authored, model)
+    if (!preview.value) throw new Error('Expected valid authored input')
+    await runtime.features.edit.updateExperiment(experiment.id, 1, {
+      ...definitionToDraft(experiment.definition),
+      trajectoryInput: authored
+    })
+    expect(runtime.preflightExperiment(experiment.id).blockers).toEqual([])
+    const currentSnapshot = runtime.createExperimentSnapshot(experiment.id, [])
+    expect(currentSnapshot.trajectory).toEqual(preview.value.trajectory)
+    expect(currentSnapshot).not.toHaveProperty('trajectoryInput')
+    expect(parseInput).toHaveBeenCalledOnce()
+    expect(convertInput).toHaveBeenCalledOnce()
+    await runtime.features.edit.updateExperiment(experiment.id, 2, {
+      ...definitionToDraft(experiment.definition),
+      trajectoryInput: {
+        ...authored,
+        text: authored.text.replace(/,0$/, ',100')
+      }
+    })
+    expect(() => runtime.preflightExperiment(experiment.id)).toThrow(
+      'out-of-limit'
+    )
+    expect(() => runtime.createExperimentSnapshot(experiment.id, [])).toThrow(
+      'out-of-limit'
+    )
+    expect(parseInput).toHaveBeenCalledTimes(2)
+    expect(convertInput).toHaveBeenCalledTimes(2)
+    await runtime.features.history.undo()
+    expect(
+      runtime.createExperimentSnapshot(experiment.id, []).trajectory
+    ).toEqual(preview.value.trajectory)
+    expect(convertInput).toHaveBeenCalledTimes(2)
+    await runtime.features.history.undo()
+  } finally {
+    parseInput.mockRestore()
+    convertInput.mockRestore()
+  }
+
   expect(frozen.version).toBe(2)
   expect(
     frozen.workcell.bodies.every((body) =>

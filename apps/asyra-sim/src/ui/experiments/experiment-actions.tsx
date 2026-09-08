@@ -24,6 +24,7 @@ export function ExperimentPreflightAction() {
   const view = useExperimentView()
 
   const dirty = useExperimentField('dirty')
+  const executable = useExperimentField('executable')
 
   const running = useExperimentField('running')
 
@@ -33,7 +34,7 @@ export function ExperimentPreflightAction() {
     <>
       <button
         className="wide w-full"
-        disabled={!canonical || dirty || running}
+        disabled={!canonical || dirty || !executable || running}
         onClick={() => {
           try {
             view.getSnapshot().inspect()
@@ -54,6 +55,7 @@ export function ExperimentRunAction() {
   const view = useExperimentView()
 
   const dirty = useExperimentField('dirty')
+  const executable = useExperimentField('executable')
 
   const running = useExperimentField('running')
 
@@ -64,7 +66,7 @@ export function ExperimentRunAction() {
       <div className="run-actions flex gap-2 [&_>_.primary]:flex-1">
         <button
           className="primary bg-sim-accent text-[#fff] border-sim-accent [&:hover]:bg-sim-accent-hover"
-          disabled={!canonical || dirty || running}
+          disabled={!canonical || dirty || !executable || running}
           onClick={() => void view.getSnapshot().run()}
         >
           {running ? 'Formal analysis running…' : 'Run formal analysis'}

@@ -1,4 +1,8 @@
 import {
+  validTrajectoryInput,
+  type TrajectoryInput
+} from '../domain/trajectory-input'
+import {
   validIdentifier,
   type Geometry,
   type Trajectory
@@ -76,6 +80,8 @@ export const DEFAULT_EXPERIMENT_BUDGET: Readonly<ExperimentBudget> =
   })
 
 export interface ExperimentDefinition {
+  trajectoryInput?: TrajectoryInput
+  exclusionsInput?: string
   version: 1
   revision: number
   trajectory: Trajectory
@@ -237,7 +243,17 @@ export function validateExperimentDefinition(
   input: unknown
 ): asserts input is ExperimentDefinition {
   if (
-    !hasExactOwnKeys(input, definitionFields) ||
+    !isPlainRecord(input) ||
+    !hasExactOwnKeys(input, [
+      ...definitionFields,
+      ...('trajectoryInput' in input ? ['trajectoryInput'] : []),
+      ...('exclusionsInput' in input ? ['exclusionsInput'] : [])
+    ]) ||
+    ('trajectoryInput' in input &&
+      !validTrajectoryInput(input.trajectoryInput)) ||
+    ('exclusionsInput' in input &&
+      (typeof input.exclusionsInput !== 'string' ||
+        input.exclusionsInput.length > 262144)) ||
     input.version !== 1 ||
     !positiveRevision(input.revision) ||
     !validTrajectoryShape(input.trajectory) ||
@@ -274,7 +290,7 @@ export function validateExperimentDefinition(
     input.interval.length !== 2 ||
     !input.interval.every(Number.isFinite) ||
     input.interval[0] < 0 ||
-    input.interval[0] > input.interval[1]
+    input.interval[1] < 0
   )
     throw new Error('Invalid experiment interval')
 

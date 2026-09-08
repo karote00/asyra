@@ -28,7 +28,9 @@ The registered edit Feature exposes typed programmatic APIs for candidate
 creation, model replacement, body create/update/remove, and history. It is a
 one-shot, priority-100, exclusive intent owner. Calls enter the public Feature
 System interaction queue, settle conflicting sessions, then run a finite common
-API transaction. There is no App-owned command queue or history stack. Inputs
+API transaction. The App does not implement a command bus or history stack. UI writers await
+preceding identity/revision acknowledgements before dispatching dependent edits;
+Features remain the transaction and execution-queue authority. Inputs
 are detached before waiting. Repeating a create intent creates a new object;
 repeating an unchanged update is a no-op. Failures roll back the whole action.
 
@@ -205,9 +207,29 @@ composition guards, disabled/unmounted bindings and project replacement.
 
 History feedback must distinguish an applied replay from an empty history action.
 Only a canonical history-depth transition reports Undo applied or Redo applied;
-otherwise report Nothing to undo or Nothing to redo. Invalid or unfinished input
-remains transient and creates no document history entry. Valid edits in other
-controls remain independently replayable.
+otherwise report Nothing to undo or Nothing to redo. Authored trajectory source,
+mapping, units and exclusion text commit on completed gestures even when
+executable validation fails. Empty observation title/text is bounded authored
+metadata. These inputs participate in the same Core history and persistence as
+other properties. Independent settings must not parse or validate another input
+as a prerequisite to writing. Finite nonnegative interval endpoints may be
+saved in either order and outside current trajectory coverage; these are
+executable errors with immediate field diagnostics. Correct them before playback,
+preflight or formal analysis. The pure historical admission boundary still
+rejects invalid intervals. Numeric geometry/property guards remain strict;
+invalid scalar text shows immediate feedback without writing invalid numbers.
+External replay refreshes clean controls, including an open observation editor;
+a competing publication must not overwrite an unfinished local gesture.
+
+Experiment version 1 optionally stores `trajectoryInput` (version, kind, exact
+text, mapping) and `exclusionsInput` (exact text). CSV/JSON text is capped at
+8/1 MiB; exclusion text at 262,144 characters. Unknown units use the explicit
+empty declaration, not a guessed default. Structural schema checks remain strict.
+Existing normalized fields are compatibility data, never an execution fallback
+when authored input exists. Candidate duplication remaps authored mapping keys,
+complete JSON identity-key tokens and exclusion body columns in the new copy;
+it preserves CSV source headers, erroneous text, the original and historical
+evidence. Legacy definitions without authored inputs keep their existing path.
 
 ## M0 Proof Gate
 
@@ -215,3 +237,8 @@ Before expanding to M1 interaction, prove normal Core creation, one Undo per
 intent, property/hierarchy restoration, rejected invalid writes, failed-action
 rollback, and Core save/load roundtrip. This proof does not complete the UI,
 persistence acknowledgements, or the public-release workflow.
+
+Inline trajectory edits preserve the authored analysis interval. They never
+reset a custom interval to the source endpoints; changed coverage produces an
+immediate timing diagnostic. Explicit new-file acceptance may initialize its
+new interval as part of that import intent.

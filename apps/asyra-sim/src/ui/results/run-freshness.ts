@@ -1,3 +1,4 @@
+import type { ExperimentInputReader } from '../../storage/experiment-input'
 import type { ExperimentSnapshot } from '../../analysis/contracts'
 import type { AnalysisResult } from '../../analysis/result'
 import type { ExperimentDraft } from '../../common-apis/experiment'
@@ -41,9 +42,23 @@ export function stableJson(value: unknown): string {
 export function isPresentedRunStale(
   run: PresentedRun,
   workcell: Workcell,
-  draft: ExperimentDraft
+  draft: ExperimentDraft,
+  reader?: ExperimentInputReader
 ): boolean {
   const { snapshot } = run
+  if (draft.trajectoryInput || draft.exclusionsInput !== undefined) {
+    if (!reader) return true
+    try {
+      draft = definitionToDraft(
+        reader.resolve(
+          { ...draft, revision: 1, rule: { ...draft.rule, revision: 1 } },
+          workcell
+        )
+      )
+    } catch {
+      return true
+    }
+  }
 
   return (
     geometryIdentity(snapshot.workcell, snapshot.version === 2) !==

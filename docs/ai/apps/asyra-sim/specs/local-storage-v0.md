@@ -345,3 +345,28 @@ Formal cases cover actual native commit/abort, cross-connection conflicts,
 malformed or missing documents, unavailable storage, edit-during-save freshness,
 load repair retention, disposal, and normal UI automatic persistence/reopen. These tests do not
 replace the later portable-bundle, assets, run-integrity, or backup gates.
+
+
+## Authored experiment input
+
+Bounded raw trajectory text/mapping/declarations and exclusion text are canonical
+Experiment properties, including incomplete or erroneous data. Journal append,
+portable capture and reopen preserve them without conversion or correction.
+The runtime owns one `ExperimentInputReader`, disposed with that runtime. It
+retains at most two source parses and two conversion results for the current
+document and its staged edit, not an unbounded history cache. Exact text/kind,
+mapping and actuated joint IDs/kinds/limits determine conversion reuse. CSV
+header suggestions consume the prepared source without converting under prior
+units. Metadata/geometry-only changes reuse conversion; changed source or joint
+validation dependencies produce current diagnostics. Exclusion parsing retains
+the current text result/error.
+
+UI diagnostics, conversion review and execution consume that owner. Composition
+resolves authored input before geometry resolution and snapshot/preflight.
+Invalid input, including invalid interval ordering or uncovered timing, rejects
+execution instead of falling back to compatibility fields. Result freshness and
+recorded playback reuse compare the same resolved definition, not raw source
+metadata against a normalized snapshot.
+The pure snapshot/preflight boundary rejects unresolved authored properties;
+resolved snapshots contain only executable data. Existing historical evidence
+and legacy definitions without authored properties are unchanged.

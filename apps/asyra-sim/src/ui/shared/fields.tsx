@@ -4,67 +4,94 @@ import type { Vec3 } from '../../domain/math'
 export function CommittedInput({
   value,
   onCommit,
+  diagnose,
   validateOnCommit = false,
   ...props
 }: Omit<ComponentProps<'input'>, 'value' | 'onChange'> & {
   value: string | number
   onCommit: (value: string) => void
+  diagnose?: (value: string) => string
   validateOnCommit?: boolean
 }) {
   const [draft, setDraft] = useState<{
     source: string | number
     text: string
+    error: string
   } | null>(null)
 
   if (draft !== null && draft.source !== value) setDraft(null)
 
   const cancelled = useRef(false)
 
+  const error = draft?.source === value ? draft.error : ''
+  const message =
+    error ||
+    diagnose?.(draft?.source === value ? draft.text : String(value)) ||
+    ''
+
   return (
-    <input
-      {...props}
-      value={draft?.source === value ? draft.text : value}
-      onChange={(event) =>
-        setDraft({ source: value, text: event.target.value })
-      }
-      onBlur={(event) => {
-        if (
-          !cancelled.current &&
-          validateOnCommit &&
-          (!event.currentTarget.checkValidity() ||
-            (props.type === 'number' &&
-              event.currentTarget.value.trim() === ''))
-        )
-          return
-        if (
-          !cancelled.current &&
-          draft?.source === value &&
-          draft.text !== String(value)
-        )
-          onCommit(draft.text)
+    <>
+      <input
+        {...props}
+        value={draft?.source === value ? draft.text : value}
+        aria-invalid={!!message || props['aria-invalid']}
+        onChange={(event) => {
+          const field = event.currentTarget
+          let error = ''
+          if (
+            props.type === 'number' &&
+            (field.value.trim() === '' || !Number.isFinite(Number(field.value)))
+          )
+            error = 'Enter a finite number.'
+          else if (validateOnCommit && !field.validity.valid)
+            error = field.validationMessage
+          setDraft({ source: value, text: field.value, error })
+        }}
+        onBlur={(event) => {
+          if (
+            !cancelled.current &&
+            (error ||
+              (validateOnCommit &&
+                (!event.currentTarget.checkValidity() ||
+                  (props.type === 'number' &&
+                    event.currentTarget.value.trim() === ''))))
+          )
+            return
+          if (
+            !cancelled.current &&
+            draft?.source === value &&
+            draft.text !== String(value)
+          )
+            onCommit(draft.text)
 
-        cancelled.current = false
-
-        setDraft(null)
-      }}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter') {
-          event.preventDefault()
-
-          event.currentTarget.blur()
-        }
-
-        if (event.key === 'Escape') {
-          event.preventDefault()
-
-          cancelled.current = true
+          cancelled.current = false
 
           setDraft(null)
+        }}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') {
+            event.preventDefault()
 
-          event.currentTarget.blur()
-        }
-      }}
-    />
+            event.currentTarget.blur()
+          }
+
+          if (event.key === 'Escape') {
+            event.preventDefault()
+
+            cancelled.current = true
+
+            setDraft(null)
+
+            event.currentTarget.blur()
+          }
+        }}
+      />
+      {message && (
+        <span role="alert" className="text-[10px] text-sim-error-text">
+          {message}
+        </span>
+      )}
+    </>
   )
 }
 

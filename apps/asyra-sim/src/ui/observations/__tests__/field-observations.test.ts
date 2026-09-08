@@ -400,6 +400,8 @@ it('preserves expected revisions, rejects stale drafts, renders hostile text ine
 
   await act(() => button('Edit observation').click())
 
+  await fill('Observation text', 'Unfinished local edit')
+
   notes = [{ ...note, revision: 2, text: 'Changed elsewhere' }]
 
   await act(() => render())
@@ -525,3 +527,89 @@ it('commits existing text and attachment removal while new files remain prepared
   expect(notes[0].attachments).toEqual(next.attachments)
   expect(notes[0].text).toBe('Revised measurement')
 })
+
+it('commits a title on Enter with an incomplete body and replays clean fields automatically', async () => {
+  await act(() => button('Add field observation').click())
+  await fill('Observation title', 'Gap')
+  expect(
+    host
+      .querySelector('[aria-label="Observation text"]')
+      ?.getAttribute('aria-invalid')
+  ).toBe('true')
+  const title = host.querySelector<HTMLInputElement>(
+    '[aria-label="Observation title"]'
+  )
+  if (!title) throw new Error('Missing title input')
+  await act(() => title.focus())
+  await act(() =>
+    title.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })
+    )
+  )
+  expect(add).toHaveBeenCalledWith('run-a', {
+    title: 'Gap',
+    text: '',
+    attachments: []
+  })
+  const saved = structuredClone(notes)
+  notes = []
+  await act(() => render())
+  expect(title.value).toBe('')
+  notes = saved
+  await act(() => render())
+  expect(title.value).toBe('Gap')
+  await fill('Observation title', '')
+  await act(() =>
+    title.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))
+  )
+  expect(update).toHaveBeenCalledWith('run-a', 'note', 1, {
+    title: '',
+    text: '',
+    attachments: []
+  })
+})
+
+it.each([false, true])(
+  'serializes completed fields during pending creation, including editor closure %s',
+  async (closeEditor) => {
+    let finish: () => void = () => undefined
+    add.mockImplementationOnce(async (_run, draft: ObservationDraft) => {
+      await new Promise<void>((resolve) => {
+        finish = resolve
+      })
+      notes = [
+        {
+          ...draft,
+          version: 1,
+          id: 'note',
+          revision: 1,
+          createdAt: '2026-09-08T00:00:00.000Z',
+          updatedAt: '2026-09-08T00:00:00.000Z'
+        }
+      ]
+      return 'note'
+    })
+    await act(() => button('Add field observation').click())
+    await fill('Observation title', 'Gap')
+    await act(() =>
+      host
+        .querySelector('[aria-label="Observation title"]')
+        ?.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))
+    )
+    await fill('Observation text', '25 mm')
+    await commit()
+    expect(update).not.toHaveBeenCalled()
+    if (closeEditor) await act(() => root.render(null))
+    await act(async () => finish())
+    expect(update).toHaveBeenCalledWith('run-a', 'note', 1, {
+      title: 'Gap',
+      text: '25 mm',
+      attachments: []
+    })
+    expect(notes).toEqual([
+      expect.objectContaining({ title: 'Gap', text: '25 mm', revision: 2 })
+    ])
+    if (!closeEditor)
+      expect(host.querySelector('fieldset')?.disabled).toBe(false)
+  }
+)
