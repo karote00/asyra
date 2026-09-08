@@ -689,26 +689,64 @@ code {
   .target-meta + .app,
   .app {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(620px, 72vh) auto;
-    height: auto;
-    min-height: 100vh;
-    overflow: visible;
+    grid-template-rows: minmax(0, 1fr);
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
   }
 
   .main {
-    min-height: 620px;
+    min-height: 0;
     padding: 16px;
   }
 
   .flow-shell {
-    min-height: 420px;
+    min-height: 0;
+  }
+
+  .app:not(.is-detail-collapsed) .main {
+    visibility: hidden;
   }
 
   .detail {
-    height: auto;
-    max-height: none;
-    border-top: 1px solid var(--line);
+    position: fixed;
+    inset: 0;
+    height: 100dvh;
+    box-sizing: border-box;
+    padding: 60px 20px 24px;
+    overscroll-behavior: contain;
     border-left: 0;
+    z-index: 20;
+  }
+
+  .detail > .panel-close-button {
+    position: fixed;
+    top: 12px;
+    right: 20px;
+    width: auto;
+    height: 36px;
+    padding: 0 12px;
+    font-size: 0;
+    z-index: 21;
+  }
+
+  .detail::before {
+    content: '';
+    position: fixed;
+    inset: 0 0 auto;
+    height: 56px;
+    background: #0f1720;
+    border-bottom: 1px solid var(--line);
+    z-index: 20;
+  }
+
+  .detail > .panel-close-button::before {
+    content: '← Back to flow';
+    font-size: 13px;
+  }
+
+  .detail summary {
+    scroll-margin-top: 72px;
   }
 
   .guide-grid {
@@ -934,9 +972,10 @@ summary:focus-visible {
   }
 
   const enablePanelControls = () => {
-    let catalogVisible = true
-    let headerVisible = true
-    let detailVisible = true
+    const narrow = () => window.innerWidth <= 900
+    let catalogVisible = !narrow()
+    let headerVisible = !narrow()
+    let detailVisible = !narrow()
     const headerPanel = header
     const catalogToggle = document.createElement('button')
     const headerClose = document.createElement('button')
@@ -1028,7 +1067,33 @@ summary:focus-visible {
       detailVisible = false
       renderVisibility()
       notifyParent('details', false)
+      flow.querySelector('.is-selected')?.focus({ preventScroll: true })
     })
+    flow.addEventListener('click', (event) => {
+      if (!event.target.closest('.step-card')) return
+      detailVisible = true
+      renderVisibility()
+      notifyParent('details', true)
+      if (narrow()) {
+        detail.scrollTop = 0
+        detailClose.focus({ preventScroll: true })
+      }
+    })
+    flow.addEventListener(
+      'flowfitrequest',
+      (event) => {
+        const ids = event.detail?.stepIds
+        if (!narrow() || !Array.isArray(ids)) return
+        if (
+          ![...flow.children].some((card) => ids.includes(card.dataset.stepId))
+        )
+          return
+        detailVisible = false
+        renderVisibility()
+        notifyParent('details', false)
+      },
+      true
+    )
     headerOpen.addEventListener('click', () => {
       headerVisible = !headerVisible
       renderVisibility()
@@ -1047,7 +1112,6 @@ summary:focus-visible {
       else if (message.panel === 'details') detailVisible = message.visible
       else return
       renderVisibility()
-      notifyParent(message.panel, message.visible)
     })
     renderVisibility()
     notifyParent('catalog', catalogVisible)

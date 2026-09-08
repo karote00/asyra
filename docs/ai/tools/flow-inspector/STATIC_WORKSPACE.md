@@ -134,6 +134,14 @@ JSON-safe serialization. Generator drift is a formal failure.
   viewport's upper-left corner; the flow reserves safe space so those controls
   never cover its content, and the controls do not move with scroll or scale;
 - mouse and keyboard-accessible Inspector selection;
+- narrow v2 viewers (at most 900 CSS pixels) keep one primary surface visible:
+  the canvas or a full-width, independently scrolling step detail. Selecting a
+  card opens its detail; a fixed Back to flow control restores the canvas and
+  selected-card focus without resetting pan or zoom. Catalog navigation becomes
+  an overlay at narrow workspace widths and closes after selection. Overview
+  and route errors retain a catalog reopen control. Parent-originated panel
+  synchronization is applied without echoing it back; user actions report their
+  new state. Desktop side-by-side panels remain available;
 - trackpad pinch zoom from 20% through 250% inside the v2 flow viewport, with
   scale-matched scroll bounds, a visible reset control, and `Command+0`
   restoration to 100%;

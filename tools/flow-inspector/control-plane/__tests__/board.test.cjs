@@ -676,10 +676,10 @@ test(
       await page
         .getByRole('button', { name: 'Close Inspector catalog' })
         .click()
+      await canvas.getByRole('button', { name: 'Close step details' }).click()
       await canvas
         .getByRole('button', { name: 'Close Inspector header' })
         .click()
-      await canvas.getByRole('button', { name: 'Close step details' }).click()
       await expect(canvas.locator('.flow-viewport')).toBeVisible()
       await expect(
         canvas.locator('[data-panel-button="details"]')
@@ -1670,6 +1670,7 @@ test(
         downloadsPath: artifacts
       })
       const page = await browser.newPage()
+      page.setDefaultTimeout(5000)
       for (const width of [1600, 960, 576]) {
         await page.setViewportSize({ width, height: 1000 })
         await page.goto(server.origin + '/transaction-atomicity')
@@ -1711,24 +1712,26 @@ test(
           await title.evaluate((node) => getComputedStyle(node).outlineWidth),
           '2px'
         )
-        const group = page.locator('.group-toggle').first()
-        await group.hover()
-        assert.equal(
-          await group.evaluate((node) => getComputedStyle(node).outlineStyle),
-          'none',
-          'pointer hover must not mimic keyboard focus'
-        )
-        await group.focus()
-        await page.keyboard.press('Tab')
-        await page.keyboard.press('Shift+Tab')
-        assert.equal(
-          await group.evaluate((node) => node.matches(':focus-visible')),
-          true
-        )
-        assert.equal(
-          await group.evaluate((node) => getComputedStyle(node).outlineWidth),
-          '2px'
-        )
+        if (width === 1600) {
+          const group = page.locator('.group-toggle').first()
+          await group.hover()
+          assert.equal(
+            await group.evaluate((node) => getComputedStyle(node).outlineStyle),
+            'none',
+            'pointer hover must not mimic keyboard focus'
+          )
+          await group.focus()
+          await page.keyboard.press('Tab')
+          await page.keyboard.press('Shift+Tab')
+          assert.equal(
+            await group.evaluate((node) => node.matches(':focus-visible')),
+            true
+          )
+          assert.equal(
+            await group.evaluate((node) => getComputedStyle(node).outlineWidth),
+            '2px'
+          )
+        }
         const metrics = await frame
           .locator('#proof-controls')
           .evaluate((panel) => {
@@ -1808,6 +1811,105 @@ test(
         path.join(artifacts, 'catalog-review.json'),
         JSON.stringify(inspected, null, 2)
       )
+    } finally {
+      await browser?.close()
+      await server.close()
+      if (previous === undefined) delete process.env.TMPDIR
+      else process.env.TMPDIR = previous
+    }
+  }
+)
+
+test(
+  'narrow workspace gives canvas and step reading separate stable scroll surfaces',
+  { timeout: 30000 },
+  async () => {
+    const root = path.resolve(__dirname, '../../../..')
+    const artifacts = path.join(
+      root,
+      'tmp/flow-inspector/visual-review/narrow-navigation'
+    )
+    fs.mkdirSync(artifacts, { recursive: true })
+    const previous = process.env.TMPDIR
+    process.env.TMPDIR = artifacts
+    const server = await startServer(root, {
+      serviceOptions: { directory: path.join(artifacts, 'runs') }
+    })
+    let browser
+    try {
+      browser = await chromium.launch({
+        channel: process.env.FLOW_PROOF_BROWSER_CHANNEL || undefined,
+        downloadsPath: artifacts
+      })
+      const page = await browser.newPage({
+        viewport: { width: 576, height: 720 }
+      })
+      await page.goto(server.origin + '/transaction-atomicity')
+      const frame = page.frameLocator('iframe')
+      await expect(page.locator('.sidebar')).toBeHidden()
+      await expect(frame.locator('#detail')).toBeHidden()
+      const viewport = frame.locator('.flow-viewport')
+      await frame.locator('[data-step-id="finalize-transaction-state"]').click()
+      const retainedView = await viewport.evaluate((node) => [
+        node.scrollLeft,
+        node.scrollTop,
+        node.dataset.zoomScale
+      ])
+      await expect(frame.locator('#detail')).toBeVisible()
+      await expect(viewport).toBeHidden()
+      await frame.locator('#proof-controls > summary').click()
+      await frame.locator('#agent-controls > summary').click()
+      await frame.locator('#detail').hover()
+      await page.mouse.wheel(0, 700)
+      await expect
+        .poll(() => frame.locator('#detail').evaluate((node) => node.scrollTop))
+        .toBeGreaterThan(100)
+      assert.equal(
+        await page.evaluate(() => document.scrollingElement.scrollTop),
+        0
+      )
+      assert.equal(
+        await frame
+          .locator('body')
+          .evaluate((node) => node.ownerDocument.scrollingElement.scrollTop),
+        0
+      )
+      await expect(
+        frame.getByRole('button', { name: 'Close step details' })
+      ).toBeInViewport()
+      await page.screenshot({ path: path.join(artifacts, 'detail-scroll.png') })
+      await frame.getByRole('button', { name: 'Close step details' }).click()
+      await expect(viewport).toBeVisible()
+      await expect(frame.locator('#detail')).toBeHidden()
+      assert.deepEqual(
+        await viewport.evaluate((node) => [
+          node.scrollLeft,
+          node.scrollTop,
+          node.dataset.zoomScale
+        ]),
+        retainedView
+      )
+      await page.setViewportSize({ width: 820, height: 720 })
+      await expect(viewport).toBeVisible()
+      await frame.getByRole('button', { name: 'Catalog panel' }).click()
+      await expect(page.locator('.sidebar')).toBeVisible()
+      await expect(page.locator('.workspace-main')).toBeHidden()
+      await page
+        .getByRole('button', {
+          name: /Transaction Atomicity Inspector Flow Architecture/
+        })
+        .click()
+      await expect(page.locator('.sidebar')).toBeHidden()
+      await expect(viewport).toBeVisible()
+      await page.screenshot({ path: path.join(artifacts, 'flow-restored.png') })
+      await frame.getByRole('button', { name: 'Catalog panel' }).click()
+      await expect(page.locator('.sidebar')).toBeVisible()
+      await page.getByRole('button', { name: 'Overview', exact: true }).click()
+      await expect(
+        page.getByRole('button', { name: 'Open Inspector catalog' })
+      ).toBeVisible()
+      await page.getByRole('button', { name: 'Open Inspector catalog' }).click()
+      await expect(page.locator('.sidebar')).toBeVisible()
     } finally {
       await browser?.close()
       await server.close()

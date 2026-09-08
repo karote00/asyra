@@ -16,3 +16,7 @@ responsive action groups, readable status text and wrapped source metadata.
 
 Remove decorative disclosure hover fills and pointer-only catalog focus rings,
 while preserving keyboard focus, current navigation and meaningful result states.
+
+Use a single primary surface on narrow screens: open step details as a full-width
+scrolling reader with a fixed return control, and show the catalog only when
+requested. Preserve canvas pan/zoom and stop panel-state synchronization echoes.
