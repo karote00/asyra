@@ -635,6 +635,16 @@ test('Command+1 fits all bounds below manual zoom limits and respects editable f
   input.dispatchEvent(
     new KeyboardEvent('keydown', { key: '1', metaKey: true, bubbles: true })
   )
+  assert.equal(Number(viewport.dataset.zoomScale), (400 - 48) / 10000)
+  document.querySelector('[data-reset-zoom]').click()
+  input.dispatchEvent(
+    new KeyboardEvent('keydown', {
+      key: '!',
+      code: 'Digit1',
+      shiftKey: true,
+      bubbles: true
+    })
+  )
   assert.equal(viewport.dataset.zoomScale, '1')
   viewport.dispatchEvent(
     new KeyboardEvent('keydown', { key: '1', metaKey: true, bubbles: true })

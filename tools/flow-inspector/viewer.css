@@ -222,6 +222,11 @@ h1 {
 }
 
 .zoom-controls {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  max-width: calc(100% - 72px);
+  justify-content: flex-end;
   position: absolute;
   top: 12px;
   right: 24px;
@@ -450,7 +455,7 @@ h1 {
 }
 
 .full-contract > summary {
-  display: grid;
+  display: list-item;
   gap: 3px;
   padding: 14px 16px;
   color: var(--accent);
@@ -560,4 +565,22 @@ code {
   .guide-grid {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+summary {
+  cursor: pointer;
+}
+summary::marker {
+  color: var(--accent);
+}
+summary:hover {
+  background: #192635;
+}
+summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.full-contract > summary small {
+  display: block;
+  margin: 4px 0 0 18px;
 }

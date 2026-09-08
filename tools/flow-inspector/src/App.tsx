@@ -79,6 +79,44 @@ export function WorkspaceApp({
     return () => window.removeEventListener('message', receivePanelVisibility)
   }, [])
 
+  useEffect(() => {
+    if (route.kind !== 'selected' || route.entry.kind !== 'flow-v2') return
+    const forwardZoom = (event: KeyboardEvent) => {
+      if (event.isComposing || event.altKey || event.ctrlKey) return
+      const commandKey = event.metaKey && !event.shiftKey
+      const alternative = event.shiftKey && !event.metaKey
+      const key = commandKey
+        ? event.key
+        : alternative
+          ? event.code === 'Digit1'
+            ? '1'
+            : event.code === 'Digit0'
+              ? '0'
+              : ''
+          : ''
+      if (key !== '1' && key !== '0') return
+      if (
+        alternative &&
+        (event.target as Element)?.closest?.(
+          'input, textarea, select, [contenteditable="true"]'
+        )
+      )
+        return
+      const frame = targetFrameRef.current?.contentWindow
+      if (!frame) return
+      event.preventDefault()
+      frame.postMessage(
+        {
+          type: 'flow-inspector:zoom-command',
+          command: key === '1' ? 'fit-all' : 'reset'
+        },
+        '*'
+      )
+    }
+    window.addEventListener('keydown', forwardZoom, true)
+    return () => window.removeEventListener('keydown', forwardZoom, true)
+  }, [route])
+
   const navigate = (entry: WorkspaceEntry | null) => {
     if (routingMode === 'path') {
       const href = entry ? `/${entry.slug}` : '/'
@@ -173,18 +211,23 @@ export function WorkspaceApp({
                 data-testid={`group-${group}`}
                 key={group}
               >
-                <button
-                  className="group-toggle"
-                  type="button"
-                  aria-label={`${group} ${entries.length}`}
-                  aria-expanded={!collapsed}
-                  onClick={() => toggleGroup(group)}
-                >
+                <div className="group-heading">
+                  <button
+                    className="group-toggle"
+                    type="button"
+                    aria-label={`${collapsed ? 'Expand' : 'Collapse'} ${group}`}
+                    title={`${collapsed ? 'Expand' : 'Collapse'} ${group}`}
+                    aria-expanded={!collapsed}
+                    aria-controls={`group-items-${group}`}
+                    onClick={() => toggleGroup(group)}
+                  >
+                    <span aria-hidden="true">{collapsed ? '▸' : '▾'}</span>
+                  </button>
                   <span>{group}</span>
-                  <span>{entries.length}</span>
-                </button>
+                  <span className="group-count">{entries.length}</span>
+                </div>
                 {!collapsed && (
-                  <div className="group-items">
+                  <div className="group-items" id={`group-items-${group}`}>
                     {entries.map((entry) => (
                       <button
                         className="inspector-link"

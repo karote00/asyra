@@ -136,14 +136,34 @@ input {
   margin-bottom: 14px;
 }
 
-.group-toggle {
+.group-heading {
   display: flex;
-  justify-content: space-between;
-  padding: 7px 4px;
+  align-items: center;
+  gap: 8px;
+  padding-block: 7px;
   color: var(--muted);
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+.group-count {
+  margin-left: auto;
+}
+.group-toggle {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  text-align: center;
+  font-size: 18px;
+}
+.group-toggle:hover,
+.group-toggle:focus-visible {
+  color: var(--accent);
+  background: var(--panel);
+  outline: 2px solid var(--accent);
 }
 
 .group-items {

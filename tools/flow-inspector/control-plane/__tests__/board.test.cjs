@@ -72,6 +72,60 @@ test(
         body.append(style)
       })
       const fitViewport = canvas.locator('.flow-viewport')
+      const frameworkGroup = page.getByTestId('group-Framework')
+      const entriesBefore = await frameworkGroup
+        .getByTestId('inspector-entry')
+        .count()
+      await frameworkGroup.getByText('Framework', { exact: true }).click()
+      await expect(frameworkGroup.getByTestId('inspector-entry')).toHaveCount(
+        entriesBefore
+      )
+      await page
+        .getByRole('button', { name: 'Collapse Framework', exact: true })
+        .click()
+      await expect(frameworkGroup.getByTestId('inspector-entry')).toHaveCount(0)
+      await page
+        .getByRole('button', { name: 'Expand Framework', exact: true })
+        .click()
+      for (const focus of [
+        page.getByRole('searchbox'),
+        page.getByRole('button', { name: 'Collapse Framework', exact: true }),
+        canvas.locator('#scenario')
+      ]) {
+        await focus.press('Meta+0')
+        await expect(fitViewport).toHaveAttribute('data-zoom-scale', '1')
+        await focus.press('Meta+1')
+        await expect
+          .poll(async () =>
+            Number(await fitViewport.getAttribute('data-zoom-scale'))
+          )
+          .toBeLessThan(1)
+      }
+      await page
+        .getByRole('button', { name: 'Collapse Framework', exact: true })
+        .press('Shift+0')
+      await expect(fitViewport).toHaveAttribute('data-zoom-scale', '1')
+      await page
+        .getByRole('button', { name: 'Collapse Framework', exact: true })
+        .press('Shift+1')
+      await expect
+        .poll(async () =>
+          Number(await fitViewport.getAttribute('data-zoom-scale'))
+        )
+        .toBeLessThan(1)
+      await canvas.locator('[data-reset-zoom]').click()
+      await expect(fitViewport).toHaveAttribute('data-zoom-scale', '1')
+      await canvas.locator('[data-fit-all]').click()
+      await expect
+        .poll(async () =>
+          Number(await fitViewport.getAttribute('data-zoom-scale'))
+        )
+        .toBeLessThan(1)
+      await expect(canvas.locator('.full-contract > summary')).toHaveCSS(
+        'display',
+        'list-item'
+      )
+
       for (const delta of [-500, 1000]) {
         await fitViewport.evaluate((node, delta) => {
           node.dispatchEvent(
