@@ -670,6 +670,7 @@
         outputs: ['artifact:runtime'],
         conditions: [
           'Composition is open; explicitly select CUSTOM defaults and bind the provider through Core.',
+          'Install local Scene Tree and Props channels through Core before startup. Completed canonical edits and Undo/Redo publish through Core; no-op and transaction-end rollback produce no document publication. Core reset retires the channels and subscriptions; custom spatial output is not a document authority.',
           'One runtime owns one surface; startup must succeed before UI reports ready.',
           'Install an inert live-sampling Feature with guarded APIs and Core-owned cleanup. No live Worker starts at bootstrap; formal analysis cancels current live work before execution.',
           'Capture one Core per lifetime; saved startup loads its snapshot/diagnostics without an extra example or Undo entry.',
@@ -841,7 +842,7 @@
           'Retain complete admitted local shapes only for one detached workcell/source projection. Pose, selection and display updates reuse those shapes; replacement inputs create a fresh projection. Camera-only submission updates its spatial container without validating or updating mesh descriptors; accepted pending model and camera submissions preserve call order and share the existing demanded frame.',
           'Project visual vertices using explicit binding scale and body-local pose through the shared body world pose; missing source references fail even when display is hidden.',
           'Project only original bound parts or explicitly authored native parts, never legacy surrogates beneath imported surfaces. Domain placement is shared with analysis; wireframe and visibility are display-only.',
-          'Register through Core; findings are projections of accepted evidence. Apply each accepted body color to all of that body\'s original material sections, preserving admitted shapes and poses. The projection does not classify pairs or replace mixed findings with one global color.'
+          "Register through Core; findings are projections of accepted evidence. Apply each accepted body color to all of that body's original material sections, preserving admitted shapes and poses. The projection does not classify pairs or replace mixed findings with one global color."
         ],
         bypasses: [
           'No result is required for ordinary editing. Live sampled checks are independent of formal runs; projection only consumes their accepted feedback and never invokes a solver.'

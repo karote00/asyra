@@ -34,7 +34,17 @@
     order: prove CUSTOM channel/property/UI Context wiring, replace broad read
     consumers, implement publication persistence with local resource recovery,
     then run full workflow/work-count gates. See the same review's feasibility
-    section; production changes have not started.
+    section. The first composition slice now registers Core local document
+    channels. The normal-runtime regression first failed with zero publications,
+    then passed with distinct edit/Undo/Redo publications and no publication
+    for no-op or rollback. Runtime subscribers now receive the original
+    publication instead of transaction status. All 40 composition/lifecycle
+    tests, the complete 613-test Sim suite, and three ordinary
+    editing/replacement/reload browser cases pass at port 3020; the generated
+    editing screenshot was inspected. Build, lint, naming and all 97 Inspector
+    contracts pass. Registered
+    UI consumers and incremental persistence remain unfinished; this is not
+    closure of the integration follow-up.
 
 1. [Asyra Sim first-release roadmap](plans/asyra-sim-roadmap.md)
    - M1 is closed and M2 Import Contract Completion passed milestone acceptance

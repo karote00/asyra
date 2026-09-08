@@ -1,5 +1,9 @@
 // @vitest-environment jsdom
-import { expect, it, vi } from 'vitest'
+import { expect, it, onTestFinished, vi } from 'vitest'
+import core, { runTransaction } from '@asyra/core'
+import type { SharedPublication } from '@asyra/core/contracts'
+import { SharedDataChannelNames } from '@asyra/utils'
+import { PropertyFields } from '../../constants'
 import { bootstrap } from '../bootstrap'
 import { VisualAssetArchive } from '../../storage/visual-archive'
 import { decodeRestrictedGlb } from '../../engine/glb/decode'
@@ -64,6 +68,10 @@ it('composes the normal workcell runtime and cleans up surface subscriptions and
     undefined,
     new VisualAssetArchive({ decode: decodeRestrictedGlb, dispose: vi.fn() })
   )
+  onTestFinished(async () => {
+    await runtime.dispose()
+    vi.unstubAllGlobals()
+  })
   const candidate = runtime.getCandidates()[0],
     model = runtime.getWorkcell(candidate.id)
   expect(candidate.name).toBe('A - Baseline workcell')
@@ -183,11 +191,54 @@ it('composes the normal workcell runtime and cleans up surface subscriptions and
   expect(runtime.pick(250, 300)).toBeNull()
   const listener = vi.fn(),
     unsubscribe = runtime.subscribe(listener)
+  const publications = vi.fn<(publication: SharedPublication) => void>()
+  const stopPublications = core.subscribeToSharedPublication(publications)
+  const originalBody = model.bodies[0]
+  const projectedColor = () =>
+    (
+      core.getElementComputedData(originalBody.id)?.[PropertyFields.BODY] as
+        { color: number } | undefined
+    )?.color
+  expect(projectedColor()).toBe(originalBody.color)
   await runtime.features.edit.upsert(candidate.id, {
-    ...model.bodies[0],
+    ...originalBody,
+    color: 0x123456,
     name: 'Changed base'
   })
   expect(listener).toHaveBeenCalledOnce()
+  expect(projectedColor()).toBe(0x123456)
+  expect(publications).toHaveBeenCalledOnce()
+  await runtime.features.history.undo()
+  expect(projectedColor()).toBe(originalBody.color)
+  await runtime.features.history.redo()
+  expect(projectedColor()).toBe(0x123456)
+  expect(publications).toHaveBeenCalledTimes(3)
+  expect(
+    new Set(publications.mock.calls.map(([value]) => value.publicationId)).size
+  ).toBe(3)
+  for (const [publication] of publications.mock.calls)
+    for (const slice of publication.slices)
+      for (const batch of slice.batches)
+        expect([
+          SharedDataChannelNames.SCENE_TREE,
+          SharedDataChannelNames.PROPS
+        ]).toContain(batch.channel)
+  const currentBody = runtime
+    .getWorkcell(candidate.id)
+    .bodies.find((body) => body.id === originalBody.id)
+  if (!currentBody) throw new Error('Expected retained body')
+  await runtime.features.edit.upsert(candidate.id, currentBody)
+  expect(publications).toHaveBeenCalledTimes(3)
+  expect(() =>
+    runTransaction(() => {
+      core.updateElementData(originalBody.id, { name: 'Rolled back' })
+      throw new Error('Reject transaction')
+    })
+  ).toThrow('Reject transaction')
+  expect(core.getElementData(originalBody.id)?.name).toBe('Changed base')
+  expect(publications).toHaveBeenCalledTimes(3)
+  expect(listener).toHaveBeenCalledTimes(3)
+  stopPublications()
   unsubscribe()
   await runtime.dispose()
   await runtime.dispose()

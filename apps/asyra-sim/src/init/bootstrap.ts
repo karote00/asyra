@@ -1,4 +1,6 @@
 import currentCore from '@asyra/core'
+import type { SharedPublication } from '@asyra/core/contracts'
+import { SharedDataChannelNames } from '@asyra/utils'
 import type { RenderEngineProvider } from '@asyra/render-engine'
 import { ComponentTypes, MethodIds, MethodVersions } from '../constants'
 import { readWorkcell, readCandidateLineage } from '../common-apis/workcell'
@@ -166,6 +168,14 @@ export async function bootstrap(
     rendering = installCustomRenderer(core, provider)
     const layer = rendering.layer
     installModelComponents(core)
+    for (const channel of [
+      SharedDataChannelNames.SCENE_TREE,
+      SharedDataChannelNames.PROPS
+    ])
+      core.registerSharedDataChannel(
+        channel,
+        core.createLocalSharedDataChannel()
+      )
     const editing = installEditingFeatures(core, {
       validateVisuals: (workcell) => {
         resolvePartWorkcell(workcell, visuals.resolveWorkcell(workcell))
@@ -546,14 +556,10 @@ export async function bootstrap(
         loadIssues = loadCanonicalDocument(core, data)
         return structuredClone(loadIssues)
       },
-      subscribe: (listener: () => void) => {
+      subscribe: (listener: (publication: SharedPublication) => void) => {
         assertLive()
-        const unsubscribe = core.subscribeToTransactionStatus((event) => {
-          if (
-            !disposed &&
-            (event.status === 'committed' || event.status === 'rolled-back')
-          )
-            listener()
+        const unsubscribe = core.subscribeToSharedPublication((publication) => {
+          if (!disposed) listener(publication)
         })
         subscriptions.add(unsubscribe)
         return () => {

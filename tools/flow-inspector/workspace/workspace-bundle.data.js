@@ -10334,6 +10334,7 @@
             ],
             "conditions": [
               "Composition is open; explicitly select CUSTOM defaults and bind the provider through Core.",
+              "Install local Scene Tree and Props channels through Core before startup. Completed canonical edits and Undo/Redo publish through Core; no-op and transaction-end rollback produce no document publication. Core reset retires the channels and subscriptions; custom spatial output is not a document authority.",
               "One runtime owns one surface; startup must succeed before UI reports ready.",
               "Install an inert live-sampling Feature with guarded APIs and Core-owned cleanup. No live Worker starts at bootstrap; formal analysis cancels current live work before execution.",
               "Capture one Core per lifetime; saved startup loads its snapshot/diagnostics without an extra example or Undo entry.",

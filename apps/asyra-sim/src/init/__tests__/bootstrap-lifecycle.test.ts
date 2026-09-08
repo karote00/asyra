@@ -117,6 +117,25 @@ const environment = () => {
 }
 
 describe('App composition lifetime', () => {
+  it('retires document subscriptions before a successor publishes edits', async () => {
+    const { start } = environment()
+    const first = await start()
+    const oldListener = vi.fn()
+    first.subscribe(oldListener)
+    const saved = await first.captureSnapshot()
+    await first.dispose()
+    const second = await start(saved)
+    const listener = vi.fn()
+    second.subscribe(listener)
+    const candidate = second.getCandidates()[0]
+    const body = second.getWorkcell(candidate.id).bodies[0]
+    await second.features.edit.upsert(candidate.id, {
+      ...body,
+      name: 'Successor'
+    })
+    expect(listener).toHaveBeenCalledOnce()
+    expect(oldListener).not.toHaveBeenCalled()
+  })
   it('rejects changed original geometry before retaining a canonical run reference', async () => {
     const runtime = await environment().start(),
       candidate = runtime.getCandidates()[0],

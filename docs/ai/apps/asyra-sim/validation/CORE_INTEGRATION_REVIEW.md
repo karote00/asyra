@@ -10,6 +10,17 @@ and requested a requirements-first mapping to existing Asyra capabilities.
 The schema observation below is not a confirmed defect or a decision to split
 properties. The proposed staged refactor below is the current recommended order.
 
+Implementation progress: the composition document-channel slice now installs
+Core local Scene Tree/Props channels and forwards original publications to
+runtime document subscribers. A normal-runtime regression failed with zero
+publications before channel installation; a second regression exposed an extra
+rollback notification before replacing the status subscription. Edit, Undo and
+Redo now each publish once; no-op and transaction-end rollback publish nothing.
+Direct computed reads already returned correct values, so this slice adds no
+redundant computed projector or renderer replacement. Registered UI consumers,
+scoped read invalidation and publication-based storage/recovery remain pending.
+The findings below retain their explicitly identified audit baselines.
+
 ## Scope and method
 
 Trace the normal caller paths for composition, canonical editing, transaction

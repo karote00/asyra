@@ -444,6 +444,13 @@ Replacement defaults must not masquerade as original experiment inputs.
 
 ## 11. Interaction, Cancellation, and Resources
 
+- CUSTOM composition explicitly installs the Core local Scene Tree and Props
+  channels before startup. Completed canonical edits and Undo/Redo publish
+  through Core; no-op and transaction-end rollback produce no document
+  publication. Channels retire with the runtime. Spatial rendering remains a
+  separate registered output and never becomes a document change authority.
+  Runtime document subscribers consume the original publication, not transaction
+  status, so rollback cannot mark the restored document as an additional edit.
 - One edit maps to one understandable Undo action. Playback and solving do not
   write every frame into Undo history.
 - Object fields update through the editing Feature when completed, without a
