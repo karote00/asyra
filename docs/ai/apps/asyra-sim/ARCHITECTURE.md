@@ -100,7 +100,7 @@ tree or introducing its 2D providers, collaboration stack, or server APIs:
 
 - `ui/shell/`: workbench composition, bounded intent callbacks, toolbars,
   hierarchy rows, notices, and panel shells.
-- `ui/runtime/`: App-lifetime subscriptions and revision-bound read projections.
+- `ui/runtime/`: App-lifetime subscriptions and registered Core UI projections.
 - `ui/objects/`: body metadata, independent mount/joint/part fields, and
   non-canonical field-edit helpers.
 - `ui/experiments/`: experiment drafts, configuration, acceptance rules,
@@ -276,10 +276,17 @@ contract, and an unready later step still blocks that step's implementation.
 
 ### Interactive projection boundaries
 
+Core integration (2026-09-08): composition registers local canonical channels
+and one read-only Core UI workbench property. A metadata-only element/property
+index routes publication evidence before workcell, experiment and retained-run
+queries. Consumers select stable fields; unrelated experiment changes retain
+the same workcell and run values. Runtime disposal retires all registrations.
+The original CUSTOM renderer and persisted component schemas remain unchanged.
+
 The workbench follows the same separation used by Design's viewport API and
 fine-grained UI providers, without importing Design's 2D state or socket
 architecture. Camera state is viewport-local; canonical workbench reads are
-revision-bound, and unrelated hierarchy/experiment panels do not rerender for
+scoped by canonical owner evidence, and unrelated hierarchy/experiment panels do not rerender for
 each camera or playback sample. Immutable source geometry is prepared for the
 current displayed workcell; shared kinematics updates poses independently.
 Spatial admission isolates new data and issues immutable products that can
@@ -287,8 +294,9 @@ cross later internal handoffs without repeated triangle scans or copies.
 Camera-only updates use the registered spatial layer and existing Framework
 frame scheduler, never a second engine loop or direct SDK access.
 
-Canonical experiment queries refresh on runtime, candidate, or canonical
-revision, not draft-only input. Hierarchy rows consume only their displayed
+Canonical experiment queries refresh on runtime, candidate, or relevant experiment
+publication, not draft-only input. Workcell changes invalidate preview/preflight;
+unrelated publications do not reset playback. Hierarchy rows consume only their displayed
 identity, label, role, joint indicator, visibility, depth, and selection; a
 single label edit does not rerender unrelated rows. Experiment scope rows are
 isolated from numerical draft fields, and a role change updates only its row.

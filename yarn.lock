@@ -157,6 +157,7 @@ __metadata:
     "@asyra/preset": "workspace:*"
     "@asyra/render": "workspace:*"
     "@asyra/render-engine": "workspace:*"
+    "@asyra/utils": "workspace:*"
     "@playwright/test": "npm:^1.62.1"
     "@tailwindcss/vite": "npm:^4.3.3"
     "@types/node": "npm:^24.13.3"

@@ -11,9 +11,7 @@ test('a rejected trajectory selection invalidates the old preview without changi
   await page
     .getByRole('button', { name: 'Preview trajectory', exact: true })
     .click()
-  await expect(
-    page.getByRole('button', { name: 'Accept into draft', exact: true })
-  ).toBeVisible()
+  await expect(page.getByLabel('Trajectory conversion preview')).toBeVisible()
   await page.getByLabel('Load trajectory CSV').setInputFiles({
     name: 'oversized.csv',
     mimeType: 'text/csv',
@@ -21,9 +19,7 @@ test('a rejected trajectory selection invalidates the old preview without changi
   })
   const panel = page.locator('.trajectory-import')
   await expect(panel).toContainText('CSV exceeds the 8 MiB import limit')
-  await expect(
-    page.getByRole('button', { name: 'Accept into draft', exact: true })
-  ).toHaveCount(0)
+  await expect(page.getByLabel('Trajectory conversion preview')).toHaveCount(0)
   await expect(page.getByTestId('history-depth')).toHaveText(depth ?? '')
   await panel.scrollIntoViewIfNeeded()
   await page.screenshot({ path: info.outputPath('trajectory-admission.png') })
@@ -43,7 +39,7 @@ test('a rejected trajectory selection invalidates the old preview without changi
   })
 })
 
-test('ordinary analysis exposes truthful progress and cancellation leaves editing history unchanged', async ({
+test('ordinary analysis keeps progress out of history and retains terminal cancellation once', async ({
   page
 }, info) => {
   const errors: string[] = []
@@ -56,9 +52,10 @@ test('ordinary analysis exposes truthful progress and cancellation leaves editin
     .filter({ hasText: 'Numerical settings' })
     .click()
   await page.getByLabel('Global interval budget').fill('20000')
-  await page
-    .getByRole('button', { name: 'Save experiment', exact: true })
-    .click()
+  await page.keyboard.press('Tab')
+  await expect(
+    page.getByRole('button', { name: 'Run preflight', exact: true })
+  ).toBeEnabled()
   const depth = await page.getByTestId('history-depth').textContent()
   await page
     .getByRole('button', { name: 'Run formal analysis', exact: true })
@@ -67,6 +64,7 @@ test('ordinary analysis exposes truthful progress and cancellation leaves editin
   await expect(progress).toContainText('pair records received')
   await expect(progress).toContainText('not a clearance conclusion')
   await expect(progress).toHaveAttribute('data-run-id', /.+/)
+  await expect(page.getByTestId('history-depth')).toHaveText(depth ?? '')
   const state = {
     baseURL: info.project.use.baseURL,
     viewport: page.viewportSize(),
@@ -88,7 +86,9 @@ test('ordinary analysis exposes truthful progress and cancellation leaves editin
   await expect(progress).toHaveCount(0)
   await expect(page.getByTestId('analysis-result')).toContainText('cancelled')
   await expect(page.getByTestId('analysis-result')).toContainText('partial')
-  await expect(page.getByTestId('history-depth')).toHaveText(depth ?? '')
+  await expect(page.getByTestId('history-depth')).toHaveText(
+    `Undo steps: ${Number(depth?.match(/\d+/)?.[0]) + 1}`
+  )
   await info.attach('review-state.json', {
     contentType: 'application/json',
     body: JSON.stringify(state)

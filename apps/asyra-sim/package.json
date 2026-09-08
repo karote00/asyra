@@ -23,6 +23,7 @@
     "@asyra/preset": "workspace:*",
     "@asyra/render": "workspace:*",
     "@asyra/render-engine": "workspace:*",
+    "@asyra/utils": "workspace:*",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "three": "0.185.1"

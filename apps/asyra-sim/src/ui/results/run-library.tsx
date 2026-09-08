@@ -83,8 +83,8 @@ export function RunLibrary({
       </header>
 
       <p className="hint text-[10px] leading-[1.6] text-sim-muted font-normal">
-        Retain a result explicitly, then save the project. Comparisons do not
-        select a winner or approve equipment operation.
+        Completed results are retained automatically. Comparisons do not select
+        a winner or approve equipment operation.
       </p>
 
       {runs.length === 0 && (
@@ -214,16 +214,18 @@ export function RunLibrary({
               </div>
 
               <div className="run-detail-actions flex flex-wrap gap-2 my-3 mx-0 [&_button]:text-[11px]">
-                <button
-                  disabled={
-                    saving ||
-                    retainedIds.has(selected.result.runId) ||
-                    !candidateIds.has(selected.snapshot.source.candidateId)
-                  }
-                  onClick={retainSelected}
-                >
-                  Retain selected result
-                </button>
+                {!retainedIds.has(selected.result.runId) && (
+                  <button
+                    disabled={
+                      saving ||
+                      retainedIds.has(selected.result.runId) ||
+                      !candidateIds.has(selected.snapshot.source.candidateId)
+                    }
+                    onClick={retainSelected}
+                  >
+                    Retry retention
+                  </button>
+                )}
 
                 <button
                   disabled={

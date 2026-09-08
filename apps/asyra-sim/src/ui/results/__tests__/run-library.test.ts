@@ -182,7 +182,7 @@ it('retains the exact result and reports failure without claiming acknowledgemen
   await act(() => root.render(createElement(RunLibrary, props)))
 
   await act(async () => {
-    button('Retain selected result').click()
+    button('Retry retention').click()
 
     await Promise.resolve()
   })
@@ -203,7 +203,11 @@ it('retains the exact result and reports failure without claiming acknowledgemen
     )
   )
 
-  expect(button('Retain selected result').disabled).toBe(true)
+  expect(
+    [...host.querySelectorAll('button')].some(
+      (node) => node.textContent === 'Retry retention'
+    )
+  ).toBe(false)
 
   expect(host.querySelector('.run-detail')?.textContent).toContain(
     'Retained in project'

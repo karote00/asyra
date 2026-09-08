@@ -1,3 +1,4 @@
+import type { ExperimentInputReader } from '../../storage/experiment-input'
 import { type Workcell } from '../../domain/workcell'
 import { AnalysisResultView } from '../results/analysis-result-view'
 import { isPresentedRunStale } from '../results/run-freshness'
@@ -7,6 +8,7 @@ type Props = Pick<
   ReturnType<typeof useExperimentController>,
   'canonicalDraft' | 'replayRun' | 'selectedRun' | 'retainSelectedRun'
 > & {
+  inputReader: ExperimentInputReader
   retainedIds: ReadonlySet<string>
   workcell: Workcell
   onOpenRuns: () => void
@@ -14,6 +16,7 @@ type Props = Pick<
 
 export function ExperimentResult({
   canonicalDraft,
+  inputReader,
   replayRun,
   selectedRun,
   retainSelectedRun,
@@ -28,16 +31,13 @@ export function ExperimentResult({
           <div className="retention-actions flex flex-wrap gap-2 my-3 mx-0 [&_>_p]:basis-full">
             <p className="hint text-[10px] leading-[1.6] text-sim-muted font-normal">
               {retainedIds.has(selectedRun.result.runId)
-                ? 'Retained in this project. Save the project for durable storage.'
-                : 'Temporary result. Explicitly retain it before saving or replacing this project.'}
+                ? 'Retained in this project.'
+                : 'Result is not retained in the current project.'}
             </p>
 
-            <button
-              disabled={retainedIds.has(selectedRun.result.runId)}
-              onClick={retainSelectedRun}
-            >
-              Retain result
-            </button>
+            {!retainedIds.has(selectedRun.result.runId) && (
+              <button onClick={retainSelectedRun}>Retry retention</button>
+            )}
 
             <button onClick={onOpenRuns}>Browse runs &amp; compare</button>
           </div>
@@ -45,7 +45,12 @@ export function ExperimentResult({
           <AnalysisResultView
             key={selectedRun.result.runId}
             run={selectedRun}
-            stale={isPresentedRunStale(selectedRun, workcell, canonicalDraft)}
+            stale={isPresentedRunStale(
+              selectedRun,
+              workcell,
+              canonicalDraft,
+              inputReader
+            )}
             onReplay={replayRun}
           />
         </>

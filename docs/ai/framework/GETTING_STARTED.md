@@ -6,6 +6,13 @@ owner documents remain the implementation contracts.
 
 ## Choose an entry point
 
+- Before implementing an App, read the
+  [Core App implementation guide](../../public/start/custom-composition.md#build-one-complete-data-path).
+  It extracts reusable Design methods for transaction/publication handoff,
+  property granularity, localized subscriptions, artifact reuse and lifecycle.
+  Identify those actual boundaries and their tests; directory similarity or
+  working Undo alone does not establish complete Framework integration.
+
 - Build a product from public Framework packages with the
   [custom composition guide](../../public/start/custom-composition.md).
 - Start from the complete, ready-to-use Asyra Design product with

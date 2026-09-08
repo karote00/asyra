@@ -11,10 +11,10 @@ import type { RunRecord } from '../../storage/run-record'
 import {
   createDefaultExperimentDraft,
   definitionToDraft,
-  formatExclusions,
-  parseExclusions
+  formatExclusions
 } from './experiment-draft'
 import type { PlaybackView } from './playback-view'
+import { useViewValue } from '../shared/use-view-value'
 
 type Perform = (
   action: (assertCurrent: () => void) => Promise<unknown>,
@@ -25,7 +25,6 @@ export function useExperimentController({
   runtime,
   candidateId,
   workcell,
-  revision,
   perform,
   onPlayback,
   runs,
@@ -34,15 +33,14 @@ export function useExperimentController({
   runtime: SimRuntime
   candidateId: string
   workcell: Workcell
-  revision: number
   perform: Perform
   onPlayback: (value: PlaybackView | null) => void
   runs: readonly RunRecord[]
   onRun: (run: RunRecord) => void
 }) {
-  const experiments = useMemo(
-    () => runtime.getExperiments(candidateId),
-    [runtime, candidateId, revision]
+  const experiments = useViewValue(
+    runtime.views,
+    (snapshot) => snapshot.experiments
   )
 
   const [experimentId, setExperimentId] = useState(experiments[0]?.id ?? '')
@@ -59,8 +57,8 @@ export function useExperimentController({
       : createDefaultExperimentDraft(workcell)
   )
 
-  const [exclusions, setExclusions] = useState(() =>
-    formatExclusions(draft.scope.excludedPairs)
+  const [exclusions, setExclusions] = useState(
+    () => draft.exclusionsInput ?? formatExclusions(draft.scope.excludedPairs)
   )
 
   const [preflight, setPreflight] = useState<PreflightReport | null>(null)
@@ -74,6 +72,29 @@ export function useExperimentController({
   )
 
   const [error, setError] = useState('')
+  const [trajectoryValid, setTrajectoryValid] = useState(true)
+  const resolvedInput = useMemo(() => {
+    if (!canonical) return null
+    try {
+      return runtime.experimentInputs.resolve(canonical.definition, workcell)
+    } catch {
+      return null
+    }
+  }, [runtime, canonical, workcell])
+  const exclusionsError = useMemo(() => {
+    try {
+      runtime.experimentInputs.readExclusions(exclusions)
+      return ''
+    } catch (reason) {
+      return reason instanceof Error ? reason.message : String(reason)
+    }
+  }, [runtime, exclusions])
+  const executable = !!resolvedInput && trajectoryValid && !exclusionsError
+  const [saving, setSaving] = useState(false)
+  const pendingWrites = useRef(0)
+  const writeQueue = useRef(Promise.resolve())
+  const expectedCanonical = useRef('')
+  const requestedWrite = useRef('')
 
   const live = useRef(true)
 
@@ -100,10 +121,15 @@ export function useExperimentController({
   }, [])
 
   useEffect(() => {
-    if (canonical) {
+    const acknowledgedWrite = canonicalKey === expectedCanonical.current
+    expectedCanonical.current = ''
+    if (canonical && !acknowledgedWrite) {
       setDraft(definitionToDraft(canonical.definition))
 
-      setExclusions(formatExclusions(canonical.definition.scope.excludedPairs))
+      setExclusions(
+        canonical.definition.exclusionsInput ??
+          formatExclusions(canonical.definition.scope.excludedPairs)
+      )
     }
 
     setPreflight(null)
@@ -121,7 +147,7 @@ export function useExperimentController({
     setWarnings([])
 
     onPlayback(null)
-  }, [revision, onPlayback])
+  }, [workcell, onPlayback])
 
   const changed = (next: ExperimentDraft) => {
     setDraft(next)
@@ -133,35 +159,41 @@ export function useExperimentController({
     onPlayback(null)
   }
 
-  let dirty = !canonical
+  const withExclusions = (input: ExperimentDraft): ExperimentDraft =>
+    input.exclusionsInput !== undefined ||
+    exclusions !== formatExclusions(input.scope.excludedPairs)
+      ? { ...input, exclusionsInput: exclusions }
+      : input
 
-  try {
-    dirty ||=
-      JSON.stringify({
-        ...draft,
-        scope: { ...draft.scope, excludedPairs: parseExclusions(exclusions) }
-      }) !== canonicalKey
-  } catch {
-    dirty = true
-  }
+  const dirty =
+    !canonical || JSON.stringify(withExclusions(draft)) !== canonicalKey
 
   const fail = (reason: unknown) => {
     if (live.current)
       setError(reason instanceof Error ? reason.message : String(reason))
   }
 
-  const save = async () => {
-    try {
-      const next = {
-        ...draft,
-        scope: { ...draft.scope, excludedPairs: parseExclusions(exclusions) }
-      }
-
+  const save = async (input: ExperimentDraft = draft) => {
+    const next = withExclusions(input)
+    setDraft(next)
+    const key = JSON.stringify(next)
+    if (pendingWrites.current && requestedWrite.current === key)
+      return writeQueue.current
+    requestedWrite.current = key
+    pendingWrites.current++
+    setSaving(true)
+    const write = async () => {
+      if (!live.current) return
+      let committed = false
       await perform(async (assertCurrent) => {
-        if (canonical)
+        const current = runtime
+          .getExperiments(candidateId)
+          .find((item) => item.id === experimentId)
+        expectedCanonical.current = key
+        if (current)
           await runtime.features.edit.updateExperiment(
-            canonical.id,
-            canonical.definition.revision,
+            current.id,
+            current.definition.revision,
             next
           )
         else {
@@ -170,18 +202,26 @@ export function useExperimentController({
             name,
             next
           )
-
           assertCurrent()
-
           if (live.current) setExperimentId(id)
         }
-
         assertCurrent()
-      }, 'Experiment saved - one Undo action')
-
+        committed = true
+      }, 'Experiment updated - one Undo action')
+      if (!committed) throw new Error('Experiment edit was not committed.')
+    }
+    const pending = writeQueue.current.then(write)
+    writeQueue.current = pending.catch(() => undefined)
+    try {
+      await pending
       if (live.current) setError('')
+      return true
     } catch (reason) {
       fail(reason)
+      return false
+    } finally {
+      pendingWrites.current--
+      if (live.current) setSaving(pendingWrites.current > 0)
     }
   }
 
@@ -200,8 +240,10 @@ export function useExperimentController({
   }
 
   const inspect = () => {
-    if (!canonical || dirty)
-      throw new Error('Save the experiment draft before preflight.')
+    if (!canonical || dirty || !executable)
+      throw new Error(
+        'Correct the current experiment input errors before preflight.'
+      )
 
     const report = runtime.preflightExperiment(canonical.id)
 
@@ -211,10 +253,10 @@ export function useExperimentController({
   }
 
   const replayCurrent = (value: number) => {
-    if (!canonical) return
+    if (!resolvedInput || !executable || dirty) return
 
     try {
-      const joints = jointValuesAt(canonical.definition.trajectory, value)
+      const joints = jointValuesAt(resolvedInput.trajectory, value)
 
       onPlayback({
         workcell,
@@ -283,16 +325,22 @@ export function useExperimentController({
         signal: controller.signal
       })
 
-      if (live.current)
-        onRun({
-          version: 1,
-          name: runName,
-          retainedAt: new Date().toISOString(),
-          environment,
-          snapshot,
-          result,
-          ...(lineage ? { lineage } : {})
-        })
+      if (!live.current) return
+      const record: RunRecord = {
+        version: 1,
+        name: runName,
+        retainedAt: new Date().toISOString(),
+        environment,
+        snapshot,
+        result,
+        ...(lineage ? { lineage } : {})
+      }
+      try {
+        await runtime.features.storage.retain(record)
+      } catch (reason) {
+        fail(reason)
+      }
+      if (live.current) onRun(record)
     } catch (reason) {
       fail(reason)
     } finally {
@@ -314,10 +362,14 @@ export function useExperimentController({
     selectedRun &&
     void perform(
       () => runtime.features.storage.retain(selectedRun),
-      'Result retained - save the project for durable storage'
+      'Result retained in project'
     )
 
   return {
+    resolvedInput,
+    executable,
+    setTrajectoryValid,
+    exclusionsError,
     methods,
     canonicalDraft,
     experiments,
@@ -343,6 +395,7 @@ export function useExperimentController({
     dirty,
     fail,
     save,
+    saving,
     freshDraft,
     inspect,
     replayCurrent,

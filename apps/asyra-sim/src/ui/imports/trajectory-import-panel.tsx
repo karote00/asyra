@@ -1,46 +1,98 @@
+import { useEffect } from 'react'
+import type { TrajectoryInput } from '../../domain/trajectory-input'
+import type { ExperimentInputReader } from '../../storage/experiment-input'
+import type { TrajectoryImportPreview } from '../../storage/trajectory-import'
 import type { NormalizedTrajectorySource } from '../../domain/trajectory-source'
 import type { Trajectory, Workcell } from '../../domain/workcell'
 import { useTrajectoryImport } from './use-trajectory-import'
 
 export function TrajectoryImportPanel({
   workcell,
+  open,
+  onOpen,
   trajectory,
-  onAccept
+  onAccept,
+  onEdit,
+  input,
+  reader,
+  onValidity,
+  saving = false
 }: {
   workcell: Workcell
+  open?: boolean
+  onOpen?: (open: boolean) => void
   trajectory: Trajectory
-  onAccept: (value: NormalizedTrajectorySource) => void
+  onAccept: (value: NormalizedTrajectorySource, input: TrajectoryInput) => void
+  onEdit?: (
+    input: TrajectoryInput,
+    result: TrajectoryImportPreview
+  ) => Promise<boolean>
+  input?: TrajectoryInput
+  reader?: ExperimentInputReader
+  onValidity?: (valid: boolean) => void
+  saving?: boolean
 }) {
   const {
+    importPending,
+    complete,
     kind,
     text,
     setText,
     mapping,
     setMapping,
+    setTimeUnit,
+    setJointUnit,
     preview,
-    setPreview,
+    diagnostics,
+    valid,
+    executable,
     columns,
     error,
-    setError,
     reading,
-    setReading,
-    generation,
     actuated,
     inspect,
+    accept,
+    discard,
     load,
     setJointMapping
-  } = useTrajectoryImport({ workcell, trajectory })
+  } = useTrajectoryImport({ workcell, trajectory, input, reader })
+
+  useEffect(() => {
+    onValidity?.(importPending || executable)
+  }, [onValidity, importPending, executable])
 
   return (
-    <details className="trajectory-import">
-      <summary>
-        Trajectory input <span>preview before acceptance</span>
-      </summary>
+    <details
+      className="trajectory-import"
+      open={open}
+      onToggle={(event) => onOpen?.(event.currentTarget.open)}
+      onKeyDown={(event) => {
+        if (
+          event.key === 'Enter' &&
+          event.target instanceof HTMLSelectElement
+        ) {
+          event.preventDefault()
+          event.target.blur()
+        }
+      }}
+      onBlur={(event) => {
+        if (
+          event.target instanceof HTMLTextAreaElement ||
+          event.target instanceof HTMLSelectElement
+        )
+          void complete(
+            onEdit ??
+              (async (_input, result) => {
+                if (result.value) onAccept(result.value, _input)
+                return true
+              })
+          )
+      }}
+    >
+      <summary>Trajectory input</summary>
 
       <p className="hint text-[10px] leading-[1.6] text-sim-muted font-normal">
-        CSV units are mapped explicitly. JSON must use the strict
-        <code> sim-trajectory v1</code> envelope. Preview never edits the
-        project.
+        Choose source units for imported CSV files, then preview the conversion.
       </p>
 
       <div className="file-row flex items-center gap-2 my-3 mx-0">
@@ -104,27 +156,34 @@ export function TrajectoryImportPanel({
         <textarea
           aria-label="Trajectory source data"
           rows={7}
+          aria-invalid={!valid}
+          maxLength={kind === 'csv' ? 8 * 1024 * 1024 : 1024 * 1024}
           value={text}
           spellCheck={false}
-          onChange={(event) => {
-            generation.current++
-
-            setReading(false)
-
-            setError('')
-
-            setText(event.target.value)
-
-            setPreview(null)
-          }}
+          onChange={(event) => setText(event.target.value)}
         />
       </label>
+
+      {diagnostics.length > 0 && (
+        <ul
+          className="diagnostic-list text-[11px] leading-[1.7] pl-[18px] text-sim-error-text"
+          role="alert"
+        >
+          {diagnostics.slice(0, 20).map((item, index) => (
+            <li key={`${item.code}:${item.row ?? 0}:${index}`}>
+              {item.row ? `Row ${item.row}: ` : ''}
+              {item.message}
+            </li>
+          ))}
+        </ul>
+      )}
 
       {kind === 'csv' && (
         <div className="mapping-grid grid grid-cols-[1fr_1fr] gap-[10px] mb-3 [&_select]:text-[10px]">
           <label>
             Time column
             <select
+              aria-label="Time column"
               value={mapping.time.column}
               onChange={(event) =>
                 setMapping((current) => ({
@@ -144,17 +203,14 @@ export function TrajectoryImportPanel({
           <label>
             Time unit
             <select
+              aria-label="Time unit"
               value={mapping.time.unit}
               onChange={(event) =>
-                setMapping((current) => ({
-                  ...current,
-                  time: {
-                    ...current.time,
-                    unit: event.target.value as 'ms' | 's'
-                  }
-                }))
+                setTimeUnit(event.target.value as '' | 'ms' | 's')
               }
             >
+              <option value="">Choose unit</option>
+
               <option value="s">seconds</option>
 
               <option value="ms">milliseconds</option>
@@ -164,7 +220,7 @@ export function TrajectoryImportPanel({
           {actuated.map((body) => {
             const entry = mapping.joints[body.id] ?? {
               column: '',
-              unit: body.joint.kind === 'revolute' ? 'rad' : 'm'
+              unit: '' as const
             }
 
             return (
@@ -198,12 +254,14 @@ export function TrajectoryImportPanel({
                     aria-label={`${body.name} CSV unit`}
                     value={entry.unit}
                     onChange={(event) =>
-                      setJointMapping(body.id, {
-                        ...entry,
-                        unit: event.target.value as typeof entry.unit
-                      })
+                      setJointUnit(
+                        body.id,
+                        event.target.value as typeof entry.unit
+                      )
                     }
                   >
+                    <option value="">Choose unit</option>
+
                     {body.joint.kind === 'revolute' ? (
                       <>
                         <option value="rad">radians</option>
@@ -239,18 +297,10 @@ export function TrajectoryImportPanel({
         Preview trajectory
       </button>
 
-      {preview && preview.diagnostics.length > 0 && (
-        <ul
-          className="diagnostic-list text-[11px] leading-[1.7] pl-[18px] text-sim-error-text"
-          role="alert"
-        >
-          {preview.diagnostics.slice(0, 20).map((item, index) => (
-            <li key={`${item.code}:${item.row ?? 0}:${index}`}>
-              {item.row ? `Row ${item.row}: ` : ''}
-              {item.message}
-            </li>
-          ))}
-        </ul>
+      {(preview || reading) && (
+        <button className="wide w-full mt-2" onClick={discard}>
+          Discard preview
+        </button>
       )}
 
       {preview?.value && (
@@ -264,12 +314,42 @@ export function TrajectoryImportPanel({
             {preview.value.trajectory.keyframes.at(-1)?.time ?? 0}s
           </span>
 
-          <button
-            className="primary bg-sim-accent text-[#fff] border-sim-accent [&:hover]:bg-sim-accent-hover"
-            onClick={() => preview.value && onAccept(preview.value)}
+          <div
+            aria-label="Trajectory conversion preview"
+            className="grid gap-2 max-h-48 min-[700px]:max-h-72 overflow-y-auto"
           >
-            Accept into draft
-          </button>
+            <p className="text-sim-muted">
+              Source → converted values. Showing first, middle and last
+              keyframes. Displayed values are rounded.
+            </p>
+            {preview.conversions.map((sample) => (
+              <div
+                key={`${sample.frameIndex}:${sample.sourceField}`}
+                className="min-w-0 border-t border-sim-border pt-2 wrap-anywhere"
+              >
+                <div>
+                  Keyframe {sample.frameIndex + 1} - {sample.sourceField}
+                </div>
+                <div className="font-mono">
+                  {Number(sample.sourceValue.toPrecision(10))}{' '}
+                  {sample.sourceUnit}
+                  {' → '}
+                  {Number(sample.canonicalValue.toPrecision(10))}{' '}
+                  {sample.canonicalUnit}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {importPending && (
+            <button
+              className="primary bg-sim-accent text-[#fff] border-sim-accent [&:hover]:bg-sim-accent-hover"
+              disabled={saving}
+              onClick={() => accept(onAccept)}
+            >
+              Import trajectory
+            </button>
+          )}
         </div>
       )}
     </details>

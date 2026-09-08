@@ -1,3 +1,5 @@
+import { trajectoryIntervalError } from '../../domain/trajectory-interval'
+import { CommittedInput } from '../shared/fields'
 import { EXPERIMENT_RESOURCE_PROFILE } from '../../analysis/contracts'
 import { useViewValue } from '../shared/use-view-value'
 import type { ExperimentFieldsView } from './experiment-fields-view'
@@ -17,19 +19,20 @@ export function ThresholdFields({ source }: Props) {
     <div className="field-pair grid grid-cols-[1fr_1fr] gap-[10px]">
       <label>
         Minimum clearance (mm)
-        <input
+        <CommittedInput
+          validateOnCommit
           aria-label="Minimum clearance (mm)"
           type="number"
           min="0"
           max="20000"
           step="0.001"
           value={draft.rule.minimumClearance * 1000}
-          onChange={(event) =>
+          onCommit={(text) =>
             source.changeDraft((draft) => ({
               ...draft,
               rule: {
                 ...draft.rule,
-                minimumClearance: Number(event.target.value) / 1000
+                minimumClearance: Number(text) / 1000
               }
             }))
           }
@@ -38,18 +41,19 @@ export function ThresholdFields({ source }: Props) {
 
       <label>
         Wall-time budget (ms)
-        <input
+        <CommittedInput
+          validateOnCommit
           aria-label="Wall-time budget (ms)"
           type="number"
           min={EXPERIMENT_RESOURCE_PROFILE.minDurationMs}
           max={EXPERIMENT_RESOURCE_PROFILE.maxDurationMs}
           value={draft.budget.maxDurationMs}
-          onChange={(event) =>
+          onCommit={(text) =>
             source.changeDraft((draft) => ({
               ...draft,
               budget: {
                 ...draft.budget,
-                maxDurationMs: Number(event.target.value)
+                maxDurationMs: Number(text)
               }
             }))
           }
@@ -63,6 +67,7 @@ export function IntervalFields({ source }: Props) {
   useViewValue(source, (value) => value.draft.interval[0])
 
   useViewValue(source, (value) => value.draft.interval[1])
+  useViewValue(source, (value) => value.draft.trajectory)
 
   const draft = source.getSnapshot().draft
 
@@ -71,18 +76,24 @@ export function IntervalFields({ source }: Props) {
       {(['Start', 'End'] as const).map((label, index) => (
         <label key={label}>
           {label} time (s)
-          <input
+          <CommittedInput
+            validateOnCommit
             aria-label={`${label} time (s)`}
             type="number"
             min="0"
             step="any"
             value={draft.interval[index]}
-            onChange={(event) => {
+            diagnose={(text) => {
+              const interval: [number, number] = [...draft.interval]
+              interval[index] = Number(text)
+              return trajectoryIntervalError(interval, draft.trajectory)
+            }}
+            onCommit={(text) => {
               const interval: [number, number] = [
                 ...source.getSnapshot().draft.interval
               ]
 
-              interval[index] = Number(event.target.value)
+              interval[index] = Number(text)
 
               source.changeDraft((draft) => ({ ...draft, interval }))
             }}
@@ -110,18 +121,19 @@ export function NumericalFields({ source }: Props) {
 
       <label>
         Global interval budget
-        <input
+        <CommittedInput
+          validateOnCommit
           aria-label="Global interval budget"
           type="number"
           min="1"
           max={EXPERIMENT_RESOURCE_PROFILE.maxIntervals}
           value={draft.budget.maxIntervals}
-          onChange={(event) =>
+          onCommit={(text) =>
             source.changeDraft((draft) => ({
               ...draft,
               budget: {
                 ...draft.budget,
-                maxIntervals: Number(event.target.value)
+                maxIntervals: Number(text)
               }
             }))
           }
@@ -130,20 +142,21 @@ export function NumericalFields({ source }: Props) {
 
       <label>
         Distance tolerance (m)
-        <input
+        <CommittedInput
+          validateOnCommit
           type="number"
           min="0.000000001"
           max="1"
           step="any"
           value={draft.method.settings.distanceTolerance}
-          onChange={(event) =>
+          onCommit={(text) =>
             source.changeDraft((draft) => ({
               ...draft,
               method: {
                 ...draft.method,
                 settings: {
                   ...draft.method.settings,
-                  distanceTolerance: Number(event.target.value)
+                  distanceTolerance: Number(text)
                 }
               }
             }))
@@ -153,20 +166,21 @@ export function NumericalFields({ source }: Props) {
 
       <label>
         Time tolerance (s)
-        <input
+        <CommittedInput
+          validateOnCommit
           type="number"
           min="0.000000001"
           max="1"
           step="any"
           value={draft.method.settings.timeTolerance}
-          onChange={(event) =>
+          onCommit={(text) =>
             source.changeDraft((draft) => ({
               ...draft,
               method: {
                 ...draft.method,
                 settings: {
                   ...draft.method.settings,
-                  timeTolerance: Number(event.target.value)
+                  timeTolerance: Number(text)
                 }
               }
             }))

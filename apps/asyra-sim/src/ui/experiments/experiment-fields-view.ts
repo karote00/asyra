@@ -9,6 +9,7 @@ export interface ExperimentFieldInputs {
   workcell: Workcell
   methods: readonly MethodDescriptor[]
   exclusions: string
+  exclusionsError?: string
   onChange: (draft: ExperimentDraft) => void
   onExclusions: (value: string) => void
 }
@@ -19,6 +20,7 @@ export interface ScopeSnapshot {
   names: ReadonlyMap<string, string>
   roles: ReadonlyMap<string, string>
   exclusions: string
+  exclusionsError?: string
 }
 
 /** Transient field projections, not an editable canonical model. */
@@ -57,6 +59,7 @@ export class ExperimentFieldsView extends ViewSource<ExperimentFieldInputs> {
               (id) => [id, 'primary'] as const
             )
           ]),
+      exclusionsError: next.exclusionsError,
       exclusions: next.exclusions
     }
   }
@@ -67,7 +70,8 @@ export class ExperimentFieldsView extends ViewSource<ExperimentFieldInputs> {
     const scopeChanged =
       previous.draft.scope !== next.draft.scope ||
       previous.workcell !== next.workcell ||
-      previous.exclusions !== next.exclusions
+      previous.exclusions !== next.exclusions ||
+      previous.exclusionsError !== next.exclusionsError
 
     const scope = scopeChanged
       ? this.scope.stage(this.scopeSnapshot(next))

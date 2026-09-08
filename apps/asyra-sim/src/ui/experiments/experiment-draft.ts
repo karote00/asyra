@@ -6,8 +6,11 @@ import {
 import type { ExperimentDraft } from '../../common-apis/experiment'
 import { MethodIds, MethodVersions } from '../../constants'
 import type { Trajectory } from '../../domain/workcell'
-import { validIdentifier, type Workcell } from '../../domain/workcell'
-import type { TrajectoryCsvMapping } from '../../storage/trajectory-import'
+import { type Workcell } from '../../domain/workcell'
+import type {
+  TrajectoryCsvMapping,
+  TrajectoryCsvMappingDraft
+} from '../../storage/trajectory-import'
 
 export function definitionToDraft(
   definition: ExperimentDefinition
@@ -94,28 +97,7 @@ export function formatExclusions(
     .join('\n')
 }
 
-export function parseExclusions(text: string): ExcludedBodyPair[] {
-  if (!text.trim()) return []
-
-  return text.split(/\r?\n/).map((line, index) => {
-    const [a, b, ...reasonParts] = line.split('\t')
-
-    const reason = reasonParts.join(' ').trim()
-
-    if (
-      !validIdentifier(a) ||
-      !validIdentifier(b) ||
-      a === b ||
-      !reason ||
-      reason.length > 500
-    )
-      throw new Error(
-        `Invalid exclusion on line ${index + 1}; use body-a<TAB>body-b<TAB>reason.`
-      )
-
-    return { version: 1, a, b, reason }
-  })
-}
+export { parseExclusions } from '../../domain/scope-input'
 
 export function trajectoryToCsv(
   workcell: Workcell,
@@ -153,7 +135,7 @@ export function canonicalCsvMapping(workcell: Workcell): TrajectoryCsvMapping {
 export function guessCsvMapping(
   columns: readonly string[],
   workcell: Workcell
-): TrajectoryCsvMapping {
+): TrajectoryCsvMappingDraft {
   const unused = new Set(columns)
 
   const lower = (value: string) => value.toLocaleLowerCase()
@@ -170,7 +152,7 @@ export function guessCsvMapping(
     ['time', 'clock', 'timestamp'].some((word) => lower(column).includes(word))
   )
 
-  const joints: Record<string, TrajectoryCsvMapping['joints'][string]> = {}
+  const joints: Record<string, TrajectoryCsvMappingDraft['joints'][string]> = {}
 
   for (const body of workcell.bodies) {
     if (body.joint.kind === 'fixed') continue
@@ -181,9 +163,9 @@ export function guessCsvMapping(
           lower(column) === lower(body.id) ||
           lower(column).includes(lower(body.id))
       ),
-      unit: body.joint.kind === 'revolute' ? 'rad' : 'm'
+      unit: ''
     }
   }
 
-  return { time: { column: timeColumn, unit: 's' }, joints }
+  return { time: { column: timeColumn, unit: '' }, joints }
 }

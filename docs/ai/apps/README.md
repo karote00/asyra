@@ -27,6 +27,8 @@ All apps, including future app folders under `docs/ai/apps/*`, inherit the
 framework hard rules in `docs/ai/framework/rules/*`.
 
 Before implementing a new app or an app feature/refactor, follow
+[the Core App implementation guide](../../public/start/custom-composition.md#build-one-complete-data-path)
+and
 [App Optimization and Maintainability](../framework/rules/app-optimization-and-maintainability.md).
 Plan responsibility and update boundaries from the first slice, separate views
 from runtime/API orchestration, use Tailwind for web component styling, keep

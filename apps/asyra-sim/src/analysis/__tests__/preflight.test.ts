@@ -248,3 +248,17 @@ describe('M2 experiment preflight and snapshot', () => {
     }
   })
 })
+
+it('rejects unresolved authored input instead of executing an older normalized trajectory', () => {
+  const source = definition()
+  source.trajectoryInput = {
+    version: 1,
+    kind: 'csv',
+    text: 'unfinished',
+    mapping: { time: { column: '', unit: '' }, joints: {} }
+  }
+  expect(
+    preflightExperiment(createSyntheticExample().workcell, source, [method])
+      .blockers.length
+  ).toBeGreaterThan(0)
+})

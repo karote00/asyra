@@ -54,10 +54,14 @@
       "path": "start/custom-composition.md",
       "section": "Customize",
       "title": "Compose only the infrastructure you need",
-      "description": "Start from Core and choose information, interaction, rendering, persistence, collaboration, and AI capabilities independently.",
+      "description": "Build a Core App with transaction publications, incremental persistence, scoped subscriptions, computation reuse and explicit lifecycle ownership.",
       "sources": [
         "docs/ai/framework/ARCHITECTURE.md",
-        "docs/ai/framework/packages/core.md"
+        "docs/ai/framework/packages/core.md",
+        "docs/ai/framework/rules/app-optimization-and-maintainability.md",
+        "docs/ai/framework/rules/computation-ownership-and-reuse.md",
+        "docs/ai/framework/packages/ui-context.md",
+        "docs/ai/apps/asyra-design/specs/socket-authoritative-document-session.md"
       ],
       "packages": ["@asyra/core"]
     },

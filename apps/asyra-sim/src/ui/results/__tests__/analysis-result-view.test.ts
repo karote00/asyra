@@ -1,3 +1,9 @@
+import { ExperimentInputReader } from '../../../storage/experiment-input'
+import * as importer from '../../../storage/trajectory-import'
+import {
+  canonicalCsvMapping,
+  trajectoryToCsv
+} from '../../experiments/experiment-draft'
 // @vitest-environment jsdom
 import { act, createElement } from 'react'
 import { createRoot } from 'react-dom/client'
@@ -231,5 +237,70 @@ it('tracks geometric input changes while preserving frozen replay and partial lo
     await act(() => root.unmount())
 
     vi.unstubAllGlobals()
+  }
+})
+
+it('compares authored inputs using the shared executable result and treats current invalid input as stale', () => {
+  const example = createSyntheticExample()
+  const draft = createSyntheticExperimentDraft(example)
+  const snapshot = createExperimentSnapshot({
+    snapshotId: 'input',
+    candidateId: 'candidate',
+    experimentId: 'study',
+    workcell: example.workcell,
+    definition: { ...draft, revision: 1, rule: { ...draft.rule, revision: 1 } },
+    methods: INSTALLED_METHOD_CATALOG.descriptors,
+    acknowledgedWarningCodes: []
+  })
+  const run = {
+    snapshot,
+    result: terminalAnalysisResult(snapshot, [], {
+      runId: 'input-run',
+      startedAt: 0,
+      endedAt: 1,
+      execution: 'cancelled',
+      error: 'Cancelled'
+    })
+  }
+  const input = {
+    version: 1 as const,
+    kind: 'csv' as const,
+    text: trajectoryToCsv(example.workcell, draft.trajectory),
+    mapping: canonicalCsvMapping(example.workcell)
+  }
+  const reader = new ExperimentInputReader()
+  reader.previewTrajectory(input, example.workcell)
+  const convert = vi.spyOn(importer, 'previewTrajectoryCsv')
+  try {
+    expect(
+      isPresentedRunStale(
+        run,
+        example.workcell,
+        { ...draft, trajectoryInput: input },
+        reader
+      )
+    ).toBe(false)
+    expect(convert).not.toHaveBeenCalled()
+    expect(
+      isPresentedRunStale(
+        run,
+        example.workcell,
+        { ...draft, trajectoryInput: { ...input, text: 'broken' } },
+        reader
+      )
+    ).toBe(true)
+    expect(convert).toHaveBeenCalledOnce()
+    expect(
+      isPresentedRunStale(
+        run,
+        example.workcell,
+        { ...draft, trajectoryInput: input },
+        reader
+      )
+    ).toBe(false)
+    expect(convert).toHaveBeenCalledOnce()
+  } finally {
+    convert.mockRestore()
+    reader.dispose()
   }
 })

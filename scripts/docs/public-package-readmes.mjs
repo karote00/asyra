@@ -54,7 +54,7 @@ const PACKAGE_COPY = Object.freeze({
       'App-domain rules, UI presentation, concrete engine resources, backend policy, permissions, or the future Core Kernel'
     ],
     start:
-      'Use Core for supported App composition and extensions that cross canonical package owners. Register composition before the first `core.start(...)`.',
+      'Use Core for supported App composition and extensions that cross canonical package owners. Register composition before the first `core.start(...)`.\n\nRead the <a href="https://github.com/karote00/asyra/blob/main/docs/public/start/custom-composition.md#build-one-complete-data-path" target="_blank" rel="noopener noreferrer">Core App implementation guide</a> before building: it connects transaction publications, incremental persistence, scoped subscriptions, computation reuse and lifecycle. Working Undo alone does not establish complete integration.',
     lifecycle:
       'Startup validates and closes composition, initializes required runtime owners, loads canonical data, and publishes ready only after success. App-owned migrations form one connected migration chain; an unmatched string version passes through to ordinary owner validation. A failure tears down owned work and never reports false readiness. The current no-provider compatibility branch is not a public Headless lifecycle.',
     code: "import core from '@asyra/core'"

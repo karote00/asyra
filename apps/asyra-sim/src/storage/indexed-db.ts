@@ -1,5 +1,7 @@
+import { validateJournalEntry, type JournalEntry } from './publication-journal'
 import {
   decodeProject,
+  PROJECT_BYTE_LIMIT,
   validateSummary,
   type ProjectRepository,
   type ProjectSummary,
@@ -8,7 +10,8 @@ import {
 
 const DATABASE = 'sim-local-v1'
 const PROJECTS = 'projects',
-  DOCUMENTS = 'documents'
+  DOCUMENTS = 'documents',
+  JOURNAL = 'publications'
 const abortError = () =>
   new DOMException('Local storage operation cancelled', 'AbortError')
 
@@ -70,7 +73,7 @@ export class IndexedProjectRepository implements ProjectRepository {
         )
       )
     const opening = new Promise<IDBDatabase>((resolve, reject) => {
-      const request = factory.open(this.name, 1)
+      const request = factory.open(this.name, 2)
       let settled = false
       const timeout = setTimeout(
         () => fail(new Error('Local storage did not open within 5 seconds')),
@@ -95,11 +98,17 @@ export class IndexedProjectRepository implements ProjectRepository {
           request.transaction?.abort()
           return
         }
-        const projects = request.result.createObjectStore(PROJECTS, {
-          keyPath: 'id'
-        })
-        projects.createIndex('savedAt', 'savedAt')
-        request.result.createObjectStore(DOCUMENTS)
+        if (!request.result.objectStoreNames.contains(PROJECTS)) {
+          const projects = request.result.createObjectStore(PROJECTS, {
+            keyPath: 'id'
+          })
+          projects.createIndex('savedAt', 'savedAt')
+          request.result.createObjectStore(DOCUMENTS)
+        }
+        if (!request.result.objectStoreNames.contains(JOURNAL))
+          request.result
+            .createObjectStore(JOURNAL)
+            .createIndex('publicationKey', 'publicationKey', { unique: true })
       }
       request.onsuccess = () => {
         if (settled || this.closed) {
@@ -134,7 +143,10 @@ export class IndexedProjectRepository implements ProjectRepository {
     const database = await this.open()
     signal?.throwIfAborted()
     if (this.closed) throw new Error('Local storage is closed')
-    const transaction = database.transaction([PROJECTS, DOCUMENTS], mode)
+    const transaction = database.transaction(
+      [PROJECTS, DOCUMENTS, JOURNAL],
+      mode
+    )
     this.transactions.add(transaction)
     const completion = transactionCompletion(transaction, signal)
     let output: { value: T } | undefined, failure: unknown
@@ -167,7 +179,7 @@ export class IndexedProjectRepository implements ProjectRepository {
   ): Promise<void> {
     validateSummary(project)
     decodeProject(project.payload)
-    const { payload, ...metadata } = structuredClone(project)
+    const { payload, journal: _journal, ...metadata } = structuredClone(project)
     let conflict: Error | undefined
     try {
       await this.transact<undefined>(
@@ -184,7 +196,26 @@ export class IndexedProjectRepository implements ProjectRepository {
               tx.abort()
               return
             }
-            store.put(metadata)
+            store.put({
+              ...metadata,
+              journalLength: 0,
+              checkpointRevision: metadata.revision,
+              storedBytes: new TextEncoder().encode(payload).byteLength
+            })
+            const cursor = tx
+              .objectStore(JOURNAL)
+              .openCursor(
+                IDBKeyRange.bound(
+                  [metadata.id, 0],
+                  [metadata.id, Number.MAX_SAFE_INTEGER]
+                )
+              )
+            cursor.onsuccess = () => {
+              if (cursor.result) {
+                cursor.result.delete()
+                cursor.result.continue()
+              }
+            }
             tx.objectStore(DOCUMENTS).put(payload, metadata.id)
             done(undefined)
           }
@@ -196,14 +227,123 @@ export class IndexedProjectRepository implements ProjectRepository {
     }
   }
 
+  async append(
+    project: ProjectSummary,
+    expectedRevision: string,
+    entry: JournalEntry | null,
+    signal?: AbortSignal
+  ): Promise<void> {
+    validateSummary(project)
+    if (entry) validateJournalEntry(entry)
+    const encoded = JSON.stringify(entry, (_key, value) => {
+      if (typeof value === 'number' && !Number.isFinite(value))
+        throw new Error('Nonfinite journal value')
+      return value
+    })
+    const bytes = entry ? new TextEncoder().encode(encoded).byteLength : 0
+    let failure: Error | undefined
+    try {
+      await this.transact<undefined>(
+        'readwrite',
+        (tx, done) => {
+          const store = tx.objectStore(PROJECTS)
+          const request = store.get(project.id)
+          request.onsuccess = () => {
+            const current = request.result as
+              | (ProjectSummary & {
+                  journalLength?: number
+                  storedBytes?: number
+                  checkpointRevision?: string
+                })
+              | undefined
+            if (!current || current.revision !== expectedRevision) {
+              failure = new Error(
+                'This project changed in another tab; reopen it or save a new project'
+              )
+              tx.abort()
+              return
+            }
+            const appendEntry = (checkpointBytes: number) => {
+              const storedBytes =
+                (current.storedBytes ?? checkpointBytes) + bytes
+              if (storedBytes > PROJECT_BYTE_LIMIT) {
+                failure = new Error(
+                  'Project exceeds the 64 MiB limit; create a checkpoint copy'
+                )
+                tx.abort()
+                return
+              }
+              const sequence = (current.journalLength ?? 0) + 1
+              tx.objectStore(JOURNAL).add(
+                {
+                  entry,
+                  previousRevision: current.revision,
+                  revision: project.revision,
+                  ...(entry
+                    ? {
+                        publicationKey: [
+                          project.id,
+                          entry.publication.publicationId
+                        ]
+                      }
+                    : {})
+                },
+                [project.id, sequence]
+              )
+              store.put({
+                ...project,
+                journalLength: sequence,
+                checkpointRevision:
+                  current.checkpointRevision ?? current.revision,
+                storedBytes
+              })
+              done(undefined)
+            }
+            if (current.storedBytes === undefined) {
+              const checkpoint = tx.objectStore(DOCUMENTS).get(project.id)
+              checkpoint.onsuccess = () =>
+                appendEntry(
+                  new TextEncoder().encode(checkpoint.result as string)
+                    .byteLength
+                )
+            } else appendEntry(0)
+          }
+        },
+        signal
+      )
+    } catch (error) {
+      throw failure ?? error
+    }
+  }
+
   async read(id: string, signal?: AbortSignal): Promise<StoredProject> {
-    const value = await this.transact<{ metadata: unknown; payload: unknown }>(
+    const value = await this.transact<{
+      metadata: unknown
+      payload: unknown
+      journal: {
+        entry: JournalEntry | null
+        previousRevision: string
+        revision: string
+      }[]
+    }>(
       'readonly',
       (tx, done) => {
         let metadata: unknown, payload: unknown
+        let journal: {
+          entry: JournalEntry | null
+          previousRevision: string
+          revision: string
+        }[] = []
         const meta = tx.objectStore(PROJECTS).get(id),
           doc = tx.objectStore(DOCUMENTS).get(id)
-        const finish = () => done({ metadata, payload })
+        const tail = tx
+          .objectStore(JOURNAL)
+          .getAll(IDBKeyRange.bound([id, 0], [id, Number.MAX_SAFE_INTEGER]))
+        const finish = () => done({ metadata, payload, journal })
+        tail.onsuccess = () => {
+          journal = tail.result
+          finish()
+        }
         meta.onsuccess = () => {
           metadata = meta.result
           finish()
@@ -221,7 +361,40 @@ export class IndexedProjectRepository implements ProjectRepository {
     if (typeof value.payload !== 'string')
       throw new Error('Saved project document is missing')
     decodeProject(value.payload)
-    return { ...value.metadata, payload: value.payload }
+    const metadata = value.metadata as ProjectSummary & {
+      journalLength?: number
+      checkpointRevision?: string
+      storedBytes?: number
+    }
+    if ((metadata.journalLength ?? 0) !== value.journal.length)
+      throw new Error('Incomplete local publication journal')
+    let revision = metadata.checkpointRevision ?? metadata.revision
+    for (const item of value.journal) {
+      if (item.previousRevision !== revision)
+        throw new Error('Broken local publication revision chain')
+      if (item.entry && item.entry.version !== 1)
+        throw new Error('Unsupported local journal entry')
+      revision = item.revision
+    }
+    if (revision !== metadata.revision)
+      throw new Error('Unacknowledged local publication tail')
+    const {
+      journalLength: _length,
+      checkpointRevision: _checkpoint,
+      storedBytes: _bytes,
+      ...summary
+    } = metadata
+    return {
+      ...summary,
+      payload: value.payload,
+      ...(value.journal.length
+        ? {
+            journal: value.journal.flatMap((item) =>
+              item.entry ? [item.entry] : []
+            )
+          }
+        : {})
+    }
   }
 
   list(
@@ -247,7 +420,17 @@ export class IndexedProjectRepository implements ProjectRepository {
             tx.abort()
             return
           }
-          projects.push(cursor.value)
+          const {
+            journalLength: _length,
+            checkpointRevision: _checkpoint,
+            storedBytes: _bytes,
+            ...summary
+          } = cursor.value as ProjectSummary & {
+            journalLength?: number
+            checkpointRevision?: string
+            storedBytes?: number
+          }
+          projects.push(summary)
           cursor.continue()
         }
       },

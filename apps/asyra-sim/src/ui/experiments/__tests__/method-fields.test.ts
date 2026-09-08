@@ -87,6 +87,9 @@ async function editParameter(value: string) {
 
     element.dispatchEvent(new Event('input', { bubbles: true }))
   })
+  await act(async () => {
+    element.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))
+  })
 }
 
 it('selects installed method defaults and edits bounded parameters only in the draft', async () => {
@@ -118,11 +121,10 @@ it('selects installed method defaults and edits bounded parameters only in the d
 
   await editParameter('')
 
-  expect(state.draft().method.settings.parameters).toEqual({})
-
-  expect(host.textContent).toContain(
-    'Required method parameters are missing or outside their declared limits'
-  )
+  expect(state.draft().method.settings.parameters).toEqual({
+    additionalError: 0.0005
+  })
+  expect(parameter?.value).toBe('')
 
   const official = INSTALLED_METHOD_CATALOG.descriptors[0]
 

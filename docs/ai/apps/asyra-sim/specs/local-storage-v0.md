@@ -1,13 +1,40 @@
 # Local Project Storage v0
 
-The storage owner retains detached project snapshots in origin-local IndexedDB.
+The storage owner retains a checkpoint and ordered canonical publications in origin-local IndexedDB.
 The App lifecycle owner replaces a project runtime; the editing owner applies
 canonical data through Core. A database operation never opens or extends a
 canonical transaction.
 
-## Save and Open
+## Automatic Persistence and Open
 
-An explicit save captures the canonical document and unresolved load diagnostics.
+One app-lifetime storage session immediately queues every Core document
+publication, including Undo/Redo, in delivery order. There is no debounce.
+An initial checkpoint stores the complete document; ordinary writes append the
+original publication and previously unrecorded immutable resources without
+recapturing the project or entering the interaction-cancelling capture Feature.
+Each append and metadata revision are acknowledged in one IndexedDB transaction.
+Writes are serialized; distinct publications arriving during a write remain
+queued in order, and failed entries remain available for explicit retry.
+Project names remain non-Undo metadata and use a metadata-only write.
+Copy/export busy
+periods must not discard queued changes. New projects receive an identity on the
+first acknowledgement; the UI records it in the current URL and restores it on
+reload. Ordinary editing exposes no Save action.
+
+Local storage retains a checkpoint plus an ordered, versioned publication tail.
+Reopening validates the complete tail and immutable resource union, then uses
+Core canonical replay in a fresh runtime without local history or publication
+echo. A missing resource, invalid operation, broken order or revision conflict
+fails closed. Existing snapshot-only projects open with an empty tail; portable
+exports and explicit copies remain complete version-1 snapshots. The combined
+checkpoint/tail budget is 64 MiB; quota or budget exhaustion stays retryable and
+does not acknowledge lost changes. Explicit copies establish a new checkpoint. After waiting for an active write,
+a copy may capture current canonical data even when the old tail cannot append;
+it never overwrites the previously acknowledged project.
+Checkpoint capture pauses new editing until its exact publication boundary is
+recorded; ordinary appends never capture or cancel a later interaction.
+
+A persistence capture includes the canonical document and unresolved load diagnostics.
 The versioned envelope is JSON data, not executable code. Reject unsupported
 format versions, malformed envelopes, nonfinite serialized values, and data above
 the 64 MiB project limit. Native Core load validation remains responsible for
@@ -37,8 +64,8 @@ must reject rather than silently overwrite it. New projects receive new IDs.
 
 The presentation states are unsaved, saving, saved, and error; opening is a
 separate busy operation. Editing during a save is allowed. Completion acknowledges
-only the captured revision, so newer edits remain unsaved. Repeated overlapping
-save/open operations reject. Save failures and pre-retirement open failures
+only the written publication or checkpoint boundary, so newer edits remain unsaved. The queue drains pending edits before explicit project replacement. Other overlapping
+low-level operations reject. Save failures and pre-retirement open failures
 retain the editable model and support retry. Post-retirement failure instead
 retains detached recovery with no editable runtime. Persistence status and
 project identity are not a second editable workcell or Undo stack.
@@ -47,8 +74,7 @@ The user selects a saved summary and explicitly accepts replacement. Opening
 reads and validates a detached envelope before the App replacement boundary.
 Check that the document has not changed since the open request before accepting
 replacement; otherwise
-reject and ask the user to retry. Confirm replacement when current edits are not
-saved. Opening uses the complete runtime reset below, not load plus an isolated
+reject and ask the user to retry. Flush pending edits before replacement; a persistence failure blocks replacement. Opening uses the complete runtime reset below, not load plus an isolated
 history clear. The user approved this lifecycle extension; normal Open requires
 the integration gates below. Closing the App aborts owned database work and
 ignores late responses.
@@ -276,16 +302,18 @@ recovery, one canvas/input surface, and resource cleanup in the real browser.
 
 Storage is optional for editing: unavailable IndexedDB must display an actionable
 save/open error, not prevent local modeling or substitute volatile memory while
-claiming a save. Do not automatically restore or overwrite a project at startup.
+claiming a save. Restore only the explicit project identity in the current URL; never overwrite it with the startup example.
 List at most the 100 most recently saved project summaries and disclose truncation.
 Deleting projects and automatic migration are outside this initial slice.
 
 ## Privacy and Recovery
 
-The workbench presents explicit Save, Save copy, and Open controls in a local
-project dialog. It displays persistence acknowledgement independently from model
-editing, lists saved names/times, discloses the 100-item limit, and confirms
-replacement (including an unsaved-change warning). No project opens automatically.
+The workbench presents project names, Copy project, Open, portable import/export,
+and failure retry in a local project dialog. Valid name edits persist automatically;
+the list reflects acknowledged names/times and discloses the 100-item limit.
+Explicit switching confirms replacement and flushes pending edits. Reload restores
+the project identified in the current URL. A failed restore cannot acknowledge the
+startup example as the requested project; retry uses the original target.
 Model editing remains available during save or storage unavailability. Editing
 controls stop accepting input while the runtime controller is replacing a
 document. A new lifetime resets candidate selection, object selection, camera,
@@ -315,5 +343,30 @@ Browser semantics follow the
 <a href="https://developer.mozilla.org/en-US/docs/Web/API/IDBTransaction/complete_event" target="_blank" rel="noopener noreferrer">IndexedDB transaction-completion contract</a>.
 Formal cases cover actual native commit/abort, cross-connection conflicts,
 malformed or missing documents, unavailable storage, edit-during-save freshness,
-load repair retention, disposal, and normal UI save/reopen. These tests do not
+load repair retention, disposal, and normal UI automatic persistence/reopen. These tests do not
 replace the later portable-bundle, assets, run-integrity, or backup gates.
+
+
+## Authored experiment input
+
+Bounded raw trajectory text/mapping/declarations and exclusion text are canonical
+Experiment properties, including incomplete or erroneous data. Journal append,
+portable capture and reopen preserve them without conversion or correction.
+The runtime owns one `ExperimentInputReader`, disposed with that runtime. It
+retains at most two source parses and two conversion results for the current
+document and its staged edit, not an unbounded history cache. Exact text/kind,
+mapping and actuated joint IDs/kinds/limits determine conversion reuse. CSV
+header suggestions consume the prepared source without converting under prior
+units. Metadata/geometry-only changes reuse conversion; changed source or joint
+validation dependencies produce current diagnostics. Exclusion parsing retains
+the current text result/error.
+
+UI diagnostics, conversion review and execution consume that owner. Composition
+resolves authored input before geometry resolution and snapshot/preflight.
+Invalid input, including invalid interval ordering or uncovered timing, rejects
+execution instead of falling back to compatibility fields. Result freshness and
+recorded playback reuse compare the same resolved definition, not raw source
+metadata against a normalized snapshot.
+The pure snapshot/preflight boundary rejects unresolved authored properties;
+resolved snapshots contain only executable data. Existing historical evidence
+and legacy definitions without authored properties are unchanged.

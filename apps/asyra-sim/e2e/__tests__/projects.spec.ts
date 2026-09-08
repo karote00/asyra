@@ -7,13 +7,16 @@ async function ready(page: Page) {
 }
 async function save(page: Page, name: string, copy = false) {
   await page.getByRole('button', { name: 'Projects', exact: true }).click()
+  if (copy) {
+    await page
+      .getByRole('button', { name: 'Copy project', exact: true })
+      .click()
+    await expect(page.getByTestId('persistence-status')).toContainText(
+      ' - Copy'
+    )
+  }
   await page.getByLabel('Project name', { exact: true }).fill(name)
-  await page
-    .getByRole('button', {
-      name: copy ? 'Save copy' : 'Save project',
-      exact: true
-    })
-    .click()
+  await page.getByLabel('Project name', { exact: true }).press('Enter')
   await expect(page.getByTestId('persistence-status')).toHaveText(
     `Saved locally - ${name}`
   )
@@ -42,7 +45,8 @@ test('reopens the existing database and migrates a legacy full model before resa
 }) => {
   await ready(page)
   await renameFixture(page, 'fixture post', 'Retained legacy fixture')
-  await save(page, 'Legacy project')
+  // Copy materializes the current document before constructing a snapshot-only legacy fixture.
+  await save(page, 'Legacy project', true)
   const original = await page.evaluate(async () => {
     const repositoryPath = '/src/storage/indexed-db.ts'
     const migrationPath = '/src/storage/load-migration.ts'
@@ -89,7 +93,7 @@ test('reopens the existing database and migrates a legacy full model before resa
   ).toBeVisible()
   await expect(page.getByRole('treeitem')).toHaveCount(11)
   await expect(page.getByTestId('history-depth')).toHaveText('Undo steps: 0')
-  await save(page, 'Legacy project')
+  await save(page, 'Migrated project', true)
   const persisted = await page.evaluate(async (id) => {
     const repositoryPath = '/src/storage/indexed-db.ts'
     const migrationPath = '/src/storage/load-migration.ts'
@@ -104,7 +108,7 @@ test('reopens the existing database and migrates a legacy full model before resa
     } finally {
       repository.close()
     }
-  }, original.id)
+  }, new URL(page.url()).searchParams.get('projectId'))
   expect(persisted.format).toBe('sim-project')
   expect(persisted.visualSources).toEqual(original.sources)
 })
@@ -118,8 +122,8 @@ test('local project A/B/A replacement resets history and view without duplicatin
   const canvas = page.getByTestId('workcell-canvas').locator('canvas')
   const initialView = await canvas.screenshot()
   await save(page, 'Project A')
-  await renameFixture(page, 'fixture post', 'B fixture')
   await save(page, 'Project B', true)
+  await renameFixture(page, 'fixture post', 'B fixture')
   const bounds = await canvas.boundingBox()
   if (!bounds) throw new Error('Missing canvas')
   await page.mouse.move(bounds.x + 100, bounds.y + 100)
@@ -192,6 +196,7 @@ test('cancel and invalid target preserve the editable current document', async (
 }) => {
   await ready(page)
   await save(page, 'Stored target')
+  await save(page, 'Editable copy', true)
   await renameFixture(page, 'fixture post', 'Unsaved fixture')
   await open(page, 'Stored target', false)
   await page
@@ -209,7 +214,11 @@ test('cancel and invalid target preserve the editable current document', async (
       EXISTING_APP_DATABASE
     )
     const { projects } = await repository.list()
-    const stored = await repository.read(projects[0].id),
+    const stored = await repository.read(
+        projects.find(
+          (project: { name: string }) => project.name === 'Stored target'
+        ).id
+      ),
       payload = JSON.parse(stored.payload)
     const elements = payload.document.sceneTree.elements
     const id = Object.keys(elements).find((key) => elements[key].parentId)
@@ -248,7 +257,7 @@ test('unavailable browser storage reports an error without disabling local editi
   await ready(page)
   await page.getByRole('button', { name: 'Projects', exact: true }).click()
   await page.getByLabel('Project name', { exact: true }).fill('Cannot save')
-  await page.getByRole('button', { name: 'Save project', exact: true }).click()
+  await page.getByLabel('Project name', { exact: true }).press('Enter')
   await expect(page.getByRole('dialog')).toContainText(
     'IndexedDB is unavailable'
   )
@@ -344,7 +353,7 @@ test('retained load diagnostics stay visible and survive saving a copy', async (
     '1 load review requirement'
   )
   await expect(page.getByTestId('persistence-status')).toHaveText(
-    'Unsaved changes'
+    'Saved locally - Needs review'
   )
   await page.getByTestId('load-diagnostics').locator('summary').click()
   await expect(page.getByTestId('load-diagnostics')).toContainText(
@@ -377,7 +386,7 @@ test('a blank workcell survives an App reload and explicit reopen without an ext
   await save(page, 'Blank workcell')
   await page.reload()
   await expect(page.getByRole('status')).toHaveText('Local runtime ready')
-  await expect(page.getByRole('treeitem')).toHaveCount(11)
+  await expect(page.getByRole('treeitem')).toHaveCount(2)
   await open(page, 'Blank workcell')
   await expect(page.getByTestId('persistence-status')).toHaveText(
     'Saved locally - Blank workcell'

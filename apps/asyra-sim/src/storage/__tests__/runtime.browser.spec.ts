@@ -72,7 +72,7 @@ test('request success followed by native transaction abort never acknowledges a 
       await import(path)
     const name = `sim-abort-test-${crypto.randomUUID()}`
     const database = await new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open(name, 1)
+      const request = indexedDB.open(name)
       request.onupgradeneeded = () => request.result.createObjectStore('values')
       request.onsuccess = () => resolve(request.result)
       request.onerror = () => reject(request.error)
@@ -147,7 +147,7 @@ test('missing or corrupt saved documents reject and closed or cancelled storage 
     }
     await capture(() => repository.read('missing'))
     const database = await new Promise<IDBDatabase>((resolve) => {
-      const request = indexedDB.open(name, 1)
+      const request = indexedDB.open(name)
       request.onsuccess = () => resolve(request.result)
     })
     try {

@@ -36,9 +36,7 @@ test('runs complete original parts with one geometry display and rejects surroga
   await page
     .getByLabel('Analysis method')
     .selectOption('continuous-clearance-v0@0.1.0')
-  await page
-    .getByRole('button', { name: 'Save experiment', exact: true })
-    .click()
+  await page.keyboard.press('Tab')
   for (const wireframe of [false, true]) {
     await page.getByLabel('Wireframe', { exact: true }).setChecked(wireframe)
     await page

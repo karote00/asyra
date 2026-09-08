@@ -105,7 +105,8 @@ export function useWorkbenchActions({
           isPresentedRunStale(
             run,
             runtime.getWorkcell(run.snapshot.source.candidateId),
-            definitionToDraft(experiment.definition)
+            definitionToDraft(experiment.definition),
+            runtime.experimentInputs
           )
         )
       } catch {
@@ -122,8 +123,7 @@ export function useWorkbenchActions({
 
       await runtime.features.storage.retain(run)
 
-      if (isCurrent(runtime))
-        setStatus('Result retained - save the project for durable storage')
+      if (isCurrent(runtime)) setStatus('Result retained in project')
     },
     [runtime, isCurrent, setStatus]
   )

@@ -22,8 +22,13 @@ These rules apply to every task without requiring additional document reads:
   validated step/stage boundaries. Never push unless the user explicitly
   requests the remote operation. Follow
   `docs/ai/workflows/git-commit-push-policy.md`.
+- Create new linked worktrees under the main repository's `.worktrees/`
+  directory, never inside `.git/`. Follow the worktree location and collision
+  rules in `docs/ai/workflows/git-commit-push-policy.md`.
 - Do not overwrite unrelated user changes in a dirty worktree.
 - For new apps and app feature/refactor work, read
+  `docs/public/start/custom-composition.md` (the reusable App implementation
+  guide) and
   `docs/ai/framework/rules/app-optimization-and-maintainability.md` before the
   first implementation slice. Design ownership and actual update boundaries
   up front; reuse optimization concepts, not another app's entire architecture.

@@ -7,6 +7,7 @@ export function ExperimentPlayback() {
   const canonical = useExperimentField('canonical')
 
   const dirty = useExperimentField('dirty')
+  const executable = useExperimentField('executable')
 
   const experimentId = useExperimentField('experimentId')
 
@@ -22,7 +23,8 @@ export function ExperimentPlayback() {
 
   const warnings = useExperimentField('warnings')
 
-  const active = !!canonical && !dirty && (previewActive ?? true) && !running
+  const active =
+    !!canonical && executable && !dirty && (previewActive ?? true) && !running
 
   const identity = `${experimentId}:${canonicalKey}:${revision}:${run?.result.runId ?? ''}:${warnings.join(',')}`
 
@@ -30,7 +32,7 @@ export function ExperimentPlayback() {
 
   return (
     <>
-      {canonical && !dirty && (
+      {canonical && executable && !dirty && (
         <>
           <PlaybackControls
             key={identity}

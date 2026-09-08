@@ -1,3 +1,4 @@
+import { journalFixture } from './journal-fixture'
 import { describe, expect, it, vi } from 'vitest'
 import { ProjectSession, type DocumentPorts } from '../project-session'
 import {
@@ -35,6 +36,15 @@ function fixture() {
     }),
     write: vi.fn(async (record) => {
       records.set(record.id, structuredClone(record))
+    }),
+    append: vi.fn(async (metadata, _expected, entry) => {
+      const current = records.get(metadata.id)
+      if (!current) throw new Error('missing')
+      records.set(metadata.id, {
+        ...current,
+        ...metadata,
+        journal: [...(current.journal ?? []), ...(entry ? [entry] : [])]
+      })
     }),
     list: vi.fn(async () => ({ projects: [], limited: false })),
     close: vi.fn()
@@ -116,11 +126,11 @@ describe('project persistence acknowledgement', () => {
     document.capture = vi.fn(() => capture.promise)
     const exporting = session.exportProject()
     await expect(session.save('Other')).rejects.toThrow('still running')
-    session.markEdited()
+    session.markEdited(journalFixture())
     capture.resolve(snapshot())
     await expect(exporting).rejects.toThrow('model changed')
     document.apply = vi.fn(async (_target, guard) => {
-      session.markEdited()
+      session.markEdited(journalFixture())
       guard()
       return []
     })
@@ -166,7 +176,7 @@ describe('project persistence acknowledgement', () => {
     repository.write = vi.fn(() => write.promise)
     const saving = session.save('Example')
     await Promise.resolve()
-    session.markEdited()
+    session.markEdited(journalFixture())
     write.resolve(undefined)
     await saving
     expect(session.getState()).toMatchObject({
@@ -202,7 +212,7 @@ describe('project persistence acknowledgement', () => {
     const { session, repository } = fixture()
     await session.save('Original')
     const original = session.getState().project
-    session.markEdited()
+    session.markEdited(journalFixture())
     repository.write = vi.fn(async () => {
       throw new Error('conflict')
     })
@@ -224,7 +234,7 @@ describe('project persistence acknowledgement', () => {
     await expect(session.open('id', false)).rejects.toThrow('acceptance')
     repository.read = vi.fn(() => read.promise)
     const opening = session.open('id', true)
-    session.markEdited()
+    session.markEdited(journalFixture())
     read.resolve({
       id: 'id',
       name: 'Saved',
@@ -235,7 +245,7 @@ describe('project persistence acknowledgement', () => {
     await expect(opening).rejects.toThrow('model changed')
     expect(document.apply).not.toHaveBeenCalled()
     document.apply = vi.fn(async (_data, guard) => {
-      session.markEdited()
+      session.markEdited(journalFixture())
       guard()
       return []
     })
@@ -285,5 +295,146 @@ describe('project persistence acknowledgement', () => {
     expect(session.getState().project).toBeNull()
     session.close()
     expect(repository.close).toHaveBeenCalledOnce()
+  })
+})
+
+describe('automatic project persistence', () => {
+  it('serializes every publication without recapturing a burst', async () => {
+    const { session, document, repository } = fixture()
+    await session.start()
+    const append = vi.mocked(repository.append)
+    const pending = deferred<undefined>()
+    append.mockImplementationOnce(() => pending.promise)
+    for (let i = 0; i < 20; i++) session.markEdited(journalFixture())
+    expect(document.capture).toHaveBeenCalledOnce()
+    expect(append).toHaveBeenCalledOnce()
+    pending.resolve(undefined)
+    await session.flush()
+    expect(append).toHaveBeenCalledTimes(20)
+    expect(document.capture).toHaveBeenCalledOnce()
+    expect(session.getState().dirty).toBe(false)
+    session.close()
+  })
+
+  it('keeps a failed publication retryable without acknowledging later entries', async () => {
+    const { session, repository } = fixture()
+    await session.start()
+    const append = vi.mocked(repository.append)
+    append.mockRejectedValueOnce(new Error('quota'))
+    session.markEdited(journalFixture())
+    await vi.waitFor(() => expect(session.getState().status).toBe('error'))
+    expect(session.getState()).toMatchObject({ dirty: true, error: 'quota' })
+    await session.flush()
+    expect(session.getState().status).toBe('saved')
+    session.close()
+    const count = append.mock.calls.length
+    session.markEdited(journalFixture())
+    expect(append).toHaveBeenCalledTimes(count)
+  })
+
+  it('restores an existing identity without rewriting it or creating a replacement on failure', async () => {
+    const { session, repository, document } = fixture()
+    await session.save('Existing')
+    const id = session.getState().project?.id
+    if (!id) throw new Error('Missing project')
+    session.close()
+    const restored = new ProjectSession(repository, document)
+    await restored.start(id)
+    expect(restored.getState().project?.id).toBe(id)
+    expect(repository.write).toHaveBeenCalledOnce()
+    restored.close()
+    const missing = new ProjectSession(repository, document)
+    await expect(missing.start('missing')).rejects.toThrow('missing')
+    expect(repository.write).toHaveBeenCalledOnce()
+    expect(missing.getState().status).toBe('error')
+    missing.close()
+  })
+
+  it('does not replace the document when pending persistence fails', async () => {
+    const { session, repository, document } = fixture()
+    await session.start()
+    const original = session.getState().project
+    vi.mocked(repository.append).mockRejectedValueOnce(
+      new Error('revision conflict')
+    )
+    session.markEdited(journalFixture())
+    await expect(session.open('another-project', true)).rejects.toThrow(
+      'revision conflict'
+    )
+    expect(document.apply).not.toHaveBeenCalled()
+    expect(session.getState()).toMatchObject({
+      project: original,
+      dirty: true,
+      status: 'error'
+    })
+    session.close()
+  })
+
+  it('automatically acknowledges a reopened document that preserves load diagnostics', async () => {
+    vi.useFakeTimers()
+    const { session, document, repository } = fixture()
+    try {
+      await session.start()
+      const id = session.getState().project?.id
+      if (!id) throw new Error('Missing project')
+      vi.mocked(document.apply).mockResolvedValueOnce([
+        { path: 'source', message: 'Needs review' }
+      ])
+      await session.open(id, true)
+      expect(session.getState().dirty).toBe(true)
+      await vi.advanceTimersByTimeAsync(300)
+      expect(session.getState().status).toBe('saved')
+      expect(repository.write).toHaveBeenCalledTimes(2)
+    } finally {
+      session.close()
+      vi.useRealTimers()
+    }
+  })
+
+  it('keeps a rename made while copying queued until the copy is acknowledged', async () => {
+    vi.useFakeTimers()
+    const { session, repository, records } = fixture()
+    try {
+      await session.start()
+      const pending = deferred<undefined>()
+      vi.mocked(repository.write).mockImplementationOnce(async (record) => {
+        await pending.promise
+        records.set(record.id, structuredClone(record))
+      })
+      const copying = session.copy('Copied project')
+      await vi.advanceTimersByTimeAsync(0)
+      session.rename('Renamed during copy')
+      await vi.advanceTimersByTimeAsync(500)
+      expect(repository.write).toHaveBeenCalledTimes(2)
+      pending.resolve(undefined)
+      await copying
+      await vi.advanceTimersByTimeAsync(300)
+      expect(session.getState()).toMatchObject({
+        dirty: false,
+        project: { name: 'Renamed during copy' }
+      })
+      expect(repository.write).toHaveBeenCalledTimes(2)
+      expect(repository.append).toHaveBeenCalledOnce()
+    } finally {
+      session.close()
+      vi.useRealTimers()
+    }
+  })
+
+  it('flushes before switching and renames without requiring manual save', async () => {
+    const { session, repository } = fixture()
+    await session.start()
+    const first = session.getState().project
+    if (!first) throw new Error('Missing project')
+    await session.save('Copy', true)
+    session.markEdited(journalFixture())
+    await session.open(first.id, true)
+    expect(session.getState().project?.id).toBe(first.id)
+    session.rename('Renamed')
+    await session.flush()
+    expect(session.getState().project?.name).toBe('Renamed')
+    expect(repository.write).toHaveBeenCalledTimes(2)
+    expect(repository.append).toHaveBeenCalledTimes(2)
+    session.close()
   })
 })

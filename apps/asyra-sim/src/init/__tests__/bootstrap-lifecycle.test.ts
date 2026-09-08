@@ -1,6 +1,11 @@
 // @vitest-environment jsdom
+import { IDBFactory, IDBKeyRange } from 'fake-indexeddb'
+import { IndexedProjectRepository } from '../../storage/indexed-db'
+import { ProjectSession } from '../../storage/project-session'
+import { restoreJournal } from '../../storage/publication-journal'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import core from '@asyra/core'
+import core, { getSessionManager } from '@asyra/core'
+import * as workcellQueries from '../../common-apis/workcell'
 import { bootstrap, type SimRuntime } from '../bootstrap'
 import { ThreeEngine, type GraphicsDriver } from '../../engine/three-engine'
 import { terminalAnalysisResult } from '../../analysis/result'
@@ -117,6 +122,263 @@ const environment = () => {
 }
 
 describe('App composition lifetime', () => {
+  it('restores the selected candidate projection after Undo and Redo of its creation', async () => {
+    const runtime = await environment().start()
+    const first = runtime.getCandidates()[0]
+    const duplicate = await runtime.features.edit.duplicateCandidate(
+      first.id,
+      'B'
+    )
+    runtime.views.selectCandidate(duplicate)
+    expect(runtime.views.getSnapshot().workcell?.bodies).toHaveLength(11)
+    await runtime.features.history.undo()
+    expect(runtime.views.getSnapshot().workcell).toBeNull()
+    await runtime.features.history.redo()
+    expect(runtime.views.getSnapshot().candidateId).toBe(duplicate)
+    expect(runtime.views.getSnapshot().workcell?.bodies).toHaveLength(11)
+  })
+
+  it('finishes saving action A while interaction B remains active without cancellation or an early commit', async () => {
+    vi.stubGlobal('IDBKeyRange', IDBKeyRange)
+    const runtime = await environment().start()
+    const repository = new IndexedProjectRepository(
+      new IDBFactory(),
+      'interaction-publication'
+    )
+    const session = new ProjectSession(repository, {
+      capture: () => runtime.captureSnapshot(),
+      apply: async () => []
+    })
+    await session.start()
+    let release!: () => void
+    const blocked = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    const append = repository.append.bind(repository)
+    repository.append = vi.fn(
+      async (...args: Parameters<IndexedProjectRepository['append']>) => {
+        await blocked
+        return append(...args)
+      }
+    )
+    const stop = runtime.subscribe((publication) =>
+      session.markEdited(
+        runtime.publicationEntry(publication, session.getKnownResources())
+      )
+    )
+    const candidate = runtime.getCandidates()[0]
+    const body = runtime.getWorkcell(candidate.id).bodies[0]
+    await runtime.features.edit.upsert(candidate.id, {
+      ...body,
+      name: 'Action A'
+    })
+    const depth = runtime.getHistoryDepth()
+    const manager = getSessionManager()
+    const onCancel = vi.fn(),
+      onEnd = vi.fn()
+    manager.registerSession(
+      'test.persistence-interaction',
+      'test.persistence-interaction',
+      10,
+      true,
+      'rollback',
+      { onStart: () => ({}), onCancel, onEnd }
+    )
+    await manager.handleStart(
+      'test.persistence-interaction',
+      core.getSystemContextSnapshot()
+    )
+    try {
+      release()
+      await session.flush()
+      expect(onCancel).not.toHaveBeenCalled()
+      expect(onEnd).not.toHaveBeenCalled()
+      expect(manager.getAllActiveSessions().size).toBe(1)
+      expect(runtime.getHistoryDepth()).toBe(depth)
+      expect(session.getState().status).toBe('saved')
+    } finally {
+      stop()
+      session.close()
+      await manager.handleEnd(
+        'test.persistence-interaction',
+        core.getSystemContextSnapshot()
+      )
+    }
+  })
+
+  it('recovers ordered local publications, immutable runs and new attachments without ordinary snapshot captures', async () => {
+    vi.stubGlobal('IDBKeyRange', IDBKeyRange)
+    const { start } = environment()
+    const first = await start()
+    const repository = new IndexedProjectRepository(
+      new IDBFactory(),
+      'publication-recovery'
+    )
+    const session = new ProjectSession(repository, {
+      capture: () => first.captureSnapshot(),
+      apply: async () => []
+    })
+    await session.start()
+    const capture = vi.spyOn(first, 'captureSnapshot')
+    const stop = first.subscribe((publication) =>
+      session.markEdited(
+        first.publicationEntry(publication, session.getKnownResources())
+      )
+    )
+    const candidate = first.getCandidates()[0]
+    const body = first.getWorkcell(candidate.id).bodies[0]
+    await first.features.edit.upsert(candidate.id, {
+      ...body,
+      name: 'Journal body',
+      color: 0x654321
+    })
+    await first.features.history.undo()
+    await first.features.history.redo()
+    const experiment = first.getExperiments(candidate.id)[0]
+    await first.features.edit.createExperiment(
+      candidate.id,
+      'Journal experiment',
+      experiment.definition
+    )
+    const removable = first
+      .getWorkcell(candidate.id)
+      .bodies.find((item) => item.id === 'example:fixture-post')
+    if (!removable) throw new Error('Missing removable fixture')
+    await first.features.edit.remove(candidate.id, removable.id)
+    await first.features.history.undo()
+    const frozen = first.createExperimentSnapshot(experiment.id, [])
+    const record = {
+      version: 1 as const,
+      name: 'Journal evidence',
+      retainedAt: '2026-09-08T00:00:00Z',
+      environment: {
+        appVersion: 'test',
+        userAgent: 'unit',
+        hardwareConcurrency: 1
+      },
+      snapshot: frozen,
+      result: terminalAnalysisResult(frozen, [], {
+        runId: 'journal-run',
+        startedAt: 0,
+        endedAt: 1,
+        execution: 'cancelled',
+        error: 'Cancelled'
+      })
+    }
+    await first.features.storage.retain(record)
+    const bytes = new TextEncoder().encode('Observed fixture')
+    const receipt = await first.features.observations.prepare([
+      { filename: 'field.txt', bytes }
+    ])
+    await first.features.observations.retain(receipt, {
+      runId: 'journal-run',
+      draft: {
+        title: 'Field',
+        text: 'Observed',
+        attachments: receipt.attachments
+      }
+    })
+    await session.flush()
+    expect(capture).not.toHaveBeenCalled()
+    const expected = await first.captureSnapshot()
+    const metadata = session.getState().project
+    if (!metadata) throw new Error('Missing acknowledged project')
+    const stored = await repository.read(metadata.id)
+    expect(stored.journal).toHaveLength(8)
+    expect(
+      stored.journal?.flatMap((entry) => entry.resources.runs ?? [])
+    ).toHaveLength(1)
+    expect(
+      stored.journal?.flatMap(
+        (entry) => entry.resources.observationSources ?? []
+      )
+    ).toHaveLength(1)
+    expect(
+      stored.journal?.flatMap((entry) => entry.resources.visualSources ?? [])
+    ).toHaveLength(0)
+    const recovered = restoreJournal(
+      decodeProject(stored.payload),
+      stored.journal ?? []
+    )
+    stop()
+    session.close()
+    await first.dispose()
+    const replay = vi.spyOn(core, 'applyRemoteCanonicalChangeSlices')
+    const second = await start(recovered)
+    expect(replay).toHaveBeenCalledTimes(recovered.replay?.length ?? 0)
+    for (const [index, call] of replay.mock.calls.entries())
+      expect(call[0].slices).toBe(recovered.replay?.[index].slices)
+    replay.mockRestore()
+    expect(second.getHistoryDepth()).toBe(0)
+    expect(await second.captureSnapshot()).toEqual(expected)
+    const note = second.getObservations('journal-run')[0]
+    expect(
+      Array.from(second.getObservationAttachment(note.attachments[0]))
+    ).toEqual(Array.from(bytes))
+  })
+
+  it('shares registered workcell and run values across unrelated experiment edits and invalidates real dependencies', async () => {
+    const runtime = await environment().start()
+    const candidate = runtime.getCandidates()[0]
+    runtime.views.selectCandidate(candidate.id)
+    const before = runtime.views.getSnapshot()
+    const listener = vi.fn()
+    const stop = runtime.views.subscribe((view) => view.workcell, listener)
+    const experiment = runtime.getExperiments(candidate.id)[0]
+    const reads = vi.spyOn(workcellQueries, 'readWorkcell')
+    await runtime.features.edit.updateExperiment(
+      experiment.id,
+      experiment.definition.revision,
+      {
+        ...experiment.definition,
+        budget: {
+          ...experiment.definition.budget,
+          maxIntervals: experiment.definition.budget.maxIntervals + 1
+        }
+      }
+    )
+    expect(runtime.views.getSnapshot().workcell).toBe(before.workcell)
+    expect(runtime.views.getSnapshot().retainedRuns).toBe(before.retainedRuns)
+    expect(listener).not.toHaveBeenCalled()
+    // The one read belongs to the existing mutation admission. The registered
+    // UI/viewport consumers must not request another canonical workcell.
+    expect(reads).toHaveBeenCalledTimes(1)
+    const body = runtime.getWorkcell(candidate.id).bodies[0]
+    await runtime.features.edit.upsert(candidate.id, {
+      ...body,
+      name: 'Projected body'
+    })
+    expect(runtime.views.getSnapshot().workcell).toEqual(
+      runtime.getWorkcell(candidate.id)
+    )
+    expect(listener).toHaveBeenCalledOnce()
+    await runtime.features.history.undo()
+    expect(runtime.views.getSnapshot().workcell).toEqual(before.workcell)
+    expect(listener).toHaveBeenCalledTimes(2)
+    runtime.views.selectCandidate(null)
+    expect(runtime.views.getSnapshot().workcell).toBeNull()
+    stop()
+    reads.mockRestore()
+  })
+  it('retires document subscriptions before a successor publishes edits', async () => {
+    const { start } = environment()
+    const first = await start()
+    const oldListener = vi.fn()
+    first.subscribe(oldListener)
+    const saved = await first.captureSnapshot()
+    await first.dispose()
+    const second = await start(saved)
+    const listener = vi.fn()
+    second.subscribe(listener)
+    const candidate = second.getCandidates()[0]
+    const body = second.getWorkcell(candidate.id).bodies[0]
+    await second.features.edit.upsert(candidate.id, {
+      ...body,
+      name: 'Successor'
+    })
+    expect(listener).toHaveBeenCalledOnce()
+    expect(oldListener).not.toHaveBeenCalled()
+  })
   it('rejects changed original geometry before retaining a canonical run reference', async () => {
     const runtime = await environment().start(),
       candidate = runtime.getCandidates()[0],

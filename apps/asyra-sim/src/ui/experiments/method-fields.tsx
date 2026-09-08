@@ -1,3 +1,4 @@
+import { CommittedInput } from '../shared/fields'
 import type {
   ExperimentMethodSelection,
   MethodDescriptor
@@ -96,7 +97,8 @@ export function MethodFields({
 
               if (field.kind === 'number')
                 control = (
-                  <input
+                  <CommittedInput
+                    validateOnCommit
                     aria-label={label}
                     type="number"
                     min={field.min}
@@ -107,13 +109,8 @@ export function MethodFields({
                         ? current
                         : ''
                     }
-                    onChange={(event) =>
-                      update(
-                        key,
-                        event.target.value === ''
-                          ? undefined
-                          : Number(event.target.value)
-                      )
+                    onCommit={(text) =>
+                      update(key, text === '' ? undefined : Number(text))
                     }
                   />
                 )

@@ -66,30 +66,30 @@ termination. Any known missed collision blocks the affected method's release.
 These IDs are stable names for formal tests, not an additional assertion
 registry. Owner tests belong in `__tests__/`; UI cases belong in App `e2e/`.
 
-| Case                                 | Given / when                                                            | Required result                                                                       |
-| ------------------------------------ | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| SIM-01 Basic clearance               | Known sphere/box/capsule geometry, queried statically                   | All supported pairs meet independent oracles and method error bounds                  |
-| SIM-02 High-speed crossing           | An object passes through a thin plate between keyframes                 | A finding or explicit unresolved interval, never complete clear                       |
-| SIM-03 Rotational sweep              | An endpoint follows a joint arc through an obstacle                     | Analyze the actual joint path, not a straight line between endpoints                  |
-| SIM-04 Self-collision and exclusions | Different rigid links intersect; another pair is explicitly excluded    | Check nonexcluded pairs and preserve exclusion reasons in the report                  |
-| SIM-05 Units and hierarchy           | Convert units, move a parent, reopen the project                        | Equivalent pose/geometry conclusions without accumulating drift                       |
-| SIM-06 Empty scope                   | No pairs, no trajectory, or background only                             | No-valid-scope or static-mode feedback, not a fabricated motion pass                  |
-| SIM-07 Invalid import                | NaN, duplicate times, missing units/joints, wrong version               | Structured errors, no partial state, no silently skipped rows                         |
+| Case                                 | Given / when                                                                                                               | Required result                                                                                                       |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| SIM-01 Basic clearance               | Known sphere/box/capsule geometry, queried statically                                                                      | All supported pairs meet independent oracles and method error bounds                                                  |
+| SIM-02 High-speed crossing           | An object passes through a thin plate between keyframes                                                                    | A finding or explicit unresolved interval, never complete clear                                                       |
+| SIM-03 Rotational sweep              | An endpoint follows a joint arc through an obstacle                                                                        | Analyze the actual joint path, not a straight line between endpoints                                                  |
+| SIM-04 Self-collision and exclusions | Different rigid links intersect; another pair is explicitly excluded                                                       | Check nonexcluded pairs and preserve exclusion reasons in the report                                                  |
+| SIM-05 Units and hierarchy           | Convert units, move a parent, reopen the project                                                                           | Equivalent pose/geometry conclusions without accumulating drift                                                       |
+| SIM-06 Empty scope                   | No pairs, no trajectory, or background only                                                                                | No-valid-scope or static-mode feedback, not a fabricated motion pass                                                  |
+| SIM-07 Invalid import                | NaN, duplicate times, missing units/joints, wrong version                                                                  | Structured errors, no partial state, no silently skipped rows                                                         |
 | SIM-08 Original-part geometry        | A supplied mesh has omitted table legs, holes or small features in a surrogate; visibility changes or a rerun is attempted | Never execute the surrogate as the original part; block unsupported input, preserve old evidence for read-only review |
-| SIM-09 Unresolved/error band         | Clearance is too close to a threshold or an interval cannot be resolved | Preserve uncertainty/unresolved state; do not label it safe                           |
-| SIM-10 Execution failure             | Cancellation, timeout, worker crash, invalid result                     | Correct terminal state, partial scope, cleanup, and no false success                  |
-| SIM-11 Uncooperative method          | An adapter ignores abort                                                | Terminate the owned worker at the deadline; UI remains usable; no late mutation       |
-| SIM-12 Editing during a run          | Geometry changes to B while run A executes                              | A retains its original snapshot and is distinguished from B; no mixed input           |
-| SIM-13 Stale results                 | Change trajectory/threshold/method, or only the camera                  | Input changes affect freshness; camera changes do not                                 |
-| SIM-14 Candidate comparison          | A/B/C use different scopes, methods, or exclusions                      | Differences are visible; incompatible results are not silently ranked                 |
-| SIM-15 Persistence and recovery      | Save failure, quota exhaustion, missing asset, corrupt bundle           | No false saved state or damage to the original project; actionable recovery/rejection |
-| SIM-16 Method replacement            | Replace a method with an independent example module and rerun           | No Core changes, same lifecycle, old results retain their version                     |
-| SIM-17 Missing version               | Import a project referencing an unavailable method                      | Historical data remains readable; rerun is blocked; no automatic upgrade              |
-| SIM-18 Load repair                   | Joint/dimension fields trigger Framework fallback                       | Show the repair and block analysis under the original assumptions                     |
-| SIM-19 Output parity                 | Use one run in UI, JSON, CSV, HTML, and replay                          | Same source result, units, unknowns, scope, and versions                              |
-| SIM-20 Offline/private data          | Launch the distribution without a network, import private data, rerun   | Core journey succeeds with no default exfiltration or required remote assets          |
-| SIM-21 Injection and large files     | Malicious CSV/HTML strings, remote assets, oversized/corrupt input      | No content execution or unexpected traffic; size/resource limits apply                |
-| SIM-22 User journey                  | A new user follows the docs through three candidates and reopening      | No code changes or maintainer data repair; user can explain limitations               |
+| SIM-09 Unresolved/error band         | Clearance is too close to a threshold or an interval cannot be resolved                                                    | Preserve uncertainty/unresolved state; do not label it safe                                                           |
+| SIM-10 Execution failure             | Cancellation, timeout, worker crash, invalid result                                                                        | Correct terminal state, partial scope, cleanup, and no false success                                                  |
+| SIM-11 Uncooperative method          | An adapter ignores abort                                                                                                   | Terminate the owned worker at the deadline; UI remains usable; no late mutation                                       |
+| SIM-12 Editing during a run          | Geometry changes to B while run A executes                                                                                 | A retains its original snapshot and is distinguished from B; no mixed input                                           |
+| SIM-13 Stale results                 | Change trajectory/threshold/method, or only the camera                                                                     | Input changes affect freshness; camera changes do not                                                                 |
+| SIM-14 Candidate comparison          | A/B/C use different scopes, methods, or exclusions                                                                         | Differences are visible; incompatible results are not silently ranked                                                 |
+| SIM-15 Persistence and recovery      | Save failure, quota exhaustion, missing asset, corrupt bundle                                                              | No false saved state or damage to the original project; actionable recovery/rejection                                 |
+| SIM-16 Method replacement            | Replace a method with an independent example module and rerun                                                              | No Core changes, same lifecycle, old results retain their version                                                     |
+| SIM-17 Missing version               | Import a project referencing an unavailable method                                                                         | Historical data remains readable; rerun is blocked; no automatic upgrade                                              |
+| SIM-18 Load repair                   | Joint/dimension fields trigger Framework fallback                                                                          | Show the repair and block analysis under the original assumptions                                                     |
+| SIM-19 Output parity                 | Use one run in UI, JSON, CSV, HTML, and replay                                                                             | Same source result, units, unknowns, scope, and versions                                                              |
+| SIM-20 Offline/private data          | Launch the distribution without a network, import private data, rerun                                                      | Core journey succeeds with no default exfiltration or required remote assets                                          |
+| SIM-21 Injection and large files     | Malicious CSV/HTML strings, remote assets, oversized/corrupt input                                                         | No content execution or unexpected traffic; size/resource limits apply                                                |
+| SIM-22 User journey                  | A new user follows the docs through three candidates and reopening                                                         | No code changes or maintainer data repair; user can explain limitations                                               |
 
 ## 4. Test Layers and Order
 
@@ -219,3 +219,149 @@ Remaining differences: the sample is authored, not manufacturer-certified;
 the local SwiftShader timing is not reference-hardware evidence. Independent
 numerical review, larger workload qualification and a rebuilt packaged release
 are not implied by these local passes.
+
+### M2 import-contract acceptance
+
+Local acceptance on 2026-09-07 uses the isolated worktree
+`.worktrees/asyra-sim-m2-import-contract`, branch
+`codex/asyra-sim-m2-import-contract`, Node 24.13.0, Yarn 4.3.1, installed Chrome,
+and the ordinary Core/CUSTOM App. Its `.env` sets
+`APP_URL=http://127.0.0.1:3034`; server and Playwright share that origin. Browser
+cases use DPR 1 and default camera; conversion review covers 1440/960/600 CSS px
+at 960 px height with light and dark themes. No reference-GPU performance claim
+is made.
+
+Permanent regression tests first failed on guessed source units, missing
+conversion review, repeated normalization, stale reads and canonical/draft
+replay initialization. The final App suite passes 593 tests. The storage
+work-count oracle observes both normalization and actual angle/length conversion;
+the UI caller proves parsing reuse, zero conversion during source loading, no
+extra work during repeat preview/acceptance, and correct dependency invalidation.
+The two-row case converts each angle and length twice total, rather than twice
+per row. The 2,000-row case exposes only first/middle/last review values.
+
+Final commands, from this worktree root:
+
+```sh
+yarn workspace @asyra/asyra-sim test:local
+yarn workspace @asyra/asyra-sim typecheck
+yarn workspace @asyra/asyra-sim lint
+yarn workspace @asyra/asyra-sim build
+yarn lint:naming
+node --test tools/flow-inspector/workspace/__tests__/catalog.contract.test.cjs scripts/__tests__/test-file-placement.test.mjs
+yarn workspace @asyra/asyra-sim test:e2e e2e/__tests__/trajectory-import.spec.ts e2e/__tests__/visual-references.spec.ts --output=.artifacts/m2-import-final
+yarn workspace @asyra/asyra-sim test:e2e e2e/__tests__/experiments.spec.ts e2e/__tests__/workcell.spec.ts e2e/__tests__/original-part-admission.spec.ts --output=.artifacts/m2-workbench
+yarn workspace @asyra/asyra-sim test:e2e e2e/__tests__/projects.spec.ts --output=.artifacts/m2-projects
+```
+
+The browser set contains 22 distinct passing cases. The final import/GLB group
+passes all eight; the workbench group passes seven. All seven project cases
+also passed in the combined project/GLB run retained under `.artifacts/m2-storage`.
+One GLB case in that earlier run observed viewport text before Redo completion;
+its permanent test now awaits History depth before inspecting restored bindings.
+The focused replay and final complete import/GLB gates pass without changing GLB
+production code. This synchronization does not weaken geometry or replay oracles.
+
+Local artifacts are under `apps/asyra-sim/.artifacts/`. Import review contains
+`csv-conversion-first.png`, `csv-conversion-last.png`, `conversion-overview.png`,
+`conversion-detail.png` and `conversion-last-joints.png` in their Playwright case
+directories, plus source/accepted-definition and viewport/theme attachments.
+Agent screenshot inspection verified source/canonical labels and values,
+scrollable rows and reachable acceptance controls; automated cases separately
+verify unchanged pre-acceptance history, one explicit import action, Undo/Redo, stored units
+and reopening. App/test logs are retained in the worktree's root `.artifacts/`.
+The existing large-bundle build warning remains a later delivery consideration;
+no dependency or runtime upgrade was introduced.
+
+This evidence closes M2 only. It does not certify M3 numerical-method guarantees,
+M4 acceptance, M5 packaging/resource profiles, independent pilots or R0 release.
+
+## Automatic Persistence Regression Gates
+
+Completed object, experiment and observation field gestures must produce one
+intended Feature edit; incomplete numerical text remains transient. New file import acceptance
+reuses the current conversion receipt, and unrelated experiment revisions must
+not reparse or replace edited source text. Exercise queued field writes and
+canonical Undo/Redo acknowledgements independently.
+
+Project-session tests count one initial capture and one ordered append per
+publication, including bursts and changes during pending writes. Real Core/IndexedDB
+recovery covers edit/Undo/Redo, creation/removal/restoration, immutable runs and
+new attachments without ordinary captures or duplicate resources. A blocked A
+write must finish while interaction B remains active without cancellation or an
+early history commit. Repository tests reject duplicate/gapped/broken tails.
+Tests preserve revision-conflict/quota failures, flush before replacement, and
+cover copy/rename and disposal races. Browser gates restore the same URL project
+identity after edits and reload, retain terminal results automatically, preserve
+observation/source bytes through portable reopening, and reject a missing reload
+target without acknowledging the startup example under its identity. There is no
+ordinary Save or Retain button; creation, new file import acceptance, copy/export and failure
+retry remain explicit actions.
+
+Inline trajectory completion must commit once without Apply and share the exact
+validation result with review. Prove conversion work counts, invalid-input
+rejection, preservation of edited text/units across own acknowledgements, and
+canonical Undo/Redo plus reload. Observation metadata edits and accepted
+attachment removal must commit while new files remain prepared; prove no source
+retention until explicit attachment acceptance, with Undo/Redo and reload.
+
+
+### Authored-input independence regression gate
+
+- `editing.test.ts`: erroneous trajectory/exclusion text persists with independent
+  settings, Core Undo/Redo, reload and candidate reference remapping.
+- `experiment-input.test.ts` and `bootstrap.test.ts`: assert parse/conversion
+  counts and exact result reuse through review, acknowledgement, preflight and
+  snapshot; joint/source changes invalidate, unresolved/invalid inputs cannot
+  execute prior normalized data.
+- `trajectory-import-panel.test.ts`: errors appear while typing, completed raw
+  edits persist without Apply, mapping/unit choices survive edits, and external
+  file reads do not convert using previous-source units. Existing receipt,
+  cancellation, late-read, JSON and bounded conversion-preview cases remain.
+- Observation contract, Feature and UI suites: incomplete title/text independently
+  commits and replays; pending creation/update acknowledgements do not lose
+  later completed fields, even on editor closure. Attachment admission and stale
+  local edits remain guarded.
+- `fields.test.ts`: native numeric validity appears during input, unsafe scalar
+  text stays local, and a corrected value commits on Enter.
+- `history-editing.spec.ts`: enter an out-of-limit final joint value (`100 rad`),
+  see the error before blur, complete the gesture, replay it and edit independent
+  settings; persist a malformed exclusion, reload both exact inputs, repair each,
+  and verify execution only resumes after errors clear. Empty unit declarations
+  also survive replay/reload without inferred defaults. Finite interval endpoints
+  persist independently of ordering and coverage, and numeric error text remains
+  visible in object vector fields. Capture source/error and
+  repaired conversion states on the same live `APP_URL`.
+- Run trajectory-import, experiments, automatic-persistence and field-observations
+  E2E suites alongside the regression flow. Inspect emitted live-app screenshots;
+  parser-only tests do not close this gate.
+
+
+Verified 2026-09-08 in `codex/asyra-sim-m2-import-contract`: 647 App tests,
+17 E2E cases (one worker, no retries), App build including typecheck, App lint,
+11 naming checks, 97 Inspector contract checks and two test-placement checks.
+Live-app screenshots were inspected separately from automated assertions.
+The production build retains its existing large-chunk advisory; no dependency,
+bundling or release work was included.
+
+Commands (repository worktree root):
+
+```sh
+yarn workspace @asyra/asyra-sim test:local
+APP_URL=http://127.0.0.1:3020 yarn workspace @asyra/asyra-sim test:e2e e2e/__tests__/history-editing.spec.ts e2e/__tests__/trajectory-import.spec.ts e2e/__tests__/experiments.spec.ts e2e/__tests__/automatic-persistence.spec.ts e2e/__tests__/field-observations.spec.ts --workers=1 --retries=0 --reporter=line
+yarn workspace @asyra/asyra-sim build
+yarn workspace @asyra/asyra-sim lint
+yarn lint:naming
+yarn workspace @asyra/flow-inspector test:contracts
+node --test scripts/__tests__/test-file-placement.test.mjs
+```
+
+Local logs: `.artifacts/editable-input-{full,e2e,build,lint,naming,inspector,placement}-final.log`.
+Browser artifacts: `apps/asyra-sim/test-results/`, including
+`authored-input-errors.png`, `authored-input-repaired.png`,
+`interval-diagnostics.png`, `object-field-diagnostic.png` and
+`incomplete-observation.png`. E2E uses 1440 × 960 at default browser zoom for the
+editing flows; the strict JSON review additionally covers 960/600-pixel layouts
+and light/dark themes. Screenshots retain the ordinary viewport/panel overlays,
+selected fixture where applicable, and the exact test-asserted field values.
+The local Vite server remains on port 3020 (PID 13928 for this invocation).

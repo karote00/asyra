@@ -26,7 +26,7 @@ for (const name of names) {
     await picker.selectOption({ label: `${name} - r1` })
     await expect(
       page.getByRole('button', { name: 'Save experiment', exact: true })
-    ).toBeDisabled()
+    ).toHaveCount(0)
     await page
       .getByRole('button', { name: 'Play trajectory', exact: true })
       .click()
@@ -42,6 +42,7 @@ for (const name of names) {
       .click()
     await page.getByLabel('Sampled trajectory preview time').press('End')
     await expect(page.locator('.viewport-summary')).toContainText('8.0000 s')
+    await expect(page.getByTestId('history-depth')).toHaveText(history ?? '')
     await page.screenshot({ path: info.outputPath('study-preview.png') })
     await page
       .getByRole('button', { name: 'Run preflight', exact: true })
@@ -61,7 +62,9 @@ for (const name of names) {
         .locator('dd')
     ).toHaveText('completed')
     await expect(result).toContainText('Original parts - 23,028 triangles')
-    await expect(page.getByTestId('history-depth')).toHaveText(history ?? '')
+    await expect(page.getByTestId('history-depth')).toHaveText(
+      `Undo steps: ${Number(history?.match(/\d+/)?.[0]) + 1}`
+    )
     await result.scrollIntoViewIfNeeded()
     await page.screenshot({ path: info.outputPath('study-result.png') })
     await info.attach('starter-study-review', {
@@ -95,9 +98,10 @@ test('a focused interval keeps all workcell parts, reports real findings and rep
   })
   await page.getByLabel('Start time (s)').fill('3.8')
   await page.getByLabel('End time (s)').fill('4.2')
-  await page
-    .getByRole('button', { name: 'Save experiment', exact: true })
-    .click()
+  await page.keyboard.press('Tab')
+  await expect(
+    page.getByRole('button', { name: 'Run preflight', exact: true })
+  ).toBeEnabled()
   const history = await page.getByTestId('history-depth').textContent()
 
   await page.getByRole('button', { name: 'Run preflight', exact: true }).click()
@@ -158,7 +162,9 @@ test('a focused interval keeps all workcell parts, reports real findings and rep
   await expect(page.locator('.viewport-summary')).toContainText(
     'Historical run replay - 3.8000 s'
   )
-  await expect(page.getByTestId('history-depth')).toHaveText(history ?? '')
+  await expect(page.getByTestId('history-depth')).toHaveText(
+    `Undo steps: ${Number(history?.match(/\d+/)?.[0]) + 1}`
+  )
   await page.screenshot({ path: info.outputPath('collision-replay.png') })
   await info.attach('collision-review', {
     contentType: 'application/json',

@@ -7,7 +7,8 @@ import type { SimRuntime } from '../../../init/bootstrap'
 import { ExperimentPanel } from '../../experiments/experiment-panel'
 import { type PlaybackView } from '../../experiments/playback-view'
 import type { ExperimentInputs } from '../../experiments/experiment-inputs'
-import type { ReadonlyView } from '../../shared/view-source'
+import { ViewSource, type ReadonlyView } from '../../shared/view-source'
+import type { WorkbenchSnapshot } from '../../../init/registered-views'
 import { Workbench } from '../workbench'
 
 const rowRenders = vi.hoisted(() => new Map<string, number>())
@@ -85,7 +86,14 @@ let revision = 0
 
 const revisionListeners = new Set<() => void>()
 
+let registered: ViewSource<WorkbenchSnapshot>
+
 const publishRevision = () => {
+  registered.publish({
+    ...registered.getSnapshot(),
+    workcell,
+    historyDepth: revision
+  })
   for (const listener of revisionListeners) listener()
 }
 
@@ -103,6 +111,9 @@ const readers = {
 
 const runtime = {
   ...readers,
+  get views() {
+    return { ...registered, selectCandidate: () => undefined }
+  },
   getVisualAssets: vi.fn(() => new Map()),
   setFrame: vi.fn(),
   setCamera: vi.fn(),
@@ -130,6 +141,17 @@ beforeEach(async () => {
   revision = 0
 
   workcell = createSyntheticExample().workcell
+  registered = new ViewSource<WorkbenchSnapshot>({
+    candidateId: 'candidate',
+    candidates: [{ id: 'candidate', name: 'A' }],
+    workcell,
+    modelError: '',
+    experiments: [],
+    retainedRuns: [],
+    runError: '',
+    loadIssues: [],
+    historyDepth: revision
+  })
 
   host = document.createElement('div')
 
@@ -213,7 +235,7 @@ it('camera gestures do not reread canonical workbench data', async () => {
   expect(runtime.setCamera).toHaveBeenCalledTimes(30)
 })
 
-it('playback and panel state reuse a revision-bound projection, but committed changes invalidate it', async () => {
+it('playback and panel state reuse registered values, while dependent publications update the hierarchy', async () => {
   const start = performance.now()
 
   viewportOptionsRenders.count = 0
@@ -265,7 +287,7 @@ it('playback and panel state reuse a revision-bound projection, but committed ch
 
   await act(publishRevision)
 
-  expect(readers.getWorkcell).toHaveBeenCalledTimes(1)
+  expect(readers.getWorkcell).not.toHaveBeenCalled()
 
   expect(
     host.querySelector('[data-object-id="example:base"]')?.textContent

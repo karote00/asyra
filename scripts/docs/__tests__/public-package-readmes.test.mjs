@@ -33,3 +33,14 @@ test('package README generator owns the exact release package set', async () => 
 test('checked-in package READMEs match deterministic generation', async () => {
   assert.equal(await checkPublicPackageReadmes({ repositoryRoot }), 19)
 })
+
+test('Core package readers can reach the complete App guide directly', async () => {
+  const readmes = await generatePublicPackageReadmes({ repositoryRoot })
+  const core = readmes.find((entry) => entry.path === 'packages/core/README.md')
+  assert.ok(core)
+  assert.match(
+    core.content,
+    /href="https:\/\/github\.com\/karote00\/asyra\/blob\/main\/docs\/public\/start\/custom-composition\.md#build-one-complete-data-path"/
+  )
+  assert.match(core.content, /target="_blank" rel="noopener noreferrer"/)
+})

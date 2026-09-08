@@ -126,3 +126,83 @@ as superseding entries; do not overwrite released history.
   the independent numerical, resource, offline distribution, pilot or support
   gates in `release/FIRST_RELEASE.md`. No version bump, release record, package
   publication, tag or merge is authorized by closeout.
+
+## 2026-09-07 - Close M1 Workcell Foundations
+
+- Context: M1 had passed its bounded exit gates but lacked milestone closeout.
+- Decision: Archive the existing owner scope and evidence in
+  [M1 workcell foundations](../../plans/completed/m1-workcell-foundations.md).
+  Keep the first-release roadmap active and resume at M2 import-contract
+  acceptance, not M5. This supersedes active-M1 wording without rewriting old
+  decisions or claiming PR completion proves M2-M4.
+- Consequences: No product code, historical units or evidence are changed.
+  M3-M6 and first-release gates remain separate. Closeout adds no Changeset,
+  version bump, tag, package publication or deployment.
+
+
+## 2026-09-07 - Complete M2 Source Units and Conversion Review
+
+- Context: External CSV mapping assigned canonical units without a source
+  declaration, and acceptance preview omitted converted joint values. Prior
+  helper tests encoded guessed units instead of the product contract.
+- Decision: Suggest columns only for external/edited CSV, preserve explicit
+  JSON and known App-generated canonical units, and share storage-owned parsed
+  rows and validated conversion review with draft acceptance. Canonical replay
+  initializes import text from its matching definition/revision.
+- Outcome: M2's five owner exit criteria pass the bounded formal and browser
+  evidence in [the roadmap](../../plans/asyra-sim-roadmap.md#5-m2-executable-experiments-and-data-import).
+  No source units, canonical numbers or historical evidence are migrated.
+- Consequences: Save retains the existing one-action Feature transaction;
+  previews and discard remain noncanonical. Next work starts with a bounded M3
+  contract/evidence review, not M4/M5 or automatic method reimplementation.
+  No push, PR, merge, tag, version bump, publication or deployment is part of
+  this acceptance.
+
+### 2026-09-08 - Retain explicit import unit declarations during editing
+
+Numeric source edits retain user-declared units and valid column mappings while
+retiring the conversion preview and acceptance eligibility. Initial App canonical
+units remain distinct from explicit declarations; a new CSV requires fresh units,
+and a removed source column retires its own declaration. No saved source evidence
+or Feature/History boundary changes. Permanent UI and browser regressions cover
+retention, conversion reuse, invalidation, and unchanged save/replay behavior.
+
+### 2026-09-08 - Keep initial unit choices visible during source edits
+
+The first retention correction covered explicitly selected units but still cleared
+initial App unit choices. User verification caught that missing product case.
+Retain those choices visibly, distinguish them from source declarations, and
+require one explicit confirmation before validation can admit edited data.
+Confirmation does not validate numbers, accept a draft, or save a project.
+The regression starts from untouched App data, types invalid text, confirms units,
+and corrects the value without reselecting units.
+
+### 2026-09-08 - Remove the additional unit confirmation flow
+
+User direction supersedes the confirmation interaction above. Editing current
+source text retains its existing units without a notice or extra confirmation.
+External CSV file loading still starts with undeclared units. Preview invalidation,
+numeric validation, and the existing draft/save boundary are unchanged.
+
+### 2026-09-08 - Apply and save a trajectory in one action
+
+The successful import preview now offers Apply and save. It merges the same
+validated trajectory artifact into the latest experiment draft and passes that
+complete input directly to the existing save Feature, avoiding a React state
+update followed by a stale save closure. Other settings and exclusions are saved
+in the same transaction; one Undo/Redo reverses/restores the complete change.
+Pending saves disable both save entry points and guard duplicate dispatch.
+
+### 2026-09-08 - Close M2 and its accepted editing follow-ups
+
+- Context: M2 import acceptance was followed by user-requested automatic
+  persistence, registered Core integration and independently editable authored
+  input. Their completed evidence must no longer appear as active work.
+- Decision: close M2 with all five owner exit criteria accepted and no in-scope
+  blocker. Archive the acceptance and final 647 App / 17 affected E2E results in
+  `docs/ai/apps/asyra-sim/plans/completed/m2-import-contract.md`.
+- Consequences: this supersedes the earlier manual Save/Apply and transient-only
+  invalid-input limitations. Core publications/history own completed edits;
+  execution validity remains separate. The roadmap stays active for M3-M6.
+  User-authorized push and PR review follow closeout; no merge, Changeset,
+  version bump, tag, publication or deployment is authorized by this decision.

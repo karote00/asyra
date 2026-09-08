@@ -200,6 +200,7 @@ test('previews, accepts, edits, undoes and reopens complete original part geomet
     '11 analysis parts'
   )
   await page.getByRole('button', { name: 'Redo', exact: true }).click()
+  await expect.poll(() => readHistoryDepth(page)).toBe(initialDepth + 1)
   await expect(page.locator('.viewport-summary')).toContainText(
     '12 analysis parts'
   )
@@ -306,7 +307,9 @@ test('keeps a historical-only visual source available for replay after portable 
   await expect(page.getByTestId('analysis-result')).toBeVisible({
     timeout: 20000
   })
-  await page.getByRole('button', { name: 'Retain result', exact: true }).click()
+  await expect(page.locator('.retention-actions')).toContainText(
+    'Retained in this project'
+  )
   await page
     .getByRole('treeitem', { name: '◇ fixture post', exact: true })
     .click()

@@ -12,6 +12,12 @@ supported Headless Core API in the current release.
 
 ## Choose your path
 
+Building your own App? Start with
+[the Core App implementation guide](start/custom-composition.md#build-one-complete-data-path).
+It connects transaction completion to incremental persistence, scoped UI
+subscriptions, reusable computation and runtime replacement. Read it before
+implementing autosave and projection subscriptions.
+
 The public documentation uses five paths so readers can tell whether they are
 starting from an official product, learning the architecture, extending their
 own domain, or replacing a Framework boundary.

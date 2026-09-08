@@ -41,20 +41,34 @@ test('ordinary field observations preserve immutable evidence, opaque files and 
     .click()
   const library = page.getByRole('dialog', { name: 'Runs and comparison' })
   const panel = library.getByRole('region', { name: 'Field observations' })
-  await expect(panel).toContainText('Retain this result first')
+  await expect(
+    panel.getByRole('button', { name: 'Add field observation', exact: true })
+  ).toBeEnabled()
   const beforeReport = JSON.parse(
     (await download(page, 'Export JSON')).toString('utf8')
   )
-  await library
-    .getByRole('button', { name: 'Retain selected result', exact: true })
-    .click()
   await panel
     .getByRole('button', { name: 'Add field observation', exact: true })
     .click()
   await panel.getByLabel('Observation title').fill('Bench measurement')
+  await panel.getByLabel('Observation title').press('Enter')
+  await expect(panel.locator('.observation-note').first()).toContainText(
+    'revision 1'
+  )
+  await expect(panel.getByLabel('Observation text')).toHaveAttribute(
+    'aria-invalid',
+    'true'
+  )
+  await panel
+    .locator('.observation-editor')
+    .screenshot({ path: info.outputPath('incomplete-observation.png') })
   const firstText =
     'Fixture offset measured: 25 mm. Operator note: <img src=x onerror=alert(1)> is untrusted text.'
   await panel.getByLabel('Observation text').fill(firstText)
+  await panel.getByLabel('Observation text').press('Tab')
+  await expect(panel.locator('.observation-note').first()).toContainText(
+    'revision 2'
+  )
   const csv = Buffer.from('point,clearance_mm\nfixture,25\n', 'utf8')
   const opaque = Buffer.from(
     '<script>Evidence text, never execute.</script>',
@@ -80,7 +94,7 @@ test('ordinary field observations preserve immutable evidence, opaque files and 
     path: info.outputPath('field-observation-editor.png')
   })
   await panel
-    .getByRole('button', { name: 'Save observation', exact: true })
+    .getByRole('button', { name: 'Apply attachments', exact: true })
     .scrollIntoViewIfNeeded()
   await page.screenshot({
     path: info.outputPath('field-observation-files.png')
@@ -89,13 +103,13 @@ test('ordinary field observations preserve immutable evidence, opaque files and 
     (await page.getByTestId('history-depth').innerText()).match(/\d+/)?.[0]
   )
   await panel
-    .getByRole('button', { name: 'Save observation', exact: true })
+    .getByRole('button', { name: 'Apply attachments', exact: true })
     .click()
   await expect(page.getByTestId('history-depth')).toHaveText(
     `Undo steps: ${initialDepth + 1}`
   )
   const note = panel.locator('.observation-note').first()
-  await expect(note).toContainText('revision 1')
+  await expect(note).toContainText('revision 3')
   expect(await download(page, 'Download measurement.csv')).toEqual(csv)
   expect(await download(page, 'Download operator-note.txt')).toEqual(opaque)
   expect(await panel.locator('img,script').count()).toBe(0)
@@ -110,10 +124,8 @@ test('ordinary field observations preserve immutable evidence, opaque files and 
     .fill(
       'Second check: 24 mm. Same measurement files; a revised user interpretation.'
     )
-  await panel
-    .getByRole('button', { name: 'Save observation', exact: true })
-    .click()
-  await expect(note).toContainText('revision 2')
+  await panel.getByLabel('Observation text').press('Tab')
+  await expect(note).toContainText('revision 4')
   const bundle = JSON.parse(
     (await download(page, 'Export field observations')).toString('utf8')
   )
@@ -122,11 +134,11 @@ test('ordinary field observations preserve immutable evidence, opaque files and 
   expect(
     bundle.sources.map((source: { sourceId: string }) => source.sourceId)
   ).toEqual(expectedSources)
-  expect(bundle.observations[0].revision).toBe(2)
+  expect(bundle.observations[0].revision).toBe(4)
   expect(bundle).not.toHaveProperty('result')
   for (const [action, revision] of [
-    ['Undo', 1],
-    ['Redo', 2]
+    ['Undo', 3],
+    ['Redo', 4]
   ] as const) {
     await library
       .getByRole('button', { name: 'Close runs', exact: true })
@@ -152,7 +164,7 @@ test('ordinary field observations preserve immutable evidence, opaque files and 
   await page
     .getByRole('button', { name: 'Runs & compare', exact: true })
     .click()
-  await expect(note).toContainText('revision 2')
+  await expect(note).toContainText('revision 4')
   await panel.scrollIntoViewIfNeeded()
   await page.screenshot({
     path: info.outputPath('retained-field-observation.png')
@@ -162,7 +174,7 @@ test('ordinary field observations preserve immutable evidence, opaque files and 
   await page
     .getByLabel('Project name', { exact: true })
     .fill('Field validation pilot')
-  await page.getByRole('button', { name: 'Save project', exact: true }).click()
+  await page.getByLabel('Project name', { exact: true }).press('Enter')
   await expect(page.getByTestId('persistence-status')).toHaveText(
     'Saved locally - Field validation pilot'
   )
@@ -231,9 +243,7 @@ test('ordinary field observations preserve immutable evidence, opaque files and 
   await panel
     .getByLabel('Observation text')
     .fill('No attachments. A user-reported observation only.')
-  await panel
-    .getByRole('button', { name: 'Save observation', exact: true })
-    .click()
+  await panel.getByLabel('Observation text').press('Tab')
   const finalBundle = JSON.parse(
     (await download(page, 'Export field observations')).toString('utf8')
   )
@@ -271,4 +281,75 @@ test('ordinary field observations preserve immutable evidence, opaque files and 
   })
   expect(errors).toEqual([])
   expect(external).toEqual([])
+})
+
+test('pending attachments do not gate existing observation edits or their Undo and Redo', async ({
+  page
+}, info) => {
+  await page.goto('/')
+  await expect(page.getByRole('status')).toHaveText('Local runtime ready')
+  await page.getByRole('button', { name: 'Experiments', exact: true }).click()
+  await page
+    .getByRole('button', { name: 'Run formal analysis', exact: true })
+    .click()
+  await expect(page.getByTestId('analysis-result')).toBeVisible({
+    timeout: 20000
+  })
+  const openRuns = () =>
+    page.getByRole('button', { name: 'Runs & compare', exact: true }).click()
+  await openRuns()
+  const library = page.getByRole('dialog', { name: 'Runs and comparison' })
+  const panel = library.getByRole('region', { name: 'Field observations' })
+  await panel
+    .getByRole('button', { name: 'Add field observation', exact: true })
+    .click()
+  await panel.getByLabel('Observation title').fill('Independent text')
+  await panel.getByLabel('Observation text').fill('Original measurement')
+  await panel.getByLabel('Observation text').press('Tab')
+  const note = panel.locator('.observation-note').first()
+  await expect(note).toContainText('Original measurement')
+  await panel
+    .getByLabel('Observation attachments', { exact: true })
+    .setInputFiles({
+      name: 'pending.txt',
+      mimeType: 'text/plain',
+      buffer: Buffer.from('pending')
+    })
+  await expect(
+    panel.getByLabel('Prepared observation attachments')
+  ).toContainText('pending.txt')
+  const depth = await page.getByTestId('history-depth').innerText()
+  await panel.getByLabel('Observation text').fill('Revised measurement')
+  await panel.getByLabel('Observation text').press('Tab')
+  await expect(note).toContainText('Revised measurement')
+  await expect(page.getByTestId('history-depth')).toHaveText(
+    `Undo steps: ${Number(depth.match(/\d+/)?.[0]) + 1}`
+  )
+  await expect(
+    panel.getByLabel('Prepared observation attachments')
+  ).toContainText('pending.txt')
+  expect(
+    JSON.parse(
+      (await download(page, 'Export field observations')).toString('utf8')
+    ).sources
+  ).toEqual([])
+  await panel.screenshot({
+    path: info.outputPath('independent-observation-edit.png')
+  })
+  await library.getByRole('button', { name: 'Close runs', exact: true }).click()
+  await page.getByRole('button', { name: 'Undo', exact: true }).click()
+  await openRuns()
+  await expect(note).toContainText('Original measurement')
+  await library.getByRole('button', { name: 'Close runs', exact: true }).click()
+  await page.getByRole('button', { name: 'Redo', exact: true }).click()
+  await expect(page.getByTestId('persistence-status')).toContainText(
+    'Saved locally'
+  )
+  await page.reload()
+  await expect(page.getByRole('status')).toHaveText('Local runtime ready')
+  await expect(page.getByTestId('persistence-status')).toContainText(
+    'Saved locally'
+  )
+  await openRuns()
+  await expect(note).toContainText('Revised measurement')
 })

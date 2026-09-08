@@ -1,7 +1,7 @@
 {
   "pages": [
     {
-      "contentSha256": "c499393d584b87baa02883542281a5ab07cbe0b7effbd48095291cbf6b57ba3a",
+      "contentSha256": "64a854fecee1c9eb02748d9e2e8b4d7a66d6bf989f0c7bbfa9d3485ac75c9794",
       "description": "Build domain-owned information products whose visual, collaborative, persistent, and AI-facing capabilities remain composable.",
       "headings": [
         {
@@ -54,7 +54,7 @@
       "path": "index.md",
       "section": "Overview",
       "title": "Asyra Framework",
-      "wordCount": 621
+      "wordCount": 658
     },
     {
       "contentSha256": "f646e736122a5332a52f3e06e26083447f19b031d4ce119270a5d80a741e5ddd",
@@ -241,12 +241,40 @@
       "wordCount": 476
     },
     {
-      "contentSha256": "8b98e9390c823ea763bcb801537ca3d4f7262a511700602d95b2fdfb67346f79",
-      "description": "Start from Core and choose information, interaction, rendering, persistence, collaboration, and AI capabilities independently.",
+      "contentSha256": "bcc96b18ed83c5ca17294200538946fcefbbb26123b1df0e402bff261ca43784",
+      "description": "Build a Core App with transaction publications, incremental persistence, scoped subscriptions, computation reuse and explicit lifecycle ownership.",
       "headings": [
         {
           "depth": 1,
           "title": "Compose only the infrastructure you need"
+        },
+        {
+          "depth": 2,
+          "title": "Build one complete data path"
+        },
+        {
+          "depth": 2,
+          "title": "Let transactions define completed actions"
+        },
+        {
+          "depth": 2,
+          "title": "Persist publications, not repeated full snapshots"
+        },
+        {
+          "depth": 2,
+          "title": "Scope updates before they reach React"
+        },
+        {
+          "depth": 2,
+          "title": "Reuse admitted results at their real lifetime"
+        },
+        {
+          "depth": 2,
+          "title": "Prove the integration, not just each helper"
+        },
+        {
+          "depth": 2,
+          "title": "Bind everything to the document lifetime"
         },
         {
           "depth": 2,
@@ -297,7 +325,7 @@
       "path": "start/custom-composition.md",
       "section": "Customize",
       "title": "Compose only the infrastructure you need",
-      "wordCount": 689
+      "wordCount": 2500
     },
     {
       "contentSha256": "e636a8f65ffb1b0e0f5c1f40b5eca93e0e7833ad7224c61253ac570c20fa4621",
@@ -1277,7 +1305,7 @@
       "wordCount": 399
     },
     {
-      "contentSha256": "ee567cf3f452b8c2b343ad1355e9b18cb20b31d15a7acbb38ac58b6696626896",
+      "contentSha256": "3b8910534a98b9460f57ed54fe8ad900ae672f29c383558403209b7ef9dc32fd",
       "description": "The strict composition facade for Framework capabilities and lifecycle.",
       "headings": [
         {
@@ -1333,7 +1361,7 @@
       "path": "reference/packages/core.md",
       "section": "Reference",
       "title": "@asyra/core",
-      "wordCount": 621
+      "wordCount": 672
     },
     {
       "contentSha256": "c2bc81415b3770b776ecd0b282c3889325c76a75a26bdb2d50be5a85b84b042d",

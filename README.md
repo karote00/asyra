@@ -152,6 +152,9 @@ and concrete rendering providers remain optional composition choices.
 
 Continue with:
 
+- **[Build a Core App correctly](docs/public/start/custom-composition.md#build-one-complete-data-path)** - transaction publications, incremental persistence,
+  scoped UI subscriptions, reusable computation and runtime lifecycle, extracted
+  from Asyra Design into one implementation guide.
 - [Custom composition](docs/public/start/custom-composition.md)
 - [Model product information first](docs/public/learn/information-models.md)
 - [Define an App-owned component and schema](docs/public/build/custom-schema.md)

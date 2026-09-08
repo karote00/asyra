@@ -1,3 +1,4 @@
+import { trajectoryIntervalError } from '../domain/trajectory-interval'
 import {
   validateTrajectory,
   validateWorkcell,
@@ -69,7 +70,13 @@ function inspectExperiment(
   try {
     validateWorkcell(workcell)
     validateExperimentDefinition(definition)
+    if (definition.trajectoryInput || definition.exclusionsInput !== undefined)
+      throw new Error('Resolve authored experiment inputs before execution')
     validateTrajectory(workcell, definition.trajectory)
+    if (definition.interval[0] > definition.interval[1])
+      throw new Error(
+        trajectoryIntervalError(definition.interval, definition.trajectory)
+      )
   } catch (error) {
     return invalidReport(
       error instanceof Error ? error.message : 'Invalid experiment input'
@@ -209,20 +216,11 @@ function inspectExperiment(
         )
     }
 
-  const first = definition.trajectory.keyframes[0],
-    last = definition.trajectory.keyframes.at(-1)
-  if (
-    !first ||
-    !last ||
-    definition.interval[0] < first.time ||
-    definition.interval[1] > last.time
+  const intervalError = trajectoryIntervalError(
+    definition.interval,
+    definition.trajectory
   )
-    blockers.push(
-      issue(
-        'interval-uncovered',
-        'The trajectory does not cover the full analysis interval.'
-      )
-    )
+  if (intervalError) blockers.push(issue('interval-uncovered', intervalError))
 
   const candidateBodyPairs = new Map<string, readonly [string, string]>()
   const primaryIds = [...primary]

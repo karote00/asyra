@@ -4,6 +4,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import {
   OBSERVATION_LIMITS,
+  type ObservationDraft,
   type FieldObservation
 } from '../../../common-apis/observation-contract'
 import type { PreparedObservationAttachments } from '../../../storage/observation-archive'
@@ -71,11 +72,27 @@ beforeEach(async () => {
 
   prepare.mockResolvedValue(receipt)
 
-  retain.mockResolvedValue('note')
-
-  add.mockResolvedValue('note')
-
-  update.mockResolvedValue(undefined)
+  const acknowledge = (draft: ObservationDraft, id = 'note') => {
+    const previous = notes.find((note) => note.id === id)
+    const timestamp = '2026-09-08T00:00:00.000Z'
+    const next: FieldObservation = {
+      ...draft,
+      version: 1,
+      id,
+      revision: (previous?.revision ?? 0) + 1,
+      createdAt: previous?.createdAt ?? timestamp,
+      updatedAt: timestamp
+    }
+    notes = [...notes.filter((note) => note.id !== id), next]
+    return id
+  }
+  retain.mockImplementation(async (_receipt, intent) =>
+    acknowledge(intent.draft, intent.edit?.id)
+  )
+  add.mockImplementation(async (_run, draft) => acknowledge(draft))
+  update.mockImplementation(async (_run, id, _revision, draft) => {
+    acknowledge(draft, id)
+  })
 
   remove.mockResolvedValue(undefined)
 
@@ -127,6 +144,19 @@ async function fill(label: string, value: string) {
   })
 }
 
+async function commit() {
+  const apply = [...host.querySelectorAll('button')].find(
+    (node) => node.textContent === 'Apply attachments'
+  )
+  await act(async () => {
+    if (apply) apply.click()
+    else
+      host
+        .querySelector('[aria-label="Observation text"]')
+        ?.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))
+  })
+}
+
 async function begin() {
   await act(() => button('Add field observation').click())
 
@@ -166,7 +196,7 @@ it('accepts text only through the canonical Feature and makes no promise of dura
 
   expect(add).not.toHaveBeenCalled()
 
-  await act(async () => button('Save observation').click())
+  await commit()
 
   expect(add).toHaveBeenCalledWith('run-a', {
     title: 'Site check',
@@ -174,7 +204,7 @@ it('accepts text only through the canonical Feature and makes no promise of dura
     attachments: []
   })
 
-  expect(host.textContent).toContain('save the project')
+  expect(host.textContent).toContain('Observation updated')
 
   expect(retain).not.toHaveBeenCalled()
 
@@ -198,7 +228,7 @@ it('shows inert attachment identity for review and retains only after explicit a
 
   expect(retain).not.toHaveBeenCalled()
 
-  await act(async () => button('Save observation').click())
+  await commit()
 
   expect(retain).toHaveBeenCalledWith(receipt, {
     runId: 'run-a',
@@ -219,13 +249,13 @@ it('keeps failed acceptance retryable and removes an existing attachment only th
 
   retain.mockRejectedValueOnce(new Error('Acceptance rejected'))
 
-  await act(async () => button('Save observation').click())
+  await commit()
 
   expect(host.textContent).toContain('Acceptance rejected')
 
   expect(host.textContent).toContain(receipt.attachments[0].sourceId)
 
-  await act(async () => button('Save observation').click())
+  await commit()
 
   expect(retain).toHaveBeenCalledTimes(2)
 
@@ -248,7 +278,7 @@ it('keeps failed acceptance retryable and removes an existing attachment only th
 
   await act(() => button('Remove attachment field.txt').click())
 
-  await act(async () => button('Save observation').click())
+  await commit()
 
   expect(update).toHaveBeenCalledWith(
     'run-a',
@@ -359,7 +389,7 @@ it('preserves expected revisions, rejects stale drafts, renders hostile text ine
 
   await fill('Observation text', 'Changed')
 
-  await act(async () => button('Save observation').click())
+  await commit()
 
   expect(update).toHaveBeenCalledWith(
     'run-a',
@@ -370,15 +400,21 @@ it('preserves expected revisions, rejects stale drafts, renders hostile text ine
 
   await act(() => button('Edit observation').click())
 
+  await fill('Observation text', 'Unfinished local edit')
+
   notes = [{ ...note, revision: 2, text: 'Changed elsewhere' }]
 
   await act(() => render())
 
-  expect(button('Save observation').disabled).toBe(true)
+  expect(
+    [...host.querySelectorAll('button')].some(
+      (node) => node.textContent === 'Save observation'
+    )
+  ).toBe(false)
 
   expect(host.textContent).toContain('changed since this draft')
 
-  await act(() => button('Discard draft').click())
+  await act(() => button('Close observation').click())
 
   const confirm = vi.fn(() => false)
 
@@ -394,3 +430,186 @@ it('preserves expected revisions, rejects stale drafts, renders hostile text ine
 
   expect(remove).toHaveBeenCalledWith('run-a', 'note', 2)
 })
+
+it('automatically applies completed text edits to the same observation without a Save action', async () => {
+  const timestamp = '2026-09-08T00:00:00.000Z'
+  add.mockImplementation(async (_run, draft) => {
+    notes = [
+      {
+        ...draft,
+        version: 1,
+        id: 'note',
+        revision: 1,
+        createdAt: timestamp,
+        updatedAt: timestamp
+      }
+    ]
+    return 'note'
+  })
+  update.mockImplementation(async (_run, id, revision, draft) => {
+    notes = notes.map((note) =>
+      note.id === id ? { ...note, ...draft, revision: revision + 1 } : note
+    )
+  })
+  await begin()
+  expect(add).not.toHaveBeenCalled()
+  const field = host.querySelector<HTMLTextAreaElement>(
+    '[aria-label="Observation text"]'
+  )
+  if (!field) throw new Error('Missing observation text')
+  await act(async () => {
+    field.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))
+  })
+  expect(add).toHaveBeenCalledOnce()
+  expect(host.querySelector('[aria-label="Observation text"]')).toBe(field)
+  await act(async () => {
+    field.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))
+  })
+  expect(update).not.toHaveBeenCalled()
+  await fill('Observation text', 'Reported gap: 26 mm')
+  await act(async () => {
+    field.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))
+  })
+  expect(update).toHaveBeenCalledWith(
+    'run-a',
+    'note',
+    1,
+    expect.objectContaining({ text: 'Reported gap: 26 mm' })
+  )
+  expect(add).toHaveBeenCalledOnce()
+  expect(
+    [...host.querySelectorAll('button')].some(
+      (node) => node.textContent === 'Save observation'
+    )
+  ).toBe(false)
+})
+
+it('commits existing text and attachment removal while new files remain prepared for a separate attachment action', async () => {
+  await begin()
+  await choose([file()])
+  await commit()
+  const next = {
+    attachments: [
+      {
+        ...receipt.attachments[0],
+        sourceId: `sha256:${'b'.repeat(64)}`,
+        filename: 'next.txt'
+      }
+    ]
+  }
+  prepare.mockResolvedValueOnce(next)
+  await choose([file('next.txt')])
+  update.mockClear()
+  retain.mockClear()
+  await fill('Observation text', 'Revised measurement')
+  await act(async () =>
+    host
+      .querySelector('[aria-label="Observation text"]')
+      ?.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))
+  )
+  expect(update).toHaveBeenCalledOnce()
+  expect(notes[0].text).toBe('Revised measurement')
+  expect(notes[0].attachments).toEqual(receipt.attachments)
+  expect(retain).not.toHaveBeenCalled()
+  expect(
+    host.querySelector('[aria-label="Prepared observation attachments"]')
+      ?.textContent
+  ).toContain('next.txt')
+  await act(async () => button('Remove attachment field.txt').click())
+  expect(update).toHaveBeenCalledTimes(2)
+  expect(notes[0].attachments).toEqual([])
+  expect(
+    host.querySelector('[aria-label="Prepared observation attachments"]')
+      ?.textContent
+  ).toContain('next.txt')
+  await act(async () => button('Apply attachments').click())
+  expect(retain).toHaveBeenCalledOnce()
+  expect(notes[0].attachments).toEqual(next.attachments)
+  expect(notes[0].text).toBe('Revised measurement')
+})
+
+it('commits a title on Enter with an incomplete body and replays clean fields automatically', async () => {
+  await act(() => button('Add field observation').click())
+  await fill('Observation title', 'Gap')
+  expect(
+    host
+      .querySelector('[aria-label="Observation text"]')
+      ?.getAttribute('aria-invalid')
+  ).toBe('true')
+  const title = host.querySelector<HTMLInputElement>(
+    '[aria-label="Observation title"]'
+  )
+  if (!title) throw new Error('Missing title input')
+  await act(() => title.focus())
+  await act(() =>
+    title.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })
+    )
+  )
+  expect(add).toHaveBeenCalledWith('run-a', {
+    title: 'Gap',
+    text: '',
+    attachments: []
+  })
+  const saved = structuredClone(notes)
+  notes = []
+  await act(() => render())
+  expect(title.value).toBe('')
+  notes = saved
+  await act(() => render())
+  expect(title.value).toBe('Gap')
+  await fill('Observation title', '')
+  await act(() =>
+    title.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))
+  )
+  expect(update).toHaveBeenCalledWith('run-a', 'note', 1, {
+    title: '',
+    text: '',
+    attachments: []
+  })
+})
+
+it.each([false, true])(
+  'serializes completed fields during pending creation, including editor closure %s',
+  async (closeEditor) => {
+    let finish: () => void = () => undefined
+    add.mockImplementationOnce(async (_run, draft: ObservationDraft) => {
+      await new Promise<void>((resolve) => {
+        finish = resolve
+      })
+      notes = [
+        {
+          ...draft,
+          version: 1,
+          id: 'note',
+          revision: 1,
+          createdAt: '2026-09-08T00:00:00.000Z',
+          updatedAt: '2026-09-08T00:00:00.000Z'
+        }
+      ]
+      return 'note'
+    })
+    await act(() => button('Add field observation').click())
+    await fill('Observation title', 'Gap')
+    await act(() =>
+      host
+        .querySelector('[aria-label="Observation title"]')
+        ?.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))
+    )
+    await fill('Observation text', '25 mm')
+    await commit()
+    expect(update).not.toHaveBeenCalled()
+    if (closeEditor) await act(() => root.render(null))
+    await act(async () => finish())
+    expect(update).toHaveBeenCalledWith('run-a', 'note', 1, {
+      title: 'Gap',
+      text: '25 mm',
+      attachments: []
+    })
+    expect(notes).toEqual([
+      expect.objectContaining({ title: 'Gap', text: '25 mm', revision: 2 })
+    ])
+    if (!closeEditor)
+      expect(host.querySelector('fieldset')?.disabled).toBe(false)
+  }
+)

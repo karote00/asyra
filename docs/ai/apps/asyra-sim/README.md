@@ -12,9 +12,11 @@ single robot workcell**, not a complete factory simulator.
   supplied triangles, closed-solid admission and continuous evidence share one
   domain source. See [the method contract](specs/original-part-method-v1.md)
   and PLANS.md for implementation evidence and remaining public-release gates.
-- The development workbench implementation is complete for PR #156 review. See
-  [the completed plan](plans/completed/development-workbench.md). The R0 release
-  gates remain open; this is not a released product.
+- The development workbench was merged as PR #156. See
+  [the completed plan](plans/completed/development-workbench.md). M1 is closed
+  and M2 import-contract acceptance is complete; the next bounded milestone is
+  M3 contract/evidence review. See [PLANS.md](PLANS.md). The R0 release gates
+  remain open; this is not a released product.
 - The hosted workbench uses the permanent domain `asyra-sim.vercel.app` and
   production branch `main`. See [hosting and browser-local data boundaries](release/HOSTED_PREVIEW.md).
 - App workspace: `apps/asyra-sim/`, alongside `apps/asyra-design/`.
@@ -37,6 +39,12 @@ single robot workcell**, not a complete factory simulator.
   R0 readiness.
 
 ## Reading Guide
+
+Before resuming implementation, read the requested
+[Core integration review](validation/CORE_INTEGRATION_REVIEW.md). It records the publication/persistence and upstream projection gaps found at
+`a379a0ee2` and their completed corrections. See the
+[M2 closeout](plans/completed/m2-import-contract.md) for final acceptance;
+new implementation starts from the separately bounded M3 review.
 
 | Question                                                                         | Document                                                        |
 | -------------------------------------------------------------------------------- | --------------------------------------------------------------- |

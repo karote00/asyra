@@ -75,6 +75,8 @@ function validateForCandidate(
 ): void {
   validateExperimentDefinition(definition)
   const workcell = readWorkcell(core, candidateId)
+  // Authored text is schema-valid document data; execution resolves it separately.
+  if (definition.trajectoryInput) return
   validateTrajectory(workcell, definition.trajectory)
   const actuated = workcell.bodies.filter((body) => body.joint.kind !== 'fixed')
   if (
@@ -92,15 +94,6 @@ function validateForCandidate(
     )
       throw new Error(`Experiment source unit does not match joint ${body.id}`)
   }
-  const first = definition.trajectory.keyframes[0],
-    last = definition.trajectory.keyframes.at(-1)
-  if (
-    !first ||
-    !last ||
-    definition.interval[0] < first.time ||
-    definition.interval[1] > last.time
-  )
-    throw new Error('Experiment interval is not covered by its trajectory')
 }
 
 export function readExperiment(

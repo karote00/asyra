@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { previewTrajectoryCsv } from '../../../storage/trajectory-import'
 import { IDENTITY_POSE } from '../../../domain/math'
 import type { Body, Workcell } from '../../../domain/workcell'
 import {
@@ -119,8 +120,22 @@ describe('experiment UI draft helpers', () => {
     })
 
     expect(guessCsvMapping(['clock', 'axis'], workcell)).toEqual({
-      time: { column: 'clock', unit: 's' },
-      joints: { joint: { column: 'axis', unit: 'rad' } }
+      time: { column: 'clock', unit: '' },
+      joints: { joint: { column: 'axis', unit: '' } }
     })
   })
+})
+
+it('never infers external source units from canonical headers or in-limit numbers', () => {
+  const mapping = guessCsvMapping(['time', 'joint'], workcell)
+  expect(
+    previewTrajectoryCsv('time,joint\n0,0.5\n1,1', workcell, mapping).value
+  ).toBeNull()
+  expect(
+    previewTrajectoryCsv(
+      'time,joint\n0,0.5\n1,1',
+      workcell,
+      canonicalCsvMapping(workcell)
+    ).value
+  ).not.toBeNull()
 })

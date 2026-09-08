@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import {
   validObservationDraft,
   type FieldObservation,
+  type ObservationDraft,
   type ObservationAttachmentReference
 } from '../../common-apis/observation-contract'
 import { downloadBytes, downloadText } from '../projects/download-project'
@@ -21,6 +22,13 @@ export function useObservationController({
   isCurrent: () => boolean
 }) {
   const [open, setOpen] = useState(false)
+
+  const selectedId = useRef<string | null>(null)
+  const writes = useRef({
+    tail: Promise.resolve(),
+    pending: 0,
+    acknowledged: null as FieldObservation | null
+  })
 
   const [editing, setEditing] = useState<FieldObservation | null>(null)
 
@@ -66,8 +74,8 @@ export function useObservationController({
     }
   }
 
-  const current = editing
-    ? notes.find((note) => note.id === editing.id)
+  const current = selectedId.current
+    ? notes.find((note) => note.id === selectedId.current)
     : undefined
 
   const stale =
@@ -79,7 +87,32 @@ export function useObservationController({
     attachments: [...existing, ...(files.prepared?.attachments ?? [])]
   }
 
+  const currentKey = JSON.stringify(current)
+  useEffect(() => {
+    if (
+      saving ||
+      !selectedId.current ||
+      currentKey === JSON.stringify(editing ?? undefined)
+    )
+      return
+    // External canonical replay refreshes clean fields. A competing publication
+    // must not overwrite an unfinished local gesture.
+    if (
+      title !== (editing?.title ?? '') ||
+      text !== (editing?.text ?? '') ||
+      JSON.stringify(existing) !== JSON.stringify(editing?.attachments ?? [])
+    )
+      return
+    writes.current.acknowledged = current ?? null
+    setEditing(current ? structuredClone(current) : null)
+    setTitle(current?.title ?? '')
+    setText(current?.text ?? '')
+    setExisting(current ? structuredClone(current.attachments) : [])
+  }, [currentKey, saving])
+
   const reset = () => {
+    selectedId.current = null
+    writes.current = { tail: Promise.resolve(), pending: 0, acknowledged: null }
     generation.current++
 
     files.clear()
@@ -107,6 +140,8 @@ export function useObservationController({
     setOpen(true)
 
     if (note) {
+      selectedId.current = note.id
+      writes.current.acknowledged = note
       setEditing(structuredClone(note))
 
       setTitle(note.title)
@@ -117,50 +152,91 @@ export function useObservationController({
     }
   }
 
-  const save = async () => {
-    if (!validObservationDraft(draft) || stale || files.busy || files.error)
+  const save = async (
+    input: ObservationDraft = draft,
+    includePrepared = true
+  ) => {
+    const queue = writes.current
+    if (
+      !validObservationDraft(input) ||
+      (stale && !queue.pending) ||
+      (includePrepared && (files.busy || files.error)) ||
+      !isCurrent()
+    )
       return
-
+    if (
+      !editing &&
+      !queue.pending &&
+      !input.title &&
+      !input.text &&
+      !input.attachments.length
+    )
+      return
+    const next = structuredClone(input)
+    const prepared = includePrepared ? files.prepared : null
     const ticket = generation.current
-
     const active = () =>
       mounted.current && ticket === generation.current && isCurrent()
-
-    if (!active()) return
-
+    queue.pending++
     setSaving(true)
-
-    setError('')
-
-    try {
-      if (files.prepared) {
-        await runtime.features.observations.retain(files.prepared, {
+    const write = async () => {
+      // Completed gestures outlive their editor, but never their document.
+      // The preceding acknowledgement owns the identity/revision for this queue.
+      if (!isCurrent()) throw new Error('The document is no longer active')
+      const previous = queue.acknowledged
+      if (
+        previous &&
+        !prepared &&
+        next.title === previous.title &&
+        next.text === previous.text &&
+        JSON.stringify(next.attachments) ===
+          JSON.stringify(previous.attachments)
+      )
+        return
+      if (active()) setError('')
+      let id = previous?.id
+      if (prepared)
+        id = await runtime.features.observations.retain(prepared, {
           runId,
-          draft,
-          ...(editing
-            ? { edit: { id: editing.id, expectedRevision: editing.revision } }
+          draft: next,
+          ...(previous
+            ? { edit: { id: previous.id, expectedRevision: previous.revision } }
             : {})
         })
-      } else if (editing)
+      else if (previous)
         await runtime.features.edit.updateObservation(
           runId,
-          editing.id,
-          editing.revision,
-          draft
+          previous.id,
+          previous.revision,
+          next
         )
-      else await runtime.features.edit.addObservation(runId, draft)
-
+      else id = await runtime.features.edit.addObservation(runId, next)
+      const acknowledged = runtime
+        .getObservations(runId)
+        .find((note) => note.id === id)
+      if (!acknowledged)
+        throw new Error('The observation acknowledgement is unavailable')
+      queue.acknowledged = acknowledged
       if (active()) {
-        reset()
-
+        selectedId.current = acknowledged.id
+        setEditing(structuredClone(acknowledged))
+        if (queue.pending === 1)
+          setExisting(structuredClone(acknowledged.attachments))
+        if (prepared) files.clear()
         setStatus(
-          'Observation retained - save the project for durable storage. One Undo action for a material change.'
+          'Observation updated - one Undo action for a material change.'
         )
       }
+    }
+    const pending = queue.tail.then(write)
+    queue.tail = pending.catch(() => undefined)
+    try {
+      await pending
     } catch (reason) {
       if (active()) setError(errorMessage(reason))
     } finally {
-      if (active()) setSaving(false)
+      queue.pending--
+      if (active()) setSaving(queue.pending > 0)
     }
   }
 
@@ -187,9 +263,7 @@ export function useObservationController({
       if (mounted.current && ticket === generation.current && isCurrent()) {
         reset()
 
-        setStatus(
-          'Observation removed - Undo can restore it. Save the project to persist this change.'
-        )
+        setStatus('Observation removed - Undo can restore it.')
       }
     } catch (reason) {
       if (mounted.current && isCurrent()) setError(errorMessage(reason))

@@ -139,9 +139,12 @@ it('retains an empty numeric input as invalid instead of inventing a zero thresh
 
   expect(field.value).toBe('')
 
-  expect(host.textContent).toContain('Save and preflight will reject')
-
-  expect(() => validateAcceptanceExpression(value())).toThrow()
+  await act(async () => {
+    field.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))
+  })
+  expect(field.value).toBe('')
+  expect(value()).toEqual(source)
+  expect(() => validateAcceptanceExpression(value())).not.toThrow()
 
   expect(source.value).toBe(0.01)
 })

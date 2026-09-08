@@ -69,8 +69,31 @@ independently interpret axes or parent-child transforms.
 
 - Length inputs explicitly support mm/m; angles support deg/rad; time uses
   seconds or explicitly declared milliseconds.
-- Import previews show conversions and preserve source units. Do not guess
-  units for unspecified columns.
+- Import previews show conversions and preserve source units. External CSV files
+  require explicit time and joint unit declarations, even when values fit joint
+  limits or headers resemble canonical names. Column suggestions do not declare
+  units. App-generated data starts with known s/rad/m units; strict JSON retains
+  its declared units. Editing the current source text retains existing units and
+  valid column mappings without an additional notice or confirmation action.
+  Invalid or incomplete values block new-file acceptance and execution, not
+  preservation of authored input. Removing a mapped column
+  retires only its mapping and unit; loading another CSV requires fresh units.
+  Workcell changes still validate joint/unit compatibility.
+- Before acceptance, show source fields, units and representative values beside
+  their canonical values and units, from the same validated conversion result.
+  Bound review to first, middle and last keyframes. Changed source, mapping,
+  units or workcell retires the old preview and acceptance eligibility; repeated
+  preview and acceptance of unchanged input do not repeat parsing/conversion.
+  Preview and discard are noncanonical. Completing an inline text, mapping or
+  unit edit commits bounded authored text and declarations through the existing
+  Feature as one Undo action, including invalid or incomplete input. Show current
+  diagnostics immediately beside the source. Reuse the same conversion result
+  for review and execution; never execute an older normalized trajectory. Its own acknowledgement
+  preserves edited source text and units; external Undo/Redo resets the projection.
+  New file imports require explicit Import trajectory acceptance of the valid
+  preview. Both paths merge into the latest experiment draft. Pending commits
+  block repeat submission. Never reinterpret
+  existing project units, values or historical evidence.
 - Joint axes must be finite and nonzero and normalized according to the
   contract. Reject nonfinite positions, dimensions, and times.
 - Analysis dimensions must be valid. Negative scale or hidden nonuniform
@@ -428,6 +451,21 @@ Replacement defaults must not masquerade as original experiment inputs.
 
 ## 11. Interaction, Cancellation, and Resources
 
+- CUSTOM composition explicitly installs the Core local Scene Tree and Props
+  channels before startup. Completed canonical edits and Undo/Redo publish
+  through Core; no-op and transaction-end rollback produce no document
+  publication. Channels retire with the runtime. Spatial rendering remains a
+  separate registered output and never becomes a document change authority.
+  Runtime document subscribers consume the original publication, not transaction
+  status, so rollback cannot mark the restored document as an additional edit.
+- The runtime owns a registered, read-only UI Context projection for candidates,
+  the selected workcell, experiments, retained runs, diagnostics and history
+  depth. Consumers share the completed domain values. Publication evidence
+  invalidates only affected owners; experiment/observation edits do not rebuild
+  unchanged workcell geometry. Selection and runtime replacement retire the
+  previous workcell projection. Temporary absence preserves selection intent:
+  Undo shows no substitute model and Redo restores the same candidate.
+  Projection failures remain explicit errors.
 - One edit maps to one understandable Undo action. Playback and solving do not
   write every frame into Undo history.
 - Object fields update through the editing Feature when completed, without a
@@ -443,8 +481,11 @@ Replacement defaults must not masquerade as original experiment inputs.
   Do not claim that an ordinary Promise can always be forcibly stopped.
 - Timeout and cancellation preserve explicitly partial evidence, or state that
   no evidence could be retained. They do not produce a success summary.
-- Saving partial runs uses an explicit acceptance/save action. Failed analysis
-  must not damage the original project.
+- Terminal runs, including explicitly partial/cancelled records, are retained
+  automatically through the existing Feature and persisted with the project.
+  Failed retention keeps the immutable result available for retry. In-progress
+  evidence is never retained automatically. Failed analysis must not damage the
+  original project.
 - Closing, restarting, and switching methods must prevent late results from
   mutating a new session.
 - Project replacement uses the complete App runtime termination/reconstruction
@@ -483,3 +524,37 @@ and visual behavior.
 This scope is complete only when the full PRODUCT journey works through normal
 UI/import/API paths and all first-release gates pass. One animation or one
 correct collision does not satisfy this contract.
+
+## Automatic Persistence and Editing Consistency
+
+Valid document edits and Undo/Redo automatically persist to the local project.
+Ordinary editing has no Save action. Bounded trajectory source, mapping, units
+and exclusion text are authored document data even when incomplete or invalid.
+Observation title and text commit independently, including blank content. Display
+errors while typing; block execution on current trajectory/exclusion errors, not
+unrelated edits. Finite interval endpoints persist independently; ordering/coverage errors
+block execution with immediate feedback. Numeric model fields retain finite/type/range guards with inline
+validity feedback; unfinished scalar text stays local. One completed editing
+gesture remains one Undo action. Inline trajectory edits
+commit on field blur; Enter remains a newline in multiline source text. New file
+imports still require preview and explicit acceptance. Completed formal results automatically belong to the
+project; previews and incomplete analysis progress do not become saved evidence.
+
+One storage owner immediately queues each original Core canonical publication
+and serializes its IndexedDB append without debounce or ordinary full capture.
+Changes arriving during a write remain distinct and are persisted in order.
+Only acknowledged writes may report Saved. Failures and cross-tab revision
+conflicts preserve local changes and expose retry/recovery; no blind overwrites.
+Project switches flush outstanding work before retiring the current document.
+New/imported projects receive their own identity; reload restores the same project.
+Project names persist automatically. Copy and portable export remain explicit.
+Local recovery validates an ordered journal over the initial checkpoint and
+newly referenced immutable resources, then applies prepared slices through Core
+without history or publication echo. Copy/export materialize complete snapshots;
+a copy can recover a rejected tail into a new project. Existing snapshot-only
+projects remain readable. No Asyra Design socket backend is introduced.
+
+Inline trajectory edits preserve the authored analysis interval. They never
+reset a custom interval to the source endpoints; changed coverage produces an
+immediate timing diagnostic. Explicit new-file acceptance may initialize its
+new interval as part of that import intent.

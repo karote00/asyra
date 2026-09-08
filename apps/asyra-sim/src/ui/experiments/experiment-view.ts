@@ -21,6 +21,7 @@ export class ExperimentView extends ViewSource<ExperimentState> {
       workcell: state.workcell,
       methods: state.methods,
       exclusions: state.exclusions,
+      exclusionsError: state.exclusionsError,
       onChange: state.changed,
       onExclusions: (value: string) => {
         const current = this.getSnapshot()

@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import {
   OBSERVATION_LIMITS,
   validObservationDraft
@@ -23,6 +24,7 @@ type Props = Pick<
   | 'reset'
   | 'begin'
   | 'save'
+  | 'error'
 >
 
 export function ObservationEditor({
@@ -41,8 +43,11 @@ export function ObservationEditor({
   draft,
   reset,
   begin,
-  save
+  save,
+  error
 }: Props) {
+  const submit = useRef<HTMLButtonElement>(null)
+
   return (
     <>
       {open && (
@@ -55,7 +60,16 @@ export function ObservationEditor({
             [&_textarea]:leading-[1.6] [&_textarea]:p-2 [&_textarea]:border
             [&_textarea]:border-sim-border [&_textarea]:rounded-[4px]
             [&_textarea]:resize-y"
-          disabled={saving}
+          onBlur={(event) => {
+            // The explicit action submits these same fields with its attachments.
+            if (submit.current && event.relatedTarget === submit.current) return
+            if (
+              (event.target instanceof HTMLInputElement &&
+                event.target.type !== 'file') ||
+              event.target instanceof HTMLTextAreaElement
+            )
+              void save({ ...draft, attachments: existing }, false)
+          }}
         >
           <legend>
             {editing ? 'Edit field observation' : 'New field observation'}
@@ -66,9 +80,21 @@ export function ObservationEditor({
             <input
               aria-label="Observation title"
               value={title}
+              aria-invalid={!title.trim()}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault()
+                  event.currentTarget.blur()
+                }
+              }}
               maxLength={OBSERVATION_LIMITS.title}
               onChange={(event) => setTitle(event.target.value)}
             />
+            {!title.trim() && (
+              <span role="alert" className="text-sim-error-text">
+                Enter a title.
+              </span>
+            )}
           </label>
 
           <label>
@@ -77,10 +103,16 @@ export function ObservationEditor({
               aria-label="Observation text"
               rows={4}
               value={text}
+              aria-invalid={!text.trim()}
               maxLength={OBSERVATION_LIMITS.text}
               onChange={(event) => setText(event.target.value)}
               placeholder="What was measured or observed, under which real-world conditions?"
             />
+            {!text.trim() && (
+              <span role="alert" className="text-sim-error-text">
+                Add observation details.
+              </span>
+            )}
           </label>
 
           <span className="hint text-[10px] leading-[1.6] text-sim-muted font-normal">
@@ -98,13 +130,13 @@ export function ObservationEditor({
               <AttachmentDetails reference={reference} />
 
               <button
-                onClick={() =>
-                  setExisting(
-                    existing.filter(
-                      (item) => item.sourceId !== reference.sourceId
-                    )
+                onClick={() => {
+                  const attachments = existing.filter(
+                    (item) => item.sourceId !== reference.sourceId
                   )
-                }
+                  setExisting(attachments)
+                  void save({ ...draft, attachments }, false)
+                }}
               >
                 Remove attachment {reference.filename}
               </button>
@@ -148,7 +180,7 @@ export function ObservationEditor({
             <div aria-label="Prepared observation attachments">
               <p className="hint text-[10px] leading-[1.6] text-sim-muted font-normal">
                 {files.prepared.attachments.length} new files prepared - not yet
-                retained. Review these before saving the observation.
+                retained. Review these before adding the files.
               </p>
 
               {files.prepared.attachments.map((reference) => (
@@ -195,20 +227,25 @@ export function ObservationEditor({
           )}
 
           <div className="run-detail-actions flex flex-wrap gap-2 my-3 mx-0 [&_button]:text-[11px]">
-            <button
-              className="primary bg-sim-accent text-[#fff] border-sim-accent [&:hover]:bg-sim-accent-hover"
-              disabled={
-                !validObservationDraft(draft) ||
-                stale ||
-                files.busy ||
-                !!files.error
-              }
-              onClick={() => void save()}
-            >
-              Save observation
-            </button>
+            {(files.prepared || error) && (
+              <button
+                ref={submit}
+                disabled={
+                  saving ||
+                  !validObservationDraft(draft) ||
+                  stale ||
+                  files.busy ||
+                  !!files.error
+                }
+                onClick={() => void save()}
+              >
+                {files.prepared ? 'Apply attachments' : 'Retry change'}
+              </button>
+            )}
 
-            <button onClick={reset}>Discard draft</button>
+            <button disabled={saving} onClick={reset}>
+              {editing ? 'Close observation' : 'Discard draft'}
+            </button>
           </div>
         </fieldset>
       )}

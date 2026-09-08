@@ -64,9 +64,12 @@ export function useProjectControls({
     }
   }
 
-  const save = async (copy = false) => {
+  const copy = async () => {
     try {
-      await session.save(name, copy)
+      await session.start()
+      await session.copy(`${state.project?.name ?? name} - Copy`)
+
+      setName(session.getState().project?.name ?? name)
 
       setProblem('')
 
@@ -77,18 +80,15 @@ export function useProjectControls({
   }
 
   const choose = async (project: ProjectSummary) => {
-    const warning = state.dirty
-      ? ' Current unsaved changes will be replaced.'
-      : ''
-
     if (
       !window.confirm(
-        `Open “${project.name}”?${warning} This starts a new document with empty Undo/Redo. ${unsavedRunCount} unretained results will be lost.`
+        `Open “${project.name}”? This starts a new document with empty Undo/Redo. ${unsavedRunCount} unretained results will be lost.`
       )
     )
       return
 
     try {
+      await session.start()
       await session.open(project.id, true)
 
       setName(project.name)
@@ -111,19 +111,28 @@ export function useProjectControls({
   else if (state.status === 'error')
     caption = 'Save/open error - changes not acknowledged'
 
-  const saveCurrent = () => {
-    setName(state.project?.name ?? name)
+  const rename = (value: string) => {
+    try {
+      session.rename(value)
+      setName(value.trim())
+      setProblem('')
+    } catch (error) {
+      setProblem(errorMessage(error))
+    }
+  }
 
-    if (!state.project) {
-      setOpen(true)
-
-      void refresh()
-    } else
-      void session.save(state.project.name).catch((error) => {
-        setProblem(errorMessage(error))
-
-        setOpen(true)
-      })
+  const retry = async () => {
+    try {
+      if (!session.getState().project)
+        await session.start(
+          new URL(window.location.href).searchParams.get('projectId') ??
+            undefined
+        )
+      else await session.flush()
+      setProblem('')
+    } catch (error) {
+      setProblem(errorMessage(error))
+    }
   }
 
   return {
@@ -132,16 +141,19 @@ export function useProjectControls({
     setOpen,
     name,
     setName,
-    projects,
+    projects: projects.map((project) =>
+      project.id === state.project?.id ? state.project : project
+    ),
     limited,
     listing,
     problem,
     setProblem,
     dialog,
     refresh,
-    save,
+    copy,
+    rename,
     choose,
     caption,
-    saveCurrent
+    retry
   }
 }

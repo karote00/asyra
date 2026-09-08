@@ -73,12 +73,13 @@ export function usePortableProject({
     if (
       !preview ||
       !window.confirm(
-        `Import “${preview.name}”? This replaces the current document and starts empty Undo/Redo. Save current changes first. ${unsavedRunCount} unretained results will be lost.`
+        `Import “${preview.name}”? This replaces the current document and starts empty Undo/Redo. ${unsavedRunCount} unretained results will be lost.`
       )
     )
       return
 
     try {
+      await session.start()
       await session.importProject(preview.text, true)
 
       onImported(preview.name.replace(/\.json$/i, ''))

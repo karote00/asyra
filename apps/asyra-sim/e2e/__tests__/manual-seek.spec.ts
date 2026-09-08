@@ -16,9 +16,7 @@ for (const kind of ['clearance', 'collision']) {
     // Widen the clearance-only interval through the ordinary authored setting.
     if (kind === 'clearance') {
       await page.getByLabel('Minimum clearance (mm)').fill('200')
-      await page
-        .getByRole('button', { name: 'Save experiment', exact: true })
-        .click()
+      await page.keyboard.press('Tab')
     }
 
     const slider = page.getByLabel('Sampled trajectory preview time')

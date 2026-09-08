@@ -1,4 +1,5 @@
 import type { ProjectSession } from '../../storage/project-session'
+import { CommittedInput } from '../shared/fields'
 import { ToolbarButton } from '../shell/toolbar-button'
 import { PortableProjectControls } from './portable-project-controls'
 import { useProjectControls } from './use-project-controls'
@@ -25,10 +26,11 @@ export function ProjectControls({
     setProblem,
     dialog,
     refresh,
-    save,
+    copy,
+    rename,
     choose,
     caption,
-    saveCurrent
+    retry
   } = useProjectControls({ session, unsavedRunCount })
 
   return (
@@ -40,14 +42,6 @@ export function ProjectControls({
           [&_>_span]:text-sim-secondary"
       >
         <span data-testid="persistence-status">{caption}</span>
-
-        <ToolbarButton
-          label="Save"
-          disabled={!ready || !!state.busy}
-          onClick={saveCurrent}
-        >
-          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h12l4 4v12a2 2 0 0 1-2 2ZM7 3v6h9V3M7 21v-8h10v8M13 5v2" />
-        </ToolbarButton>
 
         <ToolbarButton
           label="Projects"
@@ -98,40 +92,33 @@ export function ProjectControls({
             these saves; this is not a backup.
           </p>
 
-          <form
-            onSubmit={(event) => {
-              event.preventDefault()
-
-              void save()
-            }}
-          >
+          <div className="my-5">
             <label>
               Project name
-              <input
+              <CommittedInput
                 value={name}
                 maxLength={200}
-                onChange={(event) => setName(event.target.value)}
+                onCommit={rename}
+                disabled={!ready || state.busy === 'open'}
               />
             </label>
-
-            <div className="project-actions flex gap-3 items-center justify-between mb-[14px] justify-start mt-[10px]">
-              <button
-                className="primary bg-sim-accent text-[#fff] border-sim-accent [&:hover]:bg-sim-accent-hover"
-                disabled={!ready || !!state.busy}
-                type="submit"
-              >
-                Save project
-              </button>
-
+            <div className="project-actions flex gap-3 mt-3">
               <button
                 disabled={!ready || !!state.busy}
-                type="button"
-                onClick={() => void save(true)}
+                onClick={() => void copy()}
               >
-                Save copy
+                Copy project
               </button>
+              {state.status === 'error' && (
+                <button
+                  disabled={!ready || !!state.busy}
+                  onClick={() => void retry()}
+                >
+                  Retry persistence
+                </button>
+              )}
             </div>
-          </form>
+          </div>
 
           <PortableProjectControls
             session={session}
@@ -139,7 +126,7 @@ export function ProjectControls({
             name={name}
             unsavedRunCount={unsavedRunCount}
             onImported={(importedName) => {
-              setName(importedName)
+              rename(importedName)
 
               setProblem('')
 

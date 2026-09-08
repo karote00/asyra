@@ -64,8 +64,8 @@ it('accepts exact bounded metadata and preserves the legacy absent property', ()
 
 it('rejects malformed, oversized, duplicate or inconsistent annotations without coercion', () => {
   for (const invalid of [
-    { ...draft, title: '' },
-    { ...draft, text: '  ' },
+    { ...draft, title: null },
+    { ...draft, text: 1 },
     { ...draft, title: 'a'.repeat(121) },
     { ...draft, text: 'a'.repeat(8001) },
     { ...draft, extra: true },
@@ -118,4 +118,15 @@ it('admits only bounded inert attachment references with content identity and sa
     { ...attachment, bytes: [1] }
   ])
     expect(validObservationAttachment(invalid)).toBe(false)
+})
+
+it('preserves incomplete authored title and text as bounded metadata', () => {
+  for (const content of [
+    { title: '', text: 'Measured 25 mm' },
+    { title: 'Gap', text: '' },
+    { title: '', text: '  ' }
+  ]) {
+    expect(validObservationDraft({ ...draft, ...content })).toBe(true)
+    expect(validFieldObservations([{ ...note, ...content }])).toBe(true)
+  }
 })

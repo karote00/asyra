@@ -14,7 +14,7 @@ stay active; the historical checkpoints below are not current release claims.
 ### 1.2 Earlier implementation checkpoint (not mesh readiness)
 
 Implementation is authorized; M0 feasibility and the bounded M1 local-workcell
-slice are complete. M2-M4 are in progress. No milestone or release gate is
+slice are complete. M2 is accepted under Section 5; M3-M4 remain in progress. No milestone or release gate is
 claimed complete merely because its contract or source files exist.
 
 The current implementation includes canonical experiment drafts, mapped
@@ -214,74 +214,24 @@ or large collections of governance documents.
 - Unresolved numerical error bounds or supported input envelopes block method
   implementation readiness. They cannot be deferred to release wording.
 
-## 4. M1: Workcell Editing Vertical Slice
+## 4. M1: Workcell Editing Vertical Slice - Complete
 
-M0 now establishes the public-boundary CUSTOM path, canonical editing and raw
-save/load, analytical and continuous interval kernels in Node and Chrome, and
-restricted GLB decoding in a module Worker. Initial environment, ordinary
-reference hardware, local delivery, and aggregate budgets are selected in
-[runtime-profile-v0.md](../specs/runtime-profile-v0.md). Reference-hardware
-performance, production cancellation, and complete import/save journeys are
-not claimed by these small proofs.
-
-The next bounded milestone retains the existing App/custom-engine boundaries
-and completes acknowledged local persistence and the ordinary blank/synthetic
-workcell save/reopen journey. Edit, storage, composition, and UI changes advance
-as separate Inspector owner segments. Gates include native IndexedDB commit and
-abort, unsaved/saving/saved/error state, edit-during-save freshness, source-load
-diagnostics, App unit/type/lint/build, and real-App save/reopen E2E. Stop for
-required new dependencies, unsupported storage semantics, or canonical-owner
-bypasses. Formal analysis, comparison, and new renderer capabilities are not
-part of this M1 slice.
-
-M1 now passes the acknowledged local save/reopen journey, including blank and
-synthetic workcells, A/B/A runtime replacement with empty history and restored
-default view, invalid/cancelled target preservation, retained load diagnostics,
-storage unavailability, and failed-successor recovery download. Recovery must be
-exportable under the native format limit before A retires. App admission, stale
-callbacks, and Framework teardown have separate formal owner coverage.
-
-The closing gates pass: 126 App unit/integration tests, 17 real-Chrome browser
-tests, App typecheck/lint and production build, Inspector and test-placement
-checks, and inspected real-App screenshots. The final Core and Preset regression
-suites pass 241 and 147 tests respectively. Browser evidence uses the configured
-App origin, 1440×960 review viewport, and SwiftShader; it is not reference-GPU
-performance evidence. M2 experiment authoring/import, M3 formal execution,
-comparison, delivery, independent pilots, and public release remain incomplete.
-
-The M0 editing proof now uses canonical identity reconciliation rather than
-remove/recreate replacement, and the App load check reuses registered complete
-validators. Regression cases cover recovery, replacement replay, parent/child
-reversal, rejection/rollback, unchanged edits, and save/load. No alternate
-history or UI model-repair path was introduced.
-
-### User Outcome
-
-Create a few objects from a blank project, manipulate a synthetic robot workcell,
-and use Undo, save, and reopen.
-
-### Owner Slices
-
-1. App bootstrap/composition: create `apps/asyra-sim/`, independent scripts,
-   clear errors, and teardown.
-2. Workcell domain: schemas, units, parents, joints, dimensions, and source asset
-   identity.
-3. Renderer/interaction adapter: camera, ray selection, transforms, and analysis
-   geometry display.
-4. App editing Features: create, modify, delete, configure joints, and enforce
-   transaction boundaries.
-5. Storage: explicit save/load, necessary migrations and validation diagnostics;
-   never report success after a failed save.
-
-Formal evidence includes transform and unit oracles, one Undo per user action,
-cancellation and atomicity, save/load roundtrips, consistent render projections,
-and resource cleanup at startup and teardown.
-
-Establish first-version local data ownership in this phase; do not introduce
-Design sockets or collaboration first. This milestone proves the workbench, not
-completed analysis.
+Closed 2026-09-07. Canonical workcell editing, transactions, acknowledged local
+saving and safe runtime replacement meet the bounded M1 exit criteria.
+The owner scope and recorded formal/browser evidence are archived in
+[M1 workcell foundations](completed/m1-workcell-foundations.md).
+This completion does not establish M2-M4 or R0 acceptance.
 
 ## 5. M2: Executable Experiments and Data Import
+
+### Closeout - 2026-09-08
+
+M2 is complete, including the user-requested Core integration, automatic
+persistence and authored-input follow-ups. All five owner exit criteria are
+accepted with no in-scope blocker. The detailed acceptance and final evidence
+are archived in [the completed M2 record](completed/m2-import-contract.md).
+M3-M6 and public-release gates remain separate; the next task is a bounded M3
+review of existing method contracts and evidence.
 
 ### User Outcome
 

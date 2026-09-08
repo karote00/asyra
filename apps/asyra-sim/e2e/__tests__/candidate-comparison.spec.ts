@@ -9,10 +9,12 @@ async function solveAndRetain(page: Page) {
     page.getByRole('button', { name: 'Cancel analysis', exact: true })
   ).toHaveCount(0, { timeout: 20000 })
   await expect(page.getByTestId('analysis-result')).toBeVisible()
-  await page.getByRole('button', { name: 'Retain result', exact: true }).click()
+  await expect(page.locator('.retention-actions')).toContainText(
+    'Retained in this project'
+  )
   await expect(
     page.getByRole('button', { name: 'Retain result', exact: true })
-  ).toBeDisabled()
+  ).toHaveCount(0)
 }
 async function duplicate(page: Page, name: string) {
   page.once('dialog', (dialog) => dialog.accept(name))

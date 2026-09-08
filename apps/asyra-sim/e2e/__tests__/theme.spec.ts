@@ -14,7 +14,7 @@ test('theme icon retains an explicit choice without editing the experiment or lo
   await expect
     .poll(() =>
       page
-        .getByRole('button', { name: 'Save', exact: true })
+        .getByRole('button', { name: 'Projects', exact: true })
         .evaluate((node) => getComputedStyle(node).backgroundColor)
     )
     .toBe('rgb(29, 39, 47)')
@@ -41,7 +41,7 @@ test('theme icon retains an explicit choice without editing the experiment or lo
   await expect
     .poll(() =>
       page
-        .getByRole('button', { name: 'Save', exact: true })
+        .getByRole('button', { name: 'Projects', exact: true })
         .evaluate((node) => getComputedStyle(node).backgroundColor)
     )
     .toBe('rgb(255, 255, 255)')

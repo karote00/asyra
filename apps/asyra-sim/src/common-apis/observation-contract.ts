@@ -94,10 +94,8 @@ export function validObservationAttachment(
 function validContent(input: Readonly<Record<string, unknown>>): boolean {
   return (
     typeof input.title === 'string' &&
-    !!input.title.trim() &&
     input.title.length <= OBSERVATION_LIMITS.title &&
     typeof input.text === 'string' &&
-    !!input.text.trim() &&
     input.text.length <= OBSERVATION_LIMITS.text &&
     Array.isArray(input.attachments) &&
     input.attachments.length <= OBSERVATION_LIMITS.attachmentsPerNote &&

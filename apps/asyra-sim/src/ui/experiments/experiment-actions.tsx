@@ -4,33 +4,19 @@ import {
   useExperimentView
 } from './experiment-context'
 
-export function ExperimentSave() {
+export function ExperimentCreation() {
   const view = useExperimentView()
-
-  const dirty = useExperimentField('dirty')
-
+  const saving = useExperimentField('saving')
   const canonical = useExperimentValue((state) => !!state.canonical)
-
+  if (canonical) return null
   return (
-    <>
-      <div
-        className="draft-actions flex items-center justify-between gap-[10px] py-3 px-0
-            border-t border-t-sim-divider border-b border-b-sim-divider
-            [&_span]:text-[10px] [&_span]:text-sim-muted"
-      >
-        <span>
-          {dirty ? 'Unsaved experiment draft' : 'Experiment unchanged'}
-        </span>
-
-        <button
-          className="primary bg-sim-accent text-[#fff] border-sim-accent [&:hover]:bg-sim-accent-hover"
-          disabled={!dirty}
-          onClick={() => void view.getSnapshot().save()}
-        >
-          {canonical ? 'Save experiment' : 'Create experiment'}
-        </button>
-      </div>
-    </>
+    <button
+      className="primary bg-sim-accent text-[#fff] border-sim-accent [&:hover]:bg-sim-accent-hover"
+      disabled={saving}
+      onClick={() => void view.getSnapshot().save()}
+    >
+      Create experiment
+    </button>
   )
 }
 
@@ -38,6 +24,7 @@ export function ExperimentPreflightAction() {
   const view = useExperimentView()
 
   const dirty = useExperimentField('dirty')
+  const executable = useExperimentField('executable')
 
   const running = useExperimentField('running')
 
@@ -47,7 +34,7 @@ export function ExperimentPreflightAction() {
     <>
       <button
         className="wide w-full"
-        disabled={!canonical || dirty || running}
+        disabled={!canonical || dirty || !executable || running}
         onClick={() => {
           try {
             view.getSnapshot().inspect()
@@ -68,6 +55,7 @@ export function ExperimentRunAction() {
   const view = useExperimentView()
 
   const dirty = useExperimentField('dirty')
+  const executable = useExperimentField('executable')
 
   const running = useExperimentField('running')
 
@@ -78,7 +66,7 @@ export function ExperimentRunAction() {
       <div className="run-actions flex gap-2 [&_>_.primary]:flex-1">
         <button
           className="primary bg-sim-accent text-[#fff] border-sim-accent [&:hover]:bg-sim-accent-hover"
-          disabled={!canonical || dirty || running}
+          disabled={!canonical || dirty || !executable || running}
           onClick={() => void view.getSnapshot().run()}
         >
           {running ? 'Formal analysis running…' : 'Run formal analysis'}

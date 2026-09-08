@@ -478,3 +478,125 @@ describe('normal canonical editing and replay', () => {
     expect(readWorkcell(core, candidate)).toEqual(before)
   })
 })
+
+it('persists erroneous trajectory and exclusion source independently, with canonical replay and reload', async () => {
+  const candidate = await features.edit.createCandidate('A', model)
+  const draft = {
+    ...experiment(),
+    trajectoryInput: {
+      version: 1,
+      kind: 'csv',
+      text: 'time\ninvalid',
+      mapping: { time: { column: 'time', unit: '' }, joints: {} }
+    },
+    exclusionsInput: 'unfinished exclusion'
+  }
+  const before = core.getUndoHistoryDepth()
+  const id = await features.edit.createExperiment(
+    candidate,
+    'Editable source',
+    draft as ExperimentDraft
+  )
+  expect(readExperiment(core, id).definition).toMatchObject(draft)
+  expect(core.getUndoHistoryDepth()).toBe(before + 1)
+  await features.edit.updateExperiment(id, 1, {
+    ...draft,
+    rule: { ...draft.rule, minimumClearance: 0.04 }
+  } as ExperimentDraft)
+  expect(readExperiment(core, id).definition.rule.minimumClearance).toBe(0.04)
+  await features.history.undo()
+  expect(readExperiment(core, id).definition.rule.minimumClearance).toBe(0.02)
+  await features.history.redo()
+  expect(readExperiment(core, id).definition).toMatchObject({
+    trajectoryInput: draft.trajectoryInput,
+    exclusionsInput: draft.exclusionsInput
+  })
+  const saved = await core.save()
+  loadCanonicalDocument(core, saved)
+  expect(readExperiment(core, id).definition).toMatchObject({
+    ...draft,
+    rule: { ...draft.rule, minimumClearance: 0.04 }
+  })
+})
+
+it.each(['csv', 'json'] as const)(
+  'duplicates authored %s references while preserving erroneous source and the original candidate',
+  async (kind) => {
+    const candidate = await features.edit.createCandidate('A', model)
+    const input: ExperimentDraft = {
+      ...experiment(),
+      trajectoryInput: {
+        version: 1,
+        kind,
+        text:
+          kind === 'csv'
+            ? 'time,base\nnope,4'
+            : '{"version":1,"joints":{"base":"rad"},"keyframes":[{"joints":{"base":4},"time":oops}]}',
+        mapping: {
+          time: { column: 'time', unit: '' },
+          joints: { base: { column: 'base', unit: 'rad' } }
+        }
+      },
+      exclusionsInput: 'base\tfixture\tpending reason\nunfinished'
+    }
+    const id = await features.edit.createExperiment(candidate, 'Input', input)
+    const before = readExperiment(core, id)
+    const depth = core.getUndoHistoryDepth()
+    const duplicate = await features.edit.duplicateCandidate(candidate, 'Copy')
+    const copied = readExperiments(core, duplicate)[0].definition
+    const copiedModel = readWorkcell(core, duplicate)
+    const baseId = copiedModel.bodies.find((body) => body.name === 'Base')?.id
+    const fixtureId = copiedModel.bodies.find(
+      (body) => body.name === 'Fixture'
+    )?.id
+    if (!baseId || !fixtureId || !input.trajectoryInput)
+      throw new Error('Missing copied input')
+    expect(copied.trajectoryInput?.mapping.joints).toEqual({
+      [baseId]: { column: 'base', unit: 'rad' }
+    })
+    expect(copied.trajectoryInput?.text).toBe(
+      kind === 'csv'
+        ? input.trajectoryInput.text
+        : input.trajectoryInput.text.replaceAll('"base":', `"${baseId}":`)
+    )
+    expect(copied.exclusionsInput).toBe(
+      `${baseId}\t${fixtureId}\tpending reason\nunfinished`
+    )
+    expect(readExperiment(core, id)).toEqual(before)
+    expect(core.getUndoHistoryDepth()).toBe(depth + 1)
+    await features.history.undo()
+    await features.history.redo()
+    expect(readExperiments(core, duplicate)[0].definition).toEqual(copied)
+  }
+)
+
+it('persists finite interval endpoints independently of ordering and trajectory coverage', async () => {
+  const candidate = await features.edit.createCandidate('A', model)
+  const id = await features.edit.createExperiment(
+    candidate,
+    'Interval',
+    experiment()
+  )
+  const depth = core.getUndoHistoryDepth()
+  await features.edit.updateExperiment(id, 1, {
+    ...experiment(),
+    interval: [2, 0]
+  })
+  await features.edit.updateExperiment(id, 2, {
+    ...experiment(),
+    interval: [2, 0],
+    rule: { ...experiment().rule, minimumClearance: 0.04 }
+  })
+  expect(readExperiment(core, id).definition).toMatchObject({
+    interval: [2, 0],
+    rule: { minimumClearance: 0.04 }
+  })
+  expect(core.getUndoHistoryDepth()).toBe(depth + 2)
+  await features.history.undo()
+  await features.history.undo()
+  expect(readExperiment(core, id).definition.interval).toEqual([0, 0])
+  await features.history.redo()
+  const saved = await core.save()
+  expect(loadCanonicalDocument(core, saved)).toEqual([])
+  expect(readExperiment(core, id).definition.interval).toEqual([2, 0])
+})
