@@ -23,11 +23,18 @@
 - **Core integration follow-up requested on 2026-09-08.** The
   [baseline review](validation/CORE_INTEGRATION_REVIEW.md) is complete as a
   source/test audit, not a production correction. It found status-driven full
-  snapshot autosave, an interaction-cancelling capture inlet, broad upstream
-  read invalidation and coarse property updates. Freeze the local publication
-  and resource-recovery contract before correcting storage, then scope
-  projections and measure schema payloads. Reconcile the storage spec/Inspector
-  before implementation; no backend, solver or M3-M6 work is included.
+  snapshot autosave, an interaction-cancelling capture inlet and broad upstream
+  read invalidation. Property representation needs feasibility assessment,
+  not an automatic schema migration. Freeze the projection, local publication
+  and resource-recovery contracts before their respective implementation slices.
+  Reconcile affected specs/Inspectors first; no backend, solver or M3-M6 work
+  is included.
+  - The requirements/capability follow-up preserves CUSTOM rendering and the
+    current object schemas. Schema size is not a confirmed defect. Proposed
+    order: prove CUSTOM channel/property/UI Context wiring, replace broad read
+    consumers, implement publication persistence with local resource recovery,
+    then run full workflow/work-count gates. See the same review's feasibility
+    section; production changes have not started.
 
 1. [Asyra Sim first-release roadmap](plans/asyra-sim-roadmap.md)
    - M1 is closed and M2 Import Contract Completion passed milestone acceptance

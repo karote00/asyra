@@ -58,7 +58,7 @@
     },
     {
       "id": "start/custom-composition",
-      "pageSha256": "05e1c89911dba4bac061c74fe5a3c7bff9877b5e337c37edf6a2b5aad918e5cf",
+      "pageSha256": "bcc96b18ed83c5ca17294200538946fcefbbb26123b1df0e402bff261ca43784",
       "sources": [
         {
           "path": "docs/ai/framework/ARCHITECTURE.md",
@@ -75,6 +75,10 @@
         {
           "path": "docs/ai/framework/rules/computation-ownership-and-reuse.md",
           "sha256": "fba7783b4d820417a0b03116c1fd49ea7c11f9af38a04e73b68c7408204c26d1"
+        },
+        {
+          "path": "docs/ai/framework/packages/ui-context.md",
+          "sha256": "4a9b1fe9e3abd5483c191cb96b6221cab8da07c709a9acdd8eeee1f2a2270dd7"
         },
         {
           "path": "docs/ai/apps/asyra-design/specs/socket-authoritative-document-session.md",

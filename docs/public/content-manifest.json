@@ -60,6 +60,7 @@
         "docs/ai/framework/packages/core.md",
         "docs/ai/framework/rules/app-optimization-and-maintainability.md",
         "docs/ai/framework/rules/computation-ownership-and-reuse.md",
+        "docs/ai/framework/packages/ui-context.md",
         "docs/ai/apps/asyra-design/specs/socket-authoritative-document-session.md"
       ],
       "packages": ["@asyra/core"]

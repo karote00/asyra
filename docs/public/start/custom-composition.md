@@ -41,12 +41,15 @@ Assign each boundary before writing UI:
 | Expensive computation | One producer with explicit semantic inputs, output lifetime and invalidation.                                 |
 | Replacement           | App lifecycle coordinates public Core teardown and a fresh runtime; old work cannot write into the successor. |
 
-Choose property boundaries and observation boundaries together. A single object
-property containing settings, a large trajectory and unrelated metadata is
-still one large value when the app replaces it. A transaction does not infer a
-smaller domain patch from that replacement. Separate independently changing
-values or use a supported owner patch API where its semantics fit. Preserve
-existing persisted identities through explicit migration when changing schemas.
+Choose property registrations and observation boundaries together. Structured
+object properties are supported; consumers can project individual UI values
+without splitting the canonical object. First use the component/property
+registration and projection contracts, then measure actual owner work and
+publication evidence. A whole-object argument alone does not prove an
+architecture defect. Value replacement and record collection patch APIs have
+different semantics; do not assume automatic recursive JSON diffing. Change
+schema granularity only for a demonstrated need, preserving persisted identities
+through explicit migration where required.
 
 For bulk actions, use the supported plural canonical operations where they fit,
 such as `core.updateElementProperties(...)`. One transaction around thousands
@@ -127,6 +130,21 @@ load responsibilities. These are App composition boundaries, not APIs for
 embedding a particular backend in Core.
 
 ## Scope updates before they reach React
+
+Core exposes `registerUIProperty`, `getUIProperty`, `onUIPropertyChange` and
+`getUIPropertySubject` for registered derived UI values. Registration supports
+compute/aggregation, triggers and source observables. The canonical change
+subscription that drives recomputation belongs to Preset or App composition;
+registration alone does not install that subscription. A CUSTOM composition
+with no selected defaults must not assume Design's projection wiring exists.
+
+Use `registerDataChannelObserver` for owned change/batch subscriptions and the
+Core property-to-computed projection helpers before consuming relevant
+`getElementComputedData` values. Publish useful UI values through the registered
+UI-property owner. Standard aggregation is selection-oriented; explicitly wire
+the App's selection semantics and initial-load/removal behavior. Do not replace
+this with a second editable model or duplicate signal registry. See the
+[UI Context contract](../../ai/framework/packages/ui-context.md).
 
 Subscribe at the field/entity/projection that consumes a value through the
 approved owner observation facade. Keep unrelated projections stable at that
