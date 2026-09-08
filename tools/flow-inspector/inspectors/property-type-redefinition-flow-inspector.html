@@ -380,6 +380,11 @@ h1 {
 }
 
 .zoom-controls {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  max-width: calc(100% - 72px);
+  justify-content: flex-end;
   position: absolute;
   top: 12px;
   right: 24px;
@@ -608,7 +613,7 @@ h1 {
 }
 
 .full-contract > summary {
-  display: grid;
+  display: list-item;
   gap: 3px;
   padding: 14px 16px;
   color: var(--accent);
@@ -718,6 +723,24 @@ code {
   .guide-grid {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+summary {
+  cursor: pointer;
+}
+summary::marker {
+  color: var(--accent);
+}
+summary:hover {
+  background: #192635;
+}
+summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.full-contract > summary small {
+  display: block;
+  margin: 4px 0 0 18px;
 }
     </style>
   </head>
@@ -1048,19 +1071,28 @@ code {
     const minimumScale = 0.2
     const maximumScale = 2.5
     let scale = 1
+    let originX = 0
+    let originY = 0
     const surface = flow.parentElement
     const controls = document.createElement('div')
     const reset = document.createElement('button')
+    const fit = document.createElement('button')
     controls.className = 'zoom-controls'
     reset.type = 'button'
     reset.dataset.resetZoom = ''
-    reset.title = 'Reset flow zoom to 100% (⌘0)'
+    reset.title = 'Reset flow zoom to 100% (Shift+0; ⌘0)'
+    fit.type = 'button'
+    fit.textContent = 'Fit all - ⇧1'
+    fit.title = 'Fit all cards (Shift+1; ⌘1)'
+    fit.dataset.fitAll = ''
     viewport.tabIndex = 0
+    viewport.setAttribute('aria-keyshortcuts', 'Shift+1 Shift+0 Meta+1 Meta+0')
+    viewport.title = '⌘1 - Fit all cards with 24px padding; ⌘0 - Reset zoom'
     viewport.setAttribute(
       'aria-label',
       'Zoomable and scrollable Inspector flow'
     )
-    controls.appendChild(reset)
+    controls.append(fit, reset)
     viewport.parentElement.appendChild(controls)
 
     const updateResetLabel = () => {
@@ -1070,30 +1102,45 @@ code {
     const syncSurfaceSize = () => {
       const baseWidth = Number(flow.dataset.baseWidth)
       const baseHeight = Number(flow.dataset.baseHeight)
-      if (baseWidth > 0) surface.style.width = `${baseWidth * scale}px`
-      if (baseHeight > 0) surface.style.height = `${baseHeight * scale}px`
+      // Reserved scrollbar gutters reduce usable scroll travel; retain their screen-space extent.
+      const viewportStyle = window.getComputedStyle(viewport)
+      const gutterWidth = Math.max(
+        0,
+        viewport.offsetWidth -
+          viewport.clientWidth -
+          parseFloat(viewportStyle.borderLeftWidth || '0') -
+          parseFloat(viewportStyle.borderRightWidth || '0')
+      )
+      if (baseWidth > 0)
+        surface.style.width = `${baseWidth * scale + originX + gutterWidth}px`
+      if (baseHeight > 0)
+        surface.style.height = `${baseHeight * scale + originY}px`
     }
 
-    const setScale = (nextScale, anchor) => {
-      const boundedScale = Math.min(
-        maximumScale,
-        Math.max(minimumScale, nextScale)
-      )
+    const setScale = (nextScale, anchor, fitOrigin) => {
+      const boundedScale = fitOrigin
+        ? nextScale
+        : Math.min(maximumScale, Math.max(minimumScale, nextScale))
       const anchorX = anchor?.x ?? viewport.clientWidth / 2
       const anchorY = anchor?.y ?? viewport.clientHeight / 2
-      const contentX = (viewport.scrollLeft + anchorX) / scale
-      const contentY = (viewport.scrollTop + anchorY) / scale
+      const contentX = (viewport.scrollLeft + anchorX - originX) / scale
+      const contentY = (viewport.scrollTop + anchorY - originY) / scale
+      originX = fitOrigin?.x ?? originX
+      originY = fitOrigin?.y ?? originY
       scale = boundedScale
       viewport.dataset.zoomScale = String(scale)
       flow.style.transformOrigin = '0 0'
-      flow.style.transform = `scale(${scale})`
+      flow.style.transform =
+        originX || originY
+          ? `translate(${originX}px, ${originY}px) scale(${scale})`
+          : `scale(${scale})`
       syncSurfaceSize()
-      viewport.scrollLeft = contentX * scale - anchorX
-      viewport.scrollTop = contentY * scale - anchorY
+      viewport.scrollLeft = contentX * scale + originX - anchorX
+      viewport.scrollTop = contentY * scale + originY - anchorY
       updateResetLabel()
     }
 
-    const resetZoom = () => setScale(1)
+    const resetZoom = () => setScale(1, undefined, { x: 0, y: 0 })
 
     viewport.addEventListener(
       'wheel',
@@ -1111,11 +1158,110 @@ code {
       },
       { passive: false }
     )
-    reset.addEventListener('click', resetZoom)
-    document.addEventListener('keydown', (event) => {
-      if (!event.metaKey || event.key !== '0') return
-      event.preventDefault()
-      resetZoom()
+    const executeZoom = (command) => {
+      if (command === 'reset') resetZoom()
+      else if (command === 'fit-all') {
+        if (selectedLaneId !== 'All') {
+          selectedLaneId = 'All'
+          render()
+        }
+        fitCards(
+          [...flow.children].filter((element) =>
+            element.classList.contains('step-card')
+          ),
+          24,
+          true
+        )
+      }
+    }
+    reset.addEventListener('click', () => executeZoom('reset'))
+    fit.addEventListener('click', () => executeZoom('fit-all'))
+    window.addEventListener('message', (event) => {
+      if (
+        window.parent === window ||
+        event.source !== window.parent ||
+        event.data?.type !== 'flow-inspector:zoom-command'
+      )
+        return
+      executeZoom(event.data.command)
+    })
+    document.addEventListener(
+      'keydown',
+      (event) => {
+        if (event.isComposing || event.altKey || event.ctrlKey) return
+        const commandKey = event.metaKey && !event.shiftKey
+        const alternative = event.shiftKey && !event.metaKey
+        let key = ''
+        if (commandKey) key = event.key
+        else if (alternative && event.code === 'Digit1') key = '1'
+        else if (alternative && event.code === 'Digit0') key = '0'
+        if (key !== '1' && key !== '0') return
+        if (
+          alternative &&
+          event.target.closest?.(
+            'input, textarea, select, [contenteditable="true"]'
+          )
+        )
+          return
+        event.preventDefault()
+        executeZoom(key === '1' ? 'fit-all' : 'reset')
+      },
+      true
+    )
+    const fitCards = (selectedCards, padding, fitAll = false) => {
+      if (!selectedCards.length) return
+      const left = Math.min(...selectedCards.map((card) => card.offsetLeft))
+      const top = Math.min(...selectedCards.map((card) => card.offsetTop))
+      const right = Math.max(
+        ...selectedCards.map((card) => card.offsetLeft + card.offsetWidth)
+      )
+      const bottom = Math.max(
+        ...selectedCards.map((card) => card.offsetTop + card.offsetHeight)
+      )
+      if (fitAll) {
+        const width = viewport.offsetWidth
+        const height = viewport.offsetHeight
+        if (width <= padding * 2 || height <= padding * 2) return
+        const fittedScale = Math.min(
+          (width - padding * 2) / Math.max(1, right - left),
+          (height - padding * 2) / Math.max(1, bottom - top)
+        )
+        const centerX = width / 2 - viewport.clientLeft
+        const centerY = height / 2 - viewport.clientTop
+        const x = Math.max(0, centerX - ((left + right) * fittedScale) / 2)
+        const y = Math.max(0, centerY - ((top + bottom) * fittedScale) / 2)
+        setScale(fittedScale, undefined, { x, y })
+        viewport.scrollLeft = ((left + right) * scale) / 2 + originX - centerX
+        viewport.scrollTop = ((top + bottom) * scale) / 2 + originY - centerY
+        viewport.scrollIntoView?.({ block: 'center', inline: 'nearest' })
+        return
+      }
+      setScale(
+        Math.min(
+          1,
+          (viewport.clientWidth - padding * 2) / Math.max(1, right - left),
+          (viewport.clientHeight - padding * 2) / Math.max(1, bottom - top)
+        )
+      )
+      viewport.scrollLeft =
+        ((left + right) * scale) / 2 + originX - viewport.clientWidth / 2
+      viewport.scrollTop =
+        ((top + bottom) * scale) / 2 + originY - viewport.clientHeight / 2
+      viewport.scrollIntoView?.({ block: 'center', inline: 'nearest' })
+    }
+    flow.addEventListener('flowfitrequest', (event) => {
+      const ids = event.detail?.stepIds
+      if (
+        !Array.isArray(ids) ||
+        !viewport.clientWidth ||
+        !viewport.clientHeight
+      )
+        return
+      const requested = new Set(ids)
+      const selectedCards = [...flow.children].filter((element) =>
+        requested.has(element.dataset.stepId)
+      )
+      fitCards(selectedCards, 40)
     })
     flow.addEventListener('flowboundschange', syncSurfaceSize)
     setScale(1, { x: 0, y: 0 })

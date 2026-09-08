@@ -155,6 +155,30 @@ function validateMapping(value) {
     )
   )
     throw new Error('Invalid mapping review state')
+  if (
+    value.evolution &&
+    (value.evolution.history?.format !== 1 ||
+      !Number.isInteger(value.evolution.history.revision) ||
+      !Array.isArray(value.evolution.history.versions) ||
+      !value.evolution.history.versions.length ||
+      !Array.isArray(value.evolution.history.decisions) ||
+      !Array.isArray(value.evolution.reviews))
+  )
+    throw new Error('Invalid contract evolution history')
+  if (
+    value.ciDeliveries &&
+    (!Array.isArray(value.ciDeliveries) ||
+      value.ciDeliveries.some(
+        (item) =>
+          !validId(item.id) ||
+          typeof item.runId !== 'string' ||
+          !Number.isSafeInteger(item.attempt) ||
+          !/^[a-f0-9]{64}$/.test(item.fingerprint) ||
+          !item.result ||
+          !item.envelope
+      ))
+  )
+    throw new Error('Invalid CI delivery history')
   return value
 }
 function openStore(directory) {

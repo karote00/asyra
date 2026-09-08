@@ -349,9 +349,17 @@ Phase 6 hardens and expands proven controls rather than first introducing them.
 As of 2026-09-07, the bounded [Phase 3 proof](../CORE_PROOF.md) implements two
 Factory flows, conditional preflight, five negative demonstrations, explicit
 mapping decisions, and versioned local evidence on the original canvas. Its
-mapping policy permits test-name changes only. Phase 4 remains the next candidate;
-protected accepted-base CI, broader flow evolution, and shared viewing are not
-implied by the local proof or its passing CI commands.
+mapping policy permits test-name changes only. Its
+[Phase 3 completed record](completed/flow-inspector-phase-3-core-proof-closeout.md) records PR #165
+and the verified merged evidence. On 2026-09-08 the user accepted closeout of
+[Phase 4 local implementation and UX](completed/flow-inspector-phase-4-local-implementation-closeout.md),
+including evolution/retirement, common actions, raw CI evidence admission,
+shared snapshots and canvas interaction fixes. GitHub mandatory protection is
+explicitly deferred to avoid disrupting concurrent projects and merges. The
+combined plan retains the original unfulfilled CI criteria as deferred work;
+passing local trials and PR checks do not prove protected delivery. No required
+check configuration is changed, and Phase 5/6 remain deferred.
+
 
 The preliminary estimate is 2-4 engineering person-weeks for the core proof,
 another 6-10 for an operational trial, and another 8-14 for a bounded agent and

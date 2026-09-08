@@ -3,11 +3,18 @@
 const path = require('node:path')
 const fs = require('node:fs')
 const { randomUUID } = require('node:crypto')
-const { loadContract, mappingDiff } = require('./contracts.cjs')
+const { admitContract, loadContract, mappingDiff } = require('./contracts.cjs')
 const { captureSource, safePath, sha256 } = require('./snapshot.cjs')
 const { runVerification } = require('./runner.cjs')
 const evidenceOwner = require('./evidence.cjs')
-const { openStore, validId } = require('./store.cjs')
+const { openStore, validId, writeAtomic } = require('./store.cjs')
+const {
+  createHistory,
+  compareVersion,
+  decideVersion
+} = require('./evolution.cjs')
+const { prepareCIContext } = require('./ci-context.cjs')
+const { assessCI } = require('./ci-evidence.cjs')
 
 const LOCAL_ACTOR = Object.freeze({
   id: 'local-developer',
@@ -15,7 +22,14 @@ const LOCAL_ACTOR = Object.freeze({
     'verify',
     'cancel',
     'prepare-mapping',
-    'decide-mapping'
+    'decide-mapping',
+    'preview-contract',
+    'prepare-contract',
+    'decide-contract',
+    'retire-contract',
+    'ci',
+    'ingest-ci',
+    'update-work'
   ])
 })
 class ActionError extends Error {
@@ -41,9 +55,12 @@ function createService(
     directory = path.join(repositoryRoot, 'tmp/flow-inspector/runs'),
     runner = runVerification,
     capture = captureSource,
-    timeoutMs = 30000
+    timeoutMs = 30000,
+    acceptedBase = 'origin/main',
+    ciAdmission = null
   } = {}
 ) {
+  ciAdmission = ciAdmission ? structuredClone(ciAdmission) : null
   let contract = loadContract(repositoryRoot)
   safePath(repositoryRoot, path.relative(repositoryRoot, directory))
   const store = openStore(directory)
@@ -56,25 +73,201 @@ function createService(
         reviews: []
       })
     const accepted = store.mapping().accepted
-    contract = loadContract(repositoryRoot, accepted.definition)
+    contract = accepted.architectureDefinition
+      ? admitContract(accepted.definition, accepted.architectureDefinition)
+      : loadContract(repositoryRoot, accepted.definition)
     if (contract.digest !== accepted.digest)
       throw new Error(
         'Accepted architecture changed; a new contract activation is required'
       )
     for (const record of store.list())
       evidenceOwner.validateStoredEvidence(contract, record)
+    if (!store.mapping().evolution) {
+      const contentDigest = sha256(
+        fs.readFileSync(safePath(repositoryRoot, contract.testFile))
+      )
+      store.saveMapping({
+        ...store.mapping(),
+        evolution: {
+          history: createHistory({
+            contract,
+            selectors: contract.cases.map((item) => ({
+              caseId: item.id,
+              file: contract.testFile,
+              testName: item.testName,
+              contentDigest
+            }))
+          }),
+          reviews: []
+        }
+      })
+    }
+    const history = store.mapping().evolution.history
+    for (const version of history.versions) {
+      const restored = admitContract(
+        version.contract.definition,
+        version.contract.architectureDefinition
+      )
+      if (restored.digest !== version.contract.digest)
+        throw new Error('Invalid retained contract version')
+    }
+    for (const delivery of store.mapping().ciDeliveries ?? []) {
+      const version = history.versions.find(
+        (item) => item.contract.digest === delivery.contractDigest
+      )?.contract
+      if (
+        !version ||
+        sha256(JSON.stringify(delivery.envelope)) !== delivery.fingerprint ||
+        !delivery.admission
+      )
+        throw new Error('Invalid retained CI source identity')
+      const assessed = assessCI(
+        delivery.admission.accepted,
+        version,
+        delivery.admission.expected,
+        delivery.envelope
+      )
+      if (JSON.stringify(assessed) !== JSON.stringify(delivery.result))
+        throw new Error('Retained CI result differs from raw evidence')
+    }
+    if (history.versions.at(-1).contract.digest !== contract.digest)
+      throw new Error('Accepted version history differs from mapping')
   } catch (error) {
     store.close()
     throw error
   }
   const projectContract = () =>
     Object.fromEntries(
-      Object.entries(contract).filter(([key]) => key !== 'definition')
+      Object.entries(contract).filter(
+        ([key]) => !['definition', 'architectureDefinition'].includes(key)
+      )
     )
   let publicContract = projectContract()
   let active = null
   let closed = false
   const pending = new Map()
+  let sharedSnapshot
+  let publicEvolution
+  let publicCI
+  let publicWork
+  const immutable = (value) => {
+    if (value && typeof value === 'object' && !Object.isFrozen(value)) {
+      Object.values(value).forEach(immutable)
+      Object.freeze(value)
+    }
+    return value
+  }
+  const projectDelivery = (value) =>
+    Object.fromEntries(
+      Object.entries(value).filter(
+        ([key]) => !['envelope', 'admission'].includes(key)
+      )
+    )
+  const refreshShared = () => {
+    const mapping = store.mapping(),
+      evolution = mapping.evolution
+    publicEvolution = {
+      revision: evolution.history.revision,
+      versions: evolution.history.versions.map((version, index) => ({
+        revision: index + 1,
+        contractDigest: version.contract.digest,
+        verificationStatus: version.verificationStatus
+      })),
+      decisions: evolution.history.decisions,
+      reviews: evolution.reviews.map(({ candidate, ...review }) => ({
+        ...review,
+        candidateDigest: candidate.contract.digest
+      }))
+    }
+    publicWork = [...new Set(contract.cases.map((item) => item.stepId))].map(
+      (stepId) => {
+        const saved = mapping.work?.[stepId]
+        return saved?.contractDigest === contract.digest
+          ? saved
+          : { stepId, status: 'untracked' }
+      }
+    )
+    let workStatus = 'untracked'
+    if (publicWork.some((item) => item.status === 'not-started'))
+      workStatus = 'not-started'
+    if (publicWork.some((item) => item.status === 'in-progress'))
+      workStatus = 'in-progress'
+    if (publicWork.some((item) => item.status === 'blocked'))
+      workStatus = 'blocked'
+    if (
+      publicWork.length &&
+      publicWork.every((item) => item.status === 'complete')
+    )
+      workStatus = 'reported-complete'
+    const deliveries = mapping.ciDeliveries ?? []
+    publicCI = {
+      deliveries: deliveries.map(projectDelivery)
+    }
+    const imported = deliveries.at(-1)
+    const remote =
+      imported?.contractDigest === contract.digest &&
+      imported.mappingRevision === mapping.revision
+        ? imported.result
+        : null
+    const latest = store
+      .list()
+      .find(
+        (record) =>
+          record.phase === 'completed' &&
+          record.scenario === 'baseline' &&
+          record.mode !== 'candidate' &&
+          record.mappingRevision === store.mapping().revision &&
+          record.contractDigest === contract.digest
+      )
+    const currentEvidence = remote?.evidence ?? latest?.evidence
+    const verificationStatus =
+      remote?.verificationStatus ??
+      latest?.ci?.verificationStatus ??
+      latest?.evidence?.status ??
+      'unknown'
+    const value = {
+      format: 1,
+      observedAt: new Date().toISOString(),
+      scope:
+        contract.flows.length +
+        ' Factory flows - ' +
+        contract.cases.length +
+        ' declared obligations',
+      baseline: remote?.baseline ??
+        latest?.ci?.baseline ?? {
+          kind: 'local-captured-source',
+          head: latest?.snapshot?.head ?? null,
+          sourceDigest: latest?.snapshot?.digest ?? null,
+          contractDigest: contract.digest
+        },
+      workStatus,
+      remainingWork: publicWork.filter((item) => item.status !== 'complete'),
+      executionStatus: active ? 'running' : (latest?.phase ?? 'not-started'),
+      verificationStatus,
+      deliveryStatus:
+        remote?.deliveryStatus ?? latest?.ci?.deliveryStatus ?? 'not-assessed',
+      blockers: remote?.blockers ??
+        latest?.ci?.blockers ??
+        latest?.evidence?.issues ?? ['No accepted baseline evidence'],
+      goals: contract.flows.map((flow) => ({ id: flow.id, goal: flow.goal })),
+      remaining: contract.cases.filter(
+        (item) =>
+          verificationStatus === 'unknown' ||
+          !currentEvidence?.cases.some(
+            (c) => c.id === item.id && c.status === 'passed'
+          )
+      ),
+      confirmedFailures:
+        currentEvidence?.cases.filter((item) => item.status === 'failed') ?? [],
+      potentialImpact: contract.flows.map((flow) => flow.id),
+      attemptId: latest?.id ?? null
+    }
+    sharedSnapshot = immutable({
+      ...value,
+      fingerprint: sha256(JSON.stringify(value))
+    })
+  }
+  refreshShared()
   const event = (name) => ({ event: name, at: new Date().toISOString() })
   const update = (id, patch, eventName) => {
     const previous = store.get(id)
@@ -91,12 +284,15 @@ function createService(
   const publicRecord = (record) => {
     if (!record) throw new ActionError(404, 'Attempt not found')
     const matchesCurrentContract =
-      record.snapshot?.contractDigest === contract.digest
+      record.mode !== 'candidate' &&
+      record.snapshot?.contractDigest === contract.digest &&
+      (record.format !== 2 ||
+        record.mappingRevision === store.mapping().revision)
     return {
       ...record,
       matchesCurrentContract,
       workStatus: 'untracked',
-      deliveryStatus: 'not-assessed'
+      deliveryStatus: record.ci?.deliveryStatus ?? 'not-assessed'
     }
   }
   const requireIdle = () => {
@@ -122,6 +318,234 @@ function createService(
   }
   return {
     contract: () => contract,
+    shared: () => sharedSnapshot,
+    setWork(request, actor) {
+      authorize(actor, 'update-work')
+      objectRequest(request, ['stepId', 'status', 'reason'])
+      requireIdle()
+      if (
+        !contract.cases.some((item) => item.stepId === request.stepId) ||
+        !['not-started', 'in-progress', 'complete', 'blocked'].includes(
+          request.status
+        ) ||
+        typeof request.reason !== 'string' ||
+        !request.reason.trim() ||
+        request.reason.length > 1000
+      )
+        throw new ActionError(
+          400,
+          'Known step, work status and reason are required'
+        )
+      const state = store.mapping(),
+        previous = state.work?.[request.stepId]
+      const work = {
+        stepId: request.stepId,
+        status: request.status,
+        reason: request.reason,
+        actor: actor.id,
+        at: new Date().toISOString(),
+        contractDigest: contract.digest
+      }
+      store.saveMapping({
+        ...state,
+        work: { ...state.work, [request.stepId]: work },
+        workAudit: [
+          ...(state.workAudit ?? []),
+          { ...work, before: previous?.status ?? 'untracked' }
+        ]
+      })
+      refreshShared()
+      return store.mapping().work[request.stepId]
+    },
+    ingestCI(request, actor) {
+      authorize(actor, 'ingest-ci')
+      objectRequest(request, ['envelope'])
+      requireIdle()
+      if (!ciAdmission?.expected)
+        throw new ActionError(
+          409,
+          'No independently admitted CI run is configured'
+        )
+      const envelope = structuredClone(request.envelope)
+      const expected = ciAdmission.expected
+      if (
+        !envelope ||
+        envelope.runId !== expected.runId ||
+        envelope.attempt !== expected.attempt
+      )
+        throw new ActionError(
+          409,
+          'CI delivery is not the currently admitted run attempt'
+        )
+      if (!/^[1-9][0-9]*$/.test(expected.runId))
+        throw new ActionError(400, 'Registered CI run id must be numeric')
+      const bytes = JSON.stringify(envelope)
+      if (Buffer.byteLength(bytes) > 2097152)
+        throw new ActionError(413, 'CI envelope exceeds size limit')
+      const fingerprint = sha256(bytes),
+        state = store.mapping(),
+        deliveries = state.ciDeliveries ?? []
+      const previous = deliveries.find(
+        (item) =>
+          item.runId === expected.runId && item.attempt === expected.attempt
+      )
+      if (previous) {
+        if (previous.fingerprint !== fingerprint)
+          throw new ActionError(
+            409,
+            'CI delivery conflicts with retained evidence'
+          )
+        return projectDelivery(previous)
+      }
+      if (
+        deliveries.some(
+          (item) =>
+            item.runId === expected.runId && item.attempt > expected.attempt
+        )
+      )
+        throw new ActionError(409, 'CI delivery attempt is stale')
+      if (
+        deliveries.some(
+          (item) =>
+            item.result.baseline.repository === expected.repository &&
+            item.result.baseline.integration === expected.integration &&
+            /^[1-9][0-9]*$/.test(item.runId) &&
+            BigInt(item.runId) > BigInt(expected.runId)
+        )
+      )
+        throw new ActionError(409, 'CI delivery run is stale')
+      const accepted = ciAdmission.accepted ?? contract
+      const result = assessCI(accepted, contract, expected, envelope)
+      const delivery = {
+        id: randomUUID(),
+        runId: expected.runId,
+        attempt: expected.attempt,
+        contractDigest: contract.digest,
+        admission: { expected, accepted },
+        mappingRevision: state.revision,
+        fingerprint,
+        result,
+        envelope,
+        actor: actor.id,
+        audit: [{ event: 'ci-ingested', at: new Date().toISOString() }]
+      }
+      store.saveMapping({ ...state, ciDeliveries: [...deliveries, delivery] })
+      refreshShared()
+      return projectDelivery(delivery)
+    },
+    readCIArtifact(id, name) {
+      const delivery = store
+        .mapping()
+        .ciDeliveries?.find((item) => item.id === id)
+      if (!delivery || !['report', 'envelope'].includes(name))
+        throw new ActionError(404, 'CI artifact not found')
+      const bytes = JSON.stringify(delivery.envelope)
+      if (sha256(bytes) !== delivery.fingerprint)
+        throw new ActionError(409, 'CI artifact fingerprint mismatch')
+      return Buffer.from(name === 'report' ? delivery.envelope.report : bytes)
+    },
+    prepareEvolution(request, actor) {
+      authorize(actor, 'prepare-contract')
+      objectRequest(request, ['attemptId', 'relations'])
+      requireIdle()
+      const record = store.get(request.attemptId)
+      if (
+        !record ||
+        record.mode !== 'candidate' ||
+        record.phase !== 'completed'
+      )
+        throw new ActionError(409, 'A completed candidate proof is required')
+      const candidateContract = loadContract(repositoryRoot)
+      if (record.contractDigest !== candidateContract.digest)
+        throw new ActionError(409, 'Candidate changed since preview')
+      const report = JSON.parse(this.readArtifact(record.id, 'report'))
+      const files = JSON.parse(this.readArtifact(record.id, 'source-manifest'))
+      const contentDigest = files.find(
+        (file) => file.path === candidateContract.testFile
+      )?.digest
+      const selectors = report.testResults
+        .flatMap((suite) => suite.assertionResults)
+        .filter((item) => ['passed', 'failed'].includes(item.status))
+        .map((item) => ({
+          caseId:
+            candidateContract.cases.find((c) => c.testName === item.fullName)
+              ?.id ?? 'unknown-' + sha256(item.fullName),
+          testName: item.fullName,
+          file: candidateContract.testFile,
+          contentDigest
+        }))
+      const candidate = { contract: candidateContract, selectors }
+      const state = store.mapping(),
+        evolution = state.evolution
+      const review = compareVersion(evolution.history, candidate, {
+        relations: request.relations ?? []
+      })
+      const existing = evolution.reviews.find((item) => item.id === review.id)
+      if (existing) return existing
+      const retained = {
+        ...review,
+        candidate,
+        attemptId: record.id,
+        status: 'pending'
+      }
+      store.saveMapping({
+        ...state,
+        evolution: { ...evolution, reviews: [...evolution.reviews, retained] }
+      })
+      refreshShared()
+      return retained
+    },
+    decideEvolution(request, actor) {
+      authorize(actor, 'decide-contract')
+      objectRequest(request, ['id', 'decision', 'reason', 'retirement'])
+      requireIdle()
+      const state = store.mapping(),
+        evolution = state.evolution
+      const review = evolution.reviews.find((item) => item.id === request.id)
+      if (!review) throw new ActionError(404, 'Contract review not found')
+      if (request.decision === 'accept') {
+        const current = loadContract(repositoryRoot)
+        const digest = sha256(
+          fs.readFileSync(safePath(repositoryRoot, current.testFile))
+        )
+        if (
+          current.digest !== review.candidate.contract.digest ||
+          review.candidate.selectors.some((s) => s.contentDigest !== digest)
+        )
+          throw new ActionError(409, 'Candidate changed after review')
+      }
+      const decision = {
+        decision: request.decision,
+        reason: request.reason,
+        retirement: request.retirement ?? []
+      }
+      const history = decideVersion(
+        evolution.history,
+        review,
+        review.candidate,
+        decision,
+        actor
+      )
+      if (history === evolution.history) return review
+      const accepted = history.versions.at(-1).contract
+      store.saveMapping({
+        ...state,
+        revision: state.revision + Number(request.decision === 'accept'),
+        accepted,
+        evolution: {
+          history,
+          reviews: evolution.reviews.map((item) =>
+            item.id === review.id ? { ...item, status: request.decision } : item
+          )
+        }
+      })
+      contract = accepted
+      publicContract = projectContract()
+      refreshShared()
+      return store
+        .mapping()
+        .evolution.reviews.find((item) => item.id === review.id)
+    },
     prepareMapping(request, actor) {
       authorize(actor, 'prepare-mapping')
       objectRequest(request, [])
@@ -199,7 +623,35 @@ function createService(
         decidedAt: new Date().toISOString(),
         reason: request.reason
       }
+      let evolution = state.evolution
+      if (status === 'accepted') {
+        const contentDigest = sha256(
+          fs.readFileSync(safePath(repositoryRoot, accepted.testFile))
+        )
+        const candidate = {
+          contract: accepted,
+          selectors: accepted.cases.map((item) => ({
+            caseId: item.id,
+            file: accepted.testFile,
+            testName: item.testName,
+            contentDigest
+          }))
+        }
+        const revision = compareVersion(evolution.history, candidate)
+        evolution = {
+          ...evolution,
+          history: decideVersion(
+            evolution.history,
+            revision,
+            candidate,
+            { decision: 'accept', reason: request.reason },
+            { id: actor.id, capabilities: ['decide-contract'] }
+          )
+        }
+      }
       store.saveMapping({
+        ...state,
+        evolution,
         format: 1,
         revision: state.revision + Number(status === 'accepted'),
         accepted,
@@ -209,6 +661,7 @@ function createService(
       })
       contract = accepted
       publicContract = projectContract()
+      refreshShared()
       return publicReview(decided)
     },
     state() {
@@ -227,6 +680,10 @@ function createService(
         }))
       return {
         contract: publicContract,
+        shared: sharedSnapshot,
+        evolution: publicEvolution,
+        ci: publicCI,
+        work: publicWork,
         activeRunId: active?.id ?? null,
         runs,
         mapping: {
@@ -245,6 +702,10 @@ function createService(
       const record = publicRecord(store.get(id))
       const artifacts = {
         report: { file: 'vitest.json', digest: record.runner?.reportDigest },
+        'ci-envelope': {
+          file: 'ci-envelope.json',
+          digest: record.ciEnvelopeDigest
+        },
         'source-manifest': {
           file: 'source-manifest.json',
           digest: record.snapshot?.digest
@@ -277,34 +738,54 @@ function createService(
         typeof request !== 'object' ||
         Array.isArray(request) ||
         Object.keys(request).some(
-          (key) => !['scenario', 'flowIds', 'requestId'].includes(key)
+          (key) => !['scenario', 'flowIds', 'requestId', 'mode'].includes(key)
         )
       )
         throw new ActionError(400, 'Invalid verification request')
+      const mode = request.mode ?? 'verify'
+      if (!['verify', 'candidate', 'ci', 'ci-demo'].includes(mode))
+        throw new ActionError(400, 'Unknown execution mode')
+      if (mode === 'candidate') authorize(actor, 'preview-contract')
+      if (mode === 'ci' || mode === 'ci-demo') authorize(actor, 'ci')
+      const requestedContract =
+        mode === 'candidate' ? loadContract(repositoryRoot) : contract
       const scenario = request.scenario ?? 'baseline'
-      if (!contract.scenarios.some((item) => item.id === scenario))
+      if (!requestedContract.scenarios.some((item) => item.id === scenario))
         throw new ActionError(400, 'Unknown scenario')
       const requestedFlows =
-        request.flowIds ?? contract.flows.map((flow) => flow.id)
+        request.flowIds ?? requestedContract.flows.map((flow) => flow.id)
       const flowIds = Array.isArray(requestedFlows)
         ? [...requestedFlows]
         : requestedFlows
       if (
         !Array.isArray(flowIds) ||
         !flowIds.length ||
-        flowIds.length > contract.flows.length ||
+        flowIds.length > requestedContract.flows.length ||
         new Set(flowIds).size !== flowIds.length ||
-        flowIds.some((id) => !contract.flows.some((flow) => flow.id === id))
+        flowIds.some(
+          (id) => !requestedContract.flows.some((flow) => flow.id === id)
+        )
       )
         throw new ActionError(
           400,
           'Unknown, duplicate, or empty flow selection'
+        )
+      if (
+        (mode === 'ci' || mode === 'ci-demo') &&
+        (flowIds.length !== requestedContract.flows.length ||
+          (mode === 'ci' && scenario !== 'baseline') ||
+          (mode === 'ci-demo' && scenario === 'baseline'))
+      )
+        throw new ActionError(
+          400,
+          'CI requires all supported flows and baseline scenario'
         )
       if (request.requestId !== undefined && !validId(request.requestId))
         throw new ActionError(400, 'Invalid request identity')
       if (request.requestId && store.get(request.requestId)) {
         const previous = store.get(request.requestId)
         if (
+          (previous.mode ?? 'verify') !== mode ||
           previous.actor !== actor.id ||
           previous.scenario !== scenario ||
           JSON.stringify(previous.flowIds) !== JSON.stringify(flowIds)
@@ -316,8 +797,9 @@ function createService(
         return previous.id
       }
       requireIdle()
-      const current = loadContract(repositoryRoot)
-      if (current.digest !== contract.digest)
+      const current =
+        mode === 'candidate' ? requestedContract : loadContract(repositoryRoot)
+      if (mode !== 'candidate' && current.digest !== contract.digest)
         throw new ActionError(
           409,
           'Working mapping differs from the accepted contract; prepare a mapping review before verification'
@@ -326,6 +808,7 @@ function createService(
       const controller = new AbortController()
       const record = {
         format: 2,
+        mode,
         mappingRevision: store.mapping().revision,
         contractDigest: current.digest,
         id,
@@ -338,10 +821,19 @@ function createService(
       }
       store.save(record)
       active = { id, controller }
+      refreshShared()
       const completion = Promise.resolve().then(async () => {
         try {
           const runDirectory = path.join(directory, id)
           const snapshot = capture(repositoryRoot, runDirectory, current)
+          const ciContext =
+            mode === 'ci' || mode === 'ci-demo'
+              ? prepareCIContext(repositoryRoot, acceptedBase, snapshot, {
+                  runId: process.env.GITHUB_RUN_ID ?? id,
+                  attempt: Number(process.env.GITHUB_RUN_ATTEMPT ?? 1),
+                  head: process.env.FLOW_CI_HEAD
+                })
+              : null
           const identity = Object.fromEntries(
             Object.entries(snapshot).filter(
               ([key]) => !['sourceRoot', 'files'].includes(key)
@@ -366,6 +858,43 @@ function createService(
             flowIds,
             scenario
           )
+          let ciFields = {}
+          if (ciContext) {
+            const report = fs.existsSync(result.reportPath ?? '')
+              ? fs.readFileSync(result.reportPath, 'utf8')
+              : ''
+            const envelope = {
+              format: 1,
+              ...ciContext.expected,
+              provider:
+                process.env.GITHUB_ACTIONS === 'true'
+                  ? 'github-actions'
+                  : 'local-ci-trial',
+              policyDigest: ciContext.candidatePolicyDigest,
+              observedAt: new Date().toISOString(),
+              snapshot,
+              runner: { ...result, report: undefined, reportPath: undefined },
+              report
+            }
+            const ci = assessCI(
+              ciContext.accepted,
+              current,
+              ciContext.expected,
+              envelope
+            )
+            ci.blockers.push(...ciContext.policyIssues)
+            if (ciContext.policyIssues.length) {
+              ci.deliveryStatus = 'blocked'
+              if (ci.verificationStatus === 'passed')
+                ci.verificationStatus = 'unknown'
+            }
+            const envelopePath = path.join(runDirectory, 'ci-envelope.json')
+            writeAtomic(envelopePath, envelope)
+            ciFields = {
+              ci,
+              ciEnvelopeDigest: sha256(fs.readFileSync(envelopePath))
+            }
+          }
           let phase = 'completed'
           if (result.reason === 'cancelled') phase = 'cancelled'
           else if (result.reason === 'timeout') phase = 'timed-out'
@@ -374,6 +903,7 @@ function createService(
             id,
             {
               phase,
+              ...ciFields,
               finishedAt: new Date().toISOString(),
               evidence,
               runner: {
@@ -405,6 +935,7 @@ function createService(
           )
         } finally {
           if (active?.id === id) active = null
+          refreshShared()
         }
         return store.get(id)
       })
@@ -413,7 +944,7 @@ function createService(
       return id
     },
     async wait(id) {
-      if (pending.has(id)) return pending.get(id)
+      if (pending.has(id)) await pending.get(id)
       return publicRecord(store.get(id))
     },
     async cancel(id, actor) {

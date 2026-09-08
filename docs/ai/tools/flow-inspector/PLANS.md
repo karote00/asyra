@@ -8,13 +8,16 @@ implementation steps and executable flow contracts to manage human and AI
 development risk. Open-source usefulness, reproducibility, and controlled
 delegation are the success criteria.
 
-## Next Implementation Candidate
+## Deferred Follow-up
 
 1. [Contract Verification and CI Plan](plans/flow-inspector-control-plane-evidence-and-ci-plan.md)
-   - Remaining Phase 4: an operational step board, common API/CLI, contract evolution,
-     mandatory all-flow CI within the declared supported set, and shared viewing.
-   - Extend the [Core Proof contract](CORE_PROOF.md) without treating its local
-     two-flow coverage or test-name mapping policy as general project protection.
+   - GitHub mandatory CI protection is deferred by the user on 2026-09-08 to
+     avoid disrupting concurrent projects and merges. Resume on a separate request.
+   - Remaining: independently protected verifier, issuer-bound required aggregate,
+     trusted remote transport and real GitHub refusal/recovery demonstrations.
+   - [Enforcement gap](../../../../tools/flow-inspector/control-plane/README.md#github-enforcement-gap)
+     retains the necessary setup and acceptance evidence. Local test success
+     does not establish repository-wide or mandatory delivery protection.
 
 ## Dependent Implementation Candidate
 
@@ -30,6 +33,11 @@ Both existing plan filenames remain stable. No schema, runtime, package,
 dependency, license, or publication change is implied by the planning revision.
 
 ## Roadmap and Baseline References
+
+- [Phase 3 completed record](plans/completed/flow-inspector-phase-3-core-proof-closeout.md)
+  retains merged proof evidence; the living `CORE_PROOF.md` has not moved.
+- [Phase 4 local implementation record](plans/completed/flow-inspector-phase-4-local-implementation-closeout.md)
+  records the accepted local/UX boundary and the explicitly deferred CI criteria.
 
 - [Workflow Control Plane Roadmap](plans/flow-inspector-workflow-control-plane-roadmap.md)
   owns cross-phase direction, boundaries, activation decisions, and provisional

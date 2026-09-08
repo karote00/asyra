@@ -130,7 +130,7 @@ const data = {
         'Render Overview and sidebar navigation, then resolve catalog-owned hosted slugs or direct-open static hashes without changing target identities.',
       inputs: ['artifact:workspace-browser-snapshot', 'browser pathname and hash', 'explicit host routing mode'],
       outputs: ['artifact:selected-workspace-route'],
-      conditions: ['Known slugs or static ids select exactly one entry. Hosted legacy hash links replace the address without adding history; selection pushes only a changed destination and back/forward restores it. Unknown paths cannot fall back to hash-selected content.'],
+      conditions: ['Catalog group text never toggles lists; a labeled arrow button owns collapse state. Forward page zoom commands only to the current v2 target and retire listeners with the route. Do not interpret target geometry.', 'Known slugs or static ids select exactly one entry. Hosted legacy hash links replace the address without adding history; selection pushes only a changed destination and back/forward restores it. Unknown paths cannot fall back to hash-selected content.'],
       bypasses: ['Hosted root or an empty direct-open static hash selects Overview only; unknown selections remain errors.'],
       allowedContributors: ['catalog summaries', 'browser location'],
       forbiddenContributors: [
@@ -192,11 +192,14 @@ const data = {
         'Render v2 targets with the shared viewer and label legacy compatibility data without inventing semantics.',
       inputs: [
         'artifact:isolated-target-document',
-        'artifact:workspace-browser-snapshot'
+        'artifact:workspace-browser-snapshot',
+        'optional flowfitrequest with rendered step IDs'
       ],
       outputs: ['artifact:rendered-static-inspector'],
       conditions: [
         'Renderer kind follows catalog classification.',
+        'Command+1 restores All lanes and fits every card with at least 24 screen CSS pixels to the viewport outer border, exact on the limiting axis; fit-all may exceed manual scale limits. Page-delivered Command keys include editable focus; Shift+1/0 exclude editable controls and provide alternatives to browser-reserved shortcuts. Visible fit/reset buttons and authenticated parent command messages share the same operation owner. Native disclosure summaries retain visible markers, hover and focus affordances. Command+0 clears fit translation and resets scale. Card geometry stays unchanged.',
+        'Fit requests frame rendered cards through the existing zoom owner with padding and reveal the canvas, bounded from 20% to 100%; absent cards do not change the viewport. Manual zoom and reset remain available. No execution state enters this owner.',
         'Document, source, and related Inspector links preserve authored destinations and open in an isolated new tab without replacing the canvas.'
       ],
       bypasses: [

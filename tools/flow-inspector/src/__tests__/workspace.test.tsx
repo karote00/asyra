@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { WorkspaceApp } from '../App'
 import { parseWorkspaceRoute, targetHref } from '../routing'
 import type { WorkspaceBundle } from '../types'
@@ -114,12 +114,44 @@ describe('React workspace', () => {
   it('collapses groups without changing catalog membership', () => {
     render(<WorkspaceApp bundle={bundle} initialHash="" />)
     const framework = screen.getByTestId('group-Framework')
+    fireEvent.click(within(framework).getByText('Framework', { exact: true }))
+    expect(within(framework).getByTestId('inspector-entry')).toBeTruthy()
     const toggle = framework.querySelector('.group-toggle')
     if (!toggle) throw new Error('Missing Framework group toggle')
     fireEvent.click(toggle)
     expect(within(framework).queryByTestId('inspector-entry')).toBeNull()
     fireEvent.click(toggle)
     expect(within(framework).getByTestId('inspector-entry')).toBeTruthy()
+  })
+
+  it('forwards zoom commands from catalog and search focus only to the active frame', () => {
+    const { unmount } = render(
+      <WorkspaceApp bundle={bundle} initialHash="#inspector=app-flow" />
+    )
+    const frame = screen.getByTitle(
+      'Selected Flow Inspector'
+    ) as HTMLIFrameElement
+    const send = vi.fn()
+    if (!frame.contentWindow) throw new Error('Expected mounted viewer frame')
+    frame.contentWindow.postMessage = send
+    const key = new KeyboardEvent('keydown', {
+      key: '1',
+      metaKey: true,
+      bubbles: true,
+      cancelable: true
+    })
+    screen.getByRole('searchbox').dispatchEvent(key)
+    expect(key.defaultPrevented).toBe(true)
+    expect(send).toHaveBeenCalledExactlyOnceWith(
+      { type: 'flow-inspector:zoom-command', command: 'fit-all' },
+      '*'
+    )
+    send.mockClear()
+    unmount()
+    window.dispatchEvent(
+      new KeyboardEvent('keydown', { key: '1', metaKey: true })
+    )
+    expect(send).not.toHaveBeenCalled()
   })
 
   it('uses the selected id as the iframe key so rapid switching replaces the document', () => {

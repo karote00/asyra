@@ -126,7 +126,8 @@ JSON-safe serialization. Generator drift is a formal failure.
 - Overview with static counts by group and schema kind;
 - Framework, Apps, Release, and Tools groups;
 - sidebar search by title, id, subgroup, and labels;
-- collapsible groups;
+- catalog groups collapse only through a visible, labeled arrow button; group
+  text and counts do not toggle the list;
 - independently toggleable catalog, v2 header, and v2 step-detail panels with
   close controls in each panel's upper-right corner and three persistent 24 px
   toggle controls positioned 12 px inside the scrollable and scalable flow
@@ -136,6 +137,20 @@ JSON-safe serialization. Generator drift is a formal failure.
 - trackpad pinch zoom from 20% through 250% inside the v2 flow viewport, with
   scale-matched scroll bounds, a visible reset control, and `Command+0`
   restoration to 100%;
+- explicit `flowfitrequest` DOM requests with step IDs fit rendered cards with
+  padding through the same zoom owner and reveal the canvas (20% minimum, at most
+  100% for fit); absent
+  cards are ignored, and reset/manual zoom remain authoritative afterward;
+- `Command+1` in the canvas document restores All lanes and fits the union of
+  every card, centered with at least 24 CSS pixels from the viewport's outer
+  border; the limiting axis has exactly 24 pixels per side (subpixel rounding
+  allowed). Padding is measured after zoom, not in graph coordinates. Fit-all
+  may exceed manual zoom limits to keep all cards visible. Editable controls
+  retain ordinary typing. Page-delivered Command+1/0 work consistently across
+  catalog, search, canvas and details; the workspace forwards commands only to
+  its active v2 target. Shift+1/0 outside editable controls and visible viewer
+  buttons are browser-independent alternatives. Browser chrome/address-bar focus
+  is outside the page's keyboard scope. `Command+0` resets scale and fit translation;
 - stable deep links and reload restoration;
 - schema version 2 rendering through the shared renderer;
 - concise step-detail summaries with clearly separated categories and a

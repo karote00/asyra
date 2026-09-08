@@ -2,8 +2,19 @@
 
 ## Status and Objective
 
-Phase 3 is implemented under the [Core Proof contract](../CORE_PROOF.md) on
-2026-09-07. Phase 4 remains deferred, so this combined plan remains open.
+Phase 3 completed and merged on 2026-09-07; its
+[completed record](completed/flow-inspector-phase-3-core-proof-closeout.md) retains the final decision
+and verified evidence. The [Core Proof contract](../CORE_PROOF.md) remains live.
+Phase 4 local implementation and UX are closed on 2026-09-08 in the
+[completed record](completed/flow-inspector-phase-4-local-implementation-closeout.md).
+The user explicitly deferred GitHub enforcement to avoid disrupting concurrent
+projects and merges. This combined record now tracks that deferred follow-up;
+it is not wholly DONE and stays at its stable path. The original cases and DoD
+below are retained: mandatory enforcement, independent verifier protection and
+remote refusal/recovery evidence remain unfulfilled. No repository protection
+change or Phase 5/6 activation is authorized by this closeout.
+See the [operational trial](../../../../../tools/flow-inspector/control-plane/README.md#phase-4-operational-trial)
+for commands, capabilities, and the concrete external blocker.
 Static Workspace `v0.2.0` is complete. The proof selects two Factory flows,
 Vitest, GitHub Actions, and a local-only action/evidence boundary. It covers
 case-backed conditional handoffs, five isolated negative scenarios, versioned

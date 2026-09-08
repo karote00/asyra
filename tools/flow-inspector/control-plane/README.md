@@ -2,7 +2,7 @@
 
 The existing Flow Inspector canvas verifies two real Factory flows: deferred publication and
 cancellation after immediate publication. Six formal obligations map to three
-concrete architecture steps shared by both flows. The bounded Phase 3 contract
+concrete architecture steps shared by both flows. The living Phase 3/4 contract
 is defined in [CORE_PROOF.md](../../../docs/ai/tools/flow-inspector/CORE_PROOF.md).
 
 ## Run Locally
@@ -115,7 +115,7 @@ They are local artifacts and are not committed or published.
 ## Formal Tests
 
 ```bash
-node --test --test-concurrency=1 tools/flow-inspector/control-plane/__tests__/{contracts,snapshot,runner,evidence,store,service,server,mapping,cli}.test.cjs
+node --test --test-concurrency=1 tools/flow-inspector/control-plane/__tests__/{contracts,snapshot,runner,evidence,store,service,server,mapping,cli,evolution,ci-context,ci-evidence,operations}.test.cjs
 FLOW_PROOF_URL=http://127.0.0.1:4318 node --test tools/flow-inspector/control-plane/__tests__/board.test.cjs
 ```
 
@@ -137,14 +137,15 @@ Required-check enforcement itself remains a repository setting.
 This is a trusted local development tool, with one bounded runner process group,
 loopback access, per-start mutation capability, explicit cancellation, and durable
 attempt identity. It does not sandbox hostile code. It supports these two flows;
-arbitrary flow onboarding, protected accepted-base CI comparison, remote CI ingestion, agent
-execution/token controls, Jira/GitHub actions, and shared team hosting remain in
-the later plans.
+arbitrary flow onboarding, autonomous execution/token controls, ticket/PR
+mutations, and shared team hosting remain outside this trial. The Phase 4 CI
+admission adapter is implemented; mandatory protected remote execution remains
+blocked as described below.
 
 The first local store trusts the checked-in mapping. Later test-name changes
 require explicit review against the accepted revision. This policy cannot add,
 remove, or weaken obligations, alter flow semantics, or accept a changed target
-architecture. Such evolution needs the separately scoped Phase 4 policy. Format-1
+architecture. Such evolution uses the separate candidate/version review actions below. Format-1
 historical attempts remain readable but do not gain format-2 provenance guarantees.
 
 The static viewer and React workspace remain owned by
@@ -153,3 +154,136 @@ tool, and this checkpoint does not change their package versions. The local
 server composes its adapter into the existing target document; static and
 standalone files do not load the adapter or require a server. No separate board
 or replacement canvas is introduced.
+
+
+## Phase 4 Operational Trial
+
+Support is exactly the two Factory flows and six obligations above. Every command
+also accepts the same `--url` prefix to share the running board's state. The server
+selects `FLOW_CI_BASE` (default `origin/main`); HTTP callers cannot override it.
+Run `git fetch origin main` before selecting a base. Local dirty snapshots remain
+visible evidence and cannot become a protected integration result.
+
+```bash
+# A behavioral trial can pass while delivery stays blocked.
+node tools/flow-inspector/control-plane/cli.cjs ci-trial
+# Real inverse-regression demonstration: expected exit 1 and exact cancel failures.
+node tools/flow-inspector/control-plane/cli.cjs ci-demo
+# Recover all six obligations on the same captured source: expected exit 0.
+node tools/flow-inspector/control-plane/cli.cjs ci-trial
+# Strict delivery command: expected exit 1 until external protection is proven.
+node tools/flow-inspector/control-plane/cli.cjs ci
+node tools/flow-inspector/control-plane/cli.cjs shared
+```
+
+On **Transaction Atomicity**, expand **Flow verification**, then **Contract
+versions and CI**. **Demonstrate CI rejection** uses the selected negative
+scenario (inverse regression when Current source is selected). **Run CI aggregate**
+recovers baseline evidence. Inspect the CI blockers and envelope link; **Retry
+selected run** preserves mode/scenario and creates a new attempt. Request identity
+replay through the API still returns the original attempt. The existing canvas,
+connections, zoom, navigation and detail panel are retained.
+
+**Shared baseline view** reports goals, remaining obligations and implementation
+work, confirmed failures, potential impact, source baseline and observation time.
+**Report work** is an explicit author report; even complete work cannot set tests
+or delivery green. **Open shared snapshot** exposes the same immutable projection
+at `GET /api/shared`. Save that JSON to share an observation; it is a trusted local
+snapshot with a fingerprint, not a signed hosted team service. Polling does not
+recapture source or recompute evidence.
+
+### Version and retirement review
+
+1. Change the contract/test source in the feature checkout, then run `candidate`.
+   Candidate evidence is never current accepted conformance.
+2. Run `contract-diff <attempt-id> [relations.json]`, or **Review candidate**
+   in the panel. Rename/move retain stable obligation ids; content changes need
+   review and fresh proof. Missing selectors and unknown evidence block acceptance.
+3. Split/merge use explicit relations, for example
+   `[{"kind":"split","before":["old.case"],"after":["new.a","new.b"]}]`.
+   The board has the same relation type and predecessor/successor controls.
+4. Review the exact base and candidate and run `contract-accept <review-id>
+   "reason" [retirement.json]` or `contract-reject <review-id> "reason"`.
+   Retirement JSON is the exact array of removed ids, e.g. `["old.case"]`.
+   The separate `retire-contract` capability is required for removal. Local trusted
+   operators hold it; future untrusted callers must not be granted it implicitly.
+5. Every accepted version and decision survives restart, with previous obligations
+   readable in history. Removal is never inferred from absent tests. Accepted
+   changes invalidate local and imported CI success, including unchanged contract
+   digests with a new accepted revision. Re-run proof after acceptance.
+
+### CI evidence admission
+
+`ci-trial` in the existing `validate` workflow executes real all-flow cases at the
+checked-out integration revision. `FLOW_CI_EMIT_EVIDENCE=1` emits a gzip/base64
+`FLOW_CI_ENVELOPE=` log record containing the exact raw report and source manifest.
+This transport adds no provider success authority. A green `validate` is not a
+protected `flow-contract-aggregate` check.
+
+The bounded adapter admits one independently registered delivery context per
+server start. Supply `FLOW_CI_ADMISSION` as a repository-local JSON path containing
+`{ "expected": ..., "accepted": ... }`. `accepted` is the admitted contract from
+the trusted Git base (including its definitions); `expected` is independently
+verified repository/base/head/integration, runId/attempt, source/configuration/
+lockfile/policy digests and optional live protection observation. The permanent
+`operations.test.cjs` demonstrates the exact schema and ingestion/replay behavior.
+Do not build this trusted file by copying the candidate envelope's claims.
+
+Run `ci-ingest <envelope.json>` or POST `{ "envelope": ... }` to `/api/ci/ingest`
+with the server's capability. The configured run identity, raw assertions,
+complete accepted inventory and artifact fingerprints must agree. Exact replay
+returns the original record; conflicts and old attempts are refused. Result and
+audit persist atomically. `GET /api/ci/<id>/artifacts/report` and `/envelope` verify
+the retained artifact fingerprint. A changed accepted version invalidates the
+imported result. Without independently configured admission, ingestion refuses;
+without proven protection, admitted evidence still has delivery **blocked**.
+
+This release implements neither GitHub webhook registration nor remote workflow
+dispatch from a card. Card CI actions execute the same local aggregate trial.
+Remote automatic transport and a protected issuer must be connected and verified
+before the Phase 4 mandatory-CI acceptance criterion can close.
+
+### GitHub Enforcement Gap
+
+Observed on 2026-09-07 for `karote00/asyra` main: classic branch protection returned
+404; effective ruleset `11441653` (`protect-main`) is active and contains deletion,
+non-fast-forward and pull-request rules, with no required status checks. This
+personal public repository therefore does not currently enforce the proposed
+aggregate. Recheck the live state with:
+
+```bash
+gh api repos/karote00/asyra/rules/branches/main
+gh api repos/karote00/asyra/rulesets/11441653
+gh api repos/karote00/asyra/branches/main/protection
+```
+
+Necessary external work, requiring separately authorized repository/provider
+administration:
+
+- Select an independently protected verifier source: an available organization
+  required workflow pinned to a reviewed source, or a dedicated trusted GitHub
+  App check issuer. Confirm product/account availability before selection.
+  A candidate-editable Actions workflow with the same check name is insufficient.
+- Register `flow-contract-aggregate` as required, bind its expected issuer, require
+  up-to-date integration, and protect verifier/assertion/policy changes with
+  independent review. Bootstrap the accepted verifier revision explicitly; this
+  PR changes gate files and cannot approve its own policy update.
+- Connect trusted remote execution/ingestion without exposing issuer credentials
+  to candidate code. Independently bind base, PR head, actual merge/integration
+  revision, raw case artifacts, verifier version and live protection observations.
+- Exercise a real PR that removes an obligation, weakens the workflow, spoofs a
+  green provider result, uses stale integration evidence, and contains the actual
+  runtime regression. Each must block merge. Restore the correct source and prove
+  all supported flows pass at the exact integration revision.
+
+Relevant authorities: <a href="https://docs.github.com/en/pull-requests/how-tos/merge-and-close-pull-requests/troubleshooting-required-status-checks" target="_blank" rel="noopener noreferrer">GitHub required-check behavior</a>
+and <a href="https://docs.github.com/en/enterprise-cloud%40latest/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets" target="_blank" rel="noopener noreferrer">available ruleset protections</a>.
+
+On 2026-09-08 the user accepted closeout of the local implementation and UX,
+while explicitly deferring the GitHub enforcement work above to avoid disrupting
+concurrent projects and merges. The
+[completed local record](../../../docs/ai/tools/flow-inspector/plans/completed/flow-inspector-phase-4-local-implementation-closeout.md)
+records that boundary. The combined plan retains the unfulfilled mandatory-CI
+criteria as deferred follow-up. Delivery remains unproven/blocked; this decision
+does not weaken evidence admission or enable Phase 5/6. No GitHub protection,
+workflow enforcement, version, tag or release is changed by closeout.

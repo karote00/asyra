@@ -44,3 +44,55 @@
 - Extend direct CI and permanent browser coverage to the full proof and mapping
   review. No new dependencies, Framework runtime changes, package version,
   remote hosting, source-writing agent, or connector is introduced.
+
+## 2026-09-07 - Close Phase 3 independently of Phase 4
+
+- Context: PR #165 merged the bounded Core Proof; all eight checks on its exact
+  pre-merge HEAD succeeded. The existing plan also owns unfinished Phase 4.
+- Decision: close only Phase 3 in
+  [its completed record](../../plans/completed/flow-inspector-phase-3-core-proof-closeout.md).
+  Retain the combined plan as active and `CORE_PROOF.md` as the living contract.
+- Consequences: preserve all prior decisions and local-proof limitations.
+  Required CI enforcement is still unproven: the effective GitHub main rules
+  have no required status checks. Phase 4 must address that explicit gap.
+- Release boundary: this closeout changes no version, Changeset, tag, or release.
+
+
+## 2026-09-07 - Activate Phase 4 with an explicit delivery blocker
+
+- Context: the merged Phase 3 proof remains limited to two Factory flows and six
+  behavioral obligations. Its completed record and prior decisions stay intact.
+- Decision: extend the living contract with immutable version history, explicit
+  split/merge/retirement review, accepted-base CI evidence admission, common
+  local actions, and baseline/time-bound manager snapshots on the original board.
+  Actual negative runtime cases prove rejection and recovery; provider success
+  cannot replace assertions or source provenance.
+- Consequences: changed versions invalidate prior results; reported work,
+  execution, verification and delivery remain separate. The effective GitHub
+  `protect-main` ruleset lacks required status checks and independent verifier
+  protection. The CI command is explicitly a trial and full Phase 4 remains open.
+- Closeout decision: do not create a Phase 4 completed record or move this combined
+  plan while mandatory enforcement is unverified. Follow the
+  [operational guide](../../../../../../tools/flow-inspector/control-plane/README.md#github-enforcement-gap)
+  for the necessary external setup and remaining acceptance evidence.
+- Release boundary: no package version, dependency, tag, release, deployment, or
+  Phase 5/6 capability is introduced.
+
+
+## 2026-09-08 - Close local Phase 4 scope and defer GitHub enforcement
+
+- Context: the bounded implementation and UX passed all eight checks on
+  `6ae04626ad1a670002e78eb91514497cd8898513`. Main still has no required status
+  check; protected verifier and remote refusal/recovery proof remain unverified.
+- Decision: the user explicitly accepted local implementation closeout and
+  deferred GitHub enforcement to avoid blocking concurrent projects and merges.
+  Record the completed scope in the
+  [Phase 4 local completed record](../../plans/completed/flow-inspector-phase-4-local-implementation-closeout.md).
+- Supersedes only the 2026-09-07 instruction prohibiting any Phase 4 completed
+  record: a bounded local record is now approved. The original mandatory-CI
+  requirements remain in the combined plan as deferred work, not satisfied DoD.
+- Consequences: preserve historical decisions and the living Core Proof contract;
+  delivery remains unproven/blocked where applicable. Do not change GitHub rules
+  or workflow enforcement. Resume external setup only on a separate user request;
+  Phase 5/6 remain deferred. PR review/merge remains separate from local completion.
+- Release boundary: no Changeset, version bump, tag, release or deployment change.

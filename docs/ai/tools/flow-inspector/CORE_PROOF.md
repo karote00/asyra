@@ -171,6 +171,16 @@ workspace is regenerated and reloaded.
 Cards launch the related flow's verification and show its outcome and failures.
 The all-flow button runs the complete supported set of two flows. A negative run
 is prominently labeled and never counted as current successful evidence.
+A newly selected failed attempt selects the first failing flow when the current
+flow has no failures. It requests the viewer to fit that flow's failed cards
+with padding through the existing bounded zoom owner. This happens once per
+changed result; unchanged polling or refresh does not override subsequent manual
+pan or zoom. Success and unknown evidence do not move the viewport.
+Subsequent manual flow selection remains respected.
+Confirmed failed cards are highlighted without changing their geometry. A
+run-level failure alert remains visible independently of the selected card,
+flow, or collapsed verification controls, with named actions to locate each
+failed owner step. Recovery clears the alert and failed highlights.
 
 Progress means observed verification progress, not task completion or deployment.
 Untested steps remain unknown. Source identity and attempt history stay visible;
@@ -252,6 +262,81 @@ cache or workspace watcher is added.
 - The PR's checks pass and the README provides reproducible local commands.
 
 Remote required-check policy is a repository setting, not implied by this code.
-Phase 4 general mapping evolution, protected accepted-base policy, arbitrary-flow onboarding,
-remote CI ingestion, team sharing, and broader retained-flow coverage remain future
-work. No completion claim extends to those features.
+The merged Phase 3 completion claim does not include general mapping evolution,
+protected accepted-base policy, remote CI ingestion, or team sharing. The active
+Phase 4 extension below has its own completion boundary.
+
+## Phase 4 Activation - Operational Contract
+
+Phase 4 is active work, not a completion claim. Its support boundary remains the
+same two Factory flows and six obligations on Node.js 24, Vitest, and GitHub
+Actions. No arbitrary repository coverage, source-writing agent, token budgets,
+ticket synchronization, account system, or hosted tenancy is implied.
+
+### Contract evolution
+
+An accepted version is immutable. A draft comparison identifies rename, move,
+content change, split, merge, deletion, missing selector, and unknown evidence.
+Matching is deterministic by stable obligation identity and explicit successor
+relations; ambiguous observations stay unresolved. No confidence score grants
+permission. Rename/move preserve obligation identity; changed contract content
+requires review and fresh proof. Splits and merges list exact predecessor and
+successor ids and never erase history. Deletion without explicit retirement is
+blocked. Retirement requires a separate capability, exact base/candidate
+identity, a nonempty reason, and explicit removed obligation ids. Retired
+versions remain readable; they cease current regression support only after the
+recorded decision. A missing selector or unknown evidence cannot be accepted as
+verified. Completed work and supported regression coverage are separate facts.
+
+The version owner produces the immutable comparison and accepted history once
+per action. API/CLI/board consume it without rescanning source on reads. Review
+binds all evidence observations and successor/retirement inputs, not only the
+candidate mapping digest. Changes invalidate prior conformance; no equivalence
+shortcut preserves a green result after contract changes.
+
+### Accepted-base CI
+
+The aggregate must evaluate every obligation in the declared supported set,
+including previously completed flows. Candidate removal or gate weakening is
+compared with an independently selected accepted base. The candidate cannot
+choose its own base, authorizations, verifier, assertions, or runner policy.
+CI ingestion checks raw case discovery and outcomes, artifact fingerprints,
+repository, base, candidate and actual integration revision, run/attempt identity,
+source inventory, contract/configuration versions, and runner environment.
+Provider success alone is never behavioral evidence. Duplicate deliveries reuse
+one record; conflicting or older deliveries cannot replace newer truth.
+Zero-match, skipped, missing, malformed, cancelled, timed-out and unknown results
+all prevent acceptance. A failing assertion remains a confirmed violation even
+when provenance errors also block delivery.
+
+A protected GitHub check requires live verification of the effective rules,
+required check identity, strict/up-to-date integration policy and executed
+revision. A workflow file or locally green aggregate is insufficient. Missing
+external protection must remain an explicit delivery blocker. Repository setting
+changes require separately authorized administration; no app deployment setting
+belongs to this phase.
+
+### Shared operations and viewing
+
+The existing action service remains the single admission and state owner for
+board, API, CLI and CI. Cards keep test/CI execution, progress, errors, named
+artifacts and retry in the existing canvas/detail surface. A manager projection
+shows goals, supported capability, remaining concrete obligations, blockers and
+potential versus confirmed downstream impact. Shared read-only snapshots bind
+baseline identity and observation time, retain verification provenance, and
+separate work completion, execution, verification and delivery. A developer's
+mutable working tree never silently becomes a delivered team baseline.
+
+### Phase 4 cases and bounded DoD
+
+Permanent tests cover all eight drift classes; exact-base authorized acceptance,
+retirement, retained history, stale/conflicting decisions and invalidation;
+accepted-base removal and policy weakening; raw failing cases behind green
+provider summaries; wrong/missing source and integration identities; aggregate
+coverage, replay ordering, crash/retry semantics and repeated-read work counts.
+Integration and browser tests prove common action results and preserve canvas
+geometry/navigation/zoom. The reproducible trial includes baseline success,
+intentional runtime violation, CI rejection and correction. Closeout requires
+these gates, static compatibility, lint/naming/build, browser screenshot review,
+and all checks on the PR's latest HEAD. An unverified required-check policy
+blocks full Phase 4 completion and must not be relabeled DONE.

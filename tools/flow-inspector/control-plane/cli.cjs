@@ -1,6 +1,9 @@
 /* global fetch, AbortSignal */
 /* eslint-disable @typescript-eslint/no-require-imports */
 const path = require('node:path')
+const fs = require('node:fs')
+const { gzipSync } = require('node:zlib')
+const { safePath } = require('./snapshot.cjs')
 const { URL } = require('node:url')
 const { createService, LOCAL_ACTOR } = require('./service.cjs')
 const { startServer, parseLocalUrl } = require('./server.cjs')
@@ -39,11 +42,33 @@ function describe(record, write) {
   )
 }
 
+function serviceOptions(repositoryRoot) {
+  const options = { acceptedBase: process.env.FLOW_CI_BASE ?? 'origin/main' }
+  if (process.env.FLOW_CI_ADMISSION)
+    options.ciAdmission = JSON.parse(
+      fs.readFileSync(
+        safePath(repositoryRoot, process.env.FLOW_CI_ADMISSION),
+        'utf8'
+      )
+    )
+  return options
+}
 async function connect(repositoryRoot, origin) {
   if (!origin) {
-    const service = createService(repositoryRoot)
+    const service = createService(
+      repositoryRoot,
+      serviceOptions(repositoryRoot)
+    )
     return {
       state: async () => service.state(),
+      shared: async () => service.shared(),
+      work: async (request) => service.setWork(request, LOCAL_ACTOR),
+      artifact: async (id, name) => service.readArtifact(id, name),
+      prepareContract: async (request) =>
+        service.prepareEvolution(request, LOCAL_ACTOR),
+      decideContract: async (request) =>
+        service.decideEvolution(request, LOCAL_ACTOR),
+      ingest: async (envelope) => service.ingestCI({ envelope }, LOCAL_ACTOR),
       get: async (id) => service.get(id),
       start: async (request) => service.start(request, LOCAL_ACTOR),
       wait: (id) => service.wait(id),
@@ -75,6 +100,15 @@ async function connect(repositoryRoot, origin) {
   const get = (id) => request('/api/runs/' + encodeURIComponent(id))
   return {
     state: () => request('/api/state'),
+    shared: () => request('/api/shared'),
+    work: (body) => request('/api/work', body),
+    artifact: async (id, name) =>
+      Buffer.from(
+        JSON.stringify(await request('/api/runs/' + id + '/artifacts/' + name))
+      ),
+    prepareContract: (body) => request('/api/contracts/prepare', body),
+    decideContract: (body) => request('/api/contracts/decide', body),
+    ingest: (envelope) => request('/api/ci/ingest', { envelope }),
     get,
     start: async (body) => (await request('/api/runs', body)).id,
     async wait(id) {
@@ -110,6 +144,16 @@ async function main(
   const [command, ...parameters] = args
   const arity = {
     serve: [0],
+    candidate: [0],
+    ci: [0],
+    'ci-trial': [0],
+    'ci-demo': [0, 1],
+    shared: [0],
+    work: [3],
+    'ci-ingest': [1],
+    'contract-diff': [1, 2],
+    'contract-accept': [2, 3],
+    'contract-reject': [2],
     verify: [0, 1],
     negative: [0, 1],
     scenario: [1, 2],
@@ -127,11 +171,13 @@ async function main(
     (command === 'serve' && origin)
   )
     throw new Error(
-      'Usage: cli.cjs [--url loopback-origin] serve | verify [flow-id] | negative [flow-id] | scenario scenario-id [flow-id] | prove | status | show attempt-id | cancel attempt-id | mapping-diff | mapping-accept review-id reason | mapping-reject review-id reason'
+      'Usage: cli.cjs [--url loopback-origin] serve | verify [flow-id] | negative [flow-id] | scenario scenario-id [flow-id] | prove | status | show attempt-id | cancel attempt-id | mapping-diff | mapping-accept review-id reason | mapping-reject review-id reason | candidate | ci | ci-trial | ci-demo [scenario-id] | shared | ci-ingest envelope.json | contract-diff attempt-id [relations.json] | contract-accept review-id reason [retirement.json] | contract-reject review-id reason'
     )
   if (command === 'serve') {
-    const server = await startServer(repositoryRoot)
-    write('Flow Inspector Phase 3: ' + server.origin)
+    const server = await startServer(repositoryRoot, {
+      serviceOptions: serviceOptions(repositoryRoot)
+    })
+    write('Flow Inspector: ' + server.origin)
     write('Local trusted workspace - Ctrl+C stops and settles active work.')
     let stopping = false
     const stop = async () => {
@@ -150,12 +196,107 @@ async function main(
   }
   const client = await connect(repositoryRoot, origin)
   try {
+    const inputFile = (filename) => {
+      const file = safePath(repositoryRoot, filename)
+      if (fs.statSync(file).size > 2097152)
+        throw new Error('Input artifact exceeds size limit')
+      return JSON.parse(fs.readFileSync(file, 'utf8'))
+    }
+    if (command === 'work') {
+      write(
+        JSON.stringify(
+          await client.work({
+            stepId: parameters[0],
+            status: parameters[1],
+            reason: parameters[2]
+          }),
+          null,
+          2
+        )
+      )
+      return 0
+    }
+    if (command === 'shared') {
+      write(JSON.stringify(await client.shared(), null, 2))
+      return 0
+    }
+    if (command === 'ci-ingest') {
+      const result = await client.ingest(inputFile(parameters[0]))
+      write(JSON.stringify(result, null, 2))
+      return result.result.deliveryStatus === 'eligible' ? 0 : 1
+    }
+    if (command === 'contract-diff') {
+      write(
+        JSON.stringify(
+          await client.prepareContract({
+            attemptId: parameters[0],
+            relations: parameters[1] ? inputFile(parameters[1]) : []
+          }),
+          null,
+          2
+        )
+      )
+      return 0
+    }
+    if (command === 'contract-accept' || command === 'contract-reject') {
+      write(
+        JSON.stringify(
+          await client.decideContract({
+            id: parameters[0],
+            decision: command === 'contract-accept' ? 'accept' : 'reject',
+            reason: parameters[1],
+            retirement: parameters[2] ? inputFile(parameters[2]) : []
+          }),
+          null,
+          2
+        )
+      )
+      return 0
+    }
+    if (['candidate', 'ci', 'ci-trial', 'ci-demo'].includes(command)) {
+      const record = await client.wait(
+        await client.start({
+          mode: command === 'ci-trial' ? 'ci' : command,
+          ...(command === 'ci-demo'
+            ? {
+                scenario:
+                  parameters[0] ??
+                  (await client.state()).contract.defaultNegativeScenario
+              }
+            : {})
+        })
+      )
+      describe(record, write)
+      if (record.ci) write(JSON.stringify(record.ci, null, 2))
+      if (command === 'ci-trial') {
+        write(
+          'CI trial - behavioral proof only, not a required or protected delivery check'
+        )
+        if (
+          process.env.FLOW_CI_EMIT_EVIDENCE === '1' &&
+          record.ciEnvelopeDigest
+        )
+          write(
+            'FLOW_CI_ENVELOPE=' +
+              gzipSync(
+                await client.artifact(record.id, 'ci-envelope')
+              ).toString('base64')
+          )
+        return record.ci?.evidence.status === 'passed' ? 0 : 1
+      }
+      if (command === 'ci' || command === 'ci-demo')
+        return record.ci?.deliveryStatus === 'eligible' ? 0 : 1
+      return record.evidence?.status === 'passed' ? 0 : 1
+    }
     if (command === 'status') {
       const state = await client.state()
       write(
         JSON.stringify(
           {
             activeRunId: state.activeRunId,
+            evolution: state.evolution,
+            ci: state.ci,
+            shared: state.shared,
             mapping: state.mapping,
             runs: state.runs
           },

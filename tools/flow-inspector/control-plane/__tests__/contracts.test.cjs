@@ -224,3 +224,15 @@ for (const [name, corrupt] of [
     assert.throws(() => admit(corrupt))
   )
 }
+
+test('accepted contracts retain detached architecture for immutable version reconstruction', () => {
+  const original = admit()
+  assert.ok(original.architectureDefinition)
+  const restored = admitContract(
+    original.definition,
+    original.architectureDefinition
+  )
+  assert.equal(restored.digest, original.digest)
+  assert.ok(Object.isFrozen(original.architectureDefinition.steps))
+  assert.notStrictEqual(original.architectureDefinition, architecture)
+})

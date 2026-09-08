@@ -122,7 +122,8 @@ test('HTTP preserves canvas assets and rejects unauthorized, cross-origin, and a
     for (const relative of [
       'docs/ai/framework/plans/completed/transaction-atomicity-and-rollback-plan.md',
       'tools/flow-inspector/inspectors/transaction-flow-inspector.data.cjs',
-      'apps/asyra-design/e2e/render-delta-performance.spec.ts'
+      'apps/asyra-design/e2e/render-delta-performance.spec.ts',
+      '.github/workflows/main.yml'
     ]) {
       const linked = await fetch(server.origin + '/' + relative)
       assert.equal(linked.status, 200)

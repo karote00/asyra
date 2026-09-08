@@ -66,6 +66,105 @@ test(
       await expect(
         canvas.locator('.step-card [role="button"], .step-card button')
       ).toHaveCount(0)
+      await canvas.locator('body').evaluate((body) => {
+        const style = document.createElement('style')
+        style.textContent = '::-webkit-scrollbar { width: 15px; height: 15px; }'
+        body.append(style)
+      })
+      const fitViewport = canvas.locator('.flow-viewport')
+      const frameworkGroup = page.getByTestId('group-Framework')
+      const entriesBefore = await frameworkGroup
+        .getByTestId('inspector-entry')
+        .count()
+      await frameworkGroup.getByText('Framework', { exact: true }).click()
+      await expect(frameworkGroup.getByTestId('inspector-entry')).toHaveCount(
+        entriesBefore
+      )
+      await page
+        .getByRole('button', { name: 'Collapse Framework', exact: true })
+        .click()
+      await expect(frameworkGroup.getByTestId('inspector-entry')).toHaveCount(0)
+      await page
+        .getByRole('button', { name: 'Expand Framework', exact: true })
+        .click()
+      for (const focus of [
+        page.getByRole('searchbox'),
+        page.getByRole('button', { name: 'Collapse Framework', exact: true }),
+        canvas.locator('#scenario')
+      ]) {
+        await focus.press('Meta+0')
+        await expect(fitViewport).toHaveAttribute('data-zoom-scale', '1')
+        await focus.press('Meta+1')
+        await expect
+          .poll(async () =>
+            Number(await fitViewport.getAttribute('data-zoom-scale'))
+          )
+          .toBeLessThan(1)
+      }
+      await page
+        .getByRole('button', { name: 'Collapse Framework', exact: true })
+        .press('Shift+0')
+      await expect(fitViewport).toHaveAttribute('data-zoom-scale', '1')
+      await page
+        .getByRole('button', { name: 'Collapse Framework', exact: true })
+        .press('Shift+1')
+      await expect
+        .poll(async () =>
+          Number(await fitViewport.getAttribute('data-zoom-scale'))
+        )
+        .toBeLessThan(1)
+      await canvas.locator('[data-reset-zoom]').click()
+      await expect(fitViewport).toHaveAttribute('data-zoom-scale', '1')
+      await canvas.locator('[data-fit-all]').click()
+      await expect
+        .poll(async () =>
+          Number(await fitViewport.getAttribute('data-zoom-scale'))
+        )
+        .toBeLessThan(1)
+      await expect(canvas.locator('.full-contract > summary')).toHaveCSS(
+        'display',
+        'list-item'
+      )
+
+      for (const delta of [-500, 1000]) {
+        await fitViewport.evaluate((node, delta) => {
+          node.dispatchEvent(
+            new WheelEvent('wheel', {
+              deltaY: delta,
+              ctrlKey: true,
+              bubbles: true,
+              cancelable: true
+            })
+          )
+        }, delta)
+        await fitViewport.press('Meta+1')
+        const gaps = await canvas.locator('.step-card').evaluateAll((cards) => {
+          const view = cards[0]
+            .closest('.flow-viewport')
+            .getBoundingClientRect()
+          const bounds = cards.map((card) => card.getBoundingClientRect())
+          return [
+            Math.min(...bounds.map((r) => r.left)) - view.left,
+            view.right - Math.max(...bounds.map((r) => r.right)),
+            Math.min(...bounds.map((r) => r.top)) - view.top,
+            view.bottom - Math.max(...bounds.map((r) => r.bottom))
+          ]
+        })
+        assert.ok(
+          gaps.every((gap) => gap >= 23.5),
+          `all cards need 24 screen px of padding: ${gaps}`
+        )
+        assert.ok(
+          Math.abs(Math.min(...gaps) - 24) < 0.5,
+          `fit must use the available bounds: ${gaps}`
+        )
+      }
+      await canvas
+        .getByRole('button', { name: 'Boundary', exact: true })
+        .click()
+      await fitViewport.press('Meta+1')
+      await expect(canvas.locator('.step-card')).toHaveCount(7)
+      await canvas.locator('[data-reset-zoom]').click()
       const owner = canvas.locator(
         '[data-step-id="finalize-transaction-state"]'
       )
@@ -175,10 +274,65 @@ test(
         })),
         view
       )
+      await page.setViewportSize({ width: 1600, height: 720 })
       const negative = await run('inverse-regression', 'failed')
-      await expect(
-        canvas.locator('.proof-badge[data-status="passed"]')
-      ).toHaveCount(3)
+      assert.ok(
+        Number(await viewport.getAttribute('data-zoom-scale')) < 1,
+        'short viewports zoom out to fit both failed cards'
+      )
+      await expect(canvas.locator('#proof-flow')).toHaveValue(
+        'immediate-cancellation'
+      )
+      await expect(canvas.locator('#proof-run-failure')).toBeVisible()
+      await expect(canvas.locator('#proof-run-failure')).toContainText(
+        '2 failed obligations'
+      )
+      await expect(canvas.locator('.step-card.proof-failed')).toHaveCount(2)
+      assert.equal(
+        await canvas.locator('.step-card.proof-failed').evaluateAll((cards) =>
+          cards.every((card) => {
+            const bounds = card.getBoundingClientRect()
+            const view = card.closest('.flow-viewport').getBoundingClientRect()
+            return (
+              bounds.left >= view.left &&
+              bounds.right <= view.right &&
+              bounds.top >= view.top &&
+              bounds.bottom <= view.bottom
+            )
+          })
+        ),
+        true,
+        'new failure automatically frames every failing card'
+      )
+      await capture('canvas-auto-fit')
+      await viewport.evaluate((node) => {
+        node.dispatchEvent(
+          new WheelEvent('wheel', {
+            deltaY: -30,
+            ctrlKey: true,
+            bubbles: true,
+            cancelable: true
+          })
+        )
+      })
+      const manualView = await viewport.evaluate((node) => [
+        node.dataset.zoomScale,
+        node.scrollLeft,
+        node.scrollTop
+      ])
+      await canvas.locator('#refresh').click()
+      await expect(canvas.locator('#refresh')).toBeEnabled()
+      assert.deepEqual(
+        await viewport.evaluate((node) => [
+          node.dataset.zoomScale,
+          node.scrollLeft,
+          node.scrollTop
+        ]),
+        manualView
+      )
+
+      await canvas.locator('#proof-flow').selectOption('deferred-publication')
+      await expect(canvas.locator('#proof-run-failure')).toBeVisible()
       await canvas.locator('#proof-flow').selectOption('immediate-cancellation')
       await expect(
         canvas.locator('.proof-badge[data-status="failed"]')
@@ -218,6 +372,8 @@ test(
         true
       )
       const recovery = await run('baseline', 'passed')
+      await expect(canvas.locator('#proof-run-failure')).toBeHidden()
+      await expect(canvas.locator('.step-card.proof-failed')).toHaveCount(0)
       await expect(canvas.locator('#source-digest')).toHaveText(baselineDigest)
       await canvas
         .getByRole('button', { name: /Regression demo - failed/ })
@@ -227,6 +383,44 @@ test(
         canvas.locator('.proof-badge[data-status="failed"]')
       ).toHaveCount(2)
       await canvas.locator('[data-reset-zoom]').click()
+      await canvas.locator('#proof-controls > summary').click()
+      await expect(canvas.locator('#proof-run-failure')).toBeVisible()
+      await canvas
+        .getByRole('button', {
+          name: 'Show Settle local shared projection',
+          exact: true
+        })
+        .click()
+      await expect(
+        canvas.locator('[data-step-id="settle-local-shared-projection"]')
+      ).toHaveClass(/is-selected/)
+      await expect(canvas.locator('#proof-failures')).toContainText(
+        'cancel.delivery - failed'
+      )
+      await canvas
+        .getByRole('button', {
+          name: 'Show Finalize transaction state',
+          exact: true
+        })
+        .click()
+      await expect(owner).toHaveClass(/is-selected/)
+      assert.equal(
+        await owner.evaluate((card) => {
+          const rect = card.getBoundingClientRect()
+          const view = card.closest('.flow-viewport').getBoundingClientRect()
+          return (
+            rect.left >= view.left &&
+            rect.right <= view.right &&
+            rect.top >= view.top &&
+            rect.bottom <= view.bottom
+          )
+        }),
+        true,
+        'failure navigation brings the rebuilt owner card into the canvas viewport'
+      )
+      await expect(canvas.locator('#proof-failures')).toContainText(
+        'cancel.outcome - failed'
+      )
       await capture('canvas-negative')
       // Inspect the complete original graph at 100%, using a large viewport
       // rather than shrinking cards or capturing clipped offscreen content.
@@ -320,7 +514,7 @@ test(
         canvas.locator('.proof-badge[data-status="passed"]')
       ).toHaveCount(3)
       await page.goto(server.origin + '/core-proof')
-      await expect(canvas.locator('.step-card')).toHaveCount(6)
+      await expect(canvas.locator('.step-card')).toHaveCount(8)
       await expect(canvas.locator('.proof-badge')).toHaveCount(0)
       await expect(canvas.locator('#run-all')).toHaveCount(0)
       await expect(canvas.locator('#proof-unavailable')).toContainText(
@@ -513,8 +707,11 @@ test(
             if (destinations.has(resource) && (!url.hash || fragmentClicked))
               continue
             const anchor = anchors.nth(record.index)
-            if (!(await anchor.isVisible()))
-              await canvas.getByText('Full contract', { exact: true }).click()
+            for (const disclosure of await anchor
+              .locator('xpath=ancestor::details')
+              .all())
+              if ((await disclosure.getAttribute('open')) === null)
+                await disclosure.locator(':scope > summary').click()
             const graph = await canvas.locator('#flow').elementHandle()
             const viewport = canvas.locator('.flow-viewport')
             const before = await viewport.evaluate((node) => ({
@@ -786,6 +983,173 @@ test(
       await server.close()
       if (previousTemporary === undefined) delete process.env.TMPDIR
       else process.env.TMPDIR = previousTemporary
+    }
+  }
+)
+
+test(
+  'Phase 4 actions preserve the original cards while exposing evolution, CI blockers and shared baseline',
+  { timeout: 60000 },
+  async () => {
+    const root = path.resolve(__dirname, '../../../..'),
+      parent = path.join(root, 'tmp/flow-inspector/visual-review')
+    fs.mkdirSync(parent, { recursive: true })
+    const artifacts = fs.mkdtempSync(path.join(parent, 'phase4-')),
+      temporary = path.join(artifacts, 'browser-tmp')
+    fs.mkdirSync(temporary)
+    const prior = process.env.TMPDIR
+    process.env.TMPDIR = temporary
+    const server = await startServer(root, {
+      serviceOptions: { directory: path.join(artifacts, 'runs') }
+    })
+    let browser
+    try {
+      browser = await chromium.launch({
+        channel: process.env.FLOW_PROOF_BROWSER_CHANNEL || undefined,
+        downloadsPath: temporary
+      })
+      const page = await browser.newPage({
+        viewport: { width: 1600, height: 1100 }
+      })
+      await page.goto(server.origin + '/transaction-atomicity')
+      const canvas = page.frameLocator('iframe')
+      await expect(canvas.locator('.step-card')).toHaveCount(7)
+      await canvas.locator('#proof-controls > summary').click()
+      await canvas
+        .getByText('Contract versions and CI', { exact: true })
+        .click()
+      const original = await canvas
+        .locator('.step-card')
+        .first()
+        .elementHandle()
+      const geometry = await canvas
+        .locator('.step-card')
+        .evaluateAll((nodes) =>
+          nodes.map((n) => [
+            n.dataset.stepId,
+            n.style.left,
+            n.style.top,
+            n.offsetWidth,
+            n.offsetHeight
+          ])
+        )
+      await canvas.locator('#run-candidate').click()
+      await expect(canvas.locator('#run-state')).toHaveText('Ready to verify', {
+        timeout: 15000
+      })
+      await expect(canvas.locator('#result-context')).toContainText('Candidate')
+      await expect(
+        canvas.locator('.proof-badge[data-status="passed"]')
+      ).toHaveCount(0)
+      await canvas.locator('#contract-prepare').click()
+      await expect(canvas.locator('#contract-diff')).toContainText('pending')
+      await canvas.locator('#contract-reason').fill('Reviewed current baseline')
+      await canvas.locator('#contract-accept').click()
+      await expect(canvas.locator('#contract-baseline')).toContainText(
+        'revision 2'
+      )
+      await canvas.locator('#run-ci-demo').click()
+      await expect(canvas.locator('#run-state')).toHaveText('Ready to verify', {
+        timeout: 15000
+      })
+      await expect(canvas.locator('#ci-result')).toContainText('failed')
+      await expect(canvas.locator('#ci-result')).toContainText('blocked')
+      await canvas.locator('#run-ci').click()
+      await expect(canvas.locator('#ci-result')).toContainText('blocked', {
+        timeout: 15000
+      })
+      await expect(canvas.locator('#ci-result')).toContainText('required-check')
+      await expect(canvas.locator('#ci-envelope-link')).toHaveAttribute(
+        'target',
+        '_blank'
+      )
+      const id = server.service.state().runs[0].id
+      await canvas.locator('#retry-run').click()
+      await expect.poll(() => server.service.state().runs[0].id).not.toBe(id)
+      await expect(canvas.locator('#run-state')).toHaveText('Ready to verify', {
+        timeout: 15000
+      })
+      await canvas.getByText('Shared baseline view', { exact: true }).click()
+      await expect(canvas.locator('#manager-view')).toContainText(
+        'Delivery: blocked'
+      )
+      await expect(canvas.locator('#shared-link')).toHaveAttribute(
+        'href',
+        '/api/shared'
+      )
+      await canvas
+        .locator('#work-step')
+        .selectOption('finalize-transaction-state')
+      await canvas.locator('#work-status').selectOption('in-progress')
+      await canvas
+        .locator('#work-reason')
+        .fill('Remaining implementation reviewed')
+      await canvas.locator('#work-save').click()
+      await expect(canvas.locator('#manager-view')).toContainText(
+        'Work: in-progress'
+      )
+      await expect(canvas.locator('#manager-view')).toContainText(
+        'Delivery: blocked'
+      )
+
+      assert.deepEqual(
+        await canvas
+          .locator('.step-card')
+          .evaluateAll((nodes) =>
+            nodes.map((n) => [
+              n.dataset.stepId,
+              n.style.left,
+              n.style.top,
+              n.offsetWidth,
+              n.offsetHeight
+            ])
+          ),
+        geometry
+      )
+      assert.equal(
+        await original.evaluate(
+          (n) => n === document.querySelector('.step-card')
+        ),
+        true
+      )
+      await page.screenshot({
+        path: path.join(artifacts, 'phase4-board.png'),
+        fullPage: true
+      })
+      await canvas
+        .locator('#phase4-controls')
+        .screenshot({ path: path.join(artifacts, 'phase4-controls.png') })
+      await canvas
+        .locator('#manager-view')
+        .evaluate((element) =>
+          element.scrollIntoView({ behavior: 'instant', block: 'start' })
+        )
+      await page.screenshot({
+        path: path.join(artifacts, 'phase4-shared.png'),
+        fullPage: true
+      })
+      fs.writeFileSync(
+        path.join(artifacts, 'metadata.json'),
+        JSON.stringify(
+          {
+            url: page.url(),
+            viewport: page.viewportSize(),
+            snapshot: server.service.shared(),
+            screenshots: [
+              'phase4-board.png',
+              'phase4-controls.png',
+              'phase4-shared.png'
+            ]
+          },
+          null,
+          2
+        )
+      )
+    } finally {
+      await browser?.close()
+      await server.close()
+      if (prior === undefined) delete process.env.TMPDIR
+      else process.env.TMPDIR = prior
     }
   }
 )

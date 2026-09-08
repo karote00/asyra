@@ -22,6 +22,12 @@ const data = {
       kind: 'authority',
       label: 'Core Proof Contract',
       href: '../../../docs/ai/tools/flow-inspector/CORE_PROOF.md'
+    },
+    {
+      id: 'ci-trial-workflow',
+      kind: 'source',
+      label: 'CI trial workflow - not required-check enforcement',
+      href: '../../../.github/workflows/main.yml'
     }
   ],
   lanes: [
@@ -37,6 +43,25 @@ const data = {
     }
   ],
   steps: [
+
+    {
+      id: 'review-contract-evolution',
+      order: 0,
+      laneId: 'proof',
+      title: 'Review contract evolution',
+      ownerPackage: 'tools/flow-inspector/control-plane',
+      purpose: 'Contract evolution',
+      inputs: ['accepted version history', 'admitted candidate contract', 'observed selector identities and source digests', 'explicit successor relations and retirement request', 'actor capability and exact-base decision'],
+      outputs: ['artifact:reviewed-contract-evolution'],
+      conditions: ['Compare stable obligations and source observations once per requested review; preserve immutable accepted versions. Accept only exact current base and candidate inputs with authorized reason; removal requires separately authorized explicit retirement. Missing selectors and unknown evidence remain unresolved.'],
+      bypasses: ['No implicit retirement, heuristic acceptance, or preserved green evidence after revision.'],
+      allowedContributors: ['admitted contracts', 'registered selector observations', 'explicit actor decision'],
+      forbiddenContributors: ['provider green status', 'client-side acceptance', 'candidate self-authorization'],
+      cacheDimensions: [],
+      implementationBoundary: ['tools/flow-inspector/control-plane/evolution.cjs', 'tools/flow-inspector/control-plane/__tests__/evolution.test.cjs'],
+      specRefs: ['#contract-evolution'],
+      failureOwnerStepId: 'review-contract-evolution'
+    },
     {
       id: 'admit-proof-contract',
       order: 1,
@@ -47,7 +72,7 @@ const data = {
       inputs: ['product-owned proof manifest', 'target architecture Inspector', 'accepted mapping for explicit candidate comparison'],
       outputs: ['artifact:admitted-proof-contract'],
       conditions: [
-        'Every required case resolves to a concrete selected step; all incoming artifact routes have explicit, case-backed required or bypassed decisions. Producers, consumers, predicates, and external inputs resolve without contradictory ownership.'
+        'Retain a detached immutable architecture definition with each admitted contract for exact historical reconstruction. Every required case resolves to a concrete selected step; all incoming artifact routes have explicit, case-backed required or bypassed decisions. Producers, consumers, predicates, and external inputs resolve without contradictory ownership.'
       ],
       bypasses: [
         'No missing, ambiguous, empty, or contradictory contract may be bypassed.'
@@ -70,6 +95,24 @@ const data = {
       failureOwnerStepId: 'admit-proof-contract'
     },
     {
+      id: 'ingest-ci-evidence',
+      order: 8,
+      laneId: 'proof',
+      title: 'Ingest CI evidence',
+      ownerPackage: 'tools/flow-inspector/control-plane',
+      purpose: 'Accepted-base CI',
+      inputs: ['independently selected accepted contract and gate policy', 'admitted integration contract', 'trusted expected repository/source/base/head/integration identity', 'CI attempt envelope and raw report'],
+      outputs: ['artifact:ci-aggregate-evidence'],
+      conditions: ['Check complete supported obligation inventory, exact source and integration provenance, raw case outcomes and artifact fingerprint; retain both confirmed assertion failures and delivery blockers.'],
+      bypasses: ['Missing protection is an explicit delivery blocker; provider green never substitutes for case evidence.'],
+      allowedContributors: ['accepted-base policy', 'assess-proof-evidence raw report assessor', 'registered CI transport'],
+      forbiddenContributors: ['candidate-selected trust base', 'provider summary as verification', 'candidate gate-policy authorization'],
+      cacheDimensions: [],
+      implementationBoundary: ['tools/flow-inspector/control-plane/ci-evidence.cjs', 'tools/flow-inspector/control-plane/__tests__/ci-evidence.test.cjs'],
+      specRefs: ['#accepted-base-ci'],
+      failureOwnerStepId: 'ingest-ci-evidence'
+    },
+    {
       id: 'capture-proof-source',
       order: 2,
       laneId: 'proof',
@@ -79,11 +122,12 @@ const data = {
       inputs: [
         'artifact:admitted-proof-contract',
         'authorized run identity',
-        'declared source roots and dependency metadata'
+        'declared source roots and dependency metadata',
+        'server-selected accepted Git base and integration revision'
       ],
       outputs: ['artifact:proof-source-snapshot'],
       conditions: [
-        'Copy regular source files once into one attempt-owned tree, retain the immutable file manifest, bind source, mapping, architecture, configuration and lockfile digests, and reject symlinks.'
+        'Read accepted-base contract and protected gate inputs once for CI admission; compare captured integration bytes with Git identity and preserve explicit policy drift blockers. Copy regular source files once into one attempt-owned tree, retain the immutable file manifest, bind source, mapping, architecture, configuration and lockfile digests, and reject symlinks.'
       ],
       bypasses: [
         'No previous snapshot or mutable checkout may replace the captured runtime source.'
@@ -95,7 +139,9 @@ const data = {
       cacheDimensions: [],
       implementationBoundary: [
         'tools/flow-inspector/control-plane/snapshot.cjs',
-        'tools/flow-inspector/control-plane/__tests__/snapshot.test.cjs'
+        'tools/flow-inspector/control-plane/__tests__/snapshot.test.cjs',
+        'tools/flow-inspector/control-plane/ci-context.cjs',
+        'tools/flow-inspector/control-plane/__tests__/ci-context.test.cjs'
       ],
       specRefs: ['#source-and-evidence'],
       failureOwnerStepId: 'capture-proof-source'
@@ -181,11 +227,14 @@ const data = {
         'artifact:assessed-proof-evidence',
         'registered local request',
         'attempt store',
-        'existing static workspace and catalog-declared local resources'
+        'existing static workspace and catalog-declared local resources',
+        'artifact:reviewed-contract-evolution',
+        'artifact:ci-aggregate-evidence',
+        'server-selected accepted Git base'
       ],
       outputs: ['artifact:proof-board-state'],
       conditions: [
-        'Authorize before work, admit one run against the explicitly accepted mapping, durably record state with audit, and expose immutable snapshot-bound evidence; restart interrupts incomplete attempts. Mapping prepare and decide actions bind the exact base revision and candidate digest, preserve all obligations, and atomically retain the decision with the accepted mapping. Duplicate request identities do not repeat execution; repeated reads consume already admitted evidence.',
+        'Keep reported step work completion independent from execution, verification and delivery. Separate candidate verification from accepted conformance, persist version decisions and accepted mapping atomically, admit CI results against a server-selected base, and produce baseline-bound read-only manager snapshots only at state changes. Authorize before work, admit one run against the explicitly accepted mapping, durably record state with audit, and expose immutable snapshot-bound evidence; restart interrupts incomplete attempts. Mapping prepare and decide actions bind the exact base revision and candidate digest, preserve all obligations, and atomically retain the decision with the accepted mapping. Duplicate request identities do not repeat execution; repeated reads consume already admitted evidence.',
         'Serve allowlisted existing workspace assets and compose the proof adapter into target documents; preserve static paths, target routing, and same-origin isolation. Serve Overview at root and catalog-slug pages with an explicit path-routing marker and workspace asset base; unknown public paths return a 404 route error without a selected target. Catalog-declared standalone HTML paths redirect to their exact short workspace target, and declared documentation/source links remain readable in a separate tab.'
       ],
       bypasses: [
@@ -198,7 +247,7 @@ const data = {
         'generated workspace bundle and its declared local documentation/source links'
       ],
       forbiddenContributors: [
-        'external providers',
+        'unregistered external delivery mutations',
         'arbitrary commands',
         'implicit current-source or deployment claims'
       ],
@@ -208,7 +257,9 @@ const data = {
         'tools/flow-inspector/control-plane/store.cjs',
         'tools/flow-inspector/control-plane/server.cjs',
         'tools/flow-inspector/control-plane/cli.cjs',
+        '.github/workflows/main.yml',
         'tools/flow-inspector/control-plane/__tests__/service.test.cjs',
+        'tools/flow-inspector/control-plane/__tests__/operations.test.cjs',
         'tools/flow-inspector/control-plane/__tests__/mapping.test.cjs',
         'tools/flow-inspector/control-plane/__tests__/cli.test.cjs',
         'tools/flow-inspector/control-plane/__tests__/store.test.cjs',
@@ -232,8 +283,9 @@ const data = {
       outputs: ['artifact:proof-board-view'],
       conditions: [
         'Preserve the existing canvas cards, routes, geometry, controls, and details; project exact selected-flow results and actions into that surface without replacing the graph.',
+        'On a newly selected failed attempt, select the first failing flow if the current flow has no failures; request viewer-owned framing of that flow’s failed step IDs once per changed result; preserve subsequent manual selection, pan and zoom on unchanged refresh. Success and unknown results do not move the viewport. Show a persistent run-level failure alert with named owner navigation and geometry-preserving failed card highlights; clear them on recovery.',
         'Bind cards only after graph DOM replacement; unchanged polling rebuilds neither graph nor bindings and performs no source capture. Target retirement disconnects observers and aborts reads.',
-        'Show every registered negative scenario, snapshot and version identity, runner environment, named artifact links, and retained attempts; unsupported targets and untested steps receive no successful evidence. Prepare and decide mapping reviews through the action service with an explicit reason; never accept mapping changes in the client.',
+        'Project explicit work reports separately from verification and delivery. Project candidate verification, exact version review with retirement, all-flow CI blockers and artifacts, retry, and baseline/time-labeled shared viewing through the same action service. Show every registered negative scenario, snapshot and version identity, runner environment, named artifact links, and retained attempts; unsupported targets and untested steps receive no successful evidence. Prepare and decide mapping reviews through the action service with an explicit reason; never accept mapping changes in the client.',
         'Loaded canvas step contracts must match admitted verification steps before projecting evidence or enabling launch.'
       ],
       bypasses: [
@@ -259,6 +311,19 @@ const data = {
     }
   ],
   routes: [
+    {
+      id: 'ingest-ci-evidence-to-actions', from: 'ingest-ci-evidence', to: 'serve-proof-actions', kind: 'handoff',
+      predicate: 'All-flow evidence is assessed with explicit delivery blockers.',
+      producedArtifacts: ['artifact:ci-aggregate-evidence']
+    },
+    {
+      id: 'review-contract-evolution-to-actions',
+      from: 'review-contract-evolution',
+      to: 'serve-proof-actions',
+      kind: 'handoff',
+      predicate: 'The version owner completed or explicitly blocked the review.',
+      producedArtifacts: ['artifact:reviewed-contract-evolution']
+    },
     {
       id: 'admit-proof-contract-to-capture-proof-source',
       from: 'admit-proof-contract',
@@ -332,6 +397,17 @@ const data = {
     }
   ],
   artifacts: [
+    {
+      id: 'artifact:ci-aggregate-evidence', title: 'CI aggregate evidence',
+      ownerStepId: 'ingest-ci-evidence', channel: 'ci-evidence', consumerStepIds: ['serve-proof-actions']
+    },
+    {
+      id: 'artifact:reviewed-contract-evolution',
+      title: 'Reviewed contract evolution',
+      ownerStepId: 'review-contract-evolution',
+      channel: 'contract-evolution',
+      consumerStepIds: ['serve-proof-actions']
+    },
     {
       id: 'artifact:admitted-proof-contract',
       title: 'Admit proof contract output',
