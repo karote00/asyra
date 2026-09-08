@@ -665,7 +665,7 @@ function Controls({
     </aside>
   )
 }
-function CrossSection() {
+export function CrossSection() {
   const config = useFarmConfiguration()
   const site = configurationSite(config)
   const strips = createLayout(site, config.strips).strips.filter(
@@ -675,7 +675,7 @@ function CrossSection() {
     0.15,
     ...config.strips
       .filter((strip) => strip.kind === 'drain')
-      .map((strip) => strip.width / 2)
+      .map((strip) => createDrainProfile(strip.width).depth)
   )
   return (
     <section className="rounded-2xl border border-[#dde3d8] bg-[#fafbf7] p-5">
@@ -714,7 +714,7 @@ function CrossSection() {
                 <>
                   <path
                     d={`${curve} L${strip.x + strip.width},${sectionDepth + 0.04} L${strip.x},${sectionDepth + 0.04} Z`}
-                    fill="#c0d3d1"
+                    fill="#c6b497"
                   />
                   <path
                     d={`${curve} L${strip.x + strip.width},0 Z`}
@@ -723,8 +723,20 @@ function CrossSection() {
                   <path
                     d={curve}
                     fill="none"
-                    stroke="#668b8a"
+                    stroke="#8d785c"
                     strokeWidth="0.008"
+                  />
+                  <path
+                    d={`${profile.waterPoints.map(([x, y], index) => `${index ? 'L' : 'M'}${strip.x + x},${-y}`).join(' ')} Z`}
+                    fill="#8ab3b4"
+                  />
+                  <line
+                    x1={strip.x + profile.lipRadius}
+                    x2={strip.x + strip.width - profile.lipRadius}
+                    y1={-profile.waterLevel}
+                    y2={-profile.waterLevel}
+                    stroke="#4f9299"
+                    strokeWidth="0.012"
                   />
                 </>
               ) : (
@@ -780,7 +792,8 @@ function PlantingSummary() {
       Ø20mm 栽培管，埋深 15cm、頂高{' '}
       {(site.eave + config.topExtension).toFixed(2)}m，縱向間距 60cm。15cm
       方格網由束帶固定，上緣 {config.netTop}m、下緣 {config.netBottom}
-      m。尚未配置植株。
+      m。Plants follow the soil rows at 20 cm spacing, using 20 variants per
+      cultivar.
     </>
   )
 }

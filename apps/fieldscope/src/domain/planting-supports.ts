@@ -24,34 +24,46 @@ export interface SupportPosition {
   z: number
 }
 
+/** Canonical water-adjacent soil rows, shared by supports and crops. */
+export function createPlantingRows(config: FarmConfiguration) {
+  const layout = createLayout(configurationSite(config), config.strips)
+  return layout.strips
+    .filter((strip) => strip.kind === 'drain')
+    .flatMap((drain, row) =>
+      (['left', 'right'] as const).flatMap((side) => {
+        const adjacent =
+          layout.strips[
+            layout.strips.indexOf(drain) + (side === 'left' ? -1 : 1)
+          ]
+        if (!adjacent || adjacent.bay !== drain.bay || adjacent.kind !== 'soil')
+          return []
+        return [
+          {
+            bay: drain.bay,
+            row,
+            side,
+            x:
+              side === 'left'
+                ? drain.x - config.soilInset
+                : drain.x + drain.width + config.soilInset
+          }
+        ]
+      })
+    )
+}
+
 export function createSupportPositions(
   config: FarmConfiguration = DEFAULT_CONFIGURATION
 ): SupportPosition[] {
-  const site = configurationSite(config)
-  const layout = createLayout(site, config.strips)
-  const drains = layout.strips.filter((strip) => strip.kind === 'drain')
   const intervalCount = Math.floor(
-    (site.length - config.startInset - config.endInset) / SUPPORT_LAYOUT.spacing
+    (config.length - config.startInset - config.endInset) /
+      SUPPORT_LAYOUT.spacing
   )
-  return drains.flatMap((drain, row) =>
-    (['left', 'right'] as const).flatMap((side) => {
-      const index = layout.strips.indexOf(drain)
-      const adjacent = layout.strips[index + (side === 'left' ? -1 : 1)]
-      if (!adjacent || adjacent.bay !== drain.bay || adjacent.kind !== 'soil')
-        return []
-      const x =
-        side === 'left'
-          ? drain.x - config.soilInset
-          : drain.x + drain.width + config.soilInset
-      return Array.from({ length: intervalCount + 1 }, (_, index) => ({
-        bay: drain.bay,
-        side,
-        row,
-        x,
-        // Index-based placement avoids accumulated floating-point drift at the far end.
-        z: config.startInset + index * SUPPORT_LAYOUT.spacing
-      }))
-    })
+  return createPlantingRows(config).flatMap((row) =>
+    Array.from({ length: intervalCount + 1 }, (_, index) => ({
+      ...row,
+      z: config.startInset + index * SUPPORT_LAYOUT.spacing
+    }))
   )
 }
 

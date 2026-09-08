@@ -2,8 +2,16 @@ import type { Point3, Member } from './greenhouse'
 
 /** Engine-neutral triangle buffers. Construction belongs to the site lifetime. */
 export class TriangleBuilder {
+  constructor(private readonly tubeSides = 8) {}
   readonly positions: number[] = []
+  readonly colors: number[] = []
   readonly indices: number[] = []
+
+  triangle(a: Point3, b: Point3, c: Point3) {
+    const offset = this.positions.length / 3
+    this.positions.push(...a, ...b, ...c)
+    this.indices.push(offset, offset + 1, offset + 2)
+  }
 
   quad(a: Point3, b: Point3, c: Point3, d: Point3) {
     const offset = this.positions.length / 3
@@ -34,10 +42,9 @@ export class TriangleBuilder {
     this.quad(p(-1, -1, 1), p(1, -1, 1), p(1, -1, -1), p(-1, -1, -1))
   }
 
-  tube(member: Pick<Member, 'points' | 'diameter'>) {
+  tube(member: Pick<Member, 'points' | 'diameter'>, sides = this.tubeSides) {
     const { points, diameter } = member
-    const offset = this.positions.length / 3,
-      sides = 8
+    const offset = this.positions.length / 3
     points.forEach((p, i) => {
       const before = points[Math.max(0, i - 1)],
         after = points[Math.min(points.length - 1, i + 1)]
@@ -65,6 +72,7 @@ export class TriangleBuilder {
     return {
       kind: 'triangles' as const,
       positions: this.positions,
+      ...(this.colors.length ? { colors: this.colors } : {}),
       indices: this.indices
     }
   }

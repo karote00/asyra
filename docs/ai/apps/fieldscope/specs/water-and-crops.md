@@ -1,0 +1,40 @@
+# Water and crops
+
+## Water
+
+Soil surface is Y = 0. Each drain is a semicircular depression in soil with a small rounded soil lip and a vertical shoulder. The semicircle rim and flat water surface are Y = -0.05 m. Rounded lips remain inside the configured drain width; lip radius is min(0.01 m, width / 10). The semicircle radius is half the width minus the lip radius. Its bottom is 0.05 m plus that radius below soil. Soil continues beneath the entire curved channel and its exposed ends. Water fills the complete semicircular volume up to the inner rim. It has a horizontal top, a curved contact boundary, and filled end faces. The soil trough continues outside and beneath the water; water is not merely a thin top sheet. The section diagram uses the same profile and level.
+
+## Planting
+
+Bays 0 and 1 contain 1914 cucumber; bays 2 and 3 contain Yu-Nu cherry tomato. Roots follow each water-adjacent soil row. Measured from that water edge, root offset is the configured pole inset plus 0.05 m farther into soil. There are no plants where no soil is adjacent. Configuration must leave room for these roots; invalid layouts are rejected without mutation.
+
+Plant longitudinal spacing is 0.20 m, starting at the configured front inset and ending no later than length minus rear inset. Defaults produce 248 plants per row, 24 rows, 5,952 plants total: 2,976 of each cultivar. Spacing is index-based; the final residual gap is allowed. Plants start at soil surface and climb toward their row's net.
+
+Each cultivar has exactly 20 distinct reusable original geometry variants. Variants differ in climbing path, foliage arrangement, height, and fruit development/size. Assignment is deterministic pseudo-random sampling so camera/layer changes and history replay do not reshuffle plants. Both sets of 20 occur in the default scene. Variant height follows the configured net envelope; no growth simulation is implied.
+
+## Occlusion and viewing detail
+
+Variants include clear fruit, fruit screened by an attached leaf, and fruit behind the actual net plane at a horizontal strand's height when the configured net permits it. Occlusion is real geometry, deterministic and reproducible; it does not claim a robot detection result. Short or high-bottom nets cannot provide every occlusion case.
+
+The full model is used for close inspection. A geometrically bounded distant representation preserves root transforms, cultivar, fruit placement and variant identity. The renderer chooses detail from projected geometric error (at most 2 pixels for the distant representation) and rejects off-screen instances using conservative bounds. Camera changes must not regenerate either model. Tests compare representations and verify switching, clipping, reuse and disposal.
+
+## Appearance references
+
+Observed original photographs, consulted 2026-09-09:
+
+- <a href="https://www.suntech-seed.com.tw/product_detail.php?id=447" target="_blank" rel="noopener noreferrer">Suntech Seed - 1914 F1 cucumber</a>: slender glossy dark-green fruit, published mature length 20–24 cm, small dark-green leaves. The plant photo shows broad heart-shaped shallow-lobed leaves, palmate veins, climbing tendrils and yellow flowers.
+- <a href="https://www.knownyou.com/tw/product-detail/166/" target="_blank" rel="noopener noreferrer">Known-You Seed - Yu-Nu tomato</a>: elongated oval red fruit, published fruit weight 18 g, large flower trusses and tall growth. The photograph shows pointed green calyces, compound serrated foliage and yellow flowers.
+- <a href="https://tpbg.tfri.gov.tw/mobile/plant.php?rid=1615" target="_blank" rel="noopener noreferrer">Taipei Botanical Garden - cucumber</a>: tendrils and rough climbing stems support the visual interpretation.
+
+The user's five close-up photographs additionally establish rounded Yu-Nu ends, downward racemes with alternating bent pedicels, narrow recurved sepals, and nonuniform green/yellow/orange/red patches on individual fruit. Maturity generally decreases toward each raceme tip rather than alternating cyclically.
+
+- <a href="https://hort.nchu.edu.tw/var/file/1/1001/img/30/444533594.pdf" target="_blank" rel="noopener noreferrer">National Chung Hsing University - Yu-Nu ripening stages</a> describes stages by the proportion of red fruit surface.
+- <a href="https://fae.moa.gov.tw/map/food_item.php?id=99&type=AS01" target="_blank" rel="noopener noreferrer">Ministry of Agriculture - cucumber</a> identifies fine white fruit spines and illustrates raised spine bases on young fruit. Modeled spine dimensions are illustrative, not cultivar measurements.
+
+Leaves use curved shared-vertex blades and spatially varying green colors, with reflected daylight keeping their undersides readable. Fruit skin uses linear-RGB vertex colors; individual turning tomatoes retain green shoulders and uneven yellow/orange/red patches. Cucumber skins include raised pale spines in close detail.
+
+Models use original procedural geometry, not copied photograph textures. Plant heights, leaf sizes, tomato dimensions and developmental mixtures are visual modeling assumptions, not cultivar measurements. These models do not certify yield, maturity detection, contact safety, or harvesting physics.
+
+## Product cases and completion
+
+Formal cases cover multiple drain widths, flat water height, soil below the curve, rounded lips, the section consumer, exact root offsets, 20 cm spacing, both cultivars, all 20 variants, repeatability, empty planting rows, invalid narrow soil, and configuration-dependent regeneration. Rendering admission and resource tests cover shared instances, transformed bounds and disposal. Runtime tests prove view changes perform zero geometry rebuilds while Apply/Undo/Redo refresh the scene. Close-up browser review must distinguish the two leaf types, long cucumber fruit, oval clustered tomatoes, calyces and tendrils. Existing app tests, typecheck, lint, production build and current-head CI must pass.

@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { expect, it, vi } from 'vitest'
+import * as crops from '../../domain/crop-models'
 import * as projection from '../../render-app/site-projection'
 import { ThreeEngine, type GraphicsDriver } from '../../engine/three-engine'
 import { bootstrap } from '../bootstrap'
@@ -9,6 +10,7 @@ it.each(['navigation', 'history', 'redo-branch'] as const)(
   'preserves runtime ownership and disposal for %s',
   async (mode) => {
     const build = vi.spyOn(projection, 'buildSiteMeshes')
+    const cropBuild = vi.spyOn(crops, 'createCropModels')
     const preset = vi.spyOn(projection, 'cameraPreset')
     const measure = vi.spyOn(navigation, 'measureScene')
     const pan = vi.spyOn(navigation, 'panCamera')
@@ -259,6 +261,8 @@ it.each(['navigation', 'history', 'redo-branch'] as const)(
       expect(disconnect).toHaveBeenCalledTimes(1)
       expect(() => runtime.orbit(1, 1)).toThrow()
       await runtime.dispose()
+      expect(cropBuild).toHaveBeenCalledTimes(build.mock.calls.length)
+      cropBuild.mockRestore()
       build.mockRestore()
       preset.mockRestore()
       measure.mockRestore()

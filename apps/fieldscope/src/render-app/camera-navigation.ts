@@ -35,11 +35,30 @@ export function measureScene(meshes: SpatialFrame['meshes']): SceneBounds {
       rotation.some((value, i) => value !== [0, 0, 0, 1][i])
     )
       throw new Error('Site bounds require unrotated triangle geometry')
+    const localMin = [Infinity, Infinity, Infinity]
+    const localMax = [-Infinity, -Infinity, -Infinity]
     for (let i = 0; i < shape.positions.length; i++) {
-      const axis = i % 3,
-        value = shape.positions[i] + position[axis]
-      min[axis] = Math.min(min[axis], value)
-      max[axis] = Math.max(max[axis], value)
+      const axis = i % 3
+      localMin[axis] = Math.min(localMin[axis], shape.positions[i])
+      localMax[axis] = Math.max(localMax[axis], shape.positions[i])
+    }
+    const instances = mesh.descriptor.instances ?? [
+      { position: [0, 0, 0], yaw: 0 }
+    ]
+    for (const instance of instances) {
+      const c = Math.cos(instance.yaw),
+        s = Math.sin(instance.yaw)
+      for (const x of [localMin[0], localMax[0]])
+        for (const y of [localMin[1], localMax[1]])
+          for (const z of [localMin[2], localMax[2]]) {
+            const transformed = [c * x + s * z, y, -s * x + c * z]
+            for (let axis = 0; axis < 3; axis++) {
+              const value =
+                transformed[axis] + instance.position[axis] + position[axis]
+              min[axis] = Math.min(min[axis], value)
+              max[axis] = Math.max(max[axis], value)
+            }
+          }
     }
   }
   if (!min.every(Number.isFinite) || !max.every(Number.isFinite))

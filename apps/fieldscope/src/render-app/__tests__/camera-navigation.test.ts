@@ -74,3 +74,37 @@ it('pans by screen pixels without rotating or zooming, and restores 100% while p
   expect(cameraDistance(restored)).toBeCloseTo(cameraDistance(original))
   expect(restored.target).toEqual(moved.target)
 })
+
+it('fits translated and rotated instances while reading model vertices only once', () => {
+  let reads = 0
+  const positions = new Proxy([0, 0, 0, 2, 0, 0, 0, 1, 3], {
+    get(target, key, receiver) {
+      if (typeof key === 'string' && /^\d+$/.test(key)) reads++
+      return Reflect.get(target, key, receiver)
+    }
+  })
+  const bounds = measureScene([
+    {
+      id: 'instances',
+      visible: true,
+      descriptor: {
+        kind: 'mesh',
+        position: [0, 0, 0],
+        rotation: [0, 0, 0, 1],
+        shape: { kind: 'triangles', positions, indices: [0, 1, 2] },
+        color: 0,
+        opacity: 1,
+        wireframe: false,
+        selectable: false,
+        instances: Array.from({ length: 1000 }, (_, i) => ({
+          position: [10, i, 20] as const,
+          yaw: Math.PI / 2
+        }))
+      }
+    }
+  ])
+  expect(bounds.min[0]).toBeCloseTo(10)
+  expect(bounds.min[2]).toBeCloseTo(18)
+  expect(bounds.max).toEqual([13, 1000, 20])
+  expect(reads).toBeLessThanOrEqual(18)
+})

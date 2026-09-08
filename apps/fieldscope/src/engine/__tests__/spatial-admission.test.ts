@@ -81,3 +81,46 @@ it('validates the detached values it will retain rather than earlier accessor re
   ).toBe(true)
   expect(reads).toBe(1)
 })
+
+it('detaches instance transforms and reuses accepted transforms across presentation changes', () => {
+  const instances = [{ position: [1, 0, 2], yaw: Math.PI }]
+  const accepted = readSpatialDescriptor({ ...input(), instances })
+  if (accepted.kind !== 'mesh') throw new Error('Expected mesh')
+  instances[0].position[0] = 99
+  expect(accepted.instances?.[0].position).toEqual([1, 0, 2])
+  expect(Object.isFrozen(accepted.instances?.[0].position)).toBe(true)
+  const next = readSpatialDescriptor({ ...accepted, color: 0 })
+  expect(next.kind === 'mesh' && next.instances).toBe(accepted.instances)
+  for (const invalid of [
+    [],
+    [{ position: [NaN, 0, 0], yaw: 0 }],
+    [{ position: [0, 0, 0], yaw: Infinity }]
+  ])
+    expect(() =>
+      readSpatialDescriptor({ ...input(), instances: invalid })
+    ).toThrow()
+})
+
+it('validates and detaches per-vertex surface colors', () => {
+  const source = input()
+  if (source.kind !== 'mesh' || source.shape.kind !== 'triangles')
+    throw new Error('Expected triangles')
+  const colors = [0.2, 0.1, 0.05, 0.3, 0.1, 0.04, 0.4, 0.2, 0.03]
+  const accepted = readSpatialDescriptor({
+    ...source,
+    shape: { ...source.shape, colors }
+  })
+  colors[0] = 99
+  expect(
+    accepted.kind === 'mesh' &&
+      accepted.shape.kind === 'triangles' &&
+      accepted.shape.colors?.[0]
+  ).toBe(0.2)
+  for (const invalid of [[1, 0, 0], colors, Array(9).fill(NaN)])
+    expect(() =>
+      readSpatialDescriptor({
+        ...source,
+        shape: { ...source.shape, colors: invalid }
+      })
+    ).toThrow()
+})

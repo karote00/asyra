@@ -84,9 +84,11 @@ export function validateConfiguration(
       strip.kind === 'soil' &&
       (value.strips[i - 1]?.kind === 'drain' ||
         value.strips[i + 1]?.kind === 'drain') &&
-      strip.width < value.soilInset + 0.01
+      strip.width < value.soilInset + 0.05
     )
-      throw new Error('水道旁土壤寬度不足以容納鋼管與指定距離')
+      throw new Error(
+        'Adjacent soil must contain the pole inset plus 5 cm for plant roots'
+      )
   })
   const sides = value.strips.reduce(
     (sum, strip, i) =>

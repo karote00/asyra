@@ -1,3 +1,5 @@
+import { createCropModels } from '../domain/crop-models'
+import { createCropPositions } from '../domain/crop-layout'
 import { createDrainProfile } from '../domain/drain-profile'
 import {
   DEFAULT_CONFIGURATION,
@@ -12,10 +14,15 @@ import {
 } from '../domain/planting-supports'
 import { createLayout, createStructure, roofPoint } from '../domain/greenhouse'
 import { TriangleBuilder } from '../domain/mesh'
-import { readSpatialDescriptor } from '../engine/spatial-contract'
+import {
+  readSpatialDescriptor,
+  readSpatialInstances
+} from '../engine/spatial-contract'
 import type { SpatialFrame, SpatialMesh, SpatialCamera } from './spatial-layer'
 
 export type LayerId =
+  | 'cucumbers'
+  | 'tomatoes'
   | 'net'
   | 'ties'
   | 'supports'
@@ -29,6 +36,8 @@ export type LayerId =
   | 'dimensions'
   | 'base'
 export const LAYER_LABELS: Record<Exclude<LayerId, 'base'>, string> = {
+  cucumbers: '1914 cucumber',
+  tomatoes: 'Yu-Nu cherry tomato',
   net: '攀爬拉網',
   ties: '網頂束帶',
   supports: '栽培鋼管',
@@ -36,12 +45,14 @@ export const LAYER_LABELS: Record<Exclude<LayerId, 'base'>, string> = {
   film: '塑膠覆膜',
   steel: '完整鋼架',
   soil: '土壤畦面',
-  drains: '凹陷水溝',
+  drains: 'Water',
   passages: '連棟走道',
   barriers: '外側防水擋板',
   dimensions: '尺寸參考線'
 }
 export const INITIAL_LAYERS: Record<LayerId, boolean> = {
+  cucumbers: true,
+  tomatoes: true,
   net: true,
   ties: true,
   supports: true,
@@ -189,7 +200,7 @@ export function buildSiteMeshes(
     0.35,
     ...strips
       .filter((strip) => strip.kind === 'drain')
-      .map((strip) => strip.width / 2 + 0.05)
+      .map((strip) => createDrainProfile(strip.width).depth + 0.05)
   )
   base.box(
     [middle, -terrainDepth - 0.13, midDepth],
@@ -203,16 +214,37 @@ export function buildSiteMeshes(
         [strip.width, terrainDepth, depth]
       )
     else {
-      const { points } = createDrainProfile(strip.width)
+      const { points, lipRadius, waterLevel, waterPoints } = createDrainProfile(
+        strip.width
+      )
+      drains.quad(
+        [strip.x + lipRadius, waterLevel, 0],
+        [strip.x + lipRadius, waterLevel, depth],
+        [strip.x + strip.width - lipRadius, waterLevel, depth],
+        [strip.x + strip.width - lipRadius, waterLevel, 0]
+      )
+      for (let i = 1; i < waterPoints.length; i++) {
+        const [ax, ay] = waterPoints[i - 1],
+          [bx, by] = waterPoints[i]
+        const a = strip.x + ax,
+          b = strip.x + bx
+        drains.quad([a, ay, 0], [b, by, 0], [b, by, depth], [a, ay, depth])
+        drains.triangle([middle, waterLevel, 0], [b, by, 0], [a, ay, 0])
+        drains.triangle(
+          [middle, waterLevel, depth],
+          [a, ay, depth],
+          [b, by, depth]
+        )
+      }
       for (let i = 1; i < points.length; i++) {
         const [ax, ay] = points[i - 1],
           [bx, by] = points[i]
         const a = strip.x + ax,
           b = strip.x + bx
-        drains.quad([a, ay, 0], [a, ay, depth], [b, by, depth], [b, by, 0])
+        soil.quad([a, ay, 0], [a, ay, depth], [b, by, depth], [b, by, 0])
         // Close the exposed ends below the curve without filling the channel opening.
         for (const z of [0, depth])
-          drains.quad(
+          soil.quad(
             [a, ay, z],
             [b, by, z],
             [b, -terrainDepth, z],
@@ -304,10 +336,45 @@ export function buildSiteMeshes(
     dimensions.box([x, -0.326, -1.2], [0.04, 0.012, 0.55])
   for (let z = 0; z <= depth; z += 5)
     dimensions.box([totalWidth + 1.2, -0.326, z], [0.55, 0.012, 0.04])
+  const plants = createCropPositions(config)
+  const crops: SiteMesh[] = []
+  if (plants.length)
+    for (const model of createCropModels(config)) {
+      const selected = plants.filter(
+        (plant) =>
+          plant.species === model.species && plant.variant === model.variant
+      )
+      if (!selected.length) continue
+      const instances = readSpatialInstances(
+        selected.map(({ position, yaw }) => ({ position, yaw }))
+      )
+      model.parts.forEach((part, index) =>
+        crops.push({
+          id: `${model.species}-${model.variant}-${index}`,
+          layer: model.species === 'cucumber-1914' ? 'cucumbers' : 'tomatoes',
+          visible: true,
+          descriptor: readSpatialDescriptor({
+            kind: 'mesh',
+            position: [0, 0, 0],
+            rotation: [0, 0, 0, 1],
+            shape: part.shape,
+            distant: { shape: part.distantShape, maxError: 0.06 },
+            roughness: part.roughness,
+            metalness: 0,
+            instances,
+            color: part.color,
+            opacity: 1,
+            wireframe: false,
+            selectable: false
+          }) as SpatialMesh
+        })
+      )
+    }
   return [
+    ...crops,
     mesh('base', base, 0xc8cebd),
     ...(soil.positions.length ? [mesh('soil', soil, 0x765437)] : []),
-    ...(drains.positions.length ? [mesh('drains', drains, 0x3d6266)] : []),
+    ...(drains.positions.length ? [mesh('drains', drains, 0x3d6266, 0.8)] : []),
     mesh('passages', builders.passages, 0xb2b3a2),
     mesh('barriers', barriers, 0x182623),
     mesh('steel', steel, 0x8a9c9b),

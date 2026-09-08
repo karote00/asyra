@@ -19,7 +19,7 @@ it('preserves exact recessed surfaces, exterior barriers and shared geometry acr
     }
   }
   expect(Math.max(...points('soil').y)).toBeCloseTo(0)
-  expect(Math.max(...points('drains').y)).toBeCloseTo(0)
+  expect(Math.max(...points('drains').y)).toBeCloseTo(-0.05)
   expect(
     points('barriers').x.every((x) => x <= 0.020001 || x >= 27.979999)
   ).toBe(true)
@@ -130,4 +130,43 @@ it('covers every bay roof and exterior wall with a visible translucent film whil
     geometry.dispose()
     material.dispose()
   }
+})
+
+it('composes all plants as shared variant instances and preserves them during view changes', () => {
+  const meshes = buildSiteMeshes()
+  for (const species of ['cucumber-1914', 'tomato-yu-nu']) {
+    const variants = meshes.filter(
+      (m) => m.id.startsWith(species) && m.id.endsWith('-0')
+    )
+    expect(variants).toHaveLength(20)
+    expect(
+      variants.reduce(
+        (sum, m) => sum + (m.descriptor.instances?.length ?? 0),
+        0
+      )
+    ).toBe(2976)
+    for (const model of variants) {
+      const siblings = meshes.filter((m) =>
+        m.id.startsWith(model.id.slice(0, -1))
+      )
+      expect(siblings).toHaveLength(7)
+      expect(
+        siblings.every(
+          (m) => m.descriptor.instances === model.descriptor.instances
+        )
+      ).toBe(true)
+    }
+  }
+  const hidden = projectView(meshes, {
+    ...INITIAL_VIEW,
+    layers: { ...INITIAL_VIEW.layers, cucumbers: false }
+  })
+  expect(
+    hidden
+      .filter((m) => m.id.startsWith('cucumber-1914'))
+      .every((m) => !m.visible)
+  ).toBe(true)
+  hidden.forEach((m, i) =>
+    expect(m.descriptor.instances).toBe(meshes[i].descriptor.instances)
+  )
 })

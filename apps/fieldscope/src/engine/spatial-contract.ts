@@ -10,8 +10,14 @@ export type SpatialShape =
   | {
       kind: 'triangles'
       positions: readonly number[]
+      colors?: readonly number[]
       indices: readonly number[]
     }
+
+export interface SpatialInstance {
+  position: SpatialVector
+  yaw: number
+}
 
 export type SpatialDescriptor =
   | {
@@ -27,6 +33,10 @@ export type SpatialDescriptor =
       position: SpatialVector
       rotation: SpatialQuaternion
       shape: SpatialShape
+      instances?: readonly SpatialInstance[]
+      distant?: { shape: SpatialShape; maxError: number }
+      roughness?: number
+      metalness?: number
       color: number
       opacity: number
       wireframe: boolean
@@ -56,6 +66,8 @@ export function sameSpatialShape(a: SpatialShape, b: SpatialShape): boolean {
       return (
         b.kind === 'triangles' &&
         equal(a.positions, b.positions) &&
+        ((!a.colors && !b.colors) ||
+          (!!a.colors && !!b.colors && equal(a.colors, b.colors))) &&
         equal(a.indices, b.indices)
       )
   }
@@ -91,6 +103,12 @@ export function isSpatialShape(value: unknown): value is SpatialShape {
     positions.length <= 3000000 &&
     positions.length % 3 === 0 &&
     positions.every(Number.isFinite) &&
+    (value.colors === undefined ||
+      (Array.isArray(value.colors) &&
+        value.colors.length === positions.length &&
+        value.colors.every(
+          (n) => typeof n === 'number' && Number.isFinite(n) && n >= 0 && n <= 1
+        ))) &&
     Array.isArray(indices) &&
     indices.length >= 3 &&
     indices.length <= 3000000 &&
@@ -110,6 +128,7 @@ export function readSpatialShape(value: unknown): SpatialShape {
     shape = {
       kind: 'triangles',
       positions: Object.freeze(snapshot.positions),
+      ...(snapshot.colors ? { colors: Object.freeze(snapshot.colors) } : {}),
       indices: Object.freeze(snapshot.indices)
     }
   else if (snapshot.kind === 'box')
@@ -127,6 +146,38 @@ export function readSpatialShape(value: unknown): SpatialShape {
   return shape
 }
 
+const admittedInstances = new WeakSet<object>()
+
+export function readSpatialInstances(
+  value: unknown
+): readonly SpatialInstance[] {
+  if (Array.isArray(value) && admittedInstances.has(value)) return value
+  const snapshot: unknown = structuredClone(value)
+  if (
+    !Array.isArray(snapshot) ||
+    !snapshot.length ||
+    snapshot.length > 60000 ||
+    !snapshot.every(
+      (item) =>
+        record(item) &&
+        finiteTuple(item.position, 3) &&
+        typeof item.yaw === 'number' &&
+        Number.isFinite(item.yaw)
+    )
+  )
+    throw new Error('Invalid spatial instances')
+  const instances = Object.freeze(
+    snapshot.map((item) =>
+      Object.freeze({
+        position: Object.freeze([...item.position]) as SpatialVector,
+        yaw: item.yaw as number
+      })
+    )
+  )
+  admittedInstances.add(instances)
+  return instances
+}
+
 export function readSpatialDescriptor(value: unknown): SpatialDescriptor {
   if (record(value) && admittedDescriptors.has(value))
     return value as SpatialDescriptor
@@ -135,6 +186,7 @@ export function readSpatialDescriptor(value: unknown): SpatialDescriptor {
     for (const key of ['position', 'target', 'rotation']) {
       if (Array.isArray(snapshot[key])) snapshot[key] = [...snapshot[key]]
     }
+    if (record(snapshot.distant)) snapshot.distant = { ...snapshot.distant }
     value = snapshot
   }
   if (!record(value) || !finiteTuple(value.position, 3)) {
@@ -176,6 +228,23 @@ export function readSpatialDescriptor(value: unknown): SpatialDescriptor {
   } else {
     throw new Error('Unsupported spatial descriptor kind')
   }
+  if (value.kind === 'mesh') {
+    for (const key of ['roughness', 'metalness']) {
+      const n = value[key]
+      if (
+        n !== undefined &&
+        (typeof n !== 'number' || !Number.isFinite(n) || n < 0 || n > 1)
+      )
+        throw new Error('Invalid spatial material')
+    }
+    if (
+      value.distant !== undefined &&
+      (!record(value.distant) ||
+        !positive(value.distant.maxError) ||
+        !value.instances)
+    )
+      throw new Error('Invalid distant representation')
+  }
   const position = Object.freeze([...(value.position as number[])])
   const descriptor =
     value.kind === 'camera'
@@ -192,6 +261,19 @@ export function readSpatialDescriptor(value: unknown): SpatialDescriptor {
           position,
           rotation: Object.freeze([...(value.rotation as number[])]),
           shape: readSpatialShape(value.shape),
+          ...(value.instances === undefined
+            ? {}
+            : { instances: readSpatialInstances(value.instances) }),
+          ...(record(value.distant)
+            ? {
+                distant: Object.freeze({
+                  shape: readSpatialShape(value.distant.shape),
+                  maxError: value.distant.maxError
+                })
+              }
+            : {}),
+          roughness: value.roughness ?? 0.65,
+          metalness: value.metalness ?? 0.12,
           color: value.color,
           opacity: value.opacity,
           wireframe: value.wireframe,

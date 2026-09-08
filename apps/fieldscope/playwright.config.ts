@@ -15,7 +15,11 @@ export default defineConfig({
     deviceScaleFactor: 1,
     channel: 'chrome',
     launchOptions: {
-      args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader']
+      // Match the desktop GPU on macOS; software rendering remains explicitly selectable.
+      args: [
+        `--use-angle=${process.env.WEBGL_RENDERER ?? (process.platform === 'darwin' ? 'metal' : 'swiftshader')}`,
+        '--enable-unsafe-swiftshader'
+      ]
     },
     screenshot: 'only-on-failure'
   },

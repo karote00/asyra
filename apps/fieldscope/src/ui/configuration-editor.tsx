@@ -44,6 +44,32 @@ export function ConfigurationEditor({ runtime }: { runtime: FarmRuntime }) {
     />
   )
 }
+function StripActionIcon({ kind }: { kind: 'up' | 'down' | 'remove' }) {
+  return (
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className="shrink-0"
+    >
+      {kind === 'remove' ? (
+        <path
+          d="M5 5L19 19M19 5L5 19"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        />
+      ) : (
+        <path
+          d={kind === 'up' ? 'M4 20L12 4L20 20Z' : 'M4 4L20 4L12 20Z'}
+          fill="currentColor"
+        />
+      )}
+    </svg>
+  )
+}
+
 function ConfigurationForm({
   runtime,
   config
@@ -148,9 +174,9 @@ function ConfigurationForm({
           {draft.strips.map((strip, i) => (
             <div
               key={i}
-              className="flex flex-wrap items-center gap-2 rounded-lg bg-[#edf1e8] p-2"
+              className="grid grid-cols-[1rem_minmax(0,1fr)_3rem_auto_4.5rem] items-center gap-1 rounded-lg bg-[#edf1e8] p-2"
             >
-              <span className="w-6 font-mono text-xs">{i + 1}</span>
+              <span className="font-mono text-xs">{i + 1}</span>
               <select
                 disabled={busy}
                 aria-label={`第 ${i + 1} 項種類`}
@@ -168,7 +194,7 @@ function ConfigurationForm({
                     )
                   })
                 }
-                className="rounded border bg-white p-2 text-xs"
+                className="min-w-0 rounded border bg-white p-1 text-xs"
               >
                 <option value="soil">土壤</option>
                 <option value="drain">水道</option>
@@ -195,41 +221,43 @@ function ConfigurationForm({
                     )
                   })
                 }
-                className="w-16 rounded border bg-white p-2 text-xs"
+                className="min-w-0 rounded border bg-white p-1 text-xs"
               />
               <span className="text-xs">m</span>
-              <button
-                type="button"
-                aria-label={`第 ${i + 1} 項向左`}
-                disabled={busy || i === 0}
-                onClick={() => reorder(i, -1)}
-                className="px-2 disabled:opacity-30"
-              >
-                ←
-              </button>
-              <button
-                type="button"
-                aria-label={`第 ${i + 1} 項向右`}
-                disabled={busy || i === draft.strips.length - 1}
-                onClick={() => reorder(i, 1)}
-                className="px-2 disabled:opacity-30"
-              >
-                →
-              </button>
-              <button
-                type="button"
-                aria-label={`刪除第 ${i + 1} 項`}
-                disabled={busy || draft.strips.length === 1}
-                onClick={() =>
-                  setDraft({
-                    ...draft,
-                    strips: draft.strips.filter((_, j) => j !== i)
-                  })
-                }
-                className="ml-auto px-2 text-xs text-[#975746]"
-              >
-                刪除
-              </button>
+              <div className="flex items-center">
+                <button
+                  type="button"
+                  aria-label={`Move strip ${i + 1} up`}
+                  disabled={busy || i === 0}
+                  onClick={() => reorder(i, -1)}
+                  className="h-6 w-6 shrink-0 rounded text-[#59694c] focus-visible:outline-2 disabled:opacity-30"
+                >
+                  <StripActionIcon kind="up" />
+                </button>
+                <button
+                  type="button"
+                  aria-label={`Move strip ${i + 1} down`}
+                  disabled={busy || i === draft.strips.length - 1}
+                  onClick={() => reorder(i, 1)}
+                  className="h-6 w-6 shrink-0 rounded text-[#59694c] focus-visible:outline-2 disabled:opacity-30"
+                >
+                  <StripActionIcon kind="down" />
+                </button>
+                <button
+                  type="button"
+                  aria-label={`Remove strip ${i + 1}`}
+                  disabled={busy || draft.strips.length === 1}
+                  onClick={() =>
+                    setDraft({
+                      ...draft,
+                      strips: draft.strips.filter((_, j) => j !== i)
+                    })
+                  }
+                  className="h-6 w-6 shrink-0 rounded text-red-700 focus-visible:outline-2 disabled:opacity-30"
+                >
+                  <StripActionIcon kind="remove" />
+                </button>
+              </div>
             </div>
           ))}
         </div>

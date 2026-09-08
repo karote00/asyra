@@ -113,3 +113,15 @@ it('keeps both exterior barriers at the outer boundaries when side margins excee
     12.7
   )
 })
+
+it('rejects soil that fits a pole but cannot hold the required crop root', () => {
+  expect(() =>
+    validateConfiguration({
+      ...DEFAULT_CONFIGURATION,
+      strips: [
+        { kind: 'drain', width: 0.3 },
+        { kind: 'soil', width: 0.18 }
+      ]
+    })
+  ).toThrow()
+})

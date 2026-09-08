@@ -109,6 +109,13 @@ describe('CUSTOM Three engine', () => {
     )
     if (!(key instanceof THREE.DirectionalLight))
       throw new Error('Missing key light')
+    const ambient = scene.children.find(
+      (value) => value instanceof THREE.HemisphereLight
+    )
+    if (!(ambient instanceof THREE.HemisphereLight))
+      throw new Error('Missing ambient light')
+    // Reflected daylight keeps the undersides of opaque leaves readable.
+    expect(ambient.groundColor.g * ambient.intensity).toBeGreaterThan(0.5)
     expect(key.castShadow).toBe(true)
     expect(key.shadow.mapSize.toArray()).toEqual([1024, 1024])
     const mesh = scene.getObjectsByProperty('isMesh', true)[0]
@@ -452,4 +459,103 @@ describe('CUSTOM Three engine', () => {
       engine.destroy()
     }
   )
+})
+
+it('renders shared instance geometry, updates transforms without rebuilding it, and disposes GPU instances', () => {
+  const { engine, driver, add } = setup()
+  add(camera)
+  const descriptor = {
+    ...box,
+    instances: [
+      { position: [2, 0, 0] as const, yaw: Math.PI / 2 },
+      { position: [-2, 0, 0] as const, yaw: 0 }
+    ]
+  }
+  const handle = add(descriptor)
+  engine.execute({ type: 'flush' })
+  const scene = vi.mocked(driver.render).mock.calls[0][0]
+  const instance = scene.getObjectsByProperty(
+    'isInstancedMesh',
+    true
+  )[0] as THREE.InstancedMesh
+  expect(instance).toBeInstanceOf(THREE.InstancedMesh)
+  expect(instance.count).toBe(2)
+  const matrix = new THREE.Matrix4()
+  instance.getMatrixAt(0, matrix)
+  expect(new THREE.Vector3().setFromMatrixPosition(matrix).toArray()).toEqual([
+    2, 0, 0
+  ])
+  const geometry = instance.geometry
+  const disposed = vi.fn()
+  instance.addEventListener('dispose', disposed)
+  engine.execute({
+    type: 'update-object',
+    object: handle,
+    properties: {
+      [SPATIAL_PROPERTY]: {
+        ...descriptor,
+        instances: [
+          { position: [3, 0, 0], yaw: 0 },
+          { position: [-3, 0, 0], yaw: 0 }
+        ]
+      }
+    }
+  })
+  expect(instance.geometry).toBe(geometry)
+  instance.getMatrixAt(0, matrix)
+  expect(new THREE.Vector3().setFromMatrixPosition(matrix).x).toBe(3)
+  engine.destroy()
+  expect(disposed).toHaveBeenCalledTimes(1)
+})
+
+it('selects instance detail from projected error and culls off-screen plants without rebuilding geometry', () => {
+  const { engine, driver, add } = setup()
+  const cameraHandle = add(camera)
+  add({
+    ...box,
+    instances: [
+      { position: [0, 0, 0], yaw: 0 },
+      { position: [10000, 0, 0], yaw: 0 }
+    ],
+    distant: { shape: { kind: 'sphere', radius: 0.5 }, maxError: 0.06 },
+    roughness: 0.3,
+    metalness: 0
+  })
+  engine.execute({ type: 'flush' })
+  const scene = vi.mocked(driver.render).mock.calls[0][0]
+  const [full, distant] = scene.getObjectsByProperty(
+    'isInstancedMesh',
+    true
+  ) as THREE.InstancedMesh[]
+  expect(full.count).toBe(1)
+  expect(distant.count).toBe(0)
+  const geometry = full.geometry
+  engine.execute({
+    type: 'update-object',
+    object: cameraHandle,
+    properties: {
+      [SPATIAL_PROPERTY]: { ...camera, position: [0, 0, 100], far: 1000 }
+    }
+  })
+  engine.execute({ type: 'flush' })
+  expect(full.count).toBe(0)
+  expect(distant.count).toBe(1)
+  expect(full.geometry).toBe(geometry)
+  expect((distant.material as THREE.MeshStandardMaterial).roughness).toBe(0.3)
+  engine.execute({
+    type: 'update-object',
+    object: cameraHandle,
+    properties: {
+      [SPATIAL_PROPERTY]: {
+        ...camera,
+        position: [0, 0, 100],
+        far: 1000,
+        fov: 1
+      }
+    }
+  })
+  engine.execute({ type: 'flush' })
+  expect(full.count).toBe(1)
+  expect(distant.count).toBe(0)
+  engine.destroy()
 })
