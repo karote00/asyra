@@ -102,7 +102,7 @@
 
 - **Automatic persistence and editing consistency (2026-09-08).**
   - This completed UX slice removed manual Save, but its snapshot-based storage
-    was not incremental Core integration. The completed follow-up in the completed M2 record replaces
+    was not incremental Core integration. The completed Core integration follow-up above replaces
     that transport while preserving the accepted editing UX.
   - Valid completed object, experiment and observation edits persist locally
     without Save controls. New experiment creation, import Apply, attachment

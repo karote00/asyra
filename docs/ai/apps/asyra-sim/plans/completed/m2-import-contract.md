@@ -142,4 +142,3 @@ against its numerical contract before changing the first unproven owner.
 Do not redo implemented methods by default or skip to M4/M5. Independent
 numerical review, reference-hardware/resource qualification, distribution,
 pilots and public-release gates retain their separate requirements.
-
