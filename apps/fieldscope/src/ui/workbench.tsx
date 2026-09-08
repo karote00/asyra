@@ -86,7 +86,6 @@ export function Workbench() {
             </div>
           </div>
           <SceneWorkspace onReady={setRuntime} />
-          {runtime && <ConfigurationEditor runtime={runtime} />}
           <div className="mt-6 grid gap-5 lg:grid-cols-[1.5fr_1fr]">
             <CrossSection />
             <section className="rounded-2xl border border-[#dde3d8] bg-[#fafbf7] p-5">
@@ -194,6 +193,19 @@ function SceneWorkspace({
   const host = useRef<HTMLDivElement>(null)
   const [runtime, setRuntime] = useState<FarmRuntime | null>(null)
   const [error, setError] = useState('')
+  const [leftOpen, setLeftOpen] = useState(() => window.innerWidth >= 1100)
+  const [rightOpen, setRightOpen] = useState(() => window.innerWidth >= 1100)
+  useEffect(() => {
+    const narrow = window.matchMedia('(max-width: 1099px)')
+    const closePanels = () => {
+      if (narrow.matches) {
+        setLeftOpen(false)
+        setRightOpen(false)
+      }
+    }
+    narrow.addEventListener('change', closePanels)
+    return () => narrow.removeEventListener('change', closePanels)
+  }, [])
   useEffect(() => {
     if (!host.current) return
     let retired = false
@@ -262,8 +274,45 @@ function SceneWorkspace({
   }, [runtime])
   const previous = useRef<{ x: number; y: number; id: number } | null>(null)
   return (
-    <div className="grid overflow-hidden rounded-2xl border border-[#d9dfd2] bg-[#fafbf7] shadow-[0_5px_24px_#32452c06] lg:grid-cols-[minmax(0,1fr)_286px]">
-      <div className="relative min-w-0 bg-[#e8ede4]">
+    <div
+      className="scene-workspace"
+      data-left-open={leftOpen}
+      data-right-open={rightOpen}
+    >
+      <div className="workspace-toolbar">
+        <PanelToggle
+          side="left"
+          open={leftOpen}
+          onClick={() => {
+            setLeftOpen(!leftOpen)
+            if (window.innerWidth < 1100) setRightOpen(false)
+          }}
+        />
+        <span className="text-[11px] text-[#718268]">溫室工作區</span>
+        <PanelToggle
+          side="right"
+          open={rightOpen}
+          onClick={() => {
+            setRightOpen(!rightOpen)
+            if (window.innerWidth < 1100) setLeftOpen(false)
+          }}
+        />
+      </div>
+      <div
+        id="layer-panel"
+        className="workspace-panel workspace-panel-left"
+        inert={!leftOpen}
+        aria-hidden={!leftOpen}
+      >
+        <div className="workspace-panel-content">
+          {runtime ? (
+            <Controls runtime={runtime} onError={setError} />
+          ) : (
+            <p className="p-5 text-xs">準備場景控制項…</p>
+          )}
+        </div>
+      </div>
+      <div className="workspace-canvas relative min-w-0 bg-[#e8ede4]">
         <div className="pointer-events-none absolute left-5 top-5 z-10">
           <div className="mb-1 text-xs font-semibold text-[#4f624b]">
             四連棟溫室
@@ -344,12 +393,62 @@ function SceneWorkspace({
           {runtime ? '空間模型已就緒' : '初始化中'}
         </div>
       </div>
-      {runtime ? (
-        <Controls runtime={runtime} onError={setError} />
-      ) : (
-        <div className="p-6 text-sm text-[#8b9584]">準備場景控制項…</div>
-      )}
+      <div
+        id="configuration-panel"
+        className="workspace-panel workspace-panel-right"
+        inert={!rightOpen}
+        aria-hidden={!rightOpen}
+      >
+        <div className="workspace-panel-content">
+          {runtime ? (
+            <ConfigurationEditor runtime={runtime} />
+          ) : (
+            <p className="p-5 text-xs">準備場景設定…</p>
+          )}
+        </div>
+      </div>
     </div>
+  )
+}
+function PanelToggle({
+  side,
+  open,
+  onClick
+}: {
+  side: 'left' | 'right'
+  open: boolean
+  onClick: () => void
+}) {
+  const name = side === 'left' ? '圖層面板' : '編輯面板'
+  const label = `${open ? '收合' : '展開'}${name}`
+  const arrowPaths = {
+    left: open ? 'm16 9-3 3 3 3' : 'm13 9 3 3-3 3',
+    right: open ? 'm8 9 3 3-3 3' : 'm11 9-3 3 3 3'
+  }
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      aria-expanded={open}
+      aria-controls={side === 'left' ? 'layer-panel' : 'configuration-panel'}
+      onClick={onClick}
+      className="flex h-9 w-9 items-center justify-center rounded-lg text-[#42624c] hover:bg-[#e3e9db]"
+    >
+      <svg
+        width="22"
+        height="22"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        aria-hidden="true"
+      >
+        <rect x="3" y="4" width="18" height="16" rx="2" />
+        <path d={side === 'left' ? 'M9 4v16' : 'M15 4v16'} />
+        <path d={arrowPaths[side]} />
+      </svg>
+    </button>
   )
 }
 function CameraToolbar({
@@ -361,7 +460,7 @@ function CameraToolbar({
 }) {
   const view = useSyncExternalStore(runtime.subscribe, runtime.getView)
   return (
-    <div className="absolute right-4 top-16 flex sm:top-4 gap-1 rounded-xl border border-white/80 bg-[#f9fbf4]/90 p-1 shadow-sm">
+    <div className="absolute right-4 top-16 flex max-w-[calc(100%-2rem)] flex-wrap gap-1 rounded-xl border border-white/80 bg-[#f9fbf4]/90 p-1 shadow-sm">
       {(Object.keys(CAMERA_LABELS) as CameraMode[]).map((mode) => (
         <button
           key={mode}
@@ -380,7 +479,7 @@ function CameraToolbar({
 function ZoomControls({ runtime }: { runtime: FarmRuntime }) {
   const percent = useSyncExternalStore(runtime.subscribeZoom, runtime.getZoom)
   return (
-    <div className="absolute right-4 top-28 flex gap-1 rounded-lg border border-white/80 bg-[#f9fbf4]/90 p-1 text-[11px] text-[#527048] sm:top-16">
+    <div className="absolute right-4 top-28 flex gap-1 rounded-lg border border-white/80 bg-[#f9fbf4]/90 p-1 text-[11px] text-[#527048]">
       <button
         onClick={runtime.fit}
         title="適合畫面（⌘1）"

@@ -38,3 +38,52 @@ canvas {
 ::selection {
   background: #d4e5a7;
 }
+
+.scene-workspace {
+  --left-panel-width: 250px;
+  --right-panel-width: 340px;
+  display: grid;
+  grid-template-columns: var(--left-panel-width) minmax(0, 1fr) var(--right-panel-width);
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #d9dfd2;
+  border-radius: 16px;
+  background: #fafbf7;
+  transition: grid-template-columns 220ms ease;
+}
+.scene-workspace[data-left-open='false'] { --left-panel-width: 0px; }
+.scene-workspace[data-right-open='false'] { --right-panel-width: 0px; }
+.workspace-toolbar {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 48px;
+  padding: 0 12px;
+  border-bottom: 1px solid #d9dfd2;
+  z-index: 30;
+}
+.workspace-panel { min-width: 0; overflow: hidden; position: relative; }
+.workspace-panel-content {
+  height: 100%;
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  transition: transform 220ms ease, visibility 220ms;
+}
+.workspace-panel-left .workspace-panel-content { width: 250px; border-right: 1px solid #d9dfd2; }
+.workspace-panel-right .workspace-panel-content { width: 340px; border-left: 1px solid #d9dfd2; }
+[data-left-open='false'] .workspace-panel-left .workspace-panel-content { transform: translateX(-100%); visibility: hidden; }
+[data-right-open='false'] .workspace-panel-right .workspace-panel-content { transform: translateX(100%); visibility: hidden; }
+@media (max-width: 1099px) {
+  .scene-workspace { grid-template-columns: minmax(0, 1fr); }
+  .workspace-panel { position: absolute; top: 48px; bottom: 0; z-index: 20; width: min(340px, calc(100% - 48px)); pointer-events: none; }
+  .workspace-panel-left { left: 0; }
+  .workspace-panel-right { right: 0; }
+  .workspace-panel .workspace-panel-content { width: 100%; background: #fafbf7; pointer-events: auto; box-shadow: 0 8px 24px #263e3026; }
+  .workspace-canvas { grid-column: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scene-workspace, .workspace-panel-content { transition: none; }
+}

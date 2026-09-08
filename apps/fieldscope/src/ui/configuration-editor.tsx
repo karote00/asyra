@@ -72,10 +72,7 @@ function ConfigurationForm({
   }
   const site = configurationSite(config)
   return (
-    <section
-      className="mt-5 rounded-2xl border border-[#d9dfd2] bg-[#fafbf7] p-5"
-      aria-label="場景設定"
-    >
+    <section className="bg-[#fafbf7] p-4" aria-label="場景設定">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-sm font-semibold">場景設定</h2>
         <div className="flex gap-2">
@@ -108,10 +105,7 @@ function ConfigurationForm({
           void act(() => runtime.setConfiguration(draft))
         }}
       >
-        <fieldset
-          disabled={busy}
-          className="grid grid-cols-2 gap-4 lg:grid-cols-3"
-        >
+        <fieldset disabled={busy} className="grid grid-cols-2 gap-3">
           {fields.map(([key, label]) => (
             <label key={key} className="text-xs text-[#50664f]">
               {label}
@@ -201,7 +195,7 @@ function ConfigurationForm({
                     )
                   })
                 }
-                className="w-24 rounded border bg-white p-2 text-xs"
+                className="w-16 rounded border bg-white p-2 text-xs"
               />
               <span className="text-xs">m</span>
               <button

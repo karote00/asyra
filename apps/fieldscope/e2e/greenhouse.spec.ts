@@ -90,6 +90,7 @@ test('real greenhouse route exposes the structure, section, inner aisle and resp
   await page.getByRole('button', { name: '透視', exact: true }).click()
   await page.getByLabel('塑膠覆膜', { exact: true }).check()
   await page.setViewportSize({ width: 390, height: 844 })
+  await page.getByRole('button', { name: '展開圖層面板', exact: true }).click()
   await expect(page.getByLabel('完整鋼架', { exact: true })).toBeVisible()
   expect(
     await page.evaluate(

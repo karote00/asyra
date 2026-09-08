@@ -141,6 +141,11 @@ Asyra Sim 的 Three.js adapter；沒有複製其產品資料模型、分析 pipe
 縮放數字有獨立訂閱，只在百分比改變時更新；平移與旋轉不通知圖層面板。
 包圍盒在 runtime 建立及設定改變時計算一次，fit 僅計算八個角點，不重建幾何。
 
+工作區左側為圖層面板，右側為設定編輯器；canvas 上方兩個圖示按鈕獨立切換，
+面板朝左右外緣滑動收合。桌面以欄寬變化釋放 canvas 空間，ResizeObserver 更新投影。
+1100px 以下採覆蓋式抽屜，預設收合，展開一側時關閉另一側。面板內容各自捲動。
+面板關閉後隱藏且 inert，無法被鍵盤聚焦；遵守 reduced-motion 設定。
+收合不卸載編輯器或 canvas，因此草稿、場景與歷史保留；面板開關屬 UI 暫態，不記入 Undo。
 控制面板在使用點以 `useSyncExternalStore` 訂閱 view；沒有 React.memo。
 
 ## 後續實作順序
