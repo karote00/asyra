@@ -516,3 +516,12 @@ usage, Board/API/CLI identity and unchanged request counts, then saves screensho
 and `review.json` beneath `tmp/flow-inspector/visual-review/provider-live-*`.
 It does not dispatch, retry, reconcile or cancel provider requests. Ordinary CI
 skips this explicitly selected live-record replay and runs offline contracts.
+
+### Verification panel readability
+
+All verification disclosures share one responsive presentation: separated
+section headers, full-width labeled controls, wrapping action groups and
+readable source/status blocks. This presentation does not alter operation
+permissions, evidence, task state or baseline acceptance. The formal Board
+readability case checks desktop and narrow panels and visits every catalog
+entry; it never dispatches a model request.

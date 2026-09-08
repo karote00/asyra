@@ -10,3 +10,6 @@ from offline adapter contract tests.
 
 Retain bounded app-server interruption confirmation separately from remote
 settlement, and show persistent cancellation investigation and handoff guidance.
+
+Improve shared verification panel readability with separated disclosures,
+responsive action groups, readable status text and wrapped source metadata.

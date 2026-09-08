@@ -1,4 +1,4 @@
-/* global document, window, Element, MutationObserver, WheelEvent, URL, fetch */
+/* global document, window, Element, MutationObserver, WheelEvent, URL, fetch, getComputedStyle */
 /* eslint-disable @typescript-eslint/no-require-imports */
 const assert = require('node:assert/strict')
 const fs = require('node:fs')
@@ -1642,6 +1642,129 @@ test(
       console.log('Live provider review artifacts: ' + artifacts)
     } finally {
       await browser?.close()
+      if (previous === undefined) delete process.env.TMPDIR
+      else process.env.TMPDIR = previous
+    }
+  }
+)
+
+test(
+  'all verification sections retain readable spacing and fit narrow detail panels',
+  { timeout: 30000 },
+  async () => {
+    const root = path.resolve(__dirname, '../../../..')
+    const artifacts = path.join(
+      root,
+      'tmp/flow-inspector/visual-review/readability'
+    )
+    fs.mkdirSync(artifacts, { recursive: true })
+    const previous = process.env.TMPDIR
+    process.env.TMPDIR = artifacts
+    const server = await startServer(root, {
+      serviceOptions: { directory: path.join(artifacts, 'runs') }
+    })
+    let browser
+    try {
+      browser = await chromium.launch({
+        channel: process.env.FLOW_PROOF_BROWSER_CHANNEL || undefined,
+        downloadsPath: artifacts
+      })
+      const page = await browser.newPage()
+      for (const width of [1600, 960, 576]) {
+        await page.setViewportSize({ width, height: 1000 })
+        await page.goto(server.origin + '/transaction-atomicity')
+        const frame = page.frameLocator('iframe')
+        await frame
+          .locator('[data-step-id="finalize-transaction-state"]')
+          .click()
+        await frame.locator('#proof-controls > summary').click()
+        await frame.locator('.proof-body > details').evaluateAll((nodes) =>
+          nodes.forEach((node) => {
+            node.open = true
+          })
+        )
+        const metrics = await frame
+          .locator('#proof-controls')
+          .evaluate((panel) => {
+            const style = getComputedStyle(panel)
+            return {
+              font: parseFloat(style.fontSize),
+              line: parseFloat(style.lineHeight),
+              overflow: panel.scrollWidth - panel.clientWidth,
+              sections: [
+                ...panel.querySelectorAll('.proof-body > details')
+              ].map((section) => ({
+                top: parseFloat(getComputedStyle(section).marginTop),
+                padding: parseFloat(
+                  getComputedStyle(section.querySelector('summary')).paddingTop
+                )
+              }))
+            }
+          })
+        assert.ok(metrics.font >= 13, 'verification text must remain readable')
+        assert.ok(metrics.line >= 20, 'verification lines need breathing room')
+        assert.ok(metrics.overflow <= 1, 'controls must fit the detail panel')
+        assert.equal(metrics.sections.length, 5)
+        for (const section of metrics.sections) {
+          assert.ok(
+            section.top >= 16,
+            'each disclosure must be separated from its predecessor'
+          )
+          assert.ok(
+            section.padding >= 10,
+            'disclosure titles need an independent reading and click area'
+          )
+        }
+        await page.screenshot({
+          path: path.join(artifacts, `verification-${width}.png`)
+        })
+        for (let index = 0; index < metrics.sections.length; index++) {
+          await frame
+            .locator('.proof-body > details > summary')
+            .nth(index)
+            .evaluate((node) => node.scrollIntoView({ block: 'start' }))
+          await page.screenshot({
+            path: path.join(artifacts, `section-${index}-${width}.png`)
+          })
+        }
+      }
+      const snapshot = {}
+      require('node:vm').runInNewContext(
+        fs.readFileSync(
+          path.join(
+            root,
+            'tools/flow-inspector/workspace/workspace-bundle.data.js'
+          ),
+          'utf8'
+        ),
+        snapshot
+      )
+      const inspected = []
+      await page.setViewportSize({ width: 1280, height: 900 })
+      for (const entry of snapshot.FLOW_INSPECTOR_WORKSPACE_BUNDLE.entries) {
+        await page.goto(server.origin + '/' + entry.slug)
+        const frame = page.frameLocator('iframe')
+        await expect(frame.locator('h1:visible')).toBeVisible()
+        if (entry.kind === 'flow-v2') {
+          await frame.locator('.step-card').first().click()
+          await expect(frame.locator('.detail-heading')).toBeVisible()
+          const overflow = await frame
+            .locator('#detail')
+            .evaluate((node) => node.scrollWidth - node.clientWidth)
+          assert.ok(
+            overflow <= 1,
+            entry.slug + ' detail must wrap long content'
+          )
+        }
+        inspected.push({ slug: entry.slug, kind: entry.kind })
+      }
+      fs.writeFileSync(
+        path.join(artifacts, 'catalog-review.json'),
+        JSON.stringify(inspected, null, 2)
+      )
+    } finally {
+      await browser?.close()
+      await server.close()
       if (previous === undefined) delete process.env.TMPDIR
       else process.env.TMPDIR = previous
     }
