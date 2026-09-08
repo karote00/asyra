@@ -156,7 +156,7 @@ test('a focused interval keeps all workcell parts, reports real findings and rep
   })
   await pair.locator('summary').click()
   await expect(pair.locator('.interval-evidence').first()).toContainText(
-    'finding'
+    'Collision - established penetration'
   )
   await pair.getByRole('button', { name: 'Replay pair', exact: true }).click()
   await expect(page.locator('.viewport-summary')).toContainText(
@@ -166,6 +166,23 @@ test('a focused interval keeps all workcell parts, reports real findings and rep
     `Undo steps: ${Number(history?.match(/\d+/)?.[0]) + 1}`
   )
   await page.screenshot({ path: info.outputPath('collision-replay.png') })
+  const recorded = await result.innerText()
+  const canvas = page.getByTestId('workcell-canvas').locator('canvas')
+  await canvas.hover()
+  await page.mouse.wheel(0, -700)
+  await expect(page.locator('.viewport-summary')).toContainText(
+    'Historical run replay - 3.8000 s'
+  )
+  expect(await result.innerText()).toBe(recorded)
+  await expect(page.getByTestId('history-depth')).toHaveText(
+    `Undo steps: ${Number(history?.match(/\d+/)?.[0]) + 1}`
+  )
+  await page.screenshot({
+    path: info.outputPath('collision-replay-closeup.png')
+  })
+  await pair.screenshot({
+    path: info.outputPath('collision-evidence-detail.png')
+  })
   await info.attach('collision-review', {
     contentType: 'application/json',
     body: JSON.stringify({
@@ -181,7 +198,13 @@ test('a focused interval keeps all workcell parts, reports real findings and rep
       overlays: 'default grid and historical pair highlights',
       result: await result.innerText(),
       pipeline: 'normal Features / original-part Worker / CUSTOM renderer',
-      screenshots: ['collision-result.png', 'collision-replay.png']
+      screenshots: [
+        'collision-result.png',
+        'collision-replay.png',
+        'collision-replay-closeup.png',
+        'collision-evidence-detail.png'
+      ],
+      closeup: 'Camera-only wheel deltaY -700 from default replay view'
     })
   })
 })

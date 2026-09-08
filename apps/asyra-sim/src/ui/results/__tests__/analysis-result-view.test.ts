@@ -304,3 +304,115 @@ it('compares authored inputs using the shared executable result and treats curre
     reader.dispose()
   }
 })
+
+it('distinguishes retained penetration, clearance and unresolved intervals with exact replay times', async () => {
+  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
+  const example = createSyntheticExample()
+  const draft = createSyntheticExperimentDraft(example)
+  const snapshot = createExperimentSnapshot({
+    snapshotId: 'mixed-evidence',
+    candidateId: 'candidate',
+    experimentId: 'experiment',
+    workcell: example.workcell,
+    definition: { ...draft, revision: 1, rule: { ...draft.rule, revision: 1 } },
+    methods: INSTALLED_METHOD_CATALOG.descriptors,
+    acknowledgedWarningCodes: []
+  })
+  const leaves = [
+    {
+      start: 0,
+      end: 2,
+      lower: 0,
+      upper: 0,
+      witnessTime: 1.123456789,
+      penetration: true,
+      state: 'finding' as const,
+      reason: 'Established static witness.'
+    },
+    {
+      start: 2,
+      end: 4,
+      lower: 0,
+      upper: 0.01,
+      witnessTime: 3,
+      penetration: false,
+      state: 'finding' as const,
+      reason: 'Established static witness.'
+    },
+    {
+      start: 4,
+      end: 8,
+      lower: 0,
+      upper: null,
+      witnessTime: null,
+      penetration: false,
+      state: 'unresolved' as const,
+      reason: 'No retained witness.'
+    }
+  ]
+  const result = terminalAnalysisResult(
+    snapshot,
+    [
+      {
+        pairId: snapshot.pairs[0].id,
+        evidence: {
+          coverage: 'partial',
+          lower: 0,
+          upper: 0,
+          evaluations: 2,
+          leaves
+        }
+      }
+    ],
+    {
+      runId: 'mixed-run',
+      startedAt: 0,
+      endedAt: 1,
+      execution: 'cancelled',
+      error: 'Cancelled'
+    }
+  )
+  const before = JSON.stringify({ snapshot, result })
+  const host = document.createElement('div')
+  const root = createRoot(host)
+  const replay = vi.fn()
+  try {
+    await act(() =>
+      root.render(
+        createElement(AnalysisResultView, {
+          run: { snapshot, result },
+          stale: false,
+          onReplay: replay
+        })
+      )
+    )
+    const pair = host.querySelector<HTMLDetailsElement>('.evidence-pair')
+    if (!pair) throw new Error('Missing pair')
+    await act(() => {
+      pair.open = true
+      pair.dispatchEvent(new Event('toggle'))
+    })
+    expect(pair.textContent).toContain('Collision - established penetration')
+    expect(pair.textContent).toContain('Clearance violation')
+    expect(pair.textContent).toContain('Unresolved')
+    expect(pair.textContent).toContain('Witness time: 1.123456789 s')
+    expect(pair.textContent).toContain('No retained witness')
+    expect(pair.textContent).toContain('not first contact')
+    const buttons = [...pair.querySelectorAll('button')].filter((button) =>
+      /^Replay (witness|interval start)$/.test(button.textContent ?? '')
+    )
+    expect(buttons).toHaveLength(3)
+    for (let index = 0; index < buttons.length; index++) {
+      await act(() => buttons[index].click())
+      expect(replay).toHaveBeenLastCalledWith(
+        snapshot,
+        leaves[index].witnessTime ?? leaves[index].start,
+        [snapshot.pairs[0].a.bodyId, snapshot.pairs[0].b.bodyId]
+      )
+    }
+    expect(JSON.stringify({ snapshot, result })).toBe(before)
+  } finally {
+    await act(() => root.unmount())
+    vi.unstubAllGlobals()
+  }
+})
