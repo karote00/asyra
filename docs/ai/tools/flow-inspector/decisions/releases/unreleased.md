@@ -77,3 +77,22 @@
   for the necessary external setup and remaining acceptance evidence.
 - Release boundary: no package version, dependency, tag, release, deployment, or
   Phase 5/6 capability is introduced.
+
+
+## 2026-09-08 - Close local Phase 4 scope and defer GitHub enforcement
+
+- Context: the bounded implementation and UX passed all eight checks on
+  `6ae04626ad1a670002e78eb91514497cd8898513`. Main still has no required status
+  check; protected verifier and remote refusal/recovery proof remain unverified.
+- Decision: the user explicitly accepted local implementation closeout and
+  deferred GitHub enforcement to avoid blocking concurrent projects and merges.
+  Record the completed scope in the
+  [Phase 4 local completed record](../../plans/completed/flow-inspector-phase-4-local-implementation-closeout.md).
+- Supersedes only the 2026-09-07 instruction prohibiting any Phase 4 completed
+  record: a bounded local record is now approved. The original mandatory-CI
+  requirements remain in the combined plan as deferred work, not satisfied DoD.
+- Consequences: preserve historical decisions and the living Core Proof contract;
+  delivery remains unproven/blocked where applicable. Do not change GitHub rules
+  or workflow enforcement. Resume external setup only on a separate user request;
+  Phase 5/6 remain deferred. PR review/merge remains separate from local completion.
+- Release boundary: no Changeset, version bump, tag, release or deployment change.

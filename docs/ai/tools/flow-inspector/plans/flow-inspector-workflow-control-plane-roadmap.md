@@ -351,11 +351,15 @@ Factory flows, conditional preflight, five negative demonstrations, explicit
 mapping decisions, and versioned local evidence on the original canvas. Its
 mapping policy permits test-name changes only. Its
 [Phase 3 completed record](completed/flow-inspector-phase-3-core-proof-closeout.md) records PR #165
-and the verified merged evidence. Phase 4 is now an active bounded operational
-trial with explicit evolution/retirement, common actions, raw CI evidence
-admission and shared snapshots. Mandatory protected accepted-base CI remains
-unverified; the live rules have no required status check. Passing trial commands
-cannot close Phase 4 or activate Phase 5. The combined plan remains active.
+and the verified merged evidence. On 2026-09-08 the user accepted closeout of
+[Phase 4 local implementation and UX](completed/flow-inspector-phase-4-local-implementation-closeout.md),
+including evolution/retirement, common actions, raw CI evidence admission,
+shared snapshots and canvas interaction fixes. GitHub mandatory protection is
+explicitly deferred to avoid disrupting concurrent projects and merges. The
+combined plan retains the original unfulfilled CI criteria as deferred work;
+passing local trials and PR checks do not prove protected delivery. No required
+check configuration is changed, and Phase 5/6 remain deferred.
+
 
 The preliminary estimate is 2-4 engineering person-weeks for the core proof,
 another 6-10 for an operational trial, and another 8-14 for a bounded agent and

@@ -279,7 +279,11 @@ administration:
 Relevant authorities: <a href="https://docs.github.com/en/pull-requests/how-tos/merge-and-close-pull-requests/troubleshooting-required-status-checks" target="_blank" rel="noopener noreferrer">GitHub required-check behavior</a>
 and <a href="https://docs.github.com/en/enterprise-cloud%40latest/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets" target="_blank" rel="noopener noreferrer">available ruleset protections</a>.
 
-Phase 4 remains open until those real enforcement demonstrations pass. Its plan
-and roadmap must not be marked DONE or moved to completed, and Phase 5/6 must not
-start based on a passing local trial. No version bump, tag or release is part of
-this work.
+On 2026-09-08 the user accepted closeout of the local implementation and UX,
+while explicitly deferring the GitHub enforcement work above to avoid disrupting
+concurrent projects and merges. The
+[completed local record](../../../docs/ai/tools/flow-inspector/plans/completed/flow-inspector-phase-4-local-implementation-closeout.md)
+records that boundary. The combined plan retains the unfulfilled mandatory-CI
+criteria as deferred follow-up. Delivery remains unproven/blocked; this decision
+does not weaken evidence admission or enable Phase 5/6. No GitHub protection,
+workflow enforcement, version, tag or release is changed by closeout.
