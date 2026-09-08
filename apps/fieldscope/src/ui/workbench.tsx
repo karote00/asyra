@@ -247,7 +247,7 @@ function SceneWorkspace({
           )
         )
       } else if (event.altKey) runtime.zoom(delta)
-      else runtime.move(0, 0, -delta * 0.0015 * (event.shiftKey ? 4 : 1))
+      else runtime.dolly(delta * (event.shiftKey ? 4 : 1))
     }
     const shortcut = (event: KeyboardEvent) => {
       if (!(event.metaKey || event.ctrlKey) || event.altKey || event.repeat)

@@ -79,6 +79,23 @@ it('keeps one geometry construction through navigation and queued display change
     runtime.actualSize()
     expect(runtime.getZoom()).toBe(100)
     await runtime.setCamera('overview')
+    runtime.pan(0, 0)
+    const beforeDolly = pan.mock.calls.at(-1)?.[0]
+    runtime.dolly(-Math.log(2) * 1000)
+    runtime.pan(0, 0)
+    const afterDolly = pan.mock.calls.at(-1)?.[0]
+    if (!beforeDolly || !afterDolly) throw new Error('Missing dolly camera')
+    expect(runtime.getZoom()).toBe(200)
+    expect(afterDolly.fov).toBe(beforeDolly.fov)
+    expect(afterDolly.target).toEqual(beforeDolly.target)
+    expect(navigation.cameraDistance(afterDolly)).toBeCloseTo(
+      navigation.cameraDistance(beforeDolly) / 2
+    )
+    runtime.dolly(Math.log(2) * 1000)
+    expect(runtime.getZoom()).toBe(100)
+    runtime.dolly(-100000)
+    expect(runtime.getZoom()).toBe(10000)
+    runtime.actualSize()
     // World-space movement is independent of optical zoom and camera presets.
     const movementDistance = () => {
       runtime.pan(0, 0)
@@ -129,6 +146,7 @@ it('keeps one geometry construction through navigation and queued display change
     const presetCount = preset.mock.calls.length
     for (let i = 0; i < 20; i++) {
       runtime.move(0.01, -0.01, 0.02)
+      runtime.dolly(1)
       runtime.look(1, -1)
       runtime.orbit(2, 1)
       runtime.zoom(1)

@@ -165,8 +165,10 @@ Canvas 取得焦點後，W/S 沿觀看方向前後推移，A/D 沿畫面左右�
 按鍵端傳入每秒 1.5 個方向單位，相機端乘以 `movementSpeed / 1.5` 換算成公尺。
 單次按下使用 1/30 秒位移，按住依幀間時間連續移動，多軸方向正規化。
 只在持續按鍵期間排程 animation frame；放開、焦點離開、視窗失焦、頁面隱藏及卸載時停止。
-一般滾輪沿觀看方向實際移動鏡頭與 target，位移為 `-deltaPixels × 0.001 × movementSpeed`，
-Shift 同樣加速 4 倍；不改 FOV。line/page wheel delta 先換算成像素。
+一般滾輪使用 Dolly：固定 target 與 FOV，只移動鏡頭，距離按 `exp(deltaPixels × 0.001)`
+縮放；倍率由實際距離與 FOV 共同計算並即時顯示。倍率限制 1–10000%，距離不得越過 near plane。
+Shift 將滾輪 delta 乘 4；line/page wheel delta 先換算成像素。
+WASD／Q/E 則維持鏡頭與 target 同步平移，獨立公尺速度不受 Dolly 或光學縮放影響。
 右鍵＋滾輪只調整速度 `speed × exp(-deltaPixels × 0.002)`，不移動鏡頭。
 Alt＋滾輪與 +/- 保留光學 zoom 至 10000%，不影響移動速度。
 右鍵拖曳固定相機位置原地轉頭，以世界向上方向避免側滾；左鍵繞 target 旋轉、

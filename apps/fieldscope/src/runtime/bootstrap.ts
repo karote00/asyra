@@ -304,6 +304,24 @@ export async function bootstrap(
           ]
         })
       },
+      dolly: (delta: number) => {
+        assertLive()
+        if (!Number.isFinite(delta)) return
+        const current = readZoom(camera)
+        const next = Math.max(
+          1,
+          Math.min(10000, current * Math.exp(-delta * 0.001))
+        )
+        publishCamera(
+          setCameraDistance(
+            camera,
+            Math.max(
+              camera.near * 1.01,
+              (cameraDistance(camera) * current) / next
+            )
+          )
+        )
+      },
       zoom: (delta: number) => {
         assertLive()
         if (!Number.isFinite(delta)) return
@@ -488,6 +506,7 @@ export async function bootstrap(
       actualSize: cameraFeature.api.actualSize,
       orbit: cameraFeature.api.orbit,
       zoom: cameraFeature.api.zoom,
+      dolly: cameraFeature.api.dolly,
       dispose
     }
   } catch (error) {
