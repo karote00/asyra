@@ -21,10 +21,11 @@
 ## Active Work
 
 1. [Asyra Sim first-release roadmap](plans/asyra-sim-roadmap.md)
-   - M1 is closed and M2 Import Contract Completion passed milestone acceptance
-     on 2026-09-07. Next is a separately bounded M3 review of the existing
-     static/continuous/clearance method contracts and evidence, starting with
-     the first unproven owner. A completed PR is not acceptance of M2-M4.
+   - M1-M3 are closed. M3 passed all six owner exit criteria on 2026-09-08;
+     see [the M3 completion record](plans/completed/m3-formal-analysis.md).
+     Next is [M3.5 workflow usability](plans/m3-5-workbench-flow.md), planned
+     after user acceptance of M3 on 2026-09-09. M3.5 is not implemented.
+     M4 follows with its own bounded contract/evidence review.
    - M5 packaging and M6 independent pilot/release review remain later work.
      Historical packaging evidence remains in roadmap section 1.2 and
      [LOCAL_CANDIDATE.md](release/LOCAL_CANDIDATE.md).
@@ -33,6 +34,12 @@
      of this PR. No new Framework 3D profile is enabled by closeout.
 
 ## Completed Work
+
+- [M3 official collision and clearance methods](plans/completed/m3-formal-analysis.md)
+  - Closed 2026-09-08: independent temporal oracles and explicit formal finding
+    types/witness times, preserving the existing solver and frozen history.
+    All six owners accepted; 650 App tests, 27 distinct browser cases and
+    inspected screenshots pass. No in-scope blocker; M4-M6 remain separate.
 
 - [M2 executable experiments and import contract](plans/completed/m2-import-contract.md)
   - Closed 2026-09-08, including Core integration, automatic persistence and

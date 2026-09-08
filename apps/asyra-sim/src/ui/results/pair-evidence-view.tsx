@@ -2,6 +2,14 @@ import { useState } from 'react'
 import type { ExperimentSnapshot } from '../../analysis/contracts'
 import type { OfficialPairEvidence } from '../../analysis/methods/official-method'
 import { formatDistance } from './format-distance'
+import type { IntervalEvidence } from '../../analysis/methods/continuous-query'
+
+function intervalLabel(interval: IntervalEvidence): string {
+  if (interval.penetration) return 'Collision - established penetration'
+  if (interval.state === 'finding') return 'Clearance violation'
+  if (interval.state === 'unresolved') return 'Unresolved'
+  return 'No issue within interval'
+}
 
 export function PairEvidenceView({
   pair,
@@ -80,15 +88,29 @@ export function PairEvidenceView({
               className="interval-evidence grid gap-[5px] pt-3 text-[10px] text-sim-muted [&_button]:justify-self-start"
               key={page * 20 + index}
             >
+              <strong>{intervalLabel(interval)}</strong>
+
               <strong>
-                {interval.state} - {interval.start.toFixed(6)}–
-                {interval.end.toFixed(6)} s
+                Interval: {interval.start}–{interval.end} s
               </strong>
 
               <span>
                 {formatDistance(interval.lower)} ≤ minimum ≤{' '}
                 {formatDistance(interval.upper)}
               </span>
+
+              <span>
+                {interval.witnessTime === null
+                  ? 'No retained witness'
+                  : `Witness time: ${interval.witnessTime} s`}
+              </span>
+
+              {interval.state === 'finding' && (
+                <span>
+                  This is an established witness, not first contact or every
+                  contact in this interval.
+                </span>
+              )}
 
               <span>{interval.reason}</span>
 

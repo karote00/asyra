@@ -206,3 +206,34 @@ Pending saves disable both save entry points and guard duplicate dispatch.
   execution validity remains separate. The roadmap stays active for M3-M6.
   User-authorized push and PR review follow closeout; no merge, Changeset,
   version bump, tag, publication or deployment is authorized by this decision.
+
+
+### 2026-09-08 - Close M3 official collision and clearance acceptance
+
+- Context: merged implementation and earlier test counts did not establish M3
+  acceptance. A bounded review compared the six owners against current numerical,
+  runtime and Inspector contracts before changing code.
+- Decision: accept M3 under the frozen local profile after independent interval
+  oracles, a test-first formal finding/witness presentation correction, 650 App
+  tests and 27 distinct browser cases with inspected screenshots. Archive the
+  owner conclusions and operational cases in
+  `docs/ai/apps/asyra-sim/plans/completed/m3-formal-analysis.md`.
+- Consequences: retain the existing solver, method version, complete original
+  geometry, Core transaction/persistence ownership and immutable history. No
+  numerical/resource limit was relaxed. M4 begins with its own bounded review;
+  M5/M6 and independent numerical, reference-hardware and release gates remain
+  open. Closeout authorizes no remote or release operation.
+
+
+### 2026-09-09 - User accepts M3 and inserts M3.5 workflow usability
+
+- Context: the user accepted M3 after the live seven-run demonstration, but found
+  the crowded panel and preflight/replay/retention transitions hard to understand.
+- Decision: retain M3 closeout and add
+  `docs/ai/apps/asyra-sim/plans/m3-5-workbench-flow.md` before M4. Plan a single
+  run entry with automatic admission, focused tabs and clearer result evidence.
+  M3.5 implementation has not started; contract readiness comes first.
+- Consequences: this supersedes the earlier next-step recommendation to start M4
+  immediately. Preserve numerical owners, full geometry, history and persistence.
+  The user authorized committing and pushing M3 and the M3.5 plan, followed by
+  current-commit CI verification before review. No merge or release is authorized.
