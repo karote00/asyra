@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { IDENTITY_POSE } from '../../../domain/math'
 import { convexDistance } from '../convex-query'
+import { queryOriginalPartPair } from '../original-part-method'
 import {
   validateTrajectory,
   validateWorkcell,
@@ -327,3 +328,70 @@ describe('complete-time pair evidence', () => {
     ).toThrow('covered')
   })
 })
+
+// Independent oracle: two radius-1/8 spheres, one translating from -8 to 8.
+// Over [a,b], the nearest x coordinate is zero if the interval spans the
+// midpoint, otherwise the nearer endpoint. No production pose/distance helper
+// computes these expected values. All fixture constants are binary fractions.
+it.each([0, 3599])(
+  'original method bounds every leaf and its witness at time origin %s',
+  (origin) => {
+    const duration = 1 / 1024
+    const radius = 1 / 8
+    for (const offset of [0, 1 / 2]) {
+      const primitive = {
+        ...sphere,
+        geometry: { kind: 'sphere' as const, radius }
+      }
+      const query = input(
+        [
+          { ...moving, colliders: [primitive] },
+          {
+            ...fixed,
+            pose: { ...IDENTITY_POSE, position: [0, offset, 0] },
+            colliders: [primitive]
+          }
+        ],
+        {
+          version: 1,
+          keyframes: [
+            { time: origin, joints: { moving: -8 } },
+            { time: origin + duration, joints: { moving: 8 } }
+          ]
+        }
+      )
+      const result = queryOriginalPartPair(query, settings)
+      let cursor = origin
+      for (const leaf of result.leaves) {
+        expect(leaf.start).toBe(cursor)
+        expect(leaf.end).toBeGreaterThanOrEqual(leaf.start)
+        cursor = leaf.end
+        const x0 = -8 + (16 * (leaf.start - origin)) / duration
+        const x1 = -8 + (16 * (leaf.end - origin)) / duration
+        const nearest =
+          x0 <= 0 && x1 >= 0 ? 0 : Math.min(Math.abs(x0), Math.abs(x1))
+        const minimum = Math.max(0, Math.hypot(nearest, offset) - 2 * radius)
+        expect(leaf.lower).toBeLessThanOrEqual(minimum)
+        if (leaf.upper !== null)
+          expect(leaf.upper).toBeGreaterThanOrEqual(minimum)
+        if (leaf.penetration) {
+          expect(leaf.witnessTime).not.toBeNull()
+          const time = leaf.witnessTime as number
+          // Exact strict contact window from |x(t)| < 1/4.
+          expect(time).toBeGreaterThan(origin + (duration * 31) / 64)
+          expect(time).toBeLessThan(origin + (duration * 33) / 64)
+          expect(offset).toBe(0)
+        }
+      }
+      expect(cursor).toBe(origin + duration)
+      if (offset === 0)
+        expect(result.leaves.some((leaf) => leaf.penetration)).toBe(true)
+      else {
+        expect(result.coverage).toBe('complete')
+        expect(result.lower).toBeLessThanOrEqual(1 / 4)
+        expect(result.upper).toBeGreaterThanOrEqual(1 / 4)
+        expect(result.leaves.every((leaf) => leaf.state === 'clear')).toBe(true)
+      }
+    }
+  }
+)
