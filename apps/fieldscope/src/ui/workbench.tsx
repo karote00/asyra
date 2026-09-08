@@ -434,7 +434,7 @@ function Controls({
           ))}
         </div>
         <p className="mt-2 text-[10px] leading-relaxed text-[#8a957d]">
-          已配置 3,984 根 Ø20mm 鋼管，埋深 15cm、頂高
+          已配置 1,992 根 Ø20mm 鋼管，埋深 15cm、頂高
           3m；縱向連接管以跨接彈簧夾銜接橫樑。尚未配置植株。
         </p>
       </div>

@@ -242,8 +242,8 @@ test('spring clips are inspectable at the real upright connection', async ({
       viewport: [1440, 1100],
       camera: 'joint',
       zoom: '100%',
-      supports: 3984,
-      clips: 4248,
+      supports: 1992,
+      clips: 2256,
       embeddedDepth: 0.15,
       aboveGround: 3,
       wireDiameterAssumption: 0.0025

@@ -5,7 +5,7 @@ export const SUPPORT_LAYOUT = Object.freeze({
   diameter: 0.02,
   soilInset: 0.15,
   endInset: 0.25,
-  spacing: 0.3,
+  spacing: 0.6,
   embedDepth: 0.15,
   wireDiameter: 0.0025
 })
@@ -112,25 +112,47 @@ export function createSupportAssembly() {
   return { tubes, rails, clips }
 }
 
-/** Bent spring wire: two open hooks, parallel arms and one enclosing U saddle.
- * Visual sizing follows the supplied photograph; this is not a manufacturer CAD profile.
- * Local u/v are the two pipe axes, w is their tangent separation direction.
+/** Installed EJ-101 topology from the manufacturer's cross-connector photograph:
+ * both arms pass behind the first pipe; the U bight and two free hooks capture
+ * the second pipe on opposite sides of the crossing. Dimensions remain nominal.
+ * Local u/v are the first/second pipe axes; w points from first to second.
  */
 export function springClipWire(clip: SpringClip) {
   const wireRadius = SUPPORT_LAYOUT.wireDiameter / 2
-  const a = clip.firstDiameter / 2 + wireRadius
-  const b = clip.secondDiameter / 2 + wireRadius
+  // Circumscribe each sampled arc so the wire surface clears the pipe between samples.
+  const a = (clip.firstDiameter / 2 + wireRadius) / Math.cos(Math.PI / 24)
+  const b = (clip.secondDiameter / 2 + wireRadius) / Math.cos(Math.PI / 24)
   const separation = (clip.firstDiameter + clip.secondDiameter) / 2
-  const hook = (u: number): Point3[] =>
-    Array.from({ length: 13 }, (_, i) => {
-      const angle = -Math.PI / 3 + ((i / 12) * Math.PI * 4) / 3
-      return [u, a * Math.cos(angle), a * Math.sin(angle)]
+  const reach = a + separation
+  const hookAngle = (Math.PI * 4) / 9
+  const hook = (side: number): Point3[] =>
+    Array.from({ length: 7 }, (_, i) => {
+      const angle = (hookAngle * i) / 6
+      return [
+        side * b * Math.cos(angle),
+        reach,
+        separation + b * Math.sin(angle)
+      ]
     })
+  const arm = (side: number): Point3[] => [
+    [side * b, -reach, separation],
+    ...Array.from({ length: 13 }, (_, i): Point3 => {
+      const angle = Math.PI - (i * Math.PI) / 12
+      return [side * b, a * Math.cos(angle), -a * Math.sin(angle)]
+    }),
+    [side * b, reach, separation]
+  ]
   const saddle: Point3[] = Array.from({ length: 13 }, (_, i) => {
-    const angle = Math.PI - (i / 12) * Math.PI
-    return [b * Math.cos(angle), -2 * a, separation + b * Math.sin(angle)]
+    const angle = (i * Math.PI) / 12
+    return [b * Math.cos(angle), -reach, separation + b * Math.sin(angle)]
   })
-  const local: Point3[] = [...hook(-b), ...saddle, ...hook(b).reverse()]
+  const local: Point3[] = [
+    ...hook(1).reverse(),
+    ...arm(1).reverse().slice(1),
+    ...saddle.slice(1),
+    ...arm(-1).slice(1),
+    ...hook(-1).slice(1)
+  ]
   return {
     diameter: SUPPORT_LAYOUT.wireDiameter,
     points: local.map(([u, v, w]): Point3 => [
