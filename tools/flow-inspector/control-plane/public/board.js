@@ -713,11 +713,14 @@
           unresolved ||
           acting
         if (!matching) {
-          byId('agent-result').textContent = taskState?.available
-            ? selectedProvider && providerAvailable
-              ? 'No task selected. Authorized provider selected; no model turn dispatched.'
-              : 'No task selected. Demonstration adapter - no language model or paid provider.'
-            : 'OS containment unavailable. Delegation is disabled.'
+          let status =
+            'No task selected. Demonstration adapter - no language model or paid provider.'
+          if (selectedProvider && providerAvailable)
+            status =
+              'No task selected. Authorized provider selected; no model turn dispatched.'
+          if (!taskState?.available)
+            status = 'OS containment unavailable. Delegation is disabled.'
+          byId('agent-result').textContent = status
           byId('agent-artifact').hidden = true
           byId('agent-audit').hidden = true
           return
