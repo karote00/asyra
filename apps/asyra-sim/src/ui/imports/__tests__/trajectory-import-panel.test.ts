@@ -71,7 +71,9 @@ async function choose(file: File, kind = 'CSV') {
 async function preview() {
   await act(() => button('Preview trajectory')?.click())
 
-  expect(button('Apply')).toBeDefined()
+  expect(
+    host.querySelector('[aria-label="Trajectory conversion preview"]')
+  ).not.toBeNull()
 }
 
 it.each([
@@ -94,7 +96,10 @@ it.each([
 
     expect(read).not.toHaveBeenCalled()
 
-    expect(button('Apply')).toBeUndefined()
+    expect(button('Import trajectory')).toBeUndefined()
+    expect(
+      host.querySelector('[aria-label="Trajectory conversion preview"]')
+    ).toBeNull()
 
     expect(host.textContent).toContain(`${limit / 1024 / 1024} MiB`)
 
@@ -136,7 +141,10 @@ it('cannot preview stale text while reading and preserves the next selection aga
 
   await choose(pending)
 
-  expect(button('Apply')).toBeUndefined()
+  expect(button('Import trajectory')).toBeUndefined()
+  expect(
+    host.querySelector('[aria-label="Trajectory conversion preview"]')
+  ).toBeNull()
 
   expect(button('Preview trajectory')?.disabled).toBe(true)
 
@@ -164,7 +172,10 @@ it('invalidates prior acceptance on read failure and exposes the failure', async
 
   await choose(file)
 
-  expect(button('Apply')).toBeUndefined()
+  expect(button('Import trajectory')).toBeUndefined()
+  expect(
+    host.querySelector('[aria-label="Trajectory conversion preview"]')
+  ).toBeNull()
 
   expect(host.textContent).toContain('File read failed')
 
@@ -199,11 +210,17 @@ async function externalCsv() {
 it('blocks external CSV with canonical headers until every source unit is declared', async () => {
   const example = await externalCsv()
   await act(() => button('Preview trajectory')?.click())
-  expect(button('Apply')).toBeUndefined()
+  expect(button('Import trajectory')).toBeUndefined()
+  expect(
+    host.querySelector('[aria-label="Trajectory conversion preview"]')
+  ).toBeNull()
   expect(host.textContent).toContain('explicit supported time unit')
   await select('Time unit', 's')
   await act(() => button('Preview trajectory')?.click())
-  expect(button('Apply')).toBeUndefined()
+  expect(button('Import trajectory')).toBeUndefined()
+  expect(
+    host.querySelector('[aria-label="Trajectory conversion preview"]')
+  ).toBeNull()
   for (const body of example.workcell.bodies) {
     if (body.joint.kind !== 'fixed')
       await select(`${body.name} CSV unit`, 'rad')
@@ -213,7 +230,7 @@ it('blocks external CSV with canonical headers until every source unit is declar
     host.querySelector('[aria-label="Trajectory conversion preview"]')
       ?.textContent
   ).toContain('rad')
-  await act(() => button('Apply')?.click())
+  await act(() => button('Import trajectory')?.click())
   expect(accepted).toHaveBeenCalledOnce()
   expect(accepted.mock.calls[0][0].trajectory).toEqual(example.trajectory)
 })
@@ -236,12 +253,15 @@ it('reuses source parsing and the exact validated preview on repeated review and
     const work = normalize.mock.calls.length
     expect(work).toBe(example.trajectory.keyframes.length)
     await preview()
-    await act(() => button('Apply')?.click())
+    await act(() => button('Import trajectory')?.click())
     expect(normalize).toHaveBeenCalledTimes(work)
     expect(parse).toHaveBeenCalledOnce()
     expect(accepted.mock.calls[0][0]).toBe(result.value)
     await select('Time unit', 'ms')
-    expect(button('Apply')).toBeUndefined()
+    expect(button('Import trajectory')).toBeUndefined()
+    expect(
+      host.querySelector('[aria-label="Trajectory conversion preview"]')
+    ).toBeNull()
     await preview()
     expect(normalize).toHaveBeenCalledTimes(work * 2)
     expect(parse).toHaveBeenCalledOnce()
@@ -285,7 +305,7 @@ it('preserves strict JSON declarations and displays source-to-canonical conversi
   expect(review?.textContent).toContain('2500 ms')
   expect(review?.textContent).toContain('2.5 s')
   expect(review?.textContent).toContain('0 deg')
-  await act(() => button('Apply')?.click())
+  await act(() => button('Import trajectory')?.click())
   expect(accepted.mock.calls[0][0].sourceUnits.time).toBe('ms')
 })
 
@@ -316,7 +336,10 @@ it('retires an existing preview and late file read when its workcell changes', a
       })
     )
   )
-  expect(button('Apply')).toBeUndefined()
+  expect(button('Import trajectory')).toBeUndefined()
+  expect(
+    host.querySelector('[aria-label="Trajectory conversion preview"]')
+  ).toBeNull()
   await act(async () => resolve('time\n99'))
   expect(present(host.querySelector('textarea')).value).toBe(before)
   expect(accepted).not.toHaveBeenCalled()
@@ -326,7 +349,10 @@ it('discards an import without acceptance or stale read delivery', async () => {
   await preview()
   expect(button('Discard preview')).toBeDefined()
   await act(() => button('Discard preview')?.click())
-  expect(button('Apply')).toBeUndefined()
+  expect(button('Import trajectory')).toBeUndefined()
+  expect(
+    host.querySelector('[aria-label="Trajectory conversion preview"]')
+  ).toBeNull()
   expect(accepted).not.toHaveBeenCalled()
 })
 
@@ -342,7 +368,10 @@ it('retires the old preview but retains known units after source edits', async (
     input.dispatchEvent(new Event('input', { bubbles: true }))
   })
   expect(input.value).toBe(next)
-  expect(button('Apply')).toBeUndefined()
+  expect(button('Import trajectory')).toBeUndefined()
+  expect(
+    host.querySelector('[aria-label="Trajectory conversion preview"]')
+  ).toBeNull()
   expect(button('Confirm displayed units')).toBeUndefined()
   await preview()
 })
@@ -352,7 +381,10 @@ it('invalidates column mapping and current workcell previews without reparsing s
   try {
     await preview()
     await select('Time column', '')
-    expect(button('Apply')).toBeUndefined()
+    expect(button('Import trajectory')).toBeUndefined()
+    expect(
+      host.querySelector('[aria-label="Trajectory conversion preview"]')
+    ).toBeNull()
     await select('Time column', 'time')
     await preview()
     const example = createSyntheticExample()
@@ -370,9 +402,15 @@ it('invalidates column mapping and current workcell previews without reparsing s
         })
       )
     )
-    expect(button('Apply')).toBeUndefined()
+    expect(button('Import trajectory')).toBeUndefined()
+    expect(
+      host.querySelector('[aria-label="Trajectory conversion preview"]')
+    ).toBeNull()
     await act(() => button('Preview trajectory')?.click())
-    expect(button('Apply')).toBeUndefined()
+    expect(button('Import trajectory')).toBeUndefined()
+    expect(
+      host.querySelector('[aria-label="Trajectory conversion preview"]')
+    ).toBeNull()
     expect(host.textContent).toContain('out-of-limit')
     expect(parse).not.toHaveBeenCalled()
   } finally {
@@ -427,7 +465,10 @@ it('retains declared units across numeric edits but recomputes and accepts only 
       '\n5,'
     )
     await editSource(text)
-    expect(button('Apply')).toBeUndefined()
+    expect(button('Import trajectory')).toBeUndefined()
+    expect(
+      host.querySelector('[aria-label="Trajectory conversion preview"]')
+    ).toBeNull()
     expect(parse).toHaveBeenCalledOnce()
     expect(inspect).not.toHaveBeenCalled()
     await preview()
@@ -436,11 +477,14 @@ it('retains declared units across numeric edits but recomputes and accepts only 
     expect(parse).toHaveBeenCalledOnce()
     const result = inspect.mock.results[0].value
     expect(result.value.trajectory.keyframes[1].time).toBe(0.005)
-    await act(() => button('Apply')?.click())
+    await act(() => button('Import trajectory')?.click())
     expect(accepted.mock.calls[0][0]).toBe(result.value)
     await externalCsv()
     await act(() => button('Preview trajectory')?.click())
-    expect(button('Apply')).toBeUndefined()
+    expect(button('Import trajectory')).toBeUndefined()
+    expect(
+      host.querySelector('[aria-label="Trajectory conversion preview"]')
+    ).toBeNull()
   } finally {
     parse.mockRestore()
     inspect.mockRestore()
@@ -456,7 +500,9 @@ it('preserves known joint units when only the time unit is selected', async () =
   await editSource(text)
   await act(() => button('Preview trajectory')?.click())
   expect(host.textContent).not.toContain('explicit supported time unit')
-  expect(button('Apply')).toBeDefined()
+  expect(
+    host.querySelector('[aria-label="Trajectory conversion preview"]')
+  ).not.toBeNull()
   const example = createSyntheticExample()
   for (const body of example.workcell.bodies)
     if (body.joint.kind !== 'fixed')
@@ -492,7 +538,10 @@ it('preserves unaffected declarations when one source column is removed', async 
     ''
   ])
   await act(() => button('Preview trajectory')?.click())
-  expect(button('Apply')).toBeUndefined()
+  expect(button('Import trajectory')).toBeUndefined()
+  expect(
+    host.querySelector('[aria-label="Trajectory conversion preview"]')
+  ).toBeNull()
 })
 
 it('retains unaffected units when the workcell changes joint type', async () => {
@@ -523,7 +572,10 @@ it('retains unaffected units when the workcell changes joint type', async () => 
     ].map((unit) => unit.value)
   ).toEqual(['', 'rad', 'rad', 'rad', 'rad', 'rad'])
   await act(() => button('Preview trajectory')?.click())
-  expect(button('Apply')).toBeUndefined()
+  expect(button('Import trajectory')).toBeUndefined()
+  expect(
+    host.querySelector('[aria-label="Trajectory conversion preview"]')
+  ).toBeNull()
 })
 
 it('keeps known units during first edits without prompting for confirmation', async () => {
@@ -541,15 +593,23 @@ it('keeps known units during first edits without prompting for confirmation', as
   await preview()
   await editSource(original.replace('\n8,', '\nㄉㄢ,'))
   expect(units()).toEqual(initialUnits)
-  expect(button('Apply')).toBeUndefined()
+  expect(button('Import trajectory')).toBeUndefined()
+  expect(
+    host.querySelector('[aria-label="Trajectory conversion preview"]')
+  ).toBeNull()
   expect(button('Confirm displayed units')).toBeUndefined()
   await act(() => button('Preview trajectory')?.click())
-  expect(button('Apply')).toBeUndefined()
+  expect(button('Import trajectory')).toBeUndefined()
+  expect(
+    host.querySelector('[aria-label="Trajectory conversion preview"]')
+  ).toBeNull()
   await editSource(original.replace('\n8,', '\n9,'))
   expect(units()).toEqual(initialUnits)
   expect(button('Confirm displayed units')).toBeUndefined()
   await preview()
-  await act(() => button('Apply')?.click())
+  await act(() =>
+    input.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))
+  )
   expect(accepted.mock.calls[0][0].trajectory.keyframes.at(-1).time).toBe(9)
 })
 
@@ -558,7 +618,10 @@ it('previews edits in known units without an extra confirmation step', async () 
   await editSource(original.replace('\n8,', '\n9,'))
   expect(button('Confirm displayed units')).toBeUndefined()
   expect(host.querySelector('.unit-confirmation')).toBeNull()
-  expect(button('Apply')).toBeUndefined()
+  expect(button('Import trajectory')).toBeUndefined()
+  expect(
+    host.querySelector('[aria-label="Trajectory conversion preview"]')
+  ).toBeNull()
   await preview()
   expect(accepted).not.toHaveBeenCalled()
 })
@@ -575,8 +638,42 @@ it('retains unit choices through an unfinished CSV quoted value', async () => {
     ].map((unit) => unit.value)
   ).toEqual(Array(6).fill('rad'))
   await act(() => button('Preview trajectory')?.click())
-  expect(button('Apply')).toBeUndefined()
+  expect(button('Import trajectory')).toBeUndefined()
+  expect(
+    host.querySelector('[aria-label="Trajectory conversion preview"]')
+  ).toBeNull()
   await editSource(original.replace('\n8,', '\n9,'))
   expect(button('Confirm displayed units')).toBeUndefined()
   await preview()
+})
+
+it('commits completed inline trajectory edits once without Apply and reuses their conversion review', async () => {
+  const inspect = vi.spyOn(importer, 'previewTrajectoryCsv')
+  try {
+    const field = present(host.querySelector('textarea'))
+    await editSource(field.value.replace('\n8,', '\n9,'))
+    expect(accepted).not.toHaveBeenCalled()
+    await act(() =>
+      field.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))
+    )
+    expect(accepted).toHaveBeenCalledOnce()
+    expect(accepted.mock.calls[0][0].trajectory.keyframes.at(-1).time).toBe(9)
+    expect(button('Import trajectory')).toBeUndefined()
+    const result = inspect.mock.results[0].value
+    expect(accepted.mock.calls[0][0]).toBe(result.value)
+    await act(() => button('Preview trajectory')?.click())
+    await act(() =>
+      field.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))
+    )
+    expect(inspect).toHaveBeenCalledOnce()
+    expect(accepted).toHaveBeenCalledOnce()
+    await editSource('time,broken\nnope,value')
+    await act(() =>
+      field.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))
+    )
+    expect(accepted).toHaveBeenCalledOnce()
+    expect(host.querySelector('[role="alert"]')).not.toBeNull()
+  } finally {
+    inspect.mockRestore()
+  }
 })

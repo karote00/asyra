@@ -83,9 +83,13 @@ independently interpret axes or parent-child transforms.
   Bound review to first, middle and last keyframes. Changed source, mapping,
   units or workcell retires the old preview and acceptance eligibility; repeated
   preview and acceptance of unchanged input do not repeat parsing/conversion.
-  Preview and discard are noncanonical. Apply merges the validated
-  trajectory into the latest experiment draft and commits through the existing
-  Feature transaction as one Undo action. Pending commits block repeat submission. Never reinterpret
+  Preview and discard are noncanonical. Completing an inline text, mapping or
+  unit edit validates once and commits through the existing Feature as one Undo
+  action, reusing that conversion result for review. Its own acknowledgement
+  preserves edited source text and units; external Undo/Redo resets the projection.
+  New file imports require explicit Import trajectory acceptance of the valid
+  preview. Both paths merge into the latest experiment draft. Pending commits
+  block repeat submission. Never reinterpret
   existing project units, values or historical evidence.
 - Joint axes must be finite and nonzero and normalized according to the
   contract. Reject nonfinite positions, dimensions, and times.
@@ -523,8 +527,9 @@ correct collision does not satisfy this contract.
 Valid document edits and Undo/Redo automatically persist to the local project.
 Ordinary editing has no Save action. Incomplete or invalid field text remains
 transient until a complete valid edit can be applied through its existing Feature;
-one completed editing gesture remains one Undo action. Imports still require
-preview and explicit Apply. Completed formal results automatically belong to the
+one completed editing gesture remains one Undo action. Inline trajectory edits
+commit on field blur; Enter remains a newline in multiline source text. New file
+imports still require preview and explicit acceptance. Completed formal results automatically belong to the
 project; previews and incomplete analysis progress do not become saved evidence.
 
 One storage owner immediately queues each original Core canonical publication

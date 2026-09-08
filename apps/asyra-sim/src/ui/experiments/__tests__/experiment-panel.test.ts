@@ -248,7 +248,9 @@ it('shows mapped canonical columns before preview and invalidates acceptance aft
 
   await act(() => button('Preview trajectory')?.click())
 
-  expect(button('Apply')).toBeDefined()
+  expect(
+    host.querySelector('[aria-label="Trajectory conversion preview"]')
+  ).not.toBeNull()
 
   const unit = host.querySelectorAll('select')[1]
 
@@ -258,7 +260,9 @@ it('shows mapped canonical columns before preview and invalidates acceptance aft
     unit.dispatchEvent(new Event('change', { bubbles: true }))
   })
 
-  expect(button('Apply')).toBeUndefined()
+  expect(
+    host.querySelector('[aria-label="Trajectory conversion preview"]')
+  ).toBeNull()
 })
 
 it('initializes imported source text from the same canonical revision during save and replay', async () => {
@@ -364,11 +368,14 @@ it('applies the validated trajectory after a completed field edit without duplic
   })
   await act(() => button('Preview trajectory')?.click())
   expect(updateExperiment).toHaveBeenCalledOnce()
-  expect(button('Apply')).toBeDefined()
-  await act(() => button('Apply')?.click())
-  expect(button('Apply')?.disabled).toBe(true)
+  await act(() =>
+    input.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))
+  )
+  expect(button('Apply')).toBeUndefined()
   expect(button('Save experiment')).toBeUndefined()
-  await act(() => button('Apply')?.click())
+  await act(() =>
+    input.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))
+  )
   expect(updateExperiment).toHaveBeenCalledTimes(2)
   await act(async () => finishSave())
   expect(perform).toHaveBeenCalledTimes(2)

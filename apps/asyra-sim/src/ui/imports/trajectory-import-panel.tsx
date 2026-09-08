@@ -6,14 +6,18 @@ export function TrajectoryImportPanel({
   workcell,
   trajectory,
   onAccept,
+  onEdit,
   saving = false
 }: {
   workcell: Workcell
   trajectory: Trajectory
   onAccept: (value: NormalizedTrajectorySource) => void
+  onEdit?: (value: NormalizedTrajectorySource) => Promise<boolean>
   saving?: boolean
 }) {
   const {
+    importPending,
+    complete,
     kind,
     text,
     setText,
@@ -34,10 +38,23 @@ export function TrajectoryImportPanel({
   } = useTrajectoryImport({ workcell, trajectory })
 
   return (
-    <details className="trajectory-import">
-      <summary>
-        Trajectory input <span>preview before acceptance</span>
-      </summary>
+    <details
+      className="trajectory-import"
+      onBlur={(event) => {
+        if (
+          event.target instanceof HTMLTextAreaElement ||
+          event.target instanceof HTMLSelectElement
+        )
+          void complete(
+            onEdit ??
+              (async (value) => {
+                onAccept(value)
+                return true
+              })
+          )
+      }}
+    >
+      <summary>Trajectory input</summary>
 
       <p className="hint text-[10px] leading-[1.6] text-sim-muted font-normal">
         Choose source units for imported CSV files, then preview the conversion.
@@ -285,13 +302,15 @@ export function TrajectoryImportPanel({
             ))}
           </div>
 
-          <button
-            className="primary bg-sim-accent text-[#fff] border-sim-accent [&:hover]:bg-sim-accent-hover"
-            disabled={saving}
-            onClick={() => accept(onAccept)}
-          >
-            Apply
-          </button>
+          {importPending && (
+            <button
+              className="primary bg-sim-accent text-[#fff] border-sim-accent [&:hover]:bg-sim-accent-hover"
+              disabled={saving}
+              onClick={() => accept(onAccept)}
+            >
+              Import trajectory
+            </button>
+          )}
         </div>
       )}
     </details>

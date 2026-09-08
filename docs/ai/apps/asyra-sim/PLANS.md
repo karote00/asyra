@@ -34,6 +34,32 @@
 
 ## Completed Work
 
+- **Completed-edit UX follow-up (2026-09-08).**
+  - A bounded review of existing Sim UI controls found two remaining editing
+    exceptions: inline trajectory Apply and observation metadata blocked by
+    prepared attachments. Object fields, ordinary experiment settings and project
+    names already commit completed edits. Create/import/run/copy/export/retry are
+    distinct actions, not second saves for existing data.
+  - Inline trajectory text, mapping and unit edits now validate and commit on
+    field blur through the existing Feature. Review reuses the exact conversion
+    result. Own acknowledgements preserve edited text and units; invalid input
+    remains transient and external Undo/Redo restores canonical data. New file
+    imports still require explicit Import trajectory acceptance.
+  - Observation text and accepted attachment removal commit independently of
+    pending files. Explicit attachment acceptance includes the current fields in
+    one action without losing the click to a preceding blur submission.
+  - Regression tests first reproduced both original omissions. Browser verification
+    also exposed and corrected the blur/attachment action conflict. Final evidence:
+    626 Sim tests, 26 affected browser cases at port 3020, inspected live-app
+    trajectory and observation screenshots, App build/typecheck/lint, naming,
+    all 97 Inspector contracts and test placement. The combined adjacent browser
+    batch had one detached-page timeout before the resource scenario began; the
+    complete three-case resource file passed on focused replay without another
+    production change.
+  - This closes the editing exceptions found after the Core integration review;
+    its earlier evidence was not proof that every editing control was consistent.
+    M2 remains accepted. M3-M6 and public release remain outside this follow-up.
+
 - **Core integration follow-up (2026-09-08).**
   - Completed all four approved stages: normal CUSTOM document publications,
     registered Core UI projections and scoped consumers, immediate ordered local

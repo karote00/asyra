@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import {
   validObservationDraft,
   type FieldObservation,
+  type ObservationDraft,
   type ObservationAttachmentReference
 } from '../../common-apis/observation-contract'
 import { downloadBytes, downloadText } from '../projects/download-project'
@@ -117,19 +118,21 @@ export function useObservationController({
     }
   }
 
-  const save = async (input = draft) => {
+  const save = async (
+    input: ObservationDraft = draft,
+    includePrepared = true
+  ) => {
     if (
       !validObservationDraft(input) ||
       stale ||
       saving ||
-      files.busy ||
-      files.error
+      (includePrepared && (files.busy || files.error))
     )
       return
 
     if (
       editing &&
-      !files.prepared &&
+      !(includePrepared && files.prepared) &&
       input.title === editing.title &&
       input.text === editing.text &&
       JSON.stringify(input.attachments) === JSON.stringify(editing.attachments)
@@ -149,7 +152,7 @@ export function useObservationController({
 
     try {
       let id = editing?.id
-      if (files.prepared) {
+      if (includePrepared && files.prepared) {
         id = await runtime.features.observations.retain(files.prepared, {
           runId,
           draft: input,
@@ -174,7 +177,7 @@ export function useObservationController({
           throw new Error('The observation acknowledgement is unavailable')
         setEditing(structuredClone(acknowledged))
         setExisting(structuredClone(acknowledged.attachments))
-        files.clear()
+        if (includePrepared) files.clear()
         setStatus(
           'Observation updated - one Undo action for a material change.'
         )

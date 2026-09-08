@@ -165,7 +165,7 @@ export function useExperimentController({
       }
     } catch (reason) {
       fail(reason)
-      return
+      return false
     }
     setDraft(next)
     const key = JSON.stringify(next)
@@ -204,8 +204,10 @@ export function useExperimentController({
     try {
       await pending
       if (live.current) setError('')
+      return true
     } catch (reason) {
       fail(reason)
+      return false
     } finally {
       pendingWrites.current--
       if (live.current) setSaving(pendingWrites.current > 0)

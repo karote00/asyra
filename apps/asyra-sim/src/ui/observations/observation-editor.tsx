@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import {
   OBSERVATION_LIMITS,
   validObservationDraft
@@ -45,6 +46,8 @@ export function ObservationEditor({
   save,
   error
 }: Props) {
+  const submit = useRef<HTMLButtonElement>(null)
+
   return (
     <>
       {open && (
@@ -59,12 +62,14 @@ export function ObservationEditor({
             [&_textarea]:resize-y"
           disabled={saving}
           onBlur={(event) => {
+            // The explicit action submits these same fields with its attachments.
+            if (submit.current && event.relatedTarget === submit.current) return
             if (
               (event.target instanceof HTMLInputElement &&
                 event.target.type !== 'file') ||
               event.target instanceof HTMLTextAreaElement
             )
-              if (!files.prepared) void save()
+              void save({ ...draft, attachments: existing }, false)
           }}
         >
           <legend>
@@ -113,7 +118,7 @@ export function ObservationEditor({
                     (item) => item.sourceId !== reference.sourceId
                   )
                   setExisting(attachments)
-                  if (!files.prepared) void save({ ...draft, attachments })
+                  void save({ ...draft, attachments }, false)
                 }}
               >
                 Remove attachment {reference.filename}
@@ -158,7 +163,7 @@ export function ObservationEditor({
             <div aria-label="Prepared observation attachments">
               <p className="hint text-[10px] leading-[1.6] text-sim-muted font-normal">
                 {files.prepared.attachments.length} new files prepared - not yet
-                retained. Review these before saving the observation.
+                retained. Review these before adding the files.
               </p>
 
               {files.prepared.attachments.map((reference) => (
@@ -207,6 +212,7 @@ export function ObservationEditor({
           <div className="run-detail-actions flex flex-wrap gap-2 my-3 mx-0 [&_button]:text-[11px]">
             {(files.prepared || error) && (
               <button
+                ref={submit}
                 disabled={
                   !validObservationDraft(draft) ||
                   stale ||

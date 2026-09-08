@@ -40,6 +40,8 @@ export function useTrajectoryImport({
     workcell: Workcell
     generation: number
   } | null>(null)
+  const [importPending, setImportPending] = useState(false)
+  const pendingEdit = useRef(false)
   const [error, setError] = useState('')
   const [reading, setReading] = useState(false)
   const generation = useRef(0)
@@ -92,7 +94,30 @@ export function useTrajectoryImport({
       onAccept(preview.value)
   }
 
+  const complete = async (
+    onEdit: (value: NormalizedTrajectorySource) => Promise<boolean>
+  ) => {
+    if (importPending || reading || !pendingEdit.current) return
+    const result = inspect()
+    if (!result?.value) return
+    const token = generation.current
+    pendingEdit.current = false
+    try {
+      if (
+        (await onEdit(result.value)) === false &&
+        token === generation.current
+      )
+        pendingEdit.current = true
+    } catch (reason) {
+      if (token === generation.current) {
+        pendingEdit.current = true
+        setError(reason instanceof Error ? reason.message : String(reason))
+      }
+    }
+  }
+
   const setText = (text: string) => {
+    pendingEdit.current = true
     discard()
     const csv = source.kind === 'csv' ? prepareTrajectoryCsv(text) : source.csv
     setSource({ ...source, text, csv })
@@ -114,6 +139,7 @@ export function useTrajectoryImport({
   }
 
   const setMapping = (next: SetStateAction<TrajectoryCsvMappingDraft>) => {
+    pendingEdit.current = true
     discard()
     updateMapping(next)
   }
@@ -136,6 +162,8 @@ export function useTrajectoryImport({
   }
 
   const load = async (file: File, nextKind: 'csv' | 'json') => {
+    setImportPending(true)
+    pendingEdit.current = false
     discard()
     const token = generation.current
     const limit =
@@ -175,6 +203,8 @@ export function useTrajectoryImport({
     }))
 
   return {
+    importPending,
+    complete,
     kind: source.kind,
     text: source.text,
     setText,

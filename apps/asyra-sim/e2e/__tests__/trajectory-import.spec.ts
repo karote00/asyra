@@ -81,14 +81,14 @@ test('external CSV declaration, conversion review, acceptance, Undo/Redo and reo
     'explicit supported time unit'
   )
   await expect(
-    page.getByRole('button', { name: 'Apply', exact: true })
+    page.getByRole('button', { name: 'Import trajectory', exact: true })
   ).toHaveCount(0)
   await page
     .getByRole('combobox', { name: 'Time unit', exact: true })
     .selectOption('ms')
   await preview(page)
   await expect(
-    page.getByRole('button', { name: 'Apply', exact: true })
+    page.getByRole('button', { name: 'Import trajectory', exact: true })
   ).toHaveCount(0)
   const units = page.locator('select[aria-label$=" CSV unit"]')
   await expect(units).toHaveCount(6)
@@ -101,7 +101,7 @@ test('external CSV declaration, conversion review, acceptance, Undo/Redo and reo
     .getByLabel('Trajectory source data')
     .fill(csv.replace('2000,', '3000,'))
   await expect(
-    page.getByRole('button', { name: 'Apply', exact: true })
+    page.getByRole('button', { name: 'Import trajectory', exact: true })
   ).toHaveCount(0)
   await expect(
     page.getByRole('combobox', { name: 'Time unit', exact: true })
@@ -118,7 +118,7 @@ test('external CSV declaration, conversion review, acceptance, Undo/Redo and reo
   await expect(review).toContainText('2000 ms → 2 s')
 
   await page
-    .getByRole('button', { name: 'Apply', exact: true })
+    .getByRole('button', { name: 'Import trajectory', exact: true })
     .click({ trial: true })
   await page.locator('.accepted-preview').screenshot({
     path: info.outputPath('csv-conversion-first.png'),
@@ -135,7 +135,9 @@ test('external CSV declaration, conversion review, acceptance, Undo/Redo and reo
   await expect(page.getByTestId('history-depth')).toHaveText(
     `Undo steps: ${depth + 1}`
   )
-  await page.getByRole('button', { name: 'Apply', exact: true }).click()
+  await page
+    .getByRole('button', { name: 'Import trajectory', exact: true })
+    .click()
   await expect(page.getByTestId('history-depth')).toHaveText(
     `Undo steps: ${depth + 2}`
   )
@@ -224,10 +226,10 @@ for (const [width, theme] of [
     await expect(review).toContainText('2500 ms → 2.5 s')
     await expect(review).toContainText('0 deg → 0 rad')
     await expect(
-      page.getByRole('button', { name: 'Apply', exact: true })
+      page.getByRole('button', { name: 'Import trajectory', exact: true })
     ).toBeVisible()
     await page
-      .getByRole('button', { name: 'Apply', exact: true })
+      .getByRole('button', { name: 'Import trajectory', exact: true })
       .click({ trial: true })
     await expect(page.locator('html')).toHaveAttribute('data-theme', theme)
     await page.screenshot({
@@ -252,7 +254,7 @@ for (const [width, theme] of [
       .getByRole('button', { name: 'Discard preview', exact: true })
       .click()
     await expect(
-      page.getByRole('button', { name: 'Apply', exact: true })
+      page.getByRole('button', { name: 'Import trajectory', exact: true })
     ).toHaveCount(0)
     await expect(page.getByTestId('history-depth')).toHaveText(
       `Undo steps: ${depth}`
@@ -304,7 +306,7 @@ test('editing initial canonical text retains units without a confirmation prompt
   await expect(page.locator('.unit-confirmation')).toHaveCount(0)
   await preview(page)
   await expect(
-    page.getByRole('button', { name: 'Apply', exact: true })
+    page.getByRole('button', { name: 'Import trajectory', exact: true })
   ).toHaveCount(0)
   await input.fill(original.replace('\n8,', '\n9,'))
   await expect(timeUnit).toHaveValue('s')
@@ -320,4 +322,61 @@ test('editing initial canonical text retains units without a confirmation prompt
     path: info.outputPath('confirmed-edited-preview.png'),
     animations: 'disabled'
   })
+})
+
+test('completed inline trajectory edits preserve source units through acknowledgements and persist without Apply', async ({
+  page
+}, info) => {
+  await page.goto('/')
+  await expect(page.getByRole('status')).toHaveText('Local runtime ready')
+  await openImport(page)
+  const id = await page.getByLabel('Experiment', { exact: true }).inputValue()
+  const input = page.getByLabel('Trajectory source data')
+  const initial = await input.inputValue()
+  const depth = await readHistoryDepth(page)
+  await input.fill(initial.replace('\n8,', '\n9,'))
+  await input.press('Tab')
+  await expect(page.getByTestId('history-depth')).toHaveText(
+    `Undo steps: ${depth + 1}`
+  )
+  await expect(input).toHaveValue(initial.replace('\n8,', '\n9,'))
+  await expect(
+    page.getByRole('button', { name: 'Apply', exact: true })
+  ).toHaveCount(0)
+  const timeUnit = page.getByRole('combobox', {
+    name: 'Time unit',
+    exact: true
+  })
+  await timeUnit.selectOption('ms')
+  await timeUnit.press('Tab')
+  await expect(page.getByTestId('history-depth')).toHaveText(
+    `Undo steps: ${depth + 2}`
+  )
+  await expect(timeUnit).toHaveValue('ms')
+  await expect(input).toHaveValue(initial.replace('\n8,', '\n9,'))
+  await input.fill(initial.replace('\n8,', '\n10,'))
+  await input.press('Tab')
+  await expect(page.getByTestId('history-depth')).toHaveText(
+    `Undo steps: ${depth + 3}`
+  )
+  await expect(timeUnit).toHaveValue('ms')
+  await expect(page.getByLabel('Trajectory conversion preview')).toContainText(
+    '10 ms → 0.01 s'
+  )
+  await page
+    .getByLabel('Trajectory conversion preview')
+    .scrollIntoViewIfNeeded()
+  await page.screenshot({
+    path: info.outputPath('inline-trajectory-committed.png')
+  })
+  await page.getByRole('button', { name: 'Undo', exact: true }).click()
+  await openImport(page)
+  await expect(input).toHaveValue(/\n0\.009,/)
+  await page.getByRole('button', { name: 'Redo', exact: true }).click()
+  await openImport(page)
+  await expect(input).toHaveValue(/\n0\.01,/)
+  await saveProject(page, 'Inline trajectory')
+  const definition = await savedDefinition(page, id)
+  expect(definition.sourceUnits.time).toBe('ms')
+  expect(definition.trajectory.keyframes.at(-1)?.time).toBe(0.01)
 })

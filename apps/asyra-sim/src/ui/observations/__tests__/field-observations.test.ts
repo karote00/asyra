@@ -481,3 +481,47 @@ it('automatically applies completed text edits to the same observation without a
     )
   ).toBe(false)
 })
+
+it('commits existing text and attachment removal while new files remain prepared for a separate attachment action', async () => {
+  await begin()
+  await choose([file()])
+  await commit()
+  const next = {
+    attachments: [
+      {
+        ...receipt.attachments[0],
+        sourceId: `sha256:${'b'.repeat(64)}`,
+        filename: 'next.txt'
+      }
+    ]
+  }
+  prepare.mockResolvedValueOnce(next)
+  await choose([file('next.txt')])
+  update.mockClear()
+  retain.mockClear()
+  await fill('Observation text', 'Revised measurement')
+  await act(async () =>
+    host
+      .querySelector('[aria-label="Observation text"]')
+      ?.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))
+  )
+  expect(update).toHaveBeenCalledOnce()
+  expect(notes[0].text).toBe('Revised measurement')
+  expect(notes[0].attachments).toEqual(receipt.attachments)
+  expect(retain).not.toHaveBeenCalled()
+  expect(
+    host.querySelector('[aria-label="Prepared observation attachments"]')
+      ?.textContent
+  ).toContain('next.txt')
+  await act(async () => button('Remove attachment field.txt').click())
+  expect(update).toHaveBeenCalledTimes(2)
+  expect(notes[0].attachments).toEqual([])
+  expect(
+    host.querySelector('[aria-label="Prepared observation attachments"]')
+      ?.textContent
+  ).toContain('next.txt')
+  await act(async () => button('Apply attachments').click())
+  expect(retain).toHaveBeenCalledOnce()
+  expect(notes[0].attachments).toEqual(next.attachments)
+  expect(notes[0].text).toBe('Revised measurement')
+})

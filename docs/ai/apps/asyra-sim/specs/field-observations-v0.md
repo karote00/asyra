@@ -33,7 +33,9 @@ without Save. Keep the editor on the same canonical observation after acknowledg
 incomplete text stays transient and stale edits remain rejected. The project session
 persists committed changes. New attachment receipts still require Apply attachments
 following metadata review; preview/discard never writes canonical state. Removing
-an accepted attachment is an ordinary metadata edit with one Undo action.
+an accepted attachment is an ordinary metadata edit with one Undo action. Title/text
+edits and accepted attachment removal are independent of pending file preparation,
+including busy or failed preparation. They neither retain nor discard pending files.
 
 ## Opaque Attachments
 

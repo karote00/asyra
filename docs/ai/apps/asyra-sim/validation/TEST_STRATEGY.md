@@ -268,7 +268,7 @@ Local artifacts are under `apps/asyra-sim/.artifacts/`. Import review contains
 directories, plus source/accepted-definition and viewport/theme attachments.
 Agent screenshot inspection verified source/canonical labels and values,
 scrollable rows and reachable acceptance controls; automated cases separately
-verify unchanged pre-acceptance history, one Apply action, Undo/Redo, stored units
+verify unchanged pre-acceptance history, one explicit import action, Undo/Redo, stored units
 and reopening. App/test logs are retained in the worktree's root `.artifacts/`.
 The existing large-bundle build warning remains a later delivery consideration;
 no dependency or runtime upgrade was introduced.
@@ -279,7 +279,7 @@ M4 acceptance, M5 packaging/resource profiles, independent pilots or R0 release.
 ## Automatic Persistence Regression Gates
 
 Completed object, experiment and observation field gestures must produce one
-intended Feature edit; incomplete numerical text remains transient. Import Apply
+intended Feature edit; incomplete numerical text remains transient. New file import acceptance
 reuses the current conversion receipt, and unrelated experiment revisions must
 not reparse or replace edited source text. Exercise queued field writes and
 canonical Undo/Redo acknowledgements independently.
@@ -295,5 +295,12 @@ cover copy/rename and disposal races. Browser gates restore the same URL project
 identity after edits and reload, retain terminal results automatically, preserve
 observation/source bytes through portable reopening, and reject a missing reload
 target without acknowledging the startup example under its identity. There is no
-ordinary Save or Retain button; creation, import Apply, copy/export and failure
+ordinary Save or Retain button; creation, new file import acceptance, copy/export and failure
 retry remain explicit actions.
+
+Inline trajectory completion must commit once without Apply and share the exact
+validation result with review. Prove conversion work counts, invalid-input
+rejection, preservation of edited text/units across own acknowledgements, and
+canonical Undo/Redo plus reload. Observation metadata edits and accepted
+attachment removal must commit while new files remain prepared; prove no source
+retention until explicit attachment acceptance, with Undo/Redo and reload.
