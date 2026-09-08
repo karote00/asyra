@@ -115,3 +115,11 @@ cases. This closes the deterministic local adapter scope only. Real agent provid
 acceptance and full Phase 5 remain pending; all deferred Phase 4 protection and
 remote proof requirements remain unchanged. No version, Changeset, release,
 protection change or merge is authorized by this decision.
+
+## 2026-09-08 - Authorize release-neutral Phase 5 Changeset
+
+The user authorized the existing Changeset CLI after the PR record gate blocked
+CI. `yarn changeset add --empty` generated the release-neutral record; no package
+version, tag or publication is requested. This supersedes only the prior
+Changeset exclusion for this PR and does not change the bounded completion or
+remaining provider/protection requirements.
