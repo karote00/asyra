@@ -21,6 +21,11 @@ Vercel supplies `VERCEL_ENV`. The site-specific Turbo task forwards these
 variables to Next.js. Rebuild after configuration changes because metadata,
 scripts, and response headers are emitted at build time.
 
+Creating a GA4 stream or a Search Console property does not configure Vercel.
+Check that both identifier variables actually exist in the site's Production
+environment before deploying. A Ready deployment with empty configuration
+intentionally omits the Google tags and cannot collect visits or verify GSC.
+
 The identifiers become public in the site's HTML. Never place a Google password,
 OAuth token, service-account key, or Analytics API secret in these variables.
 
@@ -68,6 +73,23 @@ Run the existing site unit tests, build, route smoke, and these E2E tests:
 The Google E2E test intercepts the external library, so it checks site integration
 and navigation stability without sending test data to Google. It does not prove
 that GA4 received real events; the account-side live check remains necessary.
+
+For the configured official deployment, run the explicit enabled-services gate
+with the identifiers copied from its GA4 stream and GSC HTML-tag panel:
+
+```bash
+SITE_URL=https://asyra-framework.vercel.app \
+NEXT_PUBLIC_GA_MEASUREMENT_ID=G-YOURMEASUREMENTID \
+GOOGLE_SITE_VERIFICATION=your-html-meta-content \
+yarn workspace @asyra/asyra-framework-site test:google-services
+```
+
+This command requires both identifiers and checks the deployed verification
+meta tag, Google library request, initialization, and internal navigation. Do
+not use the default disabled-services test as evidence that Production collects
+data. Run this gate after the deployment is Ready, then finish GSC ownership
+verification and submit `/sitemap.xml`. Report processing is a separate step;
+waiting for reports cannot repair missing deployment configuration.
 
 For isolated worktrees, supply `SITE_URL` explicitly and use a free port.
 Screenshots belong under Playwright's app-owned output directory.
