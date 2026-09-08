@@ -274,6 +274,32 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@asyra/fieldscope@workspace:apps/fieldscope":
+  version: 0.0.0-use.local
+  resolution: "@asyra/fieldscope@workspace:apps/fieldscope"
+  dependencies:
+    "@asyra/core": "workspace:*"
+    "@asyra/preset": "workspace:*"
+    "@asyra/render": "workspace:*"
+    "@asyra/render-engine": "workspace:*"
+    "@playwright/test": "npm:^1.62.1"
+    "@tailwindcss/vite": "npm:^4.3.3"
+    "@types/node": "npm:^24.13.3"
+    "@types/react": "npm:^19.2.18"
+    "@types/react-dom": "npm:^19.2.5"
+    "@types/three": "npm:0.185.4"
+    "@vitejs/plugin-react": "npm:^4.7.0"
+    jsdom: "npm:^27.4.0"
+    react: "npm:^19.2.8"
+    react-dom: "npm:^19.2.8"
+    tailwindcss: "npm:^4.3.3"
+    three: "npm:0.185.1"
+    typescript: "npm:^5.7.2"
+    vite: "npm:^6.4.3"
+    vitest: "npm:^3.2.6"
+  languageName: unknown
+  linkType: soft
+
 "@asyra/flow-inspector@workspace:tools/flow-inspector":
   version: 0.0.0-use.local
   resolution: "@asyra/flow-inspector@workspace:tools/flow-inspector"

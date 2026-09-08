@@ -146,6 +146,18 @@
         "@asyra/utils#build:utils"
       ]
     },
+    "@asyra/fieldscope#react:build": {
+      "cache": false,
+      "outputs": [
+        "dist/**"
+      ],
+      "dependsOn": [
+        "@asyra/core#build:core",
+        "@asyra/preset#build:preset",
+        "@asyra/render#build:render",
+        "@asyra/render-engine#build:render-engine"
+      ]
+    },
     "@asyra/flow-inspector#react:build": {
       "cache": false,
       "outputs": [

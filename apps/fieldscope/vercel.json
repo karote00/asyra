@@ -1,0 +1,14 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "installCommand": "cd ../.. && corepack enable && corepack prepare yarn@4.3.1 --activate && yarn set version 4.3.1 && yarn install --immutable",
+  "buildCommand": "cd ../.. && corepack yarn turbo run react:build --filter=@asyra/fieldscope --concurrency=2",
+  "outputDirectory": "dist/frontend",
+  "git": {
+    "deploymentEnabled": {
+      "main": true,
+      "development": false,
+      "*": false
+    }
+  }
+}
