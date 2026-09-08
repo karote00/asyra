@@ -19,6 +19,14 @@ import {
   type LayerId
 } from '../render-app/site-projection'
 
+import {
+  cameraDistance,
+  measureScene,
+  fitScene,
+  panCamera,
+  setCameraDistance
+} from '../render-app/camera-navigation'
+
 const RuntimeKeys = { VIEW: 'farm.view', FRAME: 'farm.frame' } as const
 const FeatureNames = {
   VIEW: 'farm.view.change',
@@ -36,8 +44,11 @@ export async function bootstrap(
   let view = INITIAL_VIEW
   let camera = cameraPreset(view.camera)
   const initialBounds = host.getBoundingClientRect()
-  let aspect =
-    Math.max(1, initialBounds.width) / Math.max(1, initialBounds.height)
+  let width = Math.max(1, initialBounds.width),
+    height = Math.max(1, initialBounds.height)
+  let aspect = width / height
+  let zoomPercent = 100
+  const zoomListeners = new Set<() => void>()
   const listeners = new Set<() => void>()
   const assertLive = () => {
     if (closed) throw new Error('Runtime is closed')
@@ -53,12 +64,20 @@ export async function bootstrap(
     silent: true
   })
   const meshes = buildSiteMeshes()
+  const sceneBounds = measureScene(meshes)
   const layer = new SpatialLayer(() =>
     core.setSystemProperty(RuntimeKeys.FRAME, ++revision)
   )
   core.registerRenderLayer(layer.registration)
   const publishCamera = (next: SpatialCamera) => {
     camera = next
+    const percent = Math.round(
+      (100 * cameraDistance(cameraPreset(view.camera))) / cameraDistance(next)
+    )
+    if (percent !== zoomPercent) {
+      zoomPercent = percent
+      zoomListeners.forEach((listener) => listener())
+    }
     layer.submitCamera(fitCamera(next, aspect))
   }
   const viewFeature = core.defineFeature(FeatureNames.VIEW, undefined, {
@@ -142,6 +161,20 @@ export async function bootstrap(
           ) as [number, number, number]
         })
       },
+      pan: (dx: number, dy: number) => {
+        assertLive()
+        publishCamera(panCamera(camera, dx, dy, width, height))
+      },
+      fit: () => {
+        assertLive()
+        publishCamera(fitScene(camera, sceneBounds, width, height))
+      },
+      actualSize: () => {
+        assertLive()
+        publishCamera(
+          setCameraDistance(camera, cameraDistance(cameraPreset(view.camera)))
+        )
+      },
       reset: (mode: CameraMode) => {
         assertLive()
         publishCamera(cameraPreset(mode))
@@ -167,6 +200,7 @@ export async function bootstrap(
     observer?.disconnect()
     subscription?.unsubscribe()
     listeners.clear()
+    zoomListeners.clear()
     disposePromise = Promise.resolve().then(async () => {
       try {
         core.unregisterRenderLayer(SPATIAL_LAYER_NAME)
@@ -187,7 +221,9 @@ export async function bootstrap(
     observer = new ResizeObserver((entries) => {
       const box = entries[0]?.contentRect
       if (!closed && box && box.width > 0 && box.height > 0) {
-        aspect = box.width / box.height
+        width = box.width
+        height = box.height
+        aspect = width / height
         layer.submitCamera(fitCamera(camera, aspect))
         core.resizeRenderer(box.width, box.height)
       }
@@ -195,6 +231,14 @@ export async function bootstrap(
     observer.observe(host)
     return {
       getView: () => view,
+      getZoom: () => zoomPercent,
+      subscribeZoom: (listener: () => void) => {
+        assertLive()
+        zoomListeners.add(listener)
+        return () => {
+          zoomListeners.delete(listener)
+        }
+      },
       subscribe: (listener: () => void) => {
         assertLive()
         listeners.add(listener)
@@ -212,6 +256,9 @@ export async function bootstrap(
         await viewFeature.api.change({ camera: mode })
         cameraFeature.api.reset(mode)
       },
+      pan: cameraFeature.api.pan,
+      fit: cameraFeature.api.fit,
+      actualSize: cameraFeature.api.actualSize,
       orbit: cameraFeature.api.orbit,
       zoom: cameraFeature.api.zoom,
       dispose

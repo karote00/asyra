@@ -55,3 +55,64 @@ it.each([358 / 440, 1090 / 610])(
       }
   }
 )
+
+it('covers every bay roof and exterior wall with a visible translucent film while keeping interior passages open', async () => {
+  const {
+    BufferGeometry,
+    Float32BufferAttribute,
+    Mesh,
+    MeshBasicMaterial,
+    DoubleSide,
+    Raycaster,
+    Vector3
+  } = await import('three')
+  const film = projectView(buildSiteMeshes(), INITIAL_VIEW).find(
+    (item) => item.id === 'film'
+  )
+  expect(film?.visible).toBe(true)
+  // Product default: a visibly covered greenhouse, not an X-ray view of the frame.
+  expect(film?.descriptor.opacity).toBeGreaterThanOrEqual(0.55)
+  expect(film?.descriptor.opacity).toBeLessThan(1)
+  const shape = film?.descriptor.shape
+  if (!shape || shape.kind !== 'triangles')
+    throw new Error('Missing membrane surface')
+  const geometry = new BufferGeometry()
+  geometry.setAttribute(
+    'position',
+    new Float32BufferAttribute(shape.positions, 3)
+  )
+  geometry.setIndex([...shape.indices])
+  const material = new MeshBasicMaterial({ side: DoubleSide })
+  const surface = new Mesh(geometry, material)
+  const hit = (
+    origin: [number, number, number],
+    direction: [number, number, number]
+  ) =>
+    new Raycaster(
+      new Vector3(...origin),
+      new Vector3(...direction)
+    ).intersectObject(surface)
+  try {
+    for (let bay = 0; bay < 4; bay++) {
+      for (const offset of [0.1, 1.75, 3.5, 5.25, 6.9]) {
+        for (const z of [0.1, 25, 49.9])
+          expect(
+            hit([bay * 7 + offset, 10, z], [0, -1, 0]).length
+          ).toBeGreaterThan(0)
+      }
+      for (const x of [bay * 7 + 1, bay * 7 + 6]) {
+        expect(hit([x, 1, -1], [0, 0, 1])[0].point.z).toBeCloseTo(0)
+        expect(hit([x, 1, 51], [0, 0, -1])[0].point.z).toBeCloseTo(50)
+      }
+      expect(hit([bay * 7 + 3.5, 1, -1], [0, 0, 1])).toHaveLength(0)
+    }
+    for (const z of [0.1, 25, 49.9]) {
+      expect(hit([-1, 1, z], [1, 0, 0])[0].point.x).toBeCloseTo(0)
+      expect(hit([29, 1, z], [-1, 0, 0])[0].point.x).toBeCloseTo(28)
+      expect(hit([6.8, 1, z], [1, 0, 0])[0].point.x).toBeCloseTo(28)
+    }
+  } finally {
+    geometry.dispose()
+    material.dispose()
+  }
+})

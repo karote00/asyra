@@ -186,8 +186,35 @@ function SceneWorkspace() {
       event.preventDefault()
       runtime.zoom(event.deltaY)
     }
+    const shortcut = (event: KeyboardEvent) => {
+      if (
+        !(event.metaKey || event.ctrlKey) ||
+        event.altKey ||
+        event.shiftKey ||
+        event.repeat
+      )
+        return
+      const element = event.target
+      if (
+        element instanceof HTMLElement &&
+        (element.isContentEditable ||
+          element.tagName === 'TEXTAREA' ||
+          (element instanceof HTMLInputElement &&
+            !['range', 'checkbox', 'button'].includes(element.type)))
+      )
+        return
+      if (event.code !== 'Digit1' && event.code !== 'Digit0') return
+      event.preventDefault()
+      event.stopPropagation()
+      if (event.code === 'Digit1') runtime.fit()
+      else runtime.actualSize()
+    }
     target.addEventListener('wheel', wheel, { passive: false })
-    return () => target.removeEventListener('wheel', wheel)
+    window.addEventListener('keydown', shortcut, true)
+    return () => {
+      target.removeEventListener('wheel', wheel)
+      window.removeEventListener('keydown', shortcut, true)
+    }
   }, [runtime])
   const previous = useRef<{ x: number; y: number; id: number } | null>(null)
   return (
@@ -235,7 +262,9 @@ function SceneWorkspace() {
           onPointerMove={(event) => {
             const p = previous.current
             if (!p || p.id !== event.pointerId || !runtime) return
-            runtime.orbit(event.clientX - p.x, event.clientY - p.y)
+            if (event.shiftKey)
+              runtime.pan(event.clientX - p.x, event.clientY - p.y)
+            else runtime.orbit(event.clientX - p.x, event.clientY - p.y)
             previous.current = { ...p, x: event.clientX, y: event.clientY }
           }}
           onPointerUp={() => {
@@ -262,8 +291,9 @@ function SceneWorkspace() {
           </div>
         )}
         {runtime && <CameraToolbar runtime={runtime} onError={setError} />}
+        {runtime && <ZoomControls runtime={runtime} />}
         <div className="pointer-events-none absolute bottom-5 left-5 text-[10px] text-[#7b8873]">
-          拖曳旋轉 - 滾輪縮放 - 方向鍵調整視角
+          拖曳旋轉 - Shift 拖曳平移 - 滾輪縮放
         </div>
         <div className="pointer-events-none absolute bottom-5 right-5 flex items-center gap-2 rounded-full bg-white/60 px-3 py-1 text-[10px] text-[#607350]">
           <span className="h-1.5 w-1.5 rounded-full bg-[#819c4d]" />
@@ -303,6 +333,30 @@ function CameraToolbar({
     </div>
   )
 }
+function ZoomControls({ runtime }: { runtime: FarmRuntime }) {
+  const percent = useSyncExternalStore(runtime.subscribeZoom, runtime.getZoom)
+  return (
+    <div className="absolute right-4 top-28 flex gap-1 rounded-lg border border-white/80 bg-[#f9fbf4]/90 p-1 text-[11px] text-[#527048] sm:top-16">
+      <button
+        onClick={runtime.fit}
+        title="適合畫面（⌘1）"
+        className="rounded px-3 py-1.5 hover:bg-[#e3e9db]"
+      >
+        適合畫面 <span className="text-[#8d9985]">⌘1</span>
+      </button>
+      <button
+        onClick={runtime.actualSize}
+        title="恢復 100%（⌘0）"
+        aria-label="恢復 100% 縮放"
+        className="min-w-20 rounded px-3 py-1.5 font-mono hover:bg-[#e3e9db]"
+      >
+        <span data-testid="zoom-percent">{percent}%</span>{' '}
+        <span className="text-[#8d9985]">⌘0</span>
+      </button>
+    </div>
+  )
+}
+
 function Controls({
   runtime,
   onError

@@ -3,9 +3,11 @@ import { expect, it, vi } from 'vitest'
 import * as projection from '../../render-app/site-projection'
 import { ThreeEngine, type GraphicsDriver } from '../../engine/three-engine'
 import { bootstrap } from '../bootstrap'
+import * as navigation from '../../render-app/camera-navigation'
 
 it('keeps one geometry construction through navigation and queued display changes, then retires it', async () => {
   const build = vi.spyOn(projection, 'buildSiteMeshes')
+  const measure = vi.spyOn(navigation, 'measureScene')
   const driver: GraphicsDriver = {
     domElement: document.createElement('canvas'),
     autoClear: true,
@@ -26,8 +28,10 @@ it('keeps one geometry construction through navigation and queued display change
       disconnect = disconnect
     }
   )
+  const host = document.createElement('div')
+  host.getBoundingClientRect = () => new DOMRect(0, 0, 640, 480)
   const runtime = await bootstrap(
-    document.createElement('div'),
+    host,
     () =>
       new ThreeEngine({
         createDriver: () => driver,
@@ -53,8 +57,15 @@ it('keeps one geometry construction through navigation and queued display change
     for (let i = 0; i < 20; i++) {
       runtime.orbit(2, 1)
       runtime.zoom(1)
+      runtime.pan(4, -2)
       flush()
     }
+    runtime.fit()
+    flush()
+    runtime.actualSize()
+    flush()
+    expect(runtime.getZoom()).toBe(100)
+    expect(measure).toHaveBeenCalledTimes(1)
     expect(notify).not.toHaveBeenCalled()
     expect(runtime.getView()).toBe(initial)
     expect(build).toHaveBeenCalledTimes(1)
@@ -82,6 +93,7 @@ it('keeps one geometry construction through navigation and queued display change
     expect(() => runtime.orbit(1, 1)).toThrow()
     await runtime.dispose()
     build.mockRestore()
+    measure.mockRestore()
     vi.unstubAllGlobals()
   }
 })

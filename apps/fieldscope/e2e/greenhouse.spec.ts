@@ -109,3 +109,94 @@ test('real greenhouse route exposes the structure, section, inner aisle and resp
   })
   expect(errors).toEqual([])
 })
+
+test('film is visible by default and Shift drag, Command 1 and Command 0 operate the real canvas', async ({
+  page
+}, testInfo) => {
+  await page.goto('/')
+  await expect(page.getByText('空間模型已就緒')).toBeVisible()
+  await expect(page.getByLabel('覆膜不透明度', { exact: true })).toHaveValue(
+    '60'
+  )
+  const settle = () =>
+    page.evaluate(
+      () =>
+        new Promise<void>((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+        )
+    )
+  await settle()
+  const canvas = page.locator('canvas')
+  const covered = await canvas.screenshot()
+  await page.getByLabel('塑膠覆膜', { exact: true }).uncheck()
+  await settle()
+  expect((await canvas.screenshot()).equals(covered)).toBe(false)
+  await page.getByLabel('塑膠覆膜', { exact: true }).check()
+  const scene = page.getByTestId('scene')
+  const bounds = await scene.boundingBox()
+  if (!bounds) throw new Error('Missing canvas bounds')
+  await settle()
+  const beforePan = await canvas.screenshot()
+  await page.mouse.move(
+    bounds.x + bounds.width / 2,
+    bounds.y + bounds.height / 2
+  )
+  await page.keyboard.down('Shift')
+  await page.mouse.down()
+  await page.mouse.move(
+    bounds.x + bounds.width / 2 + 100,
+    bounds.y + bounds.height / 2 + 40,
+    { steps: 8 }
+  )
+  await page.mouse.up()
+  await page.keyboard.up('Shift')
+  await settle()
+  expect((await canvas.screenshot()).equals(beforePan)).toBe(false)
+  await expect(page.getByTestId('zoom-percent')).toHaveText('100%')
+  await page.mouse.wheel(0, -300)
+  await expect(page.getByTestId('zoom-percent')).not.toHaveText('100%')
+  await page.keyboard.press('Meta+0')
+  await expect(page.getByTestId('zoom-percent')).toHaveText('100%')
+  await page.keyboard.press('Meta+1')
+  await settle()
+  await page.screenshot({
+    path: testInfo.outputPath('film-fit.png'),
+    fullPage: true,
+    animations: 'disabled'
+  })
+  // The fit shortcut must match its button route, including after a displaced view.
+  const fitted = await canvas.screenshot()
+  await page.mouse.wheel(0, -300)
+  await page.getByTitle('適合畫面（⌘1）').click()
+  await settle()
+  const refitted = await canvas.screenshot()
+  // Re-solving the perspective fit can change subpixel edge rounding, not the view.
+  const difference = await page.evaluate(
+    async ({ first, second }) => {
+      const pixels = async (data: string) => {
+        const image = await createImageBitmap(
+          await (await fetch(`data:image/png;base64,${data}`)).blob()
+        )
+        const buffer = document.createElement('canvas')
+        buffer.width = image.width
+        buffer.height = image.height
+        const context = buffer.getContext('2d')
+        if (!context) throw new Error('Missing comparison canvas')
+        context.drawImage(image, 0, 0)
+        image.close()
+        return context.getImageData(0, 0, buffer.width, buffer.height).data
+      }
+      const a = await pixels(first),
+        b = await pixels(second)
+      if (a.length !== b.length)
+        throw new Error('Screenshot dimensions changed')
+      let delta = 0
+      for (let i = 0; i < a.length; i++) delta += Math.abs(a[i] - b[i])
+      return delta / a.length
+    },
+    { first: fitted.toString('base64'), second: refitted.toString('base64') }
+  )
+  expect(difference).toBeLessThan(0.1)
+  await page.keyboard.press('Meta+0')
+  await expect(page.getByTestId('zoom-percent')).toHaveText('100%')
+})

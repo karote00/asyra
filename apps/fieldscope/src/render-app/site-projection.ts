@@ -44,7 +44,7 @@ export interface ViewState {
 }
 export const INITIAL_VIEW: ViewState = {
   layers: INITIAL_LAYERS,
-  filmOpacity: 0.16,
+  filmOpacity: 0.6,
   camera: 'overview'
 }
 
@@ -151,7 +151,7 @@ export function buildSiteMeshes(): SpatialFrame['meshes'] {
     mesh('barriers', barriers, 0x182623),
     mesh('steel', steel, 0x8a9c9b),
     mesh('dimensions', dimensions, 0x326c55),
-    mesh('film', film, 0xe3f2ed, INITIAL_VIEW.filmOpacity)
+    mesh('film', film, 0xf3f5ee, INITIAL_VIEW.filmOpacity)
   ]
 }
 
