@@ -15,7 +15,7 @@ export default defineConfig(({ command }) => {
     base: './',
     server,
     preview: server,
-    build: { target: 'es2022' },
+    build: { target: 'es2022', outDir: 'dist/frontend' },
     worker: { format: 'es' }
   }
 })
