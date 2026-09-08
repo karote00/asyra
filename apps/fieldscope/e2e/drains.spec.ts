@@ -46,7 +46,9 @@ test('rounded drain mouth is visible through the real front camera', async ({
   )
   await page.mouse.up()
   await page.keyboard.up('Shift')
+  await page.keyboard.down('Alt')
   await page.mouse.wheel(0, -10000)
+  await page.keyboard.up('Alt')
   await expect(page.getByTestId('zoom-percent')).toHaveText('10000%')
   await page.screenshot({
     path: testInfo.outputPath('rounded-drain-mouth.png'),

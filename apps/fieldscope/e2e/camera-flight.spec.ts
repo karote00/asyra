@@ -42,3 +42,42 @@ test('focused canvas moves with W/S and right-drag looks around without changing
     page.getByRole('button', { name: '復原 ⌘Z', exact: true })
   ).toBeDisabled()
 })
+
+test('wheel travels in world space and right-wheel changes speed without moving the camera', async ({
+  page
+}) => {
+  await page.goto('/')
+  await expect(page.getByText('空間模型已就緒')).toBeVisible()
+  const scene = page.getByTestId('scene')
+  const canvas = page.locator('canvas')
+  await canvas.hover()
+  const initial = await canvas.screenshot()
+  await page.mouse.wheel(0, -600)
+  await expect(page.getByTestId('zoom-percent')).toHaveText('100%')
+  expect((await canvas.screenshot()).equals(initial)).toBe(false)
+  await scene.focus()
+  await page.keyboard.press('Shift')
+  // Speed controls overlay the canvas and intentionally change during tuning.
+  const cameraImage = () =>
+    canvas.screenshot({
+      mask: [
+        page.getByRole('slider', { name: '鏡頭移動速度' }),
+        page.getByTestId('movement-speed')
+      ]
+    })
+  const traveled = await cameraImage()
+  await page.mouse.down({ button: 'right' })
+  await page.mouse.wheel(0, -400)
+  await expect(page.getByTestId('movement-speed')).toHaveText('13.35 m/s')
+  await page.mouse.up({ button: 'right' })
+  await page.keyboard.press('Shift')
+  await expect(page.getByTestId('movement-speed')).toHaveText('13.35 m/s')
+  expect((await cameraImage()).equals(traveled)).toBe(true)
+  await page.keyboard.down('Alt')
+  await page.mouse.wheel(0, -Math.log(15.21) * 1000)
+  await page.keyboard.up('Alt')
+  await expect(page.getByTestId('zoom-percent')).toHaveText('1521%')
+  await expect(page.getByTestId('movement-speed')).toHaveText('13.35 m/s')
+  await page.getByTitle('恢復 100%（⌘0）').click()
+  await expect(page.getByTestId('movement-speed')).toHaveText('13.35 m/s')
+})

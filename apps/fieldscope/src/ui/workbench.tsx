@@ -235,7 +235,19 @@ function SceneWorkspace({
     if (!target || !runtime) return
     const wheel = (event: WheelEvent) => {
       event.preventDefault()
-      runtime.zoom(event.deltaY)
+      let unit = 1
+      if (event.deltaMode === 1) unit = 16
+      if (event.deltaMode === 2) unit = target.clientHeight
+      const delta = event.deltaY * unit
+      if (previous.current?.button === 2) {
+        runtime.setMovementSpeed(
+          Math.max(
+            0.01,
+            Math.min(60, runtime.getMovementSpeed() * Math.exp(-delta * 0.002))
+          )
+        )
+      } else if (event.altKey) runtime.zoom(delta)
+      else runtime.move(0, 0, -delta * 0.0015 * (event.shiftKey ? 4 : 1))
     }
     const shortcut = (event: KeyboardEvent) => {
       if (!(event.metaKey || event.ctrlKey) || event.altKey || event.repeat)
@@ -404,8 +416,9 @@ function SceneWorkspace({
         )}
         {runtime && <CameraToolbar runtime={runtime} onError={setError} />}
         {runtime && <ZoomControls runtime={runtime} />}
+        {runtime && <MovementSpeedControl runtime={runtime} />}
         <div className="pointer-events-none absolute bottom-5 left-5 max-w-[calc(100%-10rem)] text-[10px] text-[#7b8873]">
-          左拖旋轉 - Shift 左拖平移 - 右拖轉頭 - 滾輪縮放
+          左拖旋轉 - Shift 左拖平移 - 右拖轉頭 - 滾輪前後
         </div>
         <div className="pointer-events-none absolute bottom-5 right-5 flex items-center gap-2 rounded-full bg-white/60 px-3 py-1 text-[10px] text-[#607350]">
           <span className="h-1.5 w-1.5 rounded-full bg-[#819c4d]" />
@@ -493,6 +506,37 @@ function CameraToolbar({
         </button>
       ))}
     </div>
+  )
+}
+function MovementSpeedControl({ runtime }: { runtime: FarmRuntime }) {
+  const speed = useSyncExternalStore(
+    runtime.subscribeMovementSpeed,
+    runtime.getMovementSpeed
+  )
+  return (
+    <label
+      className="absolute right-4 top-40 flex items-center gap-2 rounded-lg bg-[#f9fbf4]/90 px-3 py-2 text-[11px] text-[#527048]"
+      title="右鍵＋滾輪調速；Shift 加速 4 倍；Alt＋滾輪光學縮放"
+    >
+      移動速度
+      <input
+        type="range"
+        aria-label="鏡頭移動速度"
+        min={Math.log(0.01)}
+        max={Math.log(60)}
+        step="any"
+        value={Math.log(speed)}
+        className="w-20"
+        onChange={(event) =>
+          runtime.setMovementSpeed(
+            Math.max(0.01, Math.min(60, Math.exp(Number(event.target.value))))
+          )
+        }
+      />
+      <output data-testid="movement-speed" className="min-w-16 font-mono">
+        {speed.toFixed(2)} m/s
+      </output>
+    </label>
   )
 }
 function ZoomControls({ runtime }: { runtime: FarmRuntime }) {

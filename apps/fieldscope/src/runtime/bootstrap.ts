@@ -68,6 +68,8 @@ export async function bootstrap(
   let aspect = width / height
   let zoomPercent = 100
   const zoomListeners = new Set<() => void>()
+  let movementSpeed = 6
+  const speedListeners = new Set<() => void>()
   const listeners = new Set<() => void>()
   const assertLive = () => {
     if (closed) throw new Error('Runtime is closed')
@@ -261,14 +263,7 @@ export async function bootstrap(
     api: {
       move: (right: number, up: number, forward: number) => {
         assertLive()
-        // Preserve travel speed at high optical zoom without losing the
-        // separate metre-scale overview and centimetre-scale joint presets.
-        const referenceSpan =
-          2 *
-          cameraDistance(referenceCamera) *
-          Math.tan((referenceCamera.fov * Math.PI) / 360)
-        const movementScale =
-          (referenceSpan / 5) * Math.max(0.3, Math.sqrt(100 / readZoom(camera)))
+        const movementScale = movementSpeed / 1.5
         publishCamera(
           moveCamera(
             camera,
@@ -277,6 +272,14 @@ export async function bootstrap(
             forward * movementScale
           )
         )
+      },
+      setMovementSpeed: (speed: number) => {
+        assertLive()
+        if (!Number.isFinite(speed) || speed < 0.01 || speed > 60)
+          throw new Error('Movement speed must be between 0.01 and 60 m/s')
+        if (speed === movementSpeed) return
+        movementSpeed = speed
+        speedListeners.forEach((listener) => listener())
       },
       look: (dx: number, dy: number) => {
         assertLive()
@@ -385,6 +388,7 @@ export async function bootstrap(
     configListeners.clear()
     listeners.clear()
     zoomListeners.clear()
+    speedListeners.clear()
     disposePromise = Promise.resolve().then(async () => {
       try {
         core.unregisterRenderLayer(SPATIAL_LAYER_NAME)
@@ -444,6 +448,15 @@ export async function bootstrap(
       getUndoDepth: () => core.getUndoHistoryDepth(),
       getView: () => view,
       getZoom: () => zoomPercent,
+      getMovementSpeed: () => movementSpeed,
+      subscribeMovementSpeed: (listener: () => void) => {
+        assertLive()
+        speedListeners.add(listener)
+        return () => {
+          speedListeners.delete(listener)
+        }
+      },
+      setMovementSpeed: cameraFeature.api.setMovementSpeed,
       subscribeZoom: (listener: () => void) => {
         assertLive()
         zoomListeners.add(listener)

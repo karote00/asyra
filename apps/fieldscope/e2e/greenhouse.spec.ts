@@ -154,7 +154,9 @@ test('film is visible by default and Shift drag, Command 1 and Command 0 operate
   await settle()
   expect((await canvas.screenshot()).equals(beforePan)).toBe(false)
   await expect(page.getByTestId('zoom-percent')).toHaveText('100%')
+  await page.keyboard.down('Alt')
   await page.mouse.wheel(0, -300)
+  await page.keyboard.up('Alt')
   await expect(page.getByTestId('zoom-percent')).not.toHaveText('100%')
   await page.keyboard.press('Meta+0')
   await expect(page.getByTestId('zoom-percent')).toHaveText('100%')
@@ -167,7 +169,9 @@ test('film is visible by default and Shift drag, Command 1 and Command 0 operate
   })
   // The fit shortcut must match its button route, including after a displaced view.
   const fitted = await canvas.screenshot()
+  await page.keyboard.down('Alt')
   await page.mouse.wheel(0, -300)
+  await page.keyboard.up('Alt')
   await page.getByTitle('適合畫面（⌘1）').click()
   // Compare both routes with the same canvas focus outline.
   await scene.focus()
@@ -265,7 +269,9 @@ test('trellis net and top cable ties are visible and independently controlled', 
   await page.getByRole('button', { name: '夾具近看', exact: true }).click()
   const canvas = page.locator('canvas')
   await canvas.hover()
+  await page.keyboard.down('Alt')
   await page.mouse.wheel(0, 900)
+  await page.keyboard.up('Alt')
   const settle = () =>
     page.evaluate(
       () =>
@@ -316,15 +322,21 @@ test('joint inspection reaches 10000 percent and restores the baseline', async (
   await page.getByRole('button', { name: '夾具近看', exact: true }).click()
   const scene = page.getByTestId('scene')
   await scene.hover()
+  await page.keyboard.down('Alt')
   await page.mouse.wheel(0, -Math.log(10) * 1000)
+  await page.keyboard.up('Alt')
   await expect(page.getByTestId('zoom-percent')).toHaveText('1000%')
   await page.screenshot({
     path: testInfo.outputPath('joint-1000.png'),
     fullPage: true
   })
+  await page.keyboard.down('Alt')
   await page.mouse.wheel(0, -10000)
+  await page.keyboard.up('Alt')
   await expect(page.getByTestId('zoom-percent')).toHaveText('10000%')
+  await page.keyboard.down('Alt')
   await page.mouse.wheel(0, -500)
+  await page.keyboard.up('Alt')
   await expect(page.getByTestId('zoom-percent')).toHaveText('10000%')
   await page.screenshot({
     path: testInfo.outputPath('joint-10000.png'),
