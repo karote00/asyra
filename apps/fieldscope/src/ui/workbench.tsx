@@ -1,6 +1,12 @@
+import {
+  ConfigurationRuntime,
+  ConfigurationEditor,
+  useFarmConfiguration
+} from './configuration-editor'
+import { configurationSite } from '../domain/farm-configuration'
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { bootstrap, type FarmRuntime } from '../runtime/bootstrap'
-import { BED_WIDTHS, CROPS } from '../domain/greenhouse'
+import { CROPS } from '../domain/greenhouse'
 import {
   LAYER_LABELS,
   type CameraMode,
@@ -46,76 +52,101 @@ function Brand() {
 }
 
 export function Workbench() {
+  const [runtime, setRuntime] = useState<FarmRuntime | null>(null)
   return (
-    <div className="min-h-screen">
-      <header className="flex min-h-20 flex-wrap items-center justify-between gap-4 border-b border-[#dce1d6] bg-[#fafbf7] px-5 py-4 lg:px-8">
-        <Brand />
-        <div className="flex items-center gap-7 text-sm">
-          <span className="font-medium text-[#305d44]">溫室工作站</span>
-          <span className="hidden text-[#8d968d] sm:inline">
-            採收機器人監控
-          </span>
-          <span className="rounded-full border border-[#dce4cf] bg-[#edf2e5] px-3 py-1 text-xs text-[#62764e]">
-            場景建置階段
-          </span>
-        </div>
-      </header>
-      <main className="mx-auto max-w-[1900px] px-4 py-6 lg:px-8">
-        <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <div className="mb-2 text-[10px] font-medium tracking-[0.22em] text-[#8b9884]">
-              FIELD ENVIRONMENT / 01
-            </div>
-            <h1 className="text-2xl font-semibold tracking-tight">
-              從一座溫室，開始理解採收。
-            </h1>
-            <p className="mt-2 text-sm text-[#818b7d]">
-              四連棟塑膠布溫室的空間原型，為未來每一次採收建立共同座標。
-            </p>
+    <ConfigurationRuntime.Provider value={runtime}>
+      <div className="min-h-screen">
+        <header className="flex min-h-20 flex-wrap items-center justify-between gap-4 border-b border-[#dce1d6] bg-[#fafbf7] px-5 py-4 lg:px-8">
+          <Brand />
+          <div className="flex items-center gap-7 text-sm">
+            <span className="font-medium text-[#305d44]">溫室工作站</span>
+            <span className="hidden text-[#8d968d] sm:inline">
+              採收機器人監控
+            </span>
+            <span className="rounded-full border border-[#dce4cf] bg-[#edf2e5] px-3 py-1 text-xs text-[#62764e]">
+              場景建置階段
+            </span>
           </div>
-          <div className="flex gap-6 text-right">
-            <Metric value="1,400" unit="m²" label="溫室占地" />
-            <Metric value="4" unit="棟" label="相連溫室" />
-            <Metric value="5.0" unit="m" label="圓拱最高點" />
+        </header>
+        <main className="mx-auto max-w-[1900px] px-4 py-6 lg:px-8">
+          <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <div className="mb-2 text-[10px] font-medium tracking-[0.22em] text-[#8b9884]">
+                FIELD ENVIRONMENT / 01
+              </div>
+              <h1 className="text-2xl font-semibold tracking-tight">
+                從一座溫室，開始理解採收。
+              </h1>
+              <p className="mt-2 text-sm text-[#818b7d]">
+                四連棟塑膠布溫室的空間原型，為未來每一次採收建立共同座標。
+              </p>
+            </div>
+            <div className="flex gap-6 text-right">
+              <FarmMetrics />
+            </div>
           </div>
-        </div>
-        <SceneWorkspace />
-        <div className="mt-6 grid gap-5 lg:grid-cols-[1.5fr_1fr]">
-          <CrossSection />
-          <section className="rounded-2xl border border-[#dde3d8] bg-[#fafbf7] p-5">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-sm font-semibold">
-                接下來，讓田區成為可測試的環境
-              </h2>
-              <span className="text-[10px] tracking-widest text-[#8c967f]">
-                ROADMAP
-              </span>
-            </div>
-            <div className="grid grid-cols-3 gap-4 text-xs">
-              <Roadmap
-                step="02"
-                title="可替換栽培"
-                text="攀藤網、竹竿、彎曲鐵架與作物行距。"
-              />
-              <Roadmap
-                step="03"
-                title="採收模擬"
-                text="路徑、手臂、枝葉接觸與載運穩定性。"
-              />
-              <Roadmap
-                step="04"
-                title="實機監控"
-                text="同步姿態、任務事件、異常與重播。"
-              />
-            </div>
-          </section>
-        </div>
-        <footer className="mt-5 flex flex-wrap justify-between gap-2 text-[11px] text-[#8b9487]">
-          <span>田巡 FieldScope - 以真實尺度，建立採收的下一步。</span>
-          <span>Asyra + Three.js - 公尺座標</span>
-        </footer>
-      </main>
-    </div>
+          <SceneWorkspace onReady={setRuntime} />
+          {runtime && <ConfigurationEditor runtime={runtime} />}
+          <div className="mt-6 grid gap-5 lg:grid-cols-[1.5fr_1fr]">
+            <CrossSection />
+            <section className="rounded-2xl border border-[#dde3d8] bg-[#fafbf7] p-5">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-sm font-semibold">
+                  接下來，讓田區成為可測試的環境
+                </h2>
+                <span className="text-[10px] tracking-widest text-[#8c967f]">
+                  ROADMAP
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-4 text-xs">
+                <Roadmap
+                  step="02"
+                  title="可替換栽培"
+                  text="攀藤網、竹竿、彎曲鐵架與作物行距。"
+                />
+                <Roadmap
+                  step="03"
+                  title="採收模擬"
+                  text="路徑、手臂、枝葉接觸與載運穩定性。"
+                />
+                <Roadmap
+                  step="04"
+                  title="實機監控"
+                  text="同步姿態、任務事件、異常與重播。"
+                />
+              </div>
+            </section>
+          </div>
+          <footer className="mt-5 flex flex-wrap justify-between gap-2 text-[11px] text-[#8b9487]">
+            <span>田巡 FieldScope - 以真實尺度，建立採收的下一步。</span>
+            <span>Asyra + Three.js - 公尺座標</span>
+          </footer>
+        </main>
+      </div>
+    </ConfigurationRuntime.Provider>
+  )
+}
+function FarmMetrics() {
+  const config = useFarmConfiguration()
+  return (
+    <>
+      <Metric
+        value={(config.width * 4 * config.length).toLocaleString()}
+        unit="m²"
+        label="溫室占地"
+      />
+      <Metric value="4" unit="棟" label="相連溫室" />
+      <Metric value={config.height.toFixed(1)} unit="m" label="圓拱最高點" />
+    </>
+  )
+}
+function SceneDimensions() {
+  const config = useFarmConfiguration()
+  return (
+    <>
+      {(config.width * 4).toFixed(1)} × {config.length.toFixed(1)} ×{' '}
+      {config.height.toFixed(1)} m
+    </>
   )
 }
 function Metric({
@@ -155,7 +186,11 @@ function Roadmap({
   )
 }
 
-function SceneWorkspace() {
+function SceneWorkspace({
+  onReady
+}: {
+  onReady: (runtime: FarmRuntime) => void
+}) {
   const host = useRef<HTMLDivElement>(null)
   const [runtime, setRuntime] = useState<FarmRuntime | null>(null)
   const [error, setError] = useState('')
@@ -171,6 +206,7 @@ function SceneWorkspace() {
           return
         }
         setRuntime(value)
+        onReady(value)
       })
       .catch((e) => {
         if (!retired) setError(String(e))
@@ -179,7 +215,7 @@ function SceneWorkspace() {
       retired = true
       if (current) void current.dispose()
     }
-  }, [])
+  }, [onReady])
   useEffect(() => {
     const target = host.current
     if (!target || !runtime) return
@@ -188,12 +224,7 @@ function SceneWorkspace() {
       runtime.zoom(event.deltaY)
     }
     const shortcut = (event: KeyboardEvent) => {
-      if (
-        !(event.metaKey || event.ctrlKey) ||
-        event.altKey ||
-        event.shiftKey ||
-        event.repeat
-      )
+      if (!(event.metaKey || event.ctrlKey) || event.altKey || event.repeat)
         return
       const element = event.target
       if (
@@ -204,7 +235,19 @@ function SceneWorkspace() {
             !['range', 'checkbox', 'button'].includes(element.type)))
       )
         return
-      if (event.code !== 'Digit1' && event.code !== 'Digit0') return
+      if (event.code === 'KeyZ') {
+        event.preventDefault()
+        event.stopPropagation()
+        void (event.shiftKey ? runtime.redo() : runtime.undo()).catch((e) =>
+          setError(String(e))
+        )
+        return
+      }
+      if (
+        event.shiftKey ||
+        (event.code !== 'Digit1' && event.code !== 'Digit0')
+      )
+        return
       event.preventDefault()
       event.stopPropagation()
       if (event.code === 'Digit1') runtime.fit()
@@ -226,7 +269,7 @@ function SceneWorkspace() {
             四連棟溫室
           </div>
           <div className="font-mono text-[10px] tracking-wide text-[#82917c]">
-            28.0 × 50.0 × 5.0 m
+            <SceneDimensions />
           </div>
         </div>
         <div
@@ -434,16 +477,16 @@ function Controls({
           ))}
         </div>
         <p className="mt-2 text-[10px] leading-relaxed text-[#8a957d]">
-          已配置 1,992 根 Ø20mm 鋼管，埋深 15cm、頂高
-          3.15m；縱向連接管以跨接彈簧夾銜接橫樑。15cm 方格攀爬網上緣齊橫樑
-          3m，以束帶固定，網底離土壤 45cm。尚未配置植株。
+          <PlantingSummary />
         </p>
       </div>
       <details className="px-5 py-4 text-[11px] text-[#7c8971]">
         <summary className="font-medium">建模假設與結構參考</summary>
         <p className="mt-3 leading-relaxed">
-          簷高 3m；拱架每 1m；立柱每 5m；拱管直徑 48mm；立柱直徑 76mm；溝深
-          0.25m；擋板高 0.35m；端面開口寬 2m、高 2.5m。通道淨寬須扣除立柱。
+          橫樑高度隨總高計算；拱架每 1m；立柱每 5m，尾端補齊；拱管直徑
+          48mm；立柱直徑 76mm；溝深 0.25m；擋板高
+          0.35m；端面開口依跨寬與簷高縮限，上限寬 2m、高
+          2.5m。通道淨寬須扣除立柱。
         </p>
         <p className="mt-2 leading-relaxed">
           這是尺寸與構造模型，尚未進行耐風、承載或機器人通行驗證。
@@ -461,12 +504,18 @@ function Controls({
   )
 }
 function CrossSection() {
+  const config = useFarmConfiguration()
+  const site = configurationSite(config)
   return (
     <section className="rounded-2xl border border-[#dde3d8] bg-[#fafbf7] p-5">
       <div className="mb-4 flex items-center justify-between gap-3">
         <h2 className="text-sm font-semibold">每棟橫向配置</h2>
         <span className="font-mono text-[10px] text-[#8d9880]">
-          7.0 m = 0.35 + 6.3 + 0.35
+          {config.width.toFixed(2)}m = {site.margin.toFixed(2)} +{' '}
+          {config.strips
+            .reduce((sum, strip) => sum + strip.width, 0)
+            .toFixed(2)}{' '}
+          + {site.margin.toFixed(2)}
         </span>
       </div>
       <div
@@ -474,32 +523,55 @@ function CrossSection() {
         aria-label="土壤與下凹水溝的等比例寬度示意"
       >
         <div
-          style={{ flex: 0.35 }}
+          style={{ flex: site.margin }}
           className="h-6 border-b border-[#cbd3be] bg-[#e3e8db]"
         />
-        {BED_WIDTHS.map((width, i) => (
+        {config.strips.map(({ width, kind }, i) => (
           <div
             key={i}
             style={{ flex: width }}
-            className={`flex justify-center pt-1 font-mono text-[10px] ${i % 2 === 0 ? 'h-7 border-r border-[#c8bca7] bg-[#c6b497] text-[#6c5a42]' : 'mt-4 h-3 border-b border-[#91aeb0] bg-[#c0d3d1] text-[#557c7f]'}`}
+            className={`flex justify-center pt-1 font-mono text-[10px] ${kind === 'soil' ? 'h-7 border-r border-[#c8bca7] bg-[#c6b497] text-[#6c5a42]' : 'mt-4 h-3 border-b border-[#91aeb0] bg-[#c0d3d1] text-[#557c7f]'}`}
           >
             {width}
           </div>
         ))}
         <div
-          style={{ flex: 0.35 }}
+          style={{ flex: site.margin }}
           className="h-6 border-b border-[#cbd3be] bg-[#e3e8db]"
         />
       </div>
       <div className="mt-2 flex flex-wrap gap-4 text-[10px] text-[#85917a]">
-        <span>■ 土壤 5.4m</span>
-        <span className="text-[#668b8a]">■ 水溝 3 × 0.3m</span>
-        <span>兩側各留 0.35m</span>
+        <span>
+          ■ 土壤{' '}
+          {config.strips
+            .filter((strip) => strip.kind === 'soil')
+            .reduce((sum, strip) => sum + strip.width, 0)
+            .toFixed(2)}
+          m
+        </span>
+        <span className="text-[#668b8a]">
+          ■ 水道{' '}
+          {config.strips.filter((strip) => strip.kind === 'drain').length} 條
+        </span>
+        <span>兩側各留 {site.margin.toFixed(2)}m</span>
       </div>
       <p className="mt-3 text-[11px] leading-relaxed text-[#8a9480]">
-        連棟留白合併為 0.7m
+        連棟留白合併為 {(site.margin * 2).toFixed(2)}m
         走道；黑色硬質防水擋板只設在整體左右最外側。走道與水溝的採收用途，留待栽培配置及機器人規格共同決定。
       </p>
     </section>
+  )
+}
+
+function PlantingSummary() {
+  const config = useFarmConfiguration()
+  const site = configurationSite(config)
+  return (
+    <>
+      Ø20mm 栽培管，埋深 15cm、頂高{' '}
+      {(site.eave + config.topExtension).toFixed(2)}m，縱向間距 60cm。15cm
+      方格網由束帶固定，上緣 {config.netTop}m、下緣 {config.netBottom}
+      m。尚未配置植株。
+    </>
   )
 }

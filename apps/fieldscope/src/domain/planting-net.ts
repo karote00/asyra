@@ -1,4 +1,8 @@
-import { SITE, type Point3 } from './greenhouse'
+import {
+  DEFAULT_CONFIGURATION,
+  type FarmConfiguration
+} from './farm-configuration'
+import { type Point3 } from './greenhouse'
 import { SUPPORT_LAYOUT, type createSupportAssembly } from './planting-supports'
 
 /** Metres. Mesh and cord dimensions are provisional planting-system choices. */
@@ -10,22 +14,23 @@ export const NET_LAYOUT = Object.freeze({
   tieThickness: 0.001
 })
 type Assembly = ReturnType<typeof createSupportAssembly>
-export function createPlantingNet(assembly: Assembly) {
+export function createPlantingNet(
+  assembly: Assembly,
+  config: FarmConfiguration = DEFAULT_CONFIGURATION
+) {
   const strands: {
     bay: number
     diameter: number
     points: readonly Point3[]
   }[] = []
   const ties: { bay: number; center: Point3; radius: number }[] = []
-  const rows = assembly.tubes.filter(
-    (tube) => tube.z === SUPPORT_LAYOUT.endInset
-  )
+  const rows = assembly.tubes.filter((tube) => tube.z === config.startInset)
   for (const row of rows) {
     const line = assembly.tubes.filter(
       (tube) => tube.row === row.row && tube.side === row.side
     )
     const last = line[line.length - 1]
-    const top = SITE.eave
+    const top = config.netTop
     // Put the net against the drain-facing surface, clear of the steel centreline.
     const direction = row.side === 'left' ? 1 : -1
     const x =
@@ -38,18 +43,18 @@ export function createPlantingNet(assembly: Assembly) {
         points: [a, b]
       })
     const verticalIntervals = Math.ceil(
-      (top - NET_LAYOUT.bottom) / NET_LAYOUT.mesh - 1e-9
+      (top - config.netBottom) / NET_LAYOUT.mesh - 1e-9
     )
     const longitudinalIntervals = Math.ceil(
       (last.z - row.z) / NET_LAYOUT.mesh - 1e-9
     )
     for (let i = 0; i <= verticalIntervals; i++) {
-      const y = Math.min(top, NET_LAYOUT.bottom + i * NET_LAYOUT.mesh)
+      const y = Math.min(top, config.netBottom + i * NET_LAYOUT.mesh)
       add([x, y, row.z], [x, y, last.z])
     }
     for (let i = 0; i <= longitudinalIntervals; i++) {
       const z = Math.min(last.z, row.z + i * NET_LAYOUT.mesh)
-      add([x, NET_LAYOUT.bottom, z], [x, top, z])
+      add([x, config.netBottom, z], [x, top, z])
     }
     for (const tube of line)
       ties.push({

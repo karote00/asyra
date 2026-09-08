@@ -1,4 +1,9 @@
-import { SITE, createLayout, type Point3 } from './greenhouse'
+import {
+  DEFAULT_CONFIGURATION,
+  configurationSite,
+  type FarmConfiguration
+} from './farm-configuration'
+import { SITE, createLayout, memberStations, type Point3 } from './greenhouse'
 
 /** Placement is measured to the centreline of each tube, in metres. */
 export const SUPPORT_LAYOUT = Object.freeze({
@@ -19,24 +24,32 @@ export interface SupportPosition {
   z: number
 }
 
-export function createSupportPositions(): SupportPosition[] {
-  const drains = createLayout().strips.filter((strip) => strip.kind === 'drain')
+export function createSupportPositions(
+  config: FarmConfiguration = DEFAULT_CONFIGURATION
+): SupportPosition[] {
+  const site = configurationSite(config)
+  const layout = createLayout(site, config.strips)
+  const drains = layout.strips.filter((strip) => strip.kind === 'drain')
   const intervalCount = Math.floor(
-    (SITE.length - 2 * SUPPORT_LAYOUT.endInset) / SUPPORT_LAYOUT.spacing
+    (site.length - config.startInset - config.endInset) / SUPPORT_LAYOUT.spacing
   )
   return drains.flatMap((drain, row) =>
     (['left', 'right'] as const).flatMap((side) => {
+      const index = layout.strips.indexOf(drain)
+      const adjacent = layout.strips[index + (side === 'left' ? -1 : 1)]
+      if (!adjacent || adjacent.bay !== drain.bay || adjacent.kind !== 'soil')
+        return []
       const x =
         side === 'left'
-          ? drain.x - SUPPORT_LAYOUT.soilInset
-          : drain.x + drain.width + SUPPORT_LAYOUT.soilInset
+          ? drain.x - config.soilInset
+          : drain.x + drain.width + config.soilInset
       return Array.from({ length: intervalCount + 1 }, (_, index) => ({
         bay: drain.bay,
         side,
         row,
         x,
         // Index-based placement avoids accumulated floating-point drift at the far end.
-        z: SUPPORT_LAYOUT.endInset + index * SUPPORT_LAYOUT.spacing
+        z: config.startInset + index * SUPPORT_LAYOUT.spacing
       }))
     })
   )
@@ -44,7 +57,8 @@ export function createSupportPositions(): SupportPosition[] {
 
 export function createSupportTubes(
   height: number = SITE.eave + SUPPORT_LAYOUT.topExtension,
-  embedDepth: number = SUPPORT_LAYOUT.embedDepth
+  embedDepth: number = SUPPORT_LAYOUT.embedDepth,
+  config: FarmConfiguration = DEFAULT_CONFIGURATION
 ) {
   if (
     !Number.isFinite(height) ||
@@ -53,7 +67,7 @@ export function createSupportTubes(
     embedDepth <= 0
   )
     throw new Error('Support height and embed depth must be positive metres')
-  return createSupportPositions().map((position) => ({
+  return createSupportPositions(config).map((position) => ({
     ...position,
     diameter: SUPPORT_LAYOUT.diameter,
     points: [
@@ -74,10 +88,17 @@ export interface SpringClip {
 }
 
 /** Tangent crossed pipes: keep the upright centreline at the requested soil inset. */
-export function createSupportAssembly() {
-  const tubes = createSupportTubes()
-  const rows = tubes.filter((tube) => tube.z === SUPPORT_LAYOUT.endInset)
-  const railY = SITE.eave - (SITE.tubeDiameter + SUPPORT_LAYOUT.diameter) / 2
+export function createSupportAssembly(
+  config: FarmConfiguration = DEFAULT_CONFIGURATION
+) {
+  const site = configurationSite(config)
+  const tubes = createSupportTubes(
+    site.eave + config.topExtension,
+    SUPPORT_LAYOUT.embedDepth,
+    config
+  )
+  const rows = tubes.filter((tube) => tube.z === config.startInset)
+  const railY = site.eave - (site.tubeDiameter + SUPPORT_LAYOUT.diameter) / 2
   const rails = rows.map((row) => {
     const direction = row.side === 'left' ? -1 : 1
     const x = row.x + direction * SUPPORT_LAYOUT.diameter
@@ -86,7 +107,7 @@ export function createSupportAssembly() {
       diameter: SUPPORT_LAYOUT.diameter,
       points: [
         [x, railY, 0],
-        [x, railY, SITE.length]
+        [x, railY, site.length]
       ] as const
     }
   })
@@ -100,7 +121,7 @@ export function createSupportAssembly() {
     secondDiameter: SUPPORT_LAYOUT.diameter
   }))
   for (const rail of rails)
-    for (let z = 0; z <= SITE.length; z += SITE.postSpacing)
+    for (const z of memberStations(site.length, site.postSpacing))
       clips.push({
         bay: rail.bay,
         origin: [rail.points[0][0], railY, z],
@@ -108,7 +129,7 @@ export function createSupportAssembly() {
         secondAxis: [1, 0, 0],
         normal: [0, 1, 0],
         firstDiameter: SUPPORT_LAYOUT.diameter,
-        secondDiameter: SITE.tubeDiameter
+        secondDiameter: site.tubeDiameter
       })
   return { tubes, rails, clips }
 }
@@ -174,12 +195,16 @@ export function springClipWire(clip: SpringClip) {
 }
 
 /** A real upright/rail connection in the first row, used by the detail camera. */
-export function supportJointTarget(): Point3 {
-  const drain = createLayout().strips.find((strip) => strip.kind === 'drain')
-  if (!drain) throw new Error('Support layout requires a drainage channel')
-  return [
-    drain.x - SUPPORT_LAYOUT.soilInset - SUPPORT_LAYOUT.diameter / 2,
-    SITE.eave - (SITE.tubeDiameter + SUPPORT_LAYOUT.diameter) / 2,
-    SUPPORT_LAYOUT.endInset
-  ]
+export function supportJointTarget(
+  config: FarmConfiguration = DEFAULT_CONFIGURATION
+): Point3 {
+  const site = configurationSite(config)
+  const position = createSupportPositions(config)[0]
+  return position
+    ? [
+        position.x - SUPPORT_LAYOUT.diameter / 2,
+        site.eave - (site.tubeDiameter + SUPPORT_LAYOUT.diameter) / 2,
+        position.z
+      ]
+    : [site.width / 2, site.eave, site.length / 2]
 }

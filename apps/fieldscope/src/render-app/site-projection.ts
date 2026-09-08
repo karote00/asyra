@@ -1,15 +1,15 @@
+import {
+  DEFAULT_CONFIGURATION,
+  configurationSite,
+  type FarmConfiguration
+} from '../domain/farm-configuration'
 import { createPlantingNet, NET_LAYOUT } from '../domain/planting-net'
 import {
   createSupportAssembly,
   springClipWire,
   supportJointTarget
 } from '../domain/planting-supports'
-import {
-  SITE,
-  createLayout,
-  createStructure,
-  roofPoint
-} from '../domain/greenhouse'
+import { createLayout, createStructure, roofPoint } from '../domain/greenhouse'
 import { TriangleBuilder } from '../domain/mesh'
 import { readSpatialDescriptor } from '../engine/spatial-contract'
 import type { SpatialFrame, SpatialMesh, SpatialCamera } from './spatial-layer'
@@ -90,20 +90,40 @@ const mesh = (
   }) as SpatialMesh
 })
 
-/** One admitted static geometry product per runtime. View changes never rebuild it. */
-export function buildSiteMeshes(): SiteMesh[] {
-  const { strips, passages } = createLayout()
+/** One admitted static geometry product per applied configuration. View changes never rebuild it. */
+export function buildSiteMeshes(
+  config: FarmConfiguration = DEFAULT_CONFIGURATION
+): SiteMesh[] {
+  const site = configurationSite(config)
+  const totalWidth = site.width * site.bays,
+    depth = site.length,
+    middle = totalWidth / 2,
+    midDepth = depth / 2
+  const doorHalf = Math.min(1, site.width / 4),
+    doorHeight = Math.min(2.5, (site.eave * 5) / 6)
+  const roof = (bay: number, fraction: number, z: number) =>
+    roofPoint(bay, fraction, z, site)
+  const { strips, passages } = createLayout(site, config.strips)
   const builders = Object.fromEntries(
     Object.keys(INITIAL_LAYERS).map((key) => [key, new TriangleBuilder()])
   ) as Record<LayerId, TriangleBuilder>
   const { steel, soil, drains, barriers, film, base, dimensions } = builders
-  for (const member of createStructure()) steel.tube(member)
-  const assembly = createSupportAssembly()
+  for (const member of createStructure(site)) steel.tube(member)
+  const assembly = createSupportAssembly(config)
   for (const tube of [...assembly.tubes, ...assembly.rails])
     builders.supports.tube(tube)
-  const net = createPlantingNet(assembly)
-  for (const strand of net.strands) builders.net.tube(strand)
-  for (const tie of net.ties) {
+  const net = createPlantingNet(assembly, config)
+  const netBuilders = Array.from(
+    { length: site.bays },
+    () => new TriangleBuilder()
+  )
+  for (const strand of net.strands) netBuilders[strand.bay].tube(strand)
+  const tieBuilders = Array.from(
+    { length: Math.ceil(net.ties.length / 500) },
+    () => new TriangleBuilder()
+  )
+  for (const [index, tie] of net.ties.entries()) {
+    const tieBuilder = tieBuilders[Math.floor(index / 500)]
     const [x, y, z] = tie.center
     // A flat nylon band with thickness, locking head and short trimmed tail.
     for (let i = 0; i < 24; i++) {
@@ -122,121 +142,155 @@ export function buildSiteMeshes(): SiteMesh[] {
         outer = inner + NET_LAYOUT.tieThickness
       const low = y - NET_LAYOUT.tieWidth / 2,
         high = y + NET_LAYOUT.tieWidth / 2
-      builders.ties.quad(
+      tieBuilder.quad(
         point(a, outer, low),
         point(b, outer, low),
         point(b, outer, high),
         point(a, outer, high)
       )
-      builders.ties.quad(
+      tieBuilder.quad(
         point(b, inner, low),
         point(a, inner, low),
         point(a, inner, high),
         point(b, inner, high)
       )
-      builders.ties.quad(
+      tieBuilder.quad(
         point(a, inner, high),
         point(a, outer, high),
         point(b, outer, high),
         point(b, inner, high)
       )
-      builders.ties.quad(
+      tieBuilder.quad(
         point(a, outer, low),
         point(a, inner, low),
         point(b, inner, low),
         point(b, outer, low)
       )
     }
-    builders.ties.box([x + tie.radius, y, z], [0.004, 0.006, 0.006])
-    builders.ties.box(
+    tieBuilder.box([x + tie.radius, y, z], [0.004, 0.006, 0.006])
+    tieBuilder.box(
       [x + tie.radius + 0.005, y, z],
       [0.01, NET_LAYOUT.tieWidth, NET_LAYOUT.tieThickness]
     )
   }
   // Batch by bay to keep every admitted index buffer below the engine limit.
-  const clipBuilders = Array.from(
-    { length: SITE.bays },
-    () => new TriangleBuilder()
-  )
-  for (const clip of assembly.clips)
-    clipBuilders[clip.bay].tube(springClipWire(clip))
-  base.box([14, -0.48, 25], [34, 0.26, 56])
+  const clipBuilders: TriangleBuilder[] = []
+  for (let bay = 0; bay < site.bays; bay++) {
+    const clips = assembly.clips.filter((clip) => clip.bay === bay)
+    for (let start = 0; start < clips.length; start += 600) {
+      const builder = new TriangleBuilder()
+      for (const clip of clips.slice(start, start + 600))
+        builder.tube(springClipWire(clip))
+      clipBuilders.push(builder)
+    }
+  }
+  base.box([middle, -0.48, midDepth], [totalWidth + 6, 0.26, depth + 6])
   for (const strip of strips) {
     const middle = strip.x + strip.width / 2
     if (strip.kind === 'soil')
-      soil.box([middle, -0.175, 25], [strip.width, 0.35, 50])
+      soil.box([middle, -0.175, midDepth], [strip.width, 0.35, depth])
     else
-      drains.box([middle, -SITE.drainDepth - 0.05, 25], [strip.width, 0.1, 50])
+      drains.box(
+        [middle, -site.drainDepth - 0.05, midDepth],
+        [strip.width, 0.1, depth]
+      )
   }
   for (const p of passages)
-    builders.passages.box([p.x + p.width / 2, -0.175, 25], [p.width, 0.35, 50])
-  for (const x of [SITE.margin / 2, 28 - SITE.margin / 2]) {
-    builders.passages.box([x, -0.175, 25], [SITE.margin, 0.35, 50])
+    builders.passages.box(
+      [p.x + p.width / 2, -0.175, midDepth],
+      [p.width, 0.35, depth]
+    )
+  for (const [side, x] of [
+    site.margin / 2,
+    totalWidth - site.margin / 2
+  ].entries()) {
+    builders.passages.box([x, -0.175, midDepth], [site.margin, 0.35, depth])
     barriers.box(
-      [x < 1 ? 0.01 : 27.99, SITE.barrierHeight / 2, 25],
-      [SITE.barrierThickness, SITE.barrierHeight, 50]
+      [
+        side === 0
+          ? site.barrierThickness / 2
+          : totalWidth - site.barrierThickness / 2,
+        site.barrierHeight / 2,
+        midDepth
+      ],
+      [site.barrierThickness, site.barrierHeight, depth]
     )
   }
   // Shared overhead U-gutters; they are separate from ground drainage channels.
-  for (const x of [7, 14, 21]) {
-    steel.box([x, 3.02, 25], [0.22, 0.025, 50])
-    for (const dx of [-0.1, 0.1]) steel.box([x + dx, 3.07, 25], [0.02, 0.1, 50])
+  for (const x of Array.from(
+    { length: site.bays - 1 },
+    (_, i) => (i + 1) * site.width
+  )) {
+    steel.box([x, site.eave + 0.02, midDepth], [0.22, 0.025, depth])
+    for (const dx of [-0.1, 0.1])
+      steel.box([x + dx, site.eave + 0.07, midDepth], [0.02, 0.1, depth])
   }
-  for (let bay = 0; bay < 4; bay++) {
+  for (let bay = 0; bay < site.bays; bay++) {
     for (let i = 0; i < 64; i++) {
       film.quad(
-        roofPoint(bay, i / 64, 0),
-        roofPoint(bay, (i + 1) / 64, 0),
-        roofPoint(bay, (i + 1) / 64, 50),
-        roofPoint(bay, i / 64, 50)
+        roof(bay, i / 64, 0),
+        roof(bay, (i + 1) / 64, 0),
+        roof(bay, (i + 1) / 64, depth),
+        roof(bay, i / 64, depth)
       )
-      for (const z of [0, 50]) {
-        const a = roofPoint(bay, i / 64, z),
-          b = roofPoint(bay, (i + 1) / 64, z)
-        film.quad([a[0], 3, z], [b[0], 3, z], b, a)
+      for (const z of [0, depth]) {
+        const a = roof(bay, i / 64, z),
+          b = roof(bay, (i + 1) / 64, z)
+        film.quad([a[0], site.eave, z], [b[0], site.eave, z], b, a)
       }
     }
-    for (const z of [0, 50]) {
-      const left = bay * 7,
-        center = left + 3.5
+    for (const z of [0, depth]) {
+      const left = bay * site.width,
+        center = left + site.width / 2
       film.quad(
         [left, 0, z],
-        [center - 1, 0, z],
-        [center - 1, 3, z],
-        [left, 3, z]
+        [center - doorHalf, 0, z],
+        [center - doorHalf, site.eave, z],
+        [left, site.eave, z]
       )
       film.quad(
-        [center + 1, 0, z],
-        [left + 7, 0, z],
-        [left + 7, 3, z],
-        [center + 1, 3, z]
+        [center + doorHalf, 0, z],
+        [left + site.width, 0, z],
+        [left + site.width, site.eave, z],
+        [center + doorHalf, site.eave, z]
       )
       film.quad(
-        [center - 1, 2.5, z],
-        [center + 1, 2.5, z],
-        [center + 1, 3, z],
-        [center - 1, 3, z]
+        [center - doorHalf, doorHeight, z],
+        [center + doorHalf, doorHeight, z],
+        [center + doorHalf, site.eave, z],
+        [center - doorHalf, site.eave, z]
       )
     }
   }
-  for (const x of [0, 28])
-    film.quad([x, 0.35, 0], [x, 0.35, 50], [x, 3, 50], [x, 3, 0])
-  dimensions.box([14, -0.332, -1.2], [28, 0.012, 0.035])
-  dimensions.box([29.2, -0.332, 25], [0.035, 0.012, 50])
-  for (let x = 0; x <= 28; x += 7)
+  for (const x of [0, totalWidth])
+    film.quad(
+      [x, 0.35, 0],
+      [x, 0.35, depth],
+      [x, site.eave, depth],
+      [x, site.eave, 0]
+    )
+  dimensions.box([middle, -0.332, -1.2], [totalWidth, 0.012, 0.035])
+  dimensions.box([totalWidth + 1.2, -0.332, midDepth], [0.035, 0.012, depth])
+  for (let x = 0; x <= totalWidth; x += site.width)
     dimensions.box([x, -0.326, -1.2], [0.04, 0.012, 0.55])
-  for (let z = 0; z <= 50; z += 5)
-    dimensions.box([29.2, -0.326, z], [0.55, 0.012, 0.04])
+  for (let z = 0; z <= depth; z += 5)
+    dimensions.box([totalWidth + 1.2, -0.326, z], [0.55, 0.012, 0.04])
   return [
     mesh('base', base, 0xc8cebd),
-    mesh('soil', soil, 0x765437),
-    mesh('drains', drains, 0x3d6266),
+    ...(soil.positions.length ? [mesh('soil', soil, 0x765437)] : []),
+    ...(drains.positions.length ? [mesh('drains', drains, 0x3d6266)] : []),
     mesh('passages', builders.passages, 0xb2b3a2),
     mesh('barriers', barriers, 0x182623),
     mesh('steel', steel, 0x8a9c9b),
-    mesh('supports', builders.supports, 0x8a9c9b),
-    mesh('net', builders.net, 0xe5e8ce),
-    mesh('ties', builders.ties, 0x26322b),
+    ...(builders.supports.positions.length
+      ? [mesh('supports', builders.supports, 0x8a9c9b)]
+      : []),
+    ...netBuilders
+      .filter((builder) => builder.positions.length)
+      .map((builder, i) => mesh(`net-${i}`, builder, 0xe5e8ce, 1, 'net')),
+    ...tieBuilders.map((builder, i) =>
+      mesh(`ties-${i}`, builder, 0x26322b, 1, 'ties')
+    ),
     ...clipBuilders.map((builder, bay) =>
       mesh(`clips-${bay}`, builder, 0xb4bfbe, 1, 'clips')
     ),
@@ -259,33 +313,51 @@ export function projectView(
   }))
 }
 
-export function cameraPreset(mode: CameraMode): SpatialCamera {
+export function cameraPreset(
+  mode: CameraMode,
+  config: FarmConfiguration = DEFAULT_CONFIGURATION
+): SpatialCamera {
+  const site = configurationSite(config)
   if (mode === 'joint') {
-    const target = supportJointTarget()
+    const target = supportJointTarget(config)
     return {
       kind: 'camera',
       target,
       position: [target[0] - 0.13, target[1] + 0.09, target[2] - 0.17],
       fov: 43,
       near: 0.001,
-      far: 400
+      far: Math.max(400, site.length * 5, site.width * 20)
     }
   }
   const positions = {
-    overview: [53, 36, -29],
-    top: [14, 78, 24.99],
-    front: [14, 8, -42],
-    inside: [7.18, 1.65, 3]
+    overview: [(site.width * 53) / 7, site.height * 7.2, -site.length * 0.58],
+    top: [
+      site.width * 2,
+      Math.max(site.length, site.width * 4) * 1.56,
+      site.length / 2 - 0.01
+    ],
+    front: [site.width * 2, site.height * 1.6, -site.width * 6],
+    inside: [
+      site.width + site.margin / 2,
+      Math.min(1.65, site.eave * 0.55),
+      Math.min(3, site.length / 10)
+    ]
   } as const
   const target =
-    mode === 'inside' ? ([7.18, 1.65, 40] as const) : ([14, 0, 25] as const)
+    mode === 'inside'
+      ? ([
+          site.width + site.margin / 2,
+          Math.min(1.65, site.eave * 0.55),
+          site.length * 0.8
+        ] as const)
+      : ([site.width * 2, 0, site.length / 2] as const)
   return {
     kind: 'camera',
     position: positions[mode],
     target,
     fov: 43,
     near: 0.05,
-    far: 400
+    far: Math.max(400, site.length * 5, site.width * 20)
   }
 }
 

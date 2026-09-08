@@ -1,4 +1,16 @@
-import core, { getSessionManager } from '@asyra/core'
+import {
+  DEFAULT_CONFIGURATION,
+  validateConfiguration,
+  type FarmConfiguration
+} from '../domain/farm-configuration'
+import core, {
+  getSessionManager,
+  runTransaction,
+  undoWithRenderPolicy,
+  redoWithRenderPolicy,
+  getPropertyComponentAccessor,
+  unregisterPropertyComponent
+} from '@asyra/core'
 import { applyPreset, PresetProfiles } from '@asyra/preset'
 import type { RenderEngineProvider } from '@asyra/render-engine'
 import { ThreeEngine } from '../engine/three-engine'
@@ -30,7 +42,9 @@ import {
 const RuntimeKeys = { VIEW: 'farm.view', FRAME: 'farm.frame' } as const
 const FeatureNames = {
   VIEW: 'farm.view.change',
-  CAMERA: 'farm.camera.navigate'
+  CAMERA: 'farm.camera.navigate',
+  CONFIGURATION: 'farm.configuration.change',
+  HISTORY: 'farm.configuration.history'
 } as const
 
 export async function bootstrap(
@@ -41,8 +55,11 @@ export async function bootstrap(
     revision = 0
   let observer: ResizeObserver | undefined
   let disposePromise: Promise<void> | undefined
+  let config = validateConfiguration(DEFAULT_CONFIGURATION)
+  let configurationId = ''
+  const configListeners = new Set<() => void>()
   let view = INITIAL_VIEW
-  let camera = cameraPreset(view.camera)
+  let camera = cameraPreset(view.camera, config)
   const initialBounds = host.getBoundingClientRect()
   let width = Math.max(1, initialBounds.width),
     height = Math.max(1, initialBounds.height)
@@ -63,8 +80,26 @@ export async function bootstrap(
     runtime: true,
     silent: true
   })
-  const meshes = buildSiteMeshes()
-  const sceneBounds = measureScene(meshes)
+  let meshes = buildSiteMeshes(config)
+  let sceneBounds = measureScene(meshes)
+  const configurationType = 'farm-configuration'
+  core.definePropertyComponent({
+    type: configurationType,
+    defaults: { settings: DEFAULT_CONFIGURATION }
+  })
+  core.defineComponent({
+    type: configurationType,
+    idPrefix: 'farm',
+    namePrefix: 'Farm',
+    properties: [
+      {
+        name: 'settings',
+        type: configurationType,
+        defaultValue: DEFAULT_CONFIGURATION
+      }
+    ],
+    renderStrategy: () => undefined
+  })
   const layer = new SpatialLayer(() =>
     core.setSystemProperty(RuntimeKeys.FRAME, ++revision)
   )
@@ -72,7 +107,8 @@ export async function bootstrap(
   const publishCamera = (next: SpatialCamera) => {
     camera = next
     const percent = Math.round(
-      (100 * cameraDistance(cameraPreset(view.camera))) / cameraDistance(next)
+      (100 * cameraDistance(cameraPreset(view.camera, config))) /
+        cameraDistance(next)
     )
     if (percent !== zoomPercent) {
       zoomPercent = percent
@@ -80,6 +116,90 @@ export async function bootstrap(
     }
     layer.submitCamera(fitCamera(next, aspect))
   }
+  const readConfiguration = () => {
+    const propertyId = core.getElementData(configurationId)?.props?.settings
+    const property = propertyId
+      ? getPropertyComponentAccessor().getPropertyById(propertyId)
+      : undefined
+    if (!property) throw new Error('Missing canonical farm configuration')
+    return validateConfiguration(
+      (property.save() as unknown as { settings: FarmConfiguration }).settings
+    )
+  }
+  const publishConfiguration = (
+    next: FarmConfiguration,
+    prepared = buildSiteMeshes(next)
+  ) => {
+    config = next
+    meshes = prepared
+    sceneBounds = measureScene(meshes)
+    camera = cameraPreset(view.camera, config)
+    layer.submit({
+      meshes: projectView(meshes, view),
+      camera: fitCamera(camera, aspect)
+    })
+    publishCamera(camera)
+    configListeners.forEach((listener) => listener())
+  }
+  const configFeature = core.defineFeature(
+    FeatureNames.CONFIGURATION,
+    undefined,
+    {
+      priority: 100,
+      exclusive: true,
+      api: {
+        apply: async (draft: FarmConfiguration) => {
+          assertLive()
+          // Detach the request before it enters the session queue.
+          const next = validateConfiguration(draft)
+          return getSessionManager().runAfterCancellingActiveSessions(
+            () => core.getSystemContextSnapshot(),
+            () => {
+              assertLive()
+              if (JSON.stringify(next) === JSON.stringify(config)) return
+              const prepared = buildSiteMeshes(next)
+              runTransaction(() =>
+                core.updateElementProperties([
+                  {
+                    elementId: configurationId,
+                    values: {
+                      settings: {
+                        ...next,
+                        strips: next.strips.map((strip) => ({ ...strip }))
+                      }
+                    }
+                  }
+                ])
+              )
+              publishConfiguration(readConfiguration(), prepared)
+            },
+            FeatureNames.CONFIGURATION
+          )
+        }
+      }
+    }
+  )
+  const historyFeature = core.defineFeature(FeatureNames.HISTORY, undefined, {
+    priority: 100,
+    exclusive: true,
+    api: {
+      replay: (redo: boolean) => {
+        assertLive()
+        return getSessionManager().runAfterCancellingActiveSessions(
+          () => core.getSystemContextSnapshot(),
+          async () => {
+            assertLive()
+            if (redo) await redoWithRenderPolicy({ mode: 'atomic' })
+            else await undoWithRenderPolicy({ mode: 'atomic' })
+            const next = readConfiguration()
+            if (JSON.stringify(next) !== JSON.stringify(config))
+              publishConfiguration(next)
+          },
+          FeatureNames.HISTORY
+        )
+      }
+    }
+  })
   const viewFeature = core.defineFeature(FeatureNames.VIEW, undefined, {
     priority: 100,
     exclusive: true,
@@ -176,12 +296,15 @@ export async function bootstrap(
       actualSize: () => {
         assertLive()
         publishCamera(
-          setCameraDistance(camera, cameraDistance(cameraPreset(view.camera)))
+          setCameraDistance(
+            camera,
+            cameraDistance(cameraPreset(view.camera, config))
+          )
         )
       },
       reset: (mode: CameraMode) => {
         assertLive()
-        publishCamera(cameraPreset(mode))
+        publishCamera(cameraPreset(mode, config))
       }
     }
   })
@@ -191,7 +314,8 @@ export async function bootstrap(
       if (closed) return
       const previous = view
       view = next
-      if (previous.camera !== next.camera) camera = cameraPreset(next.camera)
+      if (previous.camera !== next.camera)
+        camera = cameraPreset(next.camera, config)
       layer.submit({
         meshes: projectView(meshes, next),
         camera: fitCamera(camera, aspect)
@@ -203,6 +327,7 @@ export async function bootstrap(
     closed = true
     observer?.disconnect()
     subscription?.unsubscribe()
+    configListeners.clear()
     listeners.clear()
     zoomListeners.clear()
     disposePromise = Promise.resolve().then(async () => {
@@ -211,6 +336,8 @@ export async function bootstrap(
         layer.dispose()
       } finally {
         await core.resetRuntime()
+        core.unregisterComponent(configurationType)
+        unregisterPropertyComponent(configurationType)
       }
     })
     return disposePromise
@@ -221,6 +348,21 @@ export async function bootstrap(
       width: Math.max(1, rect.width),
       height: Math.max(1, rect.height),
       backgroundColor: 0xe8ede4
+    })
+    core.sceneTreeInit()
+    runTransaction(() => {
+      configurationId = core.createElement(
+        {
+          type: configurationType,
+          x: 0,
+          y: 0,
+          settings: config,
+          visible: false
+        },
+        undefined,
+        undefined,
+        { undoable: false }
+      )
     })
     observer = new ResizeObserver((entries) => {
       const box = entries[0]?.contentRect
@@ -234,6 +376,17 @@ export async function bootstrap(
     })
     observer.observe(host)
     return {
+      getConfiguration: () => config,
+      subscribeConfiguration: (listener: () => void) => {
+        configListeners.add(listener)
+        return () => {
+          configListeners.delete(listener)
+        }
+      },
+      setConfiguration: configFeature.api.apply,
+      undo: () => historyFeature.api.replay(false),
+      redo: () => historyFeature.api.replay(true),
+      getUndoDepth: () => core.getUndoHistoryDepth(),
       getView: () => view,
       getZoom: () => zoomPercent,
       subscribeZoom: (listener: () => void) => {

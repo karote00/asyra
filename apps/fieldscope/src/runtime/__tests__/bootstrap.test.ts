@@ -85,6 +85,63 @@ it('keeps one geometry construction through navigation and queued display change
     expect(runtime.getView().filmOpacity).toBe(0.35)
     expect(build).toHaveBeenCalledTimes(1)
     expect(pending).toBeUndefined()
+    const configNotify = vi.fn()
+    const stopConfig = runtime.subscribeConfiguration(configNotify)
+    const originalConfig = runtime.getConfiguration()
+    const depth = runtime.getUndoDepth()
+    const changedConfig = {
+      ...originalConfig,
+      width: 8,
+      length: 12.7,
+      height: 4.5,
+      netTop: 2.6,
+      netBottom: 0.5,
+      topExtension: 0.3,
+      soilInset: 0.12,
+      startInset: 0.4,
+      endInset: 0.8,
+      strips: [
+        { kind: 'drain' as const, width: 0.3 },
+        { kind: 'soil' as const, width: 1 },
+        { kind: 'drain' as const, width: 0.3 },
+        { kind: 'soil' as const, width: 2 }
+      ]
+    }
+    await runtime.setConfiguration(changedConfig)
+    flush()
+    expect(runtime.getConfiguration()).toEqual(changedConfig)
+    expect(runtime.getUndoDepth()).toBe(depth + 1)
+    expect(build).toHaveBeenCalledTimes(2)
+    expect(measure).toHaveBeenCalledTimes(2)
+    expect(configNotify).toHaveBeenCalledTimes(1)
+    runtime.orbit(5, 2)
+    runtime.zoom(5)
+    flush()
+    expect(build).toHaveBeenCalledTimes(2)
+    await runtime.undo()
+    flush()
+    expect(runtime.getConfiguration()).toEqual(originalConfig)
+    expect(runtime.getUndoDepth()).toBe(depth)
+    expect(build).toHaveBeenCalledTimes(3)
+    await runtime.redo()
+    flush()
+    expect(runtime.getConfiguration()).toEqual(changedConfig)
+    expect(build).toHaveBeenCalledTimes(4)
+    await expect(
+      runtime.setConfiguration({ ...changedConfig, netBottom: 4 })
+    ).rejects.toThrow()
+    expect(runtime.getConfiguration()).toEqual(changedConfig)
+    expect(build).toHaveBeenCalledTimes(4)
+    expect(runtime.getUndoDepth()).toBe(depth + 1)
+    await runtime.setConfiguration(changedConfig)
+    expect(build).toHaveBeenCalledTimes(4)
+    await runtime.undo()
+    flush()
+    await runtime.setConfiguration({ ...originalConfig, length: 20 })
+    await runtime.redo()
+    flush()
+    expect(runtime.getConfiguration().length).toBe(20)
+    stopConfig()
     unsubscribe()
   } finally {
     await runtime.dispose()
@@ -96,4 +153,4 @@ it('keeps one geometry construction through navigation and queued display change
     measure.mockRestore()
     vi.unstubAllGlobals()
   }
-})
+}, 15000)

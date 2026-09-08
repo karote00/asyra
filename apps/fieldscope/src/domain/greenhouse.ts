@@ -17,6 +17,9 @@ export const SITE = Object.freeze({
   barrierThickness: 0.02
 })
 export const BED_WIDTHS = Object.freeze([0.9, 0.3, 1.8, 0.3, 1.8, 0.3, 0.9])
+export type Site = { [K in keyof typeof SITE]: number }
+export const BED_STRIPS: readonly { kind: Strip['kind']; width: number }[] =
+  BED_WIDTHS.map((width, i) => ({ kind: i % 2 ? 'drain' : 'soil', width }))
 export const CROPS = Object.freeze(['1914 小胡瓜', '玉女小蕃茄'])
 export interface Strip {
   bay: number
@@ -30,111 +33,130 @@ export interface Member {
   diameter: number
 }
 
-export function roofPoint(bay: number, fraction: number, z: number): Point3 {
-  const half = SITE.width / 2
-  const rise = SITE.height - SITE.eave
+export function roofPoint(
+  bay: number,
+  fraction: number,
+  z: number,
+  site: Site = SITE
+): Point3 {
+  const half = site.width / 2
+  const rise = site.height - site.eave
   const radius = (half * half + rise * rise) / (2 * rise)
   const theta = Math.asin(half / radius) * (2 * fraction - 1)
   return [
-    bay * SITE.width + half + radius * Math.sin(theta),
-    SITE.height - radius + radius * Math.cos(theta),
+    bay * site.width + half + radius * Math.sin(theta),
+    site.height - radius + radius * Math.cos(theta),
     z
   ]
 }
 
-export function createLayout() {
+export function createLayout(site: Site = SITE, beds = BED_STRIPS) {
   const strips: Strip[] = []
-  for (let bay = 0; bay < SITE.bays; bay++) {
-    let x = bay * SITE.width + SITE.margin
-    BED_WIDTHS.forEach((width, index) => {
-      strips.push({ bay, kind: index % 2 === 0 ? 'soil' : 'drain', x, width })
+  for (let bay = 0; bay < site.bays; bay++) {
+    let x = bay * site.width + site.margin
+    beds.forEach(({ width, kind }) => {
+      strips.push({ bay, kind, x, width })
       x += width
     })
   }
-  const passages = Array.from({ length: SITE.bays - 1 }, (_, i) => ({
-    x: (i + 1) * SITE.width - SITE.margin,
-    width: 2 * SITE.margin
+  const passages = Array.from({ length: site.bays - 1 }, (_, i) => ({
+    x: (i + 1) * site.width - site.margin,
+    width: 2 * site.margin
   }))
-  return { strips, passages, totalWidth: SITE.width * SITE.bays }
+  return { strips, passages, totalWidth: site.width * site.bays }
 }
 
-export function createStructure(): Member[] {
+export function createStructure(site: Site = SITE): Member[] {
   const members: Member[] = []
+  const doorHalf = Math.min(1, site.width / 4)
+  const doorHeight = Math.min(2.5, (site.eave * 5) / 6)
   const add = (
     kind: Member['kind'],
     points: readonly Point3[],
-    diameter: number = SITE.tubeDiameter
+    diameter: number = site.tubeDiameter
   ) => members.push({ kind, points, diameter })
-  for (let bay = 0; bay < SITE.bays; bay++) {
-    for (let z = 0; z <= SITE.length; z += SITE.frameSpacing)
+  for (let bay = 0; bay < site.bays; bay++) {
+    for (const z of memberStations(site.length, site.frameSpacing))
       add(
         'arch',
-        Array.from({ length: 49 }, (_, i) => roofPoint(bay, i / 48, z))
+        Array.from({ length: 49 }, (_, i) => roofPoint(bay, i / 48, z, site))
       )
     for (const fraction of [0, 0.25, 0.5, 0.75, 1])
       // Shared shoulders have one longitudinal member, not coincident duplicates.
       if (fraction !== 0 || bay === 0)
         add('purlin', [
-          roofPoint(bay, fraction, 0),
-          roofPoint(bay, fraction, SITE.length)
+          roofPoint(bay, fraction, 0, site),
+          roofPoint(bay, fraction, site.length, site)
         ])
-    for (let z = 0; z <= SITE.length; z += SITE.postSpacing) {
+    for (const z of memberStations(site.length, site.postSpacing)) {
       add('tie', [
-        [bay * 7, SITE.eave, z],
-        [(bay + 1) * 7, SITE.eave, z]
+        [bay * site.width, site.eave, z],
+        [(bay + 1) * site.width, site.eave, z]
       ])
       for (const fraction of [0.25, 0.75]) {
-        const top = roofPoint(bay, fraction, z)
-        add('brace', [[bay * 7 + 3.5, SITE.eave, z], top])
+        const top = roofPoint(bay, fraction, z, site)
+        add('brace', [[bay * site.width + site.width / 2, site.eave, z], top])
       }
     }
-    for (const z of [0, SITE.length]) {
-      const center = bay * 7 + 3.5
+    for (const z of [0, site.length]) {
+      const center = bay * site.width + site.width / 2
       // Two metre end openings are an explicit assumption, kept clear below 2.5m.
-      for (const x of [center - 1, center + 1]) {
-        const half = SITE.width / 2,
-          rise = SITE.height - SITE.eave
+      for (const x of [center - doorHalf, center + doorHalf]) {
+        const half = site.width / 2,
+          rise = site.height - site.eave
         const radius = (half * half + rise * rise) / (2 * rise)
         add('door', [
           [x, 0, z],
-          [x, SITE.height - radius + Math.sqrt(radius ** 2 - 1), z]
+          [x, site.height - radius + Math.sqrt(radius ** 2 - doorHalf ** 2), z]
         ])
       }
       add('door', [
-        [center - 1, 2.5, z],
-        [center + 1, 2.5, z]
+        [center - doorHalf, doorHeight, z],
+        [center + doorHalf, doorHeight, z]
       ])
     }
   }
-  for (let boundary = 0; boundary <= SITE.bays; boundary++) {
-    const x = boundary * SITE.width
-    for (let z = 0; z <= SITE.length; z += SITE.postSpacing)
+  for (let boundary = 0; boundary <= site.bays; boundary++) {
+    const x = boundary * site.width
+    for (const z of memberStations(site.length, site.postSpacing))
       add(
         'post',
         [
           [x, -0.4, z],
-          [x, SITE.eave, z]
+          [x, site.eave, z]
         ],
-        SITE.postDiameter
+        site.postDiameter
       )
     // Bracing only on exterior walls; internal longitudinal passages stay open.
-    if (boundary === 0 || boundary === SITE.bays) {
-      for (const y of [0.45, 1.5])
+    if (boundary === 0 || boundary === site.bays) {
+      for (const y of [site.eave * 0.15, site.eave * 0.5])
         add('purlin', [
           [x, y, 0],
-          [x, y, SITE.length]
+          [x, y, site.length]
         ])
-      for (const z of [0, SITE.length - SITE.postSpacing]) {
+      for (const z of new Set([
+        0,
+        Math.max(0, site.length - site.postSpacing)
+      ])) {
         add('brace', [
           [x, 0.45, z],
-          [x, SITE.eave, z + SITE.postSpacing]
+          [x, site.eave, Math.min(site.length, z + site.postSpacing)]
         ])
         add('brace', [
-          [x, SITE.eave, z],
-          [x, 0.45, z + SITE.postSpacing]
+          [x, site.eave, z],
+          [x, 0.45, Math.min(site.length, z + site.postSpacing)]
         ])
       }
     }
   }
   return members
+}
+
+/** Include the last frame even when length is not a multiple of the spacing. */
+export function memberStations(length: number, spacing: number): number[] {
+  const positions = Array.from(
+    { length: Math.ceil(length / spacing) },
+    (_, i) => i * spacing
+  )
+  return [...positions, length]
 }
