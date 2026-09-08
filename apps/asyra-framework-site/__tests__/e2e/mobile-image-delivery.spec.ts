@@ -1,8 +1,12 @@
 import { stat } from 'node:fs/promises'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { expect, test } from '@playwright/test'
 
-const siteRoot = path.resolve(import.meta.dirname, '../..')
+const siteRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '../..'
+)
 
 for (const width of [320, 390, 412, 520, 680, 800]) {
   test(`${width}px mobile images select a bounded sharp source on a fresh load`, async ({
