@@ -132,7 +132,8 @@ describe('React workspace', () => {
       'Selected Flow Inspector'
     ) as HTMLIFrameElement
     const send = vi.fn()
-    frame.contentWindow!.postMessage = send
+    if (!frame.contentWindow) throw new Error('Expected mounted viewer frame')
+    frame.contentWindow.postMessage = send
     const key = new KeyboardEvent('keydown', {
       key: '1',
       metaKey: true,

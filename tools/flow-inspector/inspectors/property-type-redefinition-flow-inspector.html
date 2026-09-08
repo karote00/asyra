@@ -1191,15 +1191,10 @@ summary:focus-visible {
         if (event.isComposing || event.altKey || event.ctrlKey) return
         const commandKey = event.metaKey && !event.shiftKey
         const alternative = event.shiftKey && !event.metaKey
-        const key = commandKey
-          ? event.key
-          : alternative
-            ? event.code === 'Digit1'
-              ? '1'
-              : event.code === 'Digit0'
-                ? '0'
-                : ''
-            : ''
+        let key = ''
+        if (commandKey) key = event.key
+        else if (alternative && event.code === 'Digit1') key = '1'
+        else if (alternative && event.code === 'Digit0') key = '0'
         if (key !== '1' && key !== '0') return
         if (
           alternative &&
