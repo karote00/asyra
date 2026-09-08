@@ -165,7 +165,7 @@ export function useWorkbenchController() {
   const perform = useCallback(
     async (
       action: (assertCurrent: () => void) => Promise<unknown>,
-      message: string
+      message: string | (() => string)
     ) => {
       const assertCurrent = () => {
         if (!runtime || !isCurrent(runtime))
@@ -181,7 +181,7 @@ export function useWorkbenchController() {
 
         setError('')
 
-        setStatus(message)
+        setStatus(typeof message === 'function' ? message() : message)
       } catch (reason) {
         if (!runtime || !isCurrent(runtime)) return
 
@@ -197,9 +197,17 @@ export function useWorkbenchController() {
     (direction: HistoryDirection) => {
       if (!runtime) return
 
+      const applied = direction === 'undo' ? 'Undo applied' : 'Redo applied'
+      let before = 0
       void perform(
-        () => runtime.features.history[direction](),
-        direction === 'undo' ? 'Undo applied' : 'Redo applied'
+        async () => {
+          before = runtime.getHistoryDepth()
+          await runtime.features.history[direction]()
+        },
+        () =>
+          runtime.getHistoryDepth() === before
+            ? `Nothing to ${direction}`
+            : applied
       )
     },
     [runtime, perform]

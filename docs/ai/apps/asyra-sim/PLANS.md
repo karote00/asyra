@@ -34,6 +34,21 @@
 
 ## Completed Work
 
+- **History feedback correction (2026-09-08).**
+  - The user's open page contained an out-of-limit J6 value of 100 radians and
+    zero Undo entries. Empty History actions incorrectly reported applied.
+    The shared toolbar/shortcut completion now checks canonical history depth
+    and reports Nothing to undo/redo when no replay occurred.
+  - Permanent browser tests cover direct edit-to-toolbar replay for trajectory,
+    clearance and object name, plus an invalid source alongside independent valid
+    field edits. The empty-history test failed before the fix; valid replay passed.
+    The reported additional fields have not yet been identified, so this is not
+    a claim that every user-reported case has been reproduced or resolved.
+  - Verified: 11 affected browser cases at port 3020 and inspected empty-history
+    screenshot; shell/shortcut tests, App build/lint, naming, Inspector contracts
+    and test placement. M2 acceptance and M3-M6 scope remain unchanged.
+
+
 - **Completed-edit UX follow-up (2026-09-08).**
   - A bounded review of existing Sim UI controls found two remaining editing
     exceptions: inline trajectory Apply and observation metadata blocked by

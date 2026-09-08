@@ -203,6 +203,12 @@ Errors and completion status follow the same toolbar action path. Formal gates
 cover both modifier families, native field Undo/Redo, event order, repeat and
 composition guards, disabled/unmounted bindings and project replacement.
 
+History feedback must distinguish an applied replay from an empty history action.
+Only a canonical history-depth transition reports Undo applied or Redo applied;
+otherwise report Nothing to undo or Nothing to redo. Invalid or unfinished input
+remains transient and creates no document history entry. Valid edits in other
+controls remain independently replayable.
+
 ## M0 Proof Gate
 
 Before expanding to M1 interaction, prove normal Core creation, one Undo per
