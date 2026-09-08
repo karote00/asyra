@@ -108,14 +108,20 @@ export class RuntimeController {
     })
   }
 
-  async capture(): Promise<ProjectSnapshot> {
+  async capture(onCaptured?: () => void): Promise<ProjectSnapshot> {
     if (this.operation)
       throw new Error('Another runtime operation is still running')
     const runtime = this.requireReady()
-    const captured = await runtime.captureSnapshot()
-    if (this.requireReady() !== runtime)
-      throw new Error('Runtime changed during capture')
-    return captured
+    const resume = runtime.pauseEditing()
+    try {
+      const captured = await runtime.captureSnapshot()
+      if (this.requireReady() !== runtime)
+        throw new Error('Runtime changed during capture')
+      onCaptured?.()
+      return captured
+    } finally {
+      resume()
+    }
   }
 
   replace(snapshot: ProjectSnapshot, assertCurrent: () => void) {

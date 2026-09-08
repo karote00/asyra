@@ -1,3 +1,8 @@
+import {
+  restoreJournal,
+  resourceKeys,
+  type JournalEntry
+} from './publication-journal'
 import type { ModelLoadIssue } from '../common-apis/document'
 import {
   decodeProject,
@@ -8,7 +13,7 @@ import {
 } from './project-format'
 
 export interface DocumentPorts {
-  capture(): Promise<ProjectSnapshot>
+  capture(onCaptured?: () => void): Promise<ProjectSnapshot>
   apply(
     snapshot: ProjectSnapshot,
     assertCurrent: () => void
@@ -33,7 +38,9 @@ export class ProjectSession {
   })
   private automatic = false
   private projectName = 'Untitled project'
-  private timer: ReturnType<typeof setTimeout> | null = null
+  private queue: { revision: number; entry: JournalEntry }[] = []
+  private needsCheckpoint = true
+  private knownResources = new Set<string>()
   private pendingSave: Promise<void> | null = null
   private revision = 0
   private disposed = false
@@ -54,9 +61,15 @@ export class ProjectSession {
     this.state = Object.freeze({ ...this.state, ...patch })
     this.listeners.forEach((listener) => listener())
   }
-  markEdited(): void {
+  getKnownResources(): ReadonlySet<string> {
+    return this.knownResources
+  }
+  markEdited(entry: JournalEntry): void {
     if (this.disposed) return
     this.revision++
+    this.queue.push({ revision: this.revision, entry })
+    for (const key of resourceKeys(entry.resources))
+      this.knownResources.add(key)
     this.publish({
       dirty: true,
       status: this.state.busy === 'save' ? 'saving' : 'unsaved',
@@ -74,27 +87,23 @@ export class ProjectSession {
     if (
       !this.automatic ||
       this.disposed ||
-      this.timer ||
       this.pendingSave ||
-      this.state.busy
+      this.state.busy ||
+      this.state.status === 'error'
     )
       return
-    this.timer = setTimeout(() => {
-      this.timer = null
-      void this.flush().catch(() => undefined)
-    }, 300)
+    void this.flush().catch(() => undefined)
   }
 
   async flush(): Promise<void> {
     this.assertLive()
-    if (this.timer) clearTimeout(this.timer)
-    this.timer = null
     if (this.pendingSave) return this.pendingSave
     if (!this.state.dirty) return
     const pending = (async () => {
       while (this.state.dirty) {
         this.assertLive()
-        await this.save(this.projectName)
+        if (this.state.project && !this.needsCheckpoint) await this.appendNext()
+        else await this.save(this.projectName)
       }
     })()
     this.pendingSave = pending
@@ -111,11 +120,18 @@ export class ProjectSession {
       throw new Error('Project name must contain 1–200 characters')
     if (name === this.projectName) return
     this.projectName = name
-    this.markEdited()
+    this.revision++
+    this.publish({
+      dirty: true,
+      status: this.state.busy === 'save' ? 'saving' : 'unsaved'
+    })
+    this.schedule()
   }
 
   async copy(name: string): Promise<void> {
-    await this.flush()
+    // A deliberate checkpoint copy can recover a rejected tail. Await owned
+    // writes, but do not require another successful append to the old project.
+    if (this.pendingSave) await this.pendingSave.catch(() => undefined)
     await this.save(name, true)
   }
 
@@ -143,14 +159,50 @@ export class ProjectSession {
     throw error
   }
 
+  private async appendNext(): Promise<void> {
+    const revision = this.beginOperation('save')
+    const previous = this.state.project
+    if (!previous || !this.repository.append)
+      return this.fail(new Error('Publication persistence is unavailable'))
+    const pending = this.queue[0]
+    const metadata = {
+      ...previous,
+      name: this.projectName,
+      revision: crypto.randomUUID(),
+      savedAt: new Date().toISOString()
+    }
+    try {
+      await this.repository.append(
+        metadata,
+        previous.revision,
+        pending?.entry ?? null,
+        this.lifetime.signal
+      )
+      this.assertLive()
+      if (pending) this.queue.shift()
+      const dirty = this.queue.length > 0 || this.revision !== revision
+      this.publish({
+        project: Object.freeze(metadata),
+        dirty,
+        status: dirty ? 'unsaved' : 'saved',
+        busy: null,
+        error: ''
+      })
+    } catch (error) {
+      this.fail(error)
+    }
+  }
+
   async save(name: string, newProject = false): Promise<void> {
     name = name.trim()
     if (!name || name.length > 200)
       throw new Error('Project name must contain 1–200 characters')
-    const revision = this.beginOperation('save'),
-      previous = newProject ? null : this.state.project
+    let revision = this.beginOperation('save')
+    const previous = newProject ? null : this.state.project
     try {
-      const snapshot = await this.document.capture()
+      const snapshot = await this.document.capture(() => {
+        revision = this.revision
+      })
       this.assertLive()
       const metadata: ProjectSummary = {
         id: previous?.id ?? crypto.randomUUID(),
@@ -164,6 +216,12 @@ export class ProjectSession {
         this.lifetime.signal
       )
       this.assertLive()
+      this.queue = this.queue.filter((pending) => pending.revision > revision)
+      this.knownResources = resourceKeys(snapshot)
+      for (const pending of this.queue)
+        for (const key of resourceKeys(pending.entry.resources))
+          this.knownResources.add(key)
+      this.needsCheckpoint = false
       const dirty = this.revision !== revision
       if (!dirty) this.projectName = name
       this.publish({
@@ -194,12 +252,18 @@ export class ProjectSession {
     try {
       const stored = await this.repository.read(id, this.lifetime.signal)
       assertCurrent()
-      const snapshot = decodeProject(stored.payload)
+      const snapshot = restoreJournal(
+        decodeProject(stored.payload),
+        stored.journal ?? []
+      )
       const issues = await this.document.apply(snapshot, assertCurrent)
       this.assertLive()
-      const { payload: _payload, ...metadata } = stored
+      const { payload: _payload, journal: _journal, ...metadata } = stored
+      this.queue = []
+      this.knownResources = resourceKeys(snapshot)
       this.projectName = metadata.name
       const dirty = this.revision !== revision || issues.length > 0
+      this.needsCheckpoint = dirty
       this.publish({
         project: Object.freeze(metadata),
         status: dirty ? 'unsaved' : 'saved',
@@ -244,6 +308,9 @@ export class ProjectSession {
       await this.document.apply(snapshot, assertCurrent)
       this.assertLive()
       this.projectName = 'Imported project'
+      this.needsCheckpoint = true
+      this.queue = []
+      this.knownResources = resourceKeys(snapshot)
       this.publish({
         project: null,
         status: 'unsaved',
@@ -272,8 +339,6 @@ export class ProjectSession {
   close(): void {
     if (this.disposed) return
     this.disposed = true
-    if (this.timer) clearTimeout(this.timer)
-    this.timer = null
     this.lifetime.abort()
     this.listeners.clear()
     this.repository.close()

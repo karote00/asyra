@@ -15,6 +15,7 @@ import {
   parseExclusions
 } from './experiment-draft'
 import type { PlaybackView } from './playback-view'
+import { useViewValue } from '../shared/use-view-value'
 
 type Perform = (
   action: (assertCurrent: () => void) => Promise<unknown>,
@@ -25,7 +26,6 @@ export function useExperimentController({
   runtime,
   candidateId,
   workcell,
-  revision,
   perform,
   onPlayback,
   runs,
@@ -34,15 +34,14 @@ export function useExperimentController({
   runtime: SimRuntime
   candidateId: string
   workcell: Workcell
-  revision: number
   perform: Perform
   onPlayback: (value: PlaybackView | null) => void
   runs: readonly RunRecord[]
   onRun: (run: RunRecord) => void
 }) {
-  const experiments = useMemo(
-    () => runtime.getExperiments(candidateId),
-    [runtime, candidateId, revision]
+  const experiments = useViewValue(
+    runtime.views,
+    (snapshot) => snapshot.experiments
   )
 
   const [experimentId, setExperimentId] = useState(experiments[0]?.id ?? '')
@@ -128,7 +127,7 @@ export function useExperimentController({
     setWarnings([])
 
     onPlayback(null)
-  }, [revision, onPlayback])
+  }, [workcell, onPlayback])
 
   const changed = (next: ExperimentDraft) => {
     setDraft(next)

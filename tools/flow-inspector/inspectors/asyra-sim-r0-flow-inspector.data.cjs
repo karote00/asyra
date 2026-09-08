@@ -122,7 +122,7 @@
           'Exclusive operation and close guards fence late startup/replacement; repeated close shares one terminal result.'
         ],
         bypasses: [
-          'Initial startup has no document to retire; ordinary save only captures the current runtime.'
+          'Initial startup has no document to retire. Ordinary persistence consumes publications without lifecycle capture; explicit checkpoint/export captures pause admission through their exact boundary callback.'
         ],
         allowedContributors: [
           'App bootstrap',
@@ -671,9 +671,10 @@
         conditions: [
           'Composition is open; explicitly select CUSTOM defaults and bind the provider through Core.',
           'Install local Scene Tree and Props channels through Core before startup. Completed canonical edits and Undo/Redo publish through Core; no-op and transaction-end rollback produce no document publication. Core reset retires the channels and subscriptions; custom spatial output is not a document authority.',
+          'Own the read-only UI Context projection. Canonical publication evidence invalidates candidate-scoped workcells and experiments or retained runs independently; selected candidate and runtime replacement retire previous values. Retain explicit selection intent through temporary candidate absence; Undo shows no substitute model and Redo restores that same candidate. Consumers share completed domain values and explicit read errors; no UI-owned canonical model is introduced.',
           'One runtime owns one surface; startup must succeed before UI reports ready.',
           'Install an inert live-sampling Feature with guarded APIs and Core-owned cleanup. No live Worker starts at bootstrap; formal analysis cancels current live work before execution.',
-          'Capture one Core per lifetime; saved startup loads its snapshot/diagnostics without an extra example or Undo entry.',
+          'Capture one Core per lifetime; saved startup loads its checkpoint/diagnostics and already validated canonical publication slices through Core, then verifies restored run/visual/observation references before startup. Do not decode the same admitted slices again, create an extra example, echo publications or add local Undo entries.',
           'Own prepared visual resources, or prepare saved sources before startup; install storage Features and resource admission without duplicating canonical binding ownership.',
           'Hydrate and verify a per-runtime opaque observation archive before startup; wire its admission into existing editing and expose guarded preparation, retention, observation reading, download bytes and separate feedback export.',
           'Capture only sources referenced by current canonical field observations, retaining accepted bytes for Undo until teardown. Failed startup releases the observation archive even before Feature cleanup registration; retired readers and callbacks cannot affect a successor.',
@@ -697,6 +698,7 @@
         cacheDimensions: [],
         implementationBoundary: [
           'apps/asyra-sim/src/init/custom-renderer.ts',
+          'apps/asyra-sim/src/init/registered-views.ts',
           'apps/asyra-sim/src/init/bootstrap.ts',
           'apps/asyra-sim/src/init/__tests__/custom-renderer.test.ts',
           'apps/asyra-sim/src/init/__tests__/bootstrap.test.ts',
@@ -1160,7 +1162,7 @@
           'artifact:committed-model',
           'artifact:canonical-capture',
           'artifact:result',
-          'validated import, acknowledged document-change notification or compare intent',
+          'validated import, original Core canonical publication or compare intent',
           'local visual source bytes and inert source metadata',
           'bounded local observation file bytes, canonical attachment references and explicit annotation intent',
           'artifact:visual-asset'
@@ -1176,7 +1178,7 @@
           'Observation source retention precedes the separate editing callback; failed metadata acceptance remains retryable without claiming a save. Capture only current annotation references, retain accepted bytes for Undo within runtime limits, and export feedback separately from immutable run reports.',
           'Resolve every visual reference before use and bound decoded archive geometry and repeated workcell instances independently of source bytes.',
           'Before accepting or reopening a version 2 run, compare its complete frozen part geometry with domain resolution of the verified retained sources. Changed triangles under an unchanged source identity are invalid; version 1 history is never reinterpreted.',
-          'One storage-owned automatic persistence queue coalesces document changes before capture/encoding and serializes acknowledged writes. Changes during a write remain pending; errors and revision conflicts preserve unsaved state. Flush before project replacement, restore stable project identity, and cancel scheduled work on disposal. Save acknowledgement is independent of runtime commit; historical evidence stays immutable.',
+          'One storage-owned queue immediately serializes every original Core canonical publication without debounce or ordinary snapshot capture. IndexedDB atomically appends each publication and newly referenced immutable resources with revision compare-and-swap. Changes during a write remain queued; failed writes retain their exact head for retry. Initial/copy/export checkpoints explicitly pause admission only for capture. An explicit copy waits for active writes but can recover a rejected tail into a new project without overwriting the old acknowledgement. Restore validated ordered publication slices over the checkpoint through Core before activating the replacement runtime, without local history or publication echo. Flush before replacement; disposal aborts owned writes. Durable acknowledgement is independent of the immediate runtime commit; historical evidence stays immutable.',
           'Retained runs freeze optional validated candidate lineage; comparison uses explicit body correspondence without suppressing geometry or setting changes or rewriting evidence.',
           'UI, export, comparison and replay consume the same result; incompatible comparisons are disclosed.',
           'Compare actual acceptance conditions independently of revision labels; every report preserves the retained result-owner evaluation without recomputing a verdict.'
@@ -1240,7 +1242,7 @@
           'During continuous Play, project validated provisional collision feedback immediately while the live owner is still checking other pairs. Do not advance completed-sample progress, infer full scope, or wait for sample recording; terminal evidence alone advances the protected sampling anchor. Manual seeking computes the next state and replaces the current presentation only on completed sample or recorded-evidence lookup, not intermediate pair progress.',
           'One playback controller reuses compatible exact formal witnesses and all-pair clear certificates without a Worker, requesting missing poses from the live owner even before later witnesses. Finding intervals are not continuous contact and witnesses are not first-contact times. Collision feedback never pauses or seeks the clock. Explicit Pause freezes the current frame and requests its exact pose. Keep latest checked parts highlighted during forward motion until newer feedback supersedes them, identifying checked time and earlier-pose evidence without claiming exact current contact. Never apply future evidence to an earlier displayed pose. Manual seeks keep the existing displayed pose and its feedback paired while naming the latest pending target separately; only completed latest-target evidence switches pose and feedback together, without an intermediate reset. Before any accepted feedback, preview the target as checking; failure displays the target as error. Cached targets use the same atomic handoff. Present scope and unknown/error states and matching sampled observations. Cancel stale work on seek, edits, replacement, hidden page, formal analysis or leaving playback. Preserve fixed panels, property-level subscriptions and unchanged history/report data.',
           'Keep camera state in the viewport subtree. Read-only workbench projection refreshes on canonical revision, selected candidate or runtime identity; local panels and playback never reread unchanged canonical model or retained runs. The retained projection has one current entry, preserves error output, and owns no editable state.',
-          'Experiment metadata queries share the runtime, canonical revision and candidate invalidation boundary; draft-only edits do not recapture canonical experiments. Stable controller/provider composition and property-level subscriptions own UI update boundaries, never component memo wrappers or props comparators. Hierarchy and scope rows subscribe to their displayed scalar fields; numerical draft edits do not notify scope rows, and scope callbacks preserve the latest other draft fields. Mount, joint and original-placement controls subscribe to every consumed property value and unit, while section callbacks merge into the latest committed body. Current read-only projection subscriptions never scan or retain source triangles, bypass canonical reads on revision, or own editable model state.',
+          'Experiment metadata queries consume the registered runtime/candidate projection, invalidated only by relevant canonical owner evidence; draft-only edits do not recapture canonical experiments. Stable controller/provider composition and property-level subscriptions own UI update boundaries, never component memo wrappers or props comparators. Hierarchy and scope rows subscribe to their displayed scalar fields; numerical draft edits do not notify scope rows, and scope callbacks preserve the latest other draft fields. Mount, joint and original-placement controls subscribe to every consumed property value and unit, while section callbacks merge into the latest committed body. Current read-only projection subscriptions never scan or retain source triangles, bypass relevant canonical dependency invalidation, or own editable model state.',
           'Viewport navigation owns transient camera intent only. Two-finger vertical scroll, mouse wheel and pinch zoom update only the latest transient camera, preserving its target and complete burst deltas without input-mode preferences, device-guessing heuristics or a second animation loop. Horizontal scrolling never pans; Shift-drag pan preserves eye-to-target direction and distance. Fit consumes the current displayed spatial projection and canvas dimensions with padding, excludes hidden/decorative meshes, and never feeds display bounds into analysis. Capture cancellation and runtime retirement remove stale input; ordinary selection and canonical History stay unchanged. Viewport Navigation in editing-v0.md owns the gesture and shortcut contract.',
           'Workbench history shortcuts share the toolbar guarded History Feature APIs. The ready-lifetime document keydown bridge runs after local controls and before window browser-default suppression; preserve native editable controls, ignore consumed/composing/ambiguous input, consume repeats without duplicate replay, and retire bindings on replacement or unmount. No keyboard-owned transaction, queue or history.',
           'Object field completion dispatches one edit directly through the existing editing Feature, without a form-wide Apply or a second editable body. Keep only unfinished input text and presentation settings transient; reject invalid input without history, project canonical replay, and preserve the selected editor across ordinary revisions. Reset it on body, candidate or lifetime replacement.',
@@ -1274,7 +1276,7 @@
           'automatic publishing'
         ],
         cacheDimensions: [
-          'runtime identity, canonical revision and selected candidate for the current read-only workbench projection; retained run identity and pending run identity for UI-only run indexes',
+          'runtime-owned registered projection values and selected candidate; workcell values change only for affected canonical body/candidate publications or selection, experiments only for their affected candidate, and retained runs only for affected references; retained run identity and pending run identity for UI-only run indexes',
           'runtime, displayed workcell and pending import identity for the current prepared projection; projection identity, joints, selection, accepted whole-part highlight, grid and wireframe for its current frame, excluding camera'
         ],
         implementationBoundary: [

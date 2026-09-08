@@ -1,3 +1,7 @@
+import {
+  publicationReferences,
+  type JournalEntry
+} from '../storage/publication-journal'
 import currentCore from '@asyra/core'
 import type { SharedPublication } from '@asyra/core/contracts'
 import { SharedDataChannelNames } from '@asyra/utils'
@@ -14,6 +18,7 @@ import { installAnalysisFeature } from '../features/analysis'
 import { installLivePlaybackFeature } from '../features/live-playback'
 import { LivePlaybackRunner } from '../analysis/live/runner'
 import { installModelComponents } from './components'
+import { installRegisteredViews } from './registered-views'
 import { installCustomRenderer } from './custom-renderer'
 import type { SpatialFrame, SpatialCamera } from '../render-app/spatial-layer'
 import { createSyntheticExample } from '../../samples/synthetic-workcell'
@@ -317,7 +322,26 @@ export async function bootstrap(
             }
       )
     ]
-    if (snapshot) captureRuns(core.getCanonicalOwnerSnapshot())
+    for (const publication of snapshot?.replay ?? [])
+      await core.applyRemoteCanonicalChangeSlices({
+        origin: publication.origin,
+        slices: publication.slices
+      })
+    if (snapshot) {
+      const restored = core.getCanonicalOwnerSnapshot()
+      captureRuns(restored)
+      for (const bindings of readCapturedVisualBindingGroups(restored).values())
+        visuals.resolveBindings(bindings)
+      observations.resolve(
+        projectObservationAttachments({ document: restored })
+      )
+    }
+    const views = installRegisteredViews(
+      core,
+      () => captureRuns(core.getCanonicalOwnerSnapshot()),
+      loadIssues
+    )
+    subscriptions.add(views.dispose)
     const rect = host.getBoundingClientRect()
     let width = Math.max(1, rect.width),
       height = Math.max(1, rect.height)
@@ -382,8 +406,46 @@ export async function bootstrap(
       observations.resolve(notes.flatMap((note) => note.attachments))
       return notes
     }
+    views.selectCandidate(views.getSnapshot().candidates[0]?.id ?? null)
     return {
       features,
+      views,
+      publicationEntry: (
+        publication: SharedPublication,
+        known: ReadonlySet<string>
+      ): JournalEntry => {
+        assertLive()
+        const references = publicationReferences(publication)
+        const runs = [...references.runs]
+          .filter((id) => !known.has(`run:${id}`))
+          .map((id) => {
+            const run = archive.get(id)
+            if (!run) throw new Error(`Missing publication run ${id}`)
+            for (const body of run.snapshot.workcell.bodies)
+              for (const binding of body.visuals ?? [])
+                references.visuals.add(binding.assetId)
+            return run
+          })
+        const visualIds = [...references.visuals].filter(
+          (id) => !known.has(`visual:${id}`)
+        )
+        const observationIds = [...references.observations].filter(
+          (id) => !known.has(`observation:${id}`)
+        )
+        return {
+          version: 1,
+          publication,
+          resources: {
+            ...(runs.length ? { runs } : {}),
+            ...(visualIds.length
+              ? { visualSources: visuals.capture(visualIds) }
+              : {}),
+            ...(observationIds.length
+              ? { observationSources: observations.capture(observationIds) }
+              : {})
+          }
+        }
+      },
       pauseEditing: () => {
         assertLive()
         const token = {}

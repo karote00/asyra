@@ -107,7 +107,7 @@ export function useWorkbenchController() {
     retainedRuns,
     runError,
     historyDepth
-  } = useWorkbenchData(runtime, candidateId, revision)
+  } = useWorkbenchData(runtime, candidateId)
 
   const hasSelectedCandidate = candidates.some(
     (candidate) => candidate.id === candidateId

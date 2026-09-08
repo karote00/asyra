@@ -1,54 +1,40 @@
-import { useMemo } from 'react'
-import type { Workcell } from '../../domain/workcell'
+import { useCallback, useLayoutEffect, useSyncExternalStore } from 'react'
 import type { SimRuntime } from '../../init/bootstrap'
-import type { RunRecord } from '../../storage/run-record'
+import type { WorkbenchSnapshot } from '../../init/registered-views'
 
-/** Read-only UI projection; canonical notifications own invalidation. */
+const empty: WorkbenchSnapshot = {
+  candidateId: null,
+  candidates: [],
+  workcell: null,
+  modelError: '',
+  experiments: [],
+  retainedRuns: [],
+  runError: '',
+  loadIssues: [],
+  historyDepth: 0
+}
+const noSubscription = () => undefined
+const identity = (snapshot: WorkbenchSnapshot) => snapshot
+
+/** Core UI Context owns the values and their canonical invalidation. */
 export function useWorkbenchData(
   runtime: SimRuntime | null,
-  candidateId: string | null,
-  revision: number
+  candidateId: string | null
 ) {
-  return useMemo(() => {
-    const candidates = runtime?.getCandidates() ?? []
-
-    const loadIssues = runtime?.getLoadIssues() ?? []
-
-    const historyDepth = runtime?.getHistoryDepth() ?? 0
-
-    let retainedRuns: readonly RunRecord[] = []
-
-    let runError = ''
-
-    let workcell: Workcell | null = null
-
-    let modelError = ''
-
-    try {
-      retainedRuns = runtime?.getRuns() ?? []
-    } catch (reason) {
-      runError = `Cannot read retained runs: ${reason instanceof Error ? reason.message : String(reason)}`
-    }
-
-    try {
-      if (
-        runtime &&
-        candidateId &&
-        candidates.some((candidate) => candidate.id === candidateId)
-      )
-        workcell = runtime.getWorkcell(candidateId)
-    } catch (reason) {
-      modelError = `Cannot project this candidate: ${reason instanceof Error ? reason.message : String(reason)}`
-    }
-
-    return {
-      candidates,
-      loadIssues,
-      historyDepth,
-      retainedRuns,
-      runError,
-      workcell,
-      modelError
-    }
-  }, [runtime, candidateId, revision])
+  const subscribe = useCallback(
+    (listener: () => void) =>
+      runtime?.views.subscribe(identity, listener) ?? noSubscription,
+    [runtime]
+  )
+  const getSnapshot = useCallback(
+    () => runtime?.views.getSnapshot() ?? empty,
+    [runtime]
+  )
+  const snapshot = useSyncExternalStore(subscribe, getSnapshot)
+  useLayoutEffect(() => {
+    runtime?.views.selectCandidate(candidateId)
+  }, [runtime, candidateId])
+  if (snapshot.candidateId !== candidateId)
+    return { ...snapshot, workcell: null, experiments: [] }
+  return snapshot
 }

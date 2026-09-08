@@ -451,6 +451,14 @@ Replacement defaults must not masquerade as original experiment inputs.
   separate registered output and never becomes a document change authority.
   Runtime document subscribers consume the original publication, not transaction
   status, so rollback cannot mark the restored document as an additional edit.
+- The runtime owns a registered, read-only UI Context projection for candidates,
+  the selected workcell, experiments, retained runs, diagnostics and history
+  depth. Consumers share the completed domain values. Publication evidence
+  invalidates only affected owners; experiment/observation edits do not rebuild
+  unchanged workcell geometry. Selection and runtime replacement retire the
+  previous workcell projection. Temporary absence preserves selection intent:
+  Undo shows no substitute model and Redo restores the same candidate.
+  Projection failures remain explicit errors.
 - One edit maps to one understandable Undo action. Playback and solving do not
   write every frame into Undo history.
 - Object fields update through the editing Feature when completed, without a
@@ -519,13 +527,16 @@ one completed editing gesture remains one Undo action. Imports still require
 preview and explicit Apply. Completed formal results automatically belong to the
 project; previews and incomplete analysis progress do not become saved evidence.
 
-One storage owner coalesces bursts before capture/encoding and serializes writes.
-Changes arriving during a write remain pending and are persisted afterward.
+One storage owner immediately queues each original Core canonical publication
+and serializes its IndexedDB append without debounce or ordinary full capture.
+Changes arriving during a write remain distinct and are persisted in order.
 Only acknowledged writes may report Saved. Failures and cross-tab revision
 conflicts preserve local changes and expose retry/recovery; no blind overwrites.
 Project switches flush outstanding work before retiring the current document.
 New/imported projects receive their own identity; reload restores the same project.
 Project names persist automatically. Copy and portable export remain explicit.
-The first implementation uses existing IndexedDB and source formats, with bounded
-capture/encode/write work per burst rather than per UI keystroke; it does not
-introduce the Asyra Design socket backend.
+Local recovery validates an ordered journal over the initial checkpoint and
+newly referenced immutable resources, then applies prepared slices through Core
+without history or publication echo. Copy/export materialize complete snapshots;
+a copy can recover a rejected tail into a new project. Existing snapshot-only
+projects remain readable. No Asyra Design socket backend is introduced.

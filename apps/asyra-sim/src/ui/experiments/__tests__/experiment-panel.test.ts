@@ -33,8 +33,17 @@ vi.mock('react/jsx-dev-runtime', async (original) => {
 })
 
 let inputSource: ViewSource<ExperimentInputs> | undefined
+let registered:
+  | ViewSource<{ experiments: ReturnType<SimRuntime['getExperiments']> }>
+  | undefined
 
 function renderExperiment(input: ExperimentInputs) {
+  const snapshot = {
+    experiments: input.runtime.getExperiments(input.candidateId)
+  }
+  if (registered) registered.publish(snapshot)
+  else registered = new ViewSource(snapshot)
+  input.runtime.views = registered as unknown as SimRuntime['views']
   if (inputSource) inputSource.publish(input)
   else {
     inputSource = new ViewSource(input)
@@ -51,6 +60,7 @@ beforeEach(() => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
 
   inputSource = undefined
+  registered = undefined
 
   host = document.createElement('div')
 
@@ -592,4 +602,37 @@ it('reuses an edited import source across a non-trajectory canonical revision wi
   } finally {
     parse.mockRestore()
   }
+})
+
+it('keeps preview playback across unrelated publications and invalidates it for a changed workcell', async () => {
+  const onPlayback = vi.fn()
+  const input: ExperimentInputs = {
+    runtime,
+    candidateId: 'candidate',
+    workcell: example.workcell,
+    revision: 1,
+    perform: vi.fn(),
+    onPlayback,
+    runs: [],
+    retainedIds: new Set<string>(),
+    onRun: vi.fn(),
+    onOpenRuns: vi.fn(),
+    onVisualPreview: vi.fn(),
+    isCurrent: () => true,
+    visualImportActive: true
+  }
+  await act(() => renderExperiment(input))
+  onPlayback.mockClear()
+  const source = inputSource
+  if (!source) throw new Error('Missing input source')
+  await act(() => source.publish({ ...input, revision: 2 }))
+  expect(onPlayback).not.toHaveBeenCalled()
+  await act(() =>
+    source.publish({
+      ...input,
+      revision: 3,
+      workcell: structuredClone(example.workcell)
+    })
+  )
+  expect(onPlayback).toHaveBeenCalledWith(null)
 })

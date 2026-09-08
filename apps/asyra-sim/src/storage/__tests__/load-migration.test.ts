@@ -1,5 +1,7 @@
-import { describe, expect, it } from 'vitest'
-import { IDBFactory } from 'fake-indexeddb'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { IDBFactory, IDBKeyRange } from 'fake-indexeddb'
+beforeEach(() => vi.stubGlobal('IDBKeyRange', IDBKeyRange))
+afterEach(() => vi.unstubAllGlobals())
 import { decodeProject, encodeProject } from '../project-format'
 import { IndexedProjectRepository } from '../indexed-db'
 import { ComponentTypes, PropertyTypes } from '../../constants'

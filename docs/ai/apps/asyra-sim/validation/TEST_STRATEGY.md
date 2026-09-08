@@ -284,8 +284,13 @@ reuses the current conversion receipt, and unrelated experiment revisions must
 not reparse or replace edited source text. Exercise queued field writes and
 canonical Undo/Redo acknowledgements independently.
 
-Project-session tests count captures/writes for bursts and changes during pending
-writes, preserve revision-conflict/quota failures, flush before replacement, and
+Project-session tests count one initial capture and one ordered append per
+publication, including bursts and changes during pending writes. Real Core/IndexedDB
+recovery covers edit/Undo/Redo, creation/removal/restoration, immutable runs and
+new attachments without ordinary captures or duplicate resources. A blocked A
+write must finish while interaction B remains active without cancellation or an
+early history commit. Repository tests reject duplicate/gapped/broken tails.
+Tests preserve revision-conflict/quota failures, flush before replacement, and
 cover copy/rename and disposal races. Browser gates restore the same URL project
 identity after edits and reload, retain terminal results automatically, preserve
 observation/source bytes through portable reopening, and reject a missing reload

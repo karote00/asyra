@@ -45,7 +45,8 @@ test('reopens the existing database and migrates a legacy full model before resa
 }) => {
   await ready(page)
   await renameFixture(page, 'fixture post', 'Retained legacy fixture')
-  await save(page, 'Legacy project')
+  // Copy materializes the current document before constructing a snapshot-only legacy fixture.
+  await save(page, 'Legacy project', true)
   const original = await page.evaluate(async () => {
     const repositoryPath = '/src/storage/indexed-db.ts'
     const migrationPath = '/src/storage/load-migration.ts'
@@ -92,7 +93,7 @@ test('reopens the existing database and migrates a legacy full model before resa
   ).toBeVisible()
   await expect(page.getByRole('treeitem')).toHaveCount(11)
   await expect(page.getByTestId('history-depth')).toHaveText('Undo steps: 0')
-  await save(page, 'Migrated project')
+  await save(page, 'Migrated project', true)
   const persisted = await page.evaluate(async (id) => {
     const repositoryPath = '/src/storage/indexed-db.ts'
     const migrationPath = '/src/storage/load-migration.ts'
@@ -107,7 +108,7 @@ test('reopens the existing database and migrates a legacy full model before resa
     } finally {
       repository.close()
     }
-  }, original.id)
+  }, new URL(page.url()).searchParams.get('projectId'))
   expect(persisted.format).toBe('sim-project')
   expect(persisted.visualSources).toEqual(original.sources)
 })

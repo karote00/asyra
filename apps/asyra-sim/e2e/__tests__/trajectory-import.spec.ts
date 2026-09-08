@@ -32,28 +32,29 @@ async function savedDefinition(
   page: Page,
   experimentId: string
 ): Promise<ExperimentDefinition> {
-  return page.evaluate(async (id) => {
-    const repositoryPath = '/src/storage/indexed-db.ts'
-    const migrationPath = '/src/storage/load-migration.ts'
-    const formatPath = '/src/storage/project-format.ts'
-    const { IndexedProjectRepository } = await import(repositoryPath)
-    const { EXISTING_APP_DATABASE } = await import(migrationPath)
-    const { decodeProject } = await import(formatPath)
-    const repository = new IndexedProjectRepository(
-      indexedDB,
-      EXISTING_APP_DATABASE
-    )
-    try {
-      const { projects } = await repository.list()
-      const stored = await repository.read(projects[0].id)
-      const snapshot = decodeProject(stored.payload)
-      const propertyId =
-        snapshot.document.sceneTree.elements[id].props.experiment
-      return snapshot.document.props[propertyId].experimentDefinition
-    } finally {
-      repository.close()
-    }
-  }, experimentId)
+  // Verify the acknowledged checkpoint + journal through ordinary recovery,
+  // then inspect the portable materialization rather than the old checkpoint.
+  await page.reload()
+  await expect(page.getByRole('status')).toHaveText('Local runtime ready')
+  await expect(page.getByTestId('persistence-status')).toContainText(
+    'Saved locally'
+  )
+  await page.getByRole('button', { name: 'Projects', exact: true }).click()
+  const pending = page.waitForEvent('download')
+  await page
+    .getByRole('button', { name: 'Export project', exact: true })
+    .click()
+  const stream = await (await pending).createReadStream()
+  if (!stream) throw new Error('Missing portable project stream')
+  const chunks: Buffer[] = []
+  for await (const chunk of stream) chunks.push(Buffer.from(chunk))
+  const snapshot = JSON.parse(Buffer.concat(chunks).toString('utf8'))
+  await page
+    .getByRole('button', { name: 'Close projects', exact: true })
+    .click()
+  const propertyId =
+    snapshot.document.sceneTree.elements[experimentId].props.experiment
+  return snapshot.document.props[propertyId].experimentDefinition
 }
 
 test('external CSV declaration, conversion review, acceptance, Undo/Redo and reopening preserve source units', async ({

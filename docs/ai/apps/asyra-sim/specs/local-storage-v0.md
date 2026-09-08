@@ -1,19 +1,38 @@
 # Local Project Storage v0
 
-The storage owner retains detached project snapshots in origin-local IndexedDB.
+The storage owner retains a checkpoint and ordered canonical publications in origin-local IndexedDB.
 The App lifecycle owner replaces a project runtime; the editing owner applies
 canonical data through Core. A database operation never opens or extends a
 canonical transaction.
 
 ## Automatic Persistence and Open
 
-One app-lifetime storage session automatically persists committed document changes,
-Undo/Redo, project names and retained results. A fixed 300 ms window coalesces a
-burst before canonical capture and encoding. Writes are serialized; edits during
-an outstanding write remain pending and are captured afterward. Copy/export busy
+One app-lifetime storage session immediately queues every Core document
+publication, including Undo/Redo, in delivery order. There is no debounce.
+An initial checkpoint stores the complete document; ordinary writes append the
+original publication and previously unrecorded immutable resources without
+recapturing the project or entering the interaction-cancelling capture Feature.
+Each append and metadata revision are acknowledged in one IndexedDB transaction.
+Writes are serialized; distinct publications arriving during a write remain
+queued in order, and failed entries remain available for explicit retry.
+Project names remain non-Undo metadata and use a metadata-only write.
+Copy/export busy
 periods must not discard queued changes. New projects receive an identity on the
 first acknowledgement; the UI records it in the current URL and restores it on
 reload. Ordinary editing exposes no Save action.
+
+Local storage retains a checkpoint plus an ordered, versioned publication tail.
+Reopening validates the complete tail and immutable resource union, then uses
+Core canonical replay in a fresh runtime without local history or publication
+echo. A missing resource, invalid operation, broken order or revision conflict
+fails closed. Existing snapshot-only projects open with an empty tail; portable
+exports and explicit copies remain complete version-1 snapshots. The combined
+checkpoint/tail budget is 64 MiB; quota or budget exhaustion stays retryable and
+does not acknowledge lost changes. Explicit copies establish a new checkpoint. After waiting for an active write,
+a copy may capture current canonical data even when the old tail cannot append;
+it never overwrites the previously acknowledged project.
+Checkpoint capture pauses new editing until its exact publication boundary is
+recorded; ordinary appends never capture or cancel a later interaction.
 
 A persistence capture includes the canonical document and unresolved load diagnostics.
 The versioned envelope is JSON data, not executable code. Reject unsupported
@@ -45,7 +64,7 @@ must reject rather than silently overwrite it. New projects receive new IDs.
 
 The presentation states are unsaved, saving, saved, and error; opening is a
 separate busy operation. Editing during a save is allowed. Completion acknowledges
-only the captured revision, so newer edits remain unsaved. The queue drains pending edits before explicit project replacement. Other overlapping
+only the written publication or checkpoint boundary, so newer edits remain unsaved. The queue drains pending edits before explicit project replacement. Other overlapping
 low-level operations reject. Save failures and pre-retirement open failures
 retain the editable model and support retry. Post-retirement failure instead
 retains detached recovery with no editable runtime. Persistence status and
@@ -283,7 +302,7 @@ recovery, one canvas/input surface, and resource cleanup in the real browser.
 
 Storage is optional for editing: unavailable IndexedDB must display an actionable
 save/open error, not prevent local modeling or substitute volatile memory while
-claiming a save. Do not automatically restore or overwrite a project at startup.
+claiming a save. Restore only the explicit project identity in the current URL; never overwrite it with the startup example.
 List at most the 100 most recently saved project summaries and disclose truncation.
 Deleting projects and automatic migration are outside this initial slice.
 

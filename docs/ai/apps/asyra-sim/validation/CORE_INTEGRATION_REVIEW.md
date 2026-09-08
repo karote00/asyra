@@ -1,25 +1,91 @@
 # Core integration review - 2026-09-08
 
 Baseline: `a379a0ee2`, branch `codex/asyra-sim-m2-import-contract`.
-This is a requested architecture review, not a new runtime contract or a claim
-that the findings have been fixed. Sim production code and its Inspector remain
-unchanged in this documentation/review task.
+This file retains the requested architecture audit at the named baselines.
+The initial audit changed documentation only; the subsequent approved
+implementation and its closure evidence are recorded immediately below.
 
 Follow-up baseline: `cc16f8ce5`. The user accepted the CUSTOM rendering boundary
 and requested a requirements-first mapping to existing Asyra capabilities.
 The schema observation below is not a confirmed defect or a decision to split
-properties. The proposed staged refactor below is the current recommended order.
+properties. The staged refactor below records the approved order, now implemented.
 
-Implementation progress: the composition document-channel slice now installs
-Core local Scene Tree/Props channels and forwards original publications to
-runtime document subscribers. A normal-runtime regression failed with zero
-publications before channel installation; a second regression exposed an extra
-rollback notification before replacing the status subscription. Edit, Undo and
-Redo now each publish once; no-op and transaction-end rollback publish nothing.
-Direct computed reads already returned correct values, so this slice adds no
-redundant computed projector or renderer replacement. Registered UI consumers,
-scoped read invalidation and publication-based storage/recovery remain pending.
-The findings below retain their explicitly identified audit baselines.
+## Implemented outcome
+
+The four approved integration stages are complete in this worktree. The findings
+below describe the named audit baselines, not remaining production gaps.
+
+- CUSTOM composition installs the Core local Scene Tree/Props channels and
+  forwards original publications. No-op and transaction-end rollback do not
+  publish document edits. Existing scene components, object schemas and complete
+  original geometry remain unchanged; `@asyra/utils` is the user-approved direct
+  dependency.
+- `init/registered-views.ts` owns the registered Core UI workbench value and a
+  metadata-only identity index. Publication evidence routes workcell, experiment
+  and retained-run reads before work happens. Consumers share stable values;
+  unrelated edits do not recapture the workcell or historical results. Selection
+  intent survives temporary candidate absence, so Undo shows no substitute and
+  Redo restores the selected model. Workcell changes invalidate preview; unrelated
+  publications do not clear it. Camera/playback remain transient.
+- `storage/project-session.ts` immediately queues every original canonical
+  publication, without a debounce or ordinary full capture. IndexedDB schema 2
+  retains the existing database identity and adds an ordered journal. Each append
+  atomically acknowledges the publication, newly referenced immutable resources
+  and metadata under revision compare-and-swap. Failed heads remain retryable.
+- Recovery validates the journal once into prepared Core change slices, restores
+  the checkpoint/resource union and applies those same slices through Core before
+  startup. It creates no local Undo or publication echo. Missing/broken tails,
+  duplicate publications, conflicts and corrupt resources fail closed. Existing
+  snapshot-only projects remain readable; explicit copies/exports materialize
+  portable snapshots. A failed append can be recovered into a new checkpoint
+  copy without overwriting the previous acknowledgement.
+- Deliberate checkpoint capture pauses admission through its exact revision
+  callback. Saving action A never enters the capture Feature and cannot cancel
+  an active interaction B or commit it early. Replacement still uses the existing
+  preflight/quiescence/recovery boundary.
+
+The public entry remains
+[Build a Core App correctly](../../../../public/start/custom-composition.md#build-one-complete-data-path),
+linked from the repository README and Core documentation. It records the reusable
+registration, publication, ownership and durability method without requiring
+consumers to repeatedly inspect Design.
+
+## Final verification
+
+- 624 Sim tests pass across 114 files. Permanent regressions prove ordered
+  publication writes/retry, zero ordinary persistence captures, active-interaction
+  isolation, resource recovery, prepared-slice identity reuse, unrelated-owner
+  read counts and selected-candidate Undo/Redo. Camera and playback each produce
+  zero canonical reads across 30 local UI samples.
+- 49 distinct Chromium UI/E2E cases pass in bounded single-worker batches at
+  `http://127.0.0.1:3020`, with the unchanged 180-second global limit and no retries.
+  These cover automatic persistence, native IndexedDB, A/B/A replacement,
+  legacy projects, import units, object fields, experiments, all six starter
+  studies, field files, retained evidence, original sources, candidate comparison,
+  transient navigation/playback, resource admission and existing runtime numerics.
+- The broad initial browser selection reached its time limit. Exact batches
+  resolved the remaining cases. Snapshot-only fixture readers were corrected to
+  use deliberate checkpoints or ordinary recovery plus portable materialization;
+  independent import/preflight alerts are scoped separately. The candidate Redo
+  failure was fixed in the registered projection owner after a failing permanent
+  regression. No test budget or solver guarantee was weakened.
+- Inspected ordinary project/replay, source-to-canonical conversion, original-part
+  reopening and candidate comparison screenshots. These are product-flow checks,
+  not a new independent numerical certification or reference-hardware FPS claim.
+- App build/typecheck and lint, naming (11), Inspector contracts (97), and test
+  placement (2) pass. The existing Vite chunk-size advisory remains unchanged.
+  Logs are in `.artifacts/sim-refactor-*`; focused red/green evidence also records
+  the journal, candidate projection, copy recovery and interaction boundaries.
+
+Reproduce with the App's `test:local`, `build`, `lint` and `test:e2e` scripts.
+Pass exact E2E file paths and split starter studies using `--grep`; keep
+`APP_URL=http://127.0.0.1:3020`. The development server is the existing task-owned
+PID 86512. No remote operation or release action was performed.
+
+There is no remaining blocker within this accepted integration scope. M2 retains
+its accepted status. M3 numerical-method evidence review is the next separately
+bounded milestone; M4-M6, backend transport, automatic journal compaction and
+Preset 3D extraction are not introduced by this follow-up.
 
 ## Scope and method
 
@@ -36,7 +102,7 @@ Solver mathematics, full source geometry, Preset extraction, backend creation,
 packaging and release remain outside this review. No broad source cleanup is
 authorized by these findings.
 
-## Conclusion
+## Audit-baseline conclusion
 
 Sim uses real Core Features, canonical owners, transactions and lifecycle
 facades. The earlier reorganization was not merely cosmetic. However, the
@@ -49,7 +115,7 @@ Read [the reusable Core App guide](../../../../public/start/custom-composition.m
 for the implementation method. The following source paths are relative to the
 repository root; they identify the first responsible owners.
 
-## Confirmed gaps
+## Confirmed gaps at the audit baseline
 
 ### 1. Automatic persistence observes status and recaptures the project
 
@@ -336,7 +402,7 @@ topology. Archived result bytes stay unchanged when the current model changes.
 Place routing before canonical reads and expensive preparation. UI Context
 cannot recover work already wasted by a whole-document reader upstream.
 
-## Proposed staged refactor
+## Approved staged refactor (implemented)
 
 1. **Prove CUSTOM composition.** Reconcile compose/edit/ui handoffs for channels
    and property/UI projections. Add permanent normal-runtime tests first for
@@ -362,9 +428,8 @@ cannot recover work already wasted by a whole-document reader upstream.
    justify a separately scoped representation change.
 
 Before each production slice, reconcile its exact Inspector/spec contract and
-write its Step Execution Card. Current contracts still describe revision-wide
-workbench projections and coalesced snapshot saving; this proposal does not
-silently amend those executable contracts. No solver, dependency, Preset 3D
+write its Step Execution Card. The implementation reconciles the affected compose/storage/ui and lifecycle
+contracts with registered projections and immediate publication persistence. No solver, dependency, Preset 3D
 extraction, backend, release or M3-M6 implementation is included. Project-name
 Undo semantics remain an explicit product decision; preserve current metadata
 behavior until decided.
@@ -380,4 +445,5 @@ At `cc16f8ce5`, existing permanent suites passed:
 Logs: `.artifacts/sim-feasibility-{ui-context,core,current-app}.log`. These tests
 support capability feasibility and preserved behavior, not completion of the
 proposed integration. The normal-caller cases above remain implementation gates.
-This follow-up changes documentation only.
+That feasibility follow-up changed documentation only; the implemented outcome
+above records the subsequent authorized production work.

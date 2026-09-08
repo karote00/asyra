@@ -41,7 +41,7 @@ export function useProjectRuntime(
     const session = new ProjectSession(
       new IndexedProjectRepository(undefined, EXISTING_APP_DATABASE),
       {
-        capture: () => controller.capture(),
+        capture: (onCaptured) => controller.capture(onCaptured),
         apply: (snapshot, assertCurrent) =>
           controller.replace(snapshot, assertCurrent)
       }
@@ -60,10 +60,12 @@ export function useProjectRuntime(
 
       observed = runtime
 
-      unsubscribeModel = runtime?.subscribe(() => {
+      unsubscribeModel = runtime?.subscribe((publication) => {
         if (controller.getState().runtime !== runtime) return
 
-        session.markEdited()
+        session.markEdited(
+          runtime.publicationEntry(publication, session.getKnownResources())
+        )
 
         setRevision((value) => value + 1)
       })

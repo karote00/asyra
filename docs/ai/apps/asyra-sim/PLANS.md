@@ -20,32 +20,6 @@
 
 ## Active Work
 
-- **Core integration follow-up requested on 2026-09-08.** The
-  [baseline review](validation/CORE_INTEGRATION_REVIEW.md) is complete as a
-  source/test audit, not a production correction. It found status-driven full
-  snapshot autosave, an interaction-cancelling capture inlet and broad upstream
-  read invalidation. Property representation needs feasibility assessment,
-  not an automatic schema migration. Freeze the projection, local publication
-  and resource-recovery contracts before their respective implementation slices.
-  Reconcile affected specs/Inspectors first; no backend, solver or M3-M6 work
-  is included.
-  - The requirements/capability follow-up preserves CUSTOM rendering and the
-    current object schemas. Schema size is not a confirmed defect. Proposed
-    order: prove CUSTOM channel/property/UI Context wiring, replace broad read
-    consumers, implement publication persistence with local resource recovery,
-    then run full workflow/work-count gates. See the same review's feasibility
-    section. The first composition slice now registers Core local document
-    channels. The normal-runtime regression first failed with zero publications,
-    then passed with distinct edit/Undo/Redo publications and no publication
-    for no-op or rollback. Runtime subscribers now receive the original
-    publication instead of transaction status. All 40 composition/lifecycle
-    tests, the complete 613-test Sim suite, and three ordinary
-    editing/replacement/reload browser cases pass at port 3020; the generated
-    editing screenshot was inspected. Build, lint, naming and all 97 Inspector
-    contracts pass. Registered
-    UI consumers and incremental persistence remain unfinished; this is not
-    closure of the integration follow-up.
-
 1. [Asyra Sim first-release roadmap](plans/asyra-sim-roadmap.md)
    - M1 is closed and M2 Import Contract Completion passed milestone acceptance
      on 2026-09-07. Next is a separately bounded M3 review of the existing
@@ -60,14 +34,33 @@
 
 ## Completed Work
 
+- **Core integration follow-up (2026-09-08).**
+  - Completed all four approved stages: normal CUSTOM document publications,
+    registered Core UI projections and scoped consumers, immediate ordered local
+    journal/resource persistence, and integrated recovery/workflow verification.
+  - Every ordinary canonical publication persists without debounce or full project
+    capture. Undo/Redo remain immediate. Saving a previous action cannot cancel a
+    later interaction. Explicit checkpoint/copy/export retains its stable capture
+    boundary; a rejected tail can be recovered into a new copy.
+  - Preserved scene components, whole-object schemas, full original geometry,
+    immutable evidence, source units and CUSTOM rendering. The only dependency
+    addition was the explicitly approved direct `@asyra/utils` dependency.
+  - Verified: 624 Sim tests, 49 distinct UI/E2E cases at port 3020, inspected
+    screenshots, App build/typecheck/lint, naming, all 97 Inspector contracts and
+    test placement. The bounded integration has no remaining acceptance blocker.
+  - See [the completed integration review](validation/CORE_INTEGRATION_REVIEW.md)
+    for ownership, implementation boundaries and final evidence. This closes the
+    accepted integration follow-up; it does not advance M3-M6 or approve release.
+
 - **Automatic persistence and editing consistency (2026-09-08).**
   - This completed UX slice removed manual Save, but its snapshot-based storage
-    is not complete incremental Core integration. The follow-up above records
-    the newly identified architectural gaps without claiming they are fixed.
+    was not incremental Core integration. The completed follow-up above replaces
+    that transport while preserving the accepted editing UX.
   - Valid completed object, experiment and observation edits persist locally
     without Save controls. New experiment creation, import Apply, attachment
     acceptance, copy/export and failure retry remain explicit actions.
-  - One bounded storage queue coalesces captures/writes, drains changes arriving
+  - At that UX baseline, one bounded storage queue coalesced captures/writes.
+    The completed integration above supersedes that transport. The UX drains changes arriving
     during writes or copies, flushes before replacement, and restores the same
     project identity on reload. Missing-target retry cannot overwrite its URL
     identity with the startup example. Failures remain unacknowledged/retryable.

@@ -1,3 +1,4 @@
+import type { JournalEntry, PreparedPublication } from './publication-journal'
 import type { ModelLoadIssue } from '../common-apis/document'
 import { validateRunRecords, type RunRecord } from './run-record'
 import { readCapturedRunReferences } from '../common-apis/run-reference'
@@ -13,6 +14,8 @@ import { LEGACY_PROJECT_FORMAT, migrateProjectDocument } from './load-migration'
 
 export const PROJECT_BYTE_LIMIT = 64 * 1024 * 1024
 export interface ProjectSnapshot {
+  /** Local recovery only; portable captures are materialized documents. */
+  replay?: readonly PreparedPublication[]
   document: unknown
   loadIssues: readonly ModelLoadIssue[]
   runs?: readonly RunRecord[]
@@ -37,9 +40,16 @@ export interface ProjectSummary {
   savedAt: string
 }
 export interface StoredProject extends ProjectSummary {
+  journal?: readonly JournalEntry[]
   payload: string
 }
 export interface ProjectRepository {
+  append(
+    project: ProjectSummary,
+    expectedRevision: string,
+    entry: JournalEntry | null,
+    signal?: AbortSignal
+  ): Promise<void>
   read(id: string, signal?: AbortSignal): Promise<StoredProject>
   write(
     project: StoredProject,
@@ -164,6 +174,11 @@ export function decodeProject(text: string): ProjectSnapshot {
     throw new Error('Saved project document is missing')
   checkSize(text)
   const value: unknown = JSON.parse(text)
+  if (
+    record(value) &&
+    (Object.hasOwn(value, 'publications') || Object.hasOwn(value, 'replay'))
+  )
+    throw new Error('Local journal is not a portable project')
   if (
     !record(value) ||
     (value.format !== StorageFormats.PROJECT &&

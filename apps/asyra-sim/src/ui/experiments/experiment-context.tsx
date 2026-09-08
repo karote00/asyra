@@ -26,8 +26,6 @@ export function ExperimentProvider({
 
   const workcell = useViewValue(inputs, (value) => value.workcell)
 
-  const revision = useViewValue(inputs, (value) => value.revision)
-
   const perform = useViewValue(inputs, (value) => value.perform)
 
   const onPlayback = useViewValue(inputs, (value) => value.onPlayback)
@@ -52,7 +50,6 @@ export function ExperimentProvider({
     runtime,
     candidateId,
     workcell,
-    revision,
     perform,
     onPlayback,
     runs,

@@ -110,8 +110,8 @@ test('invalid trajectory mapping and empty scope are actionable without mutating
   await page
     .getByRole('button', { name: 'Run formal analysis', exact: true })
     .click()
-  await expect(page.getByRole('alert')).toContainText(
-    'no checkable collider pairs'
-  )
+  await expect(
+    page.getByRole('alert').filter({ hasText: 'Experiment preflight blocked' })
+  ).toContainText('no checkable collider pairs')
   await expect(page.getByTestId('analysis-result')).toHaveCount(0)
 })
