@@ -12,7 +12,6 @@ export const SITE = Object.freeze({
   postSpacing: 5,
   tubeDiameter: 0.048,
   postDiameter: 0.076,
-  drainDepth: 0.25,
   barrierHeight: 0.35,
   barrierThickness: 0.02
 })

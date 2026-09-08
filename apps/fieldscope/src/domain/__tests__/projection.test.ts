@@ -19,7 +19,7 @@ it('preserves exact recessed surfaces, exterior barriers and shared geometry acr
     }
   }
   expect(Math.max(...points('soil').y)).toBeCloseTo(0)
-  expect(Math.max(...points('drains').y)).toBeCloseTo(-0.25)
+  expect(Math.max(...points('drains').y)).toBeCloseTo(0)
   expect(
     points('barriers').x.every((x) => x <= 0.020001 || x >= 27.979999)
   ).toBe(true)

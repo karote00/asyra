@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
   BED_WIDTHS,
-  SITE,
   createLayout,
   createStructure,
   roofPoint
@@ -41,7 +40,6 @@ describe('four connected greenhouses in source metres', () => {
     expect(members.filter((m) => m.kind === 'arch')).toHaveLength(204)
     expect(members.filter((m) => m.kind === 'post')).toHaveLength(55)
     expect(members.filter((m) => m.kind === 'tie')).toHaveLength(44)
-    expect(SITE.drainDepth).toBeGreaterThan(0)
     const identities = members.map((m) => JSON.stringify(m.points))
     expect(new Set(identities).size).toBe(identities.length)
   })

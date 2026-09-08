@@ -1,3 +1,4 @@
+import { createDrainProfile } from '../domain/drain-profile'
 import {
   DEFAULT_CONFIGURATION,
   configurationSite,
@@ -184,27 +185,55 @@ export function buildSiteMeshes(
       clipBuilders.push(builder)
     }
   }
-  base.box([middle, -0.48, midDepth], [totalWidth + 6, 0.26, depth + 6])
+  const terrainDepth = Math.max(
+    0.35,
+    ...strips
+      .filter((strip) => strip.kind === 'drain')
+      .map((strip) => strip.width / 2 + 0.05)
+  )
+  base.box(
+    [middle, -terrainDepth - 0.13, midDepth],
+    [totalWidth + 6, 0.26, depth + 6]
+  )
   for (const strip of strips) {
     const middle = strip.x + strip.width / 2
     if (strip.kind === 'soil')
-      soil.box([middle, -0.175, midDepth], [strip.width, 0.35, depth])
-    else
-      drains.box(
-        [middle, -site.drainDepth - 0.05, midDepth],
-        [strip.width, 0.1, depth]
+      soil.box(
+        [middle, -terrainDepth / 2, midDepth],
+        [strip.width, terrainDepth, depth]
       )
+    else {
+      const { points } = createDrainProfile(strip.width)
+      for (let i = 1; i < points.length; i++) {
+        const [ax, ay] = points[i - 1],
+          [bx, by] = points[i]
+        const a = strip.x + ax,
+          b = strip.x + bx
+        drains.quad([a, ay, 0], [a, ay, depth], [b, by, depth], [b, by, 0])
+        // Close the exposed ends below the curve without filling the channel opening.
+        for (const z of [0, depth])
+          drains.quad(
+            [a, ay, z],
+            [b, by, z],
+            [b, -terrainDepth, z],
+            [a, -terrainDepth, z]
+          )
+      }
+    }
   }
   for (const p of passages)
     builders.passages.box(
-      [p.x + p.width / 2, -0.175, midDepth],
-      [p.width, 0.35, depth]
+      [p.x + p.width / 2, -terrainDepth / 2, midDepth],
+      [p.width, terrainDepth, depth]
     )
   for (const [side, x] of [
     site.margin / 2,
     totalWidth - site.margin / 2
   ].entries()) {
-    builders.passages.box([x, -0.175, midDepth], [site.margin, 0.35, depth])
+    builders.passages.box(
+      [x, -terrainDepth / 2, midDepth],
+      [site.margin, terrainDepth, depth]
+    )
     barriers.box(
       [
         side === 0

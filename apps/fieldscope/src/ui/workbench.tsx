@@ -6,7 +6,8 @@ import {
 import { configurationSite } from '../domain/farm-configuration'
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { bootstrap, type FarmRuntime } from '../runtime/bootstrap'
-import { CROPS } from '../domain/greenhouse'
+import { CROPS, createLayout } from '../domain/greenhouse'
+import { createDrainProfile } from '../domain/drain-profile'
 import {
   LAYER_LABELS,
   type CameraMode,
@@ -583,7 +584,7 @@ function Controls({
         <summary className="font-medium">建模假設與結構參考</summary>
         <p className="mt-3 leading-relaxed">
           橫樑高度隨總高計算；拱架每 1m；立柱每 5m，尾端補齊；拱管直徑
-          48mm；立柱直徑 76mm；溝深 0.25m；擋板高
+          48mm；立柱直徑 76mm；半圓水道深度為寬度一半，槽口圓角最大 1cm；擋板高
           0.35m；端面開口依跨寬與簷高縮限，上限寬 2m、高
           2.5m。通道淨寬須扣除立柱。
         </p>
@@ -605,6 +606,15 @@ function Controls({
 function CrossSection() {
   const config = useFarmConfiguration()
   const site = configurationSite(config)
+  const strips = createLayout(site, config.strips).strips.filter(
+    (strip) => strip.bay === 0
+  )
+  const sectionDepth = Math.max(
+    0.15,
+    ...config.strips
+      .filter((strip) => strip.kind === 'drain')
+      .map((strip) => strip.width / 2)
+  )
   return (
     <section className="rounded-2xl border border-[#dde3d8] bg-[#fafbf7] p-5">
       <div className="mb-4 flex items-center justify-between gap-3">
@@ -617,28 +627,66 @@ function CrossSection() {
           + {site.margin.toFixed(2)}
         </span>
       </div>
-      <div
-        className="flex h-12 items-start gap-0"
-        aria-label="土壤與下凹水溝的等比例寬度示意"
+      <svg
+        viewBox={`0 -0.04 ${config.width} ${sectionDepth + 0.22}`}
+        className="w-full"
+        role="img"
+        aria-label="土壤與半圓水道圓角的等比例剖面"
       >
-        <div
-          style={{ flex: site.margin }}
-          className="h-6 border-b border-[#cbd3be] bg-[#e3e8db]"
+        <rect
+          x="0"
+          y="0"
+          width={config.width}
+          height={sectionDepth + 0.04}
+          fill="#e3e8db"
         />
-        {config.strips.map(({ width, kind }, i) => (
-          <div
-            key={i}
-            style={{ flex: width }}
-            className={`flex justify-center pt-1 font-mono text-[10px] ${kind === 'soil' ? 'h-7 border-r border-[#c8bca7] bg-[#c6b497] text-[#6c5a42]' : 'mt-4 h-3 border-b border-[#91aeb0] bg-[#c0d3d1] text-[#557c7f]'}`}
-          >
-            {width}
-          </div>
-        ))}
-        <div
-          style={{ flex: site.margin }}
-          className="h-6 border-b border-[#cbd3be] bg-[#e3e8db]"
-        />
-      </div>
+        {strips.map((strip, i) => {
+          const profile =
+            strip.kind === 'drain' ? createDrainProfile(strip.width) : null
+          const curve = profile?.points
+            .map(([x, y], index) => `${index ? 'L' : 'M'}${strip.x + x},${-y}`)
+            .join(' ')
+          return (
+            <g key={i}>
+              {profile ? (
+                <>
+                  <path
+                    d={`${curve} L${strip.x + strip.width},${sectionDepth + 0.04} L${strip.x},${sectionDepth + 0.04} Z`}
+                    fill="#c0d3d1"
+                  />
+                  <path
+                    d={`${curve} L${strip.x + strip.width},0 Z`}
+                    fill="#fafbf7"
+                  />
+                  <path
+                    d={curve}
+                    fill="none"
+                    stroke="#668b8a"
+                    strokeWidth="0.008"
+                  />
+                </>
+              ) : (
+                <rect
+                  x={strip.x}
+                  y="0"
+                  width={strip.width}
+                  height={sectionDepth + 0.04}
+                  fill="#c6b497"
+                />
+              )}
+              <text
+                x={strip.x + strip.width / 2}
+                y={sectionDepth + 0.14}
+                textAnchor="middle"
+                fontSize="0.10"
+                fill="#6c5a42"
+              >
+                {strip.width}
+              </text>
+            </g>
+          )
+        })}
+      </svg>
       <div className="mt-2 flex flex-wrap gap-4 text-[10px] text-[#85917a]">
         <span>
           ■ 土壤{' '}
