@@ -96,3 +96,13 @@
   or workflow enforcement. Resume external setup only on a separate user request;
   Phase 5/6 remain deferred. PR review/merge remains separate from local completion.
 - Release boundary: no Changeset, version bump, tag, release or deployment change.
+
+## 2026-09-08 - Activate isolated local Phase 5
+
+After PR #166 merged, the user authorized Phase 5 local execution while keeping
+mandatory GitHub protection, independent verifier/issuer and remote acceptance
+evidence deferred. This supersedes the Phase 5 entry dependency only; it does
+not satisfy or remove the original Phase 4 DoD. The product boundary is
+[Local Agent Execution](../../AGENT_EXECUTION.md). Deterministic adapter proof
+is distinct from real provider acceptance. No Phase 6, release or merge authority
+is introduced.

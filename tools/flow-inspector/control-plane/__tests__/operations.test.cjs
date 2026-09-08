@@ -303,3 +303,47 @@ test(
     }
   }
 )
+
+test('agent actions share capability, task identity, all-flow policy and mutual exclusion', async (t) => {
+  const dir = directory(t)
+  const service = createService(root, {
+    directory: dir,
+    agentOptions: {
+      available: () => true,
+      verify: async () => ({ evidence: { status: 'unknown' } })
+    }
+  })
+  try {
+    const state = service.state()
+    const request = {
+      requestId: randomUUID(),
+      stepId: 'finalize-transaction-state',
+      objective: 'Review isolated source',
+      allowedFiles: ['packages/factory/src/data-transact.ts'],
+      adapter: 'demonstration',
+      scenario: 'stall',
+      contractDigest: state.contract.digest,
+      revision: state.mapping.revision,
+      budgets: { elapsedMs: 60000, toolCalls: 20, attempts: 3 }
+    }
+    assert.throws(
+      () => service.startTask(request, { id: 'agent', capabilities: [] }),
+      /authorized/
+    )
+    assert.equal(service.state().tasks.records.length, 0)
+    const id = service.startTask(request, LOCAL_ACTOR)
+    assert.equal(service.startTask(request, LOCAL_ACTOR), id)
+    assert.throws(() => service.start({}, LOCAL_ACTOR), /running/)
+    assert.throws(() => service.prepareMapping({}, LOCAL_ACTOR), /running/)
+    const stopped = await service.controlTask(
+      id,
+      { action: 'handoff' },
+      LOCAL_ACTOR
+    )
+    assert.equal(stopped.phase, 'handed-off')
+    assert.equal(service.state().mapping.revision, state.mapping.revision)
+    assert.equal(service.state().tasks.records[0].id, id)
+  } finally {
+    await service.close()
+  }
+})

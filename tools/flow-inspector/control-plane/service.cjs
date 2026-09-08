@@ -15,6 +15,9 @@ const {
 } = require('./evolution.cjs')
 const { prepareCIContext } = require('./ci-context.cjs')
 const { assessCI } = require('./ci-evidence.cjs')
+const { createTaskOwner } = require('./agent-task.cjs')
+const { TASK_POLICY } = require('./agent-contract.cjs')
+const { containmentAvailable } = require('./agent-verifier.cjs')
 
 const LOCAL_ACTOR = Object.freeze({
   id: 'local-developer',
@@ -29,7 +32,9 @@ const LOCAL_ACTOR = Object.freeze({
     'retire-contract',
     'ci',
     'ingest-ci',
-    'update-work'
+    'update-work',
+    'delegate-task',
+    'control-task'
   ])
 })
 class ActionError extends Error {
@@ -57,7 +62,8 @@ function createService(
     capture = captureSource,
     timeoutMs = 30000,
     acceptedBase = 'origin/main',
-    ciAdmission = null
+    ciAdmission = null,
+    agentOptions = {}
   } = {}
 ) {
   ciAdmission = ciAdmission ? structuredClone(ciAdmission) : null
@@ -144,6 +150,7 @@ function createService(
     )
   let publicContract = projectContract()
   let active = null
+  let tasks
   let closed = false
   const pending = new Map()
   let sharedSnapshot
@@ -297,7 +304,8 @@ function createService(
   }
   const requireIdle = () => {
     if (closed) throw new ActionError(409, 'Service is closing')
-    if (active) throw new ActionError(409, 'An attempt is already running')
+    if (active || tasks?.activeId())
+      throw new ActionError(409, 'An attempt or task is already running')
   }
   const objectRequest = (request, keys) => {
     if (
@@ -316,7 +324,53 @@ function createService(
       candidateMappingVersion: candidate.mappingVersion
     }
   }
+  try {
+    tasks = createTaskOwner(repositoryRoot, {
+      ...agentOptions,
+      directory: path.join(directory, 'tasks'),
+      getBaseline: () => ({ contract, revision: store.mapping().revision }),
+      requireIdle: () => {
+        if (closed || active)
+          throw new ActionError(
+            409,
+            'An attempt is running or service is closing'
+          )
+      }
+    })
+  } catch (error) {
+    store.close()
+    throw error
+  }
+  const taskResult = (operation) => {
+    try {
+      return operation()
+    } catch (error) {
+      throw new ActionError(409, error.message)
+    }
+  }
   return {
+    startTask(request, actor) {
+      authorize(actor, 'delegate-task')
+      return taskResult(() => tasks.start(request, actor.id))
+    },
+    getTask: (id) => taskResult(() => tasks.get(id)),
+    waitTask: (id) => tasks.wait(id),
+    taskChanges: (id) => taskResult(() => tasks.changes(id)),
+    async controlTask(id, request, actor) {
+      authorize(actor, 'control-task')
+      objectRequest(request, ['action', 'scenario'])
+      if (request.action === 'resume') {
+        taskResult(() => tasks.resume(id, request.scenario, actor.id))
+        return tasks.get(id)
+      }
+      if (request.scenario !== undefined)
+        throw new ActionError(400, 'Scenario is only valid for resume')
+      try {
+        return await tasks.stop(id, request.action, actor.id)
+      } catch (error) {
+        throw new ActionError(409, error.message)
+      }
+    },
     contract: () => contract,
     shared: () => sharedSnapshot,
     setWork(request, actor) {
@@ -679,6 +733,25 @@ function createService(
           digest: record.snapshot?.digest ?? null
         }))
       return {
+        tasks: {
+          available: containmentAvailable(),
+          policy: TASK_POLICY,
+          activeId: tasks.activeId(),
+          records: tasks
+            .list()
+            .slice(0, 20)
+            .map((record) => ({
+              id: record.id,
+              stepId: record.task.stepId,
+              objective: record.task.objective,
+              phase: record.phase,
+              usage: record.usage,
+              verificationStatus: record.verificationStatus,
+              workStatus: record.workStatus,
+              deliveryStatus: record.deliveryStatus,
+              attemptCount: record.attempts.length
+            }))
+        },
         contract: publicContract,
         shared: sharedSnapshot,
         evolution: publicEvolution,
@@ -958,6 +1031,7 @@ function createService(
     async close() {
       closed = true
       try {
+        await tasks.close()
         if (active) {
           const id = active.id
           active.controller.abort()

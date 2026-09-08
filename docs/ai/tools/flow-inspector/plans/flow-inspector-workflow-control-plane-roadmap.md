@@ -436,3 +436,10 @@ Stop the affected delivery if any of these remains possible:
 - [Bounded task scope and closure](../../../framework/rules/bounded-task-scope-and-closure.md)
 - [Inspector contract readiness](../../../framework/rules/inspector-contract-readiness.md)
 - [Inspector step execution](../../../framework/rules/inspector-step-execution.md)
+
+## Phase 5 Local Activation - 2026-09-08
+
+The user separately activated [local isolated agent execution](../AGENT_EXECUTION.md)
+while retaining all deferred Phase 4 enforcement requirements. Earlier statements
+that Phase 4 closeout did not activate Phase 5 remain historical facts. This new
+decision grants no merge, publication, protection or Phase 6 authority.

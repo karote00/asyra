@@ -514,7 +514,7 @@ test(
         canvas.locator('.proof-badge[data-status="passed"]')
       ).toHaveCount(3)
       await page.goto(server.origin + '/core-proof')
-      await expect(canvas.locator('.step-card')).toHaveCount(8)
+      await expect(canvas.locator('.step-card')).toHaveCount(11)
       await expect(canvas.locator('.proof-badge')).toHaveCount(0)
       await expect(canvas.locator('#run-all')).toHaveCount(0)
       await expect(canvas.locator('#proof-unavailable')).toContainText(
@@ -1150,6 +1150,177 @@ test(
       await server.close()
       if (prior === undefined) delete process.env.TMPDIR
       else process.env.TMPDIR = prior
+    }
+  }
+)
+
+test(
+  'Phase 5 delegates the selected original card, proves a real candidate, rejects scope and recovers with retained budgets',
+  { skip: process.platform !== 'darwin', timeout: 90000 },
+  async () => {
+    const root = path.resolve(__dirname, '../../../..')
+    const parent = path.join(root, 'tmp/flow-inspector/visual-review')
+    fs.mkdirSync(parent, { recursive: true })
+    const artifacts = fs.mkdtempSync(path.join(parent, 'agent-review-'))
+    const temporary = path.join(artifacts, 'browser-tmp')
+    fs.mkdirSync(temporary)
+    const previous = process.env.TMPDIR
+    process.env.TMPDIR = temporary
+    const server = await startServer(root, {
+      serviceOptions: { directory: path.join(artifacts, 'runs') }
+    })
+    let browser
+    try {
+      browser = await chromium.launch({
+        channel: process.env.FLOW_PROOF_BROWSER_CHANNEL || undefined,
+        downloadsPath: temporary
+      })
+      const page = await browser.newPage({
+        viewport: { width: 1600, height: 1100 }
+      })
+      await page.goto(server.origin + '/transaction-atomicity')
+      const canvas = page.frameLocator('iframe')
+      await expect(canvas.locator('.step-card')).toHaveCount(7)
+      await canvas
+        .locator('[data-step-id="finalize-transaction-state"]')
+        .click()
+      await canvas.locator('#proof-controls > summary').click()
+      await canvas.locator('#agent-controls > summary').click()
+      await expect(canvas.locator('#agent-step')).toContainText(
+        'finalize-transaction-state'
+      )
+      await canvas
+        .locator('#agent-objective')
+        .fill('Review inverse restoration under retained obligations')
+      const geometry = await canvas.locator('.step-card').evaluateAll((cards) =>
+        cards.map((card) => ({
+          id: card.dataset.stepId,
+          left: card.style.left,
+          top: card.style.top
+        }))
+      )
+      await canvas.locator('#agent-start').click()
+      await expect(canvas.locator('#agent-result')).toContainText(
+        'needs-review',
+        { timeout: 20000 }
+      )
+      await expect(canvas.locator('#agent-result')).toContainText(
+        'not-delivered'
+      )
+      await expect(canvas.locator('#agent-result')).toContainText(
+        'Token usage: unknown'
+      )
+      await expect(
+        canvas.locator('.proof-badge[data-status="passed"]')
+      ).toHaveCount(0)
+      await canvas.locator('#agent-scenario').selectOption('regression')
+      await canvas.locator('#agent-resume').click()
+      await expect(canvas.locator('#agent-result')).toContainText(
+        'Verification: failed',
+        { timeout: 20000 }
+      )
+      await expect(canvas.locator('#agent-result')).toContainText(
+        'cancel.outcome'
+      )
+      await canvas.locator('#agent-result').scrollIntoViewIfNeeded()
+      await page.screenshot({
+        path: path.join(artifacts, 'agent-regression.png'),
+        fullPage: true
+      })
+      await canvas.locator('#agent-result').screenshot({
+        path: path.join(artifacts, 'agent-regression-detail.png')
+      })
+      await canvas.locator('#agent-scenario').selectOption('repair')
+      await canvas.locator('#agent-resume').click()
+      await expect(canvas.locator('#agent-result')).toContainText(
+        'Verification: passed',
+        { timeout: 20000 }
+      )
+      await expect(canvas.locator('#agent-result')).toContainText(
+        'Attempts: 3 / 3'
+      )
+      await canvas.locator('#agent-result').scrollIntoViewIfNeeded()
+      await page.screenshot({
+        path: path.join(artifacts, 'agent-recovery.png'),
+        fullPage: true
+      })
+      await canvas
+        .locator('#agent-result')
+        .screenshot({ path: path.join(artifacts, 'agent-recovery-detail.png') })
+      await canvas.locator('[data-step-id="record-reversible-journal"]').click()
+      await expect(canvas.locator('#agent-audit')).toBeHidden()
+      await canvas
+        .locator('[data-step-id="finalize-transaction-state"]')
+        .click()
+      await canvas.locator('#agent-scenario').selectOption('scope-violation')
+      await canvas.locator('#agent-start').click()
+      await expect(canvas.locator('#agent-result')).toContainText(
+        'Execution: denied'
+      )
+      await canvas.locator('#agent-handoff').click()
+      await expect(canvas.locator('#agent-result')).toContainText('handed-off')
+      await canvas.locator('#agent-scenario').selectOption('stall')
+      await canvas.locator('#agent-start').click()
+      await expect(canvas.locator('#agent-cancel')).toBeEnabled()
+      await canvas.locator('#agent-cancel').click()
+      await expect(canvas.locator('#agent-result')).toContainText('cancelled')
+      await page.reload()
+      await canvas
+        .locator('[data-step-id="finalize-transaction-state"]')
+        .click()
+      await canvas.locator('#proof-controls > summary').click()
+      await canvas.locator('#agent-controls > summary').click()
+      await expect(canvas.locator('#agent-result')).toContainText('cancelled')
+      assert.deepEqual(
+        await canvas.locator('.step-card').evaluateAll((cards) =>
+          cards.map((card) => ({
+            id: card.dataset.stepId,
+            left: card.style.left,
+            top: card.style.top
+          }))
+        ),
+        geometry
+      )
+      await expect(canvas.locator('[data-route-id]')).toHaveCount(10)
+      await canvas.locator('#agent-scenario').selectOption('tool-limit')
+      await canvas.locator('#agent-calls').fill('2')
+      await canvas.locator('#agent-start').click()
+      await expect(canvas.locator('#agent-result')).toContainText(
+        'Execution: limited'
+      )
+      await expect(canvas.locator('#agent-result')).toContainText(
+        'Tool calls: 2 / 2'
+      )
+      await canvas.locator('#agent-handoff').click()
+      await expect(canvas.locator('#agent-result')).toContainText('handed-off')
+      await page.setViewportSize({ width: 560, height: 900 })
+      await canvas.locator('#agent-result').scrollIntoViewIfNeeded()
+      await canvas
+        .locator('#agent-result')
+        .screenshot({ path: path.join(artifacts, 'agent-handoff-detail.png') })
+      await page.screenshot({
+        path: path.join(artifacts, 'agent-handoff-narrow.png'),
+        fullPage: true
+      })
+      fs.writeFileSync(
+        path.join(artifacts, 'metadata.json'),
+        JSON.stringify(
+          {
+            url: server.origin,
+            target: 'transaction-atomicity',
+            stepId: 'finalize-transaction-state',
+            geometry,
+            state: server.service.state().tasks
+          },
+          null,
+          2
+        )
+      )
+    } finally {
+      await browser?.close()
+      await server.close()
+      if (previous === undefined) delete process.env.TMPDIR
+      else process.env.TMPDIR = previous
     }
   }
 )

@@ -19,9 +19,12 @@ delegation are the success criteria.
      retains the necessary setup and acceptance evidence. Local test success
      does not establish repository-wide or mandatory delivery protection.
 
-## Dependent Implementation Candidate
+## Active Local Implementation
 
 2. [Agent Execution and Integrations Plan](plans/flow-inspector-control-plane-actions-and-integrations-plan.md)
+   - Activated 2026-09-08 under [Local Agent Execution](AGENT_EXECUTION.md),
+     independently of deferred GitHub enforcement. Real provider selection and
+     acceptance remain explicit integration decisions.
    - Phase 5: enforceable agent task scope, capabilities, resource limits,
      progress checks, stopping, recovery, and handoff.
    - Phase 6: small-team operations, selected ticket/PR integrations, hardening,

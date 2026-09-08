@@ -287,3 +287,128 @@ records that boundary. The combined plan retains the unfulfilled mandatory-CI
 criteria as deferred follow-up. Delivery remains unproven/blocked; this decision
 does not weaken evidence admission or enable Phase 5/6. No GitHub protection,
 workflow enforcement, version, tag or release is changed by closeout.
+
+## Phase 5 Local Agent Trial
+
+Activated independently on 2026-09-08 under
+[Local Agent Execution](../../../docs/ai/tools/flow-inspector/AGENT_EXECUTION.md).
+The earlier Phase 4 closeout did not activate agents; this later user decision
+permits the bounded local trial while keeping all GitHub enforcement gaps open.
+
+The executable adapter in this trial is a **deterministic demonstration**, not a
+language model. It makes actual isolated source edits and runs real Factory
+assertions. No provider, credentials, paid usage or external agent CLI is invoked.
+Real provider selection and actual backend acceptance remain unfinished.
+
+Start the server with `FLOW_PROOF_URL` as above. On **Transaction Atomicity**:
+
+1. Select **Finalize transaction state**, expand **Flow verification**, then
+   **Delegate selected step - local agent**. Enter the objective and exact allowed
+   runtime files. The trial defaults to `packages/factory/src/data-transact.ts`.
+2. Choose **Conforming change or correction** and **Delegate selected step**.
+   The demo adds a reviewable comment to the isolated source. Expect execution
+   `completed`, verification `passed`, work `needs-review`, delivery `not-delivered`.
+   The accepted-source badges remain unchanged.
+3. Choose **Inverse regression** and **Resume selected task**. The same generic
+   replacement broker changes the actual inverse expression; `cancel.outcome`
+   and `cancel.delivery` must fail. Choose correction and resume again. All six
+   obligations recover, using the same cumulative three-attempt budget.
+4. Start a separate **Scope refusal** demonstration. Its shell request is denied
+   before execution. **Hand off to human** retains the contract, source, budgets,
+   failures and audit. A new task is a new explicit human assignment; agents have
+   no task-creation capability and cannot reset budgets by creating tasks.
+5. Start **Tool limit** with two calls: the third read is refused. Start **Stall**
+   and use **Cancel task**, or set a short elapsed limit to observe timeout.
+   Stop, revoke, reload and select retained tasks. Resume preserves consumption;
+   exhausted or revoked tasks cannot restart. Closing the service preserves
+   partial work without applying it to your checkout.
+6. **Review exact source changes** opens digest-checked before/after text.
+   **Open task evidence and audit** includes task/attempt identities, source
+   manifests, actual case results, report fingerprint and local artifact paths.
+   Human review and any subsequent source application remain separate actions.
+
+### Shared task API and CLI
+
+All mutations use the existing loopback capability and local human actor.
+`GET /api/tasks/<uuid>` reads the retained task, `/changes` reads exact candidate
+changes, `POST /api/tasks` creates one assignment and
+`POST /api/tasks/<uuid>/control` takes `{ "action": "cancel" }`, `stop`, `handoff`,
+`revoke`, or `{ "action": "resume", "scenario": "repair" }`.
+`GET /api/state` includes recent task summaries without recapturing source.
+Only trusted service composition can register adapters or execution boundaries;
+HTTP requests cannot select executable paths or grant capabilities.
+
+Save a request JSON inside the repository. Obtain `contractDigest` and `revision`
+from `/api/state`'s `contract.digest` and `mapping.revision`, respectively:
+
+```json
+{
+  "requestId": "00000000-0000-4000-8000-000000000005",
+  "stepId": "finalize-transaction-state",
+  "objective": "Review inverse restoration against retained obligations",
+  "allowedFiles": ["packages/factory/src/data-transact.ts"],
+  "adapter": "demonstration",
+  "scenario": "repair",
+  "contractDigest": "<current accepted contract digest>",
+  "revision": 1,
+  "budgets": { "elapsedMs": 60000, "toolCalls": 20, "attempts": 3 }
+}
+```
+
+Use a fresh UUID for a new human assignment; exact request replay returns the
+existing task. These commands attach to the running board:
+
+```bash
+node tools/flow-inspector/control-plane/cli.cjs --url http://127.0.0.1:4318 task-start tmp/task-request.json
+node tools/flow-inspector/control-plane/cli.cjs --url http://127.0.0.1:4318 task-show <task-id>
+node tools/flow-inspector/control-plane/cli.cjs --url http://127.0.0.1:4318 task-wait <task-id>
+node tools/flow-inspector/control-plane/cli.cjs --url http://127.0.0.1:4318 task-resume <task-id> regression
+node tools/flow-inspector/control-plane/cli.cjs --url http://127.0.0.1:4318 task-changes <task-id>
+node tools/flow-inspector/control-plane/cli.cjs --url http://127.0.0.1:4318 task-cancel <task-id>
+node tools/flow-inspector/control-plane/cli.cjs --url http://127.0.0.1:4318 task-handoff <task-id>
+```
+
+Direct CLI task-start/resume waits for settlement before releasing store ownership.
+`task-wait` exits nonzero unless verification passed; a successful cancellation or
+handoff command only acknowledges that action. Task records and isolated source
+remain under `tmp/flow-inspector/runs/tasks/<uuid>/`.
+
+### Measured guarantees and remaining boundaries
+
+Supported source execution is macOS with the already installed `sandbox-exec`,
+Node 24 and locked Vitest. Linux/Windows refuse task launch; Linux CI
+runs portable contract/runtime tests and explicitly skips macOS OS integration.
+Local macOS tests are required for containment acceptance, separately from PR CI.
+Final candidate evidence identifies `macos-sandbox-no-fork`; earlier local trial
+artifacts labeled `macos-sandbox` retain their original values and do not prove
+the final no-fork boundary.
+No package, environment tool, browser or provider is installed by these actions.
+
+The broker permits only bounded reads/replacements/finish. Verification denies
+network, shell and all child-process creation, including detached Node successors.
+Vitest runs in one sandboxed Node process with one worker thread and native Node
+24 TypeScript transformation; source/assertions are OS read-only. Only attempt scratch and
+report output are writable. Runtime directory metadata/listings, ancestor package
+metadata, required system libraries and localhost resolver files are readable;
+this is not a promise to hide all host metadata. Ambient secrets are not inherited.
+Elapsed time, tool calls, attempts and service concurrency are enforced. CPU,
+peak memory, token and cost hard limits are unsupported; token/cost values are
+unknown and admission rejects requests requiring them.
+
+This is **not an independently protected verifier**. Tests and candidate runtime
+execute in a local test process; these cases do not prove tamper-proof evidence
+against arbitrary hostile JavaScript or the OS account owner. A passing candidate
+requires human review and never grants accepted-baseline, merge or publication
+authority. Stronger verifier/issuer guarantees remain in the deferred Phase 4
+requirements and cannot be inferred from this sandbox trial.
+
+Run the permanent portable and OS cases, then the original board suite:
+
+```bash
+node --test --test-concurrency=1 tools/flow-inspector/control-plane/__tests__/{agent-contract,agent-task,agent-verifier}.test.cjs
+FLOW_PROOF_URL=http://127.0.0.1:4319 FLOW_PROOF_BROWSER_CHANNEL=chrome node --test tools/flow-inspector/control-plane/__tests__/board.test.cjs
+```
+
+Browser artifacts include exact task state, regression/recovery details and narrow
+handoff screenshots under `tmp/flow-inspector/visual-review/`. There is no claim
+of saved supervision time or reduced cost without a measured comparison period.

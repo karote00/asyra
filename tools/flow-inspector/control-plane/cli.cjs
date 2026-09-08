@@ -60,6 +60,11 @@ async function connect(repositoryRoot, origin) {
       serviceOptions(repositoryRoot)
     )
     return {
+      startTask: async (body) => service.startTask(body, LOCAL_ACTOR),
+      getTask: async (id) => service.getTask(id),
+      taskChanges: async (id) => service.taskChanges(id),
+      controlTask: (id, body) => service.controlTask(id, body, LOCAL_ACTOR),
+      waitTask: (id) => service.waitTask(id),
       state: async () => service.state(),
       shared: async () => service.shared(),
       work: async (request) => service.setWork(request, LOCAL_ACTOR),
@@ -99,6 +104,19 @@ async function connect(repositoryRoot, origin) {
   capability = (await request('/api/session')).capability
   const get = (id) => request('/api/runs/' + encodeURIComponent(id))
   return {
+    startTask: async (body) => (await request('/api/tasks', body)).id,
+    getTask: (id) => request('/api/tasks/' + encodeURIComponent(id)),
+    taskChanges: (id) =>
+      request('/api/tasks/' + encodeURIComponent(id) + '/changes'),
+    controlTask: (id, body) =>
+      request('/api/tasks/' + encodeURIComponent(id) + '/control', body),
+    async waitTask(id) {
+      for (;;) {
+        const record = await request('/api/tasks/' + encodeURIComponent(id))
+        if (record.phase !== 'running') return record
+        await new Promise((resolve) => setTimeout(resolve, 250))
+      }
+    },
     state: () => request('/api/state'),
     shared: () => request('/api/shared'),
     work: (body) => request('/api/work', body),
@@ -143,6 +161,15 @@ async function main(
   }
   const [command, ...parameters] = args
   const arity = {
+    'task-start': [1],
+    'task-show': [1],
+    'task-changes': [1],
+    'task-wait': [1],
+    'task-cancel': [1],
+    'task-stop': [1],
+    'task-handoff': [1],
+    'task-revoke': [1],
+    'task-resume': [2],
     serve: [0],
     candidate: [0],
     ci: [0],
@@ -171,7 +198,7 @@ async function main(
     (command === 'serve' && origin)
   )
     throw new Error(
-      'Usage: cli.cjs [--url loopback-origin] serve | verify [flow-id] | negative [flow-id] | scenario scenario-id [flow-id] | prove | status | show attempt-id | cancel attempt-id | mapping-diff | mapping-accept review-id reason | mapping-reject review-id reason | candidate | ci | ci-trial | ci-demo [scenario-id] | shared | ci-ingest envelope.json | contract-diff attempt-id [relations.json] | contract-accept review-id reason [retirement.json] | contract-reject review-id reason'
+      'Usage: cli.cjs [--url loopback-origin] serve | verify [flow-id] | negative [flow-id] | scenario scenario-id [flow-id] | prove | status | show attempt-id | cancel attempt-id | mapping-diff | mapping-accept review-id reason | mapping-reject review-id reason | candidate | ci | ci-trial | ci-demo [scenario-id] | task-start request.json | task-show task-id | task-changes task-id | task-wait task-id | task-cancel task-id | task-stop task-id | task-handoff task-id | task-revoke task-id | task-resume task-id scenario | shared | ci-ingest envelope.json | contract-diff attempt-id [relations.json] | contract-accept review-id reason [retirement.json] | contract-reject review-id reason'
     )
   if (command === 'serve') {
     const server = await startServer(repositoryRoot, {
@@ -201,6 +228,35 @@ async function main(
       if (fs.statSync(file).size > 2097152)
         throw new Error('Input artifact exceeds size limit')
       return JSON.parse(fs.readFileSync(file, 'utf8'))
+    }
+    if (command.startsWith('task-')) {
+      let value
+      if (command === 'task-start') {
+        const id = await client.startTask(inputFile(parameters[0]))
+        value = { id }
+        // A detached task needs a live service owner. Direct CLI waits before closing.
+        if (!origin) value = await client.waitTask(id)
+      } else if (command === 'task-show')
+        value = await client.getTask(parameters[0])
+      else if (command === 'task-changes')
+        value = await client.taskChanges(parameters[0])
+      else if (command === 'task-wait')
+        value = await client.waitTask(parameters[0])
+      else {
+        value = await client.controlTask(parameters[0], {
+          action: command.slice(5),
+          ...(command === 'task-resume' ? { scenario: parameters[1] } : {})
+        })
+        if (!origin && command === 'task-resume')
+          value = await client.waitTask(parameters[0])
+      }
+      write(JSON.stringify(value, null, 2))
+      if (
+        command === 'task-wait' ||
+        (!origin && ['task-start', 'task-resume'].includes(command))
+      )
+        return value.verificationStatus === 'passed' ? 0 : 1
+      return 0
     }
     if (command === 'work') {
       write(
@@ -293,6 +349,7 @@ async function main(
       write(
         JSON.stringify(
           {
+            tasks: state.tasks,
             activeRunId: state.activeRunId,
             evolution: state.evolution,
             ci: state.ci,

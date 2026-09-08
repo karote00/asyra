@@ -340,3 +340,10 @@ intentional runtime violation, CI rejection and correction. Closeout requires
 these gates, static compatibility, lint/naming/build, browser screenshot review,
 and all checks on the PR's latest HEAD. An unverified required-check policy
 blocks full Phase 4 completion and must not be relabeled DONE.
+
+## Phase 5 Local Activation - 2026-09-08
+
+The user separately activated [local isolated agent execution](AGENT_EXECUTION.md)
+while retaining all deferred Phase 4 enforcement requirements. Earlier statements
+that Phase 4 closeout did not activate Phase 5 remain historical facts. This new
+decision grants no merge, publication, protection or Phase 6 authority.

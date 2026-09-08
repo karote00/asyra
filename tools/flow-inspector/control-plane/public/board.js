@@ -27,6 +27,11 @@
       let recordSignature = ''
       let historySignature = ''
       let selectedFlow
+      let taskState
+      let taskRecord
+      let taskId
+      let taskSignature = ''
+      let taskHistorySignature = ''
       let operationState
       let operationSignature = ''
       let selectedContractReview = ''
@@ -107,6 +112,7 @@
       }
       function renderSelected() {
         const id = graph.querySelector('.is-selected')?.dataset.stepId
+        renderTask()
         const linked = linkedFlows.get(id) ?? []
         const item = cases.get(id)
         byId('proof-step').textContent = linked.length
@@ -657,6 +663,154 @@
             !capability || !compatible || Boolean(activeId) || acting
         renderSelected()
       }
+      function renderTask() {
+        if (!byId('agent-step')) return
+        const stepId = graph.querySelector('.is-selected')?.dataset.stepId
+        const supported = linkedFlows.has(stepId)
+        byId('agent-step').textContent = supported
+          ? 'Selected owner: ' + stepId
+          : 'Select a supported owner card to delegate.'
+        byId('agent-start').disabled =
+          !capability ||
+          !compatible ||
+          !supported ||
+          !taskState?.available ||
+          Boolean(activeId) ||
+          Boolean(taskState?.activeId) ||
+          acting
+        const matching = taskRecord?.task.stepId === stepId ? taskRecord : null
+        const busy = matching?.phase === 'running'
+        for (const action of ['cancel', 'stop', 'handoff', 'revoke'])
+          byId('agent-' + action).disabled =
+            !matching || acting || (action === 'cancel' && !busy)
+        byId('agent-resume').disabled =
+          !matching ||
+          busy ||
+          Boolean(activeId) ||
+          Boolean(taskState?.activeId) ||
+          matching.revoked ||
+          acting
+        if (!matching) {
+          byId('agent-result').textContent = taskState?.available
+            ? 'No task selected. Demonstration adapter - no language model or paid provider.'
+            : 'OS containment unavailable. Delegation is disabled.'
+          byId('agent-artifact').hidden = true
+          byId('agent-audit').hidden = true
+          return
+        }
+        const last = matching.attempts.at(-1)
+        const failures =
+          last?.verdict?.evidence?.cases
+            ?.filter((item) => item.status === 'failed')
+            .map((item) => item.id) ?? []
+        byId('agent-result').textContent = [
+          'Task: ' + matching.id,
+          'Objective: ' + matching.task.objective,
+          'Execution: ' + matching.phase,
+          'Work: ' + matching.workStatus,
+          'Verification: ' + matching.verificationStatus,
+          'Delivery: ' + matching.deliveryStatus,
+          'Allowed files: ' + matching.task.allowedFiles.join(', '),
+          'Forbidden: ' + matching.task.forbiddenActions.join(', '),
+          'Attempts: ' +
+            matching.usage.attempts +
+            ' / ' +
+            matching.task.budgets.attempts,
+          'Tool calls: ' +
+            matching.usage.toolCalls +
+            ' / ' +
+            matching.task.budgets.toolCalls,
+          'Elapsed: ' +
+            matching.usage.elapsedMs +
+            ' / ' +
+            matching.task.budgets.elapsedMs +
+            ' ms',
+          'Token usage: unknown - no hard token or cost enforcement',
+          'Baseline: ' + matching.snapshot.digest,
+          'Candidate: ' + (last?.verdict?.sourceDigest ?? 'not verified'),
+          'Changed files: ' +
+            matching.changes.map((change) => change.path).join(', '),
+          'Confirmed failures: ' + (failures.join(', ') || 'none observed'),
+          'Error: ' + (matching.error ?? 'none'),
+          'All six retained obligations required. Human review required; no baseline acceptance.'
+        ].join('\n')
+        byId('agent-artifact').href = '/api/tasks/' + matching.id + '/changes'
+        byId('agent-artifact').hidden = false
+        byId('agent-audit').href = '/api/tasks/' + matching.id
+        byId('agent-audit').hidden = false
+      }
+      async function refreshTask() {
+        const stepId = graph.querySelector('.is-selected')?.dataset.stepId
+        const options = (taskState?.records ?? []).filter(
+          (item) => item.stepId === stepId
+        )
+        if (!options.some((item) => item.id === taskId)) taskId = options[0]?.id
+        const history = options.map((item) => item.id + item.phase).join(',')
+        if (history !== taskHistorySignature) {
+          taskHistorySignature = history
+          byId('agent-history').replaceChildren(
+            ...options.map((item) => {
+              const option = node(
+                'option',
+                item.id.slice(0, 8) + ' - ' + item.phase
+              )
+              option.value = item.id
+              return option
+            })
+          )
+        }
+        if (taskId) byId('agent-history').value = taskId
+        const selected = options.find((item) => item.id === taskId)
+        const signature = selected ? JSON.stringify(selected) : ''
+        if (signature !== taskSignature) {
+          taskSignature = signature
+          taskRecord = taskId ? await api('/api/tasks/' + taskId) : null
+        }
+        renderTask()
+      }
+      async function taskAction(action) {
+        if (acting || !capability) return
+        acting = true
+        renderTask()
+        try {
+          if (action === 'start') {
+            const stepId = graph.querySelector('.is-selected')?.dataset.stepId
+            const result = await api('/api/tasks', {
+              requestId: window.crypto.randomUUID(),
+              stepId,
+              objective: byId('agent-objective').value,
+              allowedFiles: byId('agent-files')
+                .value.split(',')
+                .map((file) => file.trim())
+                .filter(Boolean),
+              adapter: 'demonstration',
+              scenario: byId('agent-scenario').value,
+              contractDigest: contract.digest,
+              revision: mappingState.revision,
+              budgets: {
+                elapsedMs: Number(byId('agent-time').value),
+                toolCalls: Number(byId('agent-calls').value),
+                attempts: 3
+              }
+            })
+            taskId = result.id
+          } else if (taskId) {
+            await api('/api/tasks/' + taskId + '/control', {
+              action,
+              ...(action === 'resume'
+                ? { scenario: byId('agent-scenario').value }
+                : {})
+            })
+          }
+          taskSignature = ''
+          await refresh()
+        } catch (error) {
+          showError(error)
+        } finally {
+          acting = false
+          renderTask()
+        }
+      }
       async function refresh() {
         if (refreshing || disposed) return
         refreshing = true
@@ -668,6 +822,8 @@
           renderMapping(state.mapping)
           renderOperations(state)
           activeId = state.activeRunId
+          taskState = state.tasks
+          await refreshTask()
           if (!selectedId && state.runs.length) selectedId = state.runs[0].id
           const id = selectedId
           const value = id ? await api('/api/runs/' + id) : null
@@ -680,7 +836,10 @@
           showError(error)
         } finally {
           refreshing = false
-          if (!disposed && (activeId || requestRevision !== revision))
+          if (
+            !disposed &&
+            (activeId || taskState?.activeId || requestRevision !== revision)
+          )
             timer = window.setTimeout(refresh, 500)
         }
       }
@@ -773,6 +932,19 @@
           <p id="run-state" role="status">Ready to verify</p>
           <p>Required checks: <strong id="checks">0 / 6</strong></p><p id="result-context"></p>
           <div id="proof-failures"></div>
+          <details id="agent-controls"><summary>Delegate selected step - local agent</summary>
+            <p id="agent-step"></p><p>Demonstration adapter only - no language model. Candidate changes remain isolated for human review.</p>
+            <label>Task objective<input id="agent-objective" maxlength="2000" value="Review the selected owner under all retained obligations" /></label>
+            <label>Allowed runtime files (comma-separated)<input id="agent-files" value="packages/factory/src/data-transact.ts" /></label>
+            <label>Demonstration scenario<select id="agent-scenario"><option value="repair">Conforming change or correction</option><option value="regression">Inverse regression</option><option value="scope-violation">Scope refusal</option><option value="tool-limit">Tool limit</option><option value="stall">Stall for cancellation or timeout</option></select></label>
+            <label>Cumulative elapsed limit (ms)<input id="agent-time" type="number" min="1" max="300000" value="60000" /></label>
+            <label>Cumulative tool-call limit<input id="agent-calls" type="number" min="1" max="100" value="20" /></label>
+            <div class="proof-actions"><button id="agent-start" type="button">Delegate selected step</button><button id="agent-resume" type="button">Resume selected task</button><button id="agent-cancel" type="button">Cancel task</button><button id="agent-stop" type="button">Stop task</button><button id="agent-handoff" type="button">Hand off to human</button><button id="agent-revoke" type="button">Revoke task</button></div>
+            <label>Retained step tasks<select id="agent-history"></select></label>
+            <pre id="agent-result" role="status">No task selected</pre>
+            <a id="agent-artifact" target="_blank" rel="noopener noreferrer" hidden>Review exact source changes</a>
+            <a id="agent-audit" target="_blank" rel="noopener noreferrer" hidden>Open task evidence and audit</a>
+          </details>
           <details id="phase4-controls"><summary>Contract versions and CI</summary>
             <p id="contract-baseline"></p>
             <div class="proof-actions"><button id="run-candidate" type="button">Verify candidate</button><button id="run-ci" type="button">Run CI aggregate</button><button id="run-ci-demo" type="button">Demonstrate CI rejection</button><button id="retry-run" type="button">Retry selected run</button></div>
@@ -891,6 +1063,23 @@
           renderOperations(operationState)
           controls()
         })
+        for (const action of [
+          'start',
+          'resume',
+          'cancel',
+          'stop',
+          'handoff',
+          'revoke'
+        ])
+          listen(byId('agent-' + action), 'click', () => taskAction(action))
+        listen(byId('agent-history'), 'change', async (event) => {
+          taskId = event.target.value
+          taskSignature = ''
+          await refreshTask()
+        })
+        listen(graph, 'click', () =>
+          window.setTimeout(() => refreshTask().catch(showError), 0)
+        )
         listen(byId('run-all'), 'click', () => start())
         listen(byId('run-linked'), 'click', () => start([selectedFlow.id]))
         listen(byId('refresh'), 'click', refresh)
