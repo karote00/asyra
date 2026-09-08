@@ -179,108 +179,126 @@ export function TrajectoryImportPanel({
       )}
 
       {kind === 'csv' && (
-        <div className="mapping-grid grid grid-cols-[1fr_1fr] gap-[10px] mb-3 [&_select]:text-[10px]">
-          <label>
-            Time column
-            <select
-              aria-label="Time column"
-              value={mapping.time.column}
-              onChange={(event) =>
-                setMapping((current) => ({
-                  ...current,
-                  time: { ...current.time, column: event.target.value }
-                }))
+        <table className="mapping-grid w-full table-fixed border-collapse mb-3 text-[11px] [&_th]:text-left [&_th]:font-semibold [&_th]:text-sim-secondary [&_td]:py-1 [&_td]:pl-2 [&_select]:text-[11px]">
+          <colgroup>
+            <col className="w-[31%]" />
+            <col className="w-[42%]" />
+            <col className="w-[27%]" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th scope="col">Name</th>
+              <th scope="col" className="pl-2" title="Source CSV column">
+                Target
+              </th>
+              <th scope="col" className="pl-2">
+                Unit
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row" className="wrap-anywhere">
+                Time
+              </th>
+              <td>
+                <select
+                  aria-label="Time column"
+                  value={mapping.time.column}
+                  onChange={(event) =>
+                    setMapping((current) => ({
+                      ...current,
+                      time: { ...current.time, column: event.target.value }
+                    }))
+                  }
+                >
+                  <option value="">Choose column</option>
+
+                  {columns.map((column) => (
+                    <option key={column}>{column}</option>
+                  ))}
+                </select>
+              </td>
+              <td>
+                <select
+                  aria-label="Time unit"
+                  value={mapping.time.unit}
+                  onChange={(event) =>
+                    setTimeUnit(event.target.value as '' | 'ms' | 's')
+                  }
+                >
+                  <option value="">Choose unit</option>
+
+                  <option value="s">seconds</option>
+
+                  <option value="ms">milliseconds</option>
+                </select>
+              </td>
+            </tr>
+
+            {actuated.map((body) => {
+              const entry = mapping.joints[body.id] ?? {
+                column: '',
+                unit: '' as const
               }
-            >
-              <option value="">Choose column</option>
 
-              {columns.map((column) => (
-                <option key={column}>{column}</option>
-              ))}
-            </select>
-          </label>
+              return (
+                <tr className="mapping-row" key={body.id}>
+                  <th scope="row" className="wrap-anywhere">
+                    {body.name}
+                  </th>
+                  <td>
+                    <select
+                      aria-label={`${body.name} CSV column`}
+                      value={entry.column}
+                      title={entry.column || 'Choose column'}
+                      onChange={(event) =>
+                        setJointMapping(body.id, {
+                          ...entry,
+                          column: event.target.value
+                        })
+                      }
+                    >
+                      <option value="">Choose column</option>
 
-          <label>
-            Time unit
-            <select
-              aria-label="Time unit"
-              value={mapping.time.unit}
-              onChange={(event) =>
-                setTimeUnit(event.target.value as '' | 'ms' | 's')
-              }
-            >
-              <option value="">Choose unit</option>
+                      {columns.map((column) => (
+                        <option key={column}>{column}</option>
+                      ))}
+                    </select>
+                  </td>
+                  <td>
+                    <select
+                      aria-label={`${body.name} CSV unit`}
+                      value={entry.unit}
+                      onChange={(event) =>
+                        setJointUnit(
+                          body.id,
+                          event.target.value as typeof entry.unit
+                        )
+                      }
+                    >
+                      <option value="">Choose unit</option>
 
-              <option value="s">seconds</option>
+                      {body.joint.kind === 'revolute' ? (
+                        <>
+                          <option value="rad">radians</option>
 
-              <option value="ms">milliseconds</option>
-            </select>
-          </label>
+                          <option value="deg">degrees</option>
+                        </>
+                      ) : (
+                        <>
+                          <option value="m">meters</option>
 
-          {actuated.map((body) => {
-            const entry = mapping.joints[body.id] ?? {
-              column: '',
-              unit: '' as const
-            }
-
-            return (
-              <div
-                className="mapping-row col-span-full grid grid-cols-[1fr_1fr] gap-[10px]"
-                key={body.id}
-              >
-                <label>
-                  {body.name}
-                  <select
-                    aria-label={`${body.name} CSV column`}
-                    value={entry.column}
-                    onChange={(event) =>
-                      setJointMapping(body.id, {
-                        ...entry,
-                        column: event.target.value
-                      })
-                    }
-                  >
-                    <option value="">Choose column</option>
-
-                    {columns.map((column) => (
-                      <option key={column}>{column}</option>
-                    ))}
-                  </select>
-                </label>
-
-                <label>
-                  Unit
-                  <select
-                    aria-label={`${body.name} CSV unit`}
-                    value={entry.unit}
-                    onChange={(event) =>
-                      setJointUnit(
-                        body.id,
-                        event.target.value as typeof entry.unit
-                      )
-                    }
-                  >
-                    <option value="">Choose unit</option>
-
-                    {body.joint.kind === 'revolute' ? (
-                      <>
-                        <option value="rad">radians</option>
-
-                        <option value="deg">degrees</option>
-                      </>
-                    ) : (
-                      <>
-                        <option value="m">meters</option>
-
-                        <option value="mm">millimeters</option>
-                      </>
-                    )}
-                  </select>
-                </label>
-              </div>
-            )
-          })}
-        </div>
+                          <option value="mm">millimeters</option>
+                        </>
+                      )}
+                    </select>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
       )}
 
       {reading && (

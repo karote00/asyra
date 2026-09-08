@@ -274,3 +274,40 @@ unit/build/lint/naming/contract logs use `.artifacts/m3-5-scroll-*`.
 Bounded review rechecked the complete UI contract, direct consumers and diff:
 only presentation layout, permanent regression and current documentation changed.
 M3.5 remains open for user acceptance; no remote or closeout action is authorized.
+
+
+### Compact field layout - 2026-09-09
+
+Step Execution Card: UI owner/failure step `ui`, order 11. Full inputs, outputs,
+conditions, bypasses, contributors and boundary reread. Source: Understandable
+Experiment Workflow in robot-workcell-v0.md. Consume existing mapping, authored
+names, units and numerical draft projections; output is accessible workbench
+controls. No conversion, canonical identity, state/history or solver changes.
+Bounded inspection: trajectory mapping, Setup field composition, Preview controls
+and Results summary/disclosures. Identified redundant mapping label rows and a
+half-empty clearance row; preserve other sections with distinct purposes.
+Allowed edits: trajectory-import-panel.tsx, experiment-numerical-fields.tsx,
+permanent workbench-review E2E, current spec/Inspector/generated bundle and guide.
+Name/Target/Unit headers describe model name, CSV target column and source unit;
+keep field accessible names, full option values and completed-edit behavior.
+Time uses the same row form. Long names wrap; selects remain keyboard accessible.
+Permanent regression must fail first for name/control vertical alignment, then
+prove compact mapping and clearance at 576 x 690 and desktop inspector width.
+Gates: affected layout/import/workflow E2E, App tests, build/typecheck/lint,
+naming, Inspector and placement, synchronized normal 3020 screenshots.
+No extra UI redesign or changes to numerical values, parsing, saving or admission.
+Stop if correction requires an upstream owner or repeated local repair.
+
+
+Completed: shared semantic table headers for CSV time/joint mappings, full
+accessible select names, wrapping model names and inline clearance input.
+Other inspected Setup/Preview/Results sections retain distinct grouping and
+expandable evidence; no additional compression was justified by this review.
+The permanent row-alignment regression failed on the original two-line layout.
+Final validation passed 18 affected E2E (workbench-review, workbench-flow,
+trajectory-import), 661 App tests, build/typecheck/lint, naming and 27
+Inspector/placement contracts. Artifacts: `.artifacts/m3-5-compact-*` on normal
+APP_URL 3020. Inspected desktop and short-viewport mapping/clearance screenshots.
+Bounded review confirms existing change/blur handlers, accessible names, values,
+transaction and input-reader ownership are preserved; no runtime or solver edit.
+User acceptance remains outstanding and no remote operation was performed.

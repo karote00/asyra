@@ -14,9 +14,9 @@ export function ThresholdFields({ source }: Props) {
   const draft = source.getSnapshot().draft
 
   return (
-    <div className="field-pair grid grid-cols-[1fr_1fr] gap-[10px]">
-      <label>
-        Minimum clearance (mm)
+    <div className="field-pair">
+      <label className="grid grid-cols-[minmax(0,1fr)_104px] items-center gap-[10px]">
+        <span>Minimum clearance (mm)</span>
         <CommittedInput
           validateOnCommit
           aria-label="Minimum clearance (mm)"

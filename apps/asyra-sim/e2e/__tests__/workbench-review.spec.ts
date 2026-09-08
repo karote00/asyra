@@ -209,3 +209,68 @@ for (const viewport of [
     await page.screenshot({ path: info.outputPath('panel-top.png') })
   })
 }
+
+for (const width of [576, 1440]) {
+  test(`trajectory mapping and clearance use readable inline rows at ${width}px`, async ({
+    page
+  }, info) => {
+    await page.setViewportSize({ width, height: 690 })
+    await page.goto('/')
+    await expect(page.getByRole('status')).toHaveText('Local runtime ready')
+    await page.getByRole('button', { name: 'Experiments', exact: true }).click()
+    await page.locator('.trajectory-import > summary').click()
+    const row = page.locator('.mapping-row').first()
+    const target = page.getByLabel('J1 - Base yaw CSV column', { exact: true })
+    const unit = page.getByLabel('J1 - Base yaw CSV unit', { exact: true })
+    await target.scrollIntoViewIfNeeded()
+    const label = await row.evaluate((node) => {
+      const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT)
+      while (walker.nextNode()) {
+        if (walker.currentNode.textContent?.trim() !== 'J1 - Base yaw') continue
+        const range = document.createRange()
+        range.selectNodeContents(walker.currentNode)
+        return range.getBoundingClientRect().toJSON()
+      }
+      throw new Error('Missing joint name')
+    })
+    const [column, sourceUnit] = await Promise.all(
+      [target, unit].map((control) => control.boundingBox())
+    )
+    if (!label || !column || !sourceUnit)
+      throw new Error('Mapping controls must be rendered')
+    expect(label.y + label.height / 2).toBeGreaterThanOrEqual(column.y)
+    expect(label.y + label.height / 2).toBeLessThanOrEqual(
+      column.y + column.height
+    )
+    expect(label.x + label.width).toBeLessThanOrEqual(column.x)
+    expect(column.y).toBeCloseTo(sourceUnit.y, 0)
+    await expect(target).toHaveValue('example:joint-1')
+    await expect(unit).toHaveValue('rad')
+    await expect(
+      page.getByRole('columnheader', { name: 'Target', exact: true })
+    ).toBeVisible()
+    await expect
+      .poll(() =>
+        page
+          .locator('.experiment-panel')
+          .evaluate((node) => node.scrollWidth <= node.clientWidth + 1)
+      )
+      .toBe(true)
+    await page.screenshot({ path: info.outputPath('mapping-rows.png') })
+    const clearance = page.getByLabel('Minimum clearance (mm)', { exact: true })
+    await clearance.scrollIntoViewIfNeeded()
+    const clearanceLabel = await page
+      .getByText('Minimum clearance (mm)', { exact: true })
+      .boundingBox()
+    const clearanceInput = await clearance.boundingBox()
+    if (!clearanceLabel || !clearanceInput)
+      throw new Error('Clearance field must be rendered')
+    expect(clearanceLabel.y + clearanceLabel.height / 2).toBeGreaterThanOrEqual(
+      clearanceInput.y
+    )
+    expect(clearanceLabel.y + clearanceLabel.height / 2).toBeLessThanOrEqual(
+      clearanceInput.y + clearanceInput.height
+    )
+    await page.screenshot({ path: info.outputPath('inline-clearance.png') })
+  })
+}

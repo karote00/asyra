@@ -216,7 +216,11 @@ scrolling experiment panel. Run has a consistent position near the experiment
 selector, without a fixed footer. Short viewports must not constrain tab content
 to a separate residual-height scroll aperture; upper workbench dimensions remain
 independent of the panel content.
-Setup holds experiment, scope, trajectory and clearance inputs. Advanced settings
+Setup holds experiment, scope, trajectory and clearance inputs. CSV mapping
+uses shared Name / Target / Unit headers with one row for time and each actuated
+body; Target denotes the source CSV column. Preserve full accessible field names
+and option values, wrapping long model names. Clearance uses an inline label and
+input rather than an otherwise empty half-width row. Advanced settings
 hold method details, numerical precision and budgets without changing values or
 hiding blocking diagnostics. Preview explains sampled feedback and holds playback
 and time controls. Object inspection remains available through ordinary selection.
