@@ -1,0 +1,55 @@
+# Phase 5 Local Execution - Bounded Closeout
+
+Date: 2026-09-08. Implementation: `fedcfab3a`.
+
+## Completed boundary
+
+The separately authorized [local execution contract](../../AGENT_EXECUTION.md)
+is implemented for the deterministic broker adapter. This is executable local
+source modification and verification, not real AI provider acceptance or full
+Phase 5 completion. PR #166 was merged before this work began from latest main.
+
+The three Inspector owners admit an exact step and file scope, execute bounded
+operations with persistent cumulative budgets, and verify isolated candidates
+against all six retained obligations across both Factory flows. Board, API and
+CLI share task identity, state, controls, source changes, evidence and audit.
+Cancellation, timeout, denial, restart, retry, revocation and human handoff keep
+the accepted baseline and prior obligations. Passing work requires human review;
+delivery remains `not-delivered` and never authorizes baseline acceptance.
+
+macOS sandbox verification uses one Node process and one worker thread, denies
+forking, network and external writes, and keeps captured source/configuration
+read-only. Unsupported hosts fail closed. Unknown token/cost usage remains null;
+hard token/cost requests are refused. CPU and peak-memory limits are unsupported.
+The local verifier is not independently protected from hostile JavaScript in the
+same process; these tests do not establish protected evidence issuance.
+
+## Validation
+
+- Formal control-plane tests: 126 passed, zero skipped on macOS.
+- Browser acceptance: 5 passed, including existing canvas/navigation/UX and
+  actual candidate success, regression, correction, denial, cancellation/reload,
+  resource limit and handoff. Detailed screenshots were visually inspected.
+- Static contracts: 99 passed. React tests: 12 passed. Typecheck/build passed.
+- Naming gate passed. Repository lint: zero errors, 79 existing warnings.
+- Existing seven-run proof passed for two flows, five negative trials and six
+  obligations. CI trial behavioral proof passed; protected delivery stayed
+  blocked/unknown as required by the deferred protection contract.
+- Permanent tests include denied external access and detached child creation,
+  verifier cancellation/settlement, immutable evidence and restart tampering.
+
+Reproduce with the commands in the [operations guide](../../../../../../tools/flow-inspector/control-plane/README.md).
+Local artifacts are under `tmp/flow-inspector/visual-review/agent-review-5Ts4c7`;
+gate logs are `.phase-5-final-tests.log` and `.phase-5-board-final.log` in the
+worktree. These generated artifacts are not source authority or committed tests.
+
+## Remaining work
+
+Real agent backend, credentials, cost authorization and provider acceptance are
+unselected and unverified. The combined Phase 5/6 plan and its original DoD remain
+open for those decisions. Phase 6 ticket/PR integrations and hosting are not
+activated. Required GitHub protection, independent verifier/issuer, protected
+remote transport and real GitHub refusal/recovery remain explicitly deferred.
+No protection, dependency, runtime, version, Changeset, tag, release, deployment
+or merge change accompanies this closeout. PR checks and human review are a
+separate delivery checkpoint; this record does not claim remote checks passed.

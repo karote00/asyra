@@ -106,3 +106,12 @@ not satisfy or remove the original Phase 4 DoD. The product boundary is
 [Local Agent Execution](../../AGENT_EXECUTION.md). Deterministic adapter proof
 is distinct from real provider acceptance. No Phase 6, release or merge authority
 is introduced.
+
+## 2026-09-08 - Close bounded local Phase 5 execution
+
+The [local completed record](../../plans/completed/flow-inspector-phase-5-local-execution-closeout.md)
+records implementation `fedcfab3a`, 126 formal control-plane tests and five browser
+cases. This closes the deterministic local adapter scope only. Real agent provider
+acceptance and full Phase 5 remain pending; all deferred Phase 4 protection and
+remote proof requirements remain unchanged. No version, Changeset, release,
+protection change or merge is authorized by this decision.

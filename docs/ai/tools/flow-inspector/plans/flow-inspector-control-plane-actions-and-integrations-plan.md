@@ -2,7 +2,10 @@
 
 ## Status and Objective
 
-Phase 5 local isolated execution activated by the user on 2026-09-08 under
+The bounded deterministic local execution scope is completed in the
+[local closeout record](completed/flow-inspector-phase-5-local-execution-closeout.md).
+Real provider selection and acceptance remain pending; full Phase 5 is not closed.
+Phase 5 local isolated execution was activated by the user on 2026-09-08 under
 [Local Agent Execution](../AGENT_EXECUTION.md). GitHub enforcement remains
 deferred; the original entry criteria and full DoD below are retained for the
 protected integration milestone. Phase 6 is not activated. The existing filename remains stable. This

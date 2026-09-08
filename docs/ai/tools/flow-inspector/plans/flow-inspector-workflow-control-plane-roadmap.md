@@ -443,3 +443,11 @@ The user separately activated [local isolated agent execution](../AGENT_EXECUTIO
 while retaining all deferred Phase 4 enforcement requirements. Earlier statements
 that Phase 4 closeout did not activate Phase 5 remain historical facts. This new
 decision grants no merge, publication, protection or Phase 6 authority.
+
+## Phase 5 Local Bounded Completion - 2026-09-08
+
+The [completed local execution record](completed/flow-inspector-phase-5-local-execution-closeout.md)
+closes deterministic adapter admission, isolated candidate execution, retained
+verification and shared controls only. Real AI backend acceptance and the full
+Phase 5 DoD remain pending. All earlier protected CI requirements remain deferred;
+Phase 6 remains unactivated. No release or merge is implied.
