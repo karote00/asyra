@@ -59,6 +59,7 @@ function StripActionIcon({ kind }: { kind: 'up' | 'down' | 'remove' }) {
           fill="none"
           stroke="currentColor"
           strokeWidth="2"
+          strokeLinecap="round"
         />
       ) : (
         <path
