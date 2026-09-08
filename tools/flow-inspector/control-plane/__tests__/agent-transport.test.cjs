@@ -184,6 +184,86 @@ test('turn completion binds final JSON and provider usage, cancellation stays un
     }
   }
 })
+test('cancellation waits for the matching interruption receipt without settling remote usage', async () => {
+  for (const receipt of ['interrupted', 'completed', 'closed', 'missing']) {
+    const events = new EventEmitter()
+    const controller = new AbortController()
+    let interrupts = 0,
+      finished = false,
+      release
+    const started = new Promise((resolve) => {
+      release = resolve
+    })
+    const protocol = {
+      events,
+      notify: () => undefined,
+      async request(method) {
+        if (method === 'account/read') return { account: { type: 'chatgpt' } }
+        if (method === 'thread/start')
+          return {
+            thread: { id: 'thread' },
+            model: 'model',
+            instructionSources: [],
+            runtimeWorkspaceRoots: []
+          }
+        if (method === 'turn/start') {
+          setImmediate(release)
+          return { turn: { id: 'turn' } }
+        }
+        if (method === 'turn/interrupt') interrupts++
+        return {}
+      }
+    }
+    const pending = completeTurn(
+      protocol,
+      {
+        model: 'model',
+        contract: {},
+        history: [],
+        signal: controller.signal
+      },
+      '/isolated'
+    ).then((result) => {
+      finished = true
+      return result
+    })
+    await started
+    controller.abort()
+    await new Promise((resolve) => setImmediate(resolve))
+    assert.equal(
+      finished,
+      false,
+      'RPC acknowledgement is not an interruption receipt'
+    )
+    assert.equal(interrupts, 1)
+    events.emit('notification', {
+      method: 'turn/completed',
+      params: {
+        threadId: 'thread',
+        turn: { id: 'wrong-turn', status: 'interrupted' }
+      }
+    })
+    await new Promise((resolve) => setImmediate(resolve))
+    assert.equal(finished, false, 'another turn cannot confirm cancellation')
+    if (receipt === 'closed') events.emit('closed')
+    else if (receipt !== 'missing')
+      events.emit('notification', {
+        method: 'turn/completed',
+        params: {
+          threadId: 'thread',
+          turn: { id: 'turn', status: receipt }
+        }
+      })
+    const result = await pending
+    assert.equal(result.terminal, false)
+    assert.equal(
+      result.interruptionConfirmed === true,
+      receipt === 'interrupted'
+    )
+    assert.equal(result.usage, null)
+    assert.equal(events.listenerCount('notification'), 0)
+  }
+})
 test(
   'trusted transport OS boundary denies undeclared source, credential writes and child creation',
   {

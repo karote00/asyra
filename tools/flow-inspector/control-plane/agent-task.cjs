@@ -121,6 +121,9 @@ function createTaskOwner(
             (attempt) => attempt.id === request.attemptId
           ) ||
           !['reserved', 'settled', 'unresolved'].includes(request.state) ||
+          (request.interruptionConfirmed !== undefined &&
+            (request.interruptionConfirmed !== true ||
+              request.state !== 'unresolved')) ||
           (request.usage !== null && !reportedUsage(request.usage))
         )
           throw new Error('Invalid provider reservation')
@@ -325,6 +328,7 @@ function createTaskOwner(
       let verdict = null
       let failure = null
       let verifying = false
+      let pendingOperation
       const aborted = new Promise((resolve) => {
         if (controller.signal.aborted) resolve(null)
         else
@@ -391,10 +395,8 @@ function createTaskOwner(
             reason = 'limited'
             break
           }
-          const operation = await Promise.race([
-            adapter.next(observation),
-            aborted
-          ])
+          pendingOperation = adapter.next(observation)
+          const operation = await Promise.race([pendingOperation, aborted])
           if (controller.signal.aborted) break
           record = save(
             chargeTime({
@@ -494,7 +496,10 @@ function createTaskOwner(
         if (!reason) reason = verifying ? 'failed' : 'denied'
       } finally {
         clearTimeout(timer)
-        if (record.task.provider) await providerComplete.cancel?.()
+        if (record.task.provider && providerComplete.cancel) {
+          await providerComplete.cancel()
+          await pendingOperation?.catch(() => undefined)
+        }
         const current = chargeTime(get(id))
         const phase = reason ?? 'failed'
         const verificationStatus =

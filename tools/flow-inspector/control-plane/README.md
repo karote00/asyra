@@ -77,6 +77,22 @@ Choose a free port for this tool; do not terminate another application's server.
 
 ## CLI and CI Proof
 
+Periodic formal verification does not require a model or AI credentials.
+An external CI agent may orchestrate supported commands, but GitHub agent setup
+alone does not make the current macOS subscription adapter portable to CI.
+Unattended AI repair, machine authentication and protected remote verification
+remain separate integrations owned by the operator.
+
+If a provider task stops with **Provider follow-up required**, save its audit
+and candidate diff using the Board links. Check the provider's account usage
+and service status; contact provider support for unexplained activity using
+timestamps and task/attempt IDs, without credentials. Local IDs are not remote
+request receipts. **Hand off to human** preserves manual review, not model
+resumption. A recorded app-server interruption confirmation does not prove cloud
+execution or billing settlement. Missing confirmation stays unknown. This
+adapter has no remote receipt query after disconnect; preserve the unresolved
+record and do not delete it or create a new store to bypass the dispatch block.
+
 ```bash
 # Pass only when all six supported obligations pass.
 node tools/flow-inspector/control-plane/cli.cjs verify

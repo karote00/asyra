@@ -28,6 +28,24 @@ function fixture(complete) {
   })
   return { adapter, controller, events }
 }
+test('interruption confirmation is retained without permitting a late operation or settling usage', async () => {
+  const f = fixture(async () => {
+    f.controller.abort()
+    return {
+      terminal: false,
+      interruptionConfirmed: true,
+      usage: null,
+      text: '{"tool":"finish"}'
+    }
+  })
+  await assert.rejects(f.adapter.next(null), /cancelled/)
+  assert.deepEqual(f.events[1], {
+    id: 'request',
+    state: 'unresolved',
+    usage: null,
+    interruptionConfirmed: true
+  })
+})
 test('provider receives only admitted context after reservation; operation stays broker data', async () => {
   let input
   const f = fixture(async (value) => {

@@ -24,6 +24,8 @@ delegation are the success criteria.
 The bounded Sol local integration is recorded in the
 [completed local integration record](plans/completed/flow-inspector-phase-5-sol-local-integration-closeout.md).
 Its real-provider trial does not complete the full Phase 5/6 plan.
+The local cancellation follow-up adds bounded interruption confirmation and
+persistent investigation guidance; it does not implement remote reconciliation.
 
 2. [Agent Execution and Integrations Plan](plans/flow-inspector-control-plane-actions-and-integrations-plan.md)
    - Remaining Phase 5: independently verifiable remote reconciliation and any

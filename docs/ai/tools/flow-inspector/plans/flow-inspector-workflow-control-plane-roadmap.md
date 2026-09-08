@@ -482,3 +482,9 @@ and all six obligations. Cancellation retains an unresolved remote turn; restart
 and handoff cannot reset reservations or claim settlement. Full Phase 5,
 independent verifier/issuer, GitHub enforcement, protected remote execution,
 Phase 6 and repository-independent dynamic execution remain unclosed.
+
+The 2026-09-09 follow-up retains local subscription operation and adds bounded
+app-server interruption confirmation plus Board investigation guidance.
+Confirmation is separate from remote settlement, so unresolved dispatch remains
+blocked. CI-driven autonomous repair and machine authentication are operator
+integrations, not implied by publishing the current package.

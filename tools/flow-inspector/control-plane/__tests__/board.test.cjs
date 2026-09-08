@@ -102,10 +102,31 @@ test(
         'Reconciliation required'
       )
       await expect(canvas.locator('#agent-resume')).toBeDisabled()
+      await expect(canvas.locator('#agent-recovery')).toBeVisible()
+      await expect(canvas.locator('#agent-recovery')).toContainText(
+        'Local task stopped'
+      )
+      await expect(canvas.locator('#agent-recovery')).toContainText(
+        'Save the task audit and candidate diff'
+      )
+      await expect(canvas.locator('#agent-recovery')).toContainText(
+        'Do not delete records or create a new store'
+      )
+      await canvas.locator('#agent-handoff').click()
+      await expect(canvas.locator('#agent-result')).toContainText(
+        'Execution: handed-off'
+      )
+      await expect(canvas.locator('#agent-recovery')).toBeVisible()
+      await expect(canvas.locator('#agent-resume')).toBeDisabled()
+      assert.equal(
+        calls,
+        2,
+        'reading guidance and handing off never dispatch a model'
+      )
       await expect(canvas.locator('.step-card')).toHaveCount(7)
       await expect(canvas.locator('[data-route-id]')).toHaveCount(10)
       await canvas
-        .locator('#agent-result')
+        .locator('#agent-controls')
         .screenshot({ path: path.join(artifacts, 'provider-unresolved.png') })
       fs.writeFileSync(
         path.join(artifacts, 'review.json'),
@@ -1583,6 +1604,13 @@ test(
             'Reconciliation required'
           )
           await expect(canvas.locator('#agent-resume')).toBeDisabled()
+          await expect(canvas.locator('#agent-recovery')).toBeVisible()
+          await expect(canvas.locator('#agent-recovery')).toContainText(
+            'Local task stopped'
+          )
+          await canvas.locator('#agent-recovery').screenshot({
+            path: path.join(artifacts, 'live-cancellation-guidance.png')
+          })
         }
         await canvas.locator('#agent-result').screenshot({
           path: path.join(

@@ -83,6 +83,21 @@ PR checks must pass on the exact delivery HEAD before review notification.
 
 ## Explicit remaining boundaries
 
+### Local cancellation follow-up - 2026-09-09
+
+The subscription transport now gives the matching app-server interruption
+notification a bounded one-second grace period. Task completion waits for the
+pending observation after transport cleanup, retaining optional interruption
+confirmation across restart without reconciling cloud execution or usage.
+The Board shows persistent investigation guidance, source/audit review links
+and human handoff while the unresolved dispatch block remains intact.
+Formal offline cases distinguish acknowledgement, matching and wrong-turn
+notifications, missing receipts, disconnects and late results. Existing live
+records are replayed read-only; no new model request or retroactive interruption
+confirmation is claimed. The earlier actual cancellation remains unresolved.
+
+### Deferred capabilities
+
 The ephemeral app-server interface supplies no independently queryable receipt
 for the cancelled remote request. Further provider dispatch in this store stays
 blocked; handoff, restart, a new task or human acknowledgement cannot claim it

@@ -65,7 +65,13 @@ function providerAdapter(
       }
       const usage = reportedUsage(response?.usage)
       const state = response?.terminal === true ? 'settled' : 'unresolved'
-      settle(id, { state, usage })
+      settle(id, {
+        state,
+        usage,
+        ...(signal.aborted && response?.interruptionConfirmed === true
+          ? { interruptionConfirmed: true }
+          : {})
+      })
       if (signal.aborted) throw new Error('Provider request cancelled')
       if (state !== 'settled')
         throw new Error('Provider remote result unresolved')

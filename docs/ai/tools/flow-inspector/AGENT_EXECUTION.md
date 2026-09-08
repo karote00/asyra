@@ -148,6 +148,18 @@ and its evidence remain historical. Human handoff contains the same contract,
 remaining budgets, source changes, verification and unresolved blockers.
 No candidate is applied to the user's checkout automatically.
 
+On cancellation, the subscription transport sends at most one `turn/interrupt`
+for its active turn and allows up to one second for the matching
+`turn/completed` interruption notification before closing its owned process.
+The task owner waits for transport cleanup and the pending operation observation
+before completing local stop. A matching interruption notification may add
+`interruptionConfirmed: true` to the existing request record. Absence means no
+confirmation was retained, including for older records. This is an app-server
+turn receipt, not an independently queryable cloud or billing receipt: the
+request remains unresolved and cannot authorize another dispatch. Wrong-turn
+notifications, RPC acknowledgement alone, disconnects and grace expiry do not
+confirm interruption. Late candidate operations remain rejected after abort.
+
 ## Candidate verification
 
 After adapter finish with actual source progress, freeze candidate bytes and
@@ -187,6 +199,16 @@ execution, work, verification, delivery, budgets, changes, artifacts and handoff
 Original canvas/cards/edges/navigation/zoom remain owned by the viewer.
 Unsupported targets have no delegation action; task selection never grants a
 verification badge from candidate evidence to the accepted source.
+
+For a selected task with unresolved remote state or missing terminal usage,
+the Board shows a persistent follow-up notice, including retained interruption
+confirmations and the distinction between local stop and remote settlement.
+It directs the user to save audit and source changes, inspect provider usage
+and service status, and contact provider support when activity is unexplained.
+Task/attempt IDs and timestamps aid investigation but are not provider request
+IDs. Never share credentials. Human handoff allows candidate inspection only;
+restarting, waiting, dismissing a message, deleting records or creating another
+store is not a reconciliation mechanism. No manual unblock action is provided.
 
 Admission captures source once. Operations update one task-owned retained record;
 reads of already admitted state do no filesystem capture, history scan, evidence

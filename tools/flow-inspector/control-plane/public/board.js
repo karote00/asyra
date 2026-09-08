@@ -703,6 +703,26 @@
             request.state === 'unresolved' ||
             (request.state === 'settled' && !request.usage)
         )
+        byId('agent-recovery').hidden = !unresolved
+        if (unresolved) {
+          const confirmed = matching.providerRequests.filter(
+            (request) => request.interruptionConfirmed === true
+          ).length
+          byId('agent-recovery').textContent = [
+            'Provider follow-up required',
+            busy
+              ? 'Local task is stopping. Wait for its execution status to settle.'
+              : 'Local task stopped. No further provider requests are allowed in this store.',
+            'App-server interruption confirmations: ' +
+              confirmed +
+              '. An interruption confirmation is not proof that remote computation or billing has stopped.',
+            'Remote execution or final usage remains unconfirmed. This adapter cannot query a remote receipt after its connection closes.',
+            '1. Save the task audit and candidate diff using the links below. Keep the task and attempt IDs and timestamps for investigation.',
+            '2. Check the provider account usage and service status. If activity is unexpected or cannot be explained, contact provider support with those IDs and timestamps; local IDs may not identify a provider request. Never include credentials.',
+            '3. Use Hand off to human to inspect the candidate and continue manual review. This does not resume the model or confirm remote settlement.',
+            'Do not delete records or create a new store to bypass this block. Restarting, waiting, or acknowledging this notice does not reconcile the request.'
+          ].join('\n\n')
+        }
         for (const action of ['cancel', 'stop', 'handoff', 'revoke'])
           byId('agent-' + action).disabled =
             !matching || acting || (action === 'cancel' && !busy)
@@ -1022,6 +1042,7 @@
             <label>Cumulative tool-call limit<input id="agent-calls" type="number" min="1" max="100" value="20" /></label>
             <div class="proof-actions"><button id="agent-start" type="button">Delegate selected step</button><button id="agent-resume" type="button">Resume selected task</button><button id="agent-cancel" type="button">Cancel task</button><button id="agent-stop" type="button">Stop task</button><button id="agent-handoff" type="button">Hand off to human</button><button id="agent-revoke" type="button">Revoke task</button></div>
             <label>Retained step tasks<select id="agent-history"></select></label>
+            <pre id="agent-recovery" role="alert" hidden></pre>
             <pre id="agent-result" role="status">No task selected</pre>
             <a id="agent-artifact" target="_blank" rel="noopener noreferrer" hidden>Review exact source changes</a>
             <a id="agent-audit" target="_blank" rel="noopener noreferrer" hidden>Open task evidence and audit</a>

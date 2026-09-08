@@ -147,3 +147,14 @@ budgets. The trial closes only the selected macOS integration scope; full Phase 
 protected verification/delivery and Phase 6 remain open. The existing package
 patch Changeset is separate from closeout; no version application, merge, tag,
 publication, protection or deployment change is performed.
+
+## 2026-09-09 - Explain unresolved cancellation and retain local interruption receipts
+
+Retain subscription-based local execution and leave CI autonomous repair to
+separately configured operator integrations. Cancellation permits a bounded
+wait for an app-server interruption notification, persists that observation
+before completing local stop, and presents persistent investigation guidance.
+An interruption notification is not cloud or billing settlement. User
+acknowledgement, handoff and restart cannot remove an unresolved dispatch block.
+Offline contract cases and read-only replay of existing live records prove this
+follow-up; no new provider execution or remote reconciliation is claimed.

@@ -7,3 +7,6 @@ with durable request reservations, separate provider usage observations, fail-cl
 remote uncertainty, and shared board/API/CLI task state. Preserve candidate
 containment and manual source review; live provider acceptance remains separate
 from offline adapter contract tests.
+
+Retain bounded app-server interruption confirmation separately from remote
+settlement, and show persistent cancellation investigation and handoff guidance.

@@ -227,16 +227,24 @@ async function completeTurn(protocol, input, directory) {
   let turnId,
     text = '',
     usage = null,
-    finish
+    finish,
+    interruptTimer,
+    interruptSent = false
   const completion = new Promise((resolve) => {
     finish = resolve
   })
   const cancel = () => {
-    if (turnId)
+    if (!interruptTimer)
+      interruptTimer = setTimeout(
+        () => finish({ terminal: false, usage }),
+        1000
+      )
+    if (turnId && !interruptSent) {
+      interruptSent = true
       protocol
         .request('turn/interrupt', { threadId: thread.thread.id, turnId })
-        .catch(() => undefined)
-    finish({ terminal: false, usage })
+        .catch(() => finish({ terminal: false, usage }))
+    }
   }
   const failed = () => finish({ terminal: false, usage })
   const observe = ({ method, params }) => {
@@ -253,8 +261,21 @@ async function completeTurn(protocol, input, directory) {
         return failed()
       if (Buffer.byteLength(text) > TASK_POLICY.maxOutputBytes) return failed()
     }
-    if (method === 'turn/completed' && (!turnId || params.turn?.id === turnId))
-      finish({ terminal: params.turn?.status === 'completed', text, usage })
+    if (
+      method === 'turn/completed' &&
+      (!turnId || params.turn?.id === turnId)
+    ) {
+      if (signal.aborted)
+        finish({
+          terminal: false,
+          usage,
+          ...(interruptSent && params.turn?.status === 'interrupted'
+            ? { interruptionConfirmed: true }
+            : {})
+        })
+      else
+        finish({ terminal: params.turn?.status === 'completed', text, usage })
+    }
   }
   protocol.events.on('notification', observe)
   protocol.events.on('failure', failed)
@@ -282,6 +303,7 @@ async function completeTurn(protocol, input, directory) {
     if (signal.aborted) cancel()
     return await completion
   } finally {
+    clearTimeout(interruptTimer)
     signal.removeEventListener('abort', cancel)
     protocol.events.off('notification', observe)
     protocol.events.off('failure', failed)
@@ -304,9 +326,10 @@ function createProviderTransport(options) {
       directory,
       onSpawn: input.onSpawn
     })
-    current = protocol
+    const completion = completeTurn(protocol, input, directory)
+    current = { protocol, completion }
     try {
-      return await completeTurn(protocol, input, directory)
+      return await completion
     } finally {
       await protocol.close()
       current = null
@@ -316,7 +339,20 @@ function createProviderTransport(options) {
     }
   }
   complete.cancel = async () => {
-    if (current) await current.close()
+    const active = current
+    if (!active) return
+    let timer
+    try {
+      await Promise.race([
+        active.completion.catch(() => undefined),
+        new Promise((resolve) => {
+          timer = setTimeout(resolve, 1000)
+        })
+      ])
+    } finally {
+      clearTimeout(timer)
+      await active.protocol.close()
+    }
   }
   return complete
 }

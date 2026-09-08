@@ -130,16 +130,20 @@ test('provider cancellation records uncertainty and denies successor dispatch ev
 test('provider cancellation awaits owned transport settlement before returning', async () => {
   const authorization = providerAuthorization()
   let dispatched,
+    confirm,
     settled = false
   const ready = new Promise((resolve) => {
     dispatched = resolve
   })
   const complete = async () => {
     dispatched()
-    return new Promise(() => undefined)
+    return new Promise((resolve) => {
+      confirm = resolve
+    })
   }
   complete.cancel = async () => {
     await new Promise((resolve) => setTimeout(resolve, 10))
+    confirm({ terminal: false, usage: null, interruptionConfirmed: true })
     settled = true
   }
   const f = fixture({
@@ -156,7 +160,19 @@ test('provider cancellation awaits owned transport settlement before returning',
   await f.owner.stop(id, 'cancel', 'human')
   assert.equal(settled, true)
   assert.equal(f.owner.activeId(), null)
+  assert.equal(f.owner.get(id).providerRequests[0].interruptionConfirmed, true)
   await f.owner.close()
+  const next = createTaskOwner(root, {
+    directory: f.directory,
+    getBaseline: () => ({ contract: f.contract, revision: 1 }),
+    available: () => true,
+    providerAuthorization: authorization,
+    providerComplete: complete
+  })
+  assert.equal(next.get(id).providerRequests[0].interruptionConfirmed, true)
+  assert.equal(next.get(id).providerRequests[0].state, 'unresolved')
+  assert.throws(() => next.resume(id, 'task', 'human'), /unresolved/)
+  await next.close()
 })
 
 test(
