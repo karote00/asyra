@@ -29,7 +29,7 @@ export type LayerId =
   | 'base'
 export const LAYER_LABELS: Record<Exclude<LayerId, 'base'>, string> = {
   net: '攀爬拉網',
-  ties: '竿頂束帶',
+  ties: '網頂束帶',
   supports: '栽培鋼管',
   clips: '跨接彈簧夾',
   film: '塑膠覆膜',

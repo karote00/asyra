@@ -1,4 +1,4 @@
-import { type Point3 } from './greenhouse'
+import { SITE, type Point3 } from './greenhouse'
 import { SUPPORT_LAYOUT, type createSupportAssembly } from './planting-supports'
 
 /** Metres. Mesh and cord dimensions are provisional planting-system choices. */
@@ -25,7 +25,7 @@ export function createPlantingNet(assembly: Assembly) {
       (tube) => tube.row === row.row && tube.side === row.side
     )
     const last = line[line.length - 1]
-    const top = row.points[1][1]
+    const top = SITE.eave
     // Put the net against the drain-facing surface, clear of the steel centreline.
     const direction = row.side === 'left' ? 1 : -1
     const x =

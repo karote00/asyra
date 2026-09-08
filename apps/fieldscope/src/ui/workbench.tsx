@@ -435,8 +435,8 @@ function Controls({
         </div>
         <p className="mt-2 text-[10px] leading-relaxed text-[#8a957d]">
           已配置 1,992 根 Ø20mm 鋼管，埋深 15cm、頂高
-          3.15m；縱向連接管以跨接彈簧夾銜接橫樑。15cm
-          方格攀爬網由竿頂束帶固定，網底離土壤 45cm。尚未配置植株。
+          3.15m；縱向連接管以跨接彈簧夾銜接橫樑。15cm 方格攀爬網上緣齊橫樑
+          3m，以束帶固定，網底離土壤 45cm。尚未配置植株。
         </p>
       </div>
       <details className="px-5 py-4 text-[11px] text-[#7c8971]">

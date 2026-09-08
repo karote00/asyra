@@ -280,10 +280,10 @@ test('trellis net and top cable ties are visible and independently controlled', 
   expect((await canvas.screenshot()).equals(withNet)).toBe(false)
   await page.getByLabel('攀爬拉網', { exact: true }).check()
   const withTies = await canvas.screenshot()
-  await page.getByLabel('竿頂束帶', { exact: true }).uncheck()
+  await page.getByLabel('網頂束帶', { exact: true }).uncheck()
   await settle()
   expect((await canvas.screenshot()).equals(withTies)).toBe(false)
-  await page.getByLabel('竿頂束帶', { exact: true }).check()
+  await page.getByLabel('網頂束帶', { exact: true }).check()
   await page.getByRole('button', { name: '走道內部', exact: true }).click()
   await settle()
   await page.screenshot({
@@ -294,7 +294,7 @@ test('trellis net and top cable ties are visible and independently controlled', 
     body: JSON.stringify({
       baseURL: testInfo.project.use.baseURL,
       bottom: 0.45,
-      top: 3.15,
+      top: 3,
       spacing: 0.6,
       mesh: 0.15,
       rows: 24,
