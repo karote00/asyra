@@ -104,7 +104,11 @@ export async function bootstrap(
               next.filmOpacity > 0.65
             )
               throw new Error('覆膜不透明度必須介於 0 與 0.65')
-            if (!['overview', 'top', 'front', 'inside'].includes(next.camera))
+            if (
+              !['overview', 'top', 'front', 'inside', 'joint'].includes(
+                next.camera
+              )
+            )
               throw new Error('Unknown camera preset')
             if (
               Object.keys(next.layers).length !==
@@ -151,7 +155,7 @@ export async function bootstrap(
         const vector = camera.position.map((v, i) => v - camera.target[i])
         const distance = Math.hypot(...vector)
         const next = Math.max(
-          2,
+          0.05,
           Math.min(180, distance * Math.exp(delta * 0.001))
         )
         publishCamera({

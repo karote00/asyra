@@ -24,6 +24,21 @@ it('preserves exact recessed surfaces, exterior barriers and shared geometry acr
     points('barriers').x.every((x) => x <= 0.020001 || x >= 27.979999)
   ).toBe(true)
   expect(Math.max(...points('barriers').y)).toBeCloseTo(0.35)
+  const clips = meshes.filter((item) => item.layer === 'clips')
+  expect(clips).toHaveLength(4)
+  for (const clip of clips) {
+    const shape = clip.descriptor.shape
+    if (shape.kind !== 'triangles')
+      throw new Error('Expected batched wire geometry')
+    expect(shape.positions.length).toBeLessThan(3_000_000)
+    expect(shape.indices.length).toBeLessThan(3_000_000)
+  }
+  const hiddenClips = projectView(meshes, {
+    ...INITIAL_VIEW,
+    layers: { ...INITIAL_VIEW.layers, clips: false }
+  })
+  expect(hiddenClips.filter((item) => !item.visible)).toHaveLength(4)
+  expect(hiddenClips.find((item) => item.id === 'supports')?.visible).toBe(true)
   const changed = projectView(meshes, {
     ...INITIAL_VIEW,
     filmOpacity: 0.5,

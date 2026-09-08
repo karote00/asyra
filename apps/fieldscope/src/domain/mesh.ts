@@ -34,7 +34,7 @@ export class TriangleBuilder {
     this.quad(p(-1, -1, 1), p(1, -1, 1), p(1, -1, -1), p(-1, -1, -1))
   }
 
-  tube(member: Member) {
+  tube(member: Pick<Member, 'points' | 'diameter'>) {
     const { points, diameter } = member
     const offset = this.positions.length / 3,
       sides = 8

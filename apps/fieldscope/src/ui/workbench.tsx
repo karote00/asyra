@@ -11,7 +11,8 @@ const CAMERA_LABELS: Record<CameraMode, string> = {
   overview: '透視',
   top: '俯視',
   front: '端面',
-  inside: '走道內部'
+  inside: '走道內部',
+  joint: '夾具近看'
 }
 
 function Brand() {
@@ -433,7 +434,8 @@ function Controls({
           ))}
         </div>
         <p className="mt-2 text-[10px] leading-relaxed text-[#8a957d]">
-          本階段尚未配置植株與攀附設施。
+          已配置 3,984 根 Ø20mm 鋼管，埋深 15cm、頂高
+          3m；縱向連接管以跨接彈簧夾銜接橫樑。尚未配置植株。
         </p>
       </div>
       <details className="px-5 py-4 text-[11px] text-[#7c8971]">

@@ -1,4 +1,9 @@
 import {
+  createSupportAssembly,
+  springClipWire,
+  supportJointTarget
+} from '../domain/planting-supports'
+import {
   SITE,
   createLayout,
   createStructure,
@@ -9,6 +14,8 @@ import { readSpatialDescriptor } from '../engine/spatial-contract'
 import type { SpatialFrame, SpatialMesh, SpatialCamera } from './spatial-layer'
 
 export type LayerId =
+  | 'supports'
+  | 'clips'
   | 'film'
   | 'steel'
   | 'soil'
@@ -18,6 +25,8 @@ export type LayerId =
   | 'dimensions'
   | 'base'
 export const LAYER_LABELS: Record<Exclude<LayerId, 'base'>, string> = {
+  supports: '栽培鋼管',
+  clips: '跨接彈簧夾',
   film: '塑膠覆膜',
   steel: '完整鋼架',
   soil: '土壤畦面',
@@ -27,6 +36,8 @@ export const LAYER_LABELS: Record<Exclude<LayerId, 'base'>, string> = {
   dimensions: '尺寸參考線'
 }
 export const INITIAL_LAYERS: Record<LayerId, boolean> = {
+  supports: true,
+  clips: true,
   film: true,
   steel: true,
   soil: true,
@@ -36,7 +47,7 @@ export const INITIAL_LAYERS: Record<LayerId, boolean> = {
   dimensions: true,
   base: true
 }
-export type CameraMode = 'overview' | 'top' | 'front' | 'inside'
+export type CameraMode = 'overview' | 'top' | 'front' | 'inside' | 'joint'
 export interface ViewState {
   layers: Record<LayerId, boolean>
   filmOpacity: number
@@ -48,12 +59,16 @@ export const INITIAL_VIEW: ViewState = {
   camera: 'overview'
 }
 
+export type SiteMesh = SpatialFrame['meshes'][number] & { layer: LayerId }
+
 const mesh = (
   id: string,
   builder: TriangleBuilder,
   color: number,
-  opacity = 1
-): SpatialFrame['meshes'][number] => ({
+  opacity = 1,
+  layer = id as LayerId
+): SiteMesh => ({
+  layer,
   id,
   visible: true,
   descriptor: readSpatialDescriptor({
@@ -69,13 +84,23 @@ const mesh = (
 })
 
 /** One admitted static geometry product per runtime. View changes never rebuild it. */
-export function buildSiteMeshes(): SpatialFrame['meshes'] {
+export function buildSiteMeshes(): SiteMesh[] {
   const { strips, passages } = createLayout()
   const builders = Object.fromEntries(
     Object.keys(INITIAL_LAYERS).map((key) => [key, new TriangleBuilder()])
   ) as Record<LayerId, TriangleBuilder>
   const { steel, soil, drains, barriers, film, base, dimensions } = builders
   for (const member of createStructure()) steel.tube(member)
+  const assembly = createSupportAssembly()
+  for (const tube of [...assembly.tubes, ...assembly.rails])
+    builders.supports.tube(tube)
+  // Batch by bay to keep every admitted index buffer below the engine limit.
+  const clipBuilders = Array.from(
+    { length: SITE.bays },
+    () => new TriangleBuilder()
+  )
+  for (const clip of assembly.clips)
+    clipBuilders[clip.bay].tube(springClipWire(clip))
   base.box([14, -0.48, 25], [34, 0.26, 56])
   for (const strip of strips) {
     const middle = strip.x + strip.width / 2
@@ -150,18 +175,22 @@ export function buildSiteMeshes(): SpatialFrame['meshes'] {
     mesh('passages', builders.passages, 0xb2b3a2),
     mesh('barriers', barriers, 0x182623),
     mesh('steel', steel, 0x8a9c9b),
+    mesh('supports', builders.supports, 0x8a9c9b),
+    ...clipBuilders.map((builder, bay) =>
+      mesh(`clips-${bay}`, builder, 0xb4bfbe, 1, 'clips')
+    ),
     mesh('dimensions', dimensions, 0x326c55),
     mesh('film', film, 0xf3f5ee, INITIAL_VIEW.filmOpacity)
   ]
 }
 
 export function projectView(
-  meshes: SpatialFrame['meshes'],
+  meshes: SiteMesh[],
   view: ViewState
 ): SpatialFrame['meshes'] {
   return meshes.map((item) => ({
     ...item,
-    visible: view.layers[item.id as LayerId],
+    visible: view.layers[item.layer],
     descriptor:
       item.id === 'film'
         ? { ...item.descriptor, opacity: view.filmOpacity }
@@ -170,6 +199,17 @@ export function projectView(
 }
 
 export function cameraPreset(mode: CameraMode): SpatialCamera {
+  if (mode === 'joint') {
+    const target = supportJointTarget()
+    return {
+      kind: 'camera',
+      target,
+      position: [target[0] - 0.13, target[1] + 0.09, target[2] - 0.17],
+      fov: 43,
+      near: 0.001,
+      far: 400
+    }
+  }
   const positions = {
     overview: [53, 36, -29],
     top: [14, 78, 24.99],

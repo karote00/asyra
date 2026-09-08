@@ -200,3 +200,54 @@ test('film is visible by default and Shift drag, Command 1 and Command 0 operate
   await page.keyboard.press('Meta+0')
   await expect(page.getByTestId('zoom-percent')).toHaveText('100%')
 })
+
+test('spring clips are inspectable at the real upright connection', async ({
+  page
+}, testInfo) => {
+  await page.goto('/')
+  await expect(page.getByText('空間模型已就緒')).toBeVisible()
+  await page.getByLabel('塑膠覆膜', { exact: true }).uncheck()
+  await page.getByRole('button', { name: '夾具近看', exact: true }).click()
+  await expect(
+    page.getByRole('button', { name: '夾具近看', exact: true })
+  ).toHaveAttribute('aria-pressed', 'true')
+  const settle = () =>
+    page.evaluate(
+      () =>
+        new Promise<void>((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+        )
+    )
+  await settle()
+  await page.screenshot({
+    path: testInfo.outputPath('joint.png'),
+    fullPage: true
+  })
+  const withClip = await page.locator('canvas').screenshot()
+  await page.getByLabel('跨接彈簧夾', { exact: true }).uncheck()
+  await settle()
+  expect((await page.locator('canvas').screenshot()).equals(withClip)).toBe(
+    false
+  )
+  await page.getByLabel('跨接彈簧夾', { exact: true }).check()
+  await page.getByLabel('栽培鋼管', { exact: true }).uncheck()
+  await settle()
+  await page.screenshot({
+    path: testInfo.outputPath('wire-profile.png'),
+    fullPage: true
+  })
+  await testInfo.attach('review-context', {
+    body: JSON.stringify({
+      origin: testInfo.project.use.baseURL,
+      viewport: [1440, 1100],
+      camera: 'joint',
+      zoom: '100%',
+      supports: 3984,
+      clips: 4248,
+      embeddedDepth: 0.15,
+      aboveGround: 3,
+      wireDiameterAssumption: 0.0025
+    }),
+    contentType: 'application/json'
+  })
+})
