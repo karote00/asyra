@@ -136,13 +136,14 @@ or changing other Apps, environments, packages, or repository-wide support polic
 | M1 Workcell foundations                  | Create, manipulate, save, and reopen a simple 3D workcell                        | Consistent canonical state, transforms, and transactions                   |
 | M2 Experiments and trajectories          | Import paths, select scope, and configure methods and thresholds                 | Correct units, interpolation, snapshots, and preflight                     |
 | M3 Formal analysis                       | Obtain collision, clearance, and unresolved results with replay                  | Formal numerical evidence and continuous-time completeness                 |
+| M3.5 Workflow usability | Configure, run, read results and replay without losing context | Single run entry, focused panels and truthful result states |
 | M4 Comparison and pluggability           | Compare three variants, export, replace methods, and preserve experiment context | Consistent results, traceable versions, and independent module integration |
 | M5 Quality and delivery                  | A controlled-pilot candidate that installs or starts locally                     | Offline, security, performance, consumer, and documentation gates          |
 | M6 Independent pilots and release review | Non-developers complete the workflow independently and understand its limits     | All G1–G8 gates in FIRST_RELEASE are satisfied                             |
 | R0 Public Alpha                          | A publicly released, free local experiment tool with a limited scope             | Still not production approval or industrial safety certification           |
 | M7 and beyond                            | Expand according to real needs                                                   | Choose one evidence-backed capability increment at a time                  |
 
-The required sequence is `M0 → M1 → M2 → M3 → M4 → M5 → M6 → R0`.
+The required sequence is `M0 → M1 → M2 → M3 → M3.5 → M4 → M5 → M6 → R0`.
 Tests, supporting documentation, and resource cleanup accompany each owner
 implementation; they must not all be deferred to M5. Independent test design,
 sample preparation, and pilot arrangements may begin earlier; implementation
@@ -272,6 +273,16 @@ screenshots and unchanged numerical/resource limits. Full scope, commands,
 owner conclusions and operational acceptance are archived in
 [M3 formal analysis](completed/m3-formal-analysis.md).
 M4-M6 and independent release gates remain separate.
+
+## 6.5. M3.5: Understandable Experiment Workflow - Planned
+
+User acceptance of M3 was confirmed on 2026-09-09 after the live demonstration.
+The next bounded milestone addresses a single Run action with automatic
+preflight, Setup/Preview/Results tabs, stable controls and clearer retained
+results/replay. See [the M3.5 plan](m3-5-workbench-flow.md) for owner sequence,
+permanent product cases, gates and exclusions. No M3.5 implementation is claimed;
+first reconcile its thin product contract and exact UI Inspector route.
+M3 numerical acceptance remains closed. M4-M6 are not completed by this plan.
 
 ## 7. M4: Variant Comparison, Versions, and Private Extensions
 

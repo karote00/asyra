@@ -193,3 +193,16 @@ first unproven owner rather than assuming existing comparison/extensions are
 accepted. M5 packaging, representative/reference-hardware resources, independent
 numerical review, M6 pilots, maintenance policy and public release remain open.
 No Changeset, version bump, push, PR, merge, tag, publish or deploy was performed.
+
+
+## User acceptance follow-up - 2026-09-09
+
+The user accepted M3 after observing the original-part collision/replay,
+insufficient clearance, complete no-issue, unresolved contact, timeout and
+cancellation journeys. Seven runs were retained in the demonstration project.
+This is additional user acceptance, not a replacement for the formal evidence
+above. The next-step recommendation in the historical closeout is superseded by
+[M3.5 workflow usability](../m3-5-workbench-flow.md), planned before M4.
+The user now authorizes commit/push of M3 and the M3.5 plan and requests CI
+verification before review; the earlier no-push statement records the original
+closeout checkpoint. M4-M6 remain open.
