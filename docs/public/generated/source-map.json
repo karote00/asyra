@@ -6,7 +6,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/FRAMEWORK_ESSENTIALS.md",
-          "sha256": "30fb6c56669e377f01c30d92a4a078328ccb647f8931e20de48fdfbaf7dcfcce"
+          "sha256": "5436a60bfb6e705ea7c5d4b339b3be30228d4cbd4e7cd594ef287e328f32e069"
         },
         {
           "path": "docs/ai/framework/ARCHITECTURE.md",
@@ -76,7 +76,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/FRAMEWORK_ESSENTIALS.md",
-          "sha256": "30fb6c56669e377f01c30d92a4a078328ccb647f8931e20de48fdfbaf7dcfcce"
+          "sha256": "5436a60bfb6e705ea7c5d4b339b3be30228d4cbd4e7cd594ef287e328f32e069"
         },
         {
           "path": "docs/ai/framework/packages/core.md",
