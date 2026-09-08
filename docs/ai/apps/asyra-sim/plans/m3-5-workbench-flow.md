@@ -1,6 +1,6 @@
 # M3.5: Understandable Experiment Workflow
 
-Status: implemented and locally validated on 2026-09-09; port 3020 coordination,
+Status: implemented and validated at port 3020 on 2026-09-09;
 user acceptance and closeout remain pending.
 M3 is accepted and closed. This bounded usability milestone precedes M4.
 
@@ -128,7 +128,7 @@ Baseline: PR #171 is merged; fetched origin/main is
 `.worktrees/asyra-sim-m3-5-workbench-flow`, branch
 `codex/asyra-sim-m3-5-workbench-flow`. Existing worktrees and the main checkout's
 untracked reports remain untouched. Port 3020 initially belongs to M3 PID 46794;
-replacement requires the current user's explicit coordination.
+takeover was subsequently authorized by the user (see the final checkpoint).
 
 Discovery follows current UI callers, their direct owner APIs and permanent tests.
 Mutation is limited to UI orchestration/presentation, direct UI/E2E tests and
@@ -165,8 +165,8 @@ all blocking or warning acknowledgements remain visible. The existing hidden GLB
 file input now remains keyboard-focusable without changing source acceptance.
 No solver output, numerical default, precision, budget or saved evidence changed.
 
-Validated locally using the normal App at explicit APP_URL
-`http://127.0.0.1:3035` while 3020 remains owned by the previous M3 task:
+Initial validation used the normal App at explicit APP_URL
+`http://127.0.0.1:3035` while 3020 was still owned by the previous M3 task:
 
 - 661 App tests in 118 files; full build including typecheck; App lint.
 - 63 distinct affected E2E cases in 24 files across bounded one-worker batches:
@@ -189,21 +189,37 @@ generated trace HTML caused an early Vite reload and that affected case was reru
 No known in-scope functional test failure remains. Build retains its existing
 large-chunk advisory; this checkpoint makes no new hardware or release claim.
 
-This is a coherent, locally reviewable implementation checkpoint eligible for a
-local commit after scoped diff review. Its gates are the completed tests above;
-it is not final M3.5 acceptance. The remaining service/acceptance checkpoint must:
+The local implementation checkpoint is commit
+`04fea0ad2cb907d838f2bcef7c67a2367b9c5c17`. On 2026-09-09 the user authorized
+this takeover and future same-project port takeovers without renewed confirmation.
+The standing instruction is recorded in AGENTS.md; listener identity and project
+ownership must still be verified.
 
-1. Obtain current coordination to stop the verified old M3 Vite PID 46794 on 3020,
-   then start this worktree there and record its new PID/cwd/commit.
-2. Repeat the normal workflow/visual review at 3020 and provide that exact entry
-   for the user's hands-on acceptance. The temporary 3035 PID 76438 is retained
-   only as an interim review surface and must be retired after coordinated takeover.
-3. Receive explicit user acceptance before final plan closeout or any remote flow.
+The verified old M3 PID 46794 was stopped. This worktree now serves
+`http://127.0.0.1:3020` with Vite PID 85480 and cwd
+`.worktrees/asyra-sim-m3-5-workbench-flow/apps/asyra-sim`. Temporary 3035 PID 76438
+was stopped. Browser-origin storage was neither copied nor cleared.
 
-Therefore **M3.5 does not yet meet all completion conditions**: 3020 review and
-user acceptance are outstanding. No push, PR, merge, tag, publication or deployment
-was performed. M3 stays closed. M4 comparison/extensions, M5 packaging and M6
-pilot/release work remain separate and have not advanced.
+The final 3020 checkpoint passed 11 normal App E2E cases in the existing
+workbench-flow, formal-outcomes and resources suites, including desktop/narrow
+workflow, frozen replay, all formal outcome types, cancellation, timeout, Worker
+failure and durable saving failure/retry. Command:
+
+```sh
+APP_URL=http://127.0.0.1:3020 yarn workspace @asyra/asyra-sim test:e2e e2e/__tests__/workbench-flow.spec.ts e2e/__tests__/formal-outcomes.spec.ts e2e/__tests__/resources.spec.ts --max-failures=2 --output=../../.artifacts/m3-5-3020
+```
+
+Log: `.artifacts/m3-5-3020.log`; screenshots: `.artifacts/m3-5-3020/`.
+Desktop and narrow result/replay and terminal screenshots were inspected.
+The normal in-app browser also ran Tool and table collision at 3.8–4.2 seconds
+on this service, with the same completed/complete finding result.
+
+All implementation and agent-validation conditions are met; **user acceptance
+is still outstanding**, so M3.5 is not closed. This service authorization is not
+product acceptance. No push, PR, merge, tag, publication or deployment was
+performed. M3 stays closed. M4 comparison/extensions, M5 packaging and M6
+pilot/release work remain separate and have not advanced. The next step is the
+user's hands-on review, followed only by explicitly confirmed closeout/remote work.
 
 The ordinary operation guide is
 [Understandable workflow review](../../../../../apps/asyra-sim/README.md#understandable-workflow-review).

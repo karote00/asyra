@@ -25,7 +25,7 @@
      see [the M3 completion record](plans/completed/m3-formal-analysis.md).
      Current work is [M3.5 workflow usability](plans/m3-5-workbench-flow.md),
      implemented locally after user acceptance of M3 on 2026-09-09.
-     Port 3020 coordination and user acceptance remain pending; no closeout.
+     Port 3020 validation passed; user acceptance remains pending; no closeout.
      M4 follows with its own bounded contract/evidence review.
    - M5 packaging and M6 independent pilot/release review remain later work.
      Historical packaging evidence remains in roadmap section 1.2 and

@@ -201,6 +201,11 @@ Diagnostics must stay narrow and accountable:
 - Process diagnostics must use fixed-width, bounded output.
 - Dev servers and test processes started by the agent must be PID-tracked.
 - Extra ports must be cleaned up after use.
+- Same-project port takeover is pre-authorized by the user. Verify the current
+  listener PID, cwd, service version and project ownership, then replace that
+  service directly without asking again, including across worktrees/tasks in
+  this repository. Record the successor PID and clean up temporary ports. This
+  does not authorize stopping services belonging to another project.
 - Progress updates must describe the current gate, purpose, and current finding,
   not raw logs.
 - If work must stop for discussion, user input, or a user-requested inspection
