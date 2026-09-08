@@ -276,6 +276,14 @@ contract, and an unready later step still blocks that step's implementation.
 
 ### Interactive projection boundaries
 
+Implementation qualification (2026-09-08): the boundaries below cover local
+camera/draft isolation, but do not establish fine-grained canonical invalidation
+across the whole App. The current shared revision still rereads workcell and
+retained-run projections on unrelated edits. See the requested
+[Core integration review](validation/CORE_INTEGRATION_REVIEW.md) for the exact
+caller paths, persistence gap and missing integration tests; these findings
+remain unimplemented.
+
 The workbench follows the same separation used by Design's viewport API and
 fine-grained UI providers, without importing Design's 2D state or socket
 architecture. Camera state is viewport-local; canonical workbench reads are

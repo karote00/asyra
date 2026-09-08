@@ -75,6 +75,13 @@ not Core's internal dependency container.
 
 ## Maintained use path
 
+Read [the Core App implementation guide](../../start/custom-composition.md#build-one-complete-data-path)
+before wiring editing, persistence and UI. Observe document changes through
+`subscribeToSharedPublication(...)`; transaction status and explicit `save()`
+serialization are not an incremental autosave API. The guide covers the
+App-owned delivery queue, acknowledgement, schema granularity, scoped
+subscriptions, computation reuse and complete document replacement.
+
 Start with [information models](../../learn/information-models.md). Then choose
 the [official 2D Preset](../../start/preset-2d.md) or a
 [custom composition](../../start/custom-composition.md).

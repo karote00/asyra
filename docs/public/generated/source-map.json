@@ -2,7 +2,7 @@
   "pages": [
     {
       "id": "overview",
-      "pageSha256": "c499393d584b87baa02883542281a5ab07cbe0b7effbd48095291cbf6b57ba3a",
+      "pageSha256": "64a854fecee1c9eb02748d9e2e8b4d7a66d6bf989f0c7bbfa9d3485ac75c9794",
       "sources": [
         {
           "path": "docs/ai/framework/FRAMEWORK_ESSENTIALS.md",
@@ -58,7 +58,7 @@
     },
     {
       "id": "start/custom-composition",
-      "pageSha256": "8b98e9390c823ea763bcb801537ca3d4f7262a511700602d95b2fdfb67346f79",
+      "pageSha256": "05e1c89911dba4bac061c74fe5a3c7bff9877b5e337c37edf6a2b5aad918e5cf",
       "sources": [
         {
           "path": "docs/ai/framework/ARCHITECTURE.md",
@@ -67,6 +67,18 @@
         {
           "path": "docs/ai/framework/packages/core.md",
           "sha256": "a18a857a420385400dcc119ad6505975beb52896739413b8b44bb211c60a4963"
+        },
+        {
+          "path": "docs/ai/framework/rules/app-optimization-and-maintainability.md",
+          "sha256": "52ada63027c8cc8d6ba8e29a3107dc2cf0429db28c6a4903eb1bc17fa4bb86c7"
+        },
+        {
+          "path": "docs/ai/framework/rules/computation-ownership-and-reuse.md",
+          "sha256": "fba7783b4d820417a0b03116c1fd49ea7c11f9af38a04e73b68c7408204c26d1"
+        },
+        {
+          "path": "docs/ai/apps/asyra-design/specs/socket-authoritative-document-session.md",
+          "sha256": "ba70df7f42956830d441e964f23f1b2fc302b7500db67e88ea941c52dbb8b53c"
         }
       ]
     },
@@ -334,7 +346,7 @@
     },
     {
       "id": "reference/packages/core",
-      "pageSha256": "ee567cf3f452b8c2b343ad1355e9b18cb20b31d15a7acbb38ac58b6696626896",
+      "pageSha256": "3b8910534a98b9460f57ed54fe8ad900ae672f29c383558403209b7ef9dc32fd",
       "sources": [
         {
           "path": "docs/ai/framework/packages/core.md",

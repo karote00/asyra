@@ -15,7 +15,7 @@ Treat app domain schemas, permissions, migration, retrieval, services, and produ
 - [Create a complete design app](start/create-design-app.md): Begin with the maintained Asyra Design product template and extend it as an app owner.
 - [Extend Asyra with an AI coding agent](start/extend-with-ai.md): Give an AI agent bounded ownership, canonical APIs, and executable proof while you retain product decisions.
 - [Compose the official 2D baseline](start/preset-2d.md): Apply the optional official Preset before Core starts, then keep app-domain choices outside the Framework.
-- [Compose only the infrastructure you need](start/custom-composition.md): Start from Core and choose information, interaction, rendering, persistence, collaboration, and AI capabilities independently.
+- [Compose only the infrastructure you need](start/custom-composition.md): Build a Core App with transaction publications, incremental persistence, scoped subscriptions, computation reuse and explicit lifecycle ownership.
 - [Information models come before output](learn/information-models.md): Define app-owned information and rules without forcing it to be visible, rendered, collaborative, or AI-operated.
 - [Intent enters through Features](learn/intent-and-features.md): Translate user or agent intent into explicit Feature sessions rather than mutating owners from UI or transport code.
 - [Give every state one canonical owner](learn/canonical-state.md): Separate canonical model state, local derived state, projection state, and remote transport state.

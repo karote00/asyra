@@ -40,6 +40,11 @@ single robot workcell**, not a complete factory simulator.
 
 ## Reading Guide
 
+Before resuming implementation, read the requested
+[Core integration review](validation/CORE_INTEGRATION_REVIEW.md). It identifies
+remaining publication/persistence and upstream projection gaps at `a379a0ee2`;
+the earlier UI organization and M2 import acceptance do not close those gaps.
+
 | Question                                                                         | Document                                                        |
 | -------------------------------------------------------------------------------- | --------------------------------------------------------------- |
 | Who needs it, what does it help with, and what does it not promise?              | [PRODUCT.md](PRODUCT.md)                                        |

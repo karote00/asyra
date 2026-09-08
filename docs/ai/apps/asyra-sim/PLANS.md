@@ -20,6 +20,15 @@
 
 ## Active Work
 
+- **Core integration follow-up requested on 2026-09-08.** The
+  [baseline review](validation/CORE_INTEGRATION_REVIEW.md) is complete as a
+  source/test audit, not a production correction. It found status-driven full
+  snapshot autosave, an interaction-cancelling capture inlet, broad upstream
+  read invalidation and coarse property updates. Freeze the local publication
+  and resource-recovery contract before correcting storage, then scope
+  projections and measure schema payloads. Reconcile the storage spec/Inspector
+  before implementation; no backend, solver or M3-M6 work is included.
+
 1. [Asyra Sim first-release roadmap](plans/asyra-sim-roadmap.md)
    - M1 is closed and M2 Import Contract Completion passed milestone acceptance
      on 2026-09-07. Next is a separately bounded M3 review of the existing
@@ -35,6 +44,9 @@
 ## Completed Work
 
 - **Automatic persistence and editing consistency (2026-09-08).**
+  - This completed UX slice removed manual Save, but its snapshot-based storage
+    is not complete incremental Core integration. The follow-up above records
+    the newly identified architectural gaps without claiming they are fixed.
   - Valid completed object, experiment and observation edits persist locally
     without Save controls. New experiment creation, import Apply, attachment
     acceptance, copy/export and failure retry remain explicit actions.
