@@ -245,8 +245,60 @@ test('spring clips are inspectable at the real upright connection', async ({
       supports: 1992,
       clips: 2256,
       embeddedDepth: 0.15,
-      aboveGround: 3,
+      aboveGround: 3.15,
       wireDiameterAssumption: 0.0025
+    }),
+    contentType: 'application/json'
+  })
+})
+
+test('trellis net and top cable ties are visible and independently controlled', async ({
+  page
+}, testInfo) => {
+  await page.goto('/')
+  await expect(page.getByText('空間模型已就緒')).toBeVisible()
+  await page.getByLabel('塑膠覆膜', { exact: true }).uncheck()
+  await page.getByRole('button', { name: '夾具近看', exact: true }).click()
+  const canvas = page.locator('canvas')
+  await canvas.hover()
+  await page.mouse.wheel(0, 900)
+  const settle = () =>
+    page.evaluate(
+      () =>
+        new Promise<void>((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+        )
+    )
+  await settle()
+  const withNet = await canvas.screenshot()
+  await page.screenshot({
+    path: testInfo.outputPath('net-top.png'),
+    fullPage: true
+  })
+  await page.getByLabel('攀爬拉網', { exact: true }).uncheck()
+  await settle()
+  expect((await canvas.screenshot()).equals(withNet)).toBe(false)
+  await page.getByLabel('攀爬拉網', { exact: true }).check()
+  const withTies = await canvas.screenshot()
+  await page.getByLabel('竿頂束帶', { exact: true }).uncheck()
+  await settle()
+  expect((await canvas.screenshot()).equals(withTies)).toBe(false)
+  await page.getByLabel('竿頂束帶', { exact: true }).check()
+  await page.getByRole('button', { name: '走道內部', exact: true }).click()
+  await settle()
+  await page.screenshot({
+    path: testInfo.outputPath('net-rows.png'),
+    fullPage: true
+  })
+  await testInfo.attach('net-dimensions', {
+    body: JSON.stringify({
+      baseURL: testInfo.project.use.baseURL,
+      bottom: 0.45,
+      top: 3.15,
+      spacing: 0.6,
+      mesh: 0.15,
+      rows: 24,
+      ties: 1992
     }),
     contentType: 'application/json'
   })

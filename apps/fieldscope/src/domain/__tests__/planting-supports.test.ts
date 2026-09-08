@@ -65,7 +65,7 @@ it('connects buried uprights to all transverse beams through tangent longitudina
   expect(clips).toHaveLength(2256)
   for (const tube of tubes) {
     expect(tube.points[0][1]).toBe(-0.15)
-    expect(tube.points[1][1]).toBe(3)
+    expect(tube.points[1][1]).toBe(3.15)
     const rail = rails.find(
       (candidate) =>
         candidate.bay === tube.bay &&

@@ -1,3 +1,4 @@
+import { createPlantingNet, NET_LAYOUT } from '../domain/planting-net'
 import {
   createSupportAssembly,
   springClipWire,
@@ -14,6 +15,8 @@ import { readSpatialDescriptor } from '../engine/spatial-contract'
 import type { SpatialFrame, SpatialMesh, SpatialCamera } from './spatial-layer'
 
 export type LayerId =
+  | 'net'
+  | 'ties'
   | 'supports'
   | 'clips'
   | 'film'
@@ -25,6 +28,8 @@ export type LayerId =
   | 'dimensions'
   | 'base'
 export const LAYER_LABELS: Record<Exclude<LayerId, 'base'>, string> = {
+  net: '攀爬拉網',
+  ties: '竿頂束帶',
   supports: '栽培鋼管',
   clips: '跨接彈簧夾',
   film: '塑膠覆膜',
@@ -36,6 +41,8 @@ export const LAYER_LABELS: Record<Exclude<LayerId, 'base'>, string> = {
   dimensions: '尺寸參考線'
 }
 export const INITIAL_LAYERS: Record<LayerId, boolean> = {
+  net: true,
+  ties: true,
   supports: true,
   clips: true,
   film: true,
@@ -94,6 +101,58 @@ export function buildSiteMeshes(): SiteMesh[] {
   const assembly = createSupportAssembly()
   for (const tube of [...assembly.tubes, ...assembly.rails])
     builders.supports.tube(tube)
+  const net = createPlantingNet(assembly)
+  for (const strand of net.strands) builders.net.tube(strand)
+  for (const tie of net.ties) {
+    const [x, y, z] = tie.center
+    // A flat nylon band with thickness, locking head and short trimmed tail.
+    for (let i = 0; i < 24; i++) {
+      const a = (i * Math.PI) / 12,
+        b = ((i + 1) * Math.PI) / 12
+      const point = (
+        angle: number,
+        radius: number,
+        height: number
+      ): readonly [number, number, number] => [
+        x + radius * Math.cos(angle),
+        height,
+        z + radius * Math.sin(angle)
+      ]
+      const inner = tie.radius,
+        outer = inner + NET_LAYOUT.tieThickness
+      const low = y - NET_LAYOUT.tieWidth / 2,
+        high = y + NET_LAYOUT.tieWidth / 2
+      builders.ties.quad(
+        point(a, outer, low),
+        point(b, outer, low),
+        point(b, outer, high),
+        point(a, outer, high)
+      )
+      builders.ties.quad(
+        point(b, inner, low),
+        point(a, inner, low),
+        point(a, inner, high),
+        point(b, inner, high)
+      )
+      builders.ties.quad(
+        point(a, inner, high),
+        point(a, outer, high),
+        point(b, outer, high),
+        point(b, inner, high)
+      )
+      builders.ties.quad(
+        point(a, outer, low),
+        point(a, inner, low),
+        point(b, inner, low),
+        point(b, outer, low)
+      )
+    }
+    builders.ties.box([x + tie.radius, y, z], [0.004, 0.006, 0.006])
+    builders.ties.box(
+      [x + tie.radius + 0.005, y, z],
+      [0.01, NET_LAYOUT.tieWidth, NET_LAYOUT.tieThickness]
+    )
+  }
   // Batch by bay to keep every admitted index buffer below the engine limit.
   const clipBuilders = Array.from(
     { length: SITE.bays },
@@ -176,6 +235,8 @@ export function buildSiteMeshes(): SiteMesh[] {
     mesh('barriers', barriers, 0x182623),
     mesh('steel', steel, 0x8a9c9b),
     mesh('supports', builders.supports, 0x8a9c9b),
+    mesh('net', builders.net, 0xe5e8ce),
+    mesh('ties', builders.ties, 0x26322b),
     ...clipBuilders.map((builder, bay) =>
       mesh(`clips-${bay}`, builder, 0xb4bfbe, 1, 'clips')
     ),

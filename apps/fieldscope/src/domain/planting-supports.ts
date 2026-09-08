@@ -7,6 +7,7 @@ export const SUPPORT_LAYOUT = Object.freeze({
   endInset: 0.25,
   spacing: 0.6,
   embedDepth: 0.15,
+  topExtension: 0.15,
   wireDiameter: 0.0025
 })
 
@@ -42,7 +43,7 @@ export function createSupportPositions(): SupportPosition[] {
 }
 
 export function createSupportTubes(
-  height: number = SITE.eave,
+  height: number = SITE.eave + SUPPORT_LAYOUT.topExtension,
   embedDepth: number = SUPPORT_LAYOUT.embedDepth
 ) {
   if (
