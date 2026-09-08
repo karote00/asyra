@@ -10,6 +10,121 @@ const { loadContract, MANIFEST_PATH } = require('../contracts.cjs')
 const { captureSource } = require('../snapshot.cjs')
 
 test(
+  'offline provider fixture renders request provenance and unresolved cancellation on the original board',
+  { skip: process.platform !== 'darwin', timeout: 30000 },
+  async () => {
+    const { randomUUID } = require('node:crypto')
+    const root = path.resolve(__dirname, '../../../..')
+    const parent = path.join(root, 'tmp/flow-inspector/visual-review')
+    fs.mkdirSync(parent, { recursive: true })
+    const artifacts = fs.mkdtempSync(path.join(parent, 'provider-offline-'))
+    const temporary = path.join(artifacts, 'browser-tmp')
+    fs.mkdirSync(temporary)
+    const previous = process.env.TMPDIR
+    process.env.TMPDIR = temporary
+    const authorization = {
+      id: randomUUID(),
+      actor: 'local-developer',
+      adapter: 'codex-app-server',
+      model: 'offline-fixture',
+      billing: 'chatgpt-subscription',
+      maxRequests: 3,
+      expiresAt: '2099-01-01T00:00:00.000Z'
+    }
+    let calls = 0,
+      browser
+    const server = await startServer(root, {
+      serviceOptions: {
+        directory: path.join(artifacts, 'runs'),
+        agentOptions: {
+          available: () => true,
+          providerAuthorization: authorization,
+          providerComplete: async () => {
+            calls++
+            if (calls === 2) return new Promise(() => undefined)
+            return {
+              text: '{"tool":"shell"}',
+              terminal: true,
+              usage: { inputTokens: 2, outputTokens: 1, totalTokens: 3 }
+            }
+          }
+        }
+      }
+    })
+    try {
+      browser = await chromium.launch({
+        channel: process.env.FLOW_PROOF_BROWSER_CHANNEL || undefined,
+        downloadsPath: temporary
+      })
+      const page = await browser.newPage({
+        viewport: { width: 1600, height: 1100 }
+      })
+      await page.goto(server.origin + '/transaction-atomicity')
+      const canvas = page.frameLocator('iframe')
+      await canvas
+        .locator('[data-step-id="finalize-transaction-state"]')
+        .click()
+      await canvas.locator('#proof-controls > summary').click()
+      await canvas.locator('#agent-controls > summary').click()
+      await canvas.locator('#agent-adapter').selectOption('provider')
+      await expect(canvas.locator('#agent-result')).toContainText(
+        'No task selected. Authorized provider selected; no model turn dispatched.'
+      )
+      await expect(canvas.locator('#agent-provider-info')).toContainText(
+        'offline-fixture'
+      )
+      await canvas
+        .locator('#agent-objective')
+        .fill('Offline protocol fixture - not real provider acceptance')
+      await canvas.locator('#agent-start').click()
+      await expect(canvas.locator('#agent-result')).toContainText(
+        'Execution: denied'
+      )
+      await expect(canvas.locator('#agent-result')).toContainText(
+        'Provider-reported tokens: 3'
+      )
+      await expect(canvas.locator('#agent-result')).toContainText(
+        'Delivery: not-delivered'
+      )
+      await canvas
+        .locator('#agent-result')
+        .screenshot({ path: path.join(artifacts, 'provider-denial.png') })
+      await canvas.locator('#agent-start').click()
+      await expect.poll(() => calls).toBe(2)
+      await canvas.locator('#agent-cancel').click()
+      await expect(canvas.locator('#agent-result')).toContainText(
+        'Reconciliation required'
+      )
+      await expect(canvas.locator('#agent-resume')).toBeDisabled()
+      await expect(canvas.locator('.step-card')).toHaveCount(7)
+      await expect(canvas.locator('[data-route-id]')).toHaveCount(10)
+      await canvas
+        .locator('#agent-result')
+        .screenshot({ path: path.join(artifacts, 'provider-unresolved.png') })
+      fs.writeFileSync(
+        path.join(artifacts, 'review.json'),
+        JSON.stringify(
+          {
+            fidelity: 'offline fixture only',
+            origin: server.origin,
+            viewport: { width: 1600, height: 1100 },
+            stepId: 'finalize-transaction-state',
+            tasks: server.service.state().tasks
+          },
+          null,
+          2
+        )
+      )
+    } finally {
+      await browser?.close()
+      await server.close()
+      if (previous === undefined) delete process.env.TMPDIR
+      else process.env.TMPDIR = previous
+    }
+  }
+)
+
+test(
   'the original canvas retains geometry and controls while card verification fails, recovers, and restores history',
   { timeout: 90000 },
   async () => {
@@ -1186,6 +1301,9 @@ test(
         .click()
       await canvas.locator('#proof-controls > summary').click()
       await canvas.locator('#agent-controls > summary').click()
+      await expect(
+        canvas.locator('#agent-adapter option[value="provider"]')
+      ).toHaveJSProperty('disabled', true)
       await expect(canvas.locator('#agent-step')).toContainText(
         'finalize-transaction-state'
       )

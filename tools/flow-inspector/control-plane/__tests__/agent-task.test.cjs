@@ -11,6 +11,15 @@ const root = path.resolve(__dirname, '../../../..')
 const parent = path.join(root, 'tmp/flow-inspector/agent-task-tests')
 fs.mkdirSync(parent, { recursive: true })
 const sourceFile = 'packages/factory/src/data-transact.ts'
+const providerAuthorization = () => ({
+  id: randomUUID(),
+  actor: 'human',
+  adapter: 'codex-app-server',
+  model: 'gpt-5.4-mini',
+  billing: 'chatgpt-subscription',
+  maxRequests: 4,
+  expiresAt: '2099-01-01T00:00:00.000Z'
+})
 function fixture(options = {}) {
   const directory = fs.mkdtempSync(path.join(parent, 'run-'))
   const contract = loadContract(root)
@@ -33,6 +42,188 @@ function fixture(options = {}) {
   }
   return { owner, request, directory, contract }
 }
+
+test('provider reservations precede dispatch and survive failed attempts, handoff and restart', async () => {
+  const authorization = providerAuthorization()
+  let calls = 0
+  const f = fixture({
+    providerAuthorization: authorization,
+    providerComplete: async () => {
+      calls++
+      const retained = JSON.parse(
+        fs.readFileSync(
+          path.join(f.directory, f.request.requestId, 'task.json')
+        )
+      )
+      assert.equal(retained.providerRequests.length, calls)
+      assert.equal(retained.providerRequests.at(-1).state, 'reserved')
+      return {
+        text: '{"tool":"shell"}',
+        terminal: true,
+        usage: { inputTokens: 2, outputTokens: 3, totalTokens: 5 }
+      }
+    }
+  })
+  Object.assign(f.request, {
+    adapter: 'provider',
+    scenario: 'task',
+    providerAuthorizationId: authorization.id
+  })
+  const id = f.owner.start(f.request, 'human')
+  const result = await f.owner.wait(id)
+  assert.equal(result.phase, 'denied')
+  assert.equal(result.providerRequests.length, 1)
+  assert.equal(result.providerRequests[0].usage.totalTokens, 5)
+  assert.equal(result.usage.tokens, null)
+  assert.equal(result.changes.length, 0)
+  await f.owner.stop(id, 'handoff', 'human')
+  await f.owner.close()
+  const next = createTaskOwner(root, {
+    directory: f.directory,
+    getBaseline: () => ({ contract: f.contract, revision: 1 }),
+    available: () => true,
+    providerAuthorization: authorization,
+    providerComplete: async () => {
+      throw new Error('provider-secret-marker')
+    }
+  })
+  await next.wait(next.resume(id, 'task', 'human'))
+  assert.equal(next.get(id).providerRequests.length, 2)
+  assert.equal(next.get(id).providerRequests[1].state, 'unresolved')
+  assert.throws(() => next.resume(id, 'task', 'human'), /unresolved/)
+  assert.equal(
+    JSON.stringify(next.get(id)).includes('provider-secret-marker'),
+    false
+  )
+  await next.close()
+})
+
+test('provider cancellation records uncertainty and denies successor dispatch even for another task', async () => {
+  const authorization = providerAuthorization()
+  let dispatched
+  const ready = new Promise((resolve) => {
+    dispatched = resolve
+  })
+  const f = fixture({
+    providerAuthorization: authorization,
+    providerComplete: async () => {
+      dispatched()
+      return new Promise(() => undefined)
+    }
+  })
+  Object.assign(f.request, {
+    adapter: 'provider',
+    scenario: 'task',
+    providerAuthorizationId: authorization.id
+  })
+  const id = f.owner.start(f.request, 'human')
+  await ready
+  await f.owner.stop(id, 'cancel', 'human')
+  assert.equal(f.owner.get(id).providerRequests[0].state, 'unresolved')
+  assert.throws(
+    () => f.owner.start({ ...f.request, requestId: randomUUID() }, 'human'),
+    /unresolved/
+  )
+  await f.owner.close()
+})
+
+test('provider cancellation awaits owned transport settlement before returning', async () => {
+  const authorization = providerAuthorization()
+  let dispatched,
+    settled = false
+  const ready = new Promise((resolve) => {
+    dispatched = resolve
+  })
+  const complete = async () => {
+    dispatched()
+    return new Promise(() => undefined)
+  }
+  complete.cancel = async () => {
+    await new Promise((resolve) => setTimeout(resolve, 10))
+    settled = true
+  }
+  const f = fixture({
+    providerAuthorization: authorization,
+    providerComplete: complete
+  })
+  Object.assign(f.request, {
+    adapter: 'provider',
+    scenario: 'task',
+    providerAuthorizationId: authorization.id
+  })
+  const id = f.owner.start(f.request, 'human')
+  await ready
+  await f.owner.stop(id, 'cancel', 'human')
+  assert.equal(settled, true)
+  assert.equal(f.owner.activeId(), null)
+  await f.owner.close()
+})
+
+test(
+  'offline provider operations fail real retained behavior then correct the same candidate without accepting baseline',
+  {
+    skip: process.platform !== 'darwin',
+    timeout: 15000
+  },
+  async () => {
+    const authorization = { ...providerAuthorization(), maxRequests: 6 }
+    let correction = false
+    const f = fixture({
+      providerAuthorization: authorization,
+      providerComplete: async ({
+        observation,
+        history,
+        previousVerification
+      }) => {
+        let operation = { tool: 'finish' }
+        if (history.length === 0) operation = { tool: 'read', path: sourceFile }
+        if (history.length === 1) {
+          const mutation = f.contract.definition.scenarios.find(
+            (item) => item.id === 'inverse-regression'
+          ).mutation
+          if (correction) assert.equal(previousVerification.status, 'failed')
+          operation = {
+            tool: 'replace',
+            path: sourceFile,
+            digest: observation.digest,
+            before: correction ? mutation.to : mutation.from,
+            after: correction ? mutation.from : mutation.to
+          }
+        }
+        return {
+          text: JSON.stringify(operation),
+          terminal: true,
+          usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 }
+        }
+      }
+    })
+    Object.assign(f.request, {
+      adapter: 'provider',
+      scenario: 'task',
+      providerAuthorizationId: authorization.id
+    })
+    const original = fs.readFileSync(path.join(root, sourceFile))
+    const id = f.owner.start(f.request, 'human')
+    const failed = await f.owner.wait(id)
+    assert.equal(failed.verificationStatus, 'failed')
+    assert.deepEqual(
+      failed.attempts[0].verdict.evidence.cases
+        .filter((item) => item.status === 'failed')
+        .map((item) => item.id)
+        .sort(),
+      ['cancel.delivery', 'cancel.outcome']
+    )
+    correction = true
+    const passed = await f.owner.wait(f.owner.resume(id, 'task', 'human'))
+    assert.equal(passed.verificationStatus, 'passed')
+    assert.equal(passed.attempts[1].verdict.evidence.passedCount, 6)
+    assert.equal(passed.providerRequests.length, 6)
+    assert.equal(passed.deliveryStatus, 'not-delivered')
+    assert.deepEqual(fs.readFileSync(path.join(root, sourceFile)), original)
+    assert.throws(() => f.owner.resume(id, 'task', 'human'), /budget/)
+    await f.owner.close()
+  }
+)
 test('task source edits are isolated, attributed and read projections do no repeated capture', async () => {
   let captures = 0
   const { owner, request } = fixture({

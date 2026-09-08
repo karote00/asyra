@@ -665,6 +665,23 @@
       }
       function renderTask() {
         if (!byId('agent-step')) return
+        const provider = taskState?.providerAuthorization
+        const providerAvailable =
+          provider && Date.parse(provider.expiresAt) > Date.now()
+        byId('agent-provider-option').disabled = !providerAvailable
+        const selectedProvider = byId('agent-adapter').value === 'provider'
+        byId('agent-provider-info').textContent = providerAvailable
+          ? 'Authorized provider: ' +
+            provider.adapter +
+            ' - ' +
+            provider.model +
+            ' - ' +
+            provider.billing +
+            ' - maximum ' +
+            provider.maxRequests +
+            ' adapter turns. Internal network requests, cost and remote cancellation may remain unknown; tokens are provider-reported.'
+          : 'No real provider authorized. Demonstration uses no language model or paid provider.'
+        byId('agent-scenario').disabled = selectedProvider
         const stepId = graph.querySelector('.is-selected')?.dataset.stepId
         const supported = linkedFlows.has(stepId)
         byId('agent-step').textContent = supported
@@ -675,11 +692,15 @@
           !compatible ||
           !supported ||
           !taskState?.available ||
+          (selectedProvider && !providerAvailable) ||
           Boolean(activeId) ||
           Boolean(taskState?.activeId) ||
           acting
         const matching = taskRecord?.task.stepId === stepId ? taskRecord : null
         const busy = matching?.phase === 'running'
+        const unresolved = matching?.providerRequests?.some(
+          (request) => request.state !== 'settled' || !request.usage
+        )
         for (const action of ['cancel', 'stop', 'handoff', 'revoke'])
           byId('agent-' + action).disabled =
             !matching || acting || (action === 'cancel' && !busy)
@@ -689,10 +710,13 @@
           Boolean(activeId) ||
           Boolean(taskState?.activeId) ||
           matching.revoked ||
+          unresolved ||
           acting
         if (!matching) {
           byId('agent-result').textContent = taskState?.available
-            ? 'No task selected. Demonstration adapter - no language model or paid provider.'
+            ? selectedProvider && providerAvailable
+              ? 'No task selected. Authorized provider selected; no model turn dispatched.'
+              : 'No task selected. Demonstration adapter - no language model or paid provider.'
             : 'OS containment unavailable. Delegation is disabled.'
           byId('agent-artifact').hidden = true
           byId('agent-audit').hidden = true
@@ -726,6 +750,37 @@
             matching.task.budgets.elapsedMs +
             ' ms',
           'Token usage: unknown - no hard token or cost enforcement',
+          ...(matching.task.provider
+            ? [
+                'Provider: ' +
+                  matching.task.provider.adapter +
+                  ' - ' +
+                  matching.task.provider.model,
+                'Reserved adapter turns: ' +
+                  matching.providerRequests.length +
+                  ' - authorization maximum ' +
+                  matching.task.provider.maxRequests,
+                'Provider-reported tokens: ' +
+                  matching.providerRequests.reduce(
+                    (sum, request) => sum + (request.usage?.totalTokens ?? 0),
+                    0
+                  ) +
+                  ' (known observations only)',
+                'Remote turn outcomes: ' +
+                  matching.providerRequests
+                    .map(
+                      (request) =>
+                        request.state +
+                        (request.usage ? '' : ' - usage unknown')
+                    )
+                    .join(', '),
+                unresolved
+                  ? 'Reconciliation required. No further provider requests; local stop does not prove remote billing stopped.'
+                  : 'Local evidence retained; provider usage is not an independent meter.'
+              ]
+            : [
+                'Adapter: deterministic demonstration - not real agent evidence'
+              ]),
           'Baseline: ' + matching.snapshot.digest,
           'Candidate: ' + (last?.verdict?.sourceDigest ?? 'not verified'),
           'Changed files: ' +
@@ -783,8 +838,16 @@
                 .value.split(',')
                 .map((file) => file.trim())
                 .filter(Boolean),
-              adapter: 'demonstration',
-              scenario: byId('agent-scenario').value,
+              adapter: byId('agent-adapter').value,
+              scenario:
+                byId('agent-adapter').value === 'provider'
+                  ? 'task'
+                  : byId('agent-scenario').value,
+              ...(byId('agent-adapter').value === 'provider'
+                ? {
+                    providerAuthorizationId: taskState.providerAuthorization.id
+                  }
+                : {}),
               contractDigest: contract.digest,
               revision: mappingState.revision,
               budgets: {
@@ -798,7 +861,11 @@
             await api('/api/tasks/' + taskId + '/control', {
               action,
               ...(action === 'resume'
-                ? { scenario: byId('agent-scenario').value }
+                ? {
+                    scenario: taskRecord?.task.provider
+                      ? 'task'
+                      : byId('agent-scenario').value
+                  }
                 : {})
             })
           }
@@ -933,7 +1000,9 @@
           <p>Required checks: <strong id="checks">0 / 6</strong></p><p id="result-context"></p>
           <div id="proof-failures"></div>
           <details id="agent-controls"><summary>Delegate selected step - local agent</summary>
-            <p id="agent-step"></p><p>Demonstration adapter only - no language model. Candidate changes remain isolated for human review.</p>
+            <p id="agent-step"></p><p>Candidate changes remain isolated for human review.</p>
+            <label>Adapter<select id="agent-adapter"><option value="demonstration">Deterministic demonstration - no language model</option><option id="agent-provider-option" value="provider" disabled>Authorized real provider</option></select></label>
+            <p id="agent-provider-info"></p>
             <label>Task objective<input id="agent-objective" maxlength="2000" value="Review the selected owner under all retained obligations" /></label>
             <label>Allowed runtime files (comma-separated)<input id="agent-files" value="packages/factory/src/data-transact.ts" /></label>
             <label>Demonstration scenario<select id="agent-scenario"><option value="repair">Conforming change or correction</option><option value="regression">Inverse regression</option><option value="scope-violation">Scope refusal</option><option value="tool-limit">Tool limit</option><option value="stall">Stall for cancellation or timeout</option></select></label>
@@ -1072,6 +1141,7 @@
           'revoke'
         ])
           listen(byId('agent-' + action), 'click', () => taskAction(action))
+        listen(byId('agent-adapter'), 'change', renderTask)
         listen(byId('agent-history'), 'change', async (event) => {
           taskId = event.target.value
           taskSignature = ''

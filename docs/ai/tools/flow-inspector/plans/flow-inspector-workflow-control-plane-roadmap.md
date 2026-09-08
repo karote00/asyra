@@ -459,3 +459,14 @@ Flow Inspector now owns scoped Changeset records, MIT metadata and a tested sour
 and static-asset archive. It remains outside Framework release allowlists.
 Repository-independent control-plane execution and registry publication are not
 completed by this preparation; the original provider/protection gaps remain.
+
+## Real Provider Local Continuation - 2026-09-08
+
+After PR #167 merged, the user activated implementation of a real-provider
+adapter behind the existing operation broker, in a new worktree. Provider,
+model, authentication and usage authorization remain explicit pending choices;
+offline protocol, containment and browser evidence cannot close live acceptance.
+The continuation preserves candidate sandboxing, accepted baselines and all six
+obligations. Remote reconciliation unsupported by an ephemeral provider remains
+visible and blocks further dispatch. No Phase 6 or deferred protection work is
+activated, and no full Phase 5 completion is claimed.

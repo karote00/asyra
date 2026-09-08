@@ -735,6 +735,20 @@ function createService(
       return {
         tasks: {
           available: containmentAvailable(),
+          providerAuthorization:
+            agentOptions.providerComplete && agentOptions.providerAuthorization
+              ? Object.fromEntries(
+                  [
+                    'id',
+                    'actor',
+                    'adapter',
+                    'model',
+                    'billing',
+                    'maxRequests',
+                    'expiresAt'
+                  ].map((key) => [key, agentOptions.providerAuthorization[key]])
+                )
+              : null,
           policy: TASK_POLICY,
           activeId: tasks.activeId(),
           records: tasks
@@ -746,6 +760,7 @@ function createService(
               objective: record.task.objective,
               phase: record.phase,
               usage: record.usage,
+              providerRequests: record.providerRequests ?? [],
               verificationStatus: record.verificationStatus,
               workStatus: record.workStatus,
               deliveryStatus: record.deliveryStatus,

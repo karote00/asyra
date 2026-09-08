@@ -5,6 +5,10 @@
 The bounded deterministic local execution scope is completed in the
 [local closeout record](completed/flow-inspector-phase-5-local-execution-closeout.md).
 Real provider selection and acceptance remain pending; full Phase 5 is not closed.
+The next local continuation implements an explicitly authorized provider path
+behind the same broker, with offline contract tests separated from live model
+evidence. Its bounded scope and remaining selection gate are defined in
+[Local Agent Execution](../AGENT_EXECUTION.md#real-provider-contract---active-implementation).
 Phase 5 local isolated execution was activated by the user on 2026-09-08 under
 [Local Agent Execution](../AGENT_EXECUTION.md). GitHub enforcement remains
 deferred; the original entry criteria and full DoD below are retained for the

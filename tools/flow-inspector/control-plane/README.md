@@ -290,6 +290,70 @@ workflow enforcement, version, tag or release is changed by closeout.
 
 ## Phase 5 Local Agent Trial
 
+### Optional real-provider integration - acceptance pending
+
+The board now distinguishes deterministic demonstration from an explicitly
+authorized provider. An existing login alone never enables the provider option.
+Offline adapter tests and no-model app-server preflight are reproducible without
+consuming subscription quota. Actual provider acceptance remains pending until
+the operator explicitly selects the model, credential source and usage allowance.
+
+After that decision, create a non-secret authorization JSON inside the checkout:
+
+```json
+{
+  "id": "<fresh UUID>",
+  "actor": "local-developer",
+  "adapter": "codex-app-server",
+  "model": "<explicitly selected model>",
+  "billing": "chatgpt-subscription",
+  "maxRequests": 12,
+  "expiresAt": "<explicit authorization expiry in ISO 8601>"
+}
+```
+
+Start the local service with `FLOW_AGENT_AUTHORIZATION` pointing to that
+repository-relative file, `FLOW_AGENT_EXECUTABLE` pointing to the approved
+installed app-server binary, and `FLOW_AGENT_CREDENTIAL_FILE` pointing to the
+existing credential file. Never put credential values in the authorization,
+command line, task objective or source. The server creates an isolated transport
+home and a read-only reference; OS containment prevents changing the original
+credential. Keyring-only authentication and failed refresh under read-only
+credentials are unsupported and must fail closed, without switching billing mode.
+No additional package or CLI installation occurs. The inspected local interface
+was Codex 0.153.4; PATH's older 0.40.0 CLI has no app-server support.
+
+Choose **Authorized real provider** on the original supported step and delegate
+the task. CLI/API requests use `adapter: "provider"`, `scenario: "task"`, and
+`providerAuthorizationId` matching the service authorization. Resume keeps the
+same task and uses scenario `task`; the adapter receives the previous verification
+findings. The model emits only broker JSON, never direct source or shell effects.
+
+The task panel and task JSON show each reserved adapter turn, owning attempt, terminal
+observation and provider-reported tokens separately from unknown actual token
+usage and cost. Reservations are consumed even on errors, missing usage or
+interruptions. The adapter-turn ceiling (`maxRequests`) applies across tasks sharing that authorization in
+the store, not merely one attempt. Internal HTTP/SSE requests and retries are
+not independently counted or hard-limited: this installed app-server rejects
+overrides of its built-in OpenAI provider. In-flight cancellation awaits local process
+settlement, but does not promise remote computation or billing stopped. This
+ephemeral interface has no independently queryable receipt: unresolved remote
+requests or missing usage block further provider dispatch, including new tasks;
+human handoff preserves the same evidence and candidate. No manual reconciliation
+override claims settlement. Credential files, provider runtime directories and
+temporary references are excluded from snapshots and package archives.
+
+Run reproducible offline tests with:
+
+```bash
+node --test --test-concurrency=1 tools/flow-inspector/control-plane/__tests__/{agent-contract,agent-provider,agent-transport,agent-task,agent-verifier}.test.cjs
+```
+
+The real app-server preflight test sends only initialization, account status and
+empty thread setup, with no credentials and no model turn. It is not real agent
+acceptance. Keep live evidence, including a meaningful source change, failing
+retained verification and correction, separate from these deterministic tests.
+
 Activated independently on 2026-09-08 under
 [Local Agent Execution](../../../docs/ai/tools/flow-inspector/AGENT_EXECUTION.md).
 The earlier Phase 4 closeout did not activate agents; this later user decision

@@ -38,7 +38,13 @@ function canonicalFile(file) {
     !file.split('/').some((part) => !part || part === '.' || part === '..')
   )
 }
-function admitTask(request, contract, revision, actor) {
+function admitTask(
+  request,
+  contract,
+  revision,
+  actor,
+  providerAuthorization = null
+) {
   requireTask(
     request && typeof request === 'object' && !Array.isArray(request),
     'invalid request'
@@ -51,6 +57,7 @@ function admitTask(request, contract, revision, actor) {
         'objective',
         'allowedFiles',
         'adapter',
+        'providerAuthorizationId',
         'scenario',
         'budgets',
         'contractDigest',
@@ -93,11 +100,56 @@ function admitTask(request, contract, revision, actor) {
       request.objective.length <= 2000,
     'invalid objective'
   )
-  requireTask(request.adapter === 'demonstration', 'unsupported adapter')
-  requireTask(
-    TASK_POLICY.scenarios.includes(request.scenario),
-    'unknown demonstration'
-  )
+  let provider
+  if (request.adapter === 'provider') {
+    const value = providerAuthorization
+    requireTask(
+      value && typeof value === 'object',
+      'provider is not authorized'
+    )
+    requireTask(
+      Object.keys(value).length === 7 &&
+        Object.keys(value).every((key) =>
+          [
+            'id',
+            'actor',
+            'adapter',
+            'model',
+            'billing',
+            'maxRequests',
+            'expiresAt'
+          ].includes(key)
+        ) &&
+        validId(value.id) &&
+        value.id === request.providerAuthorizationId &&
+        value.actor === actor &&
+        value.adapter === 'codex-app-server' &&
+        typeof value.model === 'string' &&
+        /^[a-zA-Z0-9.-]{1,100}$/.test(value.model) &&
+        value.billing === 'chatgpt-subscription' &&
+        Number.isSafeInteger(value.maxRequests) &&
+        value.maxRequests > 0 &&
+        value.maxRequests <= 100 &&
+        typeof value.expiresAt === 'string' &&
+        Date.parse(value.expiresAt) > Date.now(),
+      'invalid or expired provider authorization'
+    )
+    requireTask(
+      request.scenario === 'task',
+      'provider has no demonstration scenario'
+    )
+    provider = structuredClone(value)
+  } else {
+    requireTask(request.adapter === 'demonstration', 'unsupported adapter')
+    requireTask(
+      !request.providerAuthorizationId,
+      'unexpected provider authorization'
+    )
+    requireTask(
+      TASK_POLICY.scenarios.includes(request.scenario),
+      'unknown demonstration'
+    )
+  }
   const files = request.allowedFiles
   requireTask(
     Array.isArray(files) &&
@@ -143,6 +195,7 @@ function admitTask(request, contract, revision, actor) {
     structuredClone({
       format: TASK_POLICY.format,
       ...request,
+      ...(provider ? { provider } : {}),
       actor,
       step,
       routes,

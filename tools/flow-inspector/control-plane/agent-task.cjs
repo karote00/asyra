@@ -10,6 +10,7 @@ const {
   freeze
 } = require('./agent-contract.cjs')
 const { demonstrationAdapter } = require('./agent-adapter.cjs')
+const { providerAdapter, reportedUsage } = require('./agent-provider.cjs')
 const { loadContract } = require('./contracts.cjs')
 const { assessEvidence } = require('./evidence.cjs')
 const { captureSource, safePath, sha256 } = require('./snapshot.cjs')
@@ -39,11 +40,16 @@ function createTaskOwner(
     capture = captureSource,
     verify = verifyCandidate,
     adapterFactory = demonstrationAdapter,
+    providerAuthorization = null,
+    providerComplete = null,
     available = containmentAvailable,
     requireIdle = () => undefined,
     onChange = () => undefined
   }
 ) {
+  providerAuthorization = providerAuthorization
+    ? freeze(structuredClone(providerAuthorization))
+    : null
   safePath(repositoryRoot, path.relative(repositoryRoot, directory))
   fs.mkdirSync(directory, { recursive: true })
   const records = new Map()
@@ -103,6 +109,34 @@ function createTaskOwner(
       record.usage.cost !== null
     )
       throw new Error('Invalid task identity or fingerprint')
+    if (record.task.provider) {
+      if (!Array.isArray(record.providerRequests))
+        throw new Error('Missing provider reservations')
+      const ids = new Set()
+      for (const request of record.providerRequests) {
+        if (
+          !validId(request.id) ||
+          ids.has(request.id) ||
+          !record.attempts.some(
+            (attempt) => attempt.id === request.attemptId
+          ) ||
+          !['reserved', 'settled', 'unresolved'].includes(request.state) ||
+          (request.usage !== null && !reportedUsage(request.usage))
+        )
+          throw new Error('Invalid provider reservation')
+        ids.add(request.id)
+      }
+      if (
+        record.providerRequests.some((request) => request.state === 'reserved')
+      ) {
+        record.providerRequests = record.providerRequests.map((request) =>
+          request.state === 'reserved'
+            ? { ...request, state: 'unresolved' }
+            : request
+        )
+        save(record, 'provider-interrupted-on-restart')
+      }
+    }
     if (
       (record.workStatus === 'needs-review') !==
       (record.verificationStatus === 'passed')
@@ -193,6 +227,27 @@ function createTaskOwner(
       throw new Error('Task actor is not authorized')
     if (record.revoked) throw new Error('Task capability was revoked')
   }
+  const checkProvider = (task) => {
+    if (!task.provider) return
+    if (
+      !providerComplete ||
+      JSON.stringify(task.provider) !== JSON.stringify(providerAuthorization) ||
+      Date.parse(task.provider.expiresAt) <= Date.now()
+    )
+      throw new Error('Provider authorization unavailable or expired')
+    let count = 0
+    for (const record of records.values()) {
+      for (const request of record.providerRequests ?? []) {
+        if (request.state !== 'settled')
+          throw new Error('Provider remote request unresolved')
+        if (!request.usage) throw new Error('Provider usage unresolved')
+      }
+      if (record.task.provider?.id === task.provider.id)
+        count += record.providerRequests.length
+    }
+    if (count >= task.provider.maxRequests)
+      throw new Error('Provider request budget exhausted')
+  }
   const idle = () => {
     if (closed) throw new Error('Task owner is closed')
     if (active) throw new Error('A task is already running')
@@ -220,6 +275,7 @@ function createTaskOwner(
     authorizeTask(record, actor)
     const contract = checkBaseline(record)
     checkBudget(record)
+    checkProvider(record.task)
     const remaining = record.task.budgets.elapsedMs - record.usage.elapsedMs
     const started = Date.now()
     const attemptId = randomUUID()
@@ -278,7 +334,57 @@ function createTaskOwner(
       })
       timer = setTimeout(() => stop('timed-out'), remaining)
       try {
-        const adapter = adapterFactory(record.task, scenario, contract)
+        let adapter
+        if (record.task.provider) {
+          adapter = providerAdapter(record.task, {
+            complete: providerComplete,
+            signal: controller.signal,
+            onSpawn: (pid) =>
+              save({ ...get(id), runnerPid: pid }, 'provider-process-started'),
+            sourceIdentity: {
+              digest: record.snapshot.digest,
+              head: record.snapshot.head
+            },
+            previousVerification:
+              record.attempts.at(-2)?.verdict?.evidence ?? null,
+            reserve: () => {
+              if (controller.signal.aborted)
+                throw new Error('Provider request cancelled')
+              checkProvider(get(id).task)
+              const requestId = randomUUID()
+              save(
+                {
+                  ...get(id),
+                  providerRequests: [
+                    ...get(id).providerRequests,
+                    {
+                      id: requestId,
+                      attemptId,
+                      state: 'reserved',
+                      usage: null
+                    }
+                  ]
+                },
+                'provider-request-reserved'
+              )
+              return requestId
+            },
+            settle: (requestId, result) => {
+              if (closed || active?.id !== id) return
+              save(
+                {
+                  ...get(id),
+                  providerRequests: get(id).providerRequests.map((request) =>
+                    request.id === requestId
+                      ? { ...request, ...result }
+                      : request
+                  )
+                },
+                'provider-request-observed'
+              )
+            }
+          })
+        } else adapter = adapterFactory(record.task, scenario, contract)
         while (!controller.signal.aborted) {
           record = get(id)
           if (record.usage.toolCalls >= record.task.budgets.toolCalls) {
@@ -388,6 +494,7 @@ function createTaskOwner(
         if (!reason) reason = verifying ? 'failed' : 'denied'
       } finally {
         clearTimeout(timer)
+        if (record.task.provider) await providerComplete.cancel?.()
         const current = chargeTime(get(id))
         const phase = reason ?? 'failed'
         const verificationStatus =
@@ -408,6 +515,15 @@ function createTaskOwner(
         save(
           {
             ...current,
+            ...(current.task.provider
+              ? {
+                  providerRequests: current.providerRequests.map((request) =>
+                    request.state === 'reserved'
+                      ? { ...request, state: 'unresolved' }
+                      : request
+                  )
+                }
+              : {}),
             phase,
             reservedMs: 0,
             runnerPid: null,
@@ -432,7 +548,13 @@ function createTaskOwner(
     list: () => ordered.map((id) => get(id)),
     start(request, actor) {
       const current = getBaseline()
-      const task = admitTask(request, current.contract, current.revision, actor)
+      const task = admitTask(
+        request,
+        current.contract,
+        current.revision,
+        actor,
+        providerAuthorization
+      )
       const fingerprint = sha256(JSON.stringify(task))
       if (records.has(task.requestId)) {
         if (get(task.requestId).fingerprint !== fingerprint)
@@ -440,6 +562,7 @@ function createTaskOwner(
         return task.requestId
       }
       idle()
+      checkProvider(task)
       const id = task.requestId
       const taskRoot = taskDirectory(id)
       fs.mkdirSync(taskRoot)
@@ -470,6 +593,7 @@ function createTaskOwner(
         usage: task.usage,
         reservedMs: 0,
         changes: [],
+        ...(task.provider ? { providerRequests: [] } : {}),
         attempts: [],
         audit: [],
         verificationStatus: 'unknown',
@@ -485,7 +609,11 @@ function createTaskOwner(
       authorizeTask(record, actor)
       checkBaseline(record)
       checkBudget(record)
-      if (!TASK_POLICY.scenarios.includes(scenario))
+      if (
+        !(record.task.provider
+          ? scenario === 'task'
+          : TASK_POLICY.scenarios.includes(scenario))
+      )
         throw new Error('Unknown demonstration')
       idle()
       for (const file of record.snapshot.files) {

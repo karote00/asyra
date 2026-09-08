@@ -21,6 +21,13 @@ delegation are the success criteria.
 
 ## Pending Provider Acceptance and Future Integration
 
+Active continuation: local real-provider adapter integration starts from merged
+PR #167 (`5c7af4d0b`) in a separate worktree. Admission, transport containment,
+request reservations and shared surfaces are under implementation and offline
+verification. Provider selection, explicit usage authorization and live acceptance
+are still required before this continuation can close. No completed record is
+created for unperformed provider acceptance.
+
 2. [Agent Execution and Integrations Plan](plans/flow-inspector-control-plane-actions-and-integrations-plan.md)
    - Remaining Phase 5: select and authorize a real agent backend, credentials,
      usage/cost contract and executable provider acceptance. Deterministic local
