@@ -1,3 +1,4 @@
+/* global fetch */
 /* eslint-disable @typescript-eslint/no-require-imports */
 const assert = require('node:assert/strict')
 const fs = require('node:fs')
@@ -124,6 +125,63 @@ test(
       const recovery = server.service.get(server.service.state().runs[0].id)
       assert.equal(recovery.ci.evidence.passedCount, 6)
       assert.equal(recovery.snapshot.digest, negative.snapshot.digest)
+    } finally {
+      await server.close()
+    }
+  }
+)
+
+test(
+  'Phase 5 CLI and HTTP share task start, cancellation, handoff and retry identity',
+  { timeout: 15000 },
+  async (t) => {
+    const { randomUUID } = require('node:crypto')
+    const parent = path.join(root, 'tmp/flow-inspector/cli-tests')
+    fs.mkdirSync(parent, { recursive: true })
+    const directory = fs.mkdtempSync(path.join(parent, 'phase5-'))
+    t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
+    const server = await startServer(root, {
+      url: 'http://127.0.0.1:0',
+      serviceOptions: { directory, agentOptions: { available: () => true } }
+    })
+    const messages = []
+    const invoke = (...args) =>
+      main(['--url', server.origin, ...args], {
+        repositoryRoot: root,
+        write: (value) => messages.push(value)
+      })
+    try {
+      const state = server.service.state()
+      const request = {
+        requestId: randomUUID(),
+        stepId: 'finalize-transaction-state',
+        objective: 'Review isolated source',
+        allowedFiles: ['packages/factory/src/data-transact.ts'],
+        adapter: 'demonstration',
+        scenario: 'stall',
+        contractDigest: state.contract.digest,
+        revision: state.mapping.revision,
+        budgets: { elapsedMs: 10000, toolCalls: 20, attempts: 3 }
+      }
+      const file = path.join(directory, 'request.json')
+      fs.writeFileSync(file, JSON.stringify(request))
+      const denied = await fetch(server.origin + '/api/tasks', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(request)
+      })
+      assert.equal(denied.status, 403)
+      assert.equal(await invoke('task-start', path.relative(root, file)), 0)
+      const id = JSON.parse(messages.at(-1)).id
+      assert.equal(id, request.requestId)
+      assert.equal(await invoke('task-cancel', id), 0)
+      assert.equal(await invoke('task-show', id), 0)
+      assert.equal(JSON.parse(messages.at(-1)).phase, 'cancelled')
+      assert.equal(await invoke('task-handoff', id), 0)
+      assert.equal(await invoke('status'), 0)
+      assert.equal(JSON.parse(messages.at(-1)).tasks.records[0].id, id)
+      assert.equal(server.service.getTask(id).phase, 'handed-off')
+      assert.equal(server.service.getTask(id).deliveryStatus, 'not-delivered')
     } finally {
       await server.close()
     }

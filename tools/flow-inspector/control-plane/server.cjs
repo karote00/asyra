@@ -186,6 +186,16 @@ async function startServer(
           }
           if (route.pathname === '/api/session')
             return send(200, { capability })
+          const taskRoute = route.pathname.match(
+            /^\/api\/tasks\/([a-f0-9-]{36})(\/changes)?$/
+          )
+          if (taskRoute)
+            return send(
+              200,
+              taskRoute[2]
+                ? service.taskChanges(taskRoute[1])
+                : service.getTask(taskRoute[1])
+            )
           if (route.pathname === '/api/state') return send(200, service.state())
           if (route.pathname === '/api/shared')
             return send(200, service.shared())
@@ -267,6 +277,16 @@ async function startServer(
           request,
           route.pathname === '/api/ci/ingest' ? 2097152 : 4096
         )
+        if (route.pathname === '/api/tasks')
+          return send(202, { id: service.startTask(body, LOCAL_ACTOR) })
+        const taskControl = route.pathname.match(
+          /^\/api\/tasks\/([a-f0-9-]{36})\/control$/
+        )
+        if (taskControl)
+          return send(
+            200,
+            await service.controlTask(taskControl[1], body, LOCAL_ACTOR)
+          )
         if (route.pathname === '/api/work')
           return send(200, service.setWork(body, LOCAL_ACTOR))
         if (route.pathname === '/api/contracts/prepare')

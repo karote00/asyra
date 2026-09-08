@@ -9,11 +9,11 @@ We have a quick list of common questions to get you started engaging with this p
 
 ## Asyra project rule
 
-Changeset release entries may target only fixed-allowlist Framework packages
-under `packages/*`. Root `asyra`, private apps, `create-app/*` CLI packages, and
+Changeset release entries target fixed-allowlist Framework packages under
+`packages/*`, or the independently versioned public tool `@asyra/flow-inspector`. Root `asyra`, private apps, `create-app/*` CLI packages, and
 generated templates use their own manual version owners and must not be listed
-in Changeset frontmatter. Use an empty Changeset for a required non-Framework
-closeout record. Pull requests must include a pending Changeset record before
+in Changeset frontmatter. Use an empty Changeset only when no versioned package is affected. Records
+capture future release intent; applying versions and publication are separate actions. Pull requests must include a pending Changeset record before
 completion. A release pull request remains valid after `changeset version`
 consumes those records only when the generated Framework package version and
 changelog changes are committed together. See

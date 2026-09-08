@@ -19,15 +19,14 @@ delegation are the success criteria.
      retains the necessary setup and acceptance evidence. Local test success
      does not establish repository-wide or mandatory delivery protection.
 
-## Dependent Implementation Candidate
+## Pending Provider Acceptance and Future Integration
 
 2. [Agent Execution and Integrations Plan](plans/flow-inspector-control-plane-actions-and-integrations-plan.md)
-   - Phase 5: enforceable agent task scope, capabilities, resource limits,
-     progress checks, stopping, recovery, and handoff.
+   - Remaining Phase 5: select and authorize a real agent backend, credentials,
+     usage/cost contract and executable provider acceptance. Deterministic local
+     adapter proof does not satisfy these requirements or the full original DoD.
    - Phase 6: small-team operations, selected ticket/PR integrations, hardening,
-     and reproducible open-source adoption.
-   - Entry depends on the preceding conformance/action/CI foundation, not on
-     agent controls or integrations that this plan has yet to implement.
+     and reproducible open-source adoption remain unactivated.
 
 Both existing plan filenames remain stable. No schema, runtime, package,
 dependency, license, or publication change is implied by the planning revision.

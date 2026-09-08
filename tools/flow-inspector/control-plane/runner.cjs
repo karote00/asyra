@@ -111,7 +111,8 @@ async function runVerification({
   flowIds,
   signal,
   timeoutMs,
-  onSpawn
+  onSpawn,
+  processRunner = runProcess
 }) {
   if (!contract.scenarios.some((item) => item.id === scenario))
     throw new Error('Unknown proof scenario')
@@ -126,7 +127,7 @@ async function runVerification({
   const names = contract.cases
     .filter((item) => flowIds.includes(item.flowId))
     .map((item) => item.testName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
-  const result = await runProcess({
+  const result = await processRunner({
     executable: process.execPath,
     args: [
       __filename,

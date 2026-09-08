@@ -3,13 +3,17 @@
 ## Scope
 
 This rule owns version authority and release ordering for Framework packages,
-create-app CLI packages, the root `asyra` package, private apps, and generated
+create-app CLI packages, independently versioned public tools, the root `asyra` package, private apps, and generated
 app templates.
 
 ## Version Owners
 
-- Changesets may create release entries only for public Framework packages
-  owned under `packages/*` and listed by the fixed Framework release allowlist.
+- Framework Changeset entries target public packages under `packages/*` listed
+  by the fixed Framework release allowlist.
+- `@asyra/flow-inspector` is an independently versioned public tool under
+  `tools/flow-inspector`. Its scoped Changesets record future release intent;
+  it is excluded from Framework bulk-release and family-alignment scripts.
+  Creating a record does not apply versions or authorize publication.
 - The `create-app/` directory has no version. Each CLI package under
   `create-app/<app>` owns its own manually selected version and must never be a
   Changeset release entry.
@@ -24,8 +28,8 @@ app templates.
   template inherits that app version through the official generator; the
   template is never edited, versioned, or selected in Changesets independently.
 
-An empty Changeset may record a non-documentation PR that changes no Framework
-package. Empty records satisfy closeout without assigning a release version to
+An empty Changeset may record a non-documentation PR that changes no versioned
+Framework package or public tool. Empty records satisfy closeout without assigning a release version to
 root, private, CLI, or generated-template owners.
 
 ## Framework Iteration Contract
@@ -37,7 +41,8 @@ packages changed.
 
 Normal Framework development uses ordinary scoped Changesets. A Changeset must
 not contain root `asyra`, a private app, any `create-app/*` CLI package, a
-generated template, or any workspace outside the Framework allowlist.
+generated template, or any unrelated workspace. The independently versioned
+Flow Inspector tool may have its own scoped entry outside the Framework allowlist.
 
 ## Major or Minor Family Change
 

@@ -96,3 +96,40 @@
   or workflow enforcement. Resume external setup only on a separate user request;
   Phase 5/6 remain deferred. PR review/merge remains separate from local completion.
 - Release boundary: no Changeset, version bump, tag, release or deployment change.
+
+## 2026-09-08 - Activate isolated local Phase 5
+
+After PR #166 merged, the user authorized Phase 5 local execution while keeping
+mandatory GitHub protection, independent verifier/issuer and remote acceptance
+evidence deferred. This supersedes the Phase 5 entry dependency only; it does
+not satisfy or remove the original Phase 4 DoD. The product boundary is
+[Local Agent Execution](../../AGENT_EXECUTION.md). Deterministic adapter proof
+is distinct from real provider acceptance. No Phase 6, release or merge authority
+is introduced.
+
+## 2026-09-08 - Close bounded local Phase 5 execution
+
+The [local completed record](../../plans/completed/flow-inspector-phase-5-local-execution-closeout.md)
+records implementation `fedcfab3a`, 126 formal control-plane tests and five browser
+cases. This closes the deterministic local adapter scope only. Real agent provider
+acceptance and full Phase 5 remain pending; all deferred Phase 4 protection and
+remote proof requirements remain unchanged. No version, Changeset, release,
+protection change or merge is authorized by this decision.
+
+## 2026-09-08 - Authorize release-neutral Phase 5 Changeset
+
+The user authorized the existing Changeset CLI after the PR record gate blocked
+CI. `yarn changeset add --empty` generated the release-neutral record; no package
+version, tag or publication is requested. This supersedes only the prior
+Changeset exclusion for this PR and does not change the bounded completion or
+remaining provider/protection requirements.
+
+## 2026-09-08 - Track the public Flow Inspector package
+
+The user confirmed future open-source publication and authorized public-package
+preparation. Remove the private-package exclusion for Flow Inspector itself and
+record its changes through ordinary Changesets. This supersedes the empty
+Phase 5 record: recording package release intent is distinct from applying a
+version or publishing. The tool remains outside Framework bulk-release lists.
+The initial archive provides static assets and source; dynamic control-plane
+execution still depends on the Asyra checkout. No release is performed here.

@@ -24,6 +24,12 @@ const data = {
       href: '../../../docs/ai/tools/flow-inspector/CORE_PROOF.md'
     },
     {
+      id: 'agent-execution',
+      kind: 'authority',
+      label: 'Local Agent Execution',
+      href: '../../../docs/ai/tools/flow-inspector/AGENT_EXECUTION.md'
+    },
+    {
       id: 'ci-trial-workflow',
       kind: 'source',
       label: 'CI trial workflow - not required-check enforcement',
@@ -43,6 +49,128 @@ const data = {
     }
   ],
   steps: [
+    {
+      id: 'admit-agent-task',
+      order: 9,
+      laneId: 'proof',
+      title: 'Admit bounded agent task',
+      ownerPackage: 'tools/flow-inspector/control-plane',
+      purpose: 'Task admission',
+      inputs: [
+        'artifact:admitted-proof-contract',
+        'human task request and accepted revision',
+        'declared source snapshot'
+      ],
+      outputs: ['artifact:admitted-agent-task'],
+      conditions: [
+        'Reject unknown capabilities, hard token claims, non-runtime scope and incomplete owner contracts before effects. Bind exact step, actor, source, budgets and required retained obligations.'
+      ],
+      bypasses: [
+        'No unknown, stale, denied or missing input may become success.'
+      ],
+      allowedContributors: [
+        'trusted action service',
+        'registered broker adapter',
+        'admitted immutable source and contracts'
+      ],
+      forbiddenContributors: [
+        'agent self-authorization',
+        'ambient secrets',
+        'unregistered tools',
+        'candidate-selected verifier or accepted baseline'
+      ],
+      cacheDimensions: [],
+      implementationBoundary: [
+        'tools/flow-inspector/control-plane/agent-contract.cjs',
+        'tools/flow-inspector/control-plane/__tests__/agent-contract.test.cjs'
+      ],
+      specRefs: [
+        '../../../docs/ai/tools/flow-inspector/AGENT_EXECUTION.md#task-admission'
+      ],
+      failureOwnerStepId: 'admit-agent-task'
+    },
+    {
+      id: 'execute-agent-task',
+      order: 10,
+      laneId: 'proof',
+      title: 'Execute bounded agent task',
+      ownerPackage: 'tools/flow-inspector/control-plane',
+      purpose: 'Controlled execution',
+      inputs: [
+        'artifact:admitted-agent-task',
+        'registered adapter operation data',
+        'human stop, cancel, resume, revoke or handoff request',
+        'artifact:agent-candidate-verdict'
+      ],
+      outputs: ['artifact:agent-task-state', 'artifact:agent-candidate-source'],
+      conditions: [
+        'Broker operations before effects; persist cumulative budgets and audit with task state. Preserve partial source and history across cancellation and restart. Finish requires actual source progress; candidate verdict never authorizes baseline acceptance.'
+      ],
+      bypasses: [
+        'No unknown, stale, denied or missing input may become success.'
+      ],
+      allowedContributors: [
+        'trusted action service',
+        'registered broker adapter',
+        'admitted immutable source and contracts'
+      ],
+      forbiddenContributors: [
+        'agent self-authorization',
+        'ambient secrets',
+        'unregistered tools',
+        'candidate-selected verifier or accepted baseline'
+      ],
+      cacheDimensions: [],
+      implementationBoundary: [
+        'tools/flow-inspector/control-plane/agent-task.cjs',
+        'tools/flow-inspector/control-plane/agent-adapter.cjs',
+        'tools/flow-inspector/control-plane/__tests__/agent-task.test.cjs'
+      ],
+      specRefs: [
+        '../../../docs/ai/tools/flow-inspector/AGENT_EXECUTION.md#controlled-execution'
+      ],
+      failureOwnerStepId: 'execute-agent-task'
+    },
+    {
+      id: 'verify-agent-candidate',
+      order: 11,
+      laneId: 'proof',
+      title: 'Verify isolated candidate',
+      ownerPackage: 'tools/flow-inspector/control-plane',
+      purpose: 'Candidate verification',
+      inputs: [
+        'artifact:agent-candidate-source',
+        'artifact:admitted-agent-task',
+        'abort signal and remaining deadline'
+      ],
+      outputs: ['artifact:agent-candidate-verdict'],
+      conditions: [
+        'Freeze candidate source; execute every retained obligation inside enforced OS containment using trusted captured assertions and existing evidence owner. Recheck source integrity after settlement; unknown containment refuses execution.'
+      ],
+      bypasses: [
+        'No unknown, stale, denied or missing input may become success.'
+      ],
+      allowedContributors: [
+        'trusted action service',
+        'registered broker adapter',
+        'admitted immutable source and contracts'
+      ],
+      forbiddenContributors: [
+        'agent self-authorization',
+        'ambient secrets',
+        'unregistered tools',
+        'candidate-selected verifier or accepted baseline'
+      ],
+      cacheDimensions: [],
+      implementationBoundary: [
+        'tools/flow-inspector/control-plane/agent-verifier.cjs',
+        'tools/flow-inspector/control-plane/__tests__/agent-verifier.test.cjs'
+      ],
+      specRefs: [
+        '../../../docs/ai/tools/flow-inspector/AGENT_EXECUTION.md#candidate-verification'
+      ],
+      failureOwnerStepId: 'verify-agent-candidate'
+    },
 
     {
       id: 'review-contract-evolution',
@@ -51,14 +179,35 @@ const data = {
       title: 'Review contract evolution',
       ownerPackage: 'tools/flow-inspector/control-plane',
       purpose: 'Contract evolution',
-      inputs: ['accepted version history', 'admitted candidate contract', 'observed selector identities and source digests', 'explicit successor relations and retirement request', 'actor capability and exact-base decision'],
+      inputs: [
+        'accepted version history',
+        'admitted candidate contract',
+        'observed selector identities and source digests',
+        'explicit successor relations and retirement request',
+        'actor capability and exact-base decision'
+      ],
       outputs: ['artifact:reviewed-contract-evolution'],
-      conditions: ['Compare stable obligations and source observations once per requested review; preserve immutable accepted versions. Accept only exact current base and candidate inputs with authorized reason; removal requires separately authorized explicit retirement. Missing selectors and unknown evidence remain unresolved.'],
-      bypasses: ['No implicit retirement, heuristic acceptance, or preserved green evidence after revision.'],
-      allowedContributors: ['admitted contracts', 'registered selector observations', 'explicit actor decision'],
-      forbiddenContributors: ['provider green status', 'client-side acceptance', 'candidate self-authorization'],
+      conditions: [
+        'Compare stable obligations and source observations once per requested review; preserve immutable accepted versions. Accept only exact current base and candidate inputs with authorized reason; removal requires separately authorized explicit retirement. Missing selectors and unknown evidence remain unresolved.'
+      ],
+      bypasses: [
+        'No implicit retirement, heuristic acceptance, or preserved green evidence after revision.'
+      ],
+      allowedContributors: [
+        'admitted contracts',
+        'registered selector observations',
+        'explicit actor decision'
+      ],
+      forbiddenContributors: [
+        'provider green status',
+        'client-side acceptance',
+        'candidate self-authorization'
+      ],
       cacheDimensions: [],
-      implementationBoundary: ['tools/flow-inspector/control-plane/evolution.cjs', 'tools/flow-inspector/control-plane/__tests__/evolution.test.cjs'],
+      implementationBoundary: [
+        'tools/flow-inspector/control-plane/evolution.cjs',
+        'tools/flow-inspector/control-plane/__tests__/evolution.test.cjs'
+      ],
       specRefs: ['#contract-evolution'],
       failureOwnerStepId: 'review-contract-evolution'
     },
@@ -69,7 +218,11 @@ const data = {
       title: 'Admit proof contract',
       ownerPackage: 'tools/flow-inspector/control-plane',
       purpose: 'Admission',
-      inputs: ['product-owned proof manifest', 'target architecture Inspector', 'accepted mapping for explicit candidate comparison'],
+      inputs: [
+        'product-owned proof manifest',
+        'target architecture Inspector',
+        'accepted mapping for explicit candidate comparison'
+      ],
       outputs: ['artifact:admitted-proof-contract'],
       conditions: [
         'Retain a detached immutable architecture definition with each admitted contract for exact historical reconstruction. Every required case resolves to a concrete selected step; all incoming artifact routes have explicit, case-backed required or bypassed decisions. Producers, consumers, predicates, and external inputs resolve without contradictory ownership.'
@@ -101,14 +254,34 @@ const data = {
       title: 'Ingest CI evidence',
       ownerPackage: 'tools/flow-inspector/control-plane',
       purpose: 'Accepted-base CI',
-      inputs: ['independently selected accepted contract and gate policy', 'admitted integration contract', 'trusted expected repository/source/base/head/integration identity', 'CI attempt envelope and raw report'],
+      inputs: [
+        'independently selected accepted contract and gate policy',
+        'admitted integration contract',
+        'trusted expected repository/source/base/head/integration identity',
+        'CI attempt envelope and raw report'
+      ],
       outputs: ['artifact:ci-aggregate-evidence'],
-      conditions: ['Check complete supported obligation inventory, exact source and integration provenance, raw case outcomes and artifact fingerprint; retain both confirmed assertion failures and delivery blockers.'],
-      bypasses: ['Missing protection is an explicit delivery blocker; provider green never substitutes for case evidence.'],
-      allowedContributors: ['accepted-base policy', 'assess-proof-evidence raw report assessor', 'registered CI transport'],
-      forbiddenContributors: ['candidate-selected trust base', 'provider summary as verification', 'candidate gate-policy authorization'],
+      conditions: [
+        'Check complete supported obligation inventory, exact source and integration provenance, raw case outcomes and artifact fingerprint; retain both confirmed assertion failures and delivery blockers.'
+      ],
+      bypasses: [
+        'Missing protection is an explicit delivery blocker; provider green never substitutes for case evidence.'
+      ],
+      allowedContributors: [
+        'accepted-base policy',
+        'assess-proof-evidence raw report assessor',
+        'registered CI transport'
+      ],
+      forbiddenContributors: [
+        'candidate-selected trust base',
+        'provider summary as verification',
+        'candidate gate-policy authorization'
+      ],
       cacheDimensions: [],
-      implementationBoundary: ['tools/flow-inspector/control-plane/ci-evidence.cjs', 'tools/flow-inspector/control-plane/__tests__/ci-evidence.test.cjs'],
+      implementationBoundary: [
+        'tools/flow-inspector/control-plane/ci-evidence.cjs',
+        'tools/flow-inspector/control-plane/__tests__/ci-evidence.test.cjs'
+      ],
       specRefs: ['#accepted-base-ci'],
       failureOwnerStepId: 'ingest-ci-evidence'
     },
@@ -230,6 +403,7 @@ const data = {
         'existing static workspace and catalog-declared local resources',
         'artifact:reviewed-contract-evolution',
         'artifact:ci-aggregate-evidence',
+        'artifact:agent-task-state',
         'server-selected accepted Git base'
       ],
       outputs: ['artifact:proof-board-state'],
@@ -312,8 +486,60 @@ const data = {
   ],
   routes: [
     {
-      id: 'ingest-ci-evidence-to-actions', from: 'ingest-ci-evidence', to: 'serve-proof-actions', kind: 'handoff',
-      predicate: 'All-flow evidence is assessed with explicit delivery blockers.',
+      id: 'admit-proof-contract-to-admit-agent-task',
+      from: 'admit-proof-contract',
+      to: 'admit-agent-task',
+      kind: 'handoff',
+      predicate: 'The producer completed its declared boundary.',
+      producedArtifacts: ['artifact:admitted-proof-contract']
+    },
+    {
+      id: 'admit-agent-task-to-execute-agent-task',
+      from: 'admit-agent-task',
+      to: 'execute-agent-task',
+      kind: 'handoff',
+      predicate: 'The producer completed its declared boundary.',
+      producedArtifacts: ['artifact:admitted-agent-task']
+    },
+    {
+      id: 'admit-agent-task-to-verify-agent-candidate',
+      from: 'admit-agent-task',
+      to: 'verify-agent-candidate',
+      kind: 'handoff',
+      predicate: 'The producer completed its declared boundary.',
+      producedArtifacts: ['artifact:admitted-agent-task']
+    },
+    {
+      id: 'execute-agent-task-to-verify-agent-candidate',
+      from: 'execute-agent-task',
+      to: 'verify-agent-candidate',
+      kind: 'handoff',
+      predicate: 'The producer completed its declared boundary.',
+      producedArtifacts: ['artifact:agent-candidate-source']
+    },
+    {
+      id: 'verify-agent-candidate-to-execute-agent-task',
+      from: 'verify-agent-candidate',
+      to: 'execute-agent-task',
+      kind: 'handoff',
+      predicate: 'The producer completed its declared boundary.',
+      producedArtifacts: ['artifact:agent-candidate-verdict']
+    },
+    {
+      id: 'execute-agent-task-to-serve-proof-actions',
+      from: 'execute-agent-task',
+      to: 'serve-proof-actions',
+      kind: 'handoff',
+      predicate: 'The producer completed its declared boundary.',
+      producedArtifacts: ['artifact:agent-task-state']
+    },
+    {
+      id: 'ingest-ci-evidence-to-actions',
+      from: 'ingest-ci-evidence',
+      to: 'serve-proof-actions',
+      kind: 'handoff',
+      predicate:
+        'All-flow evidence is assessed with explicit delivery blockers.',
       producedArtifacts: ['artifact:ci-aggregate-evidence']
     },
     {
@@ -321,7 +547,8 @@ const data = {
       from: 'review-contract-evolution',
       to: 'serve-proof-actions',
       kind: 'handoff',
-      predicate: 'The version owner completed or explicitly blocked the review.',
+      predicate:
+        'The version owner completed or explicitly blocked the review.',
       producedArtifacts: ['artifact:reviewed-contract-evolution']
     },
     {
@@ -398,8 +625,39 @@ const data = {
   ],
   artifacts: [
     {
-      id: 'artifact:ci-aggregate-evidence', title: 'CI aggregate evidence',
-      ownerStepId: 'ingest-ci-evidence', channel: 'ci-evidence', consumerStepIds: ['serve-proof-actions']
+      id: 'artifact:admitted-agent-task',
+      title: 'admitted-agent-task',
+      ownerStepId: 'admit-agent-task',
+      channel: 'local-agent',
+      consumerStepIds: ['execute-agent-task', 'verify-agent-candidate']
+    },
+    {
+      id: 'artifact:agent-candidate-source',
+      title: 'agent-candidate-source',
+      ownerStepId: 'execute-agent-task',
+      channel: 'local-agent',
+      consumerStepIds: ['verify-agent-candidate']
+    },
+    {
+      id: 'artifact:agent-candidate-verdict',
+      title: 'agent-candidate-verdict',
+      ownerStepId: 'verify-agent-candidate',
+      channel: 'local-agent',
+      consumerStepIds: ['execute-agent-task']
+    },
+    {
+      id: 'artifact:agent-task-state',
+      title: 'agent-task-state',
+      ownerStepId: 'execute-agent-task',
+      channel: 'local-agent',
+      consumerStepIds: ['serve-proof-actions']
+    },
+    {
+      id: 'artifact:ci-aggregate-evidence',
+      title: 'CI aggregate evidence',
+      ownerStepId: 'ingest-ci-evidence',
+      channel: 'ci-evidence',
+      consumerStepIds: ['serve-proof-actions']
     },
     {
       id: 'artifact:reviewed-contract-evolution',
@@ -416,7 +674,8 @@ const data = {
       consumerStepIds: [
         'capture-proof-source',
         'assess-proof-evidence',
-        'serve-proof-actions'
+        'serve-proof-actions',
+        'admit-agent-task'
       ]
     },
     {

@@ -230,3 +230,10 @@ and ticket synchronization are outputs of that next plan, not its prerequisites.
 - [Agent Execution and Integrations Plan](flow-inspector-control-plane-actions-and-integrations-plan.md)
 - [Static Workspace 0.2.0 Closure Plan](completed/flow-inspector-static-workspace-0.2.0-closure-plan.md)
 - [Flow Inspector contract](../FLOW_INSPECTOR.md)
+
+## Phase 5 Local Activation - 2026-09-08
+
+The user separately activated [local isolated agent execution](../AGENT_EXECUTION.md)
+while retaining all deferred Phase 4 enforcement requirements. Earlier statements
+that Phase 4 closeout did not activate Phase 5 remain historical facts. This new
+decision grants no merge, publication, protection or Phase 6 authority.

@@ -177,3 +177,29 @@ test(
     }
   }
 )
+
+test('verification consumes the trusted execution boundary once without bypassing it', async () => {
+  const root = path.resolve(__dirname, '../../../..')
+  const parent = path.join(root, 'tmp/flow-inspector/runner-boundary')
+  fs.mkdirSync(parent, { recursive: true })
+  const directory = fs.mkdtempSync(path.join(parent, 'run-'))
+  let calls = 0
+  const contract = loadContract(root)
+  const snapshot = captureSource(root, directory, contract)
+  const result = await runVerification({
+    repositoryRoot: root,
+    runDirectory: directory,
+    snapshot,
+    contract,
+    scenario: 'baseline',
+    flowIds: contract.flows.map((flow) => flow.id),
+    processRunner: async (options) => {
+      calls++
+      assert.equal(options.executable, process.execPath)
+      return { code: null, reason: 'containment-unavailable', output: '' }
+    }
+  })
+  assert.equal(calls, 1)
+  assert.equal(result.reason, 'containment-unavailable')
+  fs.rmSync(directory, { recursive: true, force: true })
+})

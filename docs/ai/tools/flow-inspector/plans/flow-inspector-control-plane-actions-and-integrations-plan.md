@@ -2,9 +2,13 @@
 
 ## Status and Objective
 
-Deferred until the
-[Contract Verification and CI Plan](flow-inspector-control-plane-evidence-and-ci-plan.md)
-completes. Revised on 2026-09-07; the existing filename remains stable. This
+The bounded deterministic local execution scope is completed in the
+[local closeout record](completed/flow-inspector-phase-5-local-execution-closeout.md).
+Real provider selection and acceptance remain pending; full Phase 5 is not closed.
+Phase 5 local isolated execution was activated by the user on 2026-09-08 under
+[Local Agent Execution](../AGENT_EXECUTION.md). GitHub enforcement remains
+deferred; the original entry criteria and full DoD below are retained for the
+protected integration milestone. Phase 6 is not activated. The existing filename remains stable. This
 plan extends an implemented action, evidence, and CI foundation rather than
 requiring its own future agent controls to exist at entry.
 

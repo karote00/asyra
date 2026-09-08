@@ -19,14 +19,19 @@ sidebar-driven surface for all current-project Inspectors while retaining
 direct-open standalone HTML compatibility. The bounded local
 [Core Proof](CORE_PROOF.md) at `tools/flow-inspector/control-plane/` adds real
 Factory flow verification, snapshot-bound evidence, explicit mapping review, and
-controlled actions on the existing canvas cards. The active Phase 4 extension adds
+controlled actions on the existing canvas cards. The completed local Phase 4 extension adds
 contract evolution, CI evidence admission, and shared baseline snapshots; its
-mandatory protected CI delivery gate is still blocked. Agent execution and
-integrations remain in later phase plans. The static Inspector's schema version 2 contract is unchanged.
+mandatory protected CI delivery gate remains deferred.
+[Local Agent Execution](AGENT_EXECUTION.md) adds bounded Phase 5 demonstration
+execution, isolated candidate verification and human handoff. Real provider
+acceptance and Phase 6 integrations remain unfinished. The static Inspector's schema version 2 contract is unchanged.
 
 The tool may inspect Framework and App contracts, but neither Framework nor an
-App may depend on the tool at runtime. Tool publication and versioning remain
-independent from Framework package Changesets and publication.
+App may depend on the tool at runtime. Tool publication and versioning remain independent from Framework publication.
+The public `@asyra/flow-inspector` package now records scoped Changesets under
+its own identity, outside the Framework bulk-release allowlist. Its archive
+contains static assets and source; dynamic execution still requires the Asyra
+checkout. See the package README for the supported distribution boundary.
 
 All Inspector data, standalone HTML, and Inspector contract tests are owned by
 `tools/flow-inspector/inspectors/`. Framework and App documentation remains the
@@ -38,6 +43,7 @@ do not store Inspector implementation artifacts.
 - `FLOW_INSPECTOR.md` - current static Inspector contract.
 - `PLANS.md` - active and future Flow Inspector planning index.
 - `CORE_PROOF.md` - living Phase 3 proof and active Phase 4 contract, cases, and bounded DoD.
+- `AGENT_EXECUTION.md` - local Phase 5 contract, supported limits and remaining boundaries.
 - `plans/` - detailed roadmap and active phase plans.
 - `plans/completed/` - completed plan records.
 - `decisions/releases/` - append-only tool release decision history.

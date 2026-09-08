@@ -69,12 +69,12 @@ test('preview artifact is independently versioned and static-only', () => {
   const toolPackage = JSON.parse(fs.readFileSync(toolPackagePath, 'utf8'))
   assert.equal(toolPackage.name, '@asyra/flow-inspector')
   assert.equal(toolPackage.version, '0.2.0')
-  assert.equal(toolPackage.private, true)
+  assert.notEqual(toolPackage.private, true)
   assert.equal(fs.existsSync(path.join(workspaceRoot, 'workspace.html')), true)
-  assert.equal(Object.hasOwn(toolPackage, 'publishConfig'), false)
+  assert.equal(toolPackage.publishConfig.access, 'public')
   assert.equal(
     toolPackage.scripts['test:contracts'],
-    'node --test __tests__/viewer-entry.test.cjs workspace/__tests__/catalog.contract.test.cjs workspace/__tests__/workspace.test.cjs'
+    'node --test __tests__/viewer-entry.test.cjs workspace/__tests__/catalog.contract.test.cjs workspace/__tests__/workspace.test.cjs __tests__/package.test.cjs'
   )
   for (const scriptName of ['test', 'test:local', 'test:ci']) {
     assert.equal(
