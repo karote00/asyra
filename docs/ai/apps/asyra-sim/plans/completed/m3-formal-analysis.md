@@ -12,7 +12,7 @@ reference-hardware qualification, or R0 release approval.
 Baseline: PR #169 merged at `a70c0bdece5734eac938fa1cc3387a13829526cb`, also
 `origin/main` after the requested fetch. Branch:
 `codex/asyra-sim-m3-formal-analysis`; worktree:
-`/Users/asa/Desktop/workspace/asra/.worktrees/asyra-sim-m3-formal-analysis`.
+`.worktrees/asyra-sim-m3-formal-analysis`.
 The original checkout's untracked `docs/reports/` and all other worktrees were
 preserved. Implementation commits are `c98ccd7e2` (method oracle) and `80bf40eb4`
 (formal finding presentation and ordinary browser cases).
@@ -116,7 +116,7 @@ rewritten.
 
 Use the normal App at `http://127.0.0.1:3020`. After explicit user approval,
 M2 PID 13928 was stopped. The long-lived M3 Vite process is PID 46794 with cwd
-`/Users/asa/Desktop/workspace/asra/.worktrees/asyra-sim-m3-formal-analysis/apps/asyra-sim`.
+`.worktrees/asyra-sim-m3-formal-analysis/apps/asyra-sim`.
 A short-lived Playwright-owned M3 service ran the first outcome batch; the final
 batches use PID 46794. Check the actual PID/cwd before any later takeover.
 
