@@ -259,36 +259,19 @@ pair sets, missing colliders, background/influencing objects, and excluded pairs
 Do not implement a general scheduling engine, arbitrary workflow loops,
 vendor-controller interpretation, or inverse kinematics.
 
-## 6. M3: Official Collision and Clearance Methods
+## 6. M3: Official Collision and Clearance Methods - Complete
 
-### User Outcome
+Closed 2026-09-08 within the frozen local profile. All six owner exit criteria
+are accepted: static/continuous/clearance evidence, Worker lifecycle, result
+validation/rules and ordinary result/replay. Existing sufficient implementations
+were retained; independent time/distance oracles and explicit formal finding
+labels/witness times close the actual evidence/presentation gaps.
 
-Run a complete local geometry experiment and identify collisions, insufficient
-clearance, and regions that remain unresolved.
-
-### Owner Slices
-
-1. Static method owner: supported shape pairs and independent analytical oracles.
-2. Continuous trajectory method owner: complete time coverage, rotation,
-   high-speed crossings, and time bounds.
-3. Clearance owner: distance bounds and witnesses, thresholds, and numerical
-   uncertainty.
-4. Runner: worker protocol, budgets, cancellation/timeouts, failures, and resource
-   cleanup.
-5. Result validator/rule evaluator: keep evidence, coverage, execution, and
-   verdict distinct.
-6. Result view/replay: project the same canonical findings, locate times, zoom
-   into local details, and display unknown states.
-
-Do not defer these owners' formal tests to a single final UI integration.
-Generate a Step Execution Card from the actual Inspector for each segment and
-complete its bounded review before advancing.
-
-This milestone must produce meaningful examples of collision, clearance
-violation, fully analyzed cases with no issues found, unresolved results,
-timeouts, and cancellation. Test every numerical promise under the frozen
-profile. Do not implement collision response, contact forces, or a dynamics
-engine that rewrites the user's trajectory.
+650 App tests and 27 distinct browser cases pass, with inspected overview/detail
+screenshots and unchanged numerical/resource limits. Full scope, commands,
+owner conclusions and operational acceptance are archived in
+[M3 formal analysis](completed/m3-formal-analysis.md).
+M4-M6 and independent release gates remain separate.
 
 ## 7. M4: Variant Comparison, Versions, and Private Extensions
 
