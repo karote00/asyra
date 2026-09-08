@@ -123,3 +123,13 @@ CI. `yarn changeset add --empty` generated the release-neutral record; no packag
 version, tag or publication is requested. This supersedes only the prior
 Changeset exclusion for this PR and does not change the bounded completion or
 remaining provider/protection requirements.
+
+## 2026-09-08 - Track the public Flow Inspector package
+
+The user confirmed future open-source publication and authorized public-package
+preparation. Remove the private-package exclusion for Flow Inspector itself and
+record its changes through ordinary Changesets. This supersedes the empty
+Phase 5 record: recording package release intent is distinct from applying a
+version or publishing. The tool remains outside Framework bulk-release lists.
+The initial archive provides static assets and source; dynamic control-plane
+execution still depends on the Asyra checkout. No release is performed here.

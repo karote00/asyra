@@ -27,8 +27,11 @@ execution, isolated candidate verification and human handoff. Real provider
 acceptance and Phase 6 integrations remain unfinished. The static Inspector's schema version 2 contract is unchanged.
 
 The tool may inspect Framework and App contracts, but neither Framework nor an
-App may depend on the tool at runtime. Tool publication and versioning remain
-independent from Framework package Changesets and publication.
+App may depend on the tool at runtime. Tool publication and versioning remain independent from Framework publication.
+The public `@asyra/flow-inspector` package now records scoped Changesets under
+its own identity, outside the Framework bulk-release allowlist. Its archive
+contains static assets and source; dynamic execution still requires the Asyra
+checkout. See the package README for the supported distribution boundary.
 
 All Inspector data, standalone HTML, and Inspector contract tests are owned by
 `tools/flow-inspector/inspectors/`. Framework and App documentation remains the

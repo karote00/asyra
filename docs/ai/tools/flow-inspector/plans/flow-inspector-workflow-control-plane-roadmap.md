@@ -451,3 +451,11 @@ closes deterministic adapter admission, isolated candidate execution, retained
 verification and shared controls only. Real AI backend acceptance and the full
 Phase 5 DoD remain pending. All earlier protected CI requirements remain deferred;
 Phase 6 remains unactivated. No release or merge is implied.
+
+## Public Package Preparation - 2026-09-08
+
+The user activated public-package preparation for future open-source distribution.
+Flow Inspector now owns scoped Changeset records, MIT metadata and a tested source
+and static-asset archive. It remains outside Framework release allowlists.
+Repository-independent control-plane execution and registry publication are not
+completed by this preparation; the original provider/protection gaps remain.
