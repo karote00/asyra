@@ -39,8 +39,9 @@ export function measureScene(meshes: SpatialFrame['meshes']): SceneBounds {
     const localMax = [-Infinity, -Infinity, -Infinity]
     for (let i = 0; i < shape.positions.length; i++) {
       const axis = i % 3
-      localMin[axis] = Math.min(localMin[axis], shape.positions[i])
-      localMax[axis] = Math.max(localMax[axis], shape.positions[i])
+      const value = shape.positions[i]
+      localMin[axis] = Math.min(localMin[axis], value)
+      localMax[axis] = Math.max(localMax[axis], value)
     }
     const instances = mesh.descriptor.instances ?? [
       { position: [0, 0, 0], yaw: 0 }
@@ -48,17 +49,25 @@ export function measureScene(meshes: SpatialFrame['meshes']): SceneBounds {
     for (const instance of instances) {
       const c = Math.cos(instance.yaw),
         s = Math.sin(instance.yaw)
-      for (const x of [localMin[0], localMax[0]])
-        for (const y of [localMin[1], localMax[1]])
-          for (const z of [localMin[2], localMax[2]]) {
-            const transformed = [c * x + s * z, y, -s * x + c * z]
-            for (let axis = 0; axis < 3; axis++) {
-              const value =
-                transformed[axis] + instance.position[axis] + position[axis]
-              min[axis] = Math.min(min[axis], value)
-              max[axis] = Math.max(max[axis], value)
-            }
-          }
+      // Yaw transforms X/Z intervals independently; their extrema equal the
+      // eight transformed corners without allocating corners for every plant.
+      const cx0 = c * localMin[0],
+        cx1 = c * localMax[0]
+      const sz0 = s * localMin[2],
+        sz1 = s * localMax[2]
+      const sx0 = -s * localMin[0],
+        sx1 = -s * localMax[0]
+      const cz0 = c * localMin[2],
+        cz1 = c * localMax[2]
+      const x = instance.position[0] + position[0]
+      const y = instance.position[1] + position[1]
+      const z = instance.position[2] + position[2]
+      min[0] = Math.min(min[0], Math.min(cx0, cx1) + Math.min(sz0, sz1) + x)
+      max[0] = Math.max(max[0], Math.max(cx0, cx1) + Math.max(sz0, sz1) + x)
+      min[1] = Math.min(min[1], localMin[1] + y)
+      max[1] = Math.max(max[1], localMax[1] + y)
+      min[2] = Math.min(min[2], Math.min(sx0, sx1) + Math.min(cz0, cz1) + z)
+      max[2] = Math.max(max[2], Math.max(sx0, sx1) + Math.max(cz0, cz1) + z)
     }
   }
   if (!min.every(Number.isFinite) || !max.every(Number.isFinite))

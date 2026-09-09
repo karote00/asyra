@@ -54,8 +54,11 @@ const admittedDescriptors = new WeakSet<object>()
 /** Compare accepted geometry values, not caller-owned object identity. */
 export function sameSpatialShape(a: SpatialShape, b: SpatialShape): boolean {
   if (a === b && admittedShapes.has(a)) return true
-  const equal = (x: readonly number[], y: readonly number[]) =>
-    x.length === y.length && x.every((value, index) => value === y[index])
+  const equal = (x: readonly number[], y: readonly number[]) => {
+    if (x.length !== y.length) return false
+    for (let i = 0; i < x.length; i++) if (x[i] !== y[i]) return false
+    return true
+  }
   switch (a.kind) {
     case 'box':
       return b.kind === 'box' && equal(a.size, b.size)
@@ -100,31 +103,44 @@ export function isSpatialShape(value: unknown): value is SpatialShape {
     )
   }
   if (value.kind !== 'triangles') return false
-  const { positions, indices } = value
-  return (
-    Array.isArray(positions) &&
-    positions.length >= 9 &&
-    positions.length <= 3000000 &&
-    positions.length % 3 === 0 &&
-    positions.every(Number.isFinite) &&
-    (value.colors === undefined ||
-      (Array.isArray(value.colors) &&
-        value.colors.length === positions.length &&
-        value.colors.every(
-          (n) => typeof n === 'number' && Number.isFinite(n) && n >= 0 && n <= 1
-        ))) &&
-    (value.uvs === undefined ||
-      (Array.isArray(value.uvs) &&
-        value.uvs.length === (positions.length / 3) * 2 &&
-        value.uvs.every(Number.isFinite))) &&
-    Array.isArray(indices) &&
-    indices.length >= 3 &&
-    indices.length <= 3000000 &&
-    indices.length % 3 === 0 &&
-    indices.every(
-      (i) => Number.isSafeInteger(i) && i >= 0 && i < positions.length / 3
-    )
+  const { positions, indices, colors, uvs } = value
+  if (
+    !Array.isArray(positions) ||
+    positions.length < 9 ||
+    positions.length > 3000000 ||
+    positions.length % 3 !== 0 ||
+    !Array.isArray(indices) ||
+    indices.length < 3 ||
+    indices.length > 3000000 ||
+    indices.length % 3 !== 0 ||
+    (colors !== undefined &&
+      (!Array.isArray(colors) || colors.length !== positions.length)) ||
+    (uvs !== undefined &&
+      (!Array.isArray(uvs) || uvs.length !== (positions.length / 3) * 2))
   )
+    return false
+  // eslint-disable-next-line @typescript-eslint/prefer-for-of -- Profiled numeric admission avoids iterator overhead.
+  for (let i = 0; i < positions.length; i++)
+    if (!Number.isFinite(positions[i])) return false
+  if (Array.isArray(colors))
+    // eslint-disable-next-line @typescript-eslint/prefer-for-of -- Profiled numeric admission avoids iterator overhead.
+    for (let i = 0; i < colors.length; i++) {
+      const n = colors[i]
+      if (typeof n !== 'number' || !Number.isFinite(n) || n < 0 || n > 1)
+        return false
+    }
+  if (Array.isArray(uvs))
+    // eslint-disable-next-line @typescript-eslint/prefer-for-of -- Profiled numeric admission avoids iterator overhead.
+    for (let i = 0; i < uvs.length; i++)
+      if (!Number.isFinite(uvs[i])) return false
+  const vertices = positions.length / 3
+  // eslint-disable-next-line @typescript-eslint/prefer-for-of -- Profiled numeric admission avoids iterator overhead.
+  for (let i = 0; i < indices.length; i++) {
+    const index = indices[i]
+    if (!Number.isSafeInteger(index) || index < 0 || index >= vertices)
+      return false
+  }
+  return true
 }
 
 export function readSpatialShape(value: unknown): SpatialShape {

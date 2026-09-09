@@ -106,5 +106,52 @@ it('fits translated and rotated instances while reading model vertices only once
   expect(bounds.min[0]).toBeCloseTo(10)
   expect(bounds.min[2]).toBeCloseTo(18)
   expect(bounds.max).toEqual([13, 1000, 20])
-  expect(reads).toBeLessThanOrEqual(18)
+  expect(reads).toBe(9)
+})
+
+it('matches explicit box corners for arbitrary instance yaw and translations', () => {
+  const points = [-2, -1, -3, 4, 5, 7, 0, 0, 0]
+  const instances = [0, 0.37, -1.2, 2.4, Math.PI].map((yaw, i) => ({
+    position: [i * 13, -i * 2, i * -17] as const,
+    yaw
+  }))
+  const offset = [6, -4, 8] as const
+  const corners: Vector3[] = []
+  for (const instance of instances)
+    for (const x of [-2, 4])
+      for (const y of [-1, 5])
+        for (const z of [-3, 7])
+          corners.push(
+            new Vector3(x, y, z)
+              .applyAxisAngle(new Vector3(0, 1, 0), instance.yaw)
+              .add(new Vector3(...instance.position))
+              .add(new Vector3(...offset))
+          )
+  const bounds = measureScene([
+    {
+      id: 'rotated',
+      visible: true,
+      descriptor: {
+        kind: 'mesh',
+        position: offset,
+        rotation: [0, 0, 0, 1],
+        shape: { kind: 'triangles', positions: points, indices: [0, 1, 2] },
+        color: 0,
+        opacity: 1,
+        wireframe: false,
+        selectable: false,
+        instances
+      }
+    }
+  ])
+  for (let axis = 0; axis < 3; axis++) {
+    expect(bounds.min[axis]).toBeCloseTo(
+      Math.min(...corners.map((p) => p.getComponent(axis))),
+      10
+    )
+    expect(bounds.max[axis]).toBeCloseTo(
+      Math.max(...corners.map((p) => p.getComponent(axis))),
+      10
+    )
+  }
 })
