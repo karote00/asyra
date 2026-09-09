@@ -1,3 +1,4 @@
+// Local candidate for human review
 import type {
   EndTransactionOptions,
   PropsChange,
