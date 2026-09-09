@@ -247,3 +247,10 @@ product-wide browser contract is broader than package publication. The
 Collaboration E2E suite runs in a separate CI job so an ordinary-suite failure
 cannot prevent the package-specific collaboration gate from reporting its own
 result.
+
+Both PR workflows skip all jobs while a pull request is Draft. Opening or
+updating a ready PR and marking a Draft PR ready for review trigger validation;
+CI also retains its label-change triggers. Draft runs may appear as skipped in
+GitHub Actions. Main-branch push validation, scheduled E2E, and manual E2E
+dispatch remain enabled independently of PR readiness. Converting an already
+running PR back to Draft does not cancel its existing run.
