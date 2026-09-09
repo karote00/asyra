@@ -65,7 +65,7 @@ jobs:
           FLOW_CI_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
           FLOW_CI_EMIT_EVIDENCE: '1'
         run: |
-          node --test --test-concurrency=1 tools/flow-inspector/control-plane/__tests__/{contracts,snapshot,runner,evidence,store,service,server,mapping,cli,evolution,ci-context,ci-evidence,operations,agent-contract,agent-provider,agent-transport,agent-task,agent-verifier,pr-review,github-delivery}.test.cjs
+          node --test --test-concurrency=1 tools/flow-inspector/control-plane/__tests__/{contracts,snapshot,runner,evidence,store,service,server,mapping,cli,evolution,ci-context,ci-evidence,operations,agent-contract,agent-provider,agent-transport,agent-task,agent-verifier,pr-review,github-delivery,workflow-results}.test.cjs
           node tools/flow-inspector/control-plane/cli.cjs prove
           node tools/flow-inspector/control-plane/cli.cjs ci-trial
 
@@ -101,3 +101,30 @@ jobs:
 
       - name: Verify release records
         run: yarn release:records
+
+  design-e2e:
+    uses: ./.github/workflows/e2e.yml
+
+  flow-ci:
+    needs: [validate, design-e2e]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      FLOW_RESULT_REPOSITORY: ${{ github.repository }}
+      FLOW_RESULT_BASE: ${{ github.event.pull_request.base.sha || github.sha }}
+      FLOW_RESULT_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+      FLOW_RESULT_INTEGRATION: ${{ github.sha }}
+      FLOW_RESULT_RUN: ${{ github.run_id }}
+      FLOW_RESULT_ATTEMPT: ${{ github.run_attempt }}
+      FLOW_VALIDATE_RESULT: ${{ needs.validate.result }}
+      FLOW_E2E_RESULT: ${{ needs.design-e2e.result }}
+      FLOW_DESIGN_EVIDENCE: ${{ needs.design-e2e.outputs.design-evidence }}
+      FLOW_COLLABORATION_EVIDENCE: ${{ needs.design-e2e.outputs.collaboration-evidence }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+      - name: Aggregate completed flow results
+        run: node tools/flow-inspector/control-plane/workflow-results.cjs aggregate

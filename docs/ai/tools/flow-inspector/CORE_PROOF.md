@@ -355,3 +355,41 @@ GitHub repository and one candidate review. The trusted delivery adapter uses
 explicit preview confirmation; external observations do not admit CI evidence,
 accept a local baseline or alter any of the six obligations. Earlier phase
 exclusions above describe their original activation, not this later grant.
+
+## Final workflow aggregation
+
+The `flow-ci` GitHub job waits for `validate` and the reusable Design E2E
+workflow, and runs even when a dependency fails. It consumes their completed
+results; it does not analyze runtime source or execute a second test suite.
+The existing Factory proof remains an independent producer. A successful
+Factory job does not establish Design conformance.
+
+The bounded Design mapping contains the existing single-element Delete case
+and two collaboration Delete cases (connected windows and nested Group removal).
+The workflow collects exact Playwright file, title, project, expected status,
+and every attempt outcome. Missing, duplicate, skipped, interrupted, unexpected,
+flaky, malformed or report-error results cannot pass. A known failed assertion
+remains failed even when another required case was not reached by fail-fast.
+Other Design flows remain outside this mapping, not implicitly verified.
+
+Each producer envelope binds repository, base, PR HEAD, actual integration SHA,
+run id and run attempt, plus the raw report SHA-256. The collector emits bounded
+job outputs and a readable job summary after tests, including failed tests.
+The final job validates identity and the exact fixed case inventory before
+projecting pass, fail or unverified. Dependency failure also blocks the final
+check even when the selected cases passed. Missing output after infrastructure
+failure or cancellation remains unverified. No secret, raw stdout, screenshot,
+trace, or arbitrary report text enters the bounded output.
+
+This is observational CI integration, not a protected issuer. Workflow and
+report bytes remain repository-controlled; digest integrity is not authenticity.
+It grants neither accepted conformance nor delivery authorization and makes no
+required-check protection claim. Existing Board PR observations can display
+the final GitHub check and its summary link; this does not add Design badges
+to the local Factory proof or alter accepted history.
+
+Formal cases cover outcome classification, exact identity, malformed and missing
+reports, inventory weakening, dependency failures and workflow ordering. Live
+acceptance uses the same Delete runtime mutation as PR 183, then removes it and
+requires a new successful final check on the corrected HEAD. Test PRs close
+without merging; production changes are delivered separately.

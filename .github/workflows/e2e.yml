@@ -1,8 +1,12 @@
 name: E2E Tests
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_call:
+    outputs:
+      design-evidence:
+        value: ${{ jobs.e2e-tests.outputs.evidence }}
+      collaboration-evidence:
+        value: ${{ jobs.collaboration-e2e-tests.outputs.evidence }}
   workflow_dispatch:
     inputs:
       run_balanced_ai_correctness:
@@ -22,6 +26,15 @@ concurrency:
 
 jobs:
   e2e-tests:
+    outputs:
+      evidence: ${{ steps.flow-results.outputs.evidence }}
+    env:
+      FLOW_RESULT_REPOSITORY: ${{ github.repository }}
+      FLOW_RESULT_BASE: ${{ github.event.pull_request.base.sha || github.sha }}
+      FLOW_RESULT_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+      FLOW_RESULT_INTEGRATION: ${{ github.sha }}
+      FLOW_RESULT_RUN: ${{ github.run_id }}
+      FLOW_RESULT_ATTEMPT: ${{ github.run_attempt }}
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -62,10 +75,25 @@ jobs:
 
       - name: Run E2E Tests
         env:
+          FLOW_CI_REPORT: ${{ github.workspace }}/tmp/flow-ci/design.json
           RUN_BALANCED_AI_CORRECTNESS: ${{ steps.balanced_ai_scope.outputs.run_balanced_ai_correctness }}
         run: bash scripts/run-e2e.sh
 
+      - name: Collect Design flow results
+        id: flow-results
+        if: ${{ always() }}
+        run: node tools/flow-inspector/control-plane/workflow-results.cjs collect design tmp/flow-ci/design.json
+
   collaboration-e2e-tests:
+    outputs:
+      evidence: ${{ steps.flow-results.outputs.evidence }}
+    env:
+      FLOW_RESULT_REPOSITORY: ${{ github.repository }}
+      FLOW_RESULT_BASE: ${{ github.event.pull_request.base.sha || github.sha }}
+      FLOW_RESULT_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+      FLOW_RESULT_INTEGRATION: ${{ github.sha }}
+      FLOW_RESULT_RUN: ${{ github.run_id }}
+      FLOW_RESULT_ATTEMPT: ${{ github.run_attempt }}
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -93,4 +121,11 @@ jobs:
         run: yarn react:build
 
       - name: Run Collaboration E2E Tests
-        run: yarn workspace @asyra/asyra-design test:e2e:collaboration
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_NAME: ${{ github.workspace }}/tmp/flow-ci/collaboration.json
+        run: yarn workspace @asyra/asyra-design test:e2e:collaboration --reporter=line,json
+
+      - name: Collect collaboration flow results
+        id: flow-results
+        if: ${{ always() }}
+        run: node tools/flow-inspector/control-plane/workflow-results.cjs collect collaboration tmp/flow-ci/collaboration.json
