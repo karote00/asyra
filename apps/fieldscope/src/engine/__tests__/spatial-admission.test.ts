@@ -1,4 +1,4 @@
-import { expect, it } from 'vitest'
+import { expect, it, vi } from 'vitest'
 import {
   readSpatialDescriptor,
   type SpatialDescriptor
@@ -123,4 +123,15 @@ it('validates and detaches per-vertex surface colors', () => {
         shape: { ...source.shape, colors: invalid }
       })
     ).toThrow()
+})
+
+it('admits flat triangle buffers without general object-graph cloning', () => {
+  const clone = vi.spyOn(globalThis, 'structuredClone')
+  try {
+    const accepted = readSpatialDescriptor(input())
+    expect(accepted.kind).toBe('mesh')
+    expect(clone).not.toHaveBeenCalled()
+  } finally {
+    clone.mockRestore()
+  }
 })

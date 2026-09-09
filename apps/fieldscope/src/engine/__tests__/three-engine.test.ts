@@ -559,3 +559,32 @@ it('selects instance detail from projected error and culls off-screen plants wit
   expect(distant.count).toBe(0)
   engine.destroy()
 })
+
+it.each([3, 65537])(
+  'preserves detached triangle positions, colors and indices for %s vertices',
+  (count) => {
+    const { engine, driver, add } = setup()
+    const positions = Array<number>(count * 3).fill(0)
+    positions[3] = 1
+    positions[(count - 1) * 3 + 1] = 1
+    const colors = Array<number>(count * 3).fill(0.25)
+    const indices = [0, 1, count - 1]
+    add(camera)
+    add({ ...box, shape: { kind: 'triangles', positions, colors, indices } })
+    positions[3] = 9
+    colors[0] = 1
+    indices[2] = 0
+    engine.execute({ type: 'flush' })
+    const scene = vi.mocked(driver.render).mock.calls[0][0]
+    const mesh = scene.getObjectsByProperty('isMesh', true)[0] as THREE.Mesh
+    expect(mesh.geometry.getAttribute('position').getX(1)).toBe(1)
+    expect(mesh.geometry.getAttribute('position').getY(count - 1)).toBe(1)
+    expect(mesh.geometry.getAttribute('color').getX(0)).toBe(0.25)
+    if (!mesh.geometry.index) throw new Error('Missing triangle indices')
+    expect(Array.from(mesh.geometry.index.array)).toEqual([0, 1, count - 1])
+    expect(mesh.geometry.index.array.BYTES_PER_ELEMENT).toBe(
+      count > 65535 ? 4 : 2
+    )
+    engine.destroy()
+  }
+)

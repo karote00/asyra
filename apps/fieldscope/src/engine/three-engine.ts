@@ -75,16 +75,24 @@ const makeGeometry = (shape: SpatialShape): THREE.BufferGeometry => {
       return new THREE.CapsuleGeometry(shape.radius, shape.length, 8, 24)
     case 'triangles': {
       const geometry = new THREE.BufferGeometry()
-      geometry.setAttribute(
-        'position',
-        new THREE.Float32BufferAttribute(shape.positions, 3)
-      )
-      if (shape.colors)
-        geometry.setAttribute(
-          'color',
-          new THREE.Float32BufferAttribute(shape.colors, 3)
-        )
-      geometry.setIndex([...shape.indices])
+      // Admitted arrays are frozen. Copy by index into the final owned GPU
+      // buffers, avoiding generic iterable conversion and index array expansion.
+      for (const [name, values] of [
+        ['position', shape.positions],
+        ['color', shape.colors]
+      ] as const) {
+        if (!values) continue
+        const array = new Float32Array(values.length)
+        for (let i = 0; i < values.length; i++) array[i] = values[i]
+        geometry.setAttribute(name, new THREE.BufferAttribute(array, 3))
+      }
+      const indices =
+        shape.positions.length / 3 > 65535
+          ? new Uint32Array(shape.indices.length)
+          : new Uint16Array(shape.indices.length)
+      for (let i = 0; i < shape.indices.length; i++)
+        indices[i] = shape.indices[i]
+      geometry.setIndex(new THREE.BufferAttribute(indices, 1))
       geometry.computeVertexNormals()
       return geometry
     }

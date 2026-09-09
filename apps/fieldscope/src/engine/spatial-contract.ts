@@ -121,7 +121,19 @@ export function isSpatialShape(value: unknown): value is SpatialShape {
 
 export function readSpatialShape(value: unknown): SpatialShape {
   if (record(value) && admittedShapes.has(value)) return value as SpatialShape
-  const snapshot: unknown = structuredClone(value)
+  // Triangle payloads contain only flat numeric arrays. Capture accessors once,
+  // detach those arrays directly, then validate the exact retained snapshot.
+  let snapshot: unknown = record(value) ? { ...value } : value
+  if (record(snapshot) && snapshot.kind === 'triangles') {
+    for (const key of ['positions', 'colors', 'indices']) {
+      const source = snapshot[key]
+      if (!Array.isArray(source)) continue
+      if (source.length > 3000000) throw new Error('Invalid spatial shape')
+      const copy = new Array<unknown>(source.length)
+      for (let i = 0; i < source.length; i++) copy[i] = source[i]
+      snapshot[key] = copy
+    }
+  } else snapshot = structuredClone(snapshot)
   if (!isSpatialShape(snapshot)) throw new Error('Invalid spatial shape')
   let shape: SpatialShape
   if (snapshot.kind === 'triangles')
