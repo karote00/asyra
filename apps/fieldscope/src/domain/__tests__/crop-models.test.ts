@@ -232,3 +232,15 @@ it('represents delayed harvest on attached fruit with two intermediate sizes bef
     }
   }
 })
+
+it('bounds full cucumber geometry while retaining all growth stages and bristled surfaces', () => {
+  for (const model of createCropModels({ netTop: 3, netBottom: 0.45 }).filter(
+    (m) => m.species === 'cucumber-1914'
+  )) {
+    const vertices = model.parts.reduce(
+      (sum, part) => sum + part.shape.positions.length / 3,
+      0
+    )
+    expect(vertices).toBeLessThan(18000)
+  }
+})

@@ -59,8 +59,8 @@ export function appendFruitSurface(
   ripeness: number,
   phase: number
 ) {
-  const rings = distant ? 3 : 14 + Number(cucumber) * 22,
-    sides = distant ? 6 : 16 + Number(cucumber) * 16
+  const rings = distant ? 3 : 14 + Number(cucumber) * 10,
+    sides = distant ? 6 : 16 + Number(cucumber) * 8
   const surface = (t: number, angle: number): Point3 => {
     const theta = Math.PI * t
     const taper = cucumber ? Math.sin(theta) ** 0.25 : Math.sin(theta)

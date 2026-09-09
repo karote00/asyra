@@ -455,7 +455,7 @@ function createModel(
     cucumber && !distant
       ? appendSurfaceHairs(
           stems,
-          24000,
+          12000,
           0.0016 * scale,
           false,
           [0.125, 0.231, 0.053]
@@ -465,7 +465,7 @@ function createModel(
     cucumber && !distant
       ? appendSurfaceHairs(
           foliage,
-          4200,
+          3000,
           0.0012 * scale,
           true,
           [0.045, 0.13, 0.035]
