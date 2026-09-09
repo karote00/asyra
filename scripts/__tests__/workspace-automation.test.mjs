@@ -103,6 +103,41 @@ test('GitHub Actions use least privilege and immutable action revisions', () => 
   assert.match(dependabot, /interval: ['"]weekly['"]/)
 })
 
+test('PR workflows skip Draft jobs and run when the PR becomes ready', () => {
+  for (const workflowPath of [
+    '.github/workflows/main.yml',
+    '.github/workflows/e2e.yml'
+  ]) {
+    const workflow = readText(workflowPath)
+    const events = workflow.match(/pull_request:\n\s+types: \[([^\]]+)\]/)[1]
+    for (const event of [
+      'opened',
+      'synchronize',
+      'reopened',
+      'ready_for_review'
+    ]) {
+      assert.ok(events.split(', ').includes(event), `${workflowPath}: ${event}`)
+    }
+    const jobs = workflow.split('\njobs:\n')[1].split(/(?=^ {2}[\w-]+:\n)/m)
+    for (const job of jobs.filter((block) => block.trim())) {
+      assert.match(
+        job,
+        /^ {4}if: github.event_name != 'pull_request' \|\| github.event.pull_request.draft == false$/m,
+        `${workflowPath}: ${job.split('\n')[0]}`
+      )
+    }
+  }
+})
+
+test('Draft filtering preserves non-PR CI triggers and label validation', () => {
+  const ci = readText('.github/workflows/main.yml')
+  const e2e = readText('.github/workflows/e2e.yml')
+  assert.match(ci, /push:\n {4}branches:\n {6}- main/)
+  assert.match(ci, /types: \[[^\]]*labeled, unlabeled/)
+  assert.match(e2e, /^ {2}workflow_dispatch:/m)
+  assert.match(e2e, /^ {2}schedule:\n {4}- cron: '0 18 \* \* \*'/m)
+})
+
 test('CI bounds workspace test concurrency without dropping test owners', () => {
   const workflow = readText('.github/workflows/main.yml')
   const scripts = readJSON('package.json').scripts
