@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 const fs = require('node:fs')
+const { execFileSync } = require('node:child_process')
 const { createHash } = require('node:crypto')
 const inventory = Object.freeze(
   [
@@ -209,7 +210,11 @@ if (require.main === module) {
     } catch {
       /* Missing producer output remains unverified. */
     }
-    const envelope = collect(report, producer, runtimeIdentity())
+    const identity = runtimeIdentity()
+    identity.integration = execFileSync('git', ['rev-parse', 'HEAD'], {
+      encoding: 'utf8'
+    }).trim()
+    const envelope = collect(report, producer, identity)
     fs.appendFileSync(
       process.env.GITHUB_OUTPUT,
       'evidence=' + JSON.stringify(envelope) + '\n'
