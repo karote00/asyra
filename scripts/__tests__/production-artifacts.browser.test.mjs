@@ -205,7 +205,7 @@ test(
     await expect(
       page.getByRole('heading', { level: 1, name: 'Asyra Framework' })
     ).toBeVisible()
-    await page.getByRole('button', { name: 'Search 41 guides' }).click()
+    await page.getByRole('button', { name: /^Search \d+ guides$/ }).click()
     await page.getByRole('searchbox', { name: 'Search' }).fill('transaction')
     await expect(page.locator('.search-results a')).not.toHaveCount(0)
     const response = await page.goto(`${url}/atlas`)

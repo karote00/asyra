@@ -53,10 +53,17 @@ test('production proof is included in PR CI and never starts Vite dev or preview
   const workflow = read('.github/workflows/production-artifacts.yml')
   assert.match(workflow, /pull_request:/)
   assert.match(workflow, /workflow_call:/)
-  assert.match(workflow, /run: yarn react:build/)
+  assert.match(workflow, /run: yarn build:production-artifacts/)
+  const build = JSON.parse(read('package.json')).scripts[
+    'build:production-artifacts'
+  ]
+  assert.match(
+    build,
+    /gen:turbo:check.*turbo run react:build build:asyra-framework-site --concurrency=2/
+  )
   assert.match(workflow, /run: yarn test:production-artifacts/)
   assert.ok(
-    workflow.indexOf('run: yarn react:build') <
+    workflow.indexOf('run: yarn build:production-artifacts') <
       workflow.indexOf('run: yarn workspace @asyra/asyra-design typecheck'),
     'Build workspace declarations before checking application consumers'
   )

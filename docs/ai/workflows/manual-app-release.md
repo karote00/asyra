@@ -89,8 +89,10 @@ to unblock the next run. Package versions are not website version identities.
 
 ## Evidence and limits
 
-`yarn test:production-artifacts` consumes an existing successful production
-build. It never rebuilds or starts Vite middleware. It verifies Sim analysis
+`yarn build:production-artifacts` executes the App builds and the website's
+explicit `build:asyra-framework-site` task in one Turbo graph. Root
+`react:build` alone does not include that website task.
+`yarn test:production-artifacts` then consumes those production builds. It never rebuilds or starts Vite middleware. It verifies Sim analysis
 and local persistence, Design local editing/history, and Next production
 routes/client search. It checks browser exceptions and rejects dev-source
 requests. Next runs as an explicitly owned child process and is cleaned up.

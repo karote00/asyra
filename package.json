@@ -76,6 +76,7 @@
     "release:full": "node scripts/release-full.js",
     "release:full:asyra-design": "node scripts/release-full.js --prod=asyra-design",
     "dev:description": "Run in watch mode: all packages including design-system, asyra-design app",
+    "build:production-artifacts": "yarn gen:turbo:check && turbo run react:build build:asyra-framework-site --concurrency=2",
     "test:production-artifacts": "node --test --test-concurrency=1 scripts/__tests__/production-artifacts.browser.test.mjs"
   },
   "workspaces": [

@@ -27,7 +27,7 @@ jobs:
       - name: Install the existing Playwright browser
         run: yarn workspace @asyra/asyra-design playwright install --with-deps chromium
       - name: Build production artifacts
-        run: yarn react:build
+        run: yarn build:production-artifacts
       - name: Check Design application types
         run: yarn workspace @asyra/asyra-design typecheck
       - name: Test production artifacts without dev servers
