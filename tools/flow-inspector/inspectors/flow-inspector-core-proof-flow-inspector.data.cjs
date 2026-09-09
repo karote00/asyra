@@ -61,11 +61,12 @@ const data = {
         'artifact:agent-candidate-verdict',
         'current accepted revision and trusted delivery policy',
         'digest-checked candidate and captured source',
+        'captured package manifest and fixed Factory patch metadata policy',
         'artifact:github-review-observation'
       ],
       outputs: ['artifact:pr-review-record'],
       conditions: [
-        'Admit only exact passing latest candidate source and explicit actor confirmation. Persist preview and intent before effects; uncertain operations reconcile by query only; ordinary reads do no remote or source work.'
+        'Admit only exact passing latest candidate source with unambiguous captured Factory ownership. Prepare one fixed patch Changeset separately from source verification; bind all metadata, source, policy and PR content to explicit actor confirmation. Persist preview and intent before effects; uncertain operations reconcile by query only; ordinary reads do no remote or source work.'
       ],
       bypasses: [
         'Disabled integration has no effects. Missing, stale, denied or uncertain inputs cannot grant success.'
@@ -78,6 +79,7 @@ const data = {
       forbiddenContributors: [
         'candidate execution or self-authorization',
         'PR content as permission',
+        'candidate-authored metadata or arbitrary package, release type or path',
         'accepted baseline mutation',
         'raw credentials or transport errors in output'
       ],
@@ -102,11 +104,12 @@ const data = {
         'artifact:pr-review-record',
         'trusted fixed repository and base configuration',
         'digest-checked candidate changes and baseline files',
+        'completed trusted Changeset and metadata validation in the review record',
         'explicit effect checkpoint from review owner'
       ],
       outputs: ['artifact:github-review-observation'],
       conditions: [
-        'Check clean checkout and exact remote base source before effects. Only confirmed frozen bytes may create a new branch and ready-for-review PR. Read current PR and HEAD-bound checks; unknown transport effects never become failure proof or authorize blind retry.'
+        'Check clean checkout and exact remote base source before effects. Reject existing metadata paths, symlink ancestors and conflicting package ownership. Only confirmed frozen source and validated Changeset bytes may create a new branch and ready-for-review PR. Read current PR and HEAD-bound checks; unknown transport effects never become failure proof or authorize blind retry.'
       ],
       bypasses: [
         'Disabled integration has no effects. Missing, stale, denied or uncertain inputs cannot grant success.'
@@ -119,6 +122,7 @@ const data = {
       forbiddenContributors: [
         'candidate execution or self-authorization',
         'PR content as permission',
+        'candidate-authored metadata or arbitrary package, release type or path',
         'accepted baseline mutation',
         'raw credentials or transport errors in output'
       ],
@@ -554,7 +558,7 @@ const data = {
         'On a newly selected failed attempt, select the first failing flow if the current flow has no failures; request viewer-owned framing of that flow’s failed step IDs once per changed result; preserve subsequent manual selection, pan and zoom on unchanged refresh. Success and unknown results do not move the viewport. Show a persistent run-level failure alert with named owner navigation and geometry-preserving failed card highlights; clear them on recovery.',
         'Bind cards only after graph DOM replacement; unchanged polling rebuilds neither graph nor bindings and performs no source capture. Target retirement disconnects observers and aborts reads.',
         'Project explicit work reports separately from verification and delivery. Project candidate verification, exact version review with retirement, all-flow CI blockers and artifacts, retry, and baseline/time-labeled shared viewing through the same action service. Show every registered negative scenario, snapshot and version identity, runner environment, named artifact links, and retained attempts; unsupported targets and untested steps receive no successful evidence. Prepare and decide mapping reviews through the action service with an explicit reason; never accept mapping changes in the client.',
-        'Project the selected task/attempt delivery preview, exact confirmation, audit and GitHub HEAD-bound observations through the common action service. Never combine local verification with remote checks or accept baseline from a PR.',
+        'Project the selected task/attempt complete delivery preview with source evidence and trusted Changeset content/reason separately, exact confirmation, audit and GitHub HEAD-bound observations through the common action service. Never combine local verification with remote checks or accept baseline from a PR.',
         'Loaded canvas step contracts must match admitted verification steps before projecting evidence or enabling launch.'
       ],
       bypasses: [

@@ -24,6 +24,79 @@ const gitDigest = (bytes) =>
     .update('blob ' + bytes.length + '\0')
     .update(bytes)
     .digest('hex')
+const METADATA_POLICY = freeze({
+  version: 1,
+  packageName: '@asyra/factory',
+  manifestPath: 'packages/factory/package.json',
+  sourcePrefix: 'packages/factory/src/',
+  releaseType: 'patch'
+})
+function prepareMetadata(input) {
+  const ownership = input.packageOwnership
+  need(
+    ownership?.path === METADATA_POLICY.manifestPath &&
+      ownership.packageName === METADATA_POLICY.packageName &&
+      /^[a-f0-9]{64}$/.test(ownership.digest) &&
+      validId(input.taskId) &&
+      validId(input.attemptId),
+    'invalid metadata package ownership'
+  )
+  need(
+    input.changes.every(
+      (c) =>
+        canonicalFile(c.path) &&
+        c.path.startsWith(METADATA_POLICY.sourcePrefix) &&
+        c.path.endsWith('.ts') &&
+        !c.path.includes('/__tests__/')
+    ),
+    'invalid metadata source ownership'
+  )
+  const summary =
+    input.adapter === 'demonstration'
+      ? 'Deterministic demonstration - retain a Factory runtime candidate for human review.'
+      : 'Retain a locally verified Factory runtime candidate for human review.'
+  const content =
+    '---\n"' +
+    METADATA_POLICY.packageName +
+    '": ' +
+    METADATA_POLICY.releaseType +
+    '\n---\n\n' +
+    summary +
+    '\n'
+  return {
+    policyVersion: METADATA_POLICY.version,
+    packageName: METADATA_POLICY.packageName,
+    releaseType: METADATA_POLICY.releaseType,
+    ownership,
+    path:
+      '.changeset/flow-review-' + input.taskId + '-' + input.attemptId + '.md',
+    content,
+    digest: sha256(content),
+    reason:
+      'Changed runtime source belongs to the captured public Factory package; the fixed delivery policy records patch release intent.',
+    validation: {
+      status: 'passed',
+      scope: 'delivery metadata only - not source verification'
+    }
+  }
+}
+function validateMetadata(preview) {
+  need(preview.metadata, 'metadata missing - prepare a fresh preview')
+  need(
+    JSON.stringify(preview.metadata) ===
+      JSON.stringify(prepareMetadata(preview)),
+    'metadata changed - prepare a fresh preview'
+  )
+  need(
+    JSON.stringify(preview.deliveryFiles) ===
+      JSON.stringify([
+        ...preview.changes.map((c) => c.path),
+        preview.metadata.path
+      ]),
+    'metadata delivery inventory changed'
+  )
+  return preview.metadata
+}
 function sourceDifference(changes) {
   return changes
     .map((change) => {
@@ -56,6 +129,44 @@ function sourceDifference(changes) {
       ].join('\n')
     })
     .join('\n\n')
+}
+function preparePreview(input, remote, adapter) {
+  const id = input.taskId
+  const metadata = prepareMetadata(input)
+  const title = 'Review candidate - ' + input.stepId
+  return {
+    ...input,
+    metadata,
+    deliveryFiles: [...input.changes.map((c) => c.path), metadata.path],
+    sourceDiff: sourceDifference(input.changes),
+    repository: adapter.repository,
+    base: adapter.base,
+    ...remote,
+    branch: 'codex/flow-review/' + id + '/' + input.attemptId,
+    title,
+    draft: false,
+    body: [
+      'Bounded candidate review for ' + input.stepId + '.',
+      '',
+      'Task: ' + id,
+      'Attempt: ' + input.attemptId,
+      'Source HEAD: ' + input.sourceHead,
+      'Source digest: ' + input.sourceDigest,
+      'Candidate digest: ' + input.candidateDigest,
+      'Local report digest: ' + input.reportDigest,
+      '',
+      'Source adapter: ' +
+        input.adapter +
+        '. Local verification passed the retained obligations.',
+      'This is not independently protected verification. PR creation and GitHub checks do not accept the local baseline.',
+      'Trusted delivery metadata: @asyra/factory patch Changeset; metadata validation is separate from local source verification.',
+      'Source provenance: ' +
+        (input.adapter === 'demonstration'
+          ? 'deterministic demonstration, not model output.'
+          : 'retained local candidate.'),
+      'Review the exact source changes. Merge, release and publication are separate human actions.'
+    ].join('\n')
+  }
 }
 function createReviewOwner(
   repositoryRoot,
@@ -159,6 +270,37 @@ function createReviewOwner(
     )
     for (const item of verdict.files)
       read(path.join(reportRoot, 'source'), item.path, item.digest)
+    const manifests = task.snapshot.files.filter(
+      (item) => item.path === METADATA_POLICY.manifestPath
+    )
+    need(manifests.length === 1, 'missing or ambiguous package ownership')
+    const manifest = manifests[0]
+    let packageInfo
+    try {
+      packageInfo = JSON.parse(
+        read(task.snapshot.sourceRoot, manifest.path, manifest.digest)
+      )
+    } catch {
+      throw new Error('PR review: invalid package ownership manifest')
+    }
+    need(
+      packageInfo.name === METADATA_POLICY.packageName &&
+        packageInfo.private !== true,
+      'unsupported package ownership'
+    )
+    need(
+      !task.snapshot.files.some(
+        (item) =>
+          item.path.startsWith(METADATA_POLICY.sourcePrefix) &&
+          item.path.endsWith('/package.json')
+      ),
+      'ambiguous nested package ownership'
+    )
+    const packageOwnership = {
+      path: manifest.path,
+      packageName: packageInfo.name,
+      digest: manifest.digest
+    }
     const files = task.snapshot.files.map((item) => ({
       ...item,
       gitDigest: gitDigest(
@@ -234,6 +376,7 @@ function createReviewOwner(
       candidateDigest: verdict.sourceDigest,
       reportDigest: verdict.runner.reportDigest,
       adapter: task.task.adapter,
+      packageOwnership,
       files,
       changes: diff
     }
@@ -267,34 +410,9 @@ function createReviewOwner(
           )
           return previous
         }
-        const remote = await adapter.inspect(input)
-        const title = 'Review candidate - ' + input.stepId
-        const preview = {
-          ...input,
-          sourceDiff: sourceDifference(input.changes),
-          repository: adapter.repository,
-          base: adapter.base,
-          ...remote,
-          branch: 'codex/flow-review/' + id + '/' + input.attemptId,
-          title,
-          draft: false,
-          body: [
-            'Bounded candidate review for ' + input.stepId + '.',
-            '',
-            'Task: ' + id,
-            'Attempt: ' + input.attemptId,
-            'Source HEAD: ' + input.sourceHead,
-            'Source digest: ' + input.sourceDigest,
-            'Candidate digest: ' + input.candidateDigest,
-            'Local report digest: ' + input.reportDigest,
-            '',
-            'Source adapter: ' +
-              input.adapter +
-              '. Local verification passed the retained obligations.',
-            'This is not independently protected verification. PR creation and GitHub checks do not accept the local baseline.',
-            'Review the exact source changes. Merge, release and publication are separate human actions.'
-          ].join('\n')
-        }
+        const prepared = preparePreview(input, {}, adapter)
+        const remote = await adapter.inspect(prepared)
+        const preview = { ...prepared, ...remote }
         const previewDigest = sha256(JSON.stringify(preview))
         if (previous?.previewDigest === previewDigest) return previous
         return save(
@@ -331,6 +449,7 @@ function createReviewOwner(
           current.preview.draft === false,
           'PR type changed - prepare a fresh preview'
         )
+        validateMetadata(current.preview)
         const input = inputs(id, actor)
         need(
           input.attemptId === current.preview.attemptId,
@@ -346,11 +465,17 @@ function createReviewOwner(
             adapter.base === current.preview.base,
           'delivery policy changed'
         )
-        const remote = await adapter.inspect(input)
+        const prepared = preparePreview(input, {}, adapter)
+        const remote = await adapter.inspect(prepared)
         need(
           remote.baseSha === current.preview.baseSha &&
             remote.baseTree === current.preview.baseTree,
           'remote base advanced'
+        )
+        need(
+          JSON.stringify({ ...prepared, ...remote }) ===
+            JSON.stringify(current.preview),
+          'complete preview changed - prepare a fresh preview'
         )
         current = save(
           { ...current, state: 'submitting', error: null },
@@ -435,4 +560,11 @@ function createReviewOwner(
     }
   }
 }
-module.exports = { createReviewOwner, REVIEW_POLICY, gitDigest }
+module.exports = {
+  createReviewOwner,
+  REVIEW_POLICY,
+  METADATA_POLICY,
+  prepareMetadata,
+  validateMetadata,
+  gitDigest
+}

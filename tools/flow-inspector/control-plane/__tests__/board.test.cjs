@@ -2014,6 +2014,18 @@ test(
       )
       await expect(canvas.locator('#pr-confirm')).toBeDisabled()
       assert.equal(effects, 0)
+      await expect(canvas.locator('#pr-metadata')).toContainText(
+        '"@asyra/factory": patch'
+      )
+      await expect(canvas.locator('#pr-metadata')).toContainText(
+        'Deterministic demonstration'
+      )
+      await expect(canvas.locator('#pr-metadata')).toContainText(
+        'not source verification'
+      )
+      await expect(canvas.locator('#pr-preview')).toContainText(
+        '.changeset/flow-review-'
+      )
       for (const [name, width, height] of [
         ['desktop', 1600, 1100],
         ['tablet', 820, 1180],
@@ -2036,6 +2048,16 @@ test(
         await page.screenshot({
           path: path.join(artifacts, name + '-preview-top.png')
         })
+        await canvas.locator('#pr-metadata').scrollIntoViewIfNeeded()
+        await page.screenshot({
+          path: path.join(artifacts, name + '-metadata.png')
+        })
+        assert.equal(
+          await canvas
+            .locator('#pr-metadata')
+            .evaluate((el) => el.scrollWidth <= el.clientWidth + 2),
+          true
+        )
         await canvas.locator('#pr-confirm').scrollIntoViewIfNeeded()
         await page.screenshot({
           path: path.join(artifacts, name + '-preview-confirm.png')
@@ -2082,6 +2104,8 @@ test(
         server.origin + '/api/tasks/' + id + '/review'
       ).then((r) => r.json())
       assert.equal(api.preview.taskId, id)
+      assert.equal(api.preview.metadata.validation.status, 'passed')
+      assert.equal(api.preview.deliveryFiles.length, 2)
       assert.equal(api.observation.state, 'closed')
       assert.equal(service.getTask(id).deliveryStatus, 'not-delivered')
       fs.writeFileSync(

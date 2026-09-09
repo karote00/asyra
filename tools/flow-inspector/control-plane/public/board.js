@@ -680,6 +680,7 @@
         byId('pr-confirm').disabled =
           !preview ||
           preview.draft !== false ||
+          !preview.metadata ||
           !['preview', 'blocked'].includes(review.state) ||
           !currentAttempt ||
           acting ||
@@ -693,6 +694,8 @@
             (currentAttempt
               ? (matching?.verificationStatus ?? 'no candidate selected')
               : 'historical attempt - open retained evidence'),
+          'Metadata validation: ' +
+            (preview?.metadata?.validation.status ?? 'not prepared'),
           'Delivery: ' + (review?.state ?? 'not prepared'),
           'PR: ' + (observation?.state ?? 'not observed'),
           'GitHub HEAD: ' + (observation?.headSha ?? 'unknown'),
@@ -730,13 +733,33 @@
               'Task: ' + preview.taskId,
               'Attempt: ' + preview.attemptId,
               'Source baseline: ' + preview.sourceHead,
-              'Changed files: ' +
-                preview.changes.map((change) => change.path).join(', '),
+              'All delivery files: ' +
+                (
+                  preview.deliveryFiles ??
+                  preview.changes.map((change) => change.path)
+                ).join(', '),
               'Title: ' + preview.title,
               '',
               preview.body
             ].join('\n')
           : 'Select an existing step task, then prepare an exact delivery preview. No branch or PR is created by preparation.'
+        const metadata = preview?.metadata
+        byId('pr-metadata').textContent = metadata
+          ? [
+              'Package: ' + metadata.packageName,
+              'Release type: ' + metadata.releaseType,
+              'Ownership: ' + metadata.ownership.path,
+              'Reason: ' + metadata.reason,
+              'Validation: ' +
+                metadata.validation.status +
+                ' - ' +
+                metadata.validation.scope,
+              'Path: ' + metadata.path,
+              'Digest: ' + metadata.digest,
+              '',
+              metadata.content
+            ].join('\n')
+          : 'No trusted Changeset in this record. Prepare a fresh complete preview before creation.'
         for (const [name, href] of [
           [
             'pr-source',
@@ -1174,11 +1197,12 @@
             <div class="proof-actions"><button id="pr-prepare" type="button">Prepare PR preview</button><button id="pr-refresh" type="button">Refresh GitHub review</button></div>
             <pre id="pr-result" role="status"></pre>
             <pre id="pr-preview"></pre>
-            <details><summary>Review source difference</summary><pre id="pr-source-diff"></pre></details>
+            <details><summary>Review source difference</summary><p>Candidate runtime source - local verification evidence is separate from delivery metadata.</p><pre id="pr-source-diff"></pre></details>
+            <h4>Trusted owner Changeset</h4><pre id="pr-metadata"></pre>
             <a id="pr-source" target="_blank" rel="noopener noreferrer" hidden>Open frozen source diff and delivery audit</a>
             <a id="pr-evidence" target="_blank" rel="noopener noreferrer" hidden>Open local candidate evidence</a>
             <a id="pr-github" target="_blank" rel="noopener noreferrer" hidden>Open GitHub review</a>
-            <label class="proof-confirmation"><input id="pr-approve" type="checkbox" />I reviewed this exact preview and confirm creating its branch and ready-for-review PR.</label>
+            <label class="proof-confirmation"><input id="pr-approve" type="checkbox" />I reviewed the complete source, trusted Changeset and PR content and confirm creating this exact branch and ready-for-review PR.</label>
             <button id="pr-confirm" type="button" disabled>Create confirmed PR</button>
           </details>
           <details id="phase4-controls"><summary>Contract versions and CI</summary>
