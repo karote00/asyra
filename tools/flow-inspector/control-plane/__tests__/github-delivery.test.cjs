@@ -96,7 +96,7 @@ function fixture() {
       return { object: { sha: branch } }
     }
     if (tail === 'pulls' && method === 'POST') {
-      assert.equal(body.draft, true)
+      assert.equal(body.draft, false)
       assert.equal(body.head, preview.branch)
       pr = makePR()
       return pr
@@ -153,7 +153,7 @@ function fixture() {
     setChecksError: () => (checksError = true)
   }
 }
-test('preview reads remote base and exact source only; confirmed adapter creates exact tree branch and draft', async () => {
+test('preview reads remote base and exact source only; confirmed adapter creates exact tree branch and ready-for-review PR', async () => {
   const f = fixture()
   assert.deepEqual(await f.adapter.inspect(f.preview), {
     baseSha,

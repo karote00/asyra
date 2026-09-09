@@ -2006,6 +2006,12 @@ test(
         'Delivery: preview'
       )
       await expect(canvas.locator('#pr-preview')).toContainText(id)
+      await expect(canvas.locator('#pr-preview')).toContainText(
+        'PR type: ready for review'
+      )
+      await expect(canvas.locator('#pr-confirm')).toHaveText(
+        'Create confirmed PR'
+      )
       await expect(canvas.locator('#pr-confirm')).toBeDisabled()
       assert.equal(effects, 0)
       for (const [name, width, height] of [

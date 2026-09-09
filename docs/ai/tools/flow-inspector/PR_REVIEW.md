@@ -29,18 +29,23 @@ confirmation, even if the changed file is unrelated. Never rebase or silently
 update the selected preview. A fresh preview requires a new explicit preparation.
 
 A durable preview contains repository, base name/SHA, deterministic candidate
-branch, changed paths and digests, PR title/body, task/attempt, source identities,
+branch, changed paths and digests, PR title/body and `draft: false`, task/attempt, source identities,
 report digest and limitations. It creates no remote objects. Preview text is
 review data, never authority. Ordinary reads reuse retained records without
 source capture, GitHub polling or history reconstruction.
 
 ## Confirmed delivery
 
+The local owner requested ready-for-review PR creation for this slice so the
+repository CI runs. Creation uses `draft: false`; it still grants no merge or
+baseline acceptance authority. Older draft previews require fresh preparation;
+their confirmation cannot authorize a different PR type.
+
 Only an explicit local-human confirmation of the exact preview digest permits
 remote writes. Revalidate current task/attempt, accepted revision, source bytes,
 clean checkout and exact remote base before the first external effect. The
 trusted GitHub delivery adapter creates only the frozen candidate content on a
-new branch and a draft PR. It executes no candidate code or repository hooks;
+new branch and a ready-for-review PR. It executes no candidate code or repository hooks;
 it never changes the checkout, existing remote branches, tests, gates, mappings,
 accepted history, protection, tags, releases or deployment configuration.
 
@@ -62,7 +67,7 @@ No arbitrary adapter registration is exposed through HTTP or CLI requests.
 
 ## Review observations
 
-Delivery means `submitted-for-review` once the draft PR exists, not accepted,
+Delivery means `submitted-for-review` once the PR exists, not accepted,
 merged or successfully delivered product work. Task execution, reported work,
 local candidate verification, PR review state and accepted baseline are distinct.
 Refresh explicitly reads open/closed/merged PR state and exact latest HEAD checks.
@@ -86,7 +91,7 @@ control, pan/zoom, keyboard focus, wrapping text and unfilled disclosure hover.
 
 Permanent offline tests precede implementation and cover:
 
-- eligible preview, explicit exact confirmation, draft PR and unchanged baseline;
+- eligible preview, explicit exact confirmation, ready-for-review PR and unchanged baseline;
 - no candidate, unknown/failed verification, changed source, scope escape,
   stale accepted revision, advanced base and dirty checkout with zero effects;
 - duplicate confirmation, retry, restart, partial success and uncertain timeout
@@ -103,7 +108,7 @@ Permanent offline tests precede implementation and cover:
 Run focused owner tests, all control-plane tests, seven-run proof, package React
 and static contracts, naming, lint, typecheck/build and maintained Board tests.
 Inspect browser screenshots. Keep offline fixtures distinct from real GitHub
-acceptance: only after offline completion present an exact candidate draft PR
+acceptance: only after offline completion present an exact candidate ready-for-review PR
 preview to the user and obtain confirmation for the external acceptance case.
 Retained historical provider evidence is read-only and must pass the same source
 eligibility; never reconstruct it or dispatch a model to replace it.

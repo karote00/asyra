@@ -286,7 +286,7 @@ function createGitHubDelivery(
         body: p.body,
         head: p.branch,
         base,
-        draft: true,
+        draft: false,
         maintainer_can_modify: false
       })
       return project(pr, p, expectedHead)

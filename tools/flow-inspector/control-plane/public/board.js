@@ -679,6 +679,7 @@
           matching.phase === 'running'
         byId('pr-confirm').disabled =
           !preview ||
+          preview.draft !== false ||
           !['preview', 'blocked'].includes(review.state) ||
           !currentAttempt ||
           acting ||
@@ -720,6 +721,10 @@
         byId('pr-preview').textContent = preview
           ? [
               'Repository: ' + preview.repository,
+              'PR type: ' +
+                (preview.draft === false
+                  ? 'ready for review'
+                  : 'draft - prepare a fresh preview'),
               'Base: ' + preview.base + ' - ' + preview.baseSha,
               'Branch: ' + preview.branch,
               'Task: ' + preview.taskId,
@@ -1173,8 +1178,8 @@
             <a id="pr-source" target="_blank" rel="noopener noreferrer" hidden>Open frozen source diff and delivery audit</a>
             <a id="pr-evidence" target="_blank" rel="noopener noreferrer" hidden>Open local candidate evidence</a>
             <a id="pr-github" target="_blank" rel="noopener noreferrer" hidden>Open GitHub review</a>
-            <label class="proof-confirmation"><input id="pr-approve" type="checkbox" />I reviewed this exact preview and confirm creating its branch and draft PR.</label>
-            <button id="pr-confirm" type="button" disabled>Create confirmed draft PR</button>
+            <label class="proof-confirmation"><input id="pr-approve" type="checkbox" />I reviewed this exact preview and confirm creating its branch and ready-for-review PR.</label>
+            <button id="pr-confirm" type="button" disabled>Create confirmed PR</button>
           </details>
           <details id="phase4-controls"><summary>Contract versions and CI</summary>
             <p id="contract-baseline"></p>

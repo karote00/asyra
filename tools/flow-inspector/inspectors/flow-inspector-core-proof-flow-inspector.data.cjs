@@ -106,7 +106,7 @@ const data = {
       ],
       outputs: ['artifact:github-review-observation'],
       conditions: [
-        'Check clean checkout and exact remote base source before effects. Only confirmed frozen bytes may create a new branch and draft PR. Read current PR and HEAD-bound checks; unknown transport effects never become failure proof or authorize blind retry.'
+        'Check clean checkout and exact remote base source before effects. Only confirmed frozen bytes may create a new branch and ready-for-review PR. Read current PR and HEAD-bound checks; unknown transport effects never become failure proof or authorize blind retry.'
       ],
       bypasses: [
         'Disabled integration has no effects. Missing, stale, denied or uncertain inputs cannot grant success.'

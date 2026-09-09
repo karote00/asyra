@@ -559,7 +559,7 @@ GitHub review configuration grants no provider dispatch authority.
 3. Review the exact repository, base SHA, branch, changed files, title and body.
    Open the frozen source diff and local evidence links. Check the explicit
    confirmation only when this exact preview is approved, then select
-   **Create confirmed draft PR**. Branch and PR creation stay in the trusted
+   **Create confirmed PR**. Branch and PR creation stay in the trusted
    adapter. No source is applied to the checkout.
 4. **Refresh GitHub review** reads the current PR and HEAD-bound checks.
    `submitted-for-review`, local verification and GitHub checks are separate;

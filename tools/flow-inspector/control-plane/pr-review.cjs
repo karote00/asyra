@@ -277,6 +277,7 @@ function createReviewOwner(
           ...remote,
           branch: 'codex/flow-review/' + id + '/' + input.attemptId,
           title,
+          draft: false,
           body: [
             'Bounded candidate review for ' + input.stepId + '.',
             '',
@@ -290,7 +291,7 @@ function createReviewOwner(
             'Source adapter: ' +
               input.adapter +
               '. Local verification passed the retained obligations.',
-            'This is not independently protected verification. Draft PR creation and GitHub checks do not accept the local baseline.',
+            'This is not independently protected verification. PR creation and GitHub checks do not accept the local baseline.',
             'Review the exact source changes. Merge, release and publication are separate human actions.'
           ].join('\n')
         }
@@ -325,6 +326,10 @@ function createReviewOwner(
         need(
           current.state !== 'uncertain',
           'uncertain effect requires reconciliation'
+        )
+        need(
+          current.preview.draft === false,
+          'PR type changed - prepare a fresh preview'
         )
         const input = inputs(id, actor)
         need(

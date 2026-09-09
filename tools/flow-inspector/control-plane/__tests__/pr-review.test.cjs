@@ -145,6 +145,7 @@ test('eligible preview is read-only; exact confirmation submits review without a
   const f = fixture(),
     p = await prepare(f)
   assert.equal(p.state, 'preview')
+  assert.equal(p.preview.draft, false)
   assert.equal(f.counts.deliver, 0)
   assert.equal(p.preview.taskId, f.record.id)
   assert.equal(p.preview.attemptId, f.record.attempts[0].id)
@@ -178,6 +179,24 @@ test('eligible preview is read-only; exact confirmation submits review without a
   assert.equal(r.observation.number, 1)
   assert.equal(f.record.deliveryStatus, 'not-delivered')
   assert.equal(f.record.task.revision, 1)
+})
+test('retained draft preview cannot authorize ready-for-review creation after restart', async () => {
+  const f = fixture(),
+    p = structuredClone(await prepare(f))
+  delete p.preview.draft
+  p.previewDigest = sha256(JSON.stringify(p.preview))
+  fs.writeFileSync(
+    path.join(f.options.directory, f.record.id + '.json'),
+    JSON.stringify(p)
+  )
+  f.owner = createReviewOwner(root, f.options)
+  await assert.rejects(() => confirm(f, p), /fresh preview/)
+  assert.equal(f.counts.deliver, 0)
+  const fresh = await prepare(f)
+  assert.notEqual(fresh.previewDigest, p.previewDigest)
+  assert.equal(fresh.preview.draft, false)
+  await confirm(f, fresh)
+  assert.equal(f.counts.deliver, 1)
 })
 for (const [name, change] of [
   ['missing candidate', (f) => (f.record.changes = [])],
