@@ -308,12 +308,14 @@ function SceneWorkspace({
             if (window.innerWidth < 1100) setRightOpen(false)
           }}
         />
-        <span
-          className="text-[11px] text-[#718268]"
-          title="點擊 canvas 後：W/S 前後、A/D 左右、E/Q 上下；按住 Shift 加速"
+        <div
+          className="flex min-w-0 flex-1 flex-wrap items-center justify-center gap-2"
+          data-testid="viewport-toolbar"
         >
-          WASD 移動 - Q/E 升降 - Shift 加速
-        </span>
+          {runtime && <CameraToolbar runtime={runtime} onError={setError} />}
+          {runtime && <ZoomControls runtime={runtime} />}
+          {runtime && <MovementSpeedControl runtime={runtime} />}
+        </div>
         <PanelToggle
           side="right"
           open={rightOpen}
@@ -414,11 +416,8 @@ function SceneWorkspace({
             場景啟動失敗：{error}
           </div>
         )}
-        {runtime && <CameraToolbar runtime={runtime} onError={setError} />}
-        {runtime && <ZoomControls runtime={runtime} />}
-        {runtime && <MovementSpeedControl runtime={runtime} />}
         <div className="pointer-events-none absolute bottom-5 left-5 max-w-[calc(100%-10rem)] text-[10px] text-[#7b8873]">
-          Drag to look - Shift drag to pan - WASD to move
+          拖曳轉向 - Shift 拖曳平移 - WASD 移動 - Q/E 升降
         </div>
         <div className="pointer-events-none absolute bottom-5 right-5 flex items-center gap-2 rounded-full bg-white/60 px-3 py-1 text-[10px] text-[#607350]">
           <span className="h-1.5 w-1.5 rounded-full bg-[#819c4d]" />
@@ -468,16 +467,16 @@ function PanelToggle({
       className="flex h-9 w-9 items-center justify-center rounded-lg text-[#42624c] hover:bg-[#e3e9db]"
     >
       <svg
-        width="22"
-        height="22"
+        width="24"
+        height="24"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
         strokeWidth="1.5"
         aria-hidden="true"
       >
-        <rect x="3" y="4" width="18" height="16" rx="2" />
-        <path d={side === 'left' ? 'M9 4v16' : 'M15 4v16'} />
+        <rect x="4.75" y="4.75" width="14.5" height="14.5" rx="2" />
+        <path d={side === 'left' ? 'M9 4.75v14.5' : 'M15 4.75v14.5'} />
         <path d={arrowPaths[side]} />
       </svg>
     </button>
@@ -492,7 +491,7 @@ function CameraToolbar({
 }) {
   const view = useSyncExternalStore(runtime.subscribe, runtime.getView)
   return (
-    <div className="absolute right-4 top-16 flex max-w-[calc(100%-2rem)] flex-wrap gap-1 rounded-xl border border-white/80 bg-[#f9fbf4]/90 p-1 shadow-sm">
+    <div className="flex flex-wrap items-center justify-center gap-1 rounded-lg bg-[#edf1e8] p-1">
       {(Object.keys(CAMERA_LABELS) as CameraMode[]).map((mode) => (
         <button
           key={mode}
@@ -515,7 +514,7 @@ function MovementSpeedControl({ runtime }: { runtime: FarmRuntime }) {
   )
   return (
     <label
-      className="absolute right-4 top-40 flex items-center gap-2 rounded-lg bg-[#f9fbf4]/90 px-3 py-2 text-[11px] text-[#527048]"
+      className="flex flex-wrap items-center justify-center gap-2 rounded-lg px-2 py-2 text-xs text-[#527048]"
       title="右鍵＋滾輪調速；Shift 加速 4 倍；Alt＋滾輪光學縮放"
     >
       移動速度
@@ -542,7 +541,7 @@ function MovementSpeedControl({ runtime }: { runtime: FarmRuntime }) {
 function ZoomControls({ runtime }: { runtime: FarmRuntime }) {
   const percent = useSyncExternalStore(runtime.subscribeZoom, runtime.getZoom)
   return (
-    <div className="absolute right-4 top-28 flex gap-1 rounded-lg border border-white/80 bg-[#f9fbf4]/90 p-1 text-[11px] text-[#527048]">
+    <div className="flex flex-wrap justify-center gap-1 rounded-lg border border-[#d9dfd2] bg-white p-1 text-xs text-[#527048]">
       <button
         onClick={runtime.fit}
         title="適合畫面（⌘1）"

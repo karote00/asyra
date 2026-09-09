@@ -133,26 +133,37 @@ function ConfigurationForm({
         }}
       >
         <fieldset disabled={busy} className="grid grid-cols-2 gap-3">
-          {fields.map(([key, label]) => (
-            <label key={key} className="text-xs text-[#50664f]">
-              {label}
-              <input
-                aria-label={label}
-                type="number"
-                step="any"
-                value={Number.isFinite(draft[key]) ? draft[key] : ''}
-                onChange={(event) =>
-                  setDraft({
-                    ...draft,
-                    [key]:
-                      event.target.value === ''
-                        ? Number.NaN
-                        : Number(event.target.value)
-                  })
-                }
-                className="mt-1 w-full rounded-lg border border-[#d4dccd] bg-white p-2 font-mono text-sm"
-              />
-            </label>
+          {fields.map(([key, label], index) => (
+            <div key={key} className="contents">
+              {(index === 0 || index === 3 || index === 7) && (
+                <h3 className="col-span-2 mt-2 border-b border-[#d9dfd2] pb-2 text-xs font-semibold">
+                  {{ 0: '溫室尺寸', 3: '鋼管位置', 7: '拉網高度' }[index]}
+                </h3>
+              )}
+              <label key={key} className="text-xs text-[#50664f]">
+                {label}
+                <span className="measurement-field mt-1">
+                  <input
+                    aria-description="單位：公尺"
+                    aria-label={label}
+                    type="number"
+                    step="any"
+                    value={Number.isFinite(draft[key]) ? draft[key] : ''}
+                    onChange={(event) =>
+                      setDraft({
+                        ...draft,
+                        [key]:
+                          event.target.value === ''
+                            ? Number.NaN
+                            : Number(event.target.value)
+                      })
+                    }
+                    className="min-w-0 w-full bg-transparent px-2 py-2 text-right text-sm tabular-nums"
+                  />
+                  <span className="field-unit">m</span>
+                </span>
+              </label>
+            </div>
           ))}
         </fieldset>
         <div className="mt-5 flex items-center justify-between">
@@ -175,7 +186,7 @@ function ConfigurationForm({
           {draft.strips.map((strip, i) => (
             <div
               key={i}
-              className="grid grid-cols-[1rem_minmax(0,1fr)_3rem_auto_4.5rem] items-center gap-1 rounded-lg bg-[#edf1e8] p-2"
+              className="grid grid-cols-[1rem_minmax(0,1fr)_4.5rem_6rem] items-center gap-1 rounded-lg bg-[#edf1e8] p-2"
             >
               <span className="font-mono text-xs">{i + 1}</span>
               <select
@@ -195,43 +206,46 @@ function ConfigurationForm({
                     )
                   })
                 }
-                className="min-w-0 rounded border bg-white p-1 text-xs"
+                className="min-w-0 h-9 rounded-lg border border-[#d4dccd] bg-white px-1 text-xs"
               >
                 <option value="soil">土壤</option>
                 <option value="drain">水道</option>
               </select>
-              <input
-                disabled={busy}
-                aria-label={`第 ${i + 1} 項寬度`}
-                type="number"
-                step="any"
-                value={Number.isFinite(strip.width) ? strip.width : ''}
-                onChange={(event) =>
-                  setDraft({
-                    ...draft,
-                    strips: draft.strips.map((item, j) =>
-                      j === i
-                        ? {
-                            ...item,
-                            width:
-                              event.target.value === ''
-                                ? Number.NaN
-                                : Number(event.target.value)
-                          }
-                        : item
-                    )
-                  })
-                }
-                className="min-w-0 rounded border bg-white p-1 text-xs"
-              />
-              <span className="text-xs">m</span>
+              <span className="measurement-field">
+                <input
+                  aria-description="單位：公尺"
+                  disabled={busy}
+                  aria-label={`第 ${i + 1} 項寬度`}
+                  type="number"
+                  step="any"
+                  value={Number.isFinite(strip.width) ? strip.width : ''}
+                  onChange={(event) =>
+                    setDraft({
+                      ...draft,
+                      strips: draft.strips.map((item, j) =>
+                        j === i
+                          ? {
+                              ...item,
+                              width:
+                                event.target.value === ''
+                                  ? Number.NaN
+                                  : Number(event.target.value)
+                            }
+                          : item
+                      )
+                    })
+                  }
+                  className="min-w-0 w-full bg-transparent py-2 pl-1 text-right text-xs tabular-nums"
+                />
+                <span className="field-unit">m</span>
+              </span>
               <div className="flex items-center">
                 <button
                   type="button"
                   aria-label={`Move strip ${i + 1} up`}
                   disabled={busy || i === 0}
                   onClick={() => reorder(i, -1)}
-                  className="h-6 w-6 shrink-0 rounded text-[#59694c] focus-visible:outline-2 disabled:opacity-30"
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded hover:bg-white text-[#59694c] focus-visible:outline-2 disabled:opacity-30"
                 >
                   <StripActionIcon kind="up" />
                 </button>
@@ -240,7 +254,7 @@ function ConfigurationForm({
                   aria-label={`Move strip ${i + 1} down`}
                   disabled={busy || i === draft.strips.length - 1}
                   onClick={() => reorder(i, 1)}
-                  className="h-6 w-6 shrink-0 rounded text-[#59694c] focus-visible:outline-2 disabled:opacity-30"
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded hover:bg-white text-[#59694c] focus-visible:outline-2 disabled:opacity-30"
                 >
                   <StripActionIcon kind="down" />
                 </button>
@@ -254,7 +268,7 @@ function ConfigurationForm({
                       strips: draft.strips.filter((_, j) => j !== i)
                     })
                   }
-                  className="h-6 w-6 shrink-0 rounded text-red-700 focus-visible:outline-2 disabled:opacity-30"
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded hover:bg-white text-red-700 focus-visible:outline-2 disabled:opacity-30"
                 >
                   <StripActionIcon kind="remove" />
                 </button>
@@ -273,7 +287,7 @@ function ConfigurationForm({
             {error}
           </p>
         )}
-        <div className="mt-4 flex flex-wrap items-center gap-4">
+        <div className="sticky -bottom-4 -mx-4 mt-4 flex flex-wrap items-center gap-3 border-t border-[#d9dfd2] bg-[#fafbf7] p-4">
           <button
             disabled={busy}
             type="submit"

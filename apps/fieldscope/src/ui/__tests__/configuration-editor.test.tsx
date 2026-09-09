@@ -30,6 +30,13 @@ it('uses ordered 24px row icons and edits only the draft until Apply', async () 
     await act(async () =>
       root.render(<ConfigurationEditor runtime={runtime} />)
     )
+    for (const input of host.querySelectorAll('input[type="number"]')) {
+      expect(input.getAttribute('aria-description')).toBe('單位：公尺')
+      expect(
+        input.closest('.measurement-field')?.querySelector('.field-unit')
+          ?.textContent
+      ).toBe('m')
+    }
     const row = button('Move strip 1 up').parentElement
     if (!row) throw new Error('Missing strip actions')
     expect(row.querySelectorAll('button').length).toBe(3)

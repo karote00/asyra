@@ -18,8 +18,8 @@ test('applies one configuration transaction and supports button and keyboard und
     const button = page.getByRole('button', { name: label, exact: true })
     const bounds = await button.boundingBox()
     if (!bounds) throw new Error('Missing strip action')
-    expect(bounds.width).toBe(24)
-    expect(bounds.height).toBe(24)
+    expect(bounds.width).toBe(32)
+    expect(bounds.height).toBe(32)
     expect(bounds.y + bounds.height / 2).toBeCloseTo(
       rowBounds.y + rowBounds.height / 2
     )

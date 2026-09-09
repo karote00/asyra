@@ -27,7 +27,8 @@ summary {
 }
 button:focus-visible,
 input:focus-visible,
-summary:focus-visible {
+summary:focus-visible,
+select:focus-visible {
   outline: 2px solid #71983a;
   outline-offset: 4px;
 }
@@ -41,9 +42,11 @@ canvas {
 
 .scene-workspace {
   --left-panel-width: 250px;
-  --right-panel-width: 340px;
+  --right-panel-width: 360px;
   display: grid;
-  grid-template-columns: var(--left-panel-width) minmax(0, 1fr) var(--right-panel-width);
+  grid-template-columns: var(--left-panel-width) minmax(0, 1fr) var(
+      --right-panel-width
+    );
   position: relative;
   overflow: hidden;
   border: 1px solid #d9dfd2;
@@ -51,39 +54,100 @@ canvas {
   background: #fafbf7;
   transition: grid-template-columns 220ms ease;
 }
-.scene-workspace[data-left-open='false'] { --left-panel-width: 0px; }
-.scene-workspace[data-right-open='false'] { --right-panel-width: 0px; }
+.scene-workspace[data-left-open='false'] {
+  --left-panel-width: 0px;
+}
+.scene-workspace[data-right-open='false'] {
+  --right-panel-width: 0px;
+}
 .workspace-toolbar {
   grid-column: 1 / -1;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 48px;
-  padding: 0 12px;
+  min-height: 48px;
+  gap: 8px;
+  padding: 8px;
   border-bottom: 1px solid #d9dfd2;
   z-index: 30;
 }
-.workspace-panel { min-width: 0; overflow: hidden; position: relative; }
+.workspace-panel {
+  min-width: 0;
+  overflow: hidden;
+  position: relative;
+}
 .workspace-panel-content {
   height: 100%;
   position: absolute;
   inset: 0;
   overflow: auto;
   overscroll-behavior: contain;
-  transition: transform 220ms ease, visibility 220ms;
+  transition:
+    transform 220ms ease,
+    visibility 220ms;
 }
-.workspace-panel-left .workspace-panel-content { width: 250px; border-right: 1px solid #d9dfd2; }
-.workspace-panel-right .workspace-panel-content { width: 340px; border-left: 1px solid #d9dfd2; }
-[data-left-open='false'] .workspace-panel-left .workspace-panel-content { transform: translateX(-100%); visibility: hidden; }
-[data-right-open='false'] .workspace-panel-right .workspace-panel-content { transform: translateX(100%); visibility: hidden; }
+.workspace-panel-left .workspace-panel-content {
+  width: 250px;
+  border-right: 1px solid #d9dfd2;
+}
+.workspace-panel-right .workspace-panel-content {
+  width: 360px;
+  border-left: 1px solid #d9dfd2;
+}
+[data-left-open='false'] .workspace-panel-left .workspace-panel-content {
+  transform: translateX(-100%);
+  visibility: hidden;
+}
+[data-right-open='false'] .workspace-panel-right .workspace-panel-content {
+  transform: translateX(100%);
+  visibility: hidden;
+}
 @media (max-width: 1099px) {
-  .scene-workspace { grid-template-columns: minmax(0, 1fr); }
-  .workspace-panel { position: absolute; top: 48px; bottom: 0; z-index: 20; width: min(340px, calc(100% - 48px)); pointer-events: none; }
-  .workspace-panel-left { left: 0; }
-  .workspace-panel-right { right: 0; }
-  .workspace-panel .workspace-panel-content { width: 100%; background: #fafbf7; pointer-events: auto; box-shadow: 0 8px 24px #263e3026; }
-  .workspace-canvas { grid-column: 1; }
+  .scene-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .workspace-panel {
+    position: absolute;
+    grid-row: 2;
+    grid-column: 1;
+    top: 0;
+    bottom: 0;
+    z-index: 20;
+    width: min(360px, calc(100% - 24px));
+    pointer-events: none;
+  }
+  .workspace-panel-left {
+    left: 0;
+  }
+  .workspace-panel-right {
+    right: 0;
+  }
+  .workspace-panel .workspace-panel-content {
+    width: 100%;
+    background: #fafbf7;
+    pointer-events: auto;
+    box-shadow: 0 8px 24px #263e3026;
+  }
+  .workspace-canvas {
+    grid-column: 1;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
-  .scene-workspace, .workspace-panel-content { transition: none; }
+  .scene-workspace,
+  .workspace-panel-content {
+    transition: none;
+  }
+}
+
+.measurement-field {
+  @apply flex min-w-0 items-center overflow-hidden rounded-lg border border-[#d4dccd] bg-white focus-within:border-[#315a43] focus-within:ring-1 focus-within:ring-[#315a43];
+}
+.field-unit {
+  @apply shrink-0 px-2 text-xs text-[#718268];
+}
+.measurement-field input:focus-visible {
+  outline: none;
+}
+button:disabled {
+  cursor: default;
 }

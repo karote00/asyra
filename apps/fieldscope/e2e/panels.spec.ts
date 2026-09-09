@@ -6,6 +6,16 @@ test('side panels collapse outward without remounting the canvas or discarding d
   await page.goto('/')
   await expect(page.getByText('空間模型已就緒')).toBeVisible()
   const scene = page.getByTestId('scene')
+  const checkToolbar = async () => {
+    const toolbar = await page.getByTestId('viewport-toolbar').boundingBox()
+    const viewport = await scene.boundingBox()
+    if (!toolbar || !viewport) throw new Error('Missing camera toolbar')
+    expect(toolbar.y + toolbar.height).toBeLessThanOrEqual(viewport.y)
+    for (const input of await page.locator('.measurement-field input').all()) {
+      await expect(input).toHaveAttribute('aria-description', '單位：公尺')
+    }
+  }
+  await checkToolbar()
   const canvas = await page.locator('canvas').elementHandle()
   const original = await scene.boundingBox()
   const left = await page.locator('#layer-panel').boundingBox()
@@ -38,6 +48,9 @@ test('side panels collapse outward without remounting the canvas or discarding d
     page.getByRole('button', { name: '復原 ⌘Z', exact: true })
   ).toBeDisabled()
   await page.getByRole('button', { name: '展開圖層面板', exact: true }).click()
+  await expect
+    .poll(async () => (await scene.boundingBox())?.width ?? 0)
+    .toBeCloseTo(original.width, 0)
   await page.getByRole('button', { name: '適合畫面 ⌘1', exact: true }).click()
   await page.screenshot({
     path: testInfo.outputPath('panels-expanded.png'),
@@ -60,6 +73,17 @@ test('side panels collapse outward without remounting the canvas or discarding d
       () => document.documentElement.scrollWidth <= innerWidth
     )
   ).toBe(true)
+  await checkToolbar()
+  const input = page.getByLabel('溫室縱向深度', { exact: true })
+  await input.focus()
+  await page.keyboard.press('Tab')
+  await expect(page.getByLabel('單棟寬度', { exact: true })).toBeFocused()
+  const footer = await page
+    .getByRole('button', { name: '套用設定', exact: true })
+    .boundingBox()
+  const panel = await page.locator('#configuration-panel').boundingBox()
+  if (!footer || !panel) throw new Error('Missing editor footer')
+  expect(footer.y + footer.height).toBeLessThanOrEqual(panel.y + panel.height)
   await page.screenshot({
     path: testInfo.outputPath('mobile-editor.png'),
     fullPage: true

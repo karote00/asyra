@@ -9,3 +9,7 @@ Unfinished text stays in the editor. Apply validates all values before a single 
 The right panel contains the editor; the left contains presentation controls. Icon buttons above the canvas collapse each panel toward its screen edge. Collapsed controls are inert. Narrow layouts overlay panels rather than destroying the canvas. Panel toggles, layer changes, camera navigation and drafts create no history entries and do not rebuild geometry.
 
 Each strip row ends with an up triangle, down triangle, and red X. Controls occupy one row and use 24×24 SVG viewports with drawing contained in the central 16×16 area. Reordering/removal edit only the draft until Apply; first/last reordering and removal of the final strip are disabled.
+
+## Workbench usability
+
+The editor groups greenhouse dimensions, support placement and net heights. Numeric values use a shared field treatment with a non-editable metre suffix, aligned tabular values and a visible focus state. Strip actions retain 24px icons with central 16px drawing while providing at least 32px click targets. Apply/discard remain draft actions with an always-reachable sticky footer. Camera presets, fit/zoom and speed form a responsive toolbar above the viewport rather than floating over plants; controls wrap without horizontal page overflow on narrow screens. Panel collapse preserves drafts and the canvas instance.
