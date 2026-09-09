@@ -22,6 +22,7 @@ Repository automation contracts:
 
 - workspace build, generated-template, and release validation:
   `package-release-validation.md`
+- manual App deployment and recovery: `manual-app-release.md`
 
 ## Authoring Rule
 

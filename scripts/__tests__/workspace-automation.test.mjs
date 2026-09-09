@@ -340,15 +340,15 @@ test('CI, E2E, and release validation own their bounded integration gates', () =
   assert.match(releaseValidation, /yarn release:app:check --prod=\$\{appName\}/)
 })
 
-test('Framework site Git deployments follow artifact inputs instead of release versions', () => {
+test('Framework site deployments are independent of PR CI and Git pushes', () => {
   const siteVercel = readJSON('apps/asyra-framework-site/vercel.json')
   const ignoreBuild = readText(
     'apps/asyra-framework-site/scripts/vercel-ignore-build.mjs'
   )
   const ci = readText('.github/workflows/main.yml')
 
-  assert.equal(siteVercel.git.deploymentEnabled, true)
-  assert.equal(siteVercel.ignoreCommand, 'node scripts/vercel-ignore-build.mjs')
+  assert.equal(siteVercel.git.deploymentEnabled, false)
+  assert.equal(siteVercel.ignoreCommand, undefined)
   assert.match(ignoreBuild, /apps\/asyra-framework-site/)
   assert.match(ignoreBuild, /docs\/public/)
   assert.match(ignoreBuild, /packages/)

@@ -4,10 +4,6 @@
   "buildCommand": "turbo run react:build",
   "outputDirectory": "dist/frontend",
   "git": {
-    "deploymentEnabled": {
-      "main": true,
-      "development": false,
-      "*": false
-    }
+    "deploymentEnabled": false
   }
 }

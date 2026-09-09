@@ -4,40 +4,18 @@ This workflow owns the repository automation contract between workspace
 manifests, Turbo, generated app templates, CI, and the explicit release
 command.
 
-## PR Checks and Vercel Deployment Status
+## PR Checks and App Deployment
 
-The PR checks list combines GitHub Actions CI with statuses reported by the
-Vercel Git integration. Vercel deployments can run alongside CI; a successful
-Vercel check does not mean the test jobs passed or the PR was merged.
+PR validation is independent of hosting. Ready PRs require `validate`,
+`framework-release-readiness`, `e2e-tests`, `collaboration-e2e-tests`, and
+`production-artifact-tests`. Draft jobs remain deferred until ready for review.
+Vercel statuses from older Git-integrated deployments are historical evidence,
+not merge prerequisites or proof that CI passed.
 
-| Check | Meaning |
-| --- | --- |
-| `Vercel – asyra-framework` | Deployment status for the Framework website. On a feature-branch PR, this is a Preview deployment. |
-| `Vercel – asyra-design` | Deployment status for Asyra Design. On a feature-branch PR, this is a Preview deployment. |
-| `Vercel Preview Comments` | Updates the PR preview comment; it is not a third deployment. |
-
-Pushing a feature/PR branch can create or update Preview deployments. Merging
-the reviewed PR into the configured Production branch, `main`, can trigger
-the automatic Production deployment. The Git integration reacts to branch
-updates, so direct pushes to `main` must not be used to bypass PR review.
-
-Vercel's generic `Deployment has completed` message does not distinguish
-Preview from Production. Open the check's deployment details and verify
-**Environment**, **Source branch/commit**, and **Domains**. A completed Preview
-deployment does not update the Production site.
-
-The Framework website enables Git deployments in
-`apps/asyra-framework-site/vercel.json` and filters build inputs through
-`scripts/vercel-ignore-build.mjs` within that app. This behavior was enabled
-by PR #129 on August 28, 2026. As of September 5, 2026, the Asyra Design
-provider setting for skipping unaffected projects is disabled, so a
-website-only PR can also create a Design Preview. This is an observed provider
-setting, not an instruction to change deployment behavior.
-
-References:
-
-- <a href="https://github.com/karote00/asyra/pull/129" target="_blank" rel="noopener noreferrer">PR #129: Framework website Git deployment configuration</a>
-- <a href="https://vercel.com/docs/git/vercel-for-github" target="_blank" rel="noopener noreferrer">Vercel for GitHub</a>
+The three hosted Apps use the explicit [manual App release workflow](manual-app-release.md).
+Their Git connections are removed during cutover, and repository configurations
+also disable automatic Git deployment. A push, PR or merge does not request an
+App deployment. Package registry publication remains a separate workflow.
 
 ## Workspace Build Graph
 
