@@ -404,6 +404,11 @@ and leave minimum clearance at **20 mm** and the interval at **0–8 s**.
 4. Open **Runs & compare** and check C, B, then A. **Selected comparison runs**
    assigns slots 1, 2 and 3 in that order. Remove a slot to compare two, or
    reselect it to append it. Click **Compare selected runs** explicitly.
+   The button shows a spinner and **Comparing runs…** while pending and prevents
+   duplicate submission. Completion automatically scrolls to and focuses the
+   comparison region; no manual search below the selected-run details is needed.
+   Reduced-motion preference disables animated scrolling. Changing selection or
+   closing the dialog cancels pending comparison.
    Expect matching method/scope/rule/interval and a `workcell.bodies` input
    difference. This example reports complete coverage; compare its stored
    bounds and findings without treating a method verdict as equipment approval.

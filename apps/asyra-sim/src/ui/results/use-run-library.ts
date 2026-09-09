@@ -37,20 +37,54 @@ export function useRunLibrary({
     ) && comparisonState.sources.length === comparisonRuns.length
       ? comparisonState.value
       : null
-  const clearComparison = () => setComparisonState(null)
+  const [pendingComparison, setPendingComparison] = useState<
+    readonly RunRecord[] | null
+  >(null)
+  const comparisonRequest = useRef<readonly RunRecord[] | null>(null)
+
+  const clearComparison = () => {
+    comparisonRequest.current = null
+    setPendingComparison(null)
+    setComparisonState(null)
+  }
+
   const compareSelected = () => {
-    try {
-      setComparisonState({
-        value: compareRuns(comparisonRuns),
-        sources: comparisonRuns
-      })
-      setError('')
-    } catch (reason) {
-      setError(errorMessage(reason))
-    }
+    if (comparisonRequest.current) return
+    comparisonRequest.current = comparisonRuns
+    setPendingComparison(comparisonRuns)
+    setComparisonState(null)
+    setError('')
   }
 
   useEffect(() => {
+    if (!pendingComparison) return
+
+    // Give the pending button a paint before the synchronous stored-input comparison.
+    // This is one cancellable request, not a recurring rendering loop or a minimum delay.
+    let frame = requestAnimationFrame(() => {
+      frame = requestAnimationFrame(() => {
+        if (comparisonRequest.current !== pendingComparison) return
+        try {
+          setComparisonState({
+            value: compareRuns(pendingComparison),
+            sources: pendingComparison
+          })
+        } catch (reason) {
+          setError(errorMessage(reason))
+        } finally {
+          comparisonRequest.current = null
+          setPendingComparison(null)
+        }
+      })
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [pendingComparison])
+
+  useEffect(() => {
+    if (comparisonRequest.current?.some((run) => !runs.includes(run))) {
+      comparisonRequest.current = null
+      setPendingComparison(null)
+    }
     setComparisonIds((current) => {
       const retained = current.filter((id) =>
         runs.some((run) => run.result.runId === id)
@@ -139,6 +173,7 @@ export function useRunLibrary({
     setComparisonIds,
     comparison,
     comparisonRuns,
+    comparing: pendingComparison !== null,
     clearComparison,
     compareSelected,
     error,

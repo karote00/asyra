@@ -92,9 +92,32 @@ test('independent A/B/C candidates retain and compare real runs with traceable b
   await expect(library.getByRole('checkbox')).toHaveCount(3)
   for (let index = 0; index < 3; index++)
     await library.getByRole('checkbox').nth(index).check()
-  await library
-    .getByRole('button', { name: 'Compare selected runs (3/3)' })
-    .click()
+  const compareAction = library.getByRole('button', {
+    name: 'Compare selected runs (3/3)'
+  })
+  const pendingPaint = compareAction.evaluate(
+    (button) =>
+      new Promise<boolean>((resolve) => {
+        let frame = 0
+        const timeout = setTimeout(() => {
+          cancelAnimationFrame(frame)
+          resolve(false)
+        }, 5000)
+        const observe = () => {
+          if (
+            button.getAttribute('aria-busy') === 'true' &&
+            button.hasAttribute('disabled') &&
+            button.textContent?.includes('Comparing runs')
+          ) {
+            clearTimeout(timeout)
+            resolve(true)
+          } else frame = requestAnimationFrame(observe)
+        }
+        frame = requestAnimationFrame(observe)
+      })
+  )
+  await compareAction.click()
+  expect(await pendingPaint).toBe(true)
   const comparison = library.getByRole('region', { name: 'Run comparison' })
   await expect(comparison).toContainText(
     'Matching method, scope, rule and interval'
@@ -102,7 +125,14 @@ test('independent A/B/C candidates retain and compare real runs with traceable b
   await expect(comparison).toContainText('workcell.bodies')
   await expect(comparison).toContainText('B - fixture revision')
   await expect(comparison).toContainText('C - further revision')
-  await comparison.scrollIntoViewIfNeeded()
+  await expect(comparison).toBeFocused()
+  await expect(
+    comparison.getByRole('heading', {
+      name: 'Matching method, scope, rule and interval',
+      exact: true
+    })
+  ).toBeInViewport()
+  await expect(comparison).toBeInViewport({ ratio: 1 })
   await page.screenshot({
     path: info.outputPath('three-candidate-comparison.png')
   })
@@ -208,6 +238,23 @@ test('independent A/B/C candidates retain and compare real runs with traceable b
   await expect(comparison).toContainText(
     'Matching method, scope, rule and interval'
   )
+  await expect(comparison).toBeFocused()
+  await expect(
+    comparison.getByRole('heading', {
+      name: 'Matching method, scope, rule and interval',
+      exact: true
+    })
+  ).toBeInViewport()
+  await expect
+    .poll(async () => {
+      const resultBox = await comparison.boundingBox()
+      const dialogBox = await library.boundingBox()
+      return resultBox && dialogBox ? resultBox.y - dialogBox.y : Infinity
+    })
+    .toBeLessThan(50)
+  await page.screenshot({
+    path: info.outputPath('automatic-comparison-narrow.png')
+  })
   await comparison.locator('article').last().scrollIntoViewIfNeeded()
   await page.screenshot({
     path: info.outputPath('reopened-three-candidate-comparison.png')

@@ -197,7 +197,7 @@ yarn workspace @asyra/asyra-sim test:local
 yarn workspace @asyra/asyra-sim build
 yarn workspace @asyra/asyra-sim lint
 yarn lint:naming
-node --test tools/flow-inspector/workspace/__tests__/*.test.cjs
+yarn workspace @asyra/flow-inspector test:contracts
 node --test scripts/__tests__/test-file-placement.test.mjs
 APP_URL=http://127.0.0.1:3020 yarn workspace @asyra/asyra-sim test:e2e src/analysis/__tests__/runner.browser.spec.ts src/storage/__tests__/runtime.browser.spec.ts e2e/__tests__/candidate-comparison.spec.ts --output=../../.artifacts/m4-final-browser
 ```
@@ -257,3 +257,46 @@ render-time validity and never recompute comparison on unrelated renders.
 Gate: run-library red/green with five unchanged input notifications, removal,
 reappearance and unchanged comparator call count, then full App and affected E2E.
 This is a correction to the current UI diff, not a new discovery class or owner.
+
+
+### User review correction - comparison feedback and navigation
+
+User review on 2026-09-09 found that Compare selected runs appeared inactive
+because new output was below the viewport. Frozen correction: existing `ui`
+owner and retained-data-to-ui route only; inputs are the selected immutable
+records, output is pending feedback followed by the existing comparison and
+explicit result navigation. UI owns one cancellable pending presentation request;
+`storage/compareRuns` remains the sole comparator, invoked once per completed
+explicit request. No cache, solver, canonical data or persistence change.
+
+Allowed files: current results controller/view, direct formal UI/E2E tests,
+section 9, current Inspector and operation guide. Extend the existing condition
+with visible pending feedback before computation, duplicate-submit protection,
+request retirement on selection/source/lifetime changes, and automatic scroll
+and keyboard focus on success. Failure restores the button and exposes the
+existing error without navigating to obsolete output. No artificial wait budget.
+Gates: test-first pending/work-count/cancellation/failure and real viewport/focus
+regressions; focused UI plus affected comparison/retained E2E at 3020, screenshot
+review, full App tests, build/typecheck/lint, naming, Inspector and placement.
+Do not revisit the other five completed owners or declare M4 user acceptance.
+
+
+Correction evidence: the original four UI cases passed while five new cases
+failed before implementation (`m4-feedback-red.log`); the ordinary browser case
+failed result focus without test-driven scrolling (`m4-feedback-red-browser.log`).
+After correction, all nine UI cases pass and the complete App suite passes
+**668 tests in 118 files**. The three affected comparison/retention browser cases
+pass, including a DOM frame observation of the busy disabled button before
+completion. The final A/B/C rerun also waits for the complete desktop comparison
+or the narrow-view result heading to enter its destination before screenshots,
+without scrolling the result on behalf of the App. Build/typecheck, App lint,
+naming, full Inspector contracts and placement pass. Evidence uses the
+`.artifacts/m4-feedback-*` log and screenshot paths; prior milestone evidence
+above remains the historical baseline.
+
+Agent visual review passed for the final desktop and 576 x 690 screenshots in
+`.artifacts/m4-feedback-final-browser/`. Interactive review also used the user's
+existing Chrome project `8c93ec70-87a9-4004-97ba-470cbb11f1e6` on the same 3020
+server: select the three retained checkboxes, click Compare, observe automatic
+scrolling and focused Run comparison. No import, model edit, run or canonical
+write was needed. M4 acceptance is still pending the user's review of this fix.

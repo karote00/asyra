@@ -489,6 +489,12 @@ comparison. Present execution, coverage and verdict with independent labels.
 At 576 x 690, history, selected runs, comparison differences and export controls
 remain reachable without horizontal clipping or compressed parallel columns.
 Keyboard operation and closing the dialog preserve the ordinary focus path.
+Explicit comparison first paints a pending button state and prevents duplicate
+submission. Success automatically scrolls to and focuses the comparison region;
+users need not discover new output below the viewport. Selection/source changes
+or dialog retirement cancel pending work. Failure restores the action and exposes
+the error without navigating to stale output. Comparing never adds an artificial
+minimum delay or starts formal analysis.
 
 Editing a project during analysis does not change the in-flight snapshot.
 The result remains bound to the original revision. New geometry, trajectory,

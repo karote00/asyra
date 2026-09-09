@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { RunContext } from './run-context'
 import { type RunComparison } from '../../storage/run-comparison'
 
@@ -6,9 +7,23 @@ export function RunComparisonView({
 }: {
   comparison: RunComparison
 }) {
+  const region = useRef<HTMLElement>(null)
+
+  useEffect(() => {
+    region.current?.focus({ preventScroll: true })
+    region.current?.scrollIntoView({
+      block: 'start',
+      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        ? 'instant'
+        : 'smooth'
+    })
+  }, [comparison])
+
   return (
     <section
-      className="run-comparison border-t border-t-sim-border pt-5 grid gap-3"
+      ref={region}
+      tabIndex={-1}
+      className="run-comparison scroll-mt-4 border-t border-t-sim-border pt-5 grid gap-3"
       aria-label="Run comparison"
     >
       <h3>

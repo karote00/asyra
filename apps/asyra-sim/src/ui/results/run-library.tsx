@@ -42,6 +42,7 @@ export function RunLibrary({
     setComparisonIds,
     comparison,
     comparisonRuns,
+    comparing,
     clearComparison,
     compareSelected,
     error,
@@ -224,10 +225,21 @@ export function RunLibrary({
 
           <button
             className="primary bg-sim-accent text-[#fff] border-sim-accent [&:hover]:bg-sim-accent-hover"
-            disabled={comparisonIds.length < 2}
+            disabled={comparing || comparisonIds.length < 2}
+            aria-busy={comparing}
             onClick={compareSelected}
           >
-            Compare selected runs ({comparisonIds.length}/3)
+            {comparing ? (
+              <span className="inline-flex items-center justify-center gap-2">
+                <span
+                  aria-hidden="true"
+                  className="size-3 rounded-full border-2 border-current border-r-transparent animate-spin motion-reduce:animate-none"
+                />
+                Comparing runs…
+              </span>
+            ) : (
+              `Compare selected runs (${comparisonIds.length}/3)`
+            )}
           </button>
         </section>
 
