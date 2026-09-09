@@ -5,6 +5,7 @@ import { useLayoutEffect, useRef } from 'react'
 
 import { DialogCloseButton } from '@/components/dialog-close-button'
 import { useModalDialog } from '@/components/use-modal-dialog'
+import { SITE_ACTIONS } from '@/lib/site-interaction-analytics.mjs'
 
 const navigationScrollKey = 'asyra-docs-navigation-scroll-top'
 
@@ -93,6 +94,7 @@ export function DocsNavigation({
       </aside>
       <button
         className="docs-navigation-trigger"
+        data-site-action={SITE_ACTIONS.docsOpen.id}
         onClick={openDialog}
         ref={triggerRef}
         type="button"

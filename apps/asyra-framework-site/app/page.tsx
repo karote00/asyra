@@ -193,12 +193,14 @@ export default function HomePage() {
             </p>
             <div className="button-row">
               <a
+                data-site-cta=""
                 className="button button--red"
                 href="/docs/start/custom-composition"
               >
                 Start building
               </a>
               <a
+                data-site-cta=""
                 className="text-action"
                 href="https://asyra-design.vercel.app/?fileId=demo"
                 rel="noopener noreferrer"
@@ -289,6 +291,7 @@ export default function HomePage() {
             </ul>
             <div className="evidence-actions">
               <a
+                data-site-cta=""
                 className="button button--red"
                 href="https://asyra-design.vercel.app/?fileId=demo"
                 rel="noopener noreferrer"
@@ -296,7 +299,7 @@ export default function HomePage() {
               >
                 Open the live product
               </a>
-              <a className="text-action" href="/asyra-design">
+              <a data-site-cta="" className="text-action" href="/asyra-design">
                 Read the product case
               </a>
             </div>
@@ -606,7 +609,9 @@ export const reviewActions = defineFeature(
               <article key={path.label}>
                 <p>{path.label}</p>
                 <span>{path.body}</span>
-                <a href={path.href}>{path.link}</a>
+                <a data-site-cta="" href={path.href}>
+                  {path.link}
+                </a>
               </article>
             ))}
           </div>
@@ -632,6 +637,7 @@ export const reviewActions = defineFeature(
             width={1536}
           />
           <a
+            data-site-cta=""
             className="button button--red closing__button"
             href="/docs/start/custom-composition"
           >
