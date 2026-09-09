@@ -347,3 +347,11 @@ The user separately activated [local isolated agent execution](AGENT_EXECUTION.m
 while retaining all deferred Phase 4 enforcement requirements. Earlier statements
 that Phase 4 closeout did not activate Phase 5 remain historical facts. This new
 decision grants no merge, publication, protection or Phase 6 authority.
+
+## Bounded GitHub Review Activation - 2026-09-09
+
+[PR Review](PR_REVIEW.md) independently activates one local owner, one configured
+GitHub repository and one candidate review. The trusted delivery adapter uses
+explicit preview confirmation; external observations do not admit CI evidence,
+accept a local baseline or alter any of the six obligations. Earlier phase
+exclusions above describe their original activation, not this later grant.

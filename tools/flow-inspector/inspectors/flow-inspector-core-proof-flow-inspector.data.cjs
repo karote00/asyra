@@ -50,6 +50,89 @@ const data = {
   ],
   steps: [
     {
+      id: 'prepare-pr-review',
+      order: 12,
+      laneId: 'interaction',
+      title: 'Prepare candidate PR review',
+      ownerPackage: 'tools/flow-inspector/control-plane',
+      purpose: 'Prepare candidate PR review',
+      inputs: [
+        'artifact:agent-task-state',
+        'artifact:agent-candidate-verdict',
+        'current accepted revision and trusted delivery policy',
+        'digest-checked candidate and captured source',
+        'artifact:github-review-observation'
+      ],
+      outputs: ['artifact:pr-review-record'],
+      conditions: [
+        'Admit only exact passing latest candidate source and explicit actor confirmation. Persist preview and intent before effects; uncertain operations reconcile by query only; ordinary reads do no remote or source work.'
+      ],
+      bypasses: [
+        'Disabled integration has no effects. Missing, stale, denied or uncertain inputs cannot grant success.'
+      ],
+      allowedContributors: [
+        'trusted local action service',
+        'retained task evidence',
+        'fixed GitHub delivery adapter'
+      ],
+      forbiddenContributors: [
+        'candidate execution or self-authorization',
+        'PR content as permission',
+        'accepted baseline mutation',
+        'raw credentials or transport errors in output'
+      ],
+      cacheDimensions: [],
+      implementationBoundary: [
+        'tools/flow-inspector/control-plane/pr-review.cjs',
+        'tools/flow-inspector/control-plane/__tests__/pr-review.test.cjs'
+      ],
+      specRefs: [
+        '../../../docs/ai/tools/flow-inspector/PR_REVIEW.md#candidate-preview'
+      ],
+      failureOwnerStepId: 'prepare-pr-review'
+    },
+    {
+      id: 'deliver-github-review',
+      order: 13,
+      laneId: 'interaction',
+      title: 'Deliver and observe GitHub review',
+      ownerPackage: 'tools/flow-inspector/control-plane',
+      purpose: 'Deliver and observe GitHub review',
+      inputs: [
+        'artifact:pr-review-record',
+        'trusted fixed repository and base configuration',
+        'digest-checked candidate changes and baseline files',
+        'explicit effect checkpoint from review owner'
+      ],
+      outputs: ['artifact:github-review-observation'],
+      conditions: [
+        'Check clean checkout and exact remote base source before effects. Only confirmed frozen bytes may create a new branch and ready-for-review PR. Read current PR and HEAD-bound checks; unknown transport effects never become failure proof or authorize blind retry.'
+      ],
+      bypasses: [
+        'Disabled integration has no effects. Missing, stale, denied or uncertain inputs cannot grant success.'
+      ],
+      allowedContributors: [
+        'trusted local action service',
+        'retained task evidence',
+        'fixed GitHub delivery adapter'
+      ],
+      forbiddenContributors: [
+        'candidate execution or self-authorization',
+        'PR content as permission',
+        'accepted baseline mutation',
+        'raw credentials or transport errors in output'
+      ],
+      cacheDimensions: [],
+      implementationBoundary: [
+        'tools/flow-inspector/control-plane/github-delivery.cjs',
+        'tools/flow-inspector/control-plane/__tests__/github-delivery.test.cjs'
+      ],
+      specRefs: [
+        '../../../docs/ai/tools/flow-inspector/PR_REVIEW.md#confirmed-delivery'
+      ],
+      failureOwnerStepId: 'deliver-github-review'
+    },
+    {
       id: 'admit-agent-task',
       order: 9,
       laneId: 'proof',
@@ -410,6 +493,7 @@ const data = {
         'artifact:reviewed-contract-evolution',
         'artifact:ci-aggregate-evidence',
         'artifact:agent-task-state',
+        'artifact:pr-review-record',
         'server-selected accepted Git base'
       ],
       outputs: ['artifact:proof-board-state'],
@@ -445,7 +529,11 @@ const data = {
         'tools/flow-inspector/control-plane/__tests__/store.test.cjs',
         'tools/flow-inspector/control-plane/__tests__/server.test.cjs'
       ],
-      specRefs: ['#controlled-actions-and-retention', '#board'],
+      specRefs: [
+        '#controlled-actions-and-retention',
+        '#board',
+        '../../../docs/ai/tools/flow-inspector/PR_REVIEW.md#confirmed-delivery'
+      ],
       failureOwnerStepId: 'serve-proof-actions'
     },
     {
@@ -466,6 +554,7 @@ const data = {
         'On a newly selected failed attempt, select the first failing flow if the current flow has no failures; request viewer-owned framing of that flow’s failed step IDs once per changed result; preserve subsequent manual selection, pan and zoom on unchanged refresh. Success and unknown results do not move the viewport. Show a persistent run-level failure alert with named owner navigation and geometry-preserving failed card highlights; clear them on recovery.',
         'Bind cards only after graph DOM replacement; unchanged polling rebuilds neither graph nor bindings and performs no source capture. Target retirement disconnects observers and aborts reads.',
         'Project explicit work reports separately from verification and delivery. Project candidate verification, exact version review with retirement, all-flow CI blockers and artifacts, retry, and baseline/time-labeled shared viewing through the same action service. Show every registered negative scenario, snapshot and version identity, runner environment, named artifact links, and retained attempts; unsupported targets and untested steps receive no successful evidence. Prepare and decide mapping reviews through the action service with an explicit reason; never accept mapping changes in the client.',
+        'Project the selected task/attempt delivery preview, exact confirmation, audit and GitHub HEAD-bound observations through the common action service. Never combine local verification with remote checks or accept baseline from a PR.',
         'Loaded canvas step contracts must match admitted verification steps before projecting evidence or enabling launch.'
       ],
       bypasses: [
@@ -486,11 +575,54 @@ const data = {
         'tools/flow-inspector/control-plane/public/board.css',
         'tools/flow-inspector/control-plane/__tests__/board.test.cjs'
       ],
-      specRefs: ['#board'],
+      specRefs: [
+        '#board',
+        '../../../docs/ai/tools/flow-inspector/PR_REVIEW.md#review-observations'
+      ],
       failureOwnerStepId: 'render-proof-board'
     }
   ],
   routes: [
+    {
+      id: 'execute-agent-task-to-prepare-pr-review',
+      from: 'execute-agent-task',
+      to: 'prepare-pr-review',
+      kind: 'handoff',
+      predicate: 'The producer completed the declared review boundary.',
+      producedArtifacts: ['artifact:agent-task-state']
+    },
+    {
+      id: 'verify-agent-candidate-to-prepare-pr-review',
+      from: 'verify-agent-candidate',
+      to: 'prepare-pr-review',
+      kind: 'handoff',
+      predicate: 'The producer completed the declared review boundary.',
+      producedArtifacts: ['artifact:agent-candidate-verdict']
+    },
+    {
+      id: 'prepare-pr-review-to-deliver-github-review',
+      from: 'prepare-pr-review',
+      to: 'deliver-github-review',
+      kind: 'handoff',
+      predicate: 'The producer completed the declared review boundary.',
+      producedArtifacts: ['artifact:pr-review-record']
+    },
+    {
+      id: 'deliver-github-review-to-prepare-pr-review',
+      from: 'deliver-github-review',
+      to: 'prepare-pr-review',
+      kind: 'handoff',
+      predicate: 'The producer completed the declared review boundary.',
+      producedArtifacts: ['artifact:github-review-observation']
+    },
+    {
+      id: 'prepare-pr-review-to-serve-proof-actions',
+      from: 'prepare-pr-review',
+      to: 'serve-proof-actions',
+      kind: 'handoff',
+      predicate: 'The producer completed the declared review boundary.',
+      producedArtifacts: ['artifact:pr-review-record']
+    },
     {
       id: 'admit-proof-contract-to-admit-agent-task',
       from: 'admit-proof-contract',
@@ -631,6 +763,20 @@ const data = {
   ],
   artifacts: [
     {
+      id: 'artifact:pr-review-record',
+      title: 'Candidate PR review',
+      ownerStepId: 'prepare-pr-review',
+      channel: 'local-delivery',
+      consumerStepIds: ['deliver-github-review', 'serve-proof-actions']
+    },
+    {
+      id: 'artifact:github-review-observation',
+      title: 'GitHub review observation',
+      ownerStepId: 'deliver-github-review',
+      channel: 'github-delivery',
+      consumerStepIds: ['prepare-pr-review']
+    },
+    {
       id: 'artifact:admitted-agent-task',
       title: 'admitted-agent-task',
       ownerStepId: 'admit-agent-task',
@@ -649,14 +795,14 @@ const data = {
       title: 'agent-candidate-verdict',
       ownerStepId: 'verify-agent-candidate',
       channel: 'local-agent',
-      consumerStepIds: ['execute-agent-task']
+      consumerStepIds: ['execute-agent-task', 'prepare-pr-review']
     },
     {
       id: 'artifact:agent-task-state',
       title: 'agent-task-state',
       ownerStepId: 'execute-agent-task',
       channel: 'local-agent',
-      consumerStepIds: ['serve-proof-actions']
+      consumerStepIds: ['serve-proof-actions', 'prepare-pr-review']
     },
     {
       id: 'artifact:ci-aggregate-evidence',

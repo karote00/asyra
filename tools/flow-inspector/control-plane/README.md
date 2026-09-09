@@ -153,8 +153,9 @@ Required-check enforcement itself remains a repository setting.
 This is a trusted local development tool, with one bounded runner process group,
 loopback access, per-start mutation capability, explicit cancellation, and durable
 attempt identity. It does not sandbox hostile code. It supports these two flows;
-arbitrary flow onboarding, autonomous execution/token controls, ticket/PR
-mutations, and shared team hosting remain outside this trial. The Phase 4 CI
+arbitrary flow onboarding, autonomous execution/token controls, unconfigured external
+mutations and shared team hosting remain outside this trial. The separately
+activated bounded GitHub review is documented below. The Phase 4 CI
 admission adapter is implemented; mandatory protected remote execution remains
 blocked as described below.
 
@@ -529,3 +530,66 @@ entry; it never dispatches a model request.
 Disclosure titles remain unfilled on pointer hover. Keyboard focus retains a
 visible outline; current-page, selected-card and failure indicators continue to
 communicate their existing states. Standalone entries embed the same viewer style.
+
+## Bounded GitHub candidate review
+
+The [PR Review contract](../../../docs/ai/tools/flow-inspector/PR_REVIEW.md)
+selects one local human and one GitHub repository. Use installed authenticated
+`gh`; no provider authorization or model request is needed. The service selects
+the destination, never the candidate or HTTP request:
+
+```bash
+FLOW_PROOF_URL=http://127.0.0.1:4318 \
+FLOW_REVIEW_REPOSITORY=karote00/asyra FLOW_REVIEW_BASE=main \
+node tools/flow-inspector/control-plane/cli.cjs serve
+```
+
+Use a free port and preserve every other worktree/server. Create a deterministic
+candidate using the existing demonstration controls, or select a retained task
+whose captured inputs still match the base. A demonstration is not model evidence.
+Do not delete an unresolved provider record or create a new store to unblock it.
+GitHub review configuration grants no provider dispatch authority.
+
+1. Select **Finalize transaction state**, open **Flow verification**, and choose
+   the existing candidate under **Retained step tasks**.
+2. Open **Candidate GitHub PR review** and **Prepare PR preview**. The broker
+   validates source, all retained local obligations, accepted revision, a clean
+   checkout and the remote base's captured inputs. Preparation creates no remote
+   objects. A differing source closure or dirty checkout refuses delivery.
+3. Review the exact repository, base SHA, branch, changed files, title and body.
+   Open the frozen source diff and local evidence links. Check the explicit
+   confirmation only when this exact preview is approved, then select
+   **Create confirmed PR**. Branch and PR creation stay in the trusted
+   adapter. No source is applied to the checkout.
+4. **Refresh GitHub review** reads the current PR and HEAD-bound checks.
+   `submitted-for-review`, local verification and GitHub checks are separate;
+   closed, merged and changed HEAD observations never accept a baseline.
+5. An uncertain timeout stays uncertain. Refresh queries the deterministic branch
+   and PR identity; a missing result cannot prove failure and cannot authorize
+   another create. Definite no-effect authentication/permission/rate-limit errors
+   allow an explicit confirmation retry after the operator resolves the cause.
+
+The same capability and durable record serve Board, API and CLI:
+
+```bash
+node tools/flow-inspector/control-plane/cli.cjs --url http://127.0.0.1:4318 pr-prepare <task-id>
+node tools/flow-inspector/control-plane/cli.cjs --url http://127.0.0.1:4318 pr-show <task-id>
+node tools/flow-inspector/control-plane/cli.cjs --url http://127.0.0.1:4318 pr-confirm <task-id> <preview-digest> confirm
+node tools/flow-inspector/control-plane/cli.cjs --url http://127.0.0.1:4318 pr-refresh <task-id>
+```
+
+`GET /api/tasks/<uuid>/review` returns the retained record without GitHub I/O.
+`POST` at the same path accepts `{action:"prepare"}`, `{action:"refresh"}` or
+`{action:"confirm",previewDigest:"...",confirm:true}`. Unknown fields reject.
+No repository, base, command, credential or candidate path can be supplied there.
+Records and audit live in the existing store's `reviews/` directory. Ordinary
+reads reuse admitted records; explicit refresh does bounded GitHub reads. Large
+truncated tree/check inventories fail visibly rather than pretending completeness.
+
+Run `pr-review.test.cjs`, `github-delivery.test.cjs`, `operations.test.cjs` and
+`board.test.cjs` under the existing formal harness. Offline GitHub transports
+are fixtures; they do not establish live GitHub acceptance. The live acceptance
+case requires a separate exact preview and user confirmation. Required-check
+protection, independent verifier/issuer, model reconciliation, ticket/team work,
+hosting and standalone dynamic installation remain deferred. The package records
+a patch Changeset outside the Framework bulk-release allowlist.

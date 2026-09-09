@@ -158,3 +158,18 @@ An interruption notification is not cloud or billing settlement. User
 acknowledgement, handoff and restart cannot remove an unresolved dispatch block.
 Offline contract cases and read-only replay of existing live records prove this
 follow-up; no new provider execution or remote reconciliation is claimed.
+
+## 2026-09-09 - Complete bounded GitHub candidate review integration
+
+The local owner selected one repository and one candidate review, and explicitly
+changed PR creation to ready for review so CI executes. This supersedes only
+the draft-only creation choice. The existing broker freezes exact source and
+confirmation before the trusted adapter creates external objects. Retained audit
+and query-only reconciliation prevent blind replay; HEAD-bound checks never
+accept local baseline or verify manual PR edits. Real PR #179 demonstrates
+creation, restart, shared Board/API/CLI records and visible Changeset CI failure.
+The [completed record](../../plans/completed/flow-inspector-phase-6-github-review-closeout.md)
+separates that live path from offline fault/state fixtures. Full Phase 5/6,
+protected verification/delivery and provider reconciliation remain open. No
+provider request, version, tag, merge of a GitHub PR, publication, protection or
+deployment setting change is performed.

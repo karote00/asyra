@@ -26,7 +26,9 @@ mandatory protected CI delivery gate remains deferred.
 execution, isolated candidate verification and human handoff. The
 [bounded Sol integration](plans/completed/flow-inspector-phase-5-sol-local-integration-closeout.md)
 adds actual subscription-model acceptance; full Phase 5, remote reconciliation
-and Phase 6 integrations remain unfinished. The static Inspector's schema version 2 contract is unchanged.
+and full Phase 6 remain unfinished.
+[Bounded GitHub PR Review](PR_REVIEW.md) adds the separately activated local
+candidate preview, explicit confirmation and review observation boundary. The static Inspector's schema version 2 contract is unchanged.
 
 The tool may inspect Framework and App contracts, but neither Framework nor an
 App may depend on the tool at runtime. Tool publication and versioning remain independent from Framework publication.
@@ -45,6 +47,7 @@ do not store Inspector implementation artifacts.
 - `FLOW_INSPECTOR.md` - current static Inspector contract.
 - `PLANS.md` - active and future Flow Inspector planning index.
 - `CORE_PROOF.md` - living Phase 3 proof and active Phase 4 contract, cases, and bounded DoD.
+- `PR_REVIEW.md` - bounded GitHub candidate review, trust boundaries and cases.
 - `AGENT_EXECUTION.md` - local Phase 5 contract, supported limits and remaining boundaries.
 - `plans/` - detailed roadmap and active phase plans.
 - `plans/completed/` - completed plan records.

@@ -16,6 +16,7 @@ const {
 const { prepareCIContext } = require('./ci-context.cjs')
 const { assessCI } = require('./ci-evidence.cjs')
 const { createTaskOwner } = require('./agent-task.cjs')
+const { createReviewOwner, REVIEW_POLICY } = require('./pr-review.cjs')
 const { TASK_POLICY } = require('./agent-contract.cjs')
 const { containmentAvailable } = require('./agent-verifier.cjs')
 
@@ -34,7 +35,8 @@ const LOCAL_ACTOR = Object.freeze({
     'ingest-ci',
     'update-work',
     'delegate-task',
-    'control-task'
+    'control-task',
+    REVIEW_POLICY.capability
   ])
 })
 class ActionError extends Error {
@@ -63,7 +65,8 @@ function createService(
     timeoutMs = 30000,
     acceptedBase = 'origin/main',
     ciAdmission = null,
-    agentOptions = {}
+    agentOptions = {},
+    deliveryAdapter = null
   } = {}
 ) {
   ciAdmission = ciAdmission ? structuredClone(ciAdmission) : null
@@ -151,6 +154,7 @@ function createService(
   let publicContract = projectContract()
   let active = null
   let tasks
+  let reviews
   let closed = false
   const pending = new Map()
   let sharedSnapshot
@@ -302,7 +306,9 @@ function createService(
       deliveryStatus: record.ci?.deliveryStatus ?? 'not-assessed'
     }
   }
-  const requireIdle = () => {
+  const requireIdle = (reviewAction = false) => {
+    if (!reviewAction && reviews?.active())
+      throw new ActionError(409, 'A delivery review is active')
     if (closed) throw new ActionError(409, 'Service is closing')
     if (active || tasks?.activeId())
       throw new ActionError(409, 'An attempt or task is already running')
@@ -330,12 +336,30 @@ function createService(
       directory: path.join(directory, 'tasks'),
       getBaseline: () => ({ contract, revision: store.mapping().revision }),
       requireIdle: () => {
+        if (reviews?.active())
+          throw new ActionError(409, 'A delivery review is active')
         if (closed || active)
           throw new ActionError(
             409,
             'An attempt is running or service is closing'
           )
       }
+    })
+  } catch (error) {
+    store.close()
+    throw error
+  }
+  try {
+    reviews = createReviewOwner(repositoryRoot, {
+      directory: path.join(directory, 'reviews'),
+      getTask: (id) => tasks.get(id),
+      getBaseline: () => ({ contract, revision: store.mapping().revision }),
+      changes: (id) => tasks.changes(id),
+      candidateDirectory: (id) => {
+        if (!validId(id)) throw new ActionError(400, 'Invalid task identity')
+        return path.join(directory, 'tasks', id, 'candidate')
+      },
+      adapter: deliveryAdapter
     })
   } catch (error) {
     store.close()
@@ -349,6 +373,32 @@ function createService(
     }
   }
   return {
+    getReview: (id) =>
+      taskResult(() => {
+        tasks.get(id)
+        return reviews.get(id)
+      }),
+    async reviewTask(id, request, actor) {
+      authorize(actor, REVIEW_POLICY.capability)
+      objectRequest(request, ['action', 'previewDigest', 'confirm'])
+      if (
+        request.action !== 'confirm' &&
+        (request.confirm !== undefined || request.previewDigest !== undefined)
+      )
+        throw new ActionError(400, 'Invalid review action request')
+      requireIdle(true)
+      try {
+        if (request.action === 'prepare')
+          return await reviews.prepare(id, actor.id)
+        if (request.action === 'confirm')
+          return await reviews.confirm(id, request, actor.id)
+        if (request.action === 'refresh')
+          return await reviews.refresh(id, actor.id)
+        throw new ActionError(400, 'Unknown review action')
+      } catch (error) {
+        throw new ActionError(error.status ?? 409, error.message)
+      }
+    },
     startTask(request, actor) {
       authorize(actor, 'delegate-task')
       return taskResult(() => tasks.start(request, actor.id))
@@ -357,6 +407,8 @@ function createService(
     waitTask: (id) => tasks.wait(id),
     taskChanges: (id) => taskResult(() => tasks.changes(id)),
     async controlTask(id, request, actor) {
+      if (reviews?.active())
+        throw new ActionError(409, 'A delivery review is active')
       authorize(actor, 'control-task')
       objectRequest(request, ['action', 'scenario'])
       if (request.action === 'resume') {
@@ -733,6 +785,7 @@ function createService(
           digest: record.snapshot?.digest ?? null
         }))
       return {
+        reviewPolicy: reviews.policy(),
         tasks: {
           available: containmentAvailable(),
           providerAuthorization:
@@ -764,6 +817,7 @@ function createService(
               verificationStatus: record.verificationStatus,
               workStatus: record.workStatus,
               deliveryStatus: record.deliveryStatus,
+              reviewRevision: reviews.get(record.id)?.audit.length ?? 0,
               attemptCount: record.attempts.length
             }))
         },
@@ -1046,6 +1100,7 @@ function createService(
     async close() {
       closed = true
       try {
+        await reviews.close()
         await tasks.close()
         if (active) {
           const id = active.id

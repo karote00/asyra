@@ -29,6 +29,8 @@
       let selectedFlow
       let taskState
       let taskRecord
+      let reviewRecord
+      let reviewPolicy
       let taskId
       let taskSignature = ''
       let taskHistorySignature = ''
@@ -663,6 +665,114 @@
             !capability || !compatible || Boolean(activeId) || acting
         renderSelected()
       }
+      function renderReview(matching) {
+        const review =
+          reviewRecord?.taskId === matching?.id ? reviewRecord : null
+        const preview = review?.preview
+        const currentAttempt =
+          !preview || preview.attemptId === matching?.attempts.at(-1)?.id
+        byId('pr-prepare').disabled =
+          !matching ||
+          !reviewPolicy ||
+          acting ||
+          !capability ||
+          matching.phase === 'running'
+        byId('pr-confirm').disabled =
+          !preview ||
+          preview.draft !== false ||
+          !['preview', 'blocked'].includes(review.state) ||
+          !currentAttempt ||
+          acting ||
+          !byId('pr-approve').checked
+        byId('pr-refresh').disabled = !review || acting || !capability
+        byId('pr-approve').disabled =
+          !preview || acting || !['preview', 'blocked'].includes(review.state)
+        const observation = review?.observation
+        byId('pr-result').textContent = [
+          'Local verification: ' +
+            (currentAttempt
+              ? (matching?.verificationStatus ?? 'no candidate selected')
+              : 'historical attempt - open retained evidence'),
+          'Delivery: ' + (review?.state ?? 'not prepared'),
+          'PR: ' + (observation?.state ?? 'not observed'),
+          'GitHub HEAD: ' + (observation?.headSha ?? 'unknown'),
+          'GitHub checks: ' + (observation?.checks?.status ?? 'unknown'),
+          'Checks HEAD: ' + (observation?.checks?.headSha ?? 'none'),
+          observation?.stale
+            ? 'Observation stale - refresh required; no current checks.'
+            : 'Refresh explicitly to read GitHub state.',
+          observation?.matchesCandidate === false
+            ? 'GitHub source is outside prepared candidate identity. Local evidence does not verify this HEAD.'
+            : '',
+          'Issue: ' + (review?.error ?? 'none'),
+          'Review submission and checks never accept the local baseline.',
+          reviewPolicy
+            ? 'Repository: ' +
+              reviewPolicy.repository +
+              ' - base: ' +
+              reviewPolicy.base
+            : 'GitHub review is not configured on this local service.'
+        ]
+          .filter(Boolean)
+          .join('\n')
+        byId('pr-source-diff').textContent =
+          preview?.sourceDiff ??
+          'Prepare a candidate preview to inspect its exact difference.'
+        byId('pr-preview').textContent = preview
+          ? [
+              'Repository: ' + preview.repository,
+              'PR type: ' +
+                (preview.draft === false
+                  ? 'ready for review'
+                  : 'draft - prepare a fresh preview'),
+              'Base: ' + preview.base + ' - ' + preview.baseSha,
+              'Branch: ' + preview.branch,
+              'Task: ' + preview.taskId,
+              'Attempt: ' + preview.attemptId,
+              'Source baseline: ' + preview.sourceHead,
+              'Changed files: ' +
+                preview.changes.map((change) => change.path).join(', '),
+              'Title: ' + preview.title,
+              '',
+              preview.body
+            ].join('\n')
+          : 'Select an existing step task, then prepare an exact delivery preview. No branch or PR is created by preparation.'
+        for (const [name, href] of [
+          [
+            'pr-source',
+            preview ? '/api/tasks/' + matching.id + '/review' : null
+          ],
+          ['pr-evidence', matching ? '/api/tasks/' + matching.id : null],
+          ['pr-github', observation?.url]
+        ]) {
+          byId(name).hidden = !href
+          if (href) byId(name).href = href
+        }
+      }
+      async function reviewAction(action) {
+        if (acting || !taskId || !capability) return
+        const selected = taskId
+        acting = true
+        renderTask()
+        try {
+          const value = await api('/api/tasks/' + selected + '/review', {
+            action,
+            ...(action === 'confirm'
+              ? {
+                  confirm: byId('pr-approve').checked,
+                  previewDigest: reviewRecord?.previewDigest
+                }
+              : {})
+          })
+          if (taskId === selected) reviewRecord = value
+          byId('pr-approve').checked = false
+        } catch (error) {
+          showError(error)
+        } finally {
+          acting = false
+          renderTask()
+        }
+      }
       function renderTask() {
         if (!byId('agent-step')) return
         const provider = taskState?.providerAuthorization
@@ -697,6 +807,7 @@
           Boolean(taskState?.activeId) ||
           acting
         const matching = taskRecord?.task.stepId === stepId ? taskRecord : null
+        renderReview(matching)
         const busy = matching?.phase === 'running'
         const unresolved = matching?.providerRequests?.some(
           (request) =>
@@ -851,7 +962,17 @@
         const signature = selected ? JSON.stringify(selected) : ''
         if (signature !== taskSignature) {
           taskSignature = signature
-          taskRecord = taskId ? await api('/api/tasks/' + taskId) : null
+          const selectedTask = taskId
+          const [nextTask, nextReview] = selectedTask
+            ? await Promise.all([
+                api('/api/tasks/' + selectedTask),
+                api('/api/tasks/' + selectedTask + '/review')
+              ])
+            : [null, null]
+          if (selectedTask !== taskId) return
+          taskRecord = nextTask
+          reviewRecord = nextReview
+          byId('pr-approve').checked = false
         }
         renderTask()
       }
@@ -922,6 +1043,7 @@
           renderOperations(state)
           activeId = state.activeRunId
           taskState = state.tasks
+          reviewPolicy = state.reviewPolicy
           await refreshTask()
           if (!selectedId && state.runs.length) selectedId = state.runs[0].id
           const id = selectedId
@@ -1046,6 +1168,18 @@
             <pre id="agent-result" role="status">No task selected</pre>
             <a id="agent-artifact" target="_blank" rel="noopener noreferrer" hidden>Review exact source changes</a>
             <a id="agent-audit" target="_blank" rel="noopener noreferrer" hidden>Open task evidence and audit</a>
+          </details>
+          <details id="pr-controls"><summary>Candidate GitHub PR review</summary>
+            <p>Prepare an exact preview from the selected task. Confirm only after reviewing source, evidence and the destination below.</p>
+            <div class="proof-actions"><button id="pr-prepare" type="button">Prepare PR preview</button><button id="pr-refresh" type="button">Refresh GitHub review</button></div>
+            <pre id="pr-result" role="status"></pre>
+            <pre id="pr-preview"></pre>
+            <details><summary>Review source difference</summary><pre id="pr-source-diff"></pre></details>
+            <a id="pr-source" target="_blank" rel="noopener noreferrer" hidden>Open frozen source diff and delivery audit</a>
+            <a id="pr-evidence" target="_blank" rel="noopener noreferrer" hidden>Open local candidate evidence</a>
+            <a id="pr-github" target="_blank" rel="noopener noreferrer" hidden>Open GitHub review</a>
+            <label class="proof-confirmation"><input id="pr-approve" type="checkbox" />I reviewed this exact preview and confirm creating its branch and ready-for-review PR.</label>
+            <button id="pr-confirm" type="button" disabled>Create confirmed PR</button>
           </details>
           <details id="phase4-controls"><summary>Contract versions and CI</summary>
             <p id="contract-baseline"></p>
@@ -1174,6 +1308,9 @@
           'revoke'
         ])
           listen(byId('agent-' + action), 'click', () => taskAction(action))
+        for (const action of ['prepare', 'confirm', 'refresh'])
+          listen(byId('pr-' + action), 'click', () => reviewAction(action))
+        listen(byId('pr-approve'), 'change', renderTask)
         listen(byId('agent-adapter'), 'change', renderTask)
         listen(byId('agent-history'), 'change', async (event) => {
           taskId = event.target.value
