@@ -5,6 +5,7 @@ export class TriangleBuilder {
   constructor(private readonly tubeSides = 8) {}
   readonly positions: number[] = []
   readonly colors: number[] = []
+  readonly uvs: number[] = []
   readonly indices: number[] = []
 
   triangle(a: Point3, b: Point3, c: Point3) {
@@ -73,6 +74,7 @@ export class TriangleBuilder {
       kind: 'triangles' as const,
       positions: this.positions,
       ...(this.colors.length ? { colors: this.colors } : {}),
+      ...(this.uvs.length ? { uvs: this.uvs } : {}),
       indices: this.indices
     }
   }

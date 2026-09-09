@@ -22,9 +22,9 @@ This flow maps the [product specification](../../specs/water-and-crops.md); it i
 - Conditions: only soil-adjacent drains yield rows; empty rows yield no placements. Invalid root clearance is rejected at configuration admission.
 - Allowed contributors: domain layout, shared support-row calculation, TriangleBuilder and observed cultivar references.
 - Forbidden contributors: Three.js, camera state, renderer decisions, wall-clock randomness, robot physics.
-- Boundary/allowlist: `domain/crop-models.ts`, `domain/crop-fruit.ts`, `domain/crop-hairs.ts`, `domain/crop-layout.ts`, crop tube subdivision in `domain/mesh.ts`, the crop review export script, row portions of `domain/planting-supports.ts`, `domain/farm-configuration.ts`, matching domain tests.
+- Boundary/allowlist: `domain/crop-models.ts`, `domain/crop-fruit.ts`, `domain/crop-hairs.ts`, `domain/leaf-surface.ts`, `domain/crop-layout.ts`, crop tube subdivision in `domain/mesh.ts`, the crop review export script, row portions of `domain/planting-supports.ts`, `domain/farm-configuration.ts`, matching domain tests.
 - Spec: Planting, appearance references, valid/empty/invalid and repeatability cases. Failure owner: crop domain or configuration admission respectively.
-- Cache dimensions: none; models are completed configuration-lifetime products.
+- Cache dimensions: none; models are completed configuration-lifetime products. Immutable cultivar leaf anatomy maps are shared module-lifetime constants.
 
 ## R - Spatial rendering and integration
 
@@ -34,8 +34,8 @@ This flow maps the [product specification](../../specs/water-and-crops.md); it i
 - Conditions: instance descriptors use instanced rendering; ordinary meshes retain their existing route. Hidden layers retain geometry. Configuration replacement retires the previous product.
 - Allowed contributors: completed domain outputs, SpatialLayer, current runtime configuration lifecycle, existing view controls and browser tests.
 - Forbidden contributors: rederiving cultivar identity/placement in the engine, expanded per-plant CPU meshes, camera-driven crop regeneration, renderer fallback plants.
-- Boundary/allowlist: `engine/spatial-contract.ts`, `engine/three-engine.ts`, `engine/graphics.ts`, their tests; `render-app/site-projection.ts`, `render-app/spatial-layer.ts`, `render-app/camera-navigation.ts` and tests; direct `runtime/bootstrap.ts`, runtime tests, `ui/workbench.tsx`, `ui/configuration-editor.tsx`, its icon tests, `playwright.config.ts`, and `e2e` consumers.
+- Boundary/allowlist: `engine/spatial-contract.ts`, `engine/surface-textures.ts`, `engine/three-engine.ts`, `engine/graphics.ts`, their tests; `render-app/site-projection.ts`, `render-app/spatial-layer.ts`, `render-app/camera-navigation.ts` and tests; direct `runtime/bootstrap.ts`, runtime tests, `ui/workbench.tsx`, `ui/configuration-editor.tsx`, its icon tests, `playwright.config.ts`, and `e2e` consumers.
 - Spec: shared model rendering, all planting cases, configuration and view lifetime, visual completion. Failure owner: admission/engine for rendering, projection for composition, runtime for invalidation.
-- Cache dimensions: none beyond the existing admitted immutable scene lifetime; bounds reduce each shape once per measurement.
+- Cache dimensions: none beyond the existing admitted immutable scene lifetime; bounds reduce each shape once per measurement. GPU surface maps are shared by admitted surface identity while materials retain them, and released with the last material.
 
 W and C feed R with completed geometric products. The section view consumes W directly. UI edits enter configuration validation before any W/C/R replacement; camera and visibility changes bypass W and C.

@@ -1,3 +1,4 @@
+import { readSpatialSurface, type SpatialSurface } from './surface-textures'
 export const SPATIAL_PROPERTY = 'spatialV0'
 export const SPATIAL_CAPABILITY = 'farm.spatial.v0'
 
@@ -11,6 +12,7 @@ export type SpatialShape =
       kind: 'triangles'
       positions: readonly number[]
       colors?: readonly number[]
+      uvs?: readonly number[]
       indices: readonly number[]
     }
 
@@ -35,6 +37,7 @@ export type SpatialDescriptor =
       shape: SpatialShape
       instances?: readonly SpatialInstance[]
       distant?: { shape: SpatialShape; maxError: number }
+      surface?: SpatialSurface
       roughness?: number
       metalness?: number
       color: number
@@ -66,6 +69,7 @@ export function sameSpatialShape(a: SpatialShape, b: SpatialShape): boolean {
       return (
         b.kind === 'triangles' &&
         equal(a.positions, b.positions) &&
+        ((!a.uvs && !b.uvs) || (!!a.uvs && !!b.uvs && equal(a.uvs, b.uvs))) &&
         ((!a.colors && !b.colors) ||
           (!!a.colors && !!b.colors && equal(a.colors, b.colors))) &&
         equal(a.indices, b.indices)
@@ -109,6 +113,10 @@ export function isSpatialShape(value: unknown): value is SpatialShape {
         value.colors.every(
           (n) => typeof n === 'number' && Number.isFinite(n) && n >= 0 && n <= 1
         ))) &&
+    (value.uvs === undefined ||
+      (Array.isArray(value.uvs) &&
+        value.uvs.length === (positions.length / 3) * 2 &&
+        value.uvs.every(Number.isFinite))) &&
     Array.isArray(indices) &&
     indices.length >= 3 &&
     indices.length <= 3000000 &&
@@ -125,7 +133,7 @@ export function readSpatialShape(value: unknown): SpatialShape {
   // detach those arrays directly, then validate the exact retained snapshot.
   let snapshot: unknown = record(value) ? { ...value } : value
   if (record(snapshot) && snapshot.kind === 'triangles') {
-    for (const key of ['positions', 'colors', 'indices']) {
+    for (const key of ['positions', 'colors', 'indices', 'uvs']) {
       const source = snapshot[key]
       if (!Array.isArray(source)) continue
       if (source.length > 3000000) throw new Error('Invalid spatial shape')
@@ -140,6 +148,7 @@ export function readSpatialShape(value: unknown): SpatialShape {
     shape = {
       kind: 'triangles',
       positions: Object.freeze(snapshot.positions),
+      ...(snapshot.uvs ? { uvs: Object.freeze(snapshot.uvs) } : {}),
       ...(snapshot.colors ? { colors: Object.freeze(snapshot.colors) } : {}),
       indices: Object.freeze(snapshot.indices)
     }
@@ -241,6 +250,15 @@ export function readSpatialDescriptor(value: unknown): SpatialDescriptor {
     throw new Error('Unsupported spatial descriptor kind')
   }
   if (value.kind === 'mesh') {
+    if (
+      value.surface !== undefined &&
+      (!record(value.shape) ||
+        !Array.isArray(value.shape.uvs) ||
+        (record(value.distant) &&
+          (!record(value.distant.shape) ||
+            !Array.isArray(value.distant.shape.uvs))))
+    )
+      throw new Error('Surface textures require UV coordinates')
     for (const key of ['roughness', 'metalness']) {
       const n = value[key]
       if (
@@ -284,6 +302,9 @@ export function readSpatialDescriptor(value: unknown): SpatialDescriptor {
                 })
               }
             : {}),
+          ...(value.surface === undefined
+            ? {}
+            : { surface: readSpatialSurface(value.surface) }),
           roughness: value.roughness ?? 0.65,
           metalness: value.metalness ?? 0.12,
           color: value.color,

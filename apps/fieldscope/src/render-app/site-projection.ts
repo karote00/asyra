@@ -1,3 +1,8 @@
+import {
+  CUCUMBER_LEAF_SURFACE,
+  TOMATO_LEAF_SURFACE
+} from '../domain/leaf-surface'
+import { readSpatialSurface } from '../engine/surface-textures'
 import { createCropModels } from '../domain/crop-models'
 import { createCropPositions } from '../domain/crop-layout'
 import { createDrainProfile } from '../domain/drain-profile'
@@ -72,6 +77,9 @@ export interface ViewState {
   filmOpacity: number
   camera: CameraMode
 }
+const cucumberSurface = readSpatialSurface(CUCUMBER_LEAF_SURFACE)
+const tomatoSurface = readSpatialSurface(TOMATO_LEAF_SURFACE)
+
 export const INITIAL_VIEW: ViewState = {
   layers: INITIAL_LAYERS,
   filmOpacity: 0.6,
@@ -360,6 +368,14 @@ export function buildSiteMeshes(
             shape: part.shape,
             distant: { shape: part.distantShape, maxError: 0.06 },
             roughness: part.roughness,
+            ...(part.surface
+              ? {
+                  surface:
+                    part.surface === CUCUMBER_LEAF_SURFACE
+                      ? cucumberSurface
+                      : tomatoSurface
+                }
+              : {}),
             metalness: 0,
             instances,
             color: part.color,

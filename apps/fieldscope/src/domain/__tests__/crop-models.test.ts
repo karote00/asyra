@@ -244,3 +244,20 @@ it('bounds full cucumber geometry while retaining all growth stages and bristled
     expect(vertices).toBeLessThan(18000)
   }
 })
+
+it('maps a shared detailed leaf surface onto every cucumber blade at both detail levels', () => {
+  const models = createCropModels({ netTop: 3, netBottom: 0.45 }).filter(
+    (m) => m.species === 'cucumber-1914'
+  )
+  const surface = models[0].parts[1].surface
+  expect(surface).toBeDefined()
+  for (const model of models) {
+    const part = model.parts[1]
+    expect(part.surface).toBe(surface)
+    for (const shape of [part.shape, part.distantShape]) {
+      if (!shape) throw new Error('Missing leaf shape')
+      expect(shape.uvs?.length).toBe((shape.positions.length / 3) * 2)
+      expect(shape?.uvs?.every(Number.isFinite)).toBe(true)
+    }
+  }
+})

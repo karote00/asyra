@@ -588,3 +588,33 @@ it.each([3, 65537])(
     engine.destroy()
   }
 )
+
+it('binds admitted UVs and surface maps to the rendered leaf material', () => {
+  const { engine, driver, add } = setup()
+  add(camera)
+  const surface = {
+    width: 2,
+    height: 2,
+    albedo: Array(16).fill(200),
+    normals: Array(16).fill(128)
+  }
+  const shape = {
+    kind: 'triangles' as const,
+    positions: [0, 0, 0, 1, 0, 0, 0, 1, 0],
+    indices: [0, 1, 2],
+    uvs: [0, 0, 1, 0, 0, 1]
+  }
+  expect(() =>
+    add({ ...box, shape: { ...shape, uvs: undefined }, surface })
+  ).toThrow('UV')
+  add({ ...box, shape, surface })
+  engine.execute({ type: 'flush' })
+  const scene = vi.mocked(driver.render).mock.calls[0][0]
+  const mesh = scene.getObjectsByProperty('isMesh', true)[0] as THREE.Mesh
+  expect(mesh.geometry.getAttribute('uv').itemSize).toBe(2)
+  expect(Array.from(mesh.geometry.getAttribute('uv').array)).toEqual(shape.uvs)
+  const material = mesh.material as THREE.MeshStandardMaterial
+  expect(material.map).toBeInstanceOf(THREE.DataTexture)
+  expect(material.normalMap).toBeInstanceOf(THREE.DataTexture)
+  engine.destroy()
+})

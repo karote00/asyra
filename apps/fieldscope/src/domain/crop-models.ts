@@ -1,3 +1,4 @@
+import { CUCUMBER_LEAF_SURFACE, TOMATO_LEAF_SURFACE } from './leaf-surface'
 import { appendSurfaceHairs } from './crop-hairs'
 import {
   appendFruitSurface,
@@ -41,6 +42,7 @@ export interface CropModel {
   leafHairCount: number
   fruits: CropFruit[]
   parts: {
+    surface?: typeof CUCUMBER_LEAF_SURFACE
     color: number
     roughness: number
     shape: ReturnType<TriangleBuilder['shape']>
@@ -105,6 +107,7 @@ function leaf(
     for (let j = 0; j < acrossCount; j++) {
       const lateral = (j / (acrossCount - 1)) * 2 - 1
       builder.positions.push(...point(t, halfWidth * lateral))
+      builder.uvs.push(0.5 + (halfWidth * lateral) / width, t)
       const mottling =
         0.012 * Math.sin(t * 31 + lateral * 13 + angle) +
         0.008 * Math.sin(t * 67 - lateral * 19)
@@ -513,6 +516,13 @@ function createModel(
             {
               color: builder.colors.length ? 0xffffff : colors[i],
               roughness: i >= 3 && i <= 5 ? 0.3 : 0.72,
+              ...(i === 1
+                ? {
+                    surface: cucumber
+                      ? CUCUMBER_LEAF_SURFACE
+                      : TOMATO_LEAF_SURFACE
+                  }
+                : {}),
               shape: builder.shape()
             }
           ]

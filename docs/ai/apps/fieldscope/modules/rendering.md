@@ -7,3 +7,5 @@ The engine owns Three.js geometry, materials, lights, meshes, instance matrices,
 Repeated crop models use instance transforms. Bounds calculation must include every instance while examining each model's vertices only once per scene measurement. Instance rendering changes neither root placement nor model topology. Configuration replacement updates both geometry and placements; layer and camera changes reuse the accepted scene.
 
 Permanent domain, admission, engine, runtime and browser tests cover these handoffs. Screenshots are rendering evidence, not the authority for dimensions or cultivar placement.
+
+Optional surface maps require UV coordinates on full and distant triangle shapes. Surface admission preserves detached immutable RGBA arrays; SurfaceTextureStore owns shared GPU color/normal maps, reference-counted by base materials. Distant material clones share the same pair under their base object's lifetime. Replacing the last textured object or destroying the engine releases the pair. No texture generation occurs during camera movement.

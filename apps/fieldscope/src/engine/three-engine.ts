@@ -1,3 +1,4 @@
+import { SurfaceTextureStore } from './surface-textures'
 import * as THREE from 'three'
 import { RenderEngineCapabilities } from '@asyra/render-engine'
 import type {
@@ -79,12 +80,16 @@ const makeGeometry = (shape: SpatialShape): THREE.BufferGeometry => {
       // buffers, avoiding generic iterable conversion and index array expansion.
       for (const [name, values] of [
         ['position', shape.positions],
-        ['color', shape.colors]
+        ['color', shape.colors],
+        ['uv', shape.uvs]
       ] as const) {
         if (!values) continue
         const array = new Float32Array(values.length)
         for (let i = 0; i < values.length; i++) array[i] = values[i]
-        geometry.setAttribute(name, new THREE.BufferAttribute(array, 3))
+        geometry.setAttribute(
+          name,
+          new THREE.BufferAttribute(array, name === 'uv' ? 2 : 3)
+        )
       }
       const indices =
         shape.positions.length / 3 > 65535
@@ -135,6 +140,8 @@ const SCREEN_PROPERTIES = new Set([
 
 /** A CUSTOM visual engine. It owns no editable state or analysis semantics. */
 export class ThreeEngine implements RenderEngine {
+  private readonly surfaceTextures = new SurfaceTextureStore()
+
   readonly name = 'FieldScope CUSTOM Three.js 0.185.1'
   readonly capabilities = new Set([
     ...Object.values(RenderEngineCapabilities),
@@ -513,6 +520,7 @@ export class ThreeEngine implements RenderEngine {
         record.spatial?.kind === 'mesh' &&
         record.content instanceof THREE.Mesh &&
         sameSpatialShape(record.spatial.shape, spatial.shape) &&
+        record.spatial.surface === spatial.surface &&
         Boolean(record.spatial.distant) === Boolean(spatial.distant) &&
         (!record.spatial.distant ||
           !spatial.distant ||
@@ -537,6 +545,7 @@ export class ThreeEngine implements RenderEngine {
         metalness: spatial.metalness ?? 0.12,
         depthWrite: spatial.opacity >= 1
       })
+      if (spatial.surface) this.surfaceTextures.apply(material, spatial.surface)
       content = spatial.instances
         ? new THREE.InstancedMesh(geometry, material, spatial.instances.length)
         : new THREE.Mesh(geometry, material)

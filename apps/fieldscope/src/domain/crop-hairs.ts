@@ -75,6 +75,8 @@ export function appendSurfaceHairs(
           offset + ((side + 1) % 3),
           offset + 3
         )
+      if (builder.uvs.length)
+        for (let vertex = 0; vertex < 4; vertex++) builder.uvs.push(0, 0)
       count++
     }
   }
