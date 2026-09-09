@@ -31,8 +31,9 @@ persistent investigation guidance; it does not implement remote reconciliation.
    - Remaining Phase 5: independently verifiable remote reconciliation and any
      additional provider/resource capabilities beyond the accepted macOS Sol trial.
      Full original protection and delivery requirements remain open.
-   - Active bounded Phase 6: [single-user GitHub PR review](PR_REVIEW.md).
-     Implementation, offline and live acceptance remain pending.
+   - Bounded single-user GitHub PR review implementation and live acceptance
+     are recorded in the [completed review record](plans/completed/flow-inspector-phase-6-github-review-closeout.md).
+     Candidate CI failure and the full Phase 6 gaps remain explicit.
    - Remaining Phase 6: small-team operations, ticket integration, hosting and
      broader adoption remain unactivated.
 

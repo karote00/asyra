@@ -251,3 +251,11 @@ The user selects the existing local owner/access model and GitHub only, with one
 repository and one candidate PR. No ticket provider is required for this bounded
 slice. [PR Review](../PR_REVIEW.md) owns its product cases and bounded DoD.
 The original full Phase 5/6 DoD and protected delivery gaps remain open.
+
+## Bounded GitHub review checkpoint - 2026-09-09
+
+The [completed review record](completed/flow-inspector-phase-6-github-review-closeout.md)
+closes only the selected local GitHub review slice: exact preview, explicit
+ready-for-review creation, retained audit and HEAD-bound observations. Real PR
+#179 demonstrates creation/restart and visible CI failure without baseline
+acceptance. The full Phase 5/6 DoD above remains open.
