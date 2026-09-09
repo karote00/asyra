@@ -19,7 +19,7 @@ export const deleteElementFeature = defineFeature(
       }
 
       const selectedIds = selectionApis.getSelectedIds()
-      if (selectedIds.length !== 1) {
+      if (selectedIds.length !== 2) {
         return null
       }
 
