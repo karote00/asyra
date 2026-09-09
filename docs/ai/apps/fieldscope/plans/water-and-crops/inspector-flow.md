@@ -18,7 +18,7 @@ This flow maps the [product specification](../../specs/water-and-crops.md); it i
 
 - Owner: FieldScope crop geometry and planting layout.
 - Inputs: validated FarmConfiguration, canonical water-adjacent soil rows and deterministic variant seeds.
-- Outputs: exactly 20 models per cultivar, material-part triangle buffers, cultivar/variant metadata and root transforms, with full/distant shapes and real occlusion geometry.
+- Outputs: exactly 20 models per cultivar, material-part triangle buffers, cultivar/variant metadata and root transforms, with full/distant shapes and real occlusion geometry. Layout assignment enforces the farm-wide maximum of ten delayed-harvest cucumber fruits across actual instances, using the same eligibility policy as the models.
 - Conditions: only soil-adjacent drains yield rows; empty rows yield no placements. Invalid root clearance is rejected at configuration admission.
 - Allowed contributors: domain layout, shared support-row calculation, TriangleBuilder and observed cultivar references.
 - Forbidden contributors: Three.js, camera state, renderer decisions, wall-clock randomness, robot physics.

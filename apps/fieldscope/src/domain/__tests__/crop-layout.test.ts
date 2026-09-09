@@ -1,5 +1,6 @@
 import { expect, it } from 'vitest'
-import { createCropPositions } from '../crop-layout'
+import { CROP_LAYOUT, createCropPositions } from '../crop-layout'
+import { createCropModels } from '../crop-models'
 import { createSupportPositions } from '../planting-supports'
 import {
   DEFAULT_CONFIGURATION,
@@ -66,4 +67,51 @@ it('rejects soil that fits the pole but not the additional plant-root offset', (
       ]
     })
   ).toThrow()
+})
+
+it('caps actual delayed-harvest cucumber fruits across the entire farm', () => {
+  const models = createCropModels(DEFAULT_CONFIGURATION).filter(
+    (model) => model.species === 'cucumber-1914'
+  )
+  const counts = new Map(
+    models.map((model) => [
+      model.variant,
+      model.fruits.filter((fruit) => fruit.maturity === 'overgrown').length
+    ])
+  )
+  for (const model of models)
+    expect(counts.get(model.variant)).toBe(
+      CROP_LAYOUT.overgrownVariants.includes(model.variant) ? 1 : 0
+    )
+  for (const length of [1, 50, 200]) {
+    const config = { ...DEFAULT_CONFIGURATION, length }
+    const plants = createCropPositions(config)
+    const cucumbers = plants.filter(
+      (plant) => plant.species === 'cucumber-1914'
+    )
+    const total = cucumbers.reduce((sum, plant) => {
+      const count = counts.get(plant.variant)
+      if (count === undefined) throw new Error('Missing planted cucumber model')
+      return sum + count
+    }, 0)
+    expect(total, `Farm length ${length}`).toBeLessThanOrEqual(10)
+    expect(total).toBe(Math.min(10, Math.floor(cucumbers.length / 500)))
+    expect(createCropPositions(config)).toEqual(plants)
+    if (length === 50) {
+      const stages = new Set(
+        cucumbers.flatMap((plant) => {
+          const model = models.find((model) => model.variant === plant.variant)
+          if (!model) throw new Error('Missing planted cucumber model')
+          return model.fruits
+            .filter((fruit) => fruit.maturity === 'overgrown')
+            .map((fruit) => fruit.growthStage)
+        })
+      )
+      expect([...stages].sort()).toEqual([
+        'overgrown-early',
+        'overgrown-late',
+        'oversized'
+      ])
+    }
+  }
 })

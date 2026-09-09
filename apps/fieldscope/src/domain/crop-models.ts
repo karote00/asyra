@@ -299,7 +299,8 @@ function createModel(
     }
   }
   const fruits: CropFruit[] = []
-  const extraGrowth = cucumber && variant % 4 === 0
+  const extraGrowth =
+    cucumber && CROP_LAYOUT.overgrownVariants.includes(variant)
   const trusses = cucumber ? 5 + Number(extraGrowth) : 3
   for (let truss = 0; truss < trusses; truss++) {
     const base = stemPoint(
