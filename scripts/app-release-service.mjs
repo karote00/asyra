@@ -161,15 +161,32 @@ export async function waitForDeployment(
   throw new Error(`Deployment ${id} timed out; inspect it before retrying`)
 }
 
-export async function smokeOrigin(origin, app, fetcher = fetch) {
+export async function smokeOrigin(
+  origin,
+  app,
+  fetcher = fetch,
+  { bypassSecret, bypassOrigin } = {}
+) {
   const url = new URL(origin)
   assert.equal(url.protocol, 'https:')
   assert.ok(
     url.hostname === app.host || /^[a-z0-9-]+\.vercel\.app$/.test(url.hostname)
   )
+  const headers = {}
+  if (bypassSecret) {
+    assert.equal(
+      url.origin,
+      bypassOrigin,
+      'Unexpected automation bypass origin'
+    )
+    assert.equal(url.username, '')
+    assert.equal(url.password, '')
+    headers['x-vercel-protection-bypass'] = bypassSecret
+  }
   const paths = app.id === 'asyra-framework' ? ['/', '/docs', '/atlas'] : ['/']
   for (const path of paths) {
     const response = await fetcher(new URL(path, url), {
+      headers,
       redirect: 'error',
       signal: AbortSignal.timeout(30_000)
     })
@@ -183,6 +200,7 @@ export async function smokeOrigin(origin, app, fetcher = fetch) {
     assert.ok(scripts.length > 0, 'No application scripts in deployed HTML')
     for (const asset of scripts) {
       const result = await fetcher(asset, {
+        headers,
         redirect: 'error',
         signal: AbortSignal.timeout(30_000)
       })
@@ -201,17 +219,21 @@ export async function publishPlan({
   runUrl,
   usage = deploymentUsage,
   wait = waitForDeployment,
-  smoke = smokeOrigin
+  smoke = smokeOrigin,
+  bypassSecrets = {}
 }) {
   requireCommit(plan.sha)
   const selected = plan.apps.filter((app) => app.release)
   // Verify every selected project before consuming any deployment quota.
   const previous = new Map()
-  for (const app of selected)
-    previous.set(
-      app.id,
-      verifyProject(await vercel(`/v9/projects/${app.id}`), app)
+  for (const app of selected) {
+    const project = await vercel(`/v9/projects/${app.id}`)
+    previous.set(app.id, verifyProject(project, app))
+    assert.ok(
+      !project.ssoProtection || bypassSecrets[app.id],
+      `${app.id} needs an automation bypass secret before creating a deployment`
     )
+  }
   assertBudget({ ...(await usage(vercel)), requested: selected.length })
   for (const app of selected) {
     assert.equal(
@@ -266,7 +288,10 @@ export async function publishPlan({
     let promoted = false
     try {
       const ready = await wait(vercel, deployment.id, plan.sha)
-      await smoke(`https://${ready.url}`, app)
+      await smoke(`https://${ready.url}`, app, undefined, {
+        bypassOrigin: `https://${ready.url}`,
+        bypassSecret: bypassSecrets[app.id]
+      })
       assert.equal(
         verifyProject(await vercel(`/v9/projects/${app.id}`), app),
         previous.get(app.id)

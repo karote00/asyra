@@ -70,6 +70,11 @@ if (process.argv[2] === 'plan') {
     vercel,
     github,
     repository,
+    bypassSecrets: {
+      'asyra-sim': process.env.VERCEL_BYPASS_SIM,
+      'asyra-design': process.env.VERCEL_BYPASS_DESIGN,
+      'asyra-framework': process.env.VERCEL_BYPASS_FRAMEWORK
+    },
     runUrl: `https://github.com/${repository}/actions/runs/${process.env.GITHUB_RUN_ID}`
   })
 }

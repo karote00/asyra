@@ -87,6 +87,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_BYPASS_SIM: ${{ secrets.VERCEL_BYPASS_SIM }}
+          VERCEL_BYPASS_DESIGN: ${{ secrets.VERCEL_BYPASS_DESIGN }}
+          VERCEL_BYPASS_FRAMEWORK: ${{ secrets.VERCEL_BYPASS_FRAMEWORK }}
           VERCEL_TEAM_ID: ${{ vars.VERCEL_TEAM_ID }}
           FORCE_APP: ${{ inputs.force_app }}
           RELEASE_REASON: ${{ inputs.reason }}

@@ -50,9 +50,13 @@ can run. Do not dispatch the publication workflow merely to test this PR.
 - Require the five PR checks listed in `package-release-validation.md`.
   Preserve existing PR, force-push and deletion protection. Do not require
   obsolete Vercel Preview status contexts.
-- A staged URL protected by Vercel authentication returns a smoke failure.
-  Do not disable protection to turn the check green. Add a separately reviewed,
-  host-scoped automation-bypass mechanism if that project needs one.
+- Keep Vercel Authentication enabled. For each protected project, the owner
+  creates a Protection Bypass for Automation secret in Vercel and stores it in
+  the same GitHub Environment as `VERCEL_BYPASS_SIM`, `VERCEL_BYPASS_DESIGN`
+  or `VERCEL_BYPASS_FRAMEWORK`. The controller checks for a missing secret
+  before creating deployments. It sends the secret only in an HTTP header to
+  the exact staged origin, refuses redirects and never sends it to external
+  assets or the stable production smoke. It never places secrets in URLs.
 
 ## App ownership and online versions
 
@@ -143,6 +147,8 @@ inspect their diff before approval; secret storage alone is not a security
 boundary against a malicious change merged into trusted release code.
 
 References:
+
+- <a href="https://vercel.com/docs/deployment-protection/methods-to-bypass-deployment-protection/protection-bypass-automation" target="_blank" rel="noopener noreferrer">Automation bypass for protected deployments</a>
 
 - <a href="https://vercel.com/docs/rest-api/deployments/create-a-new-deployment" target="_blank" rel="noopener noreferrer">Vercel deployment API</a>
 - <a href="https://vercel.com/docs/deployments/promoting-a-deployment" target="_blank" rel="noopener noreferrer">Staged production promotion</a>

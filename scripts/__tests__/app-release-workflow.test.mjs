@@ -55,6 +55,11 @@ test('production proof is included in PR CI and never starts Vite dev or preview
   assert.match(workflow, /workflow_call:/)
   assert.match(workflow, /run: yarn react:build/)
   assert.match(workflow, /run: yarn test:production-artifacts/)
+  assert.ok(
+    workflow.indexOf('run: yarn react:build') <
+      workflow.indexOf('run: yarn workspace @asyra/asyra-design typecheck'),
+    'Build workspace declarations before checking application consumers'
+  )
   assert.doesNotMatch(
     read('scripts/production-artifact-server.mjs'),
     /import .*vite/

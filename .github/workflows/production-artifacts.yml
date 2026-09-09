@@ -26,9 +26,9 @@ jobs:
       - run: yarn install --immutable
       - name: Install the existing Playwright browser
         run: yarn workspace @asyra/asyra-design playwright install --with-deps chromium
-      - name: Check Design application types
-        run: yarn workspace @asyra/asyra-design typecheck
       - name: Build production artifacts
         run: yarn react:build
+      - name: Check Design application types
+        run: yarn workspace @asyra/asyra-design typecheck
       - name: Test production artifacts without dev servers
         run: yarn test:production-artifacts

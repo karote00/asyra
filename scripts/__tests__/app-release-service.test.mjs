@@ -1,4 +1,4 @@
-/* global Response */
+/* global Response, URL */
 
 import assert from 'node:assert/strict'
 import test from 'node:test'
@@ -179,6 +179,58 @@ test('deployed smoke rejects protected pages and HTML fallback masquerading as J
           : '<html>fallback</html>',
         { headers: { 'content-type': 'text/html' } }
       )
+    })
+  )
+})
+
+test('protected staged deployment without automation secret fails before deployment creation', async () => {
+  const { options, mutations } = harness()
+  const original = options.vercel
+  options.vercel = async (...args) => {
+    const result = await original(...args)
+    return {
+      ...result,
+      ssoProtection: { deploymentType: 'prod_deployment_urls_and_all_previews' }
+    }
+  }
+  await assert.rejects(publishPlan(options), /automation bypass secret/)
+  assert.equal(mutations.length, 0)
+})
+
+test('automation bypass stays in headers on the exact staged origin and never follows external assets', async () => {
+  const requests = []
+  const fetcher = async (url, options) => {
+    requests.push({ url: String(url), options })
+    return new Response(
+      requests.length === 1
+        ? '<html><script src="/app.js"></script><script src="https://external.example/script.js"></script></html>'
+        : 'app()',
+      {
+        headers: {
+          'content-type':
+            requests.length === 1 ? 'text/html' : 'application/javascript'
+        }
+      }
+    )
+  }
+  await smokeOrigin('https://new.vercel.app', app, fetcher, {
+    bypassSecret: 'test-only',
+    bypassOrigin: 'https://new.vercel.app'
+  })
+  assert.equal(requests.length, 2)
+  for (const request of requests) {
+    assert.equal(new URL(request.url).origin, 'https://new.vercel.app')
+    assert.equal(
+      request.options.headers['x-vercel-protection-bypass'],
+      'test-only'
+    )
+    assert.equal(request.options.redirect, 'error')
+    assert.ok(!request.url.includes('test-only'))
+  }
+  await assert.rejects(
+    smokeOrigin('https://other.vercel.app', app, fetcher, {
+      bypassSecret: 'test-only',
+      bypassOrigin: 'https://new.vercel.app'
     })
   )
 })
