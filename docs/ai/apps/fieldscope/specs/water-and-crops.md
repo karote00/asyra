@@ -37,7 +37,7 @@ Models use original procedural geometry, not copied photograph textures. Plant h
 
 ## Product cases and completion
 
-Formal cases cover multiple drain widths, flat water height, soil below the curve, rounded lips, the section consumer, exact root offsets, 20 cm spacing, both cultivars, all 20 variants, repeatability, empty planting rows, invalid narrow soil, and configuration-dependent regeneration. Rendering admission and resource tests cover shared instances, transformed bounds and disposal. Runtime tests prove view changes perform zero geometry rebuilds while Apply/Undo/Redo refresh the scene. Close-up browser review must distinguish the two leaf types, long cucumber fruit, oval clustered tomatoes, calyces and tendrils. Existing app tests, typecheck, lint, production build and current-head CI must pass.
+Formal cases cover multiple drain widths, flat water height, soil below the curve, rounded lips, the section consumer, exact root offsets, 20 cm spacing, both cultivars, all 20 variants, repeatability, empty planting rows, invalid narrow soil, and configuration-dependent regeneration. Rendering admission and resource tests cover shared instances, transformed bounds and disposal. Runtime tests prove view changes perform zero geometry rebuilds while field commits/Undo/Redo refresh the scene. Close-up browser review must distinguish the two leaf types, long cucumber fruit, oval clustered tomatoes, calyces and tendrils. Existing app tests, typecheck, lint, production build and current-head CI must pass.
 
 ## Unharvested cucumber development
 

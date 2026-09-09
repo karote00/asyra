@@ -3,18 +3,30 @@ import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { expect, it, vi } from 'vitest'
 import { ConfigurationEditor } from '../configuration-editor'
-import { DEFAULT_CONFIGURATION } from '../../domain/farm-configuration'
+import {
+  DEFAULT_CONFIGURATION,
+  validateConfiguration,
+  type FarmConfiguration
+} from '../../domain/farm-configuration'
 import type { FarmRuntime } from '../../runtime/bootstrap'
 
-it('uses ordered 24px row icons and edits only the draft until Apply', async () => {
+it('uses ordered 24px row icons and commits strip edits without an Apply action', async () => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
-  const applyConfiguration = vi.fn()
+  let config = DEFAULT_CONFIGURATION
+  const listeners = new Set<() => void>()
+  const setConfiguration = vi.fn(async (next: FarmConfiguration) => {
+    config = validateConfiguration(next)
+    listeners.forEach((listener) => listener())
+  })
   const runtime = {
-    subscribeConfiguration: () => () => undefined,
-    getConfiguration: () => DEFAULT_CONFIGURATION,
+    subscribeConfiguration: (listener: () => void) => {
+      listeners.add(listener)
+      return () => listeners.delete(listener)
+    },
+    getConfiguration: () => config,
     getUndoDepth: () => 0,
     getRedoDepth: () => 0,
-    applyConfiguration
+    setConfiguration
   } as unknown as FarmRuntime
   const host = document.createElement('div'),
     root = createRoot(host)
@@ -63,7 +75,31 @@ it('uses ordered 24px row icons and edits only the draft until Apply', async () 
     await act(async () => button('Remove strip 1').click())
     expect(host.querySelectorAll('select').length).toBe(6)
     expect(host.querySelector<HTMLSelectElement>('select')?.value).toBe('soil')
-    expect(applyConfiguration).not.toHaveBeenCalled()
+    expect(setConfiguration).toHaveBeenCalledTimes(2)
+    expect(host.textContent).not.toContain('套用設定')
+    expect(host.textContent).not.toContain('查看陣列資料')
+    const length = host.querySelector<HTMLInputElement>(
+      'input[aria-label="溫室縱向深度"]'
+    )
+    const width = host.querySelector<HTMLInputElement>(
+      'input[aria-label="單棟寬度"]'
+    )
+    if (!length || !width) throw new Error('Missing dimension fields')
+    await act(async () => {
+      length.value = '41'
+      length.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))
+      width.value = '8'
+      width.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))
+    })
+    expect(setConfiguration).toHaveBeenCalledTimes(4)
+    expect(config.length).toBe(41)
+    expect(config.width).toBe(8)
+    expect(config.strips).toHaveLength(6)
+    await act(async () => {
+      length.value = ''
+      length.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))
+    })
+    expect(setConfiguration).toHaveBeenCalledTimes(4)
   } finally {
     await act(async () => root.unmount())
     host.remove()

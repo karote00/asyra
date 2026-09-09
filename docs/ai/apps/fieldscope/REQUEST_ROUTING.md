@@ -7,7 +7,7 @@
 | Crop appearance and planting layout | Crop domain; water/crop spec |
 | GPU objects, instance transforms, bounds | Engine; rendering module |
 | Camera and keyboard navigation | Camera adapters; camera spec |
-| Apply, Undo, Redo | Runtime and Core; configuration spec |
+| Field commits, Undo, Redo | Runtime and Core; configuration spec |
 | Panels and editor inputs | UI; configuration spec |
 | Deployment or validation | App configuration; workflow |
 

@@ -10,7 +10,7 @@ Feature: Greenhouse configuration and crop inspection
 
   Scenario: Reversible layout edit
     Given an accepted greenhouse configuration
-    When a valid dimensional draft is applied
+    When a valid dimensional field edit is completed
     Then one history entry replaces the complete scene
     When Undo and Redo are used
     Then each accepted scene and deterministic crop arrangement is restored

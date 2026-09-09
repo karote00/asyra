@@ -7,7 +7,7 @@ import {
 import { configurationSite } from '../domain/farm-configuration'
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { bootstrap, type FarmRuntime } from '../runtime/bootstrap'
-import { CROPS, createLayout } from '../domain/greenhouse'
+import { createLayout } from '../domain/greenhouse'
 import { createDrainProfile } from '../domain/drain-profile'
 import {
   LAYER_LABELS,
@@ -62,6 +62,7 @@ export function Workbench() {
           <Brand />
           <div className="flex items-center gap-7 text-sm">
             <span className="font-medium text-[#305d44]">溫室工作站</span>
+            <ReferenceLibrary />
             <span className="hidden text-[#8d968d] sm:inline">
               採收機器人監控
             </span>
@@ -88,35 +89,8 @@ export function Workbench() {
             </div>
           </div>
           <SceneWorkspace onReady={setRuntime} />
-          <div className="mt-6 grid gap-5 lg:grid-cols-[1.5fr_1fr]">
+          <div className="mt-6">
             <CrossSection />
-            <section className="rounded-2xl border border-[#dde3d8] bg-[#fafbf7] p-5">
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-sm font-semibold">
-                  接下來，讓田區成為可測試的環境
-                </h2>
-                <span className="text-[10px] tracking-widest text-[#8c967f]">
-                  ROADMAP
-                </span>
-              </div>
-              <div className="grid grid-cols-3 gap-4 text-xs">
-                <Roadmap
-                  step="02"
-                  title="可替換栽培"
-                  text="攀藤網、竹竿、彎曲鐵架與作物行距。"
-                />
-                <Roadmap
-                  step="03"
-                  title="採收模擬"
-                  text="路徑、手臂、枝葉接觸與載運穩定性。"
-                />
-                <Roadmap
-                  step="04"
-                  title="實機監控"
-                  text="同步姿態、任務事件、異常與重播。"
-                />
-              </div>
-            </section>
           </div>
           <footer className="mt-5 flex flex-wrap justify-between gap-2 text-[11px] text-[#8b9487]">
             <span>田巡 FieldScope - 以真實尺度，建立採收的下一步。</span>
@@ -166,23 +140,6 @@ function Metric({
         <span className="ml-1 text-xs text-[#85917c]">{unit}</span>
       </div>
       <div className="mt-1 text-[10px] text-[#829078]">{label}</div>
-    </div>
-  )
-}
-function Roadmap({
-  step,
-  title,
-  text
-}: {
-  step: string
-  title: string
-  text: string
-}) {
-  return (
-    <div>
-      <div className="mb-2 font-mono text-[#a0ad89]">{step}</div>
-      <div className="mb-2 font-medium">{title}</div>
-      <p className="leading-relaxed text-[#8b9383]">{text}</p>
     </div>
   )
 }
@@ -582,9 +539,6 @@ function Controls({
             01 / ENVIRONMENT
           </span>
         </div>
-        <p className="mt-1 text-[11px] text-[#87917e]">
-          切換覆膜，檢視溫室內部結構。
-        </p>
       </div>
       <div className="space-y-3.5 px-5 py-4">
         {(
@@ -625,42 +579,6 @@ function Controls({
           />
         </label>
       </div>
-      <div className="mx-4 rounded-xl bg-[#eef2e7] px-4 py-3">
-        <div className="text-[11px] font-semibold text-[#698052]">種植規劃</div>
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {CROPS.map((crop) => (
-            <span
-              key={crop}
-              className="rounded-md border border-[#dae3cc] bg-[#f8faf3] px-2 py-1 text-[10px] text-[#6e8057]"
-            >
-              {crop}
-            </span>
-          ))}
-        </div>
-        <p className="mt-2 text-[10px] leading-relaxed text-[#8a957d]">
-          <PlantingSummary />
-        </p>
-      </div>
-      <details className="px-5 py-4 text-[11px] text-[#7c8971]">
-        <summary className="font-medium">建模假設與結構參考</summary>
-        <p className="mt-3 leading-relaxed">
-          橫樑高度隨總高計算；拱架每 1m；立柱每 5m，尾端補齊；拱管直徑
-          48mm；立柱直徑 76mm；半圓水道深度為寬度一半，槽口圓角最大 1cm；擋板高
-          0.35m；端面開口依跨寬與簷高縮限，上限寬 2m、高
-          2.5m。通道淨寬須扣除立柱。
-        </p>
-        <p className="mt-2 leading-relaxed">
-          這是尺寸與構造模型，尚未進行耐風、承載或機器人通行驗證。
-        </p>
-        <a
-          href="https://book.tndais.gov.tw/Brochure/tech171.pdf"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-2 inline-block underline"
-        >
-          南改場溫網室技術專刊 ↗
-        </a>
-      </details>
     </aside>
   )
 }
@@ -791,8 +709,82 @@ function PlantingSummary() {
       Ø20mm 栽培管，埋深 15cm、頂高{' '}
       {(site.eave + config.topExtension).toFixed(2)}m，縱向間距 60cm。15cm
       方格網由束帶固定，上緣 {config.netTop}m、下緣 {config.netBottom}
-      m。Plants follow the soil rows at 20 cm spacing, using 20 variants per
-      cultivar.
+      m。沿土壤行每 20cm 種植一株，每個品種使用 20 種植株樣式。
+    </>
+  )
+}
+
+function ReferenceLibrary() {
+  const dialog = useRef<HTMLDialogElement>(null)
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => dialog.current?.showModal()}
+        className="rounded-lg border border-[#d9dfd2] px-3 py-2 text-xs hover:bg-[#edf1e8]"
+      >
+        參考資料
+      </button>
+      <dialog
+        ref={dialog}
+        aria-labelledby="reference-title"
+        onKeyDown={(event) => {
+          if (event.key === 'Escape') {
+            event.preventDefault()
+            event.stopPropagation()
+            dialog.current?.close()
+          }
+        }}
+        className="fixed inset-0 m-auto max-h-[80vh] w-[min(32rem,calc(100%-2rem))] overflow-auto rounded-xl border border-[#d9dfd2] bg-[#fafbf7] p-5 text-[#22382f] shadow-xl backdrop:bg-black/30"
+      >
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h2 id="reference-title" className="text-sm font-semibold">
+            參考資料
+          </h2>
+          <button
+            type="button"
+            aria-label="關閉參考資料"
+            onClick={() => dialog.current?.close()}
+            className="flex h-8 w-8 items-center justify-center rounded hover:bg-[#edf1e8]"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M5 5L19 19M19 5L5 19"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+            </svg>
+          </button>
+        </div>
+        <a
+          href="https://book.tndais.gov.tw/Brochure/tech171.pdf"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block rounded-lg border border-[#d9dfd2] p-3 text-sm hover:bg-[#edf1e8]"
+        >
+          南改場溫網室技術專刊 ↗
+        </a>
+        <details className="mt-4 text-xs text-[#50664f]">
+          <summary className="py-2 font-medium">栽培配置</summary>
+          <p className="leading-relaxed">
+            <PlantingSummary />
+          </p>
+        </details>
+        <details className="mt-4 text-xs text-[#50664f]">
+          <summary className="py-2 font-medium">模型尺寸與限制</summary>
+          <p className="mt-3 leading-relaxed">
+            橫樑高度隨總高計算；拱架每 1m；立柱每 5m，尾端補齊；拱管直徑
+            48mm；立柱直徑 76mm；半圓水道深度為寬度一半，槽口圓角最大
+            1cm；擋板高 0.35m；端面開口依跨寬與簷高縮限，上限寬 2m、高
+            2.5m。通道淨寬須扣除立柱。
+          </p>
+          <p className="mt-2 leading-relaxed">
+            這是尺寸與構造模型，尚未進行耐風、承載或機器人通行驗證。
+          </p>
+        </details>
+      </dialog>
     </>
   )
 }

@@ -6,7 +6,7 @@
 
 ## Update boundaries
 
-Configuration Apply, Undo, and Redo replace the site projection once. Camera motion, layer toggles, film opacity, panel visibility, and unfinished editor input do not rebuild geometry. Scene geometry remains valid for the owning configuration lifetime and is retired on replacement. Renderer admission receipts only recognize detached, deeply frozen products; caller identity is not validation.
+Completed configuration edits, Undo, and Redo replace the site projection once. Camera motion, layer toggles, film opacity, panel visibility, and unfinished editor input do not rebuild geometry. Scene geometry remains valid for the owning configuration lifetime and is retired on replacement. Renderer admission receipts only recognize detached, deeply frozen products; caller identity is not validation.
 
 Crop variants and placements are domain outputs. The renderer consumes completed instance transforms and triangle meshes; it must not decide crop species, spacing, ripeness, or water shape. Camera fitting consumes the bounds of actual instance transforms without expanding every plant's vertices.
 

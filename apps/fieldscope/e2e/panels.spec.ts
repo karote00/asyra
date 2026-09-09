@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-test('side panels collapse outward without remounting the canvas or discarding drafts', async ({
+test('side panels preserve immediate edits without remounting the canvas', async ({
   page
 }, testInfo) => {
   await page.goto('/')
@@ -46,7 +46,7 @@ test('side panels collapse outward without remounting the canvas or discarding d
   )
   await expect(
     page.getByRole('button', { name: '復原 ⌘Z', exact: true })
-  ).toBeDisabled()
+  ).toBeEnabled()
   await page.getByRole('button', { name: '展開圖層面板', exact: true }).click()
   await expect
     .poll(async () => (await scene.boundingBox())?.width ?? 0)
@@ -78,14 +78,22 @@ test('side panels collapse outward without remounting the canvas or discarding d
   await input.focus()
   await page.keyboard.press('Tab')
   await expect(page.getByLabel('單棟寬度', { exact: true })).toBeFocused()
-  const footer = await page
-    .getByRole('button', { name: '套用設定', exact: true })
-    .boundingBox()
-  const panel = await page.locator('#configuration-panel').boundingBox()
-  if (!footer || !panel) throw new Error('Missing editor footer')
-  expect(footer.y + footer.height).toBeLessThanOrEqual(panel.y + panel.height)
   await page.screenshot({
     path: testInfo.outputPath('mobile-editor.png'),
     fullPage: true
   })
+  await page.getByRole('button', { name: '參考資料', exact: true }).click()
+  await expect(page.getByRole('dialog', { name: '參考資料' })).toBeVisible()
+  await expect(
+    page.getByRole('link', { name: '南改場溫網室技術專刊 ↗' })
+  ).toHaveAttribute('target', '_blank')
+  await page.screenshot({
+    path: testInfo.outputPath('reference-library.png'),
+    fullPage: true
+  })
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('dialog')).not.toBeVisible()
+  await expect(
+    page.getByRole('button', { name: '參考資料', exact: true })
+  ).toBeFocused()
 })
