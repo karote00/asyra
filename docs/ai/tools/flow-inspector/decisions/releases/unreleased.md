@@ -133,3 +133,28 @@ Phase 5 record: recording package release intent is distinct from applying a
 version or publishing. The tool remains outside Framework bulk-release lists.
 The initial archive provides static assets and source; dynamic control-plane
 execution still depends on the Asyra checkout. No release is performed here.
+
+
+## 2026-09-08 - Accept bounded Sol local integration evidence
+
+The user selected Sol and authorized the existing ChatGPT subscription for a
+bounded local provider trial. The [completed record](../../plans/completed/flow-inspector-phase-5-sol-local-integration-closeout.md)
+records real model-produced regression, retained formal failure, corrected
+candidate, cancellation, human handoff and restart. This supersedes the earlier
+provider-unselected statement for this trial, while preserving immutable earlier
+records. Unknown remote settlement blocks further dispatch rather than resetting
+budgets. The trial closes only the selected macOS integration scope; full Phase 5,
+protected verification/delivery and Phase 6 remain open. The existing package
+patch Changeset is separate from closeout; no version application, merge, tag,
+publication, protection or deployment change is performed.
+
+## 2026-09-09 - Explain unresolved cancellation and retain local interruption receipts
+
+Retain subscription-based local execution and leave CI autonomous repair to
+separately configured operator integrations. Cancellation permits a bounded
+wait for an app-server interruption notification, persists that observation
+before completing local stop, and presents persistent investigation guidance.
+An interruption notification is not cloud or billing settlement. User
+acknowledgement, handoff and restart cannot remove an unresolved dispatch block.
+Offline contract cases and read-only replay of existing live records prove this
+follow-up; no new provider execution or remote reconciliation is claimed.

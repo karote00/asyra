@@ -6,26 +6,69 @@
   margin: 14px 0;
   border: 1px solid var(--line);
   border-radius: 8px;
-  padding: 10px;
+  padding: 16px;
   color: var(--text);
   background: var(--panel);
-  font-size: 12px;
+  font-size: 13px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
 }
 .proof-controls summary {
   cursor: pointer;
+  font-weight: 650;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.proof-controls > summary > span {
+  display: inline-block;
+  margin-left: 8px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-size: 12px;
 }
 .proof-body {
-  padding-top: 10px;
+  padding-top: 16px;
+}
+.proof-body > details {
+  margin-top: 20px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0 12px;
+  background: var(--bg);
+}
+.proof-body > details > summary {
+  padding: 12px 0;
+  color: var(--accent);
+}
+.proof-body > details[open] {
+  padding-bottom: 16px;
+}
+.proof-body > details[open] > summary {
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 16px;
+}
+.proof-body p {
+  margin: 12px 0;
+}
+.proof-body a:not([hidden]) {
+  display: block;
+  margin-top: 12px;
+  text-underline-offset: 3px;
 }
 .proof-body label {
   display: block;
-  margin-block: 10px;
+  margin-block: 16px;
+  color: var(--muted);
 }
 .proof-body select,
 .proof-body input {
   display: block;
   width: 100%;
-  margin-top: 5px;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin-top: 8px;
 }
 .proof-run-failure button,
 .proof-controls button,
@@ -34,7 +77,7 @@
 .proof-menu button {
   border: 1px solid var(--line);
   border-radius: 6px;
-  padding: 6px 8px;
+  padding: 9px 10px;
   color: var(--text);
   background: var(--bg);
   font: inherit;
@@ -59,7 +102,13 @@
 .proof-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 10px;
+  margin-block: 16px;
+}
+.proof-actions button {
+  flex: 1 1 140px;
+  text-align: left;
+  overflow-wrap: anywhere;
 }
 .proof-controls dd {
   margin: 4px 0 10px;
@@ -69,6 +118,24 @@
 .proof-controls pre {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+  font: inherit;
+  line-height: 1.75;
+  margin: 16px 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel);
+}
+.proof-controls pre:empty {
+  display: none;
+}
+#agent-recovery:not([hidden]) {
+  border-left: 3px solid #fbbf24;
+  background: #292315;
+}
+.proof-controls dt {
+  font-weight: 650;
+  margin-top: 16px;
 }
 .proof-controls p,
 .proof-mapping-change {

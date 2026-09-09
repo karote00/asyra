@@ -23,6 +23,60 @@ unknown charges or unmeasured token usage cannot silently activate one.
 
 ## Task admission
 
+### Real provider contract - active implementation
+
+The 2026-09-08 continuation activates a single trusted provider adapter behind
+the existing broker. Provider selection and live execution require explicit
+human authorization; a cached login is not authorization. Admission consumes a
+service-owned, non-secret authorization identity binding actor, adapter, exact
+model, billing mode, expiry and maximum adapter turn reservations (`maxRequests`). A request references
+that identity and cannot supply credentials, endpoints, commands or policy.
+Unsupported hard token, cost, CPU and memory requirements still reject.
+The provider capability is inert unless the trusted service registers it.
+The initial implementation targets the already installed Codex app-server
+interface with ChatGPT subscription authentication. On 2026-09-08 the user
+selected Sol (`gpt-5.6-sol`) and authorized the bounded subscription trial.
+[Actual local acceptance](plans/completed/flow-inspector-phase-5-sol-local-integration-closeout.md)
+records real source regression/correction and cancellation/handoff evidence.
+Authorization remains explicit for future execution; existing login alone is insufficient.
+
+Adapter turns are reserved durably before dispatch and never refunded on
+missing usage, transport error, cancellation or restart. Turn reservations, elapsed time,
+operations and attempts accumulate across retries and human handoff. Provider
+reported token observations are distinct from actual independently measured usage
+(unknown), cost (unknown), and adapter turn reservations (not tokens or independently counted HTTP requests). An uncertain
+remote request remains unresolved and blocks further dispatch until a trusted
+adapter reconciles a terminal response; human acknowledgement alone cannot claim
+remote settlement. Local cancellation prevents further broker effects even when
+remote computation or charging may continue. The broker never retries automatically. The installed app-server rejects overrides
+of its built-in OpenAI provider; internal HTTP/SSE retry counts are not measurable
+or hard-limited by this adapter. A hard network-request or token/cost limit is
+unsupported and must not be represented by `maxRequests`.
+The current ephemeral app-server transport has no independently queryable remote
+request receipt. Its unresolved requests therefore remain blocked for provider
+dispatch in that store; handoff preserves the candidate and explicitly reports
+this limitation. Starting another task does not bypass an unresolved request.
+Settled requests with missing usage also block further dispatch. No human
+"mark reconciled" endpoint exists. Adding verifiable remote reconciliation is
+separate provider capability work if the selected interface cannot supply it.
+
+Only the explicit step contract, allowed-file observations and bounded previous
+verification findings are model context. Provider text is untrusted JSON broker
+operation data; malformed, excessive or unsupported output produces no candidate
+effect. Secrets stay in the trusted transport, never task records, prompts,
+candidate execution, ordinary logs or public artifacts. The candidate sandbox
+and retained all-flow verifier remain unchanged. A real acceptance run must
+produce a meaningful behavior change or correction, retain an actual failing
+verification and passing correction, and preserve all six obligations. Offline
+transport fixtures prove protocol handling only and are recorded separately.
+
+The bounded DoD additionally requires authorization denial, dispatch reservation,
+provider errors, malformed/oversized output, absent usage, unresolved cancellation,
+restart/retry/handoff accounting, secret exclusion and board/API/CLI parity in
+permanent tests. The selected Sol local trial is recorded separately from offline
+contract tests; its read-only evidence replay never dispatches a model. Full
+Phase 5 and deferred protected delivery requirements are not closed by this trial.
+
 A request binds UUID, actor, target/step, objective, explicit allowed files,
 accepted contract digest and revision, captured source identity, adapter identity,
 required all-flow validation, wall-clock/tool-call/attempt limits and stop policy.
@@ -35,6 +89,12 @@ never authorization. One active proof or task is permitted per service.
 
 Names and format-1 task records are tool-owned, brand-neutral wire identities;
 existing proof attempt formats and accepted mapping versions remain unchanged.
+Real-provider format-1 records additionally retain the admitted non-secret
+`provider` contract and `providerRequests` observations. Existing demonstration
+records keep their original unknown token/cost values and acquire no invented
+provider observations. Each request binds an attempt identity; interrupted
+reservations become unresolved on load. Ordinary reads consume retained state
+without provider calls or source capture.
 Task identity replay returns the same task; conflicting input is rejected.
 Resuming uses the same task and cumulative budgets, with a fresh attempt UUID.
 
@@ -56,6 +116,18 @@ inverse restoration expression and must fail real Factory assertions. Recovery
 repairs that same expression. These fixtures prove control-plane behavior, not
 AI reasoning or arbitrary development competence.
 
+The optional app-server transport is a separate trusted process with an isolated
+home, no inherited environment credentials, no runtime environments, no dynamic
+tools, no workspace roots and no repository instruction sources. Shell, patch,
+web search, plugins and multi-agent features are disabled. OS policy permits
+provider communication, system runtime reads and its private runtime directory,
+but denies source-file reads, credential writes and all child-process creation.
+Only the exact operator-selected credential file is readable through a temporary
+read-only reference; secret bytes are not copied into candidate state or task
+artifacts. Logging is disabled and stderr is bounded and discarded. API-key auth
+is rejected before a model turn in subscription mode. Actual model support and
+authentication under these restrictions remain live-acceptance gates.
+
 Each operation is charged before admission, including denials and failed calls.
 Elapsed execution milliseconds and attempts accumulate across resume/restart;
 active interrupted time is conservatively charged up to the reserved deadline.
@@ -75,6 +147,18 @@ revision and captured source manifest; stale input blocks execution. Each attemp
 and its evidence remain historical. Human handoff contains the same contract,
 remaining budgets, source changes, verification and unresolved blockers.
 No candidate is applied to the user's checkout automatically.
+
+On cancellation, the subscription transport sends at most one `turn/interrupt`
+for its active turn and allows up to one second for the matching
+`turn/completed` interruption notification before closing its owned process.
+The task owner waits for transport cleanup and the pending operation observation
+before completing local stop. A matching interruption notification may add
+`interruptionConfirmed: true` to the existing request record. Absence means no
+confirmation was retained, including for older records. This is an app-server
+turn receipt, not an independently queryable cloud or billing receipt: the
+request remains unresolved and cannot authorize another dispatch. Wrong-turn
+notifications, RPC acknowledgement alone, disconnects and grace expiry do not
+confirm interruption. Late candidate operations remain rejected after abort.
 
 ## Candidate verification
 
@@ -115,6 +199,16 @@ execution, work, verification, delivery, budgets, changes, artifacts and handoff
 Original canvas/cards/edges/navigation/zoom remain owned by the viewer.
 Unsupported targets have no delegation action; task selection never grants a
 verification badge from candidate evidence to the accepted source.
+
+For a selected task with unresolved remote state or missing terminal usage,
+the Board shows a persistent follow-up notice, including retained interruption
+confirmations and the distinction between local stop and remote settlement.
+It directs the user to save audit and source changes, inspect provider usage
+and service status, and contact provider support when activity is unexplained.
+Task/attempt IDs and timestamps aid investigation but are not provider request
+IDs. Never share credentials. Human handoff allows candidate inspection only;
+restarting, waiting, dismissing a message, deleting records or creating another
+store is not a reconciliation mechanism. No manual unblock action is provided.
 
 Admission captures source once. Operations update one task-owned retained record;
 reads of already admitted state do no filesystem capture, history scan, evidence

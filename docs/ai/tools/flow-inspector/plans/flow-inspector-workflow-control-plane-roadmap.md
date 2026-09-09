@@ -459,3 +459,32 @@ Flow Inspector now owns scoped Changeset records, MIT metadata and a tested sour
 and static-asset archive. It remains outside Framework release allowlists.
 Repository-independent control-plane execution and registry publication are not
 completed by this preparation; the original provider/protection gaps remain.
+
+## Real Provider Local Continuation - 2026-09-08
+
+After PR #167 merged, the user activated implementation of a real-provider
+adapter behind the existing operation broker, in a new worktree. Provider,
+model, authentication and usage authorization remain explicit pending choices;
+offline protocol, containment and browser evidence cannot close live acceptance.
+The continuation preserves candidate sandboxing, accepted baselines and all six
+obligations. Remote reconciliation unsupported by an ephemeral provider remains
+visible and blocks further dispatch. No Phase 6 or deferred protection work is
+activated, and no full Phase 5 completion is claimed.
+
+
+## Sol Local Acceptance - 2026-09-08
+
+The user subsequently authorized Sol (`gpt-5.6-sol`) using the existing ChatGPT
+subscription. The [bounded completed record](completed/flow-inspector-phase-5-sol-local-integration-closeout.md)
+supersedes the provider-selection-pending status for this local trial only.
+Actual model-produced candidate regression and correction preserve both flows
+and all six obligations. Cancellation retains an unresolved remote turn; restart
+and handoff cannot reset reservations or claim settlement. Full Phase 5,
+independent verifier/issuer, GitHub enforcement, protected remote execution,
+Phase 6 and repository-independent dynamic execution remain unclosed.
+
+The 2026-09-09 follow-up retains local subscription operation and adds bounded
+app-server interruption confirmation plus Board investigation guidance.
+Confirmation is separate from remote settlement, so unresolved dispatch remains
+blocked. CI-driven autonomous repair and machine authentication are operator
+integrations, not implied by publishing the current package.

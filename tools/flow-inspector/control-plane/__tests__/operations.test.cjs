@@ -13,6 +13,56 @@ function directory(t) {
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }))
   return dir
 }
+test('provider capability is service-owned and state reports the same retained request observations', async (t) => {
+  const authorization = {
+    id: randomUUID(),
+    actor: LOCAL_ACTOR.id,
+    adapter: 'codex-app-server',
+    model: 'gpt-5.6-sol',
+    billing: 'chatgpt-subscription',
+    maxRequests: 1,
+    expiresAt: '2099-01-01T00:00:00.000Z'
+  }
+  const service = createService(root, {
+    directory: directory(t),
+    agentOptions: {
+      available: () => true,
+      providerAuthorization: authorization,
+      providerComplete: async () => ({
+        text: '{"tool":"shell"}',
+        terminal: true,
+        usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 }
+      })
+    }
+  })
+  try {
+    assert.deepEqual(service.state().tasks.providerAuthorization, authorization)
+    const contract = service.contract()
+    const id = service.startTask(
+      {
+        requestId: randomUUID(),
+        stepId: 'finalize-transaction-state',
+        objective: 'Bounded offline adapter contract case',
+        allowedFiles: ['packages/factory/src/data-transact.ts'],
+        adapter: 'provider',
+        scenario: 'task',
+        providerAuthorizationId: authorization.id,
+        budgets: { elapsedMs: 60000, toolCalls: 3, attempts: 2 },
+        contractDigest: contract.digest,
+        revision: 1
+      },
+      LOCAL_ACTOR
+    )
+    await service.waitTask(id)
+    assert.deepEqual(
+      service.state().tasks.records[0].providerRequests,
+      service.getTask(id).providerRequests
+    )
+    assert.equal(service.getTask(id).deliveryStatus, 'not-delivered')
+  } finally {
+    await service.close()
+  }
+})
 test(
   'candidate proof, explicit evolution acceptance, retained versions and shared reads survive restart',
   { timeout: 30000 },

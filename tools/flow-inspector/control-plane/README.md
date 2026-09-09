@@ -77,6 +77,22 @@ Choose a free port for this tool; do not terminate another application's server.
 
 ## CLI and CI Proof
 
+Periodic formal verification does not require a model or AI credentials.
+An external CI agent may orchestrate supported commands, but GitHub agent setup
+alone does not make the current macOS subscription adapter portable to CI.
+Unattended AI repair, machine authentication and protected remote verification
+remain separate integrations owned by the operator.
+
+If a provider task stops with **Provider follow-up required**, save its audit
+and candidate diff using the Board links. Check the provider's account usage
+and service status; contact provider support for unexplained activity using
+timestamps and task/attempt IDs, without credentials. Local IDs are not remote
+request receipts. **Hand off to human** preserves manual review, not model
+resumption. A recorded app-server interruption confirmation does not prove cloud
+execution or billing settlement. Missing confirmation stays unknown. This
+adapter has no remote receipt query after disconnect; preserve the unresolved
+record and do not delete it or create a new store to bypass the dispatch block.
+
 ```bash
 # Pass only when all six supported obligations pass.
 node tools/flow-inspector/control-plane/cli.cjs verify
@@ -290,6 +306,72 @@ workflow enforcement, version, tag or release is changed by closeout.
 
 ## Phase 5 Local Agent Trial
 
+### Optional real-provider integration - bounded Sol acceptance
+
+The board now distinguishes deterministic demonstration from an explicitly
+authorized provider. An existing login alone never enables the provider option.
+Offline adapter tests and no-model app-server preflight are reproducible without
+consuming subscription quota. The user-authorized `gpt-5.6-sol` trial is recorded
+in the [bounded completed record](../../../docs/ai/tools/flow-inspector/plans/completed/flow-inspector-phase-5-sol-local-integration-closeout.md).
+Future provider execution still requires an explicit model, credential source
+and usage allowance.
+
+After that decision, create a non-secret authorization JSON inside the checkout:
+
+```json
+{
+  "id": "<fresh UUID>",
+  "actor": "local-developer",
+  "adapter": "codex-app-server",
+  "model": "<explicitly selected model>",
+  "billing": "chatgpt-subscription",
+  "maxRequests": 12,
+  "expiresAt": "<explicit authorization expiry in ISO 8601>"
+}
+```
+
+Start the local service with `FLOW_AGENT_AUTHORIZATION` pointing to that
+repository-relative file, `FLOW_AGENT_EXECUTABLE` pointing to the approved
+installed app-server binary, and `FLOW_AGENT_CREDENTIAL_FILE` pointing to the
+existing credential file. Never put credential values in the authorization,
+command line, task objective or source. The server creates an isolated transport
+home and a read-only reference; OS containment prevents changing the original
+credential. Keyring-only authentication and failed refresh under read-only
+credentials are unsupported and must fail closed, without switching billing mode.
+No additional package or CLI installation occurs. The inspected local interface
+was Codex 0.153.4; PATH's older 0.40.0 CLI has no app-server support.
+
+Choose **Authorized real provider** on the original supported step and delegate
+the task. CLI/API requests use `adapter: "provider"`, `scenario: "task"`, and
+`providerAuthorizationId` matching the service authorization. Resume keeps the
+same task and uses scenario `task`; the adapter receives the previous verification
+findings. The model emits only broker JSON, never direct source or shell effects.
+
+The task panel and task JSON show each reserved adapter turn, owning attempt, terminal
+observation and provider-reported tokens separately from unknown actual token
+usage and cost. Reservations are consumed even on errors, missing usage or
+interruptions. The adapter-turn ceiling (`maxRequests`) applies across tasks sharing that authorization in
+the store, not merely one attempt. Internal HTTP/SSE requests and retries are
+not independently counted or hard-limited: this installed app-server rejects
+overrides of its built-in OpenAI provider. In-flight cancellation awaits local process
+settlement, but does not promise remote computation or billing stopped. This
+ephemeral interface has no independently queryable receipt: unresolved remote
+requests or missing usage block further provider dispatch, including new tasks;
+human handoff preserves the same evidence and candidate. No manual reconciliation
+override claims settlement. Credential files, provider runtime directories and
+temporary references are excluded from snapshots and package archives.
+
+Run reproducible offline tests with:
+
+```bash
+node --test --test-concurrency=1 tools/flow-inspector/control-plane/__tests__/{agent-contract,agent-provider,agent-transport,agent-task,agent-verifier}.test.cjs
+```
+
+The real app-server preflight test sends only initialization, account status and
+empty thread setup, with no credentials and no model turn. It is not real agent
+acceptance. Keep live evidence, including a meaningful source change, failing
+retained verification and correction, separate from these deterministic tests.
+
 Activated independently on 2026-09-08 under
 [Local Agent Execution](../../../docs/ai/tools/flow-inspector/AGENT_EXECUTION.md).
 The earlier Phase 4 closeout did not activate agents; this later user decision
@@ -412,3 +494,38 @@ FLOW_PROOF_URL=http://127.0.0.1:4319 FLOW_PROOF_BROWSER_CHANNEL=chrome node --te
 Browser artifacts include exact task state, regression/recovery details and narrow
 handoff screenshots under `tmp/flow-inspector/visual-review/`. There is no claim
 of saved supervision time or reduced cost without a measured comparison period.
+
+
+### Replay retained real-provider acceptance without model usage
+
+After the authorized task has completed its failure/correction and cancellation
+checkpoints, the formal browser replay reads retained server evidence only:
+
+```bash
+FLOW_PROOF_URL=http://127.0.0.1:64225 \
+FLOW_PROOF_BROWSER_CHANNEL=chrome \
+FLOW_LIVE_PROVIDER_TASK_ID=4ef0b75b-ac23-43a0-8de7-4d4900daa007 \
+FLOW_LIVE_PROVIDER_CANCEL_ID=34586650-4fc6-4fb9-9368-f2a3e41b74ca \
+node --test --test-name-pattern='retained live provider evidence' tools/flow-inspector/control-plane/__tests__/board.test.cjs
+```
+
+This requires the original retained task store and a running local server; fresh
+clones do not contain live records or credentials. The test validates the two
+attempts, all six obligations, review-only candidate source, unknown cancelled
+usage, Board/API/CLI identity and unchanged request counts, then saves screenshots
+and `review.json` beneath `tmp/flow-inspector/visual-review/provider-live-*`.
+It does not dispatch, retry, reconcile or cancel provider requests. Ordinary CI
+skips this explicitly selected live-record replay and runs offline contracts.
+
+### Verification panel readability
+
+All verification disclosures share one responsive presentation: separated
+section headers, full-width labeled controls, wrapping action groups and
+readable source/status blocks. This presentation does not alter operation
+permissions, evidence, task state or baseline acceptance. The formal Board
+readability case checks desktop and narrow panels and visits every catalog
+entry; it never dispatches a model request.
+
+Disclosure titles remain unfilled on pointer hover. Keyboard focus retains a
+visible outline; current-page, selected-card and failure indicators continue to
+communicate their existing states. Standalone entries embed the same viewer style.

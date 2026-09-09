@@ -1,13 +1,155 @@
-/* global document, window, Element, MutationObserver, WheelEvent, URL */
+/* global document, window, Element, MutationObserver, WheelEvent, URL, fetch, getComputedStyle */
 /* eslint-disable @typescript-eslint/no-require-imports */
 const assert = require('node:assert/strict')
 const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const { chromium, expect } = require('@playwright/test')
-const { startServer } = require('../server.cjs')
+const { startServer, parseLocalUrl } = require('../server.cjs')
 const { loadContract, MANIFEST_PATH } = require('../contracts.cjs')
 const { captureSource } = require('../snapshot.cjs')
+
+test(
+  'offline provider fixture renders request provenance and unresolved cancellation on the original board',
+  { skip: process.platform !== 'darwin', timeout: 30000 },
+  async () => {
+    const { randomUUID } = require('node:crypto')
+    const root = path.resolve(__dirname, '../../../..')
+    const parent = path.join(root, 'tmp/flow-inspector/visual-review')
+    fs.mkdirSync(parent, { recursive: true })
+    const artifacts = fs.mkdtempSync(path.join(parent, 'provider-offline-'))
+    const temporary = path.join(artifacts, 'browser-tmp')
+    fs.mkdirSync(temporary)
+    const previous = process.env.TMPDIR
+    process.env.TMPDIR = temporary
+    const authorization = {
+      id: randomUUID(),
+      actor: 'local-developer',
+      adapter: 'codex-app-server',
+      model: 'offline-fixture',
+      billing: 'chatgpt-subscription',
+      maxRequests: 3,
+      expiresAt: '2099-01-01T00:00:00.000Z'
+    }
+    let calls = 0,
+      browser
+    const server = await startServer(root, {
+      serviceOptions: {
+        directory: path.join(artifacts, 'runs'),
+        agentOptions: {
+          available: () => true,
+          providerAuthorization: authorization,
+          providerComplete: async () => {
+            calls++
+            if (calls === 2) return new Promise(() => undefined)
+            return {
+              text: '{"tool":"shell"}',
+              terminal: true,
+              usage: { inputTokens: 2, outputTokens: 1, totalTokens: 3 }
+            }
+          }
+        }
+      }
+    })
+    try {
+      browser = await chromium.launch({
+        channel: process.env.FLOW_PROOF_BROWSER_CHANNEL || undefined,
+        downloadsPath: temporary
+      })
+      const page = await browser.newPage({
+        viewport: { width: 1600, height: 1100 }
+      })
+      await page.goto(server.origin + '/transaction-atomicity')
+      const canvas = page.frameLocator('iframe')
+      await canvas
+        .locator('[data-step-id="finalize-transaction-state"]')
+        .click()
+      await canvas.locator('#proof-controls > summary').click()
+      await canvas.locator('#agent-controls > summary').click()
+      await canvas.locator('#agent-adapter').selectOption('provider')
+      await expect(canvas.locator('#agent-result')).toContainText(
+        'No task selected. Authorized provider selected; no model turn dispatched.'
+      )
+      await expect(canvas.locator('#agent-provider-info')).toContainText(
+        'offline-fixture'
+      )
+      await canvas
+        .locator('#agent-objective')
+        .fill('Offline protocol fixture - not real provider acceptance')
+      await canvas.locator('#agent-start').click()
+      await expect(canvas.locator('#agent-result')).toContainText(
+        'Execution: denied'
+      )
+      await expect(canvas.locator('#agent-result')).toContainText(
+        'Provider-reported tokens: 3'
+      )
+      await expect(canvas.locator('#agent-result')).toContainText(
+        'Delivery: not-delivered'
+      )
+      await canvas
+        .locator('#agent-result')
+        .screenshot({ path: path.join(artifacts, 'provider-denial.png') })
+      await canvas.locator('#agent-start').click()
+      await expect.poll(() => calls).toBe(2)
+      await expect(canvas.locator('#agent-result')).toContainText(
+        'Provider turn pending; reservation retained while awaiting a terminal response.'
+      )
+      await expect(canvas.locator('#agent-result')).not.toContainText(
+        'Reconciliation required'
+      )
+      await canvas.locator('#agent-cancel').click()
+      await expect(canvas.locator('#agent-result')).toContainText(
+        'Reconciliation required'
+      )
+      await expect(canvas.locator('#agent-resume')).toBeDisabled()
+      await expect(canvas.locator('#agent-recovery')).toBeVisible()
+      await expect(canvas.locator('#agent-recovery')).toContainText(
+        'Local task stopped'
+      )
+      await expect(canvas.locator('#agent-recovery')).toContainText(
+        'Save the task audit and candidate diff'
+      )
+      await expect(canvas.locator('#agent-recovery')).toContainText(
+        'Do not delete records or create a new store'
+      )
+      await canvas.locator('#agent-handoff').click()
+      await expect(canvas.locator('#agent-result')).toContainText(
+        'Execution: handed-off'
+      )
+      await expect(canvas.locator('#agent-recovery')).toBeVisible()
+      await expect(canvas.locator('#agent-resume')).toBeDisabled()
+      assert.equal(
+        calls,
+        2,
+        'reading guidance and handing off never dispatch a model'
+      )
+      await expect(canvas.locator('.step-card')).toHaveCount(7)
+      await expect(canvas.locator('[data-route-id]')).toHaveCount(10)
+      await canvas
+        .locator('#agent-controls')
+        .screenshot({ path: path.join(artifacts, 'provider-unresolved.png') })
+      fs.writeFileSync(
+        path.join(artifacts, 'review.json'),
+        JSON.stringify(
+          {
+            fidelity: 'offline fixture only',
+            origin: server.origin,
+            viewport: { width: 1600, height: 1100 },
+            stepId: 'finalize-transaction-state',
+            tasks: server.service.state().tasks
+          },
+          null,
+          2
+        )
+      )
+    } finally {
+      await browser?.close()
+      await server.close()
+      if (previous === undefined) delete process.env.TMPDIR
+      else process.env.TMPDIR = previous
+    }
+  }
+)
 
 test(
   'the original canvas retains geometry and controls while card verification fails, recovers, and restores history',
@@ -534,10 +676,10 @@ test(
       await page
         .getByRole('button', { name: 'Close Inspector catalog' })
         .click()
+      await canvas.getByRole('button', { name: 'Close step details' }).click()
       await canvas
         .getByRole('button', { name: 'Close Inspector header' })
         .click()
-      await canvas.getByRole('button', { name: 'Close step details' }).click()
       await expect(canvas.locator('.flow-viewport')).toBeVisible()
       await expect(
         canvas.locator('[data-panel-button="details"]')
@@ -1186,6 +1328,9 @@ test(
         .click()
       await canvas.locator('#proof-controls > summary').click()
       await canvas.locator('#agent-controls > summary').click()
+      await expect(
+        canvas.locator('#agent-adapter option[value="provider"]')
+      ).toHaveJSProperty('disabled', true)
       await expect(canvas.locator('#agent-step')).toContainText(
         'finalize-transaction-state'
       )
@@ -1316,6 +1461,455 @@ test(
           2
         )
       )
+    } finally {
+      await browser?.close()
+      await server.close()
+      if (previous === undefined) delete process.env.TMPDIR
+      else process.env.TMPDIR = previous
+    }
+  }
+)
+
+test(
+  'retained live provider evidence agrees across Board, API and CLI without another model request',
+  {
+    skip:
+      !process.env.FLOW_LIVE_PROVIDER_TASK_ID ||
+      !process.env.FLOW_LIVE_PROVIDER_CANCEL_ID,
+    timeout: 30000
+  },
+  async () => {
+    const { spawnSync } = require('node:child_process')
+    const { validId } = require('../store.cjs')
+    const root = path.resolve(__dirname, '../../../..')
+    const origin = parseLocalUrl(process.env.FLOW_PROOF_URL).origin
+    const taskId = process.env.FLOW_LIVE_PROVIDER_TASK_ID
+    const cancelId = process.env.FLOW_LIVE_PROVIDER_CANCEL_ID
+    assert.ok(validId(taskId) && validId(cancelId))
+    const read = async (route) => {
+      const response = await fetch(origin + route)
+      assert.equal(response.status, 200)
+      return response.json()
+    }
+    const task = await read('/api/tasks/' + taskId)
+    const cancelled = await read('/api/tasks/' + cancelId)
+    const changes = await read('/api/tasks/' + taskId + '/changes')
+    const state = await read('/api/state')
+    assert.equal(task.task.adapter, 'provider')
+    assert.equal(task.task.provider.model, 'gpt-5.6-sol')
+    assert.equal(task.task.provider.billing, 'chatgpt-subscription')
+    assert.equal(task.verificationStatus, 'passed')
+    assert.equal(task.workStatus, 'needs-review')
+    assert.equal(task.deliveryStatus, 'not-delivered')
+    assert.equal(task.attempts.length, 2)
+    assert.deepEqual(
+      task.attempts[0].verdict.evidence.cases
+        .filter((item) => item.status === 'failed')
+        .map((item) => item.id)
+        .sort(),
+      ['cancel.delivery', 'cancel.outcome']
+    )
+    assert.equal(task.attempts[1].verdict.evidence.passedCount, 6)
+    assert.equal(task.attempts[1].verdict.evidence.cases.length, 6)
+    assert.ok(
+      task.providerRequests.every(
+        (item) => item.state === 'settled' && item.usage.totalTokens > 0
+      )
+    )
+    assert.equal(task.usage.tokens, null)
+    assert.equal(task.usage.cost, null)
+    assert.equal(cancelled.task.provider.id, task.task.provider.id)
+    assert.equal(cancelled.phase, 'handed-off')
+    assert.equal(cancelled.runnerPid, null)
+    assert.ok(
+      cancelled.providerRequests.some(
+        (item) => item.state === 'unresolved' && item.usage === null
+      )
+    )
+    assert.ok(
+      cancelled.audit.some((item) => JSON.stringify(item).includes('cancel'))
+    )
+    assert.ok(
+      task.providerRequests.length + cancelled.providerRequests.length <=
+        task.task.provider.maxRequests
+    )
+    assert.equal(state.mapping.revision, task.task.revision)
+    assert.equal(changes.length, 1)
+    assert.equal(changes[0].path, 'packages/factory/src/data-transact.ts')
+    assert.equal(
+      fs.readFileSync(path.join(root, changes[0].path), 'utf8'),
+      changes[0].before
+    )
+    assert.match(
+      changes[0].after,
+      /const previousValue = \(payload as \{ before\?: unknown \}\).before/
+    )
+    assert.match(changes[0].after, /inversePayload.after = previousValue/)
+    const parent = path.join(root, 'tmp/flow-inspector/visual-review')
+    fs.mkdirSync(parent, { recursive: true })
+    const artifacts = fs.mkdtempSync(path.join(parent, 'provider-live-'))
+    const temporary = path.join(artifacts, 'browser-tmp')
+    fs.mkdirSync(temporary)
+    const previous = process.env.TMPDIR
+    process.env.TMPDIR = temporary
+    let browser
+    try {
+      browser = await chromium.launch({
+        channel: process.env.FLOW_PROOF_BROWSER_CHANNEL || undefined,
+        downloadsPath: temporary
+      })
+      const page = await browser.newPage({
+        viewport: { width: 1600, height: 1100 }
+      })
+      await page.goto(origin + '/transaction-atomicity')
+      const canvas = page.frameLocator('iframe')
+      await canvas
+        .locator('[data-step-id="finalize-transaction-state"]')
+        .click()
+      await canvas.locator('#proof-controls > summary').click()
+      await canvas.locator('#agent-controls > summary').click()
+      for (const record of [task, cancelled]) {
+        const cli = spawnSync(
+          process.execPath,
+          [
+            'tools/flow-inspector/control-plane/cli.cjs',
+            '--url',
+            origin,
+            'task-show',
+            record.id
+          ],
+          { cwd: root, encoding: 'utf8', timeout: 5000, maxBuffer: 8000000 }
+        )
+        assert.equal(cli.status, 0)
+        assert.deepEqual(JSON.parse(cli.stdout), record)
+        await canvas.locator('#agent-history').selectOption(record.id)
+        await expect(canvas.locator('#agent-result')).toContainText(
+          'Task: ' + record.id
+        )
+        await expect(canvas.locator('#agent-result')).toContainText(
+          'Provider: codex-app-server - gpt-5.6-sol'
+        )
+        await expect(canvas.locator('#agent-result')).toContainText(
+          'Delivery: not-delivered'
+        )
+        if (record.id === taskId) {
+          await expect(canvas.locator('#agent-result')).toContainText(
+            'Verification: passed'
+          )
+          await expect(canvas.locator('#agent-result')).toContainText(
+            'Work: needs-review'
+          )
+        } else {
+          await expect(canvas.locator('#agent-result')).toContainText(
+            'Reconciliation required'
+          )
+          await expect(canvas.locator('#agent-resume')).toBeDisabled()
+          await expect(canvas.locator('#agent-recovery')).toBeVisible()
+          await expect(canvas.locator('#agent-recovery')).toContainText(
+            'Local task stopped'
+          )
+          await canvas.locator('#agent-recovery').screenshot({
+            path: path.join(artifacts, 'live-cancellation-guidance.png')
+          })
+        }
+        await canvas.locator('#agent-result').screenshot({
+          path: path.join(
+            artifacts,
+            record.id === taskId ? 'live-correction.png' : 'live-handoff.png'
+          )
+        })
+      }
+      await expect(canvas.locator('.step-card')).toHaveCount(7)
+      await expect(canvas.locator('[data-route-id]')).toHaveCount(10)
+      const after = await read('/api/tasks/' + taskId)
+      const cancelAfter = await read('/api/tasks/' + cancelId)
+      assert.deepEqual(after.providerRequests, task.providerRequests)
+      assert.deepEqual(cancelAfter.providerRequests, cancelled.providerRequests)
+      fs.writeFileSync(
+        path.join(artifacts, 'review.json'),
+        JSON.stringify(
+          {
+            fidelity:
+              'actual authorized gpt-5.6-sol execution; read-only replay',
+            origin,
+            task,
+            cancelled
+          },
+          null,
+          2
+        )
+      )
+      console.log('Live provider review artifacts: ' + artifacts)
+    } finally {
+      await browser?.close()
+      if (previous === undefined) delete process.env.TMPDIR
+      else process.env.TMPDIR = previous
+    }
+  }
+)
+
+test(
+  'all verification sections retain readable spacing and fit narrow detail panels',
+  { timeout: 30000 },
+  async () => {
+    const root = path.resolve(__dirname, '../../../..')
+    const artifacts = path.join(
+      root,
+      'tmp/flow-inspector/visual-review/readability'
+    )
+    fs.mkdirSync(artifacts, { recursive: true })
+    const previous = process.env.TMPDIR
+    process.env.TMPDIR = artifacts
+    const server = await startServer(root, {
+      serviceOptions: { directory: path.join(artifacts, 'runs') }
+    })
+    let browser
+    try {
+      browser = await chromium.launch({
+        channel: process.env.FLOW_PROOF_BROWSER_CHANNEL || undefined,
+        downloadsPath: artifacts
+      })
+      const page = await browser.newPage()
+      page.setDefaultTimeout(5000)
+      for (const width of [1600, 960, 576]) {
+        await page.setViewportSize({ width, height: 1000 })
+        await page.goto(server.origin + '/transaction-atomicity')
+        const frame = page.frameLocator('iframe')
+        await frame
+          .locator('[data-step-id="finalize-transaction-state"]')
+          .click()
+        await frame.locator('#proof-controls > summary').click()
+        await frame.locator('.proof-body > details').evaluateAll((nodes) =>
+          nodes.forEach((node) => {
+            node.open = true
+          })
+        )
+        for (const summary of await frame
+          .locator('#proof-controls summary')
+          .all()) {
+          await page.mouse.move(0, 0)
+          const background = await summary.evaluate(
+            (node) => getComputedStyle(node).backgroundColor
+          )
+          await summary.hover()
+          assert.equal(
+            await summary.evaluate(
+              (node) => getComputedStyle(node).backgroundColor
+            ),
+            background,
+            'pointer hover must not paint a disclosure highlight'
+          )
+        }
+        const title = frame.locator('#proof-controls > summary')
+        await title.focus()
+        await page.keyboard.press('Tab')
+        await page.keyboard.press('Shift+Tab')
+        assert.equal(
+          await title.evaluate((node) => node.matches(':focus-visible')),
+          true
+        )
+        assert.equal(
+          await title.evaluate((node) => getComputedStyle(node).outlineWidth),
+          '2px'
+        )
+        if (width === 1600) {
+          const group = page.locator('.group-toggle').first()
+          await group.hover()
+          assert.equal(
+            await group.evaluate((node) => getComputedStyle(node).outlineStyle),
+            'none',
+            'pointer hover must not mimic keyboard focus'
+          )
+          await group.focus()
+          await page.keyboard.press('Tab')
+          await page.keyboard.press('Shift+Tab')
+          assert.equal(
+            await group.evaluate((node) => node.matches(':focus-visible')),
+            true
+          )
+          assert.equal(
+            await group.evaluate((node) => getComputedStyle(node).outlineWidth),
+            '2px'
+          )
+        }
+        const metrics = await frame
+          .locator('#proof-controls')
+          .evaluate((panel) => {
+            const style = getComputedStyle(panel)
+            return {
+              font: parseFloat(style.fontSize),
+              line: parseFloat(style.lineHeight),
+              overflow: panel.scrollWidth - panel.clientWidth,
+              sections: [
+                ...panel.querySelectorAll('.proof-body > details')
+              ].map((section) => ({
+                top: parseFloat(getComputedStyle(section).marginTop),
+                padding: parseFloat(
+                  getComputedStyle(section.querySelector('summary')).paddingTop
+                )
+              }))
+            }
+          })
+        assert.ok(metrics.font >= 13, 'verification text must remain readable')
+        assert.ok(metrics.line >= 20, 'verification lines need breathing room')
+        assert.ok(metrics.overflow <= 1, 'controls must fit the detail panel')
+        assert.equal(metrics.sections.length, 5)
+        for (const section of metrics.sections) {
+          assert.ok(
+            section.top >= 16,
+            'each disclosure must be separated from its predecessor'
+          )
+          assert.ok(
+            section.padding >= 10,
+            'disclosure titles need an independent reading and click area'
+          )
+        }
+        await page.screenshot({
+          path: path.join(artifacts, `verification-${width}.png`)
+        })
+        for (let index = 0; index < metrics.sections.length; index++) {
+          await frame
+            .locator('.proof-body > details > summary')
+            .nth(index)
+            .evaluate((node) => node.scrollIntoView({ block: 'start' }))
+          await page.screenshot({
+            path: path.join(artifacts, `section-${index}-${width}.png`)
+          })
+        }
+      }
+      const snapshot = {}
+      require('node:vm').runInNewContext(
+        fs.readFileSync(
+          path.join(
+            root,
+            'tools/flow-inspector/workspace/workspace-bundle.data.js'
+          ),
+          'utf8'
+        ),
+        snapshot
+      )
+      const inspected = []
+      await page.setViewportSize({ width: 1280, height: 900 })
+      for (const entry of snapshot.FLOW_INSPECTOR_WORKSPACE_BUNDLE.entries) {
+        await page.goto(server.origin + '/' + entry.slug)
+        const frame = page.frameLocator('iframe')
+        await expect(frame.locator('h1:visible')).toBeVisible()
+        if (entry.kind === 'flow-v2') {
+          await frame.locator('.step-card').first().click()
+          await expect(frame.locator('.detail-heading')).toBeVisible()
+          const overflow = await frame
+            .locator('#detail')
+            .evaluate((node) => node.scrollWidth - node.clientWidth)
+          assert.ok(
+            overflow <= 1,
+            entry.slug + ' detail must wrap long content'
+          )
+        }
+        inspected.push({ slug: entry.slug, kind: entry.kind })
+      }
+      fs.writeFileSync(
+        path.join(artifacts, 'catalog-review.json'),
+        JSON.stringify(inspected, null, 2)
+      )
+    } finally {
+      await browser?.close()
+      await server.close()
+      if (previous === undefined) delete process.env.TMPDIR
+      else process.env.TMPDIR = previous
+    }
+  }
+)
+
+test(
+  'narrow workspace gives canvas and step reading separate stable scroll surfaces',
+  { timeout: 30000 },
+  async () => {
+    const root = path.resolve(__dirname, '../../../..')
+    const artifacts = path.join(
+      root,
+      'tmp/flow-inspector/visual-review/narrow-navigation'
+    )
+    fs.mkdirSync(artifacts, { recursive: true })
+    const previous = process.env.TMPDIR
+    process.env.TMPDIR = artifacts
+    const server = await startServer(root, {
+      serviceOptions: { directory: path.join(artifacts, 'runs') }
+    })
+    let browser
+    try {
+      browser = await chromium.launch({
+        channel: process.env.FLOW_PROOF_BROWSER_CHANNEL || undefined,
+        downloadsPath: artifacts
+      })
+      const page = await browser.newPage({
+        viewport: { width: 576, height: 720 }
+      })
+      await page.goto(server.origin + '/transaction-atomicity')
+      const frame = page.frameLocator('iframe')
+      await expect(page.locator('.sidebar')).toBeHidden()
+      await expect(frame.locator('#detail')).toBeHidden()
+      const viewport = frame.locator('.flow-viewport')
+      await frame.locator('[data-step-id="finalize-transaction-state"]').click()
+      const retainedView = await viewport.evaluate((node) => [
+        node.scrollLeft,
+        node.scrollTop,
+        node.dataset.zoomScale
+      ])
+      await expect(frame.locator('#detail')).toBeVisible()
+      await expect(viewport).toBeHidden()
+      await frame.locator('#proof-controls > summary').click()
+      await frame.locator('#agent-controls > summary').click()
+      await frame.locator('#detail').hover()
+      await page.mouse.wheel(0, 700)
+      await expect
+        .poll(() => frame.locator('#detail').evaluate((node) => node.scrollTop))
+        .toBeGreaterThan(100)
+      assert.equal(
+        await page.evaluate(() => document.scrollingElement.scrollTop),
+        0
+      )
+      assert.equal(
+        await frame
+          .locator('body')
+          .evaluate((node) => node.ownerDocument.scrollingElement.scrollTop),
+        0
+      )
+      await expect(
+        frame.getByRole('button', { name: 'Close step details' })
+      ).toBeInViewport()
+      await page.screenshot({ path: path.join(artifacts, 'detail-scroll.png') })
+      await frame.getByRole('button', { name: 'Close step details' }).click()
+      await expect(viewport).toBeVisible()
+      await expect(frame.locator('#detail')).toBeHidden()
+      assert.deepEqual(
+        await viewport.evaluate((node) => [
+          node.scrollLeft,
+          node.scrollTop,
+          node.dataset.zoomScale
+        ]),
+        retainedView
+      )
+      await page.setViewportSize({ width: 820, height: 720 })
+      await expect(viewport).toBeVisible()
+      await frame.getByRole('button', { name: 'Catalog panel' }).click()
+      await expect(page.locator('.sidebar')).toBeVisible()
+      await expect(page.locator('.workspace-main')).toBeHidden()
+      await page
+        .getByRole('button', {
+          name: /Transaction Atomicity Inspector Flow Architecture/
+        })
+        .click()
+      await expect(page.locator('.sidebar')).toBeHidden()
+      await expect(viewport).toBeVisible()
+      await page.screenshot({ path: path.join(artifacts, 'flow-restored.png') })
+      await frame.getByRole('button', { name: 'Catalog panel' }).click()
+      await expect(page.locator('.sidebar')).toBeVisible()
+      await page.getByRole('button', { name: 'Overview', exact: true }).click()
+      await expect(
+        page.getByRole('button', { name: 'Open Inspector catalog' })
+      ).toBeVisible()
+      await page.getByRole('button', { name: 'Open Inspector catalog' }).click()
+      await expect(page.locator('.sidebar')).toBeVisible()
     } finally {
       await browser?.close()
       await server.close()

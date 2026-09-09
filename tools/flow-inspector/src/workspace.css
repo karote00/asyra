@@ -162,8 +162,10 @@ input {
 .group-toggle:hover,
 .group-toggle:focus-visible {
   color: var(--accent);
-  background: var(--panel);
+}
+.group-toggle:focus-visible {
   outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .group-items {
@@ -250,18 +252,24 @@ input {
   color: var(--danger);
 }
 
-@media (max-width: 760px) {
+@media (max-width: 900px) {
   .workspace-shell {
-    grid-template-areas:
-      'sidebar'
-      'main';
+    grid-template-areas: 'main';
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(210px, 38vh) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    height: 100dvh;
   }
 
   .sidebar {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    overscroll-behavior: contain;
     border-right: 0;
-    border-bottom: 1px solid var(--line);
+  }
+
+  .workspace-shell:not(.is-catalog-collapsed) .workspace-main {
+    visibility: hidden;
   }
 
   .workspace-shell.is-catalog-collapsed {

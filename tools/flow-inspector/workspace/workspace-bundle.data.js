@@ -35360,13 +35360,14 @@
             "inputs": [
               "artifact:admitted-proof-contract",
               "human task request and accepted revision",
+              "trusted non-secret provider authorization when selecting a real adapter",
               "declared source snapshot"
             ],
             "outputs": [
               "artifact:admitted-agent-task"
             ],
             "conditions": [
-              "Reject unknown capabilities, hard token claims, non-runtime scope and incomplete owner contracts before effects. Bind exact step, actor, source, budgets and required retained obligations."
+              "Reject unknown capabilities, hard token claims, non-runtime scope and incomplete owner contracts before effects. Bind exact step, actor, source, budgets and required retained obligations. Real provider admission requires matching service-owned authorization, exact model, billing mode, expiry and request ceiling; caller or model data cannot authorize itself."
             ],
             "bypasses": [
               "No unknown, stale, denied or missing input may become success."
@@ -35402,6 +35403,7 @@
             "inputs": [
               "artifact:admitted-agent-task",
               "registered adapter operation data",
+              "trusted provider transport settlement and usage observations",
               "human stop, cancel, resume, revoke or handoff request",
               "artifact:agent-candidate-verdict"
             ],
@@ -35410,7 +35412,7 @@
               "artifact:agent-candidate-source"
             ],
             "conditions": [
-              "Broker operations before effects; persist cumulative budgets and audit with task state. Preserve partial source and history across cancellation and restart. Finish requires actual source progress; candidate verdict never authorizes baseline acceptance."
+              "Broker operations before effects; persist cumulative budgets and audit with task state. Reserve adapter turns before dispatch against the authorization lifetime; internal HTTP retries remain unmeasured and are not a supported hard limit; retain unknown usage and unresolved remote requests across cancellation and restart and block replay until trusted reconciliation. Preserve partial source and history across cancellation and restart. Finish requires actual source progress; candidate verdict never authorizes baseline acceptance."
             ],
             "bypasses": [
               "No unknown, stale, denied or missing input may become success."
@@ -35430,6 +35432,10 @@
             "implementationBoundary": [
               "tools/flow-inspector/control-plane/agent-task.cjs",
               "tools/flow-inspector/control-plane/agent-adapter.cjs",
+              "tools/flow-inspector/control-plane/agent-provider.cjs",
+              "tools/flow-inspector/control-plane/agent-transport.cjs",
+              "tools/flow-inspector/control-plane/__tests__/agent-provider.test.cjs",
+              "tools/flow-inspector/control-plane/__tests__/agent-transport.test.cjs",
               "tools/flow-inspector/control-plane/__tests__/agent-task.test.cjs"
             ],
             "specRefs": [

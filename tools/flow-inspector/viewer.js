@@ -161,9 +161,10 @@
   }
 
   const enablePanelControls = () => {
-    let catalogVisible = true
-    let headerVisible = true
-    let detailVisible = true
+    const narrow = () => window.innerWidth <= 900
+    let catalogVisible = !narrow()
+    let headerVisible = !narrow()
+    let detailVisible = !narrow()
     const headerPanel = header
     const catalogToggle = document.createElement('button')
     const headerClose = document.createElement('button')
@@ -255,7 +256,33 @@
       detailVisible = false
       renderVisibility()
       notifyParent('details', false)
+      flow.querySelector('.is-selected')?.focus({ preventScroll: true })
     })
+    flow.addEventListener('click', (event) => {
+      if (!event.target.closest('.step-card')) return
+      detailVisible = true
+      renderVisibility()
+      notifyParent('details', true)
+      if (narrow()) {
+        detail.scrollTop = 0
+        detailClose.focus({ preventScroll: true })
+      }
+    })
+    flow.addEventListener(
+      'flowfitrequest',
+      (event) => {
+        const ids = event.detail?.stepIds
+        if (!narrow() || !Array.isArray(ids)) return
+        if (
+          ![...flow.children].some((card) => ids.includes(card.dataset.stepId))
+        )
+          return
+        detailVisible = false
+        renderVisibility()
+        notifyParent('details', false)
+      },
+      true
+    )
     headerOpen.addEventListener('click', () => {
       headerVisible = !headerVisible
       renderVisibility()
@@ -274,7 +301,6 @@
       else if (message.panel === 'details') detailVisible = message.visible
       else return
       renderVisibility()
-      notifyParent(message.panel, message.visible)
     })
     renderVisibility()
     notifyParent('catalog', catalogVisible)

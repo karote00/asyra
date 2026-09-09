@@ -27,9 +27,11 @@ export function WorkspaceApp({
 }: WorkspaceAppProps) {
   const [browserLocation, setBrowserLocation] = useState(readBrowserLocation)
   const [query, setQuery] = useState('')
-  const [catalogVisible, setCatalogVisible] = useState(true)
+  const [catalogVisible, setCatalogVisible] = useState(
+    () => window.innerWidth > 900
+  )
   const [headerVisible, setHeaderVisible] = useState(true)
-  const [detailsVisible, setDetailsVisible] = useState(true)
+  const [detailsVisible, setDetailsVisible] = useState<boolean | null>(null)
   const targetFrameRef = useRef<HTMLIFrameElement>(null)
   const [collapsedGroups, setCollapsedGroups] = useState<Set<InspectorGroup>>(
     new Set()
@@ -113,6 +115,7 @@ export function WorkspaceApp({
   }, [route])
 
   const navigate = (entry: WorkspaceEntry | null) => {
+    if (window.innerWidth <= 900) setCatalogVisible(false)
     if (routingMode === 'path') {
       const href = entry ? `/${entry.slug}` : '/'
       if (window.location.pathname + window.location.hash !== href)
@@ -153,8 +156,12 @@ export function WorkspaceApp({
   const syncTargetPanels = () => {
     sendPanelVisibility('catalog', catalogVisible)
     sendPanelVisibility('header', headerVisible)
-    sendPanelVisibility('details', detailsVisible)
+    if (detailsVisible !== null) sendPanelVisibility('details', detailsVisible)
   }
+
+  useEffect(() => {
+    sendPanelVisibility('catalog', catalogVisible)
+  }, [catalogVisible])
 
   return (
     <div
@@ -251,6 +258,16 @@ export function WorkspaceApp({
         </nav>
       </aside>
       <main className="workspace-main">
+        {!catalogVisible && route.kind !== 'selected' && (
+          <button
+            className="panel-close-button"
+            type="button"
+            aria-label="Open Inspector catalog"
+            onClick={() => setCatalogVisible(true)}
+          >
+            ☰
+          </button>
+        )}
         {route.kind === 'overview' && <Overview bundle={bundle} />}
         {route.kind === 'selected' && (
           <iframe

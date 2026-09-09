@@ -23,8 +23,10 @@ controlled actions on the existing canvas cards. The completed local Phase 4 ext
 contract evolution, CI evidence admission, and shared baseline snapshots; its
 mandatory protected CI delivery gate remains deferred.
 [Local Agent Execution](AGENT_EXECUTION.md) adds bounded Phase 5 demonstration
-execution, isolated candidate verification and human handoff. Real provider
-acceptance and Phase 6 integrations remain unfinished. The static Inspector's schema version 2 contract is unchanged.
+execution, isolated candidate verification and human handoff. The
+[bounded Sol integration](plans/completed/flow-inspector-phase-5-sol-local-integration-closeout.md)
+adds actual subscription-model acceptance; full Phase 5, remote reconciliation
+and Phase 6 integrations remain unfinished. The static Inspector's schema version 2 contract is unchanged.
 
 The tool may inspect Framework and App contracts, but neither Framework nor an
 App may depend on the tool at runtime. Tool publication and versioning remain independent from Framework publication.

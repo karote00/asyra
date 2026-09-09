@@ -58,3 +58,52 @@ test('admission refuses missing, stale, unmeasurable and out-of-owner requests b
     )
 })
 module.exports = { request }
+
+test('real provider admission binds trusted authorization without accepting caller policy', () => {
+  const authorization = {
+    id: randomUUID(),
+    actor: 'local-developer',
+    adapter: 'codex-app-server',
+    model: 'gpt-5.6-sol',
+    billing: 'chatgpt-subscription',
+    maxRequests: 12,
+    expiresAt: '2099-01-01T00:00:00.000Z'
+  }
+  const input = {
+    ...request(),
+    adapter: 'provider',
+    scenario: 'task',
+    providerAuthorizationId: authorization.id
+  }
+  assert.throws(() => admitTask(input, contract, 1, 'local-developer'))
+  const task = admitTask(input, contract, 1, 'local-developer', authorization)
+  assert.deepEqual(task.provider, authorization)
+  assert.equal(task.obligations.length, 6)
+  authorization.model = 'changed'
+  assert.equal(task.provider.model, 'gpt-5.6-sol')
+  for (const change of [
+    { id: randomUUID() },
+    { actor: 'different' },
+    { expiresAt: '2000-01-01T00:00:00.000Z' },
+    { expiresAt: 'invalid' },
+    { maxRequests: 0 },
+    { maxRequests: Infinity },
+    { credential: 'must-never-enter-task' },
+    { endpoint: 'https://untrusted.invalid' }
+  ])
+    assert.throws(() =>
+      admitTask(input, contract, 1, 'local-developer', {
+        ...task.provider,
+        ...change
+      })
+    )
+  assert.throws(() =>
+    admitTask(
+      { ...input, model: 'changed' },
+      contract,
+      1,
+      'local-developer',
+      task.provider
+    )
+  )
+})

@@ -8,6 +8,73 @@ const { startServer } = require('../server.cjs')
 const { main } = require('../cli.cjs')
 const root = path.resolve(__dirname, '../../../..')
 
+test('offline provider contract uses identical CLI, HTTP and service task evidence', async () => {
+  const { randomUUID } = require('node:crypto')
+  const parent = path.join(root, 'tmp/flow-inspector/cli-tests')
+  fs.mkdirSync(parent, { recursive: true })
+  const directory = fs.mkdtempSync(path.join(parent, 'provider-'))
+  const authorization = {
+    id: randomUUID(),
+    actor: 'local-developer',
+    adapter: 'codex-app-server',
+    model: 'gpt-5.6-sol',
+    billing: 'chatgpt-subscription',
+    maxRequests: 1,
+    expiresAt: '2099-01-01T00:00:00.000Z'
+  }
+  const server = await startServer(root, {
+    url: 'http://127.0.0.1:0',
+    serviceOptions: {
+      directory,
+      agentOptions: {
+        available: () => true,
+        providerAuthorization: authorization,
+        providerComplete: async () => ({
+          terminal: true,
+          text: '{"tool":"shell"}',
+          usage: { inputTokens: 1, outputTokens: 2, totalTokens: 3 }
+        })
+      }
+    }
+  })
+  const messages = []
+  try {
+    const state = server.service.state()
+    const request = {
+      requestId: randomUUID(),
+      stepId: 'finalize-transaction-state',
+      objective: 'Offline provider denial',
+      adapter: 'provider',
+      scenario: 'task',
+      providerAuthorizationId: authorization.id,
+      allowedFiles: ['packages/factory/src/data-transact.ts'],
+      contractDigest: state.contract.digest,
+      revision: 1,
+      budgets: { elapsedMs: 60000, toolCalls: 3, attempts: 2 }
+    }
+    const file = path.join(directory, 'request.json')
+    fs.writeFileSync(file, JSON.stringify(request))
+    const invoke = (...args) =>
+      main(['--url', server.origin, ...args], {
+        repositoryRoot: root,
+        write: (value) => messages.push(value)
+      })
+    await invoke('task-start', path.relative(root, file))
+    await server.service.waitTask(request.requestId)
+    messages.length = 0
+    await invoke('task-show', request.requestId)
+    const http = await fetch(
+      server.origin + '/api/tasks/' + request.requestId
+    ).then((response) => response.json())
+    assert.deepEqual(JSON.parse(messages.join('')), http)
+    assert.deepEqual(http, server.service.getTask(request.requestId))
+    assert.equal(http.providerRequests[0].usage.totalTokens, 3)
+    assert.equal(http.deliveryStatus, 'not-delivered')
+  } finally {
+    await server.close()
+  }
+})
+
 test(
   'CLI attaches to the running board and uses its action and evidence authority',
   { timeout: 20000 },

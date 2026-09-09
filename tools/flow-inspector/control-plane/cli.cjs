@@ -7,6 +7,7 @@ const { safePath } = require('./snapshot.cjs')
 const { URL } = require('node:url')
 const { createService, LOCAL_ACTOR } = require('./service.cjs')
 const { startServer, parseLocalUrl } = require('./server.cjs')
+const { createProviderTransport } = require('./agent-transport.cjs')
 const defaultRoot = path.resolve(__dirname, '../../..')
 
 function describe(record, write) {
@@ -44,6 +45,33 @@ function describe(record, write) {
 
 function serviceOptions(repositoryRoot) {
   const options = { acceptedBase: process.env.FLOW_CI_BASE ?? 'origin/main' }
+  if (process.env.FLOW_AGENT_AUTHORIZATION) {
+    const authorization = JSON.parse(
+      fs.readFileSync(
+        safePath(repositoryRoot, process.env.FLOW_AGENT_AUTHORIZATION),
+        'utf8'
+      )
+    )
+    if (
+      !process.env.FLOW_AGENT_EXECUTABLE ||
+      !process.env.FLOW_AGENT_CREDENTIAL_FILE
+    )
+      throw new Error(
+        'Explicit provider executable and read-only credential reference required'
+      )
+    options.agentOptions = {
+      providerAuthorization: authorization,
+      providerComplete: createProviderTransport({
+        repositoryRoot,
+        directory: path.join(
+          repositoryRoot,
+          'tmp/flow-inspector/provider-runtime'
+        ),
+        executable: process.env.FLOW_AGENT_EXECUTABLE,
+        credentialFile: process.env.FLOW_AGENT_CREDENTIAL_FILE
+      })
+    }
+  }
   if (process.env.FLOW_CI_ADMISSION)
     options.ciAdmission = JSON.parse(
       fs.readFileSync(
