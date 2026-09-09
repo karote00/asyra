@@ -177,15 +177,55 @@ test('CLI retains missing reports as unverified and exits nonzero on incomplete 
   try {
     const output = path.join(directory, 'output')
     const summary = path.join(directory, 'summary')
-    const env = { ...process.env, GITHUB_OUTPUT: output, GITHUB_STEP_SUMMARY: summary, ...Object.fromEntries(Object.entries(identity).map(([k, v]) => ['FLOW_RESULT_' + k.toUpperCase(), v])) }
-    const cli = path.join(root, 'tools/flow-inspector/control-plane/workflow-results.cjs')
-    const collected = spawnSync(process.execPath, [cli, 'collect', 'design', path.join(directory, 'missing.json')], { env, encoding: 'utf8' })
+    const env = {
+      ...process.env,
+      GITHUB_OUTPUT: output,
+      GITHUB_STEP_SUMMARY: summary,
+      ...Object.fromEntries(
+        Object.entries(identity).map(([k, v]) => [
+          'FLOW_RESULT_' + k.toUpperCase(),
+          v
+        ])
+      )
+    }
+    const cli = path.join(
+      root,
+      'tools/flow-inspector/control-plane/workflow-results.cjs'
+    )
+    const collected = spawnSync(
+      process.execPath,
+      [cli, 'collect', 'design', path.join(directory, 'missing.json')],
+      { env, encoding: 'utf8' }
+    )
     assert.equal(collected.status, 0)
-    const evidence = JSON.parse(fs.readFileSync(output, 'utf8').trim().slice('evidence='.length))
+    const evidence = JSON.parse(
+      fs.readFileSync(output, 'utf8').trim().slice('evidence='.length)
+    )
     assert.equal(evidence.cases[0].status, 'unverified')
-    const result = spawnSync(process.execPath, [cli, 'aggregate'], { env: { ...env, FLOW_DESIGN_EVIDENCE: JSON.stringify(evidence), FLOW_COLLABORATION_EVIDENCE: 'invalid', FLOW_VALIDATE_RESULT: 'success', FLOW_E2E_RESULT: 'failure' }, encoding: 'utf8' })
+    assert.equal(
+      evidence.identity.integration,
+      spawnSync('git', ['rev-parse', 'HEAD'], {
+        cwd: root,
+        encoding: 'utf8'
+      }).stdout.trim()
+    )
+    const result = spawnSync(process.execPath, [cli, 'aggregate'], {
+      env: {
+        ...env,
+        FLOW_DESIGN_EVIDENCE: JSON.stringify(evidence),
+        FLOW_COLLABORATION_EVIDENCE: 'invalid',
+        FLOW_VALIDATE_RESULT: 'success',
+        FLOW_E2E_RESULT: 'failure'
+      },
+      encoding: 'utf8'
+    })
     assert.equal(result.status, 1)
     assert.equal(JSON.parse(result.stdout).status, 'unverified')
-    assert.match(fs.readFileSync(summary, 'utf8'), /design.delete \| unverified/)
-  } finally { fs.rmSync(directory, { recursive: true, force: true }) }
+    assert.match(
+      fs.readFileSync(summary, 'utf8'),
+      /design.delete \| unverified/
+    )
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true })
+  }
 })
