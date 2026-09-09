@@ -261,3 +261,39 @@ it('maps a shared detailed leaf surface onto every cucumber blade at both detail
     }
   }
 })
+
+it.each([1.5, 3, 4.5])(
+  'places older larger fruit below younger fruit at net height %s',
+  (netTop) => {
+    for (const model of createCropModels({
+      netTop,
+      netBottom: 0.15 * netTop
+    })) {
+      const sorted = [...model.fruits].sort((a, b) => a.center[1] - b.center[1])
+      const band = Math.max(1, Math.floor(sorted.length / 3))
+      const lower = sorted.slice(0, band),
+        upper = sorted.slice(-band)
+      const average = (items: typeof sorted, key: 'ripeness' | 'length') =>
+        items.reduce((sum, fruit) => sum + fruit[key], 0) / items.length
+      expect(
+        average(lower, 'ripeness'),
+        `${model.species} variant ${model.variant}`
+      ).toBeGreaterThan(average(upper, 'ripeness') + 0.4)
+      expect(average(lower, 'length')).toBeGreaterThan(
+        average(upper, 'length') * 1.15
+      )
+      if (model.species === 'cucumber-1914') {
+        expect(sorted.at(-1)?.growthStage).toBe('flowering')
+        expect([
+          'harvestable',
+          'overgrown-early',
+          'overgrown-late',
+          'oversized'
+        ]).toContain(sorted[0].growthStage)
+      } else {
+        expect(lower.some((fruit) => fruit.maturity === 'ripe')).toBe(true)
+        expect(upper.some((fruit) => fruit.maturity === 'green')).toBe(true)
+      }
+    }
+  }
+)

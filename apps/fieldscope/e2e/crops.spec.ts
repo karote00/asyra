@@ -6,7 +6,8 @@ import { cameraDistance } from '../src/render-app/camera-navigation'
 for (const [species, rootX, height, stage] of [
   ['cucumber', 1.05, 0.8, 'harvestable'],
   ['cucumber', 1.05, 2.25, 'flowering'],
-  ['tomato', 15.05, 0.8, 'ripening']
+  ['tomato', 15.05, 0.8, 'ripening'],
+  ['tomato', 15.05, 2.0, 'young']
 ] as const) {
   test(`${species} ${stage} foliage and fruit are visible in the real planted greenhouse`, async ({
     page

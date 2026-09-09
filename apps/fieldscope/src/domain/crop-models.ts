@@ -336,11 +336,16 @@ function createModel(
             0.06,
             Math.min(
               0.98,
-              0.96 - (j / (count - 1)) * 0.84 + Math.sin(variant + truss) * 0.04
+              // Higher trusses are younger; distal fruit within a truss
+              // still develop later than fruit near its attachment.
+              0.98 -
+                truss * 0.3 -
+                (j / (count - 1)) * 0.22 +
+                Math.sin(variant + truss) * 0.025
             )
           )
       const maturity = ripeness > 0.75 ? 2 : Number(ripeness > 0.3)
-      let length = (0.034 + random() * 0.01) * scale
+      let length = (0.024 + ripeness * 0.017 + random() * 0.005) * scale
       if (cucumber) {
         const ranges = [
           [0.025, 0.02],
