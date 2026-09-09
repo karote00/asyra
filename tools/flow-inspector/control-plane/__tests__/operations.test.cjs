@@ -1,3 +1,4 @@
+/* global fetch */
 /* eslint-disable @typescript-eslint/no-require-imports */
 const test = require('node:test')
 const assert = require('node:assert/strict')
@@ -396,4 +397,202 @@ test('agent actions share capability, task identity, all-flow policy and mutual 
   } finally {
     await service.close()
   }
+})
+
+test(
+  'PR review broker binds real candidate evidence, API and CLI to one durable review record',
+  { skip: process.platform !== 'darwin', timeout: 30000 },
+  async (t) => {
+    const { startServer } = require('../server.cjs')
+    const { main } = require('../cli.cjs')
+    let effects = 0
+    const adapter = {
+      repository: 'owner/repo',
+      base: 'main',
+      inspect: async () => ({
+        baseSha: 'a'.repeat(40),
+        baseTree: 'b'.repeat(40)
+      }),
+      deliver: async (p, checkpoint) => {
+        effects++
+        await checkpoint('create-pr', { expectedHead: 'c'.repeat(40) })
+        return {
+          number: 1,
+          state: 'open',
+          headSha: 'c'.repeat(40),
+          draft: true
+        }
+      },
+      observe: async () => ({
+        number: 1,
+        state: 'merged',
+        headSha: 'd'.repeat(40),
+        checks: { headSha: 'd'.repeat(40), status: 'passed' }
+      })
+    }
+    const server = await startServer(root, {
+      serviceOptions: { directory: directory(t), deliveryAdapter: adapter },
+      url: 'http://127.0.0.1:0'
+    })
+    try {
+      const service = server.service
+      const initial = service.state().mapping.revision
+      const id = service.startTask(
+        {
+          requestId: randomUUID(),
+          stepId: 'finalize-transaction-state',
+          objective:
+            'Offline PR review transport with real local candidate verification',
+          allowedFiles: ['packages/factory/src/data-transact.ts'],
+          adapter: 'demonstration',
+          scenario: 'repair',
+          contractDigest: service.contract().digest,
+          revision: initial,
+          budgets: { elapsedMs: 60000, toolCalls: 20, attempts: 3 }
+        },
+        LOCAL_ACTOR
+      )
+      assert.equal((await service.waitTask(id)).verificationStatus, 'passed')
+      await assert.rejects(
+        () =>
+          service.reviewTask(
+            id,
+            { action: 'prepare' },
+            { id: LOCAL_ACTOR.id, capabilities: [] }
+          ),
+        /authorized/
+      )
+      const lines = []
+      assert.equal(
+        await main(['--url', server.origin, 'pr-prepare', id], {
+          repositoryRoot: root,
+          write: (x) => lines.push(x)
+        }),
+        0
+      )
+      const prepared = JSON.parse(lines.pop())
+      assert.equal(prepared.preview.taskId, id)
+      const read = await fetch(
+        server.origin + '/api/tasks/' + id + '/review'
+      ).then((r) => r.json())
+      assert.deepEqual(read, prepared)
+      assert.equal(effects, 0)
+      await assert.rejects(
+        () =>
+          service.reviewTask(
+            id,
+            {
+              action: 'confirm',
+              confirm: true,
+              previewDigest: prepared.previewDigest,
+              repository: 'evil/repo'
+            },
+            LOCAL_ACTOR
+          ),
+        /Invalid/
+      )
+      assert.equal(
+        await main(
+          [
+            '--url',
+            server.origin,
+            'pr-confirm',
+            id,
+            prepared.previewDigest,
+            'confirm'
+          ],
+          { repositoryRoot: root, write: (x) => lines.push(x) }
+        ),
+        0
+      )
+      const submitted = JSON.parse(lines.pop())
+      assert.equal(submitted.state, 'submitted-for-review')
+      assert.equal(effects, 1)
+      await main(['--url', server.origin, 'pr-refresh', id], {
+        repositoryRoot: root,
+        write: (x) => lines.push(x)
+      })
+      assert.equal(JSON.parse(lines.pop()).observation.state, 'merged')
+      assert.equal(service.state().mapping.revision, initial)
+      assert.equal(service.getTask(id).deliveryStatus, 'not-delivered')
+      assert.equal(service.getTask(id).verificationStatus, 'passed')
+    } finally {
+      await server.close()
+    }
+  }
+)
+
+test(
+  'delivery preparation excludes competing proof and task mutations and publishes review revision',
+  { skip: process.platform !== 'darwin', timeout: 15000 },
+  async (t) => {
+    let release, entered
+    const ready = new Promise((resolve) => (entered = resolve))
+    const service = createService(root, {
+      directory: directory(t),
+      deliveryAdapter: {
+        repository: 'owner/repo',
+        base: 'main',
+        inspect: async () => {
+          entered()
+          await new Promise((resolve) => (release = resolve))
+          return { baseSha: 'a'.repeat(40), baseTree: 'b'.repeat(40) }
+        }
+      }
+    })
+    try {
+      const request = {
+        requestId: randomUUID(),
+        stepId: 'finalize-transaction-state',
+        objective: 'Offline concurrency boundary',
+        allowedFiles: ['packages/factory/src/data-transact.ts'],
+        adapter: 'demonstration',
+        scenario: 'repair',
+        contractDigest: service.contract().digest,
+        revision: 1,
+        budgets: { elapsedMs: 60000, toolCalls: 20, attempts: 3 }
+      }
+      const id = service.startTask(request, LOCAL_ACTOR)
+      await service.waitTask(id)
+      const preparing = service.reviewTask(
+        id,
+        { action: 'prepare' },
+        LOCAL_ACTOR
+      )
+      await ready
+      try {
+        assert.throws(() => service.start({}, LOCAL_ACTOR), /review|delivery/)
+        assert.throws(
+          () =>
+            service.startTask(
+              { ...request, requestId: randomUUID() },
+              LOCAL_ACTOR
+            ),
+          /review|delivery/
+        )
+      } finally {
+        release()
+        await preparing
+      }
+      assert.ok(service.state().tasks.records[0].reviewRevision > 0)
+    } finally {
+      await service.close()
+    }
+  }
+)
+
+test('invalid retained delivery refuses startup without leaking the exclusive store lock', (t) => {
+  const dir = directory(t)
+  const service = createService(root, { directory: dir })
+  return service.close().then(() => {
+    fs.writeFileSync(path.join(dir, 'reviews', randomUUID() + '.json'), '{}')
+    assert.throws(
+      () => createService(root, { directory: dir }),
+      /retained delivery/
+    )
+    assert.throws(
+      () => createService(root, { directory: dir }),
+      /retained delivery/
+    )
+  })
 })

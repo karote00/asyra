@@ -488,3 +488,11 @@ app-server interruption confirmation plus Board investigation guidance.
 Confirmation is separate from remote settlement, so unresolved dispatch remains
 blocked. CI-driven autonomous repair and machine authentication are operator
 integrations, not implied by publishing the current package.
+
+## Bounded GitHub review activation - 2026-09-09
+
+[PR Review](../PR_REVIEW.md) activates only the existing local owner, one GitHub
+repository and one selected candidate draft PR workflow. Preview and explicit
+confirmation precede external effects. GitHub observations never accept the local
+baseline or reconcile unresolved provider requests. Full Phase 5/6, ticket/team
+work, protected verification and publication remain unfinished.

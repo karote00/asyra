@@ -12,7 +12,8 @@ remote uncertainty rules remain in
 Phase 5 local isolated execution was activated by the user on 2026-09-08 under
 [Local Agent Execution](../AGENT_EXECUTION.md). GitHub enforcement remains
 deferred; the original entry criteria and full DoD below are retained for the
-protected integration milestone. Phase 6 is not activated. The existing filename remains stable. This
+protected integration milestone. The bounded single-user GitHub review slice is activated on 2026-09-09 under
+[PR Review](../PR_REVIEW.md); the remaining Phase 6 scope stays deferred. The existing filename remains stable. This
 plan extends an implemented action, evidence, and CI foundation rather than
 requiring its own future agent controls to exist at entry.
 
@@ -243,3 +244,10 @@ from reproducible offline contracts. Nine of twelve authorized adapter turns
 were reserved; one remains unresolved after cancellation and blocks further
 provider dispatch. This closes the selected local integration checkpoint only.
 The original full Phase 5/6 DoD and deferred protected delivery remain open.
+
+## Bounded GitHub review activation - 2026-09-09
+
+The user selects the existing local owner/access model and GitHub only, with one
+repository and one candidate PR. No ticket provider is required for this bounded
+slice. [PR Review](../PR_REVIEW.md) owns its product cases and bounded DoD.
+The original full Phase 5/6 DoD and protected delivery gaps remain open.

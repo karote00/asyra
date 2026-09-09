@@ -656,7 +656,7 @@ test(
         canvas.locator('.proof-badge[data-status="passed"]')
       ).toHaveCount(3)
       await page.goto(server.origin + '/core-proof')
-      await expect(canvas.locator('.step-card')).toHaveCount(11)
+      await expect(canvas.locator('.step-card')).toHaveCount(13)
       await expect(canvas.locator('.proof-badge')).toHaveCount(0)
       await expect(canvas.locator('#run-all')).toHaveCount(0)
       await expect(canvas.locator('#proof-unavailable')).toContainText(
@@ -1753,7 +1753,7 @@ test(
         assert.ok(metrics.font >= 13, 'verification text must remain readable')
         assert.ok(metrics.line >= 20, 'verification lines need breathing room')
         assert.ok(metrics.overflow <= 1, 'controls must fit the detail panel')
-        assert.equal(metrics.sections.length, 5)
+        assert.equal(metrics.sections.length, 6)
         for (const section of metrics.sections) {
           assert.ok(
             section.top >= 16,
@@ -1913,6 +1913,303 @@ test(
     } finally {
       await browser?.close()
       await server.close()
+      if (previous === undefined) delete process.env.TMPDIR
+      else process.env.TMPDIR = previous
+    }
+  }
+)
+
+test(
+  'bounded PR review preview confirmation and HEAD observations remain readable on desktop tablet and narrow board',
+  { skip: process.platform !== 'darwin', timeout: 45000 },
+  async () => {
+    const { randomUUID } = require('node:crypto')
+    const { LOCAL_ACTOR } = require('../service.cjs')
+    const root = path.resolve(__dirname, '../../../..'),
+      parent = path.join(root, 'tmp/flow-inspector/visual-review')
+    fs.mkdirSync(parent, { recursive: true })
+    const artifacts = fs.mkdtempSync(path.join(parent, 'pr-review-')),
+      temporary = path.join(artifacts, 'browser-tmp')
+    fs.mkdirSync(temporary)
+    const previous = process.env.TMPDIR
+    process.env.TMPDIR = temporary
+    let effects = 0,
+      browser
+    const head = 'c'.repeat(40)
+    const server = await startServer(root, {
+      serviceOptions: {
+        directory: path.join(artifacts, 'runs'),
+        deliveryAdapter: {
+          repository: 'owner/repo',
+          base: 'main',
+          inspect: async () => ({
+            baseSha: 'a'.repeat(40),
+            baseTree: 'b'.repeat(40)
+          }),
+          deliver: async (p, checkpoint) => {
+            effects++
+            await checkpoint('create-pr', { expectedHead: head })
+            return {
+              number: 1,
+              url: 'https://github.com/owner/repo/pull/1',
+              state: 'open',
+              headSha: head,
+              draft: true
+            }
+          },
+          observe: async () => ({
+            number: 1,
+            url: 'https://github.com/owner/repo/pull/1',
+            state: 'closed',
+            headSha: 'd'.repeat(40),
+            matchesCandidate: false,
+            checks: { headSha: 'd'.repeat(40), status: 'pending' },
+            stale: false
+          })
+        }
+      }
+    })
+    try {
+      const service = server.service,
+        id = service.startTask(
+          {
+            requestId: randomUUID(),
+            stepId: 'finalize-transaction-state',
+            objective:
+              'Offline GitHub transport fixture - real local candidate proof',
+            allowedFiles: ['packages/factory/src/data-transact.ts'],
+            adapter: 'demonstration',
+            scenario: 'repair',
+            contractDigest: service.contract().digest,
+            revision: service.state().mapping.revision,
+            budgets: { elapsedMs: 60000, toolCalls: 20, attempts: 3 }
+          },
+          LOCAL_ACTOR
+        )
+      assert.equal((await service.waitTask(id)).verificationStatus, 'passed')
+      browser = await chromium.launch({
+        channel: process.env.FLOW_PROOF_BROWSER_CHANNEL || undefined,
+        downloadsPath: temporary
+      })
+      const page = await browser.newPage({
+        viewport: { width: 1600, height: 1100 }
+      })
+      await page.goto(server.origin + '/transaction-atomicity')
+      const canvas = page.frameLocator('iframe')
+      await canvas
+        .locator('[data-step-id="finalize-transaction-state"]')
+        .click()
+      await canvas.locator('#proof-controls > summary').click()
+      await canvas.locator('#pr-controls > summary').click()
+      await canvas.locator('#pr-prepare').click()
+      await expect(canvas.locator('#pr-result')).toContainText(
+        'Delivery: preview'
+      )
+      await expect(canvas.locator('#pr-preview')).toContainText(id)
+      await expect(canvas.locator('#pr-confirm')).toBeDisabled()
+      assert.equal(effects, 0)
+      for (const [name, width, height] of [
+        ['desktop', 1600, 1100],
+        ['tablet', 820, 1180],
+        ['narrow', 390, 844]
+      ]) {
+        await page.setViewportSize({ width, height })
+        if (width <= 900 && (await page.locator('.sidebar').isVisible()))
+          await page
+            .getByRole('button', { name: 'Close Inspector catalog' })
+            .click()
+        await canvas.locator('#pr-controls').scrollIntoViewIfNeeded()
+        await expect(canvas.locator('#pr-prepare')).toBeVisible()
+        assert.equal(
+          await canvas
+            .locator('#pr-controls')
+            .evaluate((el) => el.scrollWidth <= el.clientWidth + 2),
+          true
+        )
+        await canvas.locator('#pr-result').scrollIntoViewIfNeeded()
+        await page.screenshot({
+          path: path.join(artifacts, name + '-preview-top.png')
+        })
+        await canvas.locator('#pr-confirm').scrollIntoViewIfNeeded()
+        await page.screenshot({
+          path: path.join(artifacts, name + '-preview-confirm.png')
+        })
+        assert.equal(await canvas.locator('.step-card').count(), 7)
+        for (const link of ['pr-source', 'pr-evidence']) {
+          await expect(canvas.locator('#' + link)).toHaveAttribute(
+            'target',
+            '_blank'
+          )
+          await expect(canvas.locator('#' + link)).toHaveAttribute(
+            'rel',
+            'noopener noreferrer'
+          )
+        }
+      }
+      await canvas.locator('#pr-approve').check()
+      await expect(canvas.locator('#pr-confirm')).toBeEnabled()
+      await canvas.locator('#pr-confirm').click()
+      await expect(canvas.locator('#pr-result')).toContainText(
+        'submitted-for-review'
+      )
+      assert.equal(effects, 1)
+      await expect(canvas.locator('#pr-github')).toHaveAttribute(
+        'href',
+        'https://github.com/owner/repo/pull/1'
+      )
+      await canvas.locator('#pr-refresh').click()
+      await expect(canvas.locator('#pr-result')).toContainText('PR: closed')
+      await expect(canvas.locator('#pr-result')).toContainText(
+        'GitHub checks: pending'
+      )
+      await expect(canvas.locator('#pr-result')).toContainText(
+        'Local verification: passed'
+      )
+      await expect(canvas.locator('#pr-result')).toContainText(
+        'outside prepared candidate'
+      )
+      await canvas.locator('#pr-result').scrollIntoViewIfNeeded()
+      await page.screenshot({
+        path: path.join(artifacts, 'narrow-observation.png')
+      })
+      const api = await fetch(
+        server.origin + '/api/tasks/' + id + '/review'
+      ).then((r) => r.json())
+      assert.equal(api.preview.taskId, id)
+      assert.equal(api.observation.state, 'closed')
+      assert.equal(service.getTask(id).deliveryStatus, 'not-delivered')
+      fs.writeFileSync(
+        path.join(artifacts, 'review.json'),
+        JSON.stringify(
+          {
+            origin: server.origin,
+            taskId: id,
+            offlineTransport: true,
+            effects,
+            record: api
+          },
+          null,
+          2
+        )
+      )
+    } finally {
+      await browser?.close()
+      await server.close()
+      if (previous === undefined) delete process.env.TMPDIR
+      else process.env.TMPDIR = previous
+    }
+  }
+)
+
+test(
+  'retained live GitHub review agrees across Board API and CLI without another external create',
+  { skip: !process.env.FLOW_LIVE_REVIEW_TASK_ID, timeout: 30000 },
+  async () => {
+    const { main } = require('../cli.cjs')
+    const root = path.resolve(__dirname, '../../../..'),
+      origin = parseLocalUrl(process.env.FLOW_PROOF_URL).origin,
+      id = process.env.FLOW_LIVE_REVIEW_TASK_ID
+    assert.match(id, /^[a-f0-9-]{36}$/)
+    const read = (route) =>
+      fetch(origin + route).then(async (r) => {
+        assert.equal(r.status, 200)
+        return r.json()
+      })
+    const before = await read('/api/state'),
+      task = await read('/api/tasks/' + id),
+      review = await read('/api/tasks/' + id + '/review')
+    assert.equal(review.state, 'submitted-for-review')
+    assert.equal(review.preview.taskId, id)
+    assert.equal(review.preview.attemptId, task.attempts.at(-1).id)
+    assert.equal(review.preview.repository, process.env.FLOW_REVIEW_REPOSITORY)
+    assert.ok(review.observation.number > 0)
+    assert.match(review.observation.url, /^https:\/\/github.com\//)
+    const lines = []
+    assert.equal(
+      await main(['--url', origin, 'pr-show', id], {
+        repositoryRoot: root,
+        write: (x) => lines.push(x)
+      }),
+      0
+    )
+    assert.deepEqual(JSON.parse(lines[0]), review)
+    const artifacts = path.join(
+      root,
+      'tmp/flow-inspector/visual-review/github-live-' + id
+    )
+    fs.mkdirSync(artifacts, { recursive: true })
+    const previous = process.env.TMPDIR
+    process.env.TMPDIR = artifacts
+    let browser
+    try {
+      browser = await chromium.launch({
+        channel: process.env.FLOW_PROOF_BROWSER_CHANNEL || undefined,
+        downloadsPath: artifacts
+      })
+      const page = await browser.newPage({
+        viewport: { width: 1600, height: 1100 }
+      })
+      await page.goto(origin + '/transaction-atomicity')
+      const canvas = page.frameLocator('iframe')
+      await canvas.locator('[data-step-id="' + task.task.stepId + '"]').click()
+      await canvas.locator('#proof-controls > summary').click()
+      await canvas.locator('#agent-controls > summary').click()
+      await canvas.locator('#agent-history').selectOption(id)
+      await canvas.locator('#pr-controls > summary').click()
+      await expect(canvas.locator('#pr-result')).toContainText(
+        'submitted-for-review'
+      )
+      await expect(canvas.locator('#pr-github')).toHaveAttribute(
+        'href',
+        review.observation.url
+      )
+      await expect(canvas.locator('#pr-preview')).toContainText(
+        review.preview.attemptId
+      )
+      await canvas.locator('#pr-controls details > summary').click()
+      await expect(canvas.locator('#pr-source-diff')).toContainText(
+        review.preview.changes[0].path
+      )
+      for (const [name, width, height] of [
+        ['desktop', 1600, 1100],
+        ['tablet', 820, 1180],
+        ['narrow', 390, 844]
+      ]) {
+        await page.setViewportSize({ width, height })
+        if (width <= 900 && (await page.locator('.sidebar').isVisible()))
+          await page
+            .getByRole('button', { name: 'Close Inspector catalog' })
+            .click()
+        await canvas.locator('#pr-result').scrollIntoViewIfNeeded()
+        await page.screenshot({
+          path: path.join(artifacts, name + '-status.png')
+        })
+        await canvas.locator('#pr-source-diff').scrollIntoViewIfNeeded()
+        await page.screenshot({
+          path: path.join(artifacts, name + '-source.png')
+        })
+      }
+      assert.deepEqual(await read('/api/tasks/' + id + '/review'), review)
+      assert.deepEqual((await read('/api/state')).mapping, before.mapping)
+      assert.deepEqual(
+        (await read('/api/tasks/' + id)).providerRequests,
+        task.providerRequests
+      )
+      fs.writeFileSync(
+        path.join(artifacts, 'review.json'),
+        JSON.stringify(
+          {
+            origin,
+            liveGitHub: true,
+            candidateAdapter: task.task.adapter,
+            record: review
+          },
+          null,
+          2
+        )
+      )
+    } finally {
+      await browser?.close()
       if (previous === undefined) delete process.env.TMPDIR
       else process.env.TMPDIR = previous
     }

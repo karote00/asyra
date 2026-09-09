@@ -205,3 +205,15 @@
 .step-card.proof-failed {
   box-shadow: inset 0 0 0 3px #f87171;
 }
+
+.proof-body .proof-confirmation {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.proof-body .proof-confirmation input {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  margin-top: 3px;
+}

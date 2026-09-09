@@ -185,7 +185,9 @@ verifier and issuer requirements remain open.
 A successful run means execution finished; verification can independently be
 passed, failed or unknown. Work is `needs-review` only with complete passing
 all-flow evidence and actual source progress, otherwise incomplete. Delivery is
-always `not-delivered`. Agent output cannot accept a mapping, retire an obligation,
+always `not-delivered` in the execution record. The separately activated
+[PR Review](PR_REVIEW.md) record can report `submitted-for-review`; it never
+rewrites execution evidence or accepted baseline. Agent output cannot accept a mapping, retire an obligation,
 merge, publish or establish a protected baseline. Potential consumers are all
 supported flows sharing the step; confirmed failures come only from assertions.
 A human can inspect source changes, retained report and audit before applying

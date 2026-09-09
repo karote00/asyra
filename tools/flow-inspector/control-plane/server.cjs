@@ -186,6 +186,10 @@ async function startServer(
           }
           if (route.pathname === '/api/session')
             return send(200, { capability })
+          const reviewRoute = route.pathname.match(
+            /^\/api\/tasks\/([a-f0-9-]{36})\/review$/
+          )
+          if (reviewRoute) return send(200, service.getReview(reviewRoute[1]))
           const taskRoute = route.pathname.match(
             /^\/api\/tasks\/([a-f0-9-]{36})(\/changes)?$/
           )
@@ -277,6 +281,14 @@ async function startServer(
           request,
           route.pathname === '/api/ci/ingest' ? 2097152 : 4096
         )
+        const reviewAction = route.pathname.match(
+          /^\/api\/tasks\/([a-f0-9-]{36})\/review$/
+        )
+        if (reviewAction)
+          return send(
+            200,
+            await service.reviewTask(reviewAction[1], body, LOCAL_ACTOR)
+          )
         if (route.pathname === '/api/tasks')
           return send(202, { id: service.startTask(body, LOCAL_ACTOR) })
         const taskControl = route.pathname.match(

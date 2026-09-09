@@ -31,8 +31,10 @@ persistent investigation guidance; it does not implement remote reconciliation.
    - Remaining Phase 5: independently verifiable remote reconciliation and any
      additional provider/resource capabilities beyond the accepted macOS Sol trial.
      Full original protection and delivery requirements remain open.
-   - Phase 6: small-team operations, selected ticket/PR integrations, hardening,
-     and reproducible open-source adoption remain unactivated.
+   - Active bounded Phase 6: [single-user GitHub PR review](PR_REVIEW.md).
+     Implementation, offline and live acceptance remain pending.
+   - Remaining Phase 6: small-team operations, ticket integration, hosting and
+     broader adoption remain unactivated.
 
 Both existing plan filenames remain stable. No schema, runtime, package,
 dependency, license, or publication change is implied by the planning revision.

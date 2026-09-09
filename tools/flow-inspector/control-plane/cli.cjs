@@ -7,6 +7,7 @@ const { safePath } = require('./snapshot.cjs')
 const { URL } = require('node:url')
 const { createService, LOCAL_ACTOR } = require('./service.cjs')
 const { startServer, parseLocalUrl } = require('./server.cjs')
+const { createGitHubDelivery } = require('./github-delivery.cjs')
 const { createProviderTransport } = require('./agent-transport.cjs')
 const defaultRoot = path.resolve(__dirname, '../../..')
 
@@ -45,6 +46,11 @@ function describe(record, write) {
 
 function serviceOptions(repositoryRoot) {
   const options = { acceptedBase: process.env.FLOW_CI_BASE ?? 'origin/main' }
+  if (process.env.FLOW_REVIEW_REPOSITORY)
+    options.deliveryAdapter = createGitHubDelivery(repositoryRoot, {
+      repository: process.env.FLOW_REVIEW_REPOSITORY,
+      base: process.env.FLOW_REVIEW_BASE ?? 'main'
+    })
   if (process.env.FLOW_AGENT_AUTHORIZATION) {
     const authorization = JSON.parse(
       fs.readFileSync(
@@ -88,6 +94,8 @@ async function connect(repositoryRoot, origin) {
       serviceOptions(repositoryRoot)
     )
     return {
+      getReview: async (id) => service.getReview(id),
+      reviewTask: (id, body) => service.reviewTask(id, body, LOCAL_ACTOR),
       startTask: async (body) => service.startTask(body, LOCAL_ACTOR),
       getTask: async (id) => service.getTask(id),
       taskChanges: async (id) => service.taskChanges(id),
@@ -132,6 +140,10 @@ async function connect(repositoryRoot, origin) {
   capability = (await request('/api/session')).capability
   const get = (id) => request('/api/runs/' + encodeURIComponent(id))
   return {
+    getReview: (id) =>
+      request('/api/tasks/' + encodeURIComponent(id) + '/review'),
+    reviewTask: (id, body) =>
+      request('/api/tasks/' + encodeURIComponent(id) + '/review', body),
     startTask: async (body) => (await request('/api/tasks', body)).id,
     getTask: (id) => request('/api/tasks/' + encodeURIComponent(id)),
     taskChanges: (id) =>
@@ -189,6 +201,10 @@ async function main(
   }
   const [command, ...parameters] = args
   const arity = {
+    'pr-prepare': [1],
+    'pr-show': [1],
+    'pr-confirm': [3],
+    'pr-refresh': [1],
     'task-start': [1],
     'task-show': [1],
     'task-changes': [1],
@@ -226,7 +242,7 @@ async function main(
     (command === 'serve' && origin)
   )
     throw new Error(
-      'Usage: cli.cjs [--url loopback-origin] serve | verify [flow-id] | negative [flow-id] | scenario scenario-id [flow-id] | prove | status | show attempt-id | cancel attempt-id | mapping-diff | mapping-accept review-id reason | mapping-reject review-id reason | candidate | ci | ci-trial | ci-demo [scenario-id] | task-start request.json | task-show task-id | task-changes task-id | task-wait task-id | task-cancel task-id | task-stop task-id | task-handoff task-id | task-revoke task-id | task-resume task-id scenario | shared | ci-ingest envelope.json | contract-diff attempt-id [relations.json] | contract-accept review-id reason [retirement.json] | contract-reject review-id reason'
+      'Usage: cli.cjs [--url loopback-origin] serve | verify [flow-id] | negative [flow-id] | scenario scenario-id [flow-id] | prove | status | show attempt-id | cancel attempt-id | mapping-diff | mapping-accept review-id reason | mapping-reject review-id reason | candidate | ci | ci-trial | ci-demo [scenario-id] | pr-prepare task-id | pr-show task-id | pr-confirm task-id preview-digest confirm | pr-refresh task-id | task-start request.json | task-show task-id | task-changes task-id | task-wait task-id | task-cancel task-id | task-stop task-id | task-handoff task-id | task-revoke task-id | task-resume task-id scenario | shared | ci-ingest envelope.json | contract-diff attempt-id [relations.json] | contract-accept review-id reason [retirement.json] | contract-reject review-id reason'
     )
   if (command === 'serve') {
     const server = await startServer(repositoryRoot, {
@@ -256,6 +272,25 @@ async function main(
       if (fs.statSync(file).size > 2097152)
         throw new Error('Input artifact exceeds size limit')
       return JSON.parse(fs.readFileSync(file, 'utf8'))
+    }
+    if (command.startsWith('pr-')) {
+      let value
+      if (command === 'pr-show') value = await client.getReview(parameters[0])
+      else {
+        const action = command.slice(3)
+        if (action === 'confirm' && parameters[2] !== 'confirm')
+          throw new Error(
+            'Explicit confirm literal required after preview digest'
+          )
+        value = await client.reviewTask(parameters[0], {
+          action,
+          ...(action === 'confirm'
+            ? { previewDigest: parameters[1], confirm: true }
+            : {})
+        })
+      }
+      write(JSON.stringify(value, null, 2))
+      return ['blocked', 'uncertain'].includes(value?.state) ? 1 : 0
     }
     if (command.startsWith('task-')) {
       let value
