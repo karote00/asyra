@@ -35393,6 +35393,7 @@
             "implementationBoundary": [
               "tools/flow-inspector/control-plane/workflow-results.cjs",
               "tools/flow-inspector/control-plane/__tests__/workflow-results.test.cjs",
+              "tools/flow-inspector/control-plane/__tests__/board.test.cjs",
               ".github/workflows/main.yml",
               ".github/workflows/e2e.yml",
               "scripts/run-e2e.sh"
