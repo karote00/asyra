@@ -1,3 +1,4 @@
+import type { ProjectSession } from '../../storage/project-session'
 import type { Workcell } from '../../domain/workcell'
 import type { SimRuntime } from '../../init/bootstrap'
 import type { RunRecord } from '../../storage/run-record'
@@ -5,8 +6,11 @@ import type { VisualPreview } from '../imports/visual-preview'
 import type { PlaybackView } from './playback-view'
 
 export interface ExperimentInputs {
+  session?: ProjectSession
+  historicalReplay?: boolean
   runtime: SimRuntime
   candidateId: string
+  candidateName?: string
   workcell: Workcell
   revision: number
   perform: (

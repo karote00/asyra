@@ -1,3 +1,4 @@
+import { viewResults } from '../workflow'
 import { createHash } from 'node:crypto'
 import { expect, test, type Page } from '@playwright/test'
 
@@ -29,12 +30,11 @@ test('ordinary field observations preserve immutable evidence, opaque files and 
   await page.goto('/')
   await expect(page.getByRole('status')).toHaveText('Local runtime ready')
   await page.getByRole('button', { name: 'Experiments', exact: true }).click()
-  await page
-    .getByRole('button', { name: 'Run formal analysis', exact: true })
-    .click()
+  await page.getByRole('button', { name: 'Run analysis', exact: true }).click()
   await expect(
     page.getByRole('button', { name: 'Cancel analysis', exact: true })
   ).toHaveCount(0, { timeout: 20000 })
+  await viewResults(page)
   await expect(page.getByTestId('analysis-result')).toBeVisible()
   await page
     .getByRole('button', { name: 'Runs & compare', exact: true })
@@ -289,9 +289,8 @@ test('pending attachments do not gate existing observation edits or their Undo a
   await page.goto('/')
   await expect(page.getByRole('status')).toHaveText('Local runtime ready')
   await page.getByRole('button', { name: 'Experiments', exact: true }).click()
-  await page
-    .getByRole('button', { name: 'Run formal analysis', exact: true })
-    .click()
+  await page.getByRole('button', { name: 'Run analysis', exact: true }).click()
+  await viewResults(page)
   await expect(page.getByTestId('analysis-result')).toBeVisible({
     timeout: 20000
   })

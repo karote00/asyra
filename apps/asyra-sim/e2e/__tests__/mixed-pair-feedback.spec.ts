@@ -1,3 +1,4 @@
+import { showSetup } from '../workflow'
 import { expect, test } from '@playwright/test'
 
 test('full-workcell manual preview changes clearance to collision at a penetrating pose and exposes every pair issue', async ({
@@ -13,6 +14,7 @@ test('full-workcell manual preview changes clearance to collision at a penetrati
     page.getByText('9 primary - 2 influencing', { exact: true })
   ).toBeVisible()
 
+  await page.getByRole('tab', { name: 'Preview', exact: true }).click()
   const slider = page.getByLabel('Sampled trajectory preview time')
   const feedback = page.getByTestId('playback-feedback')
   const pair = (name: string) =>
@@ -101,8 +103,10 @@ test('full-workcell manual preview changes clearance to collision at a penetrati
   ).toHaveText(observations ?? '')
 
   await page.getByRole('button', { name: 'Return to editing pose' }).click()
+  await showSetup(page)
   await page.getByLabel('Minimum clearance (mm)').fill('200')
   await page.keyboard.press('Tab')
+  await page.getByRole('tab', { name: 'Preview', exact: true }).click()
   await slider.fill('3.84')
   await expect(feedback).toContainText('Checked 3.8400 s')
   await feedback

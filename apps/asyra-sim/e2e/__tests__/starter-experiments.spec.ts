@@ -1,3 +1,4 @@
+import { viewResults } from '../workflow'
 import { expect, test } from '@playwright/test'
 
 const names = [
@@ -27,6 +28,7 @@ for (const name of names) {
     await expect(
       page.getByRole('button', { name: 'Save experiment', exact: true })
     ).toHaveCount(0)
+    await page.getByRole('tab', { name: 'Preview', exact: true }).click()
     await page
       .getByRole('button', { name: 'Play trajectory', exact: true })
       .click()
@@ -45,14 +47,13 @@ for (const name of names) {
     await expect(page.getByTestId('history-depth')).toHaveText(history ?? '')
     await page.screenshot({ path: info.outputPath('study-preview.png') })
     await page
-      .getByRole('button', { name: 'Run preflight', exact: true })
+      .getByRole('button', { name: 'Run analysis', exact: true })
       .click()
     await expect(page.getByTestId('preflight-report')).toContainText(
       'Ready for formal local analysis'
     )
-    await page
-      .getByRole('button', { name: 'Run formal analysis', exact: true })
-      .click()
+
+    await viewResults(page)
     const result = page.getByTestId('analysis-result')
     await expect(result).toBeVisible({ timeout: 35_000 })
     await expect(
@@ -100,17 +101,16 @@ test('a focused interval keeps all workcell parts, reports real findings and rep
   await page.getByLabel('End time (s)').fill('4.2')
   await page.keyboard.press('Tab')
   await expect(
-    page.getByRole('button', { name: 'Run preflight', exact: true })
+    page.getByRole('button', { name: 'Run analysis', exact: true })
   ).toBeEnabled()
   const history = await page.getByTestId('history-depth').textContent()
 
-  await page.getByRole('button', { name: 'Run preflight', exact: true }).click()
+  await page.getByRole('button', { name: 'Run analysis', exact: true }).click()
   await expect(page.getByTestId('preflight-report')).toContainText(
     'Ready for formal local analysis'
   )
-  await page
-    .getByRole('button', { name: 'Run formal analysis', exact: true })
-    .click()
+
+  await viewResults(page)
   const result = page.getByTestId('analysis-result')
   const heading = result.getByRole('heading', {
     name: 'Issue found',
@@ -133,6 +133,11 @@ test('a focused interval keeps all workcell parts, reports real findings and rep
   // The retained-evidence section starts expanded; navigate its ordinary pages.
   const summaries: string[] = []
 
+  const allPairs = result.getByRole('button', {
+    name: 'Show all pairs',
+    exact: true
+  })
+  if (await allPairs.count()) await allPairs.click()
   for (let pageIndex = 0; pageIndex < 3; pageIndex += 1) {
     summaries.push(
       ...(await result.locator('.evidence-pair > summary').allTextContents())
@@ -151,6 +156,12 @@ test('a focused interval keeps all workcell parts, reports real findings and rep
     'gripper - fixture tablecomplete',
     'workpiece - fixture tablecomplete'
   ])
+  await result
+    .getByRole('button', {
+      name: 'Show finding and unresolved pairs',
+      exact: true
+    })
+    .click()
   const pair = result.locator('.evidence-pair').filter({
     has: page.locator('summary').filter({ hasText: /^gripper - fixture table/ })
   })

@@ -1,3 +1,4 @@
+import { showSetup, viewResults } from '../workflow'
 import { expect, test, type Page } from '@playwright/test'
 import { MethodIds, MethodVersions } from '../../src/constants'
 
@@ -46,6 +47,7 @@ test('ordinary nested acceptance editing preserves findings, versions, compariso
   }
   await page.getByRole('button', { name: 'Experiments', exact: true }).click()
   await page.getByLabel('Experiment name').fill('Intentional contact study')
+  await showSetup(page, true)
   await page
     .getByLabel('Analysis method')
     .selectOption(
@@ -91,18 +93,18 @@ test('ordinary nested acceptance editing preserves findings, versions, compariso
     .click()
   await page.locator('.acceptance-fields > summary').click()
   const result = page.getByTestId('analysis-result')
-  await page
-    .getByRole('button', { name: 'Run formal analysis', exact: true })
-    .click()
+  await page.getByRole('button', { name: 'Run analysis', exact: true }).click()
+  await viewResults(page)
   await expect(result).toContainText('Issue found')
   await expect(result.getByLabel('User verdict')).toHaveText('User: meets')
   await expect(result.locator('.rule-evaluation')).toContainText(
     'Condition 1.2.2 - false'
   )
   await expect(page.locator('.retention-actions')).toContainText(
-    'Retained in this project'
+    'Saved to this project'
   )
 
+  await showSetup(page)
   await page.locator('.acceptance-fields > summary').click()
   const before = await page.getByTestId('history-depth').textContent()
   await page
@@ -122,15 +124,13 @@ test('ordinary nested acceptance editing preserves findings, versions, compariso
     page.getByLabel('Condition 1.1 expected penetration')
   ).toHaveValue('absent')
   await page.locator('.acceptance-fields > summary').click()
-  await page
-    .getByRole('button', { name: 'Run formal analysis', exact: true })
-    .click()
+  await page.getByRole('button', { name: 'Run analysis', exact: true }).click()
   await expect(result.getByLabel('User verdict')).toHaveText(
     'User: does not meet'
   )
   await expect(result).toContainText('rule r2')
   await expect(page.locator('.retention-actions')).toContainText(
-    'Retained in this project'
+    'Saved to this project'
   )
   await page
     .getByRole('button', { name: 'Runs & compare', exact: true })

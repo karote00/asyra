@@ -1,3 +1,4 @@
+import { showSetup, viewResults } from '../workflow'
 import { expect, test, type Page } from '@playwright/test'
 import { MethodIds, MethodVersions } from '../../src/constants'
 
@@ -26,6 +27,7 @@ async function createSphereStudy(
   }
   await page.getByRole('button', { name: 'Experiments', exact: true }).click()
   await page.getByLabel('Experiment name').fill('Formal sphere study')
+  await showSetup(page, true)
   await page
     .getByLabel('Analysis method')
     .selectOption(
@@ -70,8 +72,9 @@ for (const [outcome, distance, threshold, coverage, label, verdict] of [
   }, info) => {
     await createSphereStudy(page, distance, threshold)
     await page
-      .getByRole('button', { name: 'Run formal analysis', exact: true })
+      .getByRole('button', { name: 'Run analysis', exact: true })
       .click()
+    await viewResults(page)
     const result = page.getByTestId('analysis-result')
     await expect(result.getByLabel('User verdict')).toHaveText(verdict)
     await expect(
@@ -87,7 +90,7 @@ for (const [outcome, distance, threshold, coverage, label, verdict] of [
         .locator('dd')
     ).toHaveText(coverage)
     await expect(page.locator('.retention-actions')).toContainText(
-      'Retained in this project'
+      'Saved to this project'
     )
     const pair = result.locator('.evidence-pair')
     await pair.locator('summary').click()
@@ -111,6 +114,13 @@ for (const [outcome, distance, threshold, coverage, label, verdict] of [
         .click()
       await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
       await page.setViewportSize({ width: 600, height: 960 })
+      await expect
+        .poll(
+          async () =>
+            (await page.locator('.experiment-scroll').boundingBox())?.height ??
+            0
+        )
+        .toBeGreaterThanOrEqual(120)
       await pair.scrollIntoViewIfNeeded()
       await expect(
         pair.getByRole('button', { name: 'Replay witness', exact: true })
@@ -156,37 +166,37 @@ test('ordinary original-part timeout is retained without success and permits ano
   await page.goto('/')
   await expect(page.getByRole('status')).toHaveText('Local runtime ready')
   await page.getByRole('button', { name: 'Experiments', exact: true }).click()
+  await showSetup(page, true)
   await page.getByLabel('Wall-time budget (ms)').fill('100')
   await page.keyboard.press('Tab')
-  await page
-    .getByRole('button', { name: 'Run formal analysis', exact: true })
-    .click()
+  await page.getByRole('button', { name: 'Run analysis', exact: true }).click()
+  await viewResults(page)
   const result = page.getByTestId('analysis-result')
   await expect(result).toContainText('timed-out')
   await expect(result).toContainText('partial')
   await expect(result.getByLabel('User verdict')).not.toHaveText('meets')
   await expect(page.locator('.retention-actions')).toContainText(
-    'Retained in this project'
+    'Saved to this project'
   )
   await expect(
     page.getByRole('button', { name: 'Cancel analysis', exact: true })
   ).toHaveCount(0)
   await result.scrollIntoViewIfNeeded()
   await page.screenshot({ path: info.outputPath('timeout.png') })
+  await showSetup(page, true)
   await page.getByLabel('Wall-time budget (ms)').fill('30000')
   await page.keyboard.press('Tab')
   await expect(result).toContainText('Historical inputs differ')
-  await page
-    .getByRole('button', { name: 'Run formal analysis', exact: true })
-    .click()
+  await page.getByRole('button', { name: 'Run analysis', exact: true }).click()
   await page
     .getByRole('button', { name: 'Cancel analysis', exact: true })
     .click()
+  await viewResults(page)
   await expect(result).toContainText('cancelled')
   await expect(result).toContainText('partial')
   await expect(result.getByLabel('User verdict')).not.toHaveText('meets')
   await expect(page.locator('.retention-actions')).toContainText(
-    'Retained in this project'
+    'Saved to this project'
   )
   await result.scrollIntoViewIfNeeded()
   await page.screenshot({ path: info.outputPath('cancelled.png') })

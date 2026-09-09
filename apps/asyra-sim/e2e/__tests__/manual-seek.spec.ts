@@ -1,3 +1,4 @@
+import { showSetup } from '../workflow'
 import { expect, test } from '@playwright/test'
 
 for (const kind of ['clearance', 'collision']) {
@@ -15,10 +16,12 @@ for (const kind of ['clearance', 'collision']) {
 
     // Widen the clearance-only interval through the ordinary authored setting.
     if (kind === 'clearance') {
+      await showSetup(page)
       await page.getByLabel('Minimum clearance (mm)').fill('200')
       await page.keyboard.press('Tab')
     }
 
+    await page.getByRole('tab', { name: 'Preview', exact: true }).click()
     const slider = page.getByLabel('Sampled trajectory preview time')
     const feedback = page.getByTestId('playback-feedback')
     const history = await page.getByTestId('history-depth').textContent()

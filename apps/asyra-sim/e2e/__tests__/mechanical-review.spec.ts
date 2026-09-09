@@ -9,6 +9,7 @@ test('mechanical main bodies remain articulated during playback with bounded fra
   await expect(page.getByLabel('Candidate', { exact: true })).toHaveValue(/.+/)
   await page.getByLabel('Wireframe', { exact: true }).uncheck()
   await page.getByRole('button', { name: 'Experiments', exact: true }).click()
+  await page.getByRole('tab', { name: 'Preview', exact: true }).click()
   const play = page.getByRole('button', {
     name: 'Play trajectory',
     exact: true

@@ -1,3 +1,4 @@
+import { showSetup, viewResults, expectAnalysisBlocked } from '../workflow'
 import { expect, test } from '@playwright/test'
 
 test('ordinary experiment controls run, replay frozen evidence, preserve edits, and cancel', async ({
@@ -16,18 +17,18 @@ test('ordinary experiment controls run, replay frozen evidence, preserve edits, 
     page.getByRole('button', { name: 'Save experiment', exact: true })
   ).toHaveCount(0)
   const depth = await page.getByTestId('history-depth').textContent()
+  await page.getByRole('tab', { name: 'Preview', exact: true }).click()
   await page.getByLabel('Sampled trajectory preview time').press('End')
   await expect(page.locator('.viewport-summary')).toContainText(
     'Sampled preview - 8.0000 s'
   )
   await expect(page.getByTestId('history-depth')).toHaveText(depth ?? '')
-  await page.getByRole('button', { name: 'Run preflight', exact: true }).click()
+  await page.getByRole('button', { name: 'Run analysis', exact: true }).click()
   await expect(page.getByTestId('preflight-report')).toContainText(
     'Ready for formal local analysis'
   )
-  await page
-    .getByRole('button', { name: 'Run formal analysis', exact: true })
-    .click()
+
+  await viewResults(page)
   const result = page.getByTestId('analysis-result')
   await expect(result).toBeVisible({ timeout: 20000 })
   await expect(result).toContainText('Execution')
@@ -44,20 +45,21 @@ test('ordinary experiment controls run, replay frozen evidence, preserve edits, 
     'Historical run replay'
   )
   await page.screenshot({ path: info.outputPath('experiment-replay.png') })
+  await showSetup(page)
   await page.getByLabel('Minimum clearance (mm)').fill('30')
   await page.keyboard.press('Tab')
   await expect(result).toContainText('Historical inputs differ')
   await expect(
     page.getByRole('button', { name: 'Save experiment', exact: true })
   ).toHaveCount(0)
-  await page
-    .getByRole('button', { name: 'Run formal analysis', exact: true })
-    .click()
+  await page.getByRole('button', { name: 'Run analysis', exact: true }).click()
   await page
     .getByRole('button', { name: 'Cancel analysis', exact: true })
     .click()
+  await viewResults(page)
   await expect(result).toContainText('cancelled')
   await expect(result).toContainText('partial')
+  await showSetup(page)
   await page
     .getByRole('button', { name: 'New experiment', exact: true })
     .click()
@@ -103,9 +105,7 @@ test('invalid trajectory input persists without changing geometry and empty scop
     page.getByRole('button', { name: 'Apply', exact: true })
   ).toHaveCount(0)
   await expect(page.getByRole('treeitem')).toHaveCount(11)
-  await expect(
-    page.getByRole('button', { name: 'Run preflight', exact: true })
-  ).toBeDisabled()
+  await expectAnalysisBlocked(page)
   await page.getByRole('button', { name: 'Undo', exact: true }).click()
   await expect(page.getByLabel('Trajectory source data')).toHaveValue(
     validSource
@@ -115,13 +115,11 @@ test('invalid trajectory input persists without changing geometry and empty scop
   await page.getByLabel('Primary-to-influencing collision').uncheck()
   await page.getByLabel('Excluded pairs', { exact: true }).fill('')
   await page.keyboard.press('Tab')
-  await page.getByRole('button', { name: 'Run preflight', exact: true }).click()
+  await page.getByRole('button', { name: 'Run analysis', exact: true }).click()
   await expect(page.getByTestId('preflight-report')).toContainText('no-pairs')
-  await page
-    .getByRole('button', { name: 'Run formal analysis', exact: true })
-    .click()
+
   await expect(
-    page.getByRole('alert').filter({ hasText: 'Experiment preflight blocked' })
+    page.getByRole('alert').filter({ hasText: 'no checkable collider pairs' })
   ).toContainText('no checkable collider pairs')
   await expect(page.getByTestId('analysis-result')).toHaveCount(0)
 })

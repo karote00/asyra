@@ -4,6 +4,7 @@ import { useLivePreview } from './use-live-preview'
 import { LiveObservations } from './live-observations'
 
 export function ExperimentPlayback() {
+  const tab = useExperimentField('tab')
   const canonical = useExperimentField('canonical')
 
   const dirty = useExperimentField('dirty')
@@ -24,7 +25,12 @@ export function ExperimentPlayback() {
   const warnings = useExperimentField('warnings')
 
   const active =
-    !!canonical && executable && !dirty && (previewActive ?? true) && !running
+    tab === 'preview' &&
+    !!canonical &&
+    executable &&
+    !dirty &&
+    (previewActive ?? true) &&
+    !running
 
   const identity = `${experimentId}:${canonicalKey}:${revision}:${run?.result.runId ?? ''}:${warnings.join(',')}`
 
