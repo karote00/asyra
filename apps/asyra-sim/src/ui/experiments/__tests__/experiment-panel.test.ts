@@ -1,3 +1,7 @@
+import { createExperimentSnapshot } from '../../../analysis/snapshot'
+import { terminalAnalysisResult } from '../../../analysis/result'
+import { INSTALLED_METHOD_CATALOG } from '../../../extensions/installed-methods'
+import type { AnalysisResult } from '../../../analysis/result'
 import { ExperimentInputReader } from '../../../storage/experiment-input'
 // @vitest-environment jsdom
 import { act, createElement } from 'react'
@@ -693,7 +697,7 @@ it('does not acknowledge a failed edit when the shell reports and consumes the F
   expect(updateExperiment).toHaveBeenCalledOnce()
   expect(host.textContent).toContain('Experiment edit was not committed')
   expect(field.value).toBe('25')
-  expect(button('Run preflight')?.disabled).toBe(true)
+  expect(button('Run analysis')).toBeDefined()
 })
 
 it('preserves the authored analysis interval when an inline trajectory edit completes', async () => {
@@ -747,4 +751,341 @@ it('preserves the authored analysis interval when an inline trajectory edit comp
     1,
     expect.objectContaining({ interval: [2, 5] })
   )
+})
+
+function admissionInput(overrides: Partial<SimRuntime> = {}) {
+  const analysisRun = vi.fn(() => new Promise(() => undefined))
+  const preflightExperiment = vi.fn(() => ({
+    blockers: [],
+    assumptions: [],
+    resourceWarnings: [],
+    pairs: [],
+    estimate: {
+      pairCount: 1,
+      segmentCount: 1,
+      workUnits: 1,
+      reliableTimeEstimate: false
+    }
+  }))
+  const createExperimentSnapshot = vi.fn(() => ({
+    snapshotId: 'current',
+    budget: draft.budget
+  }))
+  const input: ExperimentInputs = {
+    runtime: {
+      ...runtime,
+      preflightExperiment,
+      createExperimentSnapshot,
+      getCandidateLineage: () => undefined,
+      getCandidates: () => [{ id: 'candidate', name: 'Candidate' }],
+      features: {
+        ...runtime.features,
+        analysis: {
+          run: analysisRun,
+          subscribe: () => () => undefined,
+          getProgress: () => null
+        }
+      },
+      ...overrides
+    } as unknown as SimRuntime,
+    candidateId: 'candidate',
+    workcell: example.workcell,
+    revision: 1,
+    perform: async (action) => {
+      await action(() => undefined)
+    },
+    onPlayback: vi.fn(),
+    runs: [],
+    retainedIds: new Set(),
+    onRun: vi.fn(),
+    onOpenRuns: vi.fn(),
+    onVisualPreview: vi.fn(),
+    isCurrent: () => true,
+    visualImportActive: true
+  }
+  return { input, analysisRun, preflightExperiment, createExperimentSnapshot }
+}
+
+it('offers one Run analysis entry and admits exactly once on repeated activation', async () => {
+  const { input, analysisRun, preflightExperiment, createExperimentSnapshot } =
+    admissionInput()
+  await act(() => renderExperiment(input))
+  expect(button('Run preflight')).toBeUndefined()
+  const run = button('Run analysis')
+  expect(run).toBeDefined()
+  await act(() => {
+    run?.click()
+    run?.click()
+  })
+  expect(preflightExperiment).toHaveBeenCalledOnce()
+  expect(createExperimentSnapshot).toHaveBeenCalledOnce()
+  expect(analysisRun).toHaveBeenCalledOnce()
+})
+
+it('keeps invalid authored input actionable and never starts a prior valid trajectory', async () => {
+  const invalid = structuredClone(experiment)
+  invalid.definition.exclusionsInput = 'invalid exclusion'
+  const { input, analysisRun, createExperimentSnapshot } = admissionInput({
+    getExperiments: () => [invalid]
+  })
+  await act(() => renderExperiment(input))
+  expect(button('Run analysis')?.disabled).toBe(false)
+  await act(() => button('Run analysis')?.click())
+  expect(host.querySelector('[role="alert"]')).not.toBeNull()
+  expect(button('Review input')).toBeDefined()
+  expect(createExperimentSnapshot).not.toHaveBeenCalled()
+  expect(analysisRun).not.toHaveBeenCalled()
+  await act(() => button('Review input')?.click())
+  expect(document.activeElement?.getAttribute('aria-label')).toBe(
+    'Excluded pairs'
+  )
+})
+
+it('does not execute the last valid scalar when unfinished numerical text is invalid', async () => {
+  const { input, analysisRun, createExperimentSnapshot } = admissionInput()
+  await act(() => renderExperiment(input))
+  const field = host.querySelector<HTMLInputElement>(
+    '[aria-label="Minimum clearance (mm)"]'
+  )
+  if (!field) throw new Error('Missing input control')
+  await act(() => {
+    Object.getOwnPropertyDescriptor(
+      HTMLInputElement.prototype,
+      'value'
+    )?.set?.call(field, '-1')
+    field.dispatchEvent(new Event('input', { bubbles: true }))
+  })
+  await act(() => button('Run analysis')?.click())
+  expect(button('Review input')).toBeDefined()
+  expect(createExperimentSnapshot).not.toHaveBeenCalled()
+  expect(analysisRun).not.toHaveBeenCalled()
+  await act(() => button('Review input')?.click())
+  expect(document.activeElement).toBe(field)
+})
+
+it('shows required resource acknowledgement before snapshot allocation and runs after acknowledgement', async () => {
+  const { input, analysisRun, preflightExperiment, createExperimentSnapshot } =
+    admissionInput()
+  preflightExperiment.mockReturnValue({
+    blockers: [],
+    assumptions: [],
+    pairs: [],
+    resourceWarnings: [
+      { code: 'large-workload', message: 'Review large workload' }
+    ],
+    estimate: {
+      pairCount: 300,
+      segmentCount: 1,
+      workUnits: 300,
+      reliableTimeEstimate: false
+    }
+  } as never)
+  await act(() => renderExperiment(input))
+  await act(() => button('Run analysis')?.click())
+  expect(host.textContent).toContain('Review large workload')
+  expect(createExperimentSnapshot).not.toHaveBeenCalled()
+  expect(analysisRun).not.toHaveBeenCalled()
+  const warning = host.querySelector<HTMLInputElement>(
+    '[data-testid="preflight-report"] input[type="checkbox"]'
+  )
+  if (!warning) throw new Error('Missing input control')
+  await act(() => warning.click())
+  await act(() =>
+    inputSource?.publish({
+      ...input,
+      workcell: structuredClone(input.workcell),
+      revision: 2
+    })
+  )
+  await act(() => button('Run analysis')?.click())
+  expect(createExperimentSnapshot).not.toHaveBeenCalled()
+  const refreshedWarning = host.querySelector<HTMLInputElement>(
+    '[data-testid="preflight-report"] input[type="checkbox"]'
+  )
+  if (!refreshedWarning) throw new Error('Missing refreshed warning')
+  expect(refreshedWarning.checked).toBe(false)
+  await act(() => refreshedWarning.click())
+  await act(() => button('Run analysis')?.click())
+  expect(createExperimentSnapshot).toHaveBeenCalledWith('study', [
+    'large-workload'
+  ])
+  expect(analysisRun).toHaveBeenCalledOnce()
+})
+
+it('keeps an empty-scope blocker actionable without freezing or allocating a run', async () => {
+  const { input, analysisRun, preflightExperiment, createExperimentSnapshot } =
+    admissionInput()
+  preflightExperiment.mockReturnValue({
+    blockers: [{ code: 'no-pairs', message: 'No checkable pairs' }],
+    assumptions: [],
+    resourceWarnings: [],
+    pairs: [],
+    estimate: {
+      pairCount: 0,
+      segmentCount: 1,
+      workUnits: 0,
+      reliableTimeEstimate: false
+    }
+  } as never)
+  await act(() => renderExperiment(input))
+  await act(() => button('Run analysis')?.click())
+  expect(host.textContent).toContain('No checkable pairs')
+  expect(button('Review no-pairs')).toBeDefined()
+  await act(() => button('Review no-pairs')?.click())
+  expect(document.activeElement?.getAttribute('aria-label')).toContain(
+    'analysis role'
+  )
+  expect(createExperimentSnapshot).not.toHaveBeenCalled()
+  expect(analysisRun).not.toHaveBeenCalled()
+})
+
+it('switches accessible tabs with preserved fields and zero canonical or source work', async () => {
+  const { input, analysisRun } = admissionInput()
+  const parse = vi.spyOn(importer, 'prepareTrajectoryCsv')
+  await act(() => renderExperiment(input))
+  const field = host.querySelector<HTMLInputElement>(
+    '[aria-label="Minimum clearance (mm)"]'
+  )
+  if (!field) throw new Error('Missing input control')
+  const source = host.querySelector('[aria-label="Trajectory source data"]')
+  const tabs = [...host.querySelectorAll<HTMLButtonElement>('[role="tab"]')]
+  expect(tabs.map((tab) => tab.textContent)).toEqual([
+    'Setup',
+    'Preview',
+    'Results'
+  ])
+  vi.mocked(runtime.getExperiments).mockClear()
+  parse.mockClear()
+  await act(() => {
+    Object.getOwnPropertyDescriptor(
+      HTMLInputElement.prototype,
+      'value'
+    )?.set?.call(field, '-1')
+    field.dispatchEvent(new Event('input', { bubbles: true }))
+  })
+  await act(() => {
+    tabs[0].focus()
+    tabs[0].dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true })
+    )
+  })
+  expect(document.activeElement).toBe(tabs[1])
+  expect(tabs[1].getAttribute('aria-selected')).toBe('true')
+  await act(() => tabs[2].click())
+  expect(tabs[2].getAttribute('aria-selected')).toBe('true')
+  await act(() => tabs[0].click())
+  expect(host.querySelector('[aria-label="Minimum clearance (mm)"]')).toBe(
+    field
+  )
+  expect(field.value).toBe('-1')
+  expect(host.querySelector('[aria-label="Trajectory source data"]')).toBe(
+    source
+  )
+  expect(runtime.getExperiments).not.toHaveBeenCalled()
+  expect(parse).not.toHaveBeenCalled()
+  expect(analysisRun).not.toHaveBeenCalled()
+  parse.mockRestore()
+})
+
+it('keeps Run outside scrolling tab content and routes invalid input back to Setup', async () => {
+  const { input } = admissionInput()
+  await act(() => renderExperiment(input))
+  const field = host.querySelector<HTMLInputElement>(
+    '[aria-label="Minimum clearance (mm)"]'
+  )
+  if (!field) throw new Error('Missing input control')
+  await act(() => {
+    Object.getOwnPropertyDescriptor(
+      HTMLInputElement.prototype,
+      'value'
+    )?.set?.call(field, '-1')
+    field.dispatchEvent(new Event('input', { bubbles: true }))
+  })
+  await act(() => button('Results')?.click())
+  expect(button('Run analysis')?.closest('.experiment-scroll')).toBeNull()
+  await act(() => button('Run analysis')?.click())
+  await act(() => button('Review input')?.click())
+  expect(button('Setup')?.getAttribute('aria-selected')).toBe('true')
+  expect(document.activeElement).toBe(field)
+})
+
+it('offers completion without changing the editing tab, focus or unfinished text', async () => {
+  const { input } = admissionInput()
+  const snapshot = createExperimentSnapshot({
+    snapshotId: 'completion',
+    candidateId: 'candidate',
+    experimentId: 'study',
+    workcell: example.workcell,
+    definition: experiment.definition,
+    methods: INSTALLED_METHOD_CATALOG.descriptors,
+    acknowledgedWarningCodes: []
+  })
+  let finish: (result: AnalysisResult) => void = () => undefined
+  input.runtime.createExperimentSnapshot = () => snapshot
+  input.runtime.features.analysis.run = vi.fn(
+    () =>
+      new Promise<AnalysisResult>((resolve) => {
+        finish = resolve
+      })
+  )
+  input.runtime.features.storage = {
+    retain: vi.fn(async () => undefined)
+  } as unknown as SimRuntime['features']['storage']
+  input.onRun = (run) =>
+    inputSource?.publish({
+      ...input,
+      runs: [run],
+      retainedIds: new Set([run.result.runId])
+    })
+  await act(() => renderExperiment(input))
+  await act(() => button('Run analysis')?.click())
+  const field = host.querySelector<HTMLInputElement>(
+    '[aria-label="Minimum clearance (mm)"]'
+  )
+  if (!field) throw new Error('Missing input control')
+  await act(() => {
+    field.focus()
+    Object.getOwnPropertyDescriptor(
+      HTMLInputElement.prototype,
+      'value'
+    )?.set?.call(field, '35')
+    field.dispatchEvent(new Event('input', { bubbles: true }))
+  })
+  await act(() =>
+    finish(
+      terminalAnalysisResult(snapshot, [], {
+        runId: 'completion-run',
+        startedAt: 0,
+        endedAt: 1,
+        execution: 'failed',
+        error: 'Worker failed'
+      })
+    )
+  )
+  expect(button('View results')).toBeDefined()
+  expect(button('Setup')?.getAttribute('aria-selected')).toBe('true')
+  expect(document.activeElement).toBe(field)
+  expect(field.value).toBe('35')
+  expect(input.runtime.features.storage.retain).toHaveBeenCalledOnce()
+  await act(() => button('View results')?.click())
+  expect(button('Results')?.getAttribute('aria-selected')).toBe('true')
+  expect(host.textContent).toContain('Worker failed')
+})
+
+it('routes an undeclared time unit to its declaration field without allocating analysis', async () => {
+  const { input, analysisRun, createExperimentSnapshot } = admissionInput()
+  await act(() => renderExperiment(input))
+  const field = host.querySelector<HTMLSelectElement>(
+    '[aria-label="Time unit"]'
+  )
+  if (!field) throw new Error('Missing time unit')
+  await act(() => {
+    field.value = ''
+    field.dispatchEvent(new Event('change', { bubbles: true }))
+  })
+  await act(() => button('Run analysis')?.click())
+  await act(() => button('Review input')?.click())
+  expect(document.activeElement).toBe(field)
+  expect(createExperimentSnapshot).not.toHaveBeenCalled()
+  expect(analysisRun).not.toHaveBeenCalled()
 })

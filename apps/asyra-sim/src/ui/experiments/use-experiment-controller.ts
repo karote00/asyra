@@ -72,6 +72,7 @@ export function useExperimentController({
   )
 
   const [error, setError] = useState('')
+  const [tab, setTab] = useState<'setup' | 'preview' | 'results'>('setup')
   const [trajectoryValid, setTrajectoryValid] = useState(true)
   const resolvedInput = useMemo(() => {
     if (!canonical) return null
@@ -99,6 +100,7 @@ export function useExperimentController({
   const live = useRef(true)
 
   const active = useRef<AbortController | null>(null)
+  const admissionPending = useRef(false)
 
   const canonicalDraft = useMemo(
     () => (canonical ? definitionToDraft(canonical.definition) : null),
@@ -240,9 +242,15 @@ export function useExperimentController({
   }
 
   const inspect = () => {
-    if (!canonical || dirty || !executable)
+    if (!canonical || dirty || pendingWrites.current)
+      throw new Error('Complete the current experiment edits before analysis.')
+    // This owner reports the current authored-input diagnostic, never the old
+    // normalized trajectory retained alongside invalid authored text.
+    runtime.experimentInputs.resolve(canonical.definition, workcell)
+    if (!trajectoryValid || exclusionsError)
       throw new Error(
-        'Correct the current experiment input errors before preflight.'
+        exclusionsError ||
+          'Correct trajectory source, mapping and units before analysis.'
       )
 
     const report = runtime.preflightExperiment(canonical.id)
@@ -288,8 +296,27 @@ export function useExperimentController({
   }
 
   const run = async () => {
+    if (admissionPending.current || active.current || pendingWrites.current)
+      return
+    admissionPending.current = true
     try {
-      inspect()
+      const report = inspect()
+      if (report.blockers.length || report.assumptions.length) {
+        setError(
+          [...report.blockers, ...report.assumptions]
+            .map((issue) => issue.message)
+            .join(' ')
+        )
+        return
+      }
+      if (
+        report.resourceWarnings.some((issue) => !warnings.includes(issue.code))
+      ) {
+        setError(
+          'Review and acknowledge the resource warnings before analysis.'
+        )
+        return
+      }
 
       if (!canonical) return
 
@@ -351,6 +378,7 @@ export function useExperimentController({
       }
 
       active.current = null
+      admissionPending.current = false
     }
   }
 
@@ -366,6 +394,8 @@ export function useExperimentController({
     )
 
   return {
+    tab,
+    setTab,
     resolvedInput,
     executable,
     setTrajectoryValid,

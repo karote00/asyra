@@ -1,3 +1,4 @@
+import { viewResults } from '../workflow'
 import { createHash } from 'node:crypto'
 import { expect, test, type Page } from '@playwright/test'
 import { readHistoryDepth } from '../history-depth'
@@ -110,15 +111,17 @@ test('keeps an open source visible but blocks formal solid analysis without allo
     .click()
   const workers: string[] = []
   page.on('worker', (worker) => workers.push(worker.url()))
-  await page.getByRole('button', { name: 'Run preflight', exact: true }).click()
+  await page.getByRole('button', { name: 'Run analysis', exact: true }).click()
   await expect(page.getByTestId('preflight-report')).toContainText(
     'original-part-topology'
   )
-  await page
-    .getByRole('button', { name: 'Run formal analysis', exact: true })
-    .click()
+  await page.getByRole('button', { name: 'Run analysis', exact: true }).click()
   await expect(page.getByRole('alert')).toBeVisible()
   expect(workers).toEqual([])
+  await page
+    .getByRole('button', { name: 'Review original-part-topology', exact: true })
+    .click()
+  await expect(page.getByLabel('Choose original part GLB')).toBeFocused()
 })
 async function exportProject(page: Page) {
   await page.getByRole('button', { name: 'Projects', exact: true }).click()
@@ -301,14 +304,13 @@ test('keeps a historical-only visual source available for replay after portable 
   await page
     .getByRole('button', { name: 'Accept original part', exact: true })
     .click()
-  await page
-    .getByRole('button', { name: 'Run formal analysis', exact: true })
-    .click()
+  await page.getByRole('button', { name: 'Run analysis', exact: true }).click()
+  await viewResults(page)
   await expect(page.getByTestId('analysis-result')).toBeVisible({
     timeout: 20000
   })
   await expect(page.locator('.retention-actions')).toContainText(
-    'Retained in this project'
+    'Saved to this project'
   )
   await page
     .getByRole('treeitem', { name: '◇ fixture post', exact: true })

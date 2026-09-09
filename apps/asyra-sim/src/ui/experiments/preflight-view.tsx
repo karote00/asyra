@@ -1,3 +1,4 @@
+import { reviewExperimentInput } from './input-navigation'
 import { useExperimentController } from './use-experiment-controller'
 
 type Props = Pick<
@@ -48,6 +49,14 @@ export function PreflightView({
               <strong>Blocked - {issue.code}</strong>
 
               {issue.message}
+              <button
+                onClick={(event) => {
+                  const panel = event.currentTarget.closest('.experiment-panel')
+                  if (panel) reviewExperimentInput(panel, issue.code)
+                }}
+              >
+                Review {issue.code}
+              </button>
             </p>
           ))}
 

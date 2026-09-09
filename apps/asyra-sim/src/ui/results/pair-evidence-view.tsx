@@ -57,6 +57,7 @@ export function PairEvidenceView({
     <details
       className="evidence-pair p-[10px] bg-sim-raised rounded-[5px] wrap-anywhere
         [&_summary]:text-[10px] [&_button]:mt-2"
+      data-pair-id={pair.pairId}
       onToggle={(event) => setExpanded(event.currentTarget.open)}
     >
       <summary>

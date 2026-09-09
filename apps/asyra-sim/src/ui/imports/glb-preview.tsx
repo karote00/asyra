@@ -66,7 +66,7 @@ export function GlbPreview({
       <div className="file-row flex items-center gap-2 my-3 mx-0">
         <label
           className="file-button inline-block cursor-pointer py-[7px] px-[10px] border
-            border-sim-border rounded-[5px] text-[10px] [&_input]:hidden
+            border-sim-border rounded-[5px] text-[10px] [&_input]:sr-only
             [&:focus-within]:[outline:2px_solid_var(--sim-focus)]"
         >
           Choose GLB

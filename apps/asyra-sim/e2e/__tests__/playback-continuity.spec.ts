@@ -1,3 +1,4 @@
+import { viewResults } from '../workflow'
 import { expect, test } from '@playwright/test'
 import { observePlaybackFeedback } from '../playback-observer'
 
@@ -16,16 +17,16 @@ for (const formalFirst of [false, true]) {
 
     if (formalFirst) {
       await page
-        .getByRole('button', { name: 'Run preflight', exact: true })
+        .getByRole('button', { name: 'Run analysis', exact: true })
         .click()
-      await page
-        .getByRole('button', { name: 'Run formal analysis', exact: true })
-        .click()
+
+      await viewResults(page)
       await expect(page.getByTestId('analysis-result')).toBeVisible({
         timeout: 35_000
       })
     }
 
+    await page.getByRole('tab', { name: 'Preview', exact: true }).click()
     const time = page.getByLabel('Sampled trajectory preview time')
     const feedback = page.getByTestId('playback-feedback')
     const history = await page.getByTestId('history-depth').textContent()

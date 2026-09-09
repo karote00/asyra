@@ -20,42 +20,10 @@ export function ExperimentCreation() {
   )
 }
 
-export function ExperimentPreflightAction() {
-  const view = useExperimentView()
-
-  const dirty = useExperimentField('dirty')
-  const executable = useExperimentField('executable')
-
-  const running = useExperimentField('running')
-
-  const canonical = useExperimentValue((state) => !!state.canonical)
-
-  return (
-    <>
-      <button
-        className="wide w-full"
-        disabled={!canonical || dirty || !executable || running}
-        onClick={() => {
-          try {
-            view.getSnapshot().inspect()
-
-            view.getSnapshot().setError('')
-          } catch (reason) {
-            view.getSnapshot().fail(reason)
-          }
-        }}
-      >
-        Run preflight
-      </button>
-    </>
-  )
-}
-
 export function ExperimentRunAction() {
   const view = useExperimentView()
 
-  const dirty = useExperimentField('dirty')
-  const executable = useExperimentField('executable')
+  const saving = useExperimentField('saving')
 
   const running = useExperimentField('running')
 
@@ -65,11 +33,26 @@ export function ExperimentRunAction() {
     <>
       <div className="run-actions flex gap-2 [&_>_.primary]:flex-1">
         <button
+          data-run-analysis
           className="primary bg-sim-accent text-[#fff] border-sim-accent [&:hover]:bg-sim-accent-hover"
-          disabled={!canonical || dirty || !executable || running}
-          onClick={() => void view.getSnapshot().run()}
+          disabled={!canonical || saving || running}
+          onClick={(event) => {
+            const panel = event.currentTarget.closest('.experiment-panel')
+            const invalid = panel?.querySelector<HTMLInputElement>(
+              'input[aria-invalid="true"], textarea[aria-invalid="true"], select[aria-invalid="true"]'
+            )
+            if (invalid) {
+              view
+                .getSnapshot()
+                .setError(
+                  `Correct ${invalid.getAttribute('aria-label') ?? invalid.closest('label')?.textContent ?? 'the marked input'} before analysis.`
+                )
+              return
+            }
+            void view.getSnapshot().run()
+          }}
         >
-          {running ? 'Formal analysis running…' : 'Run formal analysis'}
+          {running ? 'Formal analysis running…' : 'Run analysis'}
         </button>
       </div>
     </>
