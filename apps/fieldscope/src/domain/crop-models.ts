@@ -1,14 +1,31 @@
-import { appendFruitSurface, appendFruitCalyx } from './crop-fruit'
+import { appendSurfaceHairs } from './crop-hairs'
+import {
+  appendFruitSurface,
+  appendFruitCalyx,
+  appendCucumberFlower
+} from './crop-fruit'
 import type { FarmConfiguration } from './farm-configuration'
 import type { Point3 } from './greenhouse'
 import { TriangleBuilder } from './mesh'
 import { CROP_LAYOUT, cropRandom, type CropSpecies } from './crop-layout'
 
+const CUCUMBER_GROWTH_STAGES = [
+  'flowering',
+  'young',
+  'expanding',
+  'near-harvest',
+  'harvestable',
+  'overgrown-early',
+  'overgrown-late',
+  'oversized'
+] as const
+
 export interface CropFruit {
+  growthStage?: (typeof CUCUMBER_GROWTH_STAGES)[number]
   center: Point3
   length: number
   radius: number
-  maturity: 'green' | 'turning' | 'ripe'
+  maturity: 'green' | 'turning' | 'ripe' | 'overgrown'
   occlusion: 'clear' | 'leaf' | 'net'
   ripeness: number
   spineCount: number
@@ -20,6 +37,8 @@ export interface CropModel {
   leafCount: number
   leafletCount: number
   tendrilCount: number
+  stemHairCount: number
+  leafHairCount: number
   fruits: CropFruit[]
   parts: {
     color: number
@@ -277,10 +296,12 @@ function createModel(
     }
   }
   const fruits: CropFruit[] = []
-  const trusses = cucumber ? 4 + (variant % 2) : 3
+  const extraGrowth = cucumber && variant % 4 === 0
+  const trusses = cucumber ? 5 + Number(extraGrowth) : 3
   for (let truss = 0; truss < trusses; truss++) {
     const base = stemPoint(
-      height * ((cucumber ? 0.27 : 0.38) + truss * (cucumber ? 0.12 : 0.23))
+      height *
+        (cucumber ? 0.25 + (0.62 * truss) / (trusses - 1) : 0.38 + truss * 0.23)
     )
     const angle = phase + truss * 2.0
     const count = cucumber ? 1 : 8 + ((variant + truss) % 5)
@@ -302,8 +323,12 @@ function createModel(
         diameter: 0.0026 * scale
       })
     for (let j = 0; j < count; j++) {
+      const growth =
+        extraGrowth && truss === 0
+          ? 5 + (variant % 3)
+          : 4 - truss + Number(extraGrowth)
       const ripeness = cucumber
-        ? ((truss + variant) % 3) / 2
+        ? growth / 4
         : Math.max(
             0.06,
             Math.min(
@@ -313,13 +338,23 @@ function createModel(
           )
       const maturity = ripeness > 0.75 ? 2 : Number(ripeness > 0.3)
       let length = (0.034 + random() * 0.01) * scale
-      if (cucumber)
-        length =
-          (maturity === 2 ? 0.2 + random() * 0.04 : 0.1 + random() * 0.09) *
-          scale
+      if (cucumber) {
+        const ranges = [
+          [0.025, 0.02],
+          [0.06, 0.025],
+          [0.1, 0.035],
+          [0.155, 0.035],
+          [0.2, 0.04],
+          [0.26, 0],
+          [0.28, 0],
+          [0.3, 0]
+        ]
+        length = (ranges[growth][0] + random() * ranges[growth][1]) * scale
+      }
       const radius =
         (cucumber
-          ? 0.011 + random() * 0.004
+          ? [0.003, 0.005, 0.008, 0.0105, 0.013, 0.0225, 0.031, 0.04][growth] +
+            (growth < 5 ? random() * 0.001 : 0)
           : (length / scale) * (0.29 + random() * 0.035)) * scale
       const node = cucumber ? tip : rachis(j)
       const side = j % 2 ? 1 : -1
@@ -377,7 +412,11 @@ function createModel(
         center,
         length,
         radius,
-        maturity: (['green', 'turning', 'ripe'] as const)[maturity],
+        maturity:
+          cucumber && growth > 4
+            ? 'overgrown'
+            : (['green', 'turning', 'ripe'] as const)[maturity],
+        ...(cucumber ? { growthStage: CUCUMBER_GROWTH_STAGES[growth] } : {}),
         occlusion,
         ripeness,
         spineCount: 0
@@ -389,7 +428,7 @@ function createModel(
         length,
         radius,
         cucumber,
-        cucumber ? random() * 0.009 * scale : 0,
+        cucumber && growth < 5 ? random() * 0.009 * scale : 0,
         distant,
         ripeness,
         phase + truss + j * 0.7
@@ -397,11 +436,12 @@ function createModel(
       if (cucumber) star(stems, top, 0.009 * scale, -0.005 * scale)
       else appendFruitCalyx(stems, top, 0.019 * scale, distant)
       if (cucumber)
-        star(
+        appendCucumberFlower(
           flowers,
           add(center, [0, -length / 2, 0]),
-          0.009 * scale,
-          -0.004 * scale
+          growth,
+          scale,
+          distant
         )
     }
     star(
@@ -411,6 +451,32 @@ function createModel(
       -0.006 * scale
     )
   }
+  const stemHairCount =
+    cucumber && !distant
+      ? appendSurfaceHairs(
+          stems,
+          24000,
+          0.0016 * scale,
+          false,
+          [0.125, 0.231, 0.053]
+        )
+      : 0
+  const leafHairCount =
+    cucumber && !distant
+      ? appendSurfaceHairs(
+          foliage,
+          4200,
+          0.0012 * scale,
+          true,
+          [0.045, 0.13, 0.035]
+        )
+      : 0
+  if (cucumber && distant)
+    for (let i = 0; i < stems.positions.length; i += 3)
+      stems.colors.push(0.125, 0.231, 0.053)
+  if (flowers.colors.length)
+    while (flowers.colors.length < flowers.positions.length)
+      flowers.colors.push(0.89, 0.58, 0.035)
   const builders = [stems, foliage, veins, green, turning, ripe, flowers]
   const colors = cucumber
     ? [
@@ -438,6 +504,8 @@ function createModel(
     leafCount,
     leafletCount,
     tendrilCount,
+    stemHairCount,
+    leafHairCount,
     fruits,
     parts: builders.flatMap((builder, i) =>
       builder.indices.length

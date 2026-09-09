@@ -108,7 +108,21 @@ test('left drag uses the same stationary look as right drag', async ({
       { steps: 5 }
     )
     await page.mouse.up({ button })
-    images.push(await page.locator('canvas').screenshot())
+    // Compare settled frames, not an in-flight GPU submission after pointerup.
+    let capture = await page.locator('canvas').screenshot()
+    await expect
+      .poll(async () => {
+        const next = await page.locator('canvas').screenshot()
+        const stable = capture.equals(next)
+        capture = next
+        return stable
+      })
+      .toBe(true)
+    await testInfo.attach(`${button}-look`, {
+      body: capture,
+      contentType: 'image/png'
+    })
+    images.push(capture)
   }
   expect(images[0].equals(images[1])).toBe(true)
   await page.screenshot({

@@ -173,3 +173,62 @@ it('gives every leaf a spatially varying green surface at both detail levels', (
     }
   }
 })
+
+it('includes five cucumber growth stages with expanding fruit and attached flowers', () => {
+  for (const model of createCropModels({ netTop: 3, netBottom: 0.45 }).filter(
+    (m) => m.species === 'cucumber-1914'
+  )) {
+    const stages = [
+      'flowering',
+      'young',
+      'expanding',
+      'near-harvest',
+      'harvestable'
+    ]
+    let previousLength = 0,
+      previousRadius = 0
+    for (const stage of stages) {
+      const fruit = model.fruits.find((f) => f.growthStage === stage)
+      expect(fruit, stage).toBeDefined()
+      if (!fruit) throw new Error('Missing growth stage')
+      expect(fruit.length).toBeGreaterThan(previousLength)
+      expect(fruit.radius).toBeGreaterThan(previousRadius)
+      previousLength = fruit.length
+      previousRadius = fruit.radius
+      const tipY = fruit.center[1] - fruit.length / 2
+      const flower = model.parts[6].shape.positions
+      expect(
+        flower.some(
+          (x, i) =>
+            i % 3 === 0 &&
+            Math.abs(x - fruit.center[0]) < 0.025 &&
+            Math.abs(flower[i + 2] - fruit.center[2]) < 0.025 &&
+            flower[i + 1] < tipY &&
+            flower[i + 1] > tipY - 0.04
+        )
+      ).toBe(true)
+    }
+    expect(model.fruits.some((f) => f.length < 0.05)).toBe(true)
+    expect(model.stemHairCount).toBeGreaterThan(300)
+    expect(model.leafHairCount).toBeGreaterThan(model.leafCount * 40)
+  }
+})
+
+it('represents delayed harvest on attached fruit with two intermediate sizes before oversized fruit', () => {
+  const fruits = createCropModels({ netTop: 3, netBottom: 0.45 })
+    .filter((m) => m.species === 'cucumber-1914')
+    .flatMap((m) => m.fruits)
+  for (const [stage, length, diameter] of [
+    ['overgrown-early', 0.26, 0.045],
+    ['overgrown-late', 0.28, 0.062],
+    ['oversized', 0.3, 0.08]
+  ] as const) {
+    const matches = fruits.filter((fruit) => fruit.growthStage === stage)
+    expect(matches.length).toBeGreaterThan(0)
+    for (const fruit of matches) {
+      expect(fruit.length).toBeCloseTo(length)
+      expect(fruit.radius * 2).toBeCloseTo(diameter)
+      expect(fruit.maturity).toBe('overgrown')
+    }
+  }
+})

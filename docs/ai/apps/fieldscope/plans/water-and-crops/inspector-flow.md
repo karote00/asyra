@@ -22,7 +22,7 @@ This flow maps the [product specification](../../specs/water-and-crops.md); it i
 - Conditions: only soil-adjacent drains yield rows; empty rows yield no placements. Invalid root clearance is rejected at configuration admission.
 - Allowed contributors: domain layout, shared support-row calculation, TriangleBuilder and observed cultivar references.
 - Forbidden contributors: Three.js, camera state, renderer decisions, wall-clock randomness, robot physics.
-- Boundary/allowlist: `domain/crop-models.ts`, `domain/crop-fruit.ts`, `domain/crop-layout.ts`, crop tube subdivision in `domain/mesh.ts`, the crop review export script, row portions of `domain/planting-supports.ts`, `domain/farm-configuration.ts`, matching domain tests.
+- Boundary/allowlist: `domain/crop-models.ts`, `domain/crop-fruit.ts`, `domain/crop-hairs.ts`, `domain/crop-layout.ts`, crop tube subdivision in `domain/mesh.ts`, the crop review export script, row portions of `domain/planting-supports.ts`, `domain/farm-configuration.ts`, matching domain tests.
 - Spec: Planting, appearance references, valid/empty/invalid and repeatability cases. Failure owner: crop domain or configuration admission respectively.
 - Cache dimensions: none; models are completed configuration-lifetime products.
 

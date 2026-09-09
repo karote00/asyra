@@ -20,11 +20,16 @@ export function fruitSkinColor(
     Math.sin(angle * 7 - t * 13 + phase) * 0.018
   if (cucumber) {
     const stripe = Math.max(0, Math.cos(angle * 5 + t)) ** 8 * 0.04
-    return [
-      0.09 + stripe + mottling * 0.2,
-      0.24 + (1 - ripeness) * 0.15 + stripe + mottling,
-      0.1 + stripe * 0.6
-    ].map(linear) as unknown as Point3
+    const green: Point3 = [
+      0.09 + (1 - clamp(ripeness)) * 0.23 + stripe + mottling * 0.2,
+      0.24 + (1 - clamp(ripeness)) * 0.15 + stripe + mottling,
+      0.1 + (1 - clamp(ripeness)) * 0.08 + stripe * 0.6
+    ]
+    return mix(
+      green,
+      [0.36 + mottling, 0.43 + mottling, 0.32 + mottling],
+      (ripeness - 1) / 0.75
+    ).map(linear) as unknown as Point3
   }
   const development = clamp(
     ripeness +
@@ -54,12 +59,19 @@ export function appendFruitSurface(
   ripeness: number,
   phase: number
 ) {
-  const rings = distant ? 3 : 14,
-    sides = distant ? 6 : 16
+  const rings = distant ? 3 : 14 + Number(cucumber) * 22,
+    sides = distant ? 6 : 16 + Number(cucumber) * 16
   const surface = (t: number, angle: number): Point3 => {
     const theta = Math.PI * t
     const taper = cucumber ? Math.sin(theta) ** 0.25 : Math.sin(theta)
-    const rib = cucumber ? 1 + 0.045 * Math.cos(5 * angle) : 1
+    const relief =
+      0.045 * Math.cos(5 * angle + 0.3 * Math.sin(t * 17)) +
+      0.048 *
+        Math.sin(t * 47 + angle * 3 + phase) *
+        Math.sin(angle * 11 - t * 9) +
+      0.09 *
+        Math.max(0, Math.sin(t * 44 + phase) * Math.cos(angle * 8 + t * 3)) ** 8
+    const rib = cucumber ? (1 + relief) / (ripeness > 1 ? 1.183 : 1) : 1
     return [
       center[0] +
         radius * taper * Math.cos(angle) * rib +
@@ -87,15 +99,24 @@ export function appendFruitSurface(
     }
   let spineCount = 0
   if (cucumber && !distant) {
-    const scale = length / 0.22
+    const scale = Math.min(1, length / 0.12)
     for (let row = 1; row <= 14; row++)
       for (let side = 0; side < 6; side++) {
-        const t = (row + 0.2 * Math.sin(side + phase)) / 16
-        const angle = (side * Math.PI) / 3 + row * 0.47 + phase
+        const t =
+          Math.round(((row + 0.2 * Math.sin(side + phase)) / 16) * rings) /
+          rings
+        const angle =
+          (Math.round(
+            (((side * Math.PI) / 3 + row * 0.47 + phase) / (Math.PI * 2)) *
+              sides
+          ) /
+            sides) *
+          Math.PI *
+          2
         const base = surface(t, angle),
           height =
             (0.0012 + 0.0007 * Math.sin(row * 2 + side) ** 2) *
-            Math.min(1, scale)
+            (0.65 + 0.35 * scale)
         const normal: Point3 = [Math.cos(angle), 0.18, Math.sin(angle)]
         const tip = base.map(
           (v, i) => v + normal[i] * height
@@ -109,9 +130,10 @@ export function appendFruitSurface(
           [0, -1]
         ]) {
           builder.positions.push(
-            base[0] - Math.sin(angle) * across * footprint,
-            base[1] + along * footprint,
-            base[2] + Math.cos(angle) * across * footprint
+            ...surface(
+              t - (along * footprint) / length,
+              angle + (across * footprint) / radius
+            )
           )
           builder.colors.push(
             ...fruitSkinColor(t, angle, ripeness, true, phase)
@@ -156,6 +178,47 @@ export function appendFruitCalyx(
         )
       if (step) {
         const a = start + (step - 1) * 2
+        builder.indices.push(a, a + 2, a + 3, a, a + 3, a + 1)
+      }
+    }
+  }
+}
+
+/** Flowering ovaries retain a yellow corolla; older attached fruit retain a dry remnant. */
+export function appendCucumberFlower(
+  builder: TriangleBuilder,
+  center: Point3,
+  growth: number,
+  scale: number,
+  distant: boolean
+) {
+  while (builder.colors.length < builder.positions.length)
+    builder.colors.push(0.89, 0.58, 0.035)
+  const radius = [0.014, 0.009, 0.004, 0.002][Math.min(3, growth)] * scale
+  const sections = distant ? 2 : 5
+  for (let petal = 0; petal < 5; petal++) {
+    const angle = (petal * Math.PI * 2) / 5
+    const offset = builder.positions.length / 3
+    for (let step = 0; step <= sections; step++) {
+      const t = step / sections
+      const reach = radius * t
+      const width = radius * 0.48 * Math.sin(Math.PI * t)
+      for (const side of [-1, 1]) {
+        builder.positions.push(
+          center[0] + Math.cos(angle) * reach - Math.sin(angle) * width * side,
+          center[1] -
+            radius *
+              (0.12 + t * 0.85 + 0.13 * Math.sin(t * Math.PI * 3 + petal)),
+          center[2] + Math.sin(angle) * reach + Math.cos(angle) * width * side
+        )
+        builder.colors.push(
+          ...(growth < 2
+            ? [0.95, 0.55 + t * 0.22, 0.012]
+            : [0.19, 0.095, 0.023])
+        )
+      }
+      if (step) {
+        const a = offset + (step - 1) * 2
         builder.indices.push(a, a + 2, a + 3, a, a + 3, a + 1)
       }
     }

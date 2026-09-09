@@ -26,3 +26,7 @@ Two software-rendered browser attempts exceeded the existing 30-second case limi
 No cache is proposed. Variant geometry is a completed scene product constructed once per applied configuration, reused by instance transforms and retired with that configuration. Tests must count construction through the normal runtime path as well as asserting output.
 
 Stop for a contract conflict, required dependency approval, an out-of-scope owner change, or three failed focused repair attempts. Do not hide failures with geometry fallbacks or relaxed test guards.
+
+### Cucumber appearance follow-up
+
+Extend crop owner C with eight unharvested development stages, including two delayed-harvest sizes before the user-defined 30 × 8 cm endpoint. Add irregular skin relief, surface-attached stem/leaf bristles, yellow flowering ovaries and diminishing dry corollas. Preserve twenty reusable variants, planting, tomato appearance, camera behavior and configuration-lifetime computation. Verify source relief, hair attachment, stage dimensions and distant error before close-up app review and current-head PR gates.

@@ -3,11 +3,12 @@ import { Vector3 } from 'three'
 import { cameraPreset, fitCamera } from '../src/render-app/site-projection'
 import { cameraDistance } from '../src/render-app/camera-navigation'
 
-for (const [species, rootX] of [
-  ['cucumber', 1.05],
-  ['tomato', 15.05]
+for (const [species, rootX, height, stage] of [
+  ['cucumber', 1.05, 0.8, 'harvestable'],
+  ['cucumber', 1.05, 2.25, 'flowering'],
+  ['tomato', 15.05, 0.8, 'ripening']
 ] as const) {
-  test(`${species} foliage and fruit are visible in the real planted greenhouse`, async ({
+  test(`${species} ${stage} foliage and fruit are visible in the real planted greenhouse`, async ({
     page
   }, testInfo) => {
     const errors: string[] = []
@@ -45,7 +46,7 @@ for (const [species, rootX] of [
       .normalize()
     const right = new Vector3(0, 1, 0).cross(back).normalize(),
       up = back.clone().cross(right)
-    const offset = new Vector3(rootX, 0.8, 40).sub(
+    const offset = new Vector3(rootX, height, 40).sub(
       new Vector3(...camera.target)
     )
     const scale =
