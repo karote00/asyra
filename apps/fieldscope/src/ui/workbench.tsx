@@ -775,7 +775,7 @@ function ReferenceLibrary() {
         <details className="mt-4 text-xs text-[#50664f]">
           <summary className="py-2 font-medium">模型尺寸與限制</summary>
           <p className="mt-3 leading-relaxed">
-            橫樑高度隨總高計算；拱架每 1m；立柱每 5m，尾端補齊；拱管直徑
+            橫樑高度可獨立設定；拱架每 1m；立柱每 5m，尾端補齊；拱管直徑
             48mm；立柱直徑 76mm；半圓水道深度為寬度一半，槽口圓角最大
             1cm；擋板高 0.35m；端面開口依跨寬與簷高縮限，上限寬 2m、高
             2.5m。通道淨寬須扣除立柱。

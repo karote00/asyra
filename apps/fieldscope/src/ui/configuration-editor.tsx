@@ -9,6 +9,7 @@ import {
 import type { FarmRuntime } from '../runtime/bootstrap'
 import {
   DEFAULT_CONFIGURATION,
+  configurationSite,
   type FarmConfiguration
 } from '../domain/farm-configuration'
 
@@ -52,6 +53,7 @@ const fields: [Exclude<keyof FarmConfiguration, 'strips'>, string, string][] = [
   ['length', '縱向深度', '溫室縱向深度'],
   ['width', '單棟寬度', '單棟寬度'],
   ['height', '總高度', '溫室總高度'],
+  ['eaveHeight', '橫樑高度', '橫樑高度'],
   ['soilInset', '距水道邊緣', '鋼管距水道邊緣'],
   ['startInset', '前端留白', '鋼管前端留白'],
   ['endInset', '尾端留白', '鋼管尾端留白'],
@@ -115,6 +117,7 @@ export function ConfigurationEditor({ runtime }: { runtime: FarmRuntime }) {
     runtime.subscribeConfiguration,
     runtime.getConfiguration
   )
+  const site = configurationSite(config)
   const [error, setError] = useState('')
   // Resolve patches against canonical state when their turn runs, including blur
   // immediately followed by another field or strip action.
@@ -168,15 +171,15 @@ export function ConfigurationEditor({ runtime }: { runtime: FarmRuntime }) {
       </div>
       {fields.map(([key, label, accessibleLabel], index) => (
         <div key={key}>
-          {index === 0 || index === 3 || index === 7 ? (
+          {index === 0 || index === 4 || index === 8 ? (
             <h3 className="mb-1 mt-3 border-t border-[#d9dfd2] pt-3 text-xs font-semibold">
-              {{ 0: '溫室', 3: '鋼管', 7: '拉網' }[index]}
+              {{ 0: '溫室', 4: '鋼管', 8: '拉網' }[index]}
             </h3>
           ) : null}
           <label className="flex min-h-9 items-center justify-between gap-2 text-xs text-[#50664f]">
             <span>{label}</span>
             <MeasurementInput
-              value={config[key]}
+              value={key === 'eaveHeight' ? site.eave : config[key]}
               label={accessibleLabel}
               onCommit={(value) =>
                 update((current) => ({ ...current, [key]: value }))
@@ -200,6 +203,21 @@ export function ConfigurationEditor({ runtime }: { runtime: FarmRuntime }) {
           新增項目
         </button>
       </div>
+      <label className="mb-2 flex min-h-9 items-center justify-between gap-2 text-xs text-[#50664f]">
+        <span>兩側各留</span>
+        <MeasurementInput
+          value={Number(site.margin.toFixed(6))}
+          label="兩側各留"
+          onCommit={(margin) =>
+            update((current) => ({
+              ...current,
+              width:
+                current.strips.reduce((sum, strip) => sum + strip.width, 0) +
+                2 * margin
+            }))
+          }
+        />
+      </label>
       <div className="grid gap-1" data-testid="strip-editor">
         {config.strips.map((strip, i) => (
           <div

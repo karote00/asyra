@@ -3,6 +3,7 @@ export interface FarmConfiguration {
   length: number
   width: number
   height: number
+  eaveHeight?: number
   strips: { kind: Strip['kind']; width: number }[]
   soilInset: number
   startInset: number
@@ -29,7 +30,8 @@ export function configurationSite(config: FarmConfiguration): Site {
     length: config.length,
     width: config.width,
     height: config.height,
-    eave: config.height * 0.6,
+    eave:
+      config.eaveHeight === undefined ? config.height * 0.6 : config.eaveHeight,
     margin:
       (config.width -
         config.strips.reduce((sum, strip) => sum + strip.width, 0)) /
@@ -60,7 +62,11 @@ export function validateConfiguration(
     range('畦溝寬度', strip.width, 0.05, 20)
   })
   const site = configurationSite(value)
-  if (site.margin < 0.02)
+  range('橫樑高度', site.eave, 0.1, value.height - 0.05)
+  if (
+    value.width <
+    value.strips.reduce((sum, strip) => sum + strip.width, 0) + 0.04
+  )
     throw new Error('畦溝總寬必須小於單棟寬度，左右至少各留 2cm')
   if (value.height - site.eave > site.width / 2)
     throw new Error('拱頂起拱高度不可超過半跨寬；請增加寬度或降低高度')

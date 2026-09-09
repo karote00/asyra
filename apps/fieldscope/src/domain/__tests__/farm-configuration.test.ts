@@ -125,3 +125,38 @@ it('rejects soil that fits a pole but cannot hold the required crop root', () =>
     })
   ).toThrow()
 })
+
+it('uses an authored crossbeam elevation independently of total roof height', () => {
+  const accepted = validateConfiguration({
+    ...DEFAULT_CONFIGURATION,
+    eaveHeight: 3.4
+  })
+  const site = configurationSite(accepted)
+  expect(site.eave).toBe(3.4)
+  expect(site.height).toBe(5)
+  expect(roofPoint(0, 0, 0, site)[1]).toBeCloseTo(3.4)
+  expect(roofPoint(0, 0.5, 0, site)[1]).toBeCloseTo(5)
+  expect(createSupportAssembly(accepted).tubes[0].points[1][1]).toBeCloseTo(
+    3.55
+  )
+})
+
+it.each([Number.NaN, -1, 0, 5, 6])(
+  'rejects an invalid authored crossbeam elevation: %s',
+  (eaveHeight) => {
+    expect(() =>
+      validateConfiguration({ ...DEFAULT_CONFIGURATION, eaveHeight })
+    ).toThrow()
+  }
+)
+
+it('accepts exactly two centimetres of symmetric clearance without rounding below its minimum', () => {
+  const total = DEFAULT_CONFIGURATION.strips.reduce(
+    (sum, strip) => sum + strip.width,
+    0
+  )
+  const site = configurationSite(
+    validateConfiguration({ ...DEFAULT_CONFIGURATION, width: total + 0.04 })
+  )
+  expect(site.margin).toBeCloseTo(0.02)
+})
