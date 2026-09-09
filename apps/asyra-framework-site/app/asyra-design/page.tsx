@@ -67,6 +67,7 @@ export default async function AsyraDesignPage() {
         </p>
         <div className="support-actions">
           <a
+            data-site-cta=""
             className="button button--red"
             href="https://asyra-design.vercel.app/?fileId=demo"
             rel="noopener noreferrer"
@@ -75,6 +76,7 @@ export default async function AsyraDesignPage() {
             Open Asyra Design
           </a>
           <a
+            data-site-cta=""
             className="support-text-action"
             href="/docs/start/create-design-app"
           >
