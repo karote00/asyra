@@ -386,6 +386,58 @@ changes to geometry and parameters still appear. Original identities and lineage
 are retained in reports. Pair labels use the frozen model's names, with raw IDs
 available in the expanded evidence.
 
+### M4 hands-on review
+
+Use a separate local project or a copy of your current project for this review.
+Do not clear browser data. In the starter workcell, choose **A - Baseline
+workcell**, open **Experiments**, select **Synthetic clearance study - r1**,
+and leave minimum clearance at **20 mm** and the interval at **0–8 s**.
+
+1. Run analysis and open **Results**. Wait for **Saved to this project**;
+   execution completion and durable saving are separate states.
+2. Duplicate A as **B - fixture revision**. Select **fixture post** in the
+   hierarchy; set **Mount position (m) X** to **-0.6** and press Enter.
+   Run the copied Synthetic clearance study and wait for saving.
+3. Duplicate B as **C - further revision**. Set its fixture post X to
+   **-0.45**, then run and wait for saving. A remains at **-0.75**.
+   Copies have independent identities; copying does not copy or create runs.
+4. Open **Runs & compare** and check C, B, then A. **Selected comparison runs**
+   assigns slots 1, 2 and 3 in that order. Remove a slot to compare two, or
+   reselect it to append it. Click **Compare selected runs** explicitly.
+   Expect matching method/scope/rule/interval and a `workcell.bodies` input
+   difference. This example reports complete coverage; compare its stored
+   bounds and findings without treating a method verdict as equipment approval.
+5. Expand **Original source identities** to inspect the frozen candidate,
+   experiment, run, snapshot and available copied origin. Experiment revision
+   and rule revision are shown separately from method version. Body placement
+   edits change model inputs; they do not themselves increment the experiment
+   definition revision. Selection, inspection and comparison never rerun analysis.
+6. Close the dialog with Escape; focus returns to **Runs & compare**. For C,
+   change minimum clearance to **35 mm** and complete the edit. The study advances
+   to a new revision; its old run remains historical. Run again, then compare
+   the old and new C runs. Expect the decision-rule difference and a reason why
+   they are not directly comparable. Undo/Redo edits do not rewrite either run.
+7. Select an individual run and export JSON, CSV and HTML. Use **Projects** to
+   export the portable project, then choose that file, review its preview and
+   explicitly accept import. Reopen the saved project or refresh the same
+   project URL. Retained reports and identities remain unchanged; transient
+   comparison slots are selected again. Keep the exported file as your backup.
+
+The formal three-candidate browser test exports the portable project as
+`three-candidates.json` in its report attachments. This allows the same three
+completed runs to be reviewed without reconstructing model inputs. Choose it
+through **Projects → Choose project file**, inspect the preview and confirm
+replacement only in your review project. Run reports alone are not project files.
+At **576 × 690**, history and comparison cards stack in the dialog's natural
+scroll region. Execution, coverage and verdict remain separate labels, including
+partial or cancelled evidence. Removed canonical runs lose their selected slot;
+Undoing their removal does not silently reselect them.
+
+For developer installation, exact schema/capability/version admission and the
+independent sphere example, follow the reproducible M4 commands in the
+[SDK guide](../../docs/ai/apps/asyra-sim/specs/extensions-sdk-v0.md#reproduce-the-m4-sdk-and-ui-path).
+Field observations below remain separate from these immutable run reports.
+
 ## Field observations
 
 In **Runs & compare**, select a retained result and scroll to **Field observations**.

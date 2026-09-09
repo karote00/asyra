@@ -287,6 +287,10 @@ M3 numerical acceptance remains closed. M4-M6 are not completed by this plan.
 
 ## 7. M4: Variant Comparison, Versions, and Private Extensions
 
+The [bounded M4 plan](m4-comparison-extensions.md) records current owner evidence
+and implementation. The user authorized this work on 2026-09-09 while M3.5
+acceptance remains pending; PR #175 is merged, but that is not product acceptance.
+
 ### User Outcome
 
 Compare three variants, export and reopen them, and let advanced developers

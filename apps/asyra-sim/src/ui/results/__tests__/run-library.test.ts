@@ -9,6 +9,7 @@ import { terminalAnalysisResult } from '../../../analysis/result'
 import { createExperimentSnapshot } from '../../../analysis/snapshot'
 import { validateRunRecord } from '../../../storage/run-record'
 import { RunLibrary } from '../run-library'
+import * as comparisonOwner from '../../../storage/run-comparison'
 
 const observationAccess = {
   features: {
@@ -60,6 +61,7 @@ afterEach(async () => {
 
   HTMLDialogElement.prototype.close = originalClose
 
+  vi.restoreAllMocks()
   vi.unstubAllGlobals()
 })
 
@@ -212,4 +214,101 @@ it('retains the exact result and reports failure without claiming acknowledgemen
   expect(host.querySelector('.run-detail')?.textContent).toContain(
     'Retained in project'
   )
+})
+
+it('identifies selected revisions in selection order and removes a slot without navigating history', async () => {
+  const runs = [record('a'), record('b', 0.03), record('c')]
+  const before = JSON.stringify(runs)
+  const onReplay = vi.fn(),
+    onRetain = vi.fn(),
+    onCandidate = vi.fn()
+  await act(() =>
+    root.render(
+      createElement(RunLibrary, {
+        runs,
+        retainedIds: new Set(['a', 'b', 'c']),
+        candidateIds: new Set(['candidate']),
+        onRetain,
+        onReplay,
+        onCandidate,
+        isStale: () => false,
+        onClose: vi.fn(),
+        runtime: observationAccess,
+        isCurrent: () => true
+      })
+    )
+  )
+  for (const id of ['c', 'a'])
+    await act(() =>
+      host
+        .querySelector<HTMLInputElement>(`[aria-label="Compare ${id}"]`)
+        ?.click()
+    )
+  const selection = host.querySelector(
+    '[aria-label="Selected comparison runs"]'
+  )
+  expect(selection?.textContent).toContain('1 - c')
+  expect(selection?.textContent).toContain('2 - a')
+  expect(selection?.textContent).toContain('Experiment revision 1')
+  await act(() => button('Compare selected runs (2/3)').click())
+  const comparison = host.querySelector('[aria-label="Run comparison"]')
+  expect(
+    [...(comparison?.querySelectorAll('article h4') ?? [])].map(
+      (node) => node.textContent
+    )
+  ).toEqual(['1 - c', '2 - a'])
+  expect(comparison?.textContent).toContain('Candidate: candidate')
+  expect(comparison?.textContent).toContain('Experiment: study')
+  expect(comparison?.textContent).toContain('Execution: cancelled')
+  expect(comparison?.textContent).toContain('Coverage: partial')
+  expect(comparison?.textContent).toContain('Verdict: cannot-determine')
+  await act(() => button('Remove 1 - c').click())
+  expect(host.querySelector('[aria-label="Run comparison"]')).toBeNull()
+  expect(button('Compare selected runs (1/3)').disabled).toBe(true)
+  expect(onReplay).not.toHaveBeenCalled()
+  expect(onRetain).not.toHaveBeenCalled()
+  expect(onCandidate).not.toHaveBeenCalled()
+  expect(JSON.stringify(runs)).toBe(before)
+})
+
+it('retires comparison when a canonical run disappears instead of displaying removed evidence', async () => {
+  const compare = vi.spyOn(comparisonOwner, 'compareRuns')
+  const runs = [record('a'), record('b')]
+  const props = {
+    runs,
+    retainedIds: new Set(['a', 'b']),
+    candidateIds: new Set(['candidate']),
+    onRetain: vi.fn(),
+    onReplay: vi.fn(),
+    onCandidate: vi.fn(),
+    isStale: () => false,
+    onClose: vi.fn(),
+    runtime: observationAccess,
+    isCurrent: () => true
+  }
+  await act(() => root.render(createElement(RunLibrary, props)))
+  for (const id of ['a', 'b'])
+    await act(() =>
+      host
+        .querySelector<HTMLInputElement>(`[aria-label="Compare ${id}"]`)
+        ?.click()
+    )
+  await act(() => button('Compare selected runs (2/3)').click())
+  expect(host.querySelector('[aria-label="Run comparison"]')).not.toBeNull()
+  expect(compare).toHaveBeenCalledTimes(1)
+  for (let index = 0; index < 5; index++)
+    await act(() =>
+      root.render(createElement(RunLibrary, { ...props, runs: [...runs] }))
+    )
+  expect(compare).toHaveBeenCalledTimes(1)
+  expect(host.querySelector('[aria-label="Run comparison"]')).not.toBeNull()
+  await act(() =>
+    root.render(createElement(RunLibrary, { ...props, runs: [runs[0]] }))
+  )
+  expect(host.querySelector('[aria-label="Run comparison"]')).toBeNull()
+  expect(button('Compare selected runs (1/3)').disabled).toBe(true)
+  await act(() => root.render(createElement(RunLibrary, props)))
+  expect(host.querySelector('[aria-label="Run comparison"]')).toBeNull()
+  expect(button('Compare selected runs (1/3)').disabled).toBe(true)
+  expect(compare).toHaveBeenCalledTimes(1)
 })

@@ -62,7 +62,7 @@ test('Undoing the selected duplicate never presents a different candidate as the
 test('independent A/B/C candidates retain and compare real runs with traceable body correspondence', async ({
   page
 }, info) => {
-  test.setTimeout(60000)
+  test.setTimeout(90000)
   const errors: string[] = []
   page.on('pageerror', (error) => errors.push(error.message))
   await page.goto('/')
@@ -106,6 +106,35 @@ test('independent A/B/C candidates retain and compare real runs with traceable b
   await page.screenshot({
     path: info.outputPath('three-candidate-comparison.png')
   })
+  await page.setViewportSize({ width: 576, height: 690 })
+  const historyBox = await library
+    .getByRole('region', { name: 'Run history', exact: true })
+    .boundingBox()
+  const detailBox = await library
+    .getByRole('region', { name: 'Selected run', exact: true })
+    .boundingBox()
+  expect(historyBox).not.toBeNull()
+  expect(detailBox).not.toBeNull()
+  if (!historyBox || !detailBox) throw new Error('Missing run library layout')
+  expect(detailBox.y).toBeGreaterThanOrEqual(historyBox.y + historyBox.height)
+  const cards = comparison.locator('.comparison-columns > article')
+  const first = await cards.nth(0).boundingBox(),
+    second = await cards.nth(1).boundingBox()
+  if (!first || !second) throw new Error('Missing comparison layout')
+  expect(second.y).toBeGreaterThanOrEqual(first.y + first.height)
+  expect(
+    await library.evaluate((node) => node.scrollWidth <= node.clientWidth)
+  ).toBe(true)
+  await library
+    .getByRole('region', { name: 'Selected comparison runs' })
+    .scrollIntoViewIfNeeded()
+  await page.screenshot({
+    path: info.outputPath('three-candidate-selection-narrow.png')
+  })
+  await cards.nth(1).scrollIntoViewIfNeeded()
+  await page.screenshot({
+    path: info.outputPath('three-candidate-comparison-narrow.png')
+  })
   const pending = page.waitForEvent('download')
   await library
     .getByRole('button', { name: 'Export JSON', exact: true })
@@ -126,6 +155,63 @@ test('independent A/B/C candidates retain and compare real runs with traceable b
       (body: { name: string }) => body.name === 'fixture post'
     ).pose.position[0]
   ).toBe(-0.45)
+  await page.keyboard.press('Escape')
+  await expect(library).toHaveCount(0)
+  await expect(
+    page.getByRole('button', { name: 'Runs & compare', exact: true })
+  ).toBeFocused()
+  await page.getByRole('button', { name: 'Switch to dark mode' }).click()
+  await page.getByRole('button', { name: 'Projects', exact: true }).click()
+  const pendingProject = page.waitForEvent('download')
+  await page
+    .getByRole('button', { name: 'Export project', exact: true })
+    .click()
+  const projectStream = await (await pendingProject).createReadStream()
+  if (!projectStream) throw new Error('Missing project download')
+  const projectChunks: Buffer[] = []
+  for await (const chunk of projectStream)
+    projectChunks.push(Buffer.from(chunk))
+  const payload = Buffer.concat(projectChunks)
+  await info.attach('three-candidates.json', {
+    contentType: 'application/json',
+    body: payload
+  })
+  const bundle = JSON.parse(payload.toString('utf8'))
+  expect(bundle.runs).toHaveLength(3)
+  expect(
+    bundle.runs.find(
+      (run: { result: { runId: string } }) =>
+        run.result.runId === report.result.runId
+    )
+  ).toEqual(report)
+  await page
+    .getByLabel('Portable project file', { exact: true })
+    .setInputFiles({
+      name: 'three-candidates.json',
+      mimeType: 'application/json',
+      buffer: payload
+    })
+  page.once('dialog', (dialog) => dialog.accept())
+  await page
+    .getByRole('button', { name: 'Import and replace current project' })
+    .click()
+  await expect(page.getByTestId('history-depth')).toHaveText('Undo steps: 0')
+  await page
+    .getByRole('button', { name: 'Runs & compare', exact: true })
+    .click()
+  await expect(library.getByRole('checkbox')).toHaveCount(3)
+  for (let index = 0; index < 3; index++)
+    await library.getByRole('checkbox').nth(index).check()
+  await library
+    .getByRole('button', { name: 'Compare selected runs (3/3)' })
+    .click()
+  await expect(comparison).toContainText(
+    'Matching method, scope, rule and interval'
+  )
+  await comparison.locator('article').last().scrollIntoViewIfNeeded()
+  await page.screenshot({
+    path: info.outputPath('reopened-three-candidate-comparison.png')
+  })
   await info.attach('review-state.json', {
     contentType: 'application/json',
     body: JSON.stringify({

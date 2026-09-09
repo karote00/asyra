@@ -1257,6 +1257,7 @@
           'Reset transient view/selection/drafts for each successor; guard late old-runtime effects and input callbacks.',
           'Show local storage errors without blocking editing; post-retirement failure disables editing and offers detached recovery download.',
           'Expose assumptions, unknowns, saving failures, comparison differences, and method versions.',
+          'Run history and comparison display retained names, experiment revisions, method versions, original candidate/experiment identities and available copied origin. Transient two/three-run slots preserve selection order and allow removal across history pages; changed selections or removed/replaced records retire displayed comparisons. Comparison projects stored evidence with separately labelled execution, coverage and verdict, never executes analysis or rewrites history. Short narrow views stack history and comparison columns with reachable export and keyboard controls.',
           'Author bounded typed acceptance trees in transient drafts and save through the existing editing Feature; present the retained result-owner evaluation and user verdict separately from unchanged method findings, never infer acceptance in the view.',
           'Expose field observations only for retained run references; keep text and file drafts transient, validate file size/count before reading, show inert metadata, and dispatch explicit create/update/remove through the guarded runtime. Discard stale selections on run/library/lifetime changes, confirm removals, download opaque bytes as attachments and export feedback separately from immutable reports.',
           'Prepare visual sources through owned Features; show dimensions, units, digest and limitations, preview explicit body-local placement, then accept one binding transaction.',
@@ -1297,6 +1298,7 @@
         ],
         specRefs: [
           '#understandable-experiment-workflow',
+          '#9-comparable-and-traceable-experiments',
           '#12-representative-product-cases-and-definition-of-done'
         ],
         failureOwnerStepId: 'ui'

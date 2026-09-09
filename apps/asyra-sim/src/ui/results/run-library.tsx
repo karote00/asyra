@@ -1,10 +1,9 @@
 import type { ExperimentSnapshot } from '../../analysis/contracts'
-import { compareRuns } from '../../storage/run-comparison'
 import type { RunRecord } from '../../storage/run-record'
 import { FieldObservations } from '../observations/field-observations'
 import { type ObservationAccess } from '../observations/observation-access'
-import { errorMessage } from '../shared/error-message'
 import { AnalysisResultView } from './analysis-result-view'
+import { RunContext } from './run-context'
 import { RunComparisonView } from './run-comparison-view'
 import { useRunLibrary } from './use-run-library'
 
@@ -42,9 +41,10 @@ export function RunLibrary({
     comparisonIds,
     setComparisonIds,
     comparison,
-    setComparison,
+    comparisonRuns,
+    clearComparison,
+    compareSelected,
     error,
-    setError,
     saving,
     setPage,
     selected,
@@ -66,6 +66,12 @@ export function RunLibrary({
         [&_.result-card_summary]:mx-0"
       aria-label="Runs and comparison"
       onCancel={onClose}
+      onKeyDown={(event) => {
+        if (event.key !== 'Escape' || event.nativeEvent.isComposing) return
+        event.preventDefault()
+        event.stopPropagation()
+        onClose()
+      }}
     >
       <header
         className="project-dialog-heading flex gap-3 items-center justify-between mb-[14px]
@@ -93,7 +99,7 @@ export function RunLibrary({
 
       <div
         className="run-library-grid grid grid-cols-[250px_minmax(0,_1fr)] gap-6 my-5 mx-0
-          max-[900px]:grid-cols-[200px_minmax(0,_1fr)] max-[900px]:gap-4"
+          min-[701px]:max-[900px]:grid-cols-[200px_minmax(0,_1fr)] max-[900px]:gap-4 max-[700px]:grid-cols-1"
       >
         <section
           aria-label="Run history"
@@ -122,6 +128,11 @@ export function RunLibrary({
                     {run.result.execution} - {run.result.coverage}
                   </span>
 
+                  <small>
+                    Experiment revision {run.snapshot.source.experimentRevision}{' '}
+                    - {run.snapshot.method.id}@{run.snapshot.method.version}
+                  </small>
+
                   <small>{run.result.runId}</small>
                 </button>
 
@@ -147,7 +158,7 @@ export function RunLibrary({
                           : current.filter((id) => id !== run.result.runId)
                       )
 
-                      setComparison(null)
+                      clearComparison()
                     }}
                   />
                   Include in comparison
@@ -177,24 +188,44 @@ export function RunLibrary({
             </div>
           )}
 
+          <section
+            aria-label="Selected comparison runs"
+            className="grid gap-2 wrap-anywhere"
+          >
+            <h4>Selected comparison runs</h4>
+            {comparisonRuns.length === 0 && (
+              <p>Select two or three runs below their history entries.</p>
+            )}
+            {comparisonRuns.map((run, index) => {
+              const label = `${index + 1} - ${run.name}`
+              return (
+                <div
+                  key={run.result.runId}
+                  className="grid gap-2 border border-sim-divider rounded p-2 text-xs"
+                >
+                  <strong>{label}</strong>
+                  <span>
+                    Experiment revision {run.snapshot.source.experimentRevision}
+                  </span>
+                  <button
+                    onClick={() => {
+                      setComparisonIds((current) =>
+                        current.filter((id) => id !== run.result.runId)
+                      )
+                      clearComparison()
+                    }}
+                  >
+                    Remove {label}
+                  </button>
+                </div>
+              )
+            })}
+          </section>
+
           <button
             className="primary bg-sim-accent text-[#fff] border-sim-accent [&:hover]:bg-sim-accent-hover"
             disabled={comparisonIds.length < 2}
-            onClick={() => {
-              try {
-                setComparison(
-                  compareRuns(
-                    runs.filter((run) =>
-                      comparisonIds.includes(run.result.runId)
-                    )
-                  )
-                )
-
-                setError('')
-              } catch (reason) {
-                setError(errorMessage(reason))
-              }
-            }}
+            onClick={compareSelected}
           >
             Compare selected runs ({comparisonIds.length}/3)
           </button>
@@ -212,6 +243,8 @@ export function RunLibrary({
                     : 'Temporary result'}
                 </span>
               </div>
+
+              <RunContext run={selected} />
 
               <div className="run-detail-actions flex flex-wrap gap-2 my-3 mx-0 [&_button]:text-[11px]">
                 {!retainedIds.has(selected.result.runId) && (

@@ -473,6 +473,23 @@ The comparator may display incompatible results side by side, explicitly
 marked "not directly comparable." It does not automatically choose the best
 candidate. Users select a candidate; the App sends no control command.
 
+Run history and comparison identify the retained run name, experiment revision,
+method/version and original candidate/experiment identities. Names remain exact
+retained labels, not inferred lineage or current-name replacements. Show copied
+candidate origin when retained lineage exists. Candidate copies are independent
+editable models; experiment revisions describe definitions; only explicit Run
+analysis creates new evidence. Opening history, changing selection or comparing
+never starts analysis or modifies a snapshot.
+
+Users select two or three distinct runs. Show the selected run slots in selection
+order, permit removing a selection without finding its history page, and use the
+same order for comparison columns. Selection changes retire the previous
+comparison. Removed or replaced input records cannot remain in a displayed
+comparison. Present execution, coverage and verdict with independent labels.
+At 576 x 690, history, selected runs, comparison differences and export controls
+remain reachable without horizontal clipping or compressed parallel columns.
+Keyboard operation and closing the dialog preserve the ordinary focus path.
+
 Editing a project during analysis does not change the in-flight snapshot.
 The result remains bound to the original revision. New geometry, trajectory,
 method, or rules make dependent results stale relative to the current project

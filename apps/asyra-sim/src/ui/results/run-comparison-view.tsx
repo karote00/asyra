@@ -1,3 +1,4 @@
+import { RunContext } from './run-context'
 import { type RunComparison } from '../../storage/run-comparison'
 
 export function RunComparisonView({
@@ -37,7 +38,7 @@ export function RunComparisonView({
       )}
 
       <div
-        className="comparison-columns grid grid-flow-col auto-cols-[minmax(0,_1fr)] gap-3
+        className="comparison-columns grid grid-flow-col auto-cols-[minmax(0,_1fr)] gap-3 max-[700px]:grid-flow-row max-[700px]:grid-cols-1
           [&_>_*]:border [&_>_*]:border-sim-divider [&_>_*]:p-3
           [&_>_*]:rounded-[6px] [&_>_*]:min-w-0 [&_>_*]:wrap-anywhere
           [&_p]:text-[11px] [&_p]:leading-[1.7] [&_p]:mt-2 [&_pre]:max-h-60
@@ -46,13 +47,18 @@ export function RunComparisonView({
         {comparison.runs.map((run, index) => (
           <article key={run.result.runId}>
             <h4>
-              {String.fromCharCode(65 + index)} - {run.name}
+              {index + 1} - {run.name}
             </h4>
 
             <p>
-              {run.result.execution} - {run.result.coverage} -{' '}
-              {run.result.verdict}
+              Execution: {run.result.execution}
+              <br />
+              Coverage: {run.result.coverage}
+              <br />
+              Verdict: {run.result.verdict}
             </p>
+
+            <RunContext run={run} />
 
             <p>
               {run.result.findingPairCount} finding pairs -{' '}
@@ -89,7 +95,7 @@ export function RunComparisonView({
           <summary>{difference.path}</summary>
 
           <div
-            className="comparison-columns grid grid-flow-col auto-cols-[minmax(0,_1fr)] gap-3
+            className="comparison-columns grid grid-flow-col auto-cols-[minmax(0,_1fr)] gap-3 max-[700px]:grid-flow-row max-[700px]:grid-cols-1
               [&_>_*]:border [&_>_*]:border-sim-divider [&_>_*]:p-3
               [&_>_*]:rounded-[6px] [&_>_*]:min-w-0 [&_>_*]:wrap-anywhere
               [&_p]:text-[11px] [&_p]:leading-[1.7] [&_p]:mt-2 [&_pre]:max-h-60
@@ -100,7 +106,7 @@ export function RunComparisonView({
 
               return (
                 <div key={index}>
-                  <strong>{String.fromCharCode(65 + index)}</strong>
+                  <strong>{index + 1}</strong>
 
                   <pre>{text.slice(0, 8000)}</pre>
 
