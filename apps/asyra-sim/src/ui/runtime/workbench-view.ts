@@ -88,7 +88,12 @@ function experimentInputs(state: WorkbenchState): ExperimentInputs | null {
 
   return {
     runtime: state.runtime,
+    session: state.resources?.session,
+    historicalReplay: !!state.playback?.historical,
     candidateId: state.candidateId,
+    candidateName: state.candidates.find(
+      (candidate) => candidate.id === state.candidateId
+    )?.name,
     workcell: state.workcell,
     revision: state.revision,
     perform: state.perform,

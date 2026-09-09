@@ -15,7 +15,8 @@ single robot workcell**, not a complete factory simulator.
 - The development workbench was merged as PR #156. See
   [the completed plan](plans/completed/development-workbench.md). M1 is closed
   and M2 import-contract and M3 formal-method acceptance are complete; the next
-  bounded milestone is [M3.5 workflow usability](plans/m3-5-workbench-flow.md). See [PLANS.md](PLANS.md).
+  bounded milestone is [M3.5 workflow usability](plans/m3-5-workbench-flow.md),
+  implemented and validated at port 3020, with user acceptance pending. See [PLANS.md](PLANS.md).
   The R0 release gates remain open; this is not a released product.
 - The hosted workbench uses the permanent domain `asyra-sim.vercel.app` and
   production branch `main`. See [hosting and browser-local data boundaries](release/HOSTED_PREVIEW.md).

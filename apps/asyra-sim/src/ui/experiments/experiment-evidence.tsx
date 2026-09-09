@@ -1,3 +1,4 @@
+import { reviewExperimentInput } from './input-navigation'
 import { useExperimentField, useExperimentView } from './experiment-context'
 import { RunProgress } from '../results/run-progress'
 import { ExperimentResult } from './experiment-result'
@@ -32,18 +33,37 @@ export function ExperimentPreflight() {
   const preflight = useExperimentField('preflight')
 
   const warnings = useExperimentField('warnings')
+  const running = useExperimentField('running')
 
-  return (
-    <>
-      <PreflightView
-        draft={draft}
-        preflight={preflight}
-        warnings={warnings}
-        setWarnings={(...args) => view.getSnapshot().setWarnings(...args)}
-        changed={(...args) => view.getSnapshot().changed(...args)}
-      />
-    </>
+  const content = (
+    <PreflightView
+      draft={draft}
+      preflight={preflight}
+      warnings={warnings}
+      setWarnings={(...args) => view.getSnapshot().setWarnings(...args)}
+      changed={(draft) => {
+        view.getSnapshot().changed(draft)
+        if (view.getSnapshot().canonical) void view.getSnapshot().save(draft)
+      }}
+    />
   )
+  if (
+    preflight &&
+    !running &&
+    !preflight.blockers.length &&
+    !preflight.assumptions.length &&
+    !preflight.resourceWarnings.length
+  )
+    return (
+      <details className="text-[10px] text-sim-muted">
+        <summary>
+          Preflight passed - {preflight.estimate.pairCount} pairs -{' '}
+          {preflight.estimate.workUnits} work units
+        </summary>
+        {content}
+      </details>
+    )
+  return content
 }
 
 export function ExperimentError() {
@@ -58,6 +78,16 @@ export function ExperimentError() {
           role="alert"
         >
           {error}
+          <button
+            className="block mt-2"
+            onClick={(event) => {
+              const panel = event.currentTarget.closest('.experiment-panel')
+              if (!panel) return
+              reviewExperimentInput(panel, error.toLowerCase())
+            }}
+          >
+            Review input
+          </button>
         </p>
       )}
     </>
@@ -67,6 +97,8 @@ export function ExperimentError() {
 export function ExperimentEvidence() {
   const view = useExperimentView()
 
+  const session = useExperimentField('session')
+  const historical = useExperimentField('historicalReplay')
   const canonicalDraft = useExperimentField('canonicalDraft')
   const runtime = useExperimentField('runtime')
 
@@ -78,7 +110,21 @@ export function ExperimentEvidence() {
 
   return (
     <>
+      {historical && (
+        <div className="text-[11px] bg-sim-warning text-sim-warning-text p-3 rounded">
+          <p>Historical run replay - frozen inputs</p>
+          <button
+            onClick={() => {
+              view.getSnapshot().onPlayback(null)
+              view.getSnapshot().setTab('preview')
+            }}
+          >
+            Return to current preview
+          </button>
+        </div>
+      )}
       <ExperimentResult
+        session={session}
         canonicalDraft={canonicalDraft}
         inputReader={runtime.experimentInputs}
         replayRun={(...args) => view.getSnapshot().replayRun(...args)}

@@ -1,3 +1,4 @@
+import { showSetup, viewResults } from '../workflow'
 import { expect, test, type Page } from '@playwright/test'
 import { MethodIds, MethodVersions } from '../../src/constants'
 
@@ -19,6 +20,7 @@ test('method capabilities block an unsupported ordinary experiment without runni
   await expect(page.getByRole('status')).toHaveText('Local runtime ready')
   await page.getByRole('button', { name: 'Experiments', exact: true }).click()
   const depth = await page.getByTestId('history-depth').textContent()
+  await showSetup(page, true)
   await page.getByLabel('Analysis method').selectOption(exampleSelection)
   await expect(page.getByLabel('Method parameter additionalError')).toHaveValue(
     '0'
@@ -27,16 +29,14 @@ test('method capabilities block an unsupported ordinary experiment without runni
     `Undo steps: ${Number(depth?.match(/\d+/)?.[0]) + 1}`
   )
   await page.keyboard.press('Tab')
-  await page.getByRole('button', { name: 'Run preflight', exact: true }).click()
+  await page.getByRole('button', { name: 'Run analysis', exact: true }).click()
   await expect(page.getByTestId('preflight-report')).toContainText(
     'method-capability'
   )
   await expect(page.getByTestId('preflight-report')).toContainText(
     'unsupported-geometry'
   )
-  await page
-    .getByRole('button', { name: 'Run formal analysis', exact: true })
-    .click()
+  await page.getByRole('button', { name: 'Run analysis', exact: true }).click()
   await expect(page.getByRole('alert')).toContainText('does not support')
   await expect(page.getByTestId('analysis-result')).toHaveCount(0)
   await expect(page.getByRole('treeitem')).toHaveCount(11)
@@ -81,6 +81,7 @@ test('a user builds spheres, selects an independent method, edits uncertainty, a
   }
   await page.getByRole('button', { name: 'Experiments', exact: true }).click()
   await page.getByLabel('Experiment name').fill('Independent sphere study')
+  await showSetup(page, true)
   await page.getByLabel('Analysis method').selectOption(exampleSelection)
   await page.getByLabel('Method parameter additionalError').fill('0.0005')
   await page.locator('summary').filter({ hasText: 'Analysis scope' }).click()
@@ -99,14 +100,13 @@ test('a user builds spheres, selects an independent method, edits uncertainty, a
   await page
     .getByRole('button', { name: 'Create experiment', exact: true })
     .click()
-  await page
-    .getByRole('button', { name: 'Run formal analysis', exact: true })
-    .click()
+  await page.getByRole('button', { name: 'Run analysis', exact: true }).click()
+  await viewResults(page)
   const result = page.getByTestId('analysis-result')
   await expect(result).toContainText('No issue found within scope')
   await expect(result).toContainText(MethodIds.STATIC_SPHERES)
   await expect(page.locator('.retention-actions')).toContainText(
-    'Retained in this project'
+    'Saved to this project'
   )
   await page
     .getByRole('button', { name: 'Runs & compare', exact: true })
@@ -176,13 +176,11 @@ test('a user builds spheres, selects an independent method, edits uncertainty, a
   await expect(page.getByLabel('Analysis method')).toHaveValue(
     'private-retired-spheres@0.1.0'
   )
-  await page.getByRole('button', { name: 'Run preflight', exact: true }).click()
+  await page.getByRole('button', { name: 'Run analysis', exact: true }).click()
   await expect(page.getByTestId('preflight-report')).toContainText(
     'method-unavailable'
   )
-  await page
-    .getByRole('button', { name: 'Run formal analysis', exact: true })
-    .click()
+  await page.getByRole('button', { name: 'Run analysis', exact: true }).click()
   await expect(page.getByRole('alert')).toContainText('unavailable')
   await page
     .getByRole('button', { name: 'Runs & compare', exact: true })

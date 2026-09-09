@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 
 import { DialogCloseButton } from '@/components/dialog-close-button'
 import { useModalDialog } from '@/components/use-modal-dialog'
+import { SITE_ACTIONS } from '@/lib/site-interaction-analytics.mjs'
 
 type SiteHeaderProps = Readonly<{
   variant?: 'landing' | 'supporting'
@@ -57,6 +58,7 @@ export function SiteHeader({ variant = 'supporting' }: SiteHeaderProps) {
       <button
         aria-label="Open navigation"
         className="navigation-trigger"
+        data-site-action={SITE_ACTIONS.navigationOpen.id}
         onClick={openDialog}
         ref={triggerRef}
         type="button"

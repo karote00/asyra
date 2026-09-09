@@ -5,6 +5,7 @@ import {
 } from './experiment-context'
 
 export function ExperimentHeading() {
+  const candidateName = useExperimentField('candidateName')
   const count = useExperimentValue((state) => state.experiments.length)
 
   return (
@@ -17,7 +18,10 @@ export function ExperimentHeading() {
           EXPERIMENT
         </span>
 
-        <h2>Collision & clearance</h2>
+        <h2>Collision &amp; clearance</h2>
+        <p className="text-[10px] text-sim-muted wrap-anywhere mt-1">
+          {candidateName}
+        </p>
       </div>
 
       <span className="count text-[10px] bg-sim-subtle text-sim-secondary py-1 px-[7px] rounded-[4px]">

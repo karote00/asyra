@@ -1,3 +1,4 @@
+import { showSetup, viewResults } from '../workflow'
 import { expect, test } from '@playwright/test'
 
 test('a rejected trajectory selection invalidates the old preview without changing the project', async ({
@@ -47,6 +48,7 @@ test('ordinary analysis keeps progress out of history and retains terminal cance
   await page.goto('/')
   await expect(page.getByRole('status')).toHaveText('Local runtime ready')
   await page.getByRole('button', { name: 'Experiments', exact: true }).click()
+  await showSetup(page, true)
   await page
     .locator('summary')
     .filter({ hasText: 'Numerical settings' })
@@ -54,12 +56,10 @@ test('ordinary analysis keeps progress out of history and retains terminal cance
   await page.getByLabel('Global interval budget').fill('20000')
   await page.keyboard.press('Tab')
   await expect(
-    page.getByRole('button', { name: 'Run preflight', exact: true })
+    page.getByRole('button', { name: 'Run analysis', exact: true })
   ).toBeEnabled()
   const depth = await page.getByTestId('history-depth').textContent()
-  await page
-    .getByRole('button', { name: 'Run formal analysis', exact: true })
-    .click()
+  await page.getByRole('button', { name: 'Run analysis', exact: true }).click()
   const progress = page.getByTestId('analysis-progress')
   await expect(progress).toContainText('pair records received')
   await expect(progress).toContainText('not a clearance conclusion')
@@ -84,6 +84,7 @@ test('ordinary analysis keeps progress out of history and retains terminal cance
     .getByRole('button', { name: 'Cancel analysis', exact: true })
     .click()
   await expect(progress).toHaveCount(0)
+  await viewResults(page)
   await expect(page.getByTestId('analysis-result')).toContainText('cancelled')
   await expect(page.getByTestId('analysis-result')).toContainText('partial')
   await expect(page.getByTestId('history-depth')).toHaveText(

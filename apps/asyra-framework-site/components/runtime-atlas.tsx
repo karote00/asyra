@@ -6,6 +6,7 @@ import {
   type AtlasCaseDefinition
 } from '@/lib/runtime-atlas/case-definitions.mjs'
 import type { AtlasRunSnapshot } from '@/lib/runtime-atlas/runtime.mjs'
+import { SITE_ACTIONS } from '@/lib/site-interaction-analytics.mjs'
 import { RuntimeAtlasProjection } from './runtime-atlas-projection'
 
 type WorkerResponse =
@@ -223,7 +224,11 @@ export function RuntimeAtlas() {
   const canAdvance = snapshot ? !terminalStatuses.has(snapshot.status) : false
 
   return (
-    <section aria-label="Interactive Runtime Atlas" className="atlas-shell">
+    <section
+      aria-label="Interactive Runtime Atlas"
+      className="atlas-shell"
+      data-site-case={selectedId}
+    >
       <aside className="atlas-case-picker">
         <div>
           <p>Six executable cases</p>
@@ -233,6 +238,8 @@ export function RuntimeAtlas() {
           {ATLAS_CASES.map((caseDefinition, index) => (
             <button
               aria-pressed={caseDefinition.id === selectedId}
+              data-site-action={SITE_ACTIONS.atlasSelect.id}
+              data-site-case={caseDefinition.id}
               key={caseDefinition.id}
               onClick={() => selectCase(caseDefinition)}
               type="button"
@@ -260,19 +267,42 @@ export function RuntimeAtlas() {
           </header>
 
           <div className="atlas-controls" aria-label="Runtime controls">
-            <button disabled={!canAdvance} onClick={runRemaining} type="button">
+            <button
+              data-site-action={SITE_ACTIONS.atlasRun.id}
+              disabled={!canAdvance}
+              onClick={runRemaining}
+              type="button"
+            >
               Run remaining
             </button>
-            <button disabled={!canAdvance} onClick={pause} type="button">
+            <button
+              data-site-action={SITE_ACTIONS.atlasPause.id}
+              disabled={!canAdvance}
+              onClick={pause}
+              type="button"
+            >
               Pause
             </button>
-            <button disabled={!canAdvance} onClick={step} type="button">
+            <button
+              data-site-action={SITE_ACTIONS.atlasStep.id}
+              disabled={!canAdvance}
+              onClick={step}
+              type="button"
+            >
               Step
             </button>
-            <button onClick={() => startWorker(selectedId, true)} type="button">
+            <button
+              data-site-action={SITE_ACTIONS.atlasReplay.id}
+              onClick={() => startWorker(selectedId, true)}
+              type="button"
+            >
               Replay
             </button>
-            <button onClick={() => startWorker(selectedId)} type="button">
+            <button
+              data-site-action={SITE_ACTIONS.atlasReset.id}
+              onClick={() => startWorker(selectedId)}
+              type="button"
+            >
               Reset
             </button>
             <p aria-live="polite">

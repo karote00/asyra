@@ -7,6 +7,7 @@ test('a short embedded viewport keeps contact feedback compact until explicitly 
   await page.goto('/')
   await expect(page.getByRole('status')).toHaveText('Local runtime ready')
   await page.getByRole('button', { name: 'Experiments', exact: true }).click()
+  await page.getByRole('tab', { name: 'Preview', exact: true }).click()
   await page
     .getByLabel('Experiment', { exact: true })
     .selectOption({ label: 'Tool and table collision - r1' })

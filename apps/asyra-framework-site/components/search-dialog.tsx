@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 
 import { DialogCloseButton } from '@/components/dialog-close-button'
 import { useModalDialog } from '@/components/use-modal-dialog'
+import { SITE_ACTIONS } from '@/lib/site-interaction-analytics.mjs'
 
 export interface SearchRecord {
   description: string
@@ -36,6 +37,7 @@ export function SearchDialog({
     <>
       <button
         className="docs-search-trigger"
+        data-site-action={SITE_ACTIONS.searchOpen.id}
         onClick={openDialog}
         ref={triggerRef}
         type="button"
@@ -46,6 +48,8 @@ export function SearchDialog({
       <dialog
         aria-labelledby="search-title"
         className="search-dialog"
+        data-site-search=""
+        data-site-result-count={results.length}
         onClose={handleDialogClose}
         ref={dialogRef}
       >

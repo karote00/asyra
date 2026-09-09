@@ -23,6 +23,7 @@ export function SiteFooter() {
         {navigation.map((item) =>
           'newTab' in item && item.newTab ? (
             <a
+              data-site-cta=""
               href={item.href}
               key={item.href}
               rel="noopener noreferrer"

@@ -45,7 +45,7 @@ test('visual specs resolve screenshots through Playwright testInfo', async () =>
     const source = await readFile(path.join(e2eRoot, file), 'utf8')
     const screenshotPaths = source
       .split('\n')
-      .filter((line) => line.includes('path:'))
+      .filter((line) => /\bpath\s*:/.test(line))
 
     for (const screenshotPath of screenshotPaths) {
       assert.match(

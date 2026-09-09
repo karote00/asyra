@@ -1,3 +1,4 @@
+import { showSetup, viewResults } from '../workflow'
 import { expect, test } from '@playwright/test'
 
 test('runs complete original parts with one geometry display and rejects surrogate methods', async ({
@@ -19,12 +20,11 @@ test('runs complete original parts with one geometry display and rejects surroga
   await page.getByLabel('Wireframe', { exact: true }).uncheck()
   await expect(page.getByTestId('history-depth')).toHaveText(history ?? '')
   await page.getByRole('button', { name: 'Experiments', exact: true }).click()
-  await page.getByRole('button', { name: 'Run preflight', exact: true }).click()
+  await page.getByRole('button', { name: 'Run analysis', exact: true }).click()
   const report = page.getByTestId('preflight-report')
   await expect(report).toContainText('Ready for formal local analysis')
-  await page
-    .getByRole('button', { name: 'Run formal analysis', exact: true })
-    .click()
+
+  await viewResults(page)
   const result = page.getByTestId('analysis-result')
   await expect(result).toBeVisible({ timeout: 20000 })
   await expect(result).toContainText('completed')
@@ -33,6 +33,7 @@ test('runs complete original parts with one geometry display and rejects surroga
   expect(workers.length).toBe(1)
   await result.scrollIntoViewIfNeeded()
   await page.screenshot({ path: info.outputPath('original-part-result.png') })
+  await showSetup(page, true)
   await page
     .getByLabel('Analysis method')
     .selectOption('continuous-clearance-v0@0.1.0')
@@ -40,12 +41,10 @@ test('runs complete original parts with one geometry display and rejects surroga
   for (const wireframe of [false, true]) {
     await page.getByLabel('Wireframe', { exact: true }).setChecked(wireframe)
     await page
-      .getByRole('button', { name: 'Run preflight', exact: true })
+      .getByRole('button', { name: 'Run analysis', exact: true })
       .click()
     await expect(report).toContainText('unsupported-geometry')
-    await page
-      .getByRole('button', { name: 'Run formal analysis', exact: true })
-      .click()
+
     await expect(page.getByRole('alert')).toContainText(
       'does not support every selected collider'
     )

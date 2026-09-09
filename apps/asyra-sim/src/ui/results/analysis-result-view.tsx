@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { projectResultPairs } from './result-pairs'
+import { useMemo, useState } from 'react'
 import type { ExperimentSnapshot } from '../../analysis/contracts'
 import { formatDistance } from './format-distance'
 import { MethodDetails } from './method-details'
@@ -45,9 +46,15 @@ export function AnalysisResultView({
     null
   )
 
+  const pairs = useMemo(
+    () => projectResultPairs(result, snapshot),
+    [result, snapshot]
+  )
+  const [showAll, setShowAll] = useState(() => pairs.attention.length === 0)
+  const visiblePairs = showAll ? pairs.all : pairs.attention
   const [page, setPage] = useState(0)
 
-  const pageCount = Math.max(1, Math.ceil(result.pairEvidence.length / 20))
+  const pageCount = Math.max(1, Math.ceil(visiblePairs.length / 20))
 
   const currentPage = Math.min(page, pageCount - 1)
 
@@ -90,16 +97,6 @@ export function AnalysisResultView({
           [&_dd]:font-[650]"
       >
         <div>
-          <dt>Geometry</dt>
-
-          <dd>
-            {snapshot.version === 2
-              ? `Original parts - ${snapshot.workcell.bodies.reduce((sum, body) => sum + body.colliders.reduce((count, part) => count + (part.geometry.kind === 'mesh' ? part.geometry.indices.length / 3 : 0), 0), 0).toLocaleString('en-US')} triangles`
-              : 'Native / historical primitives'}
-          </dd>
-        </div>
-
-        <div>
           <dt>Execution</dt>
 
           <dd>{result.execution}</dd>
@@ -128,6 +125,16 @@ export function AnalysisResultView({
         </div>
 
         <div>
+          <dt>Geometry</dt>
+
+          <dd>
+            {snapshot.version === 2
+              ? `Original parts - ${snapshot.workcell.bodies.reduce((sum, body) => sum + body.colliders.reduce((count, part) => count + (part.geometry.kind === 'mesh' ? part.geometry.indices.length / 3 : 0), 0), 0).toLocaleString('en-US')} triangles`
+              : 'Native / historical primitives'}
+          </dd>
+        </div>
+
+        <div>
           <dt>Minimum lower bound</dt>
 
           <dd>{formatDistance(lower)}</dd>
@@ -145,38 +152,28 @@ export function AnalysisResultView({
         regions remain unresolved. Analysis runtime is not robot cycle time.
       </p>
 
-      <p className="method-line text-[9px] text-sim-muted wrap-anywhere leading-[1.7]">
-        {result.method.id}@{result.method.version} - experiment r
-        {result.source.experimentRevision} - rule r{result.rule.revision}
-      </p>
-
-      <MethodDetails descriptor={snapshot.methodDescriptor} historical />
-
-      {result.decision && <RuleEvaluationView value={result.decision} />}
-      <details>
-        <summary>
-          Scope and assumptions <span>{snapshot.pairs.length} pairs</span>
-        </summary>
-
-        <p className="hint text-[10px] leading-[1.6] text-sim-muted font-normal">
-          {snapshot.scope.backgroundNote}
+      {missing > 0 && (
+        <p
+          className="inline-error text-sim-error-text bg-sim-error p-[11px] rounded-[5px]
+            text-[11px] leading-[1.6] wrap-anywhere"
+        >
+          {missing} pairs have no retained evidence.
         </p>
+      )}
 
-        <p className="hint text-[10px] leading-[1.6] text-sim-muted font-normal">
-          {snapshot.scope.excludedPairs.length} excluded body pairs -{' '}
-          {snapshot.scope.acknowledgedExcludedVisibleBodyIds.length}{' '}
-          acknowledged background bodies
-        </p>
-
-        {snapshot.scope.excludedPairs.map((pair) => (
-          <p
-            className="method-line text-[9px] text-sim-muted wrap-anywhere leading-[1.7]"
-            key={`${pair.a}/${pair.b}`}
-          >
-            {pair.a} / {pair.b}: {pair.reason}
-          </p>
-        ))}
-      </details>
+      {pairs.missing.length > 0 && (
+        <details>
+          <summary>
+            Unresolved pairs without evidence{' '}
+            <span>{pairs.missing.length}</span>
+          </summary>
+          {pairs.missing.map((pair) => (
+            <p key={pair.id} className="text-[10px] wrap-anywhere my-2">
+              {pair.a.bodyId} - {pair.b.bodyId}: no retained evidence
+            </p>
+          ))}
+        </details>
+      )}
 
       <details open>
         <summary>
@@ -184,13 +181,28 @@ export function AnalysisResultView({
           <span>{result.pairEvidence.length} records</span>
         </summary>
 
+        <p className="text-[11px] text-sim-muted my-2">
+          Finding and unresolved pairs first. Full records remain unchanged.
+        </p>
+        <button
+          onClick={() => {
+            setShowAll(!showAll)
+            setPage(0)
+          }}
+        >
+          {showAll ? 'Show finding and unresolved pairs' : 'Show all pairs'}
+        </button>
+        {!visiblePairs.length && (
+          <p className="text-[11px] my-2">
+            No finding or unresolved records. Open all pairs for complete
+            evidence.
+          </p>
+        )}
         <div className="evidence-list grid gap-[10px] max-h-[450px] overflow-auto">
-          {result.pairEvidence
+          {visiblePairs
             .slice(currentPage * 20, (currentPage + 1) * 20)
             .map((pair) => {
-              const source = snapshot.pairs.find(
-                (item) => item.id === pair.pairId
-              )
+              const source = pairs.sources.get(pair.pairId)
 
               if (!source)
                 throw new Error(
@@ -232,14 +244,38 @@ export function AnalysisResultView({
         )}
       </details>
 
-      {missing > 0 && (
-        <p
-          className="inline-error text-sim-error-text bg-sim-error p-[11px] rounded-[5px]
-            text-[11px] leading-[1.6] wrap-anywhere"
-        >
-          {missing} pairs have no retained evidence.
+      <p className="method-line text-[9px] text-sim-muted wrap-anywhere leading-[1.7]">
+        {result.method.id}@{result.method.version} - experiment r
+        {result.source.experimentRevision} - rule r{result.rule.revision}
+      </p>
+
+      <MethodDetails descriptor={snapshot.methodDescriptor} historical />
+
+      {result.decision && <RuleEvaluationView value={result.decision} />}
+      <details>
+        <summary>
+          Scope and assumptions <span>{snapshot.pairs.length} pairs</span>
+        </summary>
+
+        <p className="hint text-[10px] leading-[1.6] text-sim-muted font-normal">
+          {snapshot.scope.backgroundNote}
         </p>
-      )}
+
+        <p className="hint text-[10px] leading-[1.6] text-sim-muted font-normal">
+          {snapshot.scope.excludedPairs.length} excluded body pairs -{' '}
+          {snapshot.scope.acknowledgedExcludedVisibleBodyIds.length}{' '}
+          acknowledged background bodies
+        </p>
+
+        {snapshot.scope.excludedPairs.map((pair) => (
+          <p
+            className="method-line text-[9px] text-sim-muted wrap-anywhere leading-[1.7]"
+            key={`${pair.a}/${pair.b}`}
+          >
+            {pair.a} / {pair.b}: {pair.reason}
+          </p>
+        ))}
+      </details>
 
       {result.errors.map((error, index) => (
         <p

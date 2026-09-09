@@ -34,6 +34,9 @@ export function ExperimentProvider({
 
   const onRun = useViewValue(inputs, (value) => value.onRun)
 
+  useViewValue(inputs, (value) => value.session)
+  useViewValue(inputs, (value) => value.historicalReplay)
+  useViewValue(inputs, (value) => value.candidateName)
   useViewValue(inputs, (value) => value.retainedIds)
 
   useViewValue(inputs, (value) => value.onOpenRuns)

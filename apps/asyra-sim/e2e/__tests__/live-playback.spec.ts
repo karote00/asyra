@@ -1,3 +1,4 @@
+import { showSetup, viewResults } from '../workflow'
 import { expect, test } from '@playwright/test'
 import { observePlaybackFeedback } from '../playback-observer'
 
@@ -13,11 +14,13 @@ test('Play detects the original-part collision without a formal run', async ({
   const history = await page.getByTestId('history-depth').textContent()
 
   await page.getByRole('button', { name: 'Experiments', exact: true }).click()
+  await page.getByRole('tab', { name: 'Preview', exact: true }).click()
 
   await page.getByLabel('Experiment', { exact: true }).selectOption({
     label: 'Tool and table collision - r1'
   })
 
+  await page.getByRole('tab', { name: 'Preview', exact: true }).click()
   const collision = await observePlaybackFeedback(page, { kind: 'collision' })
 
   await page
@@ -60,6 +63,7 @@ test('Play detects the original-part collision without a formal run', async ({
   await page.mouse.wheel(0, -240)
   await page.screenshot({ path: info.outputPath('live-collision-closeup.png') })
 
+  await page.getByRole('tab', { name: 'Preview', exact: true }).click()
   const created: string[] = []
 
   page.on('worker', (worker) => created.push(worker.url()))
@@ -106,21 +110,23 @@ test('known formal witnesses need no Worker, missing poses are checked, and edit
   await page.goto('/')
   await expect(page.getByRole('status')).toHaveText('Local runtime ready')
   await page.getByRole('button', { name: 'Experiments', exact: true }).click()
+  await page.getByRole('tab', { name: 'Preview', exact: true }).click()
   await page
     .getByLabel('Experiment', { exact: true })
     .selectOption({ label: 'Tool and table collision - r1' })
   // Keep every part, narrowing only the authored interval to inspect the contact.
+  await showSetup(page)
   await page.getByLabel('Start time (s)').fill('3.8')
   await page.getByLabel('End time (s)').fill('4.2')
   await page.keyboard.press('Tab')
-  await page.getByRole('button', { name: 'Run preflight', exact: true }).click()
-  await page
-    .getByRole('button', { name: 'Run formal analysis', exact: true })
-    .click()
+  await page.getByRole('button', { name: 'Run analysis', exact: true }).click()
+
+  await viewResults(page)
   await expect(page.getByTestId('analysis-result')).toBeVisible({
     timeout: 35_000
   })
 
+  await page.getByRole('tab', { name: 'Preview', exact: true }).click()
   const created: string[] = []
 
   page.on('worker', (worker) => created.push(worker.url()))
@@ -145,11 +151,13 @@ test('known formal witnesses need no Worker, missing poses are checked, and edit
   expect(created).toHaveLength(1)
 
   await page.getByRole('button', { name: 'Return to editing pose' }).click()
+  await showSetup(page)
   await page.getByLabel('Minimum clearance (mm)').fill('25')
   await page.keyboard.press('Tab')
 
   await expect(feedback).toHaveCount(0)
   await expect(page.getByTestId('live-observations')).toHaveCount(0)
+  await page.getByRole('tab', { name: 'Preview', exact: true }).click()
   const collision = await observePlaybackFeedback(page, { kind: 'collision' })
   await page
     .getByRole('button', { name: 'Play trajectory', exact: true })
@@ -166,6 +174,7 @@ test('known formal witnesses need no Worker, missing poses are checked, and edit
   await mountX.fill('3')
   await mountX.press('Enter')
   await page.getByRole('button', { name: 'Experiments', exact: true }).click()
+  await page.getByRole('tab', { name: 'Preview', exact: true }).click()
 
   await expect(feedback).toHaveCount(0)
   await expect(page.getByTestId('live-observations')).toHaveCount(0)

@@ -12,10 +12,12 @@ for (const route of ['navigation', 'playback'] as const)
     const box = await canvas.boundingBox()
     if (!box) throw new Error('Missing viewport')
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
-    if (route === 'playback')
+    if (route === 'playback') {
       await page
         .getByRole('button', { name: 'Experiments', exact: true })
         .click()
+      await page.getByRole('tab', { name: 'Preview', exact: true }).click()
+    }
     const session = await page.context().newCDPSession(page)
     await session.send('Profiler.enable')
     await session.send('Profiler.start')

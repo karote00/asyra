@@ -5,6 +5,7 @@ import type { ExperimentFieldsView } from './experiment-fields-view'
 import { ScopeFields } from './scope-fields'
 import {
   ThresholdFields,
+  DurationFields,
   IntervalFields,
   NumericalFields
 } from './experiment-numerical-fields'
@@ -16,15 +17,22 @@ interface Props {
 export function ExperimentFields({ source }: Props) {
   return (
     <>
-      <MethodSelection source={source} />
-
       <ThresholdFields source={source} />
 
       <AcceptanceSelection source={source} />
 
       <IntervalFields source={source} />
 
-      <NumericalFields source={source} />
+      <details>
+        <summary>
+          Advanced settings <span>method, precision and budget</span>
+        </summary>
+        <div className="grid gap-4 pt-3">
+          <MethodSelection source={source} />
+          <DurationFields source={source} />
+          <NumericalFields source={source} />
+        </div>
+      </details>
 
       <ScopeFields source={source} />
     </>
