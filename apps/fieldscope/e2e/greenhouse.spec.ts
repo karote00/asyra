@@ -235,6 +235,27 @@ test('spring clips are inspectable at the real upright connection', async ({
     path: testInfo.outputPath('joint.png'),
     fullPage: true
   })
+  await page.getByRole('button', { name: '收合編輯面板', exact: true }).click()
+  await page.getByRole('button', { name: '收合圖層面板', exact: true }).click()
+  await expect
+    .poll(
+      async () => (await page.getByTestId('scene').boundingBox())?.width ?? 0
+    )
+    .toBeGreaterThan(1300)
+  await page.getByTestId('scene').hover()
+  await page.keyboard.down('Alt')
+  await page.mouse.wheel(0, -Math.log(3) * 1000)
+  await page.keyboard.up('Alt')
+  await expect(page.getByTestId('zoom-percent')).toHaveText('300%')
+  await settle()
+  await page
+    .locator('canvas')
+    .screenshot({ path: testInfo.outputPath('joint-continuous-wire.png') })
+  await page.getByTestId('scene').focus()
+  await page.keyboard.press('Meta+0')
+  await page.getByRole('button', { name: '展開圖層面板', exact: true }).click()
+  await expect(page.getByLabel('跨接彈簧夾', { exact: true })).toBeVisible()
+  await settle()
   const withClip = await page.locator('canvas').screenshot()
   await page.getByLabel('跨接彈簧夾', { exact: true }).uncheck()
   await settle()
