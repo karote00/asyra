@@ -42,3 +42,19 @@ it('roots fine hairs on source triangles and emits both leaf sides without resam
   }
   expect(sides).toEqual(new Set([-1, 1]))
 })
+
+it('keeps surface hair UVs nondegenerate for normal-mapped shading', () => {
+  const mesh = new TriangleBuilder()
+  mesh.positions.push(0, 0, 0, 1, 0, 0, 0, 1, 0)
+  mesh.indices.push(0, 1, 2)
+  mesh.uvs.push(0, 0, 1, 0, 0, 1)
+  appendSurfaceHairs(mesh, 20, 0.001, true, [0.1, 0.2, 0.05])
+  for (let i = 3; i < mesh.indices.length; i += 3) {
+    const [a, b, c] = mesh.indices
+      .slice(i, i + 3)
+      .map((index) => mesh.uvs.slice(index * 2, index * 2 + 2))
+    const determinant =
+      (b[0] - a[0]) * (c[1] - a[1]) - (c[0] - a[0]) * (b[1] - a[1])
+    expect(Math.abs(determinant)).toBeGreaterThan(1e-9)
+  }
+})

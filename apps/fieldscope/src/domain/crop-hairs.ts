@@ -76,7 +76,8 @@ export function appendSurfaceHairs(
           offset + 3
         )
       if (builder.uvs.length)
-        for (let vertex = 0; vertex < 4; vertex++) builder.uvs.push(0, 0)
+        // A tiny valid UV patch keeps normal-map tangent derivatives finite.
+        builder.uvs.push(0, 0, 0.001, 0, 0, 0.001, 0.001, 0.001)
       count++
     }
   }
