@@ -30,6 +30,8 @@ test('a large valid GLB requires an explicit resource acknowledgement without ma
     mimeType: 'model/gltf-binary',
     buffer: Buffer.from(encodeGlb(source.json, padded))
   })
+  await expect(page.getByLabel('Original part source review')).toBeFocused()
+  await expect(page.getByLabel('Original part source review')).toBeInViewport()
   const acknowledge = page.getByLabel('Visual memory warning acknowledgement')
   await expect(acknowledge).toBeVisible()
   await expect(

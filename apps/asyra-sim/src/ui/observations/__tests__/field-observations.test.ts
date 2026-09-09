@@ -596,6 +596,10 @@ it.each([false, true])(
         .querySelector('[aria-label="Observation title"]')
         ?.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))
     )
+    expect(
+      host.querySelector('[aria-label="Observation change status"]')
+        ?.textContent
+    ).toContain('Saving observation')
     await fill('Observation text', '25 mm')
     await commit()
     expect(update).not.toHaveBeenCalled()
@@ -613,3 +617,21 @@ it.each([false, true])(
       expect(host.querySelector('fieldset')?.disabled).toBe(false)
   }
 )
+
+it('reveals the requested editor without moving focus after its own acknowledgement', async () => {
+  await act(() => button('Add field observation').click())
+  const title = host.querySelector<HTMLInputElement>(
+    '[aria-label="Observation title"]'
+  )
+  if (!title) throw new Error('Missing observation title')
+  expect(document.activeElement).toBe(title)
+  await fill('Observation title', 'Feedback review')
+  const text = host.querySelector<HTMLTextAreaElement>(
+    '[aria-label="Observation text"]'
+  )
+  if (!text) throw new Error('Missing observation text')
+  await act(() => text.focus())
+  await fill('Observation text', '25 mm')
+  await commit()
+  expect(document.activeElement).toBe(text)
+})

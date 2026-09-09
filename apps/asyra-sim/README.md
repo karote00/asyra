@@ -523,3 +523,43 @@ and [release gates](../../docs/ai/apps/asyra-sim/release/FIRST_RELEASE.md).
 We provide a trustworthy environment for executing experiments, not a guarantee
 that users' experimental assumptions hold. Independent pilot acceptance and
 all first-release gates are required before R0.
+
+
+### Reviewing action feedback and revealed content
+
+Use the same running App and project URL. The following checks need no model
+edits or new analysis; cancel import previews and discard empty observation
+drafts when finished. For import checks, use your existing portable project or
+GLB file. Test copy/import replacement in a separate review project.
+
+1. In the upper-left header, click the folder icon labeled **Projects**.
+   Click **Copy project** or **Export project**. During the actual operation,
+   expect **Copying project…** or **Preparing export…** on the button and a
+   disabled action. The dialog also shows persistence status inside it. Fast
+   operations can finish immediately; there is no artificial delay. An error
+   restores the action and shows its reason.
+2. In that dialog, under **Portable project files**, use **Choose project file**
+   to select an exported project JSON. Expect a reading/validation message,
+   followed by automatic scrolling and focus to the green preview containing
+   file name and retained-run count. Use **Discard import preview** to leave the
+   current project intact. Actual acceptance displays **Importing project…**.
+3. Close **Projects**, click **Experiments** on the left toolbar and expand the
+   original-part GLB section. Choose a GLB. Expect reading/preparing feedback
+   beside the controls, then automatic navigation to its source review. Check
+   dimensions and units there; **Cancel preview** closes this unaccepted draft.
+4. In **Experiments**, expand the trajectory import section and click
+   **Preview trajectory** after supplying valid data and units. Expect the
+   conversion preview to receive focus and enter view. File-reading feedback
+   stays beside the file selector. Acceptance displays **Importing trajectory…**.
+5. Click **Runs & compare** on the left toolbar. Click a run's large named card
+   in **Run history** (the checkbox instead adds a comparison slot). Expect
+   automatic scrolling and focus to **Selected run**, including on a narrow
+   window. In **Field observations**, click **Add field observation**: the
+   **Observation title** input is brought into view and focused. Use **Discard
+   draft** when done. Saving an actual note/attachment shows pending feedback
+   while preserving focus during ordinary save acknowledgements.
+6. After an analysis, click **View results** in **Experiments**. Expect the
+   **Results** tab and its content to receive focus and enter view. Background
+   analysis completion itself preserves your current editing location. Creating
+   an experiment and retrying failed result retention/saving also display their
+   own pending labels and prevent duplicate submission.

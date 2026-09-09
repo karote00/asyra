@@ -24,6 +24,8 @@ export async function viewResults(page: Page) {
   await expect(
     page.getByRole('tab', { name: 'Results', exact: true })
   ).toHaveAttribute('aria-selected', 'true')
+  await expect(page.locator('#experiment-panel-results')).toBeFocused()
+  await expect(page.locator('#experiment-panel-results')).toBeInViewport()
 }
 
 export async function runAnalysis(page: Page) {

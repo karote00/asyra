@@ -429,3 +429,16 @@ it('restores comparison action after failure and permits a fresh explicit retry'
     host.querySelector('[aria-label="Run comparison"]')
   )
 })
+
+it('reveals the explicitly selected run detail without starting a comparison', async () => {
+  await selectPair()
+  const entry = host.querySelector<HTMLButtonElement>(
+    '.run-history article button'
+  )
+  if (!entry) throw new Error('Missing run entry')
+  await act(() => entry.click())
+  expect(document.activeElement?.getAttribute('aria-label')).toBe(
+    'Selected run'
+  )
+  expect(host.querySelector('[aria-label="Run comparison"]')).toBeNull()
+})

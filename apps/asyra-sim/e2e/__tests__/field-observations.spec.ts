@@ -50,6 +50,8 @@ test('ordinary field observations preserve immutable evidence, opaque files and 
   await panel
     .getByRole('button', { name: 'Add field observation', exact: true })
     .click()
+  await expect(panel.getByLabel('Observation title')).toBeFocused()
+  await expect(panel.getByLabel('Observation title')).toBeInViewport()
   await panel.getByLabel('Observation title').fill('Bench measurement')
   await panel.getByLabel('Observation title').press('Enter')
   await expect(panel.locator('.observation-note').first()).toContainText(

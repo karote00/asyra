@@ -134,7 +134,10 @@ export function useObservationController({
     setStatus('')
   }
 
+  const [editorRequest, setEditorRequest] = useState(0)
+
   const begin = (note?: FieldObservation) => {
+    setEditorRequest((value) => value + 1)
     reset()
 
     setOpen(true)
@@ -315,6 +318,7 @@ export function useObservationController({
     existing,
     setExisting,
     saving,
+    editorRequest,
     error,
     status,
     files,

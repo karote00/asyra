@@ -111,6 +111,8 @@ test('external CSV declaration, conversion review, acceptance, Undo/Redo and reo
   for (const unit of await units.all()) await expect(unit).toHaveValue('deg')
   await preview(page)
   await expect(review).toContainText('3000 ms → 3 s')
+  await expect(page.locator('.accepted-preview')).toBeFocused()
+  await expect(page.locator('.accepted-preview')).toBeInViewport()
   await page.locator('.accepted-preview').screenshot({
     path: info.outputPath('retained-units-after-edit.png'),
     animations: 'disabled'

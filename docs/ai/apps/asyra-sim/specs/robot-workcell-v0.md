@@ -495,6 +495,14 @@ users need not discover new output below the viewport. Selection/source changes
 or dialog retirement cancel pending work. Failure restores the action and exposes
 the error without navigating to stale output. Comparing never adds an artificial
 minimum delay or starts formal analysis.
+Other explicit workbench actions follow the same feedback principle: project
+copy/open/export/import/retry disclose their pending action inside the dialog;
+source preparation exposes reading, preparation and acceptance phases. Completed
+file previews, explicitly requested trajectory previews, observation editor
+opening and run-detail selection reveal their destination. Explicit View results
+navigates to the result panel, but background analysis completion and ordinary
+field/save acknowledgements do not move focus or scroll. Pending labels describe
+work, not a guarantee of durable saving or successful analysis.
 
 Editing a project during analysis does not change the in-flight snapshot.
 The result remains bound to the original revision. New geometry, trajectory,

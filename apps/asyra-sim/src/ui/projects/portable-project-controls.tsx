@@ -1,3 +1,4 @@
+import { useContentReveal } from '../shared/use-content-reveal'
 import type { ProjectSession } from '../../storage/project-session'
 import { usePortableProject } from './use-portable-project'
 
@@ -14,8 +15,18 @@ export function PortableProjectControls({
   unsavedRunCount: number
   onImported: (name: string) => void
 }) {
-  const { preview, setPreview, error, reading, read, accept, exportProject } =
-    usePortableProject({ session, name, unsavedRunCount, onImported })
+  const {
+    preview,
+    operation,
+    setPreview,
+    error,
+    reading,
+    read,
+    accept,
+    exportProject
+  } = usePortableProject({ session, name, unsavedRunCount, onImported })
+
+  const previewTarget = useContentReveal<HTMLDivElement>(preview)
 
   return (
     <section
@@ -37,8 +48,12 @@ export function PortableProjectControls({
       )}
 
       <div className="project-actions flex gap-3 items-center justify-between mb-[14px] justify-start mt-[10px]">
-        <button disabled={disabled} onClick={exportProject}>
-          Export project
+        <button
+          disabled={disabled || !!operation}
+          aria-busy={operation === 'export'}
+          onClick={exportProject}
+        >
+          {operation === 'export' ? 'Preparing export…' : 'Export project'}
         </button>
 
         <label
@@ -51,7 +66,7 @@ export function PortableProjectControls({
             aria-label="Portable project file"
             type="file"
             accept=".json,application/json"
-            disabled={disabled || reading}
+            disabled={disabled || reading || !!operation}
             onChange={(event) => {
               const file = event.target.files?.[0]
 
@@ -73,6 +88,8 @@ export function PortableProjectControls({
         <div
           className="accepted-preview p-3 bg-sim-success rounded-[6px] grid gap-2 mt-[10px] text-[11px]"
           data-testid="project-import-preview"
+          ref={previewTarget}
+          tabIndex={-1}
         >
           <strong>{preview.name}</strong>
 
@@ -86,11 +103,17 @@ export function PortableProjectControls({
             require compatible methods.
           </span>
 
-          <button disabled={disabled} onClick={() => void accept()}>
-            Import and replace current project
+          <button
+            disabled={disabled || !!operation}
+            aria-busy={operation === 'import'}
+            onClick={() => void accept()}
+          >
+            {operation === 'import'
+              ? 'Importing project…'
+              : 'Import and replace current project'}
           </button>
 
-          <button onClick={() => setPreview(null)}>
+          <button disabled={!!operation} onClick={() => setPreview(null)}>
             Discard import preview
           </button>
         </div>

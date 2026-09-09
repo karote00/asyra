@@ -13,9 +13,10 @@ export function ExperimentCreation() {
     <button
       className="primary bg-sim-accent text-[#fff] border-sim-accent [&:hover]:bg-sim-accent-hover"
       disabled={saving}
+      aria-busy={saving}
       onClick={() => void view.getSnapshot().save()}
     >
-      Create experiment
+      {saving ? 'Creating experiment…' : 'Create experiment'}
     </button>
   )
 }

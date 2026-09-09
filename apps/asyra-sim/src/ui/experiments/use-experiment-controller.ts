@@ -388,7 +388,7 @@ export function useExperimentController({
 
   const retainSelectedRun = () =>
     selectedRun &&
-    void perform(
+    perform(
       () => runtime.features.storage.retain(selectedRun),
       'Result retained in project'
     )

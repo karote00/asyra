@@ -28,6 +28,8 @@ export function usePortableProject({
   const [reading, setReading] = useState(false)
 
   const request = useRef(0)
+  const [operation, setOperation] = useState<'import' | 'export' | null>(null)
+  const operationPending = useRef(false)
 
   useEffect(
     () => () => {
@@ -70,6 +72,7 @@ export function usePortableProject({
   }
 
   const accept = async () => {
+    if (operationPending.current) return
     if (
       !preview ||
       !window.confirm(
@@ -78,6 +81,9 @@ export function usePortableProject({
     )
       return
 
+    operationPending.current = true
+    setOperation('import')
+    setError('')
     try {
       await session.start()
       await session.importProject(preview.text, true)
@@ -85,10 +91,17 @@ export function usePortableProject({
       onImported(preview.name.replace(/\.json$/i, ''))
     } catch (reason) {
       setError(errorMessage(reason))
+    } finally {
+      operationPending.current = false
+      setOperation(null)
     }
   }
 
   const exportProject = async () => {
+    if (operationPending.current) return
+    operationPending.current = true
+    setOperation('export')
+    setError('')
     try {
       const text = await session.exportProject()
 
@@ -97,11 +110,15 @@ export function usePortableProject({
       setError('')
     } catch (reason) {
       setError(errorMessage(reason))
+    } finally {
+      operationPending.current = false
+      setOperation(null)
     }
   }
 
   return {
     preview,
+    operation,
     setPreview,
     error,
     setError,

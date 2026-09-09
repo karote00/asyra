@@ -1,4 +1,4 @@
-import { useMemo, useSyncExternalStore } from 'react'
+import { useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import type { ProjectSession } from '../../storage/project-session'
 import type { ExperimentInputReader } from '../../storage/experiment-input'
 import { type Workcell } from '../../domain/workcell'
@@ -85,12 +85,29 @@ function ResultSaving({
 }: {
   session?: ProjectSession
   retained: boolean
-  onRetain: () => void
+  onRetain: () => unknown
 }) {
   const state = useSyncExternalStore(
     session?.subscribe ?? noSubscription,
     session?.getState ?? noState
   )
+  const [pending, setPending] = useState(false)
+  const active = useRef(false)
+  const [error, setError] = useState('')
+  const retry = async (action: () => unknown) => {
+    if (active.current) return
+    active.current = true
+    setPending(true)
+    setError('')
+    try {
+      await action()
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : String(reason))
+    } finally {
+      active.current = false
+      setPending(false)
+    }
+  }
   let label = 'Result could not be added to this project.'
   if (retained) {
     label = 'Saving to this project'
@@ -104,10 +121,23 @@ function ResultSaving({
       aria-live="polite"
     >
       <p>{label}</p>
-      {!retained && <button onClick={onRetain}>Retry retention</button>}
+      {error && <p role="alert">{error}</p>}
+      {!retained && (
+        <button
+          disabled={pending}
+          aria-busy={pending}
+          onClick={() => void retry(onRetain)}
+        >
+          {pending ? 'Retaining result…' : 'Retry retention'}
+        </button>
+      )}
       {retained && state?.status === 'error' && (
-        <button onClick={() => void session?.flush().catch(() => undefined)}>
-          Retry saving
+        <button
+          disabled={pending}
+          aria-busy={pending}
+          onClick={() => void retry(() => session?.flush())}
+        >
+          {pending ? 'Retrying save…' : 'Retry saving'}
         </button>
       )}
     </div>

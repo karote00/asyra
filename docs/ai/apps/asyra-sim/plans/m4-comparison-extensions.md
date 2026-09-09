@@ -300,3 +300,77 @@ existing Chrome project `8c93ec70-87a9-4004-97ba-470cbb11f1e6` on the same 3020
 server: select the three retained checkboxes, click Compare, observe automatic
 scrolling and focused Run comparison. No import, model edit, run or canonical
 write was needed. M4 acceptance is still pending the user's review of this fix.
+
+### Authorized adjacent feedback review
+
+The user authorizes correcting similar UX findings in other ordinary App sections.
+Discovery is frozen to current UI action handlers/controllers and their direct
+formal UI/browser tests: project operations and import preview, original-part
+import, trajectory read/explicit preview, observation editor/attachment actions,
+run-detail selection/retention retry, and experiment creation/explicit result
+navigation. Shell model edits already select their output and report canonical
+success; formal analysis has progress/cancel/completion and must not interrupt
+editing. Automatic acknowledgements never request scrolling or steal focus.
+
+One `ui` owner segment under retained-data-to-ui, storage-to-ui asset inputs and
+result-to-ui; section 9 plus existing import/observation/workflow contracts apply.
+Inputs remain immutable evidence, existing preparation receipts and authoritative
+session/Feature outcomes. Output is local pending feedback or explicit content
+navigation only. Allowlist: these UI families, shared DOM reveal utility if
+needed for equivalent behavior, their direct tests, current specs/Inspector,
+this plan and App guide. No new canonical write path, numerical work, parser,
+cache, queue, dependency, runtime catalog, persistence semantics or layout shell.
+One explicit action owns its pending presentation; unrelated notices and normal
+completed-field writes must not repeat work or move editing focus.
+
+Confirmed classes: disabled actions without visible pending labels, state shown
+only outside an active modal, asynchronous preview below the user's position,
+and an editor/detail rendered after a long list. Regression tests first cover
+pending/duplicate guard, failure recovery, lifetime retirement and navigation
+without recurring focus on acknowledgements. Gates: focused affected UI suites,
+normal 3020 projects/import/observations/retained/workflow E2E with desktop/narrow
+screenshots, full App tests, build/typecheck/lint, naming, Inspector and placement.
+Stop after this frozen review; unrelated bugs do not extend implementation.
+
+
+Bounded validation revision: the browser caught result navigation occurring before
+its subscribed tab became visible; the ui owner now consumes the explicit reveal
+request only with the Results tab active. The first rerun's interrupted analysis
+coincided with Vite navigation while files were edited; final browser validation
+must run against unchanged files. The added narrow selection case also changed
+the later exported run, so it now restores the original selection after proving
+navigation and waits for the heading to reach the dialog top before screenshot.
+Re-audit/self-review: section 9 and ui retained-data-to-ui/result-to-ui still own
+these effects; no Feature, solver or persistence change is needed. Remaining
+work is the fixed browser scope, screenshot inspection and final scoped gates.
+
+Adjacent-feedback closure evidence: the original formal UI tests missed the
+reported UX classes; the added/strengthened tests produced 14 failures before
+their corresponding implementation (`m4-other-feedback-red.log`,
+`m4-project-feedback-red.log`, `m4-creation-feedback-red.log`,
+`m4-retention-feedback-red.log`). Final App validation passes 678 tests in 119
+files. App build/typecheck and lint, naming (11), full Inspector contracts (100)
+and test placement (2) pass. Existing build bundle-size advisory remains.
+
+Base URL: `http://127.0.0.1:3020`. Visual Test Scope: normal projects,
+trajectory-import, field-observations, retained-runs, workbench-flow and
+visual-references browser specs. Command:
+`APP_URL=http://127.0.0.1:3020 yarn workspace @asyra/asyra-sim test:e2e e2e/__tests__/projects.spec.ts e2e/__tests__/trajectory-import.spec.ts e2e/__tests__/field-observations.spec.ts e2e/__tests__/retained-runs.spec.ts e2e/__tests__/workbench-flow.spec.ts e2e/__tests__/visual-references.spec.ts --output=../../.artifacts/m4-other-feedback-verified`.
+All 23 browser cases pass on the final unchanged build. Screenshots under
+`.artifacts/m4-other-feedback-verified/` include `selected-run-narrow.png`
+(576 x 690, historical r1 selected), `portable-project-preview.png` (1440 x 960,
+two retained runs), GLB source review, trajectory conversion and
+`results-narrow.png` (600 x 960). Agent screenshot review passed; the destination
+and its controls are visible after App-owned navigation. Remaining Differences:
+none within this bounded UI feedback scope; no numerical or equipment-validation
+claim is made from these images.
+
+Runtime State: interactive Chrome verification used the user's existing project
+`8c93ec70-87a9-4004-97ba-470cbb11f1e6`, 1371 x 826 viewport, browser zoom unchanged,
+three retained A/B/C runs. Clicking B focused Selected run at y=130. Opening an
+empty observation draft focused Observation title and scrolled it into view;
+the inspected settled screenshot placed it at y=363. The empty draft was
+discarded and the dialog closed; Undo remained 0 and no canonical data changed.
+Detailed entry/action/expected-result instructions are in the App README's
+Reviewing action feedback and revealed content section. M4 user acceptance is
+still separate from this completed correction.

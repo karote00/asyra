@@ -1,3 +1,5 @@
+import { useState } from 'react'
+import { useContentReveal } from '../shared/use-content-reveal'
 import type { ExperimentSnapshot } from '../../analysis/contracts'
 import type { RunRecord } from '../../storage/run-record'
 import { FieldObservations } from '../observations/field-observations'
@@ -54,6 +56,9 @@ export function RunLibrary({
     exportReport,
     retainSelected
   } = useRunLibrary({ runs, onRetain })
+
+  const [detailRequest, setDetailRequest] = useState<object | null>(null)
+  const detailTarget = useContentReveal<HTMLElement>(detailRequest)
 
   return (
     <dialog
@@ -121,7 +126,10 @@ export function RunLibrary({
               <article key={run.result.runId}>
                 <button
                   aria-pressed={selectedId === run.result.runId}
-                  onClick={() => setSelectedId(run.result.runId)}
+                  onClick={() => {
+                    setSelectedId(run.result.runId)
+                    setDetailRequest({})
+                  }}
                 >
                   <strong>{run.name}</strong>
 
@@ -243,7 +251,12 @@ export function RunLibrary({
           </button>
         </section>
 
-        <section className="run-detail min-w-0" aria-label="Selected run">
+        <section
+          className="run-detail min-w-0"
+          aria-label="Selected run"
+          ref={detailTarget}
+          tabIndex={-1}
+        >
           {selected && (
             <>
               <div className="section-heading flex items-center justify-between [&_>_span]:text-[10px] [&_>_span]:text-sim-muted">
@@ -268,7 +281,7 @@ export function RunLibrary({
                     }
                     onClick={retainSelected}
                   >
-                    Retry retention
+                    {saving ? 'Retaining result…' : 'Retry retention'}
                   </button>
                 )}
 

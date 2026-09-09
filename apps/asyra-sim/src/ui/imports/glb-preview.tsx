@@ -1,3 +1,4 @@
+import { useContentReveal } from '../shared/use-content-reveal'
 import type { Workcell } from '../../domain/workcell'
 import type { SimRuntime } from '../../init/bootstrap'
 import { VisualPlacementFields } from '../objects/visual-placement-fields'
@@ -49,6 +50,8 @@ export function GlbPreview({
     isCurrent,
     active
   })
+
+  const sourceReview = useContentReveal<HTMLDListElement>(prepared)
 
   return (
     <details className="glb-preview">
@@ -112,10 +115,24 @@ export function GlbPreview({
         </p>
       )}
 
-      {notice && <p role="status">{notice}</p>}
+      {phase && (
+        <p role="status" aria-live="polite">
+          {
+            {
+              reading: 'Reading original part…',
+              preparing: 'Preparing original part…',
+              accepting: 'Accepting original part…'
+            }[phase]
+          }
+        </p>
+      )}
+      {!phase && notice && <p role="status">{notice}</p>}
       {prepared && asset && (
         <>
           <dl
+            ref={sourceReview}
+            tabIndex={-1}
+            aria-label="Original part source review"
             className="asset-summary grid grid-cols-[1fr_1fr] gap-3 m-0 [&_dt]:text-[9px]
               [&_dt]:text-sim-muted [&_dt]:mb-1 [&_dd]:m-0 [&_dd]:text-[11px]
               [&_dd]:font-[650]"

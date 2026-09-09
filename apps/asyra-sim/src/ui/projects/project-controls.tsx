@@ -15,6 +15,7 @@ export function ProjectControls({
 }) {
   const {
     state,
+    pendingAction,
     open,
     setOpen,
     name,
@@ -92,6 +93,19 @@ export function ProjectControls({
             these saves; this is not a backup.
           </p>
 
+          <p
+            role="status"
+            aria-label="Project operation status"
+            className="text-xs my-3"
+          >
+            {pendingAction
+              ? {
+                  copy: 'Copying project…',
+                  open: 'Opening project…',
+                  retry: 'Retrying persistence…'
+                }[pendingAction.kind]
+              : caption}
+          </p>
           <div className="my-5">
             <label>
               Project name
@@ -104,17 +118,22 @@ export function ProjectControls({
             </label>
             <div className="project-actions flex gap-3 mt-3">
               <button
-                disabled={!ready || !!state.busy}
+                disabled={!ready || !!state.busy || !!pendingAction}
+                aria-busy={pendingAction?.kind === 'copy'}
                 onClick={() => void copy()}
               >
-                Copy project
+                {pendingAction?.kind === 'copy'
+                  ? 'Copying project…'
+                  : 'Copy project'}
               </button>
               {state.status === 'error' && (
                 <button
-                  disabled={!ready || !!state.busy}
+                  disabled={!ready || !!state.busy || !!pendingAction}
                   onClick={() => void retry()}
                 >
-                  Retry persistence
+                  {pendingAction?.kind === 'retry'
+                    ? 'Retrying persistence…'
+                    : 'Retry persistence'}
                 </button>
               )}
             </div>
@@ -122,7 +141,7 @@ export function ProjectControls({
 
           <PortableProjectControls
             session={session}
-            disabled={!ready || !!state.busy}
+            disabled={!ready || !!state.busy || !!pendingAction}
             name={name}
             unsavedRunCount={unsavedRunCount}
             onImported={(importedName) => {
@@ -147,10 +166,10 @@ export function ProjectControls({
             <h3>Saved projects</h3>
 
             <button
-              disabled={listing || !!state.busy}
+              disabled={listing || !!state.busy || !!pendingAction}
               onClick={() => void refresh()}
             >
-              Refresh
+              {listing ? 'Reading projects…' : 'Refresh'}
             </button>
           </div>
 
@@ -188,11 +207,18 @@ export function ProjectControls({
                 </div>
 
                 <button
-                  disabled={!ready || !!state.busy}
+                  disabled={!ready || !!state.busy || !!pendingAction}
                   aria-label={`Open ${project.name}`}
+                  aria-busy={
+                    pendingAction?.kind === 'open' &&
+                    pendingAction.projectId === project.id
+                  }
                   onClick={() => void choose(project)}
                 >
-                  Open
+                  {pendingAction?.kind === 'open' &&
+                  pendingAction.projectId === project.id
+                    ? 'Opening project…'
+                    : 'Open'}
                 </button>
               </li>
             ))}

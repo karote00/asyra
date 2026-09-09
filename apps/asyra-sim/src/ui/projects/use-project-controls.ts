@@ -27,6 +27,23 @@ export function useProjectControls({
   const dialog = useRef<HTMLDialogElement>(null)
 
   const request = useRef(0)
+  const [pendingAction, setPendingAction] = useState<{
+    kind: 'copy' | 'open' | 'retry'
+    projectId?: string
+  } | null>(null)
+  const actionPending = useRef(false)
+
+  const beginAction = (action: NonNullable<typeof pendingAction>) => {
+    if (actionPending.current) return false
+    actionPending.current = true
+    setPendingAction(action)
+    setProblem('')
+    return true
+  }
+  const endAction = () => {
+    actionPending.current = false
+    setPendingAction(null)
+  }
 
   useEffect(() => {
     if (!open) return
@@ -65,6 +82,7 @@ export function useProjectControls({
   }
 
   const copy = async () => {
+    if (!beginAction({ kind: 'copy' })) return
     try {
       await session.start()
       await session.copy(`${state.project?.name ?? name} - Copy`)
@@ -76,10 +94,13 @@ export function useProjectControls({
       await refresh()
     } catch (error) {
       setProblem(errorMessage(error))
+    } finally {
+      endAction()
     }
   }
 
   const choose = async (project: ProjectSummary) => {
+    if (actionPending.current) return
     if (
       !window.confirm(
         `Open “${project.name}”? This starts a new document with empty Undo/Redo. ${unsavedRunCount} unretained results will be lost.`
@@ -87,6 +108,7 @@ export function useProjectControls({
     )
       return
 
+    if (!beginAction({ kind: 'open', projectId: project.id })) return
     try {
       await session.start()
       await session.open(project.id, true)
@@ -98,6 +120,8 @@ export function useProjectControls({
       setOpen(false)
     } catch (error) {
       setProblem(errorMessage(error))
+    } finally {
+      endAction()
     }
   }
 
@@ -122,6 +146,7 @@ export function useProjectControls({
   }
 
   const retry = async () => {
+    if (!beginAction({ kind: 'retry' })) return
     try {
       if (!session.getState().project)
         await session.start(
@@ -132,11 +157,14 @@ export function useProjectControls({
       setProblem('')
     } catch (error) {
       setProblem(errorMessage(error))
+    } finally {
+      endAction()
     }
   }
 
   return {
     state,
+    pendingAction,
     open,
     setOpen,
     name,
