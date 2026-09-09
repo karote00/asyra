@@ -51,7 +51,7 @@ test('side panels preserve immediate edits without remounting the canvas', async
   await expect
     .poll(async () => (await scene.boundingBox())?.width ?? 0)
     .toBeCloseTo(original.width, 0)
-  await page.getByRole('button', { name: '適合畫面 ⌘1', exact: true }).click()
+  await page.getByRole('button', { name: '整體畫面 ⌘1', exact: true }).click()
   await page.screenshot({
     path: testInfo.outputPath('panels-expanded.png'),
     fullPage: true

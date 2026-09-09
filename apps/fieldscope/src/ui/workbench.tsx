@@ -501,10 +501,10 @@ function ZoomControls({ runtime }: { runtime: FarmRuntime }) {
     <div className="flex flex-wrap justify-center gap-1 rounded-lg border border-[#d9dfd2] bg-white p-1 text-xs text-[#527048]">
       <button
         onClick={runtime.fit}
-        title="適合畫面（⌘1）"
+        title="整體畫面（⌘1）"
         className="rounded px-3 py-1.5 hover:bg-[#e3e9db]"
       >
-        適合畫面 <span className="text-[#8d9985]">⌘1</span>
+        整體畫面 <span className="text-[#8d9985]">⌘1</span>
       </button>
       <button
         onClick={runtime.actualSize}

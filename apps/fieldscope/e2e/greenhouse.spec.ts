@@ -176,7 +176,7 @@ test('film is visible by default and Shift drag, Command 1 and Command 0 operate
   await page.keyboard.down('Alt')
   await page.mouse.wheel(0, -300)
   await page.keyboard.up('Alt')
-  await page.getByTitle('適合畫面（⌘1）').click()
+  await page.getByTitle('整體畫面（⌘1）').click()
   // Compare both routes with the same canvas focus outline.
   await scene.focus()
   await page.keyboard.press('Shift')
