@@ -60,7 +60,7 @@ const data = {
       allowedContributors: ['GitHub Actions job dependencies and outputs', 'existing Playwright JSON reporter'],
       forbiddenContributors: ['runtime source analysis', 'candidate-selected case inventory', 'accepted baseline mutation', 'provider success substituted for assertions'],
       cacheDimensions: [],
-      implementationBoundary: ['tools/flow-inspector/control-plane/workflow-results.cjs', 'tools/flow-inspector/control-plane/__tests__/workflow-results.test.cjs', 'tools/flow-inspector/control-plane/__tests__/board.test.cjs', '.github/workflows/main.yml', '.github/workflows/e2e.yml', 'scripts/run-e2e.sh'],
+      implementationBoundary: ['tools/flow-inspector/control-plane/workflow-results.cjs', 'tools/flow-inspector/control-plane/__tests__/workflow-results.test.cjs', 'tools/flow-inspector/control-plane/__tests__/board.test.cjs', '.github/workflows/main.yml', '.github/workflows/e2e.yml', 'scripts/run-e2e.sh', 'scripts/__tests__/workspace-automation.test.mjs'],
       specRefs: ['#final-workflow-aggregation'], failureOwnerStepId: 'aggregate-workflow-results'
     },
     {

@@ -107,11 +107,12 @@ jobs:
         run: yarn release:records
 
   design-e2e:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     uses: ./.github/workflows/e2e.yml
 
   flow-ci:
     needs: [validate, design-e2e]
-    if: ${{ always() }}
+    if: ${{ always() && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:

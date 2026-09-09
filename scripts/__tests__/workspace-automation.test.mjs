@@ -93,7 +93,15 @@ test('GitHub Actions use least privilege and immutable action revisions', () => 
     const workflow = readText(workflowPath)
     assert.match(workflow, /^permissions:\n {2}contents: read$/m, workflowPath)
     for (const line of workflow.match(/^\s*-?\s*uses:\s*\S+$/gm) ?? []) {
-      assert.match(line, /@[0-9a-f]{40}(?:\s+#.*)?$/u, line)
+      if (line.trim() === 'uses: ./.github/workflows/e2e.yml') {
+        assert.equal(workflowPath, '.github/workflows/main.yml')
+        assert.match(
+          readText('.github/workflows/e2e.yml'),
+          /^ {2}workflow_call:/m
+        )
+      } else {
+        assert.match(line, /@[0-9a-f]{40}(?:\s+#.*)?$/u, line)
+      }
     }
   }
 
@@ -109,7 +117,15 @@ test('PR workflows skip Draft jobs and run when the PR becomes ready', () => {
     '.github/workflows/e2e.yml'
   ]) {
     const workflow = readText(workflowPath)
-    const events = workflow.match(/pull_request:\n\s+types: \[([^\]]+)\]/)[1]
+    const eventOwner =
+      workflowPath === '.github/workflows/e2e.yml'
+        ? readText('.github/workflows/main.yml')
+        : workflow
+    if (workflowPath === '.github/workflows/e2e.yml') {
+      assert.match(workflow, /^ {2}workflow_call:/m)
+      assert.doesNotMatch(workflow, /^ {2}pull_request:/m)
+    }
+    const events = eventOwner.match(/pull_request:\n\s+types: \[([^\]]+)\]/)[1]
     for (const event of [
       'opened',
       'synchronize',
@@ -120,11 +136,18 @@ test('PR workflows skip Draft jobs and run when the PR becomes ready', () => {
     }
     const jobs = workflow.split('\njobs:\n')[1].split(/(?=^ {2}[\w-]+:\n)/m)
     for (const job of jobs.filter((block) => block.trim())) {
-      assert.match(
-        job,
-        /^ {4}if: github.event_name != 'pull_request' \|\| github.event.pull_request.draft == false$/m,
-        `${workflowPath}: ${job.split('\n')[0]}`
-      )
+      if (job.startsWith('  flow-ci:')) {
+        assert.match(
+          job,
+          /^ {4}if: \$\{\{ always\(\) && \(github.event_name != 'pull_request' \|\| github.event.pull_request.draft == false\) \}\}$/m
+        )
+      } else {
+        assert.match(
+          job,
+          /^ {4}if: github.event_name != 'pull_request' \|\| github.event.pull_request.draft == false$/m,
+          `${workflowPath}: ${job.split('\n')[0]}`
+        )
+      }
     }
   }
 })
