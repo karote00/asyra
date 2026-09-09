@@ -25,7 +25,12 @@ it('preserves exact recessed surfaces, exterior barriers and shared geometry acr
   ).toBe(true)
   expect(Math.max(...points('barriers').y)).toBeCloseTo(0.35)
   const clips = meshes.filter((item) => item.layer === 'clips')
-  expect(clips).toHaveLength(4)
+  expect(
+    clips.reduce(
+      (sum, clip) => sum + (clip.descriptor.instances?.length ?? 0),
+      0
+    )
+  ).toBe(2256)
   for (const clip of clips) {
     const shape = clip.descriptor.shape
     if (shape.kind !== 'triangles')
@@ -37,7 +42,7 @@ it('preserves exact recessed surfaces, exterior barriers and shared geometry acr
     ...INITIAL_VIEW,
     layers: { ...INITIAL_VIEW.layers, clips: false }
   })
-  expect(hiddenClips.filter((item) => !item.visible)).toHaveLength(4)
+  expect(hiddenClips.filter((item) => !item.visible)).toHaveLength(clips.length)
   expect(hiddenClips.find((item) => item.id === 'supports')?.visible).toBe(true)
   const changed = projectView(meshes, {
     ...INITIAL_VIEW,

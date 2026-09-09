@@ -1,3 +1,4 @@
+import { SiteGeometry } from '../render-app/site-geometry'
 import { moveCamera, lookCamera } from '../render-app/camera-flight'
 import {
   DEFAULT_CONFIGURATION,
@@ -84,7 +85,8 @@ export async function bootstrap(
     runtime: true,
     silent: true
   })
-  let meshes = buildSiteMeshes(config)
+  const geometry = new SiteGeometry()
+  let meshes = buildSiteMeshes(config, geometry)
   let sceneBounds = measureScene(meshes)
   const configurationType = 'farm-configuration'
   core.definePropertyComponent({
@@ -138,7 +140,7 @@ export async function bootstrap(
   }
   const publishConfiguration = (
     next: FarmConfiguration,
-    prepared = buildSiteMeshes(next)
+    prepared = buildSiteMeshes(next, geometry)
   ) => {
     config = next
     meshes = prepared
@@ -168,7 +170,7 @@ export async function bootstrap(
             () => {
               assertLive()
               if (JSON.stringify(next) === JSON.stringify(config)) return
-              const prepared = buildSiteMeshes(next)
+              const prepared = buildSiteMeshes(next, geometry)
               runTransaction(() =>
                 core.updateElementProperties([
                   {
@@ -401,6 +403,7 @@ export async function bootstrap(
   const dispose = () => {
     if (disposePromise) return disposePromise
     closed = true
+    geometry.clear()
     observer?.disconnect()
     subscription?.unsubscribe()
     configListeners.clear()

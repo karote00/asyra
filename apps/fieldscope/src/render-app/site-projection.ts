@@ -3,7 +3,7 @@ import {
   TOMATO_LEAF_SURFACE
 } from '../domain/leaf-surface'
 import { readSpatialSurface } from '../engine/surface-textures'
-import { createCropModels } from '../domain/crop-models'
+import { SiteGeometry } from './site-geometry'
 import { createCropPositions } from '../domain/crop-layout'
 import { createDrainProfile } from '../domain/drain-profile'
 import {
@@ -11,12 +11,8 @@ import {
   configurationSite,
   type FarmConfiguration
 } from '../domain/farm-configuration'
-import { createPlantingNet, NET_LAYOUT } from '../domain/planting-net'
-import {
-  createSupportAssembly,
-  springClipWire,
-  supportJointTarget
-} from '../domain/planting-supports'
+import { buildCultivationMeshes } from './cultivation-projection'
+import { supportJointTarget } from '../domain/planting-supports'
 import { createLayout, createStructure, roofPoint } from '../domain/greenhouse'
 import { TriangleBuilder } from '../domain/mesh'
 import {
@@ -110,9 +106,10 @@ const mesh = (
   }) as SpatialMesh
 })
 
-/** One admitted static geometry product per applied configuration. View changes never rebuild it. */
+/** One scene per completed configuration; unchanged shared shapes survive layout edits. */
 export function buildSiteMeshes(
-  config: FarmConfiguration = DEFAULT_CONFIGURATION
+  config: FarmConfiguration = DEFAULT_CONFIGURATION,
+  geometry = new SiteGeometry()
 ): SiteMesh[] {
   const site = configurationSite(config)
   const totalWidth = site.width * site.bays,
@@ -129,81 +126,7 @@ export function buildSiteMeshes(
   ) as Record<LayerId, TriangleBuilder>
   const { steel, soil, drains, barriers, film, base, dimensions } = builders
   for (const member of createStructure(site)) steel.tube(member)
-  const assembly = createSupportAssembly(config)
-  for (const tube of [...assembly.tubes, ...assembly.rails])
-    builders.supports.tube(tube)
-  const net = createPlantingNet(assembly, config)
-  const netBuilders = Array.from(
-    { length: site.bays },
-    () => new TriangleBuilder()
-  )
-  for (const strand of net.strands) netBuilders[strand.bay].tube(strand)
-  const tieBuilders = Array.from(
-    { length: Math.ceil(net.ties.length / 500) },
-    () => new TriangleBuilder()
-  )
-  for (const [index, tie] of net.ties.entries()) {
-    const tieBuilder = tieBuilders[Math.floor(index / 500)]
-    const [x, y, z] = tie.center
-    // A flat nylon band with thickness, locking head and short trimmed tail.
-    for (let i = 0; i < 24; i++) {
-      const a = (i * Math.PI) / 12,
-        b = ((i + 1) * Math.PI) / 12
-      const point = (
-        angle: number,
-        radius: number,
-        height: number
-      ): readonly [number, number, number] => [
-        x + radius * Math.cos(angle),
-        height,
-        z + radius * Math.sin(angle)
-      ]
-      const inner = tie.radius,
-        outer = inner + NET_LAYOUT.tieThickness
-      const low = y - NET_LAYOUT.tieWidth / 2,
-        high = y + NET_LAYOUT.tieWidth / 2
-      tieBuilder.quad(
-        point(a, outer, low),
-        point(b, outer, low),
-        point(b, outer, high),
-        point(a, outer, high)
-      )
-      tieBuilder.quad(
-        point(b, inner, low),
-        point(a, inner, low),
-        point(a, inner, high),
-        point(b, inner, high)
-      )
-      tieBuilder.quad(
-        point(a, inner, high),
-        point(a, outer, high),
-        point(b, outer, high),
-        point(b, inner, high)
-      )
-      tieBuilder.quad(
-        point(a, outer, low),
-        point(a, inner, low),
-        point(b, inner, low),
-        point(b, outer, low)
-      )
-    }
-    tieBuilder.box([x + tie.radius, y, z], [0.004, 0.006, 0.006])
-    tieBuilder.box(
-      [x + tie.radius + 0.005, y, z],
-      [0.01, NET_LAYOUT.tieWidth, NET_LAYOUT.tieThickness]
-    )
-  }
-  // Batch by bay to keep every admitted index buffer below the engine limit.
-  const clipBuilders: TriangleBuilder[] = []
-  for (let bay = 0; bay < site.bays; bay++) {
-    const clips = assembly.clips.filter((clip) => clip.bay === bay)
-    for (let start = 0; start < clips.length; start += 600) {
-      const builder = new TriangleBuilder()
-      for (const clip of clips.slice(start, start + 600))
-        builder.tube(springClipWire(clip))
-      clipBuilders.push(builder)
-    }
-  }
+  const cultivation = buildCultivationMeshes(config, geometry)
   const terrainDepth = Math.max(
     0.35,
     ...strips
@@ -347,7 +270,7 @@ export function buildSiteMeshes(
   const plants = createCropPositions(config)
   const crops: SiteMesh[] = []
   if (plants.length)
-    for (const model of createCropModels(config)) {
+    for (const model of geometry.cropModels(config)) {
       const selected = plants.filter(
         (plant) =>
           plant.species === model.species && plant.variant === model.variant
@@ -394,18 +317,7 @@ export function buildSiteMeshes(
     mesh('passages', builders.passages, 0xb2b3a2),
     mesh('barriers', barriers, 0x182623),
     mesh('steel', steel, 0x8a9c9b),
-    ...(builders.supports.positions.length
-      ? [mesh('supports', builders.supports, 0x8a9c9b)]
-      : []),
-    ...netBuilders
-      .filter((builder) => builder.positions.length)
-      .map((builder, i) => mesh(`net-${i}`, builder, 0xe5e8ce, 1, 'net')),
-    ...tieBuilders.map((builder, i) =>
-      mesh(`ties-${i}`, builder, 0x26322b, 1, 'ties')
-    ),
-    ...clipBuilders.map((builder, bay) =>
-      mesh(`clips-${bay}`, builder, 0xb4bfbe, 1, 'clips')
-    ),
+    ...cultivation,
     mesh('dimensions', dimensions, 0x326c55),
     mesh('film', film, 0xf3f5ee, INITIAL_VIEW.filmOpacity)
   ]

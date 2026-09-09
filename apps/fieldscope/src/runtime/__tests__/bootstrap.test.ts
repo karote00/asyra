@@ -1,3 +1,4 @@
+import { InstancedMesh, type BufferGeometry } from 'three'
 // @vitest-environment jsdom
 import { expect, it, vi } from 'vitest'
 import * as crops from '../../domain/crop-models'
@@ -6,7 +7,7 @@ import { ThreeEngine, type GraphicsDriver } from '../../engine/three-engine'
 import { bootstrap } from '../bootstrap'
 import * as navigation from '../../render-app/camera-navigation'
 
-it.each(['navigation', 'history', 'redo-branch'] as const)(
+it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
   'preserves runtime ownership and disposal for %s',
   async (mode) => {
     const build = vi.spyOn(projection, 'buildSiteMeshes')
@@ -187,6 +188,78 @@ it.each(['navigation', 'history', 'redo-branch'] as const)(
         expect(runtime.getView().filmOpacity).toBe(0.35)
         expect(build).toHaveBeenCalledTimes(1)
         expect(pending).toBeUndefined()
+      } else if (mode === 'soil-edit') {
+        const initial = runtime.getConfiguration()
+        const previous = build.mock.results[0].value as projection.SiteMesh[]
+        const changed = {
+          ...initial,
+          strips: initial.strips.map((strip, i) =>
+            i === 0 ? { ...strip, width: 1.1 } : strip
+          )
+        }
+        const gpuGeometries = () => {
+          const result = new Set<BufferGeometry>()
+          const scene = vi.mocked(driver.render).mock.calls[0]?.[0]
+          scene?.traverse((object) => {
+            if (object instanceof InstancedMesh) result.add(object.geometry)
+          })
+          return result
+        }
+        const originalGpu = gpuGeometries()
+        expect(originalGpu.size).toBeGreaterThan(0)
+        const started = performance.now()
+        await runtime.setConfiguration(changed)
+        const submitted = performance.now()
+        flush()
+        const flushed = performance.now()
+        const nextGpu = gpuGeometries()
+        expect(nextGpu.size).toBe(originalGpu.size)
+        expect([...nextGpu].every((shape) => originalGpu.has(shape))).toBe(true)
+        const next = build.mock.results.at(-1)?.value as projection.SiteMesh[]
+        if (process.env.FIELDSCOPE_PROFILE === '1')
+          // eslint-disable-next-line no-console -- Opt-in permanent timing evidence accompanies deterministic work assertions.
+          console.log(
+            JSON.stringify({
+              updateMs: submitted - started,
+              flushMs: flushed - submitted,
+              cropBuilds: cropBuild.mock.calls.length
+            })
+          )
+        expect.soft(cropBuild).toHaveBeenCalledTimes(1)
+        const before = previous.find((mesh) =>
+          mesh.id.startsWith('cucumber-1914')
+        )?.descriptor
+        const after = next.find(
+          (mesh) =>
+            mesh.id ===
+            previous.find((item) => item.id.startsWith('cucumber-1914'))?.id
+        )?.descriptor
+        if (!before || !after)
+          throw new Error('Missing planted crop descriptors')
+        expect.soft(after.shape === before.shape).toBe(true)
+        expect(after.instances).not.toEqual(before.instances)
+        for (const layer of ['supports', 'net', 'ties', 'clips']) {
+          const originals = previous.filter((mesh) => mesh.layer === layer)
+          const updates = next.filter((mesh) => mesh.layer === layer)
+          expect
+            .soft(updates.every((mesh) => !!mesh.descriptor.instances))
+            .toBe(true)
+          expect
+            .soft(
+              updates.every(
+                (mesh, i) =>
+                  mesh.descriptor.shape === originals[i]?.descriptor.shape
+              )
+            )
+            .toBe(true)
+        }
+
+        await runtime.undo()
+        flush()
+        await runtime.redo()
+        flush()
+        expect(runtime.getConfiguration()).toEqual(changed)
+        expect.soft(cropBuild).toHaveBeenCalledTimes(1)
       } else {
         const configNotify = vi.fn()
         const stopConfig = runtime.subscribeConfiguration(configNotify)
@@ -261,7 +334,9 @@ it.each(['navigation', 'history', 'redo-branch'] as const)(
       expect(disconnect).toHaveBeenCalledTimes(1)
       expect(() => runtime.orbit(1, 1)).toThrow()
       await runtime.dispose()
-      expect(cropBuild).toHaveBeenCalledTimes(build.mock.calls.length)
+      expect(cropBuild).toHaveBeenCalledTimes(
+        mode === 'soil-edit' || mode === 'navigation' ? 1 : 2
+      )
       cropBuild.mockRestore()
       build.mockRestore()
       preset.mockRestore()
