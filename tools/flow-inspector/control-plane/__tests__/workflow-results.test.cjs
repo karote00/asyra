@@ -158,7 +158,7 @@ test('workflow waits on reusable producers and always collects after failed test
   )
   assert.match(
     main,
-    /flow-ci:\s*\n\s*needs: \[validate, design-e2e\]\s*\n\s*if: \$\{\{ always\(\) \}\}/
+    /flow-ci:\s*\n\s*needs: \[validate, design-e2e\]\s*\n\s*if: \$\{\{ always\(\) && \(github.event_name != 'pull_request' \|\| github.event.pull_request.draft == false\) \}\}/
   )
   assert.match(main, /uses: \.\/.github\/workflows\/e2e.yml/)
   assert.match(e2e, /workflow_call:/)

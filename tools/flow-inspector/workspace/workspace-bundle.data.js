@@ -35394,7 +35394,8 @@
               "tools/flow-inspector/control-plane/__tests__/board.test.cjs",
               ".github/workflows/main.yml",
               ".github/workflows/e2e.yml",
-              "scripts/run-e2e.sh"
+              "scripts/run-e2e.sh",
+              "scripts/__tests__/workspace-automation.test.mjs"
             ],
             "specRefs": [
               "#final-workflow-aggregation"
