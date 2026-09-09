@@ -349,7 +349,7 @@ function SceneWorkspace({
         <div
           ref={host}
           data-testid="scene"
-          aria-label="可旋轉的四連棟溫室三維場景"
+          aria-label="First-person greenhouse viewport"
           role="application"
           tabIndex={0}
           className="h-[440px] outline-offset-[-3px] sm:h-[540px] xl:h-[610px]"
@@ -363,7 +363,7 @@ function SceneWorkspace({
             }
             if (keys[event.key]) {
               event.preventDefault()
-              runtime.orbit(...keys[event.key])
+              runtime.look(...keys[event.key])
             }
             if (event.key === '+' || event.key === '=') runtime.zoom(-100)
             if (event.key === '-') runtime.zoom(100)
@@ -387,7 +387,7 @@ function SceneWorkspace({
               runtime.look(event.clientX - p.x, event.clientY - p.y)
             else if (event.shiftKey)
               runtime.pan(event.clientX - p.x, event.clientY - p.y)
-            else runtime.orbit(event.clientX - p.x, event.clientY - p.y)
+            else runtime.look(event.clientX - p.x, event.clientY - p.y)
             previous.current = { ...p, x: event.clientX, y: event.clientY }
           }}
           onContextMenu={(event) => event.preventDefault()}
@@ -418,7 +418,7 @@ function SceneWorkspace({
         {runtime && <ZoomControls runtime={runtime} />}
         {runtime && <MovementSpeedControl runtime={runtime} />}
         <div className="pointer-events-none absolute bottom-5 left-5 max-w-[calc(100%-10rem)] text-[10px] text-[#7b8873]">
-          左拖旋轉 - Shift 左拖平移 - 右拖轉頭 - 滾輪前後
+          Drag to look - Shift drag to pan - WASD to move
         </div>
         <div className="pointer-events-none absolute bottom-5 right-5 flex items-center gap-2 rounded-full bg-white/60 px-3 py-1 text-[10px] text-[#607350]">
           <span className="h-1.5 w-1.5 rounded-full bg-[#819c4d]" />

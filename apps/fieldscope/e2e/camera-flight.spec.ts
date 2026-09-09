@@ -83,3 +83,36 @@ test('wheel travels in world space and right-wheel changes speed without moving 
   await page.getByTitle('恢復 100%（⌘0）').click()
   await expect(page.getByTestId('movement-speed')).toHaveText('13.35 m/s')
 })
+
+test('left drag uses the same stationary look as right drag', async ({
+  page
+}, testInfo) => {
+  await page.goto('/')
+  await expect(page.getByText('空間模型已就緒')).toBeVisible()
+  await page.getByLabel('塑膠覆膜', { exact: true }).uncheck()
+  const scene = page.getByTestId('scene')
+  const bounds = await scene.boundingBox()
+  if (!bounds) throw new Error('Missing scene')
+  const images: Buffer[] = []
+  for (const button of ['left', 'right'] as const) {
+    await page.getByRole('button', { name: '端面', exact: true }).click()
+    await page.getByRole('button', { name: '走道內部', exact: true }).click()
+    await page.mouse.move(
+      bounds.x + bounds.width / 2,
+      bounds.y + bounds.height / 2
+    )
+    await page.mouse.down({ button })
+    await page.mouse.move(
+      bounds.x + bounds.width / 2 + 70,
+      bounds.y + bounds.height / 2 + 20,
+      { steps: 5 }
+    )
+    await page.mouse.up({ button })
+    images.push(await page.locator('canvas').screenshot())
+  }
+  expect(images[0].equals(images[1])).toBe(true)
+  await page.screenshot({
+    path: testInfo.outputPath('first-person-look.png'),
+    fullPage: true
+  })
+})

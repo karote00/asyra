@@ -12,7 +12,7 @@ test('real greenhouse route exposes the structure, section, inner aisle and resp
       scenario: 'fixed-four-bay-greenhouse',
       dimensions: [28, 50, 5],
       margin: 0.35,
-      cropGeometry: 'not configured',
+      cropGeometry: '5952 plants, 20 variants per cultivar',
       views: ['overview', 'front', 'top', 'inside']
     }),
     contentType: 'application/json'
@@ -31,6 +31,10 @@ test('real greenhouse route exposes the structure, section, inner aisle and resp
         requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
       )
   )
+  await expect(
+    page.getByRole('button', { name: '走道內部', exact: true })
+  ).toHaveAttribute('aria-pressed', 'true')
+  await page.getByRole('button', { name: '透視', exact: true }).click()
   await page.screenshot({
     path: testInfo.outputPath('overview.png'),
     fullPage: true,

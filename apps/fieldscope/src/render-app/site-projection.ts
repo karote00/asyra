@@ -75,7 +75,7 @@ export interface ViewState {
 export const INITIAL_VIEW: ViewState = {
   layers: INITIAL_LAYERS,
   filmOpacity: 0.6,
-  camera: 'overview'
+  camera: 'inside'
 }
 
 export type SiteMesh = SpatialFrame['meshes'][number] & { layer: LayerId }
