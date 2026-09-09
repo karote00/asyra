@@ -656,7 +656,32 @@ test(
         canvas.locator('.proof-badge[data-status="passed"]')
       ).toHaveCount(3)
       await page.goto(server.origin + '/core-proof')
-      await expect(canvas.locator('.step-card')).toHaveCount(13)
+      await expect(canvas.locator('.step-card')).toHaveCount(14)
+      await expect(
+        canvas.locator('[data-step-id="aggregate-workflow-results"]')
+      ).toContainText('Aggregate completed workflow results')
+      for (const viewport of [
+        { width: 1600, height: 1100 },
+        { width: 820, height: 1180 },
+        { width: 390, height: 844 }
+      ]) {
+        await page.setViewportSize(viewport)
+        await page.goto(server.origin + '/core-proof')
+        await canvas
+          .locator('[data-step-id="aggregate-workflow-results"]')
+          .click()
+        await expect(canvas.locator('.detail-heading')).toContainText(
+          'Aggregate completed workflow results'
+        )
+        await page.screenshot({
+          path: path.join(
+            artifacts,
+            'workflow-owner-' + viewport.width + '.png'
+          ),
+          fullPage: true
+        })
+      }
+      await page.setViewportSize({ width: 1600, height: 1100 })
       await expect(canvas.locator('.proof-badge')).toHaveCount(0)
       await expect(canvas.locator('#run-all')).toHaveCount(0)
       await expect(canvas.locator('#proof-unavailable')).toContainText(
