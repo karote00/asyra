@@ -1,3 +1,5 @@
+import * as planting from '../../domain/crop-layout'
+import { buildSiteMeshes } from '../site-projection'
 import { expect, it, vi } from 'vitest'
 import * as crops from '../../domain/crop-models'
 import { DEFAULT_CONFIGURATION } from '../../domain/farm-configuration'
@@ -139,4 +141,83 @@ it('bounds admitted primitive retention and rebuilds evicted entries', () => {
   owner.clear()
   owner.primitive('tube:0', produce)
   expect(produce).toHaveBeenCalledTimes(35)
+})
+
+it('reuses independent projection owners and matches a fresh scene after every configuration dependency changes', () => {
+  const owner = new SiteGeometry()
+  const config = { ...DEFAULT_CONFIGURATION, length: 2.2 }
+  const initial = buildSiteMeshes(config, owner)
+  const extension = buildSiteMeshes({ ...config, topExtension: 0.2 }, owner)
+  for (const mesh of initial.filter(
+    (item) => !['supports', 'net', 'ties', 'clips'].includes(item.layer)
+  ))
+    expect(
+      extension.find((item) => item.id === mesh.id)?.descriptor ===
+        mesh.descriptor
+    ).toBe(true)
+  const changes = [
+    { length: 3.2 },
+    { width: 7.4 },
+    { height: 5.2 },
+    { eaveHeight: 3.2 },
+    { soilInset: 0.2 },
+    { startInset: 0.3 },
+    { endInset: 0.3 },
+    { netTop: 2.8 },
+    { netBottom: 0.6 },
+    {
+      strips: config.strips.map((strip, i) =>
+        i === 1 ? { ...strip, width: 0.35 } : strip
+      )
+    },
+    { strips: [{ kind: 'soil' as const, width: 6.3 }] }
+  ]
+  for (const change of changes) {
+    const next = { ...config, ...change }
+    const retained = buildSiteMeshes(next, owner)
+    const fresh = buildSiteMeshes(next)
+    expect(retained.map((mesh) => mesh.id)).toEqual(
+      fresh.map((mesh) => mesh.id)
+    )
+    retained.forEach((mesh, i) => {
+      expect(
+        sameSpatialShape(mesh.descriptor.shape, fresh[i].descriptor.shape)
+      ).toBe(true)
+      expect(mesh.descriptor.instances).toEqual(fresh[i].descriptor.instances)
+      expect(mesh.descriptor.position).toEqual(fresh[i].descriptor.position)
+      expect(mesh.descriptor.color).toBe(fresh[i].descriptor.color)
+    })
+  }
+  const beforeClear = buildSiteMeshes(config, owner)
+  owner.clear()
+  const afterClear = buildSiteMeshes(config, owner)
+  expect(
+    afterClear.find((mesh) => mesh.id === 'steel')?.descriptor ===
+      beforeClear.find((mesh) => mesh.id === 'steel')?.descriptor
+  ).toBe(false)
+})
+
+it('keeps cultivar assignments and admitted instance arrays when only the net height changes', () => {
+  const build = vi.spyOn(planting, 'createCropPositions')
+  try {
+    const owner = new SiteGeometry()
+    const config = { ...DEFAULT_CONFIGURATION, length: 2.2 }
+    const first = buildSiteMeshes(config, owner)
+    const next = buildSiteMeshes({ ...config, netTop: 2.8 }, owner)
+    expect(build).toHaveBeenCalledTimes(1)
+    for (const mesh of first.filter((item) =>
+      ['cucumbers', 'tomatoes'].includes(item.layer)
+    ))
+      expect(
+        next.find((item) => item.id === mesh.id)?.descriptor.instances ===
+          mesh.descriptor.instances
+      ).toBe(true)
+    buildSiteMeshes({ ...config, startInset: 0.3 }, owner)
+    expect(build).toHaveBeenCalledTimes(2)
+    owner.clear()
+    buildSiteMeshes(config, owner)
+    expect(build).toHaveBeenCalledTimes(3)
+  } finally {
+    build.mockRestore()
+  }
 })

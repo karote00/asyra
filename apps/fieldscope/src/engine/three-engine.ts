@@ -140,6 +140,18 @@ const SCREEN_PROPERTIES = new Set([
 
 /** A CUSTOM visual engine. It owns no editable state or analysis semantics. */
 export class ThreeEngine implements RenderEngine {
+  private readonly instanceDetail = new WeakMap<
+    THREE.InstancedMesh,
+    {
+      instances: unknown
+      world: THREE.Matrix4
+      view: THREE.Matrix4
+      projection: THREE.Matrix4
+      geometry: THREE.BufferGeometry
+      height: number
+      error: number
+    }
+  >()
   private readonly surfaceTextures = new SurfaceTextureStore()
 
   readonly name = 'FieldScope CUSTOM Three.js 0.185.1'
@@ -570,6 +582,7 @@ export class ThreeEngine implements RenderEngine {
       if (
         record.content instanceof THREE.InstancedMesh &&
         spatial.instances &&
+        !spatial.distant &&
         (content || previousInstances !== spatial.instances)
       ) {
         const matrix = new THREE.Matrix4()
@@ -656,6 +669,18 @@ export class ThreeEngine implements RenderEngine {
         !full.geometry.boundingSphere
       )
         throw new Error('Missing instance detail geometry')
+      const previous = this.instanceDetail.get(full)
+      if (
+        previous &&
+        previous.instances === spatial.instances &&
+        previous.geometry === full.geometry &&
+        previous.height === this.height &&
+        previous.error === spatial.distant.maxError &&
+        previous.world.equals(record.visual.matrixWorld) &&
+        previous.view.equals(this.camera.matrixWorldInverse) &&
+        previous.projection.equals(this.camera.projectionMatrix)
+      )
+        continue
       let fullCount = 0,
         distantCount = 0
       for (const instance of spatial.instances) {
@@ -677,6 +702,15 @@ export class ThreeEngine implements RenderEngine {
       distant.count = distantCount
       full.instanceMatrix.needsUpdate = true
       distant.instanceMatrix.needsUpdate = true
+      this.instanceDetail.set(full, {
+        instances: spatial.instances,
+        geometry: full.geometry,
+        height: this.height,
+        error: spatial.distant.maxError,
+        world: record.visual.matrixWorld.clone(),
+        view: this.camera.matrixWorldInverse.clone(),
+        projection: this.camera.projectionMatrix.clone()
+      })
     }
   }
 

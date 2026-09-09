@@ -35,6 +35,7 @@ import {
 
 import {
   cameraDistance,
+  type SceneBounds,
   measureScene,
   fitScene,
   panCamera,
@@ -87,7 +88,8 @@ export async function bootstrap(
   })
   const geometry = new SiteGeometry()
   let meshes = buildSiteMeshes(config, geometry)
-  let sceneBounds = measureScene(meshes)
+  let localBounds = new WeakMap<object, SceneBounds>()
+  let sceneBounds = measureScene(meshes, localBounds)
   const configurationType = 'farm-configuration'
   core.definePropertyComponent({
     type: configurationType,
@@ -144,7 +146,7 @@ export async function bootstrap(
   ) => {
     config = next
     meshes = prepared
-    sceneBounds = measureScene(meshes)
+    sceneBounds = measureScene(meshes, localBounds)
     referenceCamera = cameraPreset(view.camera, config)
     camera = referenceCamera
     layer.submit({
@@ -404,6 +406,7 @@ export async function bootstrap(
     if (disposePromise) return disposePromise
     closed = true
     geometry.clear()
+    localBounds = new WeakMap()
     observer?.disconnect()
     subscription?.unsubscribe()
     configListeners.clear()

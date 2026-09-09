@@ -1,3 +1,9 @@
+import * as greenhouse from '../../domain/greenhouse'
+import { RenderMesh } from '@asyra/render'
+import {
+  SPATIAL_PROPERTY,
+  type SpatialDescriptor
+} from '../../engine/spatial-contract'
 import { InstancedMesh, type BufferGeometry } from 'three'
 // @vitest-environment jsdom
 import { expect, it, vi } from 'vitest'
@@ -10,10 +16,21 @@ import * as navigation from '../../render-app/camera-navigation'
 it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
   'preserves runtime ownership and disposal for %s',
   async (mode) => {
+    const structure = vi.spyOn(greenhouse, 'createStructure')
+    const updates = vi.spyOn(RenderMesh.prototype, 'update')
     const build = vi.spyOn(projection, 'buildSiteMeshes')
     const cropBuild = vi.spyOn(crops, 'createCropModels')
     const preset = vi.spyOn(projection, 'cameraPreset')
-    const measure = vi.spyOn(navigation, 'measureScene')
+    let measurementMs = 0
+    const measureScene = navigation.measureScene
+    const measure = vi
+      .spyOn(navigation, 'measureScene')
+      .mockImplementation((...args) => {
+        const started = performance.now()
+        const result = measureScene(...args)
+        measurementMs += performance.now() - started
+        return result
+      })
     const pan = vi.spyOn(navigation, 'panCamera')
     const driver: GraphicsDriver = {
       domElement: document.createElement('canvas'),
@@ -207,11 +224,37 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
         }
         const originalGpu = gpuGeometries()
         expect(originalGpu.size).toBeGreaterThan(0)
+        updates.mockClear()
+        measurementMs = 0
         const started = performance.now()
         await runtime.setConfiguration(changed)
         const submitted = performance.now()
         flush()
         const flushed = performance.now()
+        expect.soft(structure).toHaveBeenCalledTimes(1)
+        const unchanged = previous.filter((mesh) =>
+          ['steel', 'film', 'barriers', 'dimensions', 'base'].includes(mesh.id)
+        )
+        for (const mesh of unchanged) {
+          expect
+            .soft(
+              updates.mock.calls.some(
+                ([patch]) =>
+                  (
+                    patch?.[SPATIAL_PROPERTY] as
+                      Extract<SpatialDescriptor, { kind: 'mesh' }> | undefined
+                  )?.shape === mesh.descriptor.shape
+              )
+            )
+            .toBe(false)
+          expect
+            .soft(
+              (build.mock.results.at(-1)?.value as projection.SiteMesh[]).find(
+                (next) => next.id === mesh.id
+              )?.descriptor === mesh.descriptor
+            )
+            .toBe(true)
+        }
         const nextGpu = gpuGeometries()
         expect(nextGpu.size).toBe(originalGpu.size)
         expect([...nextGpu].every((shape) => originalGpu.has(shape))).toBe(true)
@@ -221,6 +264,7 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
           console.log(
             JSON.stringify({
               updateMs: submitted - started,
+              measurementMs,
               flushMs: flushed - submitted,
               cropBuilds: cropBuild.mock.calls.length
             })
@@ -337,6 +381,8 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
       expect(cropBuild).toHaveBeenCalledTimes(
         mode === 'soil-edit' || mode === 'navigation' ? 1 : 2
       )
+      structure.mockRestore()
+      updates.mockRestore()
       cropBuild.mockRestore()
       build.mockRestore()
       preset.mockRestore()

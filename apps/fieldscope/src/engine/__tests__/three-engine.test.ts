@@ -530,6 +530,11 @@ it('selects instance detail from projected error and culls off-screen plants wit
   expect(full.count).toBe(1)
   expect(distant.count).toBe(0)
   const geometry = full.geometry
+  const version = full.instanceMatrix.version
+  const distantVersion = distant.instanceMatrix.version
+  engine.execute({ type: 'flush' })
+  expect.soft(full.instanceMatrix.version).toBe(version)
+  expect.soft(distant.instanceMatrix.version).toBe(distantVersion)
   engine.execute({
     type: 'update-object',
     object: cameraHandle,
@@ -616,5 +621,62 @@ it('binds admitted UVs and surface maps to the rendered leaf material', () => {
   const material = mesh.material as THREE.MeshStandardMaterial
   expect(material.map).toBeInstanceOf(THREE.DataTexture)
   expect(material.normalMap).toBeInstanceOf(THREE.DataTexture)
+  engine.destroy()
+})
+
+it('invalidates retained detail matrices for placement, viewport, geometry and visibility changes', () => {
+  const { engine, driver, add } = setup()
+  add({ ...camera, far: 1000 })
+  const mesh = {
+    ...box,
+    instances: [{ position: [0, 0, 0] as const, yaw: 0 }],
+    distant: { shape: { kind: 'sphere' as const, radius: 0.5 }, maxError: 0.06 }
+  }
+  const handle = add(mesh)
+  const flush = () => engine.execute({ type: 'flush' })
+  flush()
+  const scene = vi.mocked(driver.render).mock.calls[0][0]
+  const [full, distant] = scene.getObjectsByProperty(
+    'isInstancedMesh',
+    true
+  ) as THREE.InstancedMesh[]
+  const update = (value: SpatialDescriptor) =>
+    engine.execute({
+      type: 'update-object',
+      object: handle,
+      properties: { [SPATIAL_PROPERTY]: value }
+    })
+  update({ ...mesh, position: [10000, 0, 0] })
+  flush()
+  expect(full.count + distant.count).toBe(0)
+  update({ ...mesh, instances: [{ position: [0, 0, -100], yaw: 0 }] })
+  flush()
+  expect(full.count).toBe(0)
+  expect(distant.count).toBe(1)
+  const version = distant.instanceMatrix.version
+  engine.execute({
+    type: 'update-object',
+    object: handle,
+    properties: { visible: false }
+  })
+  flush()
+  expect(distant.instanceMatrix.version).toBe(version)
+  engine.execute({ type: 'resize', width: 1280, height: 6000 })
+  engine.execute({
+    type: 'update-object',
+    object: handle,
+    properties: { visible: true }
+  })
+  flush()
+  expect(full.count).toBe(1)
+  expect(distant.count).toBe(0)
+  update({ ...mesh, shape: { kind: 'box', size: [2, 2, 2] } })
+  flush()
+  const replacement = scene.getObjectsByProperty(
+    'isInstancedMesh',
+    true
+  )[0] as THREE.InstancedMesh
+  expect(replacement).not.toBe(full)
+  expect(replacement.count).toBe(1)
   engine.destroy()
 })

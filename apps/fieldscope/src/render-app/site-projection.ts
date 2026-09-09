@@ -4,7 +4,6 @@ import {
 } from '../domain/leaf-surface'
 import { readSpatialSurface } from '../engine/surface-textures'
 import { SiteGeometry } from './site-geometry'
-import { createCropPositions } from '../domain/crop-layout'
 import { createDrainProfile } from '../domain/drain-profile'
 import {
   DEFAULT_CONFIGURATION,
@@ -15,10 +14,7 @@ import { buildCultivationMeshes } from './cultivation-projection'
 import { supportJointTarget } from '../domain/planting-supports'
 import { createLayout, createStructure, roofPoint } from '../domain/greenhouse'
 import { TriangleBuilder } from '../domain/mesh'
-import {
-  readSpatialDescriptor,
-  readSpatialInstances
-} from '../engine/spatial-contract'
+import { readSpatialDescriptor } from '../engine/spatial-contract'
 import type { SpatialFrame, SpatialMesh, SpatialCamera } from './spatial-layer'
 
 export type LayerId =
@@ -112,6 +108,48 @@ export function buildSiteMeshes(
   geometry = new SiteGeometry()
 ): SiteMesh[] {
   const site = configurationSite(config)
+  // At most 32 authored strips: scalar dependency selection, not a scene diff.
+  const layout = [
+    config.width,
+    ...config.strips.flatMap(({ kind, width }) => [kind, width])
+  ]
+  const planting = [
+    ...layout,
+    config.length,
+    config.soilInset,
+    config.startInset,
+    config.endInset
+  ]
+  return [
+    ...geometry.projection(
+      'crops',
+      [...planting, config.netTop, config.netBottom],
+      () => buildCropMeshes(config, geometry)
+    ),
+    ...geometry.projection('terrain', [config.length, ...layout], () =>
+      buildTerrainMeshes(config, geometry)
+    ),
+    ...geometry.projection(
+      'envelope',
+      [config.width, config.length, config.height, site.eave],
+      () => buildEnvelopeMeshes(config)
+    ),
+    ...geometry.projection(
+      'cultivation',
+      [
+        ...planting,
+        site.eave,
+        config.topExtension,
+        config.netTop,
+        config.netBottom
+      ],
+      () => buildCultivationMeshes(config, geometry)
+    )
+  ]
+}
+
+function buildEnvelopeMeshes(config: FarmConfiguration): SiteMesh[] {
+  const site = configurationSite(config)
   const totalWidth = site.width * site.bays,
     depth = site.length,
     middle = totalWidth / 2,
@@ -120,94 +158,19 @@ export function buildSiteMeshes(
     doorHeight = Math.min(2.5, (site.eave * 5) / 6)
   const roof = (bay: number, fraction: number, z: number) =>
     roofPoint(bay, fraction, z, site)
-  const { strips, passages } = createLayout(site, config.strips)
   const builders = Object.fromEntries(
     Object.keys(INITIAL_LAYERS).map((key) => [key, new TriangleBuilder()])
   ) as Record<LayerId, TriangleBuilder>
-  const { steel, soil, drains, barriers, film, base, dimensions } = builders
+  const { steel, barriers, film, dimensions } = builders
   for (const member of createStructure(site)) steel.tube(member)
-  const cultivation = buildCultivationMeshes(config, geometry)
-  const terrainDepth = Math.max(
-    0.35,
-    ...strips
-      .filter((strip) => strip.kind === 'drain')
-      .map((strip) => createDrainProfile(strip.width).depth + 0.05)
-  )
-  base.box(
-    [middle, -terrainDepth - 0.13, midDepth],
-    [totalWidth + 6, 0.26, depth + 6]
-  )
-  for (const strip of strips) {
-    const middle = strip.x + strip.width / 2
-    if (strip.kind === 'soil')
-      soil.box(
-        [middle, -terrainDepth / 2, midDepth],
-        [strip.width, terrainDepth, depth]
-      )
-    else {
-      const { points, lipRadius, waterLevel, waterPoints } = createDrainProfile(
-        strip.width
-      )
-      drains.quad(
-        [strip.x + lipRadius, waterLevel, 0],
-        [strip.x + lipRadius, waterLevel, depth],
-        [strip.x + strip.width - lipRadius, waterLevel, depth],
-        [strip.x + strip.width - lipRadius, waterLevel, 0]
-      )
-      for (let i = 1; i < waterPoints.length; i++) {
-        const [ax, ay] = waterPoints[i - 1],
-          [bx, by] = waterPoints[i]
-        const a = strip.x + ax,
-          b = strip.x + bx
-        drains.quad([a, ay, 0], [b, by, 0], [b, by, depth], [a, ay, depth])
-        drains.triangle([middle, waterLevel, 0], [b, by, 0], [a, ay, 0])
-        drains.triangle(
-          [middle, waterLevel, depth],
-          [a, ay, depth],
-          [b, by, depth]
-        )
-      }
-      for (let i = 1; i < points.length; i++) {
-        const [ax, ay] = points[i - 1],
-          [bx, by] = points[i]
-        const a = strip.x + ax,
-          b = strip.x + bx
-        soil.quad([a, ay, 0], [a, ay, depth], [b, by, depth], [b, by, 0])
-        // Close the exposed ends below the curve without filling the channel opening.
-        for (const z of [0, depth])
-          soil.quad(
-            [a, ay, z],
-            [b, by, z],
-            [b, -terrainDepth, z],
-            [a, -terrainDepth, z]
-          )
-      }
-    }
-  }
-  for (const p of passages)
-    builders.passages.box(
-      [p.x + p.width / 2, -terrainDepth / 2, midDepth],
-      [p.width, terrainDepth, depth]
-    )
-  for (const [side, x] of [
-    site.margin / 2,
-    totalWidth - site.margin / 2
-  ].entries()) {
-    builders.passages.box(
-      [x, -terrainDepth / 2, midDepth],
-      [site.margin, terrainDepth, depth]
-    )
+  for (const x of [
+    site.barrierThickness / 2,
+    totalWidth - site.barrierThickness / 2
+  ])
     barriers.box(
-      [
-        side === 0
-          ? site.barrierThickness / 2
-          : totalWidth - site.barrierThickness / 2,
-        site.barrierHeight / 2,
-        midDepth
-      ],
+      [x, site.barrierHeight / 2, midDepth],
       [site.barrierThickness, site.barrierHeight, depth]
     )
-  }
   // Shared overhead U-gutters; they are separate from ground drainage channels.
   for (const x of Array.from(
     { length: site.bays - 1 },
@@ -267,18 +230,121 @@ export function buildSiteMeshes(
     dimensions.box([x, -0.326, -1.2], [0.04, 0.012, 0.55])
   for (let z = 0; z <= depth; z += 5)
     dimensions.box([totalWidth + 1.2, -0.326, z], [0.55, 0.012, 0.04])
-  const plants = createCropPositions(config)
+  return [
+    mesh('barriers', barriers, 0x182623),
+    mesh('steel', steel, 0x8a9c9b),
+    mesh('dimensions', dimensions, 0x326c55),
+    mesh('film', film, 0xf3f5ee, INITIAL_VIEW.filmOpacity)
+  ]
+}
+
+function buildTerrainMeshes(
+  config: FarmConfiguration,
+  geometry: SiteGeometry
+): SiteMesh[] {
+  const site = configurationSite(config)
+  const totalWidth = site.width * site.bays,
+    depth = site.length,
+    middle = totalWidth / 2,
+    midDepth = depth / 2
+  const { strips, passages } = createLayout(site, config.strips)
+  const builders = Object.fromEntries(
+    Object.keys(INITIAL_LAYERS).map((key) => [key, new TriangleBuilder()])
+  ) as Record<LayerId, TriangleBuilder>
+  const { base, soil, drains } = builders
+  const terrainDepth = Math.max(
+    0.35,
+    ...strips
+      .filter((strip) => strip.kind === 'drain')
+      .map((strip) => createDrainProfile(strip.width).depth + 0.05)
+  )
+  const ground = geometry.projection(
+    'base',
+    [site.width, depth, terrainDepth],
+    () => {
+      base.box(
+        [middle, -terrainDepth - 0.13, midDepth],
+        [totalWidth + 6, 0.26, depth + 6]
+      )
+      return [mesh('base', base, 0xc8cebd)]
+    }
+  )
+  for (const strip of strips) {
+    const middle = strip.x + strip.width / 2
+    if (strip.kind === 'soil')
+      soil.box(
+        [middle, -terrainDepth / 2, midDepth],
+        [strip.width, terrainDepth, depth]
+      )
+    else {
+      const { points, lipRadius, waterLevel, waterPoints } = createDrainProfile(
+        strip.width
+      )
+      drains.quad(
+        [strip.x + lipRadius, waterLevel, 0],
+        [strip.x + lipRadius, waterLevel, depth],
+        [strip.x + strip.width - lipRadius, waterLevel, depth],
+        [strip.x + strip.width - lipRadius, waterLevel, 0]
+      )
+      for (let i = 1; i < waterPoints.length; i++) {
+        const [ax, ay] = waterPoints[i - 1],
+          [bx, by] = waterPoints[i]
+        const a = strip.x + ax,
+          b = strip.x + bx
+        drains.quad([a, ay, 0], [b, by, 0], [b, by, depth], [a, ay, depth])
+        drains.triangle([middle, waterLevel, 0], [b, by, 0], [a, ay, 0])
+        drains.triangle(
+          [middle, waterLevel, depth],
+          [a, ay, depth],
+          [b, by, depth]
+        )
+      }
+      for (let i = 1; i < points.length; i++) {
+        const [ax, ay] = points[i - 1],
+          [bx, by] = points[i]
+        const a = strip.x + ax,
+          b = strip.x + bx
+        soil.quad([a, ay, 0], [a, ay, depth], [b, by, depth], [b, by, 0])
+        // Close the exposed ends below the curve without filling the channel opening.
+        for (const z of [0, depth])
+          soil.quad(
+            [a, ay, z],
+            [b, by, z],
+            [b, -terrainDepth, z],
+            [a, -terrainDepth, z]
+          )
+      }
+    }
+  }
+  for (const p of passages)
+    builders.passages.box(
+      [p.x + p.width / 2, -terrainDepth / 2, midDepth],
+      [p.width, terrainDepth, depth]
+    )
+  for (const x of [site.margin / 2, totalWidth - site.margin / 2]) {
+    builders.passages.box(
+      [x, -terrainDepth / 2, midDepth],
+      [site.margin, terrainDepth, depth]
+    )
+  }
+  return [
+    ...ground,
+    ...(soil.positions.length ? [mesh('soil', soil, 0x765437)] : []),
+    ...(drains.positions.length ? [mesh('drains', drains, 0x3d6266, 0.8)] : []),
+    mesh('passages', builders.passages, 0xb2b3a2)
+  ]
+}
+
+function buildCropMeshes(
+  config: FarmConfiguration,
+  geometry: SiteGeometry
+): SiteMesh[] {
+  const groups = geometry.cropInstances(config)
   const crops: SiteMesh[] = []
-  if (plants.length)
+  if (groups.size)
     for (const model of geometry.cropModels(config)) {
-      const selected = plants.filter(
-        (plant) =>
-          plant.species === model.species && plant.variant === model.variant
-      )
-      if (!selected.length) continue
-      const instances = readSpatialInstances(
-        selected.map(({ position, yaw }) => ({ position, yaw }))
-      )
+      const instances = groups.get(`${model.species}-${model.variant}`)
+      if (!instances) continue
       model.parts.forEach((part, index) =>
         crops.push({
           id: `${model.species}-${model.variant}-${index}`,
@@ -309,18 +375,7 @@ export function buildSiteMeshes(
         })
       )
     }
-  return [
-    ...crops,
-    mesh('base', base, 0xc8cebd),
-    ...(soil.positions.length ? [mesh('soil', soil, 0x765437)] : []),
-    ...(drains.positions.length ? [mesh('drains', drains, 0x3d6266, 0.8)] : []),
-    mesh('passages', builders.passages, 0xb2b3a2),
-    mesh('barriers', barriers, 0x182623),
-    mesh('steel', steel, 0x8a9c9b),
-    ...cultivation,
-    mesh('dimensions', dimensions, 0x326c55),
-    mesh('film', film, 0xf3f5ee, INITIAL_VIEW.filmOpacity)
-  ]
+  return crops
 }
 
 export function projectView(
@@ -331,7 +386,7 @@ export function projectView(
     ...item,
     visible: view.layers[item.layer],
     descriptor:
-      item.id === 'film'
+      item.id === 'film' && item.descriptor.opacity !== view.filmOpacity
         ? { ...item.descriptor, opacity: view.filmOpacity }
         : item.descriptor
   }))

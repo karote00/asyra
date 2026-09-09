@@ -25,7 +25,10 @@ export const cameraDistance = (camera: SpatialCamera) =>
   Math.hypot(...difference(camera.position, camera.target))
 
 /** One scan of admitted site geometry at startup, reused by every fit command. */
-export function measureScene(meshes: SpatialFrame['meshes']): SceneBounds {
+export function measureScene(
+  meshes: SpatialFrame['meshes'],
+  localBounds = new WeakMap<object, SceneBounds>()
+): SceneBounds {
   const min: [number, number, number] = [Infinity, Infinity, Infinity]
   const max: [number, number, number] = [-Infinity, -Infinity, -Infinity]
   for (const mesh of meshes) {
@@ -35,14 +38,21 @@ export function measureScene(meshes: SpatialFrame['meshes']): SceneBounds {
       rotation.some((value, i) => value !== [0, 0, 0, 1][i])
     )
       throw new Error('Site bounds require unrotated triangle geometry')
-    const localMin = [Infinity, Infinity, Infinity]
-    const localMax = [-Infinity, -Infinity, -Infinity]
-    for (let i = 0; i < shape.positions.length; i++) {
-      const axis = i % 3
-      const value = shape.positions[i]
-      localMin[axis] = Math.min(localMin[axis], value)
-      localMax[axis] = Math.max(localMax[axis], value)
+    const immutable = Object.isFrozen(shape) && Object.isFrozen(shape.positions)
+    let bounds = immutable ? localBounds.get(shape) : undefined
+    if (!bounds) {
+      const min: [number, number, number] = [Infinity, Infinity, Infinity]
+      const max: [number, number, number] = [-Infinity, -Infinity, -Infinity]
+      for (let i = 0; i < shape.positions.length; i++) {
+        const axis = i % 3
+        const value = shape.positions[i]
+        min[axis] = Math.min(min[axis], value)
+        max[axis] = Math.max(max[axis], value)
+      }
+      bounds = { min, max }
+      if (immutable) localBounds.set(shape, bounds)
     }
+    const { min: localMin, max: localMax } = bounds
     const instances = mesh.descriptor.instances ?? [
       { position: [0, 0, 0], yaw: 0 }
     ]

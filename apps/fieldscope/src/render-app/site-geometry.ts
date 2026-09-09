@@ -1,6 +1,13 @@
+import { createCropPositions } from '../domain/crop-layout'
+import type { SiteMesh } from './site-projection'
 import { createCropModels, type CropModel } from '../domain/crop-models'
 import type { FarmConfiguration } from '../domain/farm-configuration'
-import { readSpatialShape, type SpatialShape } from '../engine/spatial-contract'
+import {
+  readSpatialShape,
+  readSpatialInstances,
+  type SpatialInstance,
+  type SpatialShape
+} from '../engine/spatial-contract'
 
 interface CropGeometry {
   species: CropModel['species']
@@ -16,6 +23,68 @@ interface CropGeometry {
 
 /** Runtime-owned admitted geometry. Placement never contributes to this key. */
 export class SiteGeometry {
+  private planting?: {
+    key: readonly (string | number)[]
+    groups: Map<string, readonly SpatialInstance[]>
+  }
+
+  cropInstances(config: FarmConfiguration) {
+    const key = [
+      config.width,
+      config.length,
+      config.soilInset,
+      config.startInset,
+      config.endInset,
+      ...config.strips.flatMap(({ kind, width }) => [kind, width])
+    ]
+    const previous = this.planting
+    if (
+      previous &&
+      previous.key.length === key.length &&
+      key.every((value, i) => value === previous.key[i])
+    )
+      return previous.groups
+    const groups = new Map<string, SpatialInstance[]>()
+    for (const { species, variant, position, yaw } of createCropPositions(
+      config
+    )) {
+      const id = `${species}-${variant}`
+      const group = groups.get(id) ?? []
+      group.push({ position, yaw })
+      groups.set(id, group)
+    }
+    const admitted = new Map(
+      [...groups].map(([id, instances]) => [
+        id,
+        readSpatialInstances(instances)
+      ])
+    )
+    this.planting = { key, groups: admitted }
+    return admitted
+  }
+
+  private projections = new Map<
+    'base' | 'envelope' | 'terrain' | 'cultivation' | 'crops',
+    { key: readonly (number | string)[]; meshes: SiteMesh[] }
+  >()
+
+  projection(
+    group: 'base' | 'envelope' | 'terrain' | 'cultivation' | 'crops',
+    key: readonly (number | string)[],
+    produce: () => SiteMesh[]
+  ) {
+    const previous = this.projections.get(group)
+    if (
+      previous &&
+      previous.key.length === key.length &&
+      key.every((value, i) => value === previous.key[i])
+    )
+      return previous.meshes
+    const meshes = produce()
+    this.projections.set(group, { key: [...key], meshes })
+    return meshes
+  }
+
   private primitives = new Map<string, SpatialShape>()
 
   primitive(key: string, produce: () => SpatialShape) {
@@ -55,6 +124,8 @@ export class SiteGeometry {
   }
 
   clear() {
+    this.planting = undefined
+    this.projections.clear()
     this.crops = []
     this.primitives.clear()
   }

@@ -43,6 +43,7 @@ export class SpatialLayer {
   readonly registration: RenderLayerRegistration
   private readonly layer = new RenderContainer()
   private readonly meshes = new Map<string, RenderMesh>()
+  private readonly applied = new Map<string, SpatialMesh>()
   private camera: CameraProjection | null = null
   private pending: SpatialFrame | null = null
   private pendingCamera: SpatialCamera | null = null
@@ -105,6 +106,7 @@ export class SpatialLayer {
     this.pendingCamera = null
     this.meshes.forEach((mesh) => mesh.destroy())
     this.meshes.clear()
+    this.applied.clear()
     this.camera?.destroy()
     this.camera = null
     this.layer.destroy()
@@ -125,6 +127,7 @@ export class SpatialLayer {
       if (!ids.has(id)) {
         mesh.destroy()
         this.meshes.delete(id)
+        this.applied.delete(id)
       }
     }
     for (const item of frame.meshes) {
@@ -134,9 +137,12 @@ export class SpatialLayer {
         mesh.label = item.elementId ?? item.id
         this.layer.addChild(mesh)
         this.meshes.set(item.id, mesh)
-      } else mesh.update({ [SPATIAL_PROPERTY]: item.descriptor })
-      mesh.label = item.elementId ?? item.id
-      mesh.visible = item.visible
+      } else if (this.applied.get(item.id) !== item.descriptor)
+        mesh.update({ [SPATIAL_PROPERTY]: item.descriptor })
+      this.applied.set(item.id, item.descriptor)
+      const label = item.elementId ?? item.id
+      if (mesh.label !== label) mesh.label = label
+      if (mesh.visible !== item.visible) mesh.visible = item.visible
     }
     this.pending = null
     return true

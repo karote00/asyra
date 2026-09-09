@@ -155,3 +155,56 @@ it('matches explicit box corners for arbitrary instance yaw and translations', (
     )
   }
 })
+
+it('reuses immutable model extrema across placement edits while invalidating changed geometry', () => {
+  let reads = 0
+  const positions = new Proxy(Object.freeze([0, 0, 0, 2, 0, 0, 0, 1, 3]), {
+    get(target, key, receiver) {
+      if (typeof key === 'string' && /^\d+$/.test(key)) reads++
+      return Reflect.get(target, key, receiver)
+    }
+  })
+  const mesh = {
+    id: 'bounds',
+    visible: true,
+    descriptor: {
+      kind: 'mesh' as const,
+      position: [0, 0, 0] as const,
+      rotation: [0, 0, 0, 1] as const,
+      shape: Object.freeze({
+        kind: 'triangles' as const,
+        positions,
+        indices: [0, 1, 2]
+      }),
+      color: 0,
+      opacity: 1,
+      wireframe: false,
+      selectable: false
+    }
+  }
+  const cache = new WeakMap()
+  measureScene([mesh], cache)
+  expect(reads).toBe(9)
+  const moved = {
+    ...mesh,
+    descriptor: { ...mesh.descriptor, position: [4, 0, 0] as const }
+  }
+  expect(measureScene([moved], cache)).toEqual({
+    min: [4, 0, 0],
+    max: [6, 1, 3]
+  })
+  expect(reads).toBe(9)
+  const resized = {
+    ...moved,
+    descriptor: {
+      ...moved.descriptor,
+      shape: {
+        ...mesh.descriptor.shape,
+        positions: [0, 0, 0, 8, 0, 0, 0, 1, 3]
+      }
+    }
+  }
+  expect(measureScene([resized], cache)).toEqual(measureScene([resized]))
+  resized.descriptor.shape.positions[3] = 10
+  expect(measureScene([resized], cache).max[0]).toBe(14)
+})
