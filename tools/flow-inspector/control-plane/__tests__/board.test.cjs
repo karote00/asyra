@@ -2153,6 +2153,30 @@ test(
     assert.equal(review.preview.attemptId, task.attempts.at(-1).id)
     assert.equal(review.preview.repository, process.env.FLOW_REVIEW_REPOSITORY)
     assert.ok(review.observation.number > 0)
+    if (process.env.FLOW_LIVE_REVIEW_REQUIRE_PASSED === '1') {
+      assert.equal(review.preview.metadata.validation.status, 'passed')
+      assert.equal(review.preview.metadata.packageName, '@asyra/factory')
+      assert.equal(review.observation.stale, false)
+      assert.equal(review.observation.matchesCandidate, true)
+      assert.equal(review.observation.checks.status, 'passed')
+      assert.equal(
+        review.observation.checks.headSha,
+        review.observation.headSha
+      )
+      assert.ok(review.observation.checks.items.length > 0)
+      assert.ok(
+        review.observation.checks.items.every(
+          (item) => item.status === 'completed' && item.conclusion === 'success'
+        )
+      )
+      assert.equal(task.verificationStatus, 'passed')
+      assert.equal(task.attempts.at(-1).verdict.evidence.cases.length, 6)
+      assert.ok(
+        task.attempts
+          .at(-1)
+          .verdict.evidence.cases.every((item) => item.status === 'passed')
+      )
+    }
     assert.match(review.observation.url, /^https:\/\/github.com\//)
     const lines = []
     assert.equal(
@@ -2214,6 +2238,15 @@ test(
         await page.screenshot({
           path: path.join(artifacts, name + '-status.png')
         })
+        if (review.preview.metadata) {
+          await expect(canvas.locator('#pr-metadata')).toContainText(
+            review.preview.metadata.content.trim()
+          )
+          await canvas.locator('#pr-metadata').scrollIntoViewIfNeeded()
+          await page.screenshot({
+            path: path.join(artifacts, name + '-metadata.png')
+          })
+        }
         await canvas.locator('#pr-source-diff').scrollIntoViewIfNeeded()
         await page.screenshot({
           path: path.join(artifacts, name + '-source.png')
