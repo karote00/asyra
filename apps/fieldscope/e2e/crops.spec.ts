@@ -19,7 +19,7 @@ for (const [species, rootX] of [
       .click()
     await page.getByLabel('塑膠覆膜', { exact: true }).uncheck()
     const layer = page.getByLabel(
-      species === 'cucumber' ? '1914 cucumber' : 'Yu-Nu cherry tomato',
+      species === 'cucumber' ? '1914 小胡瓜' : '玉女小蕃茄',
       { exact: true }
     )
     await expect(layer).toBeChecked()

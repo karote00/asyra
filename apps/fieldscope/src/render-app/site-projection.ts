@@ -36,8 +36,8 @@ export type LayerId =
   | 'dimensions'
   | 'base'
 export const LAYER_LABELS: Record<Exclude<LayerId, 'base'>, string> = {
-  cucumbers: '1914 cucumber',
-  tomatoes: 'Yu-Nu cherry tomato',
+  cucumbers: '1914 小胡瓜',
+  tomatoes: '玉女小蕃茄',
   net: '攀爬拉網',
   ties: '網頂束帶',
   supports: '栽培鋼管',
