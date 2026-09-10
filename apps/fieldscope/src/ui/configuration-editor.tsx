@@ -65,14 +65,20 @@ const fields: [Exclude<keyof FarmConfiguration, 'strips'>, string, string][] = [
 function MeasurementInput({
   value,
   label,
-  onCommit
+  onCommit,
+  onHistory
 }: {
   value: number
   label: string
   onCommit: (value: number) => Promise<boolean>
+  onHistory: (redo: boolean) => Promise<boolean>
 }) {
   const [text, setText] = useState(String(value))
-  useEffect(() => setText(String(value)), [value])
+  const editing = useRef(false)
+  useEffect(() => {
+    editing.current = false
+    setText(String(value))
+  }, [value])
   return (
     <span className="measurement-field h-7 w-24">
       <input
@@ -81,9 +87,28 @@ function MeasurementInput({
         type="number"
         step="any"
         value={text}
-        onChange={(event) => setText(event.target.value)}
+        onChange={(event) => {
+          editing.current = true
+          setText(event.target.value)
+        }}
         onFocus={(event) => event.currentTarget.select()}
         onKeyDown={(event) => {
+          // A settled numeric field belongs to document history. Unfinished
+          // text keeps the browser's native text-edit Undo/Redo behavior.
+          if (
+            (event.metaKey || event.ctrlKey) &&
+            !event.altKey &&
+            !event.repeat &&
+            event.code === 'KeyZ' &&
+            !editing.current &&
+            text !== '' &&
+            Number(text) === value
+          ) {
+            event.preventDefault()
+            event.stopPropagation()
+            void onHistory(event.shiftKey)
+            return
+          }
           if (event.key === 'Enter') {
             event.preventDefault()
             event.currentTarget.blur()
@@ -95,6 +120,7 @@ function MeasurementInput({
           }
         }}
         onBlur={(event) => {
+          editing.current = false
           const next = event.currentTarget.value
           if (next === '') {
             setText(String(value))
@@ -136,6 +162,7 @@ export function ConfigurationEditor({ runtime }: { runtime: FarmRuntime }) {
     queue.current = result
     return result
   }
+  const replay = (redo: boolean) => act(redo ? runtime.redo : runtime.undo)
   const update = (patch: (current: FarmConfiguration) => FarmConfiguration) =>
     act(() => runtime.setConfiguration(patch(runtime.getConfiguration())))
   const reorder = (index: number, delta: number) =>
@@ -179,6 +206,7 @@ export function ConfigurationEditor({ runtime }: { runtime: FarmRuntime }) {
           <label className="flex min-h-9 items-center justify-between gap-2 text-xs text-[#50664f]">
             <span>{label}</span>
             <MeasurementInput
+              onHistory={replay}
               value={key === 'eaveHeight' ? site.eave : config[key]}
               label={accessibleLabel}
               onCommit={(value) =>
@@ -206,6 +234,7 @@ export function ConfigurationEditor({ runtime }: { runtime: FarmRuntime }) {
       <label className="mb-2 flex min-h-9 items-center justify-between gap-2 text-xs text-[#50664f]">
         <span>兩側各留</span>
         <MeasurementInput
+          onHistory={replay}
           value={Number(site.margin.toFixed(6))}
           label="兩側各留"
           onCommit={(margin) =>
@@ -246,6 +275,7 @@ export function ConfigurationEditor({ runtime }: { runtime: FarmRuntime }) {
             </select>
             <div className="[&>.measurement-field]:w-full">
               <MeasurementInput
+                onHistory={replay}
                 value={strip.width}
                 label={`第 ${i + 1} 項寬度`}
                 onCommit={(width) =>

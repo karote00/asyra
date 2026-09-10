@@ -222,6 +222,25 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
           })
           return result
         }
+        const renderedInstances = () => {
+          const result: string[] = []
+          vi.mocked(driver.render).mock.calls[0]?.[0].traverse((object) => {
+            if (object instanceof InstancedMesh)
+              result.push(
+                JSON.stringify([
+                  object.geometry.uuid,
+                  object.count,
+                  object.matrixWorld.elements,
+                  Array.from(object.instanceMatrix.array).slice(
+                    0,
+                    object.count * 16
+                  )
+                ])
+              )
+          })
+          return result.sort().join('\n')
+        }
+        const originalRendered = renderedInstances()
         const originalGpu = gpuGeometries()
         expect(originalGpu.size).toBeGreaterThan(0)
         updates.mockClear()
@@ -298,10 +317,14 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
             .toBe(true)
         }
 
+        const changedRendered = renderedInstances()
+        expect(changedRendered === originalRendered).toBe(false)
         await runtime.undo()
         flush()
+        expect(renderedInstances() === originalRendered).toBe(true)
         await runtime.redo()
         flush()
+        expect(renderedInstances() === changedRendered).toBe(true)
         expect(runtime.getConfiguration()).toEqual(changed)
         expect.soft(cropBuild).toHaveBeenCalledTimes(1)
       } else {
