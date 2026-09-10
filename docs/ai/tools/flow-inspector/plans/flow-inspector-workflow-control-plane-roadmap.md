@@ -512,3 +512,16 @@ access. This closes the source-only candidate Changeset gap for the supported
 case. Historical failures and unresolved provider evidence remain intact.
 Full Phase 5/6, protected verification, required-check protection, provider
 reconciliation, ticket/team/hosting and standalone dynamic service remain deferred.
+
+## Multi-PR flow development direction - 2026-09-10
+
+The user approved recording [multi-PR development and integration acceptance](flow-inspector-multi-pr-development-and-integration-plan.md)
+as a separate planned architecture change. A flow is a lasting product contract,
+while tasks and PRs divide its implementation. Both accepted behavior and
+in-development promises participate in CI; their assessments and full-flow
+completion remain distinct. Green results from unrelated PR heads cannot certify
+an integrated revision. Explicit baseline acceptance requires complete evidence
+on the same integrated source. This supersedes any interpretation of the bounded
+single-candidate trial as a permanent one-flow/one-PR product constraint, not its
+implemented per-attempt delivery identity. Implementation is not started; current
+contracts, completed records and deferred enforcement remain unchanged.

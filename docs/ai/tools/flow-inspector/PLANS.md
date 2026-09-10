@@ -8,6 +8,15 @@ implementation steps and executable flow contracts to manage human and AI
 development risk. Open-source usefulness, reproducibility, and controlled
 delegation are the success criteria.
 
+## Planned Architecture Direction
+
+- [Flow Development Across Multiple PRs](plans/flow-inspector-multi-pr-development-and-integration-plan.md)
+  - Direction approved 2026-09-10; implementation not started.
+  - Separate persistent flow contracts from task/PR delivery. Verify developing
+    work from the start, preserve accepted behavior, and require one complete
+    integration result before explicit baseline acceptance.
+  - Exact product/Inspector contracts and formal cases must precede implementation.
+
 ## Deferred Follow-up
 
 1. [Contract Verification and CI Plan](plans/flow-inspector-control-plane-evidence-and-ci-plan.md)
