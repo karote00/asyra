@@ -250,6 +250,22 @@ function SceneWorkspace({
     id: number
     button: number
   } | null>(null)
+  const touches = useRef(new Map<number, { x: number; y: number }>())
+  useEffect(() => {
+    const clear = () => {
+      touches.current.clear()
+      previous.current = null
+    }
+    window.addEventListener('blur', clear)
+    return () => {
+      window.removeEventListener('blur', clear)
+      clear()
+    }
+  }, [])
+  const releasePointer = (event: { pointerId: number }) => {
+    touches.current.delete(event.pointerId)
+    if (previous.current?.id === event.pointerId) previous.current = null
+  }
   return (
     <div
       className="scene-workspace"
@@ -332,6 +348,15 @@ function SceneWorkspace({
             event.preventDefault()
             event.currentTarget.focus({ preventScroll: true })
             event.currentTarget.setPointerCapture(event.pointerId)
+            if (event.pointerType === 'touch') {
+              previous.current = null
+              touches.current.set(event.pointerId, {
+                x: event.clientX,
+                y: event.clientY
+              })
+              return
+            }
+            if (touches.current.size) return
             previous.current = {
               x: event.clientX,
               y: event.clientY,
@@ -340,6 +365,33 @@ function SceneWorkspace({
             }
           }}
           onPointerMove={(event) => {
+            if (event.pointerType === 'touch') {
+              const points = touches.current
+              const old = points.get(event.pointerId)
+              if (!old) return
+              const before = [...points.values()]
+              points.set(event.pointerId, {
+                x: event.clientX,
+                y: event.clientY
+              })
+              if (!runtime) return
+              if (points.size === 1) {
+                runtime.look(event.clientX - old.x, event.clientY - old.y)
+              } else if (points.size === 2) {
+                const after = [...points.values()]
+                runtime.pan(
+                  (event.clientX - old.x) / 2,
+                  (event.clientY - old.y) / 2
+                )
+                const distance = (pair: { x: number; y: number }[]) =>
+                  Math.hypot(pair[1].x - pair[0].x, pair[1].y - pair[0].y)
+                const from = distance(before)
+                const to = distance(after)
+                if (from > 1 && to > 1 && from !== to)
+                  runtime.dolly(-1000 * Math.log(to / from))
+              }
+              return
+            }
             const p = previous.current
             if (!p || p.id !== event.pointerId || !runtime) return
             if (p.button === 2)
@@ -350,15 +402,9 @@ function SceneWorkspace({
             previous.current = { ...p, x: event.clientX, y: event.clientY }
           }}
           onContextMenu={(event) => event.preventDefault()}
-          onPointerUp={() => {
-            previous.current = null
-          }}
-          onPointerCancel={() => {
-            previous.current = null
-          }}
-          onLostPointerCapture={() => {
-            previous.current = null
-          }}
+          onPointerUp={releasePointer}
+          onPointerCancel={releasePointer}
+          onLostPointerCapture={releasePointer}
         />
         {!runtime && !error && (
           <div className="absolute inset-0 flex items-center justify-center text-sm text-[#75836e]">
@@ -374,7 +420,12 @@ function SceneWorkspace({
           </div>
         )}
         <div className="pointer-events-none absolute bottom-5 left-5 max-w-[calc(100%-10rem)] text-[10px] text-[#7b8873]">
-          拖曳轉向 - Shift 拖曳平移 - WASD 移動 - Q/E 升降
+          <span className="camera-desktop-hint">
+            拖曳轉向 - Shift 拖曳平移 - WASD 移動 - Q/E 升降
+          </span>
+          <span className="camera-touch-hint">
+            單指轉向 - 雙指平移 - 捏合前後移動
+          </span>
         </div>
         <div className="pointer-events-none absolute bottom-5 right-5 flex items-center gap-2 rounded-full bg-white/60 px-3 py-1 text-[10px] text-[#607350]">
           <span className="h-1.5 w-1.5 rounded-full bg-[#819c4d]" />

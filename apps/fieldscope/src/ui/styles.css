@@ -151,3 +151,15 @@ canvas {
 button:disabled {
   cursor: default;
 }
+
+.camera-touch-hint {
+  display: none;
+}
+@media (pointer: coarse), (max-width: 767px) {
+  .camera-desktop-hint {
+    display: none;
+  }
+  .camera-touch-hint {
+    display: inline;
+  }
+}
