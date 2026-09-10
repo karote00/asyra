@@ -1,3 +1,4 @@
+import { useTranslation, localizeError } from './i18n/locale'
 import {
   createContext,
   useContext,
@@ -49,17 +50,17 @@ function StripActionIcon({ kind }: { kind: 'up' | 'down' | 'remove' }) {
   )
 }
 
-const fields: [Exclude<keyof FarmConfiguration, 'strips'>, string, string][] = [
-  ['length', '縱向深度', '溫室縱向深度'],
-  ['width', '單棟寬度', '單棟寬度'],
-  ['height', '總高度', '溫室總高度'],
-  ['eaveHeight', '橫樑高度', '橫樑高度'],
-  ['soilInset', '距水道邊緣', '鋼管距水道邊緣'],
-  ['startInset', '前端留白', '鋼管前端留白'],
-  ['endInset', '尾端留白', '鋼管尾端留白'],
-  ['topExtension', '超出橫樑', '鋼管超出橫樑'],
-  ['netTop', '頂部高度', '拉網最高位置'],
-  ['netBottom', '底部高度', '拉網最低位置']
+const fields: Exclude<keyof FarmConfiguration, 'strips'>[] = [
+  'length',
+  'width',
+  'height',
+  'eaveHeight',
+  'soilInset',
+  'startInset',
+  'endInset',
+  'topExtension',
+  'netTop',
+  'netBottom'
 ]
 
 function MeasurementInput({
@@ -73,6 +74,7 @@ function MeasurementInput({
   onCommit: (value: number) => Promise<boolean>
   onHistory: (redo: boolean) => Promise<boolean>
 }) {
+  const { t } = useTranslation()
   const [text, setText] = useState(String(value))
   const editing = useRef(false)
   useEffect(() => {
@@ -80,10 +82,10 @@ function MeasurementInput({
     setText(String(value))
   }, [value])
   return (
-    <span className="measurement-field h-7 w-24">
+    <span className="measurement-field h-7 w-24 shrink-0">
       <input
         aria-label={label}
-        aria-description="單位：公尺"
+        aria-description={t('editor.unit')}
         type="number"
         step="any"
         value={text}
@@ -139,23 +141,24 @@ function MeasurementInput({
 }
 
 export function ConfigurationEditor({ runtime }: { runtime: FarmRuntime }) {
+  const { t } = useTranslation()
   const config = useSyncExternalStore(
     runtime.subscribeConfiguration,
     runtime.getConfiguration
   )
   const site = configurationSite(config)
-  const [error, setError] = useState('')
+  const [error, setError] = useState<unknown>(null)
   // Resolve patches against canonical state when their turn runs, including blur
   // immediately followed by another field or strip action.
   const queue = useRef<Promise<unknown>>(Promise.resolve())
   const act = (action: () => Promise<unknown>): Promise<boolean> => {
     const result = queue.current.then(async () => {
-      setError('')
+      setError(null)
       try {
         await action()
         return true
       } catch (e) {
-        setError(e instanceof Error ? e.message : String(e))
+        setError(e)
         return false
       }
     })
@@ -175,9 +178,9 @@ export function ConfigurationEditor({ runtime }: { runtime: FarmRuntime }) {
       return { ...current, strips }
     })
   return (
-    <section className="bg-[#fafbf7] p-3" aria-label="場景設定">
-      <div className="mb-3 flex items-center justify-between gap-2">
-        <h2 className="text-xs font-semibold">場景設定</h2>
+    <section className="bg-[#fafbf7] p-3" aria-label={t('editor.heading')}>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-xs font-semibold">{t('editor.heading')}</h2>
         <div className="flex gap-1">
           <button
             type="button"
@@ -185,30 +188,36 @@ export function ConfigurationEditor({ runtime }: { runtime: FarmRuntime }) {
             onClick={() => void act(runtime.undo)}
             className="rounded px-2 py-1.5 text-xs hover:bg-[#edf1e8] disabled:opacity-40"
           >
-            復原 ⌘Z
+            {t('editor.undo')}
           </button>
           <button
             type="button"
             onClick={() => void act(runtime.redo)}
             className="rounded px-2 py-1.5 text-xs hover:bg-[#edf1e8]"
           >
-            重做 ⇧⌘Z
+            {t('editor.redo')}
           </button>
         </div>
       </div>
-      {fields.map(([key, label, accessibleLabel], index) => (
+      {fields.map((key, index) => (
         <div key={key}>
           {index === 0 || index === 4 || index === 8 ? (
             <h3 className="mb-1 mt-3 border-t border-[#d9dfd2] pt-3 text-xs font-semibold">
-              {{ 0: '溫室', 4: '鋼管', 8: '拉網' }[index]}
+              {
+                {
+                  0: t('editor.greenhouse'),
+                  4: t('editor.poles'),
+                  8: t('editor.net')
+                }[index]
+              }
             </h3>
           ) : null}
           <label className="flex min-h-9 items-center justify-between gap-2 text-xs text-[#50664f]">
-            <span>{label}</span>
+            <span>{t(`field.${key}`)}</span>
             <MeasurementInput
               onHistory={replay}
               value={key === 'eaveHeight' ? site.eave : config[key]}
-              label={accessibleLabel}
+              label={t(`field.${key}Label`)}
               onCommit={(value) =>
                 update((current) => ({ ...current, [key]: value }))
               }
@@ -216,8 +225,8 @@ export function ConfigurationEditor({ runtime }: { runtime: FarmRuntime }) {
           </label>
         </div>
       ))}
-      <div className="mb-2 mt-3 flex items-center justify-between border-t border-[#d9dfd2] pt-3">
-        <h3 className="text-xs font-semibold">畦溝 - 由左至右</h3>
+      <div className="mb-2 mt-3 flex flex-wrap gap-2 items-center justify-between border-t border-[#d9dfd2] pt-3">
+        <h3 className="text-xs font-semibold">{t('editor.strips')}</h3>
         <button
           type="button"
           onClick={() =>
@@ -228,15 +237,15 @@ export function ConfigurationEditor({ runtime }: { runtime: FarmRuntime }) {
           }
           className="rounded px-2 py-1 text-xs hover:bg-[#edf1e8]"
         >
-          新增項目
+          {t('editor.add')}
         </button>
       </div>
       <label className="mb-2 flex min-h-9 items-center justify-between gap-2 text-xs text-[#50664f]">
-        <span>兩側各留</span>
+        <span>{t('editor.margin')}</span>
         <MeasurementInput
           onHistory={replay}
           value={Number(site.margin.toFixed(6))}
-          label="兩側各留"
+          label={t('editor.margin')}
           onCommit={(margin) =>
             update((current) => ({
               ...current,
@@ -251,13 +260,13 @@ export function ConfigurationEditor({ runtime }: { runtime: FarmRuntime }) {
         {config.strips.map((strip, i) => (
           <div
             key={i}
-            className="grid grid-cols-[1rem_minmax(0,1fr)_4.5rem_6rem] items-center gap-1 rounded bg-[#edf1e8] px-1 py-0.5"
+            className="grid grid-cols-[0.75rem_minmax(3.5rem,1fr)_4.25rem_6rem] items-center gap-1 rounded bg-[#edf1e8] px-1 py-0.5"
           >
             <span className="text-center text-[10px] text-[#718268]">
               {i + 1}
             </span>
             <select
-              aria-label={`第 ${i + 1} 項種類`}
+              aria-label={t('editor.stripKind', { index: i + 1 })}
               value={strip.kind}
               onChange={(event) => {
                 const kind = event.target.value as 'soil' | 'drain'
@@ -270,14 +279,14 @@ export function ConfigurationEditor({ runtime }: { runtime: FarmRuntime }) {
               }}
               className="h-7 min-w-0 rounded border border-[#d4dccd] bg-white text-xs"
             >
-              <option value="soil">土壤</option>
-              <option value="drain">水道</option>
+              <option value="soil">{t('editor.soil')}</option>
+              <option value="drain">{t('editor.drain')}</option>
             </select>
             <div className="[&>.measurement-field]:w-full">
               <MeasurementInput
                 onHistory={replay}
                 value={strip.width}
-                label={`第 ${i + 1} 項寬度`}
+                label={t('editor.stripWidth', { index: i + 1 })}
                 onCommit={(width) =>
                   update((current) => ({
                     ...current,
@@ -291,7 +300,7 @@ export function ConfigurationEditor({ runtime }: { runtime: FarmRuntime }) {
             <div className="flex items-center">
               <button
                 type="button"
-                aria-label={`Move strip ${i + 1} up`}
+                aria-label={t('editor.moveUp', { index: i + 1 })}
                 disabled={i === 0}
                 onClick={() => void reorder(i, -1)}
                 className="flex h-8 w-8 items-center justify-center rounded text-[#59694c] hover:bg-white disabled:opacity-30"
@@ -300,7 +309,7 @@ export function ConfigurationEditor({ runtime }: { runtime: FarmRuntime }) {
               </button>
               <button
                 type="button"
-                aria-label={`Move strip ${i + 1} down`}
+                aria-label={t('editor.moveDown', { index: i + 1 })}
                 disabled={i === config.strips.length - 1}
                 onClick={() => void reorder(i, 1)}
                 className="flex h-8 w-8 items-center justify-center rounded text-[#59694c] hover:bg-white disabled:opacity-30"
@@ -309,7 +318,7 @@ export function ConfigurationEditor({ runtime }: { runtime: FarmRuntime }) {
               </button>
               <button
                 type="button"
-                aria-label={`Remove strip ${i + 1}`}
+                aria-label={t('editor.remove', { index: i + 1 })}
                 disabled={config.strips.length === 1}
                 onClick={() =>
                   void update((current) => ({
@@ -325,12 +334,12 @@ export function ConfigurationEditor({ runtime }: { runtime: FarmRuntime }) {
           </div>
         ))}
       </div>
-      {error && (
+      {Boolean(error) && (
         <p
           role="alert"
           className="sticky bottom-0 mt-2 rounded bg-red-50 p-2 text-xs text-red-700"
         >
-          {error}
+          {localizeError(error, t)}
         </p>
       )}
     </section>

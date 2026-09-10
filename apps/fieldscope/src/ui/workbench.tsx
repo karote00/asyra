@@ -1,3 +1,4 @@
+import { LanguageSelector, useTranslation, localizeError } from './i18n/locale'
 import { useCameraFlight } from './use-camera-flight'
 import {
   ConfigurationRuntime,
@@ -9,21 +10,18 @@ import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { bootstrap, type FarmRuntime } from '../runtime/bootstrap'
 import { createLayout } from '../domain/greenhouse'
 import { createDrainProfile } from '../domain/drain-profile'
-import {
-  LAYER_LABELS,
-  type CameraMode,
-  type LayerId
-} from '../render-app/site-projection'
+import { type CameraMode, type LayerId } from '../render-app/site-projection'
 
-const CAMERA_LABELS: Record<CameraMode, string> = {
-  overview: '透視',
-  top: '俯視',
-  front: '端面',
-  inside: '走道內部',
-  joint: '夾具近看'
-}
+const CAMERA_MODES: CameraMode[] = [
+  'overview',
+  'top',
+  'front',
+  'inside',
+  'joint'
+]
 
 function Brand() {
+  const { t } = useTranslation()
   return (
     <div className="flex items-center gap-3">
       <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#254e3d] text-[#d9e9aa]">
@@ -43,10 +41,10 @@ function Brand() {
       </div>
       <div>
         <div className="text-lg font-semibold tracking-tight">
-          田巡 <span className="font-normal">FieldScope</span>
+          {t('app.brand')}
         </div>
         <div className="text-[10px] tracking-[0.19em] text-[#7a8779]">
-          FARM ROBOTICS WORKSPACE
+          {t('app.tagline')}
         </div>
       </div>
     </div>
@@ -54,20 +52,24 @@ function Brand() {
 }
 
 export function Workbench() {
+  const { t } = useTranslation()
   const [runtime, setRuntime] = useState<FarmRuntime | null>(null)
   return (
     <ConfigurationRuntime.Provider value={runtime}>
       <div className="min-h-screen">
         <header className="flex min-h-20 flex-wrap items-center justify-between gap-4 border-b border-[#dce1d6] bg-[#fafbf7] px-5 py-4 lg:px-8">
           <Brand />
-          <div className="flex items-center gap-7 text-sm">
-            <span className="font-medium text-[#305d44]">溫室工作站</span>
+          <div className="flex flex-wrap items-center gap-3 text-sm">
+            <span className="font-medium text-[#305d44]">
+              {t('app.workspace')}
+            </span>
             <ReferenceLibrary />
+            <LanguageSelector />
             <span className="hidden text-[#8d968d] sm:inline">
-              採收機器人監控
+              {t('app.monitoring')}
             </span>
             <span className="rounded-full border border-[#dce4cf] bg-[#edf2e5] px-3 py-1 text-xs text-[#62764e]">
-              場景建置階段
+              {t('app.phase')}
             </span>
           </div>
         </header>
@@ -75,13 +77,13 @@ export function Workbench() {
           <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
             <div>
               <div className="mb-2 text-[10px] font-medium tracking-[0.22em] text-[#8b9884]">
-                FIELD ENVIRONMENT / 01
+                {t('app.environment')}
               </div>
               <h1 className="text-2xl font-semibold tracking-tight">
-                從一座溫室，開始理解採收。
+                {t('app.heading')}
               </h1>
               <p className="mt-2 text-sm text-[#818b7d]">
-                四連棟塑膠布溫室的空間原型，為未來每一次採收建立共同座標。
+                {t('app.description')}
               </p>
             </div>
             <div className="flex gap-6 text-right">
@@ -93,8 +95,8 @@ export function Workbench() {
             <CrossSection />
           </div>
           <footer className="mt-5 flex flex-wrap justify-between gap-2 text-[11px] text-[#8b9487]">
-            <span>田巡 FieldScope - 以真實尺度，建立採收的下一步。</span>
-            <span>Asyra + Three.js - 公尺座標</span>
+            <span>{t('app.footer')}</span>
+            <span>{t('app.engine')}</span>
           </footer>
         </main>
       </div>
@@ -102,16 +104,21 @@ export function Workbench() {
   )
 }
 function FarmMetrics() {
+  const { t, locale } = useTranslation()
   const config = useFarmConfiguration()
   return (
     <>
       <Metric
-        value={(config.width * 4 * config.length).toLocaleString()}
+        value={(config.width * 4 * config.length).toLocaleString(locale)}
         unit="m²"
-        label="溫室占地"
+        label={t('metric.area')}
       />
-      <Metric value="4" unit="棟" label="相連溫室" />
-      <Metric value={config.height.toFixed(1)} unit="m" label="圓拱最高點" />
+      <Metric value="4" unit={t('metric.bayUnit')} label={t('metric.bays')} />
+      <Metric
+        value={config.height.toFixed(1)}
+        unit="m"
+        label={t('metric.height')}
+      />
     </>
   )
 }
@@ -149,9 +156,10 @@ function SceneWorkspace({
 }: {
   onReady: (runtime: FarmRuntime) => void
 }) {
+  const { t } = useTranslation()
   const host = useRef<HTMLDivElement>(null)
   const [runtime, setRuntime] = useState<FarmRuntime | null>(null)
-  const [error, setError] = useState('')
+  const [error, setError] = useState<unknown>(null)
   const [leftOpen, setLeftOpen] = useState(() => window.innerWidth >= 1100)
   const [rightOpen, setRightOpen] = useState(() => window.innerWidth >= 1100)
   useEffect(() => {
@@ -180,7 +188,7 @@ function SceneWorkspace({
         onReady(value)
       })
       .catch((e) => {
-        if (!retired) setError(String(e))
+        if (!retired) setError(e)
       })
     return () => {
       retired = true
@@ -222,7 +230,7 @@ function SceneWorkspace({
         event.preventDefault()
         event.stopPropagation()
         void (event.shiftKey ? runtime.redo() : runtime.undo()).catch((e) =>
-          setError(String(e))
+          setError(e)
         )
         return
       }
@@ -308,14 +316,14 @@ function SceneWorkspace({
           {runtime ? (
             <Controls runtime={runtime} onError={setError} />
           ) : (
-            <p className="p-5 text-xs">準備場景控制項…</p>
+            <p className="p-5 text-xs">{t('scene.controlsLoading')}</p>
           )}
         </div>
       </div>
       <div className="workspace-canvas relative min-w-0 bg-[#e8ede4]">
         <div className="pointer-events-none absolute left-5 top-5 z-10">
           <div className="mb-1 text-xs font-semibold text-[#4f624b]">
-            四連棟溫室
+            {t('scene.name')}
           </div>
           <div className="font-mono text-[10px] tracking-wide text-[#82917c]">
             <SceneDimensions />
@@ -324,7 +332,7 @@ function SceneWorkspace({
         <div
           ref={host}
           data-testid="scene"
-          aria-label="First-person greenhouse viewport"
+          aria-label={t('scene.accessible')}
           role="application"
           tabIndex={0}
           className="h-[440px] outline-offset-[-3px] sm:h-[540px] xl:h-[610px]"
@@ -408,28 +416,24 @@ function SceneWorkspace({
         />
         {!runtime && !error && (
           <div className="absolute inset-0 flex items-center justify-center text-sm text-[#75836e]">
-            正在建立溫室場景…
+            {t('scene.loading')}
           </div>
         )}
-        {error && (
+        {Boolean(error) && (
           <div
             role="alert"
             className="absolute inset-6 flex items-center justify-center rounded-xl bg-white/90 p-6 text-sm text-red-700"
           >
-            場景啟動失敗：{error}
+            {t('scene.failed', { error: localizeError(error, t) })}
           </div>
         )}
-        <div className="pointer-events-none absolute bottom-5 left-5 max-w-[calc(100%-10rem)] text-[10px] text-[#7b8873]">
-          <span className="camera-desktop-hint">
-            拖曳轉向 - Shift 拖曳平移 - WASD 移動 - Q/E 升降
-          </span>
-          <span className="camera-touch-hint">
-            單指轉向 - 雙指平移 - 捏合前後移動
-          </span>
+        <div className="pointer-events-none absolute bottom-5 left-5 max-w-[calc(100%-10rem)] rounded-md bg-[#fafbf7]/85 px-2 py-1 text-[10px] leading-relaxed text-[#50664f]">
+          <span className="camera-desktop-hint">{t('camera.desktopHint')}</span>
+          <span className="camera-touch-hint">{t('camera.touchHint')}</span>
         </div>
         <div className="pointer-events-none absolute bottom-5 right-5 flex items-center gap-2 rounded-full bg-white/60 px-3 py-1 text-[10px] text-[#607350]">
           <span className="h-1.5 w-1.5 rounded-full bg-[#819c4d]" />
-          {runtime ? '空間模型已就緒' : '初始化中'}
+          {runtime ? t('scene.ready') : t('scene.initializing')}
         </div>
       </div>
       <div
@@ -442,7 +446,7 @@ function SceneWorkspace({
           {runtime ? (
             <ConfigurationEditor runtime={runtime} />
           ) : (
-            <p className="p-5 text-xs">準備場景設定…</p>
+            <p className="p-5 text-xs">{t('scene.settingsLoading')}</p>
           )}
         </div>
       </div>
@@ -458,8 +462,8 @@ function PanelToggle({
   open: boolean
   onClick: () => void
 }) {
-  const name = side === 'left' ? '圖層面板' : '編輯面板'
-  const label = `${open ? '收合' : '展開'}${name}`
+  const { t } = useTranslation()
+  const label = t(`panel.${side}${open ? 'Close' : 'Open'}`)
   const arrowPaths = {
     left: open ? 'm16 9-3 3 3 3' : 'm13 9 3 3-3 3',
     right: open ? 'm8 9 3 3-3 3' : 'm11 9-3 3 3 3'
@@ -495,27 +499,27 @@ function CameraToolbar({
   onError
 }: {
   runtime: FarmRuntime
-  onError: (message: string) => void
+  onError: (message: unknown) => void
 }) {
+  const { t } = useTranslation()
   const view = useSyncExternalStore(runtime.subscribe, runtime.getView)
   return (
     <div className="flex flex-wrap items-center justify-center gap-1 rounded-lg bg-[#edf1e8] p-1">
-      {(Object.keys(CAMERA_LABELS) as CameraMode[]).map((mode) => (
+      {CAMERA_MODES.map((mode) => (
         <button
           key={mode}
           aria-pressed={view.camera === mode}
-          onClick={() =>
-            void runtime.setCamera(mode).catch((e) => onError(String(e)))
-          }
+          onClick={() => void runtime.setCamera(mode).catch((e) => onError(e))}
           className={`rounded-lg px-3 py-2 text-[11px] transition-colors ${view.camera === mode ? 'bg-[#315a43] text-white shadow-sm' : 'text-[#718268] hover:bg-[#e3e9db]'}`}
         >
-          {CAMERA_LABELS[mode]}
+          {t(`camera.${mode}`)}
         </button>
       ))}
     </div>
   )
 }
 function MovementSpeedControl({ runtime }: { runtime: FarmRuntime }) {
+  const { t } = useTranslation()
   const speed = useSyncExternalStore(
     runtime.subscribeMovementSpeed,
     runtime.getMovementSpeed
@@ -523,12 +527,12 @@ function MovementSpeedControl({ runtime }: { runtime: FarmRuntime }) {
   return (
     <label
       className="flex flex-wrap items-center justify-center gap-2 rounded-lg px-2 py-2 text-xs text-[#527048]"
-      title="右鍵＋滾輪調速；Shift 加速 4 倍；Alt＋滾輪光學縮放"
+      title={t('camera.speedHint')}
     >
-      移動速度
+      {t('camera.speed')}
       <input
         type="range"
-        aria-label="鏡頭移動速度"
+        aria-label={t('camera.speedLabel')}
         min={Math.log(0.01)}
         max={Math.log(60)}
         step="any"
@@ -547,20 +551,21 @@ function MovementSpeedControl({ runtime }: { runtime: FarmRuntime }) {
   )
 }
 function ZoomControls({ runtime }: { runtime: FarmRuntime }) {
+  const { t } = useTranslation()
   const percent = useSyncExternalStore(runtime.subscribeZoom, runtime.getZoom)
   return (
     <div className="flex flex-wrap justify-center gap-1 rounded-lg border border-[#d9dfd2] bg-white p-1 text-xs text-[#527048]">
       <button
         onClick={runtime.fit}
-        title="整體畫面（⌘1）"
+        title={t('camera.fitHint')}
         className="rounded px-3 py-1.5 hover:bg-[#e3e9db]"
       >
-        整體畫面 <span className="text-[#8d9985]">⌘1</span>
+        {t('camera.fit')} <span className="text-[#8d9985]">⌘1</span>
       </button>
       <button
         onClick={runtime.actualSize}
-        title="恢復 100%（⌘0）"
-        aria-label="恢復 100% 縮放"
+        title={t('camera.resetHint')}
+        aria-label={t('camera.reset')}
         className="min-w-20 rounded px-3 py-1.5 font-mono hover:bg-[#e3e9db]"
       >
         <span data-testid="zoom-percent">{percent}%</span>{' '}
@@ -575,50 +580,51 @@ function Controls({
   onError
 }: {
   runtime: FarmRuntime
-  onError: (message: string) => void
+  onError: (message: unknown) => void
 }) {
+  const { t } = useTranslation()
   const view = useSyncExternalStore(runtime.subscribe, runtime.getView)
   const handle = (promise: Promise<unknown>) => {
-    void promise.catch((e) => onError(String(e)))
+    void promise.catch((e) => onError(e))
   }
   return (
     <aside className="border-t border-[#dce2d5] lg:border-l lg:border-t-0">
       <div className="border-b border-[#e0e5d9] px-5 py-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold">場景圖層</h2>
+          <h2 className="text-sm font-semibold">{t('layers.heading')}</h2>
           <span className="font-mono text-[10px] text-[#9ba38e]">
-            01 / ENVIRONMENT
+            {t('layers.environment')}
           </span>
         </div>
       </div>
       <div className="space-y-3.5 px-5 py-4">
-        {(
-          Object.entries(LAYER_LABELS) as [Exclude<LayerId, 'base'>, string][]
-        ).map(([key, label]) => (
-          <label
-            key={key}
-            className="flex cursor-pointer items-center justify-between gap-2 text-xs"
-          >
-            <span>{label}</span>
-            <input
-              type="checkbox"
-              checked={view.layers[key]}
-              onChange={(event) =>
-                handle(runtime.setLayer(key, event.target.checked))
-              }
-              className="h-3.5 w-3.5"
-            />
-          </label>
-        ))}
+        {(Object.keys(view.layers) as LayerId[])
+          .filter((key): key is Exclude<LayerId, 'base'> => key !== 'base')
+          .map((key) => (
+            <label
+              key={key}
+              className="flex cursor-pointer items-center justify-between gap-2 text-xs"
+            >
+              <span>{t(`layer.${key}`)}</span>
+              <input
+                type="checkbox"
+                checked={view.layers[key]}
+                onChange={(event) =>
+                  handle(runtime.setLayer(key, event.target.checked))
+                }
+                className="h-3.5 w-3.5"
+              />
+            </label>
+          ))}
         <label className="block border-t border-[#e1e6da] pt-3">
           <span className="flex justify-between text-[11px] text-[#85917b]">
-            覆膜不透明度
+            {t('layers.opacity')}
             <span className="font-mono">
               {Math.round(view.filmOpacity * 100)}%
             </span>
           </span>
           <input
-            aria-label="覆膜不透明度"
+            aria-label={t('layers.opacity')}
             type="range"
             min="0"
             max="65"
@@ -634,6 +640,7 @@ function Controls({
   )
 }
 export function CrossSection() {
+  const { t } = useTranslation()
   const config = useFarmConfiguration()
   const site = configurationSite(config)
   const strips = createLayout(site, config.strips).strips.filter(
@@ -647,8 +654,8 @@ export function CrossSection() {
   )
   return (
     <section className="rounded-2xl border border-[#dde3d8] bg-[#fafbf7] p-5">
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold">每棟橫向配置</h2>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-sm font-semibold">{t('section.heading')}</h2>
         <span className="font-mono text-[10px] text-[#8d9880]">
           {config.width.toFixed(2)}m = {site.margin.toFixed(2)} +{' '}
           {config.strips
@@ -661,7 +668,7 @@ export function CrossSection() {
         viewBox={`0 -0.04 ${config.width} ${sectionDepth + 0.22}`}
         className="w-full"
         role="img"
-        aria-label="土壤與半圓水道圓角的等比例剖面"
+        aria-label={t('section.accessible')}
       >
         <rect
           x="0"
@@ -731,41 +738,45 @@ export function CrossSection() {
       </svg>
       <div className="mt-2 flex flex-wrap gap-4 text-[10px] text-[#85917a]">
         <span>
-          ■ 土壤{' '}
-          {config.strips
-            .filter((strip) => strip.kind === 'soil')
-            .reduce((sum, strip) => sum + strip.width, 0)
-            .toFixed(2)}
-          m
+          {t('section.soil', {
+            width: config.strips
+              .filter((strip) => strip.kind === 'soil')
+              .reduce((sum, strip) => sum + strip.width, 0)
+              .toFixed(2)
+          })}
         </span>
         <span className="text-[#668b8a]">
-          ■ 水道{' '}
-          {config.strips.filter((strip) => strip.kind === 'drain').length} 條
+          {t('section.drains', {
+            count: config.strips.filter((strip) => strip.kind === 'drain')
+              .length
+          })}
         </span>
-        <span>兩側各留 {site.margin.toFixed(2)}m</span>
+        <span>{t('section.margin', { width: site.margin.toFixed(2) })}</span>
       </div>
       <p className="mt-3 text-[11px] leading-relaxed text-[#8a9480]">
-        連棟留白合併為 {(site.margin * 2).toFixed(2)}m
-        走道；黑色硬質防水擋板只設在整體左右最外側。走道與水溝的採收用途，留待栽培配置及機器人規格共同決定。
+        {t('section.description', { width: (site.margin * 2).toFixed(2) })}
       </p>
     </section>
   )
 }
 
 function PlantingSummary() {
+  const { t } = useTranslation()
   const config = useFarmConfiguration()
   const site = configurationSite(config)
   return (
     <>
-      Ø20mm 栽培管，埋深 15cm、頂高{' '}
-      {(site.eave + config.topExtension).toFixed(2)}m，縱向間距 60cm。15cm
-      方格網由束帶固定，上緣 {config.netTop}m、下緣 {config.netBottom}
-      m。沿土壤行每 20cm 種植一株，每個品種使用 20 種植株樣式。
+      {t('references.plantingDetails', {
+        height: (site.eave + config.topExtension).toFixed(2),
+        top: config.netTop,
+        bottom: config.netBottom
+      })}
     </>
   )
 }
 
 function ReferenceLibrary() {
+  const { t } = useTranslation()
   const dialog = useRef<HTMLDialogElement>(null)
   return (
     <>
@@ -774,7 +785,7 @@ function ReferenceLibrary() {
         onClick={() => dialog.current?.showModal()}
         className="rounded-lg border border-[#d9dfd2] px-3 py-2 text-xs hover:bg-[#edf1e8]"
       >
-        參考資料
+        {t('references.heading')}
       </button>
       <dialog
         ref={dialog}
@@ -788,13 +799,13 @@ function ReferenceLibrary() {
         }}
         className="fixed inset-0 m-auto max-h-[80vh] w-[min(32rem,calc(100%-2rem))] overflow-auto rounded-xl border border-[#d9dfd2] bg-[#fafbf7] p-5 text-[#22382f] shadow-xl backdrop:bg-black/30"
       >
-        <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <h2 id="reference-title" className="text-sm font-semibold">
-            參考資料
+            {t('references.heading')}
           </h2>
           <button
             type="button"
-            aria-label="關閉參考資料"
+            aria-label={t('references.close')}
             onClick={() => dialog.current?.close()}
             className="flex h-8 w-8 items-center justify-center rounded hover:bg-[#edf1e8]"
           >
@@ -815,25 +826,24 @@ function ReferenceLibrary() {
           rel="noopener noreferrer"
           className="block rounded-lg border border-[#d9dfd2] p-3 text-sm hover:bg-[#edf1e8]"
         >
-          南改場溫網室技術專刊 ↗
+          {t('references.journal')}
         </a>
         <details className="mt-4 text-xs text-[#50664f]">
-          <summary className="py-2 font-medium">栽培配置</summary>
+          <summary className="py-2 font-medium">
+            {t('references.planting')}
+          </summary>
           <p className="leading-relaxed">
             <PlantingSummary />
           </p>
         </details>
         <details className="mt-4 text-xs text-[#50664f]">
-          <summary className="py-2 font-medium">模型尺寸與限制</summary>
+          <summary className="py-2 font-medium">
+            {t('references.dimensions')}
+          </summary>
           <p className="mt-3 leading-relaxed">
-            橫樑高度可獨立設定；拱架每 1m；立柱每 5m，尾端補齊；拱管直徑
-            48mm；立柱直徑 76mm；半圓水道深度為寬度一半，槽口圓角最大
-            1cm；擋板高 0.35m；端面開口依跨寬與簷高縮限，上限寬 2m、高
-            2.5m。通道淨寬須扣除立柱。
+            {t('references.dimensionsDetails')}
           </p>
-          <p className="mt-2 leading-relaxed">
-            這是尺寸與構造模型，尚未進行耐風、承載或機器人通行驗證。
-          </p>
+          <p className="mt-2 leading-relaxed">{t('references.limits')}</p>
         </details>
       </dialog>
     </>

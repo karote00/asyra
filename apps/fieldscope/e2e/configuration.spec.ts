@@ -11,11 +11,7 @@ test('commits each completed field immediately with independent undo and redo', 
   const row = page.getByLabel('第 1 項種類')
   const rowBounds = await row.boundingBox()
   if (!rowBounds) throw new Error('Missing strip row')
-  for (const label of [
-    'Move strip 1 up',
-    'Move strip 1 down',
-    'Remove strip 1'
-  ]) {
+  for (const label of ['上移第 1 項', '下移第 1 項', '刪除第 1 項']) {
     const button = page.getByRole('button', { name: label, exact: true })
     const bounds = await button.boundingBox()
     if (!bounds) throw new Error('Missing strip action')
@@ -62,16 +58,14 @@ test('commits each completed field immediately with independent undo and redo', 
   await expect(width).toHaveValue('7')
   await page.getByRole('button', { name: '重做 ⇧⌘Z', exact: true }).click()
   await expect(width).toHaveValue('8')
-  await page
-    .getByRole('button', { name: 'Move strip 2 up', exact: true })
-    .click()
+  await page.getByRole('button', { name: '上移第 2 項', exact: true }).click()
   await expect(page.getByLabel('第 1 項種類')).toHaveValue('drain')
   await page.getByRole('button', { name: '復原 ⌘Z', exact: true }).click()
   await expect(page.getByLabel('第 1 項種類')).toHaveValue('soil')
   const bottom = page.getByLabel('拉網最低位置', { exact: true })
   await bottom.fill('4')
   await bottom.press('Enter')
-  await expect(page.getByRole('alert')).toContainText('網底高度')
+  await expect(page.getByRole('alert')).toContainText('底部高度')
   await expect(bottom).toHaveValue('0.45')
   await bottom.fill('')
   await bottom.press('Tab')

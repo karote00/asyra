@@ -49,30 +49,30 @@ it('uses ordered 24px row icons and commits strip edits without an Apply action'
           ?.textContent
       ).toBe('m')
     }
-    const row = button('Move strip 1 up').parentElement
+    const row = button('上移第 1 項').parentElement
     if (!row) throw new Error('Missing strip actions')
     expect(row.querySelectorAll('button').length).toBe(3)
     expect(
       [...row.querySelectorAll('button')].map((b) =>
         b.getAttribute('aria-label')
       )
-    ).toEqual(['Move strip 1 up', 'Move strip 1 down', 'Remove strip 1'])
+    ).toEqual(['上移第 1 項', '下移第 1 項', '刪除第 1 項'])
     for (const svg of row.querySelectorAll('svg')) {
       expect(svg.getAttribute('viewBox')).toBe('0 0 24 24')
       expect(svg.getAttribute('width')).toBe('24')
       expect(svg.getAttribute('height')).toBe('24')
     }
-    expect(button('Move strip 1 up').disabled).toBe(true)
-    expect(button('Move strip 7 down').disabled).toBe(true)
-    expect(button('Remove strip 1').className).toContain('text-red-700')
+    expect(button('上移第 1 項').disabled).toBe(true)
+    expect(button('下移第 7 項').disabled).toBe(true)
+    expect(button('刪除第 1 項').className).toContain('text-red-700')
     expect(
-      button('Remove strip 1')
+      button('刪除第 1 項')
         .querySelector('path')
         ?.getAttribute('stroke-linecap')
     ).toBe('round')
-    await act(async () => button('Move strip 2 up').click())
+    await act(async () => button('上移第 2 項').click())
     expect(host.querySelector<HTMLSelectElement>('select')?.value).toBe('drain')
-    await act(async () => button('Remove strip 1').click())
+    await act(async () => button('刪除第 1 項').click())
     expect(host.querySelectorAll('select').length).toBe(6)
     expect(host.querySelector<HTMLSelectElement>('select')?.value).toBe('soil')
     expect(setConfiguration).toHaveBeenCalledTimes(2)

@@ -38,49 +38,80 @@ export function configurationSite(config: FarmConfiguration): Site {
       2
   }
 }
+export type ConfigurationField =
+  Exclude<keyof FarmConfiguration, 'strips'> | 'stripWidth'
+export type ConfigurationErrorCode =
+  | 'range'
+  | 'stripCount'
+  | 'stripKind'
+  | 'clearance'
+  | 'arch'
+  | 'inset'
+  | 'poleTop'
+  | 'roots'
+  | 'capacity'
+export class ConfigurationError extends Error {
+  constructor(
+    readonly code: ConfigurationErrorCode,
+    readonly field?: ConfigurationField,
+    readonly min?: number,
+    readonly max?: number
+  ) {
+    super(`Invalid farm configuration: ${code}${field ? ` (${field})` : ''}`)
+    this.name = 'ConfigurationError'
+  }
+}
 export function validateConfiguration(
   value: FarmConfiguration
 ): FarmConfiguration {
-  const range = (name: string, n: number, min: number, max: number) => {
+  const range = (
+    name: ConfigurationField,
+    n: number,
+    min: number,
+    max: number
+  ) => {
     if (!Number.isFinite(n) || n < min || n > max)
-      throw new Error(
-        `${name}必須介於 ${Number(min.toFixed(3))} 與 ${Number(max.toFixed(3))} 公尺`
+      throw new ConfigurationError(
+        'range',
+        name,
+        Number(min.toFixed(3)),
+        Number(max.toFixed(3))
       )
   }
-  range('縱向深度', value.length, 2, 200)
-  range('單棟寬度', value.width, 2, 20)
-  range('總高度', value.height, 2, 10)
+  range('length', value.length, 2, 200)
+  range('width', value.width, 2, 20)
+  range('height', value.height, 2, 10)
   if (
     !Array.isArray(value.strips) ||
     !value.strips.length ||
     value.strips.length > 32
   )
-    throw new Error('畦溝配置需要 1 至 32 個項目')
+    throw new ConfigurationError('stripCount')
   value.strips.forEach((strip) => {
     if (strip.kind !== 'soil' && strip.kind !== 'drain')
-      throw new Error('畦溝種類必須是土壤或水道')
-    range('畦溝寬度', strip.width, 0.05, 20)
+      throw new ConfigurationError('stripKind')
+    range('stripWidth', strip.width, 0.05, 20)
   })
   const site = configurationSite(value)
-  range('橫樑高度', site.eave, 0.1, value.height - 0.05)
+  range('eaveHeight', site.eave, 0.1, value.height - 0.05)
   if (
     value.width <
     value.strips.reduce((sum, strip) => sum + strip.width, 0) + 0.04
   )
-    throw new Error('畦溝總寬必須小於單棟寬度，左右至少各留 2cm')
+    throw new ConfigurationError('clearance')
   if (value.height - site.eave > site.width / 2)
-    throw new Error('拱頂起拱高度不可超過半跨寬；請增加寬度或降低高度')
-  range('鋼管距水道', value.soilInset, 0.01, 5)
-  range('前端留白', value.startInset, 0, value.length)
-  range('尾端留白', value.endInset, 0, value.length)
+    throw new ConfigurationError('arch')
+  range('soilInset', value.soilInset, 0.01, 5)
+  range('startInset', value.startInset, 0, value.length)
+  range('endInset', value.endInset, 0, value.length)
   if (value.startInset + value.endInset > value.length - 0.6)
-    throw new Error('前後留白之間至少需保留 60cm')
-  range('鋼管超出橫樑', value.topExtension, 0, 2)
+    throw new ConfigurationError('inset')
+  range('topExtension', value.topExtension, 0, 2)
   if (site.eave + value.topExtension >= site.height)
-    throw new Error('栽培鋼管頂端必須低於拱頂')
-  range('網底高度', value.netBottom, 0, site.eave + value.topExtension)
+    throw new ConfigurationError('poleTop')
+  range('netBottom', value.netBottom, 0, site.eave + value.topExtension)
   range(
-    '網頂高度',
+    'netTop',
     value.netTop,
     value.netBottom + 0.05,
     site.eave + value.topExtension
@@ -92,9 +123,7 @@ export function validateConfiguration(
         value.strips[i + 1]?.kind === 'drain') &&
       strip.width < value.soilInset + 0.05
     )
-      throw new Error(
-        'Adjacent soil must contain the pole inset plus 5 cm for plant roots'
-      )
+      throw new ConfigurationError('roots')
   })
   const sides = value.strips.reduce(
     (sum, strip, i) =>
@@ -112,9 +141,7 @@ export function validateConfiguration(
         1) >
     20000
   )
-    throw new Error(
-      '目前單次場景最多支援 20,000 根栽培鋼管，請縮短深度或減少水道'
-    )
+    throw new ConfigurationError('capacity')
   return Object.freeze({
     ...value,
     strips: Object.freeze(

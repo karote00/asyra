@@ -13,3 +13,9 @@ Each strip row ends with an up triangle, down triangle, and red X. Controls occu
 ## Workbench usability
 
 The editor uses compact 28px fields, with labels on the left and numeric values plus metre suffixes on the right. Group headings provide context (greenhouse, poles, net); field labels do not repeat that context. Strip actions retain 24px icons with central 16px drawing while providing 32px targets. Camera presets, fit/zoom and speed form a responsive toolbar above the viewport. Technical references and optional modeling assumptions are accessible from the header Reference Library dialog, with keyboard dismissal and focus return. External sources open in a new tab.
+
+## Language preference
+
+The header offers exactly Traditional Chinese (zh-TW, default regardless of browser language) and English (en). A deliberate selection is remembered in origin-local browser storage using `greenhouse-workspace.locale`; unsupported stored values use Traditional Chinese and blocked storage does not prevent switching. The HTML language and page title follow the selection. UI copy includes view controls, tooltips, accessibility labels, strip actions, reference descriptions, diagram legends and validation feedback. Proper names, original reference documents and SI unit symbols keep their meaning; reference links remain unchanged.
+
+Locale is UI presentation state, outside canonical farm settings and Undo/Redo. Switching preserves the same canvas/runtime, camera, layer visibility, current configuration and history. Validation emits language-neutral codes and numeric parameters; the UI formats the current error using the current locale, including when an error is already visible. The two catalogs have matching keys and interpolation parameters. Responsive review covers both languages at 360, 390, 768 and 1440px, including panel scrolling, strip rows and expanded references.

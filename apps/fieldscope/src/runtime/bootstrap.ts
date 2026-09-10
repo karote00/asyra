@@ -238,7 +238,7 @@ export async function bootstrap(
               next.filmOpacity < 0 ||
               next.filmOpacity > 0.65
             )
-              throw new Error('覆膜不透明度必須介於 0 與 0.65')
+              throw new Error('Film opacity must be between 0 and 0.65')
             if (
               !['overview', 'top', 'front', 'inside', 'joint'].includes(
                 next.camera

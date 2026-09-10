@@ -32,21 +32,6 @@ export type LayerId =
   | 'barriers'
   | 'dimensions'
   | 'base'
-export const LAYER_LABELS: Record<Exclude<LayerId, 'base'>, string> = {
-  cucumbers: '1914 小胡瓜',
-  tomatoes: '玉女小蕃茄',
-  net: '攀爬拉網',
-  ties: '網頂束帶',
-  supports: '栽培鋼管',
-  clips: '跨接彈簧夾',
-  film: '塑膠覆膜',
-  steel: '完整鋼架',
-  soil: '土壤畦面',
-  drains: 'Water',
-  passages: '連棟走道',
-  barriers: '外側防水擋板',
-  dimensions: '尺寸參考線'
-}
 export const INITIAL_LAYERS: Record<LayerId, boolean> = {
   cucumbers: true,
   tomatoes: true,

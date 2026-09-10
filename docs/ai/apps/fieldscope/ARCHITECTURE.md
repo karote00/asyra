@@ -13,3 +13,5 @@ Crop variants and placements are domain outputs. The renderer consumes completed
 There is no framework package modification, robot controller, server, collision engine, or crop damage solver in this app's current architecture.
 
 SceneTree owns the canonical structured settings element and its transaction history. SpatialLayer owns derived 3D output; retained projections are neither editable state nor a second SceneTree. This composition follows the public custom-composition guide rather than copying the design app's 2D schema.
+
+UI language is owned by `ui/i18n/locale.tsx` and its typed message catalogs. Its provider wraps the existing workbench without replacing runtime or configuration ownership. Language-neutral `ConfigurationError` codes/parameters originate in the configuration validator; UI error formatting never parses localized strings. Locale changes bypass site projection, scene admission and history.
