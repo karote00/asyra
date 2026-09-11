@@ -25,7 +25,8 @@
    - M0 feasibility and M1-M4, including M3.5, are complete. The user
      authorized the remaining M3.5/M4 acceptance and closeout on 2026-09-12.
      Their detailed records are in Completed Work below; earlier dates remain.
-   - M5 packaging and M6 independent pilot/release review remain later work.
+   - [M5 controlled-pilot candidate](plans/m5-controlled-pilot.md) is active from
+     latest main after PR #181. M6 independent pilot/release review remains later work.
      Historical packaging evidence remains in roadmap section 1.2 and
      [LOCAL_CANDIDATE.md](release/LOCAL_CANDIDATE.md).
    - Keep the engine App-owned. Extracting generic 3D defaults into Preset and

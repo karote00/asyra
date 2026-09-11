@@ -60,10 +60,23 @@ test('Undoing the selected duplicate never presents a different candidate as the
 })
 
 test('independent A/B/C candidates retain and compare real runs with traceable body correspondence', async ({
-  page
+  page,
+  context
 }, info) => {
   test.setTimeout(90000)
   const errors: string[] = []
+  const externalRequests: string[] = []
+  const baseURL = info.project.use.baseURL
+  if (!baseURL) throw new Error('An explicit App URL is required')
+  const origin = new URL(baseURL).origin
+  // Permit the local launcher only, including a cold page load and Worker assets.
+  // A blocked external request still fails the test even if the App hides it.
+  await context.route('**/*', (route) => {
+    if (new URL(route.request().url()).origin === origin)
+      return route.continue()
+    externalRequests.push(route.request().url())
+    return route.abort('internetdisconnected')
+  })
   page.on('pageerror', (error) => errors.push(error.message))
   await page.goto('/')
   await expect(page.getByRole('status')).toHaveText('Local runtime ready')
@@ -275,4 +288,5 @@ test('independent A/B/C candidates retain and compare real runs with traceable b
     })
   })
   expect(errors).toEqual([])
+  expect(externalRequests).toEqual([])
 })
