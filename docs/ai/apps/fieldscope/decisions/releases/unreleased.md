@@ -9,3 +9,11 @@ Decision: accept the implementation as DONE and archive the [plan](/docs/ai/apps
 Consequences: water/crop geometry, natural cultivar variation, performance ownership, immediate editing/history, camera gestures and bilingual presentation are maintained through the current app specifications and formal tests. No active implementation task remains in this plan. Robot behavior, harvesting physics and load/clearance validation were not delivered by this plan.
 
 Release boundary: documentation closeout only. FieldScope remains private at version 0.1.0. No Changeset, version bump, tag, package publication or deployment is created or required.
+
+## 2026-09-11 - Backfill earlier FieldScope closeout records
+
+Context: the user requested closing earlier completed FieldScope work that lacked records. Repository and merged-PR history identify PR #170 (initial workspace) and PR #174 (subsequent crop/workbench work). The initial 0.1.0 decision existed, but its completed-plan record was missing.
+
+Decision: add the [retrospective baseline closeout](/docs/ai/apps/fieldscope/plans/completed/greenhouse-workspace/plan.md), recording the actual merge time and the historical validation evidence. Retain the original baseline decision unchanged. Add explicit links to the completed PR #174 stages in [the plan index](/docs/ai/apps/fieldscope/PLANS.md); those stages remain part of the existing archived plan rather than being presented as newly invented plans.
+
+Consequences: both merged implementation batches and their completed follow-up stages are discoverable. The earlier statement that baseline documentation was backfilled remains true; this entry supplies the missing closeout record. No implementation, deployment, version change or release action is introduced.
