@@ -501,3 +501,14 @@ The [bounded completed record](completed/flow-inspector-phase-6-github-review-cl
 records implemented preview/confirmation/observations and real PR #179 acceptance.
 Its source-only candidate CI fails the Changeset requirement; this is visible
 review evidence, not accepted delivery. Broader Phase 6 remains unactivated.
+
+## Trusted candidate Changeset acceptance - 2026-09-11
+
+The [bounded closeout](completed/flow-inspector-trusted-changeset-closeout.md)
+records trusted Factory patch metadata, complete confirmation and real test
+PR #189's five successful latest-HEAD checks, followed by closure without merge.
+The fixed delivery owner prepares metadata; the candidate retains runtime-only
+access. This closes the source-only candidate Changeset gap for the supported
+case. Historical failures and unresolved provider evidence remain intact.
+Full Phase 5/6, protected verification, required-check protection, provider
+reconciliation, ticket/team/hosting and standalone dynamic service remain deferred.

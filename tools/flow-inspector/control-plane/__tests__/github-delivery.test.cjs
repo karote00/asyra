@@ -5,7 +5,7 @@ const {
   createGitHubDelivery,
   transportError
 } = require('../github-delivery.cjs')
-const { gitDigest } = require('../pr-review.cjs')
+const { gitDigest, prepareMetadata } = require('../pr-review.cjs')
 const { sha256 } = require('../snapshot.cjs')
 const file = 'packages/factory/src/data-transact.ts',
   baseSha = 'a'.repeat(40),
@@ -49,6 +49,14 @@ function fixture() {
       }
     ]
   }
+  preview.packageOwnership = {
+    path: 'packages/factory/package.json',
+    packageName: '@asyra/factory',
+    digest: sha256('manifest')
+  }
+  preview.adapter = 'demonstration'
+  preview.metadata = prepareMetadata(preview)
+  preview.deliveryFiles = [file, preview.metadata.path]
   const makePR = () => ({
     number: 5,
     state: 'open',
@@ -82,8 +90,9 @@ function fixture() {
       assert.equal(body.base_tree, tree)
       assert.deepEqual(
         body.tree.map((x) => x.path),
-        [file]
+        [file, preview.metadata.path]
       )
+      assert.equal(body.tree[1].content, preview.metadata.content)
       return { sha: 'd'.repeat(40) }
     }
     if (tail === 'git/commits' && method === 'POST') {
@@ -341,3 +350,69 @@ test('real local Git admission refuses untracked dirt and committed source misma
   await assert.rejects(() => adapter.inspect(f.preview), /source differs/)
   assert.equal(reads, 0)
 })
+
+for (const [name, mutate] of [
+  ['missing metadata', (p) => delete p.metadata],
+  ['unsupported release type', (p) => (p.metadata.releaseType = 'major')],
+  ['wrong package', (p) => (p.metadata.packageName = '@asyra/core')],
+  [
+    'illegal metadata path',
+    (p) => (p.metadata.path = '.github/workflows/main.yml')
+  ],
+  ['changed metadata bytes', (p) => (p.metadata.content += 'forged')],
+  ['wrong metadata digest', (p) => (p.metadata.digest = '0'.repeat(64))],
+  ['extra delivery file', (p) => p.deliveryFiles.push('package.json')]
+])
+  test(name + ' cannot reach an external write', async () => {
+    const f = fixture()
+    mutate(f.preview)
+    await assert.rejects(
+      () => f.adapter.deliver(f.preview, async () => undefined, {}),
+      /metadata/
+    )
+    assert.equal(f.writes.length, 0)
+  })
+for (const [name, entry] of [
+  [
+    'existing Changeset',
+    (p) => ({ path: p.metadata.path, type: 'blob', mode: '100644', sha: head })
+  ],
+  [
+    'symlink metadata ancestor',
+    () => ({ path: '.changeset', type: 'blob', mode: '120000', sha: head })
+  ],
+  [
+    'nested package owner',
+    () => ({
+      path: 'packages/factory/src/package.json',
+      type: 'blob',
+      mode: '100644',
+      sha: head
+    })
+  ]
+])
+  test(name + ' refuses preparation without writes', async () => {
+    const f = fixture()
+    const adapter = createGitHubDelivery('/unused', {
+      repository: 'owner/repo',
+      local: () => undefined,
+      request: async (method, route) => {
+        assert.equal(method, 'GET')
+        if (route.includes('/ref/')) return { object: { sha: baseSha } }
+        if (route.includes('/commits/')) return { tree: { sha: tree } }
+        return {
+          truncated: false,
+          tree: [
+            {
+              path: file,
+              type: 'blob',
+              mode: '100644',
+              sha: f.preview.files[0].gitDigest
+            },
+            entry(f.preview)
+          ]
+        }
+      }
+    })
+    await assert.rejects(() => adapter.inspect(f.preview), /metadata|ownership/)
+  })

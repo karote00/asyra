@@ -2014,6 +2014,18 @@ test(
       )
       await expect(canvas.locator('#pr-confirm')).toBeDisabled()
       assert.equal(effects, 0)
+      await expect(canvas.locator('#pr-metadata')).toContainText(
+        '"@asyra/factory": patch'
+      )
+      await expect(canvas.locator('#pr-metadata')).toContainText(
+        'Deterministic demonstration'
+      )
+      await expect(canvas.locator('#pr-metadata')).toContainText(
+        'not source verification'
+      )
+      await expect(canvas.locator('#pr-preview')).toContainText(
+        '.changeset/flow-review-'
+      )
       for (const [name, width, height] of [
         ['desktop', 1600, 1100],
         ['tablet', 820, 1180],
@@ -2036,6 +2048,16 @@ test(
         await page.screenshot({
           path: path.join(artifacts, name + '-preview-top.png')
         })
+        await canvas.locator('#pr-metadata').scrollIntoViewIfNeeded()
+        await page.screenshot({
+          path: path.join(artifacts, name + '-metadata.png')
+        })
+        assert.equal(
+          await canvas
+            .locator('#pr-metadata')
+            .evaluate((el) => el.scrollWidth <= el.clientWidth + 2),
+          true
+        )
         await canvas.locator('#pr-confirm').scrollIntoViewIfNeeded()
         await page.screenshot({
           path: path.join(artifacts, name + '-preview-confirm.png')
@@ -2082,6 +2104,8 @@ test(
         server.origin + '/api/tasks/' + id + '/review'
       ).then((r) => r.json())
       assert.equal(api.preview.taskId, id)
+      assert.equal(api.preview.metadata.validation.status, 'passed')
+      assert.equal(api.preview.deliveryFiles.length, 2)
       assert.equal(api.observation.state, 'closed')
       assert.equal(service.getTask(id).deliveryStatus, 'not-delivered')
       fs.writeFileSync(
@@ -2129,6 +2153,30 @@ test(
     assert.equal(review.preview.attemptId, task.attempts.at(-1).id)
     assert.equal(review.preview.repository, process.env.FLOW_REVIEW_REPOSITORY)
     assert.ok(review.observation.number > 0)
+    if (process.env.FLOW_LIVE_REVIEW_REQUIRE_PASSED === '1') {
+      assert.equal(review.preview.metadata.validation.status, 'passed')
+      assert.equal(review.preview.metadata.packageName, '@asyra/factory')
+      assert.equal(review.observation.stale, false)
+      assert.equal(review.observation.matchesCandidate, true)
+      assert.equal(review.observation.checks.status, 'passed')
+      assert.equal(
+        review.observation.checks.headSha,
+        review.observation.headSha
+      )
+      assert.ok(review.observation.checks.items.length > 0)
+      assert.ok(
+        review.observation.checks.items.every(
+          (item) => item.status === 'completed' && item.conclusion === 'success'
+        )
+      )
+      assert.equal(task.verificationStatus, 'passed')
+      assert.equal(task.attempts.at(-1).verdict.evidence.cases.length, 6)
+      assert.ok(
+        task.attempts
+          .at(-1)
+          .verdict.evidence.cases.every((item) => item.status === 'passed')
+      )
+    }
     assert.match(review.observation.url, /^https:\/\/github.com\//)
     const lines = []
     assert.equal(
@@ -2190,6 +2238,15 @@ test(
         await page.screenshot({
           path: path.join(artifacts, name + '-status.png')
         })
+        if (review.preview.metadata) {
+          await expect(canvas.locator('#pr-metadata')).toContainText(
+            review.preview.metadata.content.trim()
+          )
+          await canvas.locator('#pr-metadata').scrollIntoViewIfNeeded()
+          await page.screenshot({
+            path: path.join(artifacts, name + '-metadata.png')
+          })
+        }
         await canvas.locator('#pr-source-diff').scrollIntoViewIfNeeded()
         await page.screenshot({
           path: path.join(artifacts, name + '-source.png')

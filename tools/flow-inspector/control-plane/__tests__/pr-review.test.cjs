@@ -116,6 +116,18 @@ function fixture() {
     candidateDirectory: () => candidateRoot,
     adapter
   }
+  const manifestPath = 'packages/factory/package.json'
+  const manifest = JSON.stringify({ name: '@asyra/factory', version: '1.0.0' })
+  for (const dir of [sourceRoot, verifiedRoot])
+    fs.writeFileSync(path.join(dir, manifestPath), manifest)
+  const manifestFile = {
+    path: manifestPath,
+    digest: sha256(manifest),
+    size: Buffer.byteLength(manifest)
+  }
+  record.snapshot.files.push(manifestFile)
+  files.push(manifestFile)
+  record.attempts[0].verdict.sourceDigest = sha256(JSON.stringify(files))
   const owner = createReviewOwner(root, options)
   return {
     owner,
@@ -391,3 +403,78 @@ test('only equivalent authorized requests coalesce while a delivery effect is pe
     await pending
   }
 })
+
+test('trusted Changeset is complete, correctly owned and separate from source verification', async () => {
+  const f = fixture(),
+    p = await prepare(f)
+  assert.equal(p.preview.metadata.validation.status, 'passed')
+  assert.equal(p.preview.metadata.releaseType, 'patch')
+  assert.equal(p.preview.metadata.packageName, '@asyra/factory')
+  const metadata = p.preview.metadata
+  assert.equal(
+    metadata.path,
+    `.changeset/flow-review-${f.record.id}-${f.record.attempts[0].id}.md`
+  )
+  assert.match(metadata.content, /^---\n"@asyra\/factory": patch\n---\n/)
+  assert.match(metadata.content, /Deterministic demonstration/)
+  assert.match(metadata.reason, /Factory/)
+  assert.deepEqual(p.preview.deliveryFiles, [file, metadata.path])
+  assert.equal(p.preview.changes.length, 1)
+  assert.equal(fs.existsSync(path.join(f.candidateRoot, metadata.path)), false)
+  assert.equal(fs.existsSync(path.join(f.sourceRoot, metadata.path)), false)
+  await confirm(f, p)
+  assert.equal(f.counts.deliver, 1)
+})
+for (const [name, mutate] of [
+  ['missing package ownership', (f) => f.record.snapshot.files.splice(1, 1)],
+  [
+    'ambiguous package ownership',
+    (f) => f.record.snapshot.files.push(f.record.snapshot.files[1])
+  ]
+])
+  test(name + ' prevents preparation', async () => {
+    const f = fixture()
+    mutate(f)
+    await assert.rejects(() => prepare(f), /ownership/)
+    assert.equal(f.counts.deliver, 0)
+  })
+for (const [name, mutate] of [
+  ['release type', (p) => (p.metadata.releaseType = 'minor')],
+  ['package name', (p) => (p.metadata.packageName = '@asyra/core')],
+  ['path', (p) => (p.metadata.path = '.github/workflows/main.yml')],
+  ['content', (p) => (p.metadata.content += 'unapproved')],
+  ['reason', (p) => (p.metadata.reason += 'unapproved')],
+  ['title', (p) => (p.title += 'unapproved')],
+  ['body', (p) => (p.body += 'unapproved')],
+  ['all files', (p) => p.deliveryFiles.push('package.json')]
+])
+  test(
+    'changed ' + name + ' cannot use a retained confirmation after restart',
+    async () => {
+      const f = fixture(),
+        p = structuredClone(await prepare(f))
+      mutate(p.preview)
+      p.previewDigest = sha256(JSON.stringify(p.preview))
+      fs.writeFileSync(
+        path.join(f.options.directory, f.record.id + '.json'),
+        JSON.stringify(p)
+      )
+      f.owner = createReviewOwner(root, f.options)
+      await assert.rejects(() => confirm(f, p), /metadata|preview/)
+      assert.equal(f.counts.deliver, 0)
+    }
+  )
+for (const forbidden of [
+  '.changeset/escape.md',
+  'packages/factory/src/__tests__/escape.ts',
+  '.github/workflows/escape.yml'
+])
+  test('candidate cannot contribute ' + forbidden, async () => {
+    const f = fixture()
+    fs.mkdirSync(path.dirname(path.join(f.candidateRoot, forbidden)), {
+      recursive: true
+    })
+    fs.writeFileSync(path.join(f.candidateRoot, forbidden), 'untrusted')
+    await assert.rejects(() => prepare(f), /candidate/)
+    assert.equal(f.counts.deliver, 0)
+  })

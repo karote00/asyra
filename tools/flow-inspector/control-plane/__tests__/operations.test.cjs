@@ -472,6 +472,12 @@ test(
       )
       const prepared = JSON.parse(lines.pop())
       assert.equal(prepared.preview.taskId, id)
+      assert.equal(prepared.preview.metadata.packageName, '@asyra/factory')
+      assert.equal(prepared.preview.metadata.validation.status, 'passed')
+      assert.deepEqual(prepared.preview.deliveryFiles, [
+        'packages/factory/src/data-transact.ts',
+        prepared.preview.metadata.path
+      ])
       const read = await fetch(
         server.origin + '/api/tasks/' + id + '/review'
       ).then((r) => r.json())
@@ -507,6 +513,10 @@ test(
       )
       const submitted = JSON.parse(lines.pop())
       assert.equal(submitted.state, 'submitted-for-review')
+      assert.deepEqual(submitted.preview, prepared.preview)
+      assert.ok(
+        submitted.audit.some((item) => item.event === 'human-confirmed')
+      )
       assert.equal(effects, 1)
       await main(['--url', server.origin, 'pr-refresh', id], {
         repositoryRoot: root,

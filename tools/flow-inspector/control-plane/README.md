@@ -556,7 +556,12 @@ GitHub review configuration grants no provider dispatch authority.
    validates source, all retained local obligations, accepted revision, a clean
    checkout and the remote base's captured inputs. Preparation creates no remote
    objects. A differing source closure or dirty checkout refuses delivery.
-3. Review the exact repository, base SHA, branch, changed files, title and body.
+3. Review the exact repository, base SHA, branch, all delivery files, title and body.
+   The trusted owner prepares an `@asyra/factory` patch Changeset separately
+   from candidate source evidence. Its package ownership, reason, exact content
+   and metadata validation appear in **Trusted owner Changeset**. Only existing
+   Factory runtime candidates are supported; requests cannot select arbitrary
+   packages, release types, summaries or paths. Metadata changes invalidate confirmation.
    Open the frozen source diff and local evidence links. Check the explicit
    confirmation only when this exact preview is approved, then select
    **Create confirmed PR**. Branch and PR creation stay in the trusted

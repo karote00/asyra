@@ -3,6 +3,7 @@ const fs = require('node:fs')
 const { execFile, execFileSync } = require('node:child_process')
 const { safePath, sha256 } = require('./snapshot.cjs')
 const { canonicalFile } = require('./agent-contract.cjs')
+const { validateMetadata, METADATA_POLICY } = require('./pr-review.cjs')
 const hex = (value) => typeof value === 'string' && /^[a-f0-9]{40}$/.test(value)
 const need = (value, message) => {
   if (!value) throw new Error('GitHub delivery: ' + message)
@@ -240,10 +241,31 @@ function createGitHubDelivery(
           'base source differs from captured baseline'
         )
       }
+      if (input.metadata) {
+        validateMetadata(input)
+        need(!entries.has(input.metadata.path), 'metadata path already exists')
+        const ancestor = entries.get('.changeset')
+        need(
+          !ancestor || (ancestor.type === 'tree' && ancestor.mode === '040000'),
+          'invalid metadata ancestor'
+        )
+        for (const change of input.changes) {
+          const owners = [...entries.keys()].filter(
+            (name) =>
+              name.endsWith('/package.json') &&
+              change.path.startsWith(name.slice(0, -'package.json'.length))
+          )
+          need(
+            owners.every((name) => name === METADATA_POLICY.manifestPath),
+            'ambiguous package ownership'
+          )
+        }
+      }
       return { baseSha, baseTree }
     },
     async deliver(p, checkpoint, record) {
       validatePreview(p)
+      const metadata = validateMetadata(p)
       need((await readBase()) === p.baseSha, 'base advanced before effects')
       let expectedHead = record.expectedHead
       const existing = await api('GET', 'git/ref/heads/' + p.branch)
@@ -257,7 +279,10 @@ function createGitHubDelivery(
           await checkpoint('create-tree')
           const tree = await api('POST', 'git/trees', {
             base_tree: p.baseTree,
-            tree: p.changes.map((c) => ({
+            tree: [
+              ...p.changes,
+              { path: metadata.path, after: metadata.content }
+            ].map((c) => ({
               path: c.path,
               mode: '100644',
               type: 'blob',

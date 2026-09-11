@@ -33,7 +33,10 @@ persistent investigation guidance; it does not implement remote reconciliation.
      Full original protection and delivery requirements remain open.
    - Bounded single-user GitHub PR review implementation and live acceptance
      are recorded in the [completed review record](plans/completed/flow-inspector-phase-6-github-review-closeout.md).
-     Candidate CI failure and the full Phase 6 gaps remain explicit.
+     Historical candidate CI failure remains explicit. The
+     [trusted Changeset closeout](plans/completed/flow-inspector-trusted-changeset-closeout.md)
+     records the subsequent exact candidate PR with all checks passing and closure
+     without merge; the full Phase 6 gaps remain open.
    - Remaining Phase 6: small-team operations, ticket integration, hosting and
      broader adoption remain unactivated.
 

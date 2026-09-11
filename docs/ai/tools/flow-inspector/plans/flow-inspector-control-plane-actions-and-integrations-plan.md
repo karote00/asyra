@@ -259,3 +259,12 @@ closes only the selected local GitHub review slice: exact preview, explicit
 ready-for-review creation, retained audit and HEAD-bound observations. Real PR
 #179 demonstrates creation/restart and visible CI failure without baseline
 acceptance. The full Phase 5/6 DoD above remains open.
+
+## Trusted Changeset checkpoint - 2026-09-11
+
+The [trusted Changeset closeout](completed/flow-inspector-trusted-changeset-closeout.md)
+completes fixed Factory patch metadata preparation and exact confirmed delivery.
+Real deterministic test PR #189 passed all five latest-HEAD checks and was closed
+without merge; local source evidence, metadata and accepted baseline stayed
+separate. This supersedes the candidate CI gap for this bounded delivery case
+only, not the historical failure record or full Phase 5/6 requirements.
