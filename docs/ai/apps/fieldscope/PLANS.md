@@ -2,7 +2,7 @@
 
 ## Active
 
-None.
+- [Harvest robot and crate logistics](/docs/ai/apps/fieldscope/plans/harvest-robot/plan.md) - IN PROGRESS. M1 feasibility/load/energy/hazard domain implemented; mission UI, simulation and hardware validation remain planned; previous crop/workspace plans remain completed.
 
 ## Completed
 
@@ -29,3 +29,9 @@ These are completed stages of the archived water/crop plan, not separate active 
 | First-person and mobile navigation | [Camera specification](/docs/ai/apps/fieldscope/specs/camera.md), [touch gestures](/docs/ai/apps/fieldscope/plans/completed/water-and-crops/plan.md#mobile-camera-gestures) |
 | Traditional Chinese/English UI | [Bilingual interface](/docs/ai/apps/fieldscope/plans/completed/water-and-crops/plan.md#bilingual-interface) |
 | CI dependency-test isolation | [CI validation](/docs/ai/apps/fieldscope/plans/completed/water-and-crops/plan.md#ci-projection-test-isolation) |
+
+## Retrospective development stages
+
+- [Cultivar realism and harvested-target preparation](/docs/ai/apps/fieldscope/plans/completed/crop-realism/plan.md) - DONE; a sub-stage of PR #174.
+- [Responsive editing and scene ownership](/docs/ai/apps/fieldscope/plans/completed/responsive-workbench/plan.md) - DONE; a sub-stage of PR #174.
+- [Navigation, mobile controls and localization](/docs/ai/apps/fieldscope/plans/completed/navigation-and-localization/plan.md) - DONE; a sub-stage of PR #174.
