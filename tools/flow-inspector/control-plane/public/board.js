@@ -32,6 +32,7 @@
       let targetDraft = []
       let targetDraftRevision = 0
       let targetReadSignature = ''
+      let targetItemsSignature = ''
       let targetDecisionId = window.crypto.randomUUID()
       let targetBusy = false
       let taskState
@@ -1155,45 +1156,55 @@
         byId('target-pending').textContent =
           'Unassigned obligations - pending: ' +
           (targetRecord?.pending.join(', ') || 'none')
-        byId('target-items').replaceChildren(
-          ...(targetRecord?.works ?? []).map((work) => {
-            const item = node('article', undefined, 'proof-target-item')
-            item.append(
-              node('h4', work.title + ' - ' + work.status),
-              node('p', work.stepId),
-              node('p', work.scope),
-              node('p', 'Obligations: ' + work.obligationIds.join(', ')),
-              node('p', 'Runtime files: ' + work.allowedFiles.join(', '))
-            )
-            for (const dep of work.prerequisites)
+        const itemsSignature = targetRecord
+          ? targetRecord.id +
+            ':' +
+            targetRecord.revision +
+            ':' +
+            targetRecord.baselineCurrent
+          : 'none'
+        if (itemsSignature !== targetItemsSignature) {
+          targetItemsSignature = itemsSignature
+          byId('target-items').replaceChildren(
+            ...(targetRecord?.works ?? []).map((work) => {
+              const item = node('article', undefined, 'proof-target-item')
               item.append(
-                node(
-                  'p',
-                  'Prerequisite ' +
-                    dep.workId +
-                    ' - ' +
-                    dep.status +
-                    ': ' +
-                    dep.handoff
-                )
+                node('h4', work.title + ' - ' + work.status),
+                node('p', work.stepId),
+                node('p', work.scope),
+                node('p', 'Obligations: ' + work.obligationIds.join(', ')),
+                node('p', 'Runtime files: ' + work.allowedFiles.join(', '))
               )
-            const prepare = node('button', 'Prepare task from this promise')
-            prepare.type = 'button'
-            prepare.disabled =
-              work.status === 'blocked' || !targetRecord.baselineCurrent
-            prepare.onclick = () => {
-              graph
-                .querySelector('[data-step-id="' + work.stepId + '"]')
-                ?.click()
-              byId('agent-objective').value = work.scope
-              byId('agent-files').value = work.allowedFiles.join(', ')
-              byId('agent-controls').open = true
-              byId('agent-objective').focus()
-            }
-            item.append(prepare)
-            return item
-          })
-        )
+              for (const dep of work.prerequisites)
+                item.append(
+                  node(
+                    'p',
+                    'Prerequisite ' +
+                      dep.workId +
+                      ' - ' +
+                      dep.status +
+                      ': ' +
+                      dep.handoff
+                  )
+                )
+              const prepare = node('button', 'Prepare task from this promise')
+              prepare.type = 'button'
+              prepare.disabled =
+                work.status === 'blocked' || !targetRecord.baselineCurrent
+              prepare.onclick = () => {
+                graph
+                  .querySelector('[data-step-id="' + work.stepId + '"]')
+                  ?.click()
+                byId('agent-objective').value = work.scope
+                byId('agent-files').value = work.allowedFiles.join(', ')
+                byId('agent-controls').open = true
+                byId('agent-objective').focus()
+              }
+              item.append(prepare)
+              return item
+            })
+          )
+        }
         const selectedWork = byId('target-link-work').value
         byId('target-link-work').replaceChildren(
           ...(targetRecord?.works ?? []).map((w) => targetOption(w.id, w.title))
