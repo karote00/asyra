@@ -268,3 +268,12 @@ Real deterministic test PR #189 passed all five latest-HEAD checks and was close
 without merge; local source evidence, metadata and accepted baseline stayed
 separate. This supersedes the candidate CI gap for this bounded delivery case
 only, not the historical failure record or full Phase 5/6 requirements.
+
+## Multi-PR development follow-up - 2026-09-10
+
+The [multi-PR flow plan](flow-inspector-multi-pr-development-and-integration-plan.md)
+owns the newly approved architecture direction for decomposing one target flow
+into tasks and PRs while retaining accepted-behavior checks and exact integrated
+completion evidence. It is planned, not implemented, and does not activate team
+accounts or parallel agents. The existing candidate delivery contract remains
+in force until its corresponding owner slices are specified and verified.

@@ -186,3 +186,19 @@ timeout required an unchanged-HEAD rerun; no gate was relaxed. This supersedes
 the source-only candidate CI limitation for this supported case, preserving
 PR #179/#182 history and all deferred Phase 5/6 and provider boundaries. No new
 model request or release action is authorized by green CI or by this closeout.
+
+## 2026-09-10 - Separate flow contracts from multi-PR development work
+
+The user identified that requiring an entire flow to fit one PR would prevent
+useful decomposition. Record the [multi-PR development plan](../../plans/flow-inspector-multi-pr-development-and-integration-plan.md)
+with a persistent target contract, bounded work promises, accepted-behavior
+preservation and a distinct full integration assessment. Developing flows enter
+verification immediately; incomplete target obligations are visible pending
+work, never a blanket CI exemption or successful evidence. Full target acceptance
+requires all necessary evidence on one integrated source and an explicit decision.
+
+This supersedes only a one-flow/one-PR interpretation of the initial bounded
+trial. Existing task/attempt delivery identities and safeguards remain. The
+direction is approved but implementation has not started; this entry changes no
+runtime, CI, accepted baseline or protection policy, and does not resume external
+check monitoring. Prior completed records remain historical evidence.
