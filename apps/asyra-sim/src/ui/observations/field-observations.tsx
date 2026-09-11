@@ -25,6 +25,7 @@ export function FieldObservations({
     existing,
     setExisting,
     saving,
+    editorRequest,
     error,
     status,
     files,
@@ -151,6 +152,7 @@ export function FieldObservations({
                 existing={existing}
                 setExisting={setExisting}
                 saving={saving}
+                editorRequest={editorRequest}
                 files={files}
                 current={current}
                 stale={stale}
@@ -175,12 +177,13 @@ export function FieldObservations({
         </p>
       )}
 
-      {status && (
+      {(saving || status) && (
         <p
           className="hint text-[10px] leading-[1.6] text-sim-muted font-normal"
           aria-live="polite"
+          aria-label="Observation change status"
         >
-          {status}
+          {saving ? 'Saving observation change…' : status}
         </p>
       )}
     </section>

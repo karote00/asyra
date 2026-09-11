@@ -1069,6 +1069,7 @@ it('offers completion without changing the editing tab, focus or unfinished text
   expect(input.runtime.features.storage.retain).toHaveBeenCalledOnce()
   await act(() => button('View results')?.click())
   expect(button('Results')?.getAttribute('aria-selected')).toBe('true')
+  expect(document.activeElement?.id).toBe('experiment-panel-results')
   expect(host.textContent).toContain('Worker failed')
 })
 
@@ -1088,4 +1089,37 @@ it('routes an undeclared time unit to its declaration field without allocating a
   expect(document.activeElement).toBe(field)
   expect(createExperimentSnapshot).not.toHaveBeenCalled()
   expect(analysisRun).not.toHaveBeenCalled()
+})
+
+it('shows creation progress until the authoritative write completes', async () => {
+  let finish!: () => void
+  const perform = vi.fn(
+    () =>
+      new Promise<void>((resolve) => {
+        finish = resolve
+      })
+  )
+  await act(() =>
+    renderExperiment({
+      runtime,
+      candidateId: 'candidate',
+      workcell: example.workcell,
+      revision: 1,
+      perform,
+      onPlayback: vi.fn(),
+      runs: [],
+      retainedIds: new Set<string>(),
+      onRun: vi.fn(),
+      onOpenRuns: vi.fn(),
+      onVisualPreview: vi.fn(),
+      isCurrent: () => true,
+      visualImportActive: true
+    })
+  )
+  await act(() => button('New experiment')?.click())
+  await act(() => button('Create experiment')?.click())
+  expect(button('Creating experiment…')?.disabled).toBe(true)
+  expect(button('Creating experiment…')?.getAttribute('aria-busy')).toBe('true')
+  await act(() => finish())
+  expect(button('Create experiment')?.disabled).toBe(false)
 })

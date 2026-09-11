@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useExperimentField, useExperimentView } from './experiment-context'
 
 const tabs = ['setup', 'preview', 'results'] as const
@@ -58,6 +58,7 @@ export function ExperimentTabPanel({
   return (
     <div
       role="tabpanel"
+      tabIndex={-1}
       id={`experiment-panel-${tab}`}
       aria-labelledby={`experiment-tab-${tab}`}
       hidden={active !== tab}
@@ -69,6 +70,18 @@ export function ExperimentTabPanel({
 }
 
 export function ExperimentCompletion() {
+  const action = useRef<HTMLButtonElement>(null)
+  const [request, setRequest] = useState(0)
+  const activeTab = useExperimentField('tab')
+  useEffect(() => {
+    if (!request || activeTab !== 'results') return
+    const panel = action.current
+      ?.closest('.experiment-panel')
+      ?.querySelector<HTMLElement>('#experiment-panel-results')
+    panel?.focus({ preventScroll: true })
+    panel?.scrollIntoView?.({ block: 'start' })
+    setRequest(0)
+  }, [request, activeTab])
   const view = useExperimentView()
   const run = useExperimentField('selectedRun')
   const running = useExperimentField('running')
@@ -79,7 +92,13 @@ export function ExperimentCompletion() {
       aria-live="polite"
     >
       <span>Analysis {run.result.execution}</span>
-      <button onClick={() => view.getSnapshot().setTab('results')}>
+      <button
+        ref={action}
+        onClick={() => {
+          view.getSnapshot().setTab('results')
+          setRequest((value) => value + 1)
+        }}
+      >
         View results
       </button>
     </div>

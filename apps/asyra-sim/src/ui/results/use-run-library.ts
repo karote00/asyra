@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { type RunComparison } from '../../storage/run-comparison'
+import { compareRuns, type RunComparison } from '../../storage/run-comparison'
 import type { RunRecord } from '../../storage/run-record'
 import {
   exportRunCsv,
@@ -20,9 +20,83 @@ export function useRunLibrary({
 
   const [selectedId, setSelectedId] = useState(runs.at(-1)?.result.runId ?? '')
 
-  const [comparisonIds, setComparisonIds] = useState<string[]>([])
+  const [requestedComparisonIds, setComparisonIds] = useState<string[]>([])
 
-  const [comparison, setComparison] = useState<RunComparison | null>(null)
+  const [comparisonState, setComparisonState] = useState<{
+    value: RunComparison
+    sources: readonly RunRecord[]
+  } | null>(null)
+
+  const comparisonRuns = requestedComparisonIds
+    .map((id) => runs.find((run) => run.result.runId === id))
+    .filter((run): run is RunRecord => !!run)
+  const comparisonIds = comparisonRuns.map((run) => run.result.runId)
+  const comparison =
+    comparisonState?.sources.every(
+      (run, index) => comparisonRuns[index] === run
+    ) && comparisonState.sources.length === comparisonRuns.length
+      ? comparisonState.value
+      : null
+  const [pendingComparison, setPendingComparison] = useState<
+    readonly RunRecord[] | null
+  >(null)
+  const comparisonRequest = useRef<readonly RunRecord[] | null>(null)
+
+  const clearComparison = () => {
+    comparisonRequest.current = null
+    setPendingComparison(null)
+    setComparisonState(null)
+  }
+
+  const compareSelected = () => {
+    if (comparisonRequest.current) return
+    comparisonRequest.current = comparisonRuns
+    setPendingComparison(comparisonRuns)
+    setComparisonState(null)
+    setError('')
+  }
+
+  useEffect(() => {
+    if (!pendingComparison) return
+
+    // Give the pending button a paint before the synchronous stored-input comparison.
+    // This is one cancellable request, not a recurring rendering loop or a minimum delay.
+    let frame = requestAnimationFrame(() => {
+      frame = requestAnimationFrame(() => {
+        if (comparisonRequest.current !== pendingComparison) return
+        try {
+          setComparisonState({
+            value: compareRuns(pendingComparison),
+            sources: pendingComparison
+          })
+        } catch (reason) {
+          setError(errorMessage(reason))
+        } finally {
+          comparisonRequest.current = null
+          setPendingComparison(null)
+        }
+      })
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [pendingComparison])
+
+  useEffect(() => {
+    if (comparisonRequest.current?.some((run) => !runs.includes(run))) {
+      comparisonRequest.current = null
+      setPendingComparison(null)
+    }
+    setComparisonIds((current) => {
+      const retained = current.filter((id) =>
+        runs.some((run) => run.result.runId === id)
+      )
+      return retained.length === current.length ? current : retained
+    })
+    setComparisonState((current) =>
+      current && !current.sources.every((run) => runs.includes(run))
+        ? null
+        : current
+    )
+  }, [runs])
 
   const [error, setError] = useState('')
 
@@ -32,10 +106,15 @@ export function useRunLibrary({
 
   useEffect(() => {
     const element = dialog.current
+    const returnFocus = document.activeElement
 
     element?.showModal()
 
-    return () => element?.close()
+    return () => {
+      element?.close()
+      if (returnFocus instanceof HTMLElement && returnFocus.isConnected)
+        returnFocus.focus()
+    }
   }, [])
 
   const selected = runs.find((run) => run.result.runId === selectedId)
@@ -93,7 +172,10 @@ export function useRunLibrary({
     comparisonIds,
     setComparisonIds,
     comparison,
-    setComparison,
+    comparisonRuns,
+    comparing: pendingComparison !== null,
+    clearComparison,
+    compareSelected,
     error,
     setError,
     saving,

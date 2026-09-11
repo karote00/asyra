@@ -1,8 +1,31 @@
 # M3.5: Understandable Experiment Workflow
 
-Status: implemented and validated at port 3020 on 2026-09-09;
-user acceptance and closeout remain pending.
-M3 is accepted and closed. This bounded usability milestone precedes M4.
+Status: DONE - closed 2026-09-12 by the user's explicit request to close M4
+and all preceding stages. This records user acceptance of the bounded workflow.
+
+## Completion decision
+
+One Run action performs current-input admission; Setup/Preview/Results preserve
+editing context; formal evidence, historical replay, freshness and persistence
+feedback remain distinct. Natural panel scrolling and compact trajectory mapping
+retain accessible controls and canonical completed-edit behavior. The M4 action
+feedback follow-up completes destination focus without background focus theft.
+
+Exit criteria: the permanent acceptance journeys below, inspected desktop/narrow
+App screenshots and user review are complete. PR #175 delivered this workflow;
+PR #181 contains its subsequent feedback corrections. The final combined source
+`34500475524d419109c1b5c89c1e388e2b53c582` passes 678 App tests, build/typecheck,
+100 Inspector contracts and all five required remote checks (validate, ordinary
+and collaboration E2E, production artifacts, framework-release-readiness).
+Detailed historical browser evidence and limitations are retained below.
+
+Canonical record: `docs/ai/apps/asyra-sim/plans/completed/m3-5-workbench-flow.md`.
+M0 feasibility and M1-M3 retain their existing completion evidence and dates.
+This closeout also accompanies M4 acceptance; M5/M6 and R0 release remain open.
+No version bump, release, deployment or PR merge is part of this decision.
+
+The following execution history preserves earlier pending-acceptance and
+no-closeout statements as dated checkpoints; this decision supersedes them.
 
 ## User outcome and scope
 
@@ -12,8 +35,8 @@ context. The observed problem is the crowded right panel and unclear transitions
 between preflight, playback, retained results and replay, not a solver defect.
 
 Product behavior is owned by the thin contract in
-[robot-workcell-v0.md](../specs/robot-workcell-v0.md) and the matching `ui` route in
-the [R0 Inspector](../../../../../tools/flow-inspector/inspectors/asyra-sim-r0-flow-inspector.html).
+[robot-workcell-v0.md](../../specs/robot-workcell-v0.md) and the matching `ui` route in
+the [R0 Inspector](../../../../../../tools/flow-inspector/inspectors/asyra-sim-r0-flow-inspector.html).
 Each implementation slice followed the full UI owner contract and a Step Execution
 Card before its tests or implementation. Preserve `snapshot`, `run`, storage and rendering
 ownership; change their contracts only if a concrete necessary handoff requires
@@ -222,7 +245,7 @@ pilot/release work remain separate and have not advanced. The next step is the
 user's hands-on review, followed only by explicitly confirmed closeout/remote work.
 
 The ordinary operation guide is
-[Understandable workflow review](../../../../../apps/asyra-sim/README.md#understandable-workflow-review).
+[Understandable workflow review](../../../../../../apps/asyra-sim/README.md#understandable-workflow-review).
 
 
 ### UI scroll correction - 2026-09-09

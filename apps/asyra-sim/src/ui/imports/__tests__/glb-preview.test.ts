@@ -347,3 +347,44 @@ it('releases the file picker immediately on cancellation and ignores late file b
 
   expect(host.querySelector('.asset-summary')).toBeNull()
 })
+
+it('exposes source preparation and acceptance progress and reveals the prepared source', async () => {
+  const scroll = vi.fn()
+  const original = HTMLElement.prototype.scrollIntoView
+  HTMLElement.prototype.scrollIntoView = scroll
+  let finish: (value: PreparedVisualImport) => void = () => undefined
+  prepare.mockImplementationOnce(
+    () =>
+      new Promise<PreparedVisualImport>((resolve) => {
+        finish = resolve
+      })
+  )
+  await choose(smallFile())
+  expect(host.querySelector('[role="status"]')?.textContent).toContain(
+    'Preparing original part'
+  )
+  expect(input().disabled).toBe(true)
+  await act(() => finish(prepared))
+  expect(document.activeElement?.getAttribute('aria-label')).toBe(
+    'Original part source review'
+  )
+  expect(scroll).toHaveBeenCalledTimes(1)
+  let complete: () => void = () => undefined
+  retain.mockImplementationOnce(
+    () =>
+      new Promise<void>((resolve) => {
+        complete = resolve
+      })
+  )
+  await act(() => button('Preview placement in 3D')?.click())
+  await act(() => button('Accept original part')?.click())
+  expect(host.querySelector('[role="status"]')?.textContent).toContain(
+    'Accepting original part'
+  )
+  await act(() => complete())
+  expect(host.querySelector('[role="status"]')?.textContent).toContain(
+    'Original part accepted'
+  )
+  expect(scroll).toHaveBeenCalledTimes(1)
+  HTMLElement.prototype.scrollIntoView = original
+})

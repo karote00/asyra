@@ -1,4 +1,5 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { useContentReveal } from '../shared/use-content-reveal'
 import type { TrajectoryInput } from '../../domain/trajectory-input'
 import type { ExperimentInputReader } from '../../storage/experiment-input'
 import type { TrajectoryImportPreview } from '../../storage/trajectory-import'
@@ -60,6 +61,9 @@ export function TrajectoryImportPanel({
   useEffect(() => {
     onValidity?.(importPending || executable)
   }, [onValidity, importPending, executable])
+
+  const [previewRequest, setPreviewRequest] = useState<object | null>(null)
+  const previewTarget = useContentReveal<HTMLDivElement>(previewRequest)
 
   return (
     <details
@@ -136,6 +140,7 @@ export function TrajectoryImportPanel({
           />
         </label>
 
+        {reading && <span role="status">Reading trajectory file…</span>}
         <span className="format-tag text-[9px] text-sim-muted ml-auto">
           {kind.toUpperCase()}
         </span>
@@ -290,16 +295,13 @@ export function TrajectoryImportPanel({
         </table>
       )}
 
-      {reading && (
-        <p className="hint text-[10px] leading-[1.6] text-sim-muted font-normal">
-          Reading trajectory file…
-        </p>
-      )}
-
       <button
         className="wide w-full"
         disabled={reading}
-        onClick={() => inspect()}
+        onClick={() => {
+          inspect()
+          setPreviewRequest({})
+        }}
       >
         Preview trajectory
       </button>
@@ -311,7 +313,12 @@ export function TrajectoryImportPanel({
       )}
 
       {preview?.value && (
-        <div className="accepted-preview p-3 bg-sim-success rounded-[6px] grid gap-2 mt-[10px] text-[11px]">
+        <div
+          ref={previewTarget}
+          tabIndex={-1}
+          aria-label="Trajectory preview review"
+          className="accepted-preview p-3 bg-sim-success rounded-[6px] grid gap-2 mt-[10px] text-[11px]"
+        >
           <strong>
             {preview.value.trajectory.keyframes.length} valid keyframes
           </strong>
@@ -354,7 +361,7 @@ export function TrajectoryImportPanel({
               disabled={saving}
               onClick={() => accept(onAccept)}
             >
-              Import trajectory
+              {saving ? 'Importing trajectory…' : 'Import trajectory'}
             </button>
           )}
         </div>

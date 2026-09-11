@@ -2,6 +2,16 @@
 
 ## 1. Status and Task Contract
 
+### Current milestone closeout - 2026-09-12
+
+M0 feasibility and M1-M4, including M3.5, are complete within their bounded
+contracts. The user explicitly authorized M3.5/M4 acceptance and closeout;
+previous M1-M3 dates and proof limits remain intact. See
+[M3.5](completed/m3-5-workbench-flow.md) and
+[M4](completed/m4-comparison-extensions.md) for final evidence and decisions.
+M5 is the next separately authorized milestone. This roadmap stays active for
+M5/M6 and R0; milestone closeout does not authorize deployment or public release.
+
 ### 1.1 Development workbench closeout (2026-09-07)
 
 The bounded implementation and original-part refactor are complete for PR #156.
@@ -274,18 +284,20 @@ owner conclusions and operational acceptance are archived in
 [M3 formal analysis](completed/m3-formal-analysis.md).
 M4-M6 and independent release gates remain separate.
 
-## 6.5. M3.5: Understandable Experiment Workflow - Local validation
+## 6.5. M3.5: Understandable Experiment Workflow - Complete
 
-User acceptance of M3 was confirmed on 2026-09-09 after the live demonstration.
-The next bounded milestone addresses a single Run action with automatic
-preflight, Setup/Preview/Results tabs, stable controls and clearer retained
-results/replay. See [the M3.5 plan](m3-5-workbench-flow.md) for owner sequence,
-permanent product cases, gates and exclusions. Implementation and permanent tests
-now cover this UI flow. Final port 3020 validation passed; user acceptance remains
-pending and M3.5 is not closed.
-M3 numerical acceptance remains closed. M4-M6 are not completed by this plan.
+Closed 2026-09-12 by explicit user acceptance. Single Run admission, workflow
+tabs, current-input editing, natural scrolling and evidence/replay/retention
+feedback meet the bounded exit criteria. See
+[the completed M3.5 record](completed/m3-5-workbench-flow.md).
+M3 numerical acceptance remains closed; M5/M6 release gates remain separate.
 
-## 7. M4: Variant Comparison, Versions, and Private Extensions
+## 7. M4: Variant Comparison, Versions, and Private Extensions - Complete
+
+Closed 2026-09-12 by explicit user acceptance of this stage and preceding stages.
+All six owners and the ordinary UI/SDK paths meet their bounded exit criteria;
+see [the completed M4 record](completed/m4-comparison-extensions.md). The earlier
+M3.5 acceptance dependency is resolved. M5/M6 and R0 remain future work.
 
 ### User Outcome
 

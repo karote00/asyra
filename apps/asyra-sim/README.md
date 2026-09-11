@@ -386,6 +386,63 @@ changes to geometry and parameters still appear. Original identities and lineage
 are retained in reports. Pair labels use the frozen model's names, with raw IDs
 available in the expanded evidence.
 
+### M4 hands-on review
+
+Use a separate local project or a copy of your current project for this review.
+Do not clear browser data. In the starter workcell, choose **A - Baseline
+workcell**, open **Experiments**, select **Synthetic clearance study - r1**,
+and leave minimum clearance at **20 mm** and the interval at **0–8 s**.
+
+1. Run analysis and open **Results**. Wait for **Saved to this project**;
+   execution completion and durable saving are separate states.
+2. Duplicate A as **B - fixture revision**. Select **fixture post** in the
+   hierarchy; set **Mount position (m) X** to **-0.6** and press Enter.
+   Run the copied Synthetic clearance study and wait for saving.
+3. Duplicate B as **C - further revision**. Set its fixture post X to
+   **-0.45**, then run and wait for saving. A remains at **-0.75**.
+   Copies have independent identities; copying does not copy or create runs.
+4. Open **Runs & compare** and check C, B, then A. **Selected comparison runs**
+   assigns slots 1, 2 and 3 in that order. Remove a slot to compare two, or
+   reselect it to append it. Click **Compare selected runs** explicitly.
+   The button shows a spinner and **Comparing runs…** while pending and prevents
+   duplicate submission. Completion automatically scrolls to and focuses the
+   comparison region; no manual search below the selected-run details is needed.
+   Reduced-motion preference disables animated scrolling. Changing selection or
+   closing the dialog cancels pending comparison.
+   Expect matching method/scope/rule/interval and a `workcell.bodies` input
+   difference. This example reports complete coverage; compare its stored
+   bounds and findings without treating a method verdict as equipment approval.
+5. Expand **Original source identities** to inspect the frozen candidate,
+   experiment, run, snapshot and available copied origin. Experiment revision
+   and rule revision are shown separately from method version. Body placement
+   edits change model inputs; they do not themselves increment the experiment
+   definition revision. Selection, inspection and comparison never rerun analysis.
+6. Close the dialog with Escape; focus returns to **Runs & compare**. For C,
+   change minimum clearance to **35 mm** and complete the edit. The study advances
+   to a new revision; its old run remains historical. Run again, then compare
+   the old and new C runs. Expect the decision-rule difference and a reason why
+   they are not directly comparable. Undo/Redo edits do not rewrite either run.
+7. Select an individual run and export JSON, CSV and HTML. Use **Projects** to
+   export the portable project, then choose that file, review its preview and
+   explicitly accept import. Reopen the saved project or refresh the same
+   project URL. Retained reports and identities remain unchanged; transient
+   comparison slots are selected again. Keep the exported file as your backup.
+
+The formal three-candidate browser test exports the portable project as
+`three-candidates.json` in its report attachments. This allows the same three
+completed runs to be reviewed without reconstructing model inputs. Choose it
+through **Projects → Choose project file**, inspect the preview and confirm
+replacement only in your review project. Run reports alone are not project files.
+At **576 × 690**, history and comparison cards stack in the dialog's natural
+scroll region. Execution, coverage and verdict remain separate labels, including
+partial or cancelled evidence. Removed canonical runs lose their selected slot;
+Undoing their removal does not silently reselect them.
+
+For developer installation, exact schema/capability/version admission and the
+independent sphere example, follow the reproducible M4 commands in the
+[SDK guide](../../docs/ai/apps/asyra-sim/specs/extensions-sdk-v0.md#reproduce-the-m4-sdk-and-ui-path).
+Field observations below remain separate from these immutable run reports.
+
 ## Field observations
 
 In **Runs & compare**, select a retained result and scroll to **Field observations**.
@@ -466,3 +523,43 @@ and [release gates](../../docs/ai/apps/asyra-sim/release/FIRST_RELEASE.md).
 We provide a trustworthy environment for executing experiments, not a guarantee
 that users' experimental assumptions hold. Independent pilot acceptance and
 all first-release gates are required before R0.
+
+
+### Reviewing action feedback and revealed content
+
+Use the same running App and project URL. The following checks need no model
+edits or new analysis; cancel import previews and discard empty observation
+drafts when finished. For import checks, use your existing portable project or
+GLB file. Test copy/import replacement in a separate review project.
+
+1. In the upper-left header, click the folder icon labeled **Projects**.
+   Click **Copy project** or **Export project**. During the actual operation,
+   expect **Copying project…** or **Preparing export…** on the button and a
+   disabled action. The dialog also shows persistence status inside it. Fast
+   operations can finish immediately; there is no artificial delay. An error
+   restores the action and shows its reason.
+2. In that dialog, under **Portable project files**, use **Choose project file**
+   to select an exported project JSON. Expect a reading/validation message,
+   followed by automatic scrolling and focus to the green preview containing
+   file name and retained-run count. Use **Discard import preview** to leave the
+   current project intact. Actual acceptance displays **Importing project…**.
+3. Close **Projects**, click **Experiments** on the left toolbar and expand the
+   original-part GLB section. Choose a GLB. Expect reading/preparing feedback
+   beside the controls, then automatic navigation to its source review. Check
+   dimensions and units there; **Cancel preview** closes this unaccepted draft.
+4. In **Experiments**, expand the trajectory import section and click
+   **Preview trajectory** after supplying valid data and units. Expect the
+   conversion preview to receive focus and enter view. File-reading feedback
+   stays beside the file selector. Acceptance displays **Importing trajectory…**.
+5. Click **Runs & compare** on the left toolbar. Click a run's large named card
+   in **Run history** (the checkbox instead adds a comparison slot). Expect
+   automatic scrolling and focus to **Selected run**, including on a narrow
+   window. In **Field observations**, click **Add field observation**: the
+   **Observation title** input is brought into view and focused. Use **Discard
+   draft** when done. Saving an actual note/attachment shows pending feedback
+   while preserving focus during ordinary save acknowledgements.
+6. After an analysis, click **View results** in **Experiments**. Expect the
+   **Results** tab and its content to receive focus and enter view. Background
+   analysis completion itself preserves your current editing location. Creating
+   an experiment and retrying failed result retention/saving also display their
+   own pending labels and prevent duplicate submission.

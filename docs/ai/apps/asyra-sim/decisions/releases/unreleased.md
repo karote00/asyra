@@ -237,3 +237,25 @@ Pending saves disable both save entry points and guard duplicate dispatch.
   immediately. Preserve numerical owners, full geometry, history and persistence.
   The user authorized committing and pushing M3 and the M3.5 plan, followed by
   current-commit CI verification before review. No merge or release is authorized.
+
+### 2026-09-12 - User closes M3.5/M4 and confirms preceding milestones
+
+- Context: the user requested closeout of the current Asyra Sim M4 stage and
+  every preceding stage, followed by push and PR tracking. M0 feasibility and
+  M1-M3 already have bounded completion evidence; their dates and limits stand.
+- Decision: accept and close M3.5 workflow usability and M4 comparison, versions
+  and private extensions. Archive the detailed records at
+  `docs/ai/apps/asyra-sim/plans/completed/m3-5-workbench-flow.md` and
+  `docs/ai/apps/asyra-sim/plans/completed/m4-comparison-extensions.md`.
+  This supersedes the pending M3.5 implementation/acceptance state in the
+  2026-09-09 entry and the interim pending M4 acceptance checkpoints; their
+  execution history is retained. The old M3.5 path in that entry is historical.
+- Evidence: final implementation source `34500475524d419109c1b5c89c1e388e2b53c582`
+  passes 678 App tests, the recorded browser/visual gates and all five required
+  PR #181 checks, including production artifacts and release readiness.
+  The user's closeout instruction supplies acceptance; CI alone does not.
+- Consequences: M5 candidate preparation is the next separately authorized
+  milestone. M5 resource/offline evidence, M6 independent pilots and all public
+  release gates remain open. No Changeset, version bump, tag, merge, publication,
+  deployment or App-server startup is authorized by this closeout. The user
+  separately authorizes pushing this documentation and tracking its PR checks.

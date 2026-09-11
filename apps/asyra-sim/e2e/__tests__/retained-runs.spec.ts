@@ -57,6 +57,31 @@ test('retains runs with Undo, compares evidence, exports reports, and reopens po
     .getByRole('button', { name: 'Runs & compare', exact: true })
     .click()
   const library = page.getByRole('dialog', { name: 'Runs and comparison' })
+  await page.setViewportSize({ width: 576, height: 690 })
+  await library.locator('.run-history article button').last().click()
+  await expect(
+    library.getByRole('region', { name: 'Selected run', exact: true })
+  ).toBeFocused()
+  await expect(
+    library
+      .getByRole('region', { name: 'Selected run', exact: true })
+      .getByRole('heading')
+      .first()
+  ).toBeInViewport()
+  await expect
+    .poll(async () => {
+      const heading = await library
+        .getByRole('region', { name: 'Selected run', exact: true })
+        .getByRole('heading')
+        .first()
+        .boundingBox()
+      const dialog = await library.boundingBox()
+      return heading && dialog ? heading.y - dialog.y : Number.POSITIVE_INFINITY
+    })
+    .toBeLessThan(80)
+  await page.screenshot({ path: info.outputPath('selected-run-narrow.png') })
+  await library.locator('.run-history article button').first().click()
+  await page.setViewportSize({ width: 1440, height: 960 })
   const checkboxes = library.getByRole('checkbox')
   await expect(checkboxes).toHaveCount(2)
   await checkboxes.nth(0).check()
@@ -109,6 +134,8 @@ test('retains runs with Undo, compares evidence, exports reports, and reopens po
   await expect(page.getByTestId('project-import-preview')).toContainText(
     '2 retained runs'
   )
+  await expect(page.getByTestId('project-import-preview')).toBeFocused()
+  await expect(page.getByTestId('project-import-preview')).toBeInViewport()
   await page.screenshot({
     path: info.outputPath('portable-project-preview.png')
   })

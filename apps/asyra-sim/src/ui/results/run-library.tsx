@@ -1,10 +1,11 @@
+import { useState } from 'react'
+import { useContentReveal } from '../shared/use-content-reveal'
 import type { ExperimentSnapshot } from '../../analysis/contracts'
-import { compareRuns } from '../../storage/run-comparison'
 import type { RunRecord } from '../../storage/run-record'
 import { FieldObservations } from '../observations/field-observations'
 import { type ObservationAccess } from '../observations/observation-access'
-import { errorMessage } from '../shared/error-message'
 import { AnalysisResultView } from './analysis-result-view'
+import { RunContext } from './run-context'
 import { RunComparisonView } from './run-comparison-view'
 import { useRunLibrary } from './use-run-library'
 
@@ -42,9 +43,11 @@ export function RunLibrary({
     comparisonIds,
     setComparisonIds,
     comparison,
-    setComparison,
+    comparisonRuns,
+    comparing,
+    clearComparison,
+    compareSelected,
     error,
-    setError,
     saving,
     setPage,
     selected,
@@ -53,6 +56,9 @@ export function RunLibrary({
     exportReport,
     retainSelected
   } = useRunLibrary({ runs, onRetain })
+
+  const [detailRequest, setDetailRequest] = useState<object | null>(null)
+  const detailTarget = useContentReveal<HTMLElement>(detailRequest)
 
   return (
     <dialog
@@ -66,6 +72,12 @@ export function RunLibrary({
         [&_.result-card_summary]:mx-0"
       aria-label="Runs and comparison"
       onCancel={onClose}
+      onKeyDown={(event) => {
+        if (event.key !== 'Escape' || event.nativeEvent.isComposing) return
+        event.preventDefault()
+        event.stopPropagation()
+        onClose()
+      }}
     >
       <header
         className="project-dialog-heading flex gap-3 items-center justify-between mb-[14px]
@@ -93,7 +105,7 @@ export function RunLibrary({
 
       <div
         className="run-library-grid grid grid-cols-[250px_minmax(0,_1fr)] gap-6 my-5 mx-0
-          max-[900px]:grid-cols-[200px_minmax(0,_1fr)] max-[900px]:gap-4"
+          min-[701px]:max-[900px]:grid-cols-[200px_minmax(0,_1fr)] max-[900px]:gap-4 max-[700px]:grid-cols-1"
       >
         <section
           aria-label="Run history"
@@ -114,13 +126,21 @@ export function RunLibrary({
               <article key={run.result.runId}>
                 <button
                   aria-pressed={selectedId === run.result.runId}
-                  onClick={() => setSelectedId(run.result.runId)}
+                  onClick={() => {
+                    setSelectedId(run.result.runId)
+                    setDetailRequest({})
+                  }}
                 >
                   <strong>{run.name}</strong>
 
                   <span>
                     {run.result.execution} - {run.result.coverage}
                   </span>
+
+                  <small>
+                    Experiment revision {run.snapshot.source.experimentRevision}{' '}
+                    - {run.snapshot.method.id}@{run.snapshot.method.version}
+                  </small>
 
                   <small>{run.result.runId}</small>
                 </button>
@@ -147,7 +167,7 @@ export function RunLibrary({
                           : current.filter((id) => id !== run.result.runId)
                       )
 
-                      setComparison(null)
+                      clearComparison()
                     }}
                   />
                   Include in comparison
@@ -177,30 +197,66 @@ export function RunLibrary({
             </div>
           )}
 
+          <section
+            aria-label="Selected comparison runs"
+            className="grid gap-2 wrap-anywhere"
+          >
+            <h4>Selected comparison runs</h4>
+            {comparisonRuns.length === 0 && (
+              <p>Select two or three runs below their history entries.</p>
+            )}
+            {comparisonRuns.map((run, index) => {
+              const label = `${index + 1} - ${run.name}`
+              return (
+                <div
+                  key={run.result.runId}
+                  className="grid gap-2 border border-sim-divider rounded p-2 text-xs"
+                >
+                  <strong>{label}</strong>
+                  <span>
+                    Experiment revision {run.snapshot.source.experimentRevision}
+                  </span>
+                  <button
+                    onClick={() => {
+                      setComparisonIds((current) =>
+                        current.filter((id) => id !== run.result.runId)
+                      )
+                      clearComparison()
+                    }}
+                  >
+                    Remove {label}
+                  </button>
+                </div>
+              )
+            })}
+          </section>
+
           <button
             className="primary bg-sim-accent text-[#fff] border-sim-accent [&:hover]:bg-sim-accent-hover"
-            disabled={comparisonIds.length < 2}
-            onClick={() => {
-              try {
-                setComparison(
-                  compareRuns(
-                    runs.filter((run) =>
-                      comparisonIds.includes(run.result.runId)
-                    )
-                  )
-                )
-
-                setError('')
-              } catch (reason) {
-                setError(errorMessage(reason))
-              }
-            }}
+            disabled={comparing || comparisonIds.length < 2}
+            aria-busy={comparing}
+            onClick={compareSelected}
           >
-            Compare selected runs ({comparisonIds.length}/3)
+            {comparing ? (
+              <span className="inline-flex items-center justify-center gap-2">
+                <span
+                  aria-hidden="true"
+                  className="size-3 rounded-full border-2 border-current border-r-transparent animate-spin motion-reduce:animate-none"
+                />
+                Comparing runs…
+              </span>
+            ) : (
+              `Compare selected runs (${comparisonIds.length}/3)`
+            )}
           </button>
         </section>
 
-        <section className="run-detail min-w-0" aria-label="Selected run">
+        <section
+          className="run-detail min-w-0"
+          aria-label="Selected run"
+          ref={detailTarget}
+          tabIndex={-1}
+        >
           {selected && (
             <>
               <div className="section-heading flex items-center justify-between [&_>_span]:text-[10px] [&_>_span]:text-sim-muted">
@@ -213,6 +269,8 @@ export function RunLibrary({
                 </span>
               </div>
 
+              <RunContext run={selected} />
+
               <div className="run-detail-actions flex flex-wrap gap-2 my-3 mx-0 [&_button]:text-[11px]">
                 {!retainedIds.has(selected.result.runId) && (
                   <button
@@ -223,7 +281,7 @@ export function RunLibrary({
                     }
                     onClick={retainSelected}
                   >
-                    Retry retention
+                    {saving ? 'Retaining result…' : 'Retry retention'}
                   </button>
                 )}
 

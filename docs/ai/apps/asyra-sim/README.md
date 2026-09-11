@@ -14,10 +14,11 @@ single robot workcell**, not a complete factory simulator.
   and PLANS.md for implementation evidence and remaining public-release gates.
 - The development workbench was merged as PR #156. See
   [the completed plan](plans/completed/development-workbench.md). M1 is closed
-  and M2 import-contract and M3 formal-method acceptance are complete; the next
-  bounded milestone is [M3.5 workflow usability](plans/m3-5-workbench-flow.md),
-  implemented and validated at port 3020, with user acceptance pending. See [PLANS.md](PLANS.md).
-  The R0 release gates remain open; this is not a released product.
+  and M0 feasibility/M2/M3 acceptance remain complete. The user closed
+  [M3.5 workflow usability](plans/completed/m3-5-workbench-flow.md) and
+  [M4 comparison and extensions](plans/completed/m4-comparison-extensions.md)
+  on 2026-09-12. Next is the separately scoped M5 controlled-pilot candidate;
+  see [PLANS.md](PLANS.md). R0 release gates remain open.
 - The hosted workbench uses the permanent domain `asyra-sim.vercel.app` and
   production branch `main`. See [hosting and browser-local data boundaries](release/HOSTED_PREVIEW.md).
 - App workspace: `apps/asyra-sim/`, alongside `apps/asyra-design/`.
@@ -46,7 +47,8 @@ Before resuming implementation, read the requested
 `a379a0ee2` and their completed corrections. See the
 [M2 closeout](plans/completed/m2-import-contract.md) for final acceptance;
 M3 acceptance is archived in [its completion record](plans/completed/m3-formal-analysis.md);
-the next task prepares M3.5 contracts before its UI implementation.
+M3.5 and M4 are now archived as well. Consult the roadmap M5 scope before
+starting separately authorized candidate preparation.
 
 | Question                                                                         | Document                                                        |
 | -------------------------------------------------------------------------------- | --------------------------------------------------------------- |

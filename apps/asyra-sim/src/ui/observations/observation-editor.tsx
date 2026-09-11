@@ -1,3 +1,4 @@
+import { useContentReveal } from '../shared/use-content-reveal'
 import { useRef } from 'react'
 import {
   OBSERVATION_LIMITS,
@@ -17,6 +18,7 @@ type Props = Pick<
   | 'existing'
   | 'setExisting'
   | 'saving'
+  | 'editorRequest'
   | 'files'
   | 'current'
   | 'stale'
@@ -37,6 +39,7 @@ export function ObservationEditor({
   existing,
   setExisting,
   saving,
+  editorRequest,
   files,
   current,
   stale,
@@ -47,6 +50,9 @@ export function ObservationEditor({
   error
 }: Props) {
   const submit = useRef<HTMLButtonElement>(null)
+  const titleTarget = useContentReveal<HTMLInputElement>(
+    open ? editorRequest : null
+  )
 
   return (
     <>
@@ -78,6 +84,7 @@ export function ObservationEditor({
           <label>
             Title
             <input
+              ref={titleTarget}
               aria-label="Observation title"
               value={title}
               aria-invalid={!title.trim()}
@@ -230,6 +237,7 @@ export function ObservationEditor({
             {(files.prepared || error) && (
               <button
                 ref={submit}
+                aria-busy={saving}
                 disabled={
                   saving ||
                   !validObservationDraft(draft) ||
@@ -239,7 +247,9 @@ export function ObservationEditor({
                 }
                 onClick={() => void save()}
               >
-                {files.prepared ? 'Apply attachments' : 'Retry change'}
+                {saving && 'Saving observation change…'}
+                {!saving &&
+                  (files.prepared ? 'Apply attachments' : 'Retry change')}
               </button>
             )}
 

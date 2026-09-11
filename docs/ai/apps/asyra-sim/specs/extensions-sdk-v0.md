@@ -161,3 +161,32 @@ an intentionally uncooperative extension's real Worker termination. The normal
 UI suite covers selection, parameter edits, capability blocks, portable history
 and missing-module reading. Add permanent cases for each private method's own
 applicability boundaries; passing the sample's tests does not validate your math.
+
+## Reproduce the M4 SDK and UI path
+
+From the M4 repository worktree, use the declared toolchain and the same normal
+App origin. If Framework outputs are absent in a fresh checkout, build the
+existing dependency closure first:
+
+```sh
+yarn turbo run react:build --filter=@asyra/asyra-sim --concurrency=2
+yarn workspace @asyra/asyra-sim test:local src/extensions src/analysis/__tests__/method-conformance.test.ts src/analysis/__tests__/runner.test.ts src/analysis/methods/__tests__/static-spheres.test.ts
+APP_URL=http://127.0.0.1:3020 yarn workspace @asyra/asyra-sim test:e2e e2e/__tests__/methods.spec.ts src/analysis/__tests__/runner.browser.spec.ts --output=../../.artifacts/m4-sdk
+```
+
+The existing independent example is the integration specimen; these commands do
+not install another module or modify deployment composition. The ordinary UI
+case creates two native spheres with radius 0.1 m at x=0 and x=1 m, selects
+**Analytical static spheres - 0.1.0**, and sets `additionalError` to 0.0005 m.
+It explicitly selects primary/influencing scope and static time 0, then creates
+and runs the experiment. The resulting 799.5-800.5 mm bounds, example origin,
+parameters and immutable declaration survive portable export/reopen. A separate
+fixture with a missing private identity remains readable and blocks execution.
+The production Worker cases prove forced cancellation and timeout of an
+uncooperative method; conformance is not numerical certification of private code.
+
+For an actual private module, follow **Add a Private Method** above: implement
+its own identity/descriptor/execute and independent numerical oracles, include
+it only in `installed-methods.ts`, then rerun the same conformance and UI gates
+and restart. The example's green tests alone do not validate another algorithm.
+M5 independent packaging/offline qualification remains outside M4.

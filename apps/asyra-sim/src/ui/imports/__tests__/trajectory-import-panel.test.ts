@@ -733,3 +733,27 @@ it('reads new external CSV columns without converting under the previous source 
     normalize.mockRestore()
   }
 })
+
+it('reveals an explicitly requested preview but not normal completed edits', async () => {
+  await act(() => button('Preview trajectory')?.click())
+  expect(document.activeElement?.getAttribute('aria-label')).toBe(
+    'Trajectory preview review'
+  )
+})
+
+it('shows trajectory reading status beside the file controls', async () => {
+  let finish: (value: string) => void = () => undefined
+  const file = new File([], 'pending.csv')
+  file.text = () =>
+    new Promise<string>((resolve) => {
+      finish = resolve
+    })
+  await choose(file)
+  expect(host.querySelector('.file-row')?.textContent).toContain(
+    'Reading trajectory file'
+  )
+  await act(() => finish('time\n0'))
+  expect(host.querySelector('.file-row')?.textContent).not.toContain(
+    'Reading trajectory file'
+  )
+})

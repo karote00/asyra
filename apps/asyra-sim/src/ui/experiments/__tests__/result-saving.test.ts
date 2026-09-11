@@ -54,7 +54,11 @@ it('distinguishes canonical retention from acknowledged saving, failure and retr
     dirty: true,
     error: ''
   })
+  let finishFlush!: () => void
   const flush = vi.fn(async () => {
+    await new Promise<void>((resolve) => {
+      finishFlush = resolve
+    })
     state.publish({
       ...state.getSnapshot(),
       status: 'saved',
@@ -102,7 +106,13 @@ it('distinguishes canonical retention from acknowledged saving, failure and retr
       (button) => button.textContent === 'Retry saving'
     )
     expect(retry).toBeDefined()
-    await act(() => retry?.click())
+    await act(() => {
+      retry?.click()
+      retry?.click()
+    })
+    expect(host.textContent).toContain('Retrying save…')
+    expect(retry?.disabled).toBe(true)
+    await act(() => finishFlush())
     expect(flush).toHaveBeenCalledOnce()
     expect(retain).not.toHaveBeenCalled()
     expect(host.textContent).toContain('Saved to this project')
