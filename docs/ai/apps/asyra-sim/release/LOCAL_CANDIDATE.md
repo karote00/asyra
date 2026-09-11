@@ -175,15 +175,20 @@ local review. A public issue/security channel, maintenance owner and response
 policy have not been authorized; do not send secrets to a guessed address.
 Free software does not promise an SLA or unlimited immediate support.
 
-Historical evidence only: the 2026-09-05 Yarn registry audit of the locked independent consumer returned
-one moderate deprecation notice for `glob@10.5.0` through `cacache@19.0.1` in the
-development dependency tree. It is absent from the actual main/Worker bundle
-inputs. No high/critical advisory was returned by that audit. This is a dated
-registry result, not proof of vulnerability absence; developer tooling should
-only process trusted source and use the bounded isolation workflow. Dependency
-upgrades and reassessment remain separate work. Runtime notices retain the
-actual shipped license texts; missing publisher text is supplemented only from
-the exact registry-declared source revision, never an invented attribution.
+The 2026-09-12 audit of the exact-source independent consumer lock at
+`8c6cc4472942b69c5ac369c788de3a84634571b5` returned three moderate records:
+`vitest@3.2.7` and `@vitest/mocker@3.2.7` share
+<a href="https://github.com/advisories/GHSA-82fw-gwwq-j7x9" target="_blank" rel="noopener noreferrer">GHSA-82fw-gwwq-j7x9</a>,
+and `glob@10.5.0` has a deprecation record. No high/critical record was returned.
+This dated registry result is not proof of vulnerability absence. The Vitest
+advisory concerns development-server mock path access; the official App config
+uses Vitest's Node test mode and does not install the public mocker server plugin.
+The ordinary candidate launcher serves static files only. The optional SDK is
+trusted development tooling: do not expose test/dev servers or process untrusted
+source. Dependency upgrades require separate approval. Runtime bundle membership
+and notices are recorded by the producer; this audit does not turn a failed
+consumer build into passing evidence. Preserve that distinction when reviewing
+updated artifacts.
 
 The [pilot review script and sharing preview](PILOT_REVIEW.md) provide detailed
 review steps without requesting confidential files. The [maintenance proposal](MAINTENANCE_PROPOSAL.md)

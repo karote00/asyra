@@ -220,6 +220,7 @@ test('the producer stages a complete versioned candidate without serving SDK dat
     'tsconfig.json',
     'vite.config.ts',
     'vitest.config.ts',
+    'vercel.json',
     'playwright.config.ts',
     'app-environment.mjs',
     'app-environment.d.mts',
@@ -257,6 +258,10 @@ test('the producer stages a complete versioned candidate without serving SDK dat
     '# Start\n[Guide](USER_GUIDE.md)'
   )
   assert.ok(distributionFiles(candidate).includes('sdk/framework/example.tgz'))
+  assert.equal(
+    readFileSync(path.join(candidate, 'sdk/app/vercel.json'), 'utf8'),
+    'input'
+  )
   assert.ok(
     distributionFiles(candidate).includes('sdk/app/app-environment.d.mts')
   )

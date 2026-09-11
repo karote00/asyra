@@ -118,3 +118,20 @@ narrow 576 x 690 comparison screenshots were inspected: declarations, verdict,
 coverage and focused comparison destination are visible. This proves the source
 workflow only; packaged delivery and resource/reference gates remain open.
 Bounded review confirms no production runtime change and unchanged ui contract.
+
+### UI delivery correction - complete test inputs
+
+The exact-source producer at `8c6cc4472` failed 2/678 packed tests because
+`src/init/__tests__/vercel-deployment.test.ts` reads the existing `vercel.json`,
+which the consumer omitted. This is the formal red oracle; no candidate exists
+for that run. Failure/logs remain in App `.artifacts/consumers/8c6cc4472942-H7vvqL`.
+Also strengthen assembly's permanent SDK test before correction.
+
+Step card: same ui delivery inputs, output, conditions, contributors, boundary,
+references and failure owner as above, re-read before this correction. Only add
+the exact existing config to consumer/SDK file collection; preserve its disabled
+automatic deployment and test assertions. No deployment/config semantic change.
+Gates: SDK regression red/green, delivery suite/lint/naming/Inspector/placement,
+commit, then a fresh clean producer invocation. Existing consumer remains failed
+and unmodified. Local browser/log evidence was preserved under `tmp/m5/` because
+root `.artifacts/` is not ignored; this corrects the earlier evidence location.
