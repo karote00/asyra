@@ -1,0 +1,97 @@
+name: Manual App Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      force_app:
+        description: Optional App to rebuild for an out-of-Git configuration change
+        type: choice
+        default: ''
+        options: ['', 'asyra-sim', 'asyra-design', 'asyra-framework']
+      reason:
+        description: Required reason when forcing an App release
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: manual-app-production
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    if: github.repository_id == '893098287' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: read
+    outputs:
+      plan: ${{ steps.plan.outputs.plan }}
+      has_changes: ${{ steps.plan.outputs.has_changes }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '24'
+      - name: Plan accumulated App changes
+        id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FORCE_APP: ${{ inputs.force_app }}
+          RELEASE_REASON: ${{ inputs.reason }}
+        run: node scripts/app-release.mjs plan
+
+  ci:
+    needs: plan
+    if: needs.plan.outputs.has_changes == 'true'
+    uses: ./.github/workflows/main.yml
+
+  e2e:
+    needs: plan
+    if: needs.plan.outputs.has_changes == 'true'
+    uses: ./.github/workflows/e2e.yml
+    with:
+      run_balanced_ai_correctness: true
+
+  production-artifacts:
+    needs: plan
+    if: needs.plan.outputs.has_changes == 'true'
+    uses: ./.github/workflows/production-artifacts.yml
+
+  publish:
+    needs: [plan, ci, e2e, production-artifacts]
+    if: github.repository_id == '893098287' && github.ref == 'refs/heads/main' && needs.plan.outputs.has_changes == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    environment: app-production
+    permissions:
+      contents: read
+      deployments: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '24'
+      # No dependency install, PR artifact download or build in this privileged job.
+      - name: Stage, verify and promote the admitted App versions
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_BYPASS_SIM: ${{ secrets.VERCEL_BYPASS_SIM }}
+          VERCEL_BYPASS_DESIGN: ${{ secrets.VERCEL_BYPASS_DESIGN }}
+          VERCEL_BYPASS_FRAMEWORK: ${{ secrets.VERCEL_BYPASS_FRAMEWORK }}
+          VERCEL_TEAM_ID: ${{ vars.VERCEL_TEAM_ID }}
+          FORCE_APP: ${{ inputs.force_app }}
+          RELEASE_REASON: ${{ inputs.reason }}
+          RELEASE_PLAN: ${{ needs.plan.outputs.plan }}
+        run: node scripts/app-release.mjs publish

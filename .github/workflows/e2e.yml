@@ -1,6 +1,11 @@
 name: E2E Tests
 
 on:
+  workflow_call:
+    inputs:
+      run_balanced_ai_correctness:
+        type: boolean
+        default: false
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
@@ -31,6 +36,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Setup Yarn
         run: corepack enable && yarn set version 4.3.1
@@ -73,6 +79,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Setup Yarn
         run: corepack enable && yarn set version 4.3.1

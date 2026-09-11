@@ -2,18 +2,27 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "vite",
   "installCommand": "cd ../.. && corepack yarn install --immutable",
-  "buildCommand": "cd ../.. && corepack yarn turbo run react:build --filter=@asyra/asyra-sim --concurrency=2",
+  "buildCommand": "cd ../.. && corepack yarn gen:turbo:check && corepack yarn turbo run react:build --filter=@asyra/asyra-sim --concurrency=2",
   "outputDirectory": "dist",
   "git": {
-    "deploymentEnabled": true
+    "deploymentEnabled": false
   },
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "Referrer-Policy", "value": "no-referrer" },
-        { "key": "Cross-Origin-Resource-Policy", "value": "same-origin" },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "no-referrer"
+        },
+        {
+          "key": "Cross-Origin-Resource-Policy",
+          "value": "same-origin"
+        },
         {
           "key": "Content-Security-Policy",
           "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; worker-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'"

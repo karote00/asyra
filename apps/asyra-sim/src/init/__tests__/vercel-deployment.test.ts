@@ -14,10 +14,10 @@ it('builds the Sim dependency graph and serves only its static output', () => {
     'cd ../.. && corepack yarn install --immutable'
   )
   expect(config.buildCommand).toBe(
-    'cd ../.. && corepack yarn turbo run react:build --filter=@asyra/asyra-sim --concurrency=2'
+    'cd ../.. && corepack yarn gen:turbo:check && corepack yarn turbo run react:build --filter=@asyra/asyra-sim --concurrency=2'
   )
   expect(config.outputDirectory).toBe('dist')
-  expect(config.git.deploymentEnabled).toBe(true)
+  expect(config.git.deploymentEnabled).toBe(false)
   // An absent script/Worker must remain a 404, never an HTML app fallback.
   expect(config.rewrites).toBeUndefined()
   expect(config.functions).toBeUndefined()
