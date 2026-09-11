@@ -1,11 +1,21 @@
 import { expect, test } from '@playwright/test'
 
-test('side panels collapse outward without remounting the canvas or discarding drafts', async ({
+test('side panels preserve immediate edits without remounting the canvas', async ({
   page
 }, testInfo) => {
   await page.goto('/')
   await expect(page.getByText('空間模型已就緒')).toBeVisible()
   const scene = page.getByTestId('scene')
+  const checkToolbar = async () => {
+    const toolbar = await page.getByTestId('viewport-toolbar').boundingBox()
+    const viewport = await scene.boundingBox()
+    if (!toolbar || !viewport) throw new Error('Missing camera toolbar')
+    expect(toolbar.y + toolbar.height).toBeLessThanOrEqual(viewport.y)
+    for (const input of await page.locator('.measurement-field input').all()) {
+      await expect(input).toHaveAttribute('aria-description', '單位：公尺')
+    }
+  }
+  await checkToolbar()
   const canvas = await page.locator('canvas').elementHandle()
   const original = await scene.boundingBox()
   const left = await page.locator('#layer-panel').boundingBox()
@@ -36,9 +46,12 @@ test('side panels collapse outward without remounting the canvas or discarding d
   )
   await expect(
     page.getByRole('button', { name: '復原 ⌘Z', exact: true })
-  ).toBeDisabled()
+  ).toBeEnabled()
   await page.getByRole('button', { name: '展開圖層面板', exact: true }).click()
-  await page.getByRole('button', { name: '適合畫面 ⌘1', exact: true }).click()
+  await expect
+    .poll(async () => (await scene.boundingBox())?.width ?? 0)
+    .toBeCloseTo(original.width, 0)
+  await page.getByRole('button', { name: '整體畫面 ⌘1', exact: true }).click()
   await page.screenshot({
     path: testInfo.outputPath('panels-expanded.png'),
     fullPage: true
@@ -60,8 +73,27 @@ test('side panels collapse outward without remounting the canvas or discarding d
       () => document.documentElement.scrollWidth <= innerWidth
     )
   ).toBe(true)
+  await checkToolbar()
+  const input = page.getByLabel('溫室縱向深度', { exact: true })
+  await input.focus()
+  await page.keyboard.press('Tab')
+  await expect(page.getByLabel('單棟寬度', { exact: true })).toBeFocused()
   await page.screenshot({
     path: testInfo.outputPath('mobile-editor.png'),
     fullPage: true
   })
+  await page.getByRole('button', { name: '參考資料', exact: true }).click()
+  await expect(page.getByRole('dialog', { name: '參考資料' })).toBeVisible()
+  await expect(
+    page.getByRole('link', { name: '南改場溫網室技術專刊 ↗' })
+  ).toHaveAttribute('target', '_blank')
+  await page.screenshot({
+    path: testInfo.outputPath('reference-library.png'),
+    fullPage: true
+  })
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('dialog')).not.toBeVisible()
+  await expect(
+    page.getByRole('button', { name: '參考資料', exact: true })
+  ).toBeFocused()
 })

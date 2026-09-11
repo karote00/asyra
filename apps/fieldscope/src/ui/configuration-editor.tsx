@@ -1,7 +1,10 @@
+import { useTranslation, localizeError } from './i18n/locale'
 import {
   createContext,
   useContext,
   useState,
+  useEffect,
+  useRef,
   useSyncExternalStore
 } from 'react'
 import type { FarmRuntime } from '../runtime/bootstrap'
@@ -20,255 +23,325 @@ export function useFarmConfiguration() {
     runtime?.getConfiguration ?? (() => DEFAULT_CONFIGURATION)
   )
 }
-const fields: [Exclude<keyof FarmConfiguration, 'strips'>, string][] = [
-  ['length', '溫室縱向深度'],
-  ['width', '單棟寬度'],
-  ['height', '溫室總高度'],
-  ['soilInset', '鋼管距水道邊緣'],
-  ['startInset', '鋼管前端留白'],
-  ['endInset', '鋼管尾端留白'],
-  ['topExtension', '鋼管超出橫樑'],
-  ['netTop', '拉網最高位置'],
-  ['netBottom', '拉網最低位置']
+function StripActionIcon({ kind }: { kind: 'up' | 'down' | 'remove' }) {
+  return (
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className="shrink-0"
+    >
+      {kind === 'remove' ? (
+        <path
+          d="M5 5L19 19M19 5L5 19"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+      ) : (
+        <path
+          d={kind === 'up' ? 'M4 20L12 4L20 20Z' : 'M4 4L20 4L12 20Z'}
+          fill="currentColor"
+        />
+      )}
+    </svg>
+  )
+}
+
+const fields: Exclude<keyof FarmConfiguration, 'strips'>[] = [
+  'length',
+  'width',
+  'height',
+  'eaveHeight',
+  'soilInset',
+  'startInset',
+  'endInset',
+  'topExtension',
+  'netTop',
+  'netBottom'
 ]
+
+function MeasurementInput({
+  value,
+  label,
+  onCommit,
+  onHistory
+}: {
+  value: number
+  label: string
+  onCommit: (value: number) => Promise<boolean>
+  onHistory: (redo: boolean) => Promise<boolean>
+}) {
+  const { t } = useTranslation()
+  const [text, setText] = useState(String(value))
+  const editing = useRef(false)
+  useEffect(() => {
+    editing.current = false
+    setText(String(value))
+  }, [value])
+  return (
+    <span className="measurement-field h-7 w-24 shrink-0">
+      <input
+        aria-label={label}
+        aria-description={t('editor.unit')}
+        type="number"
+        step="any"
+        value={text}
+        onChange={(event) => {
+          editing.current = true
+          setText(event.target.value)
+        }}
+        onFocus={(event) => event.currentTarget.select()}
+        onKeyDown={(event) => {
+          // A settled numeric field belongs to document history. Unfinished
+          // text keeps the browser's native text-edit Undo/Redo behavior.
+          if (
+            (event.metaKey || event.ctrlKey) &&
+            !event.altKey &&
+            !event.repeat &&
+            event.code === 'KeyZ' &&
+            !editing.current &&
+            text !== '' &&
+            Number(text) === value
+          ) {
+            event.preventDefault()
+            event.stopPropagation()
+            void onHistory(event.shiftKey)
+            return
+          }
+          if (event.key === 'Enter') {
+            event.preventDefault()
+            event.currentTarget.blur()
+          }
+          if (event.key === 'Escape') {
+            event.currentTarget.value = String(value)
+            setText(String(value))
+            event.currentTarget.blur()
+          }
+        }}
+        onBlur={(event) => {
+          editing.current = false
+          const next = event.currentTarget.value
+          if (next === '') {
+            setText(String(value))
+            return
+          }
+          if (Number(next) === value) return
+          void onCommit(Number(next)).then((accepted) => {
+            if (!accepted) setText(String(value))
+          })
+        }}
+        className="h-full min-w-0 w-full bg-transparent pl-2 text-right text-xs tabular-nums"
+      />
+      <span className="field-unit">m</span>
+    </span>
+  )
+}
+
 export function ConfigurationEditor({ runtime }: { runtime: FarmRuntime }) {
+  const { t } = useTranslation()
   const config = useSyncExternalStore(
     runtime.subscribeConfiguration,
     runtime.getConfiguration
   )
-  return (
-    <ConfigurationForm
-      key={JSON.stringify(config)}
-      runtime={runtime}
-      config={config}
-    />
-  )
-}
-function ConfigurationForm({
-  runtime,
-  config
-}: {
-  runtime: FarmRuntime
-  config: FarmConfiguration
-}) {
-  const [draft, setDraft] = useState(config)
-  const [error, setError] = useState('')
-  const [busy, setBusy] = useState(false)
-  const act = async (action: () => Promise<unknown>) => {
-    setBusy(true)
-    setError('')
-    try {
-      await action()
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
-    } finally {
-      setBusy(false)
-    }
-  }
-  const reorder = (i: number, delta: number) => {
-    const strips = [...draft.strips]
-    ;[strips[i], strips[i + delta]] = [strips[i + delta], strips[i]]
-    setDraft({ ...draft, strips })
-  }
   const site = configurationSite(config)
+  const [error, setError] = useState<unknown>(null)
+  // Resolve patches against canonical state when their turn runs, including blur
+  // immediately followed by another field or strip action.
+  const queue = useRef<Promise<unknown>>(Promise.resolve())
+  const act = (action: () => Promise<unknown>): Promise<boolean> => {
+    const result = queue.current.then(async () => {
+      setError(null)
+      try {
+        await action()
+        return true
+      } catch (e) {
+        setError(e)
+        return false
+      }
+    })
+    queue.current = result
+    return result
+  }
+  const replay = (redo: boolean) => act(redo ? runtime.redo : runtime.undo)
+  const update = (patch: (current: FarmConfiguration) => FarmConfiguration) =>
+    act(() => runtime.setConfiguration(patch(runtime.getConfiguration())))
+  const reorder = (index: number, delta: number) =>
+    update((current) => {
+      const strips = [...current.strips]
+      ;[strips[index], strips[index + delta]] = [
+        strips[index + delta],
+        strips[index]
+      ]
+      return { ...current, strips }
+    })
   return (
-    <section className="bg-[#fafbf7] p-4" aria-label="場景設定">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold">場景設定</h2>
-        <div className="flex gap-2">
+    <section className="bg-[#fafbf7] p-3" aria-label={t('editor.heading')}>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-xs font-semibold">{t('editor.heading')}</h2>
+        <div className="flex gap-1">
           <button
             type="button"
-            disabled={busy || runtime.getUndoDepth() === 0}
+            disabled={runtime.getUndoDepth() === 0}
             onClick={() => void act(runtime.undo)}
-            className="rounded border px-3 py-2 text-xs disabled:opacity-40"
+            className="rounded px-2 py-1.5 text-xs hover:bg-[#edf1e8] disabled:opacity-40"
           >
-            復原 ⌘Z
+            {t('editor.undo')}
           </button>
           <button
             type="button"
-            disabled={busy}
             onClick={() => void act(runtime.redo)}
-            className="rounded border px-3 py-2 text-xs disabled:opacity-40"
+            className="rounded px-2 py-1.5 text-xs hover:bg-[#edf1e8]"
           >
-            重做 ⇧⌘Z
+            {t('editor.redo')}
           </button>
         </div>
       </div>
-      <p className="mb-4 text-xs text-[#718268]">
-        單位：公尺。四連棟共用設定。橫樑高度為總高的
-        60%，兩側留白由單棟寬度扣除畦溝總寬後平均分配。鋼管間距維持
-        0.6m，尾端留白為最小距離。
-      </p>
-      <form
-        onSubmit={(event) => {
-          event.preventDefault()
-          void act(() => runtime.setConfiguration(draft))
-        }}
-      >
-        <fieldset disabled={busy} className="grid grid-cols-2 gap-3">
-          {fields.map(([key, label]) => (
-            <label key={key} className="text-xs text-[#50664f]">
-              {label}
-              <input
-                aria-label={label}
-                type="number"
-                step="any"
-                value={Number.isFinite(draft[key]) ? draft[key] : ''}
-                onChange={(event) =>
-                  setDraft({
-                    ...draft,
-                    [key]:
-                      event.target.value === ''
-                        ? Number.NaN
-                        : Number(event.target.value)
-                  })
-                }
-                className="mt-1 w-full rounded-lg border border-[#d4dccd] bg-white p-2 font-mono text-sm"
-              />
-            </label>
-          ))}
-        </fieldset>
-        <div className="mt-5 flex items-center justify-between">
-          <h3 className="text-xs font-semibold">畦溝陣列 - 由左至右</h3>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() =>
-              setDraft({
-                ...draft,
-                strips: [...draft.strips, { kind: 'soil', width: 0.3 }]
-              })
-            }
-            className="rounded border px-3 py-2 text-xs"
-          >
-            新增項目
-          </button>
+      {fields.map((key, index) => (
+        <div key={key}>
+          {index === 0 || index === 4 || index === 8 ? (
+            <h3 className="mb-1 mt-3 border-t border-[#d9dfd2] pt-3 text-xs font-semibold">
+              {
+                {
+                  0: t('editor.greenhouse'),
+                  4: t('editor.poles'),
+                  8: t('editor.net')
+                }[index]
+              }
+            </h3>
+          ) : null}
+          <label className="flex min-h-9 items-center justify-between gap-2 text-xs text-[#50664f]">
+            <span>{t(`field.${key}`)}</span>
+            <MeasurementInput
+              onHistory={replay}
+              value={key === 'eaveHeight' ? site.eave : config[key]}
+              label={t(`field.${key}Label`)}
+              onCommit={(value) =>
+                update((current) => ({ ...current, [key]: value }))
+              }
+            />
+          </label>
         </div>
-        <div className="mt-3 grid gap-2" data-testid="strip-editor">
-          {draft.strips.map((strip, i) => (
-            <div
-              key={i}
-              className="flex flex-wrap items-center gap-2 rounded-lg bg-[#edf1e8] p-2"
+      ))}
+      <div className="mb-2 mt-3 flex flex-wrap gap-2 items-center justify-between border-t border-[#d9dfd2] pt-3">
+        <h3 className="text-xs font-semibold">{t('editor.strips')}</h3>
+        <button
+          type="button"
+          onClick={() =>
+            void update((current) => ({
+              ...current,
+              strips: [...current.strips, { kind: 'soil', width: 0.3 }]
+            }))
+          }
+          className="rounded px-2 py-1 text-xs hover:bg-[#edf1e8]"
+        >
+          {t('editor.add')}
+        </button>
+      </div>
+      <label className="mb-2 flex min-h-9 items-center justify-between gap-2 text-xs text-[#50664f]">
+        <span>{t('editor.margin')}</span>
+        <MeasurementInput
+          onHistory={replay}
+          value={Number(site.margin.toFixed(6))}
+          label={t('editor.margin')}
+          onCommit={(margin) =>
+            update((current) => ({
+              ...current,
+              width:
+                current.strips.reduce((sum, strip) => sum + strip.width, 0) +
+                2 * margin
+            }))
+          }
+        />
+      </label>
+      <div className="grid gap-1" data-testid="strip-editor">
+        {config.strips.map((strip, i) => (
+          <div
+            key={i}
+            className="grid grid-cols-[0.75rem_minmax(3.5rem,1fr)_4.25rem_6rem] items-center gap-1 rounded bg-[#edf1e8] px-1 py-0.5"
+          >
+            <span className="text-center text-[10px] text-[#718268]">
+              {i + 1}
+            </span>
+            <select
+              aria-label={t('editor.stripKind', { index: i + 1 })}
+              value={strip.kind}
+              onChange={(event) => {
+                const kind = event.target.value as 'soil' | 'drain'
+                void update((current) => ({
+                  ...current,
+                  strips: current.strips.map((item, j) =>
+                    j === i ? { ...item, kind } : item
+                  )
+                }))
+              }}
+              className="h-7 min-w-0 rounded border border-[#d4dccd] bg-white text-xs"
             >
-              <span className="w-6 font-mono text-xs">{i + 1}</span>
-              <select
-                disabled={busy}
-                aria-label={`第 ${i + 1} 項種類`}
-                value={strip.kind}
-                onChange={(event) =>
-                  setDraft({
-                    ...draft,
-                    strips: draft.strips.map((item, j) =>
-                      j === i
-                        ? {
-                            ...item,
-                            kind: event.target.value as 'soil' | 'drain'
-                          }
-                        : item
+              <option value="soil">{t('editor.soil')}</option>
+              <option value="drain">{t('editor.drain')}</option>
+            </select>
+            <div className="[&>.measurement-field]:w-full">
+              <MeasurementInput
+                onHistory={replay}
+                value={strip.width}
+                label={t('editor.stripWidth', { index: i + 1 })}
+                onCommit={(width) =>
+                  update((current) => ({
+                    ...current,
+                    strips: current.strips.map((item, j) =>
+                      j === i ? { ...item, width } : item
                     )
-                  })
+                  }))
                 }
-                className="rounded border bg-white p-2 text-xs"
-              >
-                <option value="soil">土壤</option>
-                <option value="drain">水道</option>
-              </select>
-              <input
-                disabled={busy}
-                aria-label={`第 ${i + 1} 項寬度`}
-                type="number"
-                step="any"
-                value={Number.isFinite(strip.width) ? strip.width : ''}
-                onChange={(event) =>
-                  setDraft({
-                    ...draft,
-                    strips: draft.strips.map((item, j) =>
-                      j === i
-                        ? {
-                            ...item,
-                            width:
-                              event.target.value === ''
-                                ? Number.NaN
-                                : Number(event.target.value)
-                          }
-                        : item
-                    )
-                  })
-                }
-                className="w-16 rounded border bg-white p-2 text-xs"
               />
-              <span className="text-xs">m</span>
+            </div>
+            <div className="flex items-center">
               <button
                 type="button"
-                aria-label={`第 ${i + 1} 項向左`}
-                disabled={busy || i === 0}
-                onClick={() => reorder(i, -1)}
-                className="px-2 disabled:opacity-30"
+                aria-label={t('editor.moveUp', { index: i + 1 })}
+                disabled={i === 0}
+                onClick={() => void reorder(i, -1)}
+                className="flex h-8 w-8 items-center justify-center rounded text-[#59694c] hover:bg-white disabled:opacity-30"
               >
-                ←
+                <StripActionIcon kind="up" />
               </button>
               <button
                 type="button"
-                aria-label={`第 ${i + 1} 項向右`}
-                disabled={busy || i === draft.strips.length - 1}
-                onClick={() => reorder(i, 1)}
-                className="px-2 disabled:opacity-30"
+                aria-label={t('editor.moveDown', { index: i + 1 })}
+                disabled={i === config.strips.length - 1}
+                onClick={() => void reorder(i, 1)}
+                className="flex h-8 w-8 items-center justify-center rounded text-[#59694c] hover:bg-white disabled:opacity-30"
               >
-                →
+                <StripActionIcon kind="down" />
               </button>
               <button
                 type="button"
-                aria-label={`刪除第 ${i + 1} 項`}
-                disabled={busy || draft.strips.length === 1}
+                aria-label={t('editor.remove', { index: i + 1 })}
+                disabled={config.strips.length === 1}
                 onClick={() =>
-                  setDraft({
-                    ...draft,
-                    strips: draft.strips.filter((_, j) => j !== i)
-                  })
+                  void update((current) => ({
+                    ...current,
+                    strips: current.strips.filter((_, j) => j !== i)
+                  }))
                 }
-                className="ml-auto px-2 text-xs text-[#975746]"
+                className="flex h-8 w-8 items-center justify-center rounded text-red-700 hover:bg-white disabled:opacity-30"
               >
-                刪除
+                <StripActionIcon kind="remove" />
               </button>
             </div>
-          ))}
-        </div>
-        <details className="mt-3 text-xs text-[#718268]">
-          <summary>查看陣列資料</summary>
-          <pre className="mt-2 overflow-auto rounded bg-[#edf1e8] p-3">
-            {JSON.stringify(draft.strips, null, 2)}
-          </pre>
-        </details>
-        {error && (
-          <p role="alert" className="mt-3 text-sm text-red-700">
-            {error}
-          </p>
-        )}
-        <div className="mt-4 flex flex-wrap items-center gap-4">
-          <button
-            disabled={busy}
-            type="submit"
-            className="rounded-lg bg-[#315a43] px-5 py-2 text-sm text-white disabled:opacity-40"
-          >
-            {busy ? '套用中…' : '套用設定'}
-          </button>
-          <button
-            disabled={busy}
-            type="button"
-            onClick={() => {
-              setDraft(config)
-              setError('')
-            }}
-            className="text-xs underline"
-          >
-            放棄草稿
-          </button>
-          <span className="text-xs text-[#718268]">
-            已套用：橫樑 {site.eave.toFixed(2)}m、兩側各留{' '}
-            {site.margin.toFixed(2)}m
-          </span>
-        </div>
-      </form>
+          </div>
+        ))}
+      </div>
+      {Boolean(error) && (
+        <p
+          role="alert"
+          className="sticky bottom-0 mt-2 rounded bg-red-50 p-2 text-xs text-red-700"
+        >
+          {localizeError(error, t)}
+        </p>
+      )}
     </section>
   )
 }

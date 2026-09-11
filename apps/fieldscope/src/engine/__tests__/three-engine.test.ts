@@ -109,6 +109,13 @@ describe('CUSTOM Three engine', () => {
     )
     if (!(key instanceof THREE.DirectionalLight))
       throw new Error('Missing key light')
+    const ambient = scene.children.find(
+      (value) => value instanceof THREE.HemisphereLight
+    )
+    if (!(ambient instanceof THREE.HemisphereLight))
+      throw new Error('Missing ambient light')
+    // Reflected daylight keeps the undersides of opaque leaves readable.
+    expect(ambient.groundColor.g * ambient.intensity).toBeGreaterThan(0.5)
     expect(key.castShadow).toBe(true)
     expect(key.shadow.mapSize.toArray()).toEqual([1024, 1024])
     const mesh = scene.getObjectsByProperty('isMesh', true)[0]
@@ -452,4 +459,224 @@ describe('CUSTOM Three engine', () => {
       engine.destroy()
     }
   )
+})
+
+it('renders shared instance geometry, updates transforms without rebuilding it, and disposes GPU instances', () => {
+  const { engine, driver, add } = setup()
+  add(camera)
+  const descriptor = {
+    ...box,
+    instances: [
+      { position: [2, 0, 0] as const, yaw: Math.PI / 2 },
+      { position: [-2, 0, 0] as const, yaw: 0 }
+    ]
+  }
+  const handle = add(descriptor)
+  engine.execute({ type: 'flush' })
+  const scene = vi.mocked(driver.render).mock.calls[0][0]
+  const instance = scene.getObjectsByProperty(
+    'isInstancedMesh',
+    true
+  )[0] as THREE.InstancedMesh
+  expect(instance).toBeInstanceOf(THREE.InstancedMesh)
+  expect(instance.count).toBe(2)
+  const matrix = new THREE.Matrix4()
+  instance.getMatrixAt(0, matrix)
+  expect(new THREE.Vector3().setFromMatrixPosition(matrix).toArray()).toEqual([
+    2, 0, 0
+  ])
+  const geometry = instance.geometry
+  const disposed = vi.fn()
+  instance.addEventListener('dispose', disposed)
+  engine.execute({
+    type: 'update-object',
+    object: handle,
+    properties: {
+      [SPATIAL_PROPERTY]: {
+        ...descriptor,
+        instances: [
+          { position: [3, 0, 0], yaw: 0 },
+          { position: [-3, 0, 0], yaw: 0 }
+        ]
+      }
+    }
+  })
+  expect(instance.geometry).toBe(geometry)
+  instance.getMatrixAt(0, matrix)
+  expect(new THREE.Vector3().setFromMatrixPosition(matrix).x).toBe(3)
+  engine.destroy()
+  expect(disposed).toHaveBeenCalledTimes(1)
+})
+
+it('selects instance detail from projected error and culls off-screen plants without rebuilding geometry', () => {
+  const { engine, driver, add } = setup()
+  const cameraHandle = add(camera)
+  add({
+    ...box,
+    instances: [
+      { position: [0, 0, 0], yaw: 0 },
+      { position: [10000, 0, 0], yaw: 0 }
+    ],
+    distant: { shape: { kind: 'sphere', radius: 0.5 }, maxError: 0.06 },
+    roughness: 0.3,
+    metalness: 0
+  })
+  engine.execute({ type: 'flush' })
+  const scene = vi.mocked(driver.render).mock.calls[0][0]
+  const [full, distant] = scene.getObjectsByProperty(
+    'isInstancedMesh',
+    true
+  ) as THREE.InstancedMesh[]
+  expect(full.count).toBe(1)
+  expect(distant.count).toBe(0)
+  const geometry = full.geometry
+  const version = full.instanceMatrix.version
+  const distantVersion = distant.instanceMatrix.version
+  engine.execute({ type: 'flush' })
+  expect.soft(full.instanceMatrix.version).toBe(version)
+  expect.soft(distant.instanceMatrix.version).toBe(distantVersion)
+  engine.execute({
+    type: 'update-object',
+    object: cameraHandle,
+    properties: {
+      [SPATIAL_PROPERTY]: { ...camera, position: [0, 0, 100], far: 1000 }
+    }
+  })
+  engine.execute({ type: 'flush' })
+  expect(full.count).toBe(0)
+  expect(distant.count).toBe(1)
+  expect(full.geometry).toBe(geometry)
+  expect((distant.material as THREE.MeshStandardMaterial).roughness).toBe(0.3)
+  engine.execute({
+    type: 'update-object',
+    object: cameraHandle,
+    properties: {
+      [SPATIAL_PROPERTY]: {
+        ...camera,
+        position: [0, 0, 100],
+        far: 1000,
+        fov: 1
+      }
+    }
+  })
+  engine.execute({ type: 'flush' })
+  expect(full.count).toBe(1)
+  expect(distant.count).toBe(0)
+  engine.destroy()
+})
+
+it.each([3, 65537])(
+  'preserves detached triangle positions, colors and indices for %s vertices',
+  (count) => {
+    const { engine, driver, add } = setup()
+    const positions = Array<number>(count * 3).fill(0)
+    positions[3] = 1
+    positions[(count - 1) * 3 + 1] = 1
+    const colors = Array<number>(count * 3).fill(0.25)
+    const indices = [0, 1, count - 1]
+    add(camera)
+    add({ ...box, shape: { kind: 'triangles', positions, colors, indices } })
+    positions[3] = 9
+    colors[0] = 1
+    indices[2] = 0
+    engine.execute({ type: 'flush' })
+    const scene = vi.mocked(driver.render).mock.calls[0][0]
+    const mesh = scene.getObjectsByProperty('isMesh', true)[0] as THREE.Mesh
+    expect(mesh.geometry.getAttribute('position').getX(1)).toBe(1)
+    expect(mesh.geometry.getAttribute('position').getY(count - 1)).toBe(1)
+    expect(mesh.geometry.getAttribute('color').getX(0)).toBe(0.25)
+    if (!mesh.geometry.index) throw new Error('Missing triangle indices')
+    expect(Array.from(mesh.geometry.index.array)).toEqual([0, 1, count - 1])
+    expect(mesh.geometry.index.array.BYTES_PER_ELEMENT).toBe(
+      count > 65535 ? 4 : 2
+    )
+    engine.destroy()
+  }
+)
+
+it('binds admitted UVs and surface maps to the rendered leaf material', () => {
+  const { engine, driver, add } = setup()
+  add(camera)
+  const surface = {
+    width: 2,
+    height: 2,
+    albedo: Array(16).fill(200),
+    normals: Array(16).fill(128)
+  }
+  const shape = {
+    kind: 'triangles' as const,
+    positions: [0, 0, 0, 1, 0, 0, 0, 1, 0],
+    indices: [0, 1, 2],
+    uvs: [0, 0, 1, 0, 0, 1]
+  }
+  expect(() =>
+    add({ ...box, shape: { ...shape, uvs: undefined }, surface })
+  ).toThrow('UV')
+  add({ ...box, shape, surface })
+  engine.execute({ type: 'flush' })
+  const scene = vi.mocked(driver.render).mock.calls[0][0]
+  const mesh = scene.getObjectsByProperty('isMesh', true)[0] as THREE.Mesh
+  expect(mesh.geometry.getAttribute('uv').itemSize).toBe(2)
+  expect(Array.from(mesh.geometry.getAttribute('uv').array)).toEqual(shape.uvs)
+  const material = mesh.material as THREE.MeshStandardMaterial
+  expect(material.map).toBeInstanceOf(THREE.DataTexture)
+  expect(material.normalMap).toBeInstanceOf(THREE.DataTexture)
+  engine.destroy()
+})
+
+it('invalidates retained detail matrices for placement, viewport, geometry and visibility changes', () => {
+  const { engine, driver, add } = setup()
+  add({ ...camera, far: 1000 })
+  const mesh = {
+    ...box,
+    instances: [{ position: [0, 0, 0] as const, yaw: 0 }],
+    distant: { shape: { kind: 'sphere' as const, radius: 0.5 }, maxError: 0.06 }
+  }
+  const handle = add(mesh)
+  const flush = () => engine.execute({ type: 'flush' })
+  flush()
+  const scene = vi.mocked(driver.render).mock.calls[0][0]
+  const [full, distant] = scene.getObjectsByProperty(
+    'isInstancedMesh',
+    true
+  ) as THREE.InstancedMesh[]
+  const update = (value: SpatialDescriptor) =>
+    engine.execute({
+      type: 'update-object',
+      object: handle,
+      properties: { [SPATIAL_PROPERTY]: value }
+    })
+  update({ ...mesh, position: [10000, 0, 0] })
+  flush()
+  expect(full.count + distant.count).toBe(0)
+  update({ ...mesh, instances: [{ position: [0, 0, -100], yaw: 0 }] })
+  flush()
+  expect(full.count).toBe(0)
+  expect(distant.count).toBe(1)
+  const version = distant.instanceMatrix.version
+  engine.execute({
+    type: 'update-object',
+    object: handle,
+    properties: { visible: false }
+  })
+  flush()
+  expect(distant.instanceMatrix.version).toBe(version)
+  engine.execute({ type: 'resize', width: 1280, height: 6000 })
+  engine.execute({
+    type: 'update-object',
+    object: handle,
+    properties: { visible: true }
+  })
+  flush()
+  expect(full.count).toBe(1)
+  expect(distant.count).toBe(0)
+  update({ ...mesh, shape: { kind: 'box', size: [2, 2, 2] } })
+  flush()
+  const replacement = scene.getObjectsByProperty(
+    'isInstancedMesh',
+    true
+  )[0] as THREE.InstancedMesh
+  expect(replacement).not.toBe(full)
+  expect(replacement.count).toBe(1)
+  engine.destroy()
 })

@@ -12,7 +12,7 @@ test('real greenhouse route exposes the structure, section, inner aisle and resp
       scenario: 'fixed-four-bay-greenhouse',
       dimensions: [28, 50, 5],
       margin: 0.35,
-      cropGeometry: 'not configured',
+      cropGeometry: '5952 plants, 20 variants per cultivar',
       views: ['overview', 'front', 'top', 'inside']
     }),
     contentType: 'application/json'
@@ -31,6 +31,10 @@ test('real greenhouse route exposes the structure, section, inner aisle and resp
         requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
       )
   )
+  await expect(
+    page.getByRole('button', { name: '走道內部', exact: true })
+  ).toHaveAttribute('aria-pressed', 'true')
+  await page.getByRole('button', { name: '透視', exact: true }).click()
   await page.screenshot({
     path: testInfo.outputPath('overview.png'),
     fullPage: true,
@@ -172,7 +176,7 @@ test('film is visible by default and Shift drag, Command 1 and Command 0 operate
   await page.keyboard.down('Alt')
   await page.mouse.wheel(0, -300)
   await page.keyboard.up('Alt')
-  await page.getByTitle('適合畫面（⌘1）').click()
+  await page.getByTitle('整體畫面（⌘1）').click()
   // Compare both routes with the same canvas focus outline.
   await scene.focus()
   await page.keyboard.press('Shift')
@@ -231,6 +235,27 @@ test('spring clips are inspectable at the real upright connection', async ({
     path: testInfo.outputPath('joint.png'),
     fullPage: true
   })
+  await page.getByRole('button', { name: '收合編輯面板', exact: true }).click()
+  await page.getByRole('button', { name: '收合圖層面板', exact: true }).click()
+  await expect
+    .poll(
+      async () => (await page.getByTestId('scene').boundingBox())?.width ?? 0
+    )
+    .toBeGreaterThan(1300)
+  await page.getByTestId('scene').hover()
+  await page.keyboard.down('Alt')
+  await page.mouse.wheel(0, -Math.log(3) * 1000)
+  await page.keyboard.up('Alt')
+  await expect(page.getByTestId('zoom-percent')).toHaveText('300%')
+  await settle()
+  await page
+    .locator('canvas')
+    .screenshot({ path: testInfo.outputPath('joint-continuous-wire.png') })
+  await page.getByTestId('scene').focus()
+  await page.keyboard.press('Meta+0')
+  await page.getByRole('button', { name: '展開圖層面板', exact: true }).click()
+  await expect(page.getByLabel('跨接彈簧夾', { exact: true })).toBeVisible()
+  await settle()
   const withClip = await page.locator('canvas').screenshot()
   await page.getByLabel('跨接彈簧夾', { exact: true }).uncheck()
   await settle()

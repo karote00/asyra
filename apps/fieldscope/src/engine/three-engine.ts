@@ -1,3 +1,4 @@
+import { SurfaceTextureStore } from './surface-textures'
 import * as THREE from 'three'
 import { RenderEngineCapabilities } from '@asyra/render-engine'
 import type {
@@ -75,11 +76,28 @@ const makeGeometry = (shape: SpatialShape): THREE.BufferGeometry => {
       return new THREE.CapsuleGeometry(shape.radius, shape.length, 8, 24)
     case 'triangles': {
       const geometry = new THREE.BufferGeometry()
-      geometry.setAttribute(
-        'position',
-        new THREE.Float32BufferAttribute(shape.positions, 3)
-      )
-      geometry.setIndex([...shape.indices])
+      // Admitted arrays are frozen. Copy by index into the final owned GPU
+      // buffers, avoiding generic iterable conversion and index array expansion.
+      for (const [name, values] of [
+        ['position', shape.positions],
+        ['color', shape.colors],
+        ['uv', shape.uvs]
+      ] as const) {
+        if (!values) continue
+        const array = new Float32Array(values.length)
+        for (let i = 0; i < values.length; i++) array[i] = values[i]
+        geometry.setAttribute(
+          name,
+          new THREE.BufferAttribute(array, name === 'uv' ? 2 : 3)
+        )
+      }
+      const indices =
+        shape.positions.length / 3 > 65535
+          ? new Uint32Array(shape.indices.length)
+          : new Uint16Array(shape.indices.length)
+      for (let i = 0; i < shape.indices.length; i++)
+        indices[i] = shape.indices[i]
+      geometry.setIndex(new THREE.BufferAttribute(indices, 1))
       geometry.computeVertexNormals()
       return geometry
     }
@@ -122,6 +140,20 @@ const SCREEN_PROPERTIES = new Set([
 
 /** A CUSTOM visual engine. It owns no editable state or analysis semantics. */
 export class ThreeEngine implements RenderEngine {
+  private readonly instanceDetail = new WeakMap<
+    THREE.InstancedMesh,
+    {
+      instances: unknown
+      world: THREE.Matrix4
+      view: THREE.Matrix4
+      projection: THREE.Matrix4
+      geometry: THREE.BufferGeometry
+      height: number
+      error: number
+    }
+  >()
+  private readonly surfaceTextures = new SurfaceTextureStore()
+
   readonly name = 'FieldScope CUSTOM Three.js 0.185.1'
   readonly capabilities = new Set([
     ...Object.values(RenderEngineCapabilities),
@@ -174,7 +206,7 @@ export class ThreeEngine implements RenderEngine {
       this.driver.setClearColor(options.backgroundColor ?? 0x101b29, 1)
       this.resize(options.width, options.height)
       this.root = this.create('container', {})
-      this.scene.add(new THREE.HemisphereLight(0xd7eaff, 0x4b5366, 1.3))
+      this.scene.add(new THREE.HemisphereLight(0xe6eedf, 0xb4bea5, 2))
       const key = new THREE.DirectionalLight(0xfff3e5, 2.6)
       key.position.set(-15, 35, -20)
       key.castShadow = true
@@ -302,6 +334,7 @@ export class ThreeEngine implements RenderEngine {
         break
       case 'flush':
         this.syncProjection()
+        this.updateInstanceDetail()
         this.requireDriver().clear()
         this.requireDriver().render(this.scene, this.camera)
         this.requireDriver().clearDepth()
@@ -498,27 +531,77 @@ export class ThreeEngine implements RenderEngine {
       !(
         record.spatial?.kind === 'mesh' &&
         record.content instanceof THREE.Mesh &&
-        sameSpatialShape(record.spatial.shape, spatial.shape)
+        sameSpatialShape(record.spatial.shape, spatial.shape) &&
+        record.spatial.surface === spatial.surface &&
+        Boolean(record.spatial.distant) === Boolean(spatial.distant) &&
+        (!record.spatial.distant ||
+          !spatial.distant ||
+          sameSpatialShape(
+            record.spatial.distant.shape,
+            spatial.distant.shape
+          )) &&
+        Boolean(record.spatial.instances) === Boolean(spatial.instances) &&
+        record.spatial.instances?.length === spatial.instances?.length
       )
     ) {
-      content = new THREE.Mesh(
-        makeGeometry(spatial.shape),
-        new THREE.MeshStandardMaterial({
-          color: spatial.color,
-          opacity: spatial.opacity,
-          transparent: spatial.opacity < 1,
-          wireframe: spatial.wireframe,
-          side: THREE.DoubleSide,
-          roughness: 0.65,
-          metalness: 0.12,
-          depthWrite: spatial.opacity >= 1
-        })
-      )
+      const geometry = makeGeometry(spatial.shape)
+      const material = new THREE.MeshStandardMaterial({
+        color: spatial.color,
+        vertexColors:
+          spatial.shape.kind === 'triangles' && Boolean(spatial.shape.colors),
+        opacity: spatial.opacity,
+        transparent: spatial.opacity < 1,
+        wireframe: spatial.wireframe,
+        side: THREE.DoubleSide,
+        roughness: spatial.roughness ?? 0.65,
+        metalness: spatial.metalness ?? 0.12,
+        depthWrite: spatial.opacity >= 1
+      })
+      if (spatial.surface) this.surfaceTextures.apply(material, spatial.surface)
+      content = spatial.instances
+        ? new THREE.InstancedMesh(geometry, material, spatial.instances.length)
+        : new THREE.Mesh(geometry, material)
+      if (spatial.distant && spatial.instances) {
+        const distant = new THREE.InstancedMesh(
+          makeGeometry(spatial.distant.shape),
+          material.clone(),
+          spatial.instances.length
+        )
+        distant.frustumCulled = false
+        content.frustumCulled = false
+        content.add(distant)
+        geometry.computeBoundingSphere()
+      }
     }
+    const previousInstances =
+      record.spatial?.kind === 'mesh' ? record.spatial.instances : undefined
     record.properties = properties
     record.spatial = spatial
     if (content) this.replaceContent(record, content)
     if (spatial?.kind === 'mesh') {
+      if (
+        record.content instanceof THREE.InstancedMesh &&
+        spatial.instances &&
+        !spatial.distant &&
+        (content || previousInstances !== spatial.instances)
+      ) {
+        const matrix = new THREE.Matrix4()
+        const translation = new THREE.Vector3()
+        const rotation = new THREE.Quaternion()
+        const up = new THREE.Vector3(0, 1, 0)
+        const scale = new THREE.Vector3(1, 1, 1)
+        spatial.instances.forEach((instance, index) => {
+          matrix.compose(
+            translation.fromArray(instance.position),
+            rotation.setFromAxisAngle(up, instance.yaw),
+            scale
+          )
+          ;(record.content as THREE.InstancedMesh).setMatrixAt(index, matrix)
+        })
+        record.content.instanceMatrix.needsUpdate = true
+        record.content.computeBoundingBox()
+        record.content.computeBoundingSphere()
+      }
       if (record.content instanceof THREE.Mesh) {
         record.content.castShadow =
           spatial.selectable && spatial.opacity === 1 && !spatial.wireframe
@@ -535,6 +618,13 @@ export class ThreeEngine implements RenderEngine {
         material.transparent = transparent
         material.depthWrite = !transparent
         material.wireframe = spatial.wireframe
+        material.roughness = spatial.roughness ?? 0.65
+        material.metalness = spatial.metalness ?? 0.12
+        for (const child of record.content.children)
+          if (child instanceof THREE.InstancedMesh) {
+            ;(child.material as THREE.MeshStandardMaterial).copy(material)
+            child.receiveShadow = record.content.receiveShadow
+          }
       }
       record.visual.position.fromArray(spatial.position)
       record.visual.quaternion.fromArray(spatial.rotation)
@@ -546,6 +636,84 @@ export class ThreeEngine implements RenderEngine {
     }
     record.visual.renderOrder = order
   }
+  /** Completed geometry is reused; only visible instance matrices change per frame. */
+  private updateInstanceDetail(): void {
+    this.scene.updateMatrixWorld(true)
+    this.camera.updateMatrixWorld(true)
+    const frustum = new THREE.Frustum().setFromProjectionMatrix(
+      new THREE.Matrix4().multiplyMatrices(
+        this.camera.projectionMatrix,
+        this.camera.matrixWorldInverse
+      )
+    )
+    const pixelsPerUnit =
+      (this.height * Math.abs(this.camera.projectionMatrix.elements[5])) / 2
+    const matrix = new THREE.Matrix4(),
+      world = new THREE.Matrix4(),
+      center = new THREE.Vector3(),
+      sphere = new THREE.Sphere()
+    for (const record of this.objects.values()) {
+      const spatial = record.spatial,
+        full = record.content
+      if (
+        spatial?.kind !== 'mesh' ||
+        !spatial.distant ||
+        !spatial.instances ||
+        !(full instanceof THREE.InstancedMesh) ||
+        !record.visual.visible
+      )
+        continue
+      const distant = full.children[0]
+      if (
+        !(distant instanceof THREE.InstancedMesh) ||
+        !full.geometry.boundingSphere
+      )
+        throw new Error('Missing instance detail geometry')
+      const previous = this.instanceDetail.get(full)
+      if (
+        previous &&
+        previous.instances === spatial.instances &&
+        previous.geometry === full.geometry &&
+        previous.height === this.height &&
+        previous.error === spatial.distant.maxError &&
+        previous.world.equals(record.visual.matrixWorld) &&
+        previous.view.equals(this.camera.matrixWorldInverse) &&
+        previous.projection.equals(this.camera.projectionMatrix)
+      )
+        continue
+      let fullCount = 0,
+        distantCount = 0
+      for (const instance of spatial.instances) {
+        matrix.makeRotationY(instance.yaw).setPosition(...instance.position)
+        world.multiplyMatrices(record.visual.matrixWorld, matrix)
+        sphere.copy(full.geometry.boundingSphere).applyMatrix4(world)
+        if (!frustum.intersectsSphere(sphere)) continue
+        center.copy(sphere.center).applyMatrix4(this.camera.matrixWorldInverse)
+        const nearestDepth = Math.max(0.001, -center.z - sphere.radius)
+        const errorPixels =
+          (spatial.distant.maxError *
+            world.getMaxScaleOnAxis() *
+            pixelsPerUnit) /
+          nearestDepth
+        if (errorPixels <= 2) distant.setMatrixAt(distantCount++, matrix)
+        else full.setMatrixAt(fullCount++, matrix)
+      }
+      full.count = fullCount
+      distant.count = distantCount
+      full.instanceMatrix.needsUpdate = true
+      distant.instanceMatrix.needsUpdate = true
+      this.instanceDetail.set(full, {
+        instances: spatial.instances,
+        geometry: full.geometry,
+        height: this.height,
+        error: spatial.distant.maxError,
+        world: record.visual.matrixWorld.clone(),
+        view: this.camera.matrixWorldInverse.clone(),
+        projection: this.camera.projectionMatrix.clone()
+      })
+    }
+  }
+
   private replaceContent(record: ObjectRecord, content: THREE.Object3D): void {
     if (record.content) disposeObject(record.content)
     record.content = content

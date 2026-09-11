@@ -6,6 +6,7 @@ import type {
 
 export function disposeObject(object: THREE.Object3D): void {
   object.traverse((child) => {
+    if (child instanceof THREE.InstancedMesh) child.dispose()
     if (child instanceof THREE.Mesh || child instanceof THREE.Line) {
       child.geometry.dispose()
       const materials = Array.isArray(child.material)

@@ -1,3 +1,4 @@
+import { SiteGeometry } from '../render-app/site-geometry'
 import { moveCamera, lookCamera } from '../render-app/camera-flight'
 import {
   DEFAULT_CONFIGURATION,
@@ -34,6 +35,7 @@ import {
 
 import {
   cameraDistance,
+  type SceneBounds,
   measureScene,
   fitScene,
   panCamera,
@@ -84,8 +86,10 @@ export async function bootstrap(
     runtime: true,
     silent: true
   })
-  let meshes = buildSiteMeshes(config)
-  let sceneBounds = measureScene(meshes)
+  const geometry = new SiteGeometry()
+  let meshes = buildSiteMeshes(config, geometry)
+  let localBounds = new WeakMap<object, SceneBounds>()
+  let sceneBounds = measureScene(meshes, localBounds)
   const configurationType = 'farm-configuration'
   core.definePropertyComponent({
     type: configurationType,
@@ -138,11 +142,11 @@ export async function bootstrap(
   }
   const publishConfiguration = (
     next: FarmConfiguration,
-    prepared = buildSiteMeshes(next)
+    prepared = buildSiteMeshes(next, geometry)
   ) => {
     config = next
     meshes = prepared
-    sceneBounds = measureScene(meshes)
+    sceneBounds = measureScene(meshes, localBounds)
     referenceCamera = cameraPreset(view.camera, config)
     camera = referenceCamera
     layer.submit({
@@ -168,7 +172,7 @@ export async function bootstrap(
             () => {
               assertLive()
               if (JSON.stringify(next) === JSON.stringify(config)) return
-              const prepared = buildSiteMeshes(next)
+              const prepared = buildSiteMeshes(next, geometry)
               runTransaction(() =>
                 core.updateElementProperties([
                   {
@@ -234,7 +238,7 @@ export async function bootstrap(
               next.filmOpacity < 0 ||
               next.filmOpacity > 0.65
             )
-              throw new Error('覆膜不透明度必須介於 0 與 0.65')
+              throw new Error('Film opacity must be between 0 and 0.65')
             if (
               !['overview', 'top', 'front', 'inside', 'joint'].includes(
                 next.camera
@@ -401,6 +405,8 @@ export async function bootstrap(
   const dispose = () => {
     if (disposePromise) return disposePromise
     closed = true
+    geometry.clear()
+    localBounds = new WeakMap()
     observer?.disconnect()
     subscription?.unsubscribe()
     configListeners.clear()

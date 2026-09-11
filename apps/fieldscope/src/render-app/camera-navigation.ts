@@ -25,7 +25,10 @@ export const cameraDistance = (camera: SpatialCamera) =>
   Math.hypot(...difference(camera.position, camera.target))
 
 /** One scan of admitted site geometry at startup, reused by every fit command. */
-export function measureScene(meshes: SpatialFrame['meshes']): SceneBounds {
+export function measureScene(
+  meshes: SpatialFrame['meshes'],
+  localBounds = new WeakMap<object, SceneBounds>()
+): SceneBounds {
   const min: [number, number, number] = [Infinity, Infinity, Infinity]
   const max: [number, number, number] = [-Infinity, -Infinity, -Infinity]
   for (const mesh of meshes) {
@@ -35,11 +38,46 @@ export function measureScene(meshes: SpatialFrame['meshes']): SceneBounds {
       rotation.some((value, i) => value !== [0, 0, 0, 1][i])
     )
       throw new Error('Site bounds require unrotated triangle geometry')
-    for (let i = 0; i < shape.positions.length; i++) {
-      const axis = i % 3,
-        value = shape.positions[i] + position[axis]
-      min[axis] = Math.min(min[axis], value)
-      max[axis] = Math.max(max[axis], value)
+    const immutable = Object.isFrozen(shape) && Object.isFrozen(shape.positions)
+    let bounds = immutable ? localBounds.get(shape) : undefined
+    if (!bounds) {
+      const min: [number, number, number] = [Infinity, Infinity, Infinity]
+      const max: [number, number, number] = [-Infinity, -Infinity, -Infinity]
+      for (let i = 0; i < shape.positions.length; i++) {
+        const axis = i % 3
+        const value = shape.positions[i]
+        min[axis] = Math.min(min[axis], value)
+        max[axis] = Math.max(max[axis], value)
+      }
+      bounds = { min, max }
+      if (immutable) localBounds.set(shape, bounds)
+    }
+    const { min: localMin, max: localMax } = bounds
+    const instances = mesh.descriptor.instances ?? [
+      { position: [0, 0, 0], yaw: 0 }
+    ]
+    for (const instance of instances) {
+      const c = Math.cos(instance.yaw),
+        s = Math.sin(instance.yaw)
+      // Yaw transforms X/Z intervals independently; their extrema equal the
+      // eight transformed corners without allocating corners for every plant.
+      const cx0 = c * localMin[0],
+        cx1 = c * localMax[0]
+      const sz0 = s * localMin[2],
+        sz1 = s * localMax[2]
+      const sx0 = -s * localMin[0],
+        sx1 = -s * localMax[0]
+      const cz0 = c * localMin[2],
+        cz1 = c * localMax[2]
+      const x = instance.position[0] + position[0]
+      const y = instance.position[1] + position[1]
+      const z = instance.position[2] + position[2]
+      min[0] = Math.min(min[0], Math.min(cx0, cx1) + Math.min(sz0, sz1) + x)
+      max[0] = Math.max(max[0], Math.max(cx0, cx1) + Math.max(sz0, sz1) + x)
+      min[1] = Math.min(min[1], localMin[1] + y)
+      max[1] = Math.max(max[1], localMax[1] + y)
+      min[2] = Math.min(min[2], Math.min(sx0, sx1) + Math.min(cz0, cz1) + z)
+      max[2] = Math.max(max[2], Math.max(sx0, sx1) + Math.max(cz0, cz1) + z)
     }
   }
   if (!min.every(Number.isFinite) || !max.every(Number.isFinite))

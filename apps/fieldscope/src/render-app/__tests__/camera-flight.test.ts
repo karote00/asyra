@@ -55,3 +55,9 @@ it('looks around in place and then moves forward in the new direction', () => {
   expect(delta.distanceTo(forward)).toBeLessThan(1e-10)
   expect(lookCamera(camera, 0, 100000).target.every(Number.isFinite)).toBe(true)
 })
+
+it('starts at eye level inside the greenhouse', async () => {
+  const { INITIAL_VIEW } = await import('../site-projection')
+  expect(INITIAL_VIEW.camera).toBe('inside')
+  expect(cameraPreset(INITIAL_VIEW.camera).position[1]).toBe(1.65)
+})

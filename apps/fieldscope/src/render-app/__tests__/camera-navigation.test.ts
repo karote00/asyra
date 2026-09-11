@@ -74,3 +74,137 @@ it('pans by screen pixels without rotating or zooming, and restores 100% while p
   expect(cameraDistance(restored)).toBeCloseTo(cameraDistance(original))
   expect(restored.target).toEqual(moved.target)
 })
+
+it('fits translated and rotated instances while reading model vertices only once', () => {
+  let reads = 0
+  const positions = new Proxy([0, 0, 0, 2, 0, 0, 0, 1, 3], {
+    get(target, key, receiver) {
+      if (typeof key === 'string' && /^\d+$/.test(key)) reads++
+      return Reflect.get(target, key, receiver)
+    }
+  })
+  const bounds = measureScene([
+    {
+      id: 'instances',
+      visible: true,
+      descriptor: {
+        kind: 'mesh',
+        position: [0, 0, 0],
+        rotation: [0, 0, 0, 1],
+        shape: { kind: 'triangles', positions, indices: [0, 1, 2] },
+        color: 0,
+        opacity: 1,
+        wireframe: false,
+        selectable: false,
+        instances: Array.from({ length: 1000 }, (_, i) => ({
+          position: [10, i, 20] as const,
+          yaw: Math.PI / 2
+        }))
+      }
+    }
+  ])
+  expect(bounds.min[0]).toBeCloseTo(10)
+  expect(bounds.min[2]).toBeCloseTo(18)
+  expect(bounds.max).toEqual([13, 1000, 20])
+  expect(reads).toBe(9)
+})
+
+it('matches explicit box corners for arbitrary instance yaw and translations', () => {
+  const points = [-2, -1, -3, 4, 5, 7, 0, 0, 0]
+  const instances = [0, 0.37, -1.2, 2.4, Math.PI].map((yaw, i) => ({
+    position: [i * 13, -i * 2, i * -17] as const,
+    yaw
+  }))
+  const offset = [6, -4, 8] as const
+  const corners: Vector3[] = []
+  for (const instance of instances)
+    for (const x of [-2, 4])
+      for (const y of [-1, 5])
+        for (const z of [-3, 7])
+          corners.push(
+            new Vector3(x, y, z)
+              .applyAxisAngle(new Vector3(0, 1, 0), instance.yaw)
+              .add(new Vector3(...instance.position))
+              .add(new Vector3(...offset))
+          )
+  const bounds = measureScene([
+    {
+      id: 'rotated',
+      visible: true,
+      descriptor: {
+        kind: 'mesh',
+        position: offset,
+        rotation: [0, 0, 0, 1],
+        shape: { kind: 'triangles', positions: points, indices: [0, 1, 2] },
+        color: 0,
+        opacity: 1,
+        wireframe: false,
+        selectable: false,
+        instances
+      }
+    }
+  ])
+  for (let axis = 0; axis < 3; axis++) {
+    expect(bounds.min[axis]).toBeCloseTo(
+      Math.min(...corners.map((p) => p.getComponent(axis))),
+      10
+    )
+    expect(bounds.max[axis]).toBeCloseTo(
+      Math.max(...corners.map((p) => p.getComponent(axis))),
+      10
+    )
+  }
+})
+
+it('reuses immutable model extrema across placement edits while invalidating changed geometry', () => {
+  let reads = 0
+  const positions = new Proxy(Object.freeze([0, 0, 0, 2, 0, 0, 0, 1, 3]), {
+    get(target, key, receiver) {
+      if (typeof key === 'string' && /^\d+$/.test(key)) reads++
+      return Reflect.get(target, key, receiver)
+    }
+  })
+  const mesh = {
+    id: 'bounds',
+    visible: true,
+    descriptor: {
+      kind: 'mesh' as const,
+      position: [0, 0, 0] as const,
+      rotation: [0, 0, 0, 1] as const,
+      shape: Object.freeze({
+        kind: 'triangles' as const,
+        positions,
+        indices: [0, 1, 2]
+      }),
+      color: 0,
+      opacity: 1,
+      wireframe: false,
+      selectable: false
+    }
+  }
+  const cache = new WeakMap()
+  measureScene([mesh], cache)
+  expect(reads).toBe(9)
+  const moved = {
+    ...mesh,
+    descriptor: { ...mesh.descriptor, position: [4, 0, 0] as const }
+  }
+  expect(measureScene([moved], cache)).toEqual({
+    min: [4, 0, 0],
+    max: [6, 1, 3]
+  })
+  expect(reads).toBe(9)
+  const resized = {
+    ...moved,
+    descriptor: {
+      ...moved.descriptor,
+      shape: {
+        ...mesh.descriptor.shape,
+        positions: [0, 0, 0, 8, 0, 0, 0, 1, 3]
+      }
+    }
+  }
+  expect(measureScene([resized], cache)).toEqual(measureScene([resized]))
+  resized.descriptor.shape.positions[3] = 10
+  expect(measureScene([resized], cache).max[0]).toBe(14)
+})
