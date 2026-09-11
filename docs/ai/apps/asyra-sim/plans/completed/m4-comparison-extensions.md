@@ -1,7 +1,39 @@
 # M4: Variant Comparison, Versions, and Private Extensions
 
-Status: bounded implementation and formal validation complete; user acceptance
-and closeout are pending. Live automation limitation is recorded below.
+Status: DONE - closed 2026-09-12 by the user's explicit request to close this
+stage and all preceding stages, including the previously pending M3.5 acceptance.
+
+## Completion decision
+
+All six bounded owners are complete: experiment revision/lineage, immutable
+result storage, explicit two/three-run comparison, portable/report export,
+independent field observations and trusted installed-method extension execution.
+Comparison preserves ordered slots and frozen provenance; pending action feedback
+and App-owned navigation make results, source previews and editors discoverable.
+Background acknowledgements preserve editing focus. The existing numerical,
+canonical, persistence and catalog owners retain their contracts.
+
+Exit criteria: the owner gates, non-developer UI and developer SDK paths, formal
+regressions, normal-App browser evidence, inspected screenshots and user review
+are complete. Final combined validation passes 678 App tests in 119 files,
+23 affected browser cases after the feedback correction, build/typecheck/lint,
+naming (11), Inspector contracts (100) and test placement (2). Earlier independent
+owner and 47-case browser evidence remains below, with its checkpoint dates.
+All five required CI checks pass for PR #181 source
+`34500475524d419109c1b5c89c1e388e2b53c582`: validate, ordinary E2E, collaboration
+E2E, production-artifact-tests and framework-release-readiness. PR merge and
+milestone acceptance are separate; the user now authorizes this documentation
+closeout and push, not a merge or deployment.
+
+Canonical record: `docs/ai/apps/asyra-sim/plans/completed/m4-comparison-extensions.md`.
+No in-scope blocker remains. M0 feasibility and M1-M3 retain their previous
+completion records; M3.5 is closed alongside M4. M5 candidate packaging and
+resource evidence, M6 independent pilots and the R0 release decision remain open.
+
+This decision supersedes the pending-acceptance/no-closeout statements in the
+historical execution notes below. Earlier Vercel quota and browser-automation
+limitations describe their own checkpoints, not remaining milestone blockers.
+Closeout creates no Changeset, version bump, tag, publication or deployment.
 
 ## Baseline and bounded contract
 

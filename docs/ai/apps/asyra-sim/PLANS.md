@@ -10,7 +10,8 @@
   geometry is shared by rendering and analysis. Clearance witnesses cannot hide
   later established penetration; historical method evidence is not rewritten.
 - **Hosting:** the permanent product domain is `asyra-sim.vercel.app`.
-  PRs receive Vercel checks/previews; `main` is the production branch. See
+  Releases are manually approved from `main`; PRs run CI without automatic
+  Vercel previews. See [manual App release](../../workflows/manual-app-release.md) and
   [HOSTED_PREVIEW.md](release/HOSTED_PREVIEW.md) for configuration, browser-local
   data boundaries and verification.
 - **R0 Public Alpha: not released.** Independent numerical review, representative
@@ -21,13 +22,9 @@
 ## Active Work
 
 1. [Asyra Sim first-release roadmap](plans/asyra-sim-roadmap.md)
-   - M1-M3 are closed. M3 passed all six owner exit criteria on 2026-09-08;
-     see [the M3 completion record](plans/completed/m3-formal-analysis.md).
-     Current work is [M3.5 workflow usability](plans/m3-5-workbench-flow.md),
-     implemented locally after user acceptance of M3 on 2026-09-09.
-     Port 3020 validation passed; user acceptance remains pending; no closeout.
-     [M4 comparison and extensions](plans/m4-comparison-extensions.md) now runs
-     under explicit user authorization while M3.5 acceptance remains pending.
+   - M0 feasibility and M1-M4, including M3.5, are complete. The user
+     authorized the remaining M3.5/M4 acceptance and closeout on 2026-09-12.
+     Their detailed records are in Completed Work below; earlier dates remain.
    - M5 packaging and M6 independent pilot/release review remain later work.
      Historical packaging evidence remains in roadmap section 1.2 and
      [LOCAL_CANDIDATE.md](release/LOCAL_CANDIDATE.md).
@@ -36,6 +33,18 @@
      of this PR. No new Framework 3D profile is enabled by closeout.
 
 ## Completed Work
+
+- [M4 comparison, versions and private extensions](plans/completed/m4-comparison-extensions.md)
+  - Closed 2026-09-12 by explicit user acceptance: all six owners, ordered
+    comparisons, frozen provenance, pending feedback and explicit navigation.
+    Final combined source passes 678 App tests and all five required CI checks.
+- [M3.5 understandable experiment workflow](plans/completed/m3-5-workbench-flow.md)
+  - Closed 2026-09-12: single admission, Setup/Preview/Results, natural scrolling,
+    retained evidence/replay and focus-safe feedback. Earlier implementation and
+    screenshot evidence is preserved; no in-scope blocker remains.
+- **M0 contracts and feasibility: complete.** Its bounded proofs remain recorded
+  in [M1 foundations](plans/completed/m1-workcell-foundations.md); this does not
+  claim the measured M5 platform/resource or independent R0 release gates.
 
 - [M3 official collision and clearance methods](plans/completed/m3-formal-analysis.md)
   - Closed 2026-09-08: independent temporal oracles and explicit formal finding
