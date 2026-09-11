@@ -17,3 +17,19 @@ Context: the user requested closing earlier completed FieldScope work that lacke
 Decision: add the [retrospective baseline closeout](/docs/ai/apps/fieldscope/plans/completed/greenhouse-workspace/plan.md), recording the actual merge time and the historical validation evidence. Retain the original baseline decision unchanged. Add explicit links to the completed PR #174 stages in [the plan index](/docs/ai/apps/fieldscope/PLANS.md); those stages remain part of the existing archived plan rather than being presented as newly invented plans.
 
 Consequences: both merged implementation batches and their completed follow-up stages are discoverable. The earlier statement that baseline documentation was backfilled remains true; this entry supplies the missing closeout record. No implementation, deployment, version change or release action is introduced.
+
+## 2026-09-12 - Close documentation and CI follow-up
+
+Context: the user requested closeout for the current stage and every earlier
+FieldScope stage. PR #170 and all completed PR #174 follow-ups already have
+archived records and index entries. PR #190 remains open, and its implementation
+head `333b1fba9b816b061a671c8ebc6c6e62788fe34f` passed all five CI checks.
+
+Decision: accept the [documentation and CI follow-up](/docs/ai/apps/fieldscope/plans/completed/documentation-and-ci/plan.md)
+as DONE and add it to the completed index. Preserve earlier records without
+inventing separate implementation plans for their already completed sub-stages.
+
+Consequences: no active FieldScope plan remains through this stage. The existing
+PR still requires review and merge; archived status does not claim main contains
+these changes. Closeout adds documentation only and creates no Changeset, version,
+tag, publication or deployment.

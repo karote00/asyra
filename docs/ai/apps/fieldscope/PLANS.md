@@ -10,6 +10,8 @@ None.
 
 - [Water and crop population](/docs/ai/apps/fieldscope/plans/completed/water-and-crops/plan.md) - DONE 2026-09-11. PR #174 merged with all five checks passing; delivered water/crops, responsive scene updates, immediate editing/history, camera gestures and bilingual UI. See the [closeout decision](/docs/ai/apps/fieldscope/decisions/releases/unreleased.md).
 
+- [Documentation and CI follow-up](/docs/ai/apps/fieldscope/plans/completed/documentation-and-ci/plan.md) - DONE 2026-09-12 (Asia/Taipei). PR #190 archives prior stages and fixes the documentation-only Changeset gate; its implementation head passed all five checks. PR review and merge remain pending.
+
 ## Completed follow-up stages in PR #174
 
 These are completed stages of the archived water/crop plan, not separate active plans or additional release records.
