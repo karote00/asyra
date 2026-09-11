@@ -1,6 +1,8 @@
 # Water and crop architecture flow
 
-This flow maps the [product specification](../../specs/water-and-crops.md); it is not an execution log.
+Archived with the completed plan on 2026-09-11. Current behavior remains governed by the app specifications.
+
+This flow maps the [product specification](/docs/ai/apps/fieldscope/specs/water-and-crops.md); it is not an execution log.
 
 ## W - Water domain and projection
 

@@ -1,6 +1,23 @@
 # Water and crop population plan
 
-Status: implementation complete; PR validation is the remaining integration gate.
+Status: DONE
+Completed: 2026-09-11
+
+## Completion and final decision
+
+Accepted and merged through PR #174 on 2026-09-11 at merge commit `59c8c1d36ffb4cc95683616d931ca4407607ed8c`. The final reviewed branch head was `5918a2526ef2943170d581781450fe3f41797635`.
+
+Outcome: closed soil troughs with filled water volumes; forty reusable cultivar variants and deterministic planting; realistic fruit development, occlusion and leaf surfaces; dependency-scoped scene updates; immediate configuration editing with Undo/Redo; first-person desktop/touch navigation; and a Traditional Chinese/English interface. PR #170 baseline documentation was also backfilled.
+
+Exit criteria: all 172 app unit tests and the production build passed after the final rebase. The completed UI/rendering review passed 31 browser cases, plus expanded bilingual layout checks at 360/390/768/1440px. At the final PR head, `validate`, `e2e-tests`, `collaboration-e2e-tests`, `production-artifact-tests` and `framework-release-readiness` all succeeded; none were skipped. The merged PR is the final integration acceptance.
+
+Canonical record: [completed plan](/docs/ai/apps/fieldscope/plans/completed/water-and-crops/plan.md). Ongoing behavior is defined by [water and crop specification](/docs/ai/apps/fieldscope/specs/water-and-crops.md), [configuration specification](/docs/ai/apps/fieldscope/specs/configuration.md), [camera specification](/docs/ai/apps/fieldscope/specs/camera.md) and [architecture](/docs/ai/apps/fieldscope/ARCHITECTURE.md).
+
+Release boundary: this closeout is documentation-only. FieldScope remains private at 0.1.0; no release, version change, Changeset, tag or deployment is part of closeout. Robot control, harvesting simulation and collision/load validation remain outside the delivered scope.
+
+## Historical execution notes
+
+The following notes preserve the implementation sequence, including superseded approaches and gates that subsequently passed. They are not open tasks; the completion decision and current specifications above take precedence.
 
 The user additionally requested Blender-assisted review and natural, near-realistic plants. Review the exact domain meshes in Blender and refine leaf curvature, shoot tips, fruit attachment and materials before app visual closure. The optional `apps/fieldscope/scripts/export-crop-review.mjs` exports the current models inside the app artifacts directory for this purpose.
 
@@ -12,7 +29,7 @@ Discovery is limited to the current FieldScope owners/tests, Asyra Design docume
 
 ## Sequence
 
-1. Document the baseline and freeze the [product specification](../../specs/water-and-crops.md) and [Inspector flow](inspector-flow.md).
+1. Document the baseline and freeze the [product specification](/docs/ai/apps/fieldscope/specs/water-and-crops.md) and [Inspector flow](/docs/ai/apps/fieldscope/plans/completed/water-and-crops/inspector-flow.md).
 2. Water owner: prove the old curved-water behavior fails the flat-water/soil tests; correct the shared profile and both consumers.
 3. Crop domain owner: implement and prove reusable variants, deterministic row placement and invalid-layout handling.
 4. Rendering owner: admit and render instance transforms, include transformed bounds, and prove reuse/disposal. Compose crop layers from completed domain products.
