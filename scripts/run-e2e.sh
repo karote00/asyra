@@ -110,7 +110,11 @@ if [ "${CI:-}" = "true" ]; then
   E2E_RENDER_PERFORMANCE_BROWSER=chromium \
     yarn workspace @asyra/asyra-design playwright test --config playwright.config.ts e2e/render-delta-performance.spec.ts --workers=1
   echo "Step 11: Running functional Playwright tests..."
-  E2E_SKIP_PERFORMANCE=true yarn test:e2e
+  if [ -n "${FLOW_CI_REPORT:-}" ]; then
+    E2E_SKIP_PERFORMANCE=true PLAYWRIGHT_JSON_OUTPUT_NAME="$FLOW_CI_REPORT" yarn test:e2e --reporter=line,json
+  else
+    E2E_SKIP_PERFORMANCE=true yarn test:e2e
+  fi
 else
   echo "Step 10: Running Playwright tests..."
   yarn test:e2e

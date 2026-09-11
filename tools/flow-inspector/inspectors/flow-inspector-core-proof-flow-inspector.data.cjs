@@ -50,6 +50,20 @@ const data = {
   ],
   steps: [
     {
+      id: 'aggregate-workflow-results', order: 15, laneId: 'proof',
+      title: 'Aggregate completed workflow results',
+      ownerPackage: 'tools/flow-inspector/control-plane', purpose: 'Observational CI aggregation',
+      inputs: ['completed validate and Design E2E job results', 'fixed Design Delete case inventory', 'Playwright raw case reports', 'GitHub repository, base, head, integration, run and attempt identity'],
+      outputs: ['artifact:workflow-result-summary'],
+      conditions: ['Wait for all declared producer jobs even on failure. Validate exact case inventory, all attempt outcomes and matching execution identity. Preserve confirmed failures; missing or invalid evidence is unverified. Job success is not case evidence or accepted conformance. Preserve existing required E2E check names by forwarding only exact successful producer results; missing, failed, cancelled or skipped results cannot pass.'],
+      bypasses: ['No skipped, missing, mismatched or failed evidence becomes a pass.'],
+      allowedContributors: ['GitHub Actions job dependencies and outputs', 'existing Playwright JSON reporter'],
+      forbiddenContributors: ['runtime source analysis', 'candidate-selected case inventory', 'accepted baseline mutation', 'provider success substituted for assertions'],
+      cacheDimensions: [],
+      implementationBoundary: ['tools/flow-inspector/control-plane/workflow-results.cjs', 'tools/flow-inspector/control-plane/__tests__/workflow-results.test.cjs', 'tools/flow-inspector/control-plane/__tests__/board.test.cjs', '.github/workflows/main.yml', '.github/workflows/e2e.yml', 'scripts/run-e2e.sh', 'scripts/__tests__/workspace-automation.test.mjs'],
+      specRefs: ['#final-workflow-aggregation'], failureOwnerStepId: 'aggregate-workflow-results'
+    },
+    {
       id: 'prepare-pr-review',
       order: 12,
       laneId: 'interaction',
@@ -587,6 +601,7 @@ const data = {
     }
   ],
   routes: [
+    { id: 'aggregate-workflow-results-terminal', from: 'aggregate-workflow-results', kind: 'terminal', predicate: 'Declared producer jobs have settled and their evidence has been assessed.', producedArtifacts: ['artifact:workflow-result-summary'] },
     {
       id: 'execute-agent-task-to-prepare-pr-review',
       from: 'execute-agent-task',
@@ -766,6 +781,7 @@ const data = {
     }
   ],
   artifacts: [
+    { id: 'artifact:workflow-result-summary', title: 'Workflow result summary', ownerStepId: 'aggregate-workflow-results', channel: 'github-check', consumerStepIds: [], terminal: true },
     {
       id: 'artifact:pr-review-record',
       title: 'Candidate PR review',
