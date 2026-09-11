@@ -173,3 +173,16 @@ separates that live path from offline fault/state fixtures. Full Phase 5/6,
 protected verification/delivery and provider reconciliation remain open. No
 provider request, version, tag, merge of a GitHub PR, publication, protection or
 deployment setting change is performed.
+
+## 2026-09-11 - Complete trusted Changeset delivery and actual candidate CI acceptance
+
+Keep candidate access runtime-only and assign fixed public Factory patch metadata
+to the trusted review/delivery owners. Complete confirmation binds both artifacts
+without treating release metadata as source verification. The
+[bounded closeout](../../plans/completed/flow-inspector-trusted-changeset-closeout.md)
+records deterministic test PR #189, exact remote content, duplicate/restart audit,
+all five current-HEAD checks and closure without merge. One Sim production-test
+timeout required an unchanged-HEAD rerun; no gate was relaxed. This supersedes
+the source-only candidate CI limitation for this supported case, preserving
+PR #179/#182 history and all deferred Phase 5/6 and provider boundaries. No new
+model request or release action is authorized by green CI or by this closeout.
