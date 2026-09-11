@@ -28,6 +28,11 @@ app templates.
   template inherits that app version through the official generator; the
   template is never edited, versioned, or selected in Changesets independently.
 
+Pure Markdown documentation PRs require no Changeset. This exemption checks
+all changed paths, including deletions and both rename paths: every path must
+end in `.md` and be outside `.changeset/`. Mixed changes and executable
+documentation such as `.mdx` retain the ordinary requirement.
+
 An empty Changeset may record a non-documentation PR that changes no versioned
 Framework package or public tool. Empty records satisfy closeout without assigning a release version to
 root, private, CLI, or generated-template owners.

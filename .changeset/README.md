@@ -13,8 +13,9 @@ Changeset release entries target fixed-allowlist Framework packages under
 `packages/*`, or the independently versioned public tool `@asyra/flow-inspector`. Root `asyra`, private apps, `create-app/*` CLI packages, and
 generated templates use their own manual version owners and must not be listed
 in Changeset frontmatter. Use an empty Changeset only when no versioned package is affected. Records
-capture future release intent; applying versions and publication are separate actions. Pull requests must include a pending Changeset record before
-completion. A release pull request remains valid after `changeset version`
+capture future release intent; applying versions and publication are separate actions. Pure Markdown documentation pull requests are exempt from the pending
+Changeset requirement. All other pull requests must include a pending Changeset
+record before completion. A release pull request remains valid after `changeset version`
 consumes those records only when the generated Framework package version and
 changelog changes are committed together. See
 `docs/ai/framework/rules/release-version-topology.md`.

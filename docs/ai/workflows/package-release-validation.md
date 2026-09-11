@@ -207,8 +207,11 @@ authorizes the corresponding remote operation.
 Changesets version only fixed-allowlist Framework packages under `packages/*`.
 Root `asyra`, private apps, `create-app/*` CLI packages, and generated templates
 must never appear as Changeset release entries. A non-Framework code PR may use
-an empty Changeset as its closeout record. Every pull request must carry that
-pending record before completion. CI accepts a release pull request after
+an empty Changeset as its closeout record. Pure Markdown documentation pull requests do not require a Changeset.
+All changed paths, including deleted files and both sides of a rename, must
+end in `.md` and be outside `.changeset/` to qualify. Executable documentation
+(such as `.mdx`), scripts, configuration, and mixed changes retain the pending
+record requirement before completion. CI accepts a release pull request after
 `changeset version` consumes its pending records only when at least one
 allowlisted Framework package has both its generated manifest version and
 changelog committed; deleting a Changeset alone never satisfies the gate.

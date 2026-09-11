@@ -26,12 +26,32 @@ export const parseNameStatus = (output) =>
   output
     .split('\n')
     .filter(Boolean)
-    .map((line) => {
+    .flatMap((line) => {
       const [status, ...paths] = line.split('\t')
-      return { status: status[0], path: paths.at(-1) }
+      if (status.startsWith('R')) {
+        return [
+          { status: 'D', path: paths[0] },
+          { status: 'A', path: paths[1] }
+        ]
+      }
+      return paths.map((changedPath) => ({
+        status: status[0],
+        path: changedPath
+      }))
     })
 
 export const evaluateChangesetPrDiff = (changes) => {
+  const isDocumentationOnly =
+    changes.length > 0 &&
+    changes.every(
+      ({ path: changedPath }) =>
+        changedPath.endsWith('.md') && !changedPath.startsWith('.changeset/')
+    )
+
+  if (isDocumentationOnly) {
+    return { valid: true, mode: 'documentation-only', packages: [] }
+  }
+
   const hasPendingChangeset = changes.some(
     ({ status, path: changedPath }) =>
       status !== 'D' &&
@@ -82,7 +102,7 @@ export const runChangesetPrCheck = ({ baseSha, headSha }) => {
 
   if (!result.valid) {
     throw new Error(
-      'PR requires a pending .changeset/*.md record. Release PRs are accepted only after Changesets materializes both package versions and changelogs.'
+      'Non-documentation PR requires a pending .changeset/*.md record. Release PRs are accepted only after Changesets materializes both package versions and changelogs.'
     )
   }
 
