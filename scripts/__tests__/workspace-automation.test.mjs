@@ -136,7 +136,10 @@ test('PR workflows skip Draft jobs and run when the PR becomes ready', () => {
     }
     const jobs = workflow.split('\njobs:\n')[1].split(/(?=^ {2}[\w-]+:\n)/m)
     for (const job of jobs.filter((block) => block.trim())) {
-      if (job.startsWith('  flow-ci:')) {
+      if (
+        /^ {2}(flow-ci|e2e-tests|collaboration-e2e-tests):/.test(job) &&
+        workflowPath === '.github/workflows/main.yml'
+      ) {
         assert.match(
           job,
           /^ {4}if: \$\{\{ always\(\) && \(github.event_name != 'pull_request' \|\| github.event.pull_request.draft == false\) \}\}$/m

@@ -364,6 +364,13 @@ results; it does not analyze runtime source or execute a second test suite.
 The existing Factory proof remains an independent producer. A successful
 Factory job does not establish Design conformance.
 
+The existing required check names `e2e-tests` and `collaboration-e2e-tests`
+remain available as result-forwarding jobs after the reusable workflow settles.
+Each requires its actual producer job's exported result to equal `success`;
+failure, cancellation, skipping or absent output fails the forwarding check.
+These jobs do not rerun tests or replace case evidence. They preserve existing
+repository rules without changing protection or bypassing required checks.
+
 The bounded Design mapping contains the existing single-element Delete case
 and two collaboration Delete cases (connected windows and nested Group removal).
 The workflow collects exact Playwright file, title, project, expected status,

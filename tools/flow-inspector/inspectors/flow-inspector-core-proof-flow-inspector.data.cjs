@@ -55,7 +55,7 @@ const data = {
       ownerPackage: 'tools/flow-inspector/control-plane', purpose: 'Observational CI aggregation',
       inputs: ['completed validate and Design E2E job results', 'fixed Design Delete case inventory', 'Playwright raw case reports', 'GitHub repository, base, head, integration, run and attempt identity'],
       outputs: ['artifact:workflow-result-summary'],
-      conditions: ['Wait for all declared producer jobs even on failure. Validate exact case inventory, all attempt outcomes and matching execution identity. Preserve confirmed failures; missing or invalid evidence is unverified. Job success is not case evidence or accepted conformance.'],
+      conditions: ['Wait for all declared producer jobs even on failure. Validate exact case inventory, all attempt outcomes and matching execution identity. Preserve confirmed failures; missing or invalid evidence is unverified. Job success is not case evidence or accepted conformance. Preserve existing required E2E check names by forwarding only exact successful producer results; missing, failed, cancelled or skipped results cannot pass.'],
       bypasses: ['No skipped, missing, mismatched or failed evidence becomes a pass.'],
       allowedContributors: ['GitHub Actions job dependencies and outputs', 'existing Playwright JSON reporter'],
       forbiddenContributors: ['runtime source analysis', 'candidate-selected case inventory', 'accepted baseline mutation', 'provider success substituted for assertions'],

@@ -168,6 +168,49 @@ test('workflow waits on reusable producers and always collects after failed test
   assert.match(e2e, /workflow-results.cjs collect collaboration/)
 })
 
+test('existing required E2E check names forward only successful actual producer results', () => {
+  const { spawnSync } = require('node:child_process')
+  const root = path.resolve(__dirname, '../../../..')
+  const main = fs.readFileSync(
+    path.join(root, '.github/workflows/main.yml'),
+    'utf8'
+  )
+  const e2e = fs.readFileSync(
+    path.join(root, '.github/workflows/e2e.yml'),
+    'utf8'
+  )
+  for (const [job, output] of [
+    ['e2e-tests', 'design-result'],
+    ['collaboration-e2e-tests', 'collaboration-result']
+  ]) {
+    assert.ok(
+      e2e.includes(output + ':\n        value: ${{ jobs.' + job + '.result }}')
+    )
+    const block = main.match(
+      new RegExp(
+        '^  ' + job + ':\\n([\\s\\S]*?)(?=^  [a-z]|$(?![\\s\\S]))',
+        'm'
+      )
+    )?.[1]
+    assert.ok(block, 'missing existing required check: ' + job)
+    assert.match(block, /needs: design-e2e/)
+    assert.match(block, /always\(\).*github.event.pull_request.draft == false/)
+    assert.ok(
+      block.includes(
+        'FLOW_PRODUCER_RESULT: ${{ needs.design-e2e.outputs.' + output + ' }}'
+      )
+    )
+    const command = block.match(/run: (.+)/)?.[1]
+    assert.ok(command)
+    for (const result of ['success', 'failure', 'cancelled', 'skipped', '']) {
+      const run = spawnSync('bash', ['-c', command], {
+        env: { PATH: process.env.PATH, FLOW_PRODUCER_RESULT: result }
+      })
+      assert.equal(run.status === 0, result === 'success', job + ': ' + result)
+    }
+  }
+})
+
 test('CLI retains missing reports as unverified and exits nonzero on incomplete aggregation', () => {
   const { spawnSync } = require('node:child_process')
   const root = path.resolve(__dirname, '../../../..')

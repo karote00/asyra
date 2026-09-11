@@ -7,6 +7,10 @@ on:
         type: boolean
         default: false
     outputs:
+      design-result:
+        value: ${{ jobs.e2e-tests.result }}
+      collaboration-result:
+        value: ${{ jobs.collaboration-e2e-tests.result }}
       design-evidence:
         value: ${{ jobs.e2e-tests.outputs.evidence }}
       collaboration-evidence:

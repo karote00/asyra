@@ -35374,7 +35374,7 @@
               "artifact:workflow-result-summary"
             ],
             "conditions": [
-              "Wait for all declared producer jobs even on failure. Validate exact case inventory, all attempt outcomes and matching execution identity. Preserve confirmed failures; missing or invalid evidence is unverified. Job success is not case evidence or accepted conformance."
+              "Wait for all declared producer jobs even on failure. Validate exact case inventory, all attempt outcomes and matching execution identity. Preserve confirmed failures; missing or invalid evidence is unverified. Job success is not case evidence or accepted conformance. Preserve existing required E2E check names by forwarding only exact successful producer results; missing, failed, cancelled or skipped results cannot pass."
             ],
             "bypasses": [
               "No skipped, missing, mismatched or failed evidence becomes a pass."

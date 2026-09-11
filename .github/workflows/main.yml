@@ -110,6 +110,28 @@ jobs:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     uses: ./.github/workflows/e2e.yml
 
+  e2e-tests:
+    needs: design-e2e
+    if: ${{ always() && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    env:
+      FLOW_PRODUCER_RESULT: ${{ needs.design-e2e.outputs.design-result }}
+    steps:
+      - name: Require successful Design E2E producer
+        run: test "$FLOW_PRODUCER_RESULT" = success
+
+  collaboration-e2e-tests:
+    needs: design-e2e
+    if: ${{ always() && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    env:
+      FLOW_PRODUCER_RESULT: ${{ needs.design-e2e.outputs.collaboration-result }}
+    steps:
+      - name: Require successful collaboration E2E producer
+        run: test "$FLOW_PRODUCER_RESULT" = success
+
   flow-ci:
     needs: [validate, design-e2e]
     if: ${{ always() && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
