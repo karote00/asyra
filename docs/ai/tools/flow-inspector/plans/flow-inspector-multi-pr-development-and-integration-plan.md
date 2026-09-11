@@ -2,9 +2,9 @@
 
 ## Status and decision
 
-Date: 2026-09-10. Direction approved; implementation not started.
-This plan records a requested architecture direction, not implemented runtime
-behavior or completed Phase 5/6 work. Its initial scope is one local owner,
+Date: 2026-09-10. Direction approved. The first bounded target/work slice is
+implemented on 2026-09-12; this does not complete the broader architecture or
+Phase 5/6 work. Its initial scope is one local owner,
 one repository and one evolving flow split into several tasks and PRs.
 Parallel agent scheduling, multiple repositories and team accounts are excluded.
 
@@ -17,6 +17,22 @@ as requiring one PR to contain an entire feature or flow.
 Both developing targets and accepted behavior enter verification from the start.
 Feature completion determines eligibility for explicit baseline acceptance; it
 does not determine when CI begins observing and assessing the work.
+
+## First bounded slice - target and work decomposition
+
+[The living target contract](../CORE_PROOF.md#flow-targets-and-work-decomposition)
+and `manage-flow-target` implement local goals, complete assigned-or-pending
+coverage, immutable work commitments, explicit dependency handoffs, audited
+revisions and exact existing-task links. Board/API/CLI expose the same state and
+multiple task/attempt/PR observations, with restart and stale-write protection.
+Permanent owner, API/CLI and desktop/tablet/narrow browser cases cover this scope.
+
+The strict candidate verifier remains unchanged. Dependencies stay unconfirmed,
+dependent work stays blocked and complete targets stay pending. Scoped completion,
+source-bound prerequisite verification, full cross-PR integration assessment and
+explicit target-baseline acceptance below remain unimplemented. This slice covers
+target/work admission and its usable projections only; it does not close the
+full required product cases or DoD of this plan.
 
 ## Product outcome
 

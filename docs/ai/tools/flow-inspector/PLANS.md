@@ -11,7 +11,8 @@ delegation are the success criteria.
 ## Planned Architecture Direction
 
 - [Flow Development Across Multiple PRs](plans/flow-inspector-multi-pr-development-and-integration-plan.md)
-  - Direction approved 2026-09-10; implementation not started.
+  - Direction approved 2026-09-10; bounded target/work admission and Board/API/CLI
+    implemented 2026-09-12. Integration assessment and baseline acceptance remain open.
   - Separate persistent flow contracts from task/PR delivery. Verify developing
     work from the start, preserve accepted behavior, and require one complete
     integration result before explicit baseline acceptance.
