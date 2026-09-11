@@ -115,11 +115,19 @@ test('Worker delivery failure remains an explicit retained failure with no succe
   await page.goto('/')
   await expect(page.getByRole('status')).toHaveText('Local runtime ready')
   await page.getByRole('button', { name: 'Experiments', exact: true }).click()
-  await page.route('**/analysis.worker.ts*', (route) => route.abort('failed'))
+  let intercepted = 0
+  await page.route(
+    /\/analysis\.worker(?:\.ts|-[\w-]+\.js)(?:\?.*)?$/,
+    (route) => {
+      intercepted++
+      return route.abort('failed')
+    }
+  )
   await page.getByRole('button', { name: 'Run analysis', exact: true }).click()
   await viewResults(page)
   const result = page.getByTestId('analysis-result')
   await expect(result).toContainText('failed')
+  expect(intercepted).toBe(1)
   await expect(result).toContainText('partial')
   await expect(result.getByLabel('User verdict')).not.toHaveText('meets')
   await expect(page.locator('.retention-actions')).toContainText(
