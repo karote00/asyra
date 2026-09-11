@@ -17,6 +17,7 @@ const { prepareCIContext } = require('./ci-context.cjs')
 const { assessCI } = require('./ci-evidence.cjs')
 const { createTaskOwner } = require('./agent-task.cjs')
 const { createReviewOwner, REVIEW_POLICY } = require('./pr-review.cjs')
+const { createTargetOwner, TARGET_POLICY } = require('./flow-target.cjs')
 const { TASK_POLICY } = require('./agent-contract.cjs')
 const { containmentAvailable } = require('./agent-verifier.cjs')
 
@@ -36,7 +37,8 @@ const LOCAL_ACTOR = Object.freeze({
     'update-work',
     'delegate-task',
     'control-task',
-    REVIEW_POLICY.capability
+    REVIEW_POLICY.capability,
+    TARGET_POLICY.capability
   ])
 })
 class ActionError extends Error {
@@ -365,6 +367,34 @@ function createService(
     store.close()
     throw error
   }
+  const targetContracts = () => {
+    const evolution = store.mapping().evolution
+    return [
+      ...new Map(
+        [
+          ...evolution.history.versions.map((v) => v.contract),
+          ...evolution.reviews.map((r) => r.candidate.contract)
+        ].map((c) => [c.digest, c])
+      ).values()
+    ]
+  }
+  let targets
+  try {
+    targets = createTargetOwner({
+      repositoryRoot,
+      directory,
+      getContracts: targetContracts,
+      getBaseline: () => ({
+        revision: store.mapping().revision,
+        contractDigest: contract.digest
+      }),
+      getTask: (id) => tasks.get(id),
+      getReview: (id) => reviews.get(id)
+    })
+  } catch (error) {
+    store.close()
+    throw error
+  }
   const taskResult = (operation) => {
     try {
       return operation()
@@ -373,6 +403,20 @@ function createService(
     }
   }
   return {
+    targets: () => ({
+      records: targets.list(),
+      catalog: targetContracts().map((c) => ({
+        revision: c.digest,
+        flows: c.flows,
+        obligations: c.cases
+      }))
+    }),
+    getTarget: (id) => taskResult(() => targets.get(id)),
+    decideTarget(request, actor) {
+      authorize(actor, TARGET_POLICY.capability)
+      requireIdle()
+      return taskResult(() => targets.decide(request, actor.id))
+    },
     getReview: (id) =>
       taskResult(() => {
         tasks.get(id)
@@ -785,6 +829,7 @@ function createService(
           digest: record.snapshot?.digest ?? null
         }))
       return {
+        targets: targets.list(),
         reviewPolicy: reviews.policy(),
         tasks: {
           available: containmentAvailable(),

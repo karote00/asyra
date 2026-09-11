@@ -65,3 +65,11 @@ dependency, license, or publication change is implied by the planning revision.
 - [Static Workspace 0.2.0 record](plans/completed/flow-inspector-static-workspace-0.2.0-closure-plan.md)
   records the completed Phase 0-2 baseline; its static-only contract remains
   unchanged.
+
+## Bounded flow target slice
+
+The local target/work admission and Board/API/CLI implementation is described in
+[the living contract](CORE_PROOF.md#flow-targets-and-work-decomposition).
+It retains pending obligations, immutable commitments and exact task links.
+Full multi-PR source integration assessment and explicit baseline acceptance
+remain future slices; this entry does not close the overall development plan.

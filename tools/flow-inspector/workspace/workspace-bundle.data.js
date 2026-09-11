@@ -35358,6 +35358,51 @@
         ],
         "steps": [
           {
+            "id": "manage-flow-target",
+            "order": 16,
+            "laneId": "proof",
+            "title": "Manage flow target and work commitments",
+            "ownerPackage": "tools/flow-inspector/control-plane",
+            "purpose": "Flow targets and work decomposition",
+            "inputs": [
+              "artifact:admitted-proof-contract",
+              "retained accepted versions and prepared evolution contracts",
+              "explicit local actor decision and expected target revision",
+              "artifact:agent-task-state",
+              "artifact:pr-review-record"
+            ],
+            "outputs": [
+              "artifact:flow-target-state"
+            ],
+            "conditions": [
+              "Bind one flow and exact target revision and accepted baseline. Require complete assigned-or-pending coverage, exact references, disjoint responsibility and acyclic explicit handoffs. Persist immutable revisions and audit atomically under the existing store lock. Link only exact admitted task scope. Project task and PR observations separately; prerequisites remain unconfirmed and full target pending."
+            ],
+            "bypasses": [
+              "Exact request replay returns the original revision without writes. Invalid, stale or conflicting decisions have no effects. No partial verification bypass or automatic acceptance."
+            ],
+            "allowedContributors": [
+              "trusted local action service",
+              "retained admitted contracts and task/review records",
+              "existing exclusive store ownership"
+            ],
+            "forbiddenContributors": [
+              "candidate self-authorization",
+              "PR status as prerequisite evidence",
+              "client-side conformance",
+              "model or remote dispatch",
+              "accepted history mutation"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "tools/flow-inspector/control-plane/flow-target.cjs",
+              "tools/flow-inspector/control-plane/__tests__/flow-target.test.cjs"
+            ],
+            "specRefs": [
+              "#flow-targets-and-work-decomposition"
+            ],
+            "failureOwnerStepId": "manage-flow-target"
+          },
+          {
             "id": "aggregate-workflow-results",
             "order": 15,
             "laneId": "proof",
@@ -35892,6 +35937,7 @@
               "artifact:ci-aggregate-evidence",
               "artifact:agent-task-state",
               "artifact:pr-review-record",
+              "artifact:flow-target-state",
               "server-selected accepted Git base"
             ],
             "outputs": [
@@ -35932,6 +35978,7 @@
             "specRefs": [
               "#controlled-actions-and-retention",
               "#board",
+              "#flow-targets-and-work-decomposition",
               "../../../docs/ai/tools/flow-inspector/PR_REVIEW.md#confirmed-delivery"
             ],
             "failureOwnerStepId": "serve-proof-actions"
@@ -35979,12 +36026,53 @@
             ],
             "specRefs": [
               "#board",
+              "#flow-targets-and-work-decomposition",
               "../../../docs/ai/tools/flow-inspector/PR_REVIEW.md#review-observations"
             ],
             "failureOwnerStepId": "render-proof-board"
           }
         ],
         "routes": [
+          {
+            "id": "admit-proof-contract-to-manage-flow-target",
+            "from": "admit-proof-contract",
+            "to": "manage-flow-target",
+            "kind": "handoff",
+            "predicate": "The retained owner artifact is available for an explicit target decision or observation.",
+            "producedArtifacts": [
+              "artifact:admitted-proof-contract"
+            ]
+          },
+          {
+            "id": "execute-agent-task-to-manage-flow-target",
+            "from": "execute-agent-task",
+            "to": "manage-flow-target",
+            "kind": "handoff",
+            "predicate": "The retained owner artifact is available for an explicit target decision or observation.",
+            "producedArtifacts": [
+              "artifact:agent-task-state"
+            ]
+          },
+          {
+            "id": "prepare-pr-review-to-manage-flow-target",
+            "from": "prepare-pr-review",
+            "to": "manage-flow-target",
+            "kind": "handoff",
+            "predicate": "The retained owner artifact is available for an explicit target decision or observation.",
+            "producedArtifacts": [
+              "artifact:pr-review-record"
+            ]
+          },
+          {
+            "id": "manage-flow-target-to-actions",
+            "from": "manage-flow-target",
+            "to": "serve-proof-actions",
+            "kind": "handoff",
+            "predicate": "A target revision or read projection is available without granting conformance.",
+            "producedArtifacts": [
+              "artifact:flow-target-state"
+            ]
+          },
           {
             "id": "aggregate-workflow-results-terminal",
             "from": "aggregate-workflow-results",
@@ -36216,6 +36304,15 @@
         ],
         "artifacts": [
           {
+            "id": "artifact:flow-target-state",
+            "title": "Flow target revisions and work observations",
+            "ownerStepId": "manage-flow-target",
+            "channel": "local-target",
+            "consumerStepIds": [
+              "serve-proof-actions"
+            ]
+          },
+          {
             "id": "artifact:workflow-result-summary",
             "title": "Workflow result summary",
             "ownerStepId": "aggregate-workflow-results",
@@ -36230,7 +36327,8 @@
             "channel": "local-delivery",
             "consumerStepIds": [
               "deliver-github-review",
-              "serve-proof-actions"
+              "serve-proof-actions",
+              "manage-flow-target"
             ]
           },
           {
@@ -36278,7 +36376,8 @@
             "channel": "local-agent",
             "consumerStepIds": [
               "serve-proof-actions",
-              "prepare-pr-review"
+              "prepare-pr-review",
+              "manage-flow-target"
             ]
           },
           {
@@ -36308,7 +36407,8 @@
               "capture-proof-source",
               "assess-proof-evidence",
               "serve-proof-actions",
-              "admit-agent-task"
+              "admit-agent-task",
+              "manage-flow-target"
             ]
           },
           {

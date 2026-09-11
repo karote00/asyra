@@ -254,3 +254,90 @@ test(
     }
   }
 )
+
+test('target decisions share API CLI audit and survive service restart without running candidates', async (t) => {
+  const { randomUUID } = require('node:crypto')
+  const parent = path.join(root, 'tmp/flow-inspector/cli-tests')
+  fs.mkdirSync(parent, { recursive: true })
+  const directory = fs.mkdtempSync(path.join(parent, 'targets-'))
+  t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
+  let server = await startServer(root, {
+    url: 'http://127.0.0.1:0',
+    serviceOptions: { directory }
+  })
+  try {
+    const state = server.service.state()
+    const request = {
+      action: 'create',
+      requestId: randomUUID(),
+      expectedRevision: 0,
+      reason: 'Offline target UI parity',
+      flowId: 'deferred-publication',
+      targetRevision: state.contract.digest,
+      acceptedBaseline: {
+        revision: state.mapping.revision,
+        contractDigest: state.contract.digest
+      },
+      objective: 'Develop deferred behavior',
+      works: [],
+      pending: ['deferred.snapshot', 'deferred.outcome', 'deferred.delivery']
+    }
+    assert.equal(
+      (
+        await fetch(server.origin + '/api/targets/decide', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(request)
+        })
+      ).status,
+      403
+    )
+    const file = path.join(directory, 'target-request.json')
+    fs.writeFileSync(file, JSON.stringify(request))
+    let messages = []
+    const invoke = (...args) =>
+      main(['--url', server.origin, ...args], {
+        repositoryRoot: root,
+        write: (value) => messages.push(value)
+      })
+    await invoke('target-decide', path.relative(root, file))
+    assert.equal(JSON.parse(messages.join('')).revision, 1)
+    messages = []
+    await invoke('target-show', request.requestId)
+    const api = await fetch(
+      server.origin + '/api/targets/' + request.requestId
+    ).then((r) => r.json())
+    assert.deepEqual(JSON.parse(messages.join('')), api)
+    assert.deepEqual(api, server.service.getTarget(request.requestId))
+    assert.equal(api.status, 'pending')
+    assert.equal(api.history.length, 1)
+    assert.equal(server.service.state().tasks.records.length, 0)
+    await server.close()
+    server = await startServer(root, {
+      url: 'http://127.0.0.1:0',
+      serviceOptions: { directory }
+    })
+    assert.deepEqual(server.service.getTarget(request.requestId), api)
+    messages = []
+    await invoke('target-decide', path.relative(root, file))
+    assert.equal(JSON.parse(messages.join('')).revision, 1)
+    assert.equal(server.service.getTarget(request.requestId).history.length, 1)
+    messages = []
+    await invoke('targets')
+    assert.equal(JSON.parse(messages.join('')).records.length, 1)
+    const session = await fetch(server.origin + '/api/session').then((r) =>
+      r.json()
+    )
+    const conflict = await fetch(server.origin + '/api/targets/decide', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-proof-capability': session.capability
+      },
+      body: JSON.stringify({ ...request, reason: 'conflict' })
+    })
+    assert.equal(conflict.status, 409)
+  } finally {
+    await server.close()
+  }
+})

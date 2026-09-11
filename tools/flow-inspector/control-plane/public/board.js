@@ -1,4 +1,4 @@
-/* global document, window, fetch, AbortController, MutationObserver, CustomEvent */
+/* global structuredClone, document, window, fetch, AbortController, MutationObserver, CustomEvent */
 ;(function () {
   'use strict'
 
@@ -27,6 +27,13 @@
       let recordSignature = ''
       let historySignature = ''
       let selectedFlow
+      let targetCatalog = []
+      let targetRecord
+      let targetDraft = []
+      let targetDraftRevision = 0
+      let targetReadSignature = ''
+      let targetDecisionId = window.crypto.randomUUID()
+      let targetBusy = false
       let taskState
       let taskRecord
       let reviewRecord
@@ -1054,6 +1061,379 @@
           renderTask()
         }
       }
+      const targetOption = (value, label) => {
+        const option = node('option', label)
+        option.value = value
+        return option
+      }
+      function targetDefinition() {
+        return targetCatalog.find(
+          (c) => c.revision === byId('target-revision').value
+        )
+      }
+      function targetFlow() {
+        return targetDefinition()?.flows.find(
+          (f) => f.id === byId('target-flow').value
+        )
+      }
+      function targetObligations() {
+        return (
+          targetDefinition()?.obligations.filter(
+            (c) => c.flowId === byId('target-flow').value
+          ) ?? []
+        )
+      }
+      function chooseTargetFlow() {
+        byId('target-work-step').replaceChildren(
+          ...(targetFlow()?.steps ?? []).map((step) =>
+            targetOption(step.id, step.title)
+          )
+        )
+        renderTargetObligations()
+      }
+      function renderTargetObligations() {
+        byId('target-obligations').replaceChildren(
+          ...targetObligations()
+            .filter((c) => c.stepId === byId('target-work-step').value)
+            .map((c) => {
+              const label = node('label', undefined, 'proof-confirmation')
+              const input = node('input')
+              input.type = 'checkbox'
+              input.value = c.id
+              label.append(input, node('span', c.id))
+              return label
+            })
+        )
+      }
+      function renderTargetDraft() {
+        byId('target-draft').replaceChildren(
+          ...targetDraft.map((work) => {
+            const item = node('div', undefined, 'proof-mapping-change')
+            item.append(
+              node('strong', work.title),
+              node('p', work.scope),
+              node('p', work.obligationIds.join(', '))
+            )
+            const remove = node('button', 'Return obligations to pending')
+            remove.type = 'button'
+            remove.onclick = () => {
+              targetDraft = targetDraft.filter((w) => w.id !== work.id)
+              renderTargetDraft()
+            }
+            item.append(remove)
+            return item
+          })
+        )
+        const assigned = new Set(targetDraft.flatMap((w) => w.obligationIds))
+        byId('target-draft-pending').textContent =
+          'Draft pending: ' +
+          targetObligations()
+            .filter((c) => !assigned.has(c.id))
+            .map((c) => c.id)
+            .join(', ')
+        byId('target-prerequisites').replaceChildren(
+          ...targetDraft.map((w) => targetOption(w.id, w.title))
+        )
+        byId('target-save').disabled = !targetRecord
+      }
+      function renderTargetRecord() {
+        byId('target-result').textContent = targetRecord
+          ? targetRecord.objective +
+            '\nRevision ' +
+            targetRecord.revision +
+            ' - Target pending\n' +
+            'Accepted baseline revision ' +
+            targetRecord.acceptedBaseline.revision +
+            '\n' +
+            targetRecord.acceptedBaseline.contractDigest +
+            '\n' +
+            targetRecord.limitation +
+            (targetRecord.baselineCurrent
+              ? ''
+              : '\nAccepted baseline changed; task linking is blocked.')
+          : 'Choose a saved target or create one for this flow.'
+        byId('target-pending').textContent =
+          'Unassigned obligations - pending: ' +
+          (targetRecord?.pending.join(', ') || 'none')
+        byId('target-items').replaceChildren(
+          ...(targetRecord?.works ?? []).map((work) => {
+            const item = node('article', undefined, 'proof-target-item')
+            item.append(
+              node('h4', work.title + ' - ' + work.status),
+              node('p', work.stepId),
+              node('p', work.scope),
+              node('p', 'Obligations: ' + work.obligationIds.join(', ')),
+              node('p', 'Runtime files: ' + work.allowedFiles.join(', '))
+            )
+            for (const dep of work.prerequisites)
+              item.append(
+                node(
+                  'p',
+                  'Prerequisite ' +
+                    dep.workId +
+                    ' - ' +
+                    dep.status +
+                    ': ' +
+                    dep.handoff
+                )
+              )
+            const prepare = node('button', 'Prepare task from this promise')
+            prepare.type = 'button'
+            prepare.disabled =
+              work.status === 'blocked' || !targetRecord.baselineCurrent
+            prepare.onclick = () => {
+              graph
+                .querySelector('[data-step-id="' + work.stepId + '"]')
+                ?.click()
+              byId('agent-objective').value = work.scope
+              byId('agent-files').value = work.allowedFiles.join(', ')
+              byId('agent-controls').open = true
+              byId('agent-objective').focus()
+            }
+            item.append(prepare)
+            return item
+          })
+        )
+        const selectedWork = byId('target-link-work').value
+        byId('target-link-work').replaceChildren(
+          ...(targetRecord?.works ?? []).map((w) => targetOption(w.id, w.title))
+        )
+        if (targetRecord?.works.some((w) => w.id === selectedWork))
+          byId('target-link-work').value = selectedWork
+        byId('target-link').disabled = !targetRecord?.works.length
+        byId('target-observations').replaceChildren(
+          ...(targetRecord?.tasks ?? []).map((entry) => {
+            const item = node('article', undefined, 'proof-target-item'),
+              task = entry.task
+            item.append(
+              node('h4', 'Task observation - ' + (task?.id ?? 'missing')),
+              node('p', 'Commitment: ' + entry.workId),
+              node(
+                'p',
+                'Candidate verification: ' +
+                  (task?.verificationStatus ?? 'unknown')
+              )
+            )
+            for (const attempt of task?.attempts ?? [])
+              item.append(
+                node(
+                  'p',
+                  'Attempt ' +
+                    attempt.id +
+                    ' - ' +
+                    (attempt.verdict?.evidence?.status ?? 'unknown')
+                )
+              )
+            const link = node('a', 'Open task and attempt audit')
+            link.href = '/api/tasks/' + task.id
+            link.target = '_blank'
+            link.rel = 'noopener noreferrer'
+            item.append(link)
+            if (entry.review) {
+              const review = entry.review,
+                observation = review.observation
+              item.append(
+                node('p', 'Delivery: ' + review.state),
+                node('p', 'Pinned attempt: ' + review.preview.attemptId),
+                node(
+                  'p',
+                  'PR observation: ' +
+                    (observation?.state ?? 'unknown') +
+                    ' - HEAD ' +
+                    (observation?.headSha ?? 'unknown')
+                )
+              )
+              if (observation?.url) {
+                const remote = node('a', observation.url)
+                remote.href = observation.url
+                remote.target = '_blank'
+                remote.rel = 'noopener noreferrer'
+                item.append(remote)
+              }
+              const audit = node('a', 'Open retained PR preview and audit')
+              audit.href = '/api/tasks/' + task.id + '/review'
+              audit.target = '_blank'
+              audit.rel = 'noopener noreferrer'
+              item.append(audit)
+            } else item.append(node('p', 'PR: no retained review'))
+            return item
+          })
+        )
+        byId('target-audit').textContent = targetRecord
+          ? JSON.stringify(targetRecord.history, null, 2)
+          : ''
+        byId('target-record-link').hidden = !targetRecord
+        if (targetRecord)
+          byId('target-record-link').href = '/api/targets/' + targetRecord.id
+      }
+      async function loadTarget(id) {
+        targetRecord = id ? await api('/api/targets/' + id) : null
+        if (targetRecord) {
+          byId('target-revision').value = targetRecord.targetRevision
+          chooseTargetRevision()
+          byId('target-flow').value = targetRecord.flowId
+          byId('target-objective').value = targetRecord.objective
+        }
+        byId('target-revision').disabled = Boolean(targetRecord)
+        byId('target-flow').disabled = Boolean(targetRecord)
+        byId('target-create').disabled = Boolean(targetRecord)
+        targetDraft = (targetRecord?.works ?? []).map((work) => {
+          const copy = structuredClone(work)
+          delete copy.taskIds
+          delete copy.status
+          copy.prerequisites.forEach((dep) => {
+            delete dep.status
+          })
+          return copy
+        })
+        targetDraftRevision = targetRecord?.revision ?? 0
+        targetDecisionId = window.crypto.randomUUID()
+        chooseTargetFlow()
+        renderTargetDraft()
+        renderTargetRecord()
+      }
+      function chooseTargetRevision() {
+        byId('target-flow').replaceChildren(
+          ...(targetDefinition()?.flows ?? []).map((flow) =>
+            targetOption(flow.id, flow.title)
+          )
+        )
+        chooseTargetFlow()
+      }
+      async function refreshTargets(state) {
+        const savedSelection = byId('target-select').value
+        byId('target-select').replaceChildren(
+          targetOption('', 'New target'),
+          ...(state.targets ?? []).map((t) =>
+            targetOption(t.id, t.objective + ' - revision ' + t.revision)
+          )
+        )
+        byId('target-select').value = savedSelection
+        const selectedTask = byId('target-link-task').value
+        byId('target-link-task').replaceChildren(
+          ...state.tasks.records.map((t) =>
+            targetOption(t.id, t.objective + ' - ' + t.id)
+          )
+        )
+        if (state.tasks.records.some((t) => t.id === selectedTask))
+          byId('target-link-task').value = selectedTask
+        const signature = JSON.stringify([state.targets, state.tasks.records])
+        if (targetRecord && signature !== targetReadSignature) {
+          targetRecord = await api('/api/targets/' + targetRecord.id)
+          renderTargetRecord()
+        }
+        targetReadSignature = signature
+      }
+      async function targetAction(action) {
+        if (targetBusy || !capability) return
+        targetBusy = true
+        byId('target-notice').textContent = 'Saving explicit decision…'
+        try {
+          const request = {
+            action,
+            requestId: targetDecisionId,
+            expectedRevision: targetDraftRevision,
+            reason: byId('target-reason').value
+          }
+          if (action === 'create')
+            Object.assign(request, {
+              flowId: byId('target-flow').value,
+              targetRevision: byId('target-revision').value,
+              acceptedBaseline: {
+                revision: mappingState.revision,
+                contractDigest: contract.digest
+              }
+            })
+          else request.targetId = targetRecord.id
+          if (action === 'link')
+            Object.assign(request, {
+              workId: byId('target-link-work').value,
+              taskId: byId('target-link-task').value
+            })
+          else {
+            const assigned = new Set(
+              targetDraft.flatMap((w) => w.obligationIds)
+            )
+            Object.assign(request, {
+              objective: byId('target-objective').value,
+              works: targetDraft,
+              pending: targetObligations()
+                .filter((c) => !assigned.has(c.id))
+                .map((c) => c.id)
+            })
+          }
+          const result = await api('/api/targets/decide', request)
+          await loadTarget(result.id)
+          await refresh()
+          byId('target-select').value = result.id
+          byId('target-notice').textContent =
+            'Saved revision ' +
+            result.revision +
+            '. Earlier commitments and results remain in audit.'
+        } catch (error) {
+          byId('target-notice').textContent = error.message
+        } finally {
+          targetBusy = false
+        }
+      }
+      async function initializeTargets() {
+        targetCatalog = (await api('/api/targets')).catalog
+        byId('target-revision').replaceChildren(
+          ...targetCatalog.map((c) => targetOption(c.revision, c.revision))
+        )
+        chooseTargetRevision()
+        renderTargetDraft()
+        renderTargetRecord()
+        listen(byId('target-revision'), 'change', chooseTargetRevision)
+        listen(byId('target-flow'), 'change', chooseTargetFlow)
+        listen(byId('target-work-step'), 'change', renderTargetObligations)
+        listen(byId('target-reload'), 'click', () =>
+          loadTarget(targetRecord?.id).catch(showError)
+        )
+        listen(byId('target-select'), 'change', (event) =>
+          loadTarget(event.target.value).catch(showError)
+        )
+        for (const [id, action] of [
+          ['target-create', 'create'],
+          ['target-save', 'revise'],
+          ['target-link', 'link']
+        ])
+          listen(byId(id), 'click', () => targetAction(action))
+        listen(byId('target-add-work'), 'click', () => {
+          const obligationIds = [
+            ...byId('target-obligations').querySelectorAll('input:checked')
+          ].map((input) => input.value)
+          if (
+            !byId('target-work-title').value.trim() ||
+            !byId('target-work-scope').value.trim() ||
+            !obligationIds.length
+          ) {
+            byId('target-notice').textContent =
+              'Provide a work title, exact scope and at least one obligation.'
+            return
+          }
+          targetDraft.push({
+            id: window.crypto.randomUUID(),
+            title: byId('target-work-title').value,
+            stepId: byId('target-work-step').value,
+            obligationIds,
+            scope: byId('target-work-scope').value,
+            allowedFiles: byId('target-work-files')
+              .value.split(',')
+              .map((s) => s.trim())
+              .filter(Boolean),
+            prerequisites: [
+              ...byId('target-prerequisites').selectedOptions
+            ].map((o) => ({
+              workId: o.value,
+              handoff: byId('target-handoff').value
+            }))
+          })
+          renderTargetDraft()
+          byId('target-notice').textContent =
+            'Draft updated. Review pending obligations and save an explicit revision.'
+        })
+      }
       async function refresh() {
         if (refreshing || disposed) return
         refreshing = true
@@ -1067,6 +1447,7 @@
           activeId = state.activeRunId
           taskState = state.tasks
           reviewPolicy = state.reviewPolicy
+          await refreshTargets(state)
           await refreshTask()
           if (!selectedId && state.runs.length) selectedId = state.runs[0].id
           const id = selectedId
@@ -1176,6 +1557,40 @@
           <p id="run-state" role="status">Ready to verify</p>
           <p>Required checks: <strong id="checks">0 / 6</strong></p><p id="result-context"></p>
           <div id="proof-failures"></div>
+          <details id="target-controls"><summary>Flow targets and work decomposition</summary>
+            <p>Plan bounded commitments for one flow. Candidate verification and PR state do not complete this target.</p>
+            <label>Saved target<select id="target-select"><option value="">New target</option></select></label>
+            <label>Target contract revision<select id="target-revision"></select></label>
+            <label>Concrete flow<select id="target-flow"></select></label>
+            <label>Development objective<input id="target-objective" maxlength="2000" /></label>
+            <button id="target-create" type="button">Create flow target</button>
+            <pre id="target-result" role="status"></pre><p id="target-pending"></p>
+            <div id="target-items" aria-label="Saved work commitments"></div>
+            <details><summary>Work editor and revision preview</summary>
+              <label>Work title<input id="target-work-title" maxlength="200" /></label>
+              <label>Owner step<select id="target-work-step"></select></label>
+              <fieldset><legend>Promised obligations</legend><div id="target-obligations"></div></fieldset>
+              <label>Exact promised scope<textarea id="target-work-scope" rows="3" maxlength="2000"></textarea></label>
+              <label>Allowed runtime files (comma-separated)<input id="target-work-files" value="packages/factory/src/data-transact.ts" /></label>
+              <label>Prerequisite work (select required items)<select id="target-prerequisites" multiple size="3"></select></label>
+              <label>Required handoff from each prerequisite<textarea id="target-handoff" rows="2" maxlength="2000"></textarea></label>
+              <button id="target-add-work" type="button">Add work to revision draft</button>
+              <div id="target-draft"></div><p id="target-draft-pending"></p>
+              <p>Removing work from this revision returns its obligations to pending. Earlier commitments, task links and failures remain in history.</p>
+            </details>
+            <label>Explicit decision reason<input id="target-reason" maxlength="1000" value="Define bounded work against this target" /></label>
+            <button id="target-save" type="button">Save scope revision</button><button id="target-reload" type="button">Reload saved revision into editor</button>
+            <details><summary>Connect an admitted task</summary>
+              <p>Prepare a task from a saved promise, run it through the existing admission controls, then link it here. Step, objective, files and baseline must match exactly.</p>
+              <label>Work commitment<select id="target-link-work"></select></label>
+              <label>Existing task<select id="target-link-task"></select></label>
+              <button id="target-link" type="button">Link exact task</button>
+            </details>
+            <p id="target-notice" role="status"></p>
+            <details><summary>Task, attempt and PR observations</summary><div id="target-observations"></div></details>
+            <details><summary>Revision decisions and historical commitments</summary><pre id="target-audit"></pre></details>
+            <a id="target-record-link" target="_blank" rel="noopener noreferrer" hidden>Open complete target and audit</a>
+          </details>
           <details id="agent-controls"><summary>Delegate selected step - local agent</summary>
             <p id="agent-step"></p><p>Candidate changes remain isolated for human review.</p>
             <label>Adapter<select id="agent-adapter"><option value="demonstration">Deterministic demonstration - no language model</option><option id="agent-provider-option" value="provider" disabled>Authorized real provider</option></select></label>
@@ -1362,6 +1777,7 @@
           }
         })
         capability = (await api('/api/session')).capability
+        await initializeTargets()
         await refresh()
       } catch (error) {
         showError(error)
