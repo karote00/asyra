@@ -2,9 +2,11 @@
 
 ## Active
 
-None.
+- [Harvest robot and crate logistics](/docs/ai/apps/fieldscope/plans/harvest-robot/plan.md) - IN PROGRESS. M1 feasibility/load/energy/hazard domain implemented; mission UI, simulation and hardware validation remain planned; previous crop/workspace plans remain completed.
 
 ## Completed
+
+- [Harvest feasibility - M1](/docs/ai/apps/fieldscope/plans/completed/harvest-feasibility/plan.md) - DONE 2026-09-12. PR #191 closeout precedes its current-head CI and merge gate; M2-M6 remain active planned work.
 
 - [Greenhouse workspace baseline](/docs/ai/apps/fieldscope/plans/completed/greenhouse-workspace/plan.md) - DONE 2026-09-09 (Asia/Taipei), retrospective closeout recorded 2026-09-11. PR #170 delivered the initial private 0.1.0 modeling workspace; its original baseline decision is retained.
 
@@ -29,3 +31,9 @@ These are completed stages of the archived water/crop plan, not separate active 
 | First-person and mobile navigation | [Camera specification](/docs/ai/apps/fieldscope/specs/camera.md), [touch gestures](/docs/ai/apps/fieldscope/plans/completed/water-and-crops/plan.md#mobile-camera-gestures) |
 | Traditional Chinese/English UI | [Bilingual interface](/docs/ai/apps/fieldscope/plans/completed/water-and-crops/plan.md#bilingual-interface) |
 | CI dependency-test isolation | [CI validation](/docs/ai/apps/fieldscope/plans/completed/water-and-crops/plan.md#ci-projection-test-isolation) |
+
+## Retrospective development stages
+
+- [Cultivar realism and harvested-target preparation](/docs/ai/apps/fieldscope/plans/completed/crop-realism/plan.md) - DONE; a sub-stage of PR #174.
+- [Responsive editing and scene ownership](/docs/ai/apps/fieldscope/plans/completed/responsive-workbench/plan.md) - DONE; a sub-stage of PR #174.
+- [Navigation, mobile controls and localization](/docs/ai/apps/fieldscope/plans/completed/navigation-and-localization/plan.md) - DONE; a sub-stage of PR #174.

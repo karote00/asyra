@@ -155,6 +155,10 @@ test('a user builds spheres, selects an independent method, edits uncertainty, a
     if (key === 'origin' && value === 'example') return 'private'
     return value
   })
+  await info.attach('missing-method-project.json', {
+    contentType: 'application/json',
+    body: privatePayload
+  })
   await page
     .getByLabel('Portable project file', { exact: true })
     .setInputFiles({

@@ -15,3 +15,29 @@ There is no framework package modification, robot controller, server, collision 
 SceneTree owns the canonical structured settings element and its transaction history. SpatialLayer owns derived 3D output; retained projections are neither editable state nor a second SceneTree. This composition follows the public custom-composition guide rather than copying the design app's 2D schema.
 
 UI language is owned by `ui/i18n/locale.tsx` and its typed message catalogs. Its provider wraps the existing workbench without replacing runtime or configuration ownership. Language-neutral `ConfigurationError` codes/parameters originate in the configuration validator; UI error formatting never parses localized strings. Locale changes bypass site projection, scene admission and history.
+
+## Harvest feasibility domain
+
+The four `domain/harvest-*.ts` modules provide deterministic lane, crate/load,
+energy and hazard assessments. They consume existing farm layout/planting-row
+owners and explicit observations; they do not create a second farm model,
+generate crop meshes, drive animation, mutate Core or command hardware. M1 remains pure; M2 composes its lane and energy reports into the robot workspace. Reports are necessary engineering screens,
+not physical clearance or safety certificates. The [harvest owner flow](/docs/ai/apps/fieldscope/plans/harvest-robot/inspector-flow.md)
+owns the boundaries for subsequent mission composition and projection.
+
+## Robot workspace
+
+`runtime/robot-workspace.ts` registers a separate `robot-configuration` SceneTree
+entity and the exclusive `robot.configuration.change` Feature. Admission completes
+before one settings transaction; history replay refreshes the ordinary projection.
+The immutable read snapshot is notification-scoped and not an editable React model.
+Unknown field evidence remains unknown. No M3 simulation session exists yet.
+
+`domain/robot-model.ts` constructs dimensioned concept geometry;
+`render-app/robot-projection.ts` owns its definition lifetime and admitted shapes.
+Dock position changes transforms, mission changes only route output, and camera
+changes neither geometry nor assessment. Bootstrap composes this output with the
+existing site in SpatialLayer; robot edits never call the site/crop builders.
+Local model bounds are produced with the definition and joined with site bounds
+for fit; fitting does not rescan either model. Blender review uses an export of
+this exact geometry, not a separate runtime asset or simulation oracle.

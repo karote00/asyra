@@ -1,8 +1,8 @@
+import { WorkspaceEditor } from './robot-editor'
 import { LanguageSelector, useTranslation, localizeError } from './i18n/locale'
 import { useCameraFlight } from './use-camera-flight'
 import {
   ConfigurationRuntime,
-  ConfigurationEditor,
   useFarmConfiguration
 } from './configuration-editor'
 import { configurationSite } from '../domain/farm-configuration'
@@ -444,7 +444,7 @@ function SceneWorkspace({
       >
         <div className="workspace-panel-content">
           {runtime ? (
-            <ConfigurationEditor runtime={runtime} />
+            <WorkspaceEditor runtime={runtime} />
           ) : (
             <p className="p-5 text-xs">{t('scene.settingsLoading')}</p>
           )}

@@ -64,6 +64,7 @@ export function assembleDistribution({ snapshot, consumer, output, report }) {
     'tsconfig.json',
     'vite.config.ts',
     'vitest.config.ts',
+    'vercel.json',
     'playwright.config.ts',
     'app-environment.mjs',
     'app-environment.d.mts',
@@ -90,6 +91,10 @@ export function assembleDistribution({ snapshot, consumer, output, report }) {
   )
   targets.set('apps/asyra-sim/README.md', 'USER_GUIDE.md')
   targets.set(`${docsRoot}/release/LOCAL_CANDIDATE.md`, 'README.md')
+  targets.set(
+    'apps/asyra-sim/e2e/fixtures/missing-method-project.json',
+    'examples/missing-method-project.json'
+  )
   for (const [source, target] of targets) {
     const filename = path.join(snapshot, source)
     if (!source.endsWith('.md')) copy(filename, target)

@@ -12,6 +12,7 @@ Read [App essentials](APP_ESSENTIALS.md), [Architecture](ARCHITECTURE.md), [API 
 - [Configuration and history](specs/configuration.md)
 - [Camera controls](specs/camera.md)
 - [Water and crop specification](specs/water-and-crops.md)
+- [Harvest robot contract](specs/harvest-robot.md), [hardware and charging concept](specs/harvest-hardware.md), and [staged scenarios](bdd-features/harvest-robot.feature)
 - [Rendering module](modules/rendering.md)
 - [Product scope](prd/overview.md)
 - [Executable product scenarios](bdd-features/greenhouse.feature)

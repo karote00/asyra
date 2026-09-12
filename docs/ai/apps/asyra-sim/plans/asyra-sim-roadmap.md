@@ -9,8 +9,11 @@ contracts. The user explicitly authorized M3.5/M4 acceptance and closeout;
 previous M1-M3 dates and proof limits remain intact. See
 [M3.5](completed/m3-5-workbench-flow.md) and
 [M4](completed/m4-comparison-extensions.md) for final evidence and decisions.
-M5 is the next separately authorized milestone. This roadmap stays active for
-M5/M6 and R0; milestone closeout does not authorize deployment or public release.
+The user closed [M5 delivery](completed/m5-controlled-pilot.md) on 2026-09-12
+with its capacity failure and reference-hardware gaps explicitly carried into
+M6/R0 review. M6 development is authorized after the separately authorized
+PR #192 merge, conditional on all newest-head CI passing. This roadmap remains
+active for M6 and R0; no release gate, deployment or publication is waived.
 
 ### 1.1 Development workbench closeout (2026-09-07)
 
@@ -322,7 +325,13 @@ Acceptance covers two equally important paths: non-developers configure existing
 methods through the UI, and developers add new methods through the SDK. An SDK
 without a usable UI is not complete.
 
-## 8. M5: Controlled-Pilot Candidate
+## 8. M5: Controlled-Pilot Candidate - Delivery Stage Closed
+
+Closed by explicit user direction on 2026-09-12; see the
+[completion record](completed/m5-controlled-pilot.md). The original scope and
+historical iterations below remain evidence of what was required and attempted.
+The full representative capacity gate failed and M1 / 8 GB hardware is still
+unverified. These are carried release blockers, not passing M5 evidence.
 
 The previous delivery iteration addressed the `ui` owner's consumer lock guard,
 not a solver or Framework change. The exact-source gate exposed a blanket patch
@@ -414,6 +423,11 @@ This milestone permits preparation for controlled pilots; it does not complete
 the first public product release.
 
 ## 9. M6: Independent Pilots and R0 Release Review
+
+Development is active after PR #192 merged. The bounded
+[M6 plan](m6-pilot-review.md) first makes the missing-method recovery exercise
+self-contained and adds candidate limitation/update notes. Carried resource,
+reference-hardware, independent evidence and maintenance decisions remain open.
 
 External pilots must meet FIRST_RELEASE G7; this roadmap cannot lower that
 requirement. Outreach, confidential data transfers, and other external
