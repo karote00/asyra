@@ -711,7 +711,8 @@ Unknown impact uses that complete conservative scope, never an empty exemption.
 ### Assessment input and currentness
 
 The internal `assessTargetSource` input is `{target, allocationRevision,
-acceptedContract, targetContract, sourceAdmission, proofRequests, current}`.
+acceptedContract, targetContract, acceptedVerificationSourceDigest,
+targetVerificationSourceDigest, sourceAdmission, proofRequests, current}`.
 `target` is the target owner's immutable artifact. Select its exact history entry
 whose `revision` equals `allocationRevision`; use that entry's frozen `state`,
 the target's `obligations`, `id`, `targetRevision` and `acceptedBaseline`.
@@ -724,21 +725,41 @@ The assessor consumes this allocation; it does not rebuild coverage from tasks.
 `sourceAdmission` is the source-owner-validated, service-owned artifact described
 below. `proofRequests` is the trusted service's complete retained request
 inventory for the selected assessment, not a client-selected list of green
-results. Each entry contains `id`, `contractDigest`, `flowIds`, and, when
+results. The two required verification digests come from the exact accepted-version
+and target-review references resolved by the service, never from contract digest
+equality or current checkout bytes. Each entry contains `id`, `contractDigest`,
+`verificationSourceDigest`, `flowIds`, and, when
 available, `record` plus that record's `sourceAdmission`. The id binds the exact
 attempt. The completed record must already have passed evidence-owner admission
 against its own admitted contract and source artifact. This assessor consumes
 those observations without calling raw assessment, stored-evidence validation or
 source validation again. It compares the selected repository, HEAD and runtime
 digest; each record still binds its own full snapshot digest and verification
-identities. Distinct accepted and target full snapshot digests are permitted.
+identities. Its combined source admission and snapshot must both carry the
+requested verification descriptor digest, with admitted contract, mapping,
+architecture and actual configuration identities matching the record. Runtime-only
+legacy admission cannot provide this authority. Distinct accepted and target full
+snapshot digests are permitted.
 
 A requested producer without a record, with an unfinished or error record, or
 without admitted completed evidence contributes unknown results and concrete
 blockers. Duplicate requests or more than one producer observation for the same
-contract and obligation cannot pass; retain any confirmed failed observation.
-When accepted and target contract digests are identical, one request and its
-observations can serve both assessment roles and are not counted twice. A work
+contract, verification identity and obligation cannot pass; retain any confirmed
+failed observation.
+Only when both contract and admitted verification-source digests are identical
+may one request serve both roles; all runtime, full-source, configuration and
+request bindings still apply. Same-contract versions with different verifier or
+configuration bytes require distinct observations. Duplicate detection applies
+within that exact contract and verification identity, not across different
+verification bundles. Results and evidence references retain the selected
+verification digest so the two roles remain distinguishable. Missing or mismatched
+verification authority cannot be inferred from a green result. The service must
+resolve both immutable version references independently before applying this
+sharing rule; an available target reference never replaces a missing accepted
+reference. This equivalence supports ordinary verification only, whose admitted
+actual execution configuration equals its configuration-role entry. Derived
+execution configurations require an explicit execution-identity contract before
+using this sharing rule. A work
 with no requested target-flow proof remains pending. This absence differs from
 an explicitly unassigned obligation in the frozen `state.pending`; that inventory
 keeps integration pending even if observations already exist. Accepted preservation

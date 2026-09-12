@@ -64,11 +64,12 @@ const data = {
         'artifact:assessed-proof-evidence',
         'trusted current accepted revision and selected target allocation revision',
         'complete service-owned proof request inventory and admitted completed records',
+        'exact accepted-version and target-review verification source identities',
         'trusted current target allocation and source identity for staleness'
       ],
       outputs: ['artifact:target-source-assessment'],
       conditions: [
-        'Consume the exact target history revision, frozen work coverage and admitted case-backed handoffs. Consume the complete trusted request inventory without choosing only green producers; identical accepted/target contracts share observations once. Current identity changes only staleness and eligibility, not historical verdicts. Assess accepted preservation, bounded work and complete integration separately against one captured runtime source and each admitted verification contract. Required producers must settle; missing or contradictory identities never pass. Preserve failed obligations and pending work. Full integration grants eligibility only; source, allocation or accepted-base changes make its current use stale.'
+        'Consume the exact target history revision, frozen work coverage and admitted case-backed handoffs. Consume the complete trusted request inventory without choosing only green producers; Only identical accepted/target contract and admitted verification-source identities share observations once, with full source, runtime, configuration and request bindings intact; same-contract different verification bytes remain distinct proof roles. Consume combined source-owner verification admission without rehashing source or reports. Current identity changes only staleness and eligibility, not historical verdicts. Assess accepted preservation, bounded work and complete integration separately against one captured runtime source and each admitted verification contract. Required producers must settle; missing or contradictory identities never pass. Preserve failed obligations and pending work. Full integration grants eligibility only; source, allocation or accepted-base changes make its current use stale.'
       ],
       bypasses: [
         'Only an admitted case-backed route bypass may satisfy a handoff. Historical records without source-bound evidence remain readable but cannot grant readiness.'
