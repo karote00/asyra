@@ -606,3 +606,92 @@ test('invalid retained delivery refuses startup without leaking the exclusive st
     )
   })
 })
+
+test(
+  'admitted work retains real Factory failure and correction without accepting target or baseline',
+  { skip: process.platform !== 'darwin', timeout: 30000 },
+  async (t) => {
+    const service = createService(root, { directory: directory(t) })
+    try {
+      const baseline = await service.wait(service.start({}, LOCAL_ACTOR))
+      assert.equal(baseline.evidence.status, 'passed')
+      const contract = service.contract()
+      const work = {
+        id: randomUUID(),
+        title: 'Cancellation outcome',
+        scope: 'Retain inverse restoration',
+        stepId: 'finalize-transaction-state',
+        obligationIds: ['cancel.outcome'],
+        allowedFiles: ['packages/factory/src/data-transact.ts'],
+        prerequisites: []
+      }
+      const target = service.decideTarget(
+        {
+          action: 'create',
+          requestId: randomUUID(),
+          expectedRevision: 0,
+          reason: 'Real offline source proof',
+          flowId: 'immediate-cancellation',
+          targetRevision: contract.digest,
+          acceptedBaseline: { revision: 1, contractDigest: contract.digest },
+          objective: 'Develop cancellation',
+          works: [work],
+          pending: ['cancel.snapshot', 'cancel.delivery']
+        },
+        LOCAL_ACTOR
+      )
+      const admission = {
+        action: 'admit',
+        targetId: target.id,
+        requestId: randomUUID(),
+        expectedRevision: 1,
+        reason: 'Freeze cancellation work',
+        workId: work.id,
+        taskId: randomUUID(),
+        sourceAttemptId: baseline.id
+      }
+      service.decideTarget(admission, LOCAL_ACTOR)
+      const id = service.startTask(
+        {
+          requestId: admission.taskId,
+          stepId: work.stepId,
+          objective: work.scope,
+          allowedFiles: work.allowedFiles,
+          adapter: 'demonstration',
+          scenario: 'regression',
+          contractDigest: contract.digest,
+          revision: 1,
+          budgets: { elapsedMs: 60000, toolCalls: 20, attempts: 3 },
+          workBinding: {
+            targetId: target.id,
+            workId: work.id,
+            admissionId: admission.requestId
+          }
+        },
+        LOCAL_ACTOR
+      )
+      const failed = await service.waitTask(id)
+      assert.equal(failed.verificationStatus, 'failed')
+      assert.equal(
+        service.getTarget(target.id).works[0].assessment.status,
+        'failed'
+      )
+      await service.controlTask(
+        id,
+        { action: 'resume', scenario: 'repair' },
+        LOCAL_ACTOR
+      )
+      const corrected = await service.waitTask(id)
+      assert.equal(corrected.verificationStatus, 'passed')
+      assert.equal(corrected.attempts.at(-1).verdict.evidence.cases.length, 6)
+      assert.equal(corrected.attempts[0].verdict.evidence.status, 'failed')
+      const result = service.getTarget(target.id)
+      assert.equal(result.works[0].assessment.status, 'passed')
+      assert.equal(result.status, 'pending')
+      assert.deepEqual(result.pending, ['cancel.snapshot', 'cancel.delivery'])
+      assert.equal(service.state().mapping.revision, 1)
+    } finally {
+      await service.close()
+    }
+  }
+)

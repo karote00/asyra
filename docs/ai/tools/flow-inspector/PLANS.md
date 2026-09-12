@@ -11,7 +11,9 @@ delegation are the success criteria.
 ## Planned Architecture Direction
 
 - [Flow Development Across Multiple PRs](plans/flow-inspector-multi-pr-development-and-integration-plan.md)
-  - Direction approved 2026-09-10; implementation not started.
+  - Direction approved 2026-09-10; bounded target/work admission and Board/API/CLI
+    implemented 2026-09-12; [bounded closeout](plans/completed/flow-inspector-target-work-admission-closeout.md)
+    records execution admission and evidence. Integration assessment and baseline acceptance remain open.
   - Separate persistent flow contracts from task/PR delivery. Verify developing
     work from the start, preserve accepted behavior, and require one complete
     integration result before explicit baseline acceptance.
@@ -65,3 +67,11 @@ dependency, license, or publication change is implied by the planning revision.
 - [Static Workspace 0.2.0 record](plans/completed/flow-inspector-static-workspace-0.2.0-closure-plan.md)
   records the completed Phase 0-2 baseline; its static-only contract remains
   unchanged.
+
+## Bounded flow target slice
+
+The local target/work admission and Board/API/CLI implementation is described in
+[the living contract](CORE_PROOF.md#flow-targets-and-work-decomposition).
+It retains pending obligations, immutable commitments and exact task links.
+Full multi-PR source integration assessment and explicit baseline acceptance
+remain future slices; this entry does not close the overall development plan.

@@ -94,6 +94,9 @@ async function connect(repositoryRoot, origin) {
       serviceOptions(repositoryRoot)
     )
     return {
+      targets: async () => service.targets(),
+      getTarget: async (id) => service.getTarget(id),
+      decideTarget: async (body) => service.decideTarget(body, LOCAL_ACTOR),
       getReview: async (id) => service.getReview(id),
       reviewTask: (id, body) => service.reviewTask(id, body, LOCAL_ACTOR),
       startTask: async (body) => service.startTask(body, LOCAL_ACTOR),
@@ -140,6 +143,9 @@ async function connect(repositoryRoot, origin) {
   capability = (await request('/api/session')).capability
   const get = (id) => request('/api/runs/' + encodeURIComponent(id))
   return {
+    targets: () => request('/api/targets'),
+    getTarget: (id) => request('/api/targets/' + encodeURIComponent(id)),
+    decideTarget: (body) => request('/api/targets/decide', body),
     getReview: (id) =>
       request('/api/tasks/' + encodeURIComponent(id) + '/review'),
     reviewTask: (id, body) =>
@@ -214,6 +220,9 @@ async function main(
     'task-handoff': [1],
     'task-revoke': [1],
     'task-resume': [2],
+    targets: [0],
+    'target-show': [1],
+    'target-decide': [1],
     serve: [0],
     candidate: [0],
     ci: [0],
@@ -242,7 +251,7 @@ async function main(
     (command === 'serve' && origin)
   )
     throw new Error(
-      'Usage: cli.cjs [--url loopback-origin] serve | verify [flow-id] | negative [flow-id] | scenario scenario-id [flow-id] | prove | status | show attempt-id | cancel attempt-id | mapping-diff | mapping-accept review-id reason | mapping-reject review-id reason | candidate | ci | ci-trial | ci-demo [scenario-id] | pr-prepare task-id | pr-show task-id | pr-confirm task-id preview-digest confirm | pr-refresh task-id | task-start request.json | task-show task-id | task-changes task-id | task-wait task-id | task-cancel task-id | task-stop task-id | task-handoff task-id | task-revoke task-id | task-resume task-id scenario | shared | ci-ingest envelope.json | contract-diff attempt-id [relations.json] | contract-accept review-id reason [retirement.json] | contract-reject review-id reason'
+      'Usage: cli.cjs [--url loopback-origin] serve | targets | target-show target-id | target-decide request.json | verify [flow-id] | negative [flow-id] | scenario scenario-id [flow-id] | prove | status | show attempt-id | cancel attempt-id | mapping-diff | mapping-accept review-id reason | mapping-reject review-id reason | candidate | ci | ci-trial | ci-demo [scenario-id] | pr-prepare task-id | pr-show task-id | pr-confirm task-id preview-digest confirm | pr-refresh task-id | task-start request.json | task-show task-id | task-changes task-id | task-wait task-id | task-cancel task-id | task-stop task-id | task-handoff task-id | task-revoke task-id | task-resume task-id scenario | shared | ci-ingest envelope.json | contract-diff attempt-id [relations.json] | contract-accept review-id reason [retirement.json] | contract-reject review-id reason'
     )
   if (command === 'serve') {
     const server = await startServer(repositoryRoot, {
@@ -272,6 +281,16 @@ async function main(
       if (fs.statSync(file).size > 2097152)
         throw new Error('Input artifact exceeds size limit')
       return JSON.parse(fs.readFileSync(file, 'utf8'))
+    }
+    if (['targets', 'target-show', 'target-decide'].includes(command)) {
+      let value
+      if (command === 'targets') value = await client.targets()
+      if (command === 'target-show')
+        value = await client.getTarget(parameters[0])
+      if (command === 'target-decide')
+        value = await client.decideTarget(inputFile(parameters[0]))
+      write(JSON.stringify(value, null, 2))
+      return 0
     }
     if (command.startsWith('pr-')) {
       let value

@@ -494,3 +494,54 @@ test(
     await owner.close()
   }
 )
+
+test('work admission blocks before capture and rejects source before adapter effects, then gates resume', async (t) => {
+  let checks = 0,
+    captures = 0,
+    operations = 0,
+    deny = 'prerequisite'
+  const f = fixture({
+    checkWork: (_task, snapshot) => {
+      checks++
+      if (
+        deny === 'prerequisite' ||
+        (deny === 'source' && snapshot) ||
+        deny === 'resume'
+      )
+        throw new Error('Work admission ' + deny)
+    },
+    capture: (...args) => {
+      captures++
+      return captureSource(...args)
+    },
+    adapterFactory: () => ({
+      next: async () => {
+        operations++
+        return { tool: 'shell' }
+      }
+    })
+  })
+  t.after(async () => {
+    await f.owner.close()
+    fs.rmSync(f.directory, { recursive: true, force: true })
+  })
+  assert.throws(() => f.owner.start(f.request, 'human'), /prerequisite/)
+  assert.equal(captures, 0)
+  assert.equal(operations, 0)
+  deny = 'source'
+  assert.throws(() => f.owner.start(f.request, 'human'), /source/)
+  assert.equal(captures, 1)
+  assert.equal(operations, 0)
+  assert.equal(f.owner.list().length, 0)
+  deny = null
+  const id = f.owner.start(f.request, 'human')
+  await f.owner.wait(id)
+  assert.equal(captures, 2)
+  const attempts = f.owner.get(id).attempts.length
+  const priorOperations = operations
+  deny = 'resume'
+  assert.throws(() => f.owner.resume(id, 'repair', 'human'), /resume/)
+  assert.equal(f.owner.get(id).attempts.length, attempts)
+  assert.equal(operations, priorOperations)
+  assert.ok(checks >= 5)
+})

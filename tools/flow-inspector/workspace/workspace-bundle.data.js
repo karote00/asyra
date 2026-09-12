@@ -35358,6 +35358,54 @@
         ],
         "steps": [
           {
+            "id": "manage-flow-target",
+            "order": 16,
+            "laneId": "proof",
+            "title": "Manage flow target and work commitments",
+            "ownerPackage": "tools/flow-inspector/control-plane",
+            "purpose": "Flow targets and work decomposition",
+            "inputs": [
+              "artifact:admitted-proof-contract",
+              "retained accepted versions and prepared evolution contracts",
+              "explicit local actor decision and expected target revision",
+              "artifact:agent-task-state",
+              "artifact:pr-review-record",
+              "retained completed baseline proof and source identity"
+            ],
+            "outputs": [
+              "artifact:flow-target-state",
+              "artifact:work-admission"
+            ],
+            "conditions": [
+              "Bind one flow and exact target revision and accepted baseline. Require complete assigned-or-pending coverage, exact references, disjoint responsibility and acyclic explicit handoffs. Persist immutable revisions and audit atomically under the existing store lock. Link only exact admitted task scope. Project task and PR observations separately; prerequisites remain unconfirmed and full target pending. Reserve exact task, work promise, actor and baseline source before execution; unresolved prerequisites reject. Admitted commitments cannot be removed. Validate linked task execution against retained admission; bounded candidate assessments never complete the target."
+            ],
+            "bypasses": [
+              "Exact request replay returns the original revision without writes. Invalid, stale or conflicting decisions have no effects. No partial verification bypass or automatic acceptance."
+            ],
+            "allowedContributors": [
+              "trusted local action service",
+              "retained admitted contracts and task/review records",
+              "existing exclusive store ownership"
+            ],
+            "forbiddenContributors": [
+              "candidate self-authorization",
+              "PR status as prerequisite evidence",
+              "client-side conformance",
+              "model or remote dispatch",
+              "accepted history mutation"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "tools/flow-inspector/control-plane/flow-target.cjs",
+              "tools/flow-inspector/control-plane/__tests__/flow-target.test.cjs"
+            ],
+            "specRefs": [
+              "#flow-targets-and-work-decomposition",
+              "#work-admission-before-execution"
+            ],
+            "failureOwnerStepId": "manage-flow-target"
+          },
+          {
             "id": "aggregate-workflow-results",
             "order": 15,
             "laneId": "proof",
@@ -35506,7 +35554,8 @@
               "artifact:admitted-proof-contract",
               "human task request and accepted revision",
               "trusted non-secret provider authorization when selecting a real adapter",
-              "declared source snapshot"
+              "declared source snapshot",
+              "artifact:work-admission"
             ],
             "outputs": [
               "artifact:admitted-agent-task"
@@ -35515,7 +35564,7 @@
               "Reject unknown capabilities, hard token claims, non-runtime scope and incomplete owner contracts before effects. Bind exact step, actor, source, budgets and required retained obligations. Real provider admission requires matching service-owned authorization, exact model, billing mode, expiry and request ceiling; caller or model data cannot authorize itself."
             ],
             "bypasses": [
-              "No unknown, stale, denied or missing input may become success."
+              "Unlinked legacy tasks require no work admission. A reserved or linked task cannot bypass the source-bound work admission. No unknown, stale, denied or missing input may become success."
             ],
             "allowedContributors": [
               "trusted action service",
@@ -35550,14 +35599,15 @@
               "registered adapter operation data",
               "trusted provider transport settlement and usage observations",
               "human stop, cancel, resume, revoke or handoff request",
-              "artifact:agent-candidate-verdict"
+              "artifact:agent-candidate-verdict",
+              "artifact:work-admission"
             ],
             "outputs": [
               "artifact:agent-task-state",
               "artifact:agent-candidate-source"
             ],
             "conditions": [
-              "Broker operations before effects; persist cumulative budgets and audit with task state. Reserve adapter turns before dispatch against the authorization lifetime; internal HTTP retries remain unmeasured and are not a supported hard limit; retain unknown usage and unresolved remote requests across cancellation and restart and block replay until trusted reconciliation. Preserve partial source and history across cancellation and restart. Finish requires actual source progress; candidate verdict never authorizes baseline acceptance."
+              "Broker operations before effects; persist cumulative budgets and audit with task state. Reserve adapter turns before dispatch against the authorization lifetime; internal HTTP retries remain unmeasured and are not a supported hard limit; retain unknown usage and unresolved remote requests across cancellation and restart and block replay until trusted reconciliation. Preserve partial source and history across cancellation and restart. Finish requires actual source progress; candidate verdict never authorizes baseline acceptance. Consume the target owner admission check before capture, after capture, and on resume before any operation or provider reservation."
             ],
             "bypasses": [
               "No unknown, stale, denied or missing input may become success."
@@ -35892,6 +35942,7 @@
               "artifact:ci-aggregate-evidence",
               "artifact:agent-task-state",
               "artifact:pr-review-record",
+              "artifact:flow-target-state",
               "server-selected accepted Git base"
             ],
             "outputs": [
@@ -35932,6 +35983,7 @@
             "specRefs": [
               "#controlled-actions-and-retention",
               "#board",
+              "#flow-targets-and-work-decomposition",
               "../../../docs/ai/tools/flow-inspector/PR_REVIEW.md#confirmed-delivery"
             ],
             "failureOwnerStepId": "serve-proof-actions"
@@ -35952,6 +36004,7 @@
               "artifact:proof-board-view"
             ],
             "conditions": [
+              "Prepare target work through an explicit source-bound admission before filling the task form. Project pending reservations and bounded assessments without replacing work controls on task updates; unknown prerequisites cannot launch work.",
               "Preserve the existing canvas cards, routes, geometry, controls, and details; project exact selected-flow results and actions into that surface without replacing the graph.",
               "On a newly selected failed attempt, select the first failing flow if the current flow has no failures; request viewer-owned framing of that flow’s failed step IDs once per changed result; preserve subsequent manual selection, pan and zoom on unchanged refresh. Success and unknown results do not move the viewport. Show a persistent run-level failure alert with named owner navigation and geometry-preserving failed card highlights; clear them on recovery.",
               "Bind cards only after graph DOM replacement; unchanged polling rebuilds neither graph nor bindings and performs no source capture. Target retirement disconnects observers and aborts reads.",
@@ -35979,12 +36032,73 @@
             ],
             "specRefs": [
               "#board",
+              "#flow-targets-and-work-decomposition",
               "../../../docs/ai/tools/flow-inspector/PR_REVIEW.md#review-observations"
             ],
             "failureOwnerStepId": "render-proof-board"
           }
         ],
         "routes": [
+          {
+            "id": "work-admission-to-task",
+            "from": "manage-flow-target",
+            "to": "admit-agent-task",
+            "kind": "required",
+            "predicate": "Task references an admitted work commitment",
+            "producedArtifacts": [
+              "artifact:work-admission"
+            ]
+          },
+          {
+            "id": "work-admission-to-execution",
+            "from": "manage-flow-target",
+            "to": "execute-agent-task",
+            "kind": "required",
+            "predicate": "Start or resume a task associated with target work",
+            "producedArtifacts": [
+              "artifact:work-admission"
+            ]
+          },
+          {
+            "id": "admit-proof-contract-to-manage-flow-target",
+            "from": "admit-proof-contract",
+            "to": "manage-flow-target",
+            "kind": "handoff",
+            "predicate": "The retained owner artifact is available for an explicit target decision or observation.",
+            "producedArtifacts": [
+              "artifact:admitted-proof-contract"
+            ]
+          },
+          {
+            "id": "execute-agent-task-to-manage-flow-target",
+            "from": "execute-agent-task",
+            "to": "manage-flow-target",
+            "kind": "handoff",
+            "predicate": "The retained owner artifact is available for an explicit target decision or observation.",
+            "producedArtifacts": [
+              "artifact:agent-task-state"
+            ]
+          },
+          {
+            "id": "prepare-pr-review-to-manage-flow-target",
+            "from": "prepare-pr-review",
+            "to": "manage-flow-target",
+            "kind": "handoff",
+            "predicate": "The retained owner artifact is available for an explicit target decision or observation.",
+            "producedArtifacts": [
+              "artifact:pr-review-record"
+            ]
+          },
+          {
+            "id": "manage-flow-target-to-actions",
+            "from": "manage-flow-target",
+            "to": "serve-proof-actions",
+            "kind": "handoff",
+            "predicate": "A target revision or read projection is available without granting conformance.",
+            "producedArtifacts": [
+              "artifact:flow-target-state"
+            ]
+          },
           {
             "id": "aggregate-workflow-results-terminal",
             "from": "aggregate-workflow-results",
@@ -36216,6 +36330,24 @@
         ],
         "artifacts": [
           {
+            "id": "artifact:work-admission",
+            "ownerStepId": "manage-flow-target",
+            "channel": "immutable source-bound work admission",
+            "consumerStepIds": [
+              "admit-agent-task",
+              "execute-agent-task"
+            ]
+          },
+          {
+            "id": "artifact:flow-target-state",
+            "title": "Flow target revisions and work observations",
+            "ownerStepId": "manage-flow-target",
+            "channel": "local-target",
+            "consumerStepIds": [
+              "serve-proof-actions"
+            ]
+          },
+          {
             "id": "artifact:workflow-result-summary",
             "title": "Workflow result summary",
             "ownerStepId": "aggregate-workflow-results",
@@ -36230,7 +36362,8 @@
             "channel": "local-delivery",
             "consumerStepIds": [
               "deliver-github-review",
-              "serve-proof-actions"
+              "serve-proof-actions",
+              "manage-flow-target"
             ]
           },
           {
@@ -36278,7 +36411,8 @@
             "channel": "local-agent",
             "consumerStepIds": [
               "serve-proof-actions",
-              "prepare-pr-review"
+              "prepare-pr-review",
+              "manage-flow-target"
             ]
           },
           {
@@ -36308,7 +36442,8 @@
               "capture-proof-source",
               "assess-proof-evidence",
               "serve-proof-actions",
-              "admit-agent-task"
+              "admit-agent-task",
+              "manage-flow-target"
             ]
           },
           {

@@ -360,7 +360,6 @@ combined plan retains the original unfulfilled CI criteria as deferred work;
 passing local trials and PR checks do not prove protected delivery. No required
 check configuration is changed, and Phase 5/6 remain deferred.
 
-
 The preliminary estimate is 2-4 engineering person-weeks for the core proof,
 another 6-10 for an operational trial, and another 8-14 for a bounded agent and
 small-team trial. These are low-confidence planning ranges, not calendar
@@ -471,7 +470,6 @@ obligations. Remote reconciliation unsupported by an ephemeral provider remains
 visible and blocks further dispatch. No Phase 6 or deferred protection work is
 activated, and no full Phase 5 completion is claimed.
 
-
 ## Sol Local Acceptance - 2026-09-08
 
 The user subsequently authorized Sol (`gpt-5.6-sol`) using the existing ChatGPT
@@ -523,5 +521,8 @@ completion remain distinct. Green results from unrelated PR heads cannot certify
 an integrated revision. Explicit baseline acceptance requires complete evidence
 on the same integrated source. This supersedes any interpretation of the bounded
 single-candidate trial as a permanent one-flow/one-PR product constraint, not its
-implemented per-attempt delivery identity. Implementation is not started; current
-contracts, completed records and deferred enforcement remain unchanged.
+implemented per-attempt delivery identity. The first local target/work slice and
+its Board/API/CLI projections are implemented under the
+[living contract](../CORE_PROOF.md#flow-targets-and-work-decomposition). Full source-bound
+integration assessment and target acceptance remain unimplemented; existing
+strict verification, completed records and deferred enforcement remain unchanged.
