@@ -6,6 +6,8 @@
 
 ## Completed
 
+- [Harvest feasibility - M1](/docs/ai/apps/fieldscope/plans/completed/harvest-feasibility/plan.md) - DONE 2026-09-12. PR #191 closeout precedes its current-head CI and merge gate; M2-M6 remain active planned work.
+
 - [Greenhouse workspace baseline](/docs/ai/apps/fieldscope/plans/completed/greenhouse-workspace/plan.md) - DONE 2026-09-09 (Asia/Taipei), retrospective closeout recorded 2026-09-11. PR #170 delivered the initial private 0.1.0 modeling workspace; its original baseline decision is retained.
 
 - [Water and crop population](/docs/ai/apps/fieldscope/plans/completed/water-and-crops/plan.md) - DONE 2026-09-11. PR #174 merged with all five checks passing; delivered water/crops, responsive scene updates, immediate editing/history, camera gestures and bilingual UI. See the [closeout decision](/docs/ai/apps/fieldscope/decisions/releases/unreleased.md).

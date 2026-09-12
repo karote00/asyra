@@ -31,6 +31,8 @@ within this diff and its direct consumers. Do not port Sim's analysis engine.
 
 ### M1 - Feasibility and conservative operating rules
 
+DONE - [stage closeout](/docs/ai/apps/fieldscope/plans/completed/harvest-feasibility/plan.md).
+
 Implement owner A: straight-lane geometry screening from the existing layout,
 vehicle envelope and measured/unknown ground admission; payload, box-change and
 quasi-static lateral reserve calculations; battery/return-energy admission;
