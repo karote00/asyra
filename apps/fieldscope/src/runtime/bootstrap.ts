@@ -505,6 +505,13 @@ export async function bootstrap(
     return {
       focusRobot: cameraFeature.api.focusRobot,
       getRobot: robot.get,
+      getDockSource: () => {
+        assertLive()
+        return robotProjection.getDockSource()
+      },
+      isCurrentDockSource: (
+        source: import('../render-app/robot-projection').DockSource
+      ) => !closed && robotProjection.isCurrentDockSource(source),
       getRobotSource: () => {
         assertLive()
         return robotProjection.getSource()

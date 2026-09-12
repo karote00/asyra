@@ -79,9 +79,12 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
     try {
       flush()
       const initialScene = runtime.getScene()
+      const dockSource = runtime.getDockSource()
+      expect(runtime.isCurrentDockSource(dockSource)).toBe(true)
       const robotSource = runtime.getRobotSource()
       expect(runtime.isCurrentRobotSource(robotSource)).toBe(true)
       for (let i = 0; i < 3; i++) {
+        expect(runtime.getDockSource() === dockSource).toBe(true)
         expect(runtime.getRobotSource()).toBe(robotSource)
         runtime.evaluateRobotPose(robotSource, REST_JOINTS)
       }
@@ -423,6 +426,7 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
       expect(() => runtime.orbit(1, 1)).toThrow()
       expect(() => runtime.getScene()).toThrow()
       expect(() => runtime.getRobotSource()).toThrow()
+      expect(() => runtime.getDockSource()).toThrow()
       await runtime.dispose()
       expect(cropBuild).toHaveBeenCalledTimes(
         mode === 'soil-edit' || mode === 'navigation' ? 1 : 2
