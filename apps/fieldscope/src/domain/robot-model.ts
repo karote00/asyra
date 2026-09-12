@@ -1,4 +1,5 @@
 import { TriangleBuilder } from './mesh'
+import type { SourceRegion } from './source-occupancy'
 import type { Point3 } from './greenhouse'
 import type { RobotConfiguration } from './robot-configuration'
 
@@ -10,6 +11,7 @@ export interface RobotPart {
   id: string
   color: number
   metalness: number
+  regions: readonly SourceRegion[]
   shape: {
     readonly kind: 'triangles'
     readonly positions: readonly number[]
@@ -41,7 +43,13 @@ export function createRobotModel(
     mesh: TriangleBuilder,
     metalness = 0.1
   ) => {
-    parts.push({ id, color, metalness, shape: mesh.shape() })
+    parts.push({
+      id,
+      color,
+      metalness,
+      shape: mesh.shape(),
+      regions: mesh.regions()
+    })
   }
   const box = (
     id: string,
@@ -89,6 +97,8 @@ export function createRobotModel(
       mesh.triangle(first, point(b, -depth / 2), point(a, -depth / 2))
       mesh.triangle(last, point(a, depth / 2), point(b, depth / 2))
     }
+    // Trigonometric seam endpoints are not welded: preserve open closure status.
+    mesh.region('open-shell', 0)
     add(id, color, mesh, metalness)
   }
   const tube = (
@@ -315,7 +325,13 @@ export function createDockModel(): readonly RobotPart[] {
   const box = (id: string, center: Point3, size: Point3, color: number) => {
     const mesh = new TriangleBuilder()
     mesh.box(center, size)
-    parts.push({ id, color, metalness: 0.3, shape: mesh.shape() })
+    parts.push({
+      id,
+      color,
+      metalness: 0.3,
+      shape: mesh.shape(),
+      regions: mesh.regions()
+    })
   }
   box('platform', [0, -0.015, 0], [1.5, 0.03, 2.1], 0x90998d)
   box('charger-foot', [0, 0.035, -0.85], [0.45, 0.07, 0.24], 0x33463e)

@@ -1,3 +1,4 @@
+import { readSourceRegions } from './source-occupancy'
 import {
   robotRestFrames,
   type RobotDefinition,
@@ -132,9 +133,11 @@ function bodyFor(id: string): RobotBody {
 }
 function admitPart(part: RobotPart): Readonly<RobotPart> {
   const shape = part.shape
+  const regions = readSourceRegions(part.regions, shape.indices.length)
   // Admitted projection shapes are already immutable; direct domain callers
   // receive detached buffers, so their edits cannot change the prepared rig.
   if (
+    regions === part.regions &&
     Object.isFrozen(part) &&
     Object.isFrozen(shape) &&
     Object.isFrozen(shape.positions) &&
@@ -145,6 +148,7 @@ function admitPart(part: RobotPart): Readonly<RobotPart> {
     return part
   return Object.freeze({
     ...part,
+    regions,
     shape: Object.freeze({
       ...shape,
       positions: Object.freeze([...shape.positions]),

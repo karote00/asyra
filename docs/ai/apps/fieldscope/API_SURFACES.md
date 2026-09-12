@@ -36,6 +36,16 @@ Cross-package imports use public `@asyra/*` facades. Do not import another app's
 - `SiteGeometry.prepareScene` composes immutable source metadata, installed plant
   and fruit identities, transforms and the complete pre-visibility scene. Existing
   cultivar and planting outputs are reused; empty populations create no cultivars.
+- C source products carry immutable `SourceRegion` partitions of the original
+  index buffer. `readSourceRegions` admits complete, ordered, unique ranges and
+  detaches mutable callers. `sheet` has no enclosed material; `closed-solid`
+  requires source closure evidence; `open-shell` preserves unresolved closure.
+  Boxes declare closed regions, while original uncapped tubes, botanical poles,
+  hairs/spines and unwelded cylinder seams remain open-shell. Original film,
+  foliage and calyx faces are sheets. No triangles, caps or thickness are added.
+  `SiteGeometry.primitive` retains shape and regions as one completed product;
+  scene, cultivar near/distant, robot rig and installed dock retain that metadata.
+  These declarations do not decide ray visibility, origin occupancy or contact.
 - `FarmRuntime.getScene` reads that completed source without work;
   `isCurrentScene` rejects a retired source. Canonical farm changes replace the
   revision and disposal closes access. Camera, visibility and robot design changes
