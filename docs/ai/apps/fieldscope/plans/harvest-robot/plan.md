@@ -533,3 +533,33 @@ label confirms bootstrap/source readiness, not a presented-frame acknowledgement
 No product rendering fallback was introduced. A bounded SwiftShader attempt was stopped for excessive
 GPU-process CPU and supplies no correctness evidence. Station support/contact and
 D observation/swept-motion admission remain subsequent steps; M3 is not complete.
+
+### D shared query geometry card - before observation and swept movement
+
+Owner/spec: Inspector D shared query geometry preparation and the matching D
+product clause. Consume a composition-issued same-update receipt containing real
+C scene, robot and installed station handles; check opaque receipt identity and
+all current handles together before preparation/publication/use. Publish one
+immutable source product, unique near shapes and original instance/triangle/body
+ownership. Same current receipt reuses it; source replacement retires it. Failure
+is atomic and cannot publish partial physical coverage.
+
+Only simulation/geometry.ts, `simulation/__tests__/geometry.test.ts` and
+API_SURFACES are in the production allowlist. The readiness slice touches these
+four product/Inspector/plan/BDD documents first. Existing generators, source owners,
+engine, session/admission, runtime and UI remain unchanged. Neutral transient query
+identities introduce no saved format. Physical layers remain included regardless
+of view visibility/opacity; only dimensions and robot.route are annotations.
+Tire support, exact joint contact and carried-fruit/tool contact are later collision
+policy, never blanket source filtering. Spines/calyx/distal pedicel provenance and
+unknown physical quality remain separate from retention.
+
+Formal tests first: actual C scene/rig/station fixtures, complete near physical
+mesh coverage, shared shape/triangle/partition identity, quaternion/instance
+placement and same source target mapping; source-tuple clone/mix/stale rejection,
+retirement for each source, atomic failed replacement and repeated-read/pose/clock
+zero preparation/generation. No acceleration cache before a profiled solver needs
+one. Gates: focused red/green, app unit/typecheck/lint/naming and independent
+readiness/code review. No presentation change or new browser gate in this pure
+source segment. Stop for missing canonical ownership, unsupported source requiring
+another owner, altered source geometry or a new product contact/physics decision.

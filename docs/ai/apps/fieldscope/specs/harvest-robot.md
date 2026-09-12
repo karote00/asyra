@@ -558,6 +558,48 @@ confirmations. Charging contacts inhibit traction and arm motion. Insufficient
 budget retains a pending patrol. Charger, stale SOC, blocked dock or contact
 faults remain faults; no automatic energized redocking or restart is allowed.
 
+### Shared query geometry source
+
+Observation and motion providers consume one D-owned prepared geometry product
+from an opaque composition-issued receipt binding the scene, robot definition and
+installed dock from the same completed canonical update. Receipt identity and all
+three original C handles must be current together before preparation, before
+publication and on use. Individually current products collected across updates,
+revision-only lookalikes and cloned issued products are not valid substitutes.
+
+Preparation retains the exact near admitted shape buffers and their original
+triangle indices/material association. Installed descriptor transforms and instance
+placements follow the renderer's composition order without duplicating world-space
+vertices. A unique source shape is registered once; instances reference its completed
+record. Repeated reads/queries reuse that result. A changed source receipt retires
+the prior product; preparation failure publishes nothing and does not partly replace
+it. No crop, station or robot generator runs in D.
+
+Physical source coverage includes hidden net, leaves, film, drains, soil, passages,
+barriers and underground base as authored. Only the exact dimensions layer and
+robot.route annotation are nonphysical; opacity, visibility, bounds and distant
+LOD never substitute for near geometry. Robot parts retain C's rigid-body ownership;
+station parts stay distinct. Fruit triangle ownership retains cucumber spines and
+tomato calyx/distal pedicel, including shared vertices and late hairs. Original
+source identity/placement, not string guesses or new botanical truth, joins an
+instance to C's plant/fruit metadata. Unsupported or inconsistent source data is
+explicitly unavailable, never silently omitted.
+
+This product makes no detection or clearance decision. Tire/support contact needs
+an explicit supporting surface and contact policy in the collision owner; being
+soil or platform is not blanket permission. Same rigid-body assembly is distinct
+from different-body joint interfaces: later precise joint contact eligibility may
+not exempt whole adjacent bodies. Retained fruit/tool support does not authorize
+contact with unrelated crop/net, nor prove spine/calyx integrity or contact damage.
+No force/material threshold or anatomical AZ is inferred from these shapes.
+
+Acceptance: real C source cases prove complete physical coverage, exact source
+references/indices/partitions, installed quaternion-plus-instance transforms,
+per-instance identity, distinct dock parts and rigid robot ownership. Prove atomic
+receipt admission, copied/mixed/stale source rejection, retirement on every source
+change and bounded preparation counts independent of reads/pose/clock/view. Real
+observation, interval sweep and ordinary UI execution remain separate acceptance.
+
 ### Motion and collision admission
 
 A's straight-lane screen is not motion clearance. Every proposed base, arm/tool,
