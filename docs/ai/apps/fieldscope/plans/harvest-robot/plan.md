@@ -833,3 +833,13 @@ lower bound proves sample occlusion. Behind-sample and overlapping intervals sta
 unknown with their witnesses; no midpoint inference or EPS endpoint extension.
 Add permanent selected-hit interval and behind/overlap regressions before this
 minimal ray output handoff and its observation consumer.
+
+The viewpoint producer is implemented and passes 39 focused cases and all 357 app
+unit tests, typecheck/build, lint and naming. Actual full near-source observations
+prove film occlusion outside the greenhouse and target/leaf/unknown samples inside;
+requested triangles remain separate from actual first-hit witnesses. Permanent
+regressions cover behind/overlap provider boundaries, rounded camera inversion,
+large-coordinate requested-distance enclosure and foreign context ownership.
+The latter two failed before correction. One camera preparation and one eligible
+ray batch/FK reuse completed geometry bounds with zero source generation. This
+pure producer does not close ordinary UI scan, action or full M3 integration.
