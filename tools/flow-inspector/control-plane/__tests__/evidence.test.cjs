@@ -1,6 +1,10 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 const assert = require('node:assert/strict')
 const path = require('node:path')
+const fs = require('node:fs')
+const { randomUUID, createHash } = require('node:crypto')
+const sourceOwner = require('../snapshot.cjs')
+const { runVerification } = require('../runner.cjs')
 const test = require('node:test')
 const { assessEvidence, validateStoredEvidence } = require('../evidence.cjs')
 const { loadContract } = require('../contracts.cjs')
@@ -267,3 +271,229 @@ for (const key of ['mappingVersion', 'architectureVersion'])
       /Stored evidence provenance/
     )
   })
+
+async function realRuntimeProof(t) {
+  const root = path.resolve(__dirname, '../../../..')
+  const id = randomUUID()
+  const directory = path.join(root, 'tmp/flow-inspector/evidence-runtime', id)
+  fs.mkdirSync(directory, { recursive: true })
+  t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
+  const captured = sourceOwner.captureSource(root, directory, contract)
+  const runner = await runVerification({
+    repositoryRoot: root,
+    runDirectory: directory,
+    snapshot: captured,
+    contract,
+    scenario: 'baseline',
+    flowIds,
+    timeoutMs: 10000
+  })
+  assert.equal(runner.code, 0)
+  const admission = Object.freeze({
+    attemptId: id,
+    repository: root,
+    head: captured.head,
+    sourceDigest: captured.digest,
+    runtimeSource: sourceOwner.validateRuntimeSource(captured)
+  })
+  return { id, captured, runner, admission }
+}
+
+test('runtime evidence binds real captured source through the runner and durable admission without promoting historical proof', async (t) => {
+  const { id, captured, runner, admission } = await realRuntimeProof(t)
+  const evidence = assessEvidence(contract, captured, runner, flowIds)
+  assert.equal(evidence.status, 'passed')
+  assert.equal(evidence.runtimeSourceDigest, captured.runtimeSource.digest)
+  const validate = t.mock.method(sourceOwner, 'validateRuntimeSource')
+  const reused = assessEvidence(
+    contract,
+    captured,
+    runner,
+    flowIds,
+    'baseline',
+    admission
+  )
+  assert.deepEqual(reused, evidence)
+  const retained = structuredClone(captured)
+  delete retained.files
+  delete retained.sourceRoot
+  const record = {
+    id,
+    format: 2,
+    phase: 'completed',
+    scenario: 'baseline',
+    snapshot: retained,
+    runner,
+    flowIds,
+    evidence
+  }
+  assert.doesNotThrow(() => validateStoredEvidence(contract, record, admission))
+  assert.equal(
+    validate.mock.callCount(),
+    0,
+    'admitted service evidence does not repeat source validation'
+  )
+  assert.throws(
+    () => validateStoredEvidence(contract, record),
+    /runtime|manifest/i
+  )
+  const legacySnapshot = { ...captured }
+  delete legacySnapshot.runtimeSource
+  const legacyRunner = structuredClone(runner)
+  delete legacyRunner.identity.runtimeSourceDigest
+  const legacy = assessEvidence(contract, legacySnapshot, legacyRunner, flowIds)
+  assert.equal(legacy.status, 'passed')
+  assert.equal(Object.hasOwn(legacy, 'runtimeSourceDigest'), false)
+})
+
+test('runtime evidence refuses malformed, missing and source-substituted provenance while retaining actual assertion failures', async (t) => {
+  const { captured, runner, admission } = await realRuntimeProof(t)
+  for (const [name, corrupt] of [
+    [
+      'present null source',
+      (s) => {
+        s.runtimeSource = null
+      }
+    ],
+    [
+      'present undefined source',
+      (s) => {
+        s.runtimeSource = undefined
+      }
+    ],
+    [
+      'unsupported source format',
+      (s) => {
+        s.runtimeSource.format = 2
+      }
+    ],
+    [
+      'truncated source inventory',
+      (s) => {
+        s.runtimeSource.files.pop()
+        s.runtimeSource.digest = createHash('sha256')
+          .update(JSON.stringify(s.runtimeSource.files))
+          .digest('hex')
+      }
+    ],
+    [
+      'missing runner runtime identity',
+      (_, r) => {
+        delete r.identity.runtimeSourceDigest
+      }
+    ],
+    [
+      'wrong runner runtime identity',
+      (_, r) => {
+        r.identity.runtimeSourceDigest = '0'.repeat(64)
+      }
+    ],
+    [
+      'missing runner lock identity',
+      (_, r) => {
+        delete r.identity.lockfileDigest
+      }
+    ],
+    [
+      'wrong runner lock identity',
+      (_, r) => {
+        r.identity.lockfileDigest = '0'.repeat(64)
+      }
+    ],
+    [
+      'removed source but retained new runner identity',
+      (s) => {
+        delete s.runtimeSource
+      }
+    ]
+  ]) {
+    const source = structuredClone(captured)
+    const result = structuredClone(runner)
+    corrupt(source, result)
+    const evidence = assessEvidence(contract, source, result, flowIds)
+    assert.notEqual(evidence.status, 'passed', name)
+    assert.ok(
+      evidence.issues.some((issue) => /runtime/i.test(issue)),
+      name
+    )
+  }
+  for (const key of ['digest', 'head']) {
+    const replaced = { ...captured, [key]: '0'.repeat(64) }
+    assert.notEqual(
+      assessEvidence(contract, replaced, runner, flowIds, 'baseline', admission)
+        .status,
+      'passed',
+      key
+    )
+  }
+  const result = structuredClone(runner)
+  delete result.identity.runtimeSourceDigest
+  result.code = 1
+  result.report.success = false
+  result.report.numPassedTests--
+  result.report.numFailedTests++
+  result.report.testResults[0].status = 'failed'
+  result.report.testResults[0].assertionResults[0].status = 'failed'
+  const evidence = assessEvidence(contract, captured, result, flowIds)
+  assert.equal(evidence.status, 'failed')
+  assert.equal(evidence.cases[0].status, 'failed')
+  assert.equal(evidence.runtimeSourceDigest, captured.runtimeSource.digest)
+  assert.ok(evidence.issues.some((issue) => /runtime/i.test(issue)))
+})
+
+test('durable runtime evidence refuses forged pass identities and preserves legitimate unavailable evidence', async (t) => {
+  const { id, captured, runner, admission } = await realRuntimeProof(t)
+  const evidence = assessEvidence(contract, captured, runner, flowIds)
+  const record = {
+    id,
+    format: 2,
+    phase: 'completed',
+    scenario: 'baseline',
+    snapshot: captured,
+    runner,
+    flowIds,
+    evidence
+  }
+  const forged = structuredClone(record)
+  forged.evidence.runtimeSourceDigest = '0'.repeat(64)
+  assert.throws(
+    () => validateStoredEvidence(contract, forged, admission),
+    /runtime/i
+  )
+  for (const key of ['runtimeSourceDigest', 'lockfileDigest', 'sourceDigest']) {
+    const altered = structuredClone(record)
+    altered.runner.identity[key] = '0'.repeat(64)
+    assert.throws(
+      () => validateStoredEvidence(contract, altered, admission),
+      /runtime/i,
+      key
+    )
+  }
+  const unavailableRunner = structuredClone(runner)
+  delete unavailableRunner.identity.runtimeSourceDigest
+  const unavailable = {
+    ...record,
+    runner: unavailableRunner,
+    evidence: assessEvidence(contract, captured, unavailableRunner, flowIds)
+  }
+  assert.equal(unavailable.evidence.status, 'unknown')
+  assert.doesNotThrow(() =>
+    validateStoredEvidence(contract, unavailable, admission)
+  )
+  assert.throws(
+    () =>
+      validateStoredEvidence(contract, record, {
+        ...admission,
+        attemptId: randomUUID()
+      }),
+    /runtime/i
+  )
+  assert.throws(
+    () =>
+      validateStoredEvidence(contract, record, {
+        ...admission,
+        sourceDigest: '0'.repeat(64)
+      }),
+    /runtime/i
+  )
+})
