@@ -15,7 +15,10 @@ Cross-package imports use public `@asyra/*` facades. Do not import another app's
 
 - `RobotConfiguration`, `DEFAULT_ROBOT`, `validateRobot` own the M2 design schema.
 - `assessRobotDesign` combines A's necessary lane and energy screens. A missing
-  lane is explicit `null`; no alternative lane is chosen.
+  lane is explicit `null`; no alternative lane is chosen. Its immutable `route`
+  exposes B's completed positional A input for fresh synthetic survey admission.
+  Missing identity or invalid interval makes both route and lane null; D does not
+  resolve strip IDs again. The route is not motion clearance.
 - `FarmRuntime.getRobot` / `subscribeRobot` expose the current stable read report.
 - `patchRobot` dispatches the registered one-shot Feature and merges against the
   latest canonical settings inside the session queue. Failed admission does not

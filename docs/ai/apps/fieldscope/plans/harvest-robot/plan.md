@@ -354,3 +354,18 @@ cases pass. Source and readiness received independent review. Four live images,
 including the parked robot close-up at 853% zoom, were inspected at
 http://127.0.0.1:5178. FK is candidate-only; D admission, interval motion and normal
 harvesting UI remain next, and M3 is not complete.
+
+### B completed-route handoff card
+
+Before D admission, expose B's already resolved positional A route with its
+completed design report. B remains the sole stripId-to-ordinal owner; D reads this
+result when submitting fresh synthetic survey evidence to A. Spec B workspace and
+Inspector B are the authorities. Inputs and canonical state are unchanged; output
+is a detached immutable `route` or null alongside the existing lane report. Missing
+identity or invalid interval yields null, without substituting another route.
+Only domain/robot-configuration.ts and its formal test change in production;
+API_SURFACES describes the handoff. No A algorithms, runtime, UI, geometry or D
+production changes. Cases: shared route, reorder/preceding deletion, selected
+deletion, shortened farm, output immutability and original settings unchanged.
+Gates: formal red/green, naming before/after, app unit/typecheck/lint and focused
+independent review. Stop if the handoff needs a changed lane rule or another owner.
