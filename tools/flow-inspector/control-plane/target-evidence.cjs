@@ -13,6 +13,34 @@ const statusFor = (statuses, blockers = [], absent = 'unknown') => {
   return statuses.length ? 'passed' : absent
 }
 
+function projectTargetAssessmentCurrentness(result, current) {
+  const staleReasons = []
+  if (
+    current?.targetId !== result.targetId ||
+    current?.allocationRevision !== result.allocationRevision
+  )
+    staleReasons.push('Target allocation changed')
+  if (
+    current?.acceptedBaseline?.revision !== result.acceptedBaseline.revision ||
+    current?.acceptedBaseline?.contractDigest !==
+      result.acceptedBaseline.contractDigest
+  )
+    staleReasons.push('Accepted baseline changed')
+  if (
+    ['repository', 'head', 'runtimeSourceDigest'].some(
+      (key) => current?.source?.[key] !== result.source[key]
+    )
+  )
+    staleReasons.push('Integration source changed')
+  return Object.freeze({
+    ...result,
+    current: staleReasons.length === 0,
+    staleReasons: Object.freeze(staleReasons),
+    eligible:
+      staleReasons.length === 0 && result.integration.status === 'passed'
+  })
+}
+
 function assessTargetSource(input) {
   const {
     target,
@@ -57,24 +85,6 @@ function assessTargetSource(input) {
     acceptedBaseline: target.acceptedBaseline,
     source
   }
-  const staleReasons = []
-  if (
-    current?.targetId !== target.id ||
-    current?.allocationRevision !== allocationRevision
-  )
-    staleReasons.push('Target allocation changed')
-  if (
-    current?.acceptedBaseline?.revision !== target.acceptedBaseline.revision ||
-    current?.acceptedBaseline?.contractDigest !==
-      target.acceptedBaseline.contractDigest
-  )
-    staleReasons.push('Accepted baseline changed')
-  if (
-    ['repository', 'head', 'runtimeSourceDigest'].some(
-      (key) => current?.source?.[key] !== source[key]
-    )
-  )
-    staleReasons.push('Integration source changed')
   const observations = new Map()
   const requested = new Set()
   const requestIds = new Map()
@@ -412,18 +422,12 @@ function assessTargetSource(input) {
     ],
     integration.blockers
   )
-  return freeze(
-    structuredClone({
-      format: 1,
-      ...identity,
-      accepted,
-      works,
-      integration,
-      current: staleReasons.length === 0,
-      staleReasons,
-      eligible: staleReasons.length === 0 && integration.status === 'passed'
-    })
+  return projectTargetAssessmentCurrentness(
+    freeze(
+      structuredClone({ format: 1, ...identity, accepted, works, integration })
+    ),
+    current
   )
 }
 
-module.exports = { assessTargetSource }
+module.exports = { assessTargetSource, projectTargetAssessmentCurrentness }

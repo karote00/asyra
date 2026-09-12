@@ -9,7 +9,10 @@ const evidenceOwner = require('../evidence.cjs')
 const { loadContract } = require('../contracts.cjs')
 const { runVerification } = require('../runner.cjs')
 const { createTargetOwner } = require('../flow-target.cjs')
-const { assessTargetSource } = require('../target-evidence.cjs')
+const {
+  assessTargetSource,
+  projectTargetAssessmentCurrentness
+} = require('../target-evidence.cjs')
 const root = path.resolve(__dirname, '../../../..')
 let directory,
   repository,
@@ -583,4 +586,56 @@ test('verification identity absence and forged descriptor or configuration bindi
     mutate(value)
     assert.equal(assessTargetSource(value).eligible, false)
   }
+})
+
+test('currentness projection reuses historical verdict objects with zero nested traversal or upstream work', (t) => {
+  const value = input()
+  const original = assessTargetSource(value)
+  let nestedReads = 0
+  const watch = (object, allowed = []) =>
+    new Proxy(object, {
+      get(target, key, receiver) {
+        if (!allowed.includes(key)) nestedReads++
+        return Reflect.get(target, key, receiver)
+      },
+      ownKeys(target) {
+        nestedReads++
+        return Reflect.ownKeys(target)
+      }
+    })
+  const accepted = watch(original.accepted)
+  const works = watch(original.works)
+  const integration = watch(original.integration, ['status'])
+  const retained = Object.freeze({ ...original, accepted, works, integration })
+  const forbidden = () => {
+    throw new Error('Repeated upstream work')
+  }
+  const spies = [
+    t.mock.method(fs, 'readFileSync', forbidden),
+    t.mock.method(sourceOwner, 'validateSourceSnapshot', forbidden),
+    t.mock.method(evidenceOwner, 'validateStoredEvidence', forbidden)
+  ]
+  const stale = projectTargetAssessmentCurrentness(retained, {
+    ...value.current,
+    allocationRevision: 2
+  })
+  assert.equal(stale.current, false)
+  assert.equal(stale.eligible, false)
+  assert.deepEqual(stale.staleReasons, ['Target allocation changed'])
+  const restored = projectTargetAssessmentCurrentness(stale, value.current)
+  for (const projection of [stale, restored]) {
+    assert.equal(projection.accepted, accepted)
+    assert.equal(projection.works, works)
+    assert.equal(projection.integration, integration)
+    assert.equal(projection.source, original.source)
+    assert.equal(projection.acceptedBaseline, original.acceptedBaseline)
+    assert.equal(projection.allocationRevision, original.allocationRevision)
+    assert.equal(Object.isFrozen(projection), true)
+    assert.equal(Object.isFrozen(projection.staleReasons), true)
+  }
+  assert.equal(restored.current, true)
+  assert.equal(restored.eligible, true)
+  assert.equal(original.current, true)
+  assert.equal(nestedReads, 0)
+  for (const spy of spies) assert.equal(spy.mock.callCount(), 0)
 })
