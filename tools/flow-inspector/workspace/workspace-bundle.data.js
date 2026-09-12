@@ -35368,14 +35368,17 @@
               "artifact:flow-target-state",
               "artifact:admitted-proof-contract",
               "artifact:proof-source-snapshot",
+              "artifact:admitted-runtime-source",
               "artifact:assessed-proof-evidence",
-              "trusted current accepted revision and selected target allocation revision"
+              "trusted current accepted revision and selected target allocation revision",
+              "complete service-owned proof request inventory and admitted completed records",
+              "trusted current target allocation and source identity for staleness"
             ],
             "outputs": [
               "artifact:target-source-assessment"
             ],
             "conditions": [
-              "Consume frozen work coverage and admitted case-backed handoffs. Assess accepted preservation, bounded work and complete integration separately against one captured runtime source and each admitted verification contract. Required producers must settle; missing or contradictory identities never pass. Preserve failed obligations and pending work. Full integration grants eligibility only; source, allocation or accepted-base changes make its current use stale."
+              "Consume the exact target history revision, frozen work coverage and admitted case-backed handoffs. Consume the complete trusted request inventory without choosing only green producers; identical accepted/target contracts share observations once. Current identity changes only staleness and eligibility, not historical verdicts. Assess accepted preservation, bounded work and complete integration separately against one captured runtime source and each admitted verification contract. Required producers must settle; missing or contradictory identities never pass. Preserve failed obligations and pending work. Full integration grants eligibility only; source, allocation or accepted-base changes make its current use stale."
             ],
             "bypasses": [
               "Only an admitted case-backed route bypass may satisfy a handoff. Historical records without source-bound evidence remain readable but cannot grant readiness."
@@ -36116,6 +36119,16 @@
             ]
           },
           {
+            "id": "runtime-admission-to-target-assessment",
+            "from": "serve-proof-actions",
+            "to": "assess-target-source",
+            "kind": "required",
+            "predicate": "An explicit target assessment selects the service-owned admitted source and complete retained proof requests; source admission has completed independently of assessment.",
+            "producedArtifacts": [
+              "artifact:admitted-runtime-source"
+            ]
+          },
+          {
             "id": "target-state-to-assessment",
             "from": "manage-flow-target",
             "to": "assess-target-source",
@@ -36459,7 +36472,8 @@
             "ownerStepId": "serve-proof-actions",
             "channel": "service-owned source admission",
             "consumerStepIds": [
-              "assess-proof-evidence"
+              "assess-proof-evidence",
+              "assess-target-source"
             ]
           },
           {

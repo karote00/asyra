@@ -552,6 +552,50 @@ labeled with that work's bounded obligations; it cannot stand for a passing flow
 All accepted obligations in the registered verification scope remain required.
 Unknown impact uses that complete conservative scope, never an empty exemption.
 
+### Assessment input and currentness
+
+The internal `assessTargetSource` input is `{target, allocationRevision,
+acceptedContract, targetContract, sourceAdmission, proofRequests, current}`.
+`target` is the target owner's immutable artifact. Select its exact history entry
+whose `revision` equals `allocationRevision`; use that entry's frozen `state`,
+the target's `obligations`, `id`, `targetRevision` and `acceptedBaseline`.
+`targetContract.digest` must equal `target.targetRevision` and
+`acceptedContract.digest` must equal `target.acceptedBaseline.contractDigest`.
+The selected flow and obligation inventory must agree with the admitted target
+contract. Missing, conflicting or ambiguous selections reject the request.
+The assessor consumes this allocation; it does not rebuild coverage from tasks.
+
+`sourceAdmission` is the source-owner-validated, service-owned artifact described
+below. `proofRequests` is the trusted service's complete retained request
+inventory for the selected assessment, not a client-selected list of green
+results. Each entry contains `id`, `contractDigest`, `flowIds`, and, when
+available, `record` plus that record's `sourceAdmission`. The id binds the exact
+attempt. The completed record must already have passed evidence-owner admission
+against its own admitted contract and source artifact. This assessor consumes
+those observations without calling raw assessment, stored-evidence validation or
+source validation again. It compares the selected repository, HEAD and runtime
+digest; each record still binds its own full snapshot digest and verification
+identities. Distinct accepted and target full snapshot digests are permitted.
+
+A requested producer without a record, with an unfinished or error record, or
+without admitted completed evidence contributes unknown results and concrete
+blockers. Duplicate requests or more than one producer observation for the same
+contract and obligation cannot pass; retain any confirmed failed observation.
+When accepted and target contract digests are identical, one request and its
+observations can serve both assessment roles and are not counted twice. A work
+with no requested target-flow proof remains pending. This absence differs from
+an explicitly unassigned obligation in the frozen `state.pending`; that inventory
+keeps integration pending even if observations already exist. Accepted preservation
+with no required proof is unknown, never an empty successful result.
+
+`current` contains `targetId`, `allocationRevision`, `acceptedBaseline` and
+`source: {repository, head, runtimeSourceDigest}` supplied by the trusted service.
+Compare these against the selected artifacts to report `current` and concrete
+staleness reasons. Changed current identities do not rewrite the historical
+accepted, work or integration verdicts. Acceptance eligibility requires both a
+complete passing integration verdict and current identities; an old passing
+assessment cannot become current by relabeling its revision or source.
+
 ### One source and distinct verification contracts
 
 Every participating producer must bind the same repository, captured runtime
