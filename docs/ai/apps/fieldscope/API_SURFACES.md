@@ -78,3 +78,25 @@ Cross-package imports use public `@asyra/*` facades. Do not import another app's
   This contract has formal tests using real C products and explicit query doubles;
   the actual swept provider, session clock and normal UI wiring are subsequent
   owners. No default clear provider is installed.
+
+## Session clock foundation
+
+- `HarvestSession` receives a composition canonical receipt and privately prepares
+  the mission. `start` accepts only generation-bound dispatch evidence and runs
+  admission internally; accepted-result objects cannot start a run.
+- Explicit `advance`, `pause`, `resume`, `cancel` and fault acknowledgement own
+  transient domain state. Time is in seconds; paused time cannot accumulate as
+  active progress. Crossed deadlines coalesce to one pending patrol. Clock changes
+  never create physical motion or renew a movement query.
+- Resume requires a distinct async provider bound to the current paused snapshot,
+  run, pose, held offsets, remaining intent and run-bound evidence. Accepted results
+  preserve these values; held/fault/stale results cannot unlock motion. Source
+  retirement closes the same generation even after a clock change or provider
+  rejection. Cancellation and replacement protect their successor generation.
+- `replaceMission` and `dispose` are synchronous internal composition lifecycle
+  notifications. Replacement validates before retiring a valid run; the same
+  current receipt is a no-op. External queued intents require their generation.
+- Reads return the same immutable snapshot, and transitions use immutable links
+  rather than copying accumulated history per tick. This foundation has no Core
+  transaction, timer, real movement provider or UI session controls. Action-driven
+  poses, actual picking/charging and real provider composition remain next.

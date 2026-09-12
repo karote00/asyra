@@ -220,7 +220,8 @@ never gains time from pause, resume or source replacement. No caches proposed.
 
 ### D session clock foundation
 
-Owner: D session. Inputs: issued prepared mission/currentness, explicit
+Owner: D session. Inputs: canonical receipt/currentness, internally issued
+prepareMission product, explicit
 simulation time and generation-bound intents, required dispatch movement provider
 and distinct current-state resume provider. Output: immutable current run/lifecycle,
 clock/active elapsed/schedule state and ordered transition evidence. Start invokes
@@ -228,7 +229,9 @@ admitDispatch internally; it never accepts an arbitrary accepted-result object.
 Pause/clock preserve completed pose/retention/remaining intent. Resume requests
 come only from the current paused snapshot and bind run/generation/source/time;
 late, held, expired or mismatched decisions cannot mutate it. Cancel/replace/close
-retire the old generation before successor work. No bypass of admission.
+retire the old generation before successor work. Internal synchronous replacement
+validates the successor before retiring; duplicate current receipts are no-ops
+and rejected receipts cannot invalidate a still-valid run. No bypass of admission.
 Allowed: completed D admission and C rig rest products, source-currentness checks,
 finite clock arithmetic and immutable transition products. Forbidden: implicit
 clock sources, motion extrapolation, evidence renewal, initial-dock replay for
