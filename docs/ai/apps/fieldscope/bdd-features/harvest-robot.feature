@@ -169,9 +169,10 @@ Feature: Harvest robot feasibility and supervised harvesting
     Then the patrol remains pending
     And no traction or arm motion occurs while charging contacts are engaged
 
-  @M5
+  @M3 @M5
   Scenario: Charging fails or contacts become wet
     Given an aligned dock and a previously charging pack
+    And M3 charger and contact evidence is explicitly synthetic
     When charger power fails or a BMS/contact/water fault occurs
     Then charging is inhibited and a fault is retained
     And no automatic energized redocking or patrol restart occurs
@@ -197,3 +198,104 @@ Feature: Harvest robot feasibility and supervised harvesting
     Then the authored mission interval remains unchanged
     And its route is reported invalid without a replacement route
     And the robot remains parked at its authored dock
+
+
+  @M3
+  Scenario: A design edit invalidates a run across history replay
+    Given a running synthetic mission with queued observations
+    When a canonical farm or robot edit changes its inputs
+    Then the run is invalidated before another transition
+    And old observations cannot write into a replacement run
+    When the edit is undone
+    Then the old run does not resume
+
+  @M3
+  Scenario: Rendering does not advance the simulation clock
+    Given a running mission with a known simulation time
+    When camera frames and locale changes occur without a clock input
+    Then time, patrol progress and target inventory remain unchanged
+    And farm and robot definition geometry is not rebuilt
+
+  @M3
+  Scenario: A large clock advance cannot skip a blocking checkpoint
+    Given a route with a blocked intermediate segment
+    When simulation time crosses several checkpoints in one advance
+    Then motion stops before the blocked segment
+    And the final route endpoint is not published as reached
+
+  @M3
+  Scenario: Repeated evidence cannot count one fruit twice
+    Given a supported target with confirmed cut and retained fruit
+    When placement confirmation is delivered twice
+    Then the crate receives that target and its mass once
+    And every admitted fruit remains in exactly one physical disposition
+    And simulation contact does not assert calibrated damage quality
+
+  @M3
+  Scenario: A clear endpoint does not prove a clear extraction path
+    Given a carried fruit crosses a net strand between clear endpoints
+    When extraction motion is queried
+    Then the swept query blocks the movement
+    And no pose teleports the fruit through the net
+
+  @M3
+  Scenario: Unknown leaf motion cannot admit a tool movement
+    Given a leaf can enter the proposed tool path
+    And its motion bounds over that interval are unknown
+    When the simulation requests motion admission
+    Then clearance remains unknown and the operation is unresolved
+
+  @M3
+  Scenario: Evidence from another run cannot confirm a cut
+    Given a replacement run with a supported target
+    When a cut confirmation from the cancelled run arrives
+    Then it is rejected without inventory or pose mutation
+
+  @M3
+  Scenario: A synthetic observation is not a field survey
+    Given unknown ground evidence in the authored mission
+    When an explicitly injected synthetic target observation arrives
+    Then it is labeled synthetic
+    And the ground survey remains unknown
+    And it does not by itself admit dispatch
+
+
+  @M3
+  Scenario: Dispatch evidence is admitted before a run exists
+    Given a canonical mission whose design reports retain unknown evidence
+    And complete fresh synthetic dispatch evidence bound to its mission and scene revisions
+    When Start validates that evidence through the assessments and motion admission
+    Then a run is created only after all required admission succeeds
+    And the design reports remain unchanged
+
+  @M3
+  Scenario: Paused schedule time does not become resumed movement
+    Given a paused patrol before a movement checkpoint
+    When explicit clock inputs cross two patrol deadlines
+    Then one future patrol is pending and the robot pose is unchanged
+    When fresh admission permits explicit resume
+    Then paused elapsed time is not replayed as movement
+
+
+  @M2
+  Scenario: Removing the selected strip cannot select its old neighbor
+    Given a mission bound to a nonterminal canonical strip ID
+    When the selected strip is removed and its neighbor occupies that index
+    Then the authored mission binding is unchanged and its route is invalid
+    When the removal is undone and redone
+    Then the original identity is restored and removed respectively
+    And no substitute route is chosen
+
+  @M2
+  Scenario: Reordering or removing another strip preserves mission identity
+    Given a mission bound to a canonical strip ID
+    When a preceding strip is removed or the selected strip is reordered
+    Then the mission still selects the same strip ID at its current position
+    And the route assessment uses its newly resolved ordinal
+
+  @M2
+  Scenario: Invalid strip identity cannot enter canonical history
+    Given an admitted farm and mission
+    When an edit supplies missing or duplicate strip IDs
+    Then the whole edit is rejected before mutation
+    And the farm, mission and history remain unchanged
