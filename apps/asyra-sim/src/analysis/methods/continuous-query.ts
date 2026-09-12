@@ -58,6 +58,8 @@ export interface PairQueryKernel {
   handoffEvidence?: () => boolean
   /** Only this actual route's lower certificate ignores positive witness metadata. */
   lowerUsesPositiveWitnessOnly?: (a: ConvexShape, b: ConvexShape) => boolean
+  /** Called only for this node's consumed in-interval upper <= threshold. */
+  deriveZeroLower?: (a: ConvexShape, b: ConvexShape) => 0 | null | undefined
   distance(a: ConvexShape, b: ConvexShape): DistanceEvidence | null
   lower(
     a: ConvexShape,
@@ -220,6 +222,24 @@ export function queryContinuousPair(
     let certifiedLower: number | null = null
     let witness: DistanceEvidence | null = null,
       witnessTime = middle
+    const intervalLower = (
+      a: ConvexShape,
+      b: ConvexShape,
+      completedWitness: DistanceEvidence,
+      time: number
+    ): number | null => {
+      if (
+        completedWitness.upper <= settings.threshold &&
+        time >= node.start &&
+        time <= node.end
+      ) {
+        const derived = kernel?.deriveZeroLower?.(a, b)
+        if (derived !== undefined) return derived
+      }
+      return kernel
+        ? kernel.lower(a, b, completedWitness)
+        : separationLowerBound(a, b, completedWitness.axis)
+    }
     // Endpoints matter for both minima and keyframe contacts. They are evidence,
     // never a substitute for the interval-wide separating certificate below.
     for (const time of new Set([node.start, middle, node.end])) {
@@ -272,7 +292,12 @@ export function queryContinuousPair(
           interval(node.start, node.end),
           kernel.relativeFrames
         )
-        const candidate = kernel.lower(intervalA, intervalB, witness)
+        const candidate = intervalLower(
+          intervalA,
+          intervalB,
+          witness,
+          witnessTime
+        )
         if (candidate === null) {
           kernelExhausted = true
           break
@@ -310,9 +335,7 @@ export function queryContinuousPair(
         interval(node.start, node.end),
         kernel?.relativeFrames
       )
-      lower = kernel
-        ? kernel.lower(a, b, witness)
-        : separationLowerBound(a, b, witness.axis)
+      lower = intervalLower(a, b, witness, witnessTime)
     }
     if (lower === null) {
       kernelExhausted = true

@@ -64,6 +64,9 @@ export class OriginalMeshQuery {
   chargeEvidenceHandoff(): void {
     this.tick()
   }
+  chargeEvidenceDerivation(): void {
+    this.tick()
+  }
   private index(shape: ConvexShape): MeshIndex | undefined {
     const geometry = shape.geometry
     if (geometry.kind !== 'mesh') return undefined

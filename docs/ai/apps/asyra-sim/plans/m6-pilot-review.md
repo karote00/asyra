@@ -1105,3 +1105,66 @@ original lower route, and an out-of-interval near witness followed by a genuinel
 clear source interval to prove temporal isolation. Early equality derivation
 must still consume the remaining samples. Naming baseline passed 11 tests and
 the regenerated Inspector catalog passed 8 tests before formal red work.
+
+Formal `witnessed-zero-work.test.ts` detected the missing owner operation:
+6 failures and 5 passing controls before production. The three bounded owner
+changes then passed all 11 cases, including independent raw full-source
+lowerOver results, both ordered pairs, native positive lower below threshold,
+out-of-interval source isolation, equality, later penetration, actual one-unit
+charge and cancellation. Existing direct 9-file gates passed 68 cases, including
+the original work ceilings and subdivision/source evidence. No raw lowerOver
+implementation, static sampling order or numerical bound formula changed.
+
+The permanent `witnessed-zero-source-work.test.ts` compares exactly the current
+source route with only this derivation disabled, using the same admitted input
+and budget. Both complete fixed windows preserve every PairEvidence field:
+window [2,3] costs 179,454 versus 152,833; [4,5] costs 196,189 versus 183,208.
+Each candidate derives 23 certificates and charges all 23 units. Static costs
+remain 135,258 and 135,947 respectively. Observed CPU is 2,547/1,502 ms and
+3,689/3,293 ms; these are local timing observations, not hardware acceptance.
+The true frontier segment 71 remains 24,467 in both routes with no eligible
+derivation; the window savings must not be attributed to that specific query.
+All three controls and candidates complete, and per-run static + interval +
+handoff + derivation charges equal the actual context work exactly.
+
+Current representative/frontier profiling now separates derivation charges and
+includes them in pair/prefix totals even when no lowerOver callback occurs.
+The current triangle-policy profile keeps its original work/axis/convex ceilings
+while permitting fewer actual operations after a valid certificate derivation;
+it still requires real node rejection and source convex work. No complete G4
+or browser rerun has occurred at this checkpoint; independent code review and
+the remaining direct gates precede any new full-run claim.
+
+Independent production review passed with 26 independently rerun small cases.
+The warranted full representative gate nevertheless remains red: total observed
+work 500,197, whole evaluations 20,240, first partial joint-2 / obstacle-11 at
+141 evaluations and 75 clear intervals. Derivation calls and charged units both
+equal 456. The dominant pair uses 398,216 units: static 310,392, interval 87,745,
+handoff 21 and derivation 58. Two earlier obstacle-17 pairs each derive 199 times
+and together save 398 units, so three added target evaluations alone do not prove
+equal-prefix transfer. The 8,239 ms elapsed time is a partial-run observation.
+Evidence is `tmp/capacity/witnessed-zero-full-representative.log`; no browser run.
+Production is frozen for root evaluation of this bounded improvement.
+
+The current frontier profile now records the accepted pre-derivation counts as
+historical metadata and expects the observed current 20,240/141 counts. The old
+pre-triangle assertion-only environment selector has been removed: its recorded
+temporary source-restoration experiment is historical, and restoring only two
+triangle call sites would no longer reproduce that older complete method after
+this new derivation. Current goal gates remain selected with their original
+coverage and resource assertions; no diagnostic is claimed as a G4 pass.
+
+The requested bounded complete-prefix control now passes in the permanent source
+test's `commonPrefix` case. Both runs cover exact original segments 114 through
+198, produce 95 evaluations and 90 leaves equal in every field, and charge the
+same cold preparation lifetime. Total work is 232,178 versus 218,840 (5.74% less):
+static 149,346 and handoff 19 stay identical; interval work falls from 82,813 to
+69,459, with all 16 new derivation units included. The earlier full-run prefix
+already had original preparation paid, whereas this isolated comparison includes
+12,255 additional preparation units on both sides; these are not interchangeable
+baseline totals. Observed same-input time is 5,287 versus 4,772 ms. Both complete
+leaf arrays and all charged categories are retained in
+`tmp/capacity/witnessed-zero-prefix.log`. No further full or browser run occurred.
+This supports a bounded canonical improvement, not completion of G4; any next
+iteration must begin at the actual new frontier rather than partial aggregate
+CPU/evaluation counts.

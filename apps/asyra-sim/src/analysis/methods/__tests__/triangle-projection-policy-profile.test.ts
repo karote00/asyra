@@ -43,8 +43,10 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         )
         expect(evidence.coverage).toBe('complete')
         expect(counts.triangleCalls).toBe(0)
-        expect(counts.nodeAxes).toBe(8847)
-        expect(counts.convexCalls).toBe(1742)
+        expect(counts.nodeAxes).toBeGreaterThan(0)
+        expect(counts.nodeAxes).toBeLessThanOrEqual(8847)
+        expect(counts.convexCalls).toBeGreaterThan(0)
+        expect(counts.convexCalls).toBeLessThanOrEqual(1742)
         expect(context.work).toBeLessThanOrEqual(37737)
         return {
           work: context.work,

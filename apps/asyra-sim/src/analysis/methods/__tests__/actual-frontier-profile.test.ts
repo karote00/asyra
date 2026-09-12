@@ -22,15 +22,14 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
       'attributes completed and exhausted queries - %s',
       async (mode) => {
         const snapshot = await representativeSnapshot(0)
-        // Assertion/label only: this never changes runtime policy. The control requires
-        // the explicitly verified pre-policy source used in the recorded comparison.
-        const prePolicy = process.env.SIM_PROJECTION_BASELINE === '1'
         let active = false,
           segment = -1,
           time: readonly [number, number] = [0, 0]
         let target: PairEvidence | undefined,
           handoffWork = 0
         const handoffs = new Map<number, number>()
+        let derivationWork = 0
+        const derivations = new Map<number, number>()
         interface Row {
           kind: 'static' | 'interval'
           segment: number
@@ -270,6 +269,24 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           }
         })
         const build = meshIndex.buildMeshIndex
+        const derivation = OriginalMeshQuery.prototype.chargeEvidenceDerivation
+        vi.spyOn(
+          OriginalMeshQuery.prototype,
+          'chargeEvidenceDerivation'
+        ).mockImplementation(function (this: OriginalMeshQuery) {
+          const before = this.work
+          try {
+            return derivation.call(this)
+          } finally {
+            if (active) {
+              derivationWork += this.work - before
+              derivations.set(
+                segment,
+                (derivations.get(segment) ?? 0) + this.work - before
+              )
+            }
+          }
+        })
         vi.spyOn(meshIndex, 'buildMeshIndex').mockImplementation(
           (geometry, checkpoint, hierarchy) => {
             const index = build(
@@ -360,8 +377,8 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         if (mode === 'representative') {
           const evidence = runOriginalPartMethod(snapshot)
           evaluations = evidence.evaluations
-          expect(evaluations).toBe(prePolicy ? 20234 : 20237)
-          expect(target?.evaluations).toBe(prePolicy ? 135 : 138)
+          expect(evaluations).toBe(20240)
+          expect(target?.evaluations).toBe(141)
           expect(target?.coverage).toBe('partial')
         } else {
           const pair = snapshot.pairs.find(
@@ -435,6 +452,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
               end,
               ...summary(rows.filter((row) => row.segment === segment)),
               handoffWork: handoffs.get(segment) ?? 0,
+              derivationWork: derivations.get(segment) ?? 0,
               states: leaves.reduce<Record<string, number>>((sum, leaf) => {
                 sum[leaf.state] = (sum[leaf.state] ?? 0) + 1
                 return sum
@@ -463,13 +481,17 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           JSON.stringify({
             profile: 'actual-frontier',
             mode,
-            geometryPolicy: prePolicy
-              ? 'recorded-pre-policy-control'
-              : 'current',
+            geometryPolicy: 'current',
+            recordedBeforeDerivation: {
+              source: '6862daf58',
+              evaluations: 20237,
+              targetEvaluations: 138
+            },
             evaluations,
             targetEvaluations: target.evaluations,
             target: summary(rows),
             handoffWork,
+            derivationWork,
             commonPrefix: {
               fromSegment: 114,
               query: summary(rows.filter((row) => row.segment >= 114)),
@@ -478,7 +500,8 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
               ),
               segments: common.length,
               work: common.reduce(
-                (sum, row) => sum + row.work + row.handoffWork,
+                (sum, row) =>
+                  sum + row.work + row.handoffWork + row.derivationWork,
                 0
               )
             },
