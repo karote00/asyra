@@ -773,6 +773,48 @@ accepted, work or integration verdicts. Acceptance eligibility requires both a
 complete passing integration verdict and current identities; an old passing
 assessment cannot become current by relabeling its revision or source.
 
+### Frozen target proof production
+
+The local service method `startTargetProof({requestId, targetId,
+allocationRevision, sourceAttemptId, role}, actor)` requires the existing `verify`
+capability. The role is exactly `accepted` or `target`; the client supplies only
+these identities, never contracts, source paths, reference descriptors, flow lists
+or proof results. Select the exact retained target allocation entry and the
+service-owned runtime admission for `sourceAttemptId`. Resolve the accepted role
+through the target's `acceptedVersion` history revision, and the target role
+through its exact `targetVerification` reviewed candidate. Each selected version's
+own retained verification reference and contract must match that pin and be
+available in this service. Legacy missing pins or references remain readable but
+cannot start a new authoritative proof. Contract equality cannot replace either
+version reference.
+
+A new attempt uses mode `target-proof`, baseline scenario and the selected
+contract's complete registered flow inventory for this conservative ordinary
+producer slice. It durably retains the requested selection and exact selected
+reference before dispatch. The source owner composes the selected runtime and
+that frozen verification bundle into the new attempt's fixed source directory;
+then the existing combined source admission, runner and evidence admission consume
+its exact stored contract. No stage reads checkout verification bytes or treats
+the current accepted contract as a replacement. This mode is neither an accepted
+conformance run nor a candidate version review: ordinary baseline projections and
+version preparation must not promote it. Producing this record alone does not
+create a target assessment or acceptance eligibility.
+
+`requestId` uses the existing attempt UUID identity. Authorize and validate the
+request before side effects. Exact same-actor replay returns the original attempt
+identity before idle or source-availability checks, with no lookup, composition or
+runner repetition; changed selection or actor conflicts. New requests require an
+idle service and available exact owner artifacts before saving an attempt. Once
+admitted, a composition or byte-integrity failure settles that attempt as error
+with audit and no passing evidence. Existing cancellation, timeout and close
+semantics apply to the runner; restart marks unfinished attempts interrupted and
+never restarts composition or execution automatically. Historical completed and
+interrupted attempts retain their original selection and source identity. Reads
+and replay consume retained artifacts without new validation work. Retained
+completed target proofs are evidence-admitted against their own source-admitted
+contract once on restart; missing or conflicting new authority fails closed under
+the existing manifest admission rules.
+
 ### One source and distinct verification contracts
 
 Every participating producer must bind the same repository, captured runtime
