@@ -603,6 +603,54 @@ receipt admission, copied/mixed/stale source rejection, retirement on every sour
 change and bounded preparation counts independent of reads/pose/clock/view. Real
 observation, interval sweep and ordinary UI execution remain separate acceptance.
 
+### Near-source ray evidence
+
+A D ray query consumes an issued current shared geometry product and explicit
+synthetic scene-state/time input. Rays specify finite origin, nonzero direction
+and finite positive maximum distance in metres. The query normalizes direction;
+returned distance is in world metres, including for non-unit input directions.
+The sampled segment includes its maximum-distance endpoint. It reports nearest
+source hit (original mesh, instance, triangle index, barycentric coordinates and
+distance), no hit within that range, or unknown with reasons. A stable tie rule
+uses source mesh/instance/triangle order; it cannot skip a nearer obstruction.
+Results bind the exact admitted batch input and source receipt. No-hit is not an
+empty row, detected fruit, movement permission or optical visibility guarantee.
+
+The state supplies simulation time, explicit [validFrom, validUntil) evidence,
+current robot base rigid transform and valid joints, and a labelled synthetic leaf
+source-pose assumption at that time. Missing/expired/unsupported dynamic state
+returns unknown; caller-specified simulation time does not advance the session.
+C FK is reused once per admitted batch, then the same completed body transforms
+serve every ray. No arbitrary per-body substitute model or initial-dock pose is
+allowed. This first ray segment supports the existing all-fruit-attached source;
+held/boxed/dropped changes require later D disposition input and cannot silently
+reuse attached geometry. Single-time leaf evidence supplies no swept interval bound.
+
+Near triangles are tested two-sided, preserving physical film/net/leaf occlusion
+regardless of render opacity. This is synthetic geometric obstruction, not an
+optical transmission or real sensor calibration model. There is no implicit FOV,
+sensor range rating or use of the UI orbit camera. A later observation adapter
+must separately define explicit synthetic camera projection/FOV and sample coverage;
+one visible fruit sample cannot establish stem/cut-site visibility or maturity.
+
+Origin on or inside physical material, relevant degeneracy/coplanarity or numerical
+ambiguity yields unknown unless exact source tests resolve it. An aggregate box
+may reject a nonintersecting candidate, but cannot prove material occupancy, fill
+an open crate cavity or turn possible contact into a hit/clear result. No robot,
+camera housing, support surface, joint or carried-fruit exemption is introduced.
+Only original source geometry can determine the nearest hit. Quality remains
+separate: visible spines/calyx or the synthetic cut site do not prove intact
+market quality, retention or a true anatomical abscission zone.
+
+Acceptance: exact known triangle/barycentric/distance and near/far ordering cases,
+transformed/instanced sources, ties and range endpoints, inside/coplanar/unknown
+cases, preserved source ownership and stale/batch mutation rejection. Actual C
+farm/robot/station rays cover hit/miss, net/leaves and both cultivars; profile
+unique-shape preparation, instance rejection, exact triangle tests, FK/query counts
+and elapsed time before adding a retained acceleration index. Optimization must
+preserve these exact outcomes and prove source retirement plus bounded preparation;
+no per-ray shape reconstruction or world-vertex copy is allowed.
+
 ### Motion and collision admission
 
 A's straight-lane screen is not motion clearance. Every proposed base, arm/tool,
