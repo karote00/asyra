@@ -1033,3 +1033,75 @@ this bounded result section was appended; existing DoD, rejected hypotheses and
 accepted decisions remain preserved. No production or formal test was reverted.
 The next possible witnessed-zero derivation still requires its own exact
 Inspector/spec readiness and formal red tests; it is not implemented here.
+
+### Witnessed-zero interval certificate - bounded readiness card
+
+Owner: R0 Inspector `method`, complete continuous evidence. Inputs remain the
+validated detached pair snapshot, shared domain kinematics, fixed settings and
+owned execution budget. Output remains the same bounded PairEvidence; failure
+belongs to `method`. This replan follows the accepted final-triangle correction
+at `6862daf58` and restored plan at `d735bd45d`; G4 remains red at the unchanged
+500,000 ceiling. Discovery is limited to the current continuous node, original
+mesh lower adapter, their direct formal tests and existing frontier evidence.
+
+The first unnecessary owner work is a full interval mesh certificate whose exact
+completed result is already implied by an admitted static witness. The current
+mesh `lowerOver` returns either zero or a strict lower bound above the configured
+threshold. A completed full-source static upper bound at a time inside that same
+interval, at or below that threshold, excludes the latter result. Therefore zero
+is the exact threshold-certificate result, not a guessed contact or clearance.
+Native/native interval kernels can return a positive value below the threshold
+and are excluded. Raw `lowerOver` callers do not establish temporal provenance
+and will retain their current implementation.
+
+Proposed boundary: only the continuous node may request this derivation after it
+has consumed a non-null witness from its own static samples or approved same-
+segment endpoint handoff. Its ordered pair, geometry, settings, original segment
+and invocation remain fixed, and witnessTime must lie in the node's closed
+interval. An explicit original adapter capability checks the actual mesh route.
+It returns zero after one owned work unit and cancellation checkpoint, undefined
+for an ineligible native route, and null on exhaustion. The existing lower route
+handles misses. Each derivation is newly charged; no map, retained pose, new
+geometry cache or cross-node/cross-segment result lookup is introduced.
+
+Derivation occurs only where the current node requests its early or final
+interval certificate. It never ends the remaining static sampling on a warning;
+all current sample order, penetration priority, temporal evaluations, leaf caps
+and exhaustion handling remain. A failed derivation charge cannot publish a
+successful interval result; already established static witnesses still survive.
+Static point intervals retain their existing static lower bound.
+
+Proposed internal names are method-owned `deriveZeroLower` and
+`chargeEvidenceDerivation`; they are not persisted identities. The pending
+1.0.2 release remains the version owner, and immutable older artifacts are not
+rewritten. Allowed implementation files are continuous-query.ts,
+original-part-method.ts and original-mesh-query.ts, their direct methods tests,
+the method manifest/spec, this plan and the exact Inspector projection. Shared
+domain, triangle algorithms, precision, budgets and source fixtures are excluded.
+
+Formal test-first gates: zero lower from a strictly below-threshold or exact-
+threshold completed source witness; remaining samples still upgrade an earlier
+warning to penetration; native axis-sensitive lower remains unchanged; no
+cross-segment/pair/settings evidence; exhausted derivation cannot succeed; and
+actual original mesh calls/work match independently queried lowerOver output.
+The source route must prove saved traversal work and separately count every
+derivation charge even when lowerOver is not called. Existing rational mesh,
+subdivision, motion, cancellation and 576/10k/50k ceilings remain unchanged.
+After focused correctness/work gates and independent review, compare the same
+complete current frontier segment and existing fixed windows before one full
+representative run. No browser run until that source gate is green.
+
+Self-review: the implication concerns only a threshold certificate at its
+provenance owner, not a first-warning severity shortcut. The thin spec and exact
+Inspector must agree before formal red tests or production edits. Stop on any
+native-route leak, invalid witness provenance, lost charge, changed completed
+evidence or failed fixed ceiling; do not retune prior rejected candidates. This
+card records readiness only until independent review accepts it.
+
+Independent readiness review passed. The existing completed-lower handoff keeps
+priority over a final zero derivation; exactly one operation is consumed and
+charged. Formal cases additionally require upper above threshold to use the
+original lower route, and an out-of-interval near witness followed by a genuinely
+clear source interval to prove temporal isolation. Early equality derivation
+must still consume the remaining samples. Naming baseline passed 11 tests and
+the regenerated Inspector catalog passed 8 tests before formal red work.

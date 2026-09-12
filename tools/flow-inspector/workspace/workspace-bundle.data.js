@@ -10719,6 +10719,7 @@
               "The independent static-sphere example uses analytical outward distance bounds, declares its narrower capability and optional added uncertainty, and emits the same geometry evidence contract without official-endorsement inference.",
               "Bound the full requested interval or mark unresolved; retain numerical uncertainty.",
               "Preserve established static witnesses when later geometry work exhausts its budget. An unproved full-interval lower bound is zero, not clearance; unvisited intervals remain explicitly unresolved.",
+              "At an existing interval-certificate request, the continuous node may derive the exact mesh threshold-certificate zero from its consumed complete full-source static upper bound at or below threshold, with witness time inside that same node and unchanged ordered pair, geometry, settings, original segment and invocation. Only the actual original mesh adapter enables this implication; native axis-sensitive and raw interval queries retain their original route. Each derivation charges one owned work unit and checks cancellation before publishing; all remaining samples, severity decisions and exhaustion handling remain unchanged, with no pose or cross-segment retention.",
               "Distance bounds and contact witnesses are distinct from user verdicts."
             ],
             "bypasses": [

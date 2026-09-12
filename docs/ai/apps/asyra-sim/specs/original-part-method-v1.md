@@ -78,6 +78,17 @@ consumed again only by the same node's final certification when its actual
 mesh lower route depends only on positive witness admission and both first and
 final witnesses have positive lower bounds. A nonpositive admission or null
 result is not such a certificate. Native/native witness-axis kernels recompute.
+At an interval-certificate request, a completed full-source static upper bound
+at or below the threshold, witnessed inside that same continuous node, implies
+the exact mesh threshold-certificate result zero: a completed mesh interval
+query otherwise returns a strict lower bound above the threshold. Only the
+continuous node's original mesh adapter may derive this result, with the same
+ordered pair, geometry, settings, original segment and invocation provenance.
+Native/native kernels and arbitrary raw interval queries do not use this rule.
+Each derivation charges one owned work unit and checks cancellation before
+publishing zero; exhaustion follows the existing null-result path. This does
+not skip any remaining static sample or severity decision and retains no pose
+or cross-segment evidence. Static point intervals keep their static lower bound.
 Each evidence handoff consumes one logical mesh work unit with a fresh
 checkpoint before publishing its result. A failed charge follows the existing
 exhaustion path; temporal node/leaf budgets and cancellation remain unchanged.
