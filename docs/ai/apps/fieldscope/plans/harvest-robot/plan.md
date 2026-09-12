@@ -317,7 +317,7 @@ plant populations perform no cultivar generation. Independent code review passed
 Final gates passed: 260 unit tests, typecheck, lint, 11 naming checks, 17 build
 tasks and nine ordinary greenhouse/crop browser cases. Author screenshot review
 and an independent review of cucumber and young/ripe tomato detail at 10000%
-zoom used the live app at http://127.0.0.1:5178. Source geometry retention is
+zoom used <a href="http://127.0.0.1:5178" target="_blank" rel="noopener noreferrer">the live FieldScope app</a>. Source geometry retention is
 verified; physical contact quality is not. D execution, working-arm articulation
 and harvested-fruit projection remain subsequent owner steps.
 
@@ -352,7 +352,7 @@ source, retirement and work-count proofs pass; 268 app unit tests, typecheck,
 lint, naming, 23 build tasks and all five bilingual desktop/mobile robot browser
 cases pass. Source and readiness received independent review. Four live images,
 including the parked robot close-up at 853% zoom, were inspected at
-http://127.0.0.1:5178. FK is candidate-only; D admission, interval motion and normal
+<a href="http://127.0.0.1:5178" target="_blank" rel="noopener noreferrer">the live FieldScope app</a>. FK is candidate-only; D admission, interval motion and normal
 harvesting UI remain next, and M3 is not complete.
 
 ### B completed-route handoff card
@@ -421,3 +421,47 @@ admission cases passed. Typecheck, lint, naming and scoped formatting pass.
 No session, real swept provider or ordinary UI Start is wired by this source
 slice. Next: D session clock/lifecycle against issued admission products, then
 real observation/motion providers and Core composition before motion UI closure.
+
+### D session clock foundation card
+
+Owner: D session transitions, after completed admission contracts. Inputs: an
+issued prepared mission and current-source owners, required dispatch query and
+resume-admission providers, explicit generation-bound intents and simulation
+seconds. Outputs: immutable lifecycle/run/clock/schedule snapshots and ordered
+transition evidence, with one run and at most one pending patrol. Start accepts
+only dispatch evidence and synchronously invokes/consumes admitDispatch itself;
+caller-provided accepted decisions are not an input. Cancel/replace/dispose close
+the prior generation before any successor can accept queued work.
+
+Boundary: simulation/session.ts and its formal session test only; API_SURFACES may
+document the implemented API. No source, admission-policy, runtime Feature, UI,
+observation or collision-production edits. This foundation owns lifecycle/time;
+actual route/fruit/tool progress, completion/fault actions and their confirmations
+remain later D action work. Its initial pose is the admitted stowed dock pose,
+held inventory is empty, and the remaining dispatch request is retained. Clock
+advancement records active elapsed time but creates no completed physical movement.
+
+Pause preserves pose, retained transforms, operation and remaining intent. Explicit
+paused clock inputs advance scheduling/expiry only. Resume uses a separate required
+current-state provider, bound to the immutable paused snapshot, run/generation,
+canonical receipt/current C handles, now, pose, retained offsets, remaining intent
+and fresh run-bound evidence. It cannot reuse a pre-run dispatch result or invent
+a dock pose. Accepted matching results resume the same run without motion/reset;
+held results do not unlock it; a provider fault enters faulted state. Acknowledging
+a fault returns only to paused, retaining reasons and requiring a new explicit
+Resume admission. A pending result becomes stale after another
+snapshot/generation/source change. Providers have no default clear implementation;
+clock tests use explicit doubles, and UI remains unwired until real providers exist.
+
+First Start anchors patrol deadlines. Crossed busy/paused deadlines coalesce to
+one pending flag; no automatic second Start, catch-up burst or evidence renewal.
+Cancel/replacement stops the old schedule. All external intents carry the snapshot
+generation; old queued intents cannot target a successor. Reads reuse completed
+snapshots and transition products; no accumulated-log copying per tick, A work on
+read/clock, geometry preparation, wall timers or requestAnimationFrame scheduling.
+Gates: formal red/green for forged Start result, repeated Start, invalid/backwards
+clock, exact deadline/coalescing, pause active-time isolation, bound/expired/stale
+resume, cancellation/replacement/disposal and queued inputs; immutable deterministic
+snapshots plus work counts, naming, app unit/type/lint and independent review.
+Later action cases must exercise resume with actual working joints/held fruit and
+remaining motion, through this same current-state request, before M3 closure.
