@@ -82,11 +82,36 @@ test(
       })
     )
     assert.equal(baseline.evidence.cases.length, 6)
+    assert.equal(
+      baseline.evidence.runtimeSourceDigest,
+      snapshot.runtimeSource.digest
+    )
+    const file = path.join(candidateRoot, sourceFile)
+    const original = fs.readFileSync(file, 'utf8')
+    fs.chmodSync(file, 0o600)
+    fs.writeFileSync(file, original + '\n')
+    const changed = await verifyCandidate({
+      ...input,
+      attemptId: 'changed-runtime'
+    })
+    assert.equal(
+      changed.evidence.status,
+      'passed',
+      JSON.stringify(changed.evidence.issues)
+    )
+    assert.notEqual(
+      changed.evidence.runtimeSourceDigest,
+      snapshot.runtimeSource.digest
+    )
+    assert.equal(
+      changed.runner.identity.runtimeSourceDigest,
+      changed.evidence.runtimeSourceDigest
+    )
+    assert.equal(changed.evidence.cases.length, 6)
+    fs.writeFileSync(file, original)
     const mutation = contract.definition.scenarios.find(
       (value) => value.id === 'inverse-regression'
     ).mutation
-    const file = path.join(candidateRoot, sourceFile)
-    fs.chmodSync(file, 0o600)
     fs.writeFileSync(
       file,
       fs.readFileSync(file, 'utf8').replace(mutation.from, mutation.to)
@@ -99,6 +124,15 @@ test(
         runner: negative.runner,
         issues: negative.evidence.issues
       })
+    )
+    assert.deepEqual(negative.evidence.issues, [])
+    assert.notEqual(
+      negative.evidence.runtimeSourceDigest,
+      snapshot.runtimeSource.digest
+    )
+    assert.equal(
+      negative.runner.identity.runtimeSourceDigest,
+      negative.evidence.runtimeSourceDigest
     )
     assert.deepEqual(
       negative.evidence.cases
@@ -113,6 +147,10 @@ test(
     )
     const recovery = await verifyCandidate({ ...input, attemptId: 'recovery' })
     assert.equal(recovery.evidence.status, 'passed')
+    assert.equal(
+      recovery.evidence.runtimeSourceDigest,
+      snapshot.runtimeSource.digest
+    )
   }
 )
 

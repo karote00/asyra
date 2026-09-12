@@ -3,7 +3,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const { pathToFileURL } = require('node:url')
 const { runProcess, runVerification } = require('./runner.cjs')
-const { safePath, sha256 } = require('./snapshot.cjs')
+const { safePath, sha256, createRuntimeSource } = require('./snapshot.cjs')
 const { assessEvidence } = require('./evidence.cjs')
 const { writeAtomic } = require('./store.cjs')
 const containmentAvailable = (platform = process.platform) =>
@@ -125,6 +125,7 @@ import(pathToFileURL(runner).href).catch(() => process.exit(2));`
   })
   const candidate = {
     ...snapshot,
+    runtimeSource: createRuntimeSource(files),
     sourceRoot,
     files,
     configurationDigest: sha256(
