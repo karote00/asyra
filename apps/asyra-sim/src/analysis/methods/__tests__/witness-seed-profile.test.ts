@@ -7,6 +7,7 @@ import * as convex from '../convex-query'
 import type { ConvexShape, DistanceEvidence } from '../convex-query'
 import { MeshWorkLimit, OriginalMeshQuery } from '../original-mesh-query'
 import { queryOriginalPartPair } from '../original-part-method'
+import * as continuous from '../continuous-query'
 import { representativeSnapshot } from './representative-fixture'
 import { seededDistance, type SourceWitness } from './witness-transport-control'
 
@@ -171,6 +172,17 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           targetTime = segment === 114 ? middle : node[1]
         const run = (enabled: boolean) => {
           vi.restoreAllMocks()
+          // Replay the recorded pre-sampler experiment, without double seeding.
+          const query = continuous.queryContinuousPair
+          vi.spyOn(continuous, 'queryContinuousPair').mockImplementation(
+            (input, settings, checkpoint, kernel) =>
+              query(
+                input,
+                settings,
+                checkpoint,
+                kernel ? { ...kernel, sample: undefined } : kernel
+              )
+          )
           let time: Interval | undefined,
             source: SourceWitness | undefined,
             targetEvidence: DistanceEvidence | undefined

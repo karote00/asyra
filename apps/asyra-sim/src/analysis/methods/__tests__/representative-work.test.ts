@@ -13,6 +13,8 @@ it('completes the unchanged representative workcell within the original geometry
   const counts = {
     handoffCalls: 0,
     handoffWork: 0,
+    sourceWitnessCalls: 0,
+    sourceWitnessWork: 0,
     derivationCalls: 0,
     derivationWork: 0,
     distanceCalls: 0,
@@ -30,6 +32,7 @@ it('completes the unchanged representative workcell within the original geometry
     convexCalls: 0,
     clearIntervalCertificates: 0
   }
+  const observedContexts = new Set<OriginalMeshQuery>()
   let transformed = new WeakMap<object, WeakSet<object>>()
   const worldBounds = meshIndex.worldBounds
   vi.spyOn(meshIndex, 'worldBounds').mockImplementation((bounds, pose) => {
@@ -50,6 +53,7 @@ it('completes the unchanged representative workcell within the original geometry
     OriginalMeshQuery.prototype,
     'chargeEvidenceHandoff'
   ).mockImplementation(function (this: OriginalMeshQuery) {
+    observedContexts.add(this)
     const before = this.work
     counts.handoffCalls++
     try {
@@ -59,11 +63,26 @@ it('completes the unchanged representative workcell within the original geometry
     }
   })
   const distance = OriginalMeshQuery.prototype.distance
+  const sourceWitness = OriginalMeshQuery.prototype.chargeSourceWitness
+  vi.spyOn(
+    OriginalMeshQuery.prototype,
+    'chargeSourceWitness'
+  ).mockImplementation(function (this: OriginalMeshQuery) {
+    observedContexts.add(this)
+    const before = this.work
+    counts.sourceWitnessCalls++
+    try {
+      return sourceWitness.call(this)
+    } finally {
+      counts.sourceWitnessWork += this.work - before
+    }
+  })
   const derivation = OriginalMeshQuery.prototype.chargeEvidenceDerivation
   vi.spyOn(
     OriginalMeshQuery.prototype,
     'chargeEvidenceDerivation'
   ).mockImplementation(function (this: OriginalMeshQuery) {
+    observedContexts.add(this)
     const before = this.work
     counts.derivationCalls++
     try {
@@ -76,6 +95,7 @@ it('completes the unchanged representative workcell within the original geometry
   vi.spyOn(OriginalMeshQuery.prototype, 'distance').mockImplementation(
     function (this: OriginalMeshQuery, ...args) {
       transformed = new WeakMap()
+      observedContexts.add(this)
       const before = this.work
       counts.distanceCalls++
       try {
@@ -88,6 +108,7 @@ it('completes the unchanged representative workcell within the original geometry
   vi.spyOn(OriginalMeshQuery.prototype, 'lowerOver').mockImplementation(
     function (this: OriginalMeshQuery, ...args) {
       transformed = new WeakMap()
+      observedContexts.add(this)
       const before = this.work
       counts.lowerCalls++
       try {
@@ -140,6 +161,7 @@ it('completes the unchanged representative workcell within the original geometry
     staticWork: number
     intervalWork: number
     handoffWork: number
+    sourceWitnessWork: number
     derivationWork: number
     evaluations: number
     clearIntervals: number
@@ -147,6 +169,7 @@ it('completes the unchanged representative workcell within the original geometry
   let previousStatic = 0,
     previousInterval = 0,
     previousHandoff = 0,
+    previousSourceWitness = 0,
     previousDerivation = 0,
     previousClear = 0
   const evidence = runOriginalPartMethod(
@@ -156,10 +179,17 @@ it('completes the unchanged representative workcell within the original geometry
       const staticWork = counts.distanceWork - previousStatic
       const intervalWork = counts.lowerWork - previousInterval
       const handoffWork = counts.handoffWork - previousHandoff
+      const sourceWitnessWork = counts.sourceWitnessWork - previousSourceWitness
       const derivationWork = counts.derivationWork - previousDerivation
       pairCosts.push({
         pairId: pair.pairId,
-        work: staticWork + intervalWork + handoffWork + derivationWork,
+        work:
+          staticWork +
+          intervalWork +
+          handoffWork +
+          derivationWork +
+          sourceWitnessWork,
+        sourceWitnessWork,
         handoffWork,
         derivationWork,
         staticWork,
@@ -170,6 +200,7 @@ it('completes the unchanged representative workcell within the original geometry
       previousStatic = counts.distanceWork
       previousInterval = counts.lowerWork
       previousHandoff = counts.handoffWork
+      previousSourceWitness = counts.sourceWitnessWork
       previousDerivation = counts.derivationWork
       previousClear = counts.clearIntervalCertificates
     }
@@ -187,7 +218,8 @@ it('completes the unchanged representative workcell within the original geometry
         counts.distanceWork +
         counts.lowerWork +
         counts.handoffWork +
-        counts.derivationWork,
+        counts.derivationWork +
+        counts.sourceWitnessWork,
       traversalWork:
         counts.distanceWork +
         counts.lowerWork -
@@ -201,6 +233,13 @@ it('completes the unchanged representative workcell within the original geometry
       durationMs: Math.round(performance.now() - start)
     })
   )
+  expect(
+    counts.distanceWork +
+      counts.lowerWork +
+      counts.handoffWork +
+      counts.derivationWork +
+      counts.sourceWitnessWork
+  ).toBe([...observedContexts].reduce((sum, context) => sum + context.work, 0))
   expect(evidence.pairs).toHaveLength(298)
   expect(evidence.coverage).toBe('complete')
 }, 20000)

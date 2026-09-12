@@ -7,6 +7,7 @@ import * as convex from '../convex-query'
 import type { DistanceEvidence } from '../convex-query'
 import { MeshWorkLimit, OriginalMeshQuery } from '../original-mesh-query'
 import { queryOriginalPartPair } from '../original-part-method'
+import * as continuous from '../continuous-query'
 import { representativeSnapshot } from './representative-fixture'
 import { transport, type SourceWitness } from './witness-transport-control'
 
@@ -213,6 +214,17 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             current = undefined
           }
         }
+        // Retained passive protocol baseline predates node-owned seeding.
+        const query = continuous.queryContinuousPair
+        vi.spyOn(continuous, 'queryContinuousPair').mockImplementation(
+          (input, settings, checkpoint, kernel) =>
+            query(
+              input,
+              settings,
+              checkpoint,
+              kernel ? { ...kernel, sample: undefined } : kernel
+            )
+        )
         const baseline = queryOriginalPartPair(
           {
             workcell: snapshot.workcell,

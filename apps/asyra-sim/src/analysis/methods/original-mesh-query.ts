@@ -25,6 +25,10 @@ import {
 } from './mesh-index'
 import { projectedBoundsGap } from './mesh-projection'
 import { shapeMembership } from './mesh-membership'
+import {
+  createFreshStaticSampler,
+  type SourceUpper
+} from './fresh-static-sampler'
 
 const ops = poseOperations(intervalAlgebra)
 export class MeshWorkLimit extends Error {}
@@ -46,6 +50,34 @@ function splitLeft(
 /** One execution-owned query context. No renderer, document mutation or global state. */
 export class OriginalMeshQuery {
   work = 0
+  #sourceUpper:
+    { a: ConvexShape; b: ConvexShape; seed: SourceUpper } | undefined
+  createStaticSampler(settings: {
+    threshold: number
+    distanceTolerance: number
+    maxIterations: number
+  }) {
+    const { threshold, distanceTolerance, maxIterations } = settings
+    return createFreshStaticSampler(
+      threshold,
+      () => this.chargeSourceWitness(),
+      (a, b, seed) => {
+        this.#sourceUpper = seed ? { a, b, seed } : undefined
+        try {
+          return this.distance(
+            a,
+            b,
+            threshold,
+            distanceTolerance,
+            maxIterations
+          )
+        } finally {
+          this.#sourceUpper = undefined
+        }
+      },
+      (error) => error instanceof MeshWorkLimit
+    )
+  }
   private readonly refinedIndices = new WeakMap<MeshGeometry, MeshIndex>()
   private readonly indices = new WeakMap<MeshGeometry, MeshIndex>()
   constructor(
@@ -65,6 +97,9 @@ export class OriginalMeshQuery {
     this.tick()
   }
   chargeEvidenceDerivation(): void {
+    this.tick()
+  }
+  chargeSourceWitness(): void {
     this.tick()
   }
   private index(shape: ConvexShape): MeshIndex | undefined {
@@ -161,11 +196,15 @@ export class OriginalMeshQuery {
     this.tick()
     const ai = this.index(a),
       bi = this.index(b)
-    const wa = this.witness(a, ai),
-      wb = this.witness(b, bi)
+    const seed =
+      this.#sourceUpper?.a === a && this.#sourceUpper.b === b
+        ? this.#sourceUpper.seed
+        : undefined
+    const wa = seed?.a ?? this.witness(a, ai),
+      wb = seed?.b ?? this.witness(b, bi)
     let result: DistanceEvidence = {
       lower: 0,
-      upper: ops.norm(ops.sub(wa, wb))[1],
+      upper: seed?.upper ?? ops.norm(ops.sub(wa, wb))[1],
       penetration: false,
       converged: false,
       iterations: 0,

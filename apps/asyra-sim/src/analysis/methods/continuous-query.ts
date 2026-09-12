@@ -14,6 +14,7 @@ import {
   type ConvexShape,
   type DistanceEvidence
 } from './convex-query'
+import type { StaticSampler } from './fresh-static-sampler'
 
 export interface ColliderReference {
   bodyId: string
@@ -52,6 +53,7 @@ export interface PairEvidence {
   evaluations: number
 }
 export interface PairQueryKernel {
+  sample?: StaticSampler
   relativeFrames?: boolean
   certifyClearBeforeResampling?: boolean
   /** Charge and checkpoint one completed pending-node evidence handoff. */
@@ -242,29 +244,55 @@ export function queryContinuousPair(
     }
     // Endpoints matter for both minima and keyframe contacts. They are evidence,
     // never a substitute for the interval-wide separating certificate below.
-    for (const time of new Set([node.start, middle, node.end])) {
+    const sampleTimes = [...new Set([node.start, middle, node.end])]
+    let source: unknown
+    for (const [sampleIndex, time] of sampleTimes.entries()) {
       checkpoint()
       let inherited: DistanceEvidence | undefined
       if (time === node.start) inherited = node.startEvidence
       else if (time === node.end) inherited = node.endEvidence
       let result: DistanceEvidence | null
-      if (inherited && kernel?.handoffEvidence)
+      let sampleExhausted = false
+      if (inherited && kernel?.handoffEvidence) {
         result = kernel.handoffEvidence() ? inherited : null
-      else {
+        source = undefined
+      } else {
         const [a, b] = shapesAt(
           query,
           node.segment,
           interval(time),
           kernel?.relativeFrames
         )
-        result = kernel
-          ? kernel.distance(a, b)
-          : convexDistance(
-              a,
-              b,
-              settings.distanceTolerance,
-              settings.maxIterations
-            )
+        if (kernel?.sample) {
+          const next = sampleTimes[sampleIndex + 1]
+          const capture =
+            next !== undefined &&
+            !(next === node.end && node.endEvidence && kernel.handoffEvidence)
+          const sampled = kernel.sample(
+            a,
+            b,
+            {
+              node,
+              segment: node.segment,
+              start: node.start,
+              end: node.end,
+              time,
+              capture: Boolean(capture)
+            },
+            source
+          )
+          result = sampled?.evidence ?? null
+          source = sampled?.source
+          sampleExhausted = sampled?.exhausted === true
+        } else
+          result = kernel
+            ? kernel.distance(a, b)
+            : convexDistance(
+                a,
+                b,
+                settings.distanceTolerance,
+                settings.maxIterations
+              )
       }
       if (!result) {
         kernelExhausted = true
@@ -278,6 +306,10 @@ export function queryContinuousPair(
       if (!witness || result.upper < witness.upper || result.penetration) {
         witness = result
         witnessTime = time
+      }
+      if (sampleExhausted) {
+        kernelExhausted = true
+        break
       }
       if (result.penetration) break
       if (

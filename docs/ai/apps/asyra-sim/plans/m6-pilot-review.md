@@ -1374,3 +1374,82 @@ the complete bounded correction before one representative source gate. Full G4
 remains red until its unchanged gate passes; no browser gate before that. Stop
 and replan on provenance, accounting, truth or fixed-resource failure; do not
 expand source eligibility or silently weaken existing full-field comparisons.
+
+The formal owner tests first failed because no scoped static sampler existed.
+The bounded implementation now passes 29 source/lifetime/schedule cases,
+including capture and all six consumption cancellation boundaries, runtime
+forgery/scope rejection, copied-packet isolation, later-component penetration,
+and completed evidence retained on either exhaustion path. Existing numerical,
+motion, subdivision and fixed 10k/50k/576 tests remain green. The two exact
+complete segment controls disable only the new sampler: segment 114 work is
+30,453/27,351 and segment 74 is 31,236/23,810, with full PairEvidence equality.
+Each candidate pays two captures and twelve consumption units; all static,
+interval, handoff, derivation and source charges sum exactly to context work.
+`fresh-witness-source-work.test.ts` permanently asserts that accounting and
+improvement. The older passive/interception profiles explicitly disable the
+new sampler to replay their recorded pre-sampler experiment, not double-seed
+the current implementation. Representative/current-frontier diagnostics retain
+the actual route and report source charges separately.
+
+Independent final review passed all 29 new small cases and closed the profiling
+charge omission. The authorized single representative rerun remains **RED**:
+`tmp/capacity/fresh-full-representative.log` records 500,197 total observed units,
+20,262 evaluations and the same first partial joint-2/obstacle-11 pair at 163
+evaluations (75 certified clear intervals). Its 398,216 units comprise static
+310,083, interval 87,745, source 287, handoff 21 and derivation 80. The explicit
+sum-to-context invariant passed; original preparation is 28,943 and refinement
+11,653. Observed runtime was 11.46 seconds under the unchanged guard. The extra
+22 evaluations are not a complete-prefix improvement proof or goal completion.
+No second full run or browser gate followed. Preserve this actual failure while
+reviewing bounded transfer/frontier evidence for the next decision.
+
+The initial 114–198 prefix comparison tested stronger-than-spec full-field
+equality and was **RED**. Both cold runs complete the same
+85 original segments, 95 evaluations and 90 leaves (17 findings/73 clear): work
+218,840/202,102, static 149,346/132,531, interval 69,459 unchanged, handoff 19,
+derivation 16, source 0/77. Only leaf index 6 upper differs, from
+0.010611026269177653 to 0.012944618198707215; its original interval, witness time,
+lower, classification, penetration and reason and all other 89 leaves agree.
+Evidence: `tmp/capacity/fresh-prefix-accounting.log`. Do not silently relax the
+assertion or treat bound overlap as source truth.
+
+Bounded replan, same `method` owner: isolate that exact original frame interval
+in the existing fresh source test, trace the sampler's actual completed issued
+source and its consumption identity, ordered immutable geometry, actual static
+poses/times and whole witness enclosures through the target upper. Independently
+review its complete source-enclosure/norm certificate using the retained exact
+rational transport oracle. Production and the original assertion stayed frozen
+during that proof.
+Only after that proof may review distinguish the spec's nonunique valid upper
+from the extra equality hypothesis; all other fields remain exact. No new full
+or browser run, changed geometry/budget, or broader seed lifetime is authorized.
+
+The isolated source proof identifies original segment 117. Actual sampler-issued
+sources run start 4.703517587939698 to middle 4.723618090452261 to endpoint
+4.743718592964824; copied poses/witness enclosures, ordered geometry and consumed
+handle identities match their completed source queries. Reconstructed whole-box
+transport uppers 0.015576778518212557 and 0.012944618198707215 equal the actual
+target seed, target output and selected endpoint bound. Independent review passed
+this provenance proof (`tmp/capacity/fresh-upper-provenance.log`). Any revised
+prefix criterion must explicitly preserve all other fields and the other 89
+leaves, retaining the recorded stronger-equality failure rather than treating
+bound overlap as truth.
+
+Root explicitly accepted this proven single upper difference under version
+1.0.2. The revised formal prefix oracle fixes only segment 117's expected upper
+to 0.012944618198707215, verifies its old control value and compares the whole
+PairEvidence exactly with that single expected change. The original red log
+and `sameCompleteEvidence: false` diagnostic remain; no other leaf or field is
+relaxed. This is method-semantic compatibility, not G4 completion.
+The final bounded source file passed all four cases, including this prefix and
+its source-provenance proof (`tmp/capacity/fresh-prefix-final.log`). The actual
+frontier diagnostic now asserts the observed 20,262/163 evaluation counts; it
+was updated without another full run. Production remains frozen for scoped
+commit after these gates, with full G4 explicitly red.
+
+Read-only next-hypothesis check rejects merely passing eligible warning handles
+through parent/child endpoint handoffs: an upper below threshold makes the
+parent a finding leaf, so it never subdivides. Thus current eligible handles
+cannot reach such inherited endpoints. Broader clear/uncertain source eligibility
+would require a separate reviewed owner contract and evidence; this slice does
+not introduce it.

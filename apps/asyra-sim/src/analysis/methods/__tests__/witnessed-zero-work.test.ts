@@ -244,6 +244,15 @@ describe('node-owned witnessed zero certificate', () => {
         lower = vi.spyOn(context, 'lowerOver'),
         distance = vi.spyOn(context, 'distance')
       let staticWork = 0
+      const charge = context.chargeSourceWitness.bind(context)
+      vi.spyOn(context, 'chargeSourceWitness').mockImplementation(() => {
+        const before = context.work
+        try {
+          return charge()
+        } finally {
+          staticWork += context.work - before
+        }
+      })
       distance.mockImplementation((...args) => {
         const before = context.work,
           result = originalDistance(...args)
@@ -320,6 +329,15 @@ describe('node-owned witnessed zero certificate', () => {
         result = rawDistance(...args)
       staticWork += probe.work - before
       return result
+    })
+    const charge = probe.chargeSourceWitness.bind(probe)
+    vi.spyOn(probe, 'chargeSourceWitness').mockImplementation(() => {
+      const before = probe.work
+      try {
+        return charge()
+      } finally {
+        staticWork += probe.work - before
+      }
     })
     queryOriginalPartPair(input(), settings, () => undefined, probe)
     const context = new OriginalMeshQuery(() => undefined, staticWork),

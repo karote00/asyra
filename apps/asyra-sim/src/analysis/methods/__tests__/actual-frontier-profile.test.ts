@@ -5,6 +5,7 @@ import * as projections from '../mesh-projection'
 import * as membership from '../mesh-membership'
 import * as convex from '../convex-query'
 import * as official from '../official-method'
+import * as samplers from '../fresh-static-sampler'
 import type { PairEvidence } from '../continuous-query'
 import { MeshWorkLimit, OriginalMeshQuery } from '../original-mesh-query'
 import {
@@ -28,6 +29,8 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         let target: PairEvidence | undefined,
           handoffWork = 0
         const handoffs = new Map<number, number>()
+        let sourceWitnessWork = 0
+        const sourceWitnesses = new Map<number, number>()
         let derivationWork = 0
         const derivations = new Map<number, number>()
         interface Row {
@@ -68,6 +71,24 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             penetration: { calls: number; axes: number; rejections: number }
           }
         }
+        let seededUpper: number | undefined
+        const createSampler = samplers.createFreshStaticSampler
+        vi.spyOn(samplers, 'createFreshStaticSampler').mockImplementation(
+          (threshold, tick, solve, exhausted) =>
+            createSampler(
+              threshold,
+              tick,
+              (a, b, seed) => {
+                seededUpper = seed?.upper
+                try {
+                  return solve(a, b, seed)
+                } finally {
+                  seededUpper = undefined
+                }
+              },
+              exhausted
+            )
+        )
         const rows: Row[] = []
         let current: Row | undefined
         let currentContext: OriginalMeshQuery | undefined
@@ -211,7 +232,12 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           current = row
           currentContext = context
           currentShapes = [args[0], args[1]]
-          bestUpper = Infinity
+          bestUpper = kind === 'static' ? (seededUpper ?? Infinity) : Infinity
+          if (kind === 'static' && seededUpper !== undefined) {
+            row.initialUpper = seededUpper
+            if (seededUpper < snapshot.rule.minimumClearance)
+              row.firstWarningWork = 0
+          }
           try {
             const value = call()
             row.status = 'complete'
@@ -269,6 +295,24 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           }
         })
         const build = meshIndex.buildMeshIndex
+        const sourceWitness = OriginalMeshQuery.prototype.chargeSourceWitness
+        vi.spyOn(
+          OriginalMeshQuery.prototype,
+          'chargeSourceWitness'
+        ).mockImplementation(function (this: OriginalMeshQuery) {
+          const before = this.work
+          try {
+            return sourceWitness.call(this)
+          } finally {
+            if (active) {
+              sourceWitnessWork += this.work - before
+              sourceWitnesses.set(
+                segment,
+                (sourceWitnesses.get(segment) ?? 0) + this.work - before
+              )
+            }
+          }
+        })
         const derivation = OriginalMeshQuery.prototype.chargeEvidenceDerivation
         vi.spyOn(
           OriginalMeshQuery.prototype,
@@ -377,8 +421,8 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         if (mode === 'representative') {
           const evidence = runOriginalPartMethod(snapshot)
           evaluations = evidence.evaluations
-          expect(evaluations).toBe(20240)
-          expect(target?.evaluations).toBe(141)
+          expect(evaluations).toBe(20262)
+          expect(target?.evaluations).toBe(163)
           expect(target?.coverage).toBe('partial')
         } else {
           const pair = snapshot.pairs.find(
@@ -452,6 +496,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
               end,
               ...summary(rows.filter((row) => row.segment === segment)),
               handoffWork: handoffs.get(segment) ?? 0,
+              sourceWitnessWork: sourceWitnesses.get(segment) ?? 0,
               derivationWork: derivations.get(segment) ?? 0,
               states: leaves.reduce<Record<string, number>>((sum, leaf) => {
                 sum[leaf.state] = (sum[leaf.state] ?? 0) + 1
@@ -482,6 +527,11 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             profile: 'actual-frontier',
             mode,
             geometryPolicy: 'current',
+            recordedBeforeFreshSource: {
+              source: '910d0ad74',
+              evaluations: 20240,
+              targetEvaluations: 141
+            },
             recordedBeforeDerivation: {
               source: '6862daf58',
               evaluations: 20237,
@@ -492,6 +542,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             target: summary(rows),
             handoffWork,
             derivationWork,
+            sourceWitnessWork,
             commonPrefix: {
               fromSegment: 114,
               query: summary(rows.filter((row) => row.segment >= 114)),
@@ -501,7 +552,11 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
               segments: common.length,
               work: common.reduce(
                 (sum, row) =>
-                  sum + row.work + row.handoffWork + row.derivationWork,
+                  sum +
+                  row.work +
+                  row.handoffWork +
+                  row.derivationWork +
+                  row.sourceWitnessWork,
                 0
               )
             },
