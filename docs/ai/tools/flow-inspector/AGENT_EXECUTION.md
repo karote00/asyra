@@ -229,11 +229,20 @@ anything through their ordinary review workflow.
 ## Retained candidate admission
 
 On startup, a task retaining passing candidate verification must re-admit that
-proof before exposing `needs-review`. If any of its verdict's `runtimeSource`,
-`verificationSource` or `executionSource` fields is present, require all three;
-present-null, partial or unsupported identities cannot take the legacy path.
-Historical verdicts with all three fields absent keep their existing validation,
-without constructing derived identity or rewriting evidence on load.
+proof before exposing `needs-review`. Newly created task records use `format: 2`.
+Loading supports only task formats 1 and 2; missing, null and unknown formats
+reject. A format-2 task's passing latest verdict requires `runtimeSource`,
+`verificationSource` and `executionSource`, even if all three have been deleted.
+Present-null, partial or unsupported identities reject admission. Format-1
+historical records keep their existing validation when all three are absent;
+descriptor presence still selects the new admission path for transitional records.
+A format-1 task upgrades to format 2 only when an explicit new candidate proof
+actually completes and is saved. Its older attempts and their evidence remain
+unchanged; loading or reading alone never upgrades history. This existing task
+schema version closes missing-field fallback without inferring versions from
+filenames or reverse-engineering configuration digests. It does not claim
+protection against rewriting an entire trusted local record, including its
+format, into an otherwise valid historical record.
 
 For the new path, the last retained attempt must have a valid UUID. Select its
 verification directory only as the fixed task-owned

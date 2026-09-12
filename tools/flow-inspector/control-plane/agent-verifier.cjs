@@ -1,9 +1,14 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 const fs = require('node:fs')
 const path = require('node:path')
-const { pathToFileURL } = require('node:url')
 const { runProcess, runVerification } = require('./runner.cjs')
-const { safePath, sha256, createRuntimeSource } = require('./snapshot.cjs')
+const {
+  safePath,
+  sha256,
+  createRuntimeSource,
+  createVerificationSource,
+  createDerivedExecution
+} = require('./snapshot.cjs')
 const { assessEvidence } = require('./evidence.cjs')
 const { writeAtomic } = require('./store.cjs')
 const containmentAvailable = (platform = process.platform) =>
@@ -55,6 +60,13 @@ async function verifyCandidate({
     throw new Error('OS containment unavailable; candidate execution denied')
   if (!/^[a-zA-Z0-9-]+$/.test(attemptId))
     throw new Error('Invalid verification attempt')
+  if (
+    snapshot.digest !== sha256(JSON.stringify(snapshot.files)) ||
+    snapshot.contractDigest !== contract.digest ||
+    snapshot.mappingVersion !== contract.mappingVersion ||
+    snapshot.architectureVersion !== contract.architectureVersion
+  )
+    throw new Error('Baseline source identity mismatch')
   const runDirectory = safePath(
     repositoryRoot,
     path.relative(
@@ -78,43 +90,18 @@ async function verifyCandidate({
     fs.writeFileSync(destination, bytes, { flag: 'wx', mode: 0o444 })
     files.push({ path: entry.path, size: bytes.length, digest: sha256(bytes) })
   }
-  const configFile = 'tools/flow-inspector/control-plane/candidate-config.mjs'
-  const bootstrapFile =
-    'tools/flow-inspector/control-plane/candidate-bootstrap.cjs'
-  const config = `import original from ${JSON.stringify(pathToFileURL(path.join(sourceRoot, contract.configFile)).href)};
-import { stripTypeScriptTypes } from 'node:module';
-export default {
-  ...original, esbuild: false,
-  optimizeDeps: { noDiscovery: true, include: [] },
-  plugins: [...(original.plugins ?? []), {
-    name: 'contained-native-typescript', enforce: 'pre',
-    transform(code, id) {
-      if (!id.split('?')[0].endsWith('.ts') || id.includes('/node_modules/')) return;
-      return { code: stripTypeScriptTypes(code, { mode: 'transform', sourceMap: false }), map: null };
-    }
-  }],
-  test: { ...original.test, pool: 'threads', maxWorkers: 1, minWorkers: 1,
-    deps: { optimizer: { ssr: { enabled: false }, web: { enabled: false } } }
-  }
-};`
-  const bootstrap = `const { pathToFileURL } = require('node:url');
-const [, , owner, runner, ...args] = process.argv;
-setInterval(() => {
-  if (process.ppid !== Number(owner)) process.kill(-process.pid, 'SIGKILL');
-}, 100).unref();
-process.argv = [process.execPath, runner, ...args];
-import(pathToFileURL(runner).href).catch(() => process.exit(2));`
-  for (const [file, content] of [
-    [configFile, config],
-    [bootstrapFile, bootstrap]
-  ]) {
+  const verificationSource = Object.hasOwn(snapshot, 'verificationSource')
+    ? structuredClone(snapshot.verificationSource)
+    : createVerificationSource(snapshot.files, contract)
+  const generated = createDerivedExecution({ sourceRoot, verificationSource })
+  const { configuration: configFile, bootstrap: bootstrapFile } =
+    generated.executionSource.roles
+  for (const { path: file, content } of generated.files) {
     const destination = path.join(sourceRoot, file)
     fs.mkdirSync(path.dirname(destination), { recursive: true })
     fs.writeFileSync(destination, content, { flag: 'wx', mode: 0o444 })
     files.push({
-      path: file,
-      size: Buffer.byteLength(content),
-      digest: sha256(content)
+      ...generated.executionSource.files.find((entry) => entry.path === file)
     })
   }
   files.sort((a, b) => a.path.localeCompare(b.path))
@@ -126,11 +113,11 @@ import(pathToFileURL(runner).href).catch(() => process.exit(2));`
   const candidate = {
     ...snapshot,
     runtimeSource: createRuntimeSource(files),
+    verificationSource,
+    executionSource: generated.executionSource,
     sourceRoot,
     files,
-    configurationDigest: sha256(
-      snapshot.configurationDigest + config + bootstrap
-    ),
+    configurationDigest: generated.executionSource.digest,
     digest: sha256(JSON.stringify(files)),
     manifestPath: path.relative(repositoryRoot, manifestPath)
   }
@@ -169,7 +156,9 @@ import(pathToFileURL(runner).href).catch(() => process.exit(2));`
     candidate,
     result,
     contract.flows.map((flow) => flow.id),
-    'baseline'
+    'baseline',
+    undefined,
+    { sourceRoot }
   )
   if (
     files.some((entry) => {
@@ -191,6 +180,9 @@ import(pathToFileURL(runner).href).catch(() => process.exit(2));`
   const verdict = {
     evidence,
     sourceDigest: candidate.digest,
+    runtimeSource: candidate.runtimeSource,
+    verificationSource: candidate.verificationSource,
+    executionSource: candidate.executionSource,
     configurationDigest: candidate.configurationDigest,
     baselineDigest: snapshot.digest,
     files,

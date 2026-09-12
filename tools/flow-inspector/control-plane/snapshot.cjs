@@ -414,6 +414,19 @@ function verifySourceDescriptors(files, runtime, verification, contract) {
   return { runtimeSource, verificationSource }
 }
 
+function verifyRetainedSnapshotBytes(repositoryRoot, sourceRoot, fullFiles) {
+  const repository = fs.realpathSync(repositoryRoot)
+  if (typeof sourceRoot !== 'string' || path.basename(sourceRoot) !== 'source')
+    throw new Error('Retained snapshot requires a source root')
+  if (
+    sourceRoot !== safePath(repository, path.relative(repository, sourceRoot))
+  )
+    throw new Error('Retained snapshot requires a canonical source root')
+  if (!Array.isArray(fullFiles) || !fullFiles.length)
+    throw new Error('Retained snapshot requires a full manifest')
+  readSourceEntries(fullFiles.map((entry) => ({ entry, root: sourceRoot })))
+}
+
 function verifyRetainedSource(repositoryRoot, input, contract) {
   const { runtime, verification, selected } = selectSourceEntries(
     repositoryRoot,
@@ -596,6 +609,7 @@ function captureSource(repositoryRoot, runDirectory, contract) {
 }
 
 module.exports = {
+  verifyRetainedSnapshotBytes,
   createDerivedExecution,
   verifyRetainedSource,
   composeSource,

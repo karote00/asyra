@@ -1260,3 +1260,142 @@ test('retained source verification rejects later byte corruption and unsafe auth
     fs.writeFileSync(file, original)
   }
 })
+
+test('retained full snapshot byte verification reads and hashes every actual entry once without writes or descriptor admission', (t) => {
+  const source = require('../snapshot.cjs')
+  const output = fs.mkdtempSync(path.join(parent, 'retained-derived-bytes-'))
+  t.after(() => fs.rmSync(output, { recursive: true, force: true }))
+  const contract = loadContract(root)
+  const snapshot = captureSource(root, output, contract)
+  const generated = source.createDerivedExecution({
+    sourceRoot: snapshot.sourceRoot,
+    verificationSource: snapshot.verificationSource
+  })
+  for (const file of generated.files) {
+    const destination = path.join(snapshot.sourceRoot, file.path)
+    fs.mkdirSync(path.dirname(destination), { recursive: true })
+    fs.writeFileSync(destination, file.content, { flag: 'wx', mode: 0o444 })
+  }
+  const files = [...snapshot.files, ...generated.executionSource.files].sort(
+    (a, b) => a.path.localeCompare(b.path)
+  )
+  const preserved = structuredClone(files)
+  const crypto = require('node:crypto'),
+    originalHash = crypto.createHash,
+    hashed = []
+  t.mock.method(crypto, 'createHash', (...args) => {
+    const value = originalHash(...args),
+      update = value.update
+    value.update = function (bytes) {
+      hashed.push(bytes)
+      return update.call(this, bytes)
+    }
+    return value
+  })
+  const modulePath = require.resolve('../snapshot.cjs'),
+    saved = require.cache[modulePath]
+  Reflect.deleteProperty(require.cache, modulePath)
+  const counted = require('../snapshot.cjs')
+  require.cache[modulePath] = saved
+  const admission = t.mock.method(counted, 'validateSourceSnapshot')
+  const reads = t.mock.method(fs, 'readFileSync'),
+    writes = t.mock.method(fs, 'writeFileSync')
+  assert.equal(
+    counted.verifyRetainedSnapshotBytes(root, snapshot.sourceRoot, files),
+    undefined
+  )
+  assert.equal(reads.mock.callCount(), files.length)
+  assert.equal(hashed.length, files.length)
+  assert.ok(
+    hashed.every(
+      (bytes, index) =>
+        Buffer.isBuffer(bytes) && bytes === reads.mock.calls[index].result
+    )
+  )
+  assert.equal(writes.mock.callCount(), 0)
+  assert.equal(admission.mock.callCount(), 0)
+  assert.deepEqual(files, preserved)
+  for (const entry of files)
+    assert.equal(
+      fs.statSync(path.join(snapshot.sourceRoot, entry.path)).size,
+      entry.size
+    )
+})
+
+test('retained snapshot bytes reject unsafe roots and missing changed symlinked or nonregular entries', (t) => {
+  const source = require('../snapshot.cjs')
+  const output = fs.mkdtempSync(path.join(parent, 'retained-byte-rejection-'))
+  t.after(() => fs.rmSync(output, { recursive: true, force: true }))
+  const contract = loadContract(root),
+    snapshot = captureSource(root, output, contract)
+  assert.throws(
+    () =>
+      source.verifyRetainedSnapshotBytes(
+        root,
+        snapshot.sourceRoot + '/../source',
+        snapshot.files
+      ),
+    /canonical/
+  )
+  assert.throws(
+    () =>
+      source.verifyRetainedSnapshotBytes(
+        root,
+        path.dirname(snapshot.sourceRoot),
+        snapshot.files
+      ),
+    /source root/
+  )
+  assert.throws(
+    () =>
+      source.verifyRetainedSnapshotBytes(root, snapshot.sourceRoot, [
+        { ...snapshot.files[0], path: '../escape' }
+      ]),
+    /path|escape/i
+  )
+  const entry = snapshot.files[0],
+    file = path.join(snapshot.sourceRoot, entry.path),
+    bytes = fs.readFileSync(file)
+  fs.chmodSync(file, 0o600)
+  fs.writeFileSync(file, Buffer.concat([bytes, Buffer.from('changed')]))
+  assert.throws(
+    () =>
+      source.verifyRetainedSnapshotBytes(
+        root,
+        snapshot.sourceRoot,
+        snapshot.files
+      ),
+    /fingerprint/
+  )
+  fs.rmSync(file)
+  assert.throws(
+    () =>
+      source.verifyRetainedSnapshotBytes(
+        root,
+        snapshot.sourceRoot,
+        snapshot.files
+      ),
+    /ENOENT/
+  )
+  fs.symlinkSync(path.join(snapshot.sourceRoot, snapshot.files[1].path), file)
+  assert.throws(
+    () =>
+      source.verifyRetainedSnapshotBytes(
+        root,
+        snapshot.sourceRoot,
+        snapshot.files
+      ),
+    /symlink/i
+  )
+  fs.rmSync(file)
+  fs.mkdirSync(file)
+  assert.throws(
+    () =>
+      source.verifyRetainedSnapshotBytes(
+        root,
+        snapshot.sourceRoot,
+        snapshot.files
+      ),
+    /regular/
+  )
+})
