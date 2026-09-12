@@ -27,7 +27,10 @@ results reused within that invocation, no work per plant or animation frame.
 ## B - Mission document composition (M2)
 
 Owner: app runtime through registered Core Features/APIs.
-Inputs: robot/route/patrol edits; validated farm configuration; completed A reports.
+Inputs: robot/route/patrol edits; validated farm configuration with unique stable
+strip IDs; completed A reports. Strip mission bindings use stripId, never array
+position as identity. B resolves current ordinal for A and returns a null lane
+when the selected ID is absent. Reorder/deletion of other IDs preserves binding.
 Outputs: canonical robot/mission settings and scoped derived UI values; one edit
 per intended history action. M2 has no run; M3 must invalidate incompatible runs.
 Conditions: admission must succeed; failed edits leave prior canonical state intact.
@@ -39,9 +42,13 @@ Boundary: app runtime robot/mission composition and formal runtime tests, plus
 locale and mission editor consumers of the approved API.
 Spec: B - M2 editable design workspace. Public actions: patchRobot, getRobot,
 subscribeRobot, existing undo/redo. One-shot exclusive priority 100 Feature.
-Boundary files: domain/robot-configuration.ts, runtime/robot-workspace.ts,
-runtime/bootstrap.ts, ui/robot-editor.tsx, ui/workbench.tsx, locale catalogs and
-their formal tests. Registered settings type: robot-configuration.
+Boundary files: domain/farm-configuration.ts (strip schema/defaults/admission),
+domain/robot-configuration.ts, runtime/robot-workspace.ts, runtime/bootstrap.ts,
+ui/configuration-editor.tsx (identity-preserving strip actions),
+ui/robot-editor.tsx, ui/workbench.tsx, locale catalogs and their formal tests.
+Direct app test fixtures may adopt the required strip schema without changing
+their geometry expectations. A positional lane schema and layout algorithms
+remain unchanged. Registered settings type: robot-configuration.
 Derived reports live until the next relevant canonical edit; reads do no work.
 Failure owner: B owns validation/history/replacement; A owns assessment reasons.
 Cache dimensions: none proposed.
@@ -66,22 +73,62 @@ Route projection lifetime: completed lane report. No crop preparation.
 Failure owner: projection/admission failure is visible; no substitute safe geometry.
 Cache dimensions: none proposed; topology lifetime is the robot definition.
 
-## D - Deterministic simulation (M3, not implemented)
+## D - Deterministic simulation (M3, planned)
 
-Owner: app simulation session.
-Inputs: admitted mission, completed A reports, explicit observation adapter outputs,
-simulation clock and synthetic contact/cut/retention confirmations.
-Outputs: finite-state transitions, pose intents, target inventory and crate ledger.
-Conditions: no overlapping runs; stale/missing evidence interrupts action; emergency
-priority wins. Cancellation/disposal prevents late writes. No path around B admission.
-Allowed: A advisory policy, declared observation adapter, canonical mission snapshot.
-Forbidden: hidden fruit truth as perception, hardware side effects, implicit wall
-clock scheduling, auto-restart after fault, arbitrary leaf/crop pass-through.
-Boundary: app simulation modules and formal scenario/session tests; concrete state
-schema and observation contract must be ready before implementation.
-Spec: future user-facing contract and Gherkin acceptance cases.
-Failure owner: simulation session retains unresolved/fault state and reason.
-Cache dimensions: none proposed.
+Owner: app simulation session, composed through the registered Core Feature/API
+boundary. Helpers below prepare or query inputs; none owns a competing session.
+Inputs: B's immutable admitted mission/revision and completed design A reports;
+pre-run synthetic dispatch evidence bound to mission/scene revisions and validity;
+run-bound observations/action confirmations; monotonic simulation clock inputs;
+completed scene geometry and exact swept-motion query results.
+Outputs: immutable session read snapshot, ordered transition evidence, completed
+pose intents, stable target inventory, crate ledger and explicit faults/reasons.
+Conditions: no overlapping run; at most one pending patrol. No bypass around B
+or movement admission. Paused clock inputs advance schedule/evidence time only;
+resume never catches up paused motion. Cancel/dispose/replacement closes the
+old generation before accepting successor inputs. Changed canonical mission/farm
+state invalidates the run even on history replay; view-only changes bypass D.
+Allowed: A load/energy/hazard policy, B completed canonical snapshots, a declared
+synthetic observation adapter and engine-neutral collision queries over completed
+scene products; Core Feature/session lifecycle and app API composition.
+Forbidden: hidden fruit truth as perception, Three/React authority, direct physical
+side effects, wall-clock scheduling, auto-restart after fault, private Core APIs,
+geometry generation per tick or arbitrary leaf/crop/net pass-through.
+
+Boundary (all paths relative to `apps/fieldscope/src`):
+
+- `simulation/contracts.ts` owns app-local transient schema, identities and
+  admission; `simulation/session.ts` owns transitions, scheduling and ledgers.
+- `simulation/observations.ts` owns observation admission and the synthetic
+  viewpoint/occlusion adapter; scene truth cannot escape as successful detection.
+- `simulation/collision.ts` owns exact movement-query admission over completed
+  geometry/interval envelopes. Unknown geometry or leaf motion remains unknown.
+- `runtime/harvest-session.ts` owns Core Feature/API composition and lifecycle;
+  `runtime/bootstrap.ts` wires B snapshots, disposal and completed D output only.
+- Corresponding `simulation/__tests__` and `runtime/__tests__` files own formal
+  scenario, admission, lifecycle and work-count evidence.
+
+Hand-off: B -> D receives completed mission/report on relevant canonical updates.
+D admission -> A supplies validated pre-run synthetic evidence and consumes fresh
+assessments before run creation. B reports retain their unknown design evidence;
+D cannot treat B defaults as fresh sensing or mutate B to enable dispatch.
+Existing domain/site owners -> observation/collision adapters supply completed
+engine-neutral geometry with identity and revision; D cannot clone the farm
+layout/crop generator. D -> C supplies completed poses/dispositions only; C never
+recreates harvest decisions. C's fruit/working-pose implementation and B/UI session
+controls require their own next owner cards before code changes.
+Spec: harvest-robot section D, including session/clock, observation evidence,
+conservation, motion admission and M3 acceptance; M3-tagged Gherkin cases.
+Failure owner: D rejects invalid inputs atomically, retains unresolved/fault state
+for missing evidence and blocks stale generation writes. A retains ownership of
+assessment reasons; adapters retain observation/collision reasons. Projection
+errors remain C errors and cannot manufacture a D success.
+Lifetime: mission and static scene products survive a run until their source
+revision changes; evidence expires by its explicit simulation validity interval.
+Pose queries use current motion/leaf inputs. Reads consume completed snapshots;
+no crop preparation or full accumulated-ledger scan per read/tick.
+Cache dimensions: none proposed. No persisted/wire format is introduced; session
+identities are neutral, run-scoped and unrelated to design entity identities.
 
 ## E - Physical adapter (M4-M6, blocked on physical evidence)
 

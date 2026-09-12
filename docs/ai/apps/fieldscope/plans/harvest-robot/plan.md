@@ -200,3 +200,47 @@ submissions. Consume the completed farm and robot report once and submit one
 composed frame from bootstrap; no extra model cache or changed output. Same C
 allowlist and exclusions. Gate: failing frame-count assertion, then runtime and
 configuration browser tests; no other owner expansion.
+
+## M3 software goal and readiness slice - 2026-09-13
+
+Continue from PR #194 in `.worktrees/fieldscope-robot-workspace`. The software
+goal is M2 integration plus M3 deterministic patrol, picking and crate simulation.
+M4-M6 retain their physical-evidence prerequisites and remain planned; this goal
+cannot close the full hardware plan. The goal PR must not merge into main under
+this task's authorization. The coordinator owns Git and PR operations.
+
+D readiness card: clarify the existing M3 behavior before production edits.
+Sources are M3 above, product contract D and Inspector D. Inputs are admitted B
+mission/A reports, explicit synthetic observations/confirmations, completed scene
+products and a closed clock. Outputs are the session/observation/motion-admission
+contracts and executable scenario requirements. No bypass of admission, no
+hardware, no hidden-fruit detector or wall-clock scheduler. Only this plan,
+Inspector, harvest-robot spec and its BDD cases are edited in this slice. Gates:
+naming baseline/final, scoped formatting/diff review and independent contract
+review. Stop on a new product decision, contradictory authority or external owner.
+
+Implementation starts with D schema/admission and deterministic headless scenario
+proofs, then D's real Core lifecycle wiring. C working-pose/fruit projection and
+B/UI controls follow separate owner cards after D passes its focused gates.
+Existing scene owners may require an explicit C preparation/handoff slice before
+D's real-scene adapter integration; do not duplicate crop/layout generation inside
+D. End-to-end M3 closure still requires the whole M3 DoD, including close-up
+collision/fruit evidence; headless states alone are not milestone completion.
+
+### B correction card - canonical strip identity
+
+Independent M2 review identified a nonterminal selected-strip deletion redirecting
+the mission to the next occupant of its array index. Existing runtime regression
+must fail before production correction. Source: configuration canonical strip
+identity and harvest-robot B; Inspector B owns the farm/mission handoff. Inputs:
+validated strip IDs and mission stripId. Output: unchanged binding resolved to A's
+current ordinal, or an explicit absent/invalid lane. Admission rejects missing or
+duplicate IDs before mutation. Default/Add producers create IDs; replay preserves
+them. Forbidden: inferred identity from order, substitute routes, private caches,
+a second canonical model, disk migration or A geometry changes. Only B's listed
+schema/runtime/editor consumers and direct formal fixtures/tests may change.
+Cases: selected nonterminal deletion, preceding deletion, reorder, undo/redo,
+missing/duplicate IDs, defaults and Add. Gates: red regression, focused domain/Core
+runtime/editor proofs, naming, app typecheck/lint/unit and relevant browser/build
+checks. Stop for a contract conflict or a required out-of-scope owner. This B
+correction completes before beginning D production implementation.
