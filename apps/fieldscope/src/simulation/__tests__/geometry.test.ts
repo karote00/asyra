@@ -255,3 +255,96 @@ it('composes instance placement before descriptor rotation and never substitutes
   localSite.clear()
   expect(() => owner.placePoint(source, mesh, [0, 0, 0])).toThrow()
 })
+
+it('prepares immutable original-source local bounds once and recomputes only for a successor', () => {
+  const owner = new QueryGeometry(owners)
+  const source = owner.prepare(receipt)
+  let visits = 0
+  for (const shape of source.shapes) {
+    if (shape.kind !== 'triangles') throw new Error('Missing triangle source')
+    visits += shape.positions.length / 3
+    const records = source.meshes.filter((mesh) => mesh.shape === shape)
+    const box = records[0].prepared.bounds
+    expect(records.every((mesh) => mesh.prepared.bounds === box)).toBe(true)
+    const points = Array.from({ length: shape.positions.length / 3 }, (_, i) =>
+      shape.positions.slice(i * 3, i * 3 + 3)
+    )
+    for (let axis = 0; axis < 3; axis++) {
+      const values = points.map((point) => point[axis])
+      expect(box.min[axis]).toBe(
+        values.reduce((a, b) => Math.min(a, b), Infinity)
+      )
+      expect(box.max[axis]).toBe(
+        values.reduce((a, b) => Math.max(a, b), -Infinity)
+      )
+    }
+    expect(
+      Object.isFrozen(box) &&
+        Object.isFrozen(box.min) &&
+        Object.isFrozen(box.max)
+    ).toBe(true)
+    for (const mesh of records) {
+      expect(Object.isFrozen(mesh.prepared)).toBe(true)
+      expect(mesh.prepared.regions.map((item) => item.source)).toEqual(
+        mesh.origin.regions.filter((item) => item.kind !== 'sheet')
+      )
+      for (const item of mesh.prepared.regions) {
+        expect(mesh.origin.regions.includes(item.source)).toBe(true)
+        const { indexStart, indexCount } = item.source
+        const ids = shape.indices.slice(indexStart, indexStart + indexCount)
+        for (let axis = 0; axis < 3; axis++) {
+          const values = ids.map((id) => shape.positions[id * 3 + axis])
+          expect(item.bounds.min[axis]).toBe(
+            values.reduce((a, b) => Math.min(a, b), Infinity)
+          )
+          expect(item.bounds.max[axis]).toBe(
+            values.reduce((a, b) => Math.max(a, b), -Infinity)
+          )
+        }
+      }
+    }
+  }
+  expect(source.work.vertexVisits).toBe(visits)
+  expect(source.work.shapeBounds).toBe(source.shapes.length)
+  expect(owner.prepare(receipt) === source).toBe(true)
+  current = Object.freeze({ ...receipt, revision: 7 })
+  try {
+    const next = owner.prepare(current)
+    expect(next.work).toEqual(source.work)
+    expect(next.meshes[0].prepared === source.meshes[0].prepared).toBe(false)
+    expect(() => owner.read(source)).toThrow()
+    owner.clear()
+    expect(() => owner.read(next)).toThrow()
+  } finally {
+    current = receipt
+  }
+})
+
+it('shares vertex bounds but never borrows another source region mapping on the same shape', () => {
+  const base = receipt.scene.meshes.find((mesh) => mesh.layer === 'base')
+  if (!base) throw new Error('Missing actual base source')
+  const sheets = Object.freeze(
+    base.regions.map((region) =>
+      Object.freeze({ ...region, kind: 'sheet' as const })
+    )
+  )
+  const copy = Object.freeze({ ...base, regions: sheets })
+  const scene = Object.freeze({
+    ...receipt.scene,
+    meshes: Object.freeze([base, base, copy])
+  })
+  const tuple = Object.freeze({ ...receipt, scene })
+  const owner = new QueryGeometry({
+    ...owners,
+    isCurrentReceipt: (value) => value === tuple,
+    isCurrentScene: (value) => value === scene
+  })
+  const source = owner.prepare(tuple)
+  const [first, repeated, different] = source.meshes
+  expect(first.prepared === repeated.prepared).toBe(true)
+  expect(first.prepared.bounds === different.prepared.bounds).toBe(true)
+  expect(first.prepared === different.prepared).toBe(false)
+  expect(first.prepared.regions.length).toBeGreaterThan(0)
+  expect(different.prepared.regions).toHaveLength(0)
+  expect(first.prepared.regions[0].source === base.regions[0]).toBe(true)
+})

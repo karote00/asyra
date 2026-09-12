@@ -255,36 +255,6 @@ function include(box: ReturnType<typeof emptyBounds>, p: Point3) {
     box.max[axis] = Math.max(box.max[axis], p[axis])
   }
 }
-function bounds(shape: TriangleShape, work: RayWork): Bounds {
-  work.shapeBounds++
-  const box = emptyBounds()
-  for (let i = 0; i < shape.positions.length; i += 3) {
-    work.vertexVisits++
-    include(box, [
-      shape.positions[i],
-      shape.positions[i + 1],
-      shape.positions[i + 2]
-    ])
-  }
-  return box
-}
-function regionBounds(
-  shape: TriangleShape,
-  region: SourceRegion,
-  work: RayWork
-): Bounds {
-  work.regionBounds++
-  const box = emptyBounds()
-  for (
-    let i = region.indexStart;
-    i < region.indexStart + region.indexCount;
-    i++
-  ) {
-    work.regionIndexVisits++
-    include(box, vertex(shape, i))
-  }
-  return box
-}
 /** Only a conclusive separation rejects; all surviving entries are lower bounds. */
 function entryDistance(
   box: Bounds,
@@ -457,14 +427,6 @@ function triangleHit(
     barycentric: [subtract(interval(1), total), u, v]
   }
 }
-interface Region {
-  source: SourceRegion
-  bounds: Bounds
-}
-interface PreparedShape {
-  bounds: Bounds
-  regions: readonly Region[]
-}
 function originCandidate(box: Bounds, origin: Vector) {
   return origin.every(
     (value, axis) => value.high >= box.min[axis] && value.low <= box.max[axis]
@@ -562,21 +524,10 @@ export class RayQueries {
       })
     )
     const base = prepareInverse(input.robot.base)
-    const prepared = new Map<TriangleShape, PreparedShape>()
     const placements: Placement[] = []
     for (const mesh of source.meshes) {
       if (mesh.shape.kind !== 'triangles')
         throw new Error('Unsupported query source')
-      if (!prepared.has(mesh.shape))
-        prepared.set(mesh.shape, {
-          bounds: bounds(mesh.shape, work),
-          regions: mesh.origin.regions
-            .filter((region) => region.kind !== 'sheet')
-            .map((region) => ({
-              source: region,
-              bounds: regionBounds(mesh.shape as TriangleShape, region, work)
-            }))
-        })
       const parents: Inverse[] = []
       if (mesh.frame === 'robot') {
         const body = transforms.get(
@@ -633,7 +584,7 @@ export class RayQueries {
       for (const { mesh, instance, parents } of placements) {
         work.instances++
         const shape = mesh.shape as TriangleShape,
-          product = prepared.get(shape)
+          product = mesh.prepared
         if (!product) throw new Error('Missing completed query shape')
         let origin = numberVector(ray.origin),
           localDirection = direction
