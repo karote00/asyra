@@ -742,3 +742,12 @@ Record cold and repeated source work counts on the existing eight-ray C profile;
 timing is supporting evidence, not a machine-independent budget. Stop if any
 result or source ownership changes, a predicate needs repair, or another owner
 must regenerate data. No new visual claim belongs to this preparation slice.
+
+Shared bounds completed: 26 focused and 336 full app tests, type/build/naming and
+lint (zero errors) pass; independent scoped review has no finding. Actual cold C
+preparation visits 612096 vertices and 1719909 region indices once. Both repeated
+eight-ray batches perform zero bound-preparation scans while retaining 161783
+triangle tests, 24 exact predicates and one FK per batch; two batches took about
+475 ms in this run. Direct source bounds, distinct region mappings, dynamic
+fresh-owner equivalence and retirement/clear cases pass. The work reduction is
+source preparation only; no BVH, changed query result or visual claim is implied.

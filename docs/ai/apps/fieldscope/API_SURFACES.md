@@ -135,6 +135,12 @@ Cross-package imports use public `@asyra/*` facades. Do not import another app's
   instances before installed descriptor transforms for farm/dock geometry; robot
   parts remain chassis-local and require later session base/joint pose inputs.
 - This source API makes no observation, contact-policy, quality or clearance claim.
+- `GeometryMesh.prepared` is the immutable completed local shape/non-sheet-region
+  bounds product. Shape bounds share original shape identity; region products
+  additionally share original region-array identity. `GeometrySource.work` records
+  cold source position/index visits. Same current receipt reuses the product;
+  replacement, retired reads and clear end its owner-held lifetime. Dynamic ray
+  and pose inputs consume it without source-bound preparation.
 
 ## Near-source ray evidence
 
@@ -153,6 +159,7 @@ Cross-package imports use public `@asyra/*` facades. Do not import another app's
   finite point inputs alone may use bounded exact dyadic proofs, including exact
   rational nearest ordering. Non-point uncertainty is never replaced by a rounded
   centre. Work counts include source/region preparation and exact predicates;
-  no retained bounds, ray results or world-vertex copies are cached in this slice.
+  source-local bounds come from QueryGeometry's completed product. Ray results
+  and world-vertex copies are not cached.
 - This geometry evidence is not fruit detection, quality, optical calibration,
   a swept-motion result or an implemented harvesting action/UI workflow.
