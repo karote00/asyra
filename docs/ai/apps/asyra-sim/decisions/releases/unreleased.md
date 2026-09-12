@@ -259,3 +259,22 @@ Pending saves disable both save entry points and guard duplicate dispatch.
   release gates remain open. No Changeset, version bump, tag, merge, publication,
   deployment or App-server startup is authorized by this closeout. The user
   separately authorizes pushing this documentation and tracking its PR checks.
+
+
+### 2026-09-12 - Close M5 delivery and authorize M6 development
+
+- Context: PR #192 delivered a clean exact-source candidate, corrected delivery
+  tooling and operating instructions, 678 isolated tests, 39 packaged browser
+  cases and eight passing CI checks at `9cf5c7f5e`. The user was explicitly told
+  that the representative workload leaves all 298 pairs unresolved and that
+  M1 / 8 GB reference hardware evidence is missing.
+- Decision: accept and close the M5 delivery stage with those gaps preserved,
+  archive `docs/ai/apps/asyra-sim/plans/completed/m5-controlled-pilot.md`, rebase
+  latest main and merge PR #192 once all newest-head CI passes. This is one-time
+  merge authorization. Then start M6 in a new project-local worktree, create its
+  PR and obtain passing CI before requesting user review.
+- Consequences: this supersedes pending M5 closeout and earlier M6 scheduling
+  restrictions, not failed resource evidence or FIRST_RELEASE G1-G8. Capacity,
+  reference hardware, independent numerical/pilot evidence and policy decisions
+  remain release blockers. No M6 merge, publication, deployment, dependency/tool
+  upgrade, version bump, tag or new Changeset is authorized by this closeout.

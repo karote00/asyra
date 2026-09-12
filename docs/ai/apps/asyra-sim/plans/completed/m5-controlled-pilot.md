@@ -1,7 +1,43 @@
 # M5: Controlled-Pilot Candidate
 
-Status: active - preparation authorized 2026-09-12. User review precedes plan
-closeout. M6 independent acceptance and R0 publication remain separate.
+Status: DONE - delivery stage closed 2026-09-12 by explicit user direction.
+
+## Completion decision and retained release gaps
+
+The user accepted M5 closeout after receiving its passing delivery evidence and
+explicit capacity/hardware blockers, and authorized one merge of PR #192 after
+rebasing latest main and all newest-head CI passes. M6 development begins in a
+new worktree after that merge; its PR requires user review, not automatic merge.
+
+Delivered: exact-source isolated consumer/SDK inputs, full original notices and
+checksums, network-restricted packaged journeys, current UI instructions, pilot
+scripts, diagnostic-sharing preview and a maintenance-policy proposal. Source
+`9cf5c7f5ea681a09ab64dd8ab9386d061ee44b2e` passed 678 isolated App tests,
+39 packaged browser cases and all eight CI checks. Its archive SHA-256 is
+`7132f59107e5dff8ba3a3f98a7feac76fc7b16e4ee2aadb7c16d104f8fec75e6`.
+Evidence resides in the M5 worktree's `tmp/m5/CURRENT_EVIDENCE.md` and
+`apps/asyra-sim/.artifacts/consumers/9cf5c7f5ea68-disdKW/`. Later closeout commits
+are documentation evidence, not a new candidate's passing build.
+
+This is an accepted stage closeout with explicitly carried release gaps, not a
+claim that every original M5 exit gate passed. The representative workload still
+exhausts the original-triangle work budget with all 298 pairs unresolved; its
+formal failing test and reports remain preserved in the M5 worktree. M1 / 8 GB
+reference hardware, independent numerical/pilot evidence and final maintenance
+policy remain unavailable or unresolved. They continue to block the applicable
+FIRST_RELEASE G1-G8 gates during M6/R0 review. Do not distribute the reproduction
+artifact as an accepted pilot build or waive these gaps because CI is green.
+
+Closeout contract: move this record, synchronize its direct status references and
+append the App decision history; review links/diff and run current PR checks.
+No runtime, method, budget, assertion, Inspector semantics, dependency, version,
+Changeset, tag, deployment or publication change. The user's request supersedes
+only the earlier pending-closeout and M6 scheduling statements below; measured
+failures and historical evidence remain unchanged.
+
+Canonical record: `docs/ai/apps/asyra-sim/plans/completed/m5-controlled-pilot.md`.
+
+## Historical execution record
 
 ## Bounded task contract
 
