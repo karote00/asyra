@@ -86,9 +86,15 @@ unproved coverage unresolved; it does not invent unvisited endpoint findings.
 This strategy is explicit to the original-part kernel, leaving the historical
 primitive method's ordering unchanged. World-axis bounds use inverse-direction
 projections of the complete source box. When those bounds do not reject a
-mesh pair, fixed midpoint axes of each admitted pose are tried in source order;
+root or hierarchy-node pair, fixed midpoint axes of each admitted pose are
+tried in source order;
 cardinal repeats are omitted and every attempted new axis checkpoints work.
-Only a strict gap above the current search threshold rejects a source subset.
+At the final original triangle pair there are no descendants to avoid: its
+existing world-gap rejection is followed directly by the unchanged complete
+convex query when needed, without additional pose-axis projection. The
+triangle-pair work unit and checkpoint remain before either operation. All
+original triangle geometry and uncertainty are preserved. Only a strict gap
+above the current search threshold rejects a source subset.
 These bounds never supply a contact point or replace closed-solid membership;
 root early returns retain a real source-point upper witness. No pose projections
 are retained across queries. It does not claim completion of the representative

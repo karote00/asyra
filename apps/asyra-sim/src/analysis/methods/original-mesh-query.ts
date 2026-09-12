@@ -241,14 +241,7 @@ export class OriginalMeshQuery {
           this.tick()
           const ab = at ? worldBounds(at.bounds, a.pose) : shapeBounds(a),
             bb = bt ? worldBounds(bt.bounds, b.pose) : shapeBounds(b)
-          const triangleGap = this.projectGap(
-            a,
-            b,
-            at?.bounds,
-            bt?.bounds,
-            boundsGap(ab, bb),
-            searchThreshold
-          )
+          const triangleGap = boundsGap(ab, bb)
           if (triangleGap > searchThreshold) {
             lower = Math.min(lower, triangleGap)
             continue
@@ -347,16 +340,9 @@ export class OriginalMeshQuery {
       for (const at of an?.triangles ?? [undefined])
         for (const bt of bn?.triangles ?? [undefined]) {
           this.tick()
-          let gap = this.projectGap(
-            a,
-            b,
-            at?.bounds,
-            bt?.bounds,
-            boundsGap(
-              at ? worldBounds(at.bounds, a.pose) : shapeBounds(a),
-              bt ? worldBounds(bt.bounds, b.pose) : shapeBounds(b)
-            ),
-            threshold
+          let gap = boundsGap(
+            at ? worldBounds(at.bounds, a.pose) : shapeBounds(a),
+            bt ? worldBounds(bt.bounds, b.pose) : shapeBounds(b)
           )
           if (gap <= threshold) {
             // A box overlap is not a surface overlap. Search an axis, then use

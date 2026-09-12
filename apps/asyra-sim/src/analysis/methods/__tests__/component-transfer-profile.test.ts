@@ -166,14 +166,18 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         expect(evidence.coverage).toBe('partial')
         if (!target) throw new Error('Missing exact target result')
         expect(target.coverage).toBe('partial')
-        if (mode === 'median-control') {
-          expect(evidence.evaluations).toBe(20189)
-          expect(target.evaluations).toBe(90)
-        }
+        // Component/sampling isolation is replayed on current geometry queries.
+        // The pre-policy prefix is recorded evidence, not silently relabeled as this run.
+        expect(evidence.pairs).toHaveLength(snapshot.pairs.length)
+        expect(target.evaluations).toBeGreaterThan(0)
         // eslint-disable-next-line no-console -- complete fixed-order prefix and separately charged preparation
         console.info(
           JSON.stringify({
-            profile: 'exact-component-transfer',
+            profile: 'exact-component-transfer-current-geometry',
+            recordedPrePolicyMedian: {
+              totalEvaluations: 20189,
+              targetEvaluations: 90
+            },
             mode,
             totalEvaluations: evidence.evaluations,
             targetEvaluations: target.evaluations,

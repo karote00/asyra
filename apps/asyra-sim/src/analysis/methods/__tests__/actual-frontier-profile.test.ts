@@ -22,6 +22,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
       'attributes completed and exhausted queries - %s',
       async (mode) => {
         const snapshot = await representativeSnapshot(0)
+        // Assertion/label only: this never changes runtime policy. The control requires
+        // the explicitly verified pre-policy source used in the recorded comparison.
+        const prePolicy = process.env.SIM_PROJECTION_BASELINE === '1'
         let active = false,
           segment = -1,
           time: readonly [number, number] = [0, 0]
@@ -36,6 +39,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           before: number
           after: number
           work: number
+          milliseconds: number
           status: 'running' | 'complete' | 'exhausted'
           median: number
           refinement: number
@@ -183,6 +187,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             before: context.work,
             after: context.work,
             work: 0,
+            milliseconds: 0,
             status: 'running',
             median: 0,
             refinement: 0,
@@ -202,6 +207,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
               penetration: { calls: 0, axes: 0, rejections: 0 }
             }
           }
+          const started = performance.now()
           rows.push(row)
           current = row
           currentContext = context
@@ -223,6 +229,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             if (error instanceof MeshWorkLimit) row.status = 'exhausted'
             throw error
           } finally {
+            row.milliseconds = performance.now() - started
             row.after = context.work
             row.work = row.after - row.before
             current = undefined
@@ -353,8 +360,8 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         if (mode === 'representative') {
           const evidence = runOriginalPartMethod(snapshot)
           evaluations = evidence.evaluations
-          expect(evaluations).toBe(20234)
-          expect(target?.evaluations).toBe(135)
+          expect(evaluations).toBe(prePolicy ? 20234 : 20237)
+          expect(target?.evaluations).toBe(prePolicy ? 135 : 138)
           expect(target?.coverage).toBe('partial')
         } else {
           const pair = snapshot.pairs.find(
@@ -395,6 +402,15 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         const frontierSegment = frontier?.segment ?? 74
         const summary = (selected: Row[]) => ({
           work: selected.reduce((sum, row) => sum + row.work, 0),
+          milliseconds: selected.reduce(
+            (sum, row) => sum + row.milliseconds,
+            0
+          ),
+          convexCalls: selected.reduce((sum, row) => sum + row.convexCalls, 0),
+          convexMilliseconds: selected.reduce(
+            (sum, row) => sum + row.convexMilliseconds,
+            0
+          ),
           staticWork: selected
             .filter((row) => row.kind === 'static')
             .reduce((sum, row) => sum + row.work, 0),
@@ -447,12 +463,19 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           JSON.stringify({
             profile: 'actual-frontier',
             mode,
+            geometryPolicy: prePolicy
+              ? 'recorded-pre-policy-control'
+              : 'current',
             evaluations,
             targetEvaluations: target.evaluations,
             target: summary(rows),
             handoffWork,
             commonPrefix: {
               fromSegment: 114,
+              query: summary(rows.filter((row) => row.segment >= 114)),
+              leaves: targetLeaves.filter(
+                (leaf) => leaf.start >= snapshot.trajectory.keyframes[114].time
+              ),
               segments: common.length,
               work: common.reduce(
                 (sum, row) => sum + row.work + row.handoffWork,
