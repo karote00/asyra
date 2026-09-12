@@ -7,6 +7,25 @@ import type { RobotPart } from '../domain/robot-model'
 import type { RobotBody } from '../domain/robot-kinematics'
 import { transformRobotPoint } from '../domain/robot-kinematics'
 import type { Point3 } from '../domain/greenhouse'
+import type { SourceRegion } from '../domain/source-occupancy'
+
+export interface GeometryBounds {
+  readonly min: Point3
+  readonly max: Point3
+}
+export interface PreparedGeometry {
+  readonly bounds: GeometryBounds
+  readonly regions: readonly {
+    readonly source: SourceRegion
+    readonly bounds: GeometryBounds
+  }[]
+}
+export interface GeometryWork {
+  readonly shapeBounds: number
+  readonly vertexVisits: number
+  readonly regionBounds: number
+  readonly regionIndexVisits: number
+}
 
 /** Composition-issued same-update tuple; currentness requires original identity. */
 export interface GeometryReceipt {
@@ -28,6 +47,7 @@ export interface GeometryMesh {
   readonly origin:
     Readonly<SiteMesh> | DockSource['meshes'][number] | Readonly<RobotPart>
   readonly shape: SpatialShape
+  readonly prepared: PreparedGeometry
   readonly descriptor?: SpatialMesh
   readonly layer?: SiteMesh['layer']
   readonly body?: RobotBody
@@ -39,6 +59,7 @@ export interface GeometrySource {
   readonly shapes: readonly SpatialShape[]
   readonly meshes: readonly GeometryMesh[]
   readonly fruits: PreparedScene['fruits']
+  readonly work: GeometryWork
 }
 const placementKey = (position: readonly number[], yaw: number) =>
   `${position[0]}:${position[1]}:${position[2]}:${yaw}`
@@ -66,6 +87,40 @@ export class QueryGeometry {
     if (!receipt.robot.rig) throw new Error('Robot rigid ownership unavailable')
     const shapes = new Set<SpatialShape>()
     const meshes: GeometryMesh[] = []
+    const work = {
+      shapeBounds: 0,
+      vertexVisits: 0,
+      regionBounds: 0,
+      regionIndexVisits: 0
+    }
+    const localBounds = new Map<SpatialShape, GeometryBounds>()
+    const products = new Map<
+      SpatialShape,
+      Map<readonly SourceRegion[], PreparedGeometry>
+    >()
+    const prepareBounds = (
+      shape: Extract<SpatialShape, { kind: 'triangles' }>,
+      region?: SourceRegion
+    ): GeometryBounds => {
+      const min: [number, number, number] = [Infinity, Infinity, Infinity]
+      const max: [number, number, number] = [-Infinity, -Infinity, -Infinity]
+      const start = region?.indexStart ?? 0
+      const end = region
+        ? start + region.indexCount
+        : shape.positions.length / 3
+      if (region) work.regionBounds++
+      else work.shapeBounds++
+      for (let index = start; index < end; index++) {
+        const offset = (region ? shape.indices[index] : index) * 3
+        if (region) work.regionIndexVisits++
+        else work.vertexVisits++
+        for (let axis = 0; axis < 3; axis++) {
+          min[axis] = Math.min(min[axis], shape.positions[offset + axis])
+          max[axis] = Math.max(max[axis], shape.positions[offset + axis])
+        }
+      }
+      return Object.freeze({ min: Object.freeze(min), max: Object.freeze(max) })
+    }
     const parts = new Map<
       SpatialShape,
       { part: CropPart; model: SceneFruit['model'] }
@@ -95,11 +150,39 @@ export class QueryGeometry {
       }
       plants.set(model, group)
     }
-    const register = (mesh: GeometryMesh) => {
+    const register = (mesh: Omit<GeometryMesh, 'prepared'>) => {
       if (mesh.shape.kind !== 'triangles')
         throw new Error('Unsupported physical source shape')
+      let box = localBounds.get(mesh.shape)
+      if (!box) {
+        box = prepareBounds(mesh.shape)
+        localBounds.set(mesh.shape, box)
+      }
+      let mappings = products.get(mesh.shape)
+      if (!mappings) {
+        mappings = new Map()
+        products.set(mesh.shape, mappings)
+      }
+      let prepared = mappings.get(mesh.origin.regions)
+      if (!prepared) {
+        const shape = mesh.shape
+        prepared = Object.freeze({
+          bounds: box,
+          regions: Object.freeze(
+            mesh.origin.regions
+              .filter((region) => region.kind !== 'sheet')
+              .map((region) =>
+                Object.freeze({
+                  source: region,
+                  bounds: prepareBounds(shape, region)
+                })
+              )
+          )
+        })
+        mappings.set(mesh.origin.regions, prepared)
+      }
       shapes.add(mesh.shape)
-      meshes.push(Object.freeze(mesh))
+      meshes.push(Object.freeze({ ...mesh, prepared }))
     }
     for (const mesh of receipt.scene.meshes) {
       if (mesh.layer === 'dimensions') continue
@@ -157,7 +240,8 @@ export class QueryGeometry {
       receipt,
       shapes: Object.freeze([...shapes]),
       meshes: Object.freeze(meshes),
-      fruits: receipt.scene.fruits
+      fruits: receipt.scene.fruits,
+      work: Object.freeze(work)
     })
     this.source = source
     return source
@@ -166,7 +250,12 @@ export class QueryGeometry {
   read(source: GeometrySource): GeometrySource {
     if (source !== this.source)
       throw new Error('Unissued or retired query geometry')
-    this.assertCurrent(source.receipt)
+    try {
+      this.assertCurrent(source.receipt)
+    } catch (error) {
+      this.source = undefined
+      throw error
+    }
     return source
   }
 

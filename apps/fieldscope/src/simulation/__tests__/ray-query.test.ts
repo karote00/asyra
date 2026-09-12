@@ -336,6 +336,7 @@ it('profiles actual C hit, miss, net, leaf and both cultivar sources without reg
     console.info(
       'near-ray source profile',
       JSON.stringify({
+        preparation: source.work,
         first: first.work,
         second: second.work,
         milliseconds: performance.now() - started,
@@ -370,10 +371,13 @@ it('profiles actual C hit, miss, net, leaf and both cultivar sources without reg
     )
     expect(first.work.fk).toBe(1)
     expect(second.work.fk).toBe(1)
-    expect(first.work.shapeBounds).toBe(source.shapes.length)
-    expect(first.work.vertexVisits).toBeGreaterThan(0)
-    expect(first.work.regionBounds).toBeGreaterThan(0)
-    expect(second.work.regionIndexVisits).toBe(first.work.regionIndexVisits)
+    expect(first.work.shapeBounds).toBe(0)
+    expect(first.work.vertexVisits).toBe(0)
+    expect(first.work.regionBounds).toBe(0)
+    expect(second.work.regionIndexVisits).toBe(0)
+    expect(source.work.shapeBounds).toBe(source.shapes.length)
+    expect(source.work.vertexVisits).toBeGreaterThan(0)
+    expect(source.work.regionIndexVisits).toBeGreaterThan(0)
     expect(second.work.exactPredicates).toBe(first.work.exactPredicates)
     expect(first.work.exactPredicates).toBeLessThan(first.work.triangles)
     expect(buildCrop).not.toHaveBeenCalled()
@@ -636,5 +640,45 @@ it('validates the single detached accessor snapshot before FK or query work', ()
     expect(fk).not.toHaveBeenCalled()
   } finally {
     fk.mockRestore()
+  }
+})
+
+it('preserves fresh-preparation results while time, rays and working joints reuse static bounds', () => {
+  const { site, source, queries } = fixture([triangle('reused-surface', 5)])
+  const freshOwner = new QueryGeometry({
+    isCurrentReceipt: (value) => value === source.receipt,
+    isCurrentScene: site.isCurrentScene.bind(site),
+    isCurrentRobot: projection.isCurrentSource.bind(projection),
+    isCurrentDock: projection.isCurrentDockSource.bind(projection)
+  })
+  const freshQueries = new RayQueries(freshOwner)
+  for (const time of [0, 0.2, 0.5]) {
+    const input = batch()
+    input.time = time
+    input.rays[0].direction = [time, 0, 1]
+    if (!input.robot) throw new Error('Missing dynamic robot fixture')
+    input.robot.joints = { ...input.robot.joints, yaw: time }
+    const retained = queries.query(source, input)
+    freshOwner.clear()
+    const fresh = freshQueries.query(freshOwner.prepare(source.receipt), input)
+    expect(retained.results.map((result) => result.status)).toEqual(
+      fresh.results.map((result) => result.status)
+    )
+    for (let i = 0; i < retained.results.length; i++) {
+      const a = retained.results[i],
+        b = fresh.results[i]
+      if (a.status === 'hit' && b.status === 'hit') {
+        expect(a.mesh.origin === b.mesh.origin).toBe(true)
+        expect([a.instance, a.triangle, a.distance, ...a.barycentric]).toEqual([
+          b.instance,
+          b.triangle,
+          b.distance,
+          ...b.barycentric
+        ])
+      } else if (a.status === 'unknown' && b.status === 'unknown')
+        expect(a.reason).toBe(b.reason)
+    }
+    expect(retained.work.vertexVisits + retained.work.regionIndexVisits).toBe(0)
+    expect(retained.work.fk).toBe(1)
   }
 })
