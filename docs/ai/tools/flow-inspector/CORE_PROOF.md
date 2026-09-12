@@ -335,6 +335,39 @@ in the checkout never adds it. New authoritative target assessment and later
 integration acceptance always require the retained verification-byte authority,
 independently of whether older standalone version operations remain readable.
 
+For new source-aware candidate proofs, version preparation uses that attempt's
+retained admitted contract and verification descriptor. Its selector byte identity
+comes from the admitted test-role entry; observed selectors still come from the
+registered retained runner report. Do not reload mutable checkout metadata to
+choose the candidate contract or verifier. Before the first reference handoff for
+an attempt in this service lifetime, the source owner verifies its retained
+ordinary bytes. The service retains the exact version-reference tuple privately
+for reuse with the same immutable source admission, and clears it on close or
+identity failure. This introduces no persistent verified flag.
+
+On startup, references already retained in versions or reviews are resolved only
+within this service's repository and fixed attempt directory. Match their full
+repository/attempt/HEAD/source/configuration/descriptor tuple to the current
+source admission and check each referenced attempt's bytes once. Missing or changed
+source-tree bytes leave that reference unavailable for new handoffs while its
+historical version remains readable. Existing missing or corrupt source-manifest
+admission still rejects startup under the source-admission contract. Every new
+reference handoff, later target resolver and producer must consult this service
+availability, not merely the presence of a saved reference. Later composition
+still verifies the bytes it uses.
+
+A repeated preparation may reuse the immutable candidate from that same attempt,
+but the version owner must compare it against the current exact history base and
+requested relations. Return an existing review only when that full review identity
+matches; a changed accepted base produces a new exact-base review or an explicit
+availability error. A previously accepted or rejected review may remain readable
+as historical replay; it cannot silently stand in for a new-base review or claim
+current source availability. Replay and ordinary reads do not reread verifier bytes
+or the report. Historical proofs without source-contract authority preserve their
+existing standalone preparation behavior without adding a verification reference.
+This service handoff does not change explicit version acceptance or target-baseline
+acceptance requirements.
+
 ### Accepted-base CI
 
 The aggregate must evaluate every obligation in the declared supported set,
