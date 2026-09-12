@@ -874,3 +874,26 @@ read 12 original vertices for two pairs, prepared six frames, and performed zero
 FK, source generation or bounds preparation (about 1.31 ms locally). Robot batches
 prove one FK and frame reuse. No visual/runtime path changed. This closes only
 selected static surfaces, not volume/contact or continuous movement clearance.
+
+Next D Step Card: continuous fixed-rotation translation of selected source surface
+pairs. Same owner/source preparation as the completed static primitive. Inputs
+bind original witnesses, start pose and two world displacements to one closed
+interval and explicit throughout-interval synthetic leaf/fruit assumptions.
+Publish swept surface relation only; no movement, contact or volume clearance.
+Complete triangle SAT axis projection inequalities share one normalized time.
+Exact singleton rational clipping or conservative possible/guaranteed common
+intervals provide the proof; endpoints or per-axis unrelated times cannot clear
+or manufacture a sweep. Any contact time is a conservative occurrence enclosure.
+
+Allowlist: collision.ts/direct collision.test.ts, API_SURFACES and these docs.
+SurfaceQueries.sweep and transient sweep input/result names belong to D; no new
+persistence or wire identity. Reuse original geometry/FK/frame owner output and
+existing scalar interval/dyadic arithmetic without a producer change or cache.
+Formal tests first: mid-interval crossing despite clear endpoints, brief/edge/
+endpoint contact, common/zero-relative displacement, coplanar motion, incompatible
+axis windows, uncertainty, validity and stale input. Retain static/ray controls,
+original-source identity and zero-generation/bounds/FK reuse gates; run full app
+unit/type/lint/naming/build and independent review. Stop for needed rotation,
+missing interval assumption or a proof that requires source/body/contact scope
+outside this primitive. Full coverage/volume/contact and articulated planning
+remain subsequent prerequisites before normal session motion can be admitted.

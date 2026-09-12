@@ -554,3 +554,20 @@ Feature: Harvest robot feasibility and supervised harvesting
     And separated nested surfaces do not prove their enclosed material volumes disjoint
     And tire, joint and tool-target contacts are not silently exempted
     And no endpoint-only result admits a movement
+
+
+  @M3
+  Scenario: A translated surface crosses an obstacle between separated endpoints
+    Given two original source triangles with separated initial and final poses
+    And a fixed-orientation linear translation crossing during the shared interval
+    When the continuous source-pair query evaluates the complete interval
+    Then it reports a supported swept intersection or unresolved numerical evidence
+    And endpoint separation alone never grants swept separation
+    And this pair result does not exempt support contacts or admit full robot movement
+
+  @M3
+  Scenario: Every axis must share the same contact time
+    Given source triangles whose possible projection overlaps occur at incompatible times
+    When the continuous source-pair query intersects the time constraints
+    Then it reports swept separation only with a complete common-time proof
+    And instantaneous leaf evidence cannot certify the full movement interval
