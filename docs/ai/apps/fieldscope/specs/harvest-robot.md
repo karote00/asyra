@@ -322,6 +322,28 @@ M2 runtime/history and ordinary bilingual desktop/mobile robot/browser checks;
 inspect the same parked source close-up. Later D and motion UI must separately
 prove speed boundaries, retained-fruit transforms and interval collisions.
 
+## C - M3 installed dock source handoff
+
+The charging station's existing platform, pedestal, contacts and exchange stand
+remain separate source meshes at the authored dock X/Z. C supplies an immutable
+installed dock revision and those exact admitted meshes to D, using the same
+completed product for presentation. The near source triangles and materials are
+unchanged; aggregate focus bounds are not a solid collision shape. The platform
+occupies its original local Y interval [-0.03, 0]; its top does not imply permission
+to intersect the charger, shelf, legs or other station pieces.
+
+Dock geometry is prepared once per projection lifetime. Moving the authored dock
+replaces the installed handle while reusing the same shapes. Robot dimension/tool,
+mission and presentation changes preserve a dock handle when its placement is
+unchanged. Disposal retires it; copied handles cannot establish currentness.
+The robot route annotation is absent from the physical dock source. This handoff
+makes no support-contact, charging-contact or motion-clearance decision.
+
+Acceptance: prove exact mesh/shape identities shared with presentation, unchanged
+source coordinates/materials, distinct station pieces, installed placement,
+retirement on dock movement/disposal and zero extra station/crop generation on
+reads or unrelated edits. Preserve existing robot/browser projection checks.
+
 ## D - M3 deterministic simulation contract (planned)
 
 M3 is an explicitly synthetic, in-browser simulation of the authored mission.
