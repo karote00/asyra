@@ -309,3 +309,31 @@ observation/collision owners decide unknown/blocked evidence, not this source.
 Lifetime: one composition source receipt; unique source shape registration once,
 instance placement references reused on reads/queries. No additional cache or
 unprofiled acceleration structure is proposed.
+
+### D near-source ray query
+
+Owner: D geometry query helper, before observation interpretation. Inputs: issued
+current shared geometry, synthetic batch time/validity, current robot base transform
+and joints, explicit leaf source-pose/all-fruit-attached state, finite rays/ranges.
+Outputs: immutable batch-bound nearest source hit/within-range miss/unknown;
+original mesh/instance/triangle identity, barycentric coordinates and metre distance.
+Conditions: source receipt/currentness and detached dynamic/ray schema checked
+before work and before publication; unknown motion/disposition/expired evidence
+has no valid-hit bypass. No session clock change or caller-forged completed result.
+Allowed: QueryGeometry read handoff, original near source arrays/placements, C FK
+once per batch, deterministic engine-neutral triangle/rigid-transform arithmetic.
+Forbidden: source generators, D detection or quality claims, Three raycast,
+UI camera input as sensor truth, opacity/distant/visibility filtering, blanket
+camera/robot/support exclusions, AABB occupancy or endpoint-only motion clearance.
+Boundary: simulation/ray-query.ts and `simulation/__tests__/ray-query.test.ts`;
+simulation/geometry.ts may expose the same owner source-query lifetime only after
+actual profiling justifies retained shape indexing. API_SURFACES documents the
+implemented query. Other D/session, C, runtime/UI and engine production are excluded.
+Spec: D near-source ray evidence plus existing shared source/motion/quality clauses.
+Failure owner: ray provider rejects malformed/stale batches and reports unknown
+for missing state or unresolved geometric ambiguity; observation interpretation
+and full interval collision remain their subsequent owners.
+Lifetime: current shared source; dynamic transforms/validity belong to the batch,
+FK once per batch, query-local work reset per batch. No retained query results.
+Cache dimensions: none yet. Any retained index requires measured same-source work,
+exact uncached equivalence and lifetime/bounds/disposal proof before implementation.

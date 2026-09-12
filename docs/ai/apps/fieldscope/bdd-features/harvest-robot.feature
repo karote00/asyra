@@ -457,3 +457,17 @@ Feature: Harvest robot feasibility and supervised harvesting
     When its receipt is copied or any source is retired or replaced
     Then that source cannot be used for observation or motion admission
     And no partial successor geometry is published
+
+  @M3
+  Scenario: A synthetic ray reports the nearest original obstruction
+    Given a current near geometry source and explicit valid synthetic scene state
+    When a bounded ray intersects several source surfaces
+    Then its result identifies the nearest original mesh, instance and triangle
+    And it does not label a detected fruit or admit a harvesting action
+
+  @M3
+  Scenario: A ray miss does not turn unknown scene state into empty coverage
+    Given a synthetic ray with missing leaf state or retired geometry
+    When its query is requested
+    Then it cannot produce a valid within-range miss
+    And no row is declared empty or safe to traverse
