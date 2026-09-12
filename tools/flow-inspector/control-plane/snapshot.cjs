@@ -4,6 +4,7 @@ const path = require('node:path')
 const { createHash } = require('node:crypto')
 const { execFileSync } = require('node:child_process')
 const vm = require('node:vm')
+const { pathToFileURL } = require('node:url')
 const { admitContract } = require('./contracts.cjs')
 
 const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex')
@@ -76,12 +77,117 @@ function createVerificationSource(fullFiles, contract) {
   return Object.freeze({ ...payload, digest: sha256(JSON.stringify(payload)) })
 }
 
+function createDerivedExecution(input) {
+  const requireValue = (condition, message) => {
+    if (!condition) throw new Error('Execution source: ' + message)
+  }
+  requireValue(
+    input &&
+      typeof input === 'object' &&
+      !Array.isArray(input) &&
+      Object.keys(input).length === 2 &&
+      Object.hasOwn(input, 'sourceRoot') &&
+      Object.hasOwn(input, 'verificationSource'),
+    'only trusted source location and verification descriptor are accepted'
+  )
+  const { sourceRoot, verificationSource } = input
+  requireValue(
+    typeof sourceRoot === 'string' &&
+      path.isAbsolute(sourceRoot) &&
+      sourceRoot === path.resolve(sourceRoot) &&
+      !sourceRoot.includes('\\') &&
+      !sourceRoot.includes('\0') &&
+      path.basename(sourceRoot) === 'source',
+    'trusted canonical source root required'
+  )
+  const configurationFile =
+    'tools/flow-inspector/control-plane/candidate-config.mjs'
+  const bootstrapFile =
+    'tools/flow-inspector/control-plane/candidate-bootstrap.cjs'
+  const original = verificationSource?.roles?.configuration
+  requireValue(
+    verificationSource?.format === 1 &&
+      /^[a-f0-9]{64}$/.test(verificationSource.digest ?? '') &&
+      typeof original === 'string' &&
+      !original.includes('\\') &&
+      !original.includes('\0') &&
+      !original
+        .split('/')
+        .some((part) => !part || part === '.' || part === '..'),
+    'original verification descriptor required'
+  )
+  requireValue(
+    ![configurationFile, bootstrapFile].some(
+      (file) =>
+        runtimePath(file) ||
+        Object.values(verificationSource.roles).includes(file)
+    ),
+    'generated paths overlap original source roles'
+  )
+  const configuration = `import original from ${JSON.stringify(pathToFileURL(path.join(sourceRoot, original)).href)};
+import { stripTypeScriptTypes } from 'node:module';
+export default {
+  ...original, esbuild: false,
+  optimizeDeps: { noDiscovery: true, include: [] },
+  plugins: [...(original.plugins ?? []), {
+    name: 'contained-native-typescript', enforce: 'pre',
+    transform(code, id) {
+      if (!id.split('?')[0].endsWith('.ts') || id.includes('/node_modules/')) return;
+      return { code: stripTypeScriptTypes(code, { mode: 'transform', sourceMap: false }), map: null };
+    }
+  }],
+  test: { ...original.test, pool: 'threads', maxWorkers: 1, minWorkers: 1,
+    deps: { optimizer: { ssr: { enabled: false }, web: { enabled: false } } }
+  }
+};`
+  const bootstrap = `const { pathToFileURL } = require('node:url');
+const [, , owner, runner, ...args] = process.argv;
+setInterval(() => {
+  if (process.ppid !== Number(owner)) process.kill(-process.pid, 'SIGKILL');
+}, 100).unref();
+process.argv = [process.execPath, runner, ...args];
+import(pathToFileURL(runner).href).catch(() => process.exit(2));`
+  const files = Object.freeze([
+    Object.freeze({ path: bootstrapFile, content: bootstrap }),
+    Object.freeze({ path: configurationFile, content: configuration })
+  ])
+  const payload = {
+    format: 1,
+    policy: 'contained-native-typescript-v1',
+    verificationSourceDigest: verificationSource.digest,
+    roles: Object.freeze({
+      configuration: configurationFile,
+      bootstrap: bootstrapFile
+    }),
+    files: Object.freeze(
+      files.map(({ path, content }) =>
+        Object.freeze({
+          path,
+          size: Buffer.byteLength(content),
+          digest: sha256(content)
+        })
+      )
+    )
+  }
+  return Object.freeze({
+    files,
+    executionSource: Object.freeze({
+      ...payload,
+      digest: sha256(JSON.stringify(payload))
+    })
+  })
+}
+
 function validateSourceSnapshot(
   snapshot,
   contract,
-  fullFiles = snapshot.files
+  fullFiles = snapshot.files,
+  executionContext
 ) {
   const present = Object.hasOwn(snapshot, 'verificationSource')
+  const executionPresent = Object.hasOwn(snapshot, 'executionSource')
+  if (executionPresent && !present)
+    throw new Error('Execution source: original verification identity required')
   if (present && !Object.hasOwn(snapshot, 'runtimeSource'))
     throw new Error('Verification source: runtime identity required')
   const runtimeSource = validateRuntimeSource(snapshot, fullFiles)
@@ -101,7 +207,38 @@ function validateSourceSnapshot(
     throw new Error(
       'Verification source: descriptor does not bind captured role bytes'
     )
-  return Object.freeze({ runtimeSource, verificationSource })
+  if (!executionPresent)
+    return Object.freeze({ runtimeSource, verificationSource })
+  const { executionSource } = createDerivedExecution({
+    sourceRoot: executionContext?.sourceRoot,
+    verificationSource
+  })
+  const paths = new Set(
+    [
+      ...runtimeSource.files,
+      ...verificationSource.files,
+      ...executionSource.files
+    ].map((entry) => entry.path)
+  )
+  if (
+    fullFiles.length !== paths.size ||
+    fullFiles.some((entry) => !paths.has(entry.path)) ||
+    executionSource.files.some((entry) => {
+      const captured = fullFiles.find((file) => file.path === entry.path)
+      return (
+        !captured ||
+        captured.size !== entry.size ||
+        captured.digest !== entry.digest
+      )
+    }) ||
+    JSON.stringify(snapshot.executionSource) !==
+      JSON.stringify(executionSource) ||
+    snapshot.configurationDigest !== executionSource.digest
+  )
+    throw new Error(
+      'Execution source: generated bytes, full inventory or configuration identity mismatch'
+    )
+  return Object.freeze({ runtimeSource, verificationSource, executionSource })
 }
 
 function safePath(root, relative) {
@@ -459,6 +596,7 @@ function captureSource(repositoryRoot, runDirectory, contract) {
 }
 
 module.exports = {
+  createDerivedExecution,
   verifyRetainedSource,
   composeSource,
   captureSource,
