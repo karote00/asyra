@@ -2711,21 +2711,39 @@ test(
         await page.screenshot({ path: path.join(artifacts, name + '.png') })
       }
       await page.setViewportSize({ width: 1600, height: 1100 })
-      await frame.locator('#agent-scenario').selectOption('scope-violation')
-      await frame.locator('#agent-start').click()
-      await expect(frame.locator('#agent-work-binding')).toHaveText('')
-      const id = server.service.getTarget(target.id).works[0].taskIds[0]
-      await server.service.waitTask(id)
-      assert.deepEqual(server.service.getTask(id).task.workBinding, {
-        targetId: target.id,
-        workId: work.id,
-        admissionId: server.service.getTarget(target.id).history[1].request
-          .requestId
-      })
+      const readState = server.service.state
+      const executionAvailable = readState().tasks.available
+      // Exercise unavailable containment on every host, not only Linux CI.
+      server.service.state = () => {
+        const state = readState()
+        return { ...state, tasks: { ...state.tasks, available: false } }
+      }
       await frame.locator('#refresh').click()
-      await expect(frame.locator('#target-items')).toContainText(
-        'Assessment: unknown'
-      )
+      await expect(frame.locator('#agent-start')).toBeDisabled()
+      assert.equal(server.service.state().tasks.records.length, 0)
+      await expect(frame.locator('#agent-work-binding')).toContainText(work.id)
+      server.service.state = readState
+      if (executionAvailable) {
+        await frame.locator('#refresh').click()
+        await frame.locator('#agent-scenario').selectOption('scope-violation')
+        await frame.locator('#agent-start').click()
+        await expect(frame.locator('#agent-work-binding')).toHaveText('')
+        const id = server.service.getTarget(target.id).works[0].taskIds[0]
+        await server.service.waitTask(id)
+        assert.deepEqual(server.service.getTask(id).task.workBinding, {
+          targetId: target.id,
+          workId: work.id,
+          admissionId: server.service.getTarget(target.id).history[1].request
+            .requestId
+        })
+        await frame.locator('#refresh').click()
+        await expect(frame.locator('#target-items')).toContainText(
+          'Assessment: unknown'
+        )
+      } else {
+        await expect(frame.locator('#agent-start')).toBeDisabled()
+        assert.equal(server.service.state().tasks.records.length, 0)
+      }
       assert.deepEqual(errors, [])
       fs.writeFileSync(
         path.join(artifacts, 'review.json'),
