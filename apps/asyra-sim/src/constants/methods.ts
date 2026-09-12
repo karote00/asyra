@@ -6,6 +6,6 @@ export const MethodIds = {
 
 export const MethodVersions = {
   CONTINUOUS_CLEARANCE: '0.1.0',
-  ORIGINAL_PART_CLEARANCE: '1.0.1',
+  ORIGINAL_PART_CLEARANCE: '1.0.2',
   STATIC_SPHERES: '0.1.0'
 } as const

@@ -62,7 +62,13 @@ hierarchy rejection, but cannot reject an intersecting region. Existing work
 and uncertainty limits remain in force; unfinished checks never imply clearance.
 
 Method version `1.0.1` corrects the early clearance-witness exit in `1.0.0`.
-New studies select the corrected version. Saved studies and immutable reports
+Version `1.0.2` changes deterministic dual-tree traversal: expand the node with
+the larger maximum world-bound extent, choosing the left side on exact ties,
+while retaining the source triangles, numerical predicates and all work limits.
+This changes query work and may select a different valid witness, so it has its
+own execution version; it does not claim completion of the representative
+resource or reference-hardware gates. New studies select the installed version.
+Saved studies and immutable reports
 keep their original method version; explicitly select the installed version and
 save the study before rerunning. The old implementation is not installed or
 silently aliased, and old reports are not relabeled as corrected evidence.

@@ -17,6 +17,7 @@ import {
   shapeBounds,
   worldBounds,
   worldPoint,
+  type Bounds,
   type MeshIndex,
   type PreparedMeshIndex,
   type MeshNode
@@ -25,6 +26,20 @@ import { shapeMembership } from './mesh-membership'
 
 const ops = poseOperations(intervalAlgebra)
 export class MeshWorkLimit extends Error {}
+
+/** Deterministic dual-tree descent; bounds select work, never replace geometry. */
+function splitLeft(
+  a: MeshNode | undefined,
+  b: MeshNode | undefined,
+  ab: Bounds,
+  bb: Bounds
+): boolean {
+  if (!a?.children) return false
+  if (!b?.children) return true
+  const width = (bounds: Bounds) =>
+    Math.max(...bounds.map((axis) => axis[1] - axis[0]))
+  return width(ab) >= width(bb)
+}
 
 /** One execution-owned query context. No renderer, document mutation or global state. */
 export class OriginalMeshQuery {
@@ -136,15 +151,14 @@ export class OriginalMeshQuery {
       const pair = pending.pop()
       if (!pair) throw new Error('Missing pending mesh pair')
       const [an, bn] = pair
-      const bound = boundsGap(
-        an ? worldBounds(an.bounds, a.pose) : shapeBounds(a),
-        bn ? worldBounds(bn.bounds, b.pose) : shapeBounds(b)
-      )
+      const ab = an ? worldBounds(an.bounds, a.pose) : shapeBounds(a)
+      const bb = bn ? worldBounds(bn.bounds, b.pose) : shapeBounds(b)
+      const bound = boundsGap(ab, bb)
       if (bound > searchThreshold) {
         lower = Math.min(lower, bound)
         continue
       }
-      if (an?.children) {
+      if (an?.children && splitLeft(an, bn, ab, bb)) {
         for (const child of an.children) pending.push([child, bn])
         continue
       }
@@ -222,15 +236,14 @@ export class OriginalMeshQuery {
       const pair = pending.pop()
       if (!pair) throw new Error('Missing pending mesh pair')
       const [an, bn] = pair
-      const gap = boundsGap(
-        an ? worldBounds(an.bounds, a.pose) : shapeBounds(a),
-        bn ? worldBounds(bn.bounds, b.pose) : shapeBounds(b)
-      )
+      const ab = an ? worldBounds(an.bounds, a.pose) : shapeBounds(a)
+      const bb = bn ? worldBounds(bn.bounds, b.pose) : shapeBounds(b)
+      const gap = boundsGap(ab, bb)
       if (gap > threshold) {
         lower = Math.min(lower, gap)
         continue
       }
-      if (an?.children) {
+      if (an?.children && splitLeft(an, bn, ab, bb)) {
         for (const child of an.children) pending.push([child, bn])
         continue
       }
