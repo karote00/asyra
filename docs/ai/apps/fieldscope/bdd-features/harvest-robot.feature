@@ -544,3 +544,13 @@ Feature: Harvest robot feasibility and supervised harvesting
     When the source provides no supported interior or outside proof
     Then origin occupancy remains unknown instead of declaring material or clear air
     And a farther forward surface cannot hide that origin uncertainty
+
+
+  @M3
+  Scenario: Static surface evidence does not grant movement or volume clearance
+    Given current original scene and robot source triangles at a synthetic pose
+    When the source pair query compares their complete triangles
+    Then it reports separation, intersection or numerical uncertainty with original witnesses
+    And separated nested surfaces do not prove their enclosed material volumes disjoint
+    And tire, joint and tool-target contacts are not silently exempted
+    And no endpoint-only result admits a movement
