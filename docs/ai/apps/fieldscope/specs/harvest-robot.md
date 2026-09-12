@@ -367,6 +367,53 @@ Each active clock advance processes crossed finite route/checkpoint events in or
 it may not skip an obstacle, pick confirmation or charging interlock. Identical
 admitted inputs and ordered intents produce identical state and event results.
 
+### Dispatch admission boundary
+
+D captures the completed B report and farm settings for one canonical mission
+revision, with the original owner-issued C scene/robot handles. User/configuration
+and synthetic evidence data are detached and frozen; already admitted source
+handles retain identity. Same revision numbers on cloned or retired handles are
+not current-source evidence. Composition issues a canonical receipt binding the
+B report, farm and C handles from the same completed update, with a current-receipt
+identity predicate. D rejects a stale or forged receipt even while C sources are
+still current; a caller-supplied revision number is insufficient. The B report's completed `route` supplies A's ordinal
+input; D never repeats strip-ID resolution or rebuilds C geometry.
+
+Simulation timestamps use seconds. Every dispatch bundle has a nonempty evidence
+identity, explicit synthetic source, mission/scene/robot revisions, observed time
+and validity interval. Validity is half-open [validFrom, validUntil), with finite
+nonnegative values and validFrom <= observedAt <= now < validUntil. There is no
+implicit lifetime, future observation, automatic renewal or evidence-time override
+of the current clock. Missing/invalid identities and times reject before queries.
+
+Synthetic survey values feed A's lane screen for the captured route. Battery SOC
+and uncertainty are observations; configured capacity, usable fraction, work,
+return, contingency and reserve budgets remain the mission's declared estimates.
+Crate evidence supplies explicit synthetic load/CoG/fill assumptions, identity,
+cultivar compatibility and known tare/latch; the mission payload limit remains
+binding. A's load result is stowed screening only. Incomplete crate or dock evidence,
+unknown survey, held/exchange load, or held/return-to-charge energy cannot dispatch.
+A's design report remains unchanged and unknown design evidence is never promoted.
+
+Pre-run posture is stowed (all approved rig joints at zero), and the robot source
+must have an admitted working rig. Unsupported rig or unknown posture holds Start.
+The admission owner constructs required movement requests from this captured
+mission, rather than accepting caller-selected requests: dispatch starts at its
+dock, reaches its selected route start and covers that straight lane to its end;
+return connects that route end back to the same dock. Each request names its
+purpose, exact source revisions, stowed pose, route/dock coordinates and explicit
+finite positive query interval within the evidence validity. The collision owner
+must cover these required poses/route, preserving their order and full source
+bodies. An empty or zero-motion path cannot satisfy separated required poses.
+
+Movement clearance comes from the composition-owned query provider over the same
+C sources, for explicitly identified dispatch and return movement requests. Its
+results must bind those exact requests, revisions and time intervals and be fully
+clear; missing/empty/blocked/unknown or wrong-purpose/route results hold admission. Caller booleans and A lane
+screens cannot stand in for that provider. Admission produces a decision and
+reasons; only the later session owner can create a run. Unit test doubles for the
+provider do not establish real-scene integration or permit normal UI Start.
+
 ### Observation and action evidence
 
 Before a run exists, dispatch evidence binds to the canonical mission and scene

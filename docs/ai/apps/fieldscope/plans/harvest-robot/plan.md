@@ -369,3 +369,44 @@ production changes. Cases: shared route, reorder/preceding deletion, selected
 deletion, shortened farm, output immutability and original settings unchanged.
 Gates: formal red/green, naming before/after, app unit/typecheck/lint and focused
 independent review. Stop if the handoff needs a changed lane rule or another owner.
+
+### D admission contract card
+
+Owner: Inspector D admission, before session clock/actions. Sources: spec D
+session/evidence/motion clauses and completed B route/C scene/rig handoffs.
+Inputs: a completed canonical mission tuple (revision, B report, farm snapshot,
+C scene and robot source handles), explicit simulation time, synthetic dispatch
+evidence and a composition-owned movement-query dependency. Outputs: detached
+immutable mission/evidence, fresh A lane/load/energy reports and an explicit
+accepted/held decision with reasons, never a partial run. A composition-issued canonical receipt and identity/currentness
+predicate bind the B report, farm and sources from the same completed update.
+C handles retain their
+original owner identity; current-source checks cannot use copied/revision-only
+lookalikes. No source regeneration, second strip resolver or canonical writes.
+
+Only simulation/contracts.ts and `simulation/__tests__/contracts.test.ts` are
+production/test boundaries; API_SURFACES may document implemented contracts. A/B/C
+owners, session transitions, runtime Feature wiring and UI stay unchanged here.
+The movement provider is a required downstream dependency over actual completed
+C geometry; no default clear provider or user-supplied clearance boolean. Unit
+fixtures may substitute it explicitly, but cannot close integrated dispatch. Its
+real collision owner/card precedes ordinary UI Start enablement. Session clock
+follows this admission slice; observation, exact motion and Core lifecycle then
+compose against the same sources before C/B motion UI.
+
+Validity is [validFrom, validUntil), with finite nonnegative times and
+validFrom <= observedAt <= now < validUntil. Identity/revision/time failures
+reject before A or geometry work. A screens run once per admitted dispatch intent,
+not on reads. Requests are constructed from canonical dock -> route start -> end
+and route end -> dock, with purpose, zero joints, usable rig and explicit bounded
+query intervals; caller-selected/empty requests cannot replace that coverage.
+Dispatch acceptance requires screened lane, continuing energy/load,
+known compatible crate/tare/latch/dock and complete bound movement results; all
+other results stay held. Evidence never silently refreshes when a clock advances.
+Gates: missing/wrong/expired/future/nonfinite cases, exact validity edges, caller
+mutation isolation, fake/retired C handles, invalid B route, fresh A reports while
+B remains unknown, blocked/unknown/missing/empty/wrong-purpose/wrong-route movement, stale canonical
+receipt with current C handles, unavailable rig/nonstowed evidence, zero preparation work and
+deterministic immutable results; formal red/green, naming, app unit/type/lint and
+independent review. Stop on an absent owner input, changed canonical policy, or
+need to invent physical parameters. This slice cannot claim M3 completion.
