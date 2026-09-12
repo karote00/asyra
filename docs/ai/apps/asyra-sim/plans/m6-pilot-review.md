@@ -1319,3 +1319,58 @@ this test interception does not grant general admission to plain DistanceEvidenc
 Evidence is `tmp/capacity/witness-seed-profile.log`. No production edit or broader
 capacity/browser gate has been performed; independent diagnostic review precedes
 the next explicit production readiness decision.
+
+### Fresh static witness transport - method owner readiness
+
+Objective: retain the measured source-point upper-bound benefit without changing
+samples, severity, geometry, precision or the 500k/20s guards. This card governs
+only Inspector `method`, the version 1.0.2 temporal/source-query contract and its
+existing method implementation allowlist. Inputs remain the admitted snapshot,
+ordered immutable mesh pair, canonical domain static poses, settings and budget;
+outputs remain conservative evidence and explicit unresolved coverage.
+
+Only a completed **fresh** earlier static sample in the same current continuous
+node may seed its next fresh sample. Eligibility is finite nonpenetrating
+`0 < lower <= upper < threshold`, with both mesh geometry objects and their
+positions/indices frozen. No inherited endpoint, parent/child seed, other node,
+segment or invocation supplies a seed. The first consumed sample in a node and
+point-only queries have no seed. Final samples, inherited samples, ineligible
+outputs and samples whose next endpoint is inherited create no handle. The
+continuous/domain owner establishes actual time-to-pose correspondence through
+`shapesAt`; the per-pair sampler creates the handle only from its own completed
+distance inputs and output. A private runtime brand and private query scope
+reject fabricated or foreign handles without any global registry. Admission
+also checks the same node, ordered geometry, settings and original segment,
+with source time inside the node and no later than the target.
+
+Capture copies and freezes the complete source interval poses and witness
+enclosures for one owned work unit, charged before publication. If capture
+exhausts after distance completed, retain that completed sample, publish no
+handle, and stop before any further sample or interval certificate. Consumption
+costs admission one, two inverse transforms, two forward transforms and one
+norm: six additional units, each with cancellation. Whole enclosures move;
+midpoints and old lower/axis/penetration/convergence metadata do not. The target
+still runs the existing complete distance owner, membership and penetration
+search. Unseeded inputs take their ordinary algorithm. Handles exist only in
+the current node's consumed fresh-sample state and never enter pending endpoint
+slots, geometry preparation or a pose cache. Failure remains owned by `method`.
+
+Implementation boundary: `continuous-query.ts`, `original-part-method.ts`,
+`original-mesh-query.ts`, a directly owned opaque sampler helper if needed, and
+their permanent `methods/__tests__` regressions. Thin spec/Inspector/manifest
+and direct profiling charge consumers may be synchronized. No domain/framework,
+public naked-DistanceEvidence seed API, new dependency or persisted schema.
+
+Before production, prove a formal work regression red and test runtime forgery,
+foreign scope/node/geometry, mutable-buffer rejection, immutable packet isolation,
+fresh versus inherited ordering, exact capture/consumption charges and cancellation
+at each boundary. Capture exhaustion must preserve the just-completed witness;
+consumption exhaustion must preserve prior evidence without a free target result.
+Keep static-point/native behavior and existing endpoint handoff unchanged. Retain
+the exact rational transported/source distance oracle and later-component
+penetration case, fixed 10k/50k/576 ceilings, subdivision/witnessed-zero tests,
+naming, focused lint/type and Inspector/catalog projections. Independently review
+the complete bounded correction before one representative source gate. Full G4
+remains red until its unchanged gate passes; no browser gate before that. Stop
+and replan on provenance, accounting, truth or fixed-resource failure; do not
+expand source eligibility or silently weaken existing full-field comparisons.

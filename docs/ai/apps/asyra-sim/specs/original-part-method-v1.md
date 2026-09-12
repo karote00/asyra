@@ -92,6 +92,27 @@ or cross-segment evidence. Static point intervals keep their static lower bound.
 Each evidence handoff consumes one logical mesh work unit with a fresh
 checkpoint before publishing its result. A failed charge follows the existing
 exhaustion path; temporal node/leaf budgets and cancellation remain unchanged.
+Within one continuous node, a completed fresh static sample with finite,
+nonpenetrating `0 < lower <= upper < threshold` may supply source-point witness
+enclosures to its next fresh sample on the same ordered immutable mesh pair.
+Only the per-pair sampler can issue the runtime-opaque source handle from its
+own actual completed inputs and output. The continuous/domain owner establishes
+canonical time/pose correspondence; sampler admission verifies private query
+scope, node, segment, geometry, settings and source-time ordering. Both mesh
+objects and positions/indices must be frozen. Capture copies and freezes entire
+interval poses and witnesses for one charged work unit. No inherited or final
+sample, or sample whose next endpoint is inherited, captures a handle. The first
+sample has no seed, and point-only queries retain their original work.
+Consumption charges admission, two inverse transforms, two forward transforms
+and a norm separately (six units). Transport uses whole enclosures only and
+supplies an initial upper witness; the target recomputes its own evidence through
+the unchanged complete geometry, membership and penetration search. No sample
+or severity check is skipped. A capture failure retains the completed sample
+and stops before further solving without publishing a handle; consumption failure
+retains prior evidence under ordinary exhaustion rules. Handles cannot cross
+nodes, segments or invocations, enter parent/child endpoint handoffs or geometry
+preparation, or provide a general pose cache. Native and unseeded inputs retain
+their ordinary route; no arbitrary caller-provided DistanceEvidence is admitted.
 Every attempted query consumes the unchanged work budget. Exhaustion retains only already established witnesses and marks
 unproved coverage unresolved; it does not invent unvisited endpoint findings.
 This strategy is explicit to the original-part kernel, leaving the historical
