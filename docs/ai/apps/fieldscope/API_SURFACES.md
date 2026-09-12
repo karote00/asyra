@@ -151,6 +151,10 @@ Cross-package imports use public `@asyra/*` facades. Do not import another app's
 - Results preserve nearest original mesh/instance/triangle and metre distance,
   within-range miss, or unknown. Region-local source semantics distinguish sheets,
   closed material and unresolved open shells; opacity does not grant passage.
+- Hits additionally expose the selected/refined conservative `distanceBounds`;
+  the existing `distance` remains its display midpoint. Shared `prepareQueryFrame`
+  and `transformQueryDirection` consume admitted rigid inputs and reuse the same
+  conservative coefficient inverse without a second camera transform algorithm.
 - Geometric unknowns may include one ambiguous triangle or two overlapping
   nearest candidates as immutable representative witnesses, with original source
   identity and conservative distance intervals (or explicit unbounded distance).
@@ -182,3 +186,24 @@ Cross-package imports use public `@asyra/*` facades. Do not import another app's
 - This helper changes no session, clock, inventory or action state. It rejects
   support/cut/retention/placement confirmations and additional undeclared claims;
   later viewpoint and expected-action owners must provide their own evidence.
+
+## Synthetic viewpoint samples
+
+- `TargetObservations.view` uses the same actual-run context and a
+  `synthetic-viewpoint` request at the current snapshot time. Explicit candidate
+  IDs, sample count and camera pose/slopes/range are assumptions, not detections
+  or hardware calibration. The adapter selects evenly spaced original near
+  triangle centroids with a 64-ray computation cap, preserving plant/instance and
+  partition identities.
+- Each output keeps the requested source sample and actual ray result separate.
+  Visible means this computed camera ray hit some surface of the target, not that
+  the intended triangle/pedicel is visible. Non-target occlusion requires hit
+  upper distance strictly before sample lower distance; rear/overlapping hits and
+  misses remain unknown. Requested-point distance encloses endpoint subtraction
+  before the norm; frustum eligibility follows the actual computed floating ray.
+  Owned result containers are frozen without freezing the composition context.
+- Coverage counts only declared samples; no maturity, quality, anatomy or action
+  readiness is inferred. Current session base/joints supply the robot pose in the
+  existing world-aligned, empty-held/all-attached foundation. Missing leaf or fruit
+  state remains unknown. Camera inverse prepares once, eligible rays share one
+  batch/FK and completed bounds, and no source or session state is regenerated.

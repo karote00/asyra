@@ -57,6 +57,7 @@ export type RayResult =
       readonly instance: number
       readonly triangle: number
       readonly distance: number
+      readonly distanceBounds: Interval
       readonly barycentric: Point3
     }
 export interface RayWork {
@@ -223,6 +224,13 @@ function inverse(transform: Inverse, value: Vector, direction = false): Vector {
     transform.matrix,
     direction ? value : vectorSubtract(value, transform.position)
   )
+}
+/** Shared conservative frame arithmetic; no second camera inverse implementation. */
+export function prepareQueryFrame(transform: RigidTransform) {
+  return freeze(prepareInverse(transform))
+}
+export function transformQueryDirection(frame: Inverse, direction: Point3) {
+  return inverse(frame, numberVector(direction), true)
 }
 function directionBounds(direction: Point3): Vector {
   const scale = interval(Math.max(...direction.map(Math.abs)))
@@ -688,6 +696,7 @@ export class RayQueries {
                 selected.result = {
                   ...selected.result,
                   distance: midpoint(first.distance),
+                  distanceBounds: first.distance,
                   barycentric: first.barycentric.map(
                     midpoint
                   ) as unknown as Point3
@@ -719,6 +728,7 @@ export class RayQueries {
               instance,
               triangle: index / 3,
               distance: midpoint(distance),
+              distanceBounds: distance,
               barycentric: completed.barycentric.map(
                 midpoint
               ) as unknown as Point3

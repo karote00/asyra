@@ -616,7 +616,9 @@ actual first-hit witness. A first hit belonging to the requested target proves
 that ray sees some surface of that target; it does not prove the requested
 triangle, back side, pedicel or cutsite is visible. Another first surface proves
 sample occlusion only when its conservative distance upper bound is strictly
-before the requested sample's computed-ray distance lower bound. A ray that
+before the requested point's camera-distance lower bound. Compute that bound
+from conservative endpoint subtraction and norm, independently of the rounded
+ray direction used for frustum eligibility and ray queries. A ray that
 misses the intended point and hits a rear surface, or overlapping distance bounds,
 remains unknown with its actual witness. Use the ray owner's completed hit-distance
 interval, not its displayed midpoint or an EPS extension. A miss or unresolved ray remains unknown, never proof of
