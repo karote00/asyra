@@ -163,3 +163,22 @@ Cross-package imports use public `@asyra/*` facades. Do not import another app's
   and world-vertex copies are not cached.
 - This geometry evidence is not fruit detection, quality, optical calibration,
   a swept-motion result or an implemented harvesting action/UI workflow.
+
+## Injected target observation admission
+
+- `TargetObservations.admit` consumes a composition-issued `ObservationContext`
+  tied to the real HarvestSession snapshot and its actual canonical mission plus
+  current GeometrySource. Required context/mission predicates have no permissive
+  defaults; composition must prove the run-to-mission relationship.
+- `TargetReading` is explicitly `synthetic-injected`, with an assumption label,
+  target/run/generation/source revisions and finite explicit validity. Admission
+  clones once, validates that snapshot, preserves nulls and returns immutable
+  target assumptions only after currentness is rechecked. Valid earlier readings
+  can be admitted at the current snapshot without extending their expiry.
+- Coverage is a declared visible/total sample count; zero total has no coverage.
+  Pose, maturity, target-scoped pedicel/cutsite, corridor and independent
+  spine/calyx/contact-damage fields remain assumptions. Source membership checks
+  validate identity without filling them from hidden scene truth.
+- This helper changes no session, clock, inventory or action state. It rejects
+  support/cut/retention/placement confirmations and additional undeclared claims;
+  later viewpoint and expected-action owners must provide their own evidence.
