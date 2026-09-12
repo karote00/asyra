@@ -641,6 +641,20 @@ function createService(
       repositoryRoot,
       directory,
       getContracts: targetContracts,
+      getAcceptedVersion: (revision) => {
+        const history = store.mapping().evolution.history
+        const selected = revision === undefined ? history.revision : revision
+        if (
+          !Number.isInteger(selected) ||
+          selected < 1 ||
+          selected > history.versions.length
+        )
+          return null
+        return {
+          revision: selected,
+          contractDigest: history.versions[selected - 1].contract.digest
+        }
+      },
       getVersionReview: (id, { requireAvailable }) => {
         const pair = reviewAdmissions.get(id)?.pair
         if (!pair) return null

@@ -933,3 +933,93 @@ test('target review admission is detached from the candidate returned to a direc
     fs.rmSync(dir, { recursive: true, force: true })
   }
 })
+
+test('service pins exact accepted history independently of legacy mapping revision and later same-contract configuration versions', async () => {
+  const f = referenceFixture()
+  let service = createService(f.repository, { directory: f.runs })
+  try {
+    await service.close()
+    const mappingFile = path.join(f.runs, 'mapping.json')
+    const legacy = JSON.parse(fs.readFileSync(mappingFile))
+    legacy.revision = 5
+    delete legacy.evolution
+    fs.writeFileSync(mappingFile, JSON.stringify(legacy))
+    service = createService(f.repository, { directory: f.runs })
+    assert.equal(service.state().evolution.revision, 1)
+    const first = await service.wait(
+      service.start({ mode: 'candidate' }, LOCAL_ACTOR)
+    )
+    const firstReview = service.prepareEvolution(
+      { attemptId: first.id },
+      LOCAL_ACTOR
+    )
+    const firstRequest = {
+      ...pinnedTargetRequest(service, firstReview),
+      acceptedBaseline: { revision: 5, contractDigest: f.contract.digest }
+    }
+    const firstTarget = service.decideTarget(firstRequest, LOCAL_ACTOR)
+    assert.deepEqual(service.getTarget(firstTarget.id).acceptedVersion, {
+      revision: 1,
+      contractDigest: f.contract.digest
+    })
+    assert.equal(service.getTarget(firstTarget.id).acceptedBaseline.revision, 5)
+
+    const config = path.join(f.repository, f.contract.configFile)
+    fs.chmodSync(config, 0o644)
+    fs.appendFileSync(
+      config,
+      '\n// explicit new accepted configuration bytes\n'
+    )
+    const second = await service.wait(
+      service.start({ mode: 'candidate' }, LOCAL_ACTOR)
+    )
+    assert.equal(second.evidence.status, 'passed')
+    assert.notEqual(
+      first.snapshot.configurationDigest,
+      second.snapshot.configurationDigest
+    )
+    const secondReview = service.prepareEvolution(
+      { attemptId: second.id },
+      LOCAL_ACTOR
+    )
+    service.decideEvolution(
+      {
+        id: secondReview.id,
+        decision: 'accept',
+        reason: 'Explicit new accepted verifier'
+      },
+      LOCAL_ACTOR
+    )
+    const secondRequest = {
+      ...pinnedTargetRequest(service, secondReview),
+      acceptedBaseline: { revision: 6, contractDigest: f.contract.digest }
+    }
+    const secondTarget = service.decideTarget(secondRequest, LOCAL_ACTOR)
+    assert.equal(service.getTarget(secondTarget.id).acceptedVersion.revision, 2)
+    await service.close()
+    service = createService(f.repository, { directory: f.runs })
+    assert.equal(service.getTarget(firstTarget.id).acceptedVersion.revision, 1)
+    assert.equal(service.getTarget(secondTarget.id).acceptedVersion.revision, 2)
+    assert.deepEqual(
+      service.decideTarget(firstRequest, LOCAL_ACTOR),
+      firstTarget
+    )
+    await service.close()
+
+    // Prior consumers retained neither copy; reopening must not upgrade them.
+    const targetsFile = path.join(f.runs, 'targets.json')
+    const targets = JSON.parse(fs.readFileSync(targetsFile))
+    delete targets.records[0].acceptedVersion
+    delete targets.records[0].history[0].acceptedVersion
+    fs.writeFileSync(targetsFile, JSON.stringify(targets))
+    service = createService(f.repository, { directory: f.runs })
+    assert.equal(
+      Object.hasOwn(service.getTarget(firstTarget.id), 'acceptedVersion'),
+      false
+    )
+    assert.equal(service.getTarget(secondTarget.id).acceptedVersion.revision, 2)
+  } finally {
+    await service.close()
+    fs.rmSync(f.dir, { recursive: true, force: true })
+  }
+})
