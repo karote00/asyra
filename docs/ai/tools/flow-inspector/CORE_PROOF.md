@@ -525,3 +525,170 @@ form visibly identifies the prepared work; editing scope cannot bypass server
 validation. Successful start consumes the prepared form binding. Unexecuted
 reservations show their task UUID without a broken task-artifact link. Bounded
 assessment updates preserve the existing work controls and keyboard focus.
+
+## Target source assessment
+
+This is the next multi-PR implementation contract, not a claim that the current
+Board or task admission supports dependency execution. Until its producer and
+consumer slices pass their gates, the existing unconfirmed-prerequisite and
+pending-target behavior above remains the runtime boundary. The assessment owner
+is `assess-target-source`; target allocation, candidate verification, source
+capture, raw evidence assessment and accepted history keep their existing owners.
+
+An explicit local assessment identifies a frozen target allocation revision, its
+target contract, the current accepted revision, and one captured integration
+source. Inputs come from the trusted local action service resolving retained
+owner artifacts; a client may select their identities, never supply a passing
+verdict. The assessment consumes admitted contracts, the target owner's frozen
+commitments, a source snapshot and completed proof evidence. It neither executes
+tests nor reads mutable source, fetches PRs, interprets handoff prose, starts tasks,
+changes commitments or writes accepted history.
+
+The result separates accepted-behavior preservation, each work promise and its
+prerequisites, and whole-target integration. Each result retains the source,
+accepted and target contract identities, allocation revision, required obligation
+inventory, evidence references and concrete blockers. A passing work result is
+labeled with that work's bounded obligations; it cannot stand for a passing flow.
+All accepted obligations in the registered verification scope remain required.
+Unknown impact uses that complete conservative scope, never an empty exemption.
+
+### One source and distinct verification contracts
+
+Every participating producer must bind the same repository, captured runtime
+file inventory and content digests, and Git integration identity. Git HEAD alone
+cannot identify dirty captured source. Accepted and developing contracts can have
+different mapping, architecture, configuration and report identities; each
+evidence record must match its own admitted verification contract while binding
+the same captured runtime source. The source owner supplies that runtime identity;
+this assessor cannot derive equivalence by deleting fields from a full snapshot
+digest or trusting a caller's equality claim. Existing snapshot digests and
+historical evidence are preserved. Evidence without the required runtime identity
+is unavailable for a new assessment until a new producer run supplies it.
+
+Required producers must settle before a result can pass. Missing, skipped,
+duplicate, malformed or mismatched observations are unknown, with blockers;
+confirmed obligation failures remain visible even alongside unavailable evidence.
+A failure cannot be hidden by a second task, another producer or a later PR's
+green status. Reassessment against a new source is a distinct result and preserves
+the earlier result. Different sources, target revisions or accepted revisions
+never combine into one integration pass. An assessment selected against a changed
+source, allocation or accepted revision is stale; historical results retain their
+original verdict and identity instead of being relabeled as current.
+
+### Runtime identity producer contract
+
+For this supported local slice, the source owner creates `runtimeSource` with
+`format: 1`, `files` and `digest` from bytes already captured in the immutable
+snapshot. Its complete inventory is every regular file recursively below
+`packages/{factory,reactive-events,utils,persistence}/src` except `__tests__`
+directories, those four packages' `package.json`, root `package.json`, and
+`yarn.lock`. No caller supplies exclusions, roots or an alternative manifest.
+Undeclared local package imports and unsupported source roots remain errors under
+the existing capture policy. Verification-owned manifest, architecture, spec,
+test and runner configuration files remain in the full snapshot manifest and
+its existing digest; they do not become runtime-source files merely because a
+proof references them. If a verification path overlaps the declared runtime
+inventory, reject capture instead of excluding the runtime file.
+
+Each runtime manifest entry has exactly `path`, `size`, `digest` in that key
+order: a repository-relative slash path, captured byte length, and lowercase
+SHA-256 of the bytes. Sort entries by code-unit path order, reject duplicate or
+missing entries, and hash UTF-8 `JSON.stringify(files)` with SHA-256 for `digest`.
+The owner constructs this once from the captured inventory without rereading
+source. The trusted service binds the existing repository identity and snapshot
+HEAD alongside this digest; the digest alone cannot equate repositories.
+Old full snapshot digests remain unchanged and are not migrated into this field.
+
+Execution configuration remains an authoritative verification input, not an
+ignored difference. Every producer binds its full snapshot digest, admitted
+contract/mapping/architecture identities, configuration digest, lockfile digest,
+scenario and runner environment in addition to `runtimeSource.digest`. The
+accepted contract's required execution configuration cannot be replaced by the
+target's configuration. Different accepted and target test/config files are
+permitted only under their separately admitted contracts; unknown configuration
+or runtime resolution outside the captured closure blocks verification. Equal
+runtime digests alone do not make a producer eligible or its result passing.
+
+`capture-proof-source` owns construction and immutable manifest validation.
+`execute-proof-run` copies the supplied runtime digest into its existing runner
+identity as `runtimeSourceDigest`; it neither rediscovers files nor substitutes
+a digest. `assess-proof-evidence` verifies that identity against the supplied
+snapshot, alongside every existing provenance check, and retains the runtime
+digest with its completed evidence. Its retained-evidence admission applies the
+same binding before another owner can consume that evidence. A missing,
+unsupported-format or mismatched new identity can never pass target assessment.
+Existing records without `runtimeSource` retain their established standalone
+proof behavior and original bytes; they are ineligible for target source
+assessment and require a new run. New malformed identities are rejected, not
+silently handled as historical records. Candidate snapshot construction must
+follow this same source-owner contract before candidate evidence is eligible.
+
+Implement and prove the source, runner and evidence producer handoffs before
+implementing `assess-target-source`. Formal tests must bind real captured bytes
+through the registered runner and existing assessor: changing runtime bytes,
+package metadata or lockfile changes runtime identity; changing only separately
+admitted verification inputs preserves runtime identity while changing the full
+verification identity. Missing/forged runner bindings fail. Owner unit fixtures
+can cover negative cases but cannot establish producer readiness or replace this
+integration proof. No downstream consumer may hash a filtered full manifest as a
+substitute for the source owner's artifact.
+
+### Prerequisites and partial work
+
+A work's required prerequisite is usable behavior on this same assessed source.
+Its immutable handoff description is explanatory text, not an executable oracle.
+The prerequisite and consumer steps must resolve to the target contract's admitted
+architecture routes and case-backed required or bypassed handoff decisions. The
+upstream promise's obligations and every applicable incoming route's proving cases
+must pass on this source. An admitted bypass requires its existing reason and
+case evidence; it is not a manual prerequisite confirmation. Missing or ambiguous
+route coverage, unresolved references, cycles and overlapping obligation ownership
+block the affected work. No natural-language inference or merged-PR shortcut
+may fill a missing handoff.
+
+An independent work can pass its promise when all its obligations and applicable
+handoffs pass and accepted behavior is preserved, while explicitly pending future
+obligations keep the target pending. A work whose required proof has not been requested is pending; a requested proof
+with missing or unsettled evidence is unknown; failed required cases are failed.
+These states describe proof execution on the selected source, not whether an
+agent task ran. Already-present behavior may satisfy a commitment through current
+formal source evidence without an agent task or a merged PR. Prerequisite
+readiness is reported separately from the work's own evidence, and an unsatisfied
+prerequisite blocks completion even when its own cases pass. Neither this result
+nor PR delivery alone authorizes task execution; a later admission slice must
+consume a current source-bound assessment before enabling dependent work.
+
+Whole-target integration requires no pending obligations, all current commitments
+and their handoffs proven on the same source, and passing accepted preservation.
+It exposes acceptance eligibility only. The version owner must separately enforce
+an explicit authorized exact-base decision, current integration evidence and
+retirement authority before any baseline mutation. This first owner slice cannot
+accept a baseline or change the current version owner's decision inputs.
+
+### Lifetime, cases and completion
+
+Compute one detached assessment per explicit request from immutable admitted
+artifacts. The action service retains the completed result for projections; reads
+and Board refreshes must not recapture source, rerun raw report assessment or
+rebuild target coverage. The target owner supplies coverage from its existing
+revision artifact. No computed cache is introduced. Retained records without a
+new assessment remain readable and confer no new readiness; target, work, task,
+attempt and accepted-history identities are not renamed or rewritten.
+
+Permanent owner tests must cover: independent partial success with pending target;
+accepted regression despite passing new work; missing and duplicate evidence;
+case-backed prerequisite success and missing/bypassed-route refusal; mixed-source
+and mixed-contract rejection; individually passing contributions with a failing
+integration; complete eligible integration without baseline mutation; changed-base
+and allocation staleness; and preservation of failed historical results. Include
+valid empty pending inventory and invalid empty required evidence, plus work-count
+assertions proving assessment consumes completed owner artifacts without source
+reads or repeated raw assessment. Existing Factory obligations remain unchanged.
+
+The owner gate is `control-plane/__tests__/target-evidence.test.cjs`; integration
+consumers later prove admission and Board/API/CLI parity. Before the full plan can
+close, run the existing complete control-plane, seven-run Factory proof, static,
+React, consumer, naming, lint, typecheck/build and browser gates, inspect the three
+viewports, and demonstrate offline multi-PR success and integration regression.
+No new model request, external test PR, required-check enforcement or provider
+reconciliation is implied.

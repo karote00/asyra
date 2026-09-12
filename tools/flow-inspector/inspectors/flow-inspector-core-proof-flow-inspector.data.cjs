@@ -50,6 +50,48 @@ const data = {
   ],
   steps: [
     {
+      id: 'assess-target-source',
+      order: 17,
+      laneId: 'proof',
+      title: 'Assess target at one source',
+      ownerPackage: 'tools/flow-inspector/control-plane',
+      purpose: 'Target source assessment',
+      inputs: [
+        'artifact:flow-target-state',
+        'artifact:admitted-proof-contract',
+        'artifact:proof-source-snapshot',
+        'artifact:assessed-proof-evidence',
+        'trusted current accepted revision and selected target allocation revision'
+      ],
+      outputs: ['artifact:target-source-assessment'],
+      conditions: [
+        'Consume frozen work coverage and admitted case-backed handoffs. Assess accepted preservation, bounded work and complete integration separately against one captured runtime source and each admitted verification contract. Required producers must settle; missing or contradictory identities never pass. Preserve failed obligations and pending work. Full integration grants eligibility only; source, allocation or accepted-base changes make its current use stale.'
+      ],
+      bypasses: [
+        'Only an admitted case-backed route bypass may satisfy a handoff. Historical records without source-bound evidence remain readable but cannot grant readiness.'
+      ],
+      allowedContributors: [
+        'trusted local service resolving retained owner artifacts',
+        'source owner runtime identity',
+        'proof evidence owner completed observations',
+        'target owner frozen allocation and obligation coverage'
+      ],
+      forbiddenContributors: [
+        'caller-supplied pass or source equivalence',
+        'PR merge or provider status as handoff proof',
+        'natural-language handoff interpretation',
+        'raw source reads or raw report reassessment',
+        'task execution or accepted history mutation'
+      ],
+      cacheDimensions: [],
+      implementationBoundary: [
+        'tools/flow-inspector/control-plane/target-evidence.cjs',
+        'tools/flow-inspector/control-plane/__tests__/target-evidence.test.cjs'
+      ],
+      specRefs: ['#target-source-assessment'],
+      failureOwnerStepId: 'assess-target-source'
+    },
+    {
       id: 'manage-flow-target',
       order: 16,
       laneId: 'proof',
@@ -480,7 +522,7 @@ const data = {
       ],
       outputs: ['artifact:proof-source-snapshot'],
       conditions: [
-        'Read accepted-base contract and protected gate inputs once for CI admission; compare captured integration bytes with Git identity and preserve explicit policy drift blockers. Copy regular source files once into one attempt-owned tree, retain the immutable file manifest, bind source, mapping, architecture, configuration and lockfile digests, and reject symlinks.'
+        'Read accepted-base contract and protected gate inputs once for CI admission; compare captured integration bytes with Git identity and preserve explicit policy drift blockers. Copy regular source files once into one attempt-owned tree, retain the immutable file manifest, bind source, mapping, architecture, configuration and lockfile digests, and reject symlinks. For target assessment, also identify the captured runtime file inventory independently of the admitted verification metadata; preserve full snapshot identity and never infer equivalence by stripping historical digests.'
       ],
       bypasses: [
         'No previous snapshot or mutable checkout may replace the captured runtime source.'
@@ -496,7 +538,7 @@ const data = {
         'tools/flow-inspector/control-plane/ci-context.cjs',
         'tools/flow-inspector/control-plane/__tests__/ci-context.test.cjs'
       ],
-      specRefs: ['#source-and-evidence'],
+      specRefs: ['#source-and-evidence', '#runtime-identity-producer-contract'],
       failureOwnerStepId: 'capture-proof-source'
     },
     {
@@ -513,7 +555,7 @@ const data = {
       ],
       outputs: ['artifact:proof-runner-result'],
       conditions: [
-        'Run one registered Vitest process group against captured source; await settlement on success, error, deadline, or cancellation.'
+        'Run one registered Vitest process group against captured source; await settlement on success, error, deadline, or cancellation. Bind the source owner runtime digest into runner identity without recomputing it, alongside the existing full verification identity.'
       ],
       bypasses: [
         'Denied requests never reach execution; a process failure produces a non-passing runner result.'
@@ -533,7 +575,7 @@ const data = {
         'tools/flow-inspector/control-plane/runner.cjs',
         'tools/flow-inspector/control-plane/__tests__/runner.test.cjs'
       ],
-      specRefs: ['#controlled-actions-and-retention'],
+      specRefs: ['#controlled-actions-and-retention', '#runtime-identity-producer-contract'],
       failureOwnerStepId: 'execute-proof-run'
     },
     {
@@ -550,7 +592,7 @@ const data = {
       ],
       outputs: ['artifact:assessed-proof-evidence'],
       conditions: [
-        'Exactly one passing observation per required case, successful exit, and no runner errors are necessary for pass; preserve observed step failures and verify source, contract, mapping, architecture, scenario, configuration, runner environment, and report identity. Retained current-contract evidence must preserve that inventory and version identity before admission.'
+        'Exactly one passing observation per required case, successful exit, and no runner errors are necessary for pass; preserve observed step failures and verify source, contract, mapping, architecture, scenario, configuration, runner environment, and report identity. Retained current-contract evidence must preserve that inventory and version identity before admission. For target evidence, validate and retain the runner runtime digest against its source owner snapshot; missing or mismatched runtime provenance never grants target eligibility, while unchanged historical standalone proof remains readable.'
       ],
       bypasses: [
         'Missing or invalid reports produce an explicit non-pass, never inferred completion.'
@@ -565,7 +607,7 @@ const data = {
         'tools/flow-inspector/control-plane/evidence.cjs',
         'tools/flow-inspector/control-plane/__tests__/evidence.test.cjs'
       ],
-      specRefs: ['#source-and-evidence'],
+      specRefs: ['#source-and-evidence', '#runtime-identity-producer-contract'],
       failureOwnerStepId: 'assess-proof-evidence'
     },
     {
@@ -678,6 +720,11 @@ const data = {
     }
   ],
   routes: [
+    { id: 'target-state-to-assessment', from: 'manage-flow-target', to: 'assess-target-source', kind: 'required', predicate: 'An explicit assessment selects a frozen target allocation.', producedArtifacts: ['artifact:flow-target-state'] },
+    { id: 'target-contract-to-assessment', from: 'admit-proof-contract', to: 'assess-target-source', kind: 'required', predicate: 'Accepted and target verification contracts are admitted for the selected assessment.', producedArtifacts: ['artifact:admitted-proof-contract'] },
+    { id: 'target-source-to-assessment', from: 'capture-proof-source', to: 'assess-target-source', kind: 'required', predicate: 'The source owner supplies one immutable runtime identity for all participating proofs.', producedArtifacts: ['artifact:proof-source-snapshot'] },
+    { id: 'target-evidence-to-assessment', from: 'assess-proof-evidence', to: 'assess-target-source', kind: 'required', predicate: 'Required proof producers have settled with source-bound observations.', producedArtifacts: ['artifact:assessed-proof-evidence'] },
+    { id: 'target-assessment-result', from: 'assess-target-source', kind: 'terminal', predicate: 'The explicit assessment has produced its separated results without admission or baseline mutation.', producedArtifacts: ['artifact:target-source-assessment'] },
     { id: 'work-admission-to-task', from: 'manage-flow-target', to: 'admit-agent-task', kind: 'required', predicate: 'Task references an admitted work commitment', producedArtifacts: ['artifact:work-admission'] },
     { id: 'work-admission-to-execution', from: 'manage-flow-target', to: 'execute-agent-task', kind: 'required', predicate: 'Start or resume a task associated with target work', producedArtifacts: ['artifact:work-admission'] },
     {
@@ -903,13 +950,14 @@ const data = {
     }
   ],
   artifacts: [
+    { id: 'artifact:target-source-assessment', ownerStepId: 'assess-target-source', channel: 'source-bound target assessment', consumerStepIds: [], terminal: true },
     { id: 'artifact:work-admission', ownerStepId: 'manage-flow-target', channel: 'immutable source-bound work admission', consumerStepIds: ['admit-agent-task', 'execute-agent-task'] },
     {
       id: 'artifact:flow-target-state',
       title: 'Flow target revisions and work observations',
       ownerStepId: 'manage-flow-target',
       channel: 'local-target',
-      consumerStepIds: ['serve-proof-actions']
+      consumerStepIds: ['serve-proof-actions', 'assess-target-source']
     },
     {
       id: 'artifact:workflow-result-summary',
@@ -993,7 +1041,8 @@ const data = {
         'assess-proof-evidence',
         'serve-proof-actions',
         'admit-agent-task',
-        'manage-flow-target'
+        'manage-flow-target',
+        'assess-target-source'
       ]
     },
     {
@@ -1001,7 +1050,7 @@ const data = {
       title: 'Capture proof source output',
       ownerStepId: 'capture-proof-source',
       channel: 'local-proof',
-      consumerStepIds: ['execute-proof-run', 'assess-proof-evidence']
+      consumerStepIds: ['execute-proof-run', 'assess-proof-evidence', 'assess-target-source']
     },
     {
       id: 'artifact:proof-runner-result',
@@ -1015,7 +1064,7 @@ const data = {
       title: 'Assess proof evidence output',
       ownerStepId: 'assess-proof-evidence',
       channel: 'local-proof',
-      consumerStepIds: ['serve-proof-actions']
+      consumerStepIds: ['serve-proof-actions', 'assess-target-source']
     },
     {
       id: 'artifact:proof-board-state',

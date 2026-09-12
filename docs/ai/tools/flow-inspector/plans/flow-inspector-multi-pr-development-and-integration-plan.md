@@ -38,6 +38,29 @@ explicit target-baseline acceptance below remain unimplemented. This slice cover
 target/work admission and its usable projections only; it does not close the
 full required product cases or DoD of this plan.
 
+## Active next owner slice - source-bound assessment
+
+The [target source assessment contract](../CORE_PROOF.md#target-source-assessment)
+and `assess-target-source` define the next bounded owner. It consumes frozen
+allocation, admitted verification contracts and completed source-bound proof
+artifacts to separate accepted preservation, work/prerequisite results and target
+integration eligibility. It does not run source, change admission or accept a
+baseline. This is readiness work; the implementation and its formal cases remain
+open. Existing source admission and pending-target behavior remain unchanged until
+their own consumer slices are implemented and verified.
+
+The source producer must identify one captured runtime source independently of
+each accepted/target verification contract's metadata. Old full snapshot digests
+cannot be relabeled or stripped to infer this identity. Existing proof records
+remain readable; new assessment requires new producer evidence when necessary.
+Implementation starts with the source capture producer, then its runner and
+evidence admission handoffs, followed by the assessment owner, scoped candidate
+verification, admission consumers, Board/API/CLI projections and explicit
+acceptance, one owner slice at a time. The assessor remains blocked until those
+producer contracts and formal captured-source integration cases pass; hand-built
+trusted records are not evidence that this prerequisite is complete. All original product cases,
+software DoD and deferred external boundaries below remain in force.
+
 ## Product outcome
 
 A user defines a target flow revision, divides its obligations into bounded
