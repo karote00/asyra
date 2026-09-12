@@ -143,6 +143,11 @@ test(
         scenario: scenario.id,
         flowIds
       })
+      assert.equal(
+        result.identity.runtimeSourceDigest,
+        snapshot.runtimeSource.digest
+      )
+      assert.equal(result.identity.lockfileDigest, snapshot.lockfileDigest)
       assert.equal(result.identity.sourceDigest, snapshot.digest)
       assert.equal(result.identity.mappingVersion, contract.mappingVersion)
       assert.equal(result.environment.node, process.version)
@@ -178,11 +183,12 @@ test(
   }
 )
 
-test('verification consumes the trusted execution boundary once without bypassing it', async () => {
+test('verification consumes the trusted execution boundary once without bypassing it', async (t) => {
   const root = path.resolve(__dirname, '../../../..')
   const parent = path.join(root, 'tmp/flow-inspector/runner-boundary')
   fs.mkdirSync(parent, { recursive: true })
   const directory = fs.mkdtempSync(path.join(parent, 'run-'))
+  t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
   let calls = 0
   const contract = loadContract(root)
   const snapshot = captureSource(root, directory, contract)
@@ -201,5 +207,59 @@ test('verification consumes the trusted execution boundary once without bypassin
   })
   assert.equal(calls, 1)
   assert.equal(result.reason, 'containment-unavailable')
-  fs.rmSync(directory, { recursive: true, force: true })
+  assert.equal(
+    result.identity.runtimeSourceDigest,
+    snapshot.runtimeSource.digest
+  )
+  assert.equal(result.identity.lockfileDigest, snapshot.lockfileDigest)
+  assert.equal(result.identity.sourceDigest, snapshot.digest)
+  assert.equal(
+    result.identity.configurationDigest,
+    snapshot.configurationDigest
+  )
+})
+
+test('runner carries producer runtime identity without traversing its manifest and never invents one for historical snapshots', async (t) => {
+  const root = path.resolve(__dirname, '../../../..')
+  const parent = path.join(root, 'tmp/flow-inspector/runner-identity')
+  fs.mkdirSync(parent, { recursive: true })
+  const directory = fs.mkdtempSync(path.join(parent, 'run-'))
+  t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
+  const contract = loadContract(root)
+  const snapshot = captureSource(root, directory, contract)
+  const sourceIdentity = {
+    format: 1,
+    digest: snapshot.runtimeSource.digest,
+    get files() {
+      throw new Error('Runner must not rebuild runtime inventory')
+    }
+  }
+  let executions = 0
+  const invoke = (input, name) =>
+    runVerification({
+      repositoryRoot: root,
+      runDirectory: path.join(directory, name),
+      snapshot: input,
+      contract,
+      scenario: 'baseline',
+      flowIds: contract.flows.map((flow) => flow.id),
+      processRunner: async () => {
+        executions++
+        return { code: null, reason: 'containment-unavailable', output: '' }
+      }
+    })
+  const current = await invoke(
+    { ...snapshot, runtimeSource: sourceIdentity },
+    'current'
+  )
+  assert.equal(
+    current.identity.runtimeSourceDigest,
+    snapshot.runtimeSource.digest
+  )
+  const historical = { ...snapshot }
+  delete historical.runtimeSource
+  const old = await invoke(historical, 'historical')
+  assert.equal(Object.hasOwn(old.identity, 'runtimeSourceDigest'), false)
+  assert.equal(old.identity.sourceDigest, snapshot.digest)
+  assert.equal(executions, 2)
 })

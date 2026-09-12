@@ -174,6 +174,10 @@ async function runVerification({
     },
     identity: {
       sourceDigest: snapshot.digest,
+      ...(snapshot.runtimeSource
+        ? { runtimeSourceDigest: snapshot.runtimeSource.digest }
+        : {}),
+      lockfileDigest: snapshot.lockfileDigest,
       contractDigest: contract.digest,
       mappingVersion: contract.mappingVersion,
       architectureVersion: contract.architectureVersion,
