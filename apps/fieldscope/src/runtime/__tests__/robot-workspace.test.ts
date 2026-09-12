@@ -6,6 +6,8 @@ import { ThreeEngine, type GraphicsDriver } from '../../engine/three-engine'
 import * as farm from '../../render-app/site-projection'
 import * as robot from '../../domain/robot-configuration'
 import * as navigation from '../../render-app/camera-navigation'
+import { assessHarvestLane } from '../../domain/harvest-assessment'
+import { createConfigurationStrip } from '../../domain/farm-configuration'
 
 it('owns robot patches, history and derived work without rebuilding the farm', async () => {
   const submissions = vi.spyOn(SpatialLayer.prototype, 'submit')
@@ -91,6 +93,78 @@ it('owns robot patches, history and derived work without rebuilding the farm', a
     await runtime.undo()
     expect(runtime.getRobot().lane?.status).toBe('unverified')
     expect(runtime.getRobot().settings.patrolMinutes).toBe(90)
+    const configuration = runtime.getConfiguration()
+    const mission = runtime.getRobot().settings
+    const route = runtime.getRobot().lane
+    // Deletion must preserve the selected strip's identity, not its ordinal:
+    // a removed target is invalid; a surviving target follows its new ordinal.
+    for (const removed of [2, 0]) {
+      const historyDepth = runtime.getUndoDepth()
+      await runtime.setConfiguration({
+        ...configuration,
+        strips: configuration.strips.filter((_, index) => index !== removed)
+      })
+      const expected =
+        removed === 2
+          ? null
+          : assessHarvestLane({
+              farm: runtime.getConfiguration(),
+              lane: { kind: 'strip', bay: 0, strip: 1 },
+              vehicle: {
+                width: mission.width,
+                length: mission.length,
+                height: mission.height,
+                clearance: mission.clearance
+              },
+              canopyReserve: mission.canopyReserve,
+              start: mission.start,
+              end: mission.end,
+              survey: mission.survey
+            })
+      expect(runtime.getUndoDepth()).toBe(historyDepth + 1)
+      expect(runtime.getRobot().settings).toEqual(mission)
+      expect
+        .soft(runtime.getRobot().lane, `removed strip ${removed}`)
+        .toEqual(expected)
+      await runtime.undo()
+      expect(runtime.getConfiguration()).toEqual(configuration)
+      expect(runtime.getRobot().settings).toEqual(mission)
+      expect(runtime.getRobot().lane).toEqual(route)
+      await runtime.redo()
+      expect(runtime.getRobot().settings).toEqual(mission)
+      expect
+        .soft(runtime.getRobot().lane, `redo removal of strip ${removed}`)
+        .toEqual(expected)
+      await runtime.undo()
+    }
+    const unchanged = runtime.getConfiguration()
+    const unchangedHistory = runtime.getUndoDepth()
+    const unchangedReport = runtime.getRobot()
+    const unchangedBuilds = builds.mock.calls.length
+    const unchangedAssessments = assessments.mock.calls.length
+    await expect
+      .soft(
+        runtime.setConfiguration({
+          ...unchanged,
+          strips: unchanged.strips.map((strip) => ({ ...strip, id: 'same' }))
+        })
+      )
+      .rejects.toThrow()
+    expect.soft(runtime.getConfiguration()).toBe(unchanged)
+    expect.soft(runtime.getUndoDepth()).toBe(unchangedHistory)
+    expect(runtime.getRobot()).toBe(unchangedReport)
+    expect(builds).toHaveBeenCalledTimes(unchangedBuilds)
+    expect(assessments).toHaveBeenCalledTimes(unchangedAssessments)
+    const added = createConfigurationStrip('soil', 0.3)
+    await runtime.setConfiguration({
+      ...unchanged,
+      strips: [...unchanged.strips, added]
+    })
+    expect(runtime.getConfiguration().strips.at(-1)).toEqual(added)
+    await runtime.undo()
+    expect(runtime.getConfiguration()).toEqual(unchanged)
+    await runtime.redo()
+    expect(runtime.getConfiguration().strips.at(-1)).toEqual(added)
   } finally {
     await runtime.dispose()
     expect(() => runtime.patchRobot({ width: 0.7 })).toThrow(/closed|retired/)

@@ -1,5 +1,39 @@
 import { expect, test } from '@playwright/test'
 
+test('keeps the selected strip identity through deletion and history', async ({
+  page
+}) => {
+  await page.goto('/')
+  await expect(page.getByText('空間模型已就緒')).toBeVisible()
+  const robot = page.getByRole('tab', { name: '機器人', exact: true })
+  const farm = page.getByRole('tab', { name: '溫室', exact: true })
+  await robot.click()
+  const lane = page.getByRole('combobox', { name: '巡邏路線', exact: true })
+  const selected = lane.locator('option:checked')
+  const identity = await lane.inputValue()
+  await expect(selected).toHaveText('第 1 棟 - 土壤 3')
+  await lane.selectOption({ label: '第 1 棟 - 土壤 5' })
+  await expect(selected).toHaveText('第 1 棟 - 土壤 5')
+  await lane.selectOption({ label: '第 1 棟 - 土壤 3' })
+  await expect(lane).toHaveValue(identity)
+  await farm.click()
+  await page.getByRole('button', { name: '刪除第 1 項', exact: true }).click()
+  await robot.click()
+  await expect(lane).toHaveValue(identity)
+  await expect(selected).toHaveText('第 1 棟 - 土壤 2')
+  await page.getByRole('button', { name: '復原 ⌘Z', exact: true }).click()
+  await expect(selected).toHaveText('第 1 棟 - 土壤 3')
+  await farm.click()
+  await page.getByRole('button', { name: '刪除第 3 項', exact: true }).click()
+  await robot.click()
+  await expect(lane).toHaveValue(identity)
+  await expect(selected).toHaveText('路線已不符合溫室配置')
+  await page.getByRole('button', { name: '復原 ⌘Z', exact: true }).click()
+  await expect(selected).toHaveText('第 1 棟 - 土壤 3')
+  await page.getByRole('button', { name: '重做 ⇧⌘Z', exact: true }).click()
+  await expect(selected).toHaveText('路線已不符合溫室配置')
+})
+
 for (const width of [390, 1440])
   for (const locale of ['zh-TW', 'en'] as const) {
     test(`robot workspace ${locale} at ${width}px`, async ({

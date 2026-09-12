@@ -344,10 +344,10 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
           startInset: 0.4,
           endInset: 0.8,
           strips: [
-            { kind: 'drain' as const, width: 0.3 },
-            { kind: 'soil' as const, width: 1 },
-            { kind: 'drain' as const, width: 0.3 },
-            { kind: 'soil' as const, width: 2 }
+            { id: 'fixture-1', kind: 'drain' as const, width: 0.3 },
+            { id: 'fixture-2', kind: 'soil' as const, width: 1 },
+            { id: 'fixture-3', kind: 'drain' as const, width: 0.3 },
+            { id: 'fixture-4', kind: 'soil' as const, width: 2 }
           ]
         }
         if (mode === 'history') {

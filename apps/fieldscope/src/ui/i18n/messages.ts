@@ -191,6 +191,7 @@ export const zhTW = {
   'validation.range': '{field}必須介於 {min} 與 {max} 公尺',
   'validation.stripCount': '畦溝配置需要 1 至 32 個項目',
   'validation.stripKind': '畦溝種類必須是土壤或水道',
+  'validation.stripIdentity': '畦溝識別碼不可空白或重複',
   'validation.clearance': '畦溝總寬必須小於單棟寬度，左右至少各留 2cm',
   'validation.arch': '拱頂起拱高度不可超過半跨寬；請增加寬度或降低高度',
   'validation.inset': '前後留白之間至少需保留 60cm',
@@ -400,6 +401,7 @@ export const en = {
   'validation.range': '{field} must be between {min} and {max} metres.',
   'validation.stripCount': 'The layout needs 1 to 32 strips.',
   'validation.stripKind': 'Strip type must be soil or drain.',
+  'validation.stripIdentity': 'Strip identities must be nonempty and unique.',
   'validation.clearance':
     'Strip widths must leave at least 2cm clearance on each side of the bay.',
   'validation.arch':

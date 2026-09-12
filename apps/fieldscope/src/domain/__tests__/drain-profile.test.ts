@@ -45,9 +45,9 @@ it.each([0.3, 0.6, 1.2])(
       ...DEFAULT_CONFIGURATION,
       length: 2,
       strips: [
-        { kind: 'soil' as const, width: 0.9 },
-        { kind: 'drain' as const, width },
-        { kind: 'soil' as const, width: 0.9 }
+        { id: 'fixture-1', kind: 'soil' as const, width: 0.9 },
+        { id: 'fixture-2', kind: 'drain' as const, width },
+        { id: 'fixture-3', kind: 'soil' as const, width: 0.9 }
       ]
     }
     const meshes = buildSiteMeshes(config)
