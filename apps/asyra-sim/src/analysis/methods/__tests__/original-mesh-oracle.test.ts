@@ -51,6 +51,14 @@ const add = (a: Rational, b: Rational): Rational => [
 ]
 const negate = (a: Rational): Rational => [-a[0], a[1]]
 const square = (a: Rational): Rational => [a[0] * a[0], a[1] * a[1]]
+const multiply = (a: Rational, b: Rational): Rational => [
+  a[0] * b[0],
+  a[1] * b[1]
+]
+const divide = (a: Rational, b: Rational): Rational => [
+  a[0] * b[1],
+  a[1] * b[0]
+]
 const compare = (a: Rational, b: Rational) => a[0] * b[1] - b[0] * a[1]
 const absolute = (a: Rational) => (a[0] < 0n ? negate(a) : a)
 const xAt = (time: number): Rational => {
@@ -189,6 +197,97 @@ it.each([
       expect(
         compare(square(rational(result.upper as number)), exact)
       ).toBeGreaterThanOrEqual(0n)
+    }
+  }
+)
+
+// A shared rotation keeps the boxes aligned in their common local frame.
+// For the mathematically normalized quaternion (0,0,z,w), its rotation is
+// c=(w²-z²)/(w²+z²), s=2zw/(w²+z²). Thus R^-1(dx,dy)=(c*dx+s*dy,-s*dx+c*dy).
+// All input numbers below denote their exact binary64 values, including 0.6
+// and 0.8; treating these as exactly 3/5 and 4/5 would be a different oracle.
+function rotatedMinimumSquared(dx: number, dy: number): Rational {
+  const z = rational(0.6),
+    w = rational(0.8),
+    denominator = add(square(w), square(z)),
+    c = divide(add(square(w), negate(square(z))), denominator),
+    s = divide(multiply([2n, 1n], multiply(z, w)), denominator),
+    x = rational(dx),
+    y = rational(dy)
+  const local = [
+    add(multiply(c, x), multiply(s, y)),
+    add(negate(multiply(s, x)), multiply(c, y))
+  ]
+  return local.reduce<Rational>((sum, coordinate) => {
+    const gap = add(absolute(coordinate), [-3n, 16n])
+    return gap[0] > 0n ? add(sum, square(gap)) : sum
+  }, zero)
+}
+
+it.each([
+  { factor: 1, threshold: 0.02, reverse: false },
+  { factor: 1, threshold: 0.02, reverse: true },
+  { factor: 1, threshold: 0.04, reverse: false },
+  { factor: 1, threshold: 0.04, reverse: true },
+  { factor: 1 / 4, threshold: 0, reverse: false },
+  { factor: 1 / 4, threshold: 0, reverse: true }
+])(
+  'bounds rotated original solids: scale $factor, threshold $threshold, reverse $reverse',
+  ({ factor, threshold, reverse }) => {
+    const dx = -0.2112 * factor,
+      dy = 0.0616 * factor,
+      rotation = [0, 0, 0.6, 0.8] as const
+    const query = input(0, reverse)
+    query.workcell = {
+      ...query.workcell,
+      bodies: query.workcell.bodies.map((body) => {
+        if (body.id === 'base') return body
+        return {
+          ...body,
+          pose: {
+            position: body.id === 'fixed' ? [dx, dy, 0] : [0, 0, 0],
+            rotation
+          },
+          joint: {
+            kind: 'fixed',
+            axis: [1, 0, 0],
+            value: 0,
+            min: 0,
+            max: 0
+          }
+        }
+      })
+    }
+    query.trajectory = { version: 1, keyframes: [{ time: 0, joints: {} }] }
+    query.interval = [0, 0]
+    const result = queryOriginalPartPair(query, {
+      threshold,
+      distanceTolerance: 1e-6,
+      timeTolerance: 1e-5,
+      maxIntervals: 1,
+      maxIterations: 48
+    })
+    const exact = rotatedMinimumSquared(dx, dy)
+    expect(result.leaves).toHaveLength(1)
+    const leaf = result.leaves[0]
+    expect(leaf.lower).toBeGreaterThanOrEqual(0)
+    expect(compare(square(rational(leaf.lower)), exact)).toBeLessThanOrEqual(0n)
+    expect(leaf.upper).not.toBeNull()
+    expect(leaf.upper as number).toBeGreaterThanOrEqual(0)
+    expect(
+      compare(square(rational(leaf.upper as number)), exact)
+    ).toBeGreaterThanOrEqual(0n)
+    expect(leaf.witnessTime).toBe(0)
+    if (factor === 1 / 4) {
+      expect(exact[0]).toBe(0n)
+      expect(leaf.penetration).toBe(true)
+      expect(leaf.state).toBe('finding')
+    } else {
+      expect(exact[0]).toBeGreaterThan(0n)
+      expect(leaf.penetration).toBe(false)
+      const separation = compare(exact, square(rational(threshold)))
+      expect(separation).not.toBe(0n)
+      expect(leaf.state).toBe(separation > 0n ? 'clear' : 'finding')
     }
   }
 )
