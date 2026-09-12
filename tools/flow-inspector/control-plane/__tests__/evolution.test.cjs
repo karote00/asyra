@@ -228,3 +228,240 @@ test('duplicate or malformed selector identity cannot create accepted evidence',
   candidate.selectors[0].contentDigest = 'unknown'
   assert.throws(() => review(base, candidate), /selector/)
 })
+
+function sourceVersions(t) {
+  const fs = require('node:fs')
+  const path = require('node:path')
+  const { randomUUID } = require('node:crypto')
+  const sourceOwner = require('../snapshot.cjs')
+  const root = path.resolve(__dirname, '../../../..')
+  const parent = path.join(root, 'tmp/flow-inspector/version-source-tests')
+  fs.mkdirSync(parent, { recursive: true })
+  const directory = fs.mkdtempSync(path.join(parent, 'run-'))
+  t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
+  const contract = version().contract
+  const seed = sourceOwner.captureSource(
+    root,
+    path.join(directory, 'seed'),
+    contract
+  )
+  const repository = path.join(directory, 'repository')
+  fs.cpSync(seed.sourceRoot, repository, { recursive: true })
+  function capture() {
+    const attemptId = randomUUID()
+    const snapshot = sourceOwner.captureSource(
+      repository,
+      path.join(repository, '.proofs', attemptId),
+      contract
+    )
+    const admitted = sourceOwner.validateSourceSnapshot(snapshot, contract)
+    const contentDigest = admitted.verificationSource.files.find(
+      (file) => file.path === contract.testFile
+    ).digest
+    return {
+      contract,
+      selectors: contract.cases.map((item) => ({
+        caseId: item.id,
+        file: contract.testFile,
+        testName: item.testName,
+        contentDigest
+      })),
+      verificationSource: {
+        attemptId,
+        repository,
+        head: snapshot.head,
+        sourceDigest: snapshot.digest,
+        configurationDigest: snapshot.configurationDigest,
+        descriptor: admitted.verificationSource
+      }
+    }
+  }
+  return {
+    capture,
+    changeConfiguration() {
+      const file = path.join(repository, contract.configFile)
+      fs.chmodSync(file, 0o600)
+      fs.appendFileSync(file, '\n')
+    }
+  }
+}
+
+test('version review exposes actual verification configuration changes even when selectors are unchanged', (t) => {
+  const source = sourceVersions(t)
+  const base = source.capture()
+  source.changeConfiguration()
+  const candidate = source.capture()
+  assert.deepEqual(candidate.selectors, base.selectors)
+  assert.equal(candidate.contract.digest, base.contract.digest)
+  const history = createHistory(base)
+  const comparison = compareVersion(history, candidate)
+  assert.ok(
+    comparison.changes.some(
+      (item) =>
+        item.kind === 'content-change' && item.subject === 'verification-source'
+    )
+  )
+  assert.equal(comparison.invalidatesEvidence, true)
+  const accepted = decideVersion(
+    history,
+    comparison,
+    candidate,
+    { decision: 'accept', reason: 'Review changed verification inputs' },
+    actor
+  )
+  assert.deepEqual(
+    accepted.versions.at(-1).verificationSource,
+    candidate.verificationSource
+  )
+  assert.ok(
+    Object.isFrozen(accepted.versions.at(-1).verificationSource.descriptor)
+  )
+  assert.equal(accepted.versions.at(-1).verificationStatus, 'unknown')
+  assert.equal(history.versions.length, 1)
+})
+
+test('same verification bytes in a different captured attempt change review identity without inventing content changes', (t) => {
+  const source = sourceVersions(t)
+  const base = source.capture(),
+    candidate = source.capture()
+  const history = createHistory(base)
+  const unchanged = compareVersion(history, base)
+  const changedReference = compareVersion(history, candidate)
+  assert.notEqual(changedReference.id, unchanged.id)
+  assert.deepEqual(changedReference.changes, [])
+  assert.equal(changedReference.invalidatesEvidence, false)
+  assert.throws(
+    () =>
+      decideVersion(
+        history,
+        unchanged,
+        candidate,
+        { decision: 'accept', reason: 'Reuse old review' },
+        actor
+      ),
+    /candidate changed/
+  )
+})
+
+test('malformed verification references and conflicting contract role or selector identities reject validation', (t) => {
+  const base = sourceVersions(t).capture()
+  for (const corrupt of [
+    (v) => {
+      v.verificationSource = null
+    },
+    (v) => {
+      v.verificationSource.attemptId = 'untrusted-path'
+    },
+    (v) => {
+      v.verificationSource.repository = '../repository'
+    },
+    (v) => {
+      v.verificationSource.sourceDigest = 'invalid'
+    },
+    (v) => {
+      v.verificationSource.descriptor.contractDigest = 'a'.repeat(64)
+    },
+    (v) => {
+      v.verificationSource.descriptor.roles.test = v.contract.configFile
+    },
+    (v) => {
+      v.verificationSource.descriptor.files.pop()
+    },
+    (v) => {
+      v.selectors[0].contentDigest = 'b'.repeat(64)
+    }
+  ]) {
+    const candidate = structuredClone(base)
+    corrupt(candidate)
+    assert.throws(() => createHistory(candidate), /verification/)
+  }
+})
+
+test('a reviewed source reference cannot be removed by acceptance but an explicit rejection remains auditable', (t) => {
+  const base = sourceVersions(t).capture()
+  const candidate = { contract: base.contract, selectors: base.selectors }
+  const history = createHistory(base)
+  const comparison = compareVersion(history, candidate)
+  assert.ok(
+    comparison.blockers.some(
+      (item) => item.kind === 'missing-verification-source'
+    )
+  )
+  assert.throws(
+    () =>
+      decideVersion(
+        history,
+        comparison,
+        candidate,
+        { decision: 'accept', reason: 'Drop source authority' },
+        actor
+      ),
+    /unresolved/
+  )
+  const rejected = decideVersion(
+    history,
+    comparison,
+    candidate,
+    { decision: 'reject', reason: 'Keep existing source authority' },
+    actor
+  )
+  assert.equal(rejected.versions.length, 1)
+  assert.equal(rejected.decisions.at(-1).decision, 'reject')
+})
+
+test('legacy absence remains unchanged and gains a source reference only through an explicit reviewed version', (t) => {
+  const candidate = sourceVersions(t).capture()
+  const legacy = {
+    contract: candidate.contract,
+    selectors: candidate.selectors
+  }
+  const history = createHistory(legacy)
+  const before = JSON.stringify(history)
+  const comparison = compareVersion(history, candidate)
+  assert.equal(Object.hasOwn(history.versions[0], 'verificationSource'), false)
+  const accepted = decideVersion(
+    history,
+    comparison,
+    candidate,
+    { decision: 'accept', reason: 'Bind retained verification source' },
+    actor
+  )
+  assert.ok(accepted.versions[1].verificationSource)
+  assert.equal(Object.hasOwn(accepted.versions[0], 'verificationSource'), false)
+  assert.equal(JSON.stringify(history), before)
+})
+
+test('version retention consumes admitted references without rereading or revalidating source artifacts', (t) => {
+  const candidate = sourceVersions(t).capture()
+  const sourceOwner = require('../snapshot.cjs')
+  const fs = require('node:fs')
+  const forbidden = () => {
+    throw new Error('Repeated source work')
+  }
+  const reads = t.mock.method(fs, 'readFileSync', forbidden)
+  const source = t.mock.method(sourceOwner, 'validateSourceSnapshot', forbidden)
+  const runtime = t.mock.method(sourceOwner, 'validateRuntimeSource', forbidden)
+  const descriptor = t.mock.method(
+    sourceOwner,
+    'createVerificationSource',
+    forbidden
+  )
+  const history = createHistory(candidate)
+  const comparison = compareVersion(history, candidate)
+  const accepted = decideVersion(
+    history,
+    comparison,
+    candidate,
+    { decision: 'accept', reason: 'Explicit exact-source retention' },
+    actor
+  )
+  const recorded =
+    accepted.versions.at(-1).verificationSource.configurationDigest
+  candidate.verificationSource.configurationDigest = 'b'.repeat(64)
+  assert.equal(
+    accepted.versions.at(-1).verificationSource.configurationDigest,
+    recorded
+  )
+  for (const method of [reads, source, runtime, descriptor])
+    assert.equal(method.mock.callCount(), 0)
+})
