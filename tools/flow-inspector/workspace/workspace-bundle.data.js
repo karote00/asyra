@@ -35415,6 +35415,7 @@
             "purpose": "Flow targets and work decomposition",
             "inputs": [
               "artifact:admitted-proof-contract",
+              "artifact:reviewed-contract-evolution",
               "retained accepted versions and prepared evolution contracts",
               "explicit local actor decision and expected target revision",
               "artifact:agent-task-state",
@@ -35426,7 +35427,7 @@
               "artifact:work-admission"
             ],
             "conditions": [
-              "Bind one flow and exact target revision and accepted baseline. Require complete assigned-or-pending coverage, exact references, disjoint responsibility and acyclic explicit handoffs. Persist immutable revisions and audit atomically under the existing store lock. Link only exact admitted task scope. Project task and PR observations separately; prerequisites remain unconfirmed and full target pending. Reserve exact task, work promise, actor and baseline source before execution; unresolved prerequisites reject. Admitted commitments cannot be removed. Validate linked task execution against retained admission; bounded candidate assessments never complete the target."
+              "Bind one flow and exact target revision and accepted baseline. A new targetReviewId resolves the exact trusted reviewed candidate and verification reference once at creation; retain its reviewId/candidateDigest pin immutably, check that same review on load, and reject missing or conflicting identity before writes. Preserve legacy absence without new authority and never replace a pin using latest/green status. Accepted immutable history revision selects its separate byte reference. Require complete assigned-or-pending coverage, exact references, disjoint responsibility and acyclic explicit handoffs. Persist immutable revisions and audit atomically under the existing store lock. Link only exact admitted task scope. Project task and PR observations separately; prerequisites remain unconfirmed and full target pending. Reserve exact task, work promise, actor and baseline source before execution; unresolved prerequisites reject. Admitted commitments cannot be removed. Validate linked task execution against retained admission; bounded candidate assessments never complete the target."
             ],
             "bypasses": [
               "Exact request replay returns the original revision without writes. Invalid, stale or conflicting decisions have no effects. No partial verification bypass or automatic acceptance."
@@ -36105,6 +36106,16 @@
         ],
         "routes": [
           {
+            "id": "reviewed-version-to-target-pin",
+            "from": "review-contract-evolution",
+            "to": "manage-flow-target",
+            "kind": "conditional",
+            "predicate": "A target explicitly selects an exact retained review with an admitted verification reference; the trusted service supplies that review/candidate pair, and the target pins the version-owned candidate digest without rehashing.",
+            "producedArtifacts": [
+              "artifact:reviewed-contract-evolution"
+            ]
+          },
+          {
             "id": "verification-admission-to-version",
             "from": "serve-proof-actions",
             "to": "review-contract-evolution",
@@ -36609,7 +36620,8 @@
             "ownerStepId": "review-contract-evolution",
             "channel": "contract-evolution",
             "consumerStepIds": [
-              "serve-proof-actions"
+              "serve-proof-actions",
+              "manage-flow-target"
             ]
           },
           {

@@ -456,6 +456,36 @@ never accepts its target revision. Unknown revisions and flow references reject.
 The target retains its complete obligation inventory, including unassigned pending
 obligations. Existing accepted-flow protection and all six Factory gates remain.
 
+For new source-authoritative targets, creation also selects `targetReviewId`,
+the existing hash identity of an exact retained version review. The trusted
+service's `getVersionReview(id)` supplies that immutable review and candidate
+pair. It must match the requested id, target contract digest and a valid
+service-admitted candidate verification reference. The target owner copies only
+`targetVerification: {reviewId, candidateDigest}` into the immutable target;
+`candidateDigest` is the version owner's fingerprint of the entire reviewed
+candidate, including its exact verification source reference. The target owner
+does not recompute that fingerprint or accept client-supplied candidates.
+
+Missing or conflicting review/candidate/reference identities reject creation
+before any revision write. Create-request replay, subsequent revisions, links
+and admissions preserve this pin; later requests cannot supply a replacement.
+On retained-state admission, resolve the same review and verify the pin and
+contract again. A missing or changed review cannot be repaired by selecting a
+newer review, a passing attempt or another candidate with the same contract
+digest. A later review rejection leaves the historical pin intact: explicitly
+admitted local development may continue against that frozen target, but review
+status grants no acceptance permission and never changes its verification bytes.
+
+Legacy targets without the pin retain their existing standalone behavior and
+bytes. New authoritative source assessment reports their missing verification
+authority instead of deriving a pin from current files or another review.
+The accepted baseline remains separate: its exact immutable history `revision`
+selects its own verification reference, and its `contractDigest` is an additional
+check rather than a unique version selector. Configuration-only changes may have
+the same contract digest in multiple versions. A target verification pin never
+substitutes for accepted verification-byte authority. Service producer composition
+and new assessment consumption of these pins remain subsequent owner slices.
+
 Each work item has a stable UUID, title, one concrete step, nonempty obligation
 IDs, exact promised scope text, explicit runtime file scope, and prerequisite
 work IDs with nonempty required handoff descriptions. Every target obligation must
