@@ -59,3 +59,22 @@ Cross-package imports use public `@asyra/*` facades. Do not import another app's
   retire source handles; dock, mission, camera and farm edits preserve them.
 - D must consume this same source for later IK, approved rate checks, swept
   collision queries and retention. These read APIs start no harvesting motion.
+
+## Dispatch admission source contracts
+
+- Composition issues a `CanonicalMission` receipt for one completed B/farm/C
+  update. `prepareMission` checks receipt/source currentness, detaches canonical
+  data and issues an immutable prepared product. Copied prepared products are
+  rejected even when they retain an authentic receipt.
+- `admitDispatch` validates explicit synthetic evidence at simulation seconds,
+  obtains fresh A screens using B's completed route, and requests the required
+  dispatch/return movement coverage through an injected query owner. Source
+  handles retain C's original identity; no geometry is generated here.
+- Evidence validity is [from, until). Query intervals have positive duration,
+  end before evidence expiry and preserve dispatch-before-return order. Inputs
+  do not renew themselves. Missing/unknown/blocked results hold admission and
+  retain reasons; changed currentness during a query rejects the result.
+- The returned decision creates no run and is not a physical safety certificate.
+  This contract has formal tests using real C products and explicit query doubles;
+  the actual swept provider, session clock and normal UI wiring are subsequent
+  owners. No default clear provider is installed.

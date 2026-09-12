@@ -410,3 +410,14 @@ receipt with current C handles, unavailable rig/nonstowed evidence, zero prepara
 deterministic immutable results; formal red/green, naming, app unit/type/lint and
 independent review. Stop on an absent owner input, changed canonical policy, or
 need to invent physical parameters. This slice cannot claim M3 completion.
+
+D admission source contracts completed with independent code review. Tests use
+actual C farm/robot sources and explicit query doubles, preserving B's unknown
+design report. Initial five missing-contract cases failed before implementation;
+forged prepared identity, discarded blocked reasons and reversed/overlapping
+query intervals also have formal red/green evidence. The full app suite passed
+278 tests; after adding the real unavailable-rig rejection case, all ten focused
+admission cases passed. Typecheck, lint, naming and scoped formatting pass.
+No session, real swept provider or ordinary UI Start is wired by this source
+slice. Next: D session clock/lifecycle against issued admission products, then
+real observation/motion providers and Core composition before motion UI closure.
