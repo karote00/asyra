@@ -53,23 +53,46 @@ Derived reports live until the next relevant canonical edit; reads do no work.
 Failure owner: B owns validation/history/replacement; A owns assessment reasons.
 Cache dimensions: none proposed.
 
-## C - Robot, crate and fruit projection (M2; fruit states remain M3)
+## C - Robot, crate and fruit projection (M2 implemented; M3 planned)
 
 Owner: app render projection, engine consumes admitted spatial products.
 Inputs: canonical admitted robot definition, mission settings and completed
 simulation poses/fruit states; existing farm spatial output stays separately owned.
-Outputs: dimensioned concept geometry and state projection through SpatialLayer.
+M3 preparation also consumes the existing domain cultivar/planting outputs and
+completed farm geometry once at the owning scene boundary.
+Outputs: dimensioned concept geometry and state projection through SpatialLayer;
+M3 immutable scene revision, per-instance fruit identity, source-shape partitions
+and installed transforms for D observation/collision consumers.
 Conditions: pose updates alter transforms only; definition changes replace affected
 geometry. Blender exports, if used, must match canonical dimensions and ownership.
-Allowed: completed robot geometry/pose products, existing spatial admission/engine.
+Allowed: completed robot geometry/pose products, existing spatial admission/engine;
+existing canonical crop/layout generation only inside its scene preparation owner.
 Forbidden: perception decisions, harvest success inference, force/soil conclusions,
 rebuilding cultivars per tick or private diagnostic geometry as product output.
+No substitute primitive fruit, altered botanical formula, duplicate generator,
+visibility-filtered collision scene or geometry simplification to admit motion.
 Boundary: render-app/robot-projection.ts, domain/robot-model.ts, runtime/bootstrap.ts
 composition, formal geometry/runtime/browser tests and canonical Blender export.
-Spec: C - M2 dimensioned concept projection. focusRobot is presentation-only through
-the existing camera Feature. Fruit projection remains deferred to M3.
+M3 scene preparation allowlist (relative to apps/fieldscope/src):
+`domain/crop-models.ts` (source partitions/metadata, near/distant correspondence),
+`domain/crop-layout.ts` (plant-instance identity), `render-app/site-geometry.ts`
+(retain completed metadata/shapes/assignments), `render-app/site-projection.ts`
+(owned fruit instances and full-scene handoff), `runtime/bootstrap.ts` (revision
+and lifecycle wiring), their direct domain/render/runtime formal tests and
+existing crop/robot browser evidence. `domain/crop-fruit.ts` source formula,
+A assessment, engine contracts and other app/Framework owners remain unchanged.
+D state production and B/UI session controls are not part of this C slice.
+Spec: C - M2 dimensioned concept projection and C - M3 scene identity and geometry
+handoff. focusRobot remains presentation-only through the existing camera Feature.
+M3 fruit disposition/working-pose integration follows D's completed outputs in a
+later C execution card; preparation itself removes no fruit or admits movement.
 Definition geometry lifetime: width/length/height/tool; dock position is a transform.
-Route projection lifetime: completed lane report. No crop preparation.
+Route projection lifetime: completed lane report. Robot pose does no crop preparation.
+Scene handoff lifetime: admitted canonical scene revision and botanical dimensions;
+metadata and shapes share the existing SiteGeometry owner. C -> D passes completed
+source geometry with identities, not configuration bags for regeneration. D -> C
+returns admitted poses/dispositions for those identities. A replaced scene retires
+old evidence; camera/locale/layer visibility/read/clock/pose do not regenerate it.
 Failure owner: projection/admission failure is visible; no substitute safe geometry.
 Cache dimensions: none proposed; topology lifetime is the robot definition.
 

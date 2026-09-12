@@ -299,3 +299,28 @@ Feature: Harvest robot feasibility and supervised harvesting
     When an edit supplies missing or duplicate strip IDs
     Then the whole edit is rejected before mutation
     And the farm, mission and history remain unchanged
+
+
+  @M3
+  Scenario: Repeated cultivar instances have distinct fruit identities
+    Given two plants use the same cultivar variant
+    When the canonical scene is prepared
+    Then each individual fruit has a unique scene-local identity
+    And its near and distant geometry refer to that same identity
+    And repeated views do not create additional targets
+
+  @M3
+  Scenario: Detachable geometry preserves the attached source exactly
+    Given the canonical near and distant botanical meshes
+    When source-owned fruit partitions are prepared and reassembled
+    Then every source triangle and vertex attribute is preserved exactly once
+    And no primitive fruit or changed cultivar shape is substituted
+
+  @M3
+  Scenario: Scene consumers reuse preparation across presentation and simulation updates
+    Given an admitted scene revision with prepared fruit identities and geometry
+    When camera, locale, visibility, clock and completed pose inputs change
+    Then crop models and plant assignments are not regenerated
+    And hidden nets and leaves remain available to observation and collision queries
+    When canonical botanical inputs replace the scene
+    Then old scene evidence cannot admit movement in the new revision
