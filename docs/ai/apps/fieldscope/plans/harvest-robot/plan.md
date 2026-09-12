@@ -514,3 +514,22 @@ Gates: focused red/green, naming baseline/final, full app unit/typecheck/lint/bu
 existing robot browser tests and same-app close-up inspection. Independent
 readiness/code review precedes stage closure. Stop for source geometry changes,
 missing owner, new product contact policy or an out-of-scope contributor.
+
+C installed dock source completed: exact admitted station shapes are shared with
+presentation, and formal identity/placement/retirement/work-count cases pass.
+Independent source review passed; 295 app unit tests, typecheck, lint, naming and
+build passed. Six headed Metal robot browser cases passed, including a permanent
+uniform-canvas rejection oracle. A further permanent negative fixture preserves
+the actual observed blank page PNG; its inclusive scene rectangle contains all
+overlays and is also rejected by the unchanged guard (two focused negative cases
+pass). Original DOM bounds were not recorded, so the fixture rectangle is recovered
+from the image rather than presented as recorded runtime metadata.
+The visual guard now checks the canvas region
+of the exact saved page screenshot, not a second capture. All four bilingual
+mobile/desktop close-ups from that run were inspected against
+<a href="http://127.0.0.1:5178" target="_blank" rel="noopener noreferrer">the live FieldScope app</a>.
+An earlier intermittent blank capture remains unexplained; the current ready
+label confirms bootstrap/source readiness, not a presented-frame acknowledgement.
+No product rendering fallback was introduced. A bounded SwiftShader attempt was stopped for excessive
+GPU-process CPU and supplies no correctness evidence. Station support/contact and
+D observation/swept-motion admission remain subsequent steps; M3 is not complete.
