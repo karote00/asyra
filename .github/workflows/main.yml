@@ -67,7 +67,7 @@ jobs:
           FLOW_CI_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
           FLOW_CI_EMIT_EVIDENCE: '1'
         run: |
-          node --test --test-concurrency=1 tools/flow-inspector/control-plane/__tests__/{contracts,snapshot,runner,evidence,store,service,server,mapping,cli,evolution,ci-context,ci-evidence,operations,agent-contract,agent-provider,agent-transport,agent-task,agent-verifier,pr-review,github-delivery,workflow-results}.test.cjs
+          node --test --test-concurrency=1 tools/flow-inspector/control-plane/__tests__/{contracts,snapshot,runner,evidence,store,service,server,mapping,cli,evolution,ci-context,ci-evidence,operations,agent-contract,agent-provider,agent-transport,agent-task,agent-verifier,pr-review,github-delivery,workflow-results,flow-target}.test.cjs
           node tools/flow-inspector/control-plane/cli.cjs prove
           node tools/flow-inspector/control-plane/cli.cjs ci-trial
 

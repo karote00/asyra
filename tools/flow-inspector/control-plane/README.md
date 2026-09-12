@@ -172,7 +172,6 @@ server composes its adapter into the existing target document; static and
 standalone files do not load the adapter or require a server. No separate board
 or replacement canvas is introduced.
 
-
 ## Phase 4 Operational Trial
 
 Support is exactly the two Factory flows and six obligations above. Every command
@@ -220,7 +219,7 @@ recapture source or recompute evidence.
    `[{"kind":"split","before":["old.case"],"after":["new.a","new.b"]}]`.
    The board has the same relation type and predecessor/successor controls.
 4. Review the exact base and candidate and run `contract-accept <review-id>
-   "reason" [retirement.json]` or `contract-reject <review-id> "reason"`.
+"reason" [retirement.json]` or `contract-reject <review-id> "reason"`.
    Retirement JSON is the exact array of removed ids, e.g. `["old.case"]`.
    The separate `retire-contract` capability is required for removal. Local trusted
    operators hold it; future untrusted callers must not be granted it implicitly.
@@ -496,7 +495,6 @@ Browser artifacts include exact task state, regression/recovery details and narr
 handoff screenshots under `tmp/flow-inspector/visual-review/`. There is no claim
 of saved supervision time or reduced cost without a measured comparison period.
 
-
 ### Replay retained real-provider acceptance without model usage
 
 After the authorized task has completed its failure/correction and cancellation
@@ -598,3 +596,174 @@ case requires a separate exact preview and user confirmation. Required-check
 protection, independent verifier/issuer, model reconciliation, ticket/team work,
 hosting and standalone dynamic installation remain deferred. The package records
 a patch Changeset outside the Framework bulk-release allowlist.
+
+## Flow targets and bounded work
+
+On **Transaction Atomicity**, select a card, expand **Flow verification**, then
+**Flow targets and work decomposition**. This manages development commitments,
+not conformance. Each goal binds a concrete registered flow, a retained target
+contract digest and the currently accepted baseline revision. The two existing
+Factory flows each have three obligations; a target with more obligations must
+first have its contract admitted through the existing contract-evolution preview.
+Prepared candidates may be selected without accepting them as a new baseline.
+Reload the Board after preparing a new contract revision to load its catalog.
+
+1. Choose the target contract revision and flow, enter the development objective
+   and explicit reason, then **Create flow target**. All obligations start pending.
+2. Open **Work editor and revision preview**. Choose a step, select its promised
+   obligations, enter the exact scope and runtime files. Add prerequisite work
+   and the required handoff when applicable. **Add work to revision draft** stages
+   one work item. Repeat for the other responsibilities.
+3. Review the draft and pending inventory, provide a decision reason and select
+   **Save scope revision**. Missing coverage, overlap and cyclic or unknown
+   prerequisites reject the complete decision. Nothing is silently discarded.
+4. First **Run all flows** and select that completed baseline proof.
+   **Prepare task from this promise** durably reserves its source and task UUID,
+   then fills the existing task-admission controls with the exact step, objective,
+   files and work binding. Review those controls and explicitly
+   launch the existing deterministic demonstration if desired. This button does
+   not dispatch a model. Dependent work remains blocked because this slice has no
+   source-bound prerequisite verifier. The strict all-flow candidate verifier is
+   unchanged and can refuse partial contributions.
+5. For historical independent tasks, under **Connect an admitted task**, select the saved work and an existing task,
+   enter the decision reason and **Link exact task**. Objective, step, files,
+   retained obligations and accepted baseline must match. Linking neither starts
+   execution nor enlarges scope. Multiple tasks and their attempts and retained
+   PR records appear under **Task, attempt and PR observations**.
+6. To revise a promise, return its obligations to pending in the draft and add a
+   new work item with the changed promise. Update dependent handoffs explicitly.
+   Save a new revision; old task links, commitments and failures remain under
+   **Revision decisions and historical commitments** and the complete audit link.
+   A stale editor is rejected even after refreshing observations. **Reload saved
+   revision into editor** explicitly replaces the local draft with saved state.
+
+A work item with prerequisites shows `blocked`; prerequisites show `unconfirmed`.
+Other work and the whole goal show `pending`, including after candidate success
+or a merged PR. These are not full-flow integration results. A target does not
+retire accepted obligations, accept a baseline, reconcile provider requests, skip
+CI or combine passing checks from different source identities.
+
+### Target API and CLI
+
+Use the same running service URL and local mutation capability as other actions:
+
+```bash
+node tools/flow-inspector/control-plane/cli.cjs --url http://127.0.0.1:4318 targets
+node tools/flow-inspector/control-plane/cli.cjs --url http://127.0.0.1:4318 target-decide tmp/target-request.json
+node tools/flow-inspector/control-plane/cli.cjs --url http://127.0.0.1:4318 target-show <target-id>
+```
+
+`GET /api/targets` returns saved target summaries and the retained contract catalog.
+`GET /api/targets/<uuid>` returns the complete target, every decision, current
+allocation and original task/attempt/PR observations. `POST /api/targets/decide`
+takes exactly the same request JSON as `target-decide`; the body limit is 128 KiB.
+All writes require the existing capability. Nothing executes from a target read.
+
+Create request (replace UUID and digest placeholders using the catalog/state):
+
+```json
+{
+  "action": "create",
+  "requestId": "<fresh UUID>",
+  "expectedRevision": 0,
+  "reason": "Define this bounded development target",
+  "flowId": "deferred-publication",
+  "targetRevision": "<retained contract digest>",
+  "acceptedBaseline": { "revision": 1, "contractDigest": "<accepted digest>" },
+  "objective": "Develop deferred publication behavior",
+  "works": [
+    {
+      "id": "<fresh work UUID>",
+      "title": "Journal isolation",
+      "stepId": "record-reversible-journal",
+      "obligationIds": ["deferred.snapshot"],
+      "scope": "Preserve the captured journal before commit",
+      "allowedFiles": ["packages/factory/src/data-transact.ts"],
+      "prerequisites": []
+    }
+  ],
+  "pending": ["deferred.outcome", "deferred.delivery"]
+}
+```
+
+A prerequisite is `{ "workId": "<work UUID>", "handoff": "<required behavior>" }`.
+A `revise` request replaces the allocation using `targetId`, a fresh `requestId`,
+`expectedRevision`, `reason`, `objective`, `works` and `pending`. It cannot change
+flow, target revision or accepted baseline. A work UUID freezes its promise;
+changed unadmitted promises use new UUIDs. Once admitted, a commitment cannot be removed or replaced by an allocation revision. Omit `taskIds` in allocations: linking is a separate
+`link` decision with `targetId`, `requestId`, `expectedRevision`, `reason`,
+`workId` and `taskId`. A task cannot be reassigned to another commitment.
+
+Exact request replay returns the original revision. Conflicting reuse or stale
+revision writes fail without mutation. Decisions and state are atomic in
+`tmp/flow-inspector/runs/targets.json`, under the existing service store lock;
+older stores without that file start with no targets. Attempts, PR records,
+provider reservations and accepted history retain their original stores and
+identities. Never reset a store to bypass unresolved provider dispatch.
+
+Permanent `flow-target.test.cjs`, CLI and Board cases cover this slice. The
+three-work-plus-pending case uses a structurally admitted four-obligation offline
+contract, not invented Factory evidence. The browser test uses actual local
+candidate verification on macOS and an explicitly offline GitHub adapter; its
+PR observations make no external requests. Full cross-PR integration assessment
+and explicit target-baseline acceptance remain unimplemented.
+
+
+### Admit work before execution
+
+After `verify` passes all six obligations, use its returned attempt UUID as
+`sourceAttemptId`. Submit this decision with `target-decide` or
+`POST /api/targets/decide`:
+
+```json
+{
+  "action": "admit",
+  "targetId": "<target UUID>",
+  "requestId": "<fresh admission UUID>",
+  "expectedRevision": 1,
+  "reason": "Freeze this work against the reviewed baseline source",
+  "workId": "<work UUID>",
+  "taskId": "<reserved fresh task UUID>",
+  "sourceAttemptId": "<completed baseline proof UUID>"
+}
+```
+
+Use the target's actual current revision. Admission increments it and appends
+immutable audit without running a candidate. It requires a complete passing
+baseline proof from this store, matching accepted revision and contract. It pins
+both HEAD and source digest. Any unconfirmed prerequisite refuses admission.
+A PR merge or green check is not prerequisite evidence.
+
+Then use the existing `task-start` request, setting `requestId` to the reserved
+`taskId`, exact step/objective/files from the work, and this additional field:
+
+```json
+{
+  "workBinding": {
+    "targetId": "<target UUID>",
+    "workId": "<work UUID>",
+    "admissionId": "<admission requestId>"
+  }
+}
+```
+
+The task owner checks admission before capture, compares captured source before
+any operation, and rechecks on resume. Source mismatch preserves the rejected
+snapshot; restoring the promised source permits an explicit retry of the same
+request. Do not change scope or invent another passing source label to bypass it.
+An existing linked task may be explicitly admitted using its existing task UUID
+and original source proof. Its historical request remains unchanged. Unlinked
+legacy tasks retain the original behavior.
+
+`target-show` and the Board display a separate bounded `assessment`: pending
+before execution, unknown for unavailable evidence, failed for a failed admitted
+task, passed only when all its admitted tasks' latest strict all-flow verdicts
+pass, and stale when that pass belongs to an older accepted baseline. Failures
+from another admitted task are not erased by a new passing task. All task and
+attempt identities remain available; different sources never aggregate into a
+target pass. The target stays pending and baseline acceptance remains separate.
+
+The original target/work decomposition and new admission browser cases use the
+same `FLOW_PROOF_URL` contract and cover desktop, tablet and narrow detail views.
+No new model request, candidate PR, prerequisite issuer or protected integration
+verification is required for these deterministic formal fixtures.

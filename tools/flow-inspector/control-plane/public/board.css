@@ -217,3 +217,36 @@
   flex: none;
   margin-top: 3px;
 }
+
+.proof-body textarea {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  margin-top: 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 9px 10px;
+  color: var(--text);
+  background: var(--bg);
+  font: inherit;
+}
+.proof-body textarea:focus-visible {
+  outline: 2px solid var(--accent);
+}
+.proof-target-item {
+  border-top: 1px solid var(--line);
+  margin-top: 16px;
+  padding-top: 12px;
+  overflow-wrap: anywhere;
+}
+#target-controls fieldset {
+  min-width: 0;
+  border: 1px solid var(--line);
+}
+#target-controls details {
+  margin-top: 16px;
+}
+#target-controls h4 {
+  margin: 0;
+}

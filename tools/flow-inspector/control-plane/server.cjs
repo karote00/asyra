@@ -200,6 +200,12 @@ async function startServer(
                 ? service.taskChanges(taskRoute[1])
                 : service.getTask(taskRoute[1])
             )
+          if (route.pathname === '/api/targets')
+            return send(200, service.targets())
+          const targetRoute = route.pathname.match(
+            /^\/api\/targets\/([a-f0-9-]{36})$/
+          )
+          if (targetRoute) return send(200, service.getTarget(targetRoute[1]))
           if (route.pathname === '/api/state') return send(200, service.state())
           if (route.pathname === '/api/shared')
             return send(200, service.shared())
@@ -277,10 +283,10 @@ async function startServer(
           !timingSafeEqual(Buffer.from(provided), Buffer.from(capability))
         )
           throw new ActionError(403, 'Action is not authorized')
-        const body = await readBody(
-          request,
-          route.pathname === '/api/ci/ingest' ? 2097152 : 4096
-        )
+        let bodyLimit = 4096
+        if (route.pathname === '/api/ci/ingest') bodyLimit = 2097152
+        if (route.pathname === '/api/targets/decide') bodyLimit = 131072
+        const body = await readBody(request, bodyLimit)
         const reviewAction = route.pathname.match(
           /^\/api\/tasks\/([a-f0-9-]{36})\/review$/
         )
@@ -289,6 +295,8 @@ async function startServer(
             200,
             await service.reviewTask(reviewAction[1], body, LOCAL_ACTOR)
           )
+        if (route.pathname === '/api/targets/decide')
+          return send(200, service.decideTarget(body, LOCAL_ACTOR))
         if (route.pathname === '/api/tasks')
           return send(202, { id: service.startTask(body, LOCAL_ACTOR) })
         const taskControl = route.pathname.match(

@@ -29,6 +29,9 @@ adds actual subscription-model acceptance; full Phase 5, remote reconciliation
 and full Phase 6 remain unfinished.
 [Bounded GitHub PR Review](PR_REVIEW.md) adds the separately activated local
 candidate preview, explicit confirmation and review observation boundary. The static Inspector's schema version 2 contract is unchanged.
+[Flow targets and work decomposition](CORE_PROOF.md#flow-targets-and-work-decomposition)
+adds local audited goals and bounded work commitments through Board/API/CLI;
+full cross-PR integration assessment and target baseline acceptance remain deferred.
 
 The tool may inspect Framework and App contracts, but neither Framework nor an
 App may depend on the tool at runtime. Tool publication and versioning remain independent from Framework publication.

@@ -57,7 +57,6 @@
   have no required status checks. Phase 4 must address that explicit gap.
 - Release boundary: this closeout changes no version, Changeset, tag, or release.
 
-
 ## 2026-09-07 - Activate Phase 4 with an explicit delivery blocker
 
 - Context: the merged Phase 3 proof remains limited to two Factory flows and six
@@ -77,7 +76,6 @@
   for the necessary external setup and remaining acceptance evidence.
 - Release boundary: no package version, dependency, tag, release, deployment, or
   Phase 5/6 capability is introduced.
-
 
 ## 2026-09-08 - Close local Phase 4 scope and defer GitHub enforcement
 
@@ -133,7 +131,6 @@ Phase 5 record: recording package release intent is distinct from applying a
 version or publishing. The tool remains outside Framework bulk-release lists.
 The initial archive provides static assets and source; dynamic control-plane
 execution still depends on the Asyra checkout. No release is performed here.
-
 
 ## 2026-09-08 - Accept bounded Sol local integration evidence
 
@@ -202,3 +199,30 @@ trial. Existing task/attempt delivery identities and safeguards remain. The
 direction is approved but implementation has not started; this entry changes no
 runtime, CI, accepted baseline or protection policy, and does not resume external
 check monitoring. Prior completed records remain historical evidence.
+
+## Flow targets and work decomposition - 2026-09-12
+
+The first bounded multi-PR slice adds one-repository local targets, immutable
+work commitments, complete assigned-or-pending coverage, explicit prerequisite
+handoffs and audited scope revisions. Board/API/CLI share one target owner and
+the existing store lock. Exact task linking preserves task/attempt PR identity.
+Candidate verification remains strict; dependency evidence is unconfirmed and
+whole-target integration/acceptance remain unimplemented. This records this
+slice only, not completion of the multi-PR plan or full Phase 5/6.
+
+
+## Source-bound work admission and bounded closeout - 2026-09-12
+
+Review of PR 193 found that historical task linking did not enforce admission
+before execution. The same PR now reserves source-bound work admission and makes
+the existing task owner consume it before capture, after capture and on resume.
+Target revisions cannot remove admitted promises. Bounded task assessments keep
+failures and exact candidate identities separate from target completion.
+
+This supplements the target/work checkpoint above; it does not erase its original
+limits or accept a flow baseline. Board/API/CLI share the new admission owner,
+while unresolved prerequisites remain blocked without a new evidence issuer.
+The [bounded closeout](../../plans/completed/flow-inspector-target-work-admission-closeout.md)
+closes only the first slice. Integration verification, explicit acceptance and
+the existing provider/protection gaps remain open. No merge, version or release
+operation is authorized by this record.

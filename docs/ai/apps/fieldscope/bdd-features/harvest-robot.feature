@@ -175,3 +175,25 @@ Feature: Harvest robot feasibility and supervised harvesting
     When charger power fails or a BMS/contact/water fault occurs
     Then charging is inhibited and a fault is retained
     And no automatic energized redocking or patrol restart occurs
+
+  Scenario: Edit robot dimensions without rebuilding planted geometry
+    Given a fully planted greenhouse and a parked concept robot
+    When the operator commits a valid chassis width
+    Then Core records one intended undo action
+    And the robot and route read projections update
+    And the existing farm and cultivar geometry is reused
+    When the operator undoes and redoes that action
+    Then the width and rendered robot follow canonical history
+
+  Scenario: Invalid energy arithmetic leaves the mission unchanged
+    Given an editable robot mission with an existing history depth
+    When the operator submits energy estimates whose sum overflows
+    Then admission rejects the input before mutation
+    And the mission and history depth remain unchanged
+
+  Scenario: A shorter farm cannot silently choose another route
+    Given a mission interval ending at 49.5 metres
+    When greenhouse length becomes 20 metres
+    Then the authored mission interval remains unchanged
+    And its route is reported invalid without a replacement route
+    And the robot remains parked at its authored dock
