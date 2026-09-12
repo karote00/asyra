@@ -751,3 +751,37 @@ triangle tests, 24 exact predicates and one FK per batch; two batches took about
 475 ms in this run. Direct source bounds, distinct region mappings, dynamic
 fresh-owner equivalence and retirement/clear cases pass. The work reduction is
 source preparation only; no BVH, changed query result or visual claim is implied.
+
+Next D Step Card: injected target observation admission, under the new exact
+Inspector helper and spec Observation/action evidence. Consume a composition-issued
+context containing the actual session snapshot, canonical mission and current
+GeometrySource, with required context/mission predicates and the real session read
+API. Emit one admitted immutable synthetic assumption and original target identity;
+no second run/inventory/evidence ledger. Valid earlier evidence remains usable at
+now until its explicit expiry, including while paused or faulted without resumption.
+Clone once, validate the detached snapshot, and check all owner identities before
+and after publication. Source membership is not perception or quality proof.
+
+Allowlist: observations.ts and its permanent simulation test, plus API_SURFACES.
+No session/contracts/geometry/ray/C/UI/runtime production changes. Target fields
+retain nulls for cultivar/pose/maturity/sample coverage, individual pedicel/cutsite,
+approach/extraction and independent spine/calyx/contact-damage assumptions. Reject
+confirmation kinds until the later action owner supplies a current expected-action
+receipt; do not invent an action instance in this helper. Names are transient,
+source/target/run-scoped and introduce no persistence schema or hardware settings.
+
+Formal gates first: missing/copied/stale context, wrong run/generation/revision,
+unknown target/cultivar mismatch, future/expired/nonfinite times, getter mutation,
+valid earlier input at the current snapshot, same-target repeat identity, null
+independence and attempted action-confirmation rejection. Use the actual
+HarvestSession lifecycle in the formal fixture, with explicitly labeled dispatch
+provider doubles only to enter the existing run foundation. Prove no session
+mutation, assessment or geometry generation. Then focused tests, app unit/type/
+lint/naming/build, independent bounded review and concise completion evidence.
+Stop for a missing owner handoff, changed lifecycle or a new physical assumption.
+
+Next, the real synthetic viewpoint adapter must bind explicit camera projection,
+FOV/range and declared source sampling to actual near-ray occlusion. A fruit sample
+hit cannot prove stem/cutsite recognition, maturity, full coverage or quality.
+Action confirmations, swept movement, conservation and ordinary UI remain required
+M3 work; injected assumptions alone cannot close them.
