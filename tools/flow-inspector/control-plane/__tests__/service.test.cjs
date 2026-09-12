@@ -5,6 +5,7 @@ const path = require('node:path')
 const test = require('node:test')
 const { randomUUID } = require('node:crypto')
 const evidenceOwner = require('../evidence.cjs')
+const sourceOwner = require('../snapshot.cjs')
 const { createService, LOCAL_ACTOR } = require('../service.cjs')
 const root = path.resolve(__dirname, '../../../..')
 const parent = path.join(root, 'tmp/flow-inspector/service-tests')
@@ -200,6 +201,237 @@ test('admission detaches caller-owned flow selection before asynchronous executi
     assert.equal(record.evidence?.status, 'passed', JSON.stringify(record))
     assert.equal(record.evidence.expectedCount, 3)
     assert.deepEqual(record.runner.identity.flowIds, ['deferred-publication'])
+  } finally {
+    await service.close()
+    fs.rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('runtime source admission uses captured files once and reloads one server-owned manifest without work on reads or replay', async (t) => {
+  const dir = directory()
+  let service = createService(root, { directory: dir })
+  const validate = t.mock.method(sourceOwner, 'validateRuntimeSource')
+  const assess = t.mock.method(evidenceOwner, 'assessEvidence')
+  const read = t.mock.method(fs, 'readFileSync')
+  const manifestReads = () =>
+    read.mock.calls.filter((call) =>
+      String(call.arguments[0]).endsWith('/source-manifest.json')
+    ).length
+  try {
+    const requestId = randomUUID()
+    const id = service.start({ requestId }, LOCAL_ACTOR)
+    const record = await service.wait(id)
+    assert.equal(record.evidence.status, 'passed')
+    assert.equal(
+      validate.mock.callCount(),
+      1,
+      'live capture has one source admission'
+    )
+    assert.equal(manifestReads(), 0, 'live admission reuses captured files')
+    const admission = assess.mock.calls[0].arguments[5]
+    assert.equal(admission.attemptId, id)
+    assert.equal(admission.repository, fs.realpathSync(root))
+    assert.equal(admission.head, record.snapshot.head)
+    assert.equal(admission.sourceDigest, record.snapshot.digest)
+    assert.equal(
+      admission.runtimeSource.digest,
+      record.snapshot.runtimeSource.digest
+    )
+    assert.ok(Object.isFrozen(admission))
+    await service.close()
+    service = createService(root, { directory: dir })
+    assert.equal(
+      validate.mock.callCount(),
+      2,
+      'startup admits the retained source once'
+    )
+    assert.equal(manifestReads(), 1)
+    for (let i = 0; i < 25; i++) {
+      service.state()
+      assert.equal(service.get(id).evidence.status, 'passed')
+      assert.equal(service.start({ requestId }, LOCAL_ACTOR), id)
+    }
+    assert.equal(validate.mock.callCount(), 2)
+    assert.equal(manifestReads(), 1)
+  } finally {
+    await service.close()
+    fs.rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('invalid live runtime source is rejected before runner dispatch and cannot lend admission to another attempt', async () => {
+  const dir = directory()
+  let invalid = 'null'
+  let runs = 0
+  const service = createService(root, {
+    directory: dir,
+    capture: (...args) => {
+      const snapshot = sourceOwner.captureSource(...args)
+      if (invalid === 'null') return { ...snapshot, runtimeSource: null }
+      if (invalid === 'missing-files') {
+        const incomplete = { ...snapshot }
+        delete incomplete.files
+        return incomplete
+      }
+      return snapshot
+    },
+    runner: async () => {
+      runs++
+      return {
+        code: null,
+        reason: 'containment-unavailable',
+        report: null,
+        output: ''
+      }
+    }
+  })
+  try {
+    const rejected = await service.wait(service.start({}, LOCAL_ACTOR))
+    assert.equal(rejected.phase, 'error')
+    assert.equal(runs, 0)
+    assert.match(rejected.error, /runtime/i)
+    invalid = 'missing-files'
+    const incomplete = await service.wait(service.start({}, LOCAL_ACTOR))
+    assert.equal(
+      runs,
+      0,
+      'incomplete live capture must not reread a manifest and dispatch'
+    )
+    assert.match(incomplete.error, /manifest/i)
+    invalid = false
+    const next = await service.wait(service.start({}, LOCAL_ACTOR))
+    assert.notEqual(next.id, rejected.id)
+    assert.equal(runs, 1)
+    assert.equal(next.phase, 'error')
+  } finally {
+    await service.close()
+    fs.rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('retained runtime source admission rejects corrupt or unsafe manifests and recovers without residual ownership', async (t) => {
+  const dir = directory()
+  let service = createService(root, { directory: dir })
+  try {
+    const record = await service.wait(service.start({}, LOCAL_ACTOR))
+    assert.equal(record.evidence.status, 'passed')
+    await service.close()
+    const manifest = path.join(dir, record.id, 'source-manifest.json')
+    const bytes = fs.readFileSync(manifest)
+    const recordFile = path.join(dir, record.id, 'record.json')
+    const recordBytes = fs.readFileSync(recordFile)
+    const restore = () => {
+      fs.rmSync(manifest, { force: true })
+      fs.writeFileSync(manifest, bytes)
+      fs.writeFileSync(recordFile, recordBytes)
+    }
+    for (const [name, corrupt] of [
+      ['missing manifest', () => fs.rmSync(manifest)],
+      [
+        'changed artifact bytes',
+        () => {
+          fs.rmSync(manifest)
+          fs.writeFileSync(manifest, Buffer.concat([bytes, Buffer.from('\n')]))
+        }
+      ],
+      [
+        'oversized manifest',
+        () => {
+          fs.rmSync(manifest)
+          fs.writeFileSync(manifest, Buffer.alloc(2097153))
+        }
+      ],
+      [
+        'symlinked manifest',
+        () => {
+          fs.rmSync(manifest)
+          fs.symlinkSync(path.join(root, 'package.json'), manifest)
+        }
+      ],
+      [
+        'present null runtime identity',
+        () => {
+          const value = JSON.parse(recordBytes)
+          value.snapshot.runtimeSource = null
+          fs.writeFileSync(recordFile, JSON.stringify(value))
+        }
+      ],
+      [
+        'unsupported runtime format',
+        () => {
+          const value = JSON.parse(recordBytes)
+          value.snapshot.runtimeSource.format = 2
+          fs.writeFileSync(recordFile, JSON.stringify(value))
+        }
+      ]
+    ]) {
+      corrupt()
+      assert.throws(
+        () => createService(root, { directory: dir }),
+        /source|manifest|artifact|symlink|ENOENT|runtime/i,
+        name
+      )
+      assert.equal(
+        fs.readdirSync(dir).some((file) => file.startsWith('claim-')),
+        false,
+        name
+      )
+      restore()
+      service = createService(root, { directory: dir })
+      assert.equal(service.get(record.id).evidence.status, 'passed')
+      await service.close()
+    }
+    const forged = JSON.parse(recordBytes)
+    forged.snapshot.manifestPath = '../../caller-selected-manifest.json'
+    fs.writeFileSync(recordFile, JSON.stringify(forged))
+    const read = t.mock.method(fs, 'readFileSync')
+    service = createService(root, { directory: dir })
+    assert.equal(service.get(record.id).evidence.status, 'passed')
+    assert.equal(
+      read.mock.calls.some((call) =>
+        String(call.arguments[0]).includes('caller-selected-manifest')
+      ),
+      false
+    )
+    assert.equal(
+      read.mock.calls.filter((call) => String(call.arguments[0]) === manifest)
+        .length,
+      1
+    )
+  } finally {
+    await service.close()
+    fs.rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('historical absence of runtime source never triggers new manifest reads or runtime admission', async (t) => {
+  const dir = directory()
+  let service = createService(root, { directory: dir })
+  try {
+    const record = await service.wait(service.start({}, LOCAL_ACTOR))
+    await service.close()
+    const file = path.join(dir, record.id, 'record.json')
+    const historical = JSON.parse(fs.readFileSync(file))
+    delete historical.snapshot.runtimeSource
+    delete historical.runner.identity.runtimeSourceDigest
+    delete historical.evidence.runtimeSourceDigest
+    fs.writeFileSync(file, JSON.stringify(historical))
+    fs.rmSync(path.join(dir, record.id, 'source-manifest.json'))
+    const validate = t.mock.method(sourceOwner, 'validateRuntimeSource')
+    const read = t.mock.method(fs, 'readFileSync')
+    service = createService(root, { directory: dir })
+    assert.equal(service.get(record.id).evidence.status, 'passed')
+    assert.equal(
+      Object.hasOwn(service.get(record.id).snapshot, 'runtimeSource'),
+      false
+    )
+    assert.equal(validate.mock.callCount(), 0)
+    assert.equal(
+      read.mock.calls.some((call) =>
+        String(call.arguments[0]).endsWith('/source-manifest.json')
+      ),
+      false
+    )
   } finally {
     await service.close()
     fs.rmSync(dir, { recursive: true, force: true })

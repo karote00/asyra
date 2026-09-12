@@ -633,6 +633,42 @@ can cover negative cases but cannot establish producer readiness or replace this
 integration proof. No downstream consumer may hash a filtered full manifest as a
 substitute for the source owner's artifact.
 
+### Source admission in the local service
+
+The service admits a new runtime source once for each attempt and immutable
+snapshot identity, before runner dispatch or raw/retained evidence assessment.
+This admission depends only on the trusted attempt and captured source; completed
+evidence is consumed later for persistence and projection and is never an
+admission prerequisite. For a live capture it passes the already captured complete
+file manifest to the source owner's `validateRuntimeSource`; it does not reopen
+the manifest or source files. On restart it reads `source-manifest.json` once
+from the service-owned attempt directory selected by the validated attempt UUID.
+The saved `manifestPath` never selects that read. The existing safe-path,
+regular-file, two-megabyte artifact bound and full snapshot fingerprint checks
+apply before the source owner validates the runtime inventory against it.
+
+A successful admission retains an immutable artifact binding attempt UUID,
+repository identity, HEAD, full snapshot digest and the validated runtime source.
+This artifact lives with the service's admitted attempt records and is discarded
+on close. A changed attempt source identity cannot reuse an earlier admission;
+failed admission leaves no usable artifact. The service passes the same admitted
+artifact to raw and retained evidence admission. It is not a client-supplied pass,
+new persisted conformance flag or source identity reconstructed by a projection.
+Direct proof assessment with a complete captured snapshot can instead invoke the
+same source owner at its own admission boundary. Retained proof without a full
+manifest or a service-admitted artifact cannot gain new runtime conformance.
+
+Records with no `runtimeSource` retain their existing standalone behavior and
+cause no new manifest read. Present-but-null, malformed or unsupported identities
+are not historical absence. Current missing or corrupt source artifacts reject
+admission; another run or a client assertion cannot repair that recorded source.
+API/CLI/Board reads, request replay and unrelated state changes consume the
+admitted artifact without file reads or repeated runtime manifest validation.
+Formal service cases must prove live/restart counts, unchanged source identity
+across replay, refusal of changed identity or unsafe/missing manifest, rejection
+before runner dispatch, and cleanup after failed startup. This boundary does not
+prove an independently protected store or enable baseline acceptance.
+
 ### Prerequisites and partial work
 
 A work's required prerequisite is usable behavior on this same assessed source.

@@ -35945,7 +35945,8 @@
             "inputs": [
               "artifact:admitted-proof-contract",
               "artifact:proof-source-snapshot",
-              "artifact:proof-runner-result"
+              "artifact:proof-runner-result",
+              "artifact:admitted-runtime-source"
             ],
             "outputs": [
               "artifact:assessed-proof-evidence"
@@ -35957,7 +35958,9 @@
               "Missing or invalid reports produce an explicit non-pass, never inferred completion."
             ],
             "allowedContributors": [
-              "validated Vitest JSON result"
+              "validated Vitest JSON result",
+              "source owner validation of a complete captured manifest",
+              "service-retained full-source-bound admission"
             ],
             "forbiddenContributors": [
               "test-file existence as behavioral evidence",
@@ -35984,6 +35987,7 @@
             "inputs": [
               "artifact:admitted-proof-contract",
               "artifact:assessed-proof-evidence",
+              "artifact:proof-source-snapshot",
               "registered local request",
               "attempt store",
               "existing static workspace and catalog-declared local resources",
@@ -35995,9 +35999,11 @@
               "server-selected accepted Git base"
             ],
             "outputs": [
-              "artifact:proof-board-state"
+              "artifact:proof-board-state",
+              "artifact:admitted-runtime-source"
             ],
             "conditions": [
+              "Before runner dispatch or evidence assessment, admit runtime sources through the source owner once per attempt and immutable source identity using only the trusted attempt and captured source. Completed evidence is a later persistence/projection input, never a source admission prerequisite. Live capture uses its complete manifest without IO; restart reads the bounded server-owned attempt manifest once. Retain the full-source-bound admission for evidence consumers; failed or changed identities cannot reuse it. Legacy absence grants no runtime identity and reads or request replay never redo admission.",
               "Keep reported step work completion independent from execution, verification and delivery. Separate candidate verification from accepted conformance, persist version decisions and accepted mapping atomically, admit CI results against a server-selected base, and produce baseline-bound read-only manager snapshots only at state changes. Authorize before work, admit one run against the explicitly accepted mapping, durably record state with audit, and expose immutable snapshot-bound evidence; restart interrupts incomplete attempts. Mapping prepare and decide actions bind the exact base revision and candidate digest, preserve all obligations, and atomically retain the decision with the accepted mapping. Duplicate request identities do not repeat execution; repeated reads consume already admitted evidence.",
               "Serve allowlisted existing workspace assets and compose the proof adapter into target documents; preserve static paths, target routing, and same-origin isolation. Serve Overview at root and catalog-slug pages with an explicit path-routing marker and workspace asset base; unknown public paths return a 404 route error without a selected target. Catalog-declared standalone HTML paths redirect to their exact short workspace target, and declared documentation/source links remain readable in a separate tab."
             ],
@@ -36031,6 +36037,7 @@
             ],
             "specRefs": [
               "#controlled-actions-and-retention",
+              "#source-admission-in-the-local-service",
               "#board",
               "#flow-targets-and-work-decomposition",
               "../../../docs/ai/tools/flow-inspector/PR_REVIEW.md#confirmed-delivery"
@@ -36088,6 +36095,26 @@
           }
         ],
         "routes": [
+          {
+            "id": "source-snapshot-to-service-admission",
+            "from": "capture-proof-source",
+            "to": "serve-proof-actions",
+            "kind": "required",
+            "predicate": "Before runner dispatch or evidence assessment, a trusted service-owned attempt captures or restores source with a runtime identity; no completed evidence is required.",
+            "producedArtifacts": [
+              "artifact:proof-source-snapshot"
+            ]
+          },
+          {
+            "id": "runtime-admission-to-evidence",
+            "from": "serve-proof-actions",
+            "to": "assess-proof-evidence",
+            "kind": "conditional",
+            "predicate": "After source admission and before raw or retained evidence assessment, service-owned evidence consumes its full-source admission; direct full snapshots use source-owner admission and historical absence grants no runtime conformance.",
+            "producedArtifacts": [
+              "artifact:admitted-runtime-source"
+            ]
+          },
           {
             "id": "target-state-to-assessment",
             "from": "manage-flow-target",
@@ -36401,7 +36428,7 @@
             "from": "assess-proof-evidence",
             "to": "serve-proof-actions",
             "kind": "handoff",
-            "predicate": "The producer completed its declared boundary.",
+            "predicate": "After source admission and runner settlement, completed evidence returns for persistence and projection only; it is not an input prerequisite for earlier source admission.",
             "producedArtifacts": [
               "artifact:assessed-proof-evidence"
             ]
@@ -36427,6 +36454,14 @@
           }
         ],
         "artifacts": [
+          {
+            "id": "artifact:admitted-runtime-source",
+            "ownerStepId": "serve-proof-actions",
+            "channel": "service-owned source admission",
+            "consumerStepIds": [
+              "assess-proof-evidence"
+            ]
+          },
           {
             "id": "artifact:target-source-assessment",
             "ownerStepId": "assess-target-source",
@@ -36561,7 +36596,8 @@
             "consumerStepIds": [
               "execute-proof-run",
               "assess-proof-evidence",
-              "assess-target-source"
+              "assess-target-source",
+              "serve-proof-actions"
             ]
           },
           {

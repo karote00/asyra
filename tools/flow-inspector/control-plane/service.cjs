@@ -4,7 +4,8 @@ const path = require('node:path')
 const fs = require('node:fs')
 const { randomUUID } = require('node:crypto')
 const { admitContract, loadContract, mappingDiff } = require('./contracts.cjs')
-const { captureSource, safePath, sha256 } = require('./snapshot.cjs')
+const sourceOwner = require('./snapshot.cjs')
+const { captureSource, safePath, sha256 } = sourceOwner
 const { runVerification } = require('./runner.cjs')
 const evidenceOwner = require('./evidence.cjs')
 const { openStore, validId, writeAtomic } = require('./store.cjs')
@@ -74,7 +75,60 @@ function createService(
   ciAdmission = ciAdmission ? structuredClone(ciAdmission) : null
   let contract = loadContract(repositoryRoot)
   safePath(repositoryRoot, path.relative(repositoryRoot, directory))
+  const repository = fs.realpathSync(repositoryRoot)
   const store = openStore(directory)
+  const sourceAdmissions = new Map()
+  const admitRuntimeSource = (record, files) => {
+    const snapshot = record.snapshot
+    const retained = sourceAdmissions.get(record.id)
+    if (!snapshot || !Object.hasOwn(snapshot, 'runtimeSource')) {
+      if (retained) {
+        sourceAdmissions.delete(record.id)
+        throw new Error('Runtime source admission identity was removed')
+      }
+      return
+    }
+    if (retained) {
+      if (
+        retained.repository === repository &&
+        retained.attemptId === record.id &&
+        retained.head === snapshot.head &&
+        retained.sourceDigest === snapshot.digest &&
+        retained.runtimeSource.format === snapshot.runtimeSource?.format &&
+        retained.runtimeSource.digest === snapshot.runtimeSource?.digest
+      )
+        return retained
+      sourceAdmissions.delete(record.id)
+      throw new Error('Runtime source admission identity changed')
+    }
+    let manifest = files
+    if (!manifest) {
+      const file = safePath(
+        repositoryRoot,
+        path.relative(
+          repositoryRoot,
+          path.join(directory, record.id, 'source-manifest.json')
+        )
+      )
+      const stat = fs.statSync(file)
+      if (!stat.isFile() || stat.size > 2097152)
+        throw new Error('Source manifest artifact is invalid or oversized')
+      const bytes = fs.readFileSync(file)
+      if (sha256(bytes) !== snapshot.digest)
+        throw new Error('Source manifest artifact fingerprint mismatch')
+      manifest = JSON.parse(bytes)
+    }
+    const runtimeSource = sourceOwner.validateRuntimeSource(snapshot, manifest)
+    const admission = Object.freeze({
+      attemptId: record.id,
+      repository,
+      head: snapshot.head,
+      sourceDigest: snapshot.digest,
+      runtimeSource
+    })
+    sourceAdmissions.set(record.id, admission)
+    return admission
+  }
   try {
     if (!store.mapping())
       store.saveMapping({
@@ -92,7 +146,11 @@ function createService(
         'Accepted architecture changed; a new contract activation is required'
       )
     for (const record of store.list())
-      evidenceOwner.validateStoredEvidence(contract, record)
+      evidenceOwner.validateStoredEvidence(
+        contract,
+        record,
+        admitRuntimeSource(record)
+      )
     if (!store.mapping().evolution) {
       const contentDigest = sha256(
         fs.readFileSync(safePath(repositoryRoot, contract.testFile))
@@ -144,6 +202,7 @@ function createService(
     if (history.versions.at(-1).contract.digest !== contract.digest)
       throw new Error('Accepted version history differs from mapping')
   } catch (error) {
+    sourceAdmissions.clear()
     store.close()
     throw error
   }
@@ -290,7 +349,11 @@ function createService(
       audit: [...previous.audit, event(eventName)]
     }
     if (next.phase === 'completed')
-      evidenceOwner.validateStoredEvidence(contract, next)
+      evidenceOwner.validateStoredEvidence(
+        contract,
+        next,
+        admitRuntimeSource(next)
+      )
     store.save(next)
     return store.get(id)
   }
@@ -350,6 +413,7 @@ function createService(
       }
     })
   } catch (error) {
+    sourceAdmissions.clear()
     store.close()
     throw error
   }
@@ -366,6 +430,7 @@ function createService(
       adapter: deliveryAdapter
     })
   } catch (error) {
+    sourceAdmissions.clear()
     store.close()
     throw error
   }
@@ -401,6 +466,7 @@ function createService(
       getReview: (id) => reviews.get(id)
     })
   } catch (error) {
+    sourceAdmissions.clear()
     store.close()
     throw error
   }
@@ -773,7 +839,11 @@ function createService(
           throw new ActionError(409, 'Mapping candidate changed after review')
         mappingDiff(contract, accepted)
         for (const record of store.list())
-          evidenceOwner.validateStoredEvidence(accepted, record)
+          evidenceOwner.validateStoredEvidence(
+            accepted,
+            record,
+            admitRuntimeSource(record)
+          )
       }
       const decided = {
         ...review,
@@ -1022,6 +1092,15 @@ function createService(
         try {
           const runDirectory = path.join(directory, id)
           const snapshot = capture(repositoryRoot, runDirectory, current)
+          if (
+            Object.hasOwn(snapshot, 'runtimeSource') &&
+            !Array.isArray(snapshot.files)
+          )
+            throw new Error('Runtime source: full live manifest required')
+          const runtimeAdmission = admitRuntimeSource(
+            { id, snapshot },
+            snapshot.files
+          )
           const ciContext =
             mode === 'ci' || mode === 'ci-demo'
               ? prepareCIContext(repositoryRoot, acceptedBase, snapshot, {
@@ -1052,7 +1131,8 @@ function createService(
             snapshot,
             result,
             flowIds,
-            scenario
+            scenario,
+            runtimeAdmission
           )
           let ciFields = {}
           if (ciContext) {
@@ -1162,6 +1242,7 @@ function createService(
           await pending.get(id)
         }
       } finally {
+        sourceAdmissions.clear()
         store.close()
       }
     }
