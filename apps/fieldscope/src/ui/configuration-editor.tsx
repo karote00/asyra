@@ -10,6 +10,7 @@ import {
 import type { FarmRuntime } from '../runtime/bootstrap'
 import {
   DEFAULT_CONFIGURATION,
+  createConfigurationStrip,
   configurationSite,
   type FarmConfiguration
 } from '../domain/farm-configuration'
@@ -234,7 +235,7 @@ export function ConfigurationEditor({ runtime }: { runtime: FarmRuntime }) {
           onClick={() =>
             void update((current) => ({
               ...current,
-              strips: [...current.strips, { kind: 'soil', width: 0.3 }]
+              strips: [...current.strips, createConfigurationStrip('soil', 0.3)]
             }))
           }
           className="rounded px-2 py-1 text-xs hover:bg-[#edf1e8]"
@@ -261,7 +262,7 @@ export function ConfigurationEditor({ runtime }: { runtime: FarmRuntime }) {
       <div className="grid gap-1" data-testid="strip-editor">
         {config.strips.map((strip, i) => (
           <div
-            key={i}
+            key={strip.id}
             className="grid grid-cols-[0.75rem_minmax(3.5rem,1fr)_4.25rem_6rem] items-center gap-1 rounded bg-[#edf1e8] px-1 py-0.5"
           >
             <span className="text-center text-[10px] text-[#718268]">

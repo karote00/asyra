@@ -192,7 +192,7 @@ const projectionChanges: { name: string; patch: Partial<FarmConfiguration> }[] =
     },
     {
       name: 'empty planting rows',
-      patch: { strips: [{ kind: 'soil', width: 6.3 }] }
+      patch: { strips: [{ id: 'fixture-1', kind: 'soil', width: 6.3 }] }
     }
   ]
 
