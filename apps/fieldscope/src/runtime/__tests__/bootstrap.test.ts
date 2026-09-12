@@ -8,6 +8,8 @@ import { InstancedMesh, type BufferGeometry } from 'three'
 // @vitest-environment jsdom
 import { expect, it, vi } from 'vitest'
 import * as crops from '../../domain/crop-models'
+import * as robotModel from '../../domain/robot-model'
+import { REST_JOINTS } from '../../domain/robot-kinematics'
 import * as projection from '../../render-app/site-projection'
 import { ThreeEngine, type GraphicsDriver } from '../../engine/three-engine'
 import { bootstrap } from '../bootstrap'
@@ -20,6 +22,7 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
     const updates = vi.spyOn(RenderMesh.prototype, 'update')
     const build = vi.spyOn(projection, 'buildSiteMeshes')
     const cropBuild = vi.spyOn(crops, 'createCropModels')
+    const robotBuild = vi.spyOn(robotModel, 'createRobotModel')
     const preset = vi.spyOn(projection, 'cameraPreset')
     let measurementMs = 0
     const measureScene = navigation.measureScene
@@ -76,6 +79,13 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
     try {
       flush()
       const initialScene = runtime.getScene()
+      const robotSource = runtime.getRobotSource()
+      expect(runtime.isCurrentRobotSource(robotSource)).toBe(true)
+      for (let i = 0; i < 3; i++) {
+        expect(runtime.getRobotSource()).toBe(robotSource)
+        runtime.evaluateRobotPose(robotSource, REST_JOINTS)
+      }
+      expect(robotBuild).toHaveBeenCalledTimes(1)
       const notify = vi.fn(),
         unsubscribe = runtime.subscribe(notify)
       if (mode === 'navigation') {
@@ -403,6 +413,8 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
         }
         stopConfig()
       }
+      expect(runtime.getRobotSource()).toBe(robotSource)
+      expect(robotBuild).toHaveBeenCalledTimes(1)
       unsubscribe()
     } finally {
       await runtime.dispose()
@@ -410,6 +422,7 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
       expect(disconnect).toHaveBeenCalledTimes(1)
       expect(() => runtime.orbit(1, 1)).toThrow()
       expect(() => runtime.getScene()).toThrow()
+      expect(() => runtime.getRobotSource()).toThrow()
       await runtime.dispose()
       expect(cropBuild).toHaveBeenCalledTimes(
         mode === 'soil-edit' || mode === 'navigation' ? 1 : 2
@@ -417,6 +430,7 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
       structure.mockRestore()
       updates.mockRestore()
       cropBuild.mockRestore()
+      robotBuild.mockRestore()
       build.mockRestore()
       preset.mockRestore()
       measure.mockRestore()

@@ -10,13 +10,30 @@ export interface RobotPart {
   id: string
   color: number
   metalness: number
-  shape: ReturnType<TriangleBuilder['shape']>
+  shape: {
+    readonly kind: 'triangles'
+    readonly positions: readonly number[]
+    readonly indices: readonly number[]
+    readonly colors?: readonly number[]
+    readonly uvs?: readonly number[]
+  }
 }
+/** Rest frames share the exact dimensions used by the existing concept meshes. */
+export function robotRestFrames({ length: l, height: h }: RobotDefinition) {
+  return {
+    shoulder: [0, h * 0.7, -l * 0.3 + 0.09] as Point3,
+    elbow: [0, h * 0.86, -l * 0.04] as Point3,
+    wrist: [0, h * 0.59, l * 0.13] as Point3,
+    tool: [0, h * 0.515, l * 0.14] as Point3
+  }
+}
+
 /** Dimensioned concept parts in chassis-local SI coordinates. No scene or sensing state. */
 export function createRobotModel(
   definition: RobotDefinition
 ): readonly RobotPart[] {
   const { width: w, length: l, height: h, tool } = definition
+  const frames = robotRestFrames(definition)
   const parts: RobotPart[] = []
   const add = (
     id: string,
@@ -179,27 +196,11 @@ export function createRobotModel(
     [w * 0.33, 0.12, 0.07],
     shell
   )
-  cylinder('shoulder', [0, h * 0.7, mastZ + 0.09], 0.054, w * 0.25, dark)
-  tube(
-    'upper-arm',
-    [
-      [0, h * 0.7, mastZ + 0.09],
-      [0, h * 0.86, -l * 0.04]
-    ],
-    0.065,
-    shell
-  )
-  cylinder('elbow', [0, h * 0.86, -l * 0.04], 0.047, 0.1, green)
-  tube(
-    'forearm',
-    [
-      [0, h * 0.86, -l * 0.04],
-      [0, h * 0.59, l * 0.13]
-    ],
-    0.052,
-    shell
-  )
-  cylinder('wrist', [0, h * 0.59, l * 0.13], 0.036, 0.07, dark)
+  cylinder('shoulder', frames.shoulder, 0.054, w * 0.25, dark)
+  tube('upper-arm', [frames.shoulder, frames.elbow], 0.065, shell)
+  cylinder('elbow', frames.elbow, 0.047, 0.1, green)
+  tube('forearm', [frames.elbow, frames.wrist], 0.052, shell)
+  cylinder('wrist', frames.wrist, 0.036, 0.07, dark)
   box(
     'camera-housing',
     [0, h - 0.029, -l * 0.15],

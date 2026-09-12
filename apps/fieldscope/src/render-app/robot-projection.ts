@@ -8,6 +8,22 @@ import { readSpatialDescriptor } from '../engine/spatial-contract'
 import type { SpatialFrame, SpatialMesh } from './spatial-layer'
 import type { SceneBounds } from './camera-navigation'
 
+import {
+  prepareRobotRig,
+  evaluateRobotPose,
+  UnsupportedRobotRigError,
+  type RobotRig,
+  type RobotJoints
+} from '../domain/robot-kinematics'
+
+export interface RobotSource {
+  readonly revision: number
+  readonly parts: readonly Readonly<RobotPart>[]
+  readonly rig: RobotRig | null
+  readonly unavailable: 'unsupported-lift' | null
+}
+let nextRevision = 0
+
 function project(
   parts: readonly RobotPart[],
   x: number,
@@ -35,6 +51,7 @@ function project(
 /** One definition product per runtime; camera and UI never construct geometry. */
 export class RobotProjection {
   private definition = ''
+  private source?: RobotSource
   private localBounds: SceneBounds = { min: [0, 0, 0], max: [0, 0, 0] }
   private parts: SpatialFrame['meshes'] = []
   private readonly dock = project(createDockModel(), 0, 0, 'dock')
@@ -42,7 +59,28 @@ export class RobotProjection {
     const s = report.settings
     const key = `${s.width}:${s.length}:${s.height}:${s.tool}`
     if (key !== this.definition) {
-      this.parts = project(createRobotModel(s), 0, 0, 'robot')
+      const raw = createRobotModel(s)
+      this.parts = project(raw, 0, 0, 'robot')
+      const parts = Object.freeze(
+        raw.map((part, index) => {
+          const shape = this.parts[index].descriptor.shape
+          if (shape.kind !== 'triangles')
+            throw new Error('Expected robot triangle product')
+          return Object.freeze({ ...part, shape })
+        })
+      )
+      let rig: RobotRig | null = null
+      try {
+        rig = prepareRobotRig(s, parts)
+      } catch (error) {
+        if (!(error instanceof UnsupportedRobotRigError)) throw error
+      }
+      this.source = Object.freeze({
+        revision: ++nextRevision,
+        parts,
+        rig,
+        unavailable: rig ? null : 'unsupported-lift'
+      })
       const min: [number, number, number] = [Infinity, Infinity, Infinity]
       const max: [number, number, number] = [-Infinity, -Infinity, -Infinity]
       for (const item of [...this.parts, ...this.dock]) {
@@ -95,7 +133,21 @@ export class RobotProjection {
       max: [max[0] + x, max[1], max[2] + z]
     }
   }
+  getSource(): RobotSource {
+    if (!this.source) throw new Error('Robot source is unavailable')
+    return this.source
+  }
+  isCurrentSource(source: RobotSource): boolean {
+    return this.source !== undefined && source === this.source
+  }
+  evaluatePose(source: RobotSource, joints: RobotJoints) {
+    if (!this.isCurrentSource(source)) throw new Error('Retired robot source')
+    if (!source.rig)
+      throw new UnsupportedRobotRigError('Unsupported lift stroke')
+    return evaluateRobotPose(source.rig, joints)
+  }
   clear() {
+    this.source = undefined
     this.parts = []
     this.definition = ''
   }
