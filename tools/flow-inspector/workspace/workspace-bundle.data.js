@@ -35651,13 +35651,16 @@
               "trusted provider transport settlement and usage observations",
               "human stop, cancel, resume, revoke or handoff request",
               "artifact:agent-candidate-verdict",
-              "artifact:work-admission"
+              "artifact:assessed-proof-evidence",
+              "artifact:work-admission",
+              "source-owned retained snapshot byte verification and direct evidence admission for the fixed retained attempt"
             ],
             "outputs": [
               "artifact:agent-task-state",
               "artifact:agent-candidate-source"
             ],
             "conditions": [
+              "At startup, passing verdicts with any source descriptor require all three exact descriptors, a fixed last-attempt UUID source/report location, baseline/full/configuration binding, actual retained bytes verified once by the source owner and one direct evidence admission with trusted context. Cache only completed admission; reads and identical replay do no source work. Preserve true historical absence without synthesizing derived authority.",
               "Broker operations before effects; persist cumulative budgets and audit with task state. Reserve adapter turns before dispatch against the authorization lifetime; internal HTTP retries remain unmeasured and are not a supported hard limit; retain unknown usage and unresolved remote requests across cancellation and restart and block replay until trusted reconciliation. Preserve partial source and history across cancellation and restart. Finish requires actual source progress; candidate verdict never authorizes baseline acceptance. Consume the target owner admission check before capture, after capture, and on resume before any operation or provider reservation."
             ],
             "bypasses": [
@@ -35685,7 +35688,8 @@
               "tools/flow-inspector/control-plane/__tests__/agent-task.test.cjs"
             ],
             "specRefs": [
-              "../../../docs/ai/tools/flow-inspector/AGENT_EXECUTION.md#controlled-execution"
+              "../../../docs/ai/tools/flow-inspector/AGENT_EXECUTION.md#controlled-execution",
+              "../../../docs/ai/tools/flow-inspector/AGENT_EXECUTION.md#retained-candidate-admission"
             ],
             "failureOwnerStepId": "execute-agent-task"
           },
@@ -36194,6 +36198,16 @@
             "to": "verify-agent-candidate",
             "kind": "conditional",
             "predicate": "After actual runner settlement and before candidate verdict completion, direct evidence returns with one combined source admission using the candidate-owned trusted location parameter; no completed candidate verdict is a prerequisite.",
+            "producedArtifacts": [
+              "artifact:assessed-proof-evidence"
+            ]
+          },
+          {
+            "id": "retained-evidence-to-task",
+            "from": "assess-proof-evidence",
+            "to": "execute-agent-task",
+            "kind": "conditional",
+            "predicate": "At startup after the retained verdict and actual candidate bytes are available, return exact re-admitted evidence before publishing task needs-review; no completed task projection is a prerequisite.",
             "producedArtifacts": [
               "artifact:assessed-proof-evidence"
             ]
@@ -36734,7 +36748,8 @@
             "consumerStepIds": [
               "serve-proof-actions",
               "assess-target-source",
-              "verify-agent-candidate"
+              "verify-agent-candidate",
+              "execute-agent-task"
             ]
           },
           {

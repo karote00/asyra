@@ -226,6 +226,47 @@ supported flows sharing the step; confirmed failures come only from assertions.
 A human can inspect source changes, retained report and audit before applying
 anything through their ordinary review workflow.
 
+## Retained candidate admission
+
+On startup, a task retaining passing candidate verification must re-admit that
+proof before exposing `needs-review`. If any of its verdict's `runtimeSource`,
+`verificationSource` or `executionSource` fields is present, require all three;
+present-null, partial or unsupported identities cannot take the legacy path.
+Historical verdicts with all three fields absent keep their existing validation,
+without constructing derived identity or rewriting evidence on load.
+
+For the new path, the last retained attempt must have a valid UUID. Select its
+verification directory only as the fixed task-owned
+`verification/<attemptId>` child, its source as `source` and its actual runner
+report as `vitest.json`. Require the saved report path and artifact directory to
+match those exact locations; do not derive source authority from either saved
+path. Bind the verdict's baseline digest to the task's captured snapshot, and
+require its complete manifest fingerprint through the single combined source
+admission, without a preliminary task-owned rehash of that same candidate
+manifest. Preserve the old standalone fingerprint check only for the legacy
+branch. Load the exact original captured contract through the existing contract
+owner only after checking its canonical task-owned `input-<UUID>/source` location,
+never another task or the mutable checkout, and
+match its contract, mapping and architecture identities with the saved task and
+baseline. Keep that baseline metadata source distinct from the candidate tree.
+
+Reconstruct the candidate using its verdict's full manifest, configuration and
+all three source descriptors, with the task-owned fixed source directory.
+Call the source owner's retained byte helper once for every entry, then the
+evidence owner once with the actual retained report and the separately supplied
+trusted execution context. This is one byte-verification operation and one
+combined candidate source/identity admission in the same startup lifetime;
+no service admission tuple is synthesized. Preserve report fingerprint checks
+and require exact agreement with the immutable saved evidence. Missing or changed
+source bytes, wrong locations, descriptor substitutions and execution identity
+mismatches reject passing admission. Cache the admitted task state; ordinary
+get/list and identical creation replay perform no source reads or reassessment.
+Non-passing task history keeps its existing lifecycle and evidence semantics.
+
+This owner closes the existing real passing task restart regression caused by
+the new candidate descriptor handoff. It does not make derived snapshots valid
+inputs to ordinary reference composition or grant baseline acceptance.
+
 ## Shared surfaces and work lifetime
 
 The existing service exposes the same task actions and records to CLI, API and
