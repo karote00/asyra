@@ -709,10 +709,12 @@ const data = {
       inputs: [
         'artifact:proof-board-state',
         'existing workspace canvas DOM and selected architecture target',
-        'user-selected flow and scenario'
+        'user-selected flow and scenario',
+        'explicit user-selected retained review and source attempt; cached assessment records and projections supplied by the action service'
       ],
       outputs: ['artifact:proof-board-view'],
       conditions: [
+        'Project retained assessment history, immutable target/accepted version pins, separate accepted/work-prerequisite/integration results, progress, blockers and currentness from the service. New target creation passes only an explicitly selected review id; new assessment passes the saved allocation and explicitly selected source attempt. Refresh never selects source or review authority. Legacy absence remains unavailable, errors stay visible, and eligibility never accepts history. Poll through producer gaps without reassessment or redundant detail reads; preserve unchanged work controls, drafts, focus and canvas state.',
         'Prepare target work through an explicit source-bound admission before filling the task form. Project pending reservations and bounded assessments without replacing work controls on task updates; unknown prerequisites cannot launch work.',
         'Preserve the existing canvas cards, routes, geometry, controls, and details; project exact selected-flow results and actions into that surface without replacing the graph.',
         'On a newly selected failed attempt, select the first failing flow if the current flow has no failures; request viewer-owned framing of that flow’s failed step IDs once per changed result; preserve subsequent manual selection, pan and zoom on unchanged refresh. Success and unknown results do not move the viewport. Show a persistent run-level failure alert with named owner navigation and geometry-preserving failed card highlights; clear them on recovery.',
@@ -741,6 +743,7 @@ const data = {
       ],
       specRefs: [
         '#board',
+        '#target-assessment-board-consumer',
         '#flow-targets-and-work-decomposition',
         '../../../docs/ai/tools/flow-inspector/PR_REVIEW.md#review-observations'
       ],
@@ -972,7 +975,7 @@ const data = {
       from: 'serve-proof-actions',
       to: 'render-proof-board',
       kind: 'handoff',
-      predicate: 'The producer completed its declared boundary.',
+      predicate: 'Consume service-owned board state, exact retained review/target pins and cached assessment records/currentness projections through public HTTP reads; explicit create/start/cancel actions return through the same service authority, without client assessment or private role dispatch.',
       producedArtifacts: ['artifact:proof-board-state']
     },
     {

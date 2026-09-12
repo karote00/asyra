@@ -939,6 +939,51 @@ remote commands use the existing loopback capability transport. Both preserve
 exact request replay and report the same service-owned identities and separated
 verdicts, without CLI-owned assessment, role selection or private proof dispatch.
 
+### Target assessment Board consumer
+
+The existing target controls expose an explicit reviewed verification-source
+selector when creating a target. Its value is the retained review id, submitted
+as `targetReviewId`; display the candidate contract digest and version-owned
+candidate digest separately. Changing the target contract clears an incompatible
+selection. Refresh never selects a latest or passing review on the user's behalf.
+Leaving this selector empty preserves standalone legacy creation, visibly without
+target verification authority. Saved targets display their immutable
+`targetVerification` and `acceptedVersion` pins read-only, separately from the
+accepted mapping revision. Missing legacy pins remain missing; neither the Board
+nor a later refresh upgrades them.
+
+Assessment requires a separately and explicitly selected retained source attempt;
+show its captured HEAD and runtime identity from the public run snapshot. Display
+repository identity only from an already public assessment runtime tuple for that
+exact source attempt; otherwise label it unavailable before assessment, never
+infer it from checkout paths or another reference. The source selector starts
+empty and refresh preserves the user's selection without choosing the latest or
+green attempt. Start submits only a new request id, saved target id, exact displayed
+allocation revision and selected source attempt id to the existing assessment HTTP
+API. The service determines reference availability, authorization and producer
+selection. Cancellation addresses the selected running assessment. Start, cancel
+and read failures remain visible rather than rendering successful or empty evidence.
+
+Retained assessment history and details come from the cached service projections.
+Display accepted preservation, each bounded work and its prerequisites, and full
+target integration separately, including named blockers, slot progress/reasons,
+source/verification identities, currentness and eligibility. Historical verdicts
+remain visible when stale; eligibility does not accept a target or alter accepted
+history. Selecting a saved assessment is inspection only and must not change the
+source or review selections for a new request. Missing pins are explicitly
+unavailable; missing, unknown, pending and failed observations never appear passed.
+
+Polling continues while an assessment is running, including gaps between producer
+attempts. Consume the retained list's full record/projection without a redundant
+detail fetch or client reassessment. Unchanged responses preserve work controls,
+draft fields, focus, selected source/review and canvas selection/viewport; changed
+assessment presentation is confined to its own surface. Target retirement aborts
+requests and removes listeners through the existing adapter lifecycle. This
+consumer does not relax work-admission prerequisites or expose private role-proof
+dispatch. Formal browser cases use real captured source, reviewed references and
+runner evidence, and retain inspected screenshots from the same served Board for
+desktop, tablet and narrow layouts.
+
 ### One source and distinct verification contracts
 
 Every participating producer must bind the same repository, captured runtime
