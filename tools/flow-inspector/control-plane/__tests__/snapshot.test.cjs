@@ -4,7 +4,11 @@ const fs = require('node:fs')
 const { createHash } = require('node:crypto')
 const path = require('node:path')
 const test = require('node:test')
-const { captureSource, validateRuntimeSource } = require('../snapshot.cjs')
+const {
+  captureSource,
+  validateRuntimeSource,
+  createRuntimeSource
+} = require('../snapshot.cjs')
 const { loadContract } = require('../contracts.cjs')
 const root = path.resolve(__dirname, '../../../..')
 const parent = path.join(root, 'tmp/flow-inspector/snapshot-tests')
@@ -429,4 +433,50 @@ test('runtime admission rejects malformed or self-consistent but unbound invento
       name
     )
   }
+})
+
+test('source owner constructs candidate runtime identity from captured bytes without reading source or admitting a snapshot', (t) => {
+  const output = fs.mkdtempSync(path.join(parent, 'runtime-construction-'))
+  t.after(() => fs.rmSync(output, { recursive: true, force: true }))
+  const contract = loadContract(root)
+  const snapshot = captureSource(root, output, contract)
+  const read = t.mock.method(fs, 'readFileSync', () => {
+    throw new Error('Unexpected source reread')
+  })
+  assert.deepEqual(
+    createRuntimeSource([...snapshot.files].reverse()),
+    snapshot.runtimeSource
+  )
+  const changed = snapshot.files.map((entry) =>
+    entry.path === 'packages/factory/src/data-transact.ts'
+      ? { ...entry, size: entry.size + 1, digest: 'a'.repeat(64) }
+      : entry
+  )
+  const runtime = createRuntimeSource(changed)
+  assert.notEqual(runtime.digest, snapshot.runtimeSource.digest)
+  assert.ok(Object.isFrozen(runtime))
+  assert.ok(Object.isFrozen(runtime.files))
+  assert.ok(runtime.files.every(Object.isFrozen))
+  assert.deepEqual(
+    createRuntimeSource(
+      snapshot.files.map((entry) =>
+        entry.path === contract.configFile
+          ? { ...entry, digest: 'b'.repeat(64) }
+          : entry
+      )
+    ),
+    snapshot.runtimeSource
+  )
+  assert.throws(
+    () => validateRuntimeSource({ ...snapshot, runtimeSource: runtime }),
+    /runtime inventory/i
+  )
+  const candidate = {
+    ...snapshot,
+    files: changed,
+    runtimeSource: runtime,
+    digest: createHash('sha256').update(JSON.stringify(changed)).digest('hex')
+  }
+  assert.deepEqual(validateRuntimeSource(candidate), runtime)
+  assert.equal(read.mock.callCount(), 0)
 })

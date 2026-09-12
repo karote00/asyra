@@ -9,6 +9,32 @@ const { admitContract } = require('./contracts.cjs')
 const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex')
 const sourcePackages = ['factory', 'reactive-events', 'utils', 'persistence']
 
+const runtimeMetadata = [
+  'package.json',
+  'yarn.lock',
+  ...sourcePackages.map((name) => 'packages/' + name + '/package.json')
+]
+const runtimePath = (file) =>
+  runtimeMetadata.includes(file) ||
+  (sourcePackages.some((name) =>
+    file.startsWith('packages/' + name + '/src/')
+  ) &&
+    !file.split('/').includes('__tests__'))
+
+function createRuntimeSource(fullFiles) {
+  const files = Object.freeze(
+    fullFiles
+      .filter((entry) => runtimePath(entry.path))
+      .sort((a, b) => (a.path < b.path ? -1 : Number(a.path > b.path)))
+      .map(({ path, size, digest }) => Object.freeze({ path, size, digest }))
+  )
+  return Object.freeze({
+    format: 1,
+    files,
+    digest: sha256(JSON.stringify(files))
+  })
+}
+
 function safePath(root, relative) {
   const resolved = path.resolve(root, relative)
   if (!resolved.startsWith(path.resolve(root) + path.sep))
@@ -31,17 +57,6 @@ function validateRuntimeSource(snapshot, fullFiles = snapshot.files) {
     value !== null && typeof value === 'object' && !Array.isArray(value)
   const fingerprint = (value) =>
     typeof value === 'string' && /^[a-f0-9]{64}$/.test(value)
-  const metadata = [
-    'package.json',
-    'yarn.lock',
-    ...sourcePackages.map((name) => 'packages/' + name + '/package.json')
-  ]
-  const runtimePath = (file) =>
-    metadata.includes(file) ||
-    (sourcePackages.some((name) =>
-      file.startsWith('packages/' + name + '/src/')
-    ) &&
-      !file.split('/').includes('__tests__'))
   requireValue(
     Array.isArray(fullFiles) && fullFiles.length > 0,
     'full snapshot manifest required'
@@ -72,7 +87,7 @@ function validateRuntimeSource(snapshot, fullFiles = snapshot.files) {
     'full manifest does not bind snapshot digest'
   )
   requireValue(
-    metadata.every((file) => paths.has(file)),
+    runtimeMetadata.every((file) => paths.has(file)),
     'required runtime metadata missing'
   )
   const runtime = snapshot.runtimeSource
@@ -87,14 +102,10 @@ function validateRuntimeSource(snapshot, fullFiles = snapshot.files) {
       fingerprint(runtime.digest),
     'invalid runtime identity'
   )
-  const expected = fullFiles
-    .filter((entry) => runtimePath(entry.path))
-    .sort((a, b) => (a.path < b.path ? -1 : Number(a.path > b.path)))
-    .map(({ path, size, digest }) => Object.freeze({ path, size, digest }))
-  const serialized = JSON.stringify(expected)
+  const expected = createRuntimeSource(fullFiles)
   requireValue(
-    JSON.stringify(runtime.files) === serialized &&
-      sha256(serialized) === runtime.digest,
+    JSON.stringify(runtime.files) === JSON.stringify(expected.files) &&
+      expected.digest === runtime.digest,
     'runtime inventory differs from full manifest'
   )
   requireValue(
@@ -105,7 +116,7 @@ function validateRuntimeSource(snapshot, fullFiles = snapshot.files) {
   )
   return Object.freeze({
     format: 1,
-    files: Object.freeze(expected),
+    files: expected.files,
     digest: runtime.digest
   })
 }
@@ -196,16 +207,7 @@ function captureSource(repositoryRoot, runDirectory, contract) {
     flag: 'wx',
     mode: 0o444
   })
-  const runtimeFiles = Object.freeze(
-    files
-      .filter((entry) => runtimePaths.has(entry.path))
-      .map(({ path, size, digest }) => Object.freeze({ path, size, digest }))
-  )
-  const runtimeSource = Object.freeze({
-    format: 1,
-    files: runtimeFiles,
-    digest: sha256(JSON.stringify(runtimeFiles))
-  })
+  const runtimeSource = createRuntimeSource(files)
   return {
     kind: 'worktree-snapshot',
     runtimeSource,
@@ -225,4 +227,10 @@ function captureSource(repositoryRoot, runDirectory, contract) {
   }
 }
 
-module.exports = { captureSource, validateRuntimeSource, safePath, sha256 }
+module.exports = {
+  captureSource,
+  createRuntimeSource,
+  validateRuntimeSource,
+  safePath,
+  sha256
+}
