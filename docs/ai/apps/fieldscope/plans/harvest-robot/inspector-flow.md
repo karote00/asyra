@@ -498,3 +498,32 @@ Lifetime: one batch only, original issued source lifetime; no retained cache.
 Gates: exact and uncertain source-pair cases, nested-volume counterexample,
 actual C transformed/instanced and robot/dock pairs, zero generation/bounds scans,
 FK/frame reuse, original ray suite, full app unit/type/lint/naming/build and review.
+
+### D continuous translation surface pairs
+
+Owner: `simulation/collision.ts`, extending the same source-pair evidence helper.
+Inputs: issued current GeometrySource and clone-once source-bound triangle pairs,
+starting synthetic robot pose, each pair's two finite world displacements, shared
+closed [from,until] interval, and leaf/fruit state explicitly valid throughout.
+Displacement means start→end translation at fixed orientation and common t∈[0,1].
+Outputs: immutable swept-separated/swept-intersection/unknown with original pair
+witnesses, reasons and work counts; supported contact fraction/time is an enclosure
+of an occurrence, not earliest contact or an admitted pose.
+Conditions: 0<=from<until finite; validFrom<=from and until<validUntil. All source
+references/schema valid before work, source current before and before publication.
+No instant-leaf-pose bypass, sampling-only separation or contact/body exemptions.
+Allowed: existing source/forward-frame/FK preparation; complete static triangle
+SAT axes including coplanar axes; shared query arithmetic; generic singleton
+exact rational clipping. For nonpoint data, common outer possible interval empty
+proves separation; common inner guaranteed witness proves intersection; otherwise
+unknown. Zero/degenerate/uncertain axes never invent separation or intersection.
+Forbidden: articulated FK interpolation, rotation, full-body/volume/contact
+clearance, EPS, rounded-exact claims, geometry/cache/UI/session/action changes.
+Boundary: `simulation/collision.ts`, `simulation/__tests__/collision.test.ts`,
+API_SURFACES and current readiness docs. No ray/frame/arithmetic producer change.
+Spec: continuous fixed-rotation source-pair sweep and motion/quality clauses.
+Failure owner: D query admission rejects invalid/stale input; unresolved continuous
+geometry stays unknown. Lifetime: batch only, no retained outputs or new cache.
+Gates: continuous middle/brief/endpoint/coplanar controls, relative/common motion,
+non-overlapping axis time windows, uncertain source transforms, validity/clone
+and retirement, original static/ray tests, work counts, full app gates and review.

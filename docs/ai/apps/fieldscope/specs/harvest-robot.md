@@ -874,6 +874,51 @@ frame products per batch perform no source generation, bounds preparation or
 session mutation. This precedes continuous linear sweep, articulated trajectory,
 full-body coverage and exact intended-contact admission; it cannot replace them.
 
+### Continuous fixed-rotation source-pair sweep
+
+D's next geometry primitive moves each selected original triangle by an explicit
+start-to-end world displacement while retaining its starting orientation. Both
+surfaces use the same normalized fraction t in [0,1]; displacements are neither
+velocities nor articulated FK endpoints. The starting source/instance/body points
+come from the same admitted geometry and synthetic pose as static queries.
+Finite times satisfy 0 <= from < until. The entire closed movement interval,
+including both endpoints, must lie in [validFrom,validUntil), so validUntil must
+strictly exceed until. Leaves require an explicit synthetic assumption of remaining
+at source pose throughout that interval; an instantaneous pose cannot stand in
+for an interval envelope. Fruit attachment state also covers the whole interval.
+Missing or expired interval state produces unknown.
+
+Complete fixed SAT axes include triangle face normals, all edge cross products
+and coplanar in-plane edge normals. For each axis, relative displacement gives
+linear projection-overlap inequalities in the common t. Their common possible
+time interval must be proved empty before reporting swept-separated. A common
+guaranteed time, or generic exact dyadic/rational evidence for singleton original
+points, is required for swept-intersection. Each axis being possible at a different
+time does not prove contact. Zero axes do not separate; degenerate geometry and
+unresolved interval signs remain unknown. No endpoint-only clearance, epsilon
+expansion or rounded-point promotion is allowed.
+
+A reported contact fraction/time encloses a supported occurrence, not necessarily
+the earliest contact and not a set of admitted movement poses. Rational witness
+bounds need not mean every enclosed floating value is a contact; consumers cannot
+use their midpoint as a confirmed pose. Conversion to simulation time retains
+subtraction/multiplication uncertainty. Common displacement, zero relative motion,
+closed endpoint contact and arbitrarily brief supported contact follow the same
+continuous predicates, without temporal sampling to prove separation.
+
+This remains selected source surface evidence. It does not authorize rotation,
+changing joint angles, swept material-volume clearance, complete robot/scene pair
+coverage, or intended-contact exceptions. No support/joint/tool-target exemption
+or inferred harvest quality is introduced. Full motion admission must subsequently
+prove those separate obligations before the session can move.
+
+Acceptance: separated endpoints with an interior crossing, brief and endpoint
+contact, coplanar sweep/edge grazing, common and zero relative motion, incompatible
+axis time windows, transformed-source uncertainty, whole-interval expiry and
+source/schema admission. Original static cases remain unchanged. Reuse the same
+source/forward-frame preparation with one required FK per batch, no geometry or
+bounds rebuilding and no persistent query cache.
+
 ### Motion and collision admission
 
 A's straight-lane screen is not motion clearance. Every proposed base, arm/tool,
