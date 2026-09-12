@@ -1168,3 +1168,61 @@ leaf arrays and all charged categories are retained in
 This supports a bounded canonical improvement, not completion of G4; any next
 iteration must begin at the actual new frontier rather than partial aggregate
 CPU/evaluation counts.
+
+### Current frontier - existing source representative seed diagnosis
+
+Owner remains Inspector `method`, complete original source evidence. Root
+authorized one passive exact-frontier replay under the unchanged 500k/20s guards
+to answer the missing operation/time question, not another hopeful goal run.
+`current141-frontier.log` reproduces 20,240/141 evaluations: the exhausted query
+is static, original segment 67 at 2.693467336683417, after 2,292 remaining work,
+1,025 node axes and no convex call. Its initial source upper is 1.0397306474722536.
+The largest complete static query at segment 114 time 4.582914572864322 costs
+6,148: first warning at 5,986 and 162 work afterwards. Its complete witnessed
+upper is 0.010714356302402587. This is actual phase evidence, not an inference
+from partial aggregate CPU or evaluation totals.
+
+The bounded hypothesis uses only existing admitted closed-component source
+representatives: whether their actual point pairs can establish a legal warning
+upper before triangle traversal, allowing the unchanged complete penetration
+search to start with threshold zero. This is not a first-warning exit and would
+not guarantee the same final witness; any later implementation would need its
+own observable-evidence/version review. No production edit is authorized here.
+
+Diagnostic scope is exactly those two static times on the original joint-2 /
+obstacle-11 pair. Run each original query to completion with its unchanged
+source/index/settings and fresh budget, then measure complete source-point
+distances from the actual prepared index representatives. All 36 + 5 transforms
+and 36 x 5 point-pair norms are counted separately, one work/checkpoint per actual
+operation, with an immediate combined 500k guard. Existing baseline preparation
+and query costs remain charged. This conservative probe does not claim to reuse
+membership transforms merely because it calls the same helper.
+
+Permanent test boundary is `methods/__tests__/component-seed-profile.test.ts`;
+the only other edit is this plan. Capture exact source index/pose identity, the
+baseline completed evidence, candidate legal upper and full added work. If no
+candidate upper is strictly below the current threshold, stop this hypothesis;
+do not expand to all vertices, select new representatives or change the fixture.
+A positive result is only admission to a reviewed actual-delta experiment, not
+permission to accept changed witnesses or bypass full penetration traversal.
+The existing Inspector source-witness and no-pose-retention contracts are
+unchanged; no new cache dimensions or product identities are introduced.
+
+The passive hypothesis is rejected. Both original static queries complete and
+the exact 36-by-5 existing representative sets are checked: frame 67 has minimum
+point-pair upper 0.1545195846814336; frame 114 has 0.12632201793555548. Neither
+reaches the 0.02 warning threshold, despite improving the first-representative
+upper near 1.04. Each adds 41 actual point transforms and 180 actual norms, all
+221 units counted. No threshold-zero search could begin from these witnesses,
+so an actual-delta experiment would have no supporting admission evidence.
+Original completed source results remain finding without penetration, upper
+0.007203098142746448 and 0.010714356302402587 respectively. No production change,
+alternate representative selection or all-vertex scan follows this negative.
+
+Permanent replay: set `SIM_CAPACITY_DIAGNOSTICS=1` and run the app test command
+for `src/analysis/methods/__tests__/component-seed-profile.test.ts`. Its two cases
+assert the negative warning admission and retain the entire added-work count;
+logs are `tmp/capacity/component-seed-profile.log`. This is an explicitly opt-in
+rejected hypothesis, while the ordinary representative capacity gate stays red
+and selected. The separate exact-frontier replay also passed its current numeric
+expectations without a full-goal completion claim.
