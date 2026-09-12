@@ -750,3 +750,186 @@ test('source-aware attempts with an older no-reference review prepare a new auth
     fs.rmSync(dir, { recursive: true, force: true })
   }
 })
+
+function pinnedTargetRequest(service, review, requestId = randomUUID()) {
+  const contract = service.contract()
+  const flow = contract.flows[0]
+  return {
+    action: 'create',
+    requestId,
+    expectedRevision: 0,
+    reason: 'Bind the exact reviewed verification source',
+    flowId: flow.id,
+    targetRevision: contract.digest,
+    targetReviewId: review.id,
+    acceptedBaseline: {
+      revision: service.state().evolution.revision,
+      contractDigest: contract.digest
+    },
+    objective: 'Develop the frozen reviewed flow',
+    works: [],
+    pending: contract.cases
+      .filter((item) => item.flowId === flow.id)
+      .map((item) => item.id)
+  }
+}
+
+test('service supplies exact old-base reviewed pairs and separates historical targets from current byte availability', async (t) => {
+  const f = referenceFixture()
+  let service = createService(f.repository, { directory: f.runs })
+  try {
+    const record = await service.wait(
+      service.start({ mode: 'candidate' }, LOCAL_ACTOR)
+    )
+    const review = service.prepareEvolution(
+      { attemptId: record.id },
+      LOCAL_ACTOR
+    )
+    const publicReview = service
+      .state()
+      .evolution.reviews.find((item) => item.id === review.id)
+    assert.equal(publicReview.candidateDigest, review.candidateDigest)
+    assert.equal(
+      publicReview.candidateContractDigest,
+      review.candidate.contract.digest
+    )
+    service.decideEvolution(
+      {
+        id: review.id,
+        decision: 'accept',
+        reason: 'Explicit initial reference version'
+      },
+      LOCAL_ACTOR
+    )
+    const request = pinnedTargetRequest(service, review)
+    const created = service.decideTarget(request, LOCAL_ACTOR)
+    assert.deepEqual(service.getTarget(created.id).targetVerification, {
+      reviewId: review.id,
+      candidateDigest: review.candidateDigest
+    })
+    await service.close()
+    fs.rmSync(path.join(f.runs, record.id, 'source', f.contract.configFile))
+    const compare = t.mock.method(require('../evolution.cjs'), 'compareVersion')
+    const verify = t.mock.method(sourceOwner, 'verifyRetainedSource')
+    service = createService(f.repository, { directory: f.runs })
+    assert.equal(compare.mock.callCount(), 1)
+    assert.equal(verify.mock.callCount(), 1)
+    const read = t.mock.method(fs, 'readFileSync')
+    for (let i = 0; i < 10; i++) {
+      assert.deepEqual(service.decideTarget(request, LOCAL_ACTOR), created)
+      service.getTarget(created.id)
+      service.targets()
+    }
+    assert.equal(read.mock.callCount(), 0)
+    assert.equal(compare.mock.callCount(), 1)
+    assert.equal(verify.mock.callCount(), 1)
+    assert.throws(
+      () =>
+        service.decideTarget(pinnedTargetRequest(service, review), LOCAL_ACTOR),
+      /unavailable/i
+    )
+    assert.equal(service.targets().records.length, 1)
+  } finally {
+    await service.close()
+    fs.rmSync(f.dir, { recursive: true, force: true })
+  }
+})
+
+test('service re-admits every retained version-review owner field and preserves exact rejected historical pins', async () => {
+  const dir = directory()
+  let service = createService(root, { directory: dir })
+  try {
+    const record = await service.wait(
+      service.start({ mode: 'candidate' }, LOCAL_ACTOR)
+    )
+    const review = service.prepareEvolution(
+      { attemptId: record.id },
+      LOCAL_ACTOR
+    )
+    const created = service.decideTarget(
+      pinnedTargetRequest(service, review),
+      LOCAL_ACTOR
+    )
+    service.decideEvolution(
+      {
+        id: review.id,
+        decision: 'reject',
+        reason: 'Retain target source without accepting it'
+      },
+      LOCAL_ACTOR
+    )
+    await service.close()
+    service = createService(root, { directory: dir })
+    assert.equal(
+      service.getTarget(created.id).targetVerification.reviewId,
+      review.id
+    )
+    await service.close()
+    const file = path.join(dir, 'mapping.json')
+    const original = JSON.parse(fs.readFileSync(file))
+    for (const mutate of [
+      (value) => {
+        value.candidateDigest = '0'.repeat(64)
+      },
+      (value) => {
+        value.baseRevision = 0
+      },
+      (value) => {
+        value.changes = []
+      },
+      (value) => {
+        value.relations = [{ kind: 'invalid' }]
+      },
+      (value) => {
+        value.status = 'accept'
+      },
+      (value) => {
+        value.attemptId = randomUUID()
+      }
+    ]) {
+      const changed = structuredClone(original)
+      mutate(changed.evolution.reviews[0])
+      fs.writeFileSync(file, JSON.stringify(changed))
+      assert.throws(
+        () => createService(root, { directory: dir }),
+        /review|relation|attempt|version/i
+      )
+    }
+    fs.writeFileSync(file, JSON.stringify(original))
+    service = createService(root, { directory: dir })
+    assert.equal(
+      service.getTarget(created.id).targetVerification.candidateDigest,
+      review.candidateDigest
+    )
+  } finally {
+    await service.close()
+    fs.rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('target review admission is detached from the candidate returned to a direct preparation caller', async () => {
+  const dir = directory()
+  const service = createService(root, { directory: dir })
+  try {
+    const record = await service.wait(
+      service.start({ mode: 'candidate' }, LOCAL_ACTOR)
+    )
+    const review = service.prepareEvolution(
+      { attemptId: record.id },
+      LOCAL_ACTOR
+    )
+    const digest = review.candidateDigest
+    review.candidate.verificationSource = null
+    const created = service.decideTarget(
+      pinnedTargetRequest(service, review),
+      LOCAL_ACTOR
+    )
+    assert.equal(
+      service.getTarget(created.id).targetVerification.candidateDigest,
+      digest
+    )
+  } finally {
+    await service.close()
+    fs.rmSync(dir, { recursive: true, force: true })
+  }
+})

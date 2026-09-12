@@ -51,30 +51,30 @@ full required product cases or DoD of this plan.
 ## Active next owner slice - source-bound assessment
 
 The [target source assessment contract](../CORE_PROOF.md#target-source-assessment)
-and `assess-target-source` define the next bounded owner. It consumes frozen
-allocation, admitted verification contracts and completed source-bound proof
-artifacts to separate accepted preservation, work/prerequisite results and target
-integration eligibility. It does not run source, change admission or accept a
-baseline. The pure assessor and real captured-source producer cases are now
-implemented. Frozen verification descriptors, immutable version references and
-exact reviewed target pins have passed their owner gates. The next service slice
-retains each attempt's exact admitted contract and admits both source descriptors
-once. Ordinary retained-byte composition is the next source-owner boundary;
-exact version selection and authoritative assessment requests follow as separate
-service slices. These ordinary proofs do not cover undeclared generated wrappers. Existing target execution and pending behavior remain unchanged
-until their consumer slices are implemented and verified.
+and `assess-target-source` separate accepted preservation, bounded
+work/prerequisite results and target integration eligibility. The pure assessor,
+real captured-source producer chain, runtime/verification descriptors, combined
+service admission, ordinary retained-byte composition and read-only byte checks
+have passed their owner gates. Version preparation now retains exact verifier
+references; the service validates reviewed pairs against their original history
+base and supplies immutable target pins with explicit creation/load/replay
+availability semantics.
 
-The source producer must identify one captured runtime source independently of
-each accepted/target verification contract's metadata. Old full snapshot digests
-cannot be relabeled or stripped to infer this identity. Existing proof records
-remain readable; new assessment requires new producer evidence when necessary.
-Implementation starts with the source capture producer, then its runner and
-evidence admission handoffs, followed by the assessment owner, scoped candidate
-verification, admission consumers, Board/API/CLI projections and explicit
-acceptance, one owner slice at a time. The assessor remains blocked until those
-producer contracts and formal captured-source integration cases pass; hand-built
-trusted records are not evidence that this prerequisite is complete. All original product cases,
-software DoD and deferred external boundaries below remain in force.
+The next service consumer registers authoritative target assessment requests,
+selects the accepted version by its exact immutable history revision and the
+target by its exact reviewed pin, and composes both producers on one selected
+runtime. Scoped verification, execution/admission consumers, Board/API/CLI
+projections and explicit target-baseline acceptance remain subsequent slices.
+Existing target execution and pending behavior stay in effect until those
+consumers are implemented and verified. Ordinary composition does not cover
+undeclared generated wrappers; the fixed four-package capture scope also does
+not close the original Factory/collaboration/UI cross-PR product cases.
+
+Historical full snapshot digests and missing verification authority are never
+relabeled or reconstructed from a mutable checkout. Formal readiness uses real
+captured bytes through the registered runner and evidence owners, not hand-built
+trusted passing records. All original product cases, software DoD and deferred
+external boundaries below remain in force.
 
 ## Product outcome
 

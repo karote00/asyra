@@ -10,11 +10,8 @@ const { captureSource, safePath, sha256 } = sourceOwner
 const { runVerification } = require('./runner.cjs')
 const evidenceOwner = require('./evidence.cjs')
 const { openStore, validId, writeAtomic } = require('./store.cjs')
-const {
-  createHistory,
-  compareVersion,
-  decideVersion
-} = require('./evolution.cjs')
+const versionOwner = require('./evolution.cjs')
+const { createHistory, compareVersion, decideVersion } = versionOwner
 const { prepareCIContext } = require('./ci-context.cjs')
 const { assessCI } = require('./ci-evidence.cjs')
 const { createTaskOwner } = require('./agent-task.cjs')
@@ -78,8 +75,16 @@ function createService(
   safePath(repositoryRoot, path.relative(repositoryRoot, directory))
   const repository = fs.realpathSync(repositoryRoot)
   const store = openStore(directory)
+  const immutable = (value) => {
+    if (value && typeof value === 'object' && !Object.isFrozen(value)) {
+      Object.values(value).forEach(immutable)
+      Object.freeze(value)
+    }
+    return value
+  }
   const sourceAdmissions = new Map()
   const verificationReferences = new Map()
+  const reviewAdmissions = new Map()
   const admitRuntimeSource = (record, files, liveContract) => {
     const snapshot = record.snapshot
     const entry = sourceAdmissions.get(record.id)
@@ -201,11 +206,10 @@ function createService(
     })
     return admission
   }
-  const referenceFor = (record, expected) => {
-    const entry = record && sourceAdmissions.get(record.id)
-    const admission = entry?.admission
-    if (!entry?.contract || !admission?.verificationSource) return null
-    const reference = Object.freeze({
+  const referenceIdentity = (record) => {
+    const admission = record && sourceAdmissions.get(record.id)?.admission
+    if (!admission?.verificationSource) return null
+    return Object.freeze({
       attemptId: admission.attemptId,
       repository: admission.repository,
       head: admission.head,
@@ -213,6 +217,12 @@ function createService(
       configurationDigest: admission.configurationDigest,
       descriptor: admission.verificationSource
     })
+  }
+  const referenceFor = (record, expected) => {
+    const entry = record && sourceAdmissions.get(record.id)
+    const admission = entry?.admission
+    if (!entry?.contract || !admission?.verificationSource) return null
+    const reference = referenceIdentity(record)
     if (expected && !isDeepStrictEqual(reference, expected)) return null
     if (verificationReferences.has(record.id)) {
       const retained = verificationReferences.get(record.id)
@@ -236,6 +246,67 @@ function createService(
     } catch {
       verificationReferences.set(record.id, null)
       return null
+    }
+  }
+  const admitReviewMetadata = (retained, completed) => {
+    const history = store.mapping().evolution.history
+    const invalid = () => {
+      throw new Error('Invalid retained version review metadata')
+    }
+    if (
+      !Number.isInteger(retained.baseRevision) ||
+      retained.baseRevision < 1 ||
+      retained.baseRevision > history.versions.length ||
+      !validId(retained.attemptId)
+    )
+      invalid()
+    const comparison =
+      completed ??
+      versionOwner.compareVersion(
+        {
+          ...history,
+          revision: retained.baseRevision,
+          versions: history.versions.slice(0, retained.baseRevision)
+        },
+        retained.candidate,
+        { relations: retained.relations }
+      )
+    if (
+      !Object.entries(comparison).every(([key, value]) =>
+        isDeepStrictEqual(retained[key], value)
+      )
+    )
+      invalid()
+    const decision = history.decisions.find(
+      (item) => item.reviewId === retained.id
+    )
+    if (retained.status !== (decision?.decision ?? 'pending')) invalid()
+    const record = store.get(retained.attemptId)
+    if (
+      record &&
+      (record.mode !== 'candidate' ||
+        record.phase !== 'completed' ||
+        record.contractDigest !== retained.candidate.contract.digest)
+    )
+      invalid()
+    const reference = retained.candidate.verificationSource
+    if (Object.hasOwn(retained.candidate, 'verificationSource')) {
+      if (
+        reference.attemptId !== retained.attemptId ||
+        reference.repository !== repository
+      )
+        invalid()
+      const identity = referenceIdentity(record)
+      if (identity && !isDeepStrictEqual(identity, reference)) invalid()
+    }
+    return {
+      comparison,
+      pair: immutable({
+        ...comparison,
+        candidate: structuredClone(retained.candidate),
+        attemptId: retained.attemptId,
+        status: retained.status
+      })
     }
   }
   try {
@@ -299,6 +370,8 @@ function createService(
           version.verificationSource
         )
     }
+    for (const review of store.mapping().evolution.reviews)
+      reviewAdmissions.set(review.id, admitReviewMetadata(review))
     for (const delivery of store.mapping().ciDeliveries ?? []) {
       const version = history.versions.find(
         (item) => item.contract.digest === delivery.contractDigest
@@ -323,6 +396,7 @@ function createService(
   } catch (error) {
     sourceAdmissions.clear()
     verificationReferences.clear()
+    reviewAdmissions.clear()
     store.close()
     throw error
   }
@@ -342,13 +416,6 @@ function createService(
   let publicEvolution
   let publicCI
   let publicWork
-  const immutable = (value) => {
-    if (value && typeof value === 'object' && !Object.isFrozen(value)) {
-      Object.values(value).forEach(immutable)
-      Object.freeze(value)
-    }
-    return value
-  }
   const projectDelivery = (value) =>
     Object.fromEntries(
       Object.entries(value).filter(
@@ -368,7 +435,7 @@ function createService(
       decisions: evolution.history.decisions,
       reviews: evolution.reviews.map(({ candidate, ...review }) => ({
         ...review,
-        candidateDigest: candidate.contract.digest
+        candidateContractDigest: candidate.contract.digest
       }))
     }
     publicWork = [...new Set(contract.cases.map((item) => item.stepId))].map(
@@ -535,6 +602,7 @@ function createService(
   } catch (error) {
     sourceAdmissions.clear()
     verificationReferences.clear()
+    reviewAdmissions.clear()
     store.close()
     throw error
   }
@@ -553,6 +621,7 @@ function createService(
   } catch (error) {
     sourceAdmissions.clear()
     verificationReferences.clear()
+    reviewAdmissions.clear()
     store.close()
     throw error
   }
@@ -572,6 +641,19 @@ function createService(
       repositoryRoot,
       directory,
       getContracts: targetContracts,
+      getVersionReview: (id, { requireAvailable }) => {
+        const pair = reviewAdmissions.get(id)?.pair
+        if (!pair) return null
+        if (
+          requireAvailable &&
+          !referenceFor(
+            store.get(pair.attemptId),
+            pair.candidate.verificationSource
+          )
+        )
+          return null
+        return pair
+      },
       getBaseline: () => ({
         revision: store.mapping().revision,
         contractDigest: contract.digest
@@ -590,6 +672,7 @@ function createService(
   } catch (error) {
     sourceAdmissions.clear()
     verificationReferences.clear()
+    reviewAdmissions.clear()
     store.close()
     throw error
   }
@@ -872,10 +955,12 @@ function createService(
         attemptId: record.id,
         status: 'pending'
       }
+      const admittedReview = admitReviewMetadata(retained, review)
       store.saveMapping({
         ...state,
         evolution: { ...evolution, reviews: [...evolution.reviews, retained] }
       })
+      reviewAdmissions.set(retained.id, admittedReview)
       refreshShared()
       return retained
     },
@@ -923,6 +1008,16 @@ function createService(
           )
         }
       })
+      const retainedReview = store
+        .mapping()
+        .evolution.reviews.find((item) => item.id === review.id)
+      reviewAdmissions.set(
+        review.id,
+        admitReviewMetadata(
+          retainedReview,
+          reviewAdmissions.get(review.id)?.comparison
+        )
+      )
       contract = accepted
       publicContract = projectContract()
       refreshShared()
@@ -1408,6 +1503,7 @@ function createService(
       } finally {
         sourceAdmissions.clear()
         verificationReferences.clear()
+        reviewAdmissions.clear()
         store.close()
       }
     }
