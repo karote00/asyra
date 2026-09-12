@@ -773,6 +773,18 @@ accepted, work or integration verdicts. Acceptance eligibility requires both a
 complete passing integration verdict and current identities; an old passing
 assessment cannot become current by relabeling its revision or source.
 
+`projectTargetAssessmentCurrentness(result, current)` belongs to the same
+assessment owner. It consumes a completed immutable result and trusted current
+identities with the same field semantics above, and returns a new immutable
+projection changing only `current`, `staleReasons` and `eligible`. It preserves
+all historical source and revision identities and reuses the exact accepted,
+work and integration verdict objects. It does not walk obligations, routes,
+producer records or evidence, read files, or repeat upstream admission. Initial
+assessment uses this same policy after computing its verdicts. Consumers cache
+the projection when an accepted baseline, allocation or explicitly selected
+integration-source identity changes; reads and request replay do not invoke this
+policy again. Changing currentness never rewrites the retained original result.
+
 ### Frozen target proof production
 
 The local service method `startTargetProof({requestId, targetId,
