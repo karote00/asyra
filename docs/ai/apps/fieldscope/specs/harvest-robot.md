@@ -402,7 +402,9 @@ mission, rather than accepting caller-selected requests: dispatch starts at its
 dock, reaches its selected route start and covers that straight lane to its end;
 return connects that route end back to the same dock. Each request names its
 purpose, exact source revisions, stowed pose, route/dock coordinates and explicit
-finite positive query interval within the evidence validity. The collision owner
+finite positive query interval within the evidence validity. Each query ends
+strictly before evidence expiry, and return begins no earlier than dispatch ends.
+The collision owner
 must cover these required poses/route, preserving their order and full source
 bodies. An empty or zero-motion path cannot satisfy separated required poses.
 
