@@ -99,6 +99,37 @@ old evidence; camera/locale/layer visibility/read/clock/pose do not regenerate i
 Failure owner: projection/admission failure is visible; no substitute safe geometry.
 Cache dimensions: none proposed; topology lifetime is the robot definition.
 
+### C working-rig source handoff
+
+Owner: the same app robot definition/projection owner. Inputs: admitted robot
+width/length/height/tool and its existing chassis-local source parts, then bounded
+joint inputs for that definition. Outputs: immutable definition revision, unique
+rigid part ownership, rest pivots/axes/fixed chain, approved joint bounds/speeds,
+tool contact reference and candidate forward-kinematic body transforms.
+Conditions: exact zero-state source identity; full lift-envelope validation; no
+partial result for invalid/nonfinite/out-of-bounds/stale-definition input. Dock,
+mission and presentation changes bypass definition preparation. No hardware bypass.
+Allowed: existing robot-model source formulas, engine-neutral rigid transforms,
+readSpatialShape admission and completed definition products. Forbidden: Three
+kinematics authority, D-generated robot geometry, unconstrained Cartesian reach,
+link stretching, per-pose shape generation, live motion without D admission,
+physical safety or harvest-quality inference, and unapproved joints/parameters.
+Boundary: domain/robot-model.ts (shared source frame definitions),
+domain/robot-kinematics.ts (app-owned rig preparation and pure FK),
+render-app/robot-projection.ts (definition lifetime and source read handoff),
+runtime/bootstrap.ts (read-only rig source API/lifecycle), and their corresponding
+domain/render/runtime formal tests plus existing robot browser checks. App API
+and architecture docs describe the implemented read handoff. D modules and UI
+motion controls are excluded from this source slice.
+Spec: C - M3 synthetic working-arm source; approved five DOFs and explicit speed
+bounds only. C -> D supplies the actual immutable rig/source and candidate FK;
+D later returns admitted same-revision joints/fruit retention for C presentation.
+Failure owner: C reports unsupported lift/definition or invalid joints and retains
+parked design output; D later owns reach planning, speed/timing and swept admission.
+Lifetime: once per robot width/length/height/tool definition. Repeated FK and reads
+reuse its admitted source shapes/frames. Retirement/disposal rejects old handles.
+Cache dimensions: none proposed; rig is a completed definition product.
+
 ## D - Deterministic simulation (M3, planned)
 
 Owner: app simulation session, composed through the registered Core Feature/API
