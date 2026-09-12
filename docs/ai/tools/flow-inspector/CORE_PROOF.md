@@ -400,3 +400,128 @@ reports, inventory weakening, dependency failures and workflow ordering. Live
 acceptance uses the same Delete runtime mutation as PR 183, then removes it and
 requires a new successful final check on the corrected HEAD. Test PRs close
 without merging; production changes are delivered separately.
+
+## Flow targets and work decomposition
+
+This bounded local slice supports one repository and one human. A development
+target is distinct from a flow contract, work item, task, attempt and PR. The
+multi-PR direction in PR 188 is not itself runtime capability. Full integration
+assessment and explicit new-baseline acceptance remain separate future slices.
+
+A target binds one admitted flow, a target contract revision (its content digest,
+resolved from retained accepted versions or prepared contract-evolution reviews),
+and an explicit accepted baseline `{revision, contractDigest}`. Creating a target
+never accepts its target revision. Unknown revisions and flow references reject.
+The target retains its complete obligation inventory, including unassigned pending
+obligations. Existing accepted-flow protection and all six Factory gates remain.
+
+Each work item has a stable UUID, title, one concrete step, nonempty obligation
+IDs, exact promised scope text, explicit runtime file scope, and prerequisite
+work IDs with nonempty required handoff descriptions. Every target obligation must
+be assigned exactly once or explicitly listed as pending. Unknown steps, obligations,
+files, prerequisites, missing coverage, overlapping responsibility and cycles
+reject the entire decision without writing. Resolve overlap by revising assignments;
+there is no override that grants shared arbitrary mutation authority.
+
+Create and revise decisions require a UUID request identity, actor, reason and
+expected target revision (zero for creation). Each successful decision appends a
+full immutable revision and audit atomically in the existing exclusively owned
+store. Exact replay returns its original decision; conflicting reuse and stale
+writes reject. Changing scope requires an explicit revision and reason. An existing
+work UUID cannot change its promise, step, files, obligations or prerequisites:
+use a new work UUID for a changed commitment. Old commitments, task links and
+historical failures remain readable in earlier revisions. Pending obligations
+cannot be omitted, even after failure. Target flow/revision/baseline bindings are
+immutable; a different target contract requires a distinct target.
+
+Linking an existing admitted task is a revision decision. It requires matching
+accepted baseline, complete concrete step contract, exact scope text (the task objective), exact
+allowed files, and all promised obligations present in the task's retained
+contract. A task may belong to only one work commitment across targets. Multiple
+tasks may serve one commitment, and one target may contain multiple task/attempt/
+PR records. Linking neither runs nor resumes a task and grants no new permission.
+The original task scope and strict all-flow candidate verifier stay intact; linked task execution also requires the source admission below.
+An evolved target incompatible with current task admission stays visibly limited;
+it cannot use partial delivery to bypass that verifier.
+
+Prerequisites always remain `unconfirmed` in this slice: linked tasks, passed
+candidate checks and merged PRs do not prove their handoffs in the current source.
+Dependent work displays `blocked`; allocation status and the complete target remain
+`pending`. Source-admitted bounded assessments are exposed separately below. Task verification and PR observations are displayed under their original
+identities, separately from work completion. No aggregation of different HEADs,
+client conformance decision, automatic acceptance or dependency dispatch exists.
+
+The target owner computes coverage once per revision, validates retained history
+once at service startup, and produces detached task/review projections once per
+requested target read. Board/API/CLI consume that projection without source reads,
+remote calls, evidence assessment or rebuilding the graph. No cache is introduced.
+The existing Board detail offers target creation, work editing, pending inventory,
+explicit revision review, task linking and full historical audit. Desktop, tablet
+and narrow layouts preserve the existing canvas, focus, fixed return and pan/zoom.
+
+Bounded DoD: permanent owner tests cover three work items plus pending inventory,
+invalid references, omissions, overlap, cycles, exact task compatibility, duplicate
+and stale decisions, restart, failed-history retention, partial success and merged
+but unconfirmed prerequisites. Service/API/CLI tests prove authorization and audit
+parity; browser tests exercise actual creation/revision/linking at three viewports
+with screenshot review. Existing control-plane, seven-run Factory proof, static,
+React, naming, lint, typecheck/build and latest implementation PR CI must pass.
+Offline fixtures are labeled and never replace live provider evidence. No model,
+external test PR, provider reconciliation or new baseline is activated.
+
+
+### Work admission before execution
+
+A separate `admit` target decision reserves one task UUID for an unchanged work
+commitment before execution. It requires the current target revision, actor,
+reason and a retained completed baseline proof attempt from this store. The proof
+must bind the same accepted revision/contract and contain all six passing
+obligations. The owner pins its exact source digest and HEAD plus repository
+identity; neither a PR observation nor a caller-supplied pass is eligible.
+This initial source proof protects accepted behavior, not completion of new work.
+
+The decision appends immutable admission and audit to the target history and
+reserves the task link atomically. Admitted work cannot be removed or have its
+promise replaced by an allocation revision. Other allocation changes remain
+explicit revisions. Failed attempts and earlier admissions remain visible.
+Existing historical links remain readable, but a linked task needs source-bound
+admission before another execution. Unlinked legacy tasks retain their original
+execution contract. Explicit admission of a retained task binds its original
+snapshot; it does not overwrite its task or attempt history.
+
+Task start supplies `workBinding: {targetId, workId, admissionId}`. The trusted
+service resolves the decision; the task owner checks it before capture, after
+capture and before every resumed attempt. Scope, actor, step, obligations,
+accepted revision, repository and captured source must agree. A reserved task
+cannot omit or substitute its binding. A stale, missing or changed relation
+fails before adapter operations or provider reservations. Task identity replay
+creates no new attempt. Existing provider dispatch blocks remain authoritative.
+
+Prerequisites remain unconfirmed in this slice and therefore prevent admission
+and execution. No prerequisite confirmation endpoint is introduced. This permits
+independent work only; proving usable prerequisite behavior on an integrated
+source is a later verification slice.
+
+Board/API/CLI target detail exposes each admitted work's bounded `assessment` with its
+exact task/attempt and candidate source identity. Unassigned obligations remain
+in `pending`; admitted but unexecuted work is pending, incomplete evidence is
+unknown, failed obligations remain failed, and a complete existing all-flow
+candidate verdict may pass only its bounded work assessment. The target stays
+pending regardless of individual passes, PR checks or merge. Historical linked
+tasks without admission are observations only. Reads use retained records, never
+capture source or assess raw evidence again.
+
+Permanent cases must prove reservation and restart, immutable commitments,
+prerequisite/scope/source/actor/identity rejection before execution, legacy-task
+compatibility, failure then correction with retained attempts, no cross-HEAD
+aggregation or automatic acceptance, and API/CLI parity. Existing security,
+Factory proof and browser gates remain mandatory.
+
+
+The Board's Prepare task action first records admission against the selected
+completed baseline proof, then fills the existing task form with that reserved
+binding. Missing or ineligible proof shows an error without starting work. The
+form visibly identifies the prepared work; editing scope cannot bypass server
+validation. Successful start consumes the prepared form binding. Unexecuted
+reservations show their task UUID without a broken task-artifact link. Bounded
+assessment updates preserve the existing work controls and keyboard focus.

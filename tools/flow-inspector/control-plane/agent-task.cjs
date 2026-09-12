@@ -44,6 +44,9 @@ function createTaskOwner(
     providerComplete = null,
     available = containmentAvailable,
     requireIdle = () => undefined,
+    checkWork = (task) => {
+      if (task.workBinding) throw new Error('Work admission owner unavailable')
+    },
     onChange = () => undefined
   }
 ) {
@@ -567,11 +570,14 @@ function createTaskOwner(
         return task.requestId
       }
       idle()
+      checkWork(task)
       checkProvider(task)
       const id = task.requestId
       const taskRoot = taskDirectory(id)
-      fs.mkdirSync(taskRoot)
-      const snapshot = capture(repositoryRoot, taskRoot, current.contract)
+      fs.mkdirSync(taskRoot, { recursive: true })
+      const captureRoot = path.join(taskRoot, 'input-' + randomUUID())
+      const snapshot = capture(repositoryRoot, captureRoot, current.contract)
+      checkWork(task, snapshot)
       for (const file of task.allowedFiles) {
         if (!snapshot.files.some((entry) => entry.path === file))
           throw new Error('Allowed source file is absent from snapshot')
@@ -613,6 +619,7 @@ function createTaskOwner(
       const record = get(id)
       authorizeTask(record, actor)
       checkBaseline(record)
+      checkWork(record.task, record.snapshot)
       checkBudget(record)
       if (
         !(record.task.provider

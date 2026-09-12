@@ -53,6 +53,7 @@ function admitTask(
     Object.keys(request).every((key) =>
       [
         'requestId',
+        'workBinding',
         'stepId',
         'objective',
         'allowedFiles',
@@ -67,6 +68,19 @@ function admitTask(
     'unknown field'
   )
   requireTask(validId(request.requestId), 'invalid task identity')
+  if (Object.hasOwn(request, 'workBinding')) {
+    const binding = request.workBinding
+    requireTask(
+      binding &&
+        typeof binding === 'object' &&
+        !Array.isArray(binding) &&
+        Object.keys(binding).length === 3 &&
+        ['targetId', 'workId', 'admissionId'].every((key) =>
+          validId(binding[key])
+        ),
+      'invalid work binding'
+    )
+  }
   requireTask(typeof actor === 'string' && actor.trim(), 'missing actor')
   requireTask(
     request.contractDigest === contract.digest && request.revision === revision,

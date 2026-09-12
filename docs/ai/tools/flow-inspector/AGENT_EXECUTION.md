@@ -236,3 +236,22 @@ static contracts, React tests, naming, lint, typecheck/build, browser tests and
 inspect generated screenshots. Latest PR HEAD checks must pass before review.
 Close only the demonstrated local adapter scope; real provider acceptance and
 original remote enforcement requirements remain visible if unselected.
+
+
+## Target work admission
+
+Tasks may reference `workBinding: {targetId, workId, admissionId}` from the
+[work admission owner](CORE_PROOF.md#work-admission-before-execution). That owner
+reserves a task UUID and exact baseline proof source before execution. The
+existing task owner consumes its check before capture, after capture and on
+resume; wrong source, scope, actor or references never reach adapter operations.
+The task fingerprint retains the binding and all original obligations. Each
+capture has its own input directory so a rejected snapshot remains inspectable
+and a corrected explicit retry can reuse the reserved task UUID.
+
+Existing unlinked format-1 tasks remain compatible. Historical target links are
+observations; further execution requires explicit admission of that task's
+original snapshot. Admission never rewrites its task or attempts. Dependencies
+without source-bound handoff evidence remain blocked; no manual confirmation
+or new evidence issuer exists. Provider uncertainty and cumulative budgets are
+checked unchanged. A bounded work pass never accepts a target or baseline.

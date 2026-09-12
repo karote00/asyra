@@ -254,3 +254,236 @@ test(
     }
   }
 )
+
+test('target decisions share API CLI audit and survive service restart without running candidates', async (t) => {
+  const { randomUUID } = require('node:crypto')
+  const parent = path.join(root, 'tmp/flow-inspector/cli-tests')
+  fs.mkdirSync(parent, { recursive: true })
+  const directory = fs.mkdtempSync(path.join(parent, 'targets-'))
+  t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
+  let server = await startServer(root, {
+    url: 'http://127.0.0.1:0',
+    serviceOptions: { directory }
+  })
+  try {
+    const state = server.service.state()
+    const request = {
+      action: 'create',
+      requestId: randomUUID(),
+      expectedRevision: 0,
+      reason: 'Offline target UI parity',
+      flowId: 'deferred-publication',
+      targetRevision: state.contract.digest,
+      acceptedBaseline: {
+        revision: state.mapping.revision,
+        contractDigest: state.contract.digest
+      },
+      objective: 'Develop deferred behavior',
+      works: [],
+      pending: ['deferred.snapshot', 'deferred.outcome', 'deferred.delivery']
+    }
+    assert.equal(
+      (
+        await fetch(server.origin + '/api/targets/decide', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(request)
+        })
+      ).status,
+      403
+    )
+    const file = path.join(directory, 'target-request.json')
+    fs.writeFileSync(file, JSON.stringify(request))
+    let messages = []
+    const invoke = (...args) =>
+      main(['--url', server.origin, ...args], {
+        repositoryRoot: root,
+        write: (value) => messages.push(value)
+      })
+    await invoke('target-decide', path.relative(root, file))
+    assert.equal(JSON.parse(messages.join('')).revision, 1)
+    messages = []
+    await invoke('target-show', request.requestId)
+    const api = await fetch(
+      server.origin + '/api/targets/' + request.requestId
+    ).then((r) => r.json())
+    assert.deepEqual(JSON.parse(messages.join('')), api)
+    assert.deepEqual(api, server.service.getTarget(request.requestId))
+    assert.equal(api.status, 'pending')
+    assert.equal(api.history.length, 1)
+    assert.equal(server.service.state().tasks.records.length, 0)
+    await server.close()
+    server = await startServer(root, {
+      url: 'http://127.0.0.1:0',
+      serviceOptions: { directory }
+    })
+    assert.deepEqual(server.service.getTarget(request.requestId), api)
+    messages = []
+    await invoke('target-decide', path.relative(root, file))
+    assert.equal(JSON.parse(messages.join('')).revision, 1)
+    assert.equal(server.service.getTarget(request.requestId).history.length, 1)
+    messages = []
+    await invoke('targets')
+    assert.equal(JSON.parse(messages.join('')).records.length, 1)
+    const session = await fetch(server.origin + '/api/session').then((r) =>
+      r.json()
+    )
+    const conflict = await fetch(server.origin + '/api/targets/decide', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-proof-capability': session.capability
+      },
+      body: JSON.stringify({ ...request, reason: 'conflict' })
+    })
+    assert.equal(conflict.status, 409)
+  } finally {
+    await server.close()
+  }
+})
+
+test('API CLI work admission locks source before task launch, rejects bypass and survives restart', async (t) => {
+  const { randomUUID } = require('node:crypto')
+  const { LOCAL_ACTOR } = require('../service.cjs')
+  const { captureSource } = require('../snapshot.cjs')
+  const parent = path.join(root, 'tmp/flow-inspector/cli-tests')
+  fs.mkdirSync(parent, { recursive: true })
+  const directory = fs.mkdtempSync(path.join(parent, 'admission-'))
+  let captures = 0,
+    wrongSource = false
+  const serviceOptions = {
+    directory,
+    agentOptions: {
+      available: () => true,
+      capture: (...args) => {
+        captures++
+        const snapshot = captureSource(...args)
+        return wrongSource ? { ...snapshot, digest: '0'.repeat(64) } : snapshot
+      },
+      verify: async () => ({ evidence: { status: 'unknown' } })
+    }
+  }
+  let server = await startServer(root, {
+    url: 'http://127.0.0.1:0',
+    serviceOptions
+  })
+  t.after(async () => {
+    await server.close()
+    fs.rmSync(directory, { recursive: true, force: true })
+  })
+  const contract = server.service.contract()
+  const source = await server.service.wait(
+    server.service.start({}, LOCAL_ACTOR)
+  )
+  assert.equal(source.evidence.status, 'passed')
+  const work = {
+    id: randomUUID(),
+    title: 'Bounded outcome',
+    scope: 'Preserve commit outcome',
+    stepId: 'finalize-transaction-state',
+    obligationIds: ['deferred.outcome'],
+    allowedFiles: ['packages/factory/src/data-transact.ts'],
+    prerequisites: []
+  }
+  const target = server.service.decideTarget(
+    {
+      action: 'create',
+      requestId: randomUUID(),
+      expectedRevision: 0,
+      reason: 'Create independent work',
+      flowId: 'deferred-publication',
+      targetRevision: contract.digest,
+      acceptedBaseline: { revision: 1, contractDigest: contract.digest },
+      objective: 'Develop deferred behavior',
+      works: [work],
+      pending: ['deferred.snapshot', 'deferred.delivery']
+    },
+    LOCAL_ACTOR
+  )
+  const admission = {
+    action: 'admit',
+    targetId: target.id,
+    requestId: randomUUID(),
+    expectedRevision: 1,
+    reason: 'Lock baseline before execution',
+    workId: work.id,
+    taskId: randomUUID(),
+    sourceAttemptId: source.id
+  }
+  const file = path.join(directory, 'request.json')
+  const invoke = async (...args) => {
+    const output = []
+    await main(['--url', server.origin, ...args], {
+      repositoryRoot: root,
+      write: (v) => output.push(v)
+    })
+    return JSON.parse(output.join(''))
+  }
+  fs.writeFileSync(file, JSON.stringify(admission))
+  const saved = await invoke('target-decide', path.relative(root, file))
+  assert.equal(saved.revision, 2)
+  assert.equal(captures, 0)
+  const request = {
+    requestId: admission.taskId,
+    stepId: work.stepId,
+    objective: work.scope,
+    allowedFiles: work.allowedFiles,
+    adapter: 'demonstration',
+    scenario: 'scope-violation',
+    contractDigest: contract.digest,
+    revision: 1,
+    budgets: { elapsedMs: 60000, toolCalls: 20, attempts: 3 },
+    workBinding: {
+      targetId: target.id,
+      workId: work.id,
+      admissionId: admission.requestId
+    }
+  }
+  const omitted = { ...request }
+  delete omitted.workBinding
+  assert.throws(
+    () => server.service.startTask(omitted, LOCAL_ACTOR),
+    /admission/i
+  )
+  assert.throws(
+    () =>
+      server.service.startTask({ ...request, objective: 'other' }, LOCAL_ACTOR),
+    /scope/i
+  )
+  assert.equal(captures, 0)
+  wrongSource = true
+  assert.throws(() => server.service.startTask(request, LOCAL_ACTOR), /source/i)
+  assert.equal(server.service.state().tasks.records.length, 0)
+  wrongSource = false
+  fs.writeFileSync(file, JSON.stringify(request))
+  await invoke('task-start', path.relative(root, file))
+  await server.service.waitTask(request.requestId)
+  assert.equal(server.service.getTask(request.requestId).attempts.length, 1)
+  const detail = await invoke('target-show', target.id)
+  assert.equal(detail.tasks[0].task.id, request.requestId)
+  assert.equal(detail.works[0].assessment.status, 'unknown')
+  assert.equal(detail.status, 'pending')
+  const api = await fetch(server.origin + '/api/targets/' + target.id).then(
+    (r) => r.json()
+  )
+  assert.deepEqual(detail, api)
+  await server.close()
+  server = await startServer(root, {
+    url: 'http://127.0.0.1:0',
+    serviceOptions
+  })
+  assert.deepEqual(await invoke('target-show', target.id), detail)
+  assert.equal(
+    server.service.startTask(request, LOCAL_ACTOR),
+    request.requestId
+  )
+  assert.equal(server.service.getTask(request.requestId).attempts.length, 1)
+  await server.service.controlTask(
+    request.requestId,
+    { action: 'resume', scenario: 'scope-violation' },
+    LOCAL_ACTOR
+  )
+  await server.service.waitTask(request.requestId)
+  assert.equal(server.service.getTask(request.requestId).attempts.length, 2)
+  assert.equal(server.service.state().mapping.revision, 1)
+})

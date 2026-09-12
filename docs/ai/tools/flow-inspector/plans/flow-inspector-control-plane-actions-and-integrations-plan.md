@@ -234,7 +234,6 @@ a later explicit operation after the selected open-source readiness work.
 - [Contract Verification and CI Plan](flow-inspector-control-plane-evidence-and-ci-plan.md)
 - [Flow Inspector contract](../FLOW_INSPECTOR.md)
 
-
 ## Sol Local Integration Checkpoint - 2026-09-08
 
 The user selected `gpt-5.6-sol` through ChatGPT subscription authentication.
@@ -274,6 +273,8 @@ only, not the historical failure record or full Phase 5/6 requirements.
 The [multi-PR flow plan](flow-inspector-multi-pr-development-and-integration-plan.md)
 owns the newly approved architecture direction for decomposing one target flow
 into tasks and PRs while retaining accepted-behavior checks and exact integrated
-completion evidence. It is planned, not implemented, and does not activate team
+completion evidence. The bounded local target/work and projection slice is
+implemented under the [living contract](../CORE_PROOF.md#flow-targets-and-work-decomposition);
+source-bound integration assessment remains planned. This does not activate team
 accounts or parallel agents. The existing candidate delivery contract remains
 in force until its corresponding owner slices are specified and verified.
