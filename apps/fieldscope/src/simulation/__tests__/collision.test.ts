@@ -22,7 +22,11 @@ import * as crops from '../../domain/crop-models'
 import * as models from '../../domain/robot-model'
 import { TriangleBuilder } from '../../domain/mesh'
 import { QueryGeometry, type GeometryReceipt } from '../geometry'
-import { SurfaceQueries, type SurfaceBatch } from '../collision'
+import {
+  SurfaceQueries,
+  type SurfaceBatch,
+  type SurfaceSweepBatch
+} from '../collision'
 
 const farm = {
   ...DEFAULT_CONFIGURATION,
@@ -405,4 +409,256 @@ it('does not exempt intersecting original robot surfaces and preserves empty bat
     frames: 0,
     fk: 0
   })
+})
+
+function sweep(): SurfaceSweepBatch {
+  const initial = batch()
+  return {
+    source: initial.source,
+    from: 1,
+    until: 3,
+    validFrom: 0,
+    validUntil: 10,
+    robot: initial.robot,
+    leaves: 'source-pose-throughout',
+    fruits: 'all-attached-throughout',
+    pairs: initial.pairs.map((pair) => ({
+      ...pair,
+      firstTranslation: [0, 0, 2],
+      secondTranslation: [0, 0, 0]
+    }))
+  }
+}
+const shiftedPlane = (z: number) => [0, 0, z, 4, 0, z, 0, 4, z]
+it.each([
+  ['interior', 1, 0.5],
+  ['initial endpoint', 0, 0],
+  ['final endpoint', 2, 1],
+  ['brief contact', 2e-12, 1e-12]
+])(
+  'proves continuous %s contact on original triangles',
+  (_label, height, fraction) => {
+    const f = setup([
+        triangle('moving', plane),
+        triangle('obstacle', shiftedPlane(height as number))
+      ]),
+      input = sweep()
+    const result = f.query.sweep(f.source, input),
+      contact = result.results[0]
+    expect(contact.status).toBe('swept-intersection')
+    if (!contact.contactFraction || !contact.contactTime)
+      throw new Error('Missing certified contact occurrence')
+    expect(contact.contactFraction.low).toBeLessThanOrEqual(fraction as number)
+    expect(contact.contactFraction.high).toBeGreaterThanOrEqual(
+      fraction as number
+    )
+    expect(contact.contactTime.low).toBeLessThanOrEqual(
+      1 + 2 * (fraction as number)
+    )
+    expect(contact.contactTime.high).toBeGreaterThanOrEqual(
+      1 + 2 * (fraction as number)
+    )
+    expect(contact.first.mesh).toBe(f.source.meshes[0])
+    expect(contact.second.mesh).toBe(f.source.meshes[1])
+    expect(Object.isFrozen(contact.contactFraction)).toBe(true)
+    expect(Object.isFrozen(contact.contactTime)).toBe(true)
+    if (fraction === 0.5) {
+      expect(f.query.query(f.source, batch()).results[0].status).toBe(
+        'surface-separated'
+      )
+      const end = setup([
+        triangle('moving-end', shiftedPlane(2)),
+        triangle('obstacle', shiftedPlane(1))
+      ])
+      expect(end.query.query(end.source, batch()).results[0].status).toBe(
+        'surface-separated'
+      )
+    }
+  }
+)
+
+it.each([
+  ['coplanar overlap', [3, 0, 0, 4, 0, 0, 3, 1, 0], 'swept-intersection'],
+  ['coplanar edge grazing', [3, 1, 0, 4, 1, 0, 3, 2, 0], 'swept-intersection'],
+  ['coplanar separated', [3, 2, 0, 4, 2, 0, 3, 3, 0], 'swept-separated']
+])(
+  'covers continuous %s with the complete coplanar axis family',
+  (_label, points, expected) => {
+    const f = setup([
+        triangle('moving', [0, 0, 0, 1, 0, 0, 0, 1, 0]),
+        triangle('obstacle', points as number[])
+      ]),
+      input = sweep()
+    input.pairs[0].firstTranslation = [4, 0, 0]
+    expect(f.query.sweep(f.source, input).results[0].status).toBe(expected)
+  }
+)
+
+it('requires one common time instead of unrelated axis overlap times', () => {
+  const f = setup([
+      triangle('moving', [0, 0, 0, 1, 0, 0, 0, 1, 0]),
+      triangle('obstacle', [3, 0, 1, 4, 0, 1, 3, 1, 1])
+    ]),
+    input = sweep()
+  input.pairs[0].firstTranslation = [4, 0, 4]
+  // Z overlap requires t=1/4; X overlap requires t>=1/2.
+  expect(f.query.sweep(f.source, input).results[0].status).toBe(
+    'swept-separated'
+  )
+})
+
+it.each([0, 1])(
+  'preserves zero relative motion and common translation for original separation %s',
+  (height) => {
+    const f = setup([
+        triangle('a', plane),
+        triangle('b', shiftedPlane(height))
+      ]),
+      input = sweep()
+    for (const translation of [
+      [0, 0, 0],
+      [1e10, 3, -9]
+    ] as Point3[]) {
+      input.pairs[0].firstTranslation = translation
+      input.pairs[0].secondTranslation = translation
+      expect(f.query.sweep(f.source, input).results[0].status).toBe(
+        height ? 'swept-separated' : 'swept-intersection'
+      )
+    }
+  }
+)
+
+it('retains transformed interval ambiguity instead of declaring endpoint separation clear', () => {
+  const a = triangle('a', plane),
+    b = triangle('b', shiftedPlane(1))
+  const rotation = [0, Math.sin(Math.PI / 8), 0, Math.cos(Math.PI / 8)]
+  for (const mesh of [a, b])
+    mesh.descriptor = readSpatialDescriptor({
+      ...mesh.descriptor,
+      rotation
+    }) as SiteMesh['descriptor']
+  const f = setup([a, b]),
+    input = sweep()
+  input.pairs[0].firstTranslation = [Math.SQRT2, 0, Math.SQRT2]
+  expect(f.query.sweep(f.source, input).results[0].status).toBe('unknown')
+})
+
+it('requires fresh assumptions through the closed final endpoint and rejects malformed sweep inputs', () => {
+  const f = setup([triangle('a', plane), triangle('b', shiftedPlane(1))])
+  for (const value of [NaN, Infinity, 1, 0]) {
+    const input = sweep()
+    input.until = value
+    expect(() => f.query.sweep(f.source, input)).toThrow()
+  }
+  const sparse = sweep()
+  sparse.pairs[0].firstTranslation = new Array(3) as unknown as Point3
+  expect(() => f.query.sweep(f.source, sparse)).toThrow()
+  const instant = { ...sweep(), leaves: 'source-pose' }
+  expect(() => f.query.sweep(f.source, instant as SurfaceSweepBatch)).toThrow()
+  const expired = sweep()
+  expired.validUntil = expired.until
+  expect(f.query.sweep(f.source, expired).results[0].status).toBe('unknown')
+  expired.validUntil = 4
+  expect(f.query.sweep(f.source, expired).results[0].status).toBe(
+    'swept-intersection'
+  )
+  expired.leaves = 'unknown'
+  expect(f.query.sweep(f.source, expired).results[0].status).toBe('unknown')
+  const getter = sweep()
+  let reads = 0
+  Object.defineProperty(getter, 'until', {
+    enumerable: true,
+    get() {
+      reads++
+      return NaN
+    }
+  })
+  expect(() => f.query.sweep(f.source, getter)).toThrow()
+  expect(reads).toBe(1)
+  expect(() => f.query.sweep({ ...f.source }, sweep())).toThrow()
+  f.site.clear()
+  expect(() => f.query.sweep(f.source, sweep())).toThrow()
+})
+
+it('reuses completed source and batch FK for an actual robot and installed dock sweep', () => {
+  const f = setup([]),
+    input = sweep(),
+    mesh = f.source.meshes.findIndex((item) => item.kind === 'robot'),
+    dock = f.source.meshes.findIndex((item) => item.kind === 'dock')
+  input.pairs = [0, 1].map((triangle) => ({
+    first: { mesh, triangle, instance: 0 },
+    second: { mesh: dock, triangle, instance: 0 },
+    firstTranslation: [0.1, 0, 0],
+    secondTranslation: [0, 0, 0]
+  }))
+  const fk = vi.spyOn(kinematics, 'evaluateRobotPose'),
+    prepare = vi.spyOn(f.owner, 'prepare')
+  try {
+    const result = f.query.sweep(f.source, input)
+    expect(
+      result.results.every((pair) => pair.status === 'swept-separated')
+    ).toBe(true)
+    expect(result.work).toMatchObject({
+      pairs: 2,
+      frames: 3,
+      vertexVisits: 12,
+      fk: 1,
+      shapeBounds: 0,
+      regionBounds: 0
+    })
+    expect(fk).toHaveBeenCalledTimes(1)
+    expect(prepare).not.toHaveBeenCalled()
+    input.pairs[0].firstTranslation = [99, 0, 0]
+    expect(result.input.pairs[0].firstTranslation[0]).toBe(0.1)
+    expect(Object.isFrozen(result.input.pairs[0].firstTranslation)).toBe(true)
+  } finally {
+    fk.mockRestore()
+    prepare.mockRestore()
+  }
+})
+
+it('proves a common guaranteed nonpoint time and conclusive nonpoint separation', () => {
+  const a = triangle('a', plane),
+    b = triangle('b', [1, 1, -1, 2, 1.25, 1, 1.125, 2, 1.5])
+  const rotation = [0, Math.sin(Math.PI / 8), 0, Math.cos(Math.PI / 8)]
+  for (const mesh of [a, b])
+    mesh.descriptor = readSpatialDescriptor({
+      ...mesh.descriptor,
+      rotation
+    }) as SiteMesh['descriptor']
+  const f = setup([a, b]),
+    input = sweep()
+  input.pairs[0].firstTranslation = [0.5, 0, 0]
+  input.pairs[0].secondTranslation = [0.5, 0, 0]
+  const contact = f.query.sweep(f.source, input).results[0]
+  expect(contact.status).toBe('swept-intersection')
+  expect(contact.reason).toBe('common-guaranteed-time')
+  expect(contact.contactFraction).toEqual({ low: 0, high: 0 })
+  const far = triangle('far', shiftedPlane(10))
+  far.descriptor = readSpatialDescriptor({
+    ...far.descriptor,
+    rotation
+  }) as SiteMesh['descriptor']
+  const separated = setup([a, far])
+  expect(separated.query.sweep(separated.source, input).results[0].status).toBe(
+    'swept-separated'
+  )
+})
+
+it('keeps relative displacement and large finite simulation-time conversion conservative', () => {
+  const f = setup([triangle('a', plane), triangle('b', shiftedPlane(1))]),
+    input = sweep()
+  input.pairs[0].firstTranslation = [0, 0, 1]
+  input.pairs[0].secondTranslation = [0, 0, -1]
+  input.from = 8e307
+  input.until = 1.6e308
+  input.validUntil = 1.7e308
+  const contact = f.query.sweep(f.source, input).results[0]
+  expect(contact.status).toBe('swept-intersection')
+  expect(contact.contactFraction).toEqual({ low: 0.5, high: 0.5 })
+  if (!contact.contactTime) throw new Error('Missing time enclosure')
+  expect(contact.contactTime.low).toBeLessThanOrEqual(1.2e308)
+  expect(contact.contactTime.high).toBeGreaterThanOrEqual(1.2e308)
+  expect(contact.contactTime.low).toBeGreaterThanOrEqual(input.from)
+  expect(contact.contactTime.high).toBeLessThanOrEqual(input.until)
 })
