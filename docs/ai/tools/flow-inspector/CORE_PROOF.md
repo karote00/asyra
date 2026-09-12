@@ -509,6 +509,28 @@ digest. A later review rejection leaves the historical pin intact: explicitly
 admitted local development may continue against that frozen target, but review
 status grants no acceptance permission and never changes its verification bytes.
 
+The service admits each retained review's metadata through the version owner.
+Require integer `baseRevision` within the retained history and select that exact
+immutable history prefix, with its matching revision and last version. Invoke
+`compareVersion` with the retained candidate and relations, then compare every
+owner-produced review field, including id, base/candidate digests, changes,
+blockers and relations. Do not recompute review fingerprints in the service or
+substitute the latest base. Service-owned attempt and status fields are checked
+separately. A changed owner field rejects admission rather than repairing history.
+Retain the admitted pair privately for target resolution; startup and newly
+prepared reviews establish it once, while get/list/replay perform no new review
+admission or source-byte validation.
+
+Review metadata integrity is separate from current source-byte availability.
+Retained targets may load their exact admitted historical pair when its byte
+reference has become unavailable, preserving the pin and readable history. Before
+a new target creation with `targetReviewId`, the service must require that pair's
+exact reference to be available in this service lifetime. No new target or later
+producer gains authority from metadata alone. Target callback resolution does not
+choose a newer or greener review. Public evolution review projections preserve
+the version owner's `candidateDigest`; `candidateContractDigest` separately names
+the contract digest and must not overwrite the reviewed-candidate identity.
+
 Legacy targets without the pin retain their existing standalone behavior and
 bytes. New authoritative source assessment reports their missing verification
 authority instead of deriving a pin from current files or another review.

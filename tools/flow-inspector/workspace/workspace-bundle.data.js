@@ -36015,6 +36015,7 @@
               "artifact:admitted-verification-source"
             ],
             "conditions": [
+              "Admit retained review metadata once through the version owner against its exact immutable history prefix and compare every owner field before supplying a target callback pair. Keep metadata integrity separate from retained-byte availability: historical pins remain readable, while new pinned target creation requires the exact reference to be available. Public review candidateDigest remains the version-owned fingerprint, with contract identity projected separately. No latest-review substitution or read-time re-admission is permitted.",
               "Source-aware version preparation uses that attempt’s retained contract, test-role identity and registered report. Verify retained bytes once at first reference handoff per attempt/service lifetime, bind the exact tuple privately, and re-admit retained references once on startup. Missing source-tree bytes preserve history but forbid new handoffs; reference presence alone is not availability. Review replay requires the version owner’s full current-base/candidate/relations identity and does not repeat source or report IO. Legacy preparation cannot acquire reference authority.",
               "New attempts retain the exact server-admitted sourceContract definitions. Restore them through the contract owner on restart and bind attempt and snapshot contract, mapping and architecture identities. Present malformed or conflicting sourceContract rejects admission; historical absence remains runtime-only and grants no verification authority. Paired new verification descriptors use one combined source-owner manifest admission; retain the verification descriptor and execution configuration in the same immutable attempt artifact. Reads and replay do not repeat it. Descriptor admission alone does not prove retained source-tree bytes or enable composition.",
               "Before supplying a verification reference to the version owner, resolve and admit that attempt’s source descriptor and actual execution configuration within this repository. Retain the exact reference and immutable bytes; absent historical descriptors grant no new verification authority. This source admission is independent of version acceptance and does not imply target eligibility.",
@@ -36115,7 +36116,7 @@
             "from": "review-contract-evolution",
             "to": "manage-flow-target",
             "kind": "conditional",
-            "predicate": "A target explicitly selects an exact retained review with an admitted verification reference; the trusted service supplies that review/candidate pair, and the target pins the version-owned candidate digest without rehashing.",
+            "predicate": "A new target explicitly selects an exact version-owner-admitted review and an available verification reference; the trusted service supplies the immutable review/candidate pair, and the target pins its version-owned digest without rehashing. Retained pin loading checks that same metadata pair independently of current byte availability.",
             "producedArtifacts": [
               "artifact:reviewed-contract-evolution"
             ]
