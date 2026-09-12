@@ -810,7 +810,7 @@ snapshot identity, before runner dispatch or raw/retained evidence assessment.
 This admission depends only on the trusted attempt and captured source; completed
 evidence is consumed later for persistence and projection and is never an
 admission prerequisite. For a live capture it passes the already captured complete
-file manifest to the source owner's `validateRuntimeSource`; it does not reopen
+file manifest to the source owner's admission API; it does not reopen
 the manifest or source files. On restart it reads `source-manifest.json` once
 from the service-owned attempt directory selected by the validated attempt UUID.
 The saved `manifestPath` never selects that read. The existing safe-path,
@@ -827,6 +827,44 @@ new persisted conformance flag or source identity reconstructed by a projection.
 Direct proof assessment with a complete captured snapshot can instead invoke the
 same source owner at its own admission boundary. Retained proof without a full
 manifest or a service-admitted artifact cannot gain new runtime conformance.
+
+For new proof attempts, the service retains `sourceContract: {definition,
+architectureDefinition}` from the contract it already admitted before capture.
+This is server-owned attempt data, never a client contract selector. Live capture
+uses that same admitted contract. Restart restores it through the contract owner
+and checks the reconstructed contract digest, mapping and architecture identities
+against the attempt and snapshot before source admission. The contract owner is
+the only authority for interpreting the saved definitions; a stored admitted flag
+or another version with a matching selector cannot replace that admission.
+
+Presence is determined with `hasOwn(sourceContract)`. Present-but-null, malformed
+or conflicting material rejects admission. Attempts interrupted or failed before
+a snapshot is produced remain readable with no source authority; absence of an
+unproduced artifact is not a completed pair mismatch. Once capture has produced
+a snapshot, a new capture must pair this contract with its verification descriptor. With the pair present, the service calls
+`validateSourceSnapshot` once for the complete full manifest, obtaining both
+runtime and verification descriptors without a second runtime validation. Its
+private immutable artifact additionally binds the admitted contract identities,
+verification descriptor and snapshot execution `configurationDigest`; changed or
+removed members invalidate the whole artifact. The existing live zero-read,
+restart one-manifest-read and read/replay zero-validation requirements apply to
+this combined admission too.
+
+Historical attempts without `sourceContract` may retain their prior runtime-only
+admission and readable evidence, even if a verification descriptor was recorded.
+Their verification authority is unavailable: that descriptor is not declared
+valid and cannot supply a version reference or authorize a new producer. Do not
+repair missing authority from the checkout, a latest review or an arbitrary
+contract with the same digest. This compatibility path does not turn a malformed
+present new contract into historical absence, nor weaken runtime admission.
+
+Combined manifest admission establishes descriptor binding, not the continued
+availability or integrity of retained source-tree bytes. Before publishing a
+replayable version reference or composing another producer, the source owner must
+validate the retained execution inputs at the service-owned attempt location.
+The manifest and source tree remain pinned by existing attempt retention; no new
+cleanup action may discard a referenced bundle. This admission slice alone does
+not enable version references, target review resolution or source composition.
 
 Records with no `runtimeSource` retain their existing standalone behavior and
 cause no new manifest read. Present-but-null, malformed or unsupported identities

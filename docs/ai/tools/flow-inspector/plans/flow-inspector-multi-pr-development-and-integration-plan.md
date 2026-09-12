@@ -55,9 +55,13 @@ and `assess-target-source` define the next bounded owner. It consumes frozen
 allocation, admitted verification contracts and completed source-bound proof
 artifacts to separate accepted preservation, work/prerequisite results and target
 integration eligibility. It does not run source, change admission or accept a
-baseline. This is readiness work; the implementation and its formal cases remain
-open. Existing source admission and pending-target behavior remain unchanged until
-their own consumer slices are implemented and verified.
+baseline. The pure assessor and real captured-source producer cases are now
+implemented. Frozen verification descriptors, immutable version references and
+exact reviewed target pins have passed their owner gates. The next service slice
+retains each attempt's exact admitted contract and admits both source descriptors
+once; retained-byte composition and authoritative assessment requests follow as
+separate owners. Existing target execution and pending behavior remain unchanged
+until their consumer slices are implemented and verified.
 
 The source producer must identify one captured runtime source independently of
 each accepted/target verification contract's metadata. Old full snapshot digests
