@@ -487,3 +487,194 @@ test('API CLI work admission locks source before task launch, rejects bypass and
   assert.equal(server.service.getTask(request.requestId).attempts.length, 2)
   assert.equal(server.service.state().mapping.revision, 1)
 })
+
+test('assessment CLI waits for real local and remote production while preserving pending failed stale and control outcomes', async () => {
+  const { randomUUID } = require('node:crypto')
+  const { createService, LOCAL_ACTOR } = require('../service.cjs')
+  const sourceOwner = require('../snapshot.cjs')
+  const contract = require('../contracts.cjs').loadContract(root)
+  const parent = path.join(root, 'tmp/flow-inspector/cli-assessment-tests')
+  fs.mkdirSync(parent, { recursive: true })
+  const directory = fs.mkdtempSync(path.join(parent, 'run-'))
+  const snapshot = sourceOwner.captureSource(
+    root,
+    path.join(directory, 'initial'),
+    contract
+  )
+  const repository = snapshot.sourceRoot
+  let service = createService(repository),
+    server
+  const makeTarget = (review) => {
+    const flow = review.candidate.contract.flows[0]
+    const cases = review.candidate.contract.cases.filter(
+      (item) => item.flowId === flow.id
+    )
+    const request = {
+      action: 'create',
+      requestId: randomUUID(),
+      expectedRevision: 0,
+      reason: 'CLI frozen target',
+      flowId: flow.id,
+      targetRevision: review.candidate.contract.digest,
+      targetReviewId: review.id,
+      acceptedBaseline: {
+        revision: service.state().mapping.revision,
+        contractDigest: service.contract().digest
+      },
+      objective: 'Prove complete CLI target',
+      works: cases.map((item) => ({
+        id: randomUUID(),
+        title: item.id,
+        stepId: item.stepId,
+        obligationIds: [item.id],
+        scope: 'Prove obligation',
+        allowedFiles: ['packages/factory/src/data-transact.ts'],
+        prerequisites: []
+      })),
+      pending: []
+    }
+    return { request, target: service.decideTarget(request, LOCAL_ACTOR) }
+  }
+  let holdCancellation = false
+  const invoke = async (args, remote = false) => {
+    const messages = []
+    const code = await main(remote ? ['--url', server.origin, ...args] : args, {
+      repositoryRoot: repository,
+      write: (value) => messages.push(value)
+    })
+    return { code, value: JSON.parse(messages.at(-1)) }
+  }
+  try {
+    const proof = await service.wait(
+      service.start({ mode: 'candidate' }, LOCAL_ACTOR)
+    )
+    const review = service.prepareEvolution(
+      { attemptId: proof.id },
+      LOCAL_ACTOR
+    )
+    service.decideEvolution(
+      {
+        id: review.id,
+        decision: 'accept',
+        reason: 'Explicit CLI accepted source'
+      },
+      LOCAL_ACTOR
+    )
+    const { target, request: targetRequest } = makeTarget(review)
+    const request = {
+      requestId: randomUUID(),
+      targetId: target.id,
+      allocationRevision: 1,
+      sourceAttemptId: proof.id
+    }
+    const input = path.join(repository, 'assessment.json')
+    fs.writeFileSync(input, JSON.stringify(request))
+    await service.close()
+    const local = await invoke(['target-assess', 'assessment.json'])
+    assert.equal(local.code, 0)
+    assert.equal(local.value.phase, 'completed')
+    assert.equal(local.value.projection.eligible, true)
+    server = await startServer(repository, {
+      url: 'http://127.0.0.1:0',
+      serviceOptions: {
+        runner: async (options) => {
+          if (holdCancellation && !options.signal.aborted)
+            await new Promise((resolve) =>
+              options.signal.addEventListener('abort', resolve, { once: true })
+            )
+          return require('../runner.cjs').runVerification(options)
+        }
+      }
+    })
+    service = server.service
+    const replay = await invoke(['target-assess', 'assessment.json'], true)
+    assert.deepEqual(replay, local)
+    const remoteRequest = { ...request, requestId: randomUUID() }
+    fs.writeFileSync(input, JSON.stringify(remoteRequest))
+    const remote = await invoke(['target-assess', 'assessment.json'], true)
+    assert.equal(remote.code, 0)
+    assert.equal(remote.value.phase, 'completed')
+    assert.equal(remote.value.result.accepted.status, 'passed')
+    assert.equal(
+      (await invoke(['target-assessment-show', remote.value.id], true)).code,
+      0
+    )
+    assert.equal((await invoke(['target-assessments'], true)).value.length, 2)
+    await assert.rejects(
+      () => invoke(['target-assess', 'assessment.json', '--no-wait'], true),
+      /Usage/
+    )
+    await assert.rejects(() => invoke(['target-assess'], true), /Usage/)
+    service.decideTarget(
+      {
+        action: 'revise',
+        targetId: target.id,
+        requestId: randomUUID(),
+        expectedRevision: 1,
+        reason: 'Explicit pending allocation',
+        objective: targetRequest.objective,
+        works: [],
+        pending: targetRequest.works.flatMap((work) => work.obligationIds)
+      },
+      LOCAL_ACTOR
+    )
+    const stale = await invoke(['target-assessment-wait', local.value.id], true)
+    assert.equal(stale.code, 1)
+    assert.equal(stale.value.result.integration.status, 'passed')
+    assert.equal(stale.value.projection.current, false)
+    const pendingRequest = {
+      ...request,
+      requestId: randomUUID(),
+      allocationRevision: 2
+    }
+    fs.writeFileSync(input, JSON.stringify(pendingRequest))
+    const pending = await invoke(['target-assess', 'assessment.json'], true)
+    assert.equal(pending.code, 1)
+    assert.equal(pending.value.result.accepted.status, 'passed')
+    assert.equal(pending.value.result.integration.status, 'pending')
+    const assertions = path.join(repository, contract.testFile)
+    const bytes = fs.readFileSync(assertions, 'utf8')
+    fs.chmodSync(assertions, 0o600)
+    fs.writeFileSync(
+      assertions,
+      bytes.replace(
+        'expect(deferred.history).toBe(1)',
+        'expect(deferred.history).toBe(2)'
+      )
+    )
+    const failedProof = await service.wait(
+      service.start({ mode: 'candidate' }, LOCAL_ACTOR)
+    )
+    assert.equal(failedProof.evidence.status, 'failed')
+    const failedReview = service.prepareEvolution(
+      { attemptId: failedProof.id },
+      LOCAL_ACTOR
+    )
+    const failedTarget = makeTarget(failedReview).target
+    fs.writeFileSync(
+      input,
+      JSON.stringify({
+        ...request,
+        requestId: randomUUID(),
+        targetId: failedTarget.id,
+        sourceAttemptId: failedProof.id
+      })
+    )
+    const failed = await invoke(['target-assess', 'assessment.json'], true)
+    assert.equal(failed.code, 1)
+    assert.equal(failed.value.result.accepted.status, 'passed')
+    assert.equal(failed.value.result.integration.status, 'failed')
+    holdCancellation = true
+    const cancelId = service.startTargetAssessment(
+      { ...pendingRequest, requestId: randomUUID() },
+      LOCAL_ACTOR
+    )
+    const cancelled = await invoke(['target-assessment-cancel', cancelId], true)
+    assert.equal(cancelled.code, 0)
+    assert.equal(cancelled.value.phase, 'cancelled')
+  } finally {
+    if (server) await server.close()
+    else await service.close()
+    fs.rmSync(directory, { recursive: true, force: true })
+  }
+})
