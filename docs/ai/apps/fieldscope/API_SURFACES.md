@@ -111,3 +111,17 @@ Cross-package imports use public `@asyra/*` facades. Do not import another app's
   rather than copying accumulated history per tick. This foundation has no Core
   transaction, timer, real movement provider or UI session controls. Action-driven
   poses, actual picking/charging and real provider composition remain next.
+
+## Shared query geometry source
+
+- `QueryGeometry.prepare` consumes a composition-issued `GeometryReceipt` binding
+  current C scene, robot and dock handles from one update. Required owner predicates
+  validate receipt identity and all handles before preparation and publication.
+- Its immutable `GeometrySource` shares original near shape buffers, descriptors,
+  fruit partitions/plant bindings and robot body ownership. Only farm dimensions
+  are removed; robot source contains no route annotation. No source generators run.
+- `read` and `placePoint` reject copied/retired products; `clear` retires the product.
+  Unchanged current receipts reuse preparation. `placePoint` composes source
+  instances before installed descriptor transforms for farm/dock geometry; robot
+  parts remain chassis-local and require later session base/joint pose inputs.
+- This source API makes no observation, contact-policy, quality or clearance claim.

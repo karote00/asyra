@@ -578,8 +578,11 @@ it. No crop, station or robot generator runs in D.
 Physical source coverage includes hidden net, leaves, film, drains, soil, passages,
 barriers and underground base as authored. Only the exact dimensions layer and
 robot.route annotation are nonphysical; opacity, visibility, bounds and distant
-LOD never substitute for near geometry. Robot parts retain C's rigid-body ownership;
-station parts stay distinct. Fruit triangle ownership retains cucumber spines and
+LOD never substitute for near geometry. Robot parts retain C's rigid-body
+ownership in their chassis-local frame;
+station parts stay distinct in the installed world frame. Later queries must
+consume the session's actual base/joint/retained-fruit transforms; the station
+position must never stand in for a working robot pose. Fruit triangle ownership retains cucumber spines and
 tomato calyx/distal pedicel, including shared vertices and late hairs. Original
 source identity/placement, not string guesses or new botanical truth, joins an
 instance to C's plant/fruit metadata. Unsupported or inconsistent source data is
