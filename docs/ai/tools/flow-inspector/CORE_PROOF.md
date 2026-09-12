@@ -1227,6 +1227,56 @@ remain required; generating or admitting a closure proves none of those outcomes
 Later retained admission/replay must use the same exact trusted location and
 validate actual retained bytes at its declared lifetime, without UI recomputation.
 
+### Derived source composition
+
+`composeDerivedSource(repositoryRoot, runDirectory, runtimeInput,
+verificationInput, contract)` composes an execution snapshot under the existing
+fixed `contained-native-typescript-v1` source policy. Both inputs retain the
+trusted `{sourceRoot, admission}` boundary: canonical repository and attempt
+location, with the owning service's exact attempt UUID, repository, HEAD, full
+source digest, contract/mapping/architecture identities, actual configuration
+digest and completed source-owned descriptors. A derived runtime admission must
+already bind its runtime, original verification and execution descriptors to its
+full snapshot through `validateSourceSnapshot` with the trusted location. A
+candidate verdict is not that admission artifact. The task-to-service tuple
+handoff remains a separate consumer prerequisite; callers cannot confer it by
+providing paths or claiming their object was admitted.
+
+Only this derived composition API may consume a runtime admission with an own
+`executionSource` field. Ordinary `composeSource` rejects that presence, including
+null or malformed values. Never remove the descriptor to send untrusted candidate
+runtime through an ordinary producer. In both APIs the selected verification
+input must be the exact original ordinary five-role bundle: its actual
+configuration digest equals the original configuration entry, and an own
+execution descriptor is rejected rather than stripped or treated as equivalent.
+The supplied contract belongs to that chosen bundle. Runtime supplies only its
+admitted runtime inventory, HEAD, package metadata and lockfile; its previous
+verifier and generated files are not copied into the new proof.
+
+The source owner verifies each selected runtime or verifier entry's actual bytes
+once through its shared safe-path, regular-file, size and digest boundary, and
+copies it once. Generate the two fixed execution files for the new trusted
+source directory, preserving their original verification descriptor binding.
+Reuse the generator's entry sizes and digests in the complete output manifest.
+The new runtime and verification descriptors must match the selected identities;
+configuration identity is the new execution digest, and the full snapshot digest
+binds the complete new inventory. Different source locations produce different
+execution identities; never equate them merely because the original verifier
+is unchanged. Producer descriptor construction and full hashing are distinct
+from the subsequent consumer's one combined source admission; tests count actual
+input reads/hashes and generated fingerprint reuse separately.
+
+Both APIs preserve fixed output containment, immutable no-overwrite behavior,
+input/output non-aliasing, readonly files and failure without a usable returned
+snapshot. Partial output is not an artifact or fallback. Ordinary composition
+retains its previous behavior for ordinary inputs. This source operation does
+not execute code, establish containment, grant retained replay or authorize
+accepted baseline changes. Production service/evidence/target consumers must
+separately admit these exact identities and always use the contained runner for
+candidate runtime. Source tests use real distinct accepted/target verifier bytes
+through that runner and direct evidence; they do not declare service integration
+or full runtime coverage complete.
+
 ### Retained snapshot byte verification
 
 `verifyRetainedSnapshotBytes(repositoryRoot, sourceRoot, fullFiles)` is the

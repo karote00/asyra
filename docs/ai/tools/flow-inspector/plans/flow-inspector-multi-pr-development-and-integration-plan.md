@@ -66,10 +66,14 @@ producers on one selected runtime. Durable results preserve independent role
 verifiers, cancellation and restart outcomes, with currentness-only cached
 projections. The loopback HTTP, CLI and Board consumers now expose registered
 actions, exact source selection and separated retained results, with real-producer
-browser and lifecycle evidence. The next source owner slice binds the candidate
-verifier's generated configuration/bootstrap closure before scoped verification
-can consume that execution authority. Scoped verification, execution/admission
-consumers and explicit target-baseline acceptance remain subsequent slices.
+browser and lifecycle evidence. Candidate verification now consumes the fixed
+source-owned configuration/bootstrap closure; retained task admission checks real
+bytes and exact descriptors once, with task format 2 preventing missing-field
+legacy fallback. The next source slice composes independently retained verifier
+bundles onto candidate runtime under a new derived closure. Service/evidence
+handoff and contained target producers must follow before scoped execution can
+consume that authority. Scoped verification, execution/admission consumers and
+explicit target-baseline acceptance remain subsequent slices.
 Existing target execution and pending behavior stay in effect until those
 consumers are implemented and verified. Ordinary composition does not cover
 undeclared generated wrappers; the fixed four-package capture scope also does
