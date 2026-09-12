@@ -491,7 +491,7 @@ obligations. Existing accepted-flow protection and all six Factory gates remain.
 
 For new source-authoritative targets, creation also selects `targetReviewId`,
 the existing hash identity of an exact retained version review. The trusted
-service's `getVersionReview(id)` supplies that immutable review and candidate
+service's `getVersionReview(id, {requireAvailable})` supplies that immutable review and candidate
 pair. It must match the requested id, target contract digest and a valid
 service-admitted candidate verification reference. The target owner copies only
 `targetVerification: {reviewId, candidateDigest}` into the immutable target;
@@ -520,6 +520,12 @@ separately. A changed owner field rejects admission rather than repairing histor
 Retain the admitted pair privately for target resolution; startup and newly
 prepared reviews establish it once, while get/list/replay perform no new review
 admission or source-byte validation.
+
+The target owner sets `requireAvailable: true` only for a new creation after its
+existing exact-request replay check. Retained target loading sets it to `false`;
+get/list and exact create replay do not call the resolver again. The service owns
+availability enforcement inside that callback. It must not reconstruct target
+request history or reject a historical replay through an earlier service precheck.
 
 Review metadata integrity is separate from current source-byte availability.
 Retained targets may load their exact admitted historical pair when its byte

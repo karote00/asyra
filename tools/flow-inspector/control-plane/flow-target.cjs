@@ -162,11 +162,11 @@ function createTargetOwner({
   getSource = () => null,
   getVersionReview = () => null
 }) {
-  const resolveVerification = (reviewId, targetRevision) => {
+  const resolveVerification = (reviewId, targetRevision, requireAvailable) => {
     const digest = (value) =>
       typeof value === 'string' && /^[a-f0-9]{64}$/.test(value)
     requireValue(digest(reviewId), 'invalid target version review identity')
-    const review = getVersionReview(reviewId)
+    const review = getVersionReview(reviewId, { requireAvailable })
     const candidate = review?.candidate
     const reference = candidate?.verificationSource
     requireValue(
@@ -221,7 +221,8 @@ function createTargetOwner({
         )
         const resolved = resolveVerification(
           pin.reviewId,
-          record.targetRevision
+          record.targetRevision,
+          false
         )
         requireValue(
           pin.candidateDigest === resolved.candidateDigest,
@@ -564,7 +565,8 @@ function createTargetOwner({
             ? {
                 targetVerification: resolveVerification(
                   request.targetReviewId,
-                  contract.digest
+                  contract.digest,
+                  true
                 )
               }
             : {}),

@@ -860,3 +860,47 @@ test('legacy target absence remains unchanged even when an otherwise matching re
     before
   )
 })
+
+test('target callback distinguishes new creation from retained metadata and never rechecks availability on exact replay', async (t) => {
+  const value = await pinnedSetup(t)
+  let available = true
+  const phases = []
+  value.options.getVersionReview = (id, context) => {
+    phases.push(context)
+    return context?.requireAvailable && !available
+      ? null
+      : value.versions.get(id)
+  }
+  let owner = createTargetOwner(value.options)
+  const created = owner.decide(value.request, 'local-developer')
+  assert.deepEqual(phases, [{ requireAvailable: true }])
+  available = false
+  owner = createTargetOwner(value.options)
+  assert.deepEqual(phases, [
+    { requireAvailable: true },
+    { requireAvailable: false }
+  ])
+  const before = phases.length
+  assert.deepEqual(owner.decide(value.request, 'local-developer'), created)
+  owner.get(created.id)
+  owner.list()
+  assert.equal(phases.length, before)
+  assert.throws(
+    () =>
+      owner.decide(
+        { ...value.request, requestId: randomUUID() },
+        'local-developer'
+      ),
+    /unavailable/i
+  )
+  assert.deepEqual(phases.at(-1), { requireAvailable: true })
+  assert.equal(owner.list().length, 1)
+  assert.throws(
+    () =>
+      owner.decide(
+        { ...value.request, reason: 'Changed replay' },
+        'local-developer'
+      ),
+    /conflict/i
+  )
+})
