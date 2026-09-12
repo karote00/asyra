@@ -115,7 +115,7 @@ units; strict JSON keeps its declared units. Editing the current text retains
 existing units without an additional notice or confirmation.
 Review the source fields, units and first/middle/last values against their
 canonical conversions before acceptance. The scrollable review shares the
-validated result with **Apply**, which commits the trajectory through one Feature
+validated result with **Import trajectory**, which commits the trajectory through one Feature
 transaction and automatically persists it. Source,
 mapping, unit or workcell changes invalidate it; Discard preview makes no edit.
 Other valid study fields apply when editing completes (blur or Enter), with one Undo

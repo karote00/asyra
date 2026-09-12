@@ -47,23 +47,42 @@ See the [runtime profile](../specs/runtime-profile-v0.md).
    joints. Complete a text, numeric or color field with Enter or blur; selects
    and checkboxes update directly. No Apply button is needed. Undo/Redo reverses
    individual field edits. Original part placement affects display and analysis.
-3. Open **Experiments**. Review **Analysis scope**, exclusions, time interval,
-   minimum clearance, method limitations and numerical/resource settings.
-   Save any changed draft before preflight or execution. Acknowledging workload
-   warnings does not override a hard limit or improve precision.
-4. Choose **Run formal analysis**. Read execution, coverage, raw findings and
-   uncertainty separately. Use **Cancel analysis** when needed. Replay the
-   frozen evidence at problem times; the sampled pose slider is not a continuous
-   collision proof. **Retain result** explicitly adds the result to the project.
-5. **Duplicate candidate** to create B. For example, move the fixture post,
-   complete the field edit, run and retain again. Duplicate B to C and try another change.
-6. Open **Runs & compare**, select the three runs and compare. Differences in
-   scope, method, rule or inputs remain visible. There is no automatic winner.
-   Export JSON/CSV/HTML reports, then choose what deserves real-world validation.
-7. Open **Projects** and save. Also **Export project** to a portable backup.
-   Reopen that file through **Choose project file**, inspect the preview and
-   explicitly accept replacement. Opening creates an empty Undo/Redo lifetime;
-   it does not undo back into the previous document.
+3. Choose **Experiments** in the right panel, then **Setup**. Review the
+   selected candidate and experiment, **Analysis scope**, exclusions, interval
+   and minimum clearance. Expand **Advanced settings** for method limitations,
+   precision and **Numerical settings**. Complete edits with Enter or blur;
+   existing studies have no Save button. Required resource acknowledgements do
+   not override hard limits or improve precision.
+4. Click **Run analysis** once near the experiment selector. It checks current
+   inputs automatically. If blocked, use **Review input** to reach the owning
+   field, correct it and run again. While running, **Cancel analysis** cancels
+   the owned job. On completion click **View results** to enter **Results**;
+   completion alone does not switch tabs. Read execution, coverage and findings
+   separately. Partial, cancelled or unknown never means clear. Terminal results
+   are retained automatically; wait for **Saved to this project**. On failure,
+   use **Retry retention** and preserve the original result.
+5. Click **Duplicate candidate** above the workbench and enter a name for B.
+   Select **fixture post** in the left tree, change **Mount position (m) X**
+   from `-0.75` to `-0.6`, and press Enter. Return to **Experiments**, run and
+   view its result. Duplicate B to C, change the same field to `-0.45`, and run.
+   Each candidate and run retains its own inputs. In Results, replay a finding
+   with the available replay control; **Historical run replay** identifies frozen
+   evidence. **Return to current preview** returns to current inputs. Sampled
+   playback in **Preview** is not continuous collision proof.
+6. Open **Runs & compare** in the header. Select the three retained run checkboxes
+   in the intended order; verify the selected-run slots, then click **Compare
+   selected runs (3/3)**. The button shows pending feedback and the dialog moves
+   focus to **Run comparison**. Inspect candidate/revision/method declarations,
+   scope/rule differences, verdict, execution and coverage. There is no automatic
+   winner. Select a run for **Export JSON**, **Export CSV** or **Export HTML**.
+7. Close the comparison dialog with Escape. Open **Projects**, wait for the local
+   save acknowledgement and click **Export project** for a portable backup.
+   Choose that download through **Choose project file** (accessible name
+   **Portable project file**), inspect the preview, click **Import and replace
+   current project** and accept the replacement confirmation. Reopen
+   **Runs & compare**: all three runs and their original declarations must remain.
+   Undo begins empty in the new document lifetime. A failed import must preserve
+   the current document; missing runs or changed evidence fails this journey.
 
 For your own study, create a blank project and add bodies/joints/proxies, or
 edit an independent copy of the sample. New bodies need explicit scope roles.
@@ -74,9 +93,10 @@ visual imports, acceptance rules and separate field observations.
 ## Trajectory example and data formats
 
 The [synthetic CSV](examples/synthetic-trajectory.csv) reproduces the sample's
-three keyframes. In **Load CSV**, map `time` to seconds and every joint column to
-its matching joint in radians; inspect the preview before **Accept into draft**
-and **Save experiment**. A copied candidate has new IDs, so explicitly remap its
+three keyframes. In **Experiments → Setup**, expand the trajectory import section and use
+**Load trajectory CSV**. Map `time` to seconds and every joint column to its
+matching joint in radians; inspect the conversion preview and choose **Import
+trajectory**. This explicit new-file action applies and persists the accepted input. A copied candidate has new IDs, so explicitly remap its
 columns. Do not interpret vendor/controller data without checking units,
 joint conventions, interpolation and geometry assumptions.
 
@@ -92,8 +112,8 @@ fail explicitly rather than being guessed or partially imported. See the
 Browser IndexedDB is not a backup. Clearing site data removes local saves;
 changing the port, hostname, browser profile or browser does not migrate them.
 Export portable projects before changes. Keep original backups separate from
-candidate experiments. Unretained results are temporary and not included in
-saves/exports. A save is acknowledged only after local storage commits.
+candidate experiments. In-progress previews are temporary. A terminal result whose retention failed is
+not included in exports until **Retry retention** succeeds. A save is acknowledged only after local storage commits.
 
 If storage is unavailable, editing remains usable and portable export is the
 fallback. Invalid imports preserve the open document. A failure after retirement
@@ -155,15 +175,24 @@ local review. A public issue/security channel, maintenance owner and response
 policy have not been authorized; do not send secrets to a guessed address.
 Free software does not promise an SLA or unlimited immediate support.
 
-The 2026-09-05 Yarn registry audit of the locked independent consumer returned
-one moderate deprecation notice for `glob@10.5.0` through `cacache@19.0.1` in the
-development dependency tree. It is absent from the actual main/Worker bundle
-inputs. No high/critical advisory was returned by that audit. This is a dated
-registry result, not proof of vulnerability absence; developer tooling should
-only process trusted source and use the bounded isolation workflow. Dependency
-upgrades and reassessment remain separate work. Runtime notices retain the
-actual shipped license texts; missing publisher text is supplemented only from
-the exact registry-declared source revision, never an invented attribution.
+The 2026-09-12 audit of the exact-source independent consumer lock at
+`8c6cc4472942b69c5ac369c788de3a84634571b5` returned three moderate records:
+`vitest@3.2.7` and `@vitest/mocker@3.2.7` share
+<a href="https://github.com/advisories/GHSA-82fw-gwwq-j7x9" target="_blank" rel="noopener noreferrer">GHSA-82fw-gwwq-j7x9</a>,
+and `glob@10.5.0` has a deprecation record. No high/critical record was returned.
+This dated registry result is not proof of vulnerability absence. The Vitest
+advisory concerns development-server mock path access; the official App config
+uses Vitest's Node test mode and does not install the public mocker server plugin.
+The ordinary candidate launcher serves static files only. The optional SDK is
+trusted development tooling: do not expose test/dev servers or process untrusted
+source. Dependency upgrades require separate approval. Runtime bundle membership
+and notices are recorded by the producer; this audit does not turn a failed
+consumer build into passing evidence. Preserve that distinction when reviewing
+updated artifacts.
+
+The [pilot review script and sharing preview](PILOT_REVIEW.md) provide detailed
+review steps without requesting confidential files. The [maintenance proposal](MAINTENANCE_PROPOSAL.md)
+requires a separate owner/channel decision before becoming policy.
 
 Publication, independent pilots and all [first-release gates](FIRST_RELEASE.md)
 remain separate decisions. Do not use this candidate as the sole basis for

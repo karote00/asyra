@@ -64,6 +64,7 @@ export function assembleDistribution({ snapshot, consumer, output, report }) {
     'tsconfig.json',
     'vite.config.ts',
     'vitest.config.ts',
+    'vercel.json',
     'playwright.config.ts',
     'app-environment.mjs',
     'app-environment.d.mts',
