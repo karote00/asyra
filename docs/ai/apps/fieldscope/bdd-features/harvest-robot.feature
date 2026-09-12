@@ -427,3 +427,17 @@ Feature: Harvest robot feasibility and supervised harvesting
     Given a current-state resume provider has not returned
     When the run is cancelled and the provider later reports acceptance
     Then the cancelled generation remains closed and cannot mutate its successor
+
+  @M3
+  Scenario: Return queries receive the installed charging station source
+    Given the station is projected at the authored dock position
+    When a query consumer reads its current source
+    Then it receives the exact separate platform, charger and exchange stand meshes used for presentation
+    And route annotations and aggregate collision proxies are absent
+
+  @M3
+  Scenario: Moving the dock retires its installed source without rebuilding it
+    Given a current installed station source
+    When the authored dock position changes
+    Then the prior source is retired and the successor uses the same shapes at the new position
+    And unrelated mission, robot definition and view changes do not regenerate station geometry

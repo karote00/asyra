@@ -491,3 +491,26 @@ provider settlement. Only active elapsed accounting changes on clock inputs;
 no completed robot motion, picking or real clearance provider is claimed. Next
 D observation/motion/action owners and Core composition must supply real remaining
 movement admission before ordinary UI session controls and complete M3 validation.
+
+### C installed dock source card - prerequisite for real D queries
+
+After the completed D clock foundation, expose the station geometry missing from
+its downstream query inputs before implementing D geometry/observation/collision.
+Owner and authority: Inspector C installed dock source; matching product section.
+Inputs: existing admitted dock parts and authored X/Z. Output: immutable installed
+source revision/meshes shared with rendering, distinct from robot definition and
+route annotation. Unchanged placement bypasses preparation; changed placement or
+clear retires the handle. C owns missing/stale source failure; D owns later contact
+and clearance policy. Exact station triangles/materials are unchanged.
+
+Allowlist: render-app/robot-projection.ts, runtime/bootstrap.ts, corresponding
+formal render/runtime tests and API_SURFACES. This readiness slice changes only
+spec/Inspector/plan/BDD. No domain source generation changes, D production, UI
+controls, support exceptions or physics assumptions. Naming: DockSource and
+read/currentness methods are app-local transient products, with no saved schema.
+Test-first exact source/presentation identity, per-piece geometry, placement,
+retirement, unchanged definition/edit/read work counts and copied-handle rejection.
+Gates: focused red/green, naming baseline/final, full app unit/typecheck/lint/build,
+existing robot browser tests and same-app close-up inspection. Independent
+readiness/code review precedes stage closure. Stop for source geometry changes,
+missing owner, new product contact policy or an out-of-scope contributor.

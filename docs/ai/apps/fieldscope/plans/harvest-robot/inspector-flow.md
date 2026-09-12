@@ -132,6 +132,26 @@ Lifetime: once per robot width/length/height/tool definition. Repeated FK and re
 reuse its admitted source shapes/frames. Retirement/disposal rejects old handles.
 Cache dimensions: none proposed; rig is a completed definition product.
 
+### C installed dock source handoff
+
+Owner: existing RobotProjection station geometry and installed projection.
+Inputs: its completed admitted createDockModel output and B's dock X/Z.
+Outputs: immutable DockSource revision and distinct installed meshes shared by
+rendering and subsequent D queries. No aggregate bounds or route annotation.
+Conditions: dock placement changes retire the installed handle, preserving shapes;
+robot definition/mission/view changes bypass station preparation. clear/disposal
+retires source identity. No movement or contact-admission bypass.
+Allowed: existing station source, spatial admission, immutable placement product.
+Forbidden: D station regeneration, primitive proxies, altered model geometry,
+blanket platform/charger exclusions or inferred electrical/contact safety.
+Boundary: render-app/robot-projection.ts, runtime/bootstrap.ts read-only source
+access/currentness and their direct render/runtime formal tests; API_SURFACES and
+existing robot browser checks. No domain generator, simulation or UI edits.
+Spec: C - M3 installed dock source handoff. Failure owner: C unavailable/stale
+source; D later owns precise support/contact and interval-query decisions.
+Lifetime: local station geometry once per projection; installed source per dock
+X/Z. Repeated consumers reuse the completed product. No additional cache.
+
 ## D - Deterministic simulation (M3, planned)
 
 Owner: app simulation session, composed through the registered Core Feature/API
