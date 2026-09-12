@@ -2618,3 +2618,132 @@ test(
     }
   }
 )
+
+test(
+  'prepared target work reserves admission before Board execution and renders pending reservations at three widths',
+  { timeout: 60000 },
+  async () => {
+    const { randomUUID } = require('node:crypto')
+    const { LOCAL_ACTOR } = require('../service.cjs')
+    const root = path.resolve(__dirname, '../../../..')
+    const parent = path.join(root, 'tmp/flow-inspector/visual-review')
+    fs.mkdirSync(parent, { recursive: true })
+    const artifacts = fs.mkdtempSync(path.join(parent, 'admission-'))
+    const temporary = path.join(artifacts, 'browser-tmp')
+    fs.mkdirSync(temporary)
+    const previous = process.env.TMPDIR
+    process.env.TMPDIR = temporary
+    let browser
+    const server = await startServer(root, {
+      serviceOptions: {
+        directory: path.join(artifacts, 'runs'),
+        agentOptions: { available: () => true }
+      }
+    })
+    try {
+      const source = await server.service.wait(
+        server.service.start({}, LOCAL_ACTOR)
+      )
+      assert.equal(source.evidence.status, 'passed')
+      const contract = server.service.contract()
+      const work = {
+        id: randomUUID(),
+        title: 'Independent outcome work',
+        stepId: 'finalize-transaction-state',
+        scope: 'Preserve outcome with source-bound admission',
+        allowedFiles: ['packages/factory/src/data-transact.ts'],
+        obligationIds: ['deferred.outcome'],
+        prerequisites: []
+      }
+      const target = server.service.decideTarget(
+        {
+          action: 'create',
+          requestId: randomUUID(),
+          expectedRevision: 0,
+          reason: 'Browser admission fixture',
+          flowId: 'deferred-publication',
+          targetRevision: contract.digest,
+          acceptedBaseline: { revision: 1, contractDigest: contract.digest },
+          objective: 'Source-bound work trial',
+          works: [work],
+          pending: ['deferred.snapshot', 'deferred.delivery']
+        },
+        LOCAL_ACTOR
+      )
+      browser = await chromium.launch({
+        channel: process.env.FLOW_PROOF_BROWSER_CHANNEL || undefined,
+        downloadsPath: temporary
+      })
+      const page = await browser.newPage({
+        viewport: { width: 1600, height: 1100 }
+      })
+      const errors = []
+      page.on('pageerror', (e) => errors.push(e.message))
+      await page.goto(server.origin + '/transaction-atomicity')
+      const frame = page.frameLocator('iframe')
+      await frame.locator('[data-step-id="finalize-transaction-state"]').click()
+      await frame.locator('#proof-controls > summary').click()
+      await frame.locator('#target-controls > summary').click()
+      await frame.locator('#target-select').selectOption(target.id)
+      await frame.locator('#target-items button').first().click()
+      await expect(frame.locator('#agent-work-binding')).toContainText(work.id)
+      assert.equal(server.service.getTarget(target.id).history.length, 2)
+      assert.equal(server.service.state().tasks.records.length, 0)
+      await frame
+        .getByText('Task, attempt and PR observations', { exact: true })
+        .click()
+      await expect(frame.locator('#target-observations')).toContainText(
+        'Reserved task'
+      )
+      for (const [name, width, height] of [
+        ['desktop', 1600, 1100],
+        ['tablet', 900, 1000],
+        ['narrow', 430, 920]
+      ]) {
+        await page.setViewportSize({ width, height })
+        if (width <= 900 && (await page.locator('.sidebar').isVisible()))
+          await page
+            .getByRole('button', { name: 'Close Inspector catalog' })
+            .click()
+        await frame.locator('#target-controls').scrollIntoViewIfNeeded()
+        await frame.locator('#target-observations').scrollIntoViewIfNeeded()
+        await expect(frame.locator('#target-observations')).toBeVisible()
+        await page.screenshot({ path: path.join(artifacts, name + '.png') })
+      }
+      await page.setViewportSize({ width: 1600, height: 1100 })
+      await frame.locator('#agent-scenario').selectOption('scope-violation')
+      await frame.locator('#agent-start').click()
+      await expect(frame.locator('#agent-work-binding')).toHaveText('')
+      const id = server.service.getTarget(target.id).works[0].taskIds[0]
+      await server.service.waitTask(id)
+      assert.deepEqual(server.service.getTask(id).task.workBinding, {
+        targetId: target.id,
+        workId: work.id,
+        admissionId: server.service.getTarget(target.id).history[1].request
+          .requestId
+      })
+      await frame.locator('#refresh').click()
+      await expect(frame.locator('#target-items')).toContainText(
+        'Assessment: unknown'
+      )
+      assert.deepEqual(errors, [])
+      fs.writeFileSync(
+        path.join(artifacts, 'review.json'),
+        JSON.stringify(
+          {
+            origin: server.origin,
+            fidelity: 'offline deterministic fixture; no model or remote PR',
+            target: server.service.getTarget(target.id)
+          },
+          null,
+          2
+        )
+      )
+    } finally {
+      await browser?.close()
+      await server.close()
+      if (previous === undefined) delete process.env.TMPDIR
+      else process.env.TMPDIR = previous
+    }
+  }
+)

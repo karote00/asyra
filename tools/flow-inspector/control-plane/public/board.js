@@ -35,6 +35,7 @@
       let targetItemsSignature = ''
       let targetDecisionId = window.crypto.randomUUID()
       let targetBusy = false
+      let preparedWork = null
       let taskState
       let taskRecord
       let reviewRecord
@@ -1015,7 +1016,8 @@
           if (action === 'start') {
             const stepId = graph.querySelector('.is-selected')?.dataset.stepId
             const result = await api('/api/tasks', {
-              requestId: window.crypto.randomUUID(),
+              requestId: preparedWork?.taskId ?? window.crypto.randomUUID(),
+              ...(preparedWork ? { workBinding: preparedWork.binding } : {}),
               stepId,
               objective: byId('agent-objective').value,
               allowedFiles: byId('agent-files')
@@ -1041,6 +1043,8 @@
               }
             })
             taskId = result.id
+            preparedWork = null
+            byId('agent-work-binding').textContent = ''
           } else if (taskId) {
             await api('/api/tasks/' + taskId + '/control', {
               action,
@@ -1168,6 +1172,10 @@
           byId('target-items').replaceChildren(
             ...(targetRecord?.works ?? []).map((work) => {
               const item = node('article', undefined, 'proof-target-item')
+              item.dataset.workId = work.id
+              const assessment = node('p', '')
+              assessment.className = 'proof-work-assessment'
+              item.append(assessment)
               item.append(
                 node('h4', work.title + ' - ' + work.status),
                 node('p', work.stepId),
@@ -1191,19 +1199,65 @@
               prepare.type = 'button'
               prepare.disabled =
                 work.status === 'blocked' || !targetRecord.baselineCurrent
-              prepare.onclick = () => {
-                graph
-                  .querySelector('[data-step-id="' + work.stepId + '"]')
-                  ?.click()
-                byId('agent-objective').value = work.scope
-                byId('agent-files').value = work.allowedFiles.join(', ')
-                byId('agent-controls').open = true
-                byId('agent-objective').focus()
+              prepare.onclick = async () => {
+                if (acting || !capability) return
+                acting = true
+                try {
+                  if (!selectedId)
+                    throw new Error(
+                      'Select a completed all-flow baseline proof before preparing work.'
+                    )
+                  const taskId = window.crypto.randomUUID()
+                  const admissionId = window.crypto.randomUUID()
+                  const targetId = targetRecord.id
+                  await api('/api/targets/decide', {
+                    action: 'admit',
+                    targetId,
+                    expectedRevision: targetRecord.revision,
+                    requestId: admissionId,
+                    reason:
+                      'Prepare this saved work promise against the selected baseline proof',
+                    workId: work.id,
+                    taskId,
+                    sourceAttemptId: selectedId
+                  })
+                  preparedWork = {
+                    taskId,
+                    binding: { targetId, workId: work.id, admissionId }
+                  }
+                  graph
+                    .querySelector('[data-step-id="' + work.stepId + '"]')
+                    ?.click()
+                  byId('agent-objective').value = work.scope
+                  byId('agent-files').value = work.allowedFiles.join(', ')
+                  byId('agent-work-binding').textContent =
+                    'Prepared work ' + work.id + ' - task ' + taskId
+                  byId('agent-controls').open = true
+                  byId('agent-objective').focus()
+                  targetRecord = await api('/api/targets/' + targetId)
+                  renderTargetRecord()
+                } catch (error) {
+                  showError(error)
+                } finally {
+                  acting = false
+                  if (!disposed) controls()
+                }
               }
+
               item.append(prepare)
               return item
             })
           )
+        }
+        for (const work of targetRecord?.works ?? []) {
+          const summary = byId('target-items').querySelector(
+            '[data-work-id="' + work.id + '"] .proof-work-assessment'
+          )
+          if (summary)
+            summary.textContent =
+              'Assessment: ' +
+              (work.assessment?.status ?? 'pending') +
+              ' - bounded work only'
         }
         const selectedWork = byId('target-link-work').value
         byId('target-link-work').replaceChildren(
@@ -1217,7 +1271,11 @@
             const item = node('article', undefined, 'proof-target-item'),
               task = entry.task
             item.append(
-              node('h4', 'Task observation - ' + (task?.id ?? 'missing')),
+              node(
+                'h4',
+                (task ? 'Task observation - ' : 'Reserved task - ') +
+                  entry.taskId
+              ),
               node('p', 'Commitment: ' + entry.workId),
               node(
                 'p',
@@ -1235,11 +1293,13 @@
                     (attempt.verdict?.evidence?.status ?? 'unknown')
                 )
               )
-            const link = node('a', 'Open task and attempt audit')
-            link.href = '/api/tasks/' + task.id
-            link.target = '_blank'
-            link.rel = 'noopener noreferrer'
-            item.append(link)
+            if (task) {
+              const link = node('a', 'Open task and attempt audit')
+              link.href = '/api/tasks/' + task.id
+              link.target = '_blank'
+              link.rel = 'noopener noreferrer'
+              item.append(link)
+            }
             if (entry.review) {
               const review = entry.review,
                 observation = review.observation
@@ -1292,6 +1352,7 @@
           const copy = structuredClone(work)
           delete copy.taskIds
           delete copy.status
+          delete copy.assessment
           copy.prerequisites.forEach((dep) => {
             delete dep.status
           })
@@ -1587,12 +1648,12 @@
               <label>Required handoff from each prerequisite<textarea id="target-handoff" rows="2" maxlength="2000"></textarea></label>
               <button id="target-add-work" type="button">Add work to revision draft</button>
               <div id="target-draft"></div><p id="target-draft-pending"></p>
-              <p>Removing work from this revision returns its obligations to pending. Earlier commitments, task links and failures remain in history.</p>
+              <p>Removing unadmitted work from this revision returns its obligations to pending. Admitted commitments cannot be removed. Earlier commitments, task links and failures remain in history.</p>
             </details>
             <label>Explicit decision reason<input id="target-reason" maxlength="1000" value="Define bounded work against this target" /></label>
             <button id="target-save" type="button">Save scope revision</button><button id="target-reload" type="button">Reload saved revision into editor</button>
             <details><summary>Connect an admitted task</summary>
-              <p>Prepare a task from a saved promise, run it through the existing admission controls, then link it here. Step, objective, files and baseline must match exactly.</p>
+              <p>Preparing a task first locks its promise against the selected baseline proof and reserves its link. This section attaches older independent tasks as historical observations; linked tasks require admission before further execution. Step, objective, files and baseline must match exactly.</p>
               <label>Work commitment<select id="target-link-work"></select></label>
               <label>Existing task<select id="target-link-task"></select></label>
               <button id="target-link" type="button">Link exact task</button>
@@ -1602,7 +1663,7 @@
             <details><summary>Revision decisions and historical commitments</summary><pre id="target-audit"></pre></details>
             <a id="target-record-link" target="_blank" rel="noopener noreferrer" hidden>Open complete target and audit</a>
           </details>
-          <details id="agent-controls"><summary>Delegate selected step - local agent</summary>
+          <details id="agent-controls"><summary>Delegate selected step - local agent</summary><p id="agent-work-binding" role="status"></p>
             <p id="agent-step"></p><p>Candidate changes remain isolated for human review.</p>
             <label>Adapter<select id="agent-adapter"><option value="demonstration">Deterministic demonstration - no language model</option><option id="agent-provider-option" value="provider" disabled>Authorized real provider</option></select></label>
             <p id="agent-provider-info"></p>

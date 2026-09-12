@@ -358,3 +358,277 @@ test('repeated target reads reuse admitted revision history and allocation proje
   assert.equal(next.objective, changed.objective)
   assert.equal(first.history.length, 1)
 })
+
+function admissionFixture(t) {
+  const f = setup(t)
+  const contract = f.options.getContracts()[0]
+  const source = {
+    id: randomUUID(),
+    format: 2,
+    phase: 'completed',
+    scenario: 'baseline',
+    mappingRevision: 1,
+    contractDigest: contract.digest,
+    snapshot: {
+      head: 'a'.repeat(40),
+      digest: 'b'.repeat(64),
+      contractDigest: contract.digest
+    },
+    evidence: {
+      status: 'passed',
+      cases: contract.cases.map((c) => ({ ...c, status: 'passed' })),
+      issues: []
+    }
+  }
+  f.options.getSource = (id) => (id === source.id ? source : null)
+  const owner = createTargetOwner(f.options)
+  const target = owner.decide(f.request, 'local-developer')
+  const taskId = randomUUID()
+  const admission = {
+    action: 'admit',
+    targetId: target.id,
+    expectedRevision: 1,
+    requestId: randomUUID(),
+    reason: 'Lock exact source and promise before work',
+    workId: f.request.works[0].id,
+    taskId,
+    sourceAttemptId: source.id
+  }
+  const work = f.request.works[0]
+  const task = {
+    requestId: taskId,
+    actor: 'local-developer',
+    stepId: work.stepId,
+    step: contract.flows[0].steps.find((s) => s.id === work.stepId),
+    objective: work.scope,
+    allowedFiles: work.allowedFiles,
+    revision: 1,
+    contractDigest: contract.digest,
+    obligations: contract.cases,
+    workBinding: {
+      targetId: target.id,
+      workId: work.id,
+      admissionId: admission.requestId
+    }
+  }
+  return { ...f, owner, source, admission, task, target }
+}
+
+test('admission reserves source and task before execution and survives restart without changing baseline', (t) => {
+  const f = admissionFixture(t)
+  const before = f.options.getBaseline()
+  const result = f.owner.decide(f.admission, 'local-developer')
+  assert.equal(result.revision, 2)
+  assert.deepEqual(f.owner.decide(f.admission, 'local-developer'), result)
+  assert.deepEqual(
+    f.owner.checkTask(f.task, f.source.snapshot),
+    result.decision.admission
+  )
+  const restored = createTargetOwner(f.options)
+  assert.deepEqual(
+    restored.checkTask(f.task, f.source.snapshot),
+    result.decision.admission
+  )
+  assert.equal(restored.get(f.target.id).tasks[0].task, null)
+  assert.equal(restored.get(f.target.id).works[0].assessment.status, 'pending')
+  assert.deepEqual(f.options.getBaseline(), before)
+  const changed = structuredClone(f.request)
+  changed.pending.push(...changed.works.shift().obligationIds)
+  assert.throws(
+    () => restored.decide(revise(changed, f.target.id, 2), 'local-developer'),
+    /admitted commitment/i
+  )
+})
+
+test('admission denies unresolved prerequisites before reserving work', (t) => {
+  const f = admissionFixture(t)
+  const changed = structuredClone(f.request)
+  changed.works[0].id = randomUUID()
+  changed.works[0].prerequisites = [
+    { workId: changed.works[1].id, handoff: 'Usable behavior' }
+  ]
+  f.owner.decide(revise(changed, f.target.id, 1), 'local-developer')
+  assert.throws(
+    () =>
+      f.owner.decide(
+        { ...f.admission, expectedRevision: 2, workId: changed.works[0].id },
+        'local-developer'
+      ),
+    /prerequisite/i
+  )
+  assert.equal(f.owner.get(f.target.id).history.length, 2)
+})
+
+test('admission checks source, task identity, actor and complete promise; omission cannot bypass reservation', (t) => {
+  const f = admissionFixture(t)
+  f.owner.decide(f.admission, 'local-developer')
+  for (const task of [
+    { ...f.task, workBinding: undefined },
+    { ...f.task, requestId: randomUUID() },
+    { ...f.task, actor: 'another-human' },
+    { ...f.task, objective: 'weakened' },
+    { ...f.task, obligations: [] },
+    { ...f.task, allowedFiles: [] },
+    { ...f.task, workBinding: { ...f.task.workBinding, workId: randomUUID() } }
+  ])
+    assert.throws(
+      () => f.owner.checkTask(task, f.source.snapshot),
+      /admission|scope|obligation|actor|identity/i
+    )
+  assert.throws(
+    () =>
+      f.owner.checkTask(f.task, {
+        ...f.source.snapshot,
+        digest: 'c'.repeat(64)
+      }),
+    /source/i
+  )
+  assert.throws(
+    () =>
+      f.owner.checkTask(f.task, { ...f.source.snapshot, head: 'c'.repeat(40) }),
+    /source/i
+  )
+  assert.equal(
+    f.owner.checkTask({ requestId: randomUUID() }),
+    null,
+    'unlinked legacy task'
+  )
+})
+
+for (const field of ['scenario', 'phase', 'contractDigest'])
+  test('admission refuses ineligible proof ' + field, (t) => {
+    const f = admissionFixture(t)
+    f.source[field] = 'invalid'
+    assert.throws(
+      () => f.owner.decide(f.admission, 'local-developer'),
+      /source/i
+    )
+    assert.equal(f.owner.get(f.target.id).history.length, 1)
+  })
+
+test('bounded assessment preserves failed attempts and does not combine work passes into target acceptance', (t) => {
+  const f = admissionFixture(t)
+  f.owner.decide(f.admission, 'local-developer')
+  const record = {
+    id: f.task.requestId,
+    task: f.task,
+    snapshot: f.source.snapshot,
+    verificationStatus: 'failed',
+    attempts: [
+      {
+        id: randomUUID(),
+        phase: 'completed',
+        verdict: {
+          sourceDigest: 'c'.repeat(64),
+          evidence: {
+            status: 'failed',
+            cases: [
+              { id: f.request.works[0].obligationIds[0], status: 'failed' }
+            ]
+          }
+        }
+      }
+    ]
+  }
+  f.tasks.set(record.id, record)
+  assert.equal(f.owner.get(f.target.id).works[0].assessment.status, 'failed')
+  record.attempts.push({
+    id: randomUUID(),
+    phase: 'completed',
+    verdict: {
+      sourceDigest: 'd'.repeat(64),
+      evidence: {
+        status: 'passed',
+        cases: f.task.obligations.map((c) => ({ ...c, status: 'passed' }))
+      }
+    }
+  })
+  record.verificationStatus = 'passed'
+  const value = f.owner.get(f.target.id)
+  assert.equal(value.works[0].assessment.status, 'passed')
+  assert.equal(
+    value.tasks[0].task.attempts[0].verdict.evidence.status,
+    'failed'
+  )
+  assert.equal(value.works[1].assessment.status, 'pending')
+  assert.equal(value.status, 'pending')
+  assert.deepEqual(value.pending, ['future.obligation'])
+})
+
+test('a second admitted task cannot hide another task failure, and stale baseline cannot remain passed', (t) => {
+  const f = admissionFixture(t)
+  f.owner.decide(f.admission, 'local-developer')
+  const first = {
+    id: f.task.requestId,
+    task: f.task,
+    verificationStatus: 'failed',
+    attempts: [
+      {
+        id: randomUUID(),
+        verdict: {
+          sourceDigest: 'c'.repeat(64),
+          evidence: { status: 'failed', cases: [] }
+        }
+      }
+    ]
+  }
+  f.tasks.set(first.id, first)
+  const secondId = randomUUID()
+  f.owner.decide(
+    {
+      ...f.admission,
+      requestId: randomUUID(),
+      expectedRevision: 2,
+      taskId: secondId
+    },
+    'local-developer'
+  )
+  f.tasks.set(secondId, {
+    ...first,
+    id: secondId,
+    verificationStatus: 'passed',
+    attempts: [
+      {
+        id: randomUUID(),
+        verdict: {
+          sourceDigest: 'd'.repeat(64),
+          evidence: {
+            status: 'passed',
+            cases: f.task.obligations.map((c) => ({ ...c, status: 'passed' }))
+          }
+        }
+      }
+    ]
+  })
+  assert.equal(f.owner.get(f.target.id).works[0].assessment.status, 'failed')
+  first.verificationStatus = 'passed'
+  assert.equal(f.owner.get(f.target.id).works[0].assessment.status, 'passed')
+  f.options.getBaseline = () => ({
+    revision: 2,
+    contractDigest: f.task.contractDigest
+  })
+  assert.equal(
+    createTargetOwner(f.options).get(f.target.id).works[0].assessment.status,
+    'stale'
+  )
+})
+
+test('work binding identity is independent of JSON property order', (t) => {
+  const f = admissionFixture(t)
+  const result = f.owner.decide(f.admission, 'local-developer')
+  const binding = f.task.workBinding
+  assert.deepEqual(
+    f.owner.checkTask(
+      {
+        ...f.task,
+        workBinding: {
+          admissionId: binding.admissionId,
+          workId: binding.workId,
+          targetId: binding.targetId
+        }
+      },
+      f.source.snapshot
+    ),
+    result.decision.admission
+  )
+})

@@ -332,9 +332,11 @@ function createService(
       candidateMappingVersion: candidate.mappingVersion
     }
   }
+  let targets
   try {
     tasks = createTaskOwner(repositoryRoot, {
       ...agentOptions,
+      checkWork: (task, snapshot) => targets.checkTask(task, snapshot),
       directory: path.join(directory, 'tasks'),
       getBaseline: () => ({ contract, revision: store.mapping().revision }),
       requireIdle: () => {
@@ -378,7 +380,6 @@ function createService(
       ).values()
     ]
   }
-  let targets
   try {
     targets = createTargetOwner({
       repositoryRoot,
@@ -388,7 +389,15 @@ function createService(
         revision: store.mapping().revision,
         contractDigest: contract.digest
       }),
-      getTask: (id) => tasks.get(id),
+      getTask: (id) => {
+        try {
+          return tasks.get(id)
+        } catch (error) {
+          if (error.message === 'Task not found') return null
+          throw error
+        }
+      },
+      getSource: (id) => store.get(id),
       getReview: (id) => reviews.get(id)
     })
   } catch (error) {

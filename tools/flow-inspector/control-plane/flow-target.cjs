@@ -158,7 +158,8 @@ function createTargetOwner({
   getContracts,
   getBaseline,
   getTask,
-  getReview
+  getReview,
+  getSource = () => null
 }) {
   const file = path.join(directory, 'targets.json')
   let records = []
@@ -211,6 +212,31 @@ function createTargetOwner({
           'retained decision conflict'
         )
         requests.add(entry.request.requestId)
+        if (entry.admission) {
+          requireValue(
+            entry.admissionDigest === sha256(JSON.stringify(entry.admission)) &&
+              entry.request.action === 'admit' &&
+              entry.admission.id === entry.request.requestId &&
+              entry.admission.taskId === entry.request.taskId &&
+              entry.admission.workId === entry.request.workId &&
+              entry.admission.actor === entry.actor &&
+              entry.admission.repositoryRoot === repositoryRoot &&
+              /^[a-f0-9]{64}$/.test(entry.admission.source?.digest ?? '') &&
+              /^[a-f0-9]{40}$/.test(entry.admission.source?.head ?? '') &&
+              entry.state.works.some(
+                (w) =>
+                  w.id === entry.admission.workId &&
+                  w.taskIds.includes(entry.admission.taskId)
+              ),
+            'invalid retained work admission'
+          )
+        }
+        for (const older of record.history.slice(0, index))
+          if (older.admission)
+            requireValue(
+              entry.state.works.some((w) => w.id === older.admission.workId),
+              'admitted commitment cannot be removed'
+            )
         validateAllocation(entry.state, record, previousWorks)
         previousWorks = [...previousWorks, ...entry.state.works]
       })
@@ -225,17 +251,43 @@ function createTargetOwner({
   const decisionResult = (record, entry) =>
     freeze({ id: record.id, revision: entry.revision, decision: entry })
   const projections = new Map()
+  const taskBindings = new Map()
   const projectRevision = (record) => {
     const previous = projections.get(record.id)
     const links = new Map(previous?.links)
     const entries = previous ? [record.history.at(-1)] : record.history
     for (const entry of entries)
       for (const work of entry.state.works)
-        for (const taskId of work.taskIds) links.set(taskId, work.id)
+        for (const taskId of work.taskIds) {
+          links.set(taskId, work.id)
+          const old = taskBindings.get(taskId)
+          requireValue(
+            !old || (old.targetId === record.id && old.workId === work.id),
+            'task belongs to another commitment'
+          )
+          taskBindings.set(taskId, {
+            ...old,
+            targetId: record.id,
+            workId: work.id
+          })
+        }
+    for (const entry of entries)
+      if (entry.admission) {
+        const old = taskBindings.get(entry.admission.taskId)
+        requireValue(
+          !old.admission || old.admission.id === entry.admission.id,
+          'task admission already reserved'
+        )
+        taskBindings.set(entry.admission.taskId, {
+          ...old,
+          admission: entry.admission
+        })
+      }
     const works = freeze(
       record.history.at(-1).state.works.map((w) => ({
         ...w,
         status: w.prerequisites.length ? 'blocked' : 'pending',
+        assessment: { status: 'pending', attempts: [] },
         prerequisites: w.prerequisites.map((dep) => ({
           ...dep,
           status: 'unconfirmed'
@@ -245,7 +297,83 @@ function createTargetOwner({
     projections.set(record.id, { links, works })
   }
   records.forEach(projectRevision)
+  const matchTask = (record, work, task) => {
+    requireValue(
+      same(record.acceptedBaseline, getBaseline()) &&
+        task.revision === record.acceptedBaseline.revision &&
+        task.contractDigest === record.acceptedBaseline.contractDigest,
+      'task baseline mismatch'
+    )
+    requireValue(
+      task.stepId === work.stepId &&
+        task.objective === work.scope &&
+        sameSet(task.allowedFiles, work.allowedFiles),
+      'task scope mismatch'
+    )
+    requireValue(
+      same(
+        task.step,
+        record.steps.find((s) => s.id === work.stepId)
+      ),
+      'task step contract mismatch'
+    )
+    requireValue(
+      work.obligationIds.every((id) =>
+        task.obligations.some((c) =>
+          same(
+            c,
+            record.obligations.find((p) => p.id === id)
+          )
+        )
+      ),
+      'task obligation mismatch'
+    )
+  }
   const owner = {
+    checkTask(task, snapshot = null) {
+      const binding = taskBindings.get(task.requestId)
+      if (!binding && !task.workBinding) return null
+      requireValue(
+        binding?.admission,
+        'work admission required before execution'
+      )
+      const { admission } = binding
+      const record = find(binding.targetId)
+      const work = record.history
+        .at(-1)
+        .state.works.find((w) => w.id === binding.workId)
+      requireValue(work, 'admitted commitment missing')
+      requireValue(
+        task.actor === admission.actor,
+        'work admission actor mismatch'
+      )
+      const expectedBinding = {
+        targetId: record.id,
+        workId: work.id,
+        admissionId: admission.id
+      }
+      requireValue(
+        (!task.workBinding && admission.legacyTask) ||
+          (task.workBinding &&
+            Object.entries(expectedBinding).every(
+              ([key, value]) => task.workBinding[key] === value
+            )),
+        'work admission identity mismatch'
+      )
+      requireValue(
+        !work.prerequisites.length,
+        'unconfirmed prerequisite blocks execution'
+      )
+      matchTask(record, work, task)
+      if (snapshot)
+        requireValue(
+          snapshot.digest === admission.source.digest &&
+            snapshot.head === admission.source.head &&
+            snapshot.contractDigest === task.contractDigest,
+          'work admission source mismatch'
+        )
+      return admission
+    },
     list: () =>
       records.map((r) => ({
         id: r.id,
@@ -260,6 +388,7 @@ function createTargetOwner({
         state = record.history.at(-1).state
       const { links, works } = projections.get(id)
       const tasks = [...links].map(([taskId, workId]) => ({
+        taskId,
         workId,
         task: getTask(taskId) ?? null,
         review: getReview(taskId)
@@ -272,7 +401,46 @@ function createTargetOwner({
         limitation:
           'Strict all-flow candidate verification remains required. Integration assessment and baseline acceptance are not implemented for targets.',
         baselineCurrent: same(record.acceptedBaseline, getBaseline()),
-        works,
+        works: tasks.length
+          ? works.map((work) => {
+              const assessments = tasks
+                .filter(
+                  (item) =>
+                    item.workId === work.id &&
+                    taskBindings.get(item.taskId)?.admission
+                )
+                .map((item) => {
+                  const task = item.task,
+                    attempt = task?.attempts.at(-1)
+                  let status = 'pending'
+                  if (attempt) status = task.verificationStatus
+                  if (!['passed', 'failed', 'pending'].includes(status))
+                    status = 'unknown'
+                  return {
+                    status,
+                    taskId: item.taskId,
+                    attemptId: attempt?.id ?? null,
+                    sourceDigest: attempt?.verdict?.sourceDigest ?? null
+                  }
+                })
+              let status = 'pending'
+              if (
+                assessments.length &&
+                assessments.every((a) => a.status === 'passed')
+              )
+                status = 'passed'
+              if (assessments.some((a) => a.status === 'unknown'))
+                status = 'unknown'
+              if (assessments.some((a) => a.status === 'failed'))
+                status = 'failed'
+              if (
+                status === 'passed' &&
+                !same(record.acceptedBaseline, getBaseline())
+              )
+                status = 'stale'
+              return { ...work, assessment: { status, attempts: assessments } }
+            })
+          : works,
         tasks: structuredClone(tasks)
       })
     },
@@ -291,7 +459,8 @@ function createTargetOwner({
         'works',
         'pending',
         'workId',
-        'taskId'
+        'taskId',
+        'sourceAttemptId'
       ])
       const request = structuredClone(input)
       requireValue(
@@ -306,11 +475,15 @@ function createTargetOwner({
             return decisionResult(r, entry)
           }
       requireValue(
-        ['create', 'revise', 'link'].includes(request.action),
+        ['create', 'revise', 'link', 'admit'].includes(request.action),
         'unknown action'
       )
+      requireValue(
+        request.action === 'admit' || request.sourceAttemptId === undefined,
+        'source only allowed for admission'
+      )
       const create = request.action === 'create'
-      let record, state
+      let record, state, admission
       if (create) {
         requireValue(
           request.expectedRevision === 0 &&
@@ -353,7 +526,7 @@ function createTargetOwner({
         )
       }
       const previousWorks = record.history.flatMap((e) => e.state.works)
-      if (request.action !== 'link') {
+      if (!['link', 'admit'].includes(request.action)) {
         requireValue(
           !request.workId && !request.taskId,
           'unexpected link fields'
@@ -381,35 +554,80 @@ function createTargetOwner({
         state = structuredClone(record.history.at(-1).state)
         const work = state.works.find((w) => w.id === request.workId)
         requireValue(work && validId(request.taskId), 'unknown work or task')
-        const linked = getTask(request.taskId),
-          task = linked?.task
-        requireValue(task, 'task not found')
-        requireValue(
-          same(record.acceptedBaseline, getBaseline()) &&
-            task.revision === record.acceptedBaseline.revision &&
-            task.contractDigest === record.acceptedBaseline.contractDigest,
-          'task baseline mismatch'
-        )
-        requireValue(
-          task.stepId === work.stepId &&
-            task.objective === work.scope &&
-            sameSet(task.allowedFiles, work.allowedFiles),
-          'task scope mismatch'
-        )
-        requireValue(
-          same(
-            task.step,
-            record.steps.find((s) => s.id === work.stepId)
-          ),
-          'task step contract mismatch; target architecture requires a separate admitted task'
-        )
-        requireValue(
-          work.obligationIds.every((id) => {
-            const promised = record.obligations.find((c) => c.id === id)
-            return task.obligations.some((c) => same(c, promised))
-          }),
-          'task obligation mismatch; strict candidate admission cannot serve this target revision'
-        )
+        if (request.action === 'admit') {
+          requireValue(
+            !work.prerequisites.length,
+            'unconfirmed prerequisite blocks admission'
+          )
+          requireValue(
+            !taskBindings.get(request.taskId)?.admission,
+            'task admission already reserved'
+          )
+          const source = getSource(request.sourceAttemptId)
+          requireValue(
+            source?.format === 2 &&
+              source.phase === 'completed' &&
+              source.scenario === 'baseline' &&
+              (source.mode === undefined || source.mode === 'verify') &&
+              source.contractDigest ===
+                record.acceptedBaseline.contractDigest &&
+              source.mappingRevision === record.acceptedBaseline.revision &&
+              source.snapshot?.contractDigest === source.contractDigest &&
+              source.evidence?.status === 'passed' &&
+              !source.evidence.issues.length &&
+              /^[a-f0-9]{40}$/.test(source.snapshot.head) &&
+              /^[a-f0-9]{64}$/.test(source.snapshot.digest),
+            'ineligible baseline source proof'
+          )
+          const accepted = getContracts().find(
+            (c) => c.digest === record.acceptedBaseline.contractDigest
+          )
+          requireValue(
+            accepted &&
+              accepted.cases.every(
+                (c) =>
+                  source.evidence.cases.filter(
+                    (v) => v.id === c.id && v.status === 'passed'
+                  ).length === 1
+              ),
+            'incomplete baseline source proof'
+          )
+          requireValue(
+            same(record.acceptedBaseline, getBaseline()),
+            'stale accepted source baseline'
+          )
+          const oldTask = getTask(request.taskId)
+          if (oldTask) {
+            matchTask(record, work, oldTask.task)
+            requireValue(
+              oldTask.actor === actor &&
+                oldTask.snapshot.digest === source.snapshot.digest &&
+                oldTask.snapshot.head === source.snapshot.head,
+              'retained task source or actor mismatch'
+            )
+          }
+          admission = {
+            id: request.requestId,
+            taskId: request.taskId,
+            workId: work.id,
+            actor,
+            repositoryRoot,
+            source: {
+              digest: source.snapshot.digest,
+              head: source.snapshot.head
+            },
+            legacyTask: !!oldTask
+          }
+        } else {
+          requireValue(
+            request.sourceAttemptId === undefined,
+            'source only allowed for admission'
+          )
+          const linked = getTask(request.taskId),
+            task = linked?.task
+          requireValue(task, 'task not found')
+          matchTask(record, work, task)
+        }
         for (const other of records)
           for (const entry of other.history)
             for (const item of entry.state.works)
@@ -419,11 +637,18 @@ function createTargetOwner({
                   'task already belongs to another commitment'
                 )
         requireValue(
-          !work.taskIds.includes(request.taskId),
+          admission || !work.taskIds.includes(request.taskId),
           'task already linked; replay the original request'
         )
-        work.taskIds.push(request.taskId)
+        if (!work.taskIds.includes(request.taskId))
+          work.taskIds.push(request.taskId)
       }
+      for (const entry of record.history)
+        if (entry.admission)
+          requireValue(
+            state.works.some((w) => w.id === entry.admission.workId),
+            'admitted commitment cannot be removed'
+          )
       validateAllocation(state, record, previousWorks)
       if (request.action !== 'link')
         for (const work of state.works)
@@ -439,6 +664,9 @@ function createTargetOwner({
             requireValue(exists, 'runtime file missing or unsafe')
           }
       const entry = {
+        ...(admission
+          ? { admission, admissionDigest: sha256(JSON.stringify(admission)) }
+          : {}),
         stateDigest: sha256(JSON.stringify(state)),
         revision: record.history.length + 1,
         request,

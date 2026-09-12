@@ -617,13 +617,15 @@ Reload the Board after preparing a new contract revision to load its catalog.
 3. Review the draft and pending inventory, provide a decision reason and select
    **Save scope revision**. Missing coverage, overlap and cyclic or unknown
    prerequisites reject the complete decision. Nothing is silently discarded.
-4. **Prepare task from this promise** fills the existing task-admission controls
-   with the exact step, objective and files. Review those controls and explicitly
+4. First **Run all flows** and select that completed baseline proof.
+   **Prepare task from this promise** durably reserves its source and task UUID,
+   then fills the existing task-admission controls with the exact step, objective,
+   files and work binding. Review those controls and explicitly
    launch the existing deterministic demonstration if desired. This button does
    not dispatch a model. Dependent work remains blocked because this slice has no
    source-bound prerequisite verifier. The strict all-flow candidate verifier is
    unchanged and can refuse partial contributions.
-5. Under **Connect an admitted task**, select the saved work and an existing task,
+5. For historical independent tasks, under **Connect an admitted task**, select the saved work and an existing task,
    enter the decision reason and **Link exact task**. Objective, step, files,
    retained obligations and accepted baseline must match. Linking neither starts
    execution nor enlarges scope. Multiple tasks and their attempts and retained
@@ -688,7 +690,7 @@ A prerequisite is `{ "workId": "<work UUID>", "handoff": "<required behavior>" }
 A `revise` request replaces the allocation using `targetId`, a fresh `requestId`,
 `expectedRevision`, `reason`, `objective`, `works` and `pending`. It cannot change
 flow, target revision or accepted baseline. A work UUID freezes its promise;
-changed promises use new UUIDs. Omit `taskIds` in allocations: linking is a separate
+changed unadmitted promises use new UUIDs. Once admitted, a commitment cannot be removed or replaced by an allocation revision. Omit `taskIds` in allocations: linking is a separate
 `link` decision with `targetId`, `requestId`, `expectedRevision`, `reason`,
 `workId` and `taskId`. A task cannot be reassigned to another commitment.
 
@@ -705,3 +707,63 @@ contract, not invented Factory evidence. The browser test uses actual local
 candidate verification on macOS and an explicitly offline GitHub adapter; its
 PR observations make no external requests. Full cross-PR integration assessment
 and explicit target-baseline acceptance remain unimplemented.
+
+
+### Admit work before execution
+
+After `verify` passes all six obligations, use its returned attempt UUID as
+`sourceAttemptId`. Submit this decision with `target-decide` or
+`POST /api/targets/decide`:
+
+```json
+{
+  "action": "admit",
+  "targetId": "<target UUID>",
+  "requestId": "<fresh admission UUID>",
+  "expectedRevision": 1,
+  "reason": "Freeze this work against the reviewed baseline source",
+  "workId": "<work UUID>",
+  "taskId": "<reserved fresh task UUID>",
+  "sourceAttemptId": "<completed baseline proof UUID>"
+}
+```
+
+Use the target's actual current revision. Admission increments it and appends
+immutable audit without running a candidate. It requires a complete passing
+baseline proof from this store, matching accepted revision and contract. It pins
+both HEAD and source digest. Any unconfirmed prerequisite refuses admission.
+A PR merge or green check is not prerequisite evidence.
+
+Then use the existing `task-start` request, setting `requestId` to the reserved
+`taskId`, exact step/objective/files from the work, and this additional field:
+
+```json
+{
+  "workBinding": {
+    "targetId": "<target UUID>",
+    "workId": "<work UUID>",
+    "admissionId": "<admission requestId>"
+  }
+}
+```
+
+The task owner checks admission before capture, compares captured source before
+any operation, and rechecks on resume. Source mismatch preserves the rejected
+snapshot; restoring the promised source permits an explicit retry of the same
+request. Do not change scope or invent another passing source label to bypass it.
+An existing linked task may be explicitly admitted using its existing task UUID
+and original source proof. Its historical request remains unchanged. Unlinked
+legacy tasks retain the original behavior.
+
+`target-show` and the Board display a separate bounded `assessment`: pending
+before execution, unknown for unavailable evidence, failed for a failed admitted
+task, passed only when all its admitted tasks' latest strict all-flow verdicts
+pass, and stale when that pass belongs to an older accepted baseline. Failures
+from another admitted task are not erased by a new passing task. All task and
+attempt identities remain available; different sources never aggregate into a
+target pass. The target stays pending and baseline acceptance remains separate.
+
+The original target/work decomposition and new admission browser cases use the
+same `FLOW_PROOF_URL` contract and cover desktop, tablet and narrow detail views.
+No new model request, candidate PR, prerequisite issuer or protected integration
+verification is required for these deterministic formal fixtures.

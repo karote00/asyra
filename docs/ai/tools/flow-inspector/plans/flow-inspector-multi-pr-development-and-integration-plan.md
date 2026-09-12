@@ -23,12 +23,16 @@ does not determine when CI begins observing and assessing the work.
 [The living target contract](../CORE_PROOF.md#flow-targets-and-work-decomposition)
 and `manage-flow-target` implement local goals, complete assigned-or-pending
 coverage, immutable work commitments, explicit dependency handoffs, audited
-revisions and exact existing-task links. Board/API/CLI expose the same state and
+revisions, exact existing-task links and source-bound admission before execution.
+Board/API/CLI expose the same state and
 multiple task/attempt/PR observations, with restart and stale-write protection.
 Permanent owner, API/CLI and desktop/tablet/narrow browser cases cover this scope.
+The [bounded closeout](completed/flow-inspector-target-work-admission-closeout.md)
+records first-slice completion without closing this plan.
 
 The strict candidate verifier remains unchanged. Dependencies stay unconfirmed,
-dependent work stays blocked and complete targets stay pending. Scoped completion,
+dependent work stays blocked and complete targets stay pending. Bounded
+assessments use existing strict all-flow task verdicts; broader scoped verification,
 source-bound prerequisite verification, full cross-PR integration assessment and
 explicit target-baseline acceptance below remain unimplemented. This slice covers
 target/work admission and its usable projections only; it does not close the

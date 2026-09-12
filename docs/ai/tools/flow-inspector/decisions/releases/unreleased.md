@@ -209,3 +209,20 @@ the existing store lock. Exact task linking preserves task/attempt PR identity.
 Candidate verification remains strict; dependency evidence is unconfirmed and
 whole-target integration/acceptance remain unimplemented. This records this
 slice only, not completion of the multi-PR plan or full Phase 5/6.
+
+
+## Source-bound work admission and bounded closeout - 2026-09-12
+
+Review of PR 193 found that historical task linking did not enforce admission
+before execution. The same PR now reserves source-bound work admission and makes
+the existing task owner consume it before capture, after capture and on resume.
+Target revisions cannot remove admitted promises. Bounded task assessments keep
+failures and exact candidate identities separate from target completion.
+
+This supplements the target/work checkpoint above; it does not erase its original
+limits or accept a flow baseline. Board/API/CLI share the new admission owner,
+while unresolved prerequisites remain blocked without a new evidence issuer.
+The [bounded closeout](../../plans/completed/flow-inspector-target-work-admission-closeout.md)
+closes only the first slice. Integration verification, explicit acceptance and
+the existing provider/protection gaps remain open. No merge, version or release
+operation is authorized by this record.

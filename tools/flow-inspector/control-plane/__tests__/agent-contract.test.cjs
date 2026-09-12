@@ -107,3 +107,31 @@ test('real provider admission binds trusted authorization without accepting call
     )
   )
 })
+
+test('work binding is a detached exact identity, never caller authority or an optional partial binding', () => {
+  const workBinding = {
+    targetId: randomUUID(),
+    workId: randomUUID(),
+    admissionId: randomUUID()
+  }
+  const input = { ...request(), workBinding }
+  const value = admitTask(input, contract, 1, 'local-developer')
+  assert.deepEqual(value.workBinding, workBinding)
+  assert.ok(Object.isFrozen(value.workBinding))
+  for (const invalid of [
+    null,
+    {},
+    { ...workBinding, admissionId: 'unknown' },
+    { ...workBinding, passed: true }
+  ])
+    assert.throws(
+      () =>
+        admitTask(
+          { ...request(), workBinding: invalid },
+          contract,
+          1,
+          'local-developer'
+        ),
+      /binding/i
+    )
+})
