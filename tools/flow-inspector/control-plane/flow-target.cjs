@@ -159,8 +159,28 @@ function createTargetOwner({
   getBaseline,
   getTask,
   getReview,
-  getSource = () => null
+  getSource = () => null,
+  getVersionReview = () => null
 }) {
+  const resolveVerification = (reviewId, targetRevision) => {
+    const digest = (value) =>
+      typeof value === 'string' && /^[a-f0-9]{64}$/.test(value)
+    requireValue(digest(reviewId), 'invalid target version review identity')
+    const review = getVersionReview(reviewId)
+    const candidate = review?.candidate
+    const reference = candidate?.verificationSource
+    requireValue(
+      review?.id === reviewId &&
+        digest(review.candidateDigest) &&
+        candidate?.contract?.digest === targetRevision &&
+        reference &&
+        typeof reference === 'object' &&
+        reference.descriptor?.contractDigest === targetRevision &&
+        digest(reference.descriptor?.digest),
+      'target verification review or candidate is unavailable or conflicting'
+    )
+    return freeze({ reviewId, candidateDigest: review.candidateDigest })
+  }
   const file = path.join(directory, 'targets.json')
   let records = []
   // The service owns the enclosing store lock; this owner never opens another store.
@@ -180,6 +200,34 @@ function createTargetOwner({
         'invalid retained target'
       )
       ids.add(record.id)
+      const selectedReview = record.history[0].request?.targetReviewId
+      requireValue(
+        Object.hasOwn(record, 'targetVerification') ===
+          Object.hasOwn(record.history[0].request ?? {}, 'targetReviewId'),
+        'retained target verification pin was changed'
+      )
+      if (Object.hasOwn(record, 'targetVerification')) {
+        const pin = record.targetVerification
+        requireValue(
+          pin &&
+            Object.keys(pin).length === 2 &&
+            pin.reviewId === selectedReview &&
+            record.history
+              .slice(1)
+              .every(
+                (entry) => !Object.hasOwn(entry.request, 'targetReviewId')
+              ),
+          'invalid retained target verification pin'
+        )
+        const resolved = resolveVerification(
+          pin.reviewId,
+          record.targetRevision
+        )
+        requireValue(
+          pin.candidateDigest === resolved.candidateDigest,
+          'retained target verification review changed'
+        )
+      }
       const contract = getContracts().find(
         (c) => c.digest === record.targetRevision
       )
@@ -454,6 +502,7 @@ function createTargetOwner({
         'reason',
         'flowId',
         'targetRevision',
+        'targetReviewId',
         'acceptedBaseline',
         'objective',
         'works',
@@ -483,6 +532,10 @@ function createTargetOwner({
         'source only allowed for admission'
       )
       const create = request.action === 'create'
+      requireValue(
+        create || !Object.hasOwn(request, 'targetReviewId'),
+        'target verification review is immutable after creation'
+      )
       let record, state, admission
       if (create) {
         requireValue(
@@ -507,6 +560,14 @@ function createTargetOwner({
           id: request.requestId,
           flowId: flow.id,
           targetRevision: contract.digest,
+          ...(Object.hasOwn(request, 'targetReviewId')
+            ? {
+                targetVerification: resolveVerification(
+                  request.targetReviewId,
+                  contract.digest
+                )
+              }
+            : {}),
           acceptedBaseline: request.acceptedBaseline,
           obligations: contract.cases.filter((c) => c.flowId === flow.id),
           steps: flow.steps,
