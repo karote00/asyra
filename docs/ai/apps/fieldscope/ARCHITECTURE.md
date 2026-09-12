@@ -41,3 +41,16 @@ existing site in SpatialLayer; robot edits never call the site/crop builders.
 Local model bounds are produced with the definition and joined with site bounds
 for fit; fitting does not rescan either model. Blender review uses an export of
 this exact geometry, not a separate runtime asset or simulation oracle.
+
+## Canonical scene handoff
+
+SiteGeometry retains original source triangle ownership, fruit metadata and plant
+identities alongside its existing admitted shapes and planting groups. Bootstrap
+publishes one immutable scene source after each accepted canonical farm update;
+reads perform no generation or assessment. Source meshes are taken before layer
+visibility, so hidden crop/net/structure geometry remains available to future
+observation and collision consumers. Source partitions reference original shared
+vertex indices and assign each triangle once; rendered botanical output remains
+unchanged. Scene retirement and teardown invalidate the handoff. Simulation,
+working-arm articulation and fruit disposition projection remain subsequent M3
+owner steps; scene metadata does not imply perception or successful harvesting.

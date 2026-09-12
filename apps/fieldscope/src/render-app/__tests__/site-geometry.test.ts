@@ -253,3 +253,74 @@ it('keeps cultivar assignments and admitted instance arrays when only the net he
     build.mockRestore()
   }
 })
+
+it('prepares one immutable canonical scene handoff with distinct installed fruit identities', () => {
+  const generation = vi.spyOn(crops, 'createCropModels')
+  const placement = vi.spyOn(planting, 'createCropPositions')
+  const owner = new SiteGeometry()
+  const config = { ...DEFAULT_CONFIGURATION, length: 2.2 }
+  try {
+    const meshes = buildSiteMeshes(config, owner)
+    const scene = owner.prepareScene(config, meshes)
+    expect(owner.prepareScene(config, meshes)).toBe(scene)
+    expect(generation).toHaveBeenCalledTimes(1)
+    expect(placement).toHaveBeenCalledTimes(1)
+    expect(new Set(scene.fruits.map((fruit) => fruit.id)).size).toBe(
+      scene.fruits.length
+    )
+    expect(scene.fruits.length).toBeGreaterThan(scene.plants.length)
+    expect(scene.meshes.map((mesh) => mesh.id)).toEqual(
+      meshes.map((mesh) => mesh.id)
+    )
+    expect(scene.meshes.some((mesh) => mesh.layer === 'net')).toBe(true)
+    const rotated = scene.fruits.find((fruit) => fruit.plant.yaw === Math.PI)
+    if (!rotated) throw new Error('Missing rotated source fruit')
+    expect(rotated.position[0]).toBeCloseTo(
+      rotated.plant.position[0] - rotated.source.center[0]
+    )
+    expect(rotated.position[2]).toBeCloseTo(
+      rotated.plant.position[2] - rotated.source.center[2]
+    )
+    expect(Object.isFrozen(scene)).toBe(true)
+    expect(Object.isFrozen(scene.fruits)).toBe(true)
+    expect(Object.isFrozen(rotated.source)).toBe(true)
+    expect(Object.isFrozen(rotated.model.parts[0].partitions)).toBe(true)
+    const source = rotated.model.parts[0].shape
+    expect(meshes.some((mesh) => mesh.descriptor.shape === source)).toBe(true)
+    for (let i = 0; i < 10; i++) expect(owner.getScene()).toBe(scene)
+    expect(generation).toHaveBeenCalledTimes(1)
+    expect(placement).toHaveBeenCalledTimes(1)
+    const next = { ...config, netTop: 2.8 }
+    const changed = owner.prepareScene(next, buildSiteMeshes(next, owner))
+    expect(changed.revision).not.toBe(scene.revision)
+    expect(owner.isCurrentScene(scene)).toBe(false)
+    expect(owner.isCurrentScene(changed)).toBe(true)
+    expect(generation).toHaveBeenCalledTimes(2)
+    expect(placement).toHaveBeenCalledTimes(1)
+    owner.clear()
+    expect(owner.isCurrentScene(changed)).toBe(false)
+    expect(() => owner.getScene()).toThrow()
+  } finally {
+    generation.mockRestore()
+    placement.mockRestore()
+  }
+})
+
+it('prepares an empty planted population without manufacturing cultivar geometry', () => {
+  const generation = vi.spyOn(crops, 'createCropModels')
+  try {
+    const owner = new SiteGeometry()
+    const config: FarmConfiguration = {
+      ...DEFAULT_CONFIGURATION,
+      length: 2.2,
+      strips: [{ id: 'drain-only', kind: 'drain', width: 0.3 }]
+    }
+    const scene = owner.prepareScene(config, buildSiteMeshes(config, owner))
+    expect(scene.fruits).toEqual([])
+    expect(scene.plants).toEqual([])
+    expect(scene.meshes.some((mesh) => mesh.layer === 'steel')).toBe(true)
+    expect(generation).not.toHaveBeenCalled()
+  } finally {
+    generation.mockRestore()
+  }
+})
