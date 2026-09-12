@@ -182,6 +182,39 @@ local test process, so arbitrary hostile JavaScript evidence forgery is not
 claimed prevented. Human review remains mandatory; the deferred independent
 verifier and issuer requirements remain open.
 
+The candidate owner consumes the source owner's fixed derived execution policy;
+it does not maintain another configuration or bootstrap template. Before freezing
+candidate bytes, match the complete retained baseline manifest fingerprint and
+contract, mapping and architecture identities to the admitted input. Verify each
+baseline entry's actual bytes before selecting the admitted candidate runtime
+changes. The source owner constructs the new runtime descriptor from the complete
+candidate manifest. Preserve a present baseline verification descriptor, including
+malformed presence, for exact source admission rather than replacing it. Only
+when that field is truly absent may this explicit new verification construct its
+own five-role descriptor from the fully verified captured baseline manifest and
+exact admitted contract. Never read current checkout verification files, repair
+missing bytes, rewrite historical descriptors or upgrade a saved reference.
+
+Use `createDerivedExecution` with the canonical containment-checked new attempt
+source directory and that original verification descriptor. Write its exact two
+fixed files; bind `executionSource` and its digest as the candidate configuration
+identity. Run the actual generated configuration and bootstrap through the existing
+contained runner. After settlement, the evidence owner receives the full new
+snapshot and the separately supplied trusted execution context for one combined
+source admission. The candidate owner does not forge the service's admission
+tuple or separately repeat that same full candidate admission. Existing real
+runner identity, cancellation, watchdog and post-run source integrity checks
+remain mandatory. A malformed original descriptor or altered generated closure
+cannot produce passing verification.
+
+The verdict retains `runtimeSource`, `verificationSource` and `executionSource`
+for this new candidate identity alongside its complete manifest, configuration
+identity and actual runner evidence. These fields are input to the subsequent
+task retention owner; writing them does not grant durable admission or replay.
+Ordinary composition and retained-reference APIs remain restrictive. Historical
+baseline records and their original execution identities remain unchanged even
+when a new candidate proof was explicitly generated from their captured bytes.
+
 A successful run means execution finished; verification can independently be
 passed, failed or unknown. Work is `needs-review` only with complete passing
 all-flow evidence and actual source progress, otherwise incomplete. Delivery is
