@@ -39,6 +39,11 @@ and mobile devices are unverified. The reference Mac mini M1 / 8 GB performance
 gate, independent pilot users and public maintenance policy are not yet verified.
 See the [runtime profile](../specs/runtime-profile-v0.md).
 
+Read the [candidate limitations and update/recovery notes](CANDIDATE_NOTES.md)
+before an update. The [pilot review](PILOT_REVIEW.md) includes a shipped synthetic
+missing-method project and complete recovery steps. Developer regression results
+do not replace independent pilot acceptance.
+
 ## Your first experiment
 
 1. Wait for **Local runtime ready**. The invented six-axis workcell includes a

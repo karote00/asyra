@@ -278,3 +278,19 @@ Pending saves disable both save entry points and guard duplicate dispatch.
   reference hardware, independent numerical/pilot evidence and policy decisions
   remain release blockers. No M6 merge, publication, deployment, dependency/tool
   upgrade, version bump, tag or new Changeset is authorized by this closeout.
+
+
+### 2026-09-12 - Begin M6 with self-contained pilot recovery
+
+- Context: the user authorized M6 development after the one-time M5 merge.
+  PR #192 merged as `599cb5b91` after all eight checks passed for `b15ad94bf`.
+  The existing pilot guide still depended on a coordinator-provided recovery
+  file, which the distribution did not include.
+- Decision: implement the existing ui delivery contract with a shipped synthetic
+  unavailable-method project, its ordinary import/export/reopen regression and
+  candidate limitation/update notes. The fixture models missing installation;
+  it is not private-method validation or independent pilot evidence.
+- Consequences: `docs/ai/apps/asyra-sim/plans/m6-pilot-review.md` is active.
+  Capacity, reference hardware, independent reviews/pilots and maintenance policy
+  remain open. M6 PR creation and CI are authorized; its merge and R0 publication
+  still require separate user acceptance.

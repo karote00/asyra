@@ -18,8 +18,8 @@ single robot workcell**, not a complete factory simulator.
   [M3.5 workflow usability](plans/completed/m3-5-workbench-flow.md) and
   [M4 comparison and extensions](plans/completed/m4-comparison-extensions.md)
   on 2026-09-12. The user has also closed the [M5 delivery stage](plans/completed/m5-controlled-pilot.md)
-  with resource/hardware gaps retained and authorized M6 development after its PR
-  merges; see [PLANS.md](PLANS.md). R0 release gates remain open.
+  with resource/hardware gaps retained. PR #192 is merged and
+  [M6 pilot/release-review development](plans/m6-pilot-review.md) is active; see [PLANS.md](PLANS.md). R0 release gates remain open.
 - The hosted workbench uses the permanent domain `asyra-sim.vercel.app` and
   production branch `main`. See [hosting and browser-local data boundaries](release/HOSTED_PREVIEW.md).
 - App workspace: `apps/asyra-sim/`, alongside `apps/asyra-design/`.
