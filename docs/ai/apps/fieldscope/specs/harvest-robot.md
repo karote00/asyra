@@ -682,6 +682,27 @@ Only original source geometry can determine the nearest hit. Quality remains
 separate: visible spines/calyx or the synthetic cut site do not prove intact
 market quality, retention or a true anatomical abscission zone.
 
+Origin occupancy consumes C's individual material regions. Sheet regions obstruct
+rays without filling their enclosing air. Closed-solid occupancy uses the original
+region surface, never a union box around separate crate walls. For open-shell
+regions, conservative local bounds may exclude an origin candidate; otherwise
+surface evidence is checked and unresolved closure/interior yields
+`unknown-origin-occupancy`, not an inside/material-hit classification. An unresolved
+bent-tube gap may remain unknown. Do not subdivide its surface into triangle boxes
+to falsely prove the tube's centre free. Origin uncertainty starts at distance zero
+and cannot be ignored merely because its first forward surface is beyond a hit.
+
+Numerical decisions carry conservative arithmetic bounds from normalization and
+installed/body transforms through slab, determinant, barycentric and distance
+predicates. Only a conclusively outside candidate is a miss. Overflow, underflow
+or overlapping decision bounds that cannot be resolved produce unknown; near-edge
+values are not clamped to a fabricated hit. Generic exact-operation proofs retain
+supported exact endpoints and ties. A reported nearest hit must precede every
+other possible obstruction: an ambiguous intersection is ignorable only when its
+conservative lower distance is strictly beyond that hit's upper distance. Exact
+ties retain source order; unresolved overlapping nearest distances remain unknown.
+Ordinary non-axis interior hits and clearly outside misses must remain usable.
+
 Acceptance: exact known triangle/barycentric/distance and near/far ordering cases,
 transformed/instanced sources, ties and range endpoints, inside/coplanar/unknown
 cases, preserved source ownership and stale/batch mutation rejection. Actual C

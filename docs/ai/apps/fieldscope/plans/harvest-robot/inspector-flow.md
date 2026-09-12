@@ -352,13 +352,19 @@ Conditions: source receipt/currentness and detached dynamic/ray schema checked
 before work and before publication; unknown motion/disposition/expired evidence
 has no valid-hit bypass. No session clock change or caller-forged completed result.
 Allowed: QueryGeometry read handoff, original near source arrays/placements, C FK
-once per batch, deterministic engine-neutral triangle/rigid-transform arithmetic.
+once per batch, C material-region provenance, deterministic engine-neutral
+triangle/rigid-transform arithmetic with conservative propagated bounds.
+Conditions: per-region source occupancy precedes nearest-hit publication; unresolved
+origin occupancy has distance lower bound zero. Bounds only reject candidates and
+do not declare material. Only conclusive arithmetic signs classify outside; exact
+operation proofs are generic, and unresolved nearest-distance overlaps are unknown.
 Forbidden: source generators, D detection or quality claims, Three raycast,
 UI camera input as sensor truth, opacity/distant/visibility filtering, blanket
 camera/robot/support exclusions, AABB occupancy or endpoint-only motion clearance.
-Boundary: simulation/ray-query.ts and `simulation/__tests__/ray-query.test.ts`;
-simulation/geometry.ts may expose the same owner source-query lifetime only after
-actual profiling justifies retained shape indexing. API_SURFACES documents the
+Boundary: simulation/ray-query.ts, simulation/query-arithmetic.ts and their direct
+formal tests in `simulation/__tests__/`. No geometry.ts production change in this
+uncached correction; its shared completed-bounds step remains separate.
+API_SURFACES documents the
 implemented query. Other D/session, C, runtime/UI and engine production are excluded.
 Spec: D near-source ray evidence plus existing shared source/motion/quality clauses.
 Failure owner: ray provider rejects malformed/stale batches and reports unknown
