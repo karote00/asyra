@@ -441,3 +441,19 @@ Feature: Harvest robot feasibility and supervised harvesting
     When the authored dock position changes
     Then the prior source is retired and the successor uses the same shapes at the new position
     And unrelated mission, robot definition and view changes do not regenerate station geometry
+
+  @M3
+  Scenario: Observation and collision share complete current near geometry
+    Given one canonical update has current farm, robot and installed dock sources
+    When their shared query source is prepared
+    Then hidden physical layers and separate station pieces retain their original near shapes
+    And fruit spines, calyx and retained pedicel keep their canonical triangle ownership
+    And only explicit measurement and route annotations are excluded
+    And preparing geometry does not grant support or collision clearance
+
+  @M3
+  Scenario: Query geometry cannot combine sources from different updates
+    Given a query source bound to one completed canonical update
+    When its receipt is copied or any source is retired or replaced
+    Then that source cannot be used for observation or motion admission
+    And no partial successor geometry is published
