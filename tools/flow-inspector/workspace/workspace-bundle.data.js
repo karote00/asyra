@@ -35871,7 +35871,7 @@
               "artifact:proof-source-snapshot"
             ],
             "conditions": [
-              "Read accepted-base contract and protected gate inputs once for CI admission; compare captured integration bytes with Git identity and preserve explicit policy drift blockers. Copy regular source files once into one attempt-owned tree, retain the immutable file manifest, bind source, mapping, architecture, configuration and lockfile digests, and reject symlinks. For target assessment, also identify the captured runtime file inventory independently of the admitted verification metadata; preserve full snapshot identity and never infer equivalence by stripping historical digests."
+              "Read accepted-base contract and protected gate inputs once for CI admission; compare captured integration bytes with Git identity and preserve explicit policy drift blockers. Copy regular source files once into one attempt-owned tree, retain the immutable file manifest, bind source, mapping, architecture, configuration and lockfile digests, and reject symlinks. For target assessment, also identify the captured runtime file inventory independently of the admitted verification metadata; preserve full snapshot identity and never infer equivalence by stripping historical digests. Construct a frozen verificationSource descriptor for the admitted contract’s exact five metadata roles from captured entries, with no extra reads; validate both source descriptors against the complete full manifest. Descriptor presence alone does not prove retained bytes, replay readiness or accepted-version authority."
             ],
             "bypasses": [
               "No previous snapshot or mutable checkout may replace the captured runtime source."
@@ -35892,7 +35892,8 @@
             ],
             "specRefs": [
               "#source-and-evidence",
-              "#runtime-identity-producer-contract"
+              "#runtime-identity-producer-contract",
+              "#frozen-verification-source"
             ],
             "failureOwnerStepId": "capture-proof-source"
           },
@@ -35976,7 +35977,8 @@
             ],
             "specRefs": [
               "#source-and-evidence",
-              "#runtime-identity-producer-contract"
+              "#runtime-identity-producer-contract",
+              "#frozen-verification-source"
             ],
             "failureOwnerStepId": "assess-proof-evidence"
           },

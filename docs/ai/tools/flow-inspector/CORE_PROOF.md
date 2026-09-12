@@ -677,6 +677,61 @@ can cover negative cases but cannot establish producer readiness or replace this
 integration proof. No downstream consumer may hash a filtered full manifest as a
 substitute for the source owner's artifact.
 
+### Frozen verification source
+
+The source owner also constructs `verificationSource` from the same captured
+manifest. Format 1 contains `contractDigest`, `mappingVersion`,
+`architectureVersion`, `roles`, `files` and `digest`, following `format` in that
+key order. `roles` has exactly `manifest`, `architecture`, `spec`, `test`,
+`configuration`, in that order, mapped to the corresponding paths of this
+admitted contract. These five paths must be distinct canonical repository-relative
+slash paths and must not overlap the runtime inventory. Reject aliases, duplicate
+roles or paths and caller-provided replacement inventories. `files` contains
+exactly the five captured entries with the same canonical path ordering and
+`path`, `size`, `digest` shape as runtime entries. Hash the UTF-8 JSON serialization
+of the canonical object before adding its `digest` field. This binds role-to-path
+relationships, each byte fingerprint and the admitted contract identities.
+
+Construction performs no additional source reads and makes no admission claim.
+Source-owner validation requires the complete full snapshot manifest and its
+original digest, the bound runtime identity, the exact admitted contract and the
+exact verification projection. `validateSourceSnapshot` returns the detached
+immutable runtime and verification descriptors after that one admission; it does
+not read source again. Historical absence of `verificationSource` yields no
+verification authority. Present malformed or unsupported descriptors reject;
+neither a caller's digest nor current checkout files can complete them.
+
+The descriptor is not the bytes and is not, by itself, a replayable bundle. A
+service-owned attempt identity and full snapshot digest must locate the retained
+immutable source tree and manifest. The version owner must retain the exact
+verification descriptor reference, contract identities and attempt/full-source
+identity in the reviewed version; they participate in its existing candidate and
+exact-base decision fingerprints. Retain referenced source artifacts for that
+version's lifetime. Missing or tampered artifacts make new assessments unavailable;
+never replace them from a mutable checkout or rewrite the accepted history.
+A historical version without sufficient recorded verification-byte authority
+remains readable but cannot authorize a new authoritative producer. Recovery may
+use an already recorded immutable source identity only when its existing evidence
+actually binds all required bytes; matching contract or selector names alone does
+not establish configuration authority.
+
+Later source composition reads each selected runtime entry from its source-owner
+snapshot and each verification entry from that version's own retained bundle,
+checks actual bytes against every entry, and creates a new immutable snapshot.
+It preserves the selected runtime digest while producing its own full snapshot
+and execution-configuration identities. Missing entries are errors, never current
+checkout fallbacks. Accepted and target producers may have genuinely different
+verification test/configuration bytes while sharing the selected runtime; formal
+positive cases must execute both through the real runner and evidence owner.
+
+These five roles do not enumerate all execution inputs. Candidate-generated
+configuration and bootstrap files retain their existing full snapshot and derived
+execution-configuration binding. A five-role descriptor cannot authorize arbitrary
+wrappers or override that provenance. Composition and candidate handoff must bind
+those generated inputs through their declared owner before claiming replayable
+verification authority. The initial source constructor/validator slice does not
+activate version retention, composition, service assessment or baseline acceptance.
+
 ### Source admission in the local service
 
 The service admits a new runtime source once for each attempt and immutable
