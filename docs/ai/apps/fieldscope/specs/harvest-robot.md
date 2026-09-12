@@ -203,11 +203,20 @@ or introduce persisted IDs. B's canonical strip identity remains separately owne
 
 Preparation preserves the current botanical source geometry, cultivar assignment,
 maturity and distributions. A detachable fruit uses partitions of the same source
-geometry produced for its attached form, including the source ownership of any
-fruit-attached detail; it is not regenerated from length/radius or replaced by a
-primitive. Source triangles and material/vertex attributes remain unchanged in
-both near and distant geometry. Partitioning cannot duplicate or lose triangles,
-leave a second fruit on the plant, or remove unrelated stem/leaf geometry. The
+geometry produced for its attached form, including source ownership of cucumber
+spines, tomato calyx, retained distal pedicel and late-generated surface hairs;
+it is not regenerated from length/radius or replaced by a primitive. Source
+triangles and material/vertex attributes remain unchanged in both near and distant
+geometry. Adjacent tube segments may share source vertices. Ownership is unique
+per source triangle; original vertex indices/attributes remain shared references.
+Reconstruction recovers original vertex data once by source index. Partitioning
+cannot duplicate or lose triangles, leave a second fruit on the plant, or remove
+unrelated stem/leaf geometry. For the current tomato source, the final pedicel
+segment from the point 9 mm times the canonical botanical scale above the fruit
+top to its top belongs to the retained fruit; proximal segments
+remain plant-owned. That boundary is explicitly a synthetic source cut site, not
+a measured anatomical abscission zone or verified cultivar node. No new cut cap
+or changed geometry is introduced by this partition handoff. The
 existing shape generator remains authoritative; partition metadata is a handoff,
 not a second crop model or another random-generation pass.
 
@@ -235,7 +244,8 @@ and resource bounds remain authoritative; no additional cache is proposed.
 
 C handoff acceptance: formal source-space tests reconstruct each original near and
 distant mesh from its partitions and compare positions, indices, colors/UVs when
-present and material ownership without gaps or duplicates. Installed transforms
+present and material ownership without gaps or duplicate triangle ownership;
+shared boundary vertices retain their original source indices. Installed transforms
 map the same target to its original canonical location, including repeated models
 and plant rotations. Identity and source-shape tests cover scene replacement,
 empty populations, both cultivars and all supported variants. Preserve the existing
@@ -345,6 +355,29 @@ capacity, measured or explicitly synthetic fill and excluded/damaged/unknown
 quality. A's load screen runs before another pick and after changed load evidence;
 volume, incompatible crop or unresolved damage can exclude placement even below
 mass capacity. Physical damage remains unknown without a calibrated contact model.
+Cucumber handling preserves fine spines and uses explicitly modeled soft textile
+contact assumptions; no normal action scrapes, wipes or rolls off the spines.
+A distant representation lacking fine spines is not evidence of spine loss.
+Soft textile contact is a design assumption, not a proven zero-damage guarantee.
+Tomato handling preserves the calyx and retained pedicel
+with soft support. The initial synthetic action supports the individual fruit,
+identifies its pedicel and clear corridor, then cuts on the plant side of its
+retained attachment. Plant-side means along the pedicel toward the plant, not
+world Y. Never cut the main stem, rachis, neighboring fruit or calyx interface.
+Unknown anatomy/corridor defers the action; no fallback pulling or bending is
+admitted. Bending at a real abscission zone is not inferred from a geometry joint.
+Harvest retention, spine/calyx integrity and contact-damage quality are distinct
+results; successful cut/placement cannot prove intact quality.
+
+Source context: Taiwan's <a href="https://www.acri.gov.tw/Uploads/Item/8d07414a-0d58-4587-ba44-f9a7219acd37.pdf" target="_blank" rel="noopener noreferrer">fruit-vegetable health management guidance</a>
+identifies cucumber spines as a freshness/marketability attribute. The soft textile
+choice remains the user's handling requirement, not a measured retention rate.
+<a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC3600680/" target="_blank" rel="noopener noreferrer">Tomato pedicel abscission research</a>
+distinguishes the pedicel abscission zone from the calyx interface. Published
+<a href="https://www.mdpi.com/2073-4395/14/10/2274" target="_blank" rel="noopener noreferrer">pedicel mechanics for Syngenta Spectrum</a>
+do not establish Yu-Nu force, diameter or cutting-angle limits; those remain
+unmeasured here.
+
 Exchange immobilizes the base and inhibits the tool; new crate ID, tare and latch
 confirmation are required before explicit resumption. Removed crates retain their
 inventory ledger; exchanging cannot erase previously boxed fruit.

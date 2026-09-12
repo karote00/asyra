@@ -74,7 +74,10 @@ visibility-filtered collision scene or geometry simplification to admit motion.
 Boundary: render-app/robot-projection.ts, domain/robot-model.ts, runtime/bootstrap.ts
 composition, formal geometry/runtime/browser tests and canonical Blender export.
 M3 scene preparation allowlist (relative to apps/fieldscope/src):
-`domain/crop-models.ts` (source partitions/metadata, near/distant correspondence),
+`domain/crop-models.ts` (source triangle partitions/metadata, near/distant
+correspondence, cucumber spines and tomato calyx/distal synthetic pedicel ownership),
+`domain/crop-hairs.ts` (optional source-triangle/generated-range provenance only;
+no formula, traversal, density or geometry change),
 `domain/crop-layout.ts` (plant-instance identity), `render-app/site-geometry.ts`
 (retain completed metadata/shapes/assignments), `render-app/site-projection.ts`
 (owned fruit instances and full-scene handoff), `runtime/bootstrap.ts` (revision

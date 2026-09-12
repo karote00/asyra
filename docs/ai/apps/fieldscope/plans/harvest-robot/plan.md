@@ -203,8 +203,11 @@ configuration browser tests; no other owner expansion.
 
 ## M3 software goal and readiness slice - 2026-09-13
 
-Continue from PR #194 in `.worktrees/fieldscope-robot-workspace`. The software
-goal is M2 integration plus M3 deterministic patrol, picking and crate simulation.
+PR #194 completed M2 and merged into main at e34b4f6bc after all eight CI checks
+passed. Work now continues from that main in `codex/fieldscope-simulation-goal`
+at `.worktrees/fieldscope-robot-workspace`; prior goal contracts and B correction
+were retained. The remaining software goal is M3 deterministic patrol, picking
+and crate simulation.
 M4-M6 retain their physical-evidence prerequisites and remain planned; this goal
 cannot close the full hardware plan. The goal PR must not merge into main under
 this task's authorization. The coordinator owns Git and PR operations.
@@ -269,7 +272,9 @@ Formal oracle: record source-owned vertex/index ranges during the existing singl
 botanical generation, then reassemble partition buffers by original offsets.
 Assert exact equality to the unpartitioned canonical model's near/distant arrays,
 including vertex color/UV arrays when present and material association; assert
-nonoverlapping complete source coverage. Reuse the same seeded canonical output,
+nonoverlapping complete source triangle coverage. Shared tube boundary vertices
+retain original indices and are reconstructed once, not changed to satisfy a
+vertex-exclusivity assumption. Reuse the same seeded canonical output,
 not copied generator formulas or a second simplified expected mesh. Across plant
 instances, prove identity uniqueness, rotated installed placement and identical
 near/distant identity; on retirement prove old handles cannot serve a successor.
@@ -282,3 +287,23 @@ scoped browser baseline plus close-up source-fruit review. Stop on lost botanica
 fidelity, missing source owner, a needed dependency/Framework change or a conflict
 with D motion/evidence admission. Full M3 still requires the normal UI synthetic
 scenario/clock/evidence flow and later D/C integration acceptance.
+
+C implementation card: B is accepted at bc781c7a8. Preserve original near/distant
+source geometry with a permanent pre-edit full-variant geometry/material hash
+oracle, in addition to exact partition reconstruction. Fruit calyx/star detail
+receives hairs after fruit generation; the direct crop-hairs helper may expose
+optional source-triangle/generated-range provenance without changing its formula,
+iteration order, density or output. The corresponding direct test proves geometry
+with/without observation is identical. C assigns those late ranges to their source
+fruit. All other C boundaries, gates and exclusions above remain unchanged.
+
+C crop-retention refinement: preserve cucumber fine-spine geometry and tomato
+calyx/distal pedicel, including hairs generated from those source triangles.
+Tomato's existing final pedicel segment is fruit-owned; its proximal source stays
+plant-owned. The boundary is synthetic, not an anatomical AZ or verified Yu-Nu
+node. Original near/distant geometry/material hashes remain fixed. Test shared
+boundary indices, retained target detail and unmoved proximal/neighbor triangles.
+No contact coefficient, spine retention rate, damage proof or new cut cap is
+introduced. D later requires explicit action/anatomy evidence; ordinary source
+metadata is not successful perception. This direct refinement was independently
+reviewed before production edits.
