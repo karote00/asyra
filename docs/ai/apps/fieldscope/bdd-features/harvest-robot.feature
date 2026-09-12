@@ -452,6 +452,15 @@ Feature: Harvest robot feasibility and supervised harvesting
     And preparing geometry does not grant support or collision clearance
 
   @M3
+  Scenario: Dynamic queries reuse completed source-local bounds
+    Given a current source with exact original shape and primitive region bounds
+    When bounded synthetic rays and robot poses change without a source change
+    Then queries preserve the uncached source hit, miss and unknown results
+    And no source position or region index is rescanned to prepare bounds
+    When a successor source replaces it
+    Then the successor prepares its own bounds and rejects retired output
+
+  @M3
   Scenario: Query geometry cannot combine sources from different updates
     Given a query source bound to one completed canonical update
     When its receipt is copied or any source is retired or replaced

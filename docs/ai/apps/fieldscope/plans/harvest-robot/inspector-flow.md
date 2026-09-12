@@ -333,13 +333,24 @@ proxies as physical shapes, distant LOD clearance, per-query world-mesh copies,
 blanket tire/joint/tool/fruit exemptions and physical quality inference.
 Boundary: simulation/geometry.ts and `simulation/__tests__/geometry.test.ts`;
 API_SURFACES documents the implemented handoff. No changes to C/domain generators,
-engine, B, runtime/UI or other D production in this preparation slice.
+engine, B or runtime/UI. For shared local bounds only, the direct ray-query.ts
+consumer may replace its local preparation with the completed owner output;
+its formal test may prove equivalence and work counts. Ray numerical, occupancy
+and nearest-result semantics remain unchanged.
 Spec: D shared query geometry source and motion/evidence/quality clauses.
 Failure owner: geometry rejects stale, inconsistent or unsupported source; later
 observation/collision owners decide unknown/blocked evidence, not this source.
-Lifetime: one composition source receipt; unique source shape registration once,
-instance placement references reused on reads/queries. No additional cache or
-unprofiled acceleration structure is proposed.
+Lifetime: one composition source receipt; unique source shape registration and
+local vertex/non-sheet region bounds preparation once, with original immutable
+shape and region identity. Conflicting region mappings cannot share a record.
+Instance placement references and completed local bounds are reused on queries.
+Cache dimensions: current issued receipt, original shape and region metadata;
+only source-local bounds are retained in its completed geometry product. The
+measured repeated 612096 vertex and 1719909 region-index visits justify this
+bounded preparation handoff. Same current receipt reuses it; replacement rebuilds,
+failure publishes nothing, and retirement/clear rejects old output and releases
+owner retention. Dynamic poses/rays/time are excluded from this static product.
+No cross-receipt cache, ray-local cache, world copy, BVH or query-result retention.
 
 ### D near-source ray query
 

@@ -643,6 +643,25 @@ receipt admission, copied/mixed/stale source rejection, retirement on every sour
 change and bounded preparation counts independent of reads/pose/clock/view. Real
 observation, interval sweep and ordinary UI execution remain separate acceptance.
 
+Shared local bounds are completed geometry preparation, not query results.
+The geometry owner prepares each original shape's local vertex bounds and its
+non-sheet primitive region bounds once for the current receipt, retaining the
+original region identities. Distinct source metadata for the same shape must not
+silently reuse another region mapping. Bounds remain conservative candidate
+rejection only; neither membership nor retention establishes material or clearance.
+Queries consume this immutable product without rescanning positions or region
+indices. Changes to rays, time, pose or camera do not rebuild source-local bounds;
+source replacement rebuilds them, while retirement or disposal rejects prior
+products and releases owner retention. No cross-source cache, world-vertex copy,
+spatial hierarchy or ray-result cache is introduced.
+
+Acceptance: cold preparation matches direct original-source bounds; repeated
+reads and changing dynamic queries perform zero bound scans and preserve the
+uncached nearest-hit/miss/unknown results. Prove exact source/region identities,
+immutable outputs, atomic failed replacement, same-receipt reuse, successor
+recomputation and retired/cleared rejection. Count actual position/index visits
+alongside correctness on the existing representative C scene.
+
 ### Near-source ray evidence
 
 A D ray query consumes an issued current shared geometry product and explicit

@@ -710,3 +710,35 @@ detection, optical transmission, quality or swept clearance. These repeated
 preparation counts justify the next separate QueryGeometry shared-bounds card,
 not a ray-local cache. No visual or camera change is claimed by this pure query
 slice.
+
+Next D Step Card: shared QueryGeometry source-local bounds. The shared geometry
+Inspector owner consumes the same current receipt and original immutable shapes
+and regions, and emits completed local shape/non-sheet-region bounds. Shape
+bounds are keyed by original shape identity; region products additionally require
+the original region-array identity, so a different mapping cannot borrow bounds
+or occupancy declarations merely because positions are shared. Retention is
+bounded to one published source. Same current receipt bypasses preparation;
+replacement builds before publication, and retirement/clear rejects stale output
+and releases owner-held retention. Dynamic ray/base/joint/time changes consume
+the same product, with their existing query admission and FK work unchanged.
+
+Allowlist: simulation/geometry.ts and its permanent geometry test; ray-query.ts
+only consumes completed bounds and removes its duplicate preparation, with direct
+ray tests for result equivalence and normal-path work counts. API_SURFACES records
+the handoff. Spec, Inspector and BDD cover the same source-reuse behavior. No C,
+UI, session, arithmetic, occupancy/nearest predicate or source geometry change;
+no cross-source cache, BVH, world vertices or query-result retention.
+
+Test-first: prove repeated actual queries currently rescan bounds, then require
+zero position/region-index preparation visits after the cold source preparation.
+Compare each retained bound with a direct original-array min/max oracle; compare
+actual ray results against fresh owner preparation for both unchanged and changed
+dynamic inputs. Preserve original source/region identities, distinct mappings on
+one shape, immutable output and complete coverage. Prove same-receipt no-work,
+successor recomputation, failed replacement atomicity, retired read/clear rejection
+and no source generators. Run existing ray numerical controls unchanged, focused
+geometry/ray tests, then app unit/type/lint/naming/build and independent review.
+Record cold and repeated source work counts on the existing eight-ray C profile;
+timing is supporting evidence, not a machine-independent budget. Stop if any
+result or source ownership changes, a predicate needs repair, or another owner
+must regenerate data. No new visual claim belongs to this preparation slice.
