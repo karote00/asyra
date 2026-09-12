@@ -35,6 +35,13 @@ Unknown field evidence remains unknown. No M3 simulation session exists yet.
 
 `domain/robot-model.ts` constructs dimensioned concept geometry;
 `render-app/robot-projection.ts` owns its definition lifetime and admitted shapes.
+`domain/robot-kinematics.ts` attaches one synthetic five-DOF rigid owner to each
+original source part and supplies pure candidate FK. RobotProjection admits these
+same shape buffers once, retains the immutable rig with a definition revision and
+rejects retired source handles. Unsupported full lift travel leaves parked output
+available and the working rig unavailable. No geometry generation occurs on pose
+queries, and candidate poses do not drive live presentation. D will own motion,
+reach, rate and collision admission against this source.
 Dock position changes transforms, mission changes only route output, and camera
 changes neither geometry nor assessment. Bootstrap composes this output with the
 existing site in SpatialLayer; robot edits never call the site/crop builders.

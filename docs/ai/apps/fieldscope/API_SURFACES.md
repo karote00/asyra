@@ -41,3 +41,18 @@ Cross-package imports use public `@asyra/*` facades. Do not import another app's
 - These APIs are app-local transient geometry handoffs, not a sensor, clearance,
   persisted format or implemented harvesting session. D's adapters own observation
   and swept-motion admission against this source.
+
+## Synthetic working-rig source
+
+- `prepareRobotRig` binds the unchanged robot source to the approved five-joint
+  synthetic chain, with rest pivots, tool axes, bounds and rate metadata. It
+  rejects an unsupported full lift stroke without altering parked geometry.
+- `evaluateRobotPose` returns immutable candidate rigid transforms and tool/chain
+  frames. Joint limits are validated atomically; it does not plan reach, advance
+  time or admit collision clearance. Source buffers are reused across poses.
+- `FarmRuntime.getRobotSource` reads the completed definition product;
+  `isCurrentRobotSource` tests its lifetime. `evaluateRobotPose(source, joints)`
+  rejects retired handles or unavailable rigs. Definition changes and disposal
+  retire source handles; dock, mission, camera and farm edits preserve them.
+- D must consume this same source for later IK, approved rate checks, swept
+  collision queries and retention. These read APIs start no harvesting motion.

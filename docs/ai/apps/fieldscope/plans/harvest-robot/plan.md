@@ -223,9 +223,9 @@ Inspector, harvest-robot spec and its BDD cases are edited in this slice. Gates:
 naming baseline/final, scoped formatting/diff review and independent contract
 review. Stop on a new product decision, contradictory authority or external owner.
 
-C crop source preparation is complete. Continue with C synthetic working-rig
-source and FK handoff, then D admission, deterministic scenario proofs and real
-Core lifecycle wiring against those completed sources. D schema design can precede C, but an
+C crop source preparation and synthetic working-rig/FK handoff are complete.
+Continue with D admission, deterministic scenario proofs and real Core lifecycle
+wiring against those completed sources. D schema design can precede C, but an
 independent synthetic shape model cannot substitute for the actual scene.
 C working-pose/fruit disposition integration and B/UI controls follow separate
 owner cards after D passes its focused gates. End-to-end M3 closure requires the
@@ -345,3 +345,12 @@ typecheck/lint/build, existing bilingual desktop/mobile robot browser checks and
 close-up source review. Stop on an unresolved source frame, new DOF/tool parameter,
 necessary out-of-scope owner or changed canonical mesh output. Independent
 readiness review precedes production; independent code review precedes advancement.
+
+C working-rig source completed: original geometry/material hashes for both tools
+and two nondefault dimensions remain exact. Formal joint/pivot/lift, immutable
+source, retirement and work-count proofs pass; 268 app unit tests, typecheck,
+lint, naming, 23 build tasks and all five bilingual desktop/mobile robot browser
+cases pass. Source and readiness received independent review. Four live images,
+including the parked robot close-up at 853% zoom, were inspected at
+http://127.0.0.1:5178. FK is candidate-only; D admission, interval motion and normal
+harvesting UI remain next, and M3 is not complete.

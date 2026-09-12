@@ -505,6 +505,20 @@ export async function bootstrap(
     return {
       focusRobot: cameraFeature.api.focusRobot,
       getRobot: robot.get,
+      getRobotSource: () => {
+        assertLive()
+        return robotProjection.getSource()
+      },
+      isCurrentRobotSource: (
+        source: import('../render-app/robot-projection').RobotSource
+      ) => !closed && robotProjection.isCurrentSource(source),
+      evaluateRobotPose: (
+        source: import('../render-app/robot-projection').RobotSource,
+        joints: import('../domain/robot-kinematics').RobotJoints
+      ) => {
+        assertLive()
+        return robotProjection.evaluatePose(source, joints)
+      },
       subscribeRobot: robot.subscribe,
       patchRobot: robot.patch,
       getScene: () => {
