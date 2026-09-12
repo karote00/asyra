@@ -486,3 +486,17 @@ Feature: Harvest robot feasibility and supervised harvesting
     Then every original triangle belongs to exactly one declared source region
     And unverified closure is not promoted to a watertight solid
     And original fruit spines, calyx and geometry remain unchanged
+
+  @M3
+  Scenario: Arithmetic ambiguity cannot erase a possible nearest obstruction
+    Given a bounded ray close to a source edge, parallel plane or range endpoint
+    When finite arithmetic cannot prove the candidate lies outside
+    Then the query returns a supported hit or unknown instead of a false miss
+    And ordinary non-axis interior hits and clearly outside misses remain supported
+
+  @M3
+  Scenario: An unresolved open shell does not invent material occupancy
+    Given an origin that cannot be excluded from an original open-shell region
+    When the source provides no supported interior or outside proof
+    Then origin occupancy remains unknown instead of declaring material or clear air
+    And a farther forward surface cannot hide that origin uncertainty

@@ -664,3 +664,34 @@ prove all existing controlled rays plus the three recorded non-axis-aligned
 failures before broader gates. Shared local bounds remain a subsequent
 QueryGeometry owner step; no ray-local cache is introduced. This revised order
 replaces the earlier attempt to close the uncached ray candidate directly.
+
+Next D Step Card: revised near-source ray query. Consume the current issued
+GeometrySource, C material regions and detached synthetic batch; emit the existing
+nearest source identity/miss/unknown result. Allowlist: ray-query.ts,
+query-arithmetic.ts, their permanent simulation tests and API_SURFACES. C,
+QueryGeometry production, session, UI, source generation and retained caches are
+excluded. Original actual-scene and three numerical regression reds are preserved.
+
+Use one conservative arithmetic representation through scaled normalization,
+source transform/inverse operations, broadphase, triangle and nearest-order tests.
+Preserve exact cases via generic operation exactness proofs; outward uncertainty
+must cover unproved rounding, and nonfinite intermediate bounds remain unknown.
+Inverse transforms must correspond to the actual C coefficients, without silently
+assuming a rounded quaternion product is exactly unit length. C FK stays once per
+batch. Original source regions provide occupancy: sheets never fill air; separate
+closed regions use their surfaces; unresolved open-shell candidates return origin
+unknown rather than interpreting their bounds as material. No aggregate winding
+or per-triangle-box shortcut replaces these semantics.
+
+Formal gates: near-parallel/edge/range endpoint false misses; non-axis interior and
+clearly outside controls; edge and range offsets on both sides; extreme finite
+directions; installed/instance/body transforms; exact tie and overlapping uncertain
+nearest ordering; far versus origin ambiguity; closed box/open crate, film air,
+unresolved bent shell and outside-shell cases. Direct arithmetic tests check
+enclosure and generic exact cases. Then rerun actual C hit/miss/net/leaf/cultivar
+profiles with source work counts, FK once, currentness and no generation; source
+shape/region preparation remains query-local and measured for the later shared
+bounds card. Focused correctness precedes full app unit/type/lint/naming/build and
+independent bounded review. No new visual claim or camera change in this pure D
+segment. Stop for a missing upstream owner, unbounded arithmetic or any need to
+invent physical material/optical parameters.
