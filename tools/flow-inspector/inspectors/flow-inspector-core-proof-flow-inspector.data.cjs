@@ -406,6 +406,7 @@ const data = {
       purpose: 'Contract evolution',
       inputs: [
         'accepted version history',
+        'artifact:admitted-verification-source',
         'admitted candidate contract',
         'observed selector identities and source digests',
         'explicit successor relations and retirement request',
@@ -413,7 +414,7 @@ const data = {
       ],
       outputs: ['artifact:reviewed-contract-evolution'],
       conditions: [
-        'Compare stable obligations and source observations once per requested review; preserve immutable accepted versions. Accept only exact current base and candidate inputs with authorized reason; removal requires separately authorized explicit retirement. Missing selectors and unknown evidence remain unresolved.'
+        'Compare stable obligations and source observations once per requested review; preserve immutable accepted versions. Accept only exact current base and candidate inputs with authorized reason; removal requires separately authorized explicit retirement. Missing selectors and unknown evidence remain unresolved. When a service-admitted verification reference is supplied, bind its exact source tuple, descriptor and execution configuration into review and immutable history without source reads or revalidation. Expose verification-content changes, forbid accepting removal of existing verification authority, and preserve legacy absence without granting new authority.'
       ],
       bypasses: [
         'No implicit retirement, heuristic acceptance, or preserved green evidence after revision.'
@@ -433,7 +434,7 @@ const data = {
         'tools/flow-inspector/control-plane/evolution.cjs',
         'tools/flow-inspector/control-plane/__tests__/evolution.test.cjs'
       ],
-      specRefs: ['#contract-evolution'],
+      specRefs: ['#contract-evolution', '#version-verification-references'],
       failureOwnerStepId: 'review-contract-evolution'
     },
     {
@@ -639,8 +640,9 @@ const data = {
         'artifact:flow-target-state',
         'server-selected accepted Git base'
       ],
-      outputs: ['artifact:proof-board-state', 'artifact:admitted-runtime-source'],
+      outputs: ['artifact:proof-board-state', 'artifact:admitted-runtime-source', 'artifact:admitted-verification-source'],
       conditions: [
+        'Before supplying a verification reference to the version owner, resolve and admit that attempt’s source descriptor and actual execution configuration within this repository. Retain the exact reference and immutable bytes; absent historical descriptors grant no new verification authority. This source admission is independent of version acceptance and does not imply target eligibility.',
         'Before runner dispatch or evidence assessment, admit runtime sources through the source owner once per attempt and immutable source identity using only the trusted attempt and captured source. Completed evidence is a later persistence/projection input, never a source admission prerequisite. Live capture uses its complete manifest without IO; restart reads the bounded server-owned attempt manifest once. Retain the full-source-bound admission for evidence consumers; failed or changed identities cannot reuse it. Legacy absence grants no runtime identity and reads or request replay never redo admission.',
         'Keep reported step work completion independent from execution, verification and delivery. Separate candidate verification from accepted conformance, persist version decisions and accepted mapping atomically, admit CI results against a server-selected base, and produce baseline-bound read-only manager snapshots only at state changes. Authorize before work, admit one run against the explicitly accepted mapping, durably record state with audit, and expose immutable snapshot-bound evidence; restart interrupts incomplete attempts. Mapping prepare and decide actions bind the exact base revision and candidate digest, preserve all obligations, and atomically retain the decision with the accepted mapping. Duplicate request identities do not repeat execution; repeated reads consume already admitted evidence.',
         'Serve allowlisted existing workspace assets and compose the proof adapter into target documents; preserve static paths, target routing, and same-origin isolation. Serve Overview at root and catalog-slug pages with an explicit path-routing marker and workspace asset base; unknown public paths return a 404 route error without a selected target. Catalog-declared standalone HTML paths redirect to their exact short workspace target, and declared documentation/source links remain readable in a separate tab.'
@@ -731,6 +733,7 @@ const data = {
     }
   ],
   routes: [
+    { id: 'verification-admission-to-version', from: 'serve-proof-actions', to: 'review-contract-evolution', kind: 'conditional', predicate: 'A version review supplies a verification reference only after the service binds its own attempt, admitted source descriptor and execution configuration; historical absence cannot be promoted.', producedArtifacts: ['artifact:admitted-verification-source'] },
     { id: 'source-snapshot-to-service-admission', from: 'capture-proof-source', to: 'serve-proof-actions', kind: 'required', predicate: 'Before runner dispatch or evidence assessment, a trusted service-owned attempt captures or restores source with a runtime identity; no completed evidence is required.', producedArtifacts: ['artifact:proof-source-snapshot'] },
     { id: 'runtime-admission-to-evidence', from: 'serve-proof-actions', to: 'assess-proof-evidence', kind: 'conditional', predicate: 'After source admission and before raw or retained evidence assessment, service-owned evidence consumes its full-source admission; direct full snapshots use source-owner admission and historical absence grants no runtime conformance.', producedArtifacts: ['artifact:admitted-runtime-source'] },
     { id: 'runtime-admission-to-target-assessment', from: 'serve-proof-actions', to: 'assess-target-source', kind: 'required', predicate: 'An explicit target assessment selects the service-owned admitted source and complete retained proof requests; source admission has completed independently of assessment.', producedArtifacts: ['artifact:admitted-runtime-source'] },
@@ -964,6 +967,7 @@ const data = {
     }
   ],
   artifacts: [
+    { id: 'artifact:admitted-verification-source', ownerStepId: 'serve-proof-actions', channel: 'service-owned verification source reference', consumerStepIds: ['review-contract-evolution'] },
     { id: 'artifact:admitted-runtime-source', ownerStepId: 'serve-proof-actions', channel: 'service-owned source admission', consumerStepIds: ['assess-proof-evidence', 'assess-target-source'] },
     { id: 'artifact:target-source-assessment', ownerStepId: 'assess-target-source', channel: 'source-bound target assessment', consumerStepIds: [], terminal: true },
     { id: 'artifact:work-admission', ownerStepId: 'manage-flow-target', channel: 'immutable source-bound work admission', consumerStepIds: ['admit-agent-task', 'execute-agent-task'] },

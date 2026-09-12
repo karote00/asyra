@@ -294,6 +294,47 @@ binds all evidence observations and successor/retirement inputs, not only the
 candidate mapping digest. Changes invalidate prior conformance; no equivalence
 shortcut preserves a green result after contract changes.
 
+### Version verification references
+
+A version may retain `verificationSource: {attemptId, repository, head,
+sourceDigest, configurationDigest, descriptor}`. The descriptor is the source
+owner's admitted `verificationSource`; the surrounding tuple binds the trusted
+service attempt, repository, captured HEAD, full snapshot and actual execution
+configuration. This reference contains no client-selected filesystem path. Only
+that service and repository may resolve the attempt's retained artifacts.
+
+The version owner consumes a service-admitted reference. Its structural and
+contract checks do not make caller-supplied content authoritative: the service
+must have completed source admission and execution-configuration binding before
+passing the reference. The descriptor's contract/mapping/architecture identities
+and five role paths must agree with the version's admitted contract; every
+selector must match the descriptor's captured test path and byte digest. The
+version owner neither rehashes manifests nor reads bytes. The reference is copied
+into immutable candidate/accepted history and participates in the existing
+candidate and exact-base fingerprints. On reload, the reference remains a
+historical fact; replay requires fresh source-owner admission of the retained
+artifacts through the same trusted repository boundary.
+
+Verification-content changes must be visible in the comparison even when test
+selectors are unchanged. Changes to the descriptor digest or actual execution
+configuration use the existing `content-change` observation with
+`subject: 'verification-source'` and the affected flow identities. A different
+attempt or full snapshot reference with identical verification bytes changes
+review identity without falsely claiming a behavior-content change. Acceptance
+still requires the existing explicit reason, exact base/candidate, capability
+and retirement authority; retaining a reference proves neither target integration
+nor acceptance eligibility.
+
+A candidate cannot silently remove a reference from a version that already has
+one: acceptance is blocked, while an explicit rejection may retain its audit.
+Malformed present references reject validation. Historical versions without the
+field keep their existing standalone semantics and receive no new source
+verification authority. Acquiring that authority requires an explicit reviewed
+version with a valid reference; loading an old history or finding matching files
+in the checkout never adds it. New authoritative target assessment and later
+integration acceptance always require the retained verification-byte authority,
+independently of whether older standalone version operations remain readable.
+
 ### Accepted-base CI
 
 The aggregate must evaluate every obligation in the declared supported set,
