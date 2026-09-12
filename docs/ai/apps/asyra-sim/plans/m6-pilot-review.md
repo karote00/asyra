@@ -1,9 +1,11 @@
 # M6: Independent Pilots and Release Review
 
 Status: active - development authorized 2026-09-12 after the M5 merge.
-M6 acceptance, M6 merge and R0 publication are not authorized by this task.
+The 2026-09-13 multi-agent handoff authorizes continued plan implementation,
+development pushes and sub-PR integration into this goal branch. Goal PR #195
+must not be merged into main. External acceptance and R0 publication remain open.
 
-## Bounded task contract
+## Original recovery slice contract
 
 Baseline: 599cb5b916d25e157c3d5b40ce14b3bb5e93785f from fetched main after PR #192.
 Branch: `codex/asyra-sim-m6-pilot-review`.
@@ -111,3 +113,37 @@ Bounded review confirms exact byte copying, local document linking, original
 notices/checksum guards and unchanged ui/solver/storage ownership. Commit this
 validated tooling stage before invoking the clean producer; its source tests and
 packaged browser evidence remain the next checkpoint.
+
+## Completed recovery evidence and continued development - 2026-09-13
+
+The producer and packaged workflow above subsequently completed on exact source
+`593762b965aacd83e3323245c35765e14da1889c`. The clean consumer rebuilt and packed
+19 Framework inputs, retained 387 registry identities, passed 678 isolated App
+tests and the type/bundle gates, and assembled 31 dependency notice records.
+All five affected packaged browser cases passed; source, candidate and SDK
+recovery-fixture bytes and the final candidate checksums agreed. All eight CI
+checks passed on that same HEAD. These are completed recovery-slice results,
+not evidence for later source changes or full M6 acceptance.
+
+The original producer record is
+`apps/asyra-sim/.artifacts/consumers/593762b965aa-9PKgp4/consumer-evidence.json`;
+the packaged browser record is `tmp/m6/packaged-report.json`. The candidate
+archive SHA-256 is
+`fe1f23d6ffe7d6ff3a042757c2c08f36d0961ac726d2b76943f413a76f94dfa4`.
+The handoff review found no concrete defect in the bounded recovery code diff;
+the five distribution tests passed again on 2026-09-13. Prior screenshot review
+remains historical evidence, not a new visual review.
+
+Continued development first investigates the representative capacity failure
+against the unchanged workload, precision and resource limits. A separate
+method-owner execution contract must precede any correction; the original
+recovery slice above is not retroactively expanded. Preserve the M5 failing
+regression and original reports.
+
+The user authorized research into suitable public validation data and, when
+unavailable, reproducible synthetic data grounded in real-world conditions.
+Record source permission, provenance, assumptions and validation scope. Public
+or synthetic cases do not count as reference-hardware measurements, independent
+human numerical review, or either non-developer pilot. Maintenance authority and
+physical evidence cannot be inferred from generated data. M6 and R0 remain open
+until their actual required evidence exists.
