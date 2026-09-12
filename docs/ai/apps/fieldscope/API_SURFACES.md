@@ -227,3 +227,23 @@ Cross-package imports use public `@asyra/*` facades. Do not import another app's
 - Frames and one required FK are prepared per batch. `SurfaceWork` accounts for
   selected vertex visits, frames, axes and exact predicates; no shape/region
   bounds or C geometry is rebuilt, and no result/pose cache survives the batch.
+
+## Continuous translation surface pairs
+
+- `SurfaceQueries.sweep` consumes a clone-once `SurfaceSweepBatch`: original
+  source-bound pairs, start pose, each surface's world displacement, and a shared
+  closed `[from,until]` interval. Displacements are not velocities or changing FK
+  poses. `validFrom <= from < until < validUntil` covers both movement endpoints.
+- `source-pose-throughout` means the selected original local leaf shape remains
+  fixed except for its declared rigid translation; it does not claim the leaf
+  remains world-stationary. Additional unknown movement/deformation stays unknown.
+  This synthetic pair assumption does not certify real or unselected leaf motion.
+- `swept-separated` requires continuous common-time exclusion, not separated
+  endpoints. `swept-intersection` requires a common guaranteed or exact contact;
+  other cases stay `unknown`. Original witnesses and static shared preparation
+  remain intact. No volume, rotation, full-body or contact allowance is implied.
+- Readonly contact fraction/time bounds enclose one supported occurrence, not
+  necessarily the earliest contact. Their midpoint is not a confirmed pose.
+  Existing scalar arithmetic and complete static axes provide interval/exact
+  time constraints; one required FK, zero bounds/source regeneration and no
+  persistent cache remain the batch work contract.
