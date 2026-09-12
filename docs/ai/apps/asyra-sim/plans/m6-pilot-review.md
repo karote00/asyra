@@ -891,3 +891,89 @@ Logs: `tmp/capacity/handoff-historical-replay.log`,
 handoff slice is frozen for scoped review/commit. The next discovery is limited
 to the new actual original-segment frontier and completed-query cost attribution;
 no new production strategy follows directly from the partial aggregate.
+
+
+### Actual frontier cost attribution card
+
+Method owner, baseline `fcbb00605`: one passive replay of the original ordered
+representative input with the unchanged 500,000 budget and twenty-second case
+guard. The test must reproduce 20,234 whole / 135 target evaluations before
+interpreting costs. Instrument only the existing public query, kinematics,
+preparation, membership and axis operations; do not inject a new production hook.
+Each static row captures its exact input time and original segment, each lower
+row its exact interval, and each records complete output or MeshWorkLimit plus
+actual work. Static callbacks do not reveal parent node intervals; the profile
+must not invent these from the most recent interval. Handoffs get their own
+work counter, without borrowing a recent pose/time. All errors propagate.
+
+Output is bounded to segment totals, largest completed queries, the actual
+exhausted query and nearby final leaf intervals/severity. Unvisited pending
+unresolved leaves are distinguished from the actual exhausted input. Separate
+median/refinement preparation, membership, axis and residual traversal costs;
+world-bound reconstruction counts are CPU observations, not savings in logical
+work. Compare only completely visited identical original segments against the
+retained baseline; do not compare partial aggregate costs. The next isolated
+probe, if needed, is limited to that actual frontier original segment. No
+production strategy, schedule change or new cache follows from this diagnosis.
+
+The isolated segment 74 probe retains the same original endpoints and separates
+its cold preparation from query work. Its added passive axis attribution uses
+the actual threshold argument (clearance versus zero penetration search) and
+actual completed projection rejection, not a guessed witness phase. First
+warning work also accounts for the initial canonical source representative
+upper witness before tracking improving convex results. No query is skipped.
+
+The same segment-only attribution additionally registers exact original and
+refined Bounds object identities as node or triangle bounds. It separates
+actual projection attempts/axis charges/rejections by that source level and
+records projection/convex elapsed time as a supplementary CPU signal. A
+triangle-level rejection avoids one convex call after its triangle-pair tick
+has already been paid; node rejection can avoid descendant work. Unknown
+metadata is reported separately, never guessed from bounds values. This is
+passive accounting, not authorization to remove any rejection policy.
+
+
+The passive replay reproduces 20,234 / 135. Its actual exhausted call is the
+static endpoint at 3.0150753768844223 in original segment 74
+[2.9748743718592965, 3.0150753768844223], consuming only its remaining 1,008 units;
+that partial call is not comparable to a complete query. The segment's retained
+leaf is finding from an already completed midpoint witness; earlier pending
+segments remain unresolved. The common 85 completed segments 114–198 cost
+262,790 including handoffs, versus the retained 378,588 (30.6% less).
+
+The isolated complete segment costs 42,963: 13,542 cold preparation and 29,421
+query work. All three static results are positive-lower warning witnesses,
+without penetration; final interval lower is zero. Actual warning arrives late:
+only 119/162/196 static work remains after it. Complete triangle-level projection
+performs 5,226 charged axes, zero rejections and zero avoided convex queries;
+node/root projection performs 8,847 axes and 50 rejections. Exact source-bound
+metadata has no unclassified calls. Projection CPU is supplementary: roughly
+19 ms for triangle axes, while interval convex calls consume roughly 373 ms in
+this recorded run. Evidence: `actual-frontier-profile.log`,
+`frontier-segment74.log`, `frontier-segment74-phases.log`, and
+`frontier-segment74-levels.log` under `tmp/capacity/`. No production policy changed.
+
+### Final triangle projection policy probe
+
+Reviewed bounded hypothesis: retain complete source root/node pose-axis rejection
+and every existing charge; at the final original triangle pair only, compare
+cheap world-gap rejection followed by the unchanged complete convex query
+against the current additional pose-axis attempt. No descendant work remains
+at that source level. A test-owned adapter must identify exact original triangle
+Bounds objects, never infer from leaf size or treat a four-triangle leaf as a
+triangle. It may return no additional certificate at that exact optional call;
+all actual triangle ticks, convex queries, geometry and thresholds remain owned
+by current production. No source shape is replaced and uncertainty cannot turn
+into fabricated clearance.
+
+First compare the same segment 74 source and settings with current control,
+including complete evidence, actual work, axis attempts/rejections, convex call
+counts and CPU. Repeat the cold case in alternating order to expose warm-up
+noise; elapsed time supplements fixed logical work and the unchanged twenty-
+second guard. Require no increase in complete convex calls on this measured
+zero-rejection case and report all repeated timings rather than choosing the
+best sample. Then run the existing 10k/50k/576 and two-window tests through the
+same test-owned adapter, preserving their assertions and original guard. If
+any required correctness or cost gate fails, stop/replan; do not redefine units,
+tune axes, or claim success merely because fewer axes were charged. Production
+requires a separately reviewed formal red/correction card after this evidence.
