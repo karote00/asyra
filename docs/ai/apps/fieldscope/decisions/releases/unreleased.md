@@ -33,3 +33,50 @@ Consequences: no active FieldScope plan remains through this stage. The existing
 PR still requires review and merge; archived status does not claim main contains
 these changes. Closeout adds documentation only and creates no Changeset, version,
 tag, publication or deployment.
+
+## 2026-09-12 - Separate historical stages before harvest robotics
+
+Context: the user requested several completed plans matching the earlier app
+development stages before starting robotics in a new worktree.
+
+Decision: expose separate retrospective crop realism, responsive workbench and
+navigation/localization records in [Plans](/docs/ai/apps/fieldscope/PLANS.md), each
+linked to its original completed PR #174 parent. The baseline and documentation/CI
+closeouts already merged through PR #190 remain unchanged.
+
+Consequences: stage discovery is explicit without claiming new implementation,
+independent historical test totals or physical robot capabilities. A separate
+active harvest-robot plan owns future work. No release action is part of closeout.
+
+## 2026-09-12 - Start harvest robotics with explicit feasibility boundaries
+
+Decision: start the [harvest robot plan](/docs/ai/apps/fieldscope/plans/harvest-robot/plan.md)
+with deterministic necessary-condition screens and primary-source hardware
+research. Prefer an onboard latched crate for the first prototype; treat prepared
+lanes and manual end exchange as provisional assumptions pending site input.
+Include a dry charging station and conservative loaded-return energy admission.
+
+Evidence: M1 passes 57 new cases and all 229 app unit tests, typecheck, lint,
+naming and 17 filtered build tasks. These are local results; PR checks are a
+separate gate. The app UI and scene are unchanged by this milestone.
+
+Consequences: M1 does not prove a physical robot fits, avoids damage or operates
+safely. Unknown soil, observations and access remain explicit. M2-M6 stay active
+planned work; there is no robot mesh, live mission runtime or hardware connection
+yet. New software code carries an empty Changeset independently of historical
+closeout; no versions, deployment or manufacturing action are introduced.
+
+## 2026-09-12 - Close M1 before authorized integration
+
+Context: the user authorized rebasing PR #191 onto current main, pushing, merging
+only after all current-head checks pass, then creating a fresh worktree for M2.
+They explicitly requested M1 closeout before pushing and monitoring.
+
+Decision: archive the [completed M1 stage](/docs/ai/apps/fieldscope/plans/completed/harvest-feasibility/plan.md)
+and retain M2-M6 in the active parent plan. The original head passed CI; the
+rebased implementation passed 229 app tests and typecheck. The new pushed head
+must independently pass CI before merge.
+
+Consequences: stage acceptance does not claim the new CI has passed or that the
+PR has merged. No new release record, version, tag, publication or deployment is
+created by closeout. M2 implementation starts in its own post-merge worktree.
