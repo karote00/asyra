@@ -135,3 +135,24 @@ Cross-package imports use public `@asyra/*` facades. Do not import another app's
   instances before installed descriptor transforms for farm/dock geometry; robot
   parts remain chassis-local and require later session base/joint pose inputs.
 - This source API makes no observation, contact-policy, quality or clearance claim.
+
+## Near-source ray evidence
+
+- `RayQueries.query` consumes the issued current `GeometrySource` and a detached
+  `RayBatch`: synthetic simulation time/validity, current base/joints, explicit
+  leaf source-pose/all-fruit-attached state and bounded finite rays. It advances
+  no clock and runs C FK once per batch without source generation.
+- Results preserve nearest original mesh/instance/triangle and metre distance,
+  within-range miss, or unknown. Region-local source semantics distinguish sheets,
+  closed material and unresolved open shells; opacity does not grant passage.
+- Geometric unknowns may include one ambiguous triangle or two overlapping
+  nearest candidates as immutable representative witnesses, with original source
+  identity and conservative distance intervals (or explicit unbounded distance).
+  They explain uncertainty without implying exhaustive coverage or clearance.
+- Arithmetic bounds cover normalization, inverse placement and predicates;
+  finite point inputs alone may use bounded exact dyadic proofs, including exact
+  rational nearest ordering. Non-point uncertainty is never replaced by a rounded
+  centre. Work counts include source/region preparation and exact predicates;
+  no retained bounds, ray results or world-vertex copies are cached in this slice.
+- This geometry evidence is not fruit detection, quality, optical calibration,
+  a swept-motion result or an implemented harvesting action/UI workflow.

@@ -702,6 +702,12 @@ other possible obstruction: an ambiguous intersection is ignorable only when its
 conservative lower distance is strictly beyond that hit's upper distance. Exact
 ties retain source order; unresolved overlapping nearest distances remain unknown.
 Ordinary non-axis interior hits and clearly outside misses must remain usable.
+Geometric unknowns may include bounded representative witnesses: one ambiguous
+source triangle or two overlapping nearest candidates, in original source order,
+with mesh/instance/triangle identity and conservative distance bounds. These bind
+the same batch and current source, remain immutable, and are not exhaustive
+coverage or a first-hit claim. Unbounded distance is explicit or omitted; other
+unknown reasons need no witness. No global diagnostic state is retained.
 
 Acceptance: exact known triangle/barycentric/distance and near/far ordering cases,
 transformed/instanced sources, ties and range endpoints, inside/coplanar/unknown

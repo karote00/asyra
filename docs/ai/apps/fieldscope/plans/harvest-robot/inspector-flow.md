@@ -348,6 +348,9 @@ current shared geometry, synthetic batch time/validity, current robot base trans
 and joints, explicit leaf source-pose/all-fruit-attached state, finite rays/ranges.
 Outputs: immutable batch-bound nearest source hit/within-range miss/unknown;
 original mesh/instance/triangle identity, barycentric coordinates and metre distance.
+Geometric unknown output may carry at most two immutable representative source
+witnesses (one ambiguous triangle or two nearest-order candidates), bound to the
+same source/batch with conservative distance bounds; never an exhaustive ledger.
 Conditions: source receipt/currentness and detached dynamic/ray schema checked
 before work and before publication; unknown motion/disposition/expired evidence
 has no valid-hit bypass. No session clock change or caller-forged completed result.
