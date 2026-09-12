@@ -66,7 +66,14 @@ Version `1.0.2` changes deterministic dual-tree traversal: expand the node with
 the larger maximum world-bound extent, choosing the left side on exact ties,
 while retaining the source triangles, numerical predicates and all work limits.
 This changes query work and may select a different valid witness, so it has its
-own execution version; it does not claim completion of the representative
+own execution version. Its temporal query first evaluates the starting witness
+and attempts an interval certificate. Strict certified clearance skips the
+remaining point samples; otherwise the original remaining samples and final
+certificate remain necessary. Every attempted query consumes the unchanged
+work budget. Exhaustion retains only already established witnesses and marks
+unproved coverage unresolved; it does not invent unvisited endpoint findings.
+This strategy is explicit to the original-part kernel, leaving the historical
+primitive method's ordering unchanged. It does not claim completion of the representative
 resource or reference-hardware gates. New studies select the installed version.
 Saved studies and immutable reports
 keep their original method version; explicitly select the installed version and

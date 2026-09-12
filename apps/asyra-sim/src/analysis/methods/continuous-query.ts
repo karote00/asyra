@@ -53,6 +53,7 @@ export interface PairEvidence {
 }
 export interface PairQueryKernel {
   relativeFrames?: boolean
+  certifyClearBeforeResampling?: boolean
   distance(a: ConvexShape, b: ConvexShape): DistanceEvidence | null
   lower(
     a: ConvexShape,
@@ -206,6 +207,7 @@ export function queryContinuousPair(
     const node = pending.pop()
     if (!node) break
     const middle = node.start + (node.end - node.start) / 2
+    let certifiedLower: number | null = null
     let witness: DistanceEvidence | null = null,
       witnessTime = middle
     // Endpoints matter for both minima and keyframe contacts. They are evidence,
@@ -237,21 +239,46 @@ export function queryContinuousPair(
         witnessTime = time
       }
       if (result.penetration) break
+      if (
+        kernel?.certifyClearBeforeResampling &&
+        time === node.start &&
+        node.start !== node.end &&
+        witness.upper >= settings.threshold
+      ) {
+        const [intervalA, intervalB] = shapesAt(
+          query,
+          node.segment,
+          interval(node.start, node.end),
+          kernel.relativeFrames
+        )
+        const candidate = kernel.lower(intervalA, intervalB, witness)
+        if (candidate === null) {
+          kernelExhausted = true
+          break
+        }
+        if (candidate > witness.upper)
+          throw new Error('Inconsistent continuous distance certificates')
+        if (candidate > settings.threshold) {
+          certifiedLower = candidate
+          break
+        }
+      }
     }
     if (!witness) throw new Error('No witness evaluation')
     evaluations++
-    const [a, b] = shapesAt(
-      query,
-      node.segment,
-      interval(node.start, node.end),
-      kernel?.relativeFrames
-    )
-    let lower: number | null = witness.lower
+    let lower: number | null = certifiedLower ?? witness.lower
     if (kernelExhausted) lower = null
-    else if (node.start !== node.end)
+    else if (certifiedLower === null && node.start !== node.end) {
+      const [a, b] = shapesAt(
+        query,
+        node.segment,
+        interval(node.start, node.end),
+        kernel?.relativeFrames
+      )
       lower = kernel
         ? kernel.lower(a, b, witness)
         : separationLowerBound(a, b, witness.axis)
+    }
     if (lower === null) {
       kernelExhausted = true
       // Preserve an established static witness even when no interval-wide
