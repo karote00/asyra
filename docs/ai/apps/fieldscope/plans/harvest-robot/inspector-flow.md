@@ -218,6 +218,31 @@ completed products; A/query work occurs only on an explicit admission intent.
 Lifetime: captured canonical revision and current C handles; evidence [from,until)
 never gains time from pause, resume or source replacement. No caches proposed.
 
+### D session clock foundation
+
+Owner: D session. Inputs: issued prepared mission/currentness, explicit
+simulation time and generation-bound intents, required dispatch movement provider
+and distinct current-state resume provider. Output: immutable current run/lifecycle,
+clock/active elapsed/schedule state and ordered transition evidence. Start invokes
+admitDispatch internally; it never accepts an arbitrary accepted-result object.
+Pause/clock preserve completed pose/retention/remaining intent. Resume requests
+come only from the current paused snapshot and bind run/generation/source/time;
+late, held, expired or mismatched decisions cannot mutate it. Cancel/replace/close
+retire the old generation before successor work. No bypass of admission.
+Allowed: completed D admission and C rig rest products, source-currentness checks,
+finite clock arithmetic and immutable transition products. Forbidden: implicit
+clock sources, motion extrapolation, evidence renewal, initial-dock replay for
+Resume, source rebuild, second run or provider-free clearance.
+Boundary: simulation/session.ts and `simulation/__tests__/session.test.ts`;
+API_SURFACES may describe the implemented contract. Runtime/UI, A/B/C and real
+observation/collision/action implementations are outside this foundation slice.
+Spec: D session/clock, session admission/pause and existing motion requirements.
+Failure owner: session rejects malformed/stale intents atomically; admission and
+resume providers own their reasons. A held result never resumes physical motion.
+Lifetime: explicit generation and current canonical/source receipt; pause retains
+run identity. Reads reuse snapshots and immutable transition links with no full
+ledger scan/copy or A/geometry work. No caches proposed.
+
 ## E - Physical adapter (M4-M6, blocked on physical evidence)
 
 Owner: separately authorized hardware integration and safety engineering.

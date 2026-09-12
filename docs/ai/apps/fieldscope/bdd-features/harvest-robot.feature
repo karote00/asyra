@@ -407,3 +407,23 @@ Feature: Harvest robot feasibility and supervised harvesting
     Given a stowed robot at its dock and a different selected route start and end
     When the query provider returns empty or wrong-purpose route coverage
     Then dispatch remains held even if that unrelated result says clear
+
+
+  @M3
+  Scenario: Start cannot consume a borrowed accepted object
+    Given an idle session for its current canonical mission
+    When a caller submits an earlier accepted result instead of dispatch evidence
+    Then no run is created
+
+  @M3
+  Scenario: Resume keeps the paused operation instead of replaying the dock route
+    Given a paused run with its current pose and remaining intent
+    When a fresh current-state resume decision matches that exact paused snapshot
+    Then the same run resumes without changing its pose or operation progress
+    And elapsed paused time is not added to the next active clock difference
+
+  @M3
+  Scenario: A pending resume cannot outlive cancellation
+    Given a current-state resume provider has not returned
+    When the run is cancelled and the provider later reports acceptance
+    Then the cancelled generation remains closed and cannot mutate its successor
