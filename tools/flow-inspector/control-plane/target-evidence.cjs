@@ -19,6 +19,8 @@ function assessTargetSource(input) {
     allocationRevision,
     acceptedContract,
     targetContract,
+    acceptedVerificationSourceDigest,
+    targetVerificationSourceDigest,
     sourceAdmission,
     proofRequests,
     current
@@ -35,6 +37,9 @@ function assessTargetSource(input) {
     !same(
       target.obligations,
       targetContract.cases.filter((item) => item.flowId === target.flowId)
+    ) ||
+    ![acceptedVerificationSourceDigest, targetVerificationSourceDigest].every(
+      (digest) => typeof digest === 'string' && /^[a-f0-9]{64}$/.test(digest)
     ) ||
     !sourceAdmission?.runtimeSource ||
     !Array.isArray(proofRequests)
@@ -81,11 +86,18 @@ function assessTargetSource(input) {
       contract
     ])
   )
+  const verificationIdentities = new Set([
+    acceptedContract.digest + ':' + acceptedVerificationSourceDigest,
+    targetContract.digest + ':' + targetVerificationSourceDigest
+  ])
   const globalBlockers = []
   for (const request of proofRequests) {
     const contract = contracts.get(request.contractDigest)
+    const proofIdentity =
+      request.contractDigest + ':' + request.verificationSourceDigest
     if (
       !contract ||
+      !verificationIdentities.has(proofIdentity) ||
       !Array.isArray(request.flowIds) ||
       !request.flowIds.length ||
       new Set(request.flowIds).size !== request.flowIds.length ||
@@ -96,7 +108,7 @@ function assessTargetSource(input) {
       globalBlockers.push('Unresolved producer contract or flow inventory')
       continue
     }
-    request.flowIds.forEach((id) => requested.add(contract.digest + ':' + id))
+    request.flowIds.forEach((id) => requested.add(proofIdentity + ':' + id))
     const expected = contract.cases.filter((item) =>
       request.flowIds.includes(item.flowId)
     )
@@ -106,6 +118,14 @@ function assessTargetSource(input) {
     const runner = record?.runner?.identity
     const bound =
       record?.phase === 'completed' &&
+      admitted?.verificationSource?.digest ===
+        request.verificationSourceDigest &&
+      snapshot?.verificationSource?.digest ===
+        request.verificationSourceDigest &&
+      admitted.contractDigest === contract.digest &&
+      admitted.mappingVersion === contract.mappingVersion &&
+      admitted.architectureVersion === contract.architectureVersion &&
+      admitted.configurationDigest === snapshot.configurationDigest &&
       record.id === request.id &&
       admitted?.attemptId === request.id &&
       admitted.repository === source.repository &&
@@ -145,7 +165,7 @@ function assessTargetSource(input) {
           ).length === 1
       )
     for (const item of expected) {
-      const key = contract.digest + ':' + item.id
+      const key = proofIdentity + ':' + item.id
       const found = bound
         ? evidence.cases.filter(
             (observed) =>
@@ -179,20 +199,27 @@ function assessTargetSource(input) {
           attemptId: request.id,
           sourceDigest: snapshot?.digest ?? null,
           contractDigest: contract.digest,
+          verificationSourceDigest: request.verificationSourceDigest,
           obligationId: item.id
         }
       })
       observations.set(key, previous)
     }
   }
-  function assessCases(contract, cases, absent = 'unknown') {
+  function assessCases(
+    contract,
+    cases,
+    verificationSourceDigest,
+    absent = 'unknown'
+  ) {
+    const proofIdentity = contract.digest + ':' + verificationSourceDigest
     const blockers = [...globalBlockers]
     const results = cases.map((item) => {
-      const found = observations.get(contract.digest + ':' + item.id) ?? []
+      const found = observations.get(proofIdentity + ':' + item.id) ?? []
       const reasons = found.flatMap((value) => value.blockers)
       if (found.length > 1)
         reasons.push('Multiple producers for one obligation')
-      const missing = requested.has(contract.digest + ':' + item.flowId)
+      const missing = requested.has(proofIdentity + ':' + item.flowId)
         ? 'unknown'
         : absent
       if (!found.length && missing === 'unknown')
@@ -212,6 +239,7 @@ function assessTargetSource(input) {
     return {
       ...identity,
       contractDigest: contract.digest,
+      verificationSourceDigest,
       requiredObligationIds: cases.map((item) => item.id),
       cases: results,
       blockers: [...new Set(blockers)],
@@ -222,14 +250,23 @@ function assessTargetSource(input) {
       )
     }
   }
-  const accepted = assessCases(acceptedContract, acceptedContract.cases)
+  const accepted = assessCases(
+    acceptedContract,
+    acceptedContract.cases,
+    acceptedVerificationSourceDigest
+  )
   const worksById = new Map(state.works.map((work) => [work.id, work]))
   const ownById = new Map(
     state.works.map((work) => {
       const cases = target.obligations.filter((item) =>
         work.obligationIds.includes(item.id)
       )
-      const own = assessCases(targetContract, cases, 'pending')
+      const own = assessCases(
+        targetContract,
+        cases,
+        targetVerificationSourceDigest,
+        'pending'
+      )
       if (
         !cases.length ||
         cases.length !== work.obligationIds.length ||
@@ -309,7 +346,12 @@ function assessTargetSource(input) {
       )
       if (cases.length !== handoff.caseIds.length)
         blockers.push('Unresolved handoff proving case: ' + route.id)
-      const proof = assessCases(targetContract, cases, 'pending')
+      const proof = assessCases(
+        targetContract,
+        cases,
+        targetVerificationSourceDigest,
+        'pending'
+      )
       routes.push({
         routeId: route.id,
         decision: handoff.decision,
@@ -343,7 +385,12 @@ function assessTargetSource(input) {
     return result
   }
   const works = state.works.map(assessWork)
-  const integration = assessCases(targetContract, target.obligations, 'pending')
+  const integration = assessCases(
+    targetContract,
+    target.obligations,
+    targetVerificationSourceDigest,
+    'pending'
+  )
   const allocated = [
     ...state.pending,
     ...state.works.flatMap((work) => work.obligationIds)

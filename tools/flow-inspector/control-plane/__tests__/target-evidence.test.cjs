@@ -17,7 +17,9 @@ let directory,
   targetContract,
   acceptedProof,
   targetProof,
-  targetFailure
+  targetFailure,
+  sameContractProof,
+  sameContractFailure
 
 test.before(async () => {
   const parent = path.join(root, 'tmp/flow-inspector/target-evidence-tests')
@@ -54,7 +56,11 @@ test.before(async () => {
       repository,
       head: snapshot.head,
       sourceDigest: snapshot.digest,
-      runtimeSource: sourceOwner.validateRuntimeSource(snapshot)
+      ...sourceOwner.validateSourceSnapshot(snapshot, contract),
+      contractDigest: contract.digest,
+      mappingVersion: contract.mappingVersion,
+      architectureVersion: contract.architectureVersion,
+      configurationDigest: snapshot.configurationDigest
     })
     const evidence = evidenceOwner.assessEvidence(
       contract,
@@ -84,6 +90,7 @@ test.before(async () => {
       request: {
         id,
         contractDigest: contract.digest,
+        verificationSourceDigest: sourceAdmission.verificationSource.digest,
         flowIds,
         record,
         sourceAdmission
@@ -93,6 +100,23 @@ test.before(async () => {
   const accepted = await produce('accepted')
   acceptedContract = accepted.contract
   acceptedProof = accepted.request
+  const config = path.join(repository, acceptedContract.configFile)
+  fs.chmodSync(config, 0o600)
+  fs.appendFileSync(config, '\n// Reviewed configuration variant\n')
+  sameContractProof = (await produce('same-contract-configuration')).request
+  const sameAssertions = path.join(repository, acceptedContract.testFile)
+  const sameOriginal = fs.readFileSync(sameAssertions, 'utf8')
+  fs.chmodSync(sameAssertions, 0o600)
+  fs.writeFileSync(
+    sameAssertions,
+    sameOriginal.replace(
+      'expect(deferred.history).toBe(1)',
+      'expect(deferred.history).toBe(2)'
+    )
+  )
+  sameContractFailure = (await produce('same-contract-failure', 'failed'))
+    .request
+  fs.writeFileSync(sameAssertions, sameOriginal)
   const manifest = path.join(repository, acceptedContract.manifestPath)
   const definition = JSON.parse(fs.readFileSync(manifest, 'utf8'))
   definition.flows[0].title += ' - Developing'
@@ -193,6 +217,8 @@ function input({
     allocationRevision: 1,
     acceptedContract,
     targetContract: contract,
+    acceptedVerificationSourceDigest: acceptedProof.verificationSourceDigest,
+    targetVerificationSourceDigest: proof.verificationSourceDigest,
     sourceAdmission,
     proofRequests: sameContract
       ? [acceptedProof]
@@ -277,6 +303,7 @@ test('unrequested work is pending but requested missing, running and error produ
 test('an unrelated unassigned target failure does not replace a bounded work result with aggregate failure', () => {
   const value = clone(input({ partial: true }))
   value.proofRequests[1] = targetFailure
+  value.targetVerificationSourceDigest = targetFailure.verificationSourceDigest
   const result = assessTargetSource(value)
   assert.equal(result.works[0].status, 'passed')
   assert.equal(result.integration.status, 'failed')
@@ -397,6 +424,11 @@ test('assessment consumes completed owner artifacts without file reads, source v
   }
   const reads = t.mock.method(fs, 'readFileSync', forbidden)
   const source = t.mock.method(sourceOwner, 'validateRuntimeSource', forbidden)
+  const combined = t.mock.method(
+    sourceOwner,
+    'validateSourceSnapshot',
+    forbidden
+  )
   const raw = t.mock.method(evidenceOwner, 'assessEvidence', forbidden)
   const retained = t.mock.method(
     evidenceOwner,
@@ -404,7 +436,7 @@ test('assessment consumes completed owner artifacts without file reads, source v
     forbidden
   )
   assert.equal(assessTargetSource(value).eligible, true)
-  for (const method of [reads, source, raw, retained])
+  for (const method of [reads, source, combined, raw, retained])
     assert.equal(method.mock.callCount(), 0)
 })
 
@@ -442,6 +474,7 @@ test('integration failure cannot be replaced by individual green history and lat
   const value = clone(input())
   const previous = assessTargetSource(value)
   value.proofRequests[1] = targetFailure
+  value.targetVerificationSourceDigest = targetFailure.verificationSourceDigest
   const failed = assessTargetSource(value)
   const retained = JSON.stringify(failed)
   assert.equal(failed.integration.status, 'failed')
@@ -485,4 +518,69 @@ test('currentness compares identity values independently of object insertion ord
     revision: value.current.acceptedBaseline.revision
   }
   assert.equal(assessTargetSource(value).eligible, true)
+})
+
+test('same-contract distinct admitted verification bytes preserve separate accepted and target proof roles', () => {
+  for (const proof of [sameContractProof, sameContractFailure]) {
+    const value = input({ sameContract: true })
+    assert.equal(proof.contractDigest, acceptedProof.contractDigest)
+    assert.notEqual(
+      proof.verificationSourceDigest,
+      acceptedProof.verificationSourceDigest
+    )
+    assert.equal(
+      proof.sourceAdmission.runtimeSource.digest,
+      acceptedProof.sourceAdmission.runtimeSource.digest
+    )
+    value.targetVerificationSourceDigest = proof.verificationSourceDigest
+    value.proofRequests = [acceptedProof, proof]
+    const result = assessTargetSource(value)
+    assert.equal(result.accepted.status, 'passed')
+    assert.equal(
+      result.integration.status,
+      proof === sameContractProof ? 'passed' : 'failed'
+    )
+    assert.equal(
+      result.accepted.verificationSourceDigest,
+      acceptedProof.verificationSourceDigest
+    )
+    assert.equal(
+      result.integration.verificationSourceDigest,
+      proof.verificationSourceDigest
+    )
+    assert.equal(result.eligible, proof === sameContractProof)
+  }
+})
+
+test('verification identity absence and forged descriptor or configuration binding cannot grant assessment authority', () => {
+  for (const mutate of [
+    (v) => delete v.acceptedVerificationSourceDigest,
+    (v) => delete v.targetVerificationSourceDigest
+  ]) {
+    const value = clone(input())
+    mutate(value)
+    assert.throws(
+      () => assessTargetSource(value),
+      /invalid selected owner artifacts/
+    )
+  }
+  for (const mutate of [
+    (v) => delete v.proofRequests[1].verificationSourceDigest,
+    (v) => delete v.proofRequests[1].sourceAdmission.verificationSource,
+    (v) =>
+      (v.proofRequests[1].sourceAdmission.verificationSource.digest =
+        '0'.repeat(64)),
+    (v) =>
+      (v.proofRequests[1].record.snapshot.verificationSource.digest =
+        '0'.repeat(64)),
+    (v) =>
+      (v.proofRequests[1].sourceAdmission.configurationDigest = '0'.repeat(64)),
+    (v) => (v.proofRequests[1].sourceAdmission.contractDigest = '0'.repeat(64)),
+    (v) => (v.proofRequests[1].sourceAdmission.mappingVersion = 'other'),
+    (v) => (v.proofRequests[1].sourceAdmission.architectureVersion = 'other')
+  ]) {
+    const value = clone(input())
+    mutate(value)
+    assert.equal(assessTargetSource(value).eligible, false)
+  }
 })
