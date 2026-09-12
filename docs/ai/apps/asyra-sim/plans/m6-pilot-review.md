@@ -285,3 +285,265 @@ assume trajectory keyframes can be merged outside the domain contract. Any next
 production iteration requires a revised reviewed plan and a permanent work-count
 red oracle, with full source, warning/penetration semantics, thresholds, shared
 poses, and the existing budget unchanged.
+
+### Fourth bounded iteration - query-local sibling ordering
+
+The current source-query profile splits obstacle-11 into eight fixed one-second
+windows, each retaining the 20-second test guard and the original 500,000 work
+budget. The five expensive windows use 150,070 / 300,053 / 141,911 / 420,497 /
+164,078 work; membership is small, while static triangle and interval queries
+predominate. Exact same-time/source/pose/control comparisons found only nine
+repeated admitted interval queries totaling 70,069 work. That approximately six
+percent opportunity does not justify treating interval reuse as the main fix.
+A diagnostic reversed complete index order preserved all source offsets,
+components, representatives, leaf states and penetration while reducing the
+2-second window from 300,053 to 183,570 combined work and the 4-second window
+from 420,497 to 309,453. Each includes 3,134 extra reordering units. Reversal is
+a diagnostic control, not the proposed production heuristic.
+
+Step Execution Card: owner remains Inspector `method`; inputs, evidence outputs,
+shared domain poses, full-source and containment contracts are unchanged. The
+first avoidable owner work is source-order descent before establishing useful
+witnesses. One candidate orders only the two child pairs of an existing node
+expansion. Sort by conservative world-axis gap ascending, then squared world-box
+center distance, then original source order. Centers select order only and never
+supply product bounds, witnesses, membership or contact. Leaves gain no scoring.
+No global queue, pose cache, sampled collision route or domain change is allowed.
+
+A pending entry owns its two already computed complete world bounds and their
+threshold-independent world gap, consumed once when that exact entry is popped.
+Its lifetime is one distance/lowerOver call. Every prepared node pair charges its
+existing node work immediately, even if later early exit leaves it unvisited;
+one additional tick charges each sibling ordering decision. Projected rejection
+still runs at pop with the current search threshold, including zero after a
+warning witness. No threshold-dependent projected score is retained. Pending
+entries and all their bounds disappear when the current query returns or throws.
+All children and original triangles remain eligible; a warning still requires
+searching every potentially intersecting region for penetration.
+
+The reviewer and root accepted formal test-first experimentation instead of
+copying the solver or adding test-only production hooks. First add a permanent
+multi-component work oracle that is red on the current source-order method,
+including source permutations, rotation, reversed pairs, late penetration and
+exhaustive truth. After that red and plan review, implement this one candidate.
+Then require those truth/work oracles, prior 576/10,000/50,000 gates, cancellation,
+and both fixed representative windows to pass with material work reduction
+(including the new decision charges). If this candidate fails those conditions,
+remove only this uncommitted candidate's production change and replan; do not
+retain it because it has been written or tune a heuristic to a fixture. Existing
+full-workload red tests and prior immutable evidence remain preserved.
+
+The sibling-order candidate failed its predeclared material-benefit gates. The
+formal baseline was 300,053 versus a 240,000 ceiling and 420,497 versus a 336,000
+ceiling. Candidate work increased to 316,490 and 454,787 respectively, despite
+passing all twelve direct multi-component and prior bounded-work cases (the
+dual-tree combined work was 536, below its unchanged 576 ceiling). There was no
+observed truth regression; the cost hypothesis was wrong. The uncommitted
+production candidate was restored to the reviewed third-slice implementation.
+Its permanent red work tests, diagnostic controls, and bounded output logs in
+tmp/capacity/sibling-order-{red,candidate}.log remain preserved. No alternative
+heuristic was substituted. The next iteration must re-audit the same source
+query owner and revise the plan before any further implementation.
+
+The next diagnostic tests a different canonical decision, not another ordering
+heuristic. Once a real static warning witness exists, the remaining question is
+penetration. A strict positive certificate separating the complete original
+source bounds would exclude penetration everywhere; the current search only
+rechecks subtree bounds at the lowered zero threshold. Passively measure a
+zero-threshold root certificate at the first real triangle warning witness in
+the same two obstacle-11 windows. Keep the baseline traversal running unchanged,
+record each completed query's remaining actual work and every probe axis cost,
+and require the certificate to enclose the real upper witness with no later
+penetration. No production early return is authorized by this diagnostic alone.
+
+The zero-threshold root-box diagnostic disproved this candidate before any
+production edit: the two windows had 30/33 first-warning probes and zero
+positive full-root certificates, costing 120/132 additional logical units with
+no saved work. Baseline completion subsequently found real penetration in
+13/11 of those queries and positive-lower clearance warnings in 17/22. The
+complete convex-query counts were respectively 17/13 penetration, 158/203
+positive-lower warning, 7,408/14,181 separated, and 7/16 uncertain results.
+Unconditional warning early return would therefore be incorrect. The formal
+profile passes its truth checks and is retained in warning-separation-profile
+and tmp/capacity/warning-separation-states.log; this candidate does not proceed
+to production.
+
+A separately authorized passive extension used the already established warning's
+fixed axis to project every original source vertex with outward arithmetic.
+This remained rejection-only, never convex-hull collision geometry or a product
+upper witness. It also produced zero certificates in both windows. The complete
+vertex/norm probe costs were 106,110 and 116,721 units, with zero saved work;
+all baseline penetration and uncertain results remained present. This direction
+is stopped without a production patch (tmp/capacity/vertex-separation-profile.log).
+
+Read-only temporal-contract review also rules out treating a first clearance
+warning as permission to skip subsequent required witness samples: the current
+1.0.2 strategy explicitly requires remaining samples and a final certificate
+unless strict full-interval clearance was proven. The same-pose penetration
+priority and independent collision/clearance product findings remain binding.
+No temporal shortcut or new retained-pose cache was implemented. Production
+remains the independently reviewed third slice pending a new bounded owner plan.
+
+The next same-query reuse audit measured exact completed projected-gap calls with
+both query pose identities, all twelve bounds coordinates and the current
+threshold fixed. Repeated value-equal calls account for 28,299 / 44,370 axis work,
+but 55,573 / 77,417 lookups already exceed that saving before any bound interning
+preparation. Reference-identical repeats account for only 150 / 216 units.
+No query cache is justified by these results.
+
+The next bounded feasibility adapter changes only triangle broad rejection:
+compare the current local-box world bound with the outward extrema of the three
+actual source vertices at the same admitted pose/interval. A triangle and its
+motion are enclosed because each triangle point is a convex combination of the
+three transformed vertices at every admitted time. This never supplies collision
+or contact geometry. Root/node hierarchy, all source triangles and membership
+remain untouched. Account for the replacement's three point transforms versus
+the original three inverse-axis box projections, and separately measure avoided
+axis queries, convex calls and the unchanged logical work budget. There is no
+additional mesh scan or retained pose state. Only material evidence permits a
+reviewed implementation plan and independent enclosure/work regressions.
+
+### Immutable hierarchy partition feasibility
+
+Exact triangle bounds reduce convex calls substantially but logical work only
+3.3% / 6.7%, so no triangle correction is frozen. Complete query-local node source
+extrema, including each transformed source point, bound union and lookup, instead
+exhaust the unchanged combined budget at 500,001 in both windows. It is rejected.
+The existing median hierarchy has 74,977 / 94,423 internal-node visits, of which
+72,372 / 90,716 visit positive-overlap siblings; visit-weighted overlap relative
+to the smaller child's surface area is 0.586 / 0.591. A frequently visited
+1,101-triangle node has 0.829 sibling overlap. These structural observations
+justify one immutable partition probe, not another query ordering heuristic.
+
+The root and independent reviewer froze one source-complete SAH feasibility
+rule before execution: eight fixed bins on each of three local axes, surface
+area times source count, four-triangle leaves, deterministic axis/bin ties and
+source-offset ties. Keep every original triangle exactly once, its vertices,
+component and representative unchanged. Empty/degenerate partitions use the
+existing legal median construction, never a different product geometry.
+Every added scan/assignment/partition/prefix-suffix pass charges each 256 items
+including its final partial chunk; each actual candidate split cost evaluation
+charges one additional unit. Existing preparation charges remain, all new work
+is included in prepared.work, warm runs pay equivalent preparation and failed
+preparation is not retained. No bin, leaf, budget or charging changes may follow
+measurement to make a fixture pass. A formal test-owned rebuilt index probe must
+show total preparation-plus-query benefit, truth and fixed prior work limits
+before a reviewed test-first production plan can be proposed.
+
+### Lazy immutable refinement - bounded implementation experiment
+
+The fully charged eager SAH probe improves the two windows to 169,653 / 234,238
+work but regresses the complete workload: 33 meshes consume 26,081 median plus
+449,840 SAH preparation units and leave coverage partial after 10,149 evaluations.
+Eager preparation is rejected. The next experiment preserves that exact SAH
+algorithm and charging but moves its owner to the first real hierarchy use.
+
+Inspector `method` still owns immutable geometry/hierarchy preparation and all
+query evidence. Distance uses the unchanged median index for complete-root
+rejection and every membership test; only after those admissions does it obtain
+completed refined indices before constructing pending node pairs. lowerOver
+likewise retains root rejection and positive-witness containment admission before
+refinement. Exhaustive mode and already-leaf indices require no refinement.
+Median indices remain intact. No names, poses, times or past query performance
+select the strategy. Completed refinements are keyed only by exact frozen source
+geometry/hierarchy mode in the existing allowed preparation lifetime; invocation
+state records whether the equivalent cold cost has already been charged. Warm
+first use charges that same cost with the current checkpoint. Incomplete/aborted
+refinement is not retained and cannot fall back to median as successful evidence.
+
+Root and independent review authorized a real, uncommitted owner experiment
+instead of fragile test proxies. Permanent tests precede implementation for
+cheap-root and membership bypasses, same geometry in two poses, cold/warm charge
+parity, unused warm refinements, exhaustive bypass and aborted preparation.
+The existing representative and fixed-window work regressions are already red.
+All prior work ceilings remain unchanged; the known approximately 60,000 cold
+refinement cost may itself violate the 50,000 obstacle gate. Such a failure must
+be reported, not hidden with a selector or raised ceiling. Candidate production
+is accepted only after full workload, work-count, truth and independent review;
+otherwise preserve evidence and restore only the uncommitted experiment.
+
+The real lazy-owner experiment passed all four preparation lifetime/admission
+contracts, both twenty-percent fixed-window improvements and the unchanged
+460-of-576 dual-tree gate. It nevertheless consumed 66,482 units in both
+obstacle-10 directions, exceeding the unchanged 50,000 ceiling. The candidate
+is rejected; only its two uncommitted production files were restored. No full
+workload/browser rerun or geometry-dependent selector follows this failure.
+The formal red and candidate outputs remain in
+`tmp/capacity/lazy-hierarchy-red.log` and
+`tmp/capacity/lazy-hierarchy-candidate.log`; the rejected source diff is retained
+as `tmp/capacity/lazy-hierarchy-rejected.patch` for reproducing that historical
+experiment, not as current product implementation.
+
+### Permanent capacity diagnostic commands
+
+Hypothesis profiles are permanent, explicitly selected evidence, not ordinary
+passing capacity gates. Run a specific profile with
+`SIM_CAPACITY_DIAGNOSTICS=1 yarn workspace @asyra/asyra-sim test:local <file> --maxWorkers=1`.
+The selected files are `source-query-cost.test.ts` and the method test files
+ending in `-profile.test.ts`. Each retains its fixed twenty-second case guard.
+Run expensive windows separately by test title when necessary. Negative net
+benefit and partial budget exhaustion are expected diagnostic observations;
+a passing profile assertion does not mean its strategy is adopted or G4 passes.
+The source/node projected-bound adapters describe the earlier feasibility
+hypothesis and must not be cited as an unmodified pre-projection baseline on
+current 1.0.2 production. Current-owner profiles report current production.
+
+`SIM_LAZY_HIERARCHY_EXPERIMENT=1 yarn workspace @asyra/asyra-sim test:local lazy-hierarchy.test.ts --maxWorkers=1`
+selects the rejected lazy-owner contracts. On current production it intentionally
+fails because the rejected refinement API is absent; its recorded candidate
+run passed four contracts but failed the independent 50,000 work ceiling.
+This opt-in preserves the experiment without claiming an absent product feature.
+
+`representative-work.test.ts`, `representative-resource.browser.spec.ts` and
+`sibling-order-work.test.ts` retain their original selection and unchanged work
+assertions. They are actual outstanding capacity/work regressions, not hidden
+hypotheses. The representative goal remains incomplete.
+
+### Median axis mismatch observation
+
+A passive fixed-original-node diagnostic compares the current full-box longest
+axis with the spread of the same `lo + hi` sorting key. It never changes product
+indices or recursively repartitions the hierarchy. Across the two fixed windows,
+600 nodes have mismatched axes, with 13,240 / 18,471 actual world-bound visits
+out of 74,977 / 94,423 internal visits. Hypothetical median partition on the
+other axis changes visit-weighted local overlap from 8,563 to 8,214 and from
+12,195 to 10,770. These small local changes are not actual saved query work;
+current complete query work remains 300,053 / 420,497. The observation does
+not justify another production partition candidate. Diagnostic scans/sorts are
+measurement overhead, not free product preparation or a proposed work budget.
+
+### Single-pass immutable local rotation probe
+
+The next method-owned test-only hypothesis preserves the original median leaves
+and visits each original node once in postorder. The primary description is
+<a href="https://hwrt.cs.utah.edu/papers/hwrt_rotations.pdf" target="_blank" rel="noopener noreferrer">Kopta et al., section 1.2</a>.
+This is immutable source preparation, never pose refitting or contact geometry.
+For children `L=(A,B), R=(C,D)`, the fixed candidate order is swapping R with A,
+R with B, L with C, L with D, then regrouping `(A,C)|(B,D)` and
+`(A,D)|(B,C)`. Invalid candidates are absent. Compare the change in complete
+unnormalized internal surface-area cost, using only changed internal bounds;
+fixed leaf costs cancel. Strictly negative cost is required, ties retain the
+first candidate and no-op takes precedence. Nonfinite costs select no-op.
+No additional passes, new partition rules or triangle/leaf splitting/merging.
+
+Each original node visit, each actual bounds union, every candidate evaluation
+including rejected candidates, and each constructed internal node costs one
+checkpoint. Reuse a candidate's completed bounds when constructing its selected
+node; do not charge or compute the union twice. Preserve all existing median
+preparation charges. Tests must prove original leaf identity exactly once,
+complete offsets/components/representatives, exact child unions, acyclicity,
+unchanged original source index, and independent whole-tree area nonincrease.
+The two existing windows and unchanged 50,000/576 work gates decide whether
+this test-owned probe merits a production plan; observations alone do not.
+
+The rotation probe completes both windows with identical leaf state/penetration
+evidence and unchanged source leaf identities, offsets, components and source
+index. Original preparation is 3,176 and additional charged rotation work is
+14,292. Total work is 266,659 / 380,416 versus 300,053 / 420,497: improvements
+of 11.1% / 9.5%, below the existing 240,000 / 336,000 window ceilings. This
+single-pass candidate is rejected before production or full-workload testing.
+Do not add passes or tune its fixed candidates to rescue it. The three tiny
+rotation oracles pass, including exact work counts 11 / 24 / 21; the two actual
+source windows pass their diagnostic truth checks. These are hypothesis results,
+not completed capacity gates. Evidence: `tmp/capacity/rotation-oracle.log` and
+`tmp/capacity/rotation-preparation-profile.log`. Production remains unchanged.
