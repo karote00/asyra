@@ -140,7 +140,13 @@ width, length, stowed height, lateral clearance, canopy reserve; longitudinal st
 and end; patrol period in minutes; crate payload limit and assumed payload in kg;
 nominal battery Wh, usable fraction, SOC, SOC uncertainty, next-work/return/
 contingency/reserve Wh; dock X/Z. Tool is cucumber support-and-cut or tomato padded
-support-and-cut. Scan side is left/right/both. Lane uses A's strip or shared-side ID.
+support-and-cut. Scan side is left/right/both. A strip mission stores its bay and
+canonical `stripId`; shared-side missions keep their existing bay/side selection.
+B resolves `stripId` to the current ordinal only when calling A's positional lane
+assessment. A missing selected ID produces a null lane report and invalid-route
+reason; no neighbor is substituted. Removing a preceding strip or reordering
+follows the same selected ID and recomputes its current route. Undo/Redo restores
+both canonical strip identity and mission binding through normal state replay.
 Ground and entrance/headland survey use A's explicit unknown states. Numeric ranges
 are finite, ordered and positive where physically required. Invalid edits preserve
 state/history. Farm edits that remove a lane or shorten an interval leave the mission
@@ -176,3 +182,155 @@ M2 acceptance: formal validation, canonical history/concurrent/disposal tests;
 work counts across robot/farm/camera edits; geometry bounds and route visibility
 oracles; app typecheck/lint/build/unit gates; bilingual desktop/mobile browser
 checks with close-up robot/box/dock inspection. No hardware effects or new packages.
+
+## D - M3 deterministic simulation contract (planned)
+
+M3 is an explicitly synthetic, in-browser simulation of the authored mission.
+It does not introduce a trained detector, calibrated contact physics, hardware
+control, backend scheduling or persistence. Existing M2 controls remain design
+inputs. A simulation consumes an immutable admitted mission snapshot; it does
+not rewrite that snapshot or turn simulated observations into field measurements.
+
+### Session and clock
+
+Start, pause, resume, cancel and fault acknowledgement are separate intents
+through the registered app Feature/API boundary. Start admits the mission, route,
+return path, crate and battery evidence before creating a run. Failed admission
+publishes reasons without a partial run or design/history mutation. One runtime
+owns at most one live run and one pending patrol. A replacement first invalidates
+the old run; its queued observations and transitions cannot write into its successor.
+
+The read snapshot contains run identity, mission revision, simulation time,
+lifecycle (idle, running, paused, completed, cancelled, invalidated or faulted),
+current operation, pending-patrol flag, route/checkpoint progress, robot/tool pose,
+fruit inventory, crate ledger, energy state and unresolved reasons. Operational
+phases distinguish travel, look, reobserve, defer, approach, support, cut, verify,
+place, return-to-exchange, exchange, return-to-charge, dock, charge and undock.
+A lifecycle fault takes priority over the operation; acknowledgement clears no
+missing evidence and does not itself resume motion.
+
+Simulation time advances only by explicit finite, nonnegative clock inputs;
+backwards or non-finite time is rejected without state change. Scheduling uses
+that clock, not requestAnimationFrame, Date.now or browser timers. Rendering may
+interpolate presentation between completed poses but cannot advance the session.
+Pause freezes motion and operation progress, while explicit clock inputs may
+continue to advance scheduling time and expire evidence. Resuming does not apply
+paused elapsed time to motion or operation deadlines; only subsequent active
+advancement can progress them. Resume requires current admission. Design edits and
+history replay that change farm/robot/mission inputs invalidate the run. Undoing
+the edit cannot resurrect its old run. Camera, locale and panel changes do not
+invalidate it. Reload and disposal terminate the transient session.
+
+Patrol deadlines are measured from scheduled starts. Deadlines missed during a
+busy or paused session coalesce to one pending patrol, never a catch-up burst.
+When work can resume, the pending patrol still requires fresh dispatch admission.
+Each active clock advance processes crossed finite route/checkpoint events in order;
+it may not skip an obstacle, pick confirmation or charging interlock. Identical
+admitted inputs and ordered intents produce identical state and event results.
+
+### Observation and action evidence
+
+Before a run exists, dispatch evidence binds to the canonical mission and scene
+revisions, simulation time and validity interval, not a prospective run ID. It
+contains explicitly synthetic route/return/dock, ground/entrance/headland, crate
+and battery evidence needed by A and motion admission. D validates that bundle
+and calls A with those admitted synthetic inputs before creating the run. B
+design reports retain their unknown evidence and are not rewritten as clearance.
+Missing, expired or mismatched pre-run evidence holds dispatch without creating
+a run. Accepted evidence is bound to the newly created run for later use and
+expires normally; it does not become a field survey or bypass motion queries.
+
+An in-run observation names its run, mission revision, target or route segment, source
+(synthetic input or synthetic observation adapter), simulation observation time
+and explicit validity interval. Target observations include stable fruit identity,
+cultivar, pose, maturity, visibility/coverage, stem identity/uncertainty and the
+approach/extraction corridor evidence. Unknown values remain explicit unknowns.
+Duplicate target observations refine evidence; they do not create another fruit.
+Reject malformed, future-dated, wrong-run or wrong-revision evidence. Expired or
+missing evidence inhibits the dependent action and leaves an unresolved reason.
+No hardcoded sensor timeout or detector confidence is a measured physical limit.
+
+The observation adapter is the sole boundary that can inspect authored synthetic
+scene truth. It must evaluate the requested viewpoint and occlusion before
+returning observations and mark unknown coverage where occluded. A synthetic
+scenario may explicitly inject observations, but must label them as assumptions.
+The session never enumerates hidden fruit and treats that enumeration as a
+successful scan. Hiding a render layer does not remove the object from sensing
+or collision geometry. A row without observed fruit is not known empty.
+
+Action confirmations are separate, run/target/action-bound observations: support,
+cut/separation, retention, placement, crate identity/tare/latch, dock alignment,
+charging contacts and charger status. A command or elapsed time is not its own
+confirmation. Wrong-target, duplicate or late confirmation cannot repeat an
+inventory transfer. Stale sensing, uncertain stem, lost retention and contact
+faults follow A's priority policy and require renewed evidence before resumption.
+
+### Fruit, crate and energy conservation
+
+Each stable target has one physical simulation disposition: attached, supported,
+held, boxed or dropped. Detached/held requires both cut and retention confirmation.
+Failed or deferred work records its reason alongside the last confirmed disposition;
+it cannot silently erase a target or convert uncertainty into a boxed fruit.
+Missing cut/retention evidence leaves the plant's confirmed fruit present.
+A confirmed drop after detachment is explicit. Every transition retains run ID,
+target ID, evidence and simulation time. Crate and held masses are separate;
+transfer to a crate occurs once after placement confirmation. The sum of those
+exclusive dispositions conserves all admitted targets across replay and faults.
+
+Crates record identity, cultivar compatibility, valid tare/latch, mass/volume
+capacity, measured or explicitly synthetic fill and excluded/damaged/unknown
+quality. A's load screen runs before another pick and after changed load evidence;
+volume, incompatible crop or unresolved damage can exclude placement even below
+mass capacity. Physical damage remains unknown without a calibrated contact model.
+Exchange immobilizes the base and inhibits the tool; new crate ID, tare and latch
+confirmation are required before explicit resumption. Removed crates retain their
+inventory ledger; exchanging cannot erase previously boxed fruit.
+
+Fresh synthetic battery evidence and declared energy estimates feed A before
+start, each travel segment and each pick. Return and reserve cannot be spent to
+meet a patrol deadline. Return requires an admitted path and stowed tool; absent
+return or dock evidence holds the run. Dock/charge/undock require their individual
+confirmations. Charging contacts inhibit traction and arm motion. Insufficient
+budget retains a pending patrol. Charger, stale SOC, blocked dock or contact
+faults remain faults; no automatic energized redocking or restart is allowed.
+
+### Motion and collision admission
+
+A's straight-lane screen is not motion clearance. Every proposed base, arm/tool,
+carried-fruit, extraction and placement movement requires a completed swept-motion
+query against the authored scene and current dynamic observations. Pre-run queries
+bind to mission/scene revisions, start/end poses and simulation interval. Queries
+after run creation additionally bind to that run identity; results report
+clear, blocked or unknown, affected bodies and reasons. Only complete clear
+results admit that exact movement. No endpoint-only clearance, missing-body
+clearance, implicit alternative route or arbitrary pass-through is permitted.
+
+The query includes chassis, mast/arm/tool, retained crate and carried fruit against
+structure, net strands, crop/leaf envelopes and explicit obstacles. Moving leaves
+need their interval envelope; missing motion bounds produce unknown clearance.
+Intended support contact must be separately identified and confirmed; it cannot
+exempt unrelated leaf/net contact. Unknown contact forces are not a damage model.
+Geometrically blocked or unreachable cuts/extractions remain deferred/unresolved;
+pose projection cannot teleport or invent a successful trajectory.
+
+### M3 acceptance
+
+The ordinary app UI must let users provide or select clearly labeled synthetic
+scenario evidence, advance the simulation clock and inspect/control the session.
+Supported admitted scenarios must actually progress through the normal observation,
+motion-query and projection path; an always-unknown session, headless-only API or
+always-clear adapter does not satisfy M3. Synthetic assumptions remain visible
+and never become measured sensor or hardware evidence.
+
+Formal scenarios cover valid, exact-boundary, empty, invalid, stale and interrupted
+sessions; finite event traversal; schedule coalescing; deterministic replay;
+run replacement/disposal; collision coverage; no hidden-fruit detection; target and
+mass conservation; crate exchange; charge interlocks and priority faults. Runtime
+tests prove normal Feature admission and document invalidation. Read subscriptions,
+camera and locale perform no simulation, assessment or geometry preparation.
+Immutable geometry preparation follows scene/definition changes, not simulation
+ticks; current pose/contact queries still rerun for changed motion inputs.
+Close-up browser review must show the same admitted arm/net/crate and fruit states
+in both languages and desktop/mobile layouts. App unit/typecheck/lint/build,
+naming and current-head CI must pass. M3 completion leaves M4-M6 planned and does
+not certify a real harvesting system.
