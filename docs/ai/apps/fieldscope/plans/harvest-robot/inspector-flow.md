@@ -152,6 +152,37 @@ source; D later owns precise support/contact and interval-query decisions.
 Lifetime: local station geometry once per projection; installed source per dock
 X/Z. Repeated consumers reuse the completed product. No additional cache.
 
+### C source material-region provenance
+
+Owner: canonical C source construction/preparation and completed handoff.
+Inputs: existing primitive operations and unchanged near/distant source arrays.
+Outputs: immutable source-local region identities, original triangle ranges and
+producer-declared sheet/closed-solid/open-shell semantics, carried with original
+robot, cultivar, farm and installed station products. No geometric replacement.
+Conditions: every triangle covered exactly once; source closure evidence precedes
+closed-solid claims. Missing/overlapping/unclassified metadata is unavailable.
+Mixed builders preserve primitive regions; no whole-plant or layer shortcut.
+Allowed: original TriangleBuilder construction provenance, source producer region
+declarations, existing spatial shape admission and C lifecycle/products.
+Forbidden: new caps/welding/thickness, changed source formulas or materials,
+ray/occupancy decisions, blanket physical exclusions, manufactured watertight fruit,
+per-frame generation and private diagnostic geometry.
+Boundary: domain/source-occupancy.ts (app-local region contract/admission),
+domain/mesh.ts (record original primitive ranges), domain/robot-model.ts,
+domain/crop-models.ts, domain/crop-fruit.ts and domain/crop-hairs.ts (metadata-only
+producer declarations); render-app/site-projection.ts, cultivation-projection.ts,
+site-geometry.ts and robot-projection.ts (same completed metadata handoff).
+domain/robot-kinematics.ts may only admit/detach region metadata in admitPart,
+preserving already admitted products; FK, body assignment and limits are unchanged.
+Direct formal source/render/runtime tests and fixtures may adopt the new metadata
+without changing unrelated behavior or geometry expectations. API_SURFACES and
+existing robot/crop browser checks describe/prove the handoff. No engine/framework,
+B settings, D production, session/action or UI behavior change in this C segment.
+Spec: C source material-region provenance; original C geometry/retention DoD.
+Failure owner: C rejects incomplete provenance; D later resolves query ambiguity.
+Lifetime: original source definition/scene, with existing installed-pose retirement.
+No new cache; metadata is produced once with canonical geometry and reused.
+
 ## D - Deterministic simulation (M3, planned)
 
 Owner: app simulation session, composed through the registered Core Feature/API
@@ -335,5 +366,7 @@ for missing state or unresolved geometric ambiguity; observation interpretation
 and full interval collision remain their subsequent owners.
 Lifetime: current shared source; dynamic transforms/validity belong to the batch,
 FK once per batch, query-local work reset per batch. No retained query results.
-Cache dimensions: none yet. Any retained index requires measured same-source work,
-exact uncached equivalence and lifetime/bounds/disposal proof before implementation.
+Cache dimensions: none in this ray slice. Measured repeated bound scans are the
+input to a subsequent QueryGeometry preparation step shared by ray and collision,
+not authorization for a ray-local cache. That next card must define source lifetime,
+bounds/disposal and uncached equivalence before implementation.

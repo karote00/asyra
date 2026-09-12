@@ -597,3 +597,55 @@ naming and independent readiness/code review. No presentation change/browser gat
 Stop for new optical/hardware/force parameters, missing true source/body ownership,
 a needed out-of-scope contributor, or geometric ambiguity that cannot be honestly
 reported. Uncertain geometry stays unknown rather than admitting a false result.
+
+Near-ray source profile before optimization: six actual C rays performed 378
+shape-bound preparations / 612,096 vertex visits, 15,438 instance tests and 105,702
+triangle tests per batch. Repeating the same source repeated all bound scans;
+two batches took about 124 ms in the bounded test. Exact controlled cases and
+real roof/station hits pass; possible source containment stays unknown. The formal
+far-ambiguity regression first failed and now proves uncertainty strictly behind
+a known nearer hit cannot erase that hit.
+
+Next owner step after uncached ray closure: QueryGeometry prepares shared local
+shape bounds for ray and future collision. The attempted zero-repeat-bounds formal
+expectation was recorded red against the current uncached query; no ray-local cache
+was implemented. A separate readiness card must bind shared bounds to exact source
+identity, retirement/disposal and uncached equivalence. No BVH or ray-result cache.
+
+### Revised ray iteration - source occupancy before unified numerical predicates
+
+The ray candidate is paused. Permanent failures show greenhouse air was treated
+as uncertain material by aggregate open-surface winding, and near-parallel, edge
+barycentric and distance-end arithmetic can become false misses. Source region
+semantics are the first missing owner output; more ray-local layer or EPS patches
+cannot repair that boundary. Discovery stays limited to these failed predicates,
+their actual source constructors, direct consumers and the fixed formal cases.
+
+Next C Step Card: product/Inspector C source material-region provenance. Consume
+unchanged construction operations; emit complete primitive region ranges and
+sheet/closed-solid/open-shell declarations with the original admitted products.
+Allowlist is the explicit C provenance section, including direct metadata fixtures.
+No D production resumes in this segment. Box and any proven closed construction
+have material interiors; unverified seams/poles/open tubes remain open-shell, and
+thin film/foliage/calyx regions remain surfaces without filled enclosing air.
+No source hash, cap, vertex or biological quality assumption changes.
+
+Test-first region coverage/closure declarations and real-source handoff; preserve
+all robot/crop source hash oracles, fruit partition/late-hair detail, lifecycle and
+work counts. Direct rig admission must isolate caller-owned mutable region arrays
+without changing FK or limits; prove mutation isolation in its permanent test.
+Gates: focused source tests, app type/lint/naming, existing source,
+render and runtime regressions, and same-app source visual checks. The intentionally
+paused D numerical tests stay recorded red and are not claimed as passed C evidence.
+Independent readiness and code review precede resuming the next D owner.
+Stop for a geometry change, missing source owner or a new physical parameter.
+
+Then a separate D revised predicate card will use one conservative arithmetic
+policy across normalization, slab rejection, plane/determinant, barycentric and
+range tests. Only conclusively outside intervals may become misses; uncertainty
+must not be clamped to a fabricated hit. Source-region occupancy is independent
+of this numerical policy. Preserve nearest-hit identity and the exact range end;
+prove all existing controlled rays plus the three recorded non-axis-aligned
+failures before broader gates. Shared local bounds remain a subsequent
+QueryGeometry owner step; no ray-local cache is introduced. This revised order
+replaces the earlier attempt to close the uncached ray candidate directly.

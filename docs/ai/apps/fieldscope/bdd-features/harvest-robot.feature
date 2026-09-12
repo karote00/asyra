@@ -471,3 +471,18 @@ Feature: Harvest robot feasibility and supervised harvesting
     When its query is requested
     Then it cannot produce a valid within-range miss
     And no row is declared empty or safe to traverse
+
+  @M3
+  Scenario: Thin greenhouse film encloses air without making that air material
+    Given the original film triangles are declared as source sheet regions
+    When a ray starts in the greenhouse air and reaches the film
+    Then the film remains an obstruction surface
+    And its enclosed air is not classified as occupied film material
+
+  @M3
+  Scenario: Mixed source construction preserves each material region
+    Given a source combines closed boxes, open tube shells and thin sheets
+    When its canonical material provenance is prepared
+    Then every original triangle belongs to exactly one declared source region
+    And unverified closure is not promoted to a watertight solid
+    And original fruit spines, calyx and geometry remain unchanged

@@ -344,6 +344,46 @@ source coordinates/materials, distinct station pieces, installed placement,
 retirement on dock movement/disposal and zero extra station/crop generation on
 reads or unrelated edits. Preserve existing robot/browser projection checks.
 
+## C - Source material-region provenance
+
+C records material-region identity and original triangle-index ranges during the
+same source construction that produces the visible geometry. Each source triangle
+belongs to exactly one region; original vertex sharing, index order, attributes,
+fruit ownership and materials remain unchanged. Mixed meshes retain distinct
+primitive regions rather than receiving one guessed classification for the entire
+plant, greenhouse or station. Region identity is local to its source revision.
+
+A sheet supplies a two-sided physical surface but no enclosed material volume:
+film, leaf blades and calyx sheets can obstruct a ray without filling the air they
+enclose. A closed-solid region explicitly declares material interior supported by
+its actual source closure. A box is a closed primitive; a capped cylinder may only
+receive that classification when its source closure oracle supports it. An open
+shell supplies physical surface geometry with unresolved material interior; uncapped
+tubes, unverified fruit-pole/seam closure, fine spine/hair shells and incomplete
+mixed terrain regions cannot be silently promoted to watertight solids.
+
+The source producer declares regions from construction operations, not a D layer,
+name, opacity or winding heuristic. Raw ranges require an explicit region; missing,
+overlapping or incomplete metadata is unavailable, never assumed sheet or solid.
+No caps, welded vertices, thickness, force or contact coefficients are added to
+make a region pass. Fruit calyx/pedicel/spines retain their original partitions;
+separation never creates a new closure claim. Distinct crate walls/floor/rims and
+station boxes remain separate material regions, preserving open cavities.
+
+C hands immutable regions alongside the same admitted shape/instance products to
+shared query consumers. Regions survive view/clock/pose reads without regeneration
+and retire with their source. Later D queries test occupancy per declared region:
+sheet interiors do not become material, closed parts do not fill one aggregate
+box, and unresolved shell interior remains explicit. All regions still contribute
+their original ray/swept surfaces; provenance is not a contact exemption.
+
+Acceptance: permanent complete/disjoint triangle coverage, explicit box/capped or
+unverified-cylinder/open-tube/sheet cases and mixed-source region identity. Original
+robot and all cultivar near/distant geometry/material hashes remain exact, including
+spines, calyx and late hairs. Canonical C scene/rig/station handoffs retain metadata,
+original shapes and preparation counts. The paused D room-air and numerical ray
+regressions are closed only in the subsequent D predicate segment.
+
 ## D - M3 deterministic simulation contract (planned)
 
 M3 is an explicitly synthetic, in-browser simulation of the authored mission.
