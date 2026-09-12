@@ -923,6 +923,55 @@ source/schema admission. Original static cases remain unchanged. Reuse the same
 source/forward-frame preparation with one required FK per batch, no geometry or
 bounds rebuilding and no persistent query cache.
 
+### Fixed-joints whole-source surface coverage
+
+D may inventory and query the complete source surface domain for a proposed
+fixed-joints, fixed-heading base translation. Every original C robot part,
+including tool, crate and tires, translates by the same declared world displacement.
+Every physical farm/dock instance remains at its installed placement under explicit
+throughout-interval local-shape assumptions. All distinct robot-part self pairs
+are included, including different parts belonging to the same rigid body. No
+same-body, joint or support contact is silently exempted. A part's own adjacent
+triangles are not tested against themselves. This scope requires an explicit
+empty-held synthetic scenario; unknown retention stays unknown. Later session
+admission must match actual retention, pose and mission to these assumptions.
+
+Compute mesh/instance and triangle Cartesian-product counts from the issued source
+inventory before narrow-pair traversal. A caller-declared nonnegative integer
+triangle-pair budget limits predicate work. Shared original local bounds, transformed
+conservatively through the existing query frame and full linear displacement, may
+strictly exclude a complete mesh-pair domain. Surviving bounds never prove contact,
+material occupancy or separation. Each tested original triangle pair uses the
+existing continuous predicate. No temporal samples replace full-interval evidence.
+
+The report accounts for total pairs, complete swept-bounds exclusions, tested
+relations and unvisited pairs. Coverage is complete only if every required original
+triangle pair was either strictly excluded or actually queried; unknown predicates
+remain unknown even with complete traversal. Budget exhaustion that leaves unvisited pairs cannot report
+complete or surface-separated. Exactly consuming the budget with no unvisited
+pairs, or excluding every pair by strict bounds with zero predicate budget,
+can still be complete. Supported intersection may be reported alongside
+explicitly incomplete coverage; it cannot hide unvisited obligations. Keep at most
+one intersection and one uncertainty representative with original source/region
+witnesses, not a global collision ledger. All source currentness checks occur before
+work and before publication. Unsupported non-representable inventory counts reject
+before traversal rather than returning a fabricated total.
+
+This report does not admit movement. Even complete surface separation leaves
+closed-solid containment, unresolved open-shell occupancy, intended contact and
+carried-fruit coverage as separate obligations. Unknown geometry is never turned
+into free material. A tire/joint/tool contact report neither permits penetration
+nor proves forces, preserved spines/calyx or acceptable market quality.
+
+Acceptance: independently enumerated complete pair-domain counts, all real C
+robot parts and hidden physical farm/dock instances, same-body overlaps, a
+mid-interval surface crossing, unknown geometry and zero/small-budget incomplete
+reports. Small admitted source fixtures prove complete traversal; actual C inventory
+and bounded profile prove scope/cost without traversing an excessive Cartesian
+product. Bounds use the original prepared output, with one forward placement
+product per query and one required FK. No C generation, local bounds regeneration,
+retained world geometry, persistent query cache or unmeasured index is introduced.
+
 ### Motion and collision admission
 
 A's straight-lane screen is not motion clearance. Every proposed base, arm/tool,
