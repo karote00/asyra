@@ -897,3 +897,14 @@ unit/type/lint/naming/build and independent review. Stop for needed rotation,
 missing interval assumption or a proof that requires source/body/contact scope
 outside this primitive. Full coverage/volume/contact and articulated planning
 remain subsequent prerequisites before normal session motion can be admitted.
+
+Continuous fixed-rotation source-pair sweep is implemented: 13 missing-method
+regressions failed first; 32 direct cases now pass, including the 17 static
+controls and exact mid-interval/brief/endpoint contact, coplanar motion, common
+and opposing displacement, incompatible axis windows and nonpoint guaranteed/
+separated/unknown cases. Large finite simulation-time bounds remain conservative.
+Actual robot/dock sweeps reuse one FK, three frames and 12 selected vertex reads
+without bounds/source rebuilding. All 390 app unit tests, typecheck/build, lint
+and naming pass; independent code review found no issue. A lint-only Fraction
+interface correction changed no runtime behavior. This closes selected continuous
+surface evidence, not articulated paths, volume/full-body/contact admission or UI.

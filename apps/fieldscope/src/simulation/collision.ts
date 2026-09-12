@@ -23,6 +23,7 @@ import {
   multiply,
   divide,
   dyadic,
+  fractionInterval,
   type Interval
 } from './query-arithmetic'
 
@@ -40,6 +41,26 @@ export interface SurfaceBatch {
   leaves: 'source-pose' | 'unknown'
   fruits: 'all-attached' | 'unknown'
   pairs: { first: SurfaceReference; second: SurfaceReference }[]
+}
+export interface SurfaceSweepBatch extends Omit<
+  SurfaceBatch,
+  'time' | 'leaves' | 'fruits' | 'pairs'
+> {
+  from: number
+  until: number
+  leaves: 'source-pose-throughout' | 'unknown'
+  fruits: 'all-attached-throughout' | 'unknown'
+  pairs: {
+    first: SurfaceReference
+    second: SurfaceReference
+    firstTranslation: Point3
+    secondTranslation: Point3
+  }[]
+}
+export interface SurfaceSweepResult extends Omit<SurfaceResult, 'status'> {
+  readonly status: 'swept-separated' | 'swept-intersection' | 'unknown'
+  readonly contactFraction?: Interval
+  readonly contactTime?: Interval
 }
 export interface SurfaceWitness {
   readonly mesh: GeometryMesh
@@ -105,20 +126,16 @@ const point = (p: unknown, size: number): p is number[] =>
   Array.isArray(p) &&
   p.length === size &&
   Array.from({ length: size }, (_, i) => Number.isFinite(p[i])).every(Boolean)
-function readBatch(raw: SurfaceBatch) {
-  const input = structuredClone(raw)
+function validateState(
+  input: Pick<SurfaceBatch, 'source' | 'validFrom' | 'validUntil' | 'robot'>
+) {
   if (
     !input ||
     input.source !== 'synthetic' ||
-    !Number.isFinite(input.time) ||
-    input.time < 0 ||
     !Number.isFinite(input.validFrom) ||
     input.validFrom < 0 ||
     !Number.isFinite(input.validUntil) ||
-    input.validUntil <= input.validFrom ||
-    !['source-pose', 'unknown'].includes(input.leaves) ||
-    !['all-attached', 'unknown'].includes(input.fruits) ||
-    !Array.isArray(input.pairs)
+    input.validUntil <= input.validFrom
   )
     fail()
   if (input.robot !== null) {
@@ -141,6 +158,40 @@ function readBatch(raw: SurfaceBatch) {
     )
       fail()
   }
+}
+function readBatch(raw: SurfaceBatch) {
+  const input = structuredClone(raw)
+  validateState(input)
+  if (
+    !Number.isFinite(input.time) ||
+    input.time < 0 ||
+    !['source-pose', 'unknown'].includes(input.leaves) ||
+    !['all-attached', 'unknown'].includes(input.fruits) ||
+    !Array.isArray(input.pairs)
+  )
+    fail()
+  return freeze(input)
+}
+function readSweep(raw: SurfaceSweepBatch) {
+  const input = structuredClone(raw)
+  validateState(input)
+  if (
+    !Number.isFinite(input.from) ||
+    input.from < 0 ||
+    !Number.isFinite(input.until) ||
+    input.until <= input.from ||
+    !['source-pose-throughout', 'unknown'].includes(input.leaves) ||
+    !['all-attached-throughout', 'unknown'].includes(input.fruits) ||
+    !Array.isArray(input.pairs)
+  )
+    fail()
+  for (const pair of input.pairs)
+    if (
+      !pair ||
+      !point(pair.firstTranslation, 3) ||
+      !point(pair.secondTranslation, 3)
+    )
+      fail()
   return freeze(input)
 }
 function witness(
@@ -181,9 +232,14 @@ function witness(
 function exactRelation(
   a: Triangle,
   b: Triangle,
-  work: SurfaceWork
-): SurfaceResult['status'] | undefined {
-  const inputs = [...a.flat(), ...b.flat()]
+  work: SurfaceWork,
+  translations?: readonly [Point3, Point3]
+): { status: SurfaceResult['status']; fraction?: Interval } | undefined {
+  const inputs = [
+    ...a.flat(),
+    ...b.flat(),
+    ...(translations?.flat().map(interval) ?? [])
+  ]
   if (!inputs.every((value) => finite(value) && value.low === value.high))
     return undefined
   work.exactPredicates++
@@ -225,7 +281,7 @@ function exactRelation(
     an = product(ae[0], ae[1]),
     bn = product(be[0], be[1])
   if (an.every((value) => value === 0n) || bn.every((value) => value === 0n))
-    return 'unknown'
+    return { status: 'unknown' }
   // Triangle face normals and all edge crosses are the SAT axes. In-plane
   // edge normals additionally cover the lower-dimensional coplanar case.
   const axes = [
@@ -235,6 +291,23 @@ function exactRelation(
     ...ae.map((x) => product(an, x)),
     ...be.map((x) => product(bn, x))
   ]
+  interface Fraction {
+    n: bigint
+    d: bigint
+  }
+  let enter: Fraction = { n: 0n, d: 1n },
+    exit: Fraction = { n: 1n, d: 1n }
+  const compare = (x: Fraction, y: Fraction) => x.n * y.d - y.n * x.d
+  const relative = translations
+    ? sub(ints.slice(18, 21) as Exact, ints.slice(21, 24) as Exact)
+    : undefined
+  const constrain = (gap: bigint, speed: bigint) => {
+    if (speed === 0n) return gap >= 0n
+    const bound = speed > 0n ? { n: -gap, d: speed } : { n: gap, d: -speed }
+    if (speed > 0n && compare(bound, enter) > 0n) enter = bound
+    if (speed < 0n && compare(bound, exit) < 0n) exit = bound
+    return compare(enter, exit) <= 0n
+  }
   for (const axis of axes) {
     if (axis.every((value) => value === 0n)) continue
     work.axes++
@@ -242,9 +315,21 @@ function exactRelation(
       bp = second.map((p) => project(axis, p))
     const min = (p: bigint[]) => p.reduce((x, y) => (x < y ? x : y)),
       max = (p: bigint[]) => p.reduce((x, y) => (x > y ? x : y))
-    if (max(ap) < min(bp) || max(bp) < min(ap)) return 'surface-separated'
+    if (relative) {
+      const speed = project(relative, axis)
+      if (
+        !constrain(max(ap) - min(bp), speed) ||
+        !constrain(max(bp) - min(ap), -speed)
+      )
+        return { status: 'surface-separated' }
+    } else if (max(ap) < min(bp) || max(bp) < min(ap))
+      return { status: 'surface-separated' }
   }
-  return 'surface-intersection'
+  if (!translations) return { status: 'surface-intersection' }
+  const fraction = fractionInterval(enter.n, enter.d)
+  return finite(fraction)
+    ? { status: 'surface-intersection', fraction }
+    : { status: 'unknown' }
 }
 function crossing(segment: [Vector, Vector], triangle: Triangle) {
   const direction = difference(segment[1], segment[0]),
@@ -278,9 +363,9 @@ function relation(
   const exact = exactRelation(a, b, work)
   if (exact)
     return {
-      status: exact,
+      status: exact.status,
       reason:
-        exact === 'unknown'
+        exact.status === 'unknown'
           ? 'degenerate-source-triangle'
           : 'exact-surface-relation'
     }
@@ -319,13 +404,121 @@ function relation(
   return { status: 'unknown', reason: 'uncertain-surface-pair' }
 }
 
+interface SweepProof {
+  status: SurfaceResult['status']
+  reason: string
+  fraction?: Interval
+}
+function sweptRelation(
+  a: Triangle,
+  b: Triangle,
+  translations: readonly [Point3, Point3],
+  work: SurfaceWork
+): SweepProof {
+  if (![...a.flat(), ...b.flat()].every(finite))
+    return { status: 'unknown', reason: 'unbounded-sweep-arithmetic' }
+  const exact = exactRelation(a, b, work, translations)
+  if (exact)
+    return {
+      ...exact,
+      reason:
+        exact.status === 'unknown'
+          ? 'degenerate-or-unbounded-sweep'
+          : 'exact-continuous-interval'
+    }
+  const ae = edges(a),
+    be = edges(b),
+    an = cross(ae[0], ae[1]),
+    bn = cross(be[0], be[1])
+  if (!an.some(nonzero) || !bn.some(nonzero))
+    return { status: 'unknown', reason: 'uncertain-source-triangle' }
+  const axes = [
+    vector([1, 0, 0]),
+    vector([0, 1, 0]),
+    vector([0, 0, 1]),
+    an,
+    bn,
+    ...ae.flatMap((x) => be.map((y) => cross(x, y))),
+    ...ae.map((x) => cross(an, x)),
+    ...be.map((x) => cross(bn, x))
+  ]
+  const relative = difference(vector(translations[0]), vector(translations[1]))
+  const possible = { low: 0, high: 1 },
+    guaranteed = { low: 0, high: 1 }
+  const constrain = (
+    window: { low: number; high: number },
+    gap: Interval,
+    speed: Interval,
+    inner: boolean
+  ) => {
+    const g = inner ? gap.low : gap.high,
+      v = inner ? speed.low : speed.high
+    if (!Number.isFinite(g) || !Number.isFinite(v)) {
+      if (inner) window.low = Infinity
+      return
+    }
+    if (v === 0) {
+      if (g < 0) window.low = Infinity
+      return
+    }
+    const bound = divide(interval(-g), interval(v))
+    if (!finite(bound)) {
+      if (inner) window.low = Infinity
+      return
+    }
+    if (v > 0) window.low = Math.max(window.low, inner ? bound.high : bound.low)
+    else window.high = Math.min(window.high, inner ? bound.low : bound.high)
+  }
+  const extent = (t: Triangle, axis: Vector, maximum: boolean): Interval => {
+    const values = t.map((p) => dot(axis, p)),
+      select = maximum ? Math.max : Math.min
+    return {
+      low: select(...values.map((v) => v.low)),
+      high: select(...values.map((v) => v.high))
+    }
+  }
+  for (const axis of axes) {
+    work.axes++
+    const speed = dot(relative, axis),
+      reverse = { low: -speed.high, high: -speed.low }
+    const gaps = [
+      subtract(extent(a, axis, true), extent(b, axis, false)),
+      subtract(extent(b, axis, true), extent(a, axis, false))
+    ]
+    for (let i = 0; i < 2; i++) {
+      const slope = i ? reverse : speed
+      constrain(possible, gaps[i], slope, false)
+      constrain(guaranteed, gaps[i], slope, true)
+    }
+    if (possible.low > possible.high)
+      return {
+        status: 'surface-separated',
+        reason: 'disjoint-continuous-time-constraints'
+      }
+  }
+  // This exact floating witness satisfies every guaranteed inequality at the
+  // same time. A midpoint of the outer possible interval would not be a proof.
+  if (guaranteed.low <= guaranteed.high)
+    return {
+      status: 'surface-intersection',
+      reason: 'common-guaranteed-time',
+      fraction: interval(guaranteed.low)
+    }
+  return { status: 'unknown', reason: 'uncertain-continuous-time-constraints' }
+}
+
 /** Selected surface evidence only; never full-body, contact or movement clearance. */
 export class SurfaceQueries {
   constructor(private readonly geometry: QueryGeometry) {}
-  query(source: GeometrySource, raw: SurfaceBatch) {
-    this.geometry.read(source)
-    const input = readBatch(raw)
-    const pairs = Array.from(input.pairs, (pair) => {
+  private prepare(
+    source: GeometrySource,
+    references: readonly {
+      first: SurfaceReference
+      second: SurfaceReference
+    }[],
+    robot: SurfaceBatch['robot']
+  ) {
+    const pairs = Array.from(references, (pair) => {
       if (!pair) fail()
       return {
         first: witness(source, pair.first),
@@ -342,19 +535,89 @@ export class SurfaceQueries {
       shapeBounds: 0,
       regionBounds: 0
     }
-    const publish = (results: SurfaceResult[]) => {
-      this.geometry.read(source)
-      return Object.freeze({
-        geometry: source,
-        input,
-        results: Object.freeze(results.map((result) => Object.freeze(result))),
-        work: Object.freeze(work)
-      })
-    }
     const hasRobot = pairs.some(
       (pair) =>
         pair.first.mesh.frame === 'robot' || pair.second.mesh.frame === 'robot'
     )
+    const triangles = () => {
+      const transforms = new Map<GeometryMesh['origin'], RigidTransform>()
+      if (hasRobot && robot) {
+        const rig = source.receipt.robot.rig
+        if (!rig) fail()
+        const pose = evaluateRobotPose(rig, robot.joints)
+        work.fk++
+        for (const part of pose.parts)
+          transforms.set(part.source, part.transform)
+      }
+      const frames = new Map<object, Frame>()
+      const forward = (key: RigidTransform) => {
+        let value = frames.get(key)
+        if (!value) {
+          value = prepareQueryForwardFrame(key)
+          frames.set(key, value)
+          work.frames++
+        }
+        return value
+      }
+      const triangle = (item: SurfaceWitness): Triangle => {
+        const mesh = item.mesh,
+          shape = mesh.shape
+        if (shape.kind !== 'triangles') fail()
+        const chain: Frame[] = []
+        const placement = mesh.descriptor?.instances?.[item.instance]
+        if (placement) {
+          let frame = frames.get(placement)
+          if (!frame) {
+            frame = prepareQueryInstanceFrame(placement)
+            frames.set(placement, frame)
+            work.frames++
+          }
+          chain.push(frame)
+        }
+        if (mesh.frame === 'robot') {
+          const body = transforms.get(mesh.origin)
+          if (!body || !robot) fail()
+          chain.push(forward(body), forward(robot.base))
+        } else {
+          if (!mesh.descriptor) fail()
+          chain.push(forward(mesh.descriptor))
+        }
+        return [0, 1, 2].map((corner) => {
+          const offset = shape.indices[item.triangle * 3 + corner] * 3
+          work.vertexVisits++
+          let p = vector([
+            shape.positions[offset],
+            shape.positions[offset + 1],
+            shape.positions[offset + 2]
+          ])
+          for (const frame of chain) p = transformQueryPoint(frame, p)
+          return p
+        }) as Triangle
+      }
+
+      return triangle
+    }
+    return { pairs, work, hasRobot, triangles }
+  }
+  private publish<I, R>(
+    source: GeometrySource,
+    input: I,
+    work: SurfaceWork,
+    results: R[]
+  ) {
+    this.geometry.read(source)
+    return Object.freeze({
+      geometry: source,
+      input,
+      results: Object.freeze(results.map((result) => Object.freeze(result))),
+      work: Object.freeze(work)
+    })
+  }
+  query(source: GeometrySource, raw: SurfaceBatch) {
+    this.geometry.read(source)
+    const input = readBatch(raw),
+      prepared = this.prepare(source, input.pairs, input.robot),
+      { pairs, work, hasRobot } = prepared
     if (
       input.time < input.validFrom ||
       input.time >= input.validUntil ||
@@ -362,71 +625,89 @@ export class SurfaceQueries {
       input.fruits !== 'all-attached' ||
       (hasRobot && !input.robot)
     )
-      return publish(
-        pairs.map((pair) => ({
+      return this.publish(
+        source,
+        input,
+        work,
+        pairs.map((pair): SurfaceResult => ({
           ...pair,
           status: 'unknown',
           reason: 'missing-or-expired-scene-state'
         }))
       )
-    const transforms = new Map<GeometryMesh['origin'], RigidTransform>()
-    if (hasRobot && input.robot) {
-      const rig = source.receipt.robot.rig
-      if (!rig) fail()
-      const pose = evaluateRobotPose(rig, input.robot.joints)
-      work.fk++
-      for (const part of pose.parts) transforms.set(part.source, part.transform)
-    }
-    const frames = new Map<object, Frame>()
-    const forward = (key: RigidTransform) => {
-      let value = frames.get(key)
-      if (!value) {
-        value = prepareQueryForwardFrame(key)
-        frames.set(key, value)
-        work.frames++
-      }
-      return value
-    }
-    const triangle = (item: SurfaceWitness): Triangle => {
-      const mesh = item.mesh,
-        shape = mesh.shape
-      if (shape.kind !== 'triangles') fail()
-      const chain: Frame[] = []
-      const placement = mesh.descriptor?.instances?.[item.instance]
-      if (placement) {
-        let frame = frames.get(placement)
-        if (!frame) {
-          frame = prepareQueryInstanceFrame(placement)
-          frames.set(placement, frame)
-          work.frames++
-        }
-        chain.push(frame)
-      }
-      if (mesh.frame === 'robot') {
-        const body = transforms.get(mesh.origin)
-        if (!body || !input.robot) fail()
-        chain.push(forward(body), forward(input.robot.base))
-      } else {
-        if (!mesh.descriptor) fail()
-        chain.push(forward(mesh.descriptor))
-      }
-      return [0, 1, 2].map((corner) => {
-        const offset = shape.indices[item.triangle * 3 + corner] * 3
-        work.vertexVisits++
-        let p = vector([
-          shape.positions[offset],
-          shape.positions[offset + 1],
-          shape.positions[offset + 2]
-        ])
-        for (const frame of chain) p = transformQueryPoint(frame, p)
-        return p
-      }) as Triangle
-    }
-    return publish(
-      pairs.map((pair) => ({
+    const triangle = prepared.triangles()
+    return this.publish(
+      source,
+      input,
+      work,
+      pairs.map((pair): SurfaceResult => ({
         ...pair,
         ...relation(triangle(pair.first), triangle(pair.second), work)
       }))
     )
+  }
+  sweep(source: GeometrySource, raw: SurfaceSweepBatch) {
+    this.geometry.read(source)
+    const input = readSweep(raw),
+      prepared = this.prepare(source, input.pairs, input.robot),
+      { pairs, work, hasRobot } = prepared
+    if (
+      input.from < input.validFrom ||
+      input.until >= input.validUntil ||
+      input.leaves !== 'source-pose-throughout' ||
+      input.fruits !== 'all-attached-throughout' ||
+      (hasRobot && !input.robot)
+    )
+      return this.publish(
+        source,
+        input,
+        work,
+        pairs.map((pair): SurfaceSweepResult => ({
+          ...pair,
+          status: 'unknown',
+          reason: 'missing-or-expired-interval-state'
+        }))
+      )
+    const triangle = prepared.triangles()
+    const results = pairs.map((pair, index): SurfaceSweepResult => {
+      const movement = input.pairs[index]
+      const proof = sweptRelation(
+        triangle(pair.first),
+        triangle(pair.second),
+        [movement.firstTranslation, movement.secondTranslation],
+        work
+      )
+      if (proof.status !== 'surface-intersection' || !proof.fraction)
+        return {
+          ...pair,
+          status:
+            proof.status === 'surface-separated'
+              ? 'swept-separated'
+              : 'unknown',
+          reason: proof.reason
+        }
+      const contactFraction = Object.freeze(proof.fraction)
+      const converted = add(
+        interval(input.from),
+        multiply(
+          subtract(interval(input.until), interval(input.from)),
+          contactFraction
+        )
+      )
+      // The proven fraction is in [0,1], so the closed request interval is an
+      // independent enclosure even if floating time conversion overflows.
+      const contactTime = Object.freeze({
+        low: Math.max(input.from, converted.low),
+        high: Math.min(input.until, converted.high)
+      })
+      return {
+        ...pair,
+        status: 'swept-intersection',
+        reason: proof.reason,
+        contactFraction,
+        contactTime
+      }
+    })
+    return this.publish(source, input, work, results)
   }
 }

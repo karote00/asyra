@@ -883,9 +883,13 @@ velocities nor articulated FK endpoints. The starting source/instance/body point
 come from the same admitted geometry and synthetic pose as static queries.
 Finite times satisfy 0 <= from < until. The entire closed movement interval,
 including both endpoints, must lie in [validFrom,validUntil), so validUntil must
-strictly exceed until. Leaves require an explicit synthetic assumption of remaining
-at source pose throughout that interval; an instantaneous pose cannot stand in
-for an interval envelope. Fruit attachment state also covers the whole interval.
+strictly exceed until. Leaves require an explicit synthetic assumption that original source local shape
+remains fixed throughout, subject only to the selected pair's declared world
+translation. This does not claim that a translated leaf is world-stationary.
+Additional unknown leaf movement/deformation stays unknown; an instantaneous pose
+is not an interval envelope. This hypothetical selected-pair assumption does not
+certify real leaf motion or unselected leaves. Fruit attachment state also covers
+the whole interval.
 Missing or expired interval state produces unknown.
 
 Complete fixed SAT axes include triangle face normals, all edge cross products
