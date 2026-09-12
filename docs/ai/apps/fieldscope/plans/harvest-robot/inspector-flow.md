@@ -277,6 +277,49 @@ Gates: forged/current-source-old-run, replacement/cancel/clock expiry, wrong tar
 or cultivar, getter snapshot, valid earlier evidence, null quality independence,
 confirmation rejection, same-target identity and no session/A/generator mutation.
 
+### D synthetic viewpoint adapter
+
+Owner: observations.ts synthetic camera sampling over actual near sources.
+Inputs: current actual-run ObservationContext and labeled request with matching
+run/generation/source revisions, observation validity, explicit candidate target
+IDs/sample count, camera world pose, rectilinear slopes/range and leaf state.
+Outputs: immutable requested source samples, actual ray witnesses and separate
+visible/occluded/outside-view/unknown counts; no inferred maturity/quality/actions.
+Conditions: same admission currentness before/after work; a new view samples the
+current snapshot time, without reconstructing past poses. Previously recorded
+earlier readings retain their separate admission validity. Candidate mappings
+are exact. No bypass for bad source mapping, unknown dynamics or stale context.
+Sampling: evenly spaced source triangle ordinals in original mesh/partition order,
+up to requested count without repetition, at most 64 rays per request. This is a
+computation cap, not sensor coverage. Empty input returns zero samples and no ray
+call. Actual computed rays, not ideal centroid intersections, are authoritative.
+Allowed: QueryGeometry's completed near source/bounds, original C sample placement,
+current session base/joints, one RayQueries batch, shared conservative frame math.
+Current foundation is world-aligned base/empty-held/all-attached; other dynamic
+dispositions need their own completed handoff, never fabricated poses.
+Forbidden: UI orbit camera truth, guessed physical camera mount, source generators,
+hidden fruit success, opacity pass-through, same-target hit as pedicel visibility,
+invented confidence/quality or session/action/inventory mutations.
+Boundary: simulation/observations.ts and its direct observations.test.ts; minimal
+ray-query.ts frame helper exports reuse existing inverse/direction arithmetic
+without changing predicates, occupancy, ordering or numerical guarantees. Its
+direct tests may cover shared frame equivalence. The existing selected/refined
+hit interval is exposed read-only as distanceBounds alongside the compatible
+distance midpoint; no interval is reconstructed from that midpoint. Non-target
+occlusion requires hit upper < requested sample-distance lower; rear/overlapping
+hits remain unknown. Direct interval-handoff and behind/overlap cases are required.
+API_SURFACES records these handoffs.
+No geometry/arithmetic/C/session/runtime/UI/framework production changes.
+Spec: Synthetic viewpoint sampling, near-source ray, observations and M3 DoD.
+Failure owner: observation rejects malformed/context inputs, propagates geometric
+unknowns and reports bounded sample coverage; ray owner retains intersection
+reasons. No result authorizes an action or physical quality conclusion.
+Lifetime: one current request; camera inverse once, eligible rays one batch/FK,
+source bounds reused. No retained sample/result cache or world geometry copies.
+Gates: source sample identity/order, actual C visibility/occlusion and front/back,
+frustum boundaries, malformed/empty/stale input, current dynamic pose and unknown,
+zero generation/bound scans and unchanged numeric ray tests; app gates and review.
+
 ### D dispatch admission
 
 Owner: D contracts admission. Inputs: composition-issued current canonical receipt

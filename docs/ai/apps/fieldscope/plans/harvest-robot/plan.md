@@ -794,3 +794,42 @@ unknown quality. Three sparse position/quaternion/cutsite regressions first fail
 slot-wise finite validation now rejects them. Admission changes no session or
 inventory and accepts no action confirmations. This remains injected assumption
 admission; the next real viewpoint/sample-ray adapter is still required.
+
+Next D Step Card: real synthetic viewpoint sampling, under the exact new Inspector
+helper and spec section. Consume the current ObservationContext, matching request
+binding, explicit candidate IDs/sample count, synthetic camera world pose/slopes/
+range and leaf-state assumptions. Generate deterministic source triangle-centroid
+samples within the 64-ray computation budget; sample references retain original
+plant/mesh/instance/partition identity. The computed camera ray is authoritative;
+its real first-hit witness may differ from the intended source triangle. Report
+four sample states without inferring anatomy, maturity, quality or action readiness.
+
+Use existing conservative frame inversion via minimal ray-query helper exports;
+keep one mathematical owner and leave all ray predicates unchanged. Camera
+inverse prepares once. Current actual session base/joints supply robot pose; this
+foundation is world-aligned/empty-held/all-attached. Newly computed view time must
+match current snapshot time, while admission of existing earlier readings remains
+valid until expiry. Explicit missing leaf or incompatible dynamic state remains
+unknown, not default clear. Eligible rays run as one current-source batch/FK.
+
+Allowlist: observations.ts/direct test, minimal ray-query.ts shared-frame export
+and its direct equivalence test, API_SURFACES. No geometry/arithmetic/session/C/UI/
+runtime or framework production. Formal tests first: exact deterministic C sample
+selection, target hit/occluder/front-back distinction, film/hidden physical layers,
+frustum inside/outside/uncertain boundary, empty and over-budget requests, sparse
+camera/input rejection, source/run replacement/clock mismatch and unknown states.
+Use actual near crop source fixtures plus a bounded full-source scene case; source
+truth only selects candidate geometry, never fills maturity or quality. Prove
+camera once, one nonempty batch/FK, zero source generation/bound scans and stable
+numeric query tests. Then full app unit/type/lint/naming/build and independent
+review. Stop for missing source ownership, inability to preserve conservative
+frame/query semantics, or unsupported dynamic handoff. Ordinary UI scan/action
+wiring remains a later integrated gate, not closure by this pure producer alone.
+
+Direct ray handoff refinement: expose the already selected/refined hit interval
+as read-only distanceBounds, preserving the existing distance midpoint. Only a
+non-target hit with upper distance strictly below the requested sample-distance
+lower bound proves sample occlusion. Behind-sample and overlapping intervals stay
+unknown with their witnesses; no midpoint inference or EPS endpoint extension.
+Add permanent selected-hit interval and behind/overlap regressions before this
+minimal ray output handoff and its observation consumer.

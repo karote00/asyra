@@ -271,6 +271,24 @@ Feature: Harvest robot feasibility and supervised harvesting
     Then that reading is rejected without mutation
 
   @M3
+  Scenario: Synthetic viewpoint samples use actual near occlusion
+    Given a current run and explicitly declared synthetic camera and candidate targets
+    When the adapter samples their original near source triangles
+    Then each camera ray reports visible, occluded, outside-view or unknown evidence
+    And the requested sample remains separate from the actual first-hit witness
+    And a front surface of the target cannot certify its requested back-side pedicel
+    And a non-target hit behind the intended sample remains unknown instead of occluded
+    And hidden physical film, nets and leaves still obstruct geometric rays
+    And no maturity or physical quality is inferred
+
+  @M3
+  Scenario: Empty or unknown viewpoint coverage does not find an empty row
+    Given an empty candidate request or unknown current leaf state
+    When a synthetic viewpoint is evaluated
+    Then no complete visibility or empty-row conclusion is produced
+    And no action, clock or inventory transition occurs
+
+  @M3
   Scenario: A target reading cannot confirm harvesting actions
     Given an injected target reading with declared intact calyx and a clear corridor
     When no current expected-action receipt exists
