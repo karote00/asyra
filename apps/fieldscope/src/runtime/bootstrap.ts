@@ -1,3 +1,5 @@
+import { RobotProjection } from '../render-app/robot-projection'
+import { createRobotWorkspace } from './robot-workspace'
 import { SiteGeometry } from '../render-app/site-geometry'
 import { moveCamera, lookCamera } from '../render-app/camera-flight'
 import {
@@ -112,6 +114,22 @@ export async function bootstrap(
     core.setSystemProperty(RuntimeKeys.FRAME, ++revision)
   )
   core.registerRenderLayer(layer.registration)
+  const robotProjection = new RobotProjection()
+  let robotMeshes: import('../render-app/spatial-layer').SpatialFrame['meshes'] =
+    []
+  const submitScene = () =>
+    layer.submit({
+      meshes: [...projectView(meshes, view), ...robotMeshes],
+      camera: fitCamera(camera, aspect)
+    })
+  const robot = createRobotWorkspace(
+    () => config,
+    () => {
+      robotMeshes = robotProjection.update(robot.get())
+      submitScene()
+    }
+  )
+  robotMeshes = robotProjection.update(robot.get())
   const readZoom = (next: SpatialCamera) => {
     const reference = referenceCamera
     return (
@@ -149,11 +167,8 @@ export async function bootstrap(
     sceneBounds = measureScene(meshes, localBounds)
     referenceCamera = cameraPreset(view.camera, config)
     camera = referenceCamera
-    layer.submit({
-      meshes: projectView(meshes, view),
-      camera: fitCamera(camera, aspect)
-    })
     publishCamera(camera)
+    robot.refresh(true)
     configListeners.forEach((listener) => listener())
   }
   const configFeature = core.defineFeature(
@@ -209,6 +224,7 @@ export async function bootstrap(
             const next = readConfiguration()
             if (JSON.stringify(next) !== JSON.stringify(config))
               publishConfiguration(next)
+            robot.refresh()
           },
           FeatureNames.HISTORY
         )
@@ -362,10 +378,24 @@ export async function bootstrap(
       },
       fit: () => {
         assertLive()
+        const s = robot.get().settings
+        const equipment = robotProjection.bounds(s.dockX, s.dockZ)
+        const combined: SceneBounds = {
+          min: [
+            Math.min(sceneBounds.min[0], equipment.min[0]),
+            Math.min(sceneBounds.min[1], equipment.min[1]),
+            Math.min(sceneBounds.min[2], equipment.min[2])
+          ],
+          max: [
+            Math.max(sceneBounds.max[0], equipment.max[0]),
+            Math.max(sceneBounds.max[1], equipment.max[1]),
+            Math.max(sceneBounds.max[2], equipment.max[2])
+          ]
+        }
         publishCamera(
           fitScene(
             { ...camera, fov: referenceCamera.fov },
-            sceneBounds,
+            combined,
             width,
             height
           )
@@ -379,6 +409,17 @@ export async function bootstrap(
             cameraDistance(referenceCamera)
           )
         )
+      },
+      focusRobot: () => {
+        assertLive()
+        const s = robot.get().settings
+        const distance = Math.max(s.width, s.length, s.height) * 2.5
+        publishCamera({
+          ...camera,
+          position: [s.dockX + distance, s.height * 1.6, s.dockZ - distance],
+          target: [s.dockX, s.height * 0.48, s.dockZ],
+          fov: 42
+        })
       },
       reset: () => {
         assertLive()
@@ -396,15 +437,14 @@ export async function bootstrap(
         referenceCamera = cameraPreset(next.camera, config)
         camera = referenceCamera
       }
-      layer.submit({
-        meshes: projectView(meshes, next),
-        camera: fitCamera(camera, aspect)
-      })
+      submitScene()
       listeners.forEach((listener) => listener())
     })
   const dispose = () => {
     if (disposePromise) return disposePromise
     closed = true
+    robot.close()
+    robotProjection.clear()
     geometry.clear()
     localBounds = new WeakMap()
     observer?.disconnect()
@@ -421,6 +461,7 @@ export async function bootstrap(
         await core.resetRuntime()
         core.unregisterComponent(configurationType)
         unregisterPropertyComponent(configurationType)
+        robot.unregister()
       }
     })
     return disposePromise
@@ -447,6 +488,7 @@ export async function bootstrap(
         { undoable: false }
       )
     })
+    robot.initialize()
     observer = new ResizeObserver((entries) => {
       const box = entries[0]?.contentRect
       if (!closed && box && box.width > 0 && box.height > 0) {
@@ -459,6 +501,10 @@ export async function bootstrap(
     })
     observer.observe(host)
     return {
+      focusRobot: cameraFeature.api.focusRobot,
+      getRobot: robot.get,
+      subscribeRobot: robot.subscribe,
+      patchRobot: robot.patch,
       getConfiguration: () => config,
       subscribeConfiguration: (listener: () => void) => {
         configListeners.add(listener)

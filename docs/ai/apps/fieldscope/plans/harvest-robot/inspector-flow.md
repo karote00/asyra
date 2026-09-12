@@ -24,12 +24,12 @@ Failure owner: A rejects invalid inputs; reports geometry/ground/data restrictio
 Cache dimensions: none. Two bounded layout passes (including the existing row helper) and one row preparation per assessment;
 results reused within that invocation, no work per plant or animation frame.
 
-## B - Mission document composition (M2, not implemented)
+## B - Mission document composition (M2)
 
 Owner: app runtime through registered Core Features/APIs.
 Inputs: robot/route/patrol edits; validated farm configuration; completed A reports.
 Outputs: canonical robot/mission settings and scoped derived UI values; one edit
-per intended history action. Edits invalidate an incompatible simulation run.
+per intended history action. M2 has no run; M3 must invalidate incompatible runs.
 Conditions: admission must succeed; failed edits leave prior canonical state intact.
 Replay bypasses intent dispatch, uses normal Core state apply and projections.
 Allowed: Core SceneTree/Props, Feature/API transaction path and A reports.
@@ -37,12 +37,16 @@ Forbidden: second React mission model, private Factory internals, render-derived
 clearance or actuator commands. Cannot turn `screened` into `safe`.
 Boundary: app runtime robot/mission composition and formal runtime tests, plus
 locale and mission editor consumers of the approved API.
-Spec: future user-facing contract; readiness must be narrowed to concrete schemas
-and public actions before M2 edits begin.
+Spec: B - M2 editable design workspace. Public actions: patchRobot, getRobot,
+subscribeRobot, existing undo/redo. One-shot exclusive priority 100 Feature.
+Boundary files: domain/robot-configuration.ts, runtime/robot-workspace.ts,
+runtime/bootstrap.ts, ui/robot-editor.tsx, ui/workbench.tsx, locale catalogs and
+their formal tests. Registered settings type: robot-configuration.
+Derived reports live until the next relevant canonical edit; reads do no work.
 Failure owner: B owns validation/history/replacement; A owns assessment reasons.
 Cache dimensions: none proposed.
 
-## C - Robot, crate and fruit projection (M2/M3, not implemented)
+## C - Robot, crate and fruit projection (M2; fruit states remain M3)
 
 Owner: app render projection, engine consumes admitted spatial products.
 Inputs: canonical admitted robot definition, mission settings and completed
@@ -53,8 +57,12 @@ geometry. Blender exports, if used, must match canonical dimensions and ownershi
 Allowed: completed robot geometry/pose products, existing spatial admission/engine.
 Forbidden: perception decisions, harvest success inference, force/soil conclusions,
 rebuilding cultivars per tick or private diagnostic geometry as product output.
-Boundary: app render-app robot projection, existing layer/engine integration and
-formal projection/engine/browser tests. Spec: M2/M3 user-visible contract.
+Boundary: render-app/robot-projection.ts, domain/robot-model.ts, runtime/bootstrap.ts
+composition, formal geometry/runtime/browser tests and canonical Blender export.
+Spec: C - M2 dimensioned concept projection. focusRobot is presentation-only through
+the existing camera Feature. Fruit projection remains deferred to M3.
+Definition geometry lifetime: width/length/height/tool; dock position is a transform.
+Route projection lifetime: completed lane report. No crop preparation.
 Failure owner: projection/admission failure is visible; no substitute safe geometry.
 Cache dimensions: none proposed; topology lifetime is the robot definition.
 

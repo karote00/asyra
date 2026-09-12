@@ -80,3 +80,27 @@ must independently pass CI before merge.
 Consequences: stage acceptance does not claim the new CI has passed or that the
 PR has merged. No new release record, version, tag, publication or deployment is
 created by closeout. M2 implementation starts in its own post-merge worktree.
+
+## 2026-09-12 - Compose the M2 robot workspace
+
+Context: PR #191 was rebased, closed out, pushed, passed all eight current-head
+checks and merged with explicit user authorization. M2 began in a new worktree
+from merge commit `e9bf5fa43`.
+
+Decision: use a separate Core settings entity and exclusive one-shot Feature for
+robot/mission edits; admit complete design assessments before canonical mutation.
+History refreshes the same read projections. Keep dimensioned robot topology
+separate from farm/cultivar geometry and project it through the registered layer.
+Dock position is an authored transform. Blender reviews the exact exported domain
+geometry. No alternate pretty asset, hidden safety permission or fake Start control.
+
+Evidence: 246 unit cases and 23 browser regression cases passed, including canonical
+history, concurrent patches, arithmetic rejection, model extents, work counts and
+bilingual responsive layout. Typecheck/lint/naming and 17 build tasks passed.
+Close-up evidence covers the robot, open crate, retained latches and charging station.
+
+Consequences: M2 is a design workspace; M3 owns patrol/harvest/charging simulation
+and detached/boxed fruit. Field measurements, actual components, soil capacity,
+full swept clearance and independent machine protection remain unverified.
+There is no physical control, release/version change, automatic deployment or
+new dependency. M2 PR merge still requires its own user authorization.
