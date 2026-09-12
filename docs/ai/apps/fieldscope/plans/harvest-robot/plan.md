@@ -45,10 +45,12 @@ This is a headless engineering foundation, not yet a visible or moving robot.
 
 ### M2 - Editable robot and mission workspace
 
+IMPLEMENTED - local acceptance passed; PR integration is a separate gate.
+
 After M1, implement B then C: Core-owned robot/mission settings (footprint, tool,
 crate, route lane and longitudinal interval, one-side/both-side scan choice,
-patrol period, battery capacity/energy budget, charge station and start/pause/resume). Project a dimensioned base, folded/working
-mast and arm, camera, latched crate and end exchange station. Label concept
+patrol period, battery capacity/energy budget, charge station). Project a dimensioned base, folded/working
+mast and arm (working pose and session controls follow in M3), camera, latched crate and end exchange station. Label concept
 geometry and show unresolved route restrictions. Use existing icons, units,
 locale catalogs and immediate editing with Undo/Redo. An invalid edit cannot
 silently clear a stop or start physical motion. Editing invalidates a simulation
@@ -113,11 +115,13 @@ acceptance remains a separate milestone; app plan completion is not certificatio
 
 ## Current execution
 
-M1 is implemented and locally validated: 57 new domain cases, 229 total app
-unit cases, typecheck, app lint, naming and the filtered production build's 17
-tasks passed. The domain reports have no UI or hardware consumer yet. M2-M6 remain planned and must not be marked
-DONE by this planning task. Pending site measurements and physical trial results
-are retained in the hardware contract, not replaced by invented values.
+M1 was closed and merged as PR #191 after all eight current-head CI checks
+passed. M2 is implemented in its new worktree: Core-owned robot/mission editing,
+history, conservative reports and dimensioned projection, with canonical Blender
+review. Local acceptance: 246 app tests, 23 browser regressions, typecheck, lint,
+naming and 17 build tasks passed. The final mobile control copy and settled
+screenshot check receive a focused repeat. M3-M6 remain planned; no active patrol,
+harvested inventory, physical observation or motor connection is delivered by M2.
 
 ## Stop and review boundaries
 
@@ -145,3 +149,54 @@ separate authorization. Preserve unrelated servers, worktrees and user changes.
   and filtered build. No visual claim or browser change in this domain-only step.
 - Stop: spec conflict, outside owner dependency, failed work-count isolation or
   unsafe inference. M2 starts only after its own schema/flow readiness review.
+
+## M2 execution contract - 2026-09-12
+
+Worktree: `.worktrees/fieldscope-robot-workspace`, based on merged PR #191.
+Scope is B then C above, app-only plus direct docs/tests and a software Changeset.
+No hardware, M3 execution, Framework changes, dependency additions or deployment.
+Discovery is limited to current app/Core APIs and direct consumers. Gates are the
+M2 acceptance section; stop for a contract conflict or needed external owner.
+
+Step B card: consume admitted farm and robot edits; produce validated canonical
+settings and A reports via a priority-100 exclusive one-shot Feature. Unknown
+survey/evidence remains unknown, replay bypasses edit dispatch, invalid input does
+not write. Allowed contributors: Core SceneTree/Props/session/transactions and A.
+Forbidden: React canonical state, Three, physical commands and crop builders.
+Files and failure ownership are Inspector B. Cases: invalid/no-op edits, concurrent
+patches, undo/redo, changed farm lane, disposal, zero farm builds for robot edits.
+Gates: domain/runtime tests, naming, typecheck. Stop on any B contract mismatch.
+
+Step B review: 11 domain cases and the real-Core runtime sequence passed;
+concurrent patches, rejected/no-op writes, history replay, removed route, disposal
+and no farm rebuild on robot edits are covered. Naming and typecheck passed.
+App lint passed after replacing empty test callbacks. No physical evidence invented.
+
+Step C card: consume B's admitted definition and completed lane report; produce
+engine-neutral robot/dock/crate meshes and candidate route through SpatialLayer.
+Geometry lifetime follows width/length/height/tool; position changes are transforms.
+Camera and locale consume existing outputs. Allowed contributors: TriangleBuilder,
+spatial admission, registered layer, existing camera API and canonical Blender export.
+Forbidden: clearance recomputation, crop builds, simulation success and motor output.
+Boundary/failure owner: Inspector C files and direct UI focus consumer. Cases:
+stowed bounds, open crate, distinct tool, missing/blocked route, topology work counts,
+bilingual desktop/mobile history and close-up screenshots. Gates: geometry/runtime
+unit tests, typecheck/lint/build, browser review. Stop on owner or geometry mismatch.
+
+Step B correction card: the runtime overflow regression proves assessment failure
+could occur after the settings transaction. Same B inputs/outputs/boundary; perform
+A admission before committing and publish that completed report once. Invalid
+arithmetic must leave canonical state and history untouched. No C or hardware
+changes in this segment. Gate: failing runtime admission regression then full B test.
+
+B correction review: the overflow case now rejects before mutation; the complete
+runtime sequence passes. Resume C's card for viewport fit integration and settled
+animation screenshots, plus B's editor consumer for compact assessment disclosure.
+Inputs, contributors, boundaries and exclusions remain unchanged. Fit must include
+the parked equipment at its authored coordinates without rescanning farm geometry.
+
+C final integration card: a farm-edit regression measured two full frame
+submissions. Consume the completed farm and robot report once and submit one
+composed frame from bootstrap; no extra model cache or changed output. Same C
+allowlist and exclusions. Gate: failing frame-count assertion, then runtime and
+configuration browser tests; no other owner expansion.

@@ -1,9 +1,9 @@
 # Harvest robot product contract
 
-## Current milestone: M1
+## Current milestone: M2
 
 M1 provides pure, deterministic engineering assessments, not actuation, physics,
-a trained detector, a scheduling service or a rendered robot. M2-M6 are defined
+a trained detector, a scheduling service or a rendered robot. The remaining milestones are defined
 in the [plan](/docs/ai/apps/fieldscope/plans/harvest-robot/plan.md). The physical
 assumptions and validation obligations are in [hardware concept](/docs/ai/apps/fieldscope/specs/harvest-hardware.md).
 No software result may be labeled certified safe or a measured ground property.
@@ -60,15 +60,16 @@ working-arm configurations need separate mass properties and moment validation.
 
 Total mass = base + payload. Compute weighted lateral CoG and height, then
 lateral reserve = half track - abs(CoG x) - CoG height * tan(abs(roll))
+
 - CoG height * abs(lateral acceleration)/9.80665 - uncertainty reserve.
-No positive reserve proves safe motion; this is a quasi-static screen. Roll is
-restricted below pi/2; negative masses/dimensions, fill outside [0,1] and non-finite
-values are invalid. Next fruit must not be admitted when projected mass exceeds
-the limit. At exact capacity or operational fill threshold request exchange.
-Crate latch loss, untrusted scale, current overload or nonpositive current lateral
-reserve -> `stop`; projected overload/nonpositive projected reserve, capacity or
-fill threshold -> `exchange`; otherwise `continue-screening`. Report current and
-projected reserves. No inventory or mass changes occur in assessment.
+  No positive reserve proves safe motion; this is a quasi-static screen. Roll is
+  restricted below pi/2; negative masses/dimensions, fill outside [0,1] and non-finite
+  values are invalid. Next fruit must not be admitted when projected mass exceeds
+  the limit. At exact capacity or operational fill threshold request exchange.
+  Crate latch loss, untrusted scale, current overload or nonpositive current lateral
+  reserve -> `stop`; projected overload/nonpositive projected reserve, capacity or
+  fill threshold -> `exchange`; otherwise `continue-screening`. Report current and
+  projected reserves. No inventory or mass changes occur in assessment.
 
 ## A - Energy admission
 
@@ -131,3 +132,47 @@ cases, plus geometry-preparation work counts and configuration changes. Typechec
 app lint and existing app unit regressions pass. No UI, render, runtime or hardware
 consumer is introduced until its subsequent owner step is ready. M1 completion is
 not closure of the full harvest-robot plan.
+
+## B - M2 editable design workspace
+
+The robot tab edits a separate Core SceneTree settings entity. SI numeric fields:
+width, length, stowed height, lateral clearance, canopy reserve; longitudinal start
+and end; patrol period in minutes; crate payload limit and assumed payload in kg;
+nominal battery Wh, usable fraction, SOC, SOC uncertainty, next-work/return/
+contingency/reserve Wh; dock X/Z. Tool is cucumber support-and-cut or tomato padded
+support-and-cut. Scan side is left/right/both. Lane uses A's strip or shared-side ID.
+Ground and entrance/headland survey use A's explicit unknown states. Numeric ranges
+are finite, ordered and positive where physically required. Invalid edits preserve
+state/history. Farm edits that remove a lane or shorten an interval leave the mission
+unchanged and display an invalid-route result, with no substitute route.
+
+All values are design inputs, not live telemetry. Defaults retain unknown survey,
+missing battery freshness, unverified return admission and unavailable dock evidence.
+Energy screening cannot enable travel. M2 has no simulation run and no Start/Pause/
+Resume control; those actions belong to M3's session. The robot remains parked at
+its authored dock, independent of lane admission. A patrol interval previews a
+straight candidate only, never a proven closed return path.
+
+One settled input or selection is one Core transaction. Undo/Redo reprojects both
+farm and robot owners only when their canonical values change. Concurrent patches
+merge against the latest state inside the session queue; disposal rejects late writes.
+The robot editor subscribes to its design report, independent of camera/locale.
+A farm edit recomputes its lane report; robot edits never build farm/crop geometry.
+Reports are produced once per relevant document update, not on reads/render frames.
+
+## C - M2 dimensioned concept projection
+
+A low battery chassis with four wheels, mast, folded jointed arm, stereo camera,
+guarded crop-specific end effector and mechanically retained open crate is shown
+at the dock. A separate dry charging pedestal and manual exchange stand make the
+logistics visible. Dimensions follow the canonical stowed envelope. The model is
+an engineering concept, not a selected bill of materials or collision proof.
+Projection consumes B's completed lane report for the route. It must not recalculate
+clearance. Farm geometry remains separately owned. Camera/locale changes build no
+robot geometry; route-only edits do not rebuild robot topology; definition changes
+replace affected geometry. No harvested inventory is fabricated before M3.
+
+M2 acceptance: formal validation, canonical history/concurrent/disposal tests;
+work counts across robot/farm/camera edits; geometry bounds and route visibility
+oracles; app typecheck/lint/build/unit gates; bilingual desktop/mobile browser
+checks with close-up robot/box/dock inspection. No hardware effects or new packages.

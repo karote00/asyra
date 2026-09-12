@@ -63,13 +63,15 @@ const fields: Exclude<keyof FarmConfiguration, 'strips'>[] = [
   'netBottom'
 ]
 
-function MeasurementInput({
+export function MeasurementInput({
   value,
   label,
   onCommit,
-  onHistory
+  onHistory,
+  unit = 'm'
 }: {
   value: number
+  unit?: string
   label: string
   onCommit: (value: number) => Promise<boolean>
   onHistory: (redo: boolean) => Promise<boolean>
@@ -85,7 +87,7 @@ function MeasurementInput({
     <span className="measurement-field h-7 w-24 shrink-0">
       <input
         aria-label={label}
-        aria-description={t('editor.unit')}
+        aria-description={unit === 'm' ? t('editor.unit') : unit}
         type="number"
         step="any"
         value={text}
@@ -135,7 +137,7 @@ function MeasurementInput({
         }}
         className="h-full min-w-0 w-full bg-transparent pl-2 text-right text-xs tabular-nums"
       />
-      <span className="field-unit">m</span>
+      <span className="field-unit">{unit}</span>
     </span>
   )
 }
