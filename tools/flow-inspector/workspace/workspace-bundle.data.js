@@ -35866,6 +35866,7 @@
             "purpose": "Source and Evidence",
             "inputs": [
               "artifact:admitted-proof-contract",
+              "artifact:admitted-runtime-source",
               "authorized run identity",
               "declared source roots and dependency metadata",
               "server-selected accepted Git base and integration revision"
@@ -35874,6 +35875,7 @@
               "artifact:proof-source-snapshot"
             ],
             "conditions": [
+              "For explicit ordinary composition, consume two already admitted service-owned source artifacts and their fixed retained attempt trees in the same repository. Require exact verification contract and configuration authority, read and verify each selected runtime or verification entry once, and produce a complete immutable snapshot preserving selected runtime HEAD/digest and chosen verification digest with a new full identity. Undeclared generated execution closure, missing or changed bytes, unsafe paths and cross-repository inputs fail before runner dispatch. This later composition route does not gate initial capture or its admission.",
               "Read accepted-base contract and protected gate inputs once for CI admission; compare captured integration bytes with Git identity and preserve explicit policy drift blockers. Copy regular source files once into one attempt-owned tree, retain the immutable file manifest, bind source, mapping, architecture, configuration and lockfile digests, and reject symlinks. For target assessment, also identify the captured runtime file inventory independently of the admitted verification metadata; preserve full snapshot identity and never infer equivalence by stripping historical digests. Construct a frozen verificationSource descriptor for the admitted contract’s exact five metadata roles from captured entries, with no extra reads; validate both source descriptors against the complete full manifest. Descriptor presence alone does not prove retained bytes, replay readiness or accepted-version authority."
             ],
             "bypasses": [
@@ -36134,6 +36136,16 @@
             "predicate": "Before runner dispatch or evidence assessment, a trusted service-owned attempt captures or restores source with a runtime identity; no completed evidence is required.",
             "producedArtifacts": [
               "artifact:proof-source-snapshot"
+            ]
+          },
+          {
+            "id": "runtime-admission-to-composition",
+            "from": "serve-proof-actions",
+            "to": "capture-proof-source",
+            "kind": "conditional",
+            "predicate": "Only an explicit later composition consumes previously completed source admissions and fixed retained trees for its selected runtime and exact verification bundle; initial capture and admission never depend on composition or assessed evidence.",
+            "producedArtifacts": [
+              "artifact:admitted-runtime-source"
             ]
           },
           {
@@ -36509,7 +36521,8 @@
             "channel": "service-owned source admission",
             "consumerStepIds": [
               "assess-proof-evidence",
-              "assess-target-source"
+              "assess-target-source",
+              "capture-proof-source"
             ]
           },
           {

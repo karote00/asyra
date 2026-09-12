@@ -59,8 +59,9 @@ baseline. The pure assessor and real captured-source producer cases are now
 implemented. Frozen verification descriptors, immutable version references and
 exact reviewed target pins have passed their owner gates. The next service slice
 retains each attempt's exact admitted contract and admits both source descriptors
-once; retained-byte composition and authoritative assessment requests follow as
-separate owners. Existing target execution and pending behavior remain unchanged
+once. Ordinary retained-byte composition is the next source-owner boundary;
+exact version selection and authoritative assessment requests follow as separate
+service slices. These ordinary proofs do not cover undeclared generated wrappers. Existing target execution and pending behavior remain unchanged
 until their consumer slices are implemented and verified.
 
 The source producer must identify one captured runtime source independently of

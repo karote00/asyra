@@ -795,6 +795,37 @@ checkout fallbacks. Accepted and target producers may have genuinely different
 verification test/configuration bytes while sharing the selected runtime; formal
 positive cases must execute both through the real runner and evidence owner.
 
+For ordinary verification, `composeSource(repositoryRoot, runDirectory,
+runtimeInput, verificationInput, contract)` consumes two service-owned inputs.
+Each input has `{sourceRoot, admission}`: `sourceRoot` is the fixed `source/`
+child of that trusted attempt directory, and `admission` is the service-owned
+artifact with its repository, attempt, HEAD and full-source tuple. It binds that
+location to its already admitted source artifact; the verification artifact includes its admitted
+verification descriptor and actual execution configuration. Neither input is a
+client-selected directory or replacement manifest. Both belong to the same
+authorized repository, although their attempts, HEADs and full source digests may
+differ. The output HEAD comes only from the selected runtime source. The supplied
+contract is the exact contract of the selected verification bundle.
+
+Before composition, require ordinary configuration authority: the verification
+artifact's actual configuration digest equals its descriptor's configuration
+entry. Generated or derived configurations without their complete declared
+execution closure are rejected, never stripped or relabeled as ordinary. The
+source owner reads the selected runtime inventory and exact five verification
+entries from those retained trees, checks safe paths, regular files, absence of
+symlinks, byte sizes and hashes, and copies each verified entry once. No mutable
+checkout read completes missing input. No cross-request byte cache is introduced.
+
+Return a snapshot only after its full output manifest is complete. Construct its
+descriptors from the verified bytes; its runtime digest must equal the selected
+runtime artifact and its verification digest must equal the selected bundle.
+Runtime supplies package metadata and lockfile, while verification supplies its
+own configuration and contract metadata. The new full digest binds both. Failure
+returns no usable snapshot and must prevent runner dispatch; a partial output is
+never evidence or a source fallback. The output follows the existing runner and
+evidence admission contracts. This source-owner operation alone does not select
+versions, publish service assessment requests or grant baseline acceptance.
+
 These five roles do not enumerate all execution inputs. Candidate-generated
 configuration and bootstrap files retain their existing full snapshot and derived
 execution-configuration binding. A five-role descriptor cannot authorize arbitrary

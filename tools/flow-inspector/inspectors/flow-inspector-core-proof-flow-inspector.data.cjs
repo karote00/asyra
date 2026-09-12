@@ -521,12 +521,14 @@ const data = {
       purpose: 'Source and Evidence',
       inputs: [
         'artifact:admitted-proof-contract',
+        'artifact:admitted-runtime-source',
         'authorized run identity',
         'declared source roots and dependency metadata',
         'server-selected accepted Git base and integration revision'
       ],
       outputs: ['artifact:proof-source-snapshot'],
       conditions: [
+        'For explicit ordinary composition, consume two already admitted service-owned source artifacts and their fixed retained attempt trees in the same repository. Require exact verification contract and configuration authority, read and verify each selected runtime or verification entry once, and produce a complete immutable snapshot preserving selected runtime HEAD/digest and chosen verification digest with a new full identity. Undeclared generated execution closure, missing or changed bytes, unsafe paths and cross-repository inputs fail before runner dispatch. This later composition route does not gate initial capture or its admission.',
         'Read accepted-base contract and protected gate inputs once for CI admission; compare captured integration bytes with Git identity and preserve explicit policy drift blockers. Copy regular source files once into one attempt-owned tree, retain the immutable file manifest, bind source, mapping, architecture, configuration and lockfile digests, and reject symlinks. For target assessment, also identify the captured runtime file inventory independently of the admitted verification metadata; preserve full snapshot identity and never infer equivalence by stripping historical digests. Construct a frozen verificationSource descriptor for the admitted contract’s exact five metadata roles from captured entries, with no extra reads; validate both source descriptors against the complete full manifest. Descriptor presence alone does not prove retained bytes, replay readiness or accepted-version authority.'
       ],
       bypasses: [
@@ -738,6 +740,7 @@ const data = {
     { id: 'reviewed-version-to-target-pin', from: 'review-contract-evolution', to: 'manage-flow-target', kind: 'conditional', predicate: 'A target explicitly selects an exact retained review with an admitted verification reference; the trusted service supplies that review/candidate pair, and the target pins the version-owned candidate digest without rehashing.', producedArtifacts: ['artifact:reviewed-contract-evolution'] },
     { id: 'verification-admission-to-version', from: 'serve-proof-actions', to: 'review-contract-evolution', kind: 'conditional', predicate: 'A version review supplies a verification reference only after the service binds its own attempt, admitted source descriptor and execution configuration; historical absence cannot be promoted.', producedArtifacts: ['artifact:admitted-verification-source'] },
     { id: 'source-snapshot-to-service-admission', from: 'capture-proof-source', to: 'serve-proof-actions', kind: 'required', predicate: 'Before runner dispatch or evidence assessment, a trusted service-owned attempt captures or restores source with a runtime identity; no completed evidence is required.', producedArtifacts: ['artifact:proof-source-snapshot'] },
+    { id: 'runtime-admission-to-composition', from: 'serve-proof-actions', to: 'capture-proof-source', kind: 'conditional', predicate: 'Only an explicit later composition consumes previously completed source admissions and fixed retained trees for its selected runtime and exact verification bundle; initial capture and admission never depend on composition or assessed evidence.', producedArtifacts: ['artifact:admitted-runtime-source'] },
     { id: 'runtime-admission-to-evidence', from: 'serve-proof-actions', to: 'assess-proof-evidence', kind: 'conditional', predicate: 'After source admission and before raw or retained evidence assessment, service-owned evidence consumes its full-source admission; direct full snapshots use source-owner admission and historical absence grants no runtime conformance.', producedArtifacts: ['artifact:admitted-runtime-source'] },
     { id: 'runtime-admission-to-target-assessment', from: 'serve-proof-actions', to: 'assess-target-source', kind: 'required', predicate: 'An explicit target assessment selects the service-owned admitted source and complete retained proof requests; source admission has completed independently of assessment.', producedArtifacts: ['artifact:admitted-runtime-source'] },
     { id: 'target-state-to-assessment', from: 'manage-flow-target', to: 'assess-target-source', kind: 'required', predicate: 'An explicit assessment selects a frozen target allocation.', producedArtifacts: ['artifact:flow-target-state'] },
@@ -971,7 +974,7 @@ const data = {
   ],
   artifacts: [
     { id: 'artifact:admitted-verification-source', ownerStepId: 'serve-proof-actions', channel: 'service-owned verification source reference', consumerStepIds: ['review-contract-evolution'] },
-    { id: 'artifact:admitted-runtime-source', ownerStepId: 'serve-proof-actions', channel: 'service-owned source admission', consumerStepIds: ['assess-proof-evidence', 'assess-target-source'] },
+    { id: 'artifact:admitted-runtime-source', ownerStepId: 'serve-proof-actions', channel: 'service-owned source admission', consumerStepIds: ['assess-proof-evidence', 'assess-target-source', 'capture-proof-source'] },
     { id: 'artifact:target-source-assessment', ownerStepId: 'assess-target-source', channel: 'source-bound target assessment', consumerStepIds: [], terminal: true },
     { id: 'artifact:work-admission', ownerStepId: 'manage-flow-target', channel: 'immutable source-bound work admission', consumerStepIds: ['admit-agent-task', 'execute-agent-task'] },
     {
