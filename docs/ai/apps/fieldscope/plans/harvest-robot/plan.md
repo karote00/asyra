@@ -863,3 +863,14 @@ Stop for missing source/body ownership, a required contact exemption, unsupporte
 numeric proof or a need to admit motion from this static result. The next owner
 will add a continuous fixed-rotation linear sweep, then articulated path/IK and
 full-body/intended-contact coverage before session movement can be admitted.
+
+Static source surface-pair evidence is implemented with 17 direct cases and the
+unchanged ray predicate suite; all 375 app unit tests, typecheck/build, lint and
+naming pass. Independent review found no remaining issue. Formal cases retain
+crossing/coplanar/touch, nested boxes, uncertain non-axis contact, source admission
+and real robot/dock and both cultivar instance witnesses. Sparse pair/invalid
+joint admission regressions failed before correction. The actual cultivar profile
+read 12 original vertices for two pairs, prepared six frames, and performed zero
+FK, source generation or bounds preparation (about 1.31 ms locally). Robot batches
+prove one FK and frame reuse. No visual/runtime path changed. This closes only
+selected static surfaces, not volume/contact or continuous movement clearance.

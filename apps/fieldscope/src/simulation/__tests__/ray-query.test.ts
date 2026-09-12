@@ -17,10 +17,14 @@ import {
 import { REST_JOINTS } from '../../domain/robot-kinematics'
 import * as kinematics from '../../domain/robot-kinematics'
 import { QueryGeometry, type GeometryReceipt } from '../geometry'
+import { interval } from '../query-arithmetic'
 import {
   RayQueries,
   prepareQueryFrame,
   transformQueryDirection,
+  prepareQueryForwardFrame,
+  prepareQueryInstanceFrame,
+  transformQueryPoint,
   type RayBatch
 } from '../ray-query'
 
@@ -720,4 +724,32 @@ it('shares the original coefficient inverse as an immutable direction frame', ()
     expect(transformed[axis].low).toBeLessThanOrEqual(axis + 1)
     expect(transformed[axis].high).toBeGreaterThanOrEqual(axis + 1)
   }
+})
+
+it('shares original forward quaternion and instance frames with surface queries', () => {
+  const point = [1, 2, 3] as const
+  const frame = prepareQueryForwardFrame({
+    position: [10, 20, 30],
+    rotation: [0, 1, 0, 0]
+  })
+  expect(transformQueryPoint(frame, point.map(interval))).toEqual([
+    interval(9),
+    interval(22),
+    interval(27)
+  ])
+  const placement = { position: [5, 6, 7] as const, yaw: Math.PI / 3 }
+  const placed = transformQueryPoint(
+    prepareQueryInstanceFrame(placement),
+    point.map(interval)
+  )
+  const expected = [
+    5 + Math.cos(placement.yaw) + 3 * Math.sin(placement.yaw),
+    8,
+    7 - Math.sin(placement.yaw) + 3 * Math.cos(placement.yaw)
+  ]
+  expected.forEach((value, axis) => {
+    expect(placed[axis].low).toBeLessThanOrEqual(value)
+    expect(placed[axis].high).toBeGreaterThanOrEqual(value)
+  })
+  expect(Object.isFrozen(frame)).toBe(true)
 })

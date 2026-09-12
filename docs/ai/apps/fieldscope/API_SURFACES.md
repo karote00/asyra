@@ -207,3 +207,23 @@ Cross-package imports use public `@asyra/*` facades. Do not import another app's
   existing world-aligned, empty-held/all-attached foundation. Missing leaf or fruit
   state remains unknown. Camera inverse prepares once, eligible rays share one
   batch/FK and completed bounds, and no source or session state is regenerated.
+
+## Static source surface pairs
+
+- `SurfaceQueries.query` consumes an issued `GeometrySource` and clone-once
+  `SurfaceBatch`: source-bound mesh/instance/triangle ordinals, synthetic time and
+  validity, explicit robot base/joints and leaf/fruit state. Original immutable
+  mesh/region/triangle witnesses remain in each result. Sources must be current
+  before work and before publication; invalid reference/schema rejects atomically.
+- Results are `surface-separated`, `surface-intersection` or `unknown`, never
+  body-free, occupied-volume-free, allowed-contact or movement-clear. Nested
+  solids can have separated surfaces. No joint, tire, same-body or tool-target
+  exemption exists; source geometry and harvest quality remain separate.
+- `prepareQueryForwardFrame`, `prepareQueryInstanceFrame` and
+  `transformQueryPoint` share the existing query owner's conservative original
+  coefficient arithmetic. The selected vertices retain interval uncertainty;
+  singleton exact dyadic predicates do not promote rounded world points to exact
+  geometry. Original inverse/ray predicates are unchanged.
+- Frames and one required FK are prepared per batch. `SurfaceWork` accounts for
+  selected vertex visits, frames, axes and exact predicates; no shape/region
+  bounds or C geometry is rebuilt, and no result/pose cache survives the batch.
