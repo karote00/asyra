@@ -341,3 +341,36 @@ Feature: Harvest robot feasibility and supervised harvesting
     Then the calyx and distal pedicel belong to that fruit
     And proximal pedicel and neighboring plant geometry remain plant-owned
     And the synthetic boundary is not reported as a measured abscission zone
+
+
+  @M3
+  Scenario: Zero synthetic joints reproduce the parked robot source
+    Given an admitted original robot definition and its five-DOF rig
+    When all joint inputs are zero
+    Then each source part has exactly one rigid owner
+    And every original vertex and material is unchanged
+    And the mast camera and retained crate remain fixed to the chassis
+
+  @M3
+  Scenario: Working joints cannot manufacture reach
+    Given a valid rig with fixed source shoulder, elbow and wrist frames
+    When finite joint inputs are evaluated within the approved bounds
+    Then the original link lengths are preserved
+    And the tool reference follows the wrist chain
+    When any joint is nonfinite or exceeds its bound
+    Then no partial candidate pose is published
+
+  @M3
+  Scenario: A smaller mast cannot silently reduce the approved lift stroke
+    Given a source definition that cannot contain the full carriage and lift stroke
+    When a working rig is requested
+    Then working-rig admission reports unsupported geometry
+    And the canonical parked design is not changed or clamped
+
+  @M3
+  Scenario: A retired robot rig cannot drive its replacement
+    Given an admitted robot definition and candidate joint input
+    When width, length, height or tool changes
+    Then the prior rig is retired
+    And stale definition inputs are rejected
+    And repeated reads and FK evaluations do not generate new robot or crop meshes

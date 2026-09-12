@@ -205,7 +205,8 @@ configuration browser tests; no other owner expansion.
 
 PR #194 completed M2 and merged into main at e34b4f6bc after all eight CI checks
 passed. Work now continues from that main in `codex/fieldscope-simulation-goal`
-at `.worktrees/fieldscope-robot-workspace`; prior goal contracts and B correction
+at `.worktrees/fieldscope-robot-workspace`, with draft goal PR #196; prior goal
+contracts and B correction
 were retained. The remaining software goal is M3 deterministic patrol, picking
 and crate simulation.
 M4-M6 retain their physical-evidence prerequisites and remain planned; this goal
@@ -222,9 +223,9 @@ Inspector, harvest-robot spec and its BDD cases are edited in this slice. Gates:
 naming baseline/final, scoped formatting/diff review and independent contract
 review. Stop on a new product decision, contradictory authority or external owner.
 
-After B correction, implementation starts with C's canonical scene preparation
-and handoff, then D admission, deterministic scenario proofs and real Core
-lifecycle wiring against that source. D schema design can precede C, but an
+C crop source preparation is complete. Continue with C synthetic working-rig
+source and FK handoff, then D admission, deterministic scenario proofs and real
+Core lifecycle wiring against those completed sources. D schema design can precede C, but an
 independent synthetic shape model cannot substitute for the actual scene.
 C working-pose/fruit disposition integration and B/UI controls follow separate
 owner cards after D passes its focused gates. End-to-end M3 closure requires the
@@ -319,3 +320,28 @@ and an independent review of cucumber and young/ripe tomato detail at 10000%
 zoom used the live app at http://127.0.0.1:5178. Source geometry retention is
 verified; physical contact quality is not. D execution, working-arm articulation
 and harvested-fruit projection remain subsequent owner steps.
+
+### C working-rig source card - approved five-DOF concept
+
+User decision: lift +/-0.10 m at 0.02 m/s; shoulder yaw and elbow +/-90 degrees,
+shoulder/wrist pitch +/-60 degrees, each at 10 degrees/s. The concept is synthetic
+and may reject unreachable targets; it is not a hardware capability claim.
+Source: spec C synthetic working-arm and Inspector C working-rig source handoff.
+Inputs: original definition/source parts and valid same-revision joint values.
+Outputs: exact rest frames, one rigid owner per part, limits/speeds/TCP and pure
+candidate FK transforms. Full carriage-stroke admission precedes rig availability.
+No new geometry design, D state, live motion UI, IK fallback or inferred physics.
+Files: Inspector C working-rig allowlist; no crop owner changes in this segment.
+Naming: neutral app-local transient rig/joint identities, no persisted migration.
+
+Test-first: freeze current source hashes (both tools, default/nondefault dimensions)
+before any production edit. Add failing joint/frame/ownership/lift/retirement and
+work-count cases; implementation must preserve those original hashes. Zero FK
+keeps source vertices unchanged and produces identity rigid transforms. Limits
+are kinematic input boundaries, not collision admission. D's later clock/action
+slice owns rate checks using the approved per-joint speeds, with no new acceleration
+assumption. Gates: focused domain/projection/runtime proofs, naming, app unit,
+typecheck/lint/build, existing bilingual desktop/mobile robot browser checks and
+close-up source review. Stop on an unresolved source frame, new DOF/tool parameter,
+necessary out-of-scope owner or changed canonical mesh output. Independent
+readiness review precedes production; independent code review precedes advancement.

@@ -256,6 +256,70 @@ baseline and close-up source-fruit review precede D state projection. These are
 handoff gates; M3 additionally requires the usable synthetic UI and full D/C
 simulation acceptance, not merely partition or headless test success.
 
+## C - M3 synthetic working-arm source (planned)
+
+The approved concept has five bounded degrees of freedom: lift translation,
+shoulder yaw, shoulder pitch, elbow pitch and wrist pitch. These are synthetic
+simulation assumptions, not manufacturer specifications or measured capabilities.
+Lift is [-0.10, +0.10] m at at most 0.02 m/s. Shoulder yaw and elbow pitch are
+[-pi/2, +pi/2]; shoulder and wrist pitch are [-pi/3, +pi/3]. Each rotary joint is
+limited to pi/18 rad/s (10 degrees/s). Exact endpoints are allowed. Acceleration,
+physical torque and TCP speed limits are not established by these assumptions.
+
+Rest frames derive from the existing source definition width w, length l and
+stowed height h: shoulder S=(0, 0.7h, -0.3l+0.09), elbow E=(0, 0.86h, -0.04l),
+wrist W=(0, 0.59h, 0.13l). The lift axis is chassis +Y; yaw is +Y at S; pitch
+axes are local +X in the yawed chain. The fixed parent chain is chassis -> lift
+-> shoulder yaw -> shoulder pitch -> elbow pitch -> wrist pitch. Link lengths
+and the S/E/W offsets come from this original geometry, never arbitrary reach.
+Zero joints reproduce every original source vertex/index/material exactly; retain
+the chassis-local shape and express rotation about its rest pivot as a rigid
+transform instead of repeatedly rebuilding or rounding its vertices.
+
+Each original part has one rigid owner. Chassis, wheels, mast, screw, mast camera,
+crate and dock remain fixed to their original owners. The lift carriage follows
+lift only; shoulder housing follows lift/yaw; upper arm follows shoulder pitch;
+elbow housing and forearm follow elbow pitch; wrist, guard, jaws and pads follow
+wrist pitch. The added yaw is a labeled synthetic frame, not extra fabricated
+hardware geometry. There is no new jaw/blade DOF or independent camera motion.
+
+The tool contact reference is the original two-pad midpoint (0, 0.515h, 0.14l),
+with closing +X, approach -Y and remaining axis +Z at rest. It moves with the
+wrist-owned assembly. Confirmed fruit retention records the actual fruit-to-tool
+relative transform; it must not snap the fruit center to that reference. C exposes
+source frames and forward kinematics; D later owns target selection, inverse
+kinematics, action timing and exact motion admission. No solution, out-of-range
+joints or collision remains unresolved; do not stretch links or invent free XYZ
+poses to reach a target. A's stowed load screen does not prove extended-arm stability.
+
+The entire lift stroke must fit the source mast with the existing 0.12 m carriage:
+its center 0.67h plus both stroke limits and half-height must stay between the
+existing mast bottom r+0.2 and top h-0.045, where r=min(0.13l, 0.12h). Reject an
+incompatible working rig without clamping stroke or changing canonical design;
+the existing parked design remains displayable. Validate finite joint inputs,
+exact bounds and the definition revision before publishing a pose. Invalid inputs
+produce no partial pose. Definition changes retire the old rig; dock/mission,
+camera and locale changes preserve source shapes and rig preparation.
+
+A kinematic pose is a candidate, not collision clearance or a harvesting command.
+D must query the same rigid body/tool/crate source and carried-fruit transforms
+through the full time interval; self-collision and nonadjacent body contact cannot
+be discarded. Precisely modeled joint interfaces may later have explicit contact
+ownership, but no blanket robot collision exclusion is allowed. The same admitted
+joint path must eventually feed queries and presentation. This source slice only
+provides immutable rig/body frames, bounds/speeds, tool reference and candidate FK;
+it starts no simulation and applies no UI motion.
+
+Acceptance: freeze original robot geometry/material hashes before edits for both
+tools and representative nondefault dimensions. Prove zero-rest exact source
+reconstruction, unique body ownership, single-axis pivots, chain composition,
+constant link lengths, tool-reference orientation, valid/invalid lift envelopes,
+exact joint limits and nonfinite rejection. Prove definition retirement and no
+robot/crop generation on repeated FK/reads or camera/dock/mission changes. Preserve
+M2 runtime/history and ordinary bilingual desktop/mobile robot/browser checks;
+inspect the same parked source close-up. Later D and motion UI must separately
+prove speed boundaries, retained-fruit transforms and interval collisions.
+
 ## D - M3 deterministic simulation contract (planned)
 
 M3 is an explicitly synthetic, in-browser simulation of the authored mission.
