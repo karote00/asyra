@@ -242,6 +242,41 @@ no crop preparation or full accumulated-ledger scan per read/tick.
 Cache dimensions: none proposed. No persisted/wire format is introduced; session
 identities are neutral, run-scoped and unrelated to design entity identities.
 
+### D injected target observation admission
+
+Owner: observations.ts target-reading admission, with no competing session.
+Inputs: composition-issued context binding original current HarvestSession
+snapshot, canonical mission and issued GeometrySource; actual session read API,
+required context/mission currentness predicates and QueryGeometry current read.
+Caller input is a labeled synthetic-injected target reading, with run/generation,
+all source revisions, observation/validity times and explicit unknown fields.
+Outputs: immutable admitted assumption and original existing target identity.
+Conditions: same-update tuple and actual snapshot identity current before/after
+work; the composition context predicate guarantees mission ownership by this run,
+not merely individually current objects. Snapshot alone cannot prove that link.
+Active running/paused/faulted run only, finite valid times, current target
+membership and known cultivar consistency. A valid earlier observation has no
+current-time-equality requirement. Detached snapshot validation precedes use.
+No bypass for cloned contexts, invalid generation, missing target or expired data.
+Allowed: actual HarvestSession.getSnapshot, canonical/source currentness checks,
+existing source membership, detached schema validation. Repeated input does not
+create a target; the session remains evidence-refinement/inventory owner.
+Forbidden: hidden maturity/visibility/quality as observations, ray hit as detection,
+source generators, A assessments, lifecycle/clock/inventory mutations, real optical
+claims, assumed quality from retention, or accepting a caller-written action ID.
+Boundary: simulation/observations.ts and its direct permanent
+`simulation/__tests__/observations.test.ts`; API_SURFACES records the handoff.
+No session/contracts/geometry/ray, C, UI, runtime or framework production changes.
+Spec: D Observation and action evidence, Fruit/crate conservation and M3 DoD.
+Failure owner: this helper rejects malformed/stale assumptions atomically; later
+viewpoint interpretation and expected-action confirmation are separate slices.
+Lifetime: context's current actual session snapshot and source tuple; evidence
+expires explicitly. No target ledger or retained cache is owned here. Reads never
+run observation work; the next adapter owns camera projection/sample occlusion.
+Gates: forged/current-source-old-run, replacement/cancel/clock expiry, wrong target
+or cultivar, getter snapshot, valid earlier evidence, null quality independence,
+confirmation rejection, same-target identity and no session/A/generator mutation.
+
 ### D dispatch admission
 
 Owner: D contracts admission. Inputs: composition-issued current canonical receipt

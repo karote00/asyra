@@ -546,6 +546,45 @@ confirmation. Wrong-target, duplicate or late confirmation cannot repeat an
 inventory transfer. Stale sensing, uncertain stem, lost retention and contact
 faults follow A's priority policy and require renewed evidence before resumption.
 
+The first target-admission slice accepts explicitly injected synthetic assumptions
+only. Its composition-issued context binds the actual HarvestSession's current
+immutable snapshot, canonical mission and issued current query geometry from the
+same update. Context identity, snapshot identity/run/generation, mission and all
+geometry handles are checked before and after admission. Running, paused and
+faulted runs may receive fresh target evidence; admission neither resumes nor
+acknowledges a fault. The composition predicate additionally guarantees this
+canonical mission is the actual run's mission: individually current snapshot and
+mission objects are insufficient, since SessionSnapshot does not expose that
+relationship. Idle, cancelled, invalidated and closed lifetimes reject it.
+Earlier observations may remain valid at the current clock; observedAt must be
+within its declared interval and no later than now, with validFrom <= now <
+validUntil. No implicit expiry extension or guessed sensor limit is introduced.
+
+Clone caller data once, then validate and freeze that same detached reading.
+The reading names its run/generation, mission/scene/robot/dock revisions and one
+current scene-local target, and carries a nonempty synthetic-assumption label.
+Cultivar, pose, maturity, sampled coverage, individual target-pedicel recognition,
+synthetic cutsite and approach/extraction corridor assumptions preserve explicit
+null unknowns. Coverage describes only the declared sample count, not whole-fruit
+visibility. Pedicel recognition is scoped to that individual target, never the
+rachis, a neighboring fruit or an anatomical AZ. Sample counts are nonnegative
+safe integers with visible <= total; total zero means no sampled coverage, never
+complete visibility. A supplied pose has finite coordinates and a valid rigid
+rotation. Pedicel and cutsite values remain injected assumptions, not inferred
+identifications. Spine integrity, calyx integrity
+and observed contact damage are independent synthetic quality fields; no value is
+filled from renderer truth or inferred from another field. Source membership
+validation may identify the existing fruit, but cannot certify these observations.
+
+This admission helper owns no second run, target inventory or action state.
+Repeated readings reference the same existing target; the later session consumer
+owns evidence refinement and rejects stale action confirmations. The first slice
+rejects action-confirmation input entirely: support/cut/retention/placement require
+a later current expected-action receipt from the action owner. No target reading,
+including declared clear corridors or intact quality, admits those actions.
+The next viewpoint adapter must produce bounded camera/sample-ray evidence over
+real near sources; injection alone does not complete observation or M3 UI gates.
+
 ### Fruit, crate and energy conservation
 
 Each stable target has one physical simulation disposition: attached, supported,
