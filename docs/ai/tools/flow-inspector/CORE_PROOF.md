@@ -540,12 +540,36 @@ the contract digest and must not overwrite the reviewed-candidate identity.
 Legacy targets without the pin retain their existing standalone behavior and
 bytes. New authoritative source assessment reports their missing verification
 authority instead of deriving a pin from current files or another review.
-The accepted baseline remains separate: its exact immutable history `revision`
-selects its own verification reference, and its `contractDigest` is an additional
-check rather than a unique version selector. Configuration-only changes may have
-the same contract digest in multiple versions. A target verification pin never
-substitutes for accepted verification-byte authority. Service producer composition
-and new assessment consumption of these pins remain subsequent owner slices.
+The accepted baseline remains separate. Its existing `acceptedBaseline.revision`
+is the mapping revision, not an immutable version-history index. For authoritative
+source assessment, a target additionally retains `acceptedVersion: {revision,
+contractDigest}` from the trusted service's `getAcceptedVersion(revision?)`.
+On a true new creation, omit the callback argument to select the current immutable
+accepted-history version. The returned revision must be a positive integer and
+its contract digest must equal the separately checked accepted mapping baseline.
+Clients cannot supply this pin or its revision. Mapping revision 5 and version
+revision 1 are valid distinct identities; equality must never be assumed.
+
+The target owner retains the accepted-version pin both at the record top level
+and as an owner-produced output in its first creation history entry, outside the
+client request. Load requires matching presence and values in both locations,
+forbids the field on later entries, and calls the trusted resolver with the saved
+revision to check that exact retained version. Replacing only either copy with
+another same-contract version rejects admission. This is the existing local audit
+consistency boundary, not an independently protected-store claim. Creation replay
+performs no version lookup; revise/link/admit preserve the original pin unchanged.
+
+An older standalone consumer without the optional callback keeps creating
+unpinned targets without new assessment authority. When the callback is
+configured, missing, invalid or conflicting returned metadata rejects creation;
+a saved pin always requires an exact resolver on load. Existing targets without
+the pin stay readable and are never upgraded by a latest-version or digest search.
+A configuration-only accepted version may share the contract digest of another
+version: only the pinned history revision selects its verification reference.
+Missing verification references or unavailable bytes block new assessment but do
+not make the retained target unreadable. The target's verification reference
+never substitutes for this accepted version's own bytes. Service selection and
+assessment consumption of these pins remain subsequent owner slices.
 
 Each work item has a stable UUID, title, one concrete step, nonempty obligation
 IDs, exact promised scope text, explicit runtime file scope, and prerequisite
