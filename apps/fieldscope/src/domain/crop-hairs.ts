@@ -49,6 +49,7 @@ export function appendSurfaceHairs(
     const vertexStart = builder.positions.length / 3
     const indexStart = builder.indices.length
     for (let j = 0; j < samples; j++) {
+      const hairStart = builder.indices.length
       const phase = count * 2.399963
       const u = 0.2 + (0.5 + 0.5 * Math.sin(phase)) * 0.35
       const v = 0.15 + (0.5 + 0.5 * Math.cos(phase * 1.7)) * (0.8 - u)
@@ -89,6 +90,7 @@ export function appendSurfaceHairs(
       if (builder.uvs.length)
         // A tiny valid UV patch keeps normal-map tangent derivatives finite.
         builder.uvs.push(0, 0, 0.001, 0, 0, 0.001, 0.001, 0.001)
+      builder.region('open-shell', hairStart)
       count++
     }
     if (samples && observe)

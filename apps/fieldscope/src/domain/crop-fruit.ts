@@ -59,6 +59,7 @@ export function appendFruitSurface(
   ripeness: number,
   phase: number
 ) {
+  const regionStart = builder.indices.length
   const rings = distant ? 3 : 14 + Number(cucumber) * 10,
     sides = distant ? 6 : 16 + Number(cucumber) * 8
   const surface = (t: number, angle: number): Point3 => {
@@ -97,11 +98,14 @@ export function appendFruitSurface(
         b = offset + ring * sides + ((side + 1) % sides)
       builder.indices.push(a, b, b + sides, a, b + sides, a + sides)
     }
+  // Original pole rings are not a verified closed material boundary.
+  builder.region('open-shell', regionStart)
   let spineCount = 0
   if (cucumber && !distant) {
     const scale = Math.min(1, length / 0.12)
     for (let row = 1; row <= 14; row++)
       for (let side = 0; side < 6; side++) {
+        const spineStart = builder.indices.length
         const t =
           Math.round(((row + 0.2 * Math.sin(side + phase)) / 16) * rings) /
           rings
@@ -147,6 +151,7 @@ export function appendFruitSurface(
             start + ((face + 1) % 4),
             start + 4
           )
+        builder.region('open-shell', spineStart)
         spineCount++
       }
   }
@@ -160,6 +165,7 @@ export function appendFruitCalyx(
   radius: number,
   distant: boolean
 ) {
+  const regionStart = builder.indices.length
   const sections = distant ? 2 : 5
   for (let sepal = 0; sepal < 5; sepal++) {
     const angle = (sepal * Math.PI * 2) / 5
@@ -182,6 +188,7 @@ export function appendFruitCalyx(
       }
     }
   }
+  builder.region('sheet', regionStart)
 }
 
 /** Flowering ovaries retain a yellow corolla; older attached fruit retain a dry remnant. */
@@ -195,6 +202,7 @@ export function appendCucumberFlower(
   while (builder.colors.length < builder.positions.length)
     builder.colors.push(0.89, 0.58, 0.035)
   const radius = [0.014, 0.009, 0.004, 0.002][Math.min(3, growth)] * scale
+  const regionStart = builder.indices.length
   const sections = distant ? 2 : 5
   for (let petal = 0; petal < 5; petal++) {
     const angle = (petal * Math.PI * 2) / 5
@@ -223,4 +231,5 @@ export function appendCucumberFlower(
       }
     }
   }
+  builder.region('sheet', regionStart)
 }

@@ -8,6 +8,7 @@ import {
 import type { FarmConfiguration } from './farm-configuration'
 import type { Point3 } from './greenhouse'
 import { TriangleBuilder } from './mesh'
+import type { SourceRegion } from './source-occupancy'
 import { CROP_LAYOUT, cropRandom, type CropSpecies } from './crop-layout'
 
 const CUCUMBER_GROWTH_STAGES = [
@@ -50,6 +51,8 @@ export interface CropModel {
   fruits: CropFruit[]
   parts: {
     id: string
+    regions: readonly SourceRegion[]
+    distantRegions?: readonly SourceRegion[]
     partitions: CropPartition[]
     distantPartitions?: CropPartition[]
     surface?: typeof CUCUMBER_LEAF_SURFACE
@@ -71,9 +74,11 @@ const triangle = (
   b: Point3,
   c: Point3
 ) => {
+  const start = builder.indices.length
   const offset = builder.positions.length / 3
   builder.positions.push(...a, ...b, ...c)
   builder.indices.push(offset, offset + 1, offset + 2)
+  builder.region('sheet', start)
 }
 
 /** Curved blade with shared vertices: smooth normals and a natural rolled edge. */
@@ -87,6 +92,7 @@ function leaf(
   cucumber: boolean,
   distant: boolean
 ) {
+  const start = builder.indices.length
   const point = (t: number, across: number, lift = 0): Point3 =>
     add(base, [
       Math.cos(angle) * length * t - Math.sin(angle) * across,
@@ -137,6 +143,7 @@ function leaf(
       builder.indices.push(a, b, b + 1, a, b + 1, a + 1)
     }
   }
+  builder.region('sheet', start)
   // Raised ribbons follow the blade; their width is sub-millimetre, not thick wire.
   const vein = (a: Point3, b: Point3) => {
     const d: Point3 = [
@@ -190,6 +197,7 @@ export function createCropModels(
           return {
             ...part,
             distantShape: counterpart.shape,
+            distantRegions: counterpart.regions,
             distantPartitions: counterpart.partitions
           }
         })
@@ -627,7 +635,8 @@ function createModel(
                       : TOMATO_LEAF_SURFACE
                   }
                 : {}),
-              shape: builder.shape()
+              shape: builder.shape(),
+              regions: builder.regions()
             }
           ]
         : []

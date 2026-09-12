@@ -1,3 +1,7 @@
+import {
+  readSourceRegions,
+  type SourceRegion
+} from '../domain/source-occupancy'
 import { createCropPositions, type CropPosition } from '../domain/crop-layout'
 import type { SiteMesh } from './site-projection'
 import { createCropModels, type CropModel } from '../domain/crop-models'
@@ -15,6 +19,8 @@ export interface CropGeometry {
   fruits: readonly Readonly<CropModel['fruits'][number]>[]
   parts: {
     id: string
+    regions: readonly SourceRegion[]
+    distantRegions: readonly SourceRegion[]
     partitions: readonly Readonly<
       CropModel['parts'][number]['partitions'][number]
     >[]
@@ -113,18 +119,31 @@ export class SiteGeometry {
     return meshes
   }
 
-  private primitives = new Map<string, SpatialShape>()
+  private primitives = new Map<
+    string,
+    { readonly shape: SpatialShape; readonly regions: readonly SourceRegion[] }
+  >()
 
-  primitive(key: string, produce: () => SpatialShape) {
+  primitive(
+    key: string,
+    produce: () => { shape: SpatialShape; regions: readonly SourceRegion[] }
+  ) {
     const existing = this.primitives.get(key)
     if (existing) return existing
-    const shape = readSpatialShape(produce())
-    this.primitives.set(key, shape)
+    const raw = produce()
+    const shape = readSpatialShape(raw.shape)
+    if (shape.kind !== 'triangles')
+      throw new Error('Expected primitive triangles')
+    const product = Object.freeze({
+      shape,
+      regions: readSourceRegions(raw.regions, shape.indices.length)
+    })
+    this.primitives.set(key, product)
     if (this.primitives.size > 32) {
       const oldest = this.primitives.keys().next().value
       if (oldest !== undefined) this.primitives.delete(oldest)
     }
-    return shape
+    return product
   }
 
   private crops: { top: number; bottom: number; models: CropGeometry[] }[] = []
@@ -149,10 +168,12 @@ export class SiteGeometry {
         })
       ),
       parts: model.parts.map((part) => {
-        if (!part.distantPartitions)
+        if (!part.distantPartitions || !part.distantRegions)
           throw new Error('Missing distant crop ownership')
         return {
           id: part.id,
+          regions: part.regions,
+          distantRegions: part.distantRegions,
           partitions: Object.freeze(
             part.partitions.map((span) => Object.freeze(span))
           ),
@@ -215,10 +236,33 @@ export class SiteGeometry {
         )
       }
     }
+    const admittedMeshes = Object.freeze(
+      meshes.map((mesh) => {
+        const shape = mesh.descriptor.shape
+        if (shape.kind !== 'triangles')
+          throw new Error('Expected source triangles')
+        const regions = readSourceRegions(mesh.regions, shape.indices.length)
+        const distant = mesh.descriptor.distant?.shape
+        const distantRegions =
+          distant && mesh.distantRegions
+            ? readSourceRegions(
+                mesh.distantRegions,
+                distant.kind === 'triangles' ? distant.indices.length : -1
+              )
+            : undefined
+        if (distant && !distantRegions)
+          throw new Error('Missing distant source regions')
+        return Object.freeze({
+          ...mesh,
+          regions,
+          ...(distantRegions ? { distantRegions } : {})
+        })
+      })
+    )
     this.sceneMeshes = meshes
     this.scene = Object.freeze({
       revision: ++sceneRevision,
-      meshes: Object.freeze(meshes.map((mesh) => Object.freeze({ ...mesh }))),
+      meshes: admittedMeshes,
       plants,
       fruits: Object.freeze(fruits)
     })
