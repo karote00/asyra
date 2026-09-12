@@ -425,7 +425,8 @@ real observation/motion providers and Core composition before motion UI closure.
 ### D session clock foundation card
 
 Owner: D session transitions, after completed admission contracts. Inputs: an
-issued prepared mission and current-source owners, required dispatch query and
+composition canonical receipt (prepared internally with prepareMission) and
+current-source owners, required dispatch query and
 resume-admission providers, explicit generation-bound intents and simulation
 seconds. Outputs: immutable lifecycle/run/clock/schedule snapshots and ordered
 transition evidence, with one run and at most one pending patrol. Start accepts
@@ -456,7 +457,11 @@ clock tests use explicit doubles, and UI remains unwired until real providers ex
 First Start anchors patrol deadlines. Crossed busy/paused deadlines coalesce to
 one pending flag; no automatic second Start, catch-up burst or evidence renewal.
 Cancel/replacement stops the old schedule. All external intents carry the snapshot
-generation; old queued intents cannot target a successor. Reads reuse completed
+generation; old queued intents cannot target a successor. Replacement/disposal
+are synchronous internal composition lifecycle calls, not queued external intents.
+A successor is validated before retiring the old run; a duplicate current receipt
+is a no-op and invalid/stale receipts leave the prior valid state unchanged.
+Reads reuse completed
 snapshots and transition products; no accumulated-log copying per tick, A work on
 read/clock, geometry preparation, wall timers or requestAnimationFrame scheduling.
 Gates: formal red/green for forged Start result, repeated Start, invalid/backwards
@@ -465,3 +470,24 @@ resume, cancellation/replacement/disposal and queued inputs; immutable determini
 snapshots plus work counts, naming, app unit/type/lint and independent review.
 Later action cases must exercise resume with actual working joints/held fruit and
 remaining motion, through this same current-state request, before M3 closure.
+
+Clock retirement iteration: the first Resume currentness check was incorrectly
+behind a paused-snapshot early return; the formal clock-then-source-retirement
+case disproved it. Re-read D session/pause and the exact session Inspector. The
+replacement plan is one same-generation settlement rule in Resume's finalization:
+retire changed sources even after an intervening clock or provider rejection,
+but never touch a cancelled/replaced successor generation. Keep result acceptance
+bound to the original paused snapshot. Only session.ts and its formal test change;
+focused clock/source/cancel/replace/rejected-provider combinations precede full
+gates. This preserves immutable reads, no source rebuilding and the existing
+resume provider boundary; no new owner or product behavior is introduced.
+
+D session clock foundation completed with independent review. The full app suite
+passed 293 tests; the final finite-clock arithmetic correction and added case
+passed all 15 focused session tests, with typecheck/lint/naming and scoped
+formatting clean. Formal red/green covers constructor/Start authority, replacement
+atomicity/idempotence, ordered pause/deadline behavior and source retirement across
+provider settlement. Only active elapsed accounting changes on clock inputs;
+no completed robot motion, picking or real clearance provider is claimed. Next
+D observation/motion/action owners and Core composition must supply real remaining
+movement admission before ordinary UI session controls and complete M3 validation.
