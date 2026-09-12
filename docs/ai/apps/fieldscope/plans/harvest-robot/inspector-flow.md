@@ -468,3 +468,33 @@ Cache dimensions: none in this ray slice. Measured repeated bound scans are the
 input to a subsequent QueryGeometry preparation step shared by ray and collision,
 not authorization for a ray-local cache. That next card must define source lifetime,
 bounds/disposal and uncached equivalence before implementation.
+
+### D static source surface pairs
+
+Owner: `simulation/collision.ts`, a geometry-evidence helper for D movement queries.
+Inputs: current issued GeometrySource; clone-once synthetic time/validity and
+mesh/instance/triangle ordinals bound to that source; explicit robot base/joints,
+leaf source-pose or unknown, fruit all-attached or unknown. Resolve only original
+source witnesses and original source-region ownership; no caller geometry proxy.
+Outputs: frozen complete batch with surface-separated/surface-intersection/unknown,
+original pair witnesses/reasons and bounded work counts. These are not body-free,
+material occupancy, contact allowance or movement-clear results.
+Conditions: all references/schema valid before geometry work; source current before
+and after; [from,until) validity. Missing dynamics/degenerate/uncertain arithmetic
+remain unknown. No same-body, joint, tire-ground or tool-target contact bypass.
+Allowed: completed QueryGeometry, C FK and existing query arithmetic/frame producer;
+strict interval separation/intersection proofs and generic singleton exact dyadic
+fallback. Original instance→descriptor and body→base transform ordering retained.
+Forbidden: generation, rounded-world singleton claims, EPS patches, layer opacity
+exemptions, volume inference, ray hits as surface-pair proof, endpoints as sweep,
+IK/action/session/UI changes or new caches.
+Boundary: `simulation/collision.ts`, `simulation/__tests__/collision.test.ts`,
+API_SURFACES; minimal `simulation/ray-query.ts` shared forward/instance-frame
+handoff and its direct regression file only. Existing ray inverse and predicates
+retain behavior; collision does not duplicate quaternion/instance arithmetic.
+Spec: static source surface-pair evidence and motion/quality clauses. Failure owner:
+D source query rejects malformed/stale inputs; uncertainty remains its own reason.
+Lifetime: one batch only, original issued source lifetime; no retained cache.
+Gates: exact and uncertain source-pair cases, nested-volume counterexample,
+actual C transformed/instanced and robot/dock pairs, zero generation/bounds scans,
+FK/frame reuse, original ray suite, full app unit/type/lint/naming/build and review.

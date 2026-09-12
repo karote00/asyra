@@ -837,6 +837,43 @@ and elapsed time before adding a retained acceleration index. Optimization must
 preserve these exact outcomes and prove source retirement plus bounded preparation;
 no per-ray shape reconstruction or world-vertex copy is allowed.
 
+### Static source surface-pair evidence
+
+Before continuous movement admission, D may compare explicitly selected original
+source triangle pairs at one synthetic time. The query consumes a current issued
+GeometrySource and detached input selecting mesh/instance/triangle ordinals within
+that exact product, with the current robot base/joints and declared leaf/fruit
+state. It resolves immutable original mesh, region and triangle witnesses; copied
+source products, invalid ordinals or malformed state are rejected before work.
+Validity is [from, until); expired or unknown dynamic state returns unknown.
+Currentness is rechecked before returning the complete batch.
+
+World points enclose the original C instance placement, installed transform, or
+robot body FK followed by base transform. Reuse the existing query frame arithmetic
+and original trigonometric/quaternion coefficients; rounded world vertices cannot
+be promoted to exact input. A static surface result is surface-separated,
+surface-intersection or unknown. Strict separating-axis proofs establish surface
+separation; supported original-triangle crossings establish intersection. Generic
+exact dyadic predicates may resolve singleton inputs, including coplanar overlap,
+edge and vertex contact. Unresolved arithmetic or degenerate triangles stay
+unknown. No EPS expansion, source-specific exception or invented thickness.
+
+These are surface relations only. Nested closed solids may have separated surfaces
+while their material volumes overlap. Open-shell interiors remain unresolved and
+sheet intersections remain real surface evidence. The query does not return body
+clearance or movement admission. It never exempts tire/support, adjacent joints,
+parts of the same robot or tool/fruit contact; later contact admission must name
+its intended bounded interface independently. Source spines, calyx and pedicel
+remain present without a claim about contact damage or quality.
+
+Acceptance: original transformed/instanced C pairs, crossing/coplanar/touch and
+separated controls, nested surfaces without volume-clear inference, conservative
+numerical ambiguity, malformed/getter-backed/stale inputs and immutable output.
+Selected original vertices only, one FK per robot-containing batch and shared
+frame products per batch perform no source generation, bounds preparation or
+session mutation. This precedes continuous linear sweep, articulated trajectory,
+full-body coverage and exact intended-contact admission; it cannot replace them.
+
 ### Motion and collision admission
 
 A's straight-lane screen is not motion clearance. Every proposed base, arm/tool,
