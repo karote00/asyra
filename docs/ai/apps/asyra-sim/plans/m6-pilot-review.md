@@ -1226,3 +1226,43 @@ logs are `tmp/capacity/component-seed-profile.log`. This is an explicitly opt-in
 rejected hypothesis, while the ordinary representative capacity gate stays red
 and selected. The separate exact-frontier replay also passed its current numeric
 expectations without a full-goal completion claim.
+
+### Completed source witness transport - passive readiness
+
+Objective: test whether an already completed nonpenetrating source witness can
+provide a legal upper seed at the next actual sample, without treating its old
+distance as evidence at the new pose. Owner is Inspector `method`; only a new
+permanent methods test and this plan may change. Production, cache dimensions,
+sample order, full penetration traversal and observable witness policy stay fixed.
+
+Cases are frozen to segment 114 start-to-middle and segment 74 middle-to-end,
+whose completed source witnesses appear in `current141-frontier.log`. Capture
+the actual ordered geometry identities, old static poses and complete world
+witness enclosures from ordinary queries. Outward inverse-transform each whole
+enclosure, then forward-transform it at the new static pose and use the outward
+norm upper only. Never use a midpoint, penetration witness, lower certificate,
+different segment or old result as the new result. Charge one admission check,
+two inverse transforms, two forward transforms and one norm: six actual units
+per eligible transfer, one on rejection, under the combined 500k/20s guard.
+
+Oracle: independently known dyadic source coordinates under cardinal and exact
+normalized rational rotations must remain enclosed, including asymmetric wide
+input enclosures; exact rational squared distance bounds test the upper. The
+two passive source cases retain unchanged full baseline queries and report the
+transported upper, all added costs and first-warning work before the target.
+No membership transform reuse is assumed. Stop on invalid provenance or no legal
+early warning; any positive result still needs a separate actual-delta and
+observable-evidence review before production. Reviewer approved this mathematical
+protocol; no source triangle/barycentric API expansion is part of this probe.
+
+The independent oracle passed three cases before the two passive source cases
+were enabled; all five then passed. Transported upper is 0.016053481245753624 at
+segment 114's midpoint and 0.00802329653171193 at segment 74's endpoint, both below
+0.02, each with all six added units. Baseline target work is 5,168 and 6,092;
+first-warning work 5,049 and 5,902 is only an avoidable-work upper limit, not an
+actual saving. The original source query results remain untouched. Evidence is
+`tmp/capacity/witness-transport-profile.log`, with the numerical oracle in the
+same permanent `witness-transport-profile.test.ts` (source profiling is opt-in).
+This positive admission supports review of an actual-delta/observable-contract
+proposal only: a new seed may change which legal witness wins, so complete
+PairEvidence equality cannot be silently replaced by classification equality.
