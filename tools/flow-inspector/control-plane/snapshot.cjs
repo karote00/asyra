@@ -190,9 +190,8 @@ function validateRuntimeSource(snapshot, fullFiles = snapshot.files) {
   })
 }
 
-function composeSource(
+function selectSourceEntries(
   repositoryRoot,
-  runDirectory,
   runtimeInput,
   verificationInput,
   contract
@@ -232,6 +231,76 @@ function composeSource(
     throw new Error(
       'Source composition requires exact ordinary verification configuration'
     )
+  const selected = [
+    ...runtime.files.map((entry) => ({ entry, root: runtimeInput.sourceRoot })),
+    ...verification.files.map((entry) => ({
+      entry,
+      root: verificationInput.sourceRoot
+    }))
+  ].sort((a, b) =>
+    a.entry.path < b.entry.path ? -1 : Number(a.entry.path > b.entry.path)
+  )
+  if (new Set(selected.map((item) => item.entry.path)).size !== selected.length)
+    throw new Error('Source composition inventories overlap')
+  return { repository, runtime, verification, selected }
+}
+
+function readSourceEntries(selected, consume) {
+  const files = []
+  for (const { entry, root } of selected) {
+    const input = safePath(root, entry.path)
+    if (!fs.lstatSync(input).isFile())
+      throw new Error('Source composition requires regular source files')
+    const bytes = fs.readFileSync(input)
+    if (bytes.length !== entry.size || sha256(bytes) !== entry.digest)
+      throw new Error('Source composition byte fingerprint mismatch')
+    consume?.(entry, bytes)
+    files.push(
+      Object.freeze({
+        path: entry.path,
+        digest: entry.digest,
+        size: entry.size
+      })
+    )
+  }
+  return files
+}
+
+function verifySourceDescriptors(files, runtime, verification, contract) {
+  const runtimeSource = createRuntimeSource(files)
+  const verificationSource = createVerificationSource(files, contract)
+  if (
+    runtimeSource.digest !== runtime.digest ||
+    verificationSource.digest !== verification.digest
+  )
+    throw new Error('Source composition descriptor mismatch')
+  return { runtimeSource, verificationSource }
+}
+
+function verifyRetainedSource(repositoryRoot, input, contract) {
+  const { runtime, verification, selected } = selectSourceEntries(
+    repositoryRoot,
+    input,
+    input,
+    contract
+  )
+  const files = readSourceEntries(selected)
+  verifySourceDescriptors(files, runtime, verification, contract)
+}
+
+function composeSource(
+  repositoryRoot,
+  runDirectory,
+  runtimeInput,
+  verificationInput,
+  contract
+) {
+  const { repository, runtime, verification, selected } = selectSourceEntries(
+    repositoryRoot,
+    runtimeInput,
+    verificationInput,
+    contract
+  )
   const sourceRoot = safePath(
     repository,
     path.relative(repository, path.join(runDirectory, 'source'))
@@ -250,43 +319,17 @@ function composeSource(
     )
       throw new Error('Source composition destination overlaps retained source')
   }
-  const selected = [
-    ...runtime.files.map((entry) => ({ entry, root: runtimeInput.sourceRoot })),
-    ...verification.files.map((entry) => ({
-      entry,
-      root: verificationInput.sourceRoot
-    }))
-  ].sort((a, b) =>
-    a.entry.path < b.entry.path ? -1 : Number(a.entry.path > b.entry.path)
-  )
-  if (new Set(selected.map((item) => item.entry.path)).size !== selected.length)
-    throw new Error('Source composition inventories overlap')
-  const files = []
-  for (const { entry, root } of selected) {
-    const input = safePath(root, entry.path)
-    if (!fs.lstatSync(input).isFile())
-      throw new Error('Source composition requires regular source files')
-    const bytes = fs.readFileSync(input)
-    if (bytes.length !== entry.size || sha256(bytes) !== entry.digest)
-      throw new Error('Source composition byte fingerprint mismatch')
+  const files = readSourceEntries(selected, (entry, bytes) => {
     const output = safePath(sourceRoot, entry.path)
     fs.mkdirSync(path.dirname(output), { recursive: true })
     fs.writeFileSync(output, bytes, { flag: 'wx', mode: 0o444 })
-    files.push(
-      Object.freeze({
-        path: entry.path,
-        digest: entry.digest,
-        size: entry.size
-      })
-    )
-  }
-  const runtimeSource = createRuntimeSource(files)
-  const verificationSource = createVerificationSource(files, contract)
-  if (
-    runtimeSource.digest !== runtime.digest ||
-    verificationSource.digest !== verification.digest
+  })
+  const { runtimeSource, verificationSource } = verifySourceDescriptors(
+    files,
+    runtime,
+    verification,
+    contract
   )
-    throw new Error('Source composition descriptor mismatch')
   const manifest = JSON.stringify(files)
   fs.writeFileSync(manifestPath, manifest, { flag: 'wx', mode: 0o444 })
   return Object.freeze({
@@ -416,6 +459,7 @@ function captureSource(repositoryRoot, runDirectory, contract) {
 }
 
 module.exports = {
+  verifyRetainedSource,
   composeSource,
   captureSource,
   createRuntimeSource,

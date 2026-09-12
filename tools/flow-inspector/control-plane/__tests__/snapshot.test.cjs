@@ -10,7 +10,8 @@ const {
   createRuntimeSource,
   createVerificationSource,
   validateSourceSnapshot,
-  composeSource
+  composeSource,
+  verifyRetainedSource
 } = require('../snapshot.cjs')
 const { loadContract } = require('../contracts.cjs')
 const root = path.resolve(__dirname, '../../../..')
@@ -876,4 +877,61 @@ test('ordinary composition cannot write beneath a retained tree through a noncan
   )
   assert.equal(write.mock.callCount(), 0)
   assert.equal(mkdir.mock.callCount(), 0)
+})
+
+test('retained source verification reads each bound entry once without writes or a replacement authority', (t) => {
+  const { repository, capture } = copiedSource(t)
+  const contract = loadContract(repository)
+  const snapshot = capture(randomUUID(), contract)
+  const input = compositionInput(repository, snapshot, contract)
+  const original = JSON.stringify(input)
+  const read = t.mock.method(fs, 'readFileSync')
+  const write = t.mock.method(fs, 'writeFileSync')
+  const mkdir = t.mock.method(fs, 'mkdirSync')
+  assert.equal(verifyRetainedSource(repository, input, contract), undefined)
+  assert.equal(read.mock.callCount(), snapshot.fileCount)
+  assert.ok(
+    read.mock.calls.every((call) =>
+      String(call.arguments[0]).startsWith(input.sourceRoot + path.sep)
+    )
+  )
+  assert.equal(write.mock.callCount(), 0)
+  assert.equal(mkdir.mock.callCount(), 0)
+  assert.equal(JSON.stringify(input), original)
+})
+
+test('retained source verification rejects later byte corruption and unsafe authority without repairing source', (t) => {
+  assert.equal(typeof verifyRetainedSource, 'function')
+  const { repository, capture } = copiedSource(t)
+  const contract = loadContract(repository)
+  const snapshot = capture(randomUUID(), contract)
+  const input = compositionInput(repository, snapshot, contract)
+  verifyRetainedSource(repository, input, contract)
+  const file = path.join(input.sourceRoot, contract.testFile)
+  const original = fs.readFileSync(file)
+  for (const corruption of ['missing', 'bytes', 'symlink']) {
+    fs.rmSync(file)
+    if (corruption === 'bytes')
+      fs.writeFileSync(file, Buffer.alloc(original.length, 32))
+    if (corruption === 'symlink')
+      fs.symlinkSync(path.join(repository, contract.testFile), file)
+    const write = t.mock.method(fs, 'writeFileSync')
+    const mkdir = t.mock.method(fs, 'mkdirSync')
+    assert.throws(
+      () => verifyRetainedSource(repository, input, contract),
+      /fingerprint|symlink|ENOENT/i
+    )
+    const invalid = structuredClone(input)
+    invalid.admission.configurationDigest = '0'.repeat(64)
+    assert.throws(
+      () => verifyRetainedSource(repository, invalid, contract),
+      /configuration/i
+    )
+    assert.equal(write.mock.callCount(), 0)
+    assert.equal(mkdir.mock.callCount(), 0)
+    write.mock.restore()
+    mkdir.mock.restore()
+    fs.rmSync(file, { force: true })
+    fs.writeFileSync(file, original)
+  }
 })
