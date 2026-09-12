@@ -47,16 +47,20 @@ function captureSource(repositoryRoot, runDirectory, contract) {
     walk('packages/' + name + '/src')
     paths.add('packages/' + name + '/package.json')
   }
+  paths.add('package.json')
+  paths.add('yarn.lock')
+  const runtimePaths = new Set(paths)
   for (const relative of [
     contract.manifestPath,
     contract.architecturePath,
     contract.specPath,
     contract.testFile,
-    contract.configFile,
-    'package.json',
-    'yarn.lock'
-  ])
+    contract.configFile
+  ]) {
+    if (runtimePaths.has(relative))
+      throw new Error('Verification input overlaps runtime source: ' + relative)
     paths.add(relative)
+  }
   fs.mkdirSync(sourceRoot, { recursive: true })
   const files = []
   const captured = new Map()
@@ -104,8 +108,19 @@ function captureSource(repositoryRoot, runDirectory, contract) {
     flag: 'wx',
     mode: 0o444
   })
+  const runtimeFiles = Object.freeze(
+    files
+      .filter((entry) => runtimePaths.has(entry.path))
+      .map(({ path, size, digest }) => Object.freeze({ path, size, digest }))
+  )
+  const runtimeSource = Object.freeze({
+    format: 1,
+    files: runtimeFiles,
+    digest: sha256(JSON.stringify(runtimeFiles))
+  })
   return {
     kind: 'worktree-snapshot',
+    runtimeSource,
     sourceRoot,
     digest: sha256(JSON.stringify(files)),
     contractDigest: contract.digest,
