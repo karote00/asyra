@@ -261,6 +261,23 @@ Feature: Harvest robot feasibility and supervised harvesting
 
 
   @M3
+  Scenario: Injected target assumptions follow the actual current run
+    Given a current session snapshot and matching mission and scene sources
+    When an earlier but still valid synthetic target reading is admitted
+    Then it retains its assumption label and the existing target identity
+    And unknown visibility, attachment and quality remain unknown
+    And the session clock, disposition and inventory remain unchanged
+    When a cancelled run or copied context supplies another reading
+    Then that reading is rejected without mutation
+
+  @M3
+  Scenario: A target reading cannot confirm harvesting actions
+    Given an injected target reading with declared intact calyx and a clear corridor
+    When no current expected-action receipt exists
+    Then it cannot confirm support, cut, retention or placement
+    And declared quality does not prove undamaged physical fruit
+
+  @M3
   Scenario: Dispatch evidence is admitted before a run exists
     Given a canonical mission whose design reports retain unknown evidence
     And complete fresh synthetic dispatch evidence bound to its mission and scene revisions
