@@ -563,3 +563,11 @@ one. Gates: focused red/green, app unit/typecheck/lint/naming and independent
 readiness/code review. No presentation change or new browser gate in this pure
 source segment. Stop for missing canonical ownership, unsupported source requiring
 another owner, altered source geometry or a new product contact/physics decision.
+
+D shared geometry preparation completed: six focused cases cover real C near
+source completeness, exact fruit partition/plant identity, descriptor-after-instance
+placement, immutable source reuse and atomic receipt/source retirement. The initial
+red was a missing-module collection failure before the new owner existed, not six
+failing behavior assertions. Independent code review passed; 301 app unit tests,
+typecheck, lint and naming pass. No observation, sweep/contact decision or app
+presentation changed in this source preparation slice.
