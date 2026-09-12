@@ -4,57 +4,13 @@ import { interval, type Interval } from '../../../domain/interval'
 import * as kinematics from '../../../domain/kinematic-algebra'
 import { EXPERIMENT_RESOURCE_PROFILE } from '../../contracts'
 import * as convex from '../convex-query'
-import type { ConvexShape, DistanceEvidence } from '../convex-query'
-import { localPoint } from '../mesh-index'
+import type { DistanceEvidence } from '../convex-query'
 import { MeshWorkLimit, OriginalMeshQuery } from '../original-mesh-query'
 import { queryOriginalPartPair } from '../original-part-method'
 import { representativeSnapshot } from './representative-fixture'
+import { transport, type SourceWitness } from './witness-transport-control'
 
 const ops = kinematics.poseOperations(kinematics.intervalAlgebra)
-interface SourceWitness {
-  shapes: readonly [ConvexShape, ConvexShape]
-  time: number
-  node: readonly [number, number]
-  evidence: DistanceEvidence
-}
-// Test-owned passive operation: no result or source geometry is mutated.
-function transport(
-  source: SourceWitness,
-  target: SourceWitness,
-  tick: () => void
-) {
-  tick()
-  if (
-    source.node !== target.node ||
-    source.time < source.node[0] ||
-    source.time > target.time ||
-    target.time > source.node[1] ||
-    source.evidence.penetration ||
-    !Number.isFinite(source.evidence.upper) ||
-    source.shapes.some(
-      (shape, side) =>
-        shape.geometry !== target.shapes[side].geometry ||
-        !Object.isFrozen(shape.geometry)
-    )
-  )
-    return undefined
-  tick()
-  const a = localPoint(source.shapes[0].pose, source.evidence.witnessA)
-  tick()
-  const b = localPoint(source.shapes[1].pose, source.evidence.witnessB)
-  tick()
-  const wa = ops.add(
-    target.shapes[0].pose.position,
-    ops.rotate(target.shapes[0].pose.rotation, a)
-  )
-  tick()
-  const wb = ops.add(
-    target.shapes[1].pose.position,
-    ops.rotate(target.shapes[1].pose.rotation, b)
-  )
-  tick()
-  return { a: wa, b: wb, upper: ops.norm(ops.sub(wa, wb))[1] }
-}
 // Independent exact binary64-to-rational comparison, no production interval
 // arithmetic in the expected normalized-rotation coordinates or squared norm.
 function rational(value: number): readonly [bigint, bigint] {

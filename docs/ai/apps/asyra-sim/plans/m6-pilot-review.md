@@ -1266,3 +1266,56 @@ same permanent `witness-transport-profile.test.ts` (source profiling is opt-in).
 This positive admission supports review of an actual-delta/observable-contract
 proposal only: a new seed may change which legal witness wins, so complete
 PairEvidence equality cannot be silently replaced by classification equality.
+
+### Transported witness - bounded actual-delta diagnostic
+
+Objective: measure the actual traversal effect of the two reviewed seeds,
+without production edits. Scope is a test-owned shared transport/interception
+helper, its unchanged existing mathematical oracles, one new diagnostic test
+and this plan. Cases stay segment 114 start-to-middle and 74 middle-to-end.
+Each candidate must first compute its source witness in the same real query
+context and pay all original source/preparation work. The target then pays all
+six transport units through the existing owned tick before its ordinary distance
+call. Intercept only that call's existing private witness() values, restoring
+the method in finally; do not copy the solver or change original traversal.
+
+Observable oracle, reviewed against version 1.0.2's nonunique valid witness
+contract: the two targets must preserve threshold classification, penetration
+and query time. Old axis, lower, convergence and iterations are not transported;
+the unchanged solver establishes them. New upper/lower/witness coordinates may
+differ but must be finite ordered conservative bounds; overlap with baseline
+bounds is only a consistency check, never independent truth. Preserve existing
+full-field equivalence tests. Add an exact dyadic closed-box squared-distance
+seed-path oracle and a later-component penetration case before actual source
+deltas, so a warning cannot hide penetration. Source-point upper validity follows
+the independently checked whole-enclosure transport; lower validity retains the
+original full-source certificates. No general plain-DistanceEvidence admission
+API is implied by this controlled frozen-geometry/static-unit-pose prototype.
+
+Report source, target, added and total work plus convex calls and CPU for control
+and candidate. Original 500k/20s guards remain; neither setup nor warm preparation
+is free. Stop on changed classification/penetration, invalid bounds, missing
+provenance or no net material benefit. A positive result requires a separately
+reviewed production ownership/provenance card; no full/browser run follows this
+diagnostic directly.
+
+The exact source experiment has material target savings: segment 114 target
+5,168 to 2,058 units, convex calls 386 to zero; segment 74 target 6,092 to 2,451,
+convex calls 448 to two. Each includes all six added seed units. Paid work before
+the target remains exactly 19,690 and 25,143 on both sides. Complete segment work
+is 30,453/27,343 and 31,236/27,595, with observed CPU 150/108 and 145/105 ms.
+Target numeric witnesses are explicitly different: 114 upper rises from
+0.015552252265540694 to 0.016053481245753624 and lower changes; 74 retains its upper
+but lower changes. Both remain nonpenetrating findings with valid source bounds.
+The complete PairEvidence for both segments nevertheless remains equal in every
+field, and the new diagnostic asserts that stronger observed equivalence.
+
+Independent seeded-path cases passed for the exact dyadic box gap squared under
+both hierarchy modes, later-component penetration despite a warning seed, and
+finally restoration after budget exhaustion. The original three transport
+oracles retain their behavior after shared test-helper extraction. All actual
+source inputs remain immutable controlled snapshots and domain static poses;
+this test interception does not grant general admission to plain DistanceEvidence.
+Evidence is `tmp/capacity/witness-seed-profile.log`. No production edit or broader
+capacity/browser gate has been performed; independent diagnostic review precedes
+the next explicit production readiness decision.
