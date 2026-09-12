@@ -142,8 +142,10 @@ nominal battery Wh, usable fraction, SOC, SOC uncertainty, next-work/return/
 contingency/reserve Wh; dock X/Z. Tool is cucumber support-and-cut or tomato padded
 support-and-cut. Scan side is left/right/both. A strip mission stores its bay and
 canonical `stripId`; shared-side missions keep their existing bay/side selection.
-B resolves `stripId` to the current ordinal only when calling A's positional lane
-assessment. A missing selected ID produces a null lane report and invalid-route
+B resolves `stripId` to the current ordinal for A's positional lane assessment.
+The completed report also exposes that detached immutable `route` for D's fresh
+survey admission; D never resolves strip identity again. The route is null when
+the selected identity or interval is invalid, and is not motion clearance. A missing selected ID produces a null lane report and invalid-route
 reason; no neighbor is substituted. Removing a preceding strip or reordering
 follows the same selected ID and recomputes its current route. Undo/Redo restores
 both canonical strip identity and mission binding through normal state replay.

@@ -207,6 +207,7 @@ export function assessRobotDesign(
   })
   return {
     settings,
+    route: lane && resolved ? Object.freeze({ ...resolved }) : null,
     lane,
     energy,
     exchangeRequired: settings.payload >= settings.payloadLimit

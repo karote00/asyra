@@ -31,7 +31,9 @@ Inputs: robot/route/patrol edits; validated farm configuration with unique stabl
 strip IDs; completed A reports. Strip mission bindings use stripId, never array
 position as identity. B resolves current ordinal for A and returns a null lane
 when the selected ID is absent. Reorder/deletion of other IDs preserves binding.
-Outputs: canonical robot/mission settings and scoped derived UI values; one edit
+Outputs: canonical robot/mission settings, the completed immutable positional
+`route` for A consumers (null for missing identity/invalid interval), and scoped
+derived UI values; one edit
 per intended history action. M2 has no run; M3 must invalidate incompatible runs.
 Conditions: admission must succeed; failed edits leave prior canonical state intact.
 Replay bypasses intent dispatch, uses normal Core state apply and projections.
