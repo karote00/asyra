@@ -307,3 +307,15 @@ No contact coefficient, spine retention rate, damage proof or new cut cap is
 introduced. D later requires explicit action/anatomy evidence; ordinary source
 metadata is not successful perception. This direct refinement was independently
 reviewed before production edits.
+
+C source preparation completed on the simulation goal branch. Original geometry
+and material hashes for all 40 cultivar variants and both detail levels remain
+unchanged. Formal tests prove source triangle ownership, late hair provenance,
+immutable installed identities, scene retirement and bounded generation; empty
+plant populations perform no cultivar generation. Independent code review passed.
+Final gates passed: 260 unit tests, typecheck, lint, 11 naming checks, 17 build
+tasks and nine ordinary greenhouse/crop browser cases. Author screenshot review
+and an independent review of cucumber and young/ripe tomato detail at 10000%
+zoom used the live app at http://127.0.0.1:5178. Source geometry retention is
+verified; physical contact quality is not. D execution, working-arm articulation
+and harvested-fruit projection remain subsequent owner steps.

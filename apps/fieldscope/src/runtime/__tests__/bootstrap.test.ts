@@ -75,6 +75,7 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
     }
     try {
       flush()
+      const initialScene = runtime.getScene()
       const notify = vi.fn(),
         unsubscribe = runtime.subscribe(notify)
       if (mode === 'navigation') {
@@ -188,6 +189,8 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
         expect(measure).toHaveBeenCalledTimes(1)
         expect(notify).not.toHaveBeenCalled()
         expect(runtime.getView()).toBe(initial)
+        expect(runtime.getScene()).toBe(initialScene)
+        expect(runtime.isCurrentScene(initialScene)).toBe(true)
         expect(build).toHaveBeenCalledTimes(1)
         await Promise.all([
           runtime.setLayer('film', false),
@@ -356,6 +359,8 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
           flush()
           expect(preset).toHaveBeenCalledTimes(configurationPresetCount + 1)
           expect(runtime.getConfiguration()).toEqual(changedConfig)
+          expect(runtime.isCurrentScene(initialScene)).toBe(false)
+          expect(runtime.getScene().revision).not.toBe(initialScene.revision)
           expect(runtime.getUndoDepth()).toBe(depth + 1)
           expect(build).toHaveBeenCalledTimes(2)
           expect(measure).toHaveBeenCalledTimes(2)
@@ -373,12 +378,16 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
           await runtime.redo()
           flush()
           expect(runtime.getConfiguration()).toEqual(changedConfig)
+          expect(runtime.isCurrentScene(initialScene)).toBe(false)
+          expect(runtime.getScene().revision).not.toBe(initialScene.revision)
           expect(preset).toHaveBeenCalledTimes(configurationPresetCount + 3)
           expect(build).toHaveBeenCalledTimes(4)
           await expect(
             runtime.setConfiguration({ ...changedConfig, netBottom: 4 })
           ).rejects.toThrow()
           expect(runtime.getConfiguration()).toEqual(changedConfig)
+          expect(runtime.isCurrentScene(initialScene)).toBe(false)
+          expect(runtime.getScene().revision).not.toBe(initialScene.revision)
           expect(build).toHaveBeenCalledTimes(4)
           expect(runtime.getUndoDepth()).toBe(depth + 1)
           await runtime.setConfiguration(changedConfig)
@@ -400,6 +409,7 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
       expect(driver.dispose).toHaveBeenCalledTimes(1)
       expect(disconnect).toHaveBeenCalledTimes(1)
       expect(() => runtime.orbit(1, 1)).toThrow()
+      expect(() => runtime.getScene()).toThrow()
       await runtime.dispose()
       expect(cropBuild).toHaveBeenCalledTimes(
         mode === 'soil-edit' || mode === 'navigation' ? 1 : 2
