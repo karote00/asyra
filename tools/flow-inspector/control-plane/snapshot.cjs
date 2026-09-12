@@ -35,6 +35,75 @@ function createRuntimeSource(fullFiles) {
   })
 }
 
+function createVerificationSource(fullFiles, contract) {
+  const roles = {
+    manifest: contract.manifestPath,
+    architecture: contract.architecturePath,
+    spec: contract.specPath,
+    test: contract.testFile,
+    configuration: contract.configFile
+  }
+  const paths = Object.values(roles)
+  if (
+    new Set(paths).size !== paths.length ||
+    paths.some(
+      (file) =>
+        typeof file !== 'string' ||
+        file.includes('\\') ||
+        file.includes('\0') ||
+        file
+          .split('/')
+          .some((part) => !part || part === '.' || part === '..') ||
+        runtimePath(file)
+    )
+  )
+    throw new Error('Verification source: invalid or overlapping role path')
+  const files = paths.sort().map((file) => {
+    const entries = fullFiles.filter((entry) => entry.path === file)
+    if (entries.length !== 1)
+      throw new Error('Verification source: missing or duplicate role entry')
+    const { path, size, digest } = entries[0]
+    return Object.freeze({ path, size, digest })
+  })
+  const payload = {
+    format: 1,
+    contractDigest: contract.digest,
+    mappingVersion: contract.mappingVersion,
+    architectureVersion: contract.architectureVersion,
+    roles: Object.freeze(roles),
+    files: Object.freeze(files)
+  }
+  return Object.freeze({ ...payload, digest: sha256(JSON.stringify(payload)) })
+}
+
+function validateSourceSnapshot(
+  snapshot,
+  contract,
+  fullFiles = snapshot.files
+) {
+  const present = Object.hasOwn(snapshot, 'verificationSource')
+  if (present && !Object.hasOwn(snapshot, 'runtimeSource'))
+    throw new Error('Verification source: runtime identity required')
+  const runtimeSource = validateRuntimeSource(snapshot, fullFiles)
+  if (!present) return Object.freeze({ runtimeSource })
+  if (
+    !runtimeSource ||
+    snapshot.contractDigest !== contract.digest ||
+    snapshot.mappingVersion !== contract.mappingVersion ||
+    snapshot.architectureVersion !== contract.architectureVersion
+  )
+    throw new Error('Verification source: admitted contract mismatch')
+  const verificationSource = createVerificationSource(fullFiles, contract)
+  if (
+    JSON.stringify(snapshot.verificationSource) !==
+    JSON.stringify(verificationSource)
+  )
+    throw new Error(
+      'Verification source: descriptor does not bind captured role bytes'
+    )
+  return Object.freeze({ runtimeSource, verificationSource })
+}
+
 function safePath(root, relative) {
   const resolved = path.resolve(root, relative)
   if (!resolved.startsWith(path.resolve(root) + path.sep))
@@ -211,6 +280,7 @@ function captureSource(repositoryRoot, runDirectory, contract) {
   return {
     kind: 'worktree-snapshot',
     runtimeSource,
+    verificationSource: createVerificationSource(files, contract),
     sourceRoot,
     digest: sha256(JSON.stringify(files)),
     contractDigest: contract.digest,
@@ -230,7 +300,9 @@ function captureSource(repositoryRoot, runDirectory, contract) {
 module.exports = {
   captureSource,
   createRuntimeSource,
+  createVerificationSource,
   validateRuntimeSource,
+  validateSourceSnapshot,
   safePath,
   sha256
 }

@@ -7,7 +7,9 @@ const test = require('node:test')
 const {
   captureSource,
   validateRuntimeSource,
-  createRuntimeSource
+  createRuntimeSource,
+  createVerificationSource,
+  validateSourceSnapshot
 } = require('../snapshot.cjs')
 const { loadContract } = require('../contracts.cjs')
 const root = path.resolve(__dirname, '../../../..')
@@ -479,4 +481,187 @@ test('source owner constructs candidate runtime identity from captured bytes wit
   }
   assert.deepEqual(validateRuntimeSource(candidate), runtime)
   assert.equal(read.mock.callCount(), 0)
+})
+
+test('capture retains an immutable verification descriptor from exactly its admitted role bytes without extra reads', (t) => {
+  const output = fs.mkdtempSync(path.join(parent, 'verification-source-'))
+  t.after(() => fs.rmSync(output, { recursive: true, force: true }))
+  const contract = loadContract(root)
+  const originalRead = fs.readFileSync
+  const read = t.mock.method(fs, 'readFileSync', (...args) =>
+    originalRead(...args)
+  )
+  const snapshot = captureSource(root, output, contract)
+  assert.equal(read.mock.callCount(), snapshot.fileCount)
+  read.mock.restore()
+  const roles = {
+    manifest: contract.manifestPath,
+    architecture: contract.architecturePath,
+    spec: contract.specPath,
+    test: contract.testFile,
+    configuration: contract.configFile
+  }
+  assert.deepEqual(snapshot.verificationSource.roles, roles)
+  assert.deepEqual(
+    snapshot.verificationSource.files.map((entry) => entry.path),
+    Object.values(roles).sort()
+  )
+  assert.deepEqual(
+    createVerificationSource([...snapshot.files].reverse(), contract),
+    snapshot.verificationSource
+  )
+  assert.ok(Object.isFrozen(snapshot.verificationSource))
+  assert.ok(Object.isFrozen(snapshot.verificationSource.roles))
+  assert.ok(snapshot.verificationSource.files.every(Object.isFrozen))
+  const forbidden = t.mock.method(fs, 'readFileSync', () => {
+    throw new Error('Source reread')
+  })
+  const admitted = validateSourceSnapshot(snapshot, contract)
+  assert.deepEqual(admitted.runtimeSource, snapshot.runtimeSource)
+  assert.deepEqual(admitted.verificationSource, snapshot.verificationSource)
+  assert.ok(Object.isFrozen(admitted))
+  assert.notEqual(admitted.verificationSource, snapshot.verificationSource)
+  assert.equal(forbidden.mock.callCount(), 0)
+})
+
+test('verification identity changes for captured verifier bytes independently of runtime and does not replace full snapshot admission', (t) => {
+  const output = fs.mkdtempSync(path.join(parent, 'verification-identity-'))
+  t.after(() => fs.rmSync(output, { recursive: true, force: true }))
+  const contract = loadContract(root)
+  const snapshot = captureSource(root, output, contract)
+  const files = snapshot.files.map((entry) =>
+    entry.path === contract.configFile
+      ? { ...entry, size: entry.size + 1, digest: 'a'.repeat(64) }
+      : entry
+  )
+  const verificationSource = createVerificationSource(files, contract)
+  assert.notEqual(verificationSource.digest, snapshot.verificationSource.digest)
+  assert.deepEqual(createRuntimeSource(files), snapshot.runtimeSource)
+  assert.throws(
+    () => validateSourceSnapshot({ ...snapshot, verificationSource }, contract),
+    /verification/i
+  )
+  const candidate = {
+    ...snapshot,
+    files,
+    verificationSource,
+    digest: createHash('sha256').update(JSON.stringify(files)).digest('hex'),
+    configurationDigest: 'a'.repeat(64)
+  }
+  assert.deepEqual(
+    validateSourceSnapshot(candidate, contract).verificationSource,
+    verificationSource
+  )
+  const runtimeChange = snapshot.files.map((entry) =>
+    entry.path === 'packages/factory/src/data-transact.ts'
+      ? { ...entry, digest: 'b'.repeat(64) }
+      : entry
+  )
+  assert.deepEqual(
+    createVerificationSource(runtimeChange, contract),
+    snapshot.verificationSource
+  )
+})
+
+test('verification admission refuses absent runtime, unbound manifests, substituted roles and descriptor-only forgery without upgrading historical absence', (t) => {
+  const output = fs.mkdtempSync(path.join(parent, 'verification-admission-'))
+  t.after(() => fs.rmSync(output, { recursive: true, force: true }))
+  const contract = loadContract(root)
+  const snapshot = captureSource(root, output, contract)
+  const historical = { ...snapshot }
+  delete historical.verificationSource
+  assert.equal(
+    validateSourceSnapshot(historical, contract).verificationSource,
+    undefined
+  )
+  const rehash = (value) => {
+    const payload = { ...value }
+    delete payload.digest
+    value.digest = createHash('sha256')
+      .update(JSON.stringify(payload))
+      .digest('hex')
+  }
+  const cases = [
+    (s) => {
+      delete s.runtimeSource
+    },
+    (s) => {
+      delete s.files
+    },
+    (s) => {
+      s.verificationSource = null
+    },
+    (s) => {
+      s.verificationSource.format = 2
+    },
+    (s) => {
+      s.verificationSource.contractDigest = 'a'.repeat(64)
+      rehash(s.verificationSource)
+    },
+    (s) => {
+      s.verificationSource.files.pop()
+      rehash(s.verificationSource)
+    },
+    (s) => {
+      s.verificationSource.files[0].digest = 'b'.repeat(64)
+      rehash(s.verificationSource)
+    },
+    (s) => {
+      const r = s.verificationSource.roles
+      ;[r.spec, r.test] = [r.test, r.spec]
+      rehash(s.verificationSource)
+    },
+    (s) => {
+      s.verificationSource.roles.test = './' + s.verificationSource.roles.test
+      rehash(s.verificationSource)
+    },
+    (s) => {
+      s.contractDigest = 'c'.repeat(64)
+    }
+  ]
+  for (const mutate of cases) {
+    const value = structuredClone(snapshot)
+    mutate(value)
+    assert.throws(
+      () => validateSourceSnapshot(value, contract),
+      /source|manifest|verification|runtime/i
+    )
+  }
+  for (const replacement of [
+    contract.specPath,
+    './' + contract.testFile,
+    'packages/factory/src/data-transact.ts'
+  ]) {
+    assert.throws(
+      () =>
+        createVerificationSource(snapshot.files, {
+          ...contract,
+          testFile: replacement
+        }),
+      /role|path|runtime|verification/i
+    )
+  }
+})
+
+test('combined source admission hashes the full manifest once and each descriptor once', (t) => {
+  const output = fs.mkdtempSync(path.join(parent, 'source-admission-count-'))
+  t.after(() => fs.rmSync(output, { recursive: true, force: true }))
+  const contract = loadContract(root)
+  const snapshot = captureSource(root, output, contract)
+  const crypto = require('node:crypto')
+  const originalHash = crypto.createHash
+  const hash = t.mock.method(crypto, 'createHash', (...args) =>
+    originalHash(...args)
+  )
+  const modulePath = require.resolve('../snapshot.cjs')
+  const saved = require.cache[modulePath]
+  Reflect.deleteProperty(require.cache, modulePath)
+  const source = require('../snapshot.cjs')
+  require.cache[modulePath] = saved
+  const admitted = source.validateSourceSnapshot(snapshot, contract)
+  assert.equal(
+    admitted.verificationSource.digest,
+    snapshot.verificationSource.digest
+  )
+  assert.equal(hash.mock.callCount(), 3)
 })
