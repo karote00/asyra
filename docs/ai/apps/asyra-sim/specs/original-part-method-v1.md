@@ -73,7 +73,8 @@ certificate remain necessary. Within a single original trajectory segment,
 completed parent start/middle/end static evidence may be handed directly to the
 corresponding child endpoints, preserving the sample-consumption order and all
 witness/severity decisions. No original segment root inherits another segment's
-evidence. A complete early interval lower certificate, including zero, may be
+distance result. The narrowly scoped upper-source boundary below does not reuse
+a distance result. A complete early interval lower certificate, including zero, may be
 consumed again only by the same node's final certification when its actual
 mesh lower route depends only on positive witness admission and both first and
 final witnesses have positive lower bounds. A nonpositive admission or null
@@ -102,17 +103,42 @@ scope, node, segment, geometry, settings and source-time ordering. Both mesh
 objects and positions/indices must be frozen. Capture copies and freezes entire
 interval poses and witnesses for one charged work unit. No inherited or final
 sample, or sample whose next endpoint is inherited, captures a handle. The first
-sample has no seed, and point-only queries retain their original work.
+sample has no same-node seed; only the explicit adjacent-boundary source below
+can seed an original root start. Point-only queries retain their original work.
 Consumption charges admission, two inverse transforms, two forward transforms
 and a norm separately (six units). Transport uses whole enclosures only and
 supplies an initial upper witness; the target recomputes its own evidence through
 the unchanged complete geometry, membership and penetration search. No sample
 or severity check is skipped. A capture failure retains the completed sample
 and stops before further solving without publishing a handle; consumption failure
-retains prior evidence under ordinary exhaustion rules. Handles cannot cross
-nodes, segments or invocations, enter parent/child endpoint handoffs or geometry
-preparation, or provide a general pose cache. Native and unseeded inputs retain
+retains prior evidence under ordinary exhaustion rules. Except for the explicit
+adjacent-boundary source below, handles cannot cross
+nodes or segments. Handles never cross invocations, enter parent/child endpoint
+handoffs or geometry preparation, or provide a general pose cache. Native and
+unseeded inputs retain
 their ordinary route; no arbitrary caller-provided DistanceEvidence is admitted.
+The 1.0.2 adjacent-boundary strategy permits one invocation-owned source slot.
+Only an unclamped original root's first fresh, actually completed eligible warning
+may supply its existing opaque source. After that entire root becomes a complete
+nonpenetrating finding, without exhaustion or subdivision, publication pays one
+additional checkpointed unit. The next root consumes or discards the slot exactly
+once. Admission requires the immediately lower original segment, complete frame
+bounds, the identical shared keyframe boundary and its first fresh static sample;
+this route alone permits decreasing source-to-target time. Clamped, point, child,
+native, nonadjacent and incomplete roots cannot publish or consume this source.
+Continuous owns root completion and canonical time/pose provenance; sampler-owned
+private scope, ordered frozen geometry, settings and origin checks remain binding.
+Only its publication operation converts an issued node source to an opaque
+boundary source sharing the immutable payload; an origin flag alone cannot
+admit an ordinary node source across nodes.
+Capture is paid once and shared with the existing same-node use; publication one
+plus capture one plus consumption six is eight units. Invalid attempted admission
+still pays its check. Publication exhaustion retains the completed source leaf,
+publishes no source and stops; consumption exhaustion retains prior completed
+evidence and marks unproved coverage unresolved. No old lower/contact/metadata is
+transported. The target executes its full original solve and all subsequent
+samples. One shared whole-enclosure transport owner serves both source routes;
+there is no segment map, global pose cache or source retention after invocation.
 Every attempted query consumes the unchanged work budget. Exhaustion retains only already established witnesses and marks
 unproved coverage unresolved; it does not invent unvisited endpoint findings.
 This strategy is explicit to the original-part kernel, leaving the historical
@@ -208,9 +234,11 @@ clearance classification must agree, with independently conservative bounds.
 Only an immutable mesh object and its immutable positions/indices permit an
 execution-owned topology/index cache. The key is that exact frozen geometry
 object (including resolved scale and source), not an asset name or mutable body.
-Poses and interval bounds are never retained in this geometry cache. The only
-query-result handoff is the explicit pending-node lifetime described above:
-no global pose map, cross-segment, cross-pair or cross-invocation result reuse.
+Poses and interval bounds are never retained in this geometry cache. Query-result
+handoff is limited to the explicit pending-node lifetime above.
+The sole additional source lifetime is the single adjacent-boundary upper-source
+slot described above; it does not reuse a distance result. No global pose map,
+cross-pair or cross-invocation result reuse is allowed.
 A new source object
 misses; mutable input misses. One explicit method executor may retain these
 indices across static invocations for the same admitted live input lifetime;

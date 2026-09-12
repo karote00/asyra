@@ -1522,3 +1522,54 @@ and complete emitted evidence equality. The bounded rerun passed all three
 cases in `tmp/capacity/adjacent-delta-final.log`. This is a test-owned actual-delta
 result, not production readiness or G4 completion; cross-segment production
 ownership remains unchanged and prohibited by the current contract.
+
+### Adjacent boundary source - bounded method readiness
+
+Owner: Inspector `method`, original-part 1.0.2 strategy. Extend only the
+sampler-owned source lifetime from a complete original root to its immediately
+adjacent descending original root; this is a new explicit exception, not an
+interpretation of the previous prohibition. Allowed implementation is existing
+methods and direct formal tests, with matching method spec/manifest/Inspector.
+No framework, domain, geometry, budget, sampling or severity change is allowed.
+
+The source is the first fresh sample of an unclamped original root, actually
+completed and admitted by the existing opaque sampler: frozen ordered mesh pair,
+actual canonical static poses, finite nonpenetrating positive warning. Keep its
+already-paid immutable handle locally. Publish only after that complete root
+finishes as a nonpenetrating finding without exhaustion or subdivision; charge
+one additional checkpoint before publishing. No general segment-completion
+tracker is needed. A single invocation-owned slot expires at the next root,
+matched or not. Only its immediately lower original segment with the exact shared
+keyframe boundary and complete frame bounds may consume it at its first fresh
+sample. No arbitrary reverse-time, clamped, point, child, native or skipped-segment
+handoff is admitted. Continuous owns actual completion/time-to-pose provenance;
+the sampler validates its unforgeable scope, original source origin, immutable
+ordered geometry, settings and explicit adjacent admission. The sampler publication operation converts only its own opaque node handle
+into an opaque boundary handle sharing the already-paid immutable payload; an
+origin flag alone cannot authorize cross-node use. All source copies and
+whole-enclosure transport stay in one numerical owner.
+
+Preserve the first source separately from later middle/end handles. Take and
+clear the boundary slot before matching the next root, including a mismatch.
+Capture remains one unit, paid once even when that source also seeds its own
+node. Each separate same-node consumption still pays its own six units; eight
+is the boundary source path cost, not an inclusive node total. Boundary publication adds one; target admission plus two inverse/two forward
+transforms and norm add six. This eight-unit path must be measured afresh rather
+than reusing the seven-unit diagnostic result. Invalid attempted admission pays
+its actual check; no unpaid packet or target witness is published. Publication
+exhaustion retains the complete source leaf, publishes no packet and stops before
+the next sample. Consumption exhaustion retains prior completed evidence and
+leaves unproved coverage unresolved. Clear the slot on consumption, mismatch,
+exhaustion and invocation end. Existing same-node and endpoint handoffs remain
+separate; native/point-only and ordinary unseeded work remain unchanged.
+
+Formal red first: exact source/target provenance, no publication from incomplete,
+clamped, penetrating or child nodes, nonadjacent/geometry/scope rejection, single
+use/disposal, all new charge cancellation points and preserved completed leaf;
+reverse-time rational source enclosure, later penetration, unchanged ordinary
+fresh/native paths and exact accounting. Then existing 10k/50k/576 work gates,
+subdivision/source oracles and exact 114-to-113 production work/evidence control,
+type/lint/naming and independent review. Preserve emitted semantic certificates;
+log and review any nonunique witness difference before changing an oracle. Stop
+on provenance, accounting, correctness or fixed-budget regression. No full or
+browser run until the root agent reviews this complete bounded correction.
