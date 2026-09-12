@@ -183,6 +183,69 @@ work counts across robot/farm/camera edits; geometry bounds and route visibility
 oracles; app typecheck/lint/build/unit gates; bilingual desktop/mobile browser
 checks with close-up robot/box/dock inspection. No hardware effects or new packages.
 
+## C - M3 scene identity and geometry handoff (planned)
+
+Before D consumes the live greenhouse, C prepares one immutable, engine-neutral
+scene product from the current canonical farm and the existing domain generators.
+It supplies scene revision, stable scene-local plant and fruit identities,
+cultivar/variant and source fruit metadata, complete source shapes and installed
+transforms for fruit, leaves, nets, structures and other collision contributors.
+Source metadata is synthetic scene truth, available to D's observation/collision
+adapters; it is not itself a successful observation or clearance report.
+
+Fruit identity distinguishes individual plants and individual fruit within a
+plant. Repeated cultivar instances and multiple views cannot alias targets.
+Near and distant representations share the same fruit identity. Identities remain
+stable throughout a scene revision and do not depend on camera, locale, visibility,
+clock or pose. A relevant canonical change retires the old revision and its
+observations; this slice does not promise fruit identity across regenerated scenes
+or introduce persisted IDs. B's canonical strip identity remains separately owned.
+
+Preparation preserves the current botanical source geometry, cultivar assignment,
+maturity and distributions. A detachable fruit uses partitions of the same source
+geometry produced for its attached form, including the source ownership of any
+fruit-attached detail; it is not regenerated from length/radius or replaced by a
+primitive. Source triangles and material/vertex attributes remain unchanged in
+both near and distant geometry. Partitioning cannot duplicate or lose triangles,
+leave a second fruit on the plant, or remove unrelated stem/leaf geometry. The
+existing shape generator remains authoritative; partition metadata is a handoff,
+not a second crop model or another random-generation pass.
+
+C retains admitted source metadata alongside the shapes/plant assignments already
+owned by SiteGeometry. Observation/collision consumers receive that completed
+product; they do not call crop or farm generators. Render layer visibility only
+changes presentation. Hidden nets/leaves/fruit remain in the scene product. Scene
+preparation may not discard thin strands or simplify crop surfaces to make motion
+queries pass. Current moving-body/leaf transforms or interval envelopes remain
+separate D query inputs; static source geometry cannot imply known leaf motion.
+
+After D exists, C consumes only completed dispositions and admitted poses. Attached
+and supported targets retain their confirmed plant representation. A confirmed
+held/boxed/dropped target changes its owned source-shape placement exactly once;
+other fruit and original cultivar geometry remain untouched. Unresolved or absent
+confirmation cannot remove a fruit. C does not infer success, visibility, damage,
+cutting or collision clearance. Working robot pose follows the same completed-pose
+boundary and cannot invent a path between blocked endpoints.
+
+Preparation lifetime follows canonical scene and botanical inputs. Camera, locale,
+read subscriptions, session clock, fruit state and robot pose changes must not
+regenerate cultivar meshes or planting assignments. Retiring a scene invalidates
+its handoff; teardown releases it. Existing dependency-scoped geometry retention
+and resource bounds remain authoritative; no additional cache is proposed.
+
+C handoff acceptance: formal source-space tests reconstruct each original near and
+distant mesh from its partitions and compare positions, indices, colors/UVs when
+present and material ownership without gaps or duplicates. Installed transforms
+map the same target to its original canonical location, including repeated models
+and plant rotations. Identity and source-shape tests cover scene replacement,
+empty populations, both cultivars and all supported variants. Preserve the existing
+crop shape/detail/texture, support/net geometry and runtime reuse tests. Permanent
+work-count tests prove one preparation per relevant change and zero generation
+for downstream reads/pose/clock/view-only changes. An ordinary full-scene browser
+baseline and close-up source-fruit review precede D state projection. These are
+handoff gates; M3 additionally requires the usable synthetic UI and full D/C
+simulation acceptance, not merely partition or headless test success.
+
 ## D - M3 deterministic simulation contract (planned)
 
 M3 is an explicitly synthetic, in-browser simulation of the authored mission.

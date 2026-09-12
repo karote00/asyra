@@ -219,13 +219,14 @@ Inspector, harvest-robot spec and its BDD cases are edited in this slice. Gates:
 naming baseline/final, scoped formatting/diff review and independent contract
 review. Stop on a new product decision, contradictory authority or external owner.
 
-Implementation starts with D schema/admission and deterministic headless scenario
-proofs, then D's real Core lifecycle wiring. C working-pose/fruit projection and
-B/UI controls follow separate owner cards after D passes its focused gates.
-Existing scene owners may require an explicit C preparation/handoff slice before
-D's real-scene adapter integration; do not duplicate crop/layout generation inside
-D. End-to-end M3 closure still requires the whole M3 DoD, including close-up
-collision/fruit evidence; headless states alone are not milestone completion.
+After B correction, implementation starts with C's canonical scene preparation
+and handoff, then D admission, deterministic scenario proofs and real Core
+lifecycle wiring against that source. D schema design can precede C, but an
+independent synthetic shape model cannot substitute for the actual scene.
+C working-pose/fruit disposition integration and B/UI controls follow separate
+owner cards after D passes its focused gates. End-to-end M3 closure requires the
+whole M3 DoD, including close-up collision/fruit evidence and a usable normal UI;
+headless states alone are not milestone completion.
 
 ### B correction card - canonical strip identity
 
@@ -244,3 +245,40 @@ missing/duplicate IDs, defaults and Add. Gates: red regression, focused domain/C
 runtime/editor proofs, naming, app typecheck/lint/unit and relevant browser/build
 checks. Stop for a contract conflict or a required out-of-scope owner. This B
 correction completes before beginning D production implementation.
+
+### C readiness card - canonical scene handoff before D consumption
+
+Sources: product contract C M3 scene identity/geometry, D observation/collision
+and M3 DoD; Inspector C. Inputs: canonical farm/robot definitions, existing
+cultivar/planting generation and completed installed scene geometry. Outputs:
+immutable scene revision, scene-local plant/fruit identities, exact source-shape
+partitions/attributes and transforms. Same source shapes serve rendering and D
+adapters. Near/distant geometry shares target identity. Conditions: preparation
+belongs to the scene lifetime; no bypass through a new generator, simplified
+primitive, hidden layer or private diagnostic mesh. C owns invalid partitions,
+identity collisions and stale scene handoffs; D later owns observations/actions.
+
+This readiness slice edits only harvest-robot spec, Inspector, plan and BDD.
+No production changes until B identity correction passes its complete gates and
+independent C readiness review passes. The next implementation slice stays within
+Inspector C's preparation allowlist. D schema design may precede preparation, but
+real scene preparation/handoff must precede D adapter integration; independent
+headless shapes cannot stand in for the real scene.
+
+Formal oracle: record source-owned vertex/index ranges during the existing single
+botanical generation, then reassemble partition buffers by original offsets.
+Assert exact equality to the unpartitioned canonical model's near/distant arrays,
+including vertex color/UV arrays when present and material association; assert
+nonoverlapping complete source coverage. Reuse the same seeded canonical output,
+not copied generator formulas or a second simplified expected mesh. Across plant
+instances, prove identity uniqueness, rotated installed placement and identical
+near/distant identity; on retirement prove old handles cannot serve a successor.
+Add preparation/caller work counts alongside output equality. Keep existing crop
+shape/detail/surface/texture and support/net vertex oracles unchanged.
+
+Gates: naming baseline/final, focused source-partition/identity/lifetime/work-count
+proofs, existing crop/geometry/runtime regressions, app typecheck/lint/build,
+scoped browser baseline plus close-up source-fruit review. Stop on lost botanical
+fidelity, missing source owner, a needed dependency/Framework change or a conflict
+with D motion/evidence admission. Full M3 still requires the normal UI synthetic
+scenario/clock/evidence flow and later D/C integration acceptance.
