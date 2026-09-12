@@ -60,9 +60,9 @@ Use disposable synthetic copies and preserve original backups.
 3. In **Projects**, choose malformed project JSON. Preview must reject it while
    the current project remains usable. A portable file with missing/corrupt
    assets must likewise reject replacement. Never manually repair production data.
-4. Missing private methods permit historical reading, but rerun must explain
-   the missing method. Use the coordinator's synthetic missing-method fixture;
-   do not install unknown code from a project file.
+4. Complete the [self-contained missing-method exercise](#missing-method-recovery-exercise)
+   below. Historical reading must remain available while rerun explains the
+   missing method. Do not install unknown code from a project file.
 5. For naturally occurring storage failure, preserve the message, export a
    portable backup, and use the offered retry only after the storage condition
    is addressed. Saved is valid only after acknowledgement. A post-retirement
@@ -74,6 +74,45 @@ Failure includes hidden missing evidence, false Saved, lost current data after
 rejected import, success after incomplete execution, or needing developer repair.
 Record a failed attempt as failed; correct the product/docs and repeat the
 affected journey before accepting it.
+
+## Missing-method recovery exercise
+
+Use the included [synthetic portable project](../../../../../apps/asyra-sim/e2e/fixtures/missing-method-project.json).
+In the extracted distribution it is `examples/missing-method-project.json`;
+the SDK also contains it at `sdk/app/e2e/fixtures/missing-method-project.json`.
+No coordinator-supplied file or private instruction is necessary.
+
+This fixture is deliberately synthetic. The ordinary independent-sphere example
+workflow produced its run on candidate source `9cf5c7f5e`; the fixture changes
+that method ID to `private-retired-spheres` and its origin to `private` to model
+an unavailable installation. It is not a claim that a private method ran or
+was independently validated. It contains only generated workcell data, not
+partner equipment data. It does not count as the second user's independent case.
+
+1. Before replacement, open **Projects**, wait for the local save acknowledgement,
+   and use **Export project** to preserve your current project outside the
+   candidate directory. Do not overwrite an existing backup.
+2. Use **Choose project file**, select the included JSON, review the import
+   preview, click **Import and replace current project**, and confirm. Import
+   must finish without manually changing the file; Undo starts empty.
+3. Select **New workcell** in **Candidate**, open **Experiments**, then **Setup**.
+   Click **Run analysis**. Expected: preflight reports `method-unavailable`;
+   no new successful run is created. Do not install a module to bypass this test.
+4. Open **Runs & compare** and select the retained **Independent sphere study**
+   run if necessary. Expand **Retained method declaration**. Expected: the
+   original completed/complete evidence remains readable and the retained
+   declaration shows **Origin: private**. A missing method must not erase it.
+5. Use **Export JSON** to preserve the report. Close the dialog, open **Projects**,
+   and **Export project**. Reimport that new portable file through the same
+   preview/confirmation flow. Reopen **Runs & compare** and export JSON again.
+   The `run` object must be unchanged, including snapshot, result and method
+   declaration; report-export wrapper metadata is not the run's identity.
+6. Restore your original backup through **Projects** when finished. Missing
+   evidence, altered declarations, a successful rerun or a required data repair
+   fails the exercise. Record the visible error and keep both original files.
+
+The permanent `pilot-recovery.spec.ts` runs this same supplied-file workflow.
+It is developer regression evidence, not a substitute for FIRST_RELEASE G7.
 
 ## Understanding and completion
 

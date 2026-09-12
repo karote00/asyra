@@ -197,7 +197,13 @@ test('the producer stages a complete versioned candidate without serving SDK dat
   const docs = 'source/docs/ai/apps/asyra-sim'
   write(
     `${docs}/release/LOCAL_CANDIDATE.md`,
-    '# Start\n[Guide](../../../../../apps/asyra-sim/README.md)'
+    '# Start\n[Guide](../../../../../apps/asyra-sim/README.md)\n[Recovery](../../../../../apps/asyra-sim/e2e/fixtures/missing-method-project.json)'
+  )
+  const recoveryFixture = '{"synthetic":"unavailable method"}'
+  write('app/e2e/fixtures/missing-method-project.json', recoveryFixture)
+  write(
+    'source/apps/asyra-sim/e2e/fixtures/missing-method-project.json',
+    recoveryFixture
   )
   write('source/apps/asyra-sim/README.md', '# User guide')
   write('source/LICENSE', 'Project license')
@@ -255,9 +261,23 @@ test('the producer stages a complete versioned candidate without serving SDK dat
   ])
   assert.equal(
     readFileSync(path.join(candidate, 'README.md'), 'utf8'),
-    '# Start\n[Guide](USER_GUIDE.md)'
+    '# Start\n[Guide](USER_GUIDE.md)\n[Recovery](examples/missing-method-project.json)'
+  )
+  assert.equal(
+    readFileSync(
+      path.join(candidate, 'examples/missing-method-project.json'),
+      'utf8'
+    ),
+    recoveryFixture
   )
   assert.ok(distributionFiles(candidate).includes('sdk/framework/example.tgz'))
+  assert.equal(
+    readFileSync(
+      path.join(candidate, 'sdk/app/e2e/fixtures/missing-method-project.json'),
+      'utf8'
+    ),
+    recoveryFixture
+  )
   assert.equal(
     readFileSync(path.join(candidate, 'sdk/app/vercel.json'), 'utf8'),
     'input'

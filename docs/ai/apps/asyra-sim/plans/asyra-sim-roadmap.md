@@ -424,6 +424,11 @@ the first public product release.
 
 ## 9. M6: Independent Pilots and R0 Release Review
 
+Development is active after PR #192 merged. The bounded
+[M6 plan](m6-pilot-review.md) first makes the missing-method recovery exercise
+self-contained and adds candidate limitation/update notes. Carried resource,
+reference-hardware, independent evidence and maintenance decisions remain open.
+
 External pilots must meet FIRST_RELEASE G7; this roadmap cannot lower that
 requirement. Outreach, confidential data transfers, and other external
 operations still require user authorization.
