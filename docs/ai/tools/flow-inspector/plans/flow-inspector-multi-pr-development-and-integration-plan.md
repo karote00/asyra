@@ -64,10 +64,12 @@ The local service now registers complete authoritative assessment inventories,
 selects exact accepted-version and reviewed-target pins, and composes both real
 producers on one selected runtime. Durable results preserve independent role
 verifiers, cancellation and restart outcomes, with currentness-only cached
-projections. The next consumer exposes these registered actions through the
-existing loopback HTTP boundary, then CLI and Board. Scoped verification,
-execution/admission consumers and explicit target-baseline acceptance remain
-subsequent slices.
+projections. The loopback HTTP, CLI and Board consumers now expose registered
+actions, exact source selection and separated retained results, with real-producer
+browser and lifecycle evidence. The next source owner slice binds the candidate
+verifier's generated configuration/bootstrap closure before scoped verification
+can consume that execution authority. Scoped verification, execution/admission
+consumers and explicit target-baseline acceptance remain subsequent slices.
 Existing target execution and pending behavior stay in effect until those
 consumers are implemented and verified. Ordinary composition does not cover
 undeclared generated wrappers; the fixed four-package capture scope also does

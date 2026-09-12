@@ -35870,12 +35870,14 @@
               "artifact:admitted-runtime-source",
               "authorized run identity",
               "declared source roots and dependency metadata",
+              "completed source-owned verification descriptor and trusted canonical candidate attempt source location for fixed derived execution generation/admission",
               "server-selected accepted Git base and integration revision"
             ],
             "outputs": [
               "artifact:proof-source-snapshot"
             ],
             "conditions": [
+              "For the fixed contained-native-typescript-v1 derived execution policy, generate the exact configuration/bootstrap bytes and canonical executionSource identity from the original admitted verification descriptor and trusted attempt source location. Construction alone grants no authority. A present descriptor requires one shared full/runtime/verification admission plus exact fixed-byte/full-inventory/configuration binding, with the location supplied separately by its trusted owner; never trust a saved sourceRoot or caller-selected policy, paths or contents. Missing, changed, extra, unsupported or overlapping inputs fail closed. Historical absence is not upgraded, ordinary composition remains restricted, and actual runner/containment use must be proved by later producer consumers.",
               "Before an ordinary verification reference handoff, the source owner may validate its already admitted retained runtime and exact five-role bytes through a read-only operation. Require the same canonical repository/attempt/source tree and configuration authority; read each entry once, write nothing, and return no new source identity or persistent verified status. Later composition must still validate the bytes it actually uses.",
               "For explicit ordinary composition, consume two already admitted service-owned source artifacts and their fixed retained attempt trees in the same repository. Require exact verification contract and configuration authority, read and verify each selected runtime or verification entry once, and produce a complete immutable snapshot preserving selected runtime HEAD/digest and chosen verification digest with a new full identity. Undeclared generated execution closure, missing or changed bytes, unsafe paths and cross-repository inputs fail before runner dispatch. This later composition route does not gate initial capture or its admission.",
               "Read accepted-base contract and protected gate inputs once for CI admission; compare captured integration bytes with Git identity and preserve explicit policy drift blockers. Copy regular source files once into one attempt-owned tree, retain the immutable file manifest, bind source, mapping, architecture, configuration and lockfile digests, and reject symlinks. For target assessment, also identify the captured runtime file inventory independently of the admitted verification metadata; preserve full snapshot identity and never infer equivalence by stripping historical digests. Construct a frozen verificationSource descriptor for the admitted contract’s exact five metadata roles from captured entries, with no extra reads; validate both source descriptors against the complete full manifest. Descriptor presence alone does not prove retained bytes, replay readiness or accepted-version authority."
@@ -35884,6 +35886,7 @@
               "No previous snapshot or mutable checkout may replace the captured runtime source."
             ],
             "allowedContributors": [
+              "trusted candidate/service owner supplying completed source artifacts and a canonical attempt location",
               "filesystem reads inside declared repository roots"
             ],
             "forbiddenContributors": [
@@ -35900,7 +35903,8 @@
             "specRefs": [
               "#source-and-evidence",
               "#runtime-identity-producer-contract",
-              "#frozen-verification-source"
+              "#frozen-verification-source",
+              "#derived-execution-source"
             ],
             "failureOwnerStepId": "capture-proof-source"
           },
