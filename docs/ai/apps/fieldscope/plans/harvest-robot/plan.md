@@ -695,3 +695,18 @@ bounds card. Focused correctness precedes full app unit/type/lint/naming/build a
 independent bounded review. No new visual claim or camera change in this pure D
 segment. Stop for a missing upstream owner, unbounded arithmetic or any need to
 invent physical material/optical parameters.
+
+D revised ray implementation completed its formal gates: 25 focused cases and
+333 full app tests pass, including the original false-miss/film-air regressions,
+exact shared-edge ordering, independent rational arithmetic enclosure and a
+single detached accessor snapshot validated before FK work. Type/build/naming
+pass. Actual C profiling covers eight rays per batch, including misses, net,
+both cultivars, foliage, roof, dock and greenhouse air; two batches took about
+573 ms. Each batch visits 612096 vertices across 378 shapes and 1719909 region
+indices across 36717 regions, performs 161783 triangle tests and 24 exact
+predicates, and evaluates FK once with zero source generation. Unresolved
+open-shell origin occupancy remains unknown; geometric hits do not establish
+detection, optical transmission, quality or swept clearance. These repeated
+preparation counts justify the next separate QueryGeometry shared-bounds card,
+not a ray-local cache. No visual or camera change is claimed by this pure query
+slice.
