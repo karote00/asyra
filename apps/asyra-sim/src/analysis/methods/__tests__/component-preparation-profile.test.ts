@@ -7,13 +7,13 @@ import {
   runOriginalPartMethod
 } from '../original-part-method'
 import { representativeSnapshot } from './representative-fixture'
-import { rotateIndex } from './rotation-index-fixture'
+import { componentIndex } from './component-index-fixture'
 
 // Explicit hypothesis evidence; this is not the representative capacity goal gate.
 describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
-  'rotation-preparation-profile.test',
+  'component-preparation-profile.test',
   () => {
-    // Preserve the historical median-index control instead of applying newer refinement.
+    // Historical eager-build control: do not add the accepted demand-time refinement again.
     beforeEach(() => {
       vi.spyOn(meshIndex, 'refineMeshIndex').mockImplementation(
         (index) => index
@@ -22,7 +22,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
     afterEach(() => vi.restoreAllMocks())
 
     it.each([2, 4])(
-      'measures fixed source-complete rotation preparation over second %s',
+      'measures fixed source-complete component preparation over second %s',
       async (start) => {
         const snapshot = await representativeSnapshot(0)
         const pair = snapshot.pairs.find(
@@ -70,49 +70,18 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             )
             if (!hierarchy) return index
             const fingerprint = JSON.stringify(index.root)
-            const originalLeaves = new Set<MeshNode>()
-            const inspect = (root: MeshNode, leaves: Set<MeshNode>) => {
-              const pending = [root],
-                seen = new Set<MeshNode>()
-              let cost = 0
-              while (pending.length) {
-                const node = pending.pop()
-                if (!node || seen.has(node))
-                  throw new Error('Repeated node or cycle')
-                seen.add(node)
-                if (!node.children) {
-                  leaves.add(node)
-                  continue
-                }
-                const [a, b] = node.children
-                if (
-                  !node.bounds.every(
-                    (axis, i) =>
-                      axis[0] === Math.min(a.bounds[i][0], b.bounds[i][0]) &&
-                      axis[1] === Math.max(a.bounds[i][1], b.bounds[i][1])
-                  )
-                )
-                  throw new Error('Incorrect complete child union')
-                const [x, y, z] = node.bounds.map((axis) => axis[1] - axis[0])
-                cost += 2 * (x * y + x * z + y * z)
-                pending.push(a, b)
-              }
-              return cost
-            }
-            const beforeCost = inspect(index.root, originalLeaves)
-            const result = rotateIndex(index, () => {
+            const sourceTriangles = (node: MeshNode): typeof node.triangles =>
+              node.children
+                ? node.children.flatMap(sourceTriangles)
+                : node.triangles
+            const beforeTriangles = sourceTriangles(index.root)
+            const result = componentIndex(index, () => {
               addedPreparation++
               checkpoint()
             })
-            const nextLeaves = new Set<MeshNode>()
-            const afterCost = inspect(result.root, nextLeaves)
-            expect(afterCost).toBeLessThanOrEqual(
-              beforeCost + Math.abs(beforeCost) * 1e-12
+            expect(new Set(sourceTriangles(result.root))).toEqual(
+              new Set(beforeTriangles)
             )
-            expect(nextLeaves.size).toBe(originalLeaves.size)
-            expect(
-              [...nextLeaves].every((leaf) => originalLeaves.has(leaf))
-            ).toBe(true)
             expect(JSON.stringify(index.root)).toBe(fingerprint)
             expect(offsets(result.root).sort((a, b) => a - b)).toEqual(
               offsets(index.root).sort((a, b) => a - b)
@@ -132,7 +101,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         // eslint-disable-next-line no-console -- fixed immutable partition feasibility includes original and added preparation
         console.info(
           JSON.stringify({
-            profile: 'single-pass-source-rotation',
+            profile: 'admitted-component-hierarchy',
             start,
             baselineWork: original.work,
             candidateWork: context.work,
@@ -164,7 +133,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
       20000
     )
 
-    it('measures the fixed rotation preparation against the unchanged full representative budget', async () => {
+    it('measures the fixed component preparation against the unchanged full representative budget', async () => {
       const snapshot = await representativeSnapshot(0)
       let originalPreparation = 0,
         addedPreparation = 0,
@@ -182,7 +151,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             hierarchy
           )
           return hierarchy
-            ? rotateIndex(index, () => {
+            ? componentIndex(index, () => {
                 addedPreparation++
                 checkpoint()
               })
@@ -193,7 +162,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
       // eslint-disable-next-line no-console -- whole-workload feasibility includes all immutable preparation charges
       console.info(
         JSON.stringify({
-          profile: 'full-single-pass-source-rotation',
+          profile: 'full-admitted-component-hierarchy',
           builds,
           originalPreparation,
           addedPreparation,

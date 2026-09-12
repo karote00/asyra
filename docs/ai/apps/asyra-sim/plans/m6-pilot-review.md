@@ -489,10 +489,15 @@ hypothesis and must not be cited as an unmodified pre-projection baseline on
 current 1.0.2 production. Current-owner profiles report current production.
 
 `SIM_LAZY_HIERARCHY_EXPERIMENT=1 yarn workspace @asyra/asyra-sim test:local lazy-hierarchy.test.ts --maxWorkers=1`
-selects the rejected lazy-owner contracts. On current production it intentionally
-fails because the rejected refinement API is absent; its recorded candidate
-run passed four contracts but failed the independent 50,000 work ceiling.
-This opt-in preserves the experiment without claiming an absent product feature.
+selects the generic refinement lifetime contracts first exercised by the rejected
+SAH experiment. The current API implements admitted-component refinement, so
+these four contracts now pass without reconstructing SAH. The historical SAH
+candidate still failed its 50,000 ceiling; its retained patch and recorded logs
+are that algorithm's evidence. SAH/rotation eager adapters explicitly disable
+newer demand-time refinement so it cannot replace their historical hierarchies.
+The reverse-order, triangle-bound and node-source-bound adapters use the same
+control to preserve their original index/metadata relationships. Actual
+`source-query-cost.test.ts` and representative goal gates use current production.
 
 `representative-work.test.ts`, `representative-resource.browser.spec.ts` and
 `sibling-order-work.test.ts` retain their original selection and unchanged work
@@ -547,3 +552,173 @@ rotation oracles pass, including exact work counts 11 / 24 / 21; the two actual
 source windows pass their diagnostic truth checks. These are hypothesis results,
 not completed capacity gates. Evidence: `tmp/capacity/rotation-oracle.log` and
 `tmp/capacity/rotation-preparation-profile.log`. Production remains unchanged.
+
+### Replan - Euclidean world-bound certificate
+
+After the rejected hierarchy candidates, the method Inspector and fixed 500,000
+work goal remain unchanged. Retained two-window profiles identify static work
+221,263 / 287,845 and interval work 78,790 / 132,652; membership is only
+172 / 3,439. Repeated projection memoization and source-world-bound rebuilding
+have already failed their net-cost tests. The next single hypothesis addresses
+`mesh-index.boundsGap`: its current maximum coordinate gap is conservative but
+weaker than the outward Euclidean norm of all positive coordinate gaps.
+
+First run a passive `euclidean-bounds-profile.test.ts` on the same two windows.
+At each actual oriented projection call, its explicit current threshold is the
+authority, including zero after an initial or later warning. Reconstruct the
+already available world bounds for measurement only; a possible implementation
+would consume those caller-owned completed bounds. Try the norm only when at
+least two coordinates have positive gaps and the existing maximum has not
+already rejected. Count every attempted complete outward norm certificate as
+one added checkpoint, including failed rejection. This is the same logical unit
+as one complete directional projection certificate, not free arithmetic.
+Record eligible calls, strict new proofs, existing projection work that would
+be bypassed, and baseline outcome/total work. Do not infer avoided descendants
+from hit rate; positive evidence needs actual bounded owner work-delta profiling
+before a production plan. A zero-benefit result stops this hypothesis.
+
+The future independent oracle, only if warranted, is the exact rational
+3/256, 4/256, 0 gap with distance 5/256 and threshold 9/512, reversed pair,
+zero/contact overlap, interval enclosure, and actual work/cancellation checks.
+No new triangle solver, geometry, hierarchy strategy, cache, severity shortcut,
+threshold or budget change is permitted. The bounded source owner and direct
+method tests are the only implementation scope, pending independent review.
+
+The passive norm counts were 7,730 / 12,105, with 2,482 / 5,102 strict
+proofs. The actual test-owned adapter then charged every norm directly through
+the original query checkpoint: 6,836 / 10,298 attempts after pruning. Complete
+query work became 296,368 / 409,102, only 1.2% / 2.7% below baseline. Every
+leaf start/end/state/penetration remained identical. This fails the fixed
+20-percent material-work requirement; no production norm change or broader
+gate follows. The adapter's reconstruction of caller-owned world bounds is
+measurement overhead, never a proposed free second production computation.
+Evidence: `tmp/capacity/euclidean-bounds-profile.log` and
+`tmp/capacity/euclidean-bounds-delta.log`. Typecheck and focused ESLint pass.
+
+The next read-only owner observation is existing source topology: joint-2 has
+4,404 triangles in 36 closed components (sizes 48, 96, 124 and 256), while
+obstacle-11 has 620 triangles in five 124-triangle closed components. Neither
+has a topology issue. Current median construction partitions all triangles
+globally instead of preserving these component subtrees. This is metadata for
+replanning only; no new component partition algorithm has been authorized or
+implemented by this observation.
+
+### Replan - preserve admitted component hierarchy
+
+The root authorized one test-owned construction using existing topology only.
+Collect every original triangle and group by its already-admitted component
+number. Build the unchanged longest-full-bound-axis median triangle hierarchy
+within each group, with the existing four-triangle leaf limit and source-offset
+sort tie. Build a deterministic median hierarchy over complete component roots,
+using the same longest-bound-axis rule and original component number as tie.
+A top-level leaf hands off to the complete component subtree; it is never a
+convex surrogate. Membership retains the identical representatives and triangle
+component ownership. No source split/merge, inferred topology, new axis heuristic
+or threshold changes. The immutable original median index is never modified.
+
+The probe preserves the original index preparation charge and adds every actual
+original-node collection visit, every rebuilt triangle/top node, each new
+bounds scan and grouping pass in 256-item chunks including each tail, and every
+new sort's comparisons in 256-comparison chunks including the tail. Component
+lookup/handoff is part of its charged top-node visit; no free second index build.
+Warm preparation must include the full extra construction cost under the existing
+prepared-index owner. Aborted construction returns nothing and retains nothing.
+
+Before the two fixed-window measurements, permanent structural tests must prove
+all offsets/components/representatives unchanged, all component roots complete,
+leaf limit four, exact child bounds, unchanged source index, cancellation and
+deterministic ordering. Overlapping and nested source components must retain
+inside/outside/uncertain membership behavior. Then compare actual cold total
+work and complete temporal/severity evidence against the fixed 240,000/336,000
+window ceilings. Only material improvement permits the unchanged 50,000/576
+gates; production still requires a separately reviewed implementation plan.
+
+The component probe improves complete fixed-window work to 208,105 / 306,172
+(30.6% / 27.2%), with original preparation 3,176 plus added preparation 10,366.
+All original triangle objects, offsets, components, representatives and temporal
+leaf state/penetration are preserved. The two structural tests pass, including
+nested/overlapping membership and cancellation. The unchanged prior gates run
+through `SIM_COMPONENT_HIERARCHY_EXPERIMENT=1` and
+`component-prior-gates.test.ts`, which imports the original oracle files and
+applies only the test-owned index builder. Eight of ten cases pass: both 50,000
+obstacle directions and all dual-tree cases, including 576 work, pass. Both
+10,000 table directions fail at 16,661 because eager extra preparation is paid
+before root rejection. Eager component preparation is not accepted; no
+production changes follow without another bounded owner replan. Evidence is in
+`tmp/capacity/component-oracle.log`, `component-preparation-profile.log` and
+`component-prior-gates.log`.
+
+### Actual-demand component refinement - owner card
+
+The eager candidate is replaced by a reviewed-lifecycle experiment at method
+hierarchy entry. Keep the complete immutable median index for all existing root
+rejection and closed-component membership. For distance, refine only after both
+membership directions finish without resolving penetration; for lowerOver,
+refine only after root rejection and the positive-witness containment admission.
+Obtain both completed refined indices before capturing the initial pending roots.
+Only the existing hierarchy=false and non-mesh routes bypass this construction;
+no body, source name, component count, triangle count or cost selector is added.
+
+The exact component builder and all previously frozen collection/grouping/node/
+scan/sort charges remain. Original median preparation is never removed. Completed
+component indices may join the existing exact-frozen-geometry/hierarchy-mode
+prepared artifact; invocation-owned state records already charged refinements.
+Cold and warm first actual use charge identical extra work with fresh checkpoints.
+Unused warm artifacts cost nothing extra; mutable or replaced source geometry
+cannot hit them. Interrupted refinement or an exhausted warm charge must not
+publish invocation success or a partial retained artifact. No poses, witnesses
+or temporal bounds enter the retained cache.
+
+Formal `component-lifetime.test.ts` tests precede the production experiment:
+root-clear and membership-resolved bypass, hierarchy=false, unused warm artifact,
+same geometry at distinct poses and reversed pairs, equal cold/warm work,
+interrupted preparation/retry, and actual current-query refined-root consumption.
+The implementation allowlist is `mesh-index.ts`, `original-mesh-query.ts` and
+direct method tests; only after independent card review may the uncommitted
+owner experiment start. Re-run unchanged 10,000 / 50,000 / 576 gates and both
+240,000 / 336,000 windows, followed by the real full representative gate only
+if every owner gate passes. No commit/push or completed capacity claim precedes
+those results and independent review. Failed work is preserved as evidence.
+
+The actual-demand owner passes all 25 fixed/lifecycle cases, plus 23 original
+mesh/motion/lifetime tests and the independent reviewer's 21 oracle/lifecycle
+cases. The full representative gate remains partial at 500,197 work and 20,195
+evaluations, first incomplete pair joint-2/obstacle-11 at 96 evaluations (73
+clear interval certificates). Only three refinements were actually built,
+costing 11,653 in addition to 28,943 median preparation. The full red evidence
+is `tmp/capacity/component-full-representative.log`; no browser rerun follows.
+
+Production is frozen while `component-transfer-profile.test.ts` compares the
+same original 200-keyframe/full-pair schedule at the unchanged 500,000 budget.
+One explicitly named median control makes refinement return its input without
+new work; it must reproduce the earlier 20,189 total / 90 target evaluations
+before any delta is interpreted. The other run keeps the current candidate.
+Each case retains the twenty-second guard and records original segment times,
+actual target prefix work, first unresolved intervals, and median/refinement/
+axis/membership costs separately. This is no reordered or split-run completion
+claim. The scheduler pushes original segments in ascending order and pops them
+from the end, so full traversal begins at time eight; isolated [2,3]/[4,5]
+windows are not equivalent to the first visited prefix and may clip boundary
+segments. No new strategy or production edit is authorized by this comparison.
+
+The exact-order control reproduces 20,189 total / 90 target evaluations. Across
+the common 83 completely visited original segments [4.663316582914573, 8],
+control work is 269,342 versus candidate 195,752 (27.3% less), including the
+candidate's 1,287 newly needed refinement units. Static work is 184,454 versus
+128,700, interval work 84,888 versus 67,052, and directional axes 152,239 versus
+97,046; membership is identical at 138. This demonstrates genuine transfer of
+the component improvement, separate from the preceding obstacle pair's 12,092
+saved work. It does not complete the full goal.
+
+The expensive original segment is number 115,
+[4.623115577889447, 4.663316582914573]. The candidate completes it using 158,944
+work (83,611 static and 75,333 interval); the control exhausts after only a
+partial 116,384 inside this segment, leaving a frontier at 4.643216080402009.
+Those two costs are not comparable complete intervals. The candidate proceeds
+through segment 114 and exhausts in 113, with unresolved frontier at
+4.542713567839196. Evidence: `tmp/capacity/component-transfer-profile.log`.
+Independent review and the root accepted this as a validated owner improvement,
+with the full G4 gate still red. The next bounded replan may only diagnose
+repeated static/interval work in original segment 115; it does not authorize
+sample/pose reuse or another production change without measured counts and
+review of the exact ownership/identity contract.

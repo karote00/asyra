@@ -14,6 +14,7 @@ import {
 import {
   boundsGap,
   buildMeshIndex,
+  refineMeshIndex,
   shapeBounds,
   worldBounds,
   worldPoint,
@@ -45,6 +46,7 @@ function splitLeft(
 /** One execution-owned query context. No renderer, document mutation or global state. */
 export class OriginalMeshQuery {
   work = 0
+  private readonly refinedIndices = new WeakMap<MeshGeometry, MeshIndex>()
   private readonly indices = new WeakMap<MeshGeometry, MeshIndex>()
   constructor(
     private readonly checkpoint: () => void = () => undefined,
@@ -87,6 +89,40 @@ export class OriginalMeshQuery {
       })
     if (immutable) this.indices.set(geometry, index)
     return index
+  }
+  private traversalIndex(
+    shape: ConvexShape,
+    index?: MeshIndex
+  ): MeshIndex | undefined {
+    if (!index || !this.hierarchy || shape.geometry.kind !== 'mesh')
+      return index
+    const geometry = shape.geometry
+    const immutable =
+      Object.isFrozen(geometry) &&
+      Object.isFrozen(geometry.positions) &&
+      Object.isFrozen(geometry.indices)
+    const retained = immutable ? this.refinedIndices.get(geometry) : undefined
+    if (retained) return retained
+    const prepared = immutable ? this.prepared.get(geometry) : undefined
+    const compatible =
+      prepared?.index === index && prepared.hierarchy === this.hierarchy
+    const cached = compatible ? prepared.refinement : undefined
+    if (cached) {
+      this.tick(cached.work)
+      this.refinedIndices.set(geometry, cached.index)
+      return cached.index
+    }
+    const before = this.work
+    const refined = refineMeshIndex(index, this.tick)
+    if (immutable) {
+      this.refinedIndices.set(geometry, refined)
+      if (compatible)
+        this.prepared.set(geometry, {
+          ...prepared,
+          refinement: { index: refined, work: this.work - before }
+        })
+    }
+    return refined
   }
   private projectGap(
     a: ConvexShape,
@@ -163,8 +199,10 @@ export class OriginalMeshQuery {
         unknown ||= membership === 'unknown'
       }
     }
+    const traversalA = this.traversalIndex(a, ai),
+      traversalB = this.traversalIndex(b, bi)
     const pending: [MeshNode | undefined, MeshNode | undefined][] = [
-      [ai?.root, bi?.root]
+      [traversalA?.root, traversalB?.root]
     ]
     let lower = Infinity
     let searchThreshold = result.upper < threshold ? 0 : threshold
@@ -270,8 +308,10 @@ export class OriginalMeshQuery {
     )
     if (overall > threshold) return overall
     if (witness.lower <= 0) return 0
+    const traversalA = this.traversalIndex(a, ai),
+      traversalB = this.traversalIndex(b, bi)
     const pending: [MeshNode | undefined, MeshNode | undefined][] = [
-      [ai?.root, bi?.root]
+      [traversalA?.root, traversalB?.root]
     ]
     let lower = Infinity
     while (pending.length) {

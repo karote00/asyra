@@ -1020,6 +1020,7 @@
         conditions: [
           'Use only validated detached inputs and shared kinematics.',
           'Original-part queries operate on all source triangles and closed-component solid membership. Conservative boxes are rejection bounds only, never replacement collision shapes.',
+          'Root rejection and closed-component membership use the complete median index. Complete admitted-component hierarchy refinement occurs only at actual traversal entry, after membership or positive-witness containment admission; each invocation charges demanded immutable preparation equivalently before reuse.',
           'The original-part method consumes domain-owned shared-ancestor pair poses. The historical primitive kernel retains its original world-frame route; neither method independently derives a hierarchy or cancels sampled transforms.',
           'A distinct original-part method identity covers static and complete continuous intervals. Triangle, containment and traversal work checkpoint the owned execution budget; numerical ambiguity remains unresolved.',
           'The independent static-sphere example uses analytical outward distance bounds, declares its narrower capability and optional added uncertainty, and emits the same geometry evidence contract without official-endorsement inference.',

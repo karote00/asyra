@@ -12,7 +12,8 @@ import { MeshWorkLimit, OriginalMeshQuery } from '../original-mesh-query'
 describe.runIf(process.env.SIM_LAZY_HIERARCHY_EXPERIMENT === '1')(
   'lazy-hierarchy.test',
   () => {
-    // Historical rejected-owner contract: explicitly fails when its candidate API is absent.
+    // Generic refinement lifetime contract first exercised by the rejected SAH trial.
+    // The current API refines components; this probe does not reconstruct SAH.
     const meshIndex = currentMeshIndex as typeof currentMeshIndex & {
       refineMeshIndex: (index: MeshIndex, checkpoint: () => void) => MeshIndex
     }

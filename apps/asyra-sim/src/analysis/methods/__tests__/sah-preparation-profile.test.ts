@@ -1,4 +1,4 @@
-import { describe, afterEach, expect, it, vi } from 'vitest'
+import { describe, afterEach, beforeEach, expect, it, vi } from 'vitest'
 import * as meshIndex from '../mesh-index'
 import type { MeshNode } from '../mesh-index'
 import { OriginalMeshQuery } from '../original-mesh-query'
@@ -13,6 +13,12 @@ import { partitionIndex } from './sah-index-fixture'
 describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
   'sah-preparation-profile.test',
   () => {
+    // Preserve the historical median-index control instead of applying newer refinement.
+    beforeEach(() => {
+      vi.spyOn(meshIndex, 'refineMeshIndex').mockImplementation(
+        (index) => index
+      )
+    })
     afterEach(() => vi.restoreAllMocks())
 
     it.each([2, 4])(

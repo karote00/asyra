@@ -1,4 +1,4 @@
-import { describe, afterEach, expect, it, vi } from 'vitest'
+import { describe, afterEach, beforeEach, expect, it, vi } from 'vitest'
 import * as meshIndex from '../mesh-index'
 import type { MeshNode } from '../mesh-index'
 import { MeshWorkLimit, OriginalMeshQuery } from '../original-mesh-query'
@@ -9,6 +9,12 @@ import { representativeSnapshot } from './representative-fixture'
 describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
   'traversal-order-profile.test',
   () => {
+    // Replay this median-index hypothesis without newer demand-time refinement.
+    beforeEach(() => {
+      vi.spyOn(meshIndex, 'refineMeshIndex').mockImplementation(
+        (index) => index
+      )
+    })
     afterEach(() => vi.restoreAllMocks())
 
     it.each([2, 4])(

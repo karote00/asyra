@@ -132,7 +132,27 @@ invariant under this shared rigid change of frame.
 The permanent nested open-bore rings case measured 65,800 work units and 93 ms
 for only 256 triangles per part with exhaustive traversal on the development
 host. This is a measured quadratic cost, not a reference-hardware benchmark.
-The method may build a median-split AABB hierarchy over all original triangles.
+The method first builds a complete median-split AABB index for root rejection
+and closed-component membership. Version `1.0.2` prepares a component-preserving
+hierarchy only when an admitted query enters triangle traversal: distance must
+finish membership first; continuous lower bounds must pass the positive static
+witness containment condition. Each already-admitted component receives the
+same longest-bound-axis median triangle tree with at most four triangles per
+leaf and source-offset ties. A median top tree over complete component bounds
+uses component-number ties. Components are never convex collision surrogates.
+Both completed indices are obtained before pending traversal roots are captured.
+All source triangle objects, component membership and representatives remain.
+
+Original median preparation remains charged. Additional original-node collection,
+rebuilt triangle/top nodes and top handoffs each checkpoint; grouping/bounds
+scans and sort comparisons checkpoint every 256 items including each pass tail.
+The complete refinement joins the same immutable geometry/hierarchy preparation
+artifact, while each invocation charges its additional work only on first actual
+use, identically cold and warm. Unused warm refinements add no charge. Failed
+construction and unpaid warm invocation hits cannot publish successful reuse;
+a previously completed immutable artifact remains valid for another invocation.
+No source name, component count, triangle count, pose or cost selector controls
+refinement. The hierarchy=false oracle keeps its original exhaustive route.
 The exhaustive path remains the test oracle; holes, containment, crossing and
 clearance classification must agree, with independently conservative bounds.
 

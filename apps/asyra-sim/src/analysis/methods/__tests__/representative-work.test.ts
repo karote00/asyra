@@ -17,6 +17,8 @@ it('completes the unchanged representative workcell within the original geometry
     lowerWork: 0,
     indexBuilds: 0,
     preparationWork: 0,
+    refinementBuilds: 0,
+    refinementPreparationWork: 0,
     membershipCalls: 0,
     membershipWork: 0,
     worldBoundsCalls: 0,
@@ -81,6 +83,16 @@ it('completes the unchanged representative workcell within the original geometry
       )
     }
   )
+  const refine = meshIndex.refineMeshIndex
+  vi.spyOn(meshIndex, 'refineMeshIndex').mockImplementation(
+    (index, checkpoint) => {
+      counts.refinementBuilds++
+      return refine(index, () => {
+        counts.refinementPreparationWork++
+        checkpoint()
+      })
+    }
+  )
   const contains = membership.shapeMembership
   vi.spyOn(membership, 'shapeMembership').mockImplementation(
     (point, shape, index, checkpoint) => {
@@ -135,6 +147,7 @@ it('completes the unchanged representative workcell within the original geometry
         counts.distanceWork +
         counts.lowerWork -
         counts.preparationWork -
+        counts.refinementPreparationWork -
         counts.membershipWork,
       pairs: evidence.pairs.length,
       evaluations: evidence.evaluations,
