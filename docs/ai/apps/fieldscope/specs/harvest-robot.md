@@ -585,6 +585,65 @@ including declared clear corridors or intact quality, admits those actions.
 The next viewpoint adapter must produce bounded camera/sample-ray evidence over
 real near sources; injection alone does not complete observation or M3 UI gates.
 
+### Synthetic viewpoint sampling
+
+The viewpoint adapter consumes the same current observation context and a labeled
+synthetic request for explicit candidate target IDs. These candidates are search
+assumptions, not prior detections. The adapter alone joins C's original plant,
+fruit-partition and near-triangle identities to samples. For each target, traverse
+original mesh/partition order and choose evenly spaced triangle ordinals, up to
+the requested positive sample count without duplicates; aim at each triangle's
+centroid. A request permits at most 64 rays as a computation budget, never a
+physical detector rating or sufficient-coverage threshold. Empty candidates yield
+zero coverage without invoking an empty ray batch. Invalid or duplicate target
+IDs, sample budgets or source mappings are rejected, not silently substituted.
+
+Camera pose is an explicit synthetic world RigidTransform, with local +X right,
++Y up and +Z forward. It is neither the UI orbit camera nor a calibrated robot
+mount. Finite positive halfWidthSlope and halfHeightSlope define a rectilinear
+frustum; FOV may be displayed as twice atan(slope), but slopes are the decision
+authority. Maximum ray distance is finite, positive and measured in metres.
+Use the existing conservative inverse of the actual quaternion coefficients;
+do not assume a rounded near-unit quaternion's conjugate is its exact inverse.
+Camera-local direction requires z > 0 and |x| <= halfWidthSlope*z and
+|y| <= halfHeightSlope*z. Conclusive exclusion is outside-view; uncertain
+boundaries remain unknown. No near-plane clipping hides an intervening object.
+
+The actual floating-point direction computed from camera origin toward the
+authored sample is the authoritative camera ray. It need not pass the exact
+authored centroid after rounding. Keep requested sample reference separate from
+actual first-hit witness. A first hit belonging to the requested target proves
+that ray sees some surface of that target; it does not prove the requested
+triangle, back side, pedicel or cutsite is visible. Another first surface proves
+sample occlusion only when its conservative distance upper bound is strictly
+before the requested sample's computed-ray distance lower bound. A ray that
+misses the intended point and hits a rear surface, or overlapping distance bounds,
+remains unknown with its actual witness. Use the ray owner's completed hit-distance
+interval, not its displayed midpoint or an EPS extension. A miss or unresolved ray remains unknown, never proof of
+absence. Report visible, occluded, outside-view and unknown separately; sample
+counts describe only these declared rays, not whole-fruit visibility or confidence.
+Opacity is not an optical model, and one visible target ray does not infer
+maturity, stem identification, quality, or harvest readiness.
+
+All eligible rays use one current-source RayQueries batch at the observation
+time/validity, with explicit synthetic leaf state. A newly computed view samples
+the current snapshot time; it cannot reconstruct an earlier pose from a newer
+snapshot. This does not change admission of previously recorded, still-valid
+earlier readings. Robot base/joints come from
+the actual session snapshot, not caller replacements. This foundation uses its
+existing world-aligned chassis frame and empty-held, all-attached source state;
+working heading or moved-fruit dispositions require their later owner handoff.
+Missing or incompatible state remains unknown. Recheck context/source currentness
+before return; no clock, inventory or source generation occurs. Prepare camera
+inverse once and C FK once per nonempty eligible batch, reusing completed bounds.
+
+Acceptance: deterministic source selection and exact identity, real near-target
+hit and nearer occluder, behind-sample hits remaining unknown, same-target front/back distinction, film/hidden physical
+occlusion, inside/outside/ambiguous frustum, empty samples, invalid sparse camera,
+stale run/source/expiry and unknown dynamics. Prove full source work counts and
+unchanged ray predicates. This sampled viewpoint evidence is a real observation
+producer prerequisite; action admission and ordinary UI still require integration.
+
 ### Fruit, crate and energy conservation
 
 Each stable target has one physical simulation disposition: attached, supported,
