@@ -1,3 +1,4 @@
+import type { SourceRegion } from '../domain/source-occupancy'
 import {
   createRobotModel,
   createDockModel,
@@ -24,7 +25,9 @@ export interface RobotSource {
 }
 export interface DockSource {
   readonly revision: number
-  readonly meshes: SpatialFrame['meshes']
+  readonly meshes: readonly (SpatialFrame['meshes'][number] & {
+    readonly regions: readonly SourceRegion[]
+  })[]
 }
 let nextRevision = 0
 
@@ -33,9 +36,12 @@ function project(
   x: number,
   z: number,
   prefix: string
-): SpatialFrame['meshes'] {
+): (SpatialFrame['meshes'][number] & {
+  readonly regions: readonly SourceRegion[]
+})[] {
   return parts.map((part) => ({
     id: `${prefix}.${part.id}`,
+    regions: part.regions,
     visible: true,
     descriptor: readSpatialDescriptor({
       kind: 'mesh',

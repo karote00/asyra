@@ -640,6 +640,21 @@ paused D numerical tests stay recorded red and are not claimed as passed C evide
 Independent readiness and code review precede resuming the next D owner.
 Stop for a geometry change, missing source owner or a new physical parameter.
 
+C material-region handoff completed: original triangle/material hashes remain
+unchanged; permanent complete-range, box edge-pair closure, actual unwelded tire
+seam, rig/scene caller-mutation isolation and atomic replacement cases pass.
+The app suite passes 308 tests with the paused ray candidate explicitly excluded;
+type/build/naming and lint excluding that candidate pass. Independent C review
+found no remaining issue. The same
+<a href="http://127.0.0.1:5178" target="_blank" rel="noopener noreferrer">live FieldScope app</a>
+passed seven headed Metal robot cases and four established headless Metal crop
+cases; all four robot and eight crop saved images were inspected. Headed crop
+wheel input instead reached 10000% at the 2000% assertion; that failed evidence
+is retained separately. The same unchanged test/input passes in headless mode;
+the precise mode-dependent input cause is unresolved, and no camera fix is claimed.
+No C geometry or test expectation was changed to bypass that failure. D ray
+occupancy and numerical regressions remain open for the next owner segment.
+
 Then a separate D revised predicate card will use one conservative arithmetic
 policy across normalization, slab rejection, plane/determinant, barycentric and
 range tests. Only conclusively outside intervals may become misses; uncertainty

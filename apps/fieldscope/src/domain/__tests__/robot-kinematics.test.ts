@@ -12,6 +12,24 @@ const definitions = [
 const digest = (value: unknown) =>
   createHash('sha256').update(JSON.stringify(value)).digest('hex')
 
+it('isolates caller-owned material regions even when the part and shape are frozen', async () => {
+  const { prepareRobotRig } = await import('../robot-kinematics')
+  const raw = createRobotModel(DEFAULT_ROBOT)
+  const admitted = prepareRobotRig(DEFAULT_ROBOT, raw)
+  const regions = admitted.parts[0].source.regions.map((region) => ({
+    ...region
+  }))
+  const input = admitted.parts.map(({ source }, index) =>
+    index ? source : Object.freeze({ ...source, regions })
+  )
+  const rig = prepareRobotRig(DEFAULT_ROBOT, input)
+  const before = digest(rig.parts[0].source.regions)
+  regions[0].kind = 'sheet'
+  regions.push({ ...regions[0], id: 'caller-added' })
+  expect(digest(rig.parts[0].source.regions)).toBe(before)
+  expect(Object.isFrozen(rig.parts[0].source.regions)).toBe(true)
+})
+
 it('preserves original parked robot source geometry and materials before articulation', () => {
   expect(
     definitions.map((definition) => ({
@@ -21,7 +39,14 @@ it('preserves original parked robot source geometry and materials before articul
         definition.height,
         definition.tool
       ],
-      hash: digest(createRobotModel(definition))
+      hash: digest(
+        createRobotModel(definition).map(({ id, color, metalness, shape }) => ({
+          id,
+          color,
+          metalness,
+          shape
+        }))
+      )
     }))
   ).toMatchSnapshot()
 })

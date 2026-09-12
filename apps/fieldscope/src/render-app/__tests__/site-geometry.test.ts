@@ -16,6 +16,47 @@ import { createPlantingNet } from '../../domain/planting-net'
 import { TriangleBuilder } from '../../domain/mesh'
 import { sameSpatialShape } from '../../engine/spatial-contract'
 
+it('carries complete source material regions with every original near scene mesh', () => {
+  const owner = new SiteGeometry()
+  const config = { ...DEFAULT_CONFIGURATION, length: 2.2 }
+  const meshes = buildSiteMeshes(config, owner)
+  const scene = owner.prepareScene(config, meshes)
+  for (const mesh of scene.meshes) {
+    expect(mesh.regions).toBeDefined()
+    expect(Object.isFrozen(mesh.regions)).toBe(true)
+    const shape = mesh.descriptor.shape
+    if (shape.kind !== 'triangles')
+      throw new Error('Expected original triangles')
+    expect(
+      mesh.regions.reduce((sum, region) => sum + region.indexCount, 0)
+    ).toBe(shape.indices.length)
+    if (mesh.layer === 'film')
+      expect(mesh.regions.every((region) => region.kind === 'sheet')).toBe(true)
+  }
+  expect(owner.prepareScene(config, meshes) === scene).toBe(true)
+})
+
+it('detaches direct scene region input and rejects incomplete replacement before publishing', () => {
+  const owner = new SiteGeometry()
+  const config = {
+    ...DEFAULT_CONFIGURATION,
+    strips: [{ id: 'soil', kind: 'soil' as const, width: 6.3 }]
+  }
+  const original = buildSiteMeshes(config, owner)
+  const regions = original[0].regions.map((region) => ({ ...region }))
+  const meshes = original.map((mesh, index) =>
+    index ? mesh : { ...mesh, regions }
+  )
+  const first = owner.prepareScene(config, meshes)
+  regions[0].kind = 'sheet'
+  expect(first.meshes[0].regions[0].kind).toBe('closed-solid')
+  const invalid = original.map((mesh, index) =>
+    index ? mesh : { ...mesh, regions: [] }
+  )
+  expect(() => owner.prepareScene(config, invalid)).toThrow()
+  expect(owner.getScene() === first).toBe(true)
+})
+
 it('retains admitted cultivar shapes only for matching net dimensions and clears them on retirement', () => {
   const build = vi.spyOn(crops, 'createCropModels')
   try {
@@ -131,10 +172,11 @@ it('projects shared hardware vertices back to the canonical installed geometry a
 
 it('bounds admitted primitive retention and rebuilds evicted entries', () => {
   const owner = new SiteGeometry()
-  const produce = vi.fn(() => ({
-    kind: 'box' as const,
-    size: [1, 1, 1] as const
-  }))
+  const produce = vi.fn(() => {
+    const builder = new TriangleBuilder()
+    builder.box([0, 0, 0], [1, 1, 1])
+    return { shape: builder.shape(), regions: builder.regions() }
+  })
   const first = owner.primitive('tube:0', produce)
   expect(owner.primitive('tube:0', produce)).toBe(first)
   expect(produce).toHaveBeenCalledTimes(1)
