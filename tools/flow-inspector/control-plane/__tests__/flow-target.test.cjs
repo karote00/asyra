@@ -904,3 +904,205 @@ test('target callback distinguishes new creation from retained metadata and neve
     /conflict/i
   )
 })
+
+test('accepted version pins distinguish mapping revision and exact same-contract verifier histories without replay lookup', async (t) => {
+  const value = await pinnedSetup(t)
+  const {
+    createHistory,
+    compareVersion,
+    decideVersion
+  } = require('../evolution.cjs')
+  let history = createHistory(value.review.candidate)
+  let baseline = { revision: 5, contractDigest: value.request.targetRevision }
+  const lookups = []
+  value.options.getBaseline = () => baseline
+  value.options.getAcceptedVersion = (revision) => {
+    lookups.push(revision)
+    const selected = revision ?? history.revision
+    const version = history.versions[selected - 1]
+    return version
+      ? { revision: selected, contractDigest: version.contract.digest }
+      : null
+  }
+  value.request.acceptedBaseline = baseline
+  let owner = createTargetOwner(value.options)
+  const created = owner.decide(value.request, 'local-developer')
+  const pin = { revision: 1, contractDigest: baseline.contractDigest }
+  assert.deepEqual(owner.get(created.id).acceptedVersion, pin)
+  assert.deepEqual(owner.get(created.id).history[0].acceptedVersion, pin)
+  assert.equal(owner.get(created.id).acceptedBaseline.revision, 5)
+  assert.deepEqual(lookups, [undefined])
+  owner.decide(value.request, 'local-developer')
+  assert.equal(lookups.length, 1)
+
+  const source = require('../snapshot.cjs')
+  const repository = path.join(
+    value.options.directory,
+    'accepted-version-source'
+  )
+  fs.cpSync(
+    path.join(value.options.directory, 'pin-proof/source'),
+    repository,
+    { recursive: true }
+  )
+  const contract = loadContract(repository)
+  const config = path.join(repository, contract.configFile)
+  fs.chmodSync(config, 0o644)
+  fs.appendFileSync(config, '\n// distinct accepted verifier configuration\n')
+  const id = randomUUID()
+  const snapshot = source.captureSource(
+    repository,
+    path.join(repository, 'attempts', id),
+    contract
+  )
+  const admitted = source.validateSourceSnapshot(snapshot, contract)
+  const candidate = {
+    ...value.review.candidate,
+    verificationSource: {
+      attemptId: id,
+      repository,
+      head: snapshot.head,
+      sourceDigest: snapshot.digest,
+      configurationDigest: snapshot.configurationDigest,
+      descriptor: admitted.verificationSource
+    }
+  }
+  history = decideVersion(
+    history,
+    compareVersion(history, candidate),
+    candidate,
+    { decision: 'accept', reason: 'Explicit distinct verifier version' },
+    { id: 'local-developer', capabilities: ['decide-contract'] }
+  )
+  assert.equal(
+    history.versions[0].contract.digest,
+    history.versions[1].contract.digest
+  )
+  assert.notEqual(
+    history.versions[0].verificationSource.configurationDigest,
+    history.versions[1].verificationSource.configurationDigest
+  )
+  baseline = { ...baseline, revision: 6 }
+  owner = createTargetOwner(value.options)
+  assert.equal(lookups.at(-1), 1)
+  assert.deepEqual(owner.get(created.id).acceptedVersion, pin)
+  const next = owner.decide(
+    { ...value.request, requestId: randomUUID(), acceptedBaseline: baseline },
+    'local-developer'
+  )
+  assert.equal(owner.get(next.id).acceptedVersion.revision, 2)
+
+  const file = path.join(value.options.directory, 'targets.json')
+  const original = JSON.parse(fs.readFileSync(file))
+  for (const mutate of [
+    (record) => {
+      record.acceptedVersion.revision = 2
+    },
+    (record) => {
+      record.history[0].acceptedVersion.revision = 2
+    },
+    (record) => {
+      delete record.acceptedVersion
+    },
+    (record) => {
+      delete record.history[0].acceptedVersion
+    },
+    (record) => {
+      record.acceptedVersion.contractDigest = '0'.repeat(64)
+      record.history[0].acceptedVersion.contractDigest = '0'.repeat(64)
+    },
+    (record) => {
+      for (const pin of [
+        record.acceptedVersion,
+        record.history[0].acceptedVersion
+      ]) {
+        delete pin.contractDigest
+        pin.unrecognized = 1
+      }
+    },
+    (record) => {
+      for (const pin of [
+        record.acceptedVersion,
+        record.history[0].acceptedVersion
+      ]) {
+        delete pin.revision
+        pin.unrecognized = 1
+      }
+    }
+  ]) {
+    const changed = structuredClone(original)
+    mutate(changed.records[0])
+    fs.writeFileSync(file, JSON.stringify(changed))
+    assert.throws(
+      () => createTargetOwner(value.options),
+      /accepted.*version|version.*pin/i
+    )
+  }
+  fs.writeFileSync(file, JSON.stringify(original))
+  const exactResolver = value.options.getAcceptedVersion
+  value.options.getAcceptedVersion = () => ({
+    revision: 2,
+    contractDigest: baseline.contractDigest
+  })
+  assert.throws(() => createTargetOwner(value.options), /accepted.*version/i)
+  value.options.getAcceptedVersion = exactResolver
+})
+
+test('configured accepted-version metadata fails closed and client pins cannot become authority', (t) => {
+  const value = setup(t)
+  try {
+    for (const metadata of [
+      null,
+      { revision: 0, contractDigest: value.request.targetRevision },
+      { revision: 1, contractDigest: '0'.repeat(64) }
+    ]) {
+      const owner = createTargetOwner({
+        ...value.options,
+        getAcceptedVersion: () => metadata
+      })
+      assert.throws(
+        () => owner.decide(value.request, 'local-developer'),
+        /accepted.*version/i
+      )
+      assert.equal(owner.list().length, 0)
+    }
+    const owner = createTargetOwner(value.options)
+    assert.throws(
+      () =>
+        owner.decide(
+          {
+            ...value.request,
+            acceptedVersion: {
+              revision: 1,
+              contractDigest: value.request.targetRevision
+            }
+          },
+          'local-developer'
+        ),
+      /unknown|field/i
+    )
+  } finally {
+    fs.rmSync(value.options.directory, { recursive: true, force: true })
+  }
+})
+
+test('legacy unpinned targets remain readable but cannot acquire an accepted version in a later audit entry', (t) => {
+  const value = setup(t)
+  const created = value.owner.decide(value.request, 'local-developer')
+  value.owner.decide(revise(value.request, created.id, 1), 'local-developer')
+  assert.equal(
+    Object.hasOwn(
+      createTargetOwner(value.options).get(created.id),
+      'acceptedVersion'
+    ),
+    false
+  )
+  const file = path.join(value.options.directory, 'targets.json')
+  const saved = JSON.parse(fs.readFileSync(file))
+  saved.records[0].history[1].acceptedVersion = {
+    revision: 1,
+    contractDigest: value.request.targetRevision
+  }
+  fs.writeFileSync(file, JSON.stringify(saved))
+  assert.throws(() => createTargetOwner(value.options), /accepted.*version/i)
+})

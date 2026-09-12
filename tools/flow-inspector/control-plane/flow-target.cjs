@@ -160,8 +160,32 @@ function createTargetOwner({
   getTask,
   getReview,
   getSource = () => null,
-  getVersionReview = () => null
+  getVersionReview = () => null,
+  getAcceptedVersion
 }) {
+  const resolveAcceptedVersion = (contractDigest, revision) => {
+    requireValue(
+      typeof getAcceptedVersion === 'function',
+      'accepted version resolver unavailable'
+    )
+    const version = getAcceptedVersion(revision)
+    requireValue(
+      version &&
+        Object.keys(version).length === 2 &&
+        Object.hasOwn(version, 'revision') &&
+        Object.hasOwn(version, 'contractDigest') &&
+        Number.isInteger(version.revision) &&
+        version.revision > 0 &&
+        (revision === undefined || version.revision === revision) &&
+        /^[a-f0-9]{64}$/.test(version.contractDigest ?? '') &&
+        version.contractDigest === contractDigest,
+      'accepted version identity unavailable or conflicting'
+    )
+    return freeze({
+      revision: version.revision,
+      contractDigest: version.contractDigest
+    })
+  }
   const resolveVerification = (reviewId, targetRevision, requireAvailable) => {
     const digest = (value) =>
       typeof value === 'string' && /^[a-f0-9]{64}$/.test(value)
@@ -200,6 +224,45 @@ function createTargetOwner({
         'invalid retained target'
       )
       ids.add(record.id)
+      requireValue(
+        record.history
+          .slice(1)
+          .every((entry) => !Object.hasOwn(entry, 'acceptedVersion')),
+        'accepted version is only allowed in the creation entry'
+      )
+      const acceptedPin = record.acceptedVersion
+      const creationPin = record.history[0].acceptedVersion
+      requireValue(
+        Object.hasOwn(record, 'acceptedVersion') ===
+          Object.hasOwn(record.history[0], 'acceptedVersion'),
+        'accepted version pin was changed'
+      )
+      if (Object.hasOwn(record, 'acceptedVersion')) {
+        requireValue(
+          acceptedPin &&
+            creationPin &&
+            Object.keys(acceptedPin).length === 2 &&
+            Object.hasOwn(acceptedPin, 'revision') &&
+            Object.hasOwn(acceptedPin, 'contractDigest') &&
+            Number.isInteger(acceptedPin.revision) &&
+            acceptedPin.revision > 0 &&
+            Object.keys(creationPin).length === 2 &&
+            Object.hasOwn(creationPin, 'revision') &&
+            Object.hasOwn(creationPin, 'contractDigest') &&
+            acceptedPin.revision === creationPin.revision &&
+            acceptedPin.contractDigest === creationPin.contractDigest,
+          'accepted version creation pin mismatch'
+        )
+        const resolvedVersion = resolveAcceptedVersion(
+          record.acceptedBaseline?.contractDigest,
+          acceptedPin.revision
+        )
+        requireValue(
+          acceptedPin.revision === resolvedVersion.revision &&
+            acceptedPin.contractDigest === resolvedVersion.contractDigest,
+          'accepted version pin differs from retained version'
+        )
+      }
       const selectedReview = record.history[0].request?.targetReviewId
       requireValue(
         Object.hasOwn(record, 'targetVerification') ===
@@ -570,6 +633,13 @@ function createTargetOwner({
                 )
               }
             : {}),
+          ...(getAcceptedVersion !== undefined
+            ? {
+                acceptedVersion: resolveAcceptedVersion(
+                  request.acceptedBaseline.contractDigest
+                )
+              }
+            : {}),
           acceptedBaseline: request.acceptedBaseline,
           obligations: contract.cases.filter((c) => c.flowId === flow.id),
           steps: flow.steps,
@@ -727,6 +797,9 @@ function createTargetOwner({
             requireValue(exists, 'runtime file missing or unsafe')
           }
       const entry = {
+        ...(create && Object.hasOwn(record, 'acceptedVersion')
+          ? { acceptedVersion: record.acceptedVersion }
+          : {}),
         ...(admission
           ? { admission, admissionDigest: sha256(JSON.stringify(admission)) }
           : {}),
