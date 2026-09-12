@@ -60,11 +60,14 @@ references; the service validates reviewed pairs against their original history
 base and supplies immutable target pins with explicit creation/load/replay
 availability semantics.
 
-The next service consumer registers authoritative target assessment requests,
-selects the accepted version by its exact immutable history revision and the
-target by its exact reviewed pin, and composes both producers on one selected
-runtime. Scoped verification, execution/admission consumers, Board/API/CLI
-projections and explicit target-baseline acceptance remain subsequent slices.
+The local service now registers complete authoritative assessment inventories,
+selects exact accepted-version and reviewed-target pins, and composes both real
+producers on one selected runtime. Durable results preserve independent role
+verifiers, cancellation and restart outcomes, with currentness-only cached
+projections. The next consumer exposes these registered actions through the
+existing loopback HTTP boundary, then CLI and Board. Scoped verification,
+execution/admission consumers and explicit target-baseline acceptance remain
+subsequent slices.
 Existing target execution and pending behavior stay in effect until those
 consumers are implemented and verified. Ordinary composition does not cover
 undeclared generated wrappers; the fixed four-package capture scope also does

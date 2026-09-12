@@ -898,6 +898,25 @@ settlement, startup and each actual identity change separately. HTTP, CLI, Board
 presentation and explicit acceptance remain subsequent consumers, not effects of
 this service action.
 
+### Target assessment HTTP transport
+
+The existing loopback server exposes `GET /api/target-assessments` for the retained
+list and `GET /api/target-assessments/:id` for one cached record/projection.
+`POST /api/target-assessments` forwards the exact registered assessment request
+and returns `202 {id}`; `POST /api/target-assessments/:id/cancel` accepts an empty
+JSON object and returns the settled record with status 200. Route ids use the
+existing canonical attempt UUID format. GET of an unknown id or an unknown route
+returns 404; invalid requests return 400, oversized bodies 413, conflicting or
+unavailable actions (including cancellation) 409, and authorization failures 403. Mutations retain the existing Host/Origin and per-start capability checks
+and default 4096-byte body limit before service work.
+
+The transport invokes the corresponding service actions; it never selects version
+references, composes proof requests, starts private target-proof producers or
+computes assessment/currentness results itself. GET and exact request replay use
+the service's retained projections with no proof IO or computation. There is no
+HTTP endpoint for private role-level proof production. CLI and Board controls
+remain subsequent consumers of these same public actions.
+
 ### One source and distinct verification contracts
 
 Every participating producer must bind the same repository, captured runtime
