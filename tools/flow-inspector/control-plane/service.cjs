@@ -79,6 +79,7 @@ function createService(
   const repository = fs.realpathSync(repositoryRoot)
   const store = openStore(directory)
   const sourceAdmissions = new Map()
+  const verificationReferences = new Map()
   const admitRuntimeSource = (record, files, liveContract) => {
     const snapshot = record.snapshot
     const entry = sourceAdmissions.get(record.id)
@@ -91,11 +92,13 @@ function createService(
         !Object.hasOwn(snapshot, 'runtimeSource'))
     ) {
       sourceAdmissions.delete(record.id)
+      verificationReferences.delete(record.id)
       throw new Error('Source runtime or verification descriptor is missing')
     }
     if (!snapshot || !Object.hasOwn(snapshot, 'runtimeSource')) {
       if (retained) {
         sourceAdmissions.delete(record.id)
+        verificationReferences.delete(record.id)
         throw new Error('Runtime source admission identity was removed')
       }
       return
@@ -122,6 +125,7 @@ function createService(
       )
         return retained
       sourceAdmissions.delete(record.id)
+      verificationReferences.delete(record.id)
       throw new Error('Runtime source admission identity changed')
     }
     let sourceContract
@@ -192,9 +196,47 @@ function createService(
     })
     sourceAdmissions.set(record.id, {
       admission,
-      sourceContract: record.sourceContract
+      sourceContract: record.sourceContract,
+      contract: sourceContract
     })
     return admission
+  }
+  const referenceFor = (record, expected) => {
+    const entry = record && sourceAdmissions.get(record.id)
+    const admission = entry?.admission
+    if (!entry?.contract || !admission?.verificationSource) return null
+    const reference = Object.freeze({
+      attemptId: admission.attemptId,
+      repository: admission.repository,
+      head: admission.head,
+      sourceDigest: admission.sourceDigest,
+      configurationDigest: admission.configurationDigest,
+      descriptor: admission.verificationSource
+    })
+    if (expected && !isDeepStrictEqual(reference, expected)) return null
+    if (verificationReferences.has(record.id)) {
+      const retained = verificationReferences.get(record.id)
+      if (retained && !isDeepStrictEqual(retained, reference)) {
+        verificationReferences.set(record.id, null)
+        return null
+      }
+      return retained
+    }
+    try {
+      sourceOwner.verifyRetainedSource(
+        repositoryRoot,
+        {
+          sourceRoot: path.join(directory, record.id, 'source'),
+          admission
+        },
+        entry.contract
+      )
+      verificationReferences.set(record.id, reference)
+      return reference
+    } catch {
+      verificationReferences.set(record.id, null)
+      return null
+    }
   }
   try {
     if (!store.mapping())
@@ -247,6 +289,16 @@ function createService(
       if (restored.digest !== version.contract.digest)
         throw new Error('Invalid retained contract version')
     }
+    for (const version of [
+      ...history.versions,
+      ...store.mapping().evolution.reviews.map((review) => review.candidate)
+    ]) {
+      if (Object.hasOwn(version, 'verificationSource'))
+        referenceFor(
+          store.get(version.verificationSource?.attemptId),
+          version.verificationSource
+        )
+    }
     for (const delivery of store.mapping().ciDeliveries ?? []) {
       const version = history.versions.find(
         (item) => item.contract.digest === delivery.contractDigest
@@ -270,6 +322,7 @@ function createService(
       throw new Error('Accepted version history differs from mapping')
   } catch (error) {
     sourceAdmissions.clear()
+    verificationReferences.clear()
     store.close()
     throw error
   }
@@ -481,6 +534,7 @@ function createService(
     })
   } catch (error) {
     sourceAdmissions.clear()
+    verificationReferences.clear()
     store.close()
     throw error
   }
@@ -498,6 +552,7 @@ function createService(
     })
   } catch (error) {
     sourceAdmissions.clear()
+    verificationReferences.clear()
     store.close()
     throw error
   }
@@ -534,6 +589,7 @@ function createService(
     })
   } catch (error) {
     sourceAdmissions.clear()
+    verificationReferences.clear()
     store.close()
     throw error
   }
@@ -747,33 +803,69 @@ function createService(
         record.phase !== 'completed'
       )
         throw new ActionError(409, 'A completed candidate proof is required')
-      const candidateContract = loadContract(repositoryRoot)
-      if (record.contractDigest !== candidateContract.digest)
-        throw new ActionError(409, 'Candidate changed since preview')
-      const report = JSON.parse(this.readArtifact(record.id, 'report'))
-      const files = JSON.parse(this.readArtifact(record.id, 'source-manifest'))
-      const contentDigest = files.find(
-        (file) => file.path === candidateContract.testFile
-      )?.digest
-      const selectors = report.testResults
-        .flatMap((suite) => suite.assertionResults)
-        .filter((item) => ['passed', 'failed'].includes(item.status))
-        .map((item) => ({
-          caseId:
-            candidateContract.cases.find((c) => c.testName === item.fullName)
-              ?.id ?? 'unknown-' + sha256(item.fullName),
-          testName: item.fullName,
-          file: candidateContract.testFile,
-          contentDigest
-        }))
-      const candidate = { contract: candidateContract, selectors }
       const state = store.mapping(),
         evolution = state.evolution
+      const sourceAware = Object.hasOwn(record, 'sourceContract')
+      const retainedCandidate =
+        sourceAware &&
+        evolution.reviews.find(
+          (item) =>
+            item.attemptId === record.id &&
+            Object.hasOwn(item.candidate, 'verificationSource')
+        )?.candidate
+      let candidate = retainedCandidate
+      if (!candidate) {
+        const candidateContract = sourceAware
+          ? sourceAdmissions.get(record.id)?.contract
+          : loadContract(repositoryRoot)
+        if (
+          !candidateContract ||
+          record.contractDigest !== candidateContract.digest
+        )
+          throw new ActionError(409, 'Candidate source contract is unavailable')
+        const verificationSource = sourceAware
+          ? referenceFor(record)
+          : undefined
+        if (sourceAware && !verificationSource)
+          throw new ActionError(
+            409,
+            'Candidate verification source is unavailable'
+          )
+        const report = JSON.parse(this.readArtifact(record.id, 'report'))
+        const contentDigest = sourceAware
+          ? verificationSource.descriptor.files.find(
+              (file) => file.path === candidateContract.testFile
+            )?.digest
+          : JSON.parse(this.readArtifact(record.id, 'source-manifest')).find(
+              (file) => file.path === candidateContract.testFile
+            )?.digest
+        const selectors = report.testResults
+          .flatMap((suite) => suite.assertionResults)
+          .filter((item) => ['passed', 'failed'].includes(item.status))
+          .map((item) => ({
+            caseId:
+              candidateContract.cases.find((c) => c.testName === item.fullName)
+                ?.id ?? 'unknown-' + sha256(item.fullName),
+            testName: item.fullName,
+            file: candidateContract.testFile,
+            contentDigest
+          }))
+        candidate = {
+          contract: candidateContract,
+          selectors,
+          ...(sourceAware ? { verificationSource } : {})
+        }
+      }
       const review = compareVersion(evolution.history, candidate, {
         relations: request.relations ?? []
       })
       const existing = evolution.reviews.find((item) => item.id === review.id)
       if (existing) return existing
+      if (sourceAware && !referenceFor(record, candidate.verificationSource))
+        throw new ActionError(
+          409,
+          'Candidate verification source is unavailable'
+        )
       const retained = {
         ...review,
         candidate,
@@ -1315,6 +1407,7 @@ function createService(
         }
       } finally {
         sourceAdmissions.clear()
+        verificationReferences.clear()
         store.close()
       }
     }

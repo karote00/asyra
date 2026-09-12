@@ -554,3 +554,199 @@ test('failure before capture produces no authority and remains readable after re
     fs.rmSync(dir, { recursive: true, force: true })
   }
 })
+
+function referenceFixture() {
+  const dir = directory()
+  const contract = require('../contracts.cjs').loadContract(root)
+  const snapshot = sourceOwner.captureSource(
+    root,
+    path.join(dir, 'initial'),
+    contract
+  )
+  const repository = snapshot.sourceRoot
+  return { dir, contract, repository, runs: path.join(repository, 'runs') }
+}
+
+test('source-aware version preparation binds retained bytes and exact current base with one reference admission per lifetime', async (t) => {
+  const f = referenceFixture()
+  let service = createService(f.repository, { directory: f.runs })
+  const verify = t.mock.method(sourceOwner, 'verifyRetainedSource')
+  try {
+    const record = await service.wait(
+      service.start({ mode: 'candidate' }, LOCAL_ACTOR)
+    )
+    assert.equal(record.evidence.status, 'passed')
+    const file = path.join(f.repository, f.contract.testFile)
+    const original = fs.readFileSync(file)
+    fs.chmodSync(file, 0o644)
+    fs.writeFileSync(
+      file,
+      'throw new Error("checkout is not the captured verifier")'
+    )
+    const review = service.prepareEvolution(
+      { attemptId: record.id },
+      LOCAL_ACTOR
+    )
+    assert.equal(
+      review.candidate.verificationSource.sourceDigest,
+      record.snapshot.digest
+    )
+    assert.deepEqual(
+      review.candidate.verificationSource.descriptor,
+      record.snapshot.verificationSource
+    )
+    assert.equal(verify.mock.callCount(), 1)
+    const read = t.mock.method(fs, 'readFileSync')
+    for (let i = 0; i < 10; i++) {
+      assert.equal(
+        service.prepareEvolution({ attemptId: record.id }, LOCAL_ACTOR).id,
+        review.id
+      )
+      service.state()
+    }
+    assert.equal(read.mock.callCount(), 0)
+    read.mock.restore()
+    fs.writeFileSync(file, original)
+    service.decideEvolution(
+      {
+        id: review.id,
+        decision: 'accept',
+        reason: 'Explicit captured version acceptance'
+      },
+      LOCAL_ACTOR
+    )
+    const next = service.prepareEvolution({ attemptId: record.id }, LOCAL_ACTOR)
+    assert.notEqual(next.id, review.id)
+    assert.equal(next.baseRevision, 2)
+    assert.equal(verify.mock.callCount(), 1)
+    await service.close()
+    service = createService(f.repository, { directory: f.runs })
+    assert.equal(
+      verify.mock.callCount(),
+      2,
+      'multiple retained version/review references to one attempt read bytes once on restart'
+    )
+    const resumedRead = t.mock.method(fs, 'readFileSync')
+    assert.equal(
+      service.prepareEvolution({ attemptId: record.id }, LOCAL_ACTOR).id,
+      next.id
+    )
+    service.state()
+    assert.equal(resumedRead.mock.callCount(), 0)
+  } finally {
+    await service.close()
+    fs.rmSync(f.dir, { recursive: true, force: true })
+  }
+})
+
+test('unavailable retained reference bytes preserve history but cannot authorize a new-base review', async () => {
+  const f = referenceFixture()
+  let service = createService(f.repository, { directory: f.runs })
+  try {
+    const record = await service.wait(
+      service.start({ mode: 'candidate' }, LOCAL_ACTOR)
+    )
+    const review = service.prepareEvolution(
+      { attemptId: record.id },
+      LOCAL_ACTOR
+    )
+    service.decideEvolution(
+      {
+        id: review.id,
+        decision: 'accept',
+        reason: 'Explicit reference retention'
+      },
+      LOCAL_ACTOR
+    )
+    await service.close()
+    fs.rmSync(path.join(f.runs, record.id, 'source', f.contract.configFile))
+    service = createService(f.repository, { directory: f.runs })
+    assert.equal(service.get(record.id).evidence.status, 'passed')
+    assert.equal(service.state().evolution.revision, 2)
+    assert.throws(
+      () => service.prepareEvolution({ attemptId: record.id }, LOCAL_ACTOR),
+      /unavailable|source/i
+    )
+    assert.equal(service.state().evolution.revision, 2)
+  } finally {
+    await service.close()
+    fs.rmSync(f.dir, { recursive: true, force: true })
+  }
+})
+
+test('historical candidate preparation remains standalone without a verification reference', async (t) => {
+  const dir = directory()
+  let service = createService(root, { directory: dir })
+  try {
+    const record = await service.wait(
+      service.start({ mode: 'candidate' }, LOCAL_ACTOR)
+    )
+    await service.close()
+    const file = path.join(dir, record.id, 'record.json')
+    const historical = JSON.parse(fs.readFileSync(file))
+    delete historical.sourceContract
+    fs.writeFileSync(file, JSON.stringify(historical))
+    const verify = t.mock.method(sourceOwner, 'verifyRetainedSource')
+    service = createService(root, { directory: dir })
+    const review = service.prepareEvolution(
+      { attemptId: record.id },
+      LOCAL_ACTOR
+    )
+    assert.equal(Object.hasOwn(review.candidate, 'verificationSource'), false)
+    assert.equal(verify.mock.callCount(), 0)
+  } finally {
+    await service.close()
+    fs.rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('source-aware attempts with an older no-reference review prepare a new authoritative candidate without rewriting history', async (t) => {
+  const dir = directory()
+  let service = createService(root, { directory: dir })
+  try {
+    const record = await service.wait(
+      service.start({ mode: 'candidate' }, LOCAL_ACTOR)
+    )
+    const current = service.prepareEvolution(
+      { attemptId: record.id },
+      LOCAL_ACTOR
+    )
+    await service.close()
+    const file = path.join(dir, 'mapping.json')
+    const mapping = JSON.parse(fs.readFileSync(file))
+    const candidate = structuredClone(current.candidate)
+    delete candidate.verificationSource
+    const legacy = {
+      ...require('../evolution.cjs').compareVersion(
+        mapping.evolution.history,
+        candidate
+      ),
+      candidate,
+      attemptId: record.id,
+      status: 'pending'
+    }
+    mapping.evolution.reviews = [legacy]
+    fs.writeFileSync(file, JSON.stringify(mapping))
+    const verify = t.mock.method(sourceOwner, 'verifyRetainedSource')
+    service = createService(root, { directory: dir })
+    assert.equal(verify.mock.callCount(), 0)
+    const upgraded = service.prepareEvolution(
+      { attemptId: record.id },
+      LOCAL_ACTOR
+    )
+    assert.ok(upgraded.candidate.verificationSource)
+    assert.notEqual(upgraded.id, legacy.id)
+    assert.equal(verify.mock.callCount(), 1)
+    const saved = JSON.parse(fs.readFileSync(file))
+    assert.deepEqual(saved.evolution.reviews[0], legacy)
+    const read = t.mock.method(fs, 'readFileSync')
+    assert.equal(
+      service.prepareEvolution({ attemptId: record.id }, LOCAL_ACTOR).id,
+      upgraded.id
+    )
+    assert.equal(read.mock.callCount(), 0)
+  } finally {
+    await service.close()
+    fs.rmSync(dir, { recursive: true, force: true })
+  }
+})
