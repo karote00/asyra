@@ -826,6 +826,19 @@ never evidence or a source fallback. The output follows the existing runner and
 evidence admission contracts. This source-owner operation alone does not select
 versions, publish service assessment requests or grant baseline acceptance.
 
+`verifyRetainedSource(repositoryRoot, input, contract)` applies the same source
+owner checks without constructing another snapshot. It consumes the same trusted
+`{sourceRoot, admission}` input, requires canonical absolute roots and the fixed
+attempt location, and verifies the complete ordinary runtime and five-role
+inventory against actual retained bytes. It reads each entry once, writes no
+files or directories, returns `undefined` on success and throws on failure.
+The service retains its original immutable admission artifact; this operation
+does not create a persisted verified flag or a substitute source identity.
+Its success supports only that reference-admission handoff. Later composition
+still checks its actual input bytes again. Shared byte-validation logic must
+preserve the read-only path and composition's existing no-overwrite and
+non-aliasing guards; UI reads and request replay invoke neither operation.
+
 These five roles do not enumerate all execution inputs. Candidate-generated
 configuration and bootstrap files retain their existing full snapshot and derived
 execution-configuration binding. A five-role descriptor cannot authorize arbitrary
