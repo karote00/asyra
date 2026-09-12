@@ -25,7 +25,10 @@
    - M0 feasibility and M1-M4, including M3.5, are complete. The user
      authorized the remaining M3.5/M4 acceptance and closeout on 2026-09-12.
      Their detailed records are in Completed Work below; earlier dates remain.
-   - M5 packaging and M6 independent pilot/release review remain later work.
+   - M5 delivery stage is closed and merged as PR #192. Its resource/hardware
+     gaps remain open. [M6 pilot and release review](plans/m6-pilot-review.md) is
+     active from merge `599cb5b91`: first deliver the missing self-contained
+     recovery fixture and update notes; independent acceptance remains pending.
      Historical packaging evidence remains in roadmap section 1.2 and
      [LOCAL_CANDIDATE.md](release/LOCAL_CANDIDATE.md).
    - Keep the engine App-owned. Extracting generic 3D defaults into Preset and
@@ -33,6 +36,12 @@
      of this PR. No new Framework 3D profile is enabled by closeout.
 
 ## Completed Work
+
+- [M5 controlled-pilot candidate delivery](plans/completed/m5-controlled-pilot.md)
+  - Closed 2026-09-12 by user acceptance of the delivered preparation stage.
+    Exact source `9cf5c7f5e` passes 678 isolated App tests, 39 packaged browser
+    cases and eight CI checks. Capacity failure, missing M1 / 8 GB hardware and
+    independent/release evidence remain open; closeout does not waive them.
 
 - [M4 comparison, versions and private extensions](plans/completed/m4-comparison-extensions.md)
   - Closed 2026-09-12 by explicit user acceptance: all six owners, ordered
