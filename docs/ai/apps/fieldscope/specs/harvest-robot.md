@@ -367,6 +367,37 @@ Each active clock advance processes crossed finite route/checkpoint events in or
 it may not skip an obstacle, pick confirmation or charging interlock. Identical
 admitted inputs and ordered intents produce identical state and event results.
 
+### Session admission and pause boundary
+
+Session Start accepts dispatch evidence, not an accepted-result object. It calls
+D admission using its own prepared mission and current clock, and consumes the
+result within that intent. A caller cannot replace the current mission, borrow a
+receipt or replay an earlier accepted result to create another run. Every queued
+intent carries the session generation; cancel, replacement and disposal retire it.
+
+Resume is a distinct current-state admission. The session supplies the exact
+paused snapshot identity and revision, run/generation, canonical receipt, current
+C sources, time, current base/joints/tool pose, retained-fruit relative transforms,
+operation/checkpoint and remaining intent. The required provider combines current
+run-bound evidence with the remaining-motion/return assessment. Its decision binds
+the original request identity and an explicit finite validity interval. Missing,
+expired, wrong-run/generation/snapshot/source or held/fault results cannot resume.
+The session rechecks snapshot/generation/currentness after the provider returns;
+cancel, replacement or an intervening clock input makes late results stale.
+
+An accepted resume keeps the same run, pose, retained inventory and progress; it
+neither resets the robot to its dock nor spends elapsed paused time. Only later
+active clock differences count toward operation progress, and every physical
+movement still needs its exact live interval query. No short-lived dispatch or
+resume result grants indefinite clearance. Fault acknowledgement is separate from
+resume and cannot clear missing evidence or auto-restart a faulted action.
+
+The clock foundation can establish this lifecycle with the current rest pose and
+an empty held inventory before action execution is implemented. It must keep a
+required current-state provider boundary, without an always-clear or permanently
+unknown production substitute. Actual working-pose/held-fruit resume and real
+provider integration remain action gates before ordinary UI controls can close M3.
+
 ### Dispatch admission boundary
 
 D captures the completed B report and farm settings for one canonical mission
