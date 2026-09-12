@@ -178,6 +178,8 @@ Boundary (all paths relative to `apps/fieldscope/src`):
 
 - `simulation/contracts.ts` owns app-local transient schema, identities and
   admission; `simulation/session.ts` owns transitions, scheduling and ledgers.
+- `simulation/geometry.ts` owns the shared prepared source representation used
+  by observation and collision; it performs no detection or clearance decision.
 - `simulation/observations.ts` owns observation admission and the synthetic
   viewpoint/occlusion adapter; scene truth cannot escape as successful detection.
 - `simulation/collision.ts` owns exact movement-query admission over completed
@@ -279,3 +281,31 @@ software-only E-stop or unverified safety claims.
 Boundary: none admitted for implementation yet. Hardware contract owns requirements.
 Failure owner: physical protection system; app reports rather than masks faults.
 Cache dimensions: none.
+
+### D shared query geometry preparation
+
+Owner: D geometry preparation, one completed source representation for observation
+and collision consumers. Inputs: composition-issued opaque receipt binding original
+current C PreparedScene, RobotSource and DockSource from one canonical update;
+receipt and individual source currentness predicates. Outputs: immutable owner-issued
+geometry product with unique near shape records, installed placements, source
+triangle/fruit ownership and robot rigid-body/station-piece identity.
+Conditions: receipt and all handles current before preparation/publication/use;
+unchanged receipt bypasses preparation only after currentness checks. Replacement
+retires the old output; failed preparation has no partial publication. No bypass
+for missing physical geometry, revision lookalikes or visibility/opacity.
+Allowed: admitted source arrays/descriptors/instances, C's canonical fruit partition
+and rig ownership products, pure engine-neutral placement composition. D consumes
+completed C outputs and never regenerates their geometry or resolves B routes.
+Forbidden: detection/harvest decisions, A/clock/session mutations, bounding-volume
+proxies as physical shapes, distant LOD clearance, per-query world-mesh copies,
+blanket tire/joint/tool/fruit exemptions and physical quality inference.
+Boundary: simulation/geometry.ts and `simulation/__tests__/geometry.test.ts`;
+API_SURFACES documents the implemented handoff. No changes to C/domain generators,
+engine, B, runtime/UI or other D production in this preparation slice.
+Spec: D shared query geometry source and motion/evidence/quality clauses.
+Failure owner: geometry rejects stale, inconsistent or unsupported source; later
+observation/collision owners decide unknown/blocked evidence, not this source.
+Lifetime: one composition source receipt; unique source shape registration once,
+instance placement references reused on reads/queries. No additional cache or
+unprofiled acceleration structure is proposed.
