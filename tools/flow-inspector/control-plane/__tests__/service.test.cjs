@@ -1023,3 +1023,274 @@ test('service pins exact accepted history independently of legacy mapping revisi
     fs.rmSync(f.dir, { recursive: true, force: true })
   }
 })
+
+test('target proof production composes exact accepted and developing bundles with own-contract retention and no baseline promotion', async (t) => {
+  const f = referenceFixture()
+  let service = createService(f.repository, { directory: f.runs })
+  try {
+    const accepted = await service.wait(
+      service.start({ mode: 'candidate' }, LOCAL_ACTOR)
+    )
+    const acceptedReview = service.prepareEvolution(
+      { attemptId: accepted.id },
+      LOCAL_ACTOR
+    )
+    service.decideEvolution(
+      {
+        id: acceptedReview.id,
+        decision: 'accept',
+        reason: 'Explicit retained accepted verifier'
+      },
+      LOCAL_ACTOR
+    )
+    const manifest = path.join(f.repository, f.contract.manifestPath)
+    const definition = JSON.parse(fs.readFileSync(manifest))
+    definition.flows[0].title += ' - Target proof'
+    fs.chmodSync(manifest, 0o600)
+    fs.writeFileSync(manifest, JSON.stringify(definition))
+    const config = path.join(f.repository, f.contract.configFile)
+    fs.chmodSync(config, 0o600)
+    fs.appendFileSync(config, '\n// Frozen developing configuration\n')
+    const developing = await service.wait(
+      service.start({ mode: 'candidate' }, LOCAL_ACTOR)
+    )
+    const review = service.prepareEvolution(
+      { attemptId: developing.id },
+      LOCAL_ACTOR
+    )
+    const target = service.decideTarget(
+      {
+        ...pinnedTargetRequest(service, review),
+        targetRevision: review.candidate.contract.digest
+      },
+      LOCAL_ACTOR
+    )
+    const request = {
+      requestId: randomUUID(),
+      targetId: target.id,
+      allocationRevision: 1,
+      sourceAttemptId: developing.id,
+      role: 'target'
+    }
+    const baseline = service.state().shared
+    const testFile = path.join(f.repository, f.contract.testFile)
+    fs.chmodSync(testFile, 0o600)
+    fs.writeFileSync(
+      testFile,
+      "throw new Error('mutable checkout is not verification authority')\n"
+    )
+    const targetProof = await service.wait(
+      service.startTargetProof(request, LOCAL_ACTOR)
+    )
+    const acceptedProof = await service.wait(
+      service.startTargetProof(
+        { ...request, requestId: randomUUID(), role: 'accepted' },
+        LOCAL_ACTOR
+      )
+    )
+    for (const record of [acceptedProof, targetProof]) {
+      assert.equal(record.phase, 'completed')
+      assert.equal(record.evidence.status, 'passed')
+      assert.equal(record.mode, 'target-proof')
+      assert.equal(record.matchesCurrentContract, false)
+      assert.equal(
+        record.snapshot.runtimeSource.digest,
+        developing.snapshot.runtimeSource.digest
+      )
+      assert.throws(() =>
+        service.prepareEvolution({ attemptId: record.id }, LOCAL_ACTOR)
+      )
+    }
+    assert.equal(
+      acceptedProof.snapshot.verificationSource.digest,
+      accepted.snapshot.verificationSource.digest
+    )
+    assert.equal(
+      targetProof.snapshot.verificationSource.digest,
+      developing.snapshot.verificationSource.digest
+    )
+    assert.notEqual(
+      acceptedProof.snapshot.contractDigest,
+      targetProof.snapshot.contractDigest
+    )
+    assert.equal(service.state().shared.attemptId, baseline.attemptId)
+    assert.equal(
+      service.state().shared.verificationStatus,
+      baseline.verificationStatus
+    )
+    await service.close()
+    fs.rmSync(path.join(f.runs, developing.id, 'source', f.contract.configFile))
+    service = createService(f.repository, { directory: f.runs })
+    assert.equal(service.get(targetProof.id).evidence.status, 'passed')
+    const reads = t.mock.method(fs, 'readFileSync')
+    const compose = t.mock.method(sourceOwner, 'composeSource')
+    assert.equal(service.startTargetProof(request, LOCAL_ACTOR), targetProof.id)
+    assert.equal(reads.mock.callCount(), 0)
+    assert.equal(compose.mock.callCount(), 0)
+    assert.throws(
+      () =>
+        service.startTargetProof({ ...request, role: 'accepted' }, LOCAL_ACTOR),
+      /conflict/i
+    )
+    assert.throws(
+      () =>
+        service.startTargetProof(request, {
+          ...LOCAL_ACTOR,
+          id: 'different actor'
+        }),
+      /conflict/i
+    )
+    assert.throws(
+      () =>
+        service.startTargetProof(
+          { ...request, requestId: randomUUID() },
+          LOCAL_ACTOR
+        ),
+      /unavailable/i
+    )
+    assert.equal(reads.mock.callCount(), 0)
+    reads.mock.restore()
+    compose.mock.restore()
+  } finally {
+    await service.close()
+    fs.rmSync(f.dir, { recursive: true, force: true })
+  }
+})
+
+test('target proof lifecycle preserves cancellation interruption errors and retained exact verifier selection', async () => {
+  const f = referenceFixture()
+  let service = createService(f.repository, { directory: f.runs })
+  try {
+    const accepted = await service.wait(
+      service.start({ mode: 'candidate' }, LOCAL_ACTOR)
+    )
+    const acceptedReview = service.prepareEvolution(
+      { attemptId: accepted.id },
+      LOCAL_ACTOR
+    )
+    service.decideEvolution(
+      {
+        id: acceptedReview.id,
+        decision: 'accept',
+        reason: 'Explicit accepted verification'
+      },
+      LOCAL_ACTOR
+    )
+    const config = path.join(f.repository, f.contract.configFile)
+    fs.chmodSync(config, 0o600)
+    fs.appendFileSync(config, '\n// Distinct target configuration\n')
+    const developing = await service.wait(
+      service.start({ mode: 'candidate' }, LOCAL_ACTOR)
+    )
+    const review = service.prepareEvolution(
+      { attemptId: developing.id },
+      LOCAL_ACTOR
+    )
+    const target = service.decideTarget(
+      pinnedTargetRequest(service, review),
+      LOCAL_ACTOR
+    )
+    const request = {
+      requestId: randomUUID(),
+      targetId: target.id,
+      allocationRevision: 1,
+      sourceAttemptId: developing.id,
+      role: 'target'
+    }
+    const completed = await service.wait(
+      service.startTargetProof(request, LOCAL_ACTOR)
+    )
+    assert.equal(completed.evidence.status, 'passed')
+    await service.close()
+    const file = path.join(f.runs, completed.id, 'record.json')
+    const original = fs.readFileSync(file)
+    for (const mutate of [
+      (value) => (value.targetProof.request.role = 'other'),
+      (value) => (value.targetProof.request.unknown = true)
+    ]) {
+      const malformed = JSON.parse(original)
+      mutate(malformed)
+      fs.writeFileSync(file, JSON.stringify(malformed))
+      assert.throws(
+        () => createService(f.repository, { directory: f.runs }),
+        /target proof|request/i
+      )
+    }
+    const forged = JSON.parse(original)
+    forged.targetProof.request.role = 'accepted'
+    forged.targetProof.verificationSource =
+      acceptedReview.candidate.verificationSource
+    fs.writeFileSync(file, JSON.stringify(forged))
+    assert.throws(
+      () => createService(f.repository, { directory: f.runs }),
+      /target proof.*selection/i
+    )
+    fs.writeFileSync(file, original)
+    let executions = 0
+    service = createService(f.repository, {
+      directory: f.runs,
+      runner: async ({ signal }) => {
+        executions++
+        if (!signal.aborted)
+          await new Promise((resolve) =>
+            signal.addEventListener('abort', resolve, { once: true })
+          )
+        return { code: null, reason: 'cancelled', report: null, output: '' }
+      }
+    })
+    const cancellation = service.startTargetProof(
+      { ...request, requestId: randomUUID() },
+      LOCAL_ACTOR
+    )
+    const cancelled = await service.cancel(cancellation, LOCAL_ACTOR)
+    assert.equal(cancelled.phase, 'cancelled')
+    assert.equal(executions, 1)
+    await service.close()
+    const interruptedFile = path.join(f.runs, cancellation, 'record.json')
+    const interrupted = JSON.parse(fs.readFileSync(interruptedFile))
+    interrupted.phase = 'running'
+    delete interrupted.finishedAt
+    fs.writeFileSync(interruptedFile, JSON.stringify(interrupted))
+    service = createService(f.repository, {
+      directory: f.runs,
+      runner: async () => {
+        executions++
+        return { code: null, reason: 'timeout', report: null, output: '' }
+      }
+    })
+    assert.equal(service.get(cancellation).phase, 'interrupted')
+    assert.equal(executions, 1)
+    const timed = await service.wait(
+      service.startTargetProof(
+        { ...request, requestId: randomUUID() },
+        LOCAL_ACTOR
+      )
+    )
+    assert.equal(timed.phase, 'timed-out')
+    assert.equal(executions, 2)
+    // The reference was available at admission; later composition must check its bytes again.
+    const retainedConfig = path.join(
+      f.runs,
+      developing.id,
+      'source',
+      f.contract.configFile
+    )
+    fs.chmodSync(retainedConfig, 0o600)
+    fs.appendFileSync(
+      retainedConfig,
+      '\n// Corrupted after reference admission\n'
+    )
+    const failed = await service.wait(
+      service.startTargetProof(
+        { ...request, requestId: randomUUID() },
+        LOCAL_ACTOR
+      )
+    )
+    assert.equal(failed.phase, 'error')
+    assert.equal(failed.snapshot, undefined)
+    assert.equal(executions, 2)
+  } finally {
+    await service.close()
+    fs.rmSync(f.dir, { recursive: true, force: true })
+  }
+})

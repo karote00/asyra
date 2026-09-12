@@ -325,12 +325,24 @@ function createService(
       throw new Error(
         'Accepted architecture changed; a new contract activation is required'
       )
-    for (const record of store.list())
-      evidenceOwner.validateStoredEvidence(
-        contract,
-        record,
-        admitRuntimeSource(record)
+    for (const record of store.list()) {
+      const admission = admitRuntimeSource(record)
+      const evidenceContract =
+        record.mode === 'target-proof'
+          ? sourceAdmissions.get(record.id)?.contract
+          : contract
+      if (
+        record.mode === 'target-proof' &&
+        record.phase === 'completed' &&
+        !evidenceContract
       )
+        throw new Error('Target proof contract authority is unavailable')
+      evidenceOwner.validateStoredEvidence(
+        evidenceContract ?? contract,
+        record,
+        admission
+      )
+    }
     if (!store.mapping().evolution) {
       const contentDigest = sha256(
         fs.readFileSync(safePath(repositoryRoot, contract.testFile))
@@ -474,7 +486,7 @@ function createService(
         (record) =>
           record.phase === 'completed' &&
           record.scenario === 'baseline' &&
-          record.mode !== 'candidate' &&
+          !['candidate', 'target-proof'].includes(record.mode) &&
           record.mappingRevision === store.mapping().revision &&
           record.contractDigest === contract.digest
       )
@@ -535,19 +547,23 @@ function createService(
       ...patch,
       audit: [...previous.audit, event(eventName)]
     }
-    if (next.phase === 'completed')
-      evidenceOwner.validateStoredEvidence(
-        contract,
-        next,
-        admitRuntimeSource(next)
-      )
+    if (next.phase === 'completed') {
+      const admission = admitRuntimeSource(next)
+      const evidenceContract =
+        next.mode === 'target-proof'
+          ? sourceAdmissions.get(id)?.contract
+          : contract
+      if (!evidenceContract)
+        throw new Error('Target proof contract authority is unavailable')
+      evidenceOwner.validateStoredEvidence(evidenceContract, next, admission)
+    }
     store.save(next)
     return store.get(id)
   }
   const publicRecord = (record) => {
     if (!record) throw new ActionError(404, 'Attempt not found')
     const matchesCurrentContract =
-      record.mode !== 'candidate' &&
+      !['candidate', 'target-proof'].includes(record.mode) &&
       record.snapshot?.contractDigest === contract.digest &&
       (record.format !== 2 ||
         record.mappingRevision === store.mapping().revision)
@@ -697,7 +713,337 @@ function createService(
       throw new ActionError(409, error.message)
     }
   }
+  const validateTargetProofSelection = (selection) => {
+    objectRequest(selection, [
+      'targetId',
+      'allocationRevision',
+      'sourceAttemptId',
+      'role'
+    ])
+    if (
+      !validId(selection.targetId) ||
+      !validId(selection.sourceAttemptId) ||
+      !Number.isInteger(selection.allocationRevision) ||
+      selection.allocationRevision < 1 ||
+      !['accepted', 'target'].includes(selection.role)
+    )
+      throw new ActionError(400, 'Invalid target proof selection')
+  }
+  const resolveTargetProof = (selection, requireAvailable) => {
+    validateTargetProofSelection(selection)
+    const target = targets.get(selection.targetId)
+    if (
+      !target.history.some(
+        (entry) => entry.revision === selection.allocationRevision
+      )
+    )
+      throw new ActionError(409, 'Target allocation is unavailable')
+    let version
+    if (selection.role === 'accepted') {
+      const pin = target.acceptedVersion
+      version =
+        pin && store.mapping().evolution.history.versions[pin.revision - 1]
+      if (!version || version.contract.digest !== pin.contractDigest)
+        throw new ActionError(
+          409,
+          'Accepted verification source is unavailable'
+        )
+    } else {
+      const pin = target.targetVerification
+      const pair = pin && reviewAdmissions.get(pin.reviewId)?.pair
+      if (!pair || pair.candidateDigest !== pin.candidateDigest)
+        throw new ActionError(409, 'Target verification source is unavailable')
+      version = pair.candidate
+    }
+    const reference = version.verificationSource
+    const verificationRecord = reference && store.get(reference.attemptId)
+    const admittedReference = requireAvailable
+      ? referenceFor(verificationRecord, reference)
+      : referenceIdentity(verificationRecord)
+    if (
+      !reference ||
+      !admittedReference ||
+      !isDeepStrictEqual(reference, admittedReference)
+    )
+      throw new ActionError(409, 'Verification source is unavailable')
+    const runtime = sourceAdmissions.get(selection.sourceAttemptId)?.admission
+    const selectedContract = sourceAdmissions.get(reference.attemptId)?.contract
+    if (
+      !runtime?.runtimeSource ||
+      !selectedContract ||
+      selectedContract.digest !== version.contract.digest
+    )
+      throw new ActionError(409, 'Selected source authority is unavailable')
+    return {
+      contract: selectedContract,
+      targetProof: immutable({
+        request: structuredClone(selection),
+        runtime: {
+          attemptId: runtime.attemptId,
+          repository: runtime.repository,
+          head: runtime.head,
+          sourceDigest: runtime.sourceDigest,
+          runtimeSourceDigest: runtime.runtimeSource.digest
+        },
+        verificationSource: reference
+      })
+    }
+  }
+  try {
+    for (const record of store.list()) {
+      if (record.mode !== 'target-proof') continue
+      const resolved = resolveTargetProof(record.targetProof?.request, false)
+      if (
+        !isDeepStrictEqual(resolved.targetProof, record.targetProof) ||
+        record.contractDigest !== resolved.contract.digest ||
+        record.scenario !== 'baseline' ||
+        (record.snapshot &&
+          (record.snapshot.head !== resolved.targetProof.runtime.head ||
+            record.snapshot.runtimeSource?.digest !==
+              resolved.targetProof.runtime.runtimeSourceDigest ||
+            record.snapshot.verificationSource?.digest !==
+              resolved.targetProof.verificationSource.descriptor.digest ||
+            record.snapshot.configurationDigest !==
+              resolved.targetProof.verificationSource.configurationDigest)) ||
+        !isDeepStrictEqual(
+          record.flowIds,
+          resolved.contract.flows.map((flow) => flow.id)
+        )
+      )
+        throw new Error('Invalid retained target proof selection')
+    }
+  } catch (error) {
+    store.close()
+    throw error
+  }
+  const beginAttempt = (
+    request,
+    actor,
+    current,
+    mode,
+    scenario,
+    flowIds,
+    targetProof
+  ) => {
+    const id = request.requestId ?? randomUUID()
+    const controller = new AbortController()
+    const record = {
+      format: 2,
+      mode,
+      mappingRevision: store.mapping().revision,
+      contractDigest: current.digest,
+      ...(targetProof ? { targetProof } : {}),
+      sourceContract: {
+        definition: current.definition,
+        architectureDefinition: current.architectureDefinition
+      },
+      id,
+      actor: actor.id,
+      phase: 'running',
+      scenario,
+      flowIds,
+      startedAt: new Date().toISOString(),
+      audit: [event('admitted')]
+    }
+    store.save(record)
+    active = { id, controller }
+    refreshShared()
+    const completion = Promise.resolve().then(async () => {
+      try {
+        const runDirectory = path.join(directory, id)
+        const snapshot = targetProof
+          ? sourceOwner.composeSource(
+              repositoryRoot,
+              runDirectory,
+              {
+                sourceRoot: path.join(
+                  directory,
+                  targetProof.runtime.attemptId,
+                  'source'
+                ),
+                admission: sourceAdmissions.get(targetProof.runtime.attemptId)
+                  .admission
+              },
+              {
+                sourceRoot: path.join(
+                  directory,
+                  targetProof.verificationSource.attemptId,
+                  'source'
+                ),
+                admission: sourceAdmissions.get(
+                  targetProof.verificationSource.attemptId
+                ).admission
+              },
+              current
+            )
+          : capture(repositoryRoot, runDirectory, current)
+        if (
+          Object.hasOwn(snapshot, 'runtimeSource') &&
+          !Array.isArray(snapshot.files)
+        )
+          throw new Error('Runtime source: full live manifest required')
+        const runtimeAdmission = admitRuntimeSource(
+          { ...store.get(id), snapshot },
+          snapshot.files,
+          current
+        )
+        const ciContext =
+          mode === 'ci' || mode === 'ci-demo'
+            ? prepareCIContext(repositoryRoot, acceptedBase, snapshot, {
+                runId: process.env.GITHUB_RUN_ID ?? id,
+                attempt: Number(process.env.GITHUB_RUN_ATTEMPT ?? 1),
+                head: process.env.FLOW_CI_HEAD
+              })
+            : null
+        const identity = Object.fromEntries(
+          Object.entries(snapshot).filter(
+            ([key]) => !['sourceRoot', 'files'].includes(key)
+          )
+        )
+        update(id, { snapshot: identity }, 'source-captured')
+        const result = await runner({
+          repositoryRoot,
+          runDirectory,
+          snapshot,
+          contract: current,
+          scenario,
+          flowIds,
+          signal: controller.signal,
+          timeoutMs,
+          onSpawn: (pid) => update(id, { runnerPid: pid }, 'runner-started')
+        })
+        const evidence = evidenceOwner.assessEvidence(
+          current,
+          snapshot,
+          result,
+          flowIds,
+          scenario,
+          runtimeAdmission
+        )
+        let ciFields = {}
+        if (ciContext) {
+          const report = fs.existsSync(result.reportPath ?? '')
+            ? fs.readFileSync(result.reportPath, 'utf8')
+            : ''
+          const envelope = {
+            format: 1,
+            ...ciContext.expected,
+            provider:
+              process.env.GITHUB_ACTIONS === 'true'
+                ? 'github-actions'
+                : 'local-ci-trial',
+            policyDigest: ciContext.candidatePolicyDigest,
+            observedAt: new Date().toISOString(),
+            snapshot,
+            runner: { ...result, report: undefined, reportPath: undefined },
+            report
+          }
+          const ci = assessCI(
+            ciContext.accepted,
+            current,
+            ciContext.expected,
+            envelope
+          )
+          ci.blockers.push(...ciContext.policyIssues)
+          if (ciContext.policyIssues.length) {
+            ci.deliveryStatus = 'blocked'
+            if (ci.verificationStatus === 'passed')
+              ci.verificationStatus = 'unknown'
+          }
+          const envelopePath = path.join(runDirectory, 'ci-envelope.json')
+          writeAtomic(envelopePath, envelope)
+          ciFields = {
+            ci,
+            ciEnvelopeDigest: sha256(fs.readFileSync(envelopePath))
+          }
+        }
+        let phase = 'completed'
+        if (result.reason === 'cancelled') phase = 'cancelled'
+        else if (result.reason === 'timeout') phase = 'timed-out'
+        else if (result.reason || result.reportError) phase = 'error'
+        update(
+          id,
+          {
+            phase,
+            ...ciFields,
+            finishedAt: new Date().toISOString(),
+            evidence,
+            runner: {
+              code: result.code,
+              reason: result.reason,
+              version: result.version,
+              environment: result.environment,
+              identity: result.identity,
+              reportDigest: result.reportDigest,
+              output: result.output,
+              reportPath: path.relative(
+                repositoryRoot,
+                result.reportPath ?? runDirectory
+              )
+            },
+            artifactDirectory: path.relative(repositoryRoot, runDirectory)
+          },
+          'runner-settled'
+        )
+      } catch (error) {
+        update(
+          id,
+          {
+            phase: 'error',
+            finishedAt: new Date().toISOString(),
+            error: error.message
+          },
+          'attempt-error'
+        )
+      } finally {
+        if (active?.id === id) active = null
+        refreshShared()
+      }
+      return store.get(id)
+    })
+    pending.set(id, completion)
+    completion.finally(() => pending.delete(id)).catch(() => undefined)
+    return id
+  }
   return {
+    startTargetProof(request, actor) {
+      authorize(actor, 'verify')
+      objectRequest(request, [
+        'requestId',
+        'targetId',
+        'allocationRevision',
+        'sourceAttemptId',
+        'role'
+      ])
+      if (!validId(request.requestId))
+        throw new ActionError(400, 'Invalid target proof request')
+      const { requestId, ...selection } = request
+      validateTargetProofSelection(selection)
+      const previous = store.get(requestId)
+      if (previous) {
+        if (
+          previous.mode !== 'target-proof' ||
+          previous.actor !== actor.id ||
+          !isDeepStrictEqual(previous.targetProof?.request, selection)
+        )
+          throw new ActionError(
+            409,
+            'Target proof request identity conflicts with an existing attempt'
+          )
+        return previous.id
+      }
+      requireIdle()
+      const resolved = taskResult(() => resolveTargetProof(selection, true))
+      return beginAttempt(
+        request,
+        actor,
+        resolved.contract,
+        'target-proof',
+        'baseline',
+        resolved.contract.flows.map((flow) => flow.id),
+        resolved.targetProof
+      )
+    },
     targets: () => ({
       records: targets.list(),
       catalog: targetContracts().map((c) => ({
@@ -1338,159 +1684,7 @@ function createService(
           409,
           'Working mapping differs from the accepted contract; prepare a mapping review before verification'
         )
-      const id = request.requestId ?? randomUUID()
-      const controller = new AbortController()
-      const record = {
-        format: 2,
-        mode,
-        mappingRevision: store.mapping().revision,
-        contractDigest: current.digest,
-        sourceContract: {
-          definition: current.definition,
-          architectureDefinition: current.architectureDefinition
-        },
-        id,
-        actor: actor.id,
-        phase: 'running',
-        scenario,
-        flowIds,
-        startedAt: new Date().toISOString(),
-        audit: [event('admitted')]
-      }
-      store.save(record)
-      active = { id, controller }
-      refreshShared()
-      const completion = Promise.resolve().then(async () => {
-        try {
-          const runDirectory = path.join(directory, id)
-          const snapshot = capture(repositoryRoot, runDirectory, current)
-          if (
-            Object.hasOwn(snapshot, 'runtimeSource') &&
-            !Array.isArray(snapshot.files)
-          )
-            throw new Error('Runtime source: full live manifest required')
-          const runtimeAdmission = admitRuntimeSource(
-            { ...store.get(id), snapshot },
-            snapshot.files,
-            current
-          )
-          const ciContext =
-            mode === 'ci' || mode === 'ci-demo'
-              ? prepareCIContext(repositoryRoot, acceptedBase, snapshot, {
-                  runId: process.env.GITHUB_RUN_ID ?? id,
-                  attempt: Number(process.env.GITHUB_RUN_ATTEMPT ?? 1),
-                  head: process.env.FLOW_CI_HEAD
-                })
-              : null
-          const identity = Object.fromEntries(
-            Object.entries(snapshot).filter(
-              ([key]) => !['sourceRoot', 'files'].includes(key)
-            )
-          )
-          update(id, { snapshot: identity }, 'source-captured')
-          const result = await runner({
-            repositoryRoot,
-            runDirectory,
-            snapshot,
-            contract: current,
-            scenario,
-            flowIds,
-            signal: controller.signal,
-            timeoutMs,
-            onSpawn: (pid) => update(id, { runnerPid: pid }, 'runner-started')
-          })
-          const evidence = evidenceOwner.assessEvidence(
-            current,
-            snapshot,
-            result,
-            flowIds,
-            scenario,
-            runtimeAdmission
-          )
-          let ciFields = {}
-          if (ciContext) {
-            const report = fs.existsSync(result.reportPath ?? '')
-              ? fs.readFileSync(result.reportPath, 'utf8')
-              : ''
-            const envelope = {
-              format: 1,
-              ...ciContext.expected,
-              provider:
-                process.env.GITHUB_ACTIONS === 'true'
-                  ? 'github-actions'
-                  : 'local-ci-trial',
-              policyDigest: ciContext.candidatePolicyDigest,
-              observedAt: new Date().toISOString(),
-              snapshot,
-              runner: { ...result, report: undefined, reportPath: undefined },
-              report
-            }
-            const ci = assessCI(
-              ciContext.accepted,
-              current,
-              ciContext.expected,
-              envelope
-            )
-            ci.blockers.push(...ciContext.policyIssues)
-            if (ciContext.policyIssues.length) {
-              ci.deliveryStatus = 'blocked'
-              if (ci.verificationStatus === 'passed')
-                ci.verificationStatus = 'unknown'
-            }
-            const envelopePath = path.join(runDirectory, 'ci-envelope.json')
-            writeAtomic(envelopePath, envelope)
-            ciFields = {
-              ci,
-              ciEnvelopeDigest: sha256(fs.readFileSync(envelopePath))
-            }
-          }
-          let phase = 'completed'
-          if (result.reason === 'cancelled') phase = 'cancelled'
-          else if (result.reason === 'timeout') phase = 'timed-out'
-          else if (result.reason || result.reportError) phase = 'error'
-          update(
-            id,
-            {
-              phase,
-              ...ciFields,
-              finishedAt: new Date().toISOString(),
-              evidence,
-              runner: {
-                code: result.code,
-                reason: result.reason,
-                version: result.version,
-                environment: result.environment,
-                identity: result.identity,
-                reportDigest: result.reportDigest,
-                output: result.output,
-                reportPath: path.relative(
-                  repositoryRoot,
-                  result.reportPath ?? runDirectory
-                )
-              },
-              artifactDirectory: path.relative(repositoryRoot, runDirectory)
-            },
-            'runner-settled'
-          )
-        } catch (error) {
-          update(
-            id,
-            {
-              phase: 'error',
-              finishedAt: new Date().toISOString(),
-              error: error.message
-            },
-            'attempt-error'
-          )
-        } finally {
-          if (active?.id === id) active = null
-          refreshShared()
-        }
-        return store.get(id)
-      })
-      pending.set(id, completion)
-      completion.finally(() => pending.delete(id)).catch(() => undefined)
-      return id
+      return beginAttempt(request, actor, current, mode, scenario, flowIds)
     },
     async wait(id) {
       if (pending.has(id)) await pending.get(id)
