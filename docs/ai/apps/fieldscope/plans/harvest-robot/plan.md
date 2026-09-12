@@ -843,3 +843,23 @@ large-coordinate requested-distance enclosure and foreign context ownership.
 The latter two failed before correction. One camera preparation and one eligible
 ray batch/FK reuse completed geometry bounds with zero source generation. This
 pure producer does not close ordinary UI scan, action or full M3 integration.
+
+Next D Step Card: static source surface-pair evidence, before continuous sweep and
+articulated path/contact admission. Consume the issued QueryGeometry and explicitly
+selected original triangles with synthetic current pose/time. Publish only surface
+relations plus original witnesses; no clear movement, material-free inference or
+contact exemption. D collision owns the predicates, existing ray frame arithmetic
+owns the minimal shared forward/instance handoff. No new persisted schema or wire
+identity; SurfaceQueries and source-pair names are app-local transient helpers.
+
+Allowlist: collision.ts/direct formal test, ray-query.ts/shared-frame direct test,
+API_SURFACES and these readiness docs. Reuse interval/exact arithmetic, C FK and
+completed source buffers; do not create a second world geometry or bounds cache.
+Formal tests first: crossing, separation, coplanar overlap, edge/vertex contact,
+numerical uncertainty, nested nonintersecting surfaces without volume clearance,
+actual C placement/body pairs, source retirement, clone-once malformed inputs and
+work counts. Then full app unit/type/lint/naming/build and independent review.
+Stop for missing source/body ownership, a required contact exemption, unsupported
+numeric proof or a need to admit motion from this static result. The next owner
+will add a continuous fixed-rotation linear sweep, then articulated path/IK and
+full-body/intended-contact coverage before session movement can be admitted.
