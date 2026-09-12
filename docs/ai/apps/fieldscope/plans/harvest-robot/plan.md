@@ -571,3 +571,29 @@ red was a missing-module collection failure before the new owner existed, not si
 failing behavior assertions. Independent code review passed; 301 app unit tests,
 typecheck, lint and naming pass. No observation, sweep/contact decision or app
 presentation changed in this source preparation slice.
+
+### D near-source ray card - geometric evidence before observations
+
+Source/owner: D near-source ray evidence and matching Inspector helper. Inputs:
+current issued QueryGeometry source, explicit synthetic time/validity and robot
+base/joints, source-pose leaves/all-attached fruit state, bounded rays. Outputs:
+batch-bound nearest original source hit/barycentrics/metre distance, finite-range
+miss or unknown. No detection, row-empty, optical, quality or swept-clearance claim.
+Validate detached batch input and current sources before/after; C FK once per
+batch, not per ray. Unsupported disposition/leaf/body evidence remains unknown.
+
+Files: simulation/ray-query.ts and `simulation/__tests__/ray-query.test.ts`,
+API_SURFACES; geometry.ts only for a profiling-justified same-owner shape index.
+Readiness updates these four docs first. No session, C, engine, runtime or UI
+production. Naming: neutral transient ray/batch identities, no persisted schema.
+First formal cases freeze exact source triangle/distance/ordering/transform/range
+and ambiguity outcomes. Real C hit/miss/net/leaf/cultivar rays record shape scans,
+instance/triangle tests, query/FK counts and elapsed time. Only measured repeated source/query
+work can authorize a source-lifetime index with identical oracle outcomes;
+no speculative cache or product geometry substitution.
+
+Gates: focused red/green and actual-source work profile, app unit/typecheck/lint,
+naming and independent readiness/code review. No presentation change/browser gate.
+Stop for new optical/hardware/force parameters, missing true source/body ownership,
+a needed out-of-scope contributor, or geometric ambiguity that cannot be honestly
+reported. Uncertain geometry stays unknown rather than admitting a false result.
