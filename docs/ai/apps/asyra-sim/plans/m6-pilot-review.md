@@ -1453,3 +1453,72 @@ parent a finding leaf, so it never subdivides. Thus current eligible handles
 cannot reach such inherited endpoints. Broader clear/uncertain source eligibility
 would require a separate reviewed owner contract and evidence; this slice does
 not introduce it.
+
+### Adjacent original segment - passive upper-source protocol
+
+Objective: test the mathematical/cost premise for one boundary, original segment
+114 to 113 in the actual descending LIFO order. This is only a new permanent
+test-owned passive profile and this short card; production, Inspector lifetime
+and current handles remain unchanged. Execute both complete current baseline
+segments in one query/context with original geometry, settings, 500k work and
+20s guard. Capture only segment 114's actual first fresh completed finite
+nonpenetrating positive warning and copied immutable poses/witnesses (one extra
+unit); at segment 113's first fresh sample, charge admission plus two inverse,
+two forward and one norm (six). Explicitly verify reverse time, adjacent indices,
+shared boundary, ordered immutable geometry and actual input identities. Confirm
+114 completion from canonical LIFO order, observed sample order and final leaves.
+Inject nothing. Prove reverse-time whole-enclosure transport with an independent
+exact source-point oracle, then report upper eligibility, the original target
+cost/first-warning upper limit and all seven added units separately from existing
+sampler work. No saving or production acceptance follows a positive upper alone.
+Stop on source/provenance/guard failure or no viable bound; any actual-delta
+experiment requires separate review. No full or browser gate.
+
+The passive oracle and source case passed. At 114 start the actual upper is
+0.010714356302402587; backward transport to 113 start gives 0.008179753354794837,
+below 0.02. The untouched target uses 5,208 units (1,943 pose axes, 390 convex
+queries, zero membership units), first warning at 4,947 units; that is only a
+potential-saving upper limit. Original work 37,128 plus the seven extra units
+is 37,135, with both segments complete. Source leaves are nonempty, cover their
+original end and never resume after 113 begins. Evidence is
+`tmp/capacity/adjacent-passive.log`; independent passive review passed.
+
+Next test-only actual-delta protocol: execute those same two full current
+segments for both cold control and candidate, preserving order/settings and
+every existing sampler operation. Candidate alone pays capture one and consume
+six; inject the proven points only at 113's first fresh distance through the
+existing private-witness test adapter, restoring its descriptor in `finally`.
+All original distance, membership, penetration and subsequent fresh samples run.
+Log complete evidence and exact cost categories before assertions. Source 114
+remains entirely equal; all non-upper fields remain exact. Only the first
+target's independently proven seed upper, and a leaf/global upper selecting
+that exact witness, may differ. Later sample upper propagation or any other
+observable difference stays red for explicit review, never automatic relaxation.
+Here non-upper equality governs emitted PairEvidence, including every leaf lower.
+Internal static axis/iterations/convergence may be recomputed by the unchanged
+solver and are logged individually; no metadata is manually rewritten. Any
+later upper propagation remains subject to the stated provenance/stop rule.
+The predeclared material gate is target cost including its six extra units at
+most 80% of control, lower whole paid work and no added target convex queries,
+under the unchanged 500k/20s guards. One bounded test-owned experiment only;
+no production, full gate or cross-segment handle implementation follows without
+separate review of its actual result.
+
+The actual delta passed its fixed gates: target work including consumption falls
+from 5,208 to 1,987, target convex queries from 390 to 40, and total paid work
+from 37,128 to 33,908 including all seven added units. Both complete emitted
+PairEvidence values are exactly equal; all later static samples remain equal.
+The original solver improves the injected upper 0.008179753354794837 to the same
+final upper/source points as control (0.0011536664118260158). Only the internal
+first-target lower differs, decreasing from 0.00029149003885364783 to
+0.00007219820252812868; the original control lower certificate also covers that
+smaller bound. No solver metadata is overwritten.
+
+The first run's extra assertion that final points must equal the initial seed
+was red, retained in `tmp/capacity/adjacent-delta.log`. Root and independent
+review explicitly accepted replacing that unsupported equality with exact final
+control source points, the conservative lower ordering, all later static fields
+and complete emitted evidence equality. The bounded rerun passed all three
+cases in `tmp/capacity/adjacent-delta-final.log`. This is a test-owned actual-delta
+result, not production readiness or G4 completion; cross-segment production
+ownership remains unchanged and prohibited by the current contract.

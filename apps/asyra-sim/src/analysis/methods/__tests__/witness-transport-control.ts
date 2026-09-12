@@ -26,16 +26,8 @@ export function seededDistance(
   const seed = transport(source, target, () => owner.tick())
   if (!seed) throw new Error('The controlled source witness is not eligible')
   const addedWork = context.work - before
-  const descriptor = Object.getOwnPropertyDescriptor(owner, 'witness')
-  let calls = 0
-  owner.witness = (shape) => {
-    calls++
-    if (shape === target.shapes[0]) return seed.a
-    if (shape === target.shapes[1]) return seed.b
-    throw new Error('Witness interception escaped the exact target shapes')
-  }
-  try {
-    const evidence = OriginalMeshQuery.prototype.distance.call(
+  const evidence = withSourceWitness(context, target.shapes, seed, () =>
+    OriginalMeshQuery.prototype.distance.call(
       context,
       target.shapes[0],
       target.shapes[1],
@@ -43,9 +35,31 @@ export function seededDistance(
       tolerance,
       iterations
     )
+  )
+  return { evidence, seed, addedWork }
+}
+
+/** Synchronous test adapter; every caller supplies independently proven points. */
+export function withSourceWitness(
+  context: OriginalMeshQuery,
+  shapes: readonly [ConvexShape, ConvexShape],
+  seed: { a: DistanceEvidence['witnessA']; b: DistanceEvidence['witnessB'] },
+  solve: () => DistanceEvidence
+) {
+  const owner = context as unknown as TestQueryOwner
+  const descriptor = Object.getOwnPropertyDescriptor(owner, 'witness')
+  let calls = 0
+  owner.witness = (shape) => {
+    calls++
+    if (shape === shapes[0]) return seed.a
+    if (shape === shapes[1]) return seed.b
+    throw new Error('Witness interception escaped the exact target shapes')
+  }
+  try {
+    const evidence = solve()
     if (calls !== 2)
       throw new Error('Expected exactly two original seed witnesses')
-    return { evidence, seed, addedWork }
+    return evidence
   } finally {
     if (descriptor) Object.defineProperty(owner, 'witness', descriptor)
     else Reflect.deleteProperty(owner, 'witness')
