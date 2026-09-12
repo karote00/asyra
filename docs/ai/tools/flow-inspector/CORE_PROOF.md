@@ -917,6 +917,28 @@ the service's retained projections with no proof IO or computation. There is no
 HTTP endpoint for private role-level proof production. CLI and Board controls
 remain subsequent consumers of these same public actions.
 
+### Target assessment CLI transport
+
+`target-assess request.json` reads the existing bounded repository-local JSON
+input, starts the registered assessment, waits for settlement and prints the full
+retained record with its currentness projection. Waiting is mandatory for this
+command in both local and `--url` modes, so closing a one-command local service
+cannot cancel its newly started assessment. `target-assessments` lists retained
+records; `target-assessment-show id`, `target-assessment-wait id` and
+`target-assessment-cancel id` expose the corresponding read, wait and cancellation
+actions. Remote wait polls the existing cached GET detail at the established
+250 ms interval; it does not create a new proof or compute a verdict.
+
+Start and wait commands exit 0 only for a completed, currently eligible assessment;
+pending, failed, stale, interrupted or otherwise unavailable completion exits 1
+while retaining and printing its distinct result. List, show and successfully
+settled cancellation are inspection/control operations and exit 0 independent of
+the historical verification outcome. Errors retain the existing CLI error path.
+The local adapter uses the existing service startup admission and close lifecycle;
+remote commands use the existing loopback capability transport. Both preserve
+exact request replay and report the same service-owned identities and separated
+verdicts, without CLI-owned assessment, role selection or private proof dispatch.
+
 ### One source and distinct verification contracts
 
 Every participating producer must bind the same repository, captured runtime
