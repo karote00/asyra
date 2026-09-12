@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 const assert = require('node:assert/strict')
 const fs = require('node:fs')
-const { createHash } = require('node:crypto')
+const { createHash, randomUUID } = require('node:crypto')
 const path = require('node:path')
 const test = require('node:test')
 const {
@@ -9,7 +9,8 @@ const {
   validateRuntimeSource,
   createRuntimeSource,
   createVerificationSource,
-  validateSourceSnapshot
+  validateSourceSnapshot,
+  composeSource
 } = require('../snapshot.cjs')
 const { loadContract } = require('../contracts.cjs')
 const root = path.resolve(__dirname, '../../../..')
@@ -664,4 +665,215 @@ test('combined source admission hashes the full manifest once and each descripto
     snapshot.verificationSource.digest
   )
   assert.equal(hash.mock.callCount(), 3)
+})
+
+function compositionInput(repository, snapshot, contract) {
+  return {
+    sourceRoot: snapshot.sourceRoot,
+    admission: Object.freeze({
+      attemptId: path.basename(path.dirname(snapshot.sourceRoot)),
+      repository: fs.realpathSync(repository),
+      head: snapshot.head,
+      sourceDigest: snapshot.digest,
+      contractDigest: contract.digest,
+      mappingVersion: contract.mappingVersion,
+      architectureVersion: contract.architectureVersion,
+      configurationDigest: snapshot.configurationDigest,
+      ...validateSourceSnapshot(snapshot, contract)
+    })
+  }
+}
+
+test('ordinary composition executes distinct retained verifier bytes on one selected runtime without checkout reads', async (t) => {
+  const { repository, capture } = copiedSource(t)
+  const contract = loadContract(repository)
+  const accepted = capture(randomUUID(), contract)
+  fs.appendFileSync(
+    path.join(repository, contract.testFile),
+    '\n// target verifier bytes\n'
+  )
+  fs.appendFileSync(
+    path.join(repository, contract.configFile),
+    '\n// target configuration bytes\n'
+  )
+  const target = capture(randomUUID(), contract)
+  fs.appendFileSync(
+    path.join(repository, 'packages/factory/src/data-transact.ts'),
+    '\n// integrated runtime source\n'
+  )
+  const integrated = capture(randomUUID(), contract)
+  const runtime = compositionInput(repository, integrated, contract)
+  const inputs = [
+    compositionInput(repository, accepted, contract),
+    compositionInput(repository, target, contract)
+  ]
+  assert.notEqual(
+    integrated.runtimeSource.digest,
+    accepted.runtimeSource.digest
+  )
+  assert.equal(accepted.runtimeSource.digest, target.runtimeSource.digest)
+  assert.notEqual(
+    accepted.verificationSource.digest,
+    target.verificationSource.digest
+  )
+  // Checkout changes after both captures cannot provide replacement proof bytes.
+  fs.writeFileSync(
+    path.join(repository, contract.testFile),
+    'throw new Error("mutable checkout must not execute")'
+  )
+  const { runVerification } = require('../runner.cjs')
+  const { assessEvidence } = require('../evidence.cjs')
+  for (const verification of inputs) {
+    const output = path.join(repository, 'attempts', randomUUID())
+    const read = t.mock.method(fs, 'readFileSync')
+    const snapshot = composeSource(
+      repository,
+      output,
+      runtime,
+      verification,
+      contract
+    )
+    assert.equal(read.mock.callCount(), snapshot.fileCount)
+    assert.equal(snapshot.readCount, snapshot.fileCount)
+    assert.ok(
+      read.mock.calls.every(
+        (call) =>
+          String(call.arguments[0]).startsWith(runtime.sourceRoot + path.sep) ||
+          String(call.arguments[0]).startsWith(
+            verification.sourceRoot + path.sep
+          )
+      )
+    )
+    read.mock.restore()
+    assert.equal(snapshot.runtimeSource.digest, integrated.runtimeSource.digest)
+    assert.equal(
+      snapshot.verificationSource.digest,
+      verification.admission.verificationSource.digest
+    )
+    assert.equal(snapshot.head, integrated.head)
+    assert.notEqual(snapshot.digest, accepted.digest)
+    assert.notEqual(snapshot.digest, target.digest)
+    const flowIds = contract.flows.map((flow) => flow.id)
+    const result = await runVerification({
+      repositoryRoot: root,
+      runDirectory: output,
+      snapshot,
+      contract,
+      flowIds,
+      scenario: 'baseline',
+      timeoutMs: 30000
+    })
+    const evidence = assessEvidence(contract, snapshot, result, flowIds)
+    assert.equal(evidence.status, 'passed', JSON.stringify(evidence.issues))
+    assert.equal(evidence.runtimeSourceDigest, integrated.runtimeSource.digest)
+  }
+})
+
+test('ordinary composition rejects missing, changed, unsafe or nonordinary input without usable snapshot', (t) => {
+  assert.equal(typeof composeSource, 'function')
+  const { repository, capture } = copiedSource(t)
+  const contract = loadContract(repository)
+  const snapshot = capture(randomUUID(), contract)
+  const input = compositionInput(repository, snapshot, contract)
+  for (const mutate of [
+    (value) => {
+      value.admission.repository = root
+    },
+    (value) => {
+      value.admission.configurationDigest = '0'.repeat(64)
+    },
+    (value) => {
+      value.admission.contractDigest = '0'.repeat(64)
+    },
+    (value) => {
+      value.admission.attemptId = randomUUID()
+    }
+  ]) {
+    const invalid = structuredClone(input)
+    mutate(invalid)
+    const output = path.join(repository, 'attempts', randomUUID())
+    assert.throws(
+      () => composeSource(repository, output, input, invalid, contract),
+      /source|contract|configuration|attempt|repository/i
+    )
+    assert.equal(
+      fs.existsSync(path.join(output, 'source-manifest.json')),
+      false
+    )
+  }
+  assert.throws(
+    () =>
+      composeSource(
+        repository,
+        path.dirname(input.sourceRoot),
+        input,
+        input,
+        contract
+      ),
+    /exists|source|immutable/i
+  )
+  const linkedOutput = path.join(repository, 'attempts', randomUUID())
+  fs.symlinkSync(path.dirname(input.sourceRoot), linkedOutput)
+  assert.throws(
+    () => composeSource(repository, linkedOutput, input, input, contract),
+    /symlink|source/i
+  )
+  assert.equal(
+    fingerprint(
+      fs.readFileSync(
+        path.join(path.dirname(input.sourceRoot), 'source-manifest.json')
+      )
+    ),
+    snapshot.digest
+  )
+  const file = path.join(input.sourceRoot, contract.testFile)
+  const original = fs.readFileSync(file)
+  for (const corrupt of ['missing', 'bytes', 'symlink']) {
+    fs.rmSync(file)
+    if (corrupt === 'bytes')
+      fs.writeFileSync(file, Buffer.alloc(original.length, 32))
+    if (corrupt === 'symlink')
+      fs.symlinkSync(path.join(repository, contract.testFile), file)
+    const output = path.join(repository, 'attempts', randomUUID())
+    assert.throws(
+      () => composeSource(repository, output, input, input, contract),
+      /source|fingerprint|symlink|ENOENT/i
+    )
+    assert.equal(
+      fs.existsSync(path.join(output, 'source-manifest.json')),
+      false
+    )
+    fs.rmSync(file, { force: true })
+    fs.writeFileSync(file, original)
+  }
+})
+
+test('ordinary composition cannot write beneath a retained tree through a noncanonical input alias', (t) => {
+  const { repository, capture } = copiedSource(t)
+  const contract = loadContract(repository)
+  const snapshot = capture(randomUUID(), contract)
+  const input = compositionInput(repository, snapshot, contract)
+  const aliased = {
+    ...input,
+    sourceRoot:
+      path.dirname(path.dirname(input.sourceRoot)) +
+      '/unused/../' +
+      input.admission.attemptId +
+      '/source'
+  }
+  const write = t.mock.method(fs, 'writeFileSync')
+  const mkdir = t.mock.method(fs, 'mkdirSync')
+  assert.throws(
+    () =>
+      composeSource(
+        repository,
+        path.join(input.sourceRoot, 'nested-attempt'),
+        aliased,
+        aliased,
+        contract
+      ),
+    /source|canonical|overlap/i
+  )
+  assert.equal(write.mock.callCount(), 0)
+  assert.equal(mkdir.mock.callCount(), 0)
 })

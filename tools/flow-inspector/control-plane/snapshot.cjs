@@ -190,6 +190,124 @@ function validateRuntimeSource(snapshot, fullFiles = snapshot.files) {
   })
 }
 
+function composeSource(
+  repositoryRoot,
+  runDirectory,
+  runtimeInput,
+  verificationInput,
+  contract
+) {
+  const repository = fs.realpathSync(repositoryRoot)
+  for (const input of [runtimeInput, verificationInput]) {
+    if (
+      !input?.admission ||
+      input.admission.repository !== repository ||
+      !/^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(
+        input.admission.attemptId ?? ''
+      ) ||
+      path.basename(input.sourceRoot ?? '') !== 'source' ||
+      path.basename(path.dirname(input.sourceRoot ?? '')) !==
+        input.admission.attemptId
+    )
+      throw new Error('Source composition repository or attempt mismatch')
+    if (
+      input.sourceRoot !==
+      safePath(repository, path.relative(repository, input.sourceRoot))
+    )
+      throw new Error('Source composition requires canonical source roots')
+  }
+  const runtime = runtimeInput.admission.runtimeSource
+  const verification = verificationInput.admission.verificationSource
+  if (
+    !runtime ||
+    !verification ||
+    verificationInput.admission.contractDigest !== contract.digest ||
+    verificationInput.admission.mappingVersion !== contract.mappingVersion ||
+    verificationInput.admission.architectureVersion !==
+      contract.architectureVersion ||
+    verificationInput.admission.configurationDigest !==
+      verification.files.find((entry) => entry.path === contract.configFile)
+        ?.digest
+  )
+    throw new Error(
+      'Source composition requires exact ordinary verification configuration'
+    )
+  const sourceRoot = safePath(
+    repository,
+    path.relative(repository, path.join(runDirectory, 'source'))
+  )
+  const manifestPath = safePath(
+    repository,
+    path.relative(repository, path.join(runDirectory, 'source-manifest.json'))
+  )
+  if (fs.existsSync(sourceRoot) || fs.existsSync(manifestPath))
+    throw new Error('Immutable source snapshot already exists')
+  for (const input of [runtimeInput, verificationInput]) {
+    if (
+      sourceRoot === input.sourceRoot ||
+      sourceRoot.startsWith(input.sourceRoot + path.sep) ||
+      input.sourceRoot.startsWith(sourceRoot + path.sep)
+    )
+      throw new Error('Source composition destination overlaps retained source')
+  }
+  const selected = [
+    ...runtime.files.map((entry) => ({ entry, root: runtimeInput.sourceRoot })),
+    ...verification.files.map((entry) => ({
+      entry,
+      root: verificationInput.sourceRoot
+    }))
+  ].sort((a, b) =>
+    a.entry.path < b.entry.path ? -1 : Number(a.entry.path > b.entry.path)
+  )
+  if (new Set(selected.map((item) => item.entry.path)).size !== selected.length)
+    throw new Error('Source composition inventories overlap')
+  const files = []
+  for (const { entry, root } of selected) {
+    const input = safePath(root, entry.path)
+    if (!fs.lstatSync(input).isFile())
+      throw new Error('Source composition requires regular source files')
+    const bytes = fs.readFileSync(input)
+    if (bytes.length !== entry.size || sha256(bytes) !== entry.digest)
+      throw new Error('Source composition byte fingerprint mismatch')
+    const output = safePath(sourceRoot, entry.path)
+    fs.mkdirSync(path.dirname(output), { recursive: true })
+    fs.writeFileSync(output, bytes, { flag: 'wx', mode: 0o444 })
+    files.push(
+      Object.freeze({
+        path: entry.path,
+        digest: entry.digest,
+        size: entry.size
+      })
+    )
+  }
+  const runtimeSource = createRuntimeSource(files)
+  const verificationSource = createVerificationSource(files, contract)
+  if (
+    runtimeSource.digest !== runtime.digest ||
+    verificationSource.digest !== verification.digest
+  )
+    throw new Error('Source composition descriptor mismatch')
+  const manifest = JSON.stringify(files)
+  fs.writeFileSync(manifestPath, manifest, { flag: 'wx', mode: 0o444 })
+  return Object.freeze({
+    kind: 'worktree-snapshot',
+    runtimeSource,
+    verificationSource,
+    sourceRoot,
+    digest: sha256(manifest),
+    contractDigest: contract.digest,
+    mappingVersion: contract.mappingVersion,
+    architectureVersion: contract.architectureVersion,
+    configurationDigest: verificationInput.admission.configurationDigest,
+    lockfileDigest: files.find((entry) => entry.path === 'yarn.lock').digest,
+    manifestPath: path.relative(repository, manifestPath),
+    head: runtimeInput.admission.head,
+    files: Object.freeze(files),
+    fileCount: files.length,
+    readCount: files.length
+  })
+}
+
 function captureSource(repositoryRoot, runDirectory, contract) {
   const sourceRoot = safePath(
     repositoryRoot,
@@ -298,6 +416,7 @@ function captureSource(repositoryRoot, runDirectory, contract) {
 }
 
 module.exports = {
+  composeSource,
   captureSource,
   createRuntimeSource,
   createVerificationSource,
