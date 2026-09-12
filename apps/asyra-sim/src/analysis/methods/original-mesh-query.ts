@@ -22,6 +22,7 @@ import {
   type PreparedMeshIndex,
   type MeshNode
 } from './mesh-index'
+import { projectedBoundsGap } from './mesh-projection'
 import { shapeMembership } from './mesh-membership'
 
 const ops = poseOperations(intervalAlgebra)
@@ -87,6 +88,20 @@ export class OriginalMeshQuery {
     if (immutable) this.indices.set(geometry, index)
     return index
   }
+  private projectGap(
+    a: ConvexShape,
+    b: ConvexShape,
+    ab: Bounds | undefined,
+    bb: Bounds | undefined,
+    gap: number,
+    threshold: number
+  ): number {
+    if (gap > threshold || !ab || !bb) return gap
+    return Math.max(
+      gap,
+      projectedBoundsGap(ab, a.pose, bb, b.pose, threshold, this.tick)
+    )
+  }
   private witness(shape: ConvexShape, index?: MeshIndex): Vector<Interval> {
     return index
       ? worldPoint(shape.pose, index.representatives[0])
@@ -116,7 +131,14 @@ export class OriginalMeshQuery {
       witnessA: wa,
       witnessB: wb
     }
-    const gap = boundsGap(shapeBounds(a, ai), shapeBounds(b, bi))
+    const gap = this.projectGap(
+      a,
+      b,
+      ai?.root.bounds,
+      bi?.root.bounds,
+      boundsGap(shapeBounds(a, ai), shapeBounds(b, bi)),
+      threshold
+    )
     if (gap > threshold) return { ...result, lower: gap }
     let unknown = false
     for (const [from, fi, to, ti] of [
@@ -153,7 +175,14 @@ export class OriginalMeshQuery {
       const [an, bn] = pair
       const ab = an ? worldBounds(an.bounds, a.pose) : shapeBounds(a)
       const bb = bn ? worldBounds(bn.bounds, b.pose) : shapeBounds(b)
-      const bound = boundsGap(ab, bb)
+      const bound = this.projectGap(
+        a,
+        b,
+        an?.bounds,
+        bn?.bounds,
+        boundsGap(ab, bb),
+        searchThreshold
+      )
       if (bound > searchThreshold) {
         lower = Math.min(lower, bound)
         continue
@@ -171,7 +200,14 @@ export class OriginalMeshQuery {
           this.tick()
           const ab = at ? worldBounds(at.bounds, a.pose) : shapeBounds(a),
             bb = bt ? worldBounds(bt.bounds, b.pose) : shapeBounds(b)
-          const triangleGap = boundsGap(ab, bb)
+          const triangleGap = this.projectGap(
+            a,
+            b,
+            at?.bounds,
+            bt?.bounds,
+            boundsGap(ab, bb),
+            searchThreshold
+          )
           if (triangleGap > searchThreshold) {
             lower = Math.min(lower, triangleGap)
             continue
@@ -224,7 +260,14 @@ export class OriginalMeshQuery {
       bi = this.index(b)
     if (!ai && !bi)
       throw new Error('Native interval queries use their analytical kernel')
-    const overall = boundsGap(shapeBounds(a, ai), shapeBounds(b, bi))
+    const overall = this.projectGap(
+      a,
+      b,
+      ai?.root.bounds,
+      bi?.root.bounds,
+      boundsGap(shapeBounds(a, ai), shapeBounds(b, bi)),
+      threshold
+    )
     if (overall > threshold) return overall
     if (witness.lower <= 0) return 0
     const pending: [MeshNode | undefined, MeshNode | undefined][] = [
@@ -238,7 +281,14 @@ export class OriginalMeshQuery {
       const [an, bn] = pair
       const ab = an ? worldBounds(an.bounds, a.pose) : shapeBounds(a)
       const bb = bn ? worldBounds(bn.bounds, b.pose) : shapeBounds(b)
-      const gap = boundsGap(ab, bb)
+      const gap = this.projectGap(
+        a,
+        b,
+        an?.bounds,
+        bn?.bounds,
+        boundsGap(ab, bb),
+        threshold
+      )
       if (gap > threshold) {
         lower = Math.min(lower, gap)
         continue
@@ -254,9 +304,16 @@ export class OriginalMeshQuery {
       for (const at of an?.triangles ?? [undefined])
         for (const bt of bn?.triangles ?? [undefined]) {
           this.tick()
-          let gap = boundsGap(
-            at ? worldBounds(at.bounds, a.pose) : shapeBounds(a),
-            bt ? worldBounds(bt.bounds, b.pose) : shapeBounds(b)
+          let gap = this.projectGap(
+            a,
+            b,
+            at?.bounds,
+            bt?.bounds,
+            boundsGap(
+              at ? worldBounds(at.bounds, a.pose) : shapeBounds(a),
+              bt ? worldBounds(bt.bounds, b.pose) : shapeBounds(b)
+            ),
+            threshold
           )
           if (gap <= threshold) {
             // A box overlap is not a surface overlap. Search an axis, then use

@@ -9,6 +9,7 @@ import {
   type Vector
 } from '../../domain/kinematic-algebra'
 import { supportValue, type ConvexShape } from './convex-query'
+import { projectBounds } from './bounds-projection'
 
 const ops = poseOperations(intervalAlgebra)
 export type Bounds = Vector<Interval>
@@ -131,7 +132,11 @@ export function worldBounds(
   bounds: Bounds,
   pose: AlgebraPose<Interval>
 ): Bounds {
-  return ops.add(pose.position, ops.rotate(pose.rotation, bounds))
+  return [
+    projectBounds(bounds, pose, [1, 0, 0]),
+    projectBounds(bounds, pose, [0, 1, 0]),
+    projectBounds(bounds, pose, [0, 0, 1])
+  ]
 }
 export function shapeBounds(shape: ConvexShape, index?: MeshIndex): Bounds {
   if (shape.geometry.kind === 'mesh') {

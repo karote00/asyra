@@ -73,7 +73,14 @@ certificate remain necessary. Every attempted query consumes the unchanged
 work budget. Exhaustion retains only already established witnesses and marks
 unproved coverage unresolved; it does not invent unvisited endpoint findings.
 This strategy is explicit to the original-part kernel, leaving the historical
-primitive method's ordering unchanged. It does not claim completion of the representative
+primitive method's ordering unchanged. World-axis bounds use inverse-direction
+projections of the complete source box. When those bounds do not reject a
+mesh pair, fixed midpoint axes of each admitted pose are tried in source order;
+cardinal repeats are omitted and every attempted new axis checkpoints work.
+Only a strict gap above the current search threshold rejects a source subset.
+These bounds never supply a contact point or replace closed-solid membership;
+root early returns retain a real source-point upper witness. No pose projections
+are retained across queries. It does not claim completion of the representative
 resource or reference-hardware gates. New studies select the installed version.
 Saved studies and immutable reports
 keep their original method version; explicitly select the installed version and

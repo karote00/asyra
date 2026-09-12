@@ -2,8 +2,11 @@
 
 Status: active - development authorized 2026-09-12 after the M5 merge.
 The 2026-09-13 multi-agent handoff authorizes continued plan implementation,
-development pushes and sub-PR integration into this goal branch. Goal PR #195
-must not be merged into main. External acceptance and R0 publication remain open.
+development pushes and sub-PR integration. The user separately authorized merging
+original PR #195 on 2026-09-13; it merged as `7e9ad9734`. Continued work now uses
+`codex/asyra-sim-capacity-goal`, created from the resulting main, with verified
+capacity commits replayed. This new goal branch must not be merged into main
+without new authorization. External acceptance and R0 publication remain open.
 
 ## Original recovery slice contract
 
@@ -147,3 +150,138 @@ or synthetic cases do not count as reference-hardware measurements, independent
 human numerical review, or either non-developer pilot. Maintenance authority and
 physical evidence cannot be inferred from generated data. M6 and R0 remain open
 until their actual required evidence exists.
+
+## Capacity task iteration - 2026-09-13
+
+The method owner remains responsible for FIRST_RELEASE G2/G4 and the unchanged
+39-body, 30-fixture, 200-keyframe, 298-pair, three-candidate workload. The M5
+regression and reports remain intact. Formal current-source regression reproduces
+500,000 logical mesh-work exhaustion after 134 temporal evaluations; all 298
+pairs are unresolved. This is not a wall-clock or temporal-node-budget failure.
+
+Two bounded corrections have passed independent review without closing G4:
+deterministic dual-tree descent raises progress to 17,686 evaluations, and
+first-witness interval certification raises it to 19,996. The latter still spends
+211,066 work on joint-2/table (199 clear intervals) and 186,994 on joint-2/obstacle-10
+(96 clear intervals before exhaustion). Its 22,017 convex calls replace the
+initial profile's zero convex calls: hierarchy order and redundant samples no
+longer explain the entire failure. Do not continue local sampling/tree patches.
+
+Revised Step Execution Card: `method`, Inspector `method` fields, numerical-method
+spec and runtime-profile representative workload. Inputs remain admitted frozen
+source geometry, domain-owned point/interval pair poses, and current budgets and
+checkpoints. Output remains complete method evidence or explicit unresolved
+coverage. Only conservative full-source rejection is allowed; bounding solids
+never supply contact geometry, a penetration verdict, or a substitute witness.
+Existing source geometry, thresholds, precision, tick accounting, legacy method
+ordering and immutable history remain unchanged. No pose or temporal cache.
+
+The next segment first profiles candidate separating directions against complete
+source bounds, on the two measured expensive pairs at their ordinary static and
+interval queries. Compare current axis-aligned rejection with outward projection
+onto fixed directions derived from each current orientation. Count candidate
+projection operations, certified rejections and actual current-query work.
+Preparation is measured separately and is never presented as free production
+work. These are formal test-owned profiles, not a production fast path.
+
+Discovery and mutation stay in `analysis/methods/**`, directly owned tests and
+this existing plan. No new repository-wide audit or workload change. Before any
+third production correction, replace this profiling hypothesis with a reviewed
+implementation plan only if profiles show material benefit after its added work.
+That plan must include exact source enclosure, independent analytical truth,
+rotated/static/continuous and near-threshold cases, containment/crossing negatives,
+full-source and hierarchy-disabled agreement, deterministic work counts, current
+cancellation, and source/pose/threshold invalidation. If root bounds cannot reject
+the costly pairs, record that result and do not install an ineffective shortcut.
+
+Self-review: this replaces the exhausted local optimization plan with a bounded
+method-certificate investigation. It maps to the existing Inspector permission
+for conservative rejection and changes neither product geometry nor cache
+ownership. Focused proof must pass before the unchanged three-candidate gate;
+no release, reference-hardware or independent-pilot claim follows from this slice.
+
+### Revised certificate implementation plan
+
+The test-owned node-certificate probe now establishes material benefit after
+charging every attempted candidate axis to the unchanged combined 500,000 work
+limit. For table at [0,2], original work 80,644 becomes 6,638 including 100 axes;
+for obstacle-10 at [2,3], 65,502 becomes 4,502 including 156 axes. Its expensive
+[3.75,4] and [4,4.25] windows fall from 205,000/185,302 to 28,137/23,512 including
+17,312/14,121 axes. Complete coverage and leaf classifications match the original
+runs. Preparation remains included and separately reported. Four cases pass
+within their unchanged 20-second guards. A prior [3,4] profile exceeded that
+guard and was split into quarter-second cases; its failure record is retained.
+Root-only rejection is rejected as insufficient: it saves work but leaves the
+most expensive subtree queries unresolved within the full-run budget.
+
+The next implementation is one pure method-owned full-source-bound projection
+helper, consumed only by original-part root/node/triangle rejection. Each call
+first uses the existing world-axis gap. When insufficient, try the three axes
+from each current pose in fixed order. The midpoint proposal is merely a fixed
+nonzero search direction; outward inverse rotation and interval dot products
+bound the projection of every point of the complete local bounds at every
+admitted pose/time. Divide a positive projection gap by an outward direction
+norm. Return only a conservative lower gap; zero/overlap has no collision or
+clearance meaning. The helper receives the current search threshold, including
+zero after a clearance witness; every attempted axis calls the existing tick.
+Mixed analytical/mesh queries retain their existing path in this slice.
+
+At the root, a positive full-source gap may return the existing real source-point
+upper witness and the certified lower gap, never a bounding-box corner witness.
+At a subtree or triangle, a positive gap rejects only that source subset.
+Retain the original static membership phase and the interval witness.lower
+containment condition; absence of a surface crossing must not turn contained
+solids into clearance. No current pose, projected bound or temporal certificate
+survives its query. Mesh preparation lifetime and equivalent hit charging remain
+unchanged. Method version 1.0.2 describes the completed bounded correction; old
+reports and studies remain unchanged and old methods are never aliased.
+
+Before production edits, independent review must accept this plan and permanent
+red tests must show the current unnecessary source-traversal work. Required
+proofs include analytical rotated and translated closed solids, near-threshold
+and crossing negatives, source-point upper witnesses, original contact/warning
+priority, both pair directions, hierarchy-disabled classification, deterministic
+reruns, changed source/pose/threshold, exact work ceilings and cancellation during
+axis attempts. Then run the direct method suite and independent numerical oracle,
+naming, typecheck and lint before the original three-candidate capacity gate.
+The feasibility adapter is not shipped as a product route and is not itself a
+correctness oracle. Failure returns to this exact method boundary and does not
+permit another speculative shortcut, smaller fixture, extra budget or fallback.
+
+The third slice's first production attempt exposed an owner mismatch: omitting
+cardinal candidate axes kept the dual-tree 576-work gate but used 54,997 work
+against the unchanged 50,000 obstacle gate. Existing worldBounds forwards an
+interval box through a quaternion cross-product expression, repeating the box
+variables and weakening the world-axis enclosure. Cardinal inverse projections
+were therefore not redundant in the feasibility profile. The bounded correction
+is to share one pure inverse-direction source projection with worldBounds itself,
+then omit genuinely repeated cardinal candidate queries. First prove exact
+rational rotated-box extrema and cardinal tightness red on the current owner;
+also retain interval-rotation vertex enclosure and near-contact negative cases.
+No domain pose, source geometry, work ceiling, or budget changes are authorized.
+
+The corrected third slice passed 103 direct method tests, independent review
+(40 tests), typecheck, focused ESLint, naming (11), and diff checks. Exact
+rational/cardinal source-width regressions were red before worldBounds changed
+(3.68 versus 0.8 and 6 versus 2), then green with the same projection owner.
+The unchanged 10,000/50,000 representative pair work ceilings and 576 dual-tree
+ceiling pass in both pair directions. These are bounded method results, not G4.
+
+The complete unchanged representative profile remains partial after 20,189
+evaluations and 500,197 accounted work (7.862 seconds on this development host).
+Its first partial pair is joint-2 versus obstacle-11: 385,726 work, comprising
+249,830 static and 135,896 interval work, with 90 evaluations and 70 clear
+certificates. The previous obstacle-10 pair now completes all 199 intervals in
+29,449 work. Evidence is in tmp/capacity/representative-world-bounds.log. The
+three-candidate browser milestone is not rerun while its focused full-workload
+prerequisite remains red.
+
+The next bounded diagnostic remains at the method owner and this newly measured
+obstacle-11 pair. Separate static membership, source hierarchy/triangle queries,
+convex queries, and interval work by fixed trajectory windows before choosing
+any further algorithm. Inspect whether late source-order discovery of a valid
+penetration witness dominates; do not infer this from the previous baseline or
+assume trajectory keyframes can be merged outside the domain contract. Any next
+production iteration requires a revised reviewed plan and a permanent work-count
+red oracle, with full source, warning/penetration semantics, thresholds, shared
+poses, and the existing budget unchanged.
