@@ -785,3 +785,12 @@ FOV/range and declared source sampling to actual near-ray occlusion. A fruit sam
 hit cannot prove stem/cutsite recognition, maturity, full coverage or quality.
 Action confirmations, swept movement, conservation and ordinary UI remain required
 M3 work; injected assumptions alone cannot close them.
+
+Injected target admission formal gates pass: 10 focused cases and 346 full app
+tests, type/build/naming and lint with zero errors. Actual HarvestSession fixtures
+cover current/paused/cancelled/disposed contexts, valid earlier evidence and expiry,
+target membership, clone-once capture, reentrant context changes and independent
+unknown quality. Three sparse position/quaternion/cutsite regressions first failed;
+slot-wise finite validation now rejects them. Admission changes no session or
+inventory and accepts no action confirmations. This remains injected assumption
+admission; the next real viewpoint/sample-ray adapter is still required.
