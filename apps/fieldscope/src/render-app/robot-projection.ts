@@ -22,6 +22,10 @@ export interface RobotSource {
   readonly rig: RobotRig | null
   readonly unavailable: 'unsupported-lift' | null
 }
+export interface DockSource {
+  readonly revision: number
+  readonly meshes: SpatialFrame['meshes']
+}
 let nextRevision = 0
 
 function project(
@@ -52,6 +56,7 @@ function project(
 export class RobotProjection {
   private definition = ''
   private source?: RobotSource
+  private dockSource?: DockSource
   private localBounds: SceneBounds = { min: [0, 0, 0], max: [0, 0, 0] }
   private parts: SpatialFrame['meshes'] = []
   private readonly dock = project(createDockModel(), 0, 0, 'dock')
@@ -96,13 +101,31 @@ export class RobotProjection {
       this.localBounds = { min, max }
       this.definition = key
     }
-    const meshes = [...this.parts, ...this.dock].map((item) => ({
+    const position = this.dockSource?.meshes[0].descriptor.position
+    if (!position || position[0] !== s.dockX || position[2] !== s.dockZ) {
+      this.dockSource = Object.freeze({
+        revision: ++nextRevision,
+        meshes: Object.freeze(
+          this.dock.map((item) =>
+            Object.freeze({
+              ...item,
+              descriptor: readSpatialDescriptor({
+                ...item.descriptor,
+                position: [s.dockX, 0, s.dockZ]
+              }) as SpatialMesh
+            })
+          )
+        )
+      })
+    }
+    const meshes = this.parts.map((item) => ({
       ...item,
       descriptor: readSpatialDescriptor({
         ...item.descriptor,
         position: [s.dockX, 0, s.dockZ]
       }) as SpatialMesh
     }))
+    meshes.push(...this.getDockSource().meshes)
     const lane = report.lane
     if (lane)
       meshes.push({
@@ -133,6 +156,13 @@ export class RobotProjection {
       max: [max[0] + x, max[1], max[2] + z]
     }
   }
+  getDockSource(): DockSource {
+    if (!this.dockSource) throw new Error('Dock source is unavailable')
+    return this.dockSource
+  }
+  isCurrentDockSource(source: DockSource): boolean {
+    return this.dockSource !== undefined && source === this.dockSource
+  }
   getSource(): RobotSource {
     if (!this.source) throw new Error('Robot source is unavailable')
     return this.source
@@ -148,6 +178,7 @@ export class RobotProjection {
   }
   clear() {
     this.source = undefined
+    this.dockSource = undefined
     this.parts = []
     this.definition = ''
   }

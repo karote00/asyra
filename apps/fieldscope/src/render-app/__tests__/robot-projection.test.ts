@@ -118,3 +118,64 @@ it('retains parked source while an unsupported full lift stroke remains unavaila
   ).toThrow('lift')
   expect(owner.getSource()).toBe(source)
 })
+
+it('shares the exact installed station product and retires placement without regenerating shapes', () => {
+  const expected = model.createDockModel()
+  const build = vi.spyOn(model, 'createDockModel')
+  try {
+    const owner = new RobotProjection()
+    const report = assessRobotDesign(
+      validateRobot(DEFAULT_ROBOT),
+      DEFAULT_CONFIGURATION
+    )
+    const meshes = owner.update(report)
+    const source = owner.getDockSource()
+    expect(Object.isFrozen(source)).toBe(true)
+    expect(Object.isFrozen(source.meshes)).toBe(true)
+    expect(source.meshes.map((mesh) => mesh.id)).toEqual(
+      expected.map((part) => `dock.${part.id}`)
+    )
+    for (const [index, mesh] of source.meshes.entries()) {
+      expect(meshes.find((item) => item.id === mesh.id) === mesh).toBe(true)
+      expect(Object.isFrozen(mesh)).toBe(true)
+      expect(mesh.descriptor.shape).toEqual(expected[index].shape)
+      expect(mesh.descriptor.color).toBe(expected[index].color)
+      expect(mesh.descriptor.position).toEqual([
+        DEFAULT_ROBOT.dockX,
+        0,
+        DEFAULT_ROBOT.dockZ
+      ])
+    }
+    expect(owner.isCurrentDockSource({ ...source })).toBe(false)
+    owner.update({
+      ...report,
+      settings: { ...report.settings, width: 0.7, patrolMinutes: 40 }
+    })
+    expect(owner.getDockSource() === source).toBe(true)
+    const movedMeshes = owner.update({
+      ...report,
+      settings: { ...report.settings, dockX: 10 }
+    })
+    const moved = owner.getDockSource()
+    expect(moved.revision).not.toBe(source.revision)
+    expect(owner.isCurrentDockSource(source)).toBe(false)
+    for (const [index, mesh] of moved.meshes.entries()) {
+      expect(
+        mesh.descriptor.shape === source.meshes[index].descriptor.shape
+      ).toBe(true)
+      expect(movedMeshes.find((item) => item.id === mesh.id) === mesh).toBe(
+        true
+      )
+      expect(mesh.descriptor.position).toEqual([10, 0, DEFAULT_ROBOT.dockZ])
+    }
+    for (let i = 0; i < 5; i++)
+      expect(owner.getDockSource() === moved).toBe(true)
+    expect(build).toHaveBeenCalledTimes(1)
+    owner.clear()
+    expect(owner.isCurrentDockSource(moved)).toBe(false)
+    expect(() => owner.getDockSource()).toThrow()
+    expect(build).toHaveBeenCalledTimes(1)
+  } finally {
+    build.mockRestore()
+  }
+})

@@ -60,6 +60,17 @@ Cross-package imports use public `@asyra/*` facades. Do not import another app's
 - D must consume this same source for later IK, approved rate checks, swept
   collision queries and retention. These read APIs start no harvesting motion.
 
+## Installed dock source
+
+- `FarmRuntime.getDockSource` returns the immutable `DockSource` revision and
+  installed station meshes also used for rendering. `isCurrentDockSource` checks
+  owner-issued handle identity. Dock relocation and disposal retire the handle;
+  unchanged placement preserves it across robot definition and mission changes.
+- Distinct platform, charger, contacts and exchange stand reuse their original
+  admitted shapes. Reads and relocation do not regenerate geometry. Bounds and
+  route annotations are not physical station meshes. These APIs admit no support,
+  electrical contact or movement clearance.
+
 ## Dispatch admission source contracts
 
 - Composition issues a `CanonicalMission` receipt for one completed B/farm/C

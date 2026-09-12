@@ -1,4 +1,87 @@
-import { expect, test } from '@playwright/test'
+import { readFileSync } from 'node:fs'
+import { expect, test, type Page } from '@playwright/test'
+
+async function assertRenderedScene(
+  page: Page,
+  raster: string,
+  region?: { x: number; y: number; width: number; height: number }
+) {
+  const colors = await page.evaluate(
+    async (data) => {
+      const image = new Image()
+      image.src = `data:image/png;base64,${data.raster}`
+      await image.decode()
+      const sample = document.createElement('canvas')
+      sample.width = sample.height = 32
+      const context = sample.getContext('2d')
+      if (!context) throw new Error('Missing raster decoder')
+      const bounds = data.region ?? {
+        x: 0,
+        y: 0,
+        width: image.width,
+        height: image.height
+      }
+      context.drawImage(
+        image,
+        bounds.x,
+        bounds.y,
+        bounds.width,
+        bounds.height,
+        0,
+        0,
+        32,
+        32
+      )
+      const pixels = context.getImageData(0, 0, 32, 32).data
+      const distinct = new Set<string>()
+      for (let i = 0; i < pixels.length; i += 4)
+        distinct.add(
+          `${pixels[i] >> 4}:${pixels[i + 1] >> 4}:${pixels[i + 2] >> 4}`
+        )
+      return distinct.size
+    },
+    { raster, region }
+  )
+  expect(
+    colors,
+    'The robot close-up canvas must render the scene'
+  ).toBeGreaterThan(8)
+}
+
+test('the scene liveness guard rejects a uniform canvas image', async ({
+  page
+}) => {
+  const raster = await page.evaluate(() => {
+    const canvas = document.createElement('canvas')
+    canvas.width = canvas.height = 32
+    const context = canvas.getContext('2d')
+    if (!context) throw new Error('Missing raster fixture context')
+    context.fillStyle = '#e7ede3'
+    context.fillRect(0, 0, 32, 32)
+    return canvas.toDataURL('image/png').split(',')[1]
+  })
+  await expect(assertRenderedScene(page, raster)).rejects.toThrow(
+    'The robot close-up canvas must render the scene'
+  )
+})
+
+test('the scene liveness guard rejects the observed blank view with overlays', async ({
+  page
+}) => {
+  // Original 1440x1100 page capture; this inclusive visible scene rectangle
+  // retains its title, dimensions, navigation help and ready badge overlays.
+  const raster = readFileSync(
+    new URL('./fixtures/robot-blank-view.png', import.meta.url)
+  ).toString('base64')
+  await expect(
+    assertRenderedScene(page, raster, {
+      x: 32,
+      y: 269,
+      width: 1376,
+      height: 612
+    })
+  ).rejects.toThrow('The robot close-up canvas must render the scene')
+})
 
 test('keeps the selected strip identity through deletion and history', async ({
   page
@@ -149,10 +232,17 @@ for (const width of [390, 1440])
             (await page.getByTestId('scene').boundingBox())?.width ?? 0
         )
         .toBeGreaterThan(width - 80)
-      await page.screenshot({
-        path: testInfo.outputPath('robot-closeup.png'),
-        fullPage: false
-      })
+      // Inspect the exact saved frame, not a later canvas capture. Raster
+      // liveness complements the exact source-space projection oracles.
+      const canvasBounds = await page.locator('canvas').boundingBox()
+      if (!canvasBounds) throw new Error('Missing canvas bounds')
+      const raster = (
+        await page.screenshot({
+          path: testInfo.outputPath('robot-closeup.png'),
+          fullPage: false
+        })
+      ).toString('base64')
+      await assertRenderedScene(page, raster, canvasBounds)
       expect(errors).toEqual([])
     })
   }
