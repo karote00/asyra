@@ -18,6 +18,16 @@ Both developing targets and accepted behavior enter verification from the start.
 Feature completion determines eligibility for explicit baseline acceptance; it
 does not determine when CI begins observing and assessing the work.
 
+## Current delivery branch
+
+The original target/work admission PR 193 was merged into main at `bb32a7209`
+after its eight required checks passed. Its prior failed artifact run remains
+historical evidence; the successful rerun used the same source. Subsequent work
+continues on `codex/flow-integration-goal`, created from that updated main with
+the reviewed source-assessment contract and producer commits retained. This goal
+branch and its final PR must not merge into main without a new explicit user
+instruction. Authorized sub-PR integration may continue into the goal branch.
+
 ## First bounded slice - target and work decomposition
 
 [The living target contract](../CORE_PROOF.md#flow-targets-and-work-decomposition)

@@ -4,7 +4,7 @@ const fs = require('node:fs')
 const { createHash } = require('node:crypto')
 const path = require('node:path')
 const test = require('node:test')
-const { captureSource } = require('../snapshot.cjs')
+const { captureSource, validateRuntimeSource } = require('../snapshot.cjs')
 const { loadContract } = require('../contracts.cjs')
 const root = path.resolve(__dirname, '../../../..')
 const parent = path.join(root, 'tmp/flow-inspector/snapshot-tests')
@@ -231,6 +231,202 @@ test('verification paths cannot disguise runtime code or dependency metadata as 
     assert.throws(
       () => capture('overlap-' + index, { ...contract, configFile }),
       /verification.*runtime|runtime.*verification/i
+    )
+  }
+})
+
+test('runtime source admission requires its exact full snapshot manifest without source IO or legacy promotion', (t) => {
+  const directory = fs.mkdtempSync(path.join(parent, 'admission-'))
+  t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
+  const snapshot = captureSource(root, directory, loadContract(root))
+  assert.equal(typeof validateRuntimeSource, 'function')
+  const originalRead = fs.readFileSync
+  const reads = t.mock.method(fs, 'readFileSync', (...args) =>
+    originalRead(...args)
+  )
+  assert.equal(
+    validateRuntimeSource(snapshot).digest,
+    snapshot.runtimeSource.digest
+  )
+  const retained = { ...snapshot }
+  delete retained.files
+  assert.throws(() => validateRuntimeSource(retained), /full.*manifest/i)
+  assert.equal(
+    validateRuntimeSource(retained, snapshot.files).digest,
+    snapshot.runtimeSource.digest
+  )
+  const historical = { ...retained }
+  delete historical.runtimeSource
+  assert.equal(validateRuntimeSource(historical), undefined)
+  assert.equal(Object.hasOwn(historical, 'runtimeSource'), false)
+  assert.equal(reads.mock.callCount(), 0)
+})
+
+test('runtime admission rejects malformed or self-consistent but unbound inventories', (t) => {
+  const directory = fs.mkdtempSync(path.join(parent, 'invalid-admission-'))
+  t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
+  const snapshot = captureSource(root, directory, loadContract(root))
+  assert.equal(typeof validateRuntimeSource, 'function')
+  const rehashRuntime = (input) => {
+    input.runtimeSource.digest = fingerprint(
+      JSON.stringify(input.runtimeSource.files)
+    )
+  }
+  const cases = [
+    [
+      'present null',
+      (input) => {
+        input.runtimeSource = null
+      }
+    ],
+    [
+      'present undefined',
+      (input) => {
+        input.runtimeSource = undefined
+      }
+    ],
+    [
+      'unsupported version',
+      (input) => {
+        input.runtimeSource.format = 2
+      }
+    ],
+    [
+      'unknown identity field',
+      (input) => {
+        input.runtimeSource.trusted = true
+      }
+    ],
+    [
+      'empty inventory',
+      (input) => {
+        input.runtimeSource.files = []
+        rehashRuntime(input)
+      }
+    ],
+    [
+      'duplicate entry',
+      (input) => {
+        input.runtimeSource.files.push(input.runtimeSource.files[0])
+        rehashRuntime(input)
+      }
+    ],
+    [
+      'missing runtime entry with fresh digest',
+      (input) => {
+        input.runtimeSource.files.splice(
+          input.runtimeSource.files.findIndex((entry) =>
+            entry.path.endsWith('/src/index.ts')
+          ),
+          1
+        )
+        rehashRuntime(input)
+      }
+    ],
+    [
+      'reordered entries',
+      (input) => {
+        input.runtimeSource.files.reverse()
+        rehashRuntime(input)
+      }
+    ],
+    [
+      'noncanonical entry key order',
+      (input) => {
+        const entry = input.runtimeSource.files[0]
+        input.runtimeSource.files[0] = {
+          digest: entry.digest,
+          path: entry.path,
+          size: entry.size
+        }
+        rehashRuntime(input)
+      }
+    ],
+    [
+      'unknown entry key',
+      (input) => {
+        input.runtimeSource.files[0].trusted = true
+        rehashRuntime(input)
+      }
+    ],
+    [
+      'invalid byte length',
+      (input) => {
+        input.runtimeSource.files[0].size = -1
+        rehashRuntime(input)
+      }
+    ],
+    [
+      'noncanonical path',
+      (input) => {
+        input.runtimeSource.files[0].path =
+          './' + input.runtimeSource.files[0].path
+        rehashRuntime(input)
+      }
+    ],
+    [
+      'wrong runtime digest',
+      (input) => {
+        input.runtimeSource.digest = '0'.repeat(64)
+      }
+    ],
+    [
+      'wrong full snapshot digest',
+      (input) => {
+        input.digest = '0'.repeat(64)
+      }
+    ],
+    [
+      'altered full manifest',
+      (input) => {
+        input.files[0].size++
+      }
+    ],
+    [
+      'wrong lockfile identity',
+      (input) => {
+        input.lockfileDigest = '0'.repeat(64)
+      }
+    ],
+    [
+      'missing required metadata in both inventories',
+      (input) => {
+        input.files = input.files.filter(
+          (entry) => entry.path !== 'packages/factory/package.json'
+        )
+        input.digest = fingerprint(JSON.stringify(input.files))
+        input.runtimeSource.files = input.runtimeSource.files.filter(
+          (entry) => entry.path !== 'packages/factory/package.json'
+        )
+        rehashRuntime(input)
+      }
+    ],
+    [
+      'unsupported source path in both inventories',
+      (input) => {
+        const entry = {
+          path: 'packages/other/src/index.ts',
+          digest: 'a'.repeat(64),
+          size: 1
+        }
+        input.files.push(entry)
+        input.digest = fingerprint(JSON.stringify(input.files))
+        input.runtimeSource.files.push({
+          path: entry.path,
+          size: entry.size,
+          digest: entry.digest
+        })
+        rehashRuntime(input)
+      }
+    ]
+  ]
+  for (const [name, corrupt] of cases) {
+    const input = structuredClone(snapshot)
+    corrupt(input)
+    assert.throws(
+      () => validateRuntimeSource(input),
+      /runtime|manifest|snapshot|lockfile/i,
+      name
     )
   }
 })

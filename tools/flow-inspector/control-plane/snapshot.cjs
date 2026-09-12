@@ -22,6 +22,94 @@ function safePath(root, relative) {
   return resolved
 }
 
+function validateRuntimeSource(snapshot, fullFiles = snapshot.files) {
+  if (!Object.hasOwn(snapshot, 'runtimeSource')) return
+  const requireValue = (condition, message) => {
+    if (!condition) throw new Error('Runtime source: ' + message)
+  }
+  const object = (value) =>
+    value !== null && typeof value === 'object' && !Array.isArray(value)
+  const fingerprint = (value) =>
+    typeof value === 'string' && /^[a-f0-9]{64}$/.test(value)
+  const metadata = [
+    'package.json',
+    'yarn.lock',
+    ...sourcePackages.map((name) => 'packages/' + name + '/package.json')
+  ]
+  const runtimePath = (file) =>
+    metadata.includes(file) ||
+    (sourcePackages.some((name) =>
+      file.startsWith('packages/' + name + '/src/')
+    ) &&
+      !file.split('/').includes('__tests__'))
+  requireValue(
+    Array.isArray(fullFiles) && fullFiles.length > 0,
+    'full snapshot manifest required'
+  )
+  const paths = new Set()
+  for (const entry of fullFiles) {
+    requireValue(
+      object(entry) &&
+        Object.keys(entry).length === 3 &&
+        ['path', 'size', 'digest'].every((key) => Object.hasOwn(entry, key)) &&
+        typeof entry.path === 'string' &&
+        !entry.path.includes('\\') &&
+        !entry.path.includes('\0') &&
+        entry.path
+          .split('/')
+          .every((part) => part && part !== '.' && part !== '..') &&
+        !paths.has(entry.path) &&
+        Number.isSafeInteger(entry.size) &&
+        entry.size >= 0 &&
+        fingerprint(entry.digest),
+      'invalid full manifest entry'
+    )
+    paths.add(entry.path)
+  }
+  requireValue(
+    fingerprint(snapshot.digest) &&
+      sha256(JSON.stringify(fullFiles)) === snapshot.digest,
+    'full manifest does not bind snapshot digest'
+  )
+  requireValue(
+    metadata.every((file) => paths.has(file)),
+    'required runtime metadata missing'
+  )
+  const runtime = snapshot.runtimeSource
+  requireValue(
+    object(runtime) &&
+      Object.keys(runtime).length === 3 &&
+      ['format', 'files', 'digest'].every((key) =>
+        Object.hasOwn(runtime, key)
+      ) &&
+      runtime.format === 1 &&
+      Array.isArray(runtime.files) &&
+      fingerprint(runtime.digest),
+    'invalid runtime identity'
+  )
+  const expected = fullFiles
+    .filter((entry) => runtimePath(entry.path))
+    .sort((a, b) => (a.path < b.path ? -1 : Number(a.path > b.path)))
+    .map(({ path, size, digest }) => Object.freeze({ path, size, digest }))
+  const serialized = JSON.stringify(expected)
+  requireValue(
+    JSON.stringify(runtime.files) === serialized &&
+      sha256(serialized) === runtime.digest,
+    'runtime inventory differs from full manifest'
+  )
+  requireValue(
+    fingerprint(snapshot.lockfileDigest) &&
+      fullFiles.find((entry) => entry.path === 'yarn.lock').digest ===
+        snapshot.lockfileDigest,
+    'lockfile identity mismatch'
+  )
+  return Object.freeze({
+    format: 1,
+    files: Object.freeze(expected),
+    digest: runtime.digest
+  })
+}
+
 function captureSource(repositoryRoot, runDirectory, contract) {
   const sourceRoot = safePath(
     repositoryRoot,
@@ -137,4 +225,4 @@ function captureSource(repositoryRoot, runDirectory, contract) {
   }
 }
 
-module.exports = { captureSource, safePath, sha256 }
+module.exports = { captureSource, validateRuntimeSource, safePath, sha256 }
