@@ -601,11 +601,13 @@ const data = {
         'artifact:admitted-proof-contract',
         'artifact:proof-source-snapshot',
         'artifact:proof-runner-result',
-        'artifact:admitted-runtime-source'
+        'artifact:admitted-runtime-source',
+        'trusted candidate-owned canonical execution context for direct derived snapshots'
       ],
       outputs: ['artifact:assessed-proof-evidence'],
       conditions: [
-        'Exactly one passing observation per required case, successful exit, and no runner errors are necessary for pass; preserve observed step failures and verify source, contract, mapping, architecture, scenario, configuration, runner environment, and report identity. Retained current-contract evidence must preserve that inventory and version identity before admission. For target evidence, validate and retain the runner runtime digest against its source owner snapshot; missing or mismatched runtime provenance never grants target eligibility, while unchanged historical standalone proof remains readable.'
+        'Exactly one passing observation per required case, successful exit, and no runner errors are necessary for pass; preserve observed step failures and verify source, contract, mapping, architecture, scenario, configuration, runner environment, and report identity. Retained current-contract evidence must preserve that inventory and version identity before admission. For target evidence, validate and retain the runner runtime digest against its source owner snapshot; missing or mismatched runtime provenance never grants target eligibility, while unchanged historical standalone proof remains readable.',
+        'Any own executionSource field requires exactly one direct source-owner combined admission with a trusted execution context, even when runtime identity is missing. Reuse its runtime descriptor for evidence comparisons. Missing context or invalid closure is non-pass; runtime-only service artifacts cannot admit derived execution, and retained derived admission remains unavailable without its declared trusted location handoff.'
       ],
       bypasses: [
         'Missing or invalid reports produce an explicit non-pass, never inferred completion.'
@@ -624,7 +626,7 @@ const data = {
         'tools/flow-inspector/control-plane/evidence.cjs',
         'tools/flow-inspector/control-plane/__tests__/evidence.test.cjs'
       ],
-      specRefs: ['#source-and-evidence', '#runtime-identity-producer-contract', '#frozen-verification-source'],
+      specRefs: ['#source-and-evidence', '#runtime-identity-producer-contract', '#frozen-verification-source', '#direct-derived-evidence-admission'],
       failureOwnerStepId: 'assess-proof-evidence'
     },
     {

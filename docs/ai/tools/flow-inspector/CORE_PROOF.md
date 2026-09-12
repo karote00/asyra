@@ -1227,6 +1227,33 @@ remain required; generating or admitting a closure proves none of those outcomes
 Later retained admission/replay must use the same exact trusted location and
 validate actual retained bytes at its declared lifetime, without UI recomputation.
 
+### Direct derived evidence admission
+
+The evidence owner's `assessEvidence` accepts an optional seventh
+`executionContext` argument only for direct derived snapshots. The trusted
+candidate owner supplies its containment-checked canonical attempt source
+location; this is not a client path or a saved snapshot field. Presence of the
+snapshot's own `executionSource` field always requires derived admission,
+including present-null and snapshots missing runtime identity. Call the source
+owner's `validateSourceSnapshot(snapshot, contract, snapshot.files,
+executionContext)` exactly once and reuse its admitted runtime descriptor for
+existing runner/source/configuration comparisons. Missing context, full manifest,
+required descriptors or invalid generated closure makes evidence non-passing;
+confirmed assertion failures remain visible. The evidence owner neither defines
+generation policy nor reads source bytes. Actual generated-byte use and post-run
+integrity remain candidate producer obligations.
+
+The sixth `sourceAdmission` argument remains the service-owned runtime admission
+artifact. It is not an alternative authority for derived execution: until the
+service's derived admission handoff is implemented, any present execution
+descriptor together with that artifact is rejected rather than falling back to
+runtime-only comparison. `validateStoredEvidence` likewise rejects present derived
+execution for completed records; this bounded slice provides no durable trusted
+location input and does not reconstruct one, read a manifest or grant authority
+from a runtime-only tuple. Historical absence preserves existing ordinary and
+legacy behavior. Neither new evidence results nor descriptor presence claim
+retained replayability.
+
 ### Source admission in the local service
 
 The service admits a new runtime source once for each attempt and immutable

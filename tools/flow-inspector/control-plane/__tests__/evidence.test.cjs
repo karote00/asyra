@@ -497,3 +497,213 @@ test('durable runtime evidence refuses forged pass identities and preserves legi
     /runtime/i
   )
 })
+
+test('derived evidence requires direct trusted source admission even without runtime identity', async (t) => {
+  const { id, captured, runner, admission } = await realRuntimeProof(t)
+  const cases = [
+    ['null execution descriptor', { ...captured, executionSource: null }],
+    [
+      'unsupported execution descriptor',
+      { ...captured, executionSource: { format: 99 } }
+    ]
+  ]
+  for (const [name, input] of cases) {
+    assert.notEqual(
+      assessEvidence(contract, input, runner, flowIds).status,
+      'passed',
+      name
+    )
+    assert.notEqual(
+      assessEvidence(contract, input, runner, flowIds, 'baseline', admission)
+        .status,
+      'passed',
+      name + ' service tuple'
+    )
+    const evidence = assessEvidence(contract, captured, runner, flowIds)
+    assert.throws(
+      () =>
+        validateStoredEvidence(
+          contract,
+          {
+            id,
+            format: 2,
+            phase: 'completed',
+            scenario: 'baseline',
+            snapshot: input,
+            runner,
+            flowIds,
+            evidence
+          },
+          admission
+        ),
+      /derived|execution/i,
+      name + ' retained'
+    )
+  }
+  const legacy = { ...captured, executionSource: null }
+  delete legacy.runtimeSource
+  const oldRunner = structuredClone(runner)
+  delete oldRunner.identity.runtimeSourceDigest
+  assert.notEqual(
+    assessEvidence(contract, legacy, oldRunner, flowIds).status,
+    'passed'
+  )
+  const missing = { ...captured, executionSource: { format: 1 } }
+  delete missing.files
+  assert.notEqual(
+    assessEvidence(contract, missing, runner, flowIds, 'baseline', undefined, {
+      sourceRoot: captured.sourceRoot
+    }).status,
+    'passed'
+  )
+})
+
+test(
+  'direct derived evidence uses real generated configuration and one combined source admission',
+  { skip: process.platform !== 'darwin', timeout: 30000 },
+  async (t) => {
+    const root = path.resolve(__dirname, '../../../..')
+    const directory = path.join(
+      root,
+      'tmp/flow-inspector/evidence-derived',
+      randomUUID()
+    )
+    fs.mkdirSync(directory, { recursive: true })
+    t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
+    const captured = sourceOwner.captureSource(root, directory, contract)
+    const generated = sourceOwner.createDerivedExecution({
+      sourceRoot: captured.sourceRoot,
+      verificationSource: captured.verificationSource
+    })
+    for (const file of generated.files) {
+      const destination = path.join(captured.sourceRoot, file.path)
+      fs.mkdirSync(path.dirname(destination), { recursive: true })
+      fs.writeFileSync(destination, file.content, { flag: 'wx', mode: 0o444 })
+    }
+    const files = [...captured.files, ...generated.executionSource.files].sort(
+      (a, b) => a.path.localeCompare(b.path)
+    )
+    const derived = {
+      ...captured,
+      files,
+      digest: createHash('sha256').update(JSON.stringify(files)).digest('hex'),
+      configurationDigest: generated.executionSource.digest,
+      executionSource: generated.executionSource
+    }
+    const { containedProcess } = require('../agent-verifier.cjs')
+    const runner = await runVerification({
+      repositoryRoot: root,
+      runDirectory: directory,
+      snapshot: derived,
+      contract: {
+        ...contract,
+        configFile: generated.executionSource.roles.configuration
+      },
+      scenario: 'baseline',
+      flowIds,
+      timeoutMs: 15000,
+      processRunner: (options) =>
+        containedProcess(
+          {
+            ...options,
+            args: [
+              path.join(
+                captured.sourceRoot,
+                generated.executionSource.roles.bootstrap
+              ),
+              String(process.pid),
+              ...options.args.slice(3),
+              '--configLoader',
+              'native'
+            ],
+            cwd: captured.sourceRoot
+          },
+          {
+            repositoryRoot: root,
+            readRoots: [captured.sourceRoot],
+            writeRoot: directory
+          }
+        )
+    })
+    assert.equal(runner.code, 0, runner.output)
+    const crypto = require('node:crypto'),
+      originalHash = crypto.createHash
+    const hash = t.mock.method(crypto, 'createHash', (...args) =>
+      originalHash(...args)
+    )
+    const modulePath = require.resolve('../snapshot.cjs'),
+      saved = require.cache[modulePath]
+    Reflect.deleteProperty(require.cache, modulePath)
+    const counted = require('../snapshot.cjs')
+    require.cache[modulePath] = saved
+    const combined = t.mock.method(
+      sourceOwner,
+      'validateSourceSnapshot',
+      (...args) => counted.validateSourceSnapshot(...args)
+    )
+    const runtime = t.mock.method(sourceOwner, 'validateRuntimeSource')
+    const reads = t.mock.method(fs, 'readFileSync')
+    const evidence = assessEvidence(
+      contract,
+      derived,
+      runner,
+      flowIds,
+      'baseline',
+      undefined,
+      { sourceRoot: captured.sourceRoot }
+    )
+    assert.equal(evidence.status, 'passed', JSON.stringify(evidence.issues))
+    assert.equal(combined.mock.callCount(), 1)
+    assert.equal(runtime.mock.callCount(), 0)
+    assert.equal(hash.mock.callCount(), 6)
+    assert.equal(reads.mock.callCount(), 0)
+    assert.equal(
+      runner.identity.configurationDigest,
+      generated.executionSource.digest
+    )
+    assert.notEqual(
+      assessEvidence(contract, derived, runner, flowIds).status,
+      'passed',
+      'snapshot sourceRoot cannot replace trusted context'
+    )
+    assert.notEqual(
+      assessEvidence(
+        contract,
+        derived,
+        runner,
+        flowIds,
+        'baseline',
+        undefined,
+        { sourceRoot: path.join(directory, 'other/source') }
+      ).status,
+      'passed'
+    )
+    const invalid = structuredClone(derived)
+    invalid.executionSource.files[0].digest = '0'.repeat(64)
+    assert.notEqual(
+      assessEvidence(
+        contract,
+        invalid,
+        runner,
+        flowIds,
+        'baseline',
+        undefined,
+        { sourceRoot: captured.sourceRoot }
+      ).status,
+      'passed'
+    )
+    const record = {
+      format: 2,
+      phase: 'completed',
+      scenario: 'baseline',
+      snapshot: derived,
+      runner,
+      flowIds,
+      evidence
+    }
+    assert.throws(
+      () => validateStoredEvidence(contract, record),
+      /derived|execution/i
+    )
+  }
+)

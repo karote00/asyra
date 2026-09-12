@@ -4,7 +4,19 @@ const sourceOwner = require('./snapshot.cjs')
 const { validId } = require('./store.cjs')
 
 const RUNTIME_EXECUTION_ISSUE = 'Runtime execution provenance mismatch'
-function resolveRuntimeSource(snapshot, admission) {
+function resolveRuntimeSource(snapshot, admission, contract, executionContext) {
+  if (Object.hasOwn(snapshot, 'executionSource')) {
+    if (admission || !contract)
+      throw new Error(
+        'Derived execution requires direct trusted source admission'
+      )
+    return sourceOwner.validateSourceSnapshot(
+      snapshot,
+      contract,
+      snapshot.files,
+      executionContext
+    ).runtimeSource
+  }
   if (!Object.hasOwn(snapshot, 'runtimeSource')) {
     if (admission)
       throw new Error('Runtime source admission lacks source identity')
@@ -74,7 +86,8 @@ function assessEvidence(
   runner,
   flowIds,
   scenario = 'baseline',
-  sourceAdmission
+  sourceAdmission,
+  executionContext
 ) {
   const expected = contract.cases.filter((item) =>
     flowIds.includes(item.flowId)
@@ -94,13 +107,19 @@ function assessEvidence(
     issues.push('Contract provenance mismatch')
   const identity = runner.identity
   const hasRuntime =
+    Object.hasOwn(snapshot, 'executionSource') ||
     Object.hasOwn(snapshot, 'runtimeSource') ||
     Object.hasOwn(identity ?? {}, 'runtimeSourceDigest') ||
     Boolean(sourceAdmission)
   let runtime
   if (hasRuntime) {
     try {
-      runtime = resolveRuntimeSource(snapshot, sourceAdmission)
+      runtime = resolveRuntimeSource(
+        snapshot,
+        sourceAdmission,
+        contract,
+        executionContext
+      )
     } catch {
       issues.push('Runtime source provenance mismatch')
     }
@@ -267,6 +286,11 @@ function assessEvidence(
 }
 
 function validateStoredEvidence(contract, record, sourceAdmission) {
+  if (
+    record.phase === 'completed' &&
+    Object.hasOwn(record.snapshot ?? {}, 'executionSource')
+  )
+    throw new Error('Stored derived execution admission is unavailable')
   if (
     record.phase !== 'completed' ||
     record.snapshot?.contractDigest !== contract.digest
