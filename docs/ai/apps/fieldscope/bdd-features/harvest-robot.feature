@@ -313,7 +313,7 @@ Feature: Harvest robot feasibility and supervised harvesting
   Scenario: Detachable geometry preserves the attached source exactly
     Given the canonical near and distant botanical meshes
     When source-owned fruit partitions are prepared and reassembled
-    Then every source triangle and vertex attribute is preserved exactly once
+    Then every source triangle has exactly one owner and original vertex attributes are preserved
     And no primitive fruit or changed cultivar shape is substituted
 
   @M3
@@ -324,3 +324,20 @@ Feature: Harvest robot feasibility and supervised harvesting
     And hidden nets and leaves remain available to observation and collision queries
     When canonical botanical inputs replace the scene
     Then old scene evidence cannot admit movement in the new revision
+
+
+  @M3
+  Scenario: Cucumber source spines follow their fruit without implying damage quality
+    Given a cucumber with its original near-view fine spine geometry
+    When its source partitions are prepared for a synthetic harvest
+    Then all spine triangles and attributes belong to that fruit
+    And the unchanged distant representation is not recorded as spine loss
+    And soft textile contact alone does not prove intact physical quality
+
+  @M3
+  Scenario: Tomato calyx and retained pedicel have one target owner
+    Given a tomato with calyx and a synthetic source cut boundary on its pedicel
+    When its source triangles are partitioned
+    Then the calyx and distal pedicel belong to that fruit
+    And proximal pedicel and neighboring plant geometry remain plant-owned
+    And the synthetic boundary is not reported as a measured abscission zone
