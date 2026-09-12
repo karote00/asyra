@@ -115,11 +115,16 @@ function RobotEditor({ runtime }: { runtime: FarmRuntime }) {
     act(() => (redo ? runtime.redo() : runtime.undo()))
   const laneId =
     settings.lane.kind === 'strip'
-      ? `strip:${settings.lane.bay}:${settings.lane.strip}`
+      ? `strip:${settings.lane.bay}:${settings.lane.stripId}`
       : `shared:${settings.lane.boundary}:${settings.lane.side}`
-  const lanes = Array.from({ length: 4 }, (_, bay) =>
+  const lanes: {
+    id: string
+    label: string
+    lane: RobotConfiguration['lane']
+  }[] = Array.from({ length: 4 }, (_, bay) =>
     farm.strips.map((strip, index) => ({
-      id: `strip:${bay}:${index}`,
+      id: `strip:${bay}:${strip.id}`,
+      lane: { kind: 'strip' as const, bay, stripId: strip.id },
       label: t('robot.laneName', {
         bay: bay + 1,
         strip: index + 1,
@@ -131,6 +136,7 @@ function RobotEditor({ runtime }: { runtime: FarmRuntime }) {
     for (const side of ['left', 'right'] as const)
       lanes.push({
         id: `shared:${boundary}:${side}`,
+        lane: { kind: 'shared', boundary, side },
         label: t('robot.sharedName', { boundary, side: t(`robot.${side}`) })
       })
   return (
@@ -224,17 +230,8 @@ function RobotEditor({ runtime }: { runtime: FarmRuntime }) {
             className={selectStyle}
             value={laneId}
             onChange={(e) => {
-              const [kind, a, b] = e.target.value.split(':')
-              void patch({
-                lane:
-                  kind === 'strip'
-                    ? { kind, bay: Number(a), strip: Number(b) }
-                    : {
-                        kind: 'shared',
-                        boundary: Number(a),
-                        side: b as 'left' | 'right'
-                      }
-              })
+              const selected = lanes.find((lane) => lane.id === e.target.value)
+              if (selected) void patch({ lane: selected.lane })
             }}
           >
             {!lanes.some((lane) => lane.id === laneId) && (

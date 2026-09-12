@@ -1,10 +1,17 @@
-import type { FarmConfiguration } from './farm-configuration'
+import {
+  DEFAULT_CONFIGURATION,
+  type FarmConfiguration
+} from './farm-configuration'
 import {
   assessHarvestLane,
   type PatrolLane,
   type LaneSurvey
 } from './harvest-assessment'
 import { assessHarvestEnergy } from './harvest-energy'
+
+export type RobotLane =
+  | { kind: 'strip'; bay: number; stripId: string }
+  | Extract<PatrolLane, { kind: 'shared' }>
 
 export interface RobotConfiguration {
   width: number
@@ -29,7 +36,7 @@ export interface RobotConfiguration {
   dockZ: number
   tool: 'cucumber' | 'tomato'
   scanSide: 'left' | 'right' | 'both'
-  lane: PatrolLane
+  lane: RobotLane
   survey: LaneSurvey
 }
 export const DEFAULT_ROBOT: Readonly<RobotConfiguration> = {
@@ -55,7 +62,11 @@ export const DEFAULT_ROBOT: Readonly<RobotConfiguration> = {
   dockZ: -1.8,
   tool: 'cucumber',
   scanSide: 'both',
-  lane: { kind: 'strip', bay: 0, strip: 2 },
+  lane: {
+    kind: 'strip',
+    bay: 0,
+    stripId: DEFAULT_CONFIGURATION.strips[2].id
+  },
   survey: {
     ground: 'unknown',
     entranceWidth: null,
@@ -126,8 +137,8 @@ export function validateRobot(
       !Number.isInteger(lane.bay) ||
       lane.bay < 0 ||
       lane.bay > 3 ||
-      !Number.isInteger(lane.strip) ||
-      lane.strip < 0
+      typeof lane.stripId !== 'string' ||
+      !lane.stripId.trim()
     )
       return fail()
   } else if (
@@ -164,14 +175,19 @@ export function assessRobotDesign(
   settings: Readonly<RobotConfiguration>,
   farm: FarmConfiguration
 ) {
+  let resolved: PatrolLane | null
+  if (settings.lane.kind === 'strip') {
+    const stripId = settings.lane.stripId
+    const strip = farm.strips.findIndex((item) => item.id === stripId)
+    resolved =
+      strip < 0 ? null : { kind: 'strip', bay: settings.lane.bay, strip }
+  } else resolved = settings.lane
   const lane =
-    settings.end > farm.length ||
-    (settings.lane.kind === 'strip' &&
-      settings.lane.strip >= farm.strips.length)
+    settings.end > farm.length || !resolved
       ? null
       : assessHarvestLane({
           farm,
-          lane: settings.lane,
+          lane: resolved,
           vehicle: {
             width: settings.width,
             length: settings.length,

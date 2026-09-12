@@ -1,10 +1,21 @@
 import { SITE, BED_STRIPS, type Site, type Strip } from './greenhouse'
+export interface ConfigurationStrip {
+  id: string
+  kind: Strip['kind']
+  width: number
+}
+export function createConfigurationStrip(
+  kind: ConfigurationStrip['kind'],
+  width: number
+): ConfigurationStrip {
+  return { id: crypto.randomUUID(), kind, width }
+}
 export interface FarmConfiguration {
   length: number
   width: number
   height: number
   eaveHeight?: number
-  strips: { kind: Strip['kind']; width: number }[]
+  strips: ConfigurationStrip[]
   soilInset: number
   startInset: number
   endInset: number
@@ -16,7 +27,10 @@ export const DEFAULT_CONFIGURATION: FarmConfiguration = {
   length: 50,
   width: 7,
   height: 5,
-  strips: BED_STRIPS.map((strip) => ({ ...strip })),
+  strips: BED_STRIPS.map((strip, index) => ({
+    ...strip,
+    id: `strip-${index + 1}`
+  })),
   soilInset: 0.15,
   startInset: 0.25,
   endInset: 0.25,
@@ -44,6 +58,7 @@ export type ConfigurationErrorCode =
   | 'range'
   | 'stripCount'
   | 'stripKind'
+  | 'stripIdentity'
   | 'clearance'
   | 'arch'
   | 'inset'
@@ -87,7 +102,15 @@ export function validateConfiguration(
     value.strips.length > 32
   )
     throw new ConfigurationError('stripCount')
+  const identities = new Set<string>()
   value.strips.forEach((strip) => {
+    if (
+      typeof strip.id !== 'string' ||
+      !strip.id.trim() ||
+      identities.has(strip.id)
+    )
+      throw new ConfigurationError('stripIdentity')
+    identities.add(strip.id)
     if (strip.kind !== 'soil' && strip.kind !== 'drain')
       throw new ConfigurationError('stripKind')
     range('stripWidth', strip.width, 0.05, 20)
