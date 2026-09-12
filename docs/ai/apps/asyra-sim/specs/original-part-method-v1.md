@@ -69,8 +69,19 @@ This changes query work and may select a different valid witness, so it has its
 own execution version. Its temporal query first evaluates the starting witness
 and attempts an interval certificate. Strict certified clearance skips the
 remaining point samples; otherwise the original remaining samples and final
-certificate remain necessary. Every attempted query consumes the unchanged
-work budget. Exhaustion retains only already established witnesses and marks
+certificate remain necessary. Within a single original trajectory segment,
+completed parent start/middle/end static evidence may be handed directly to the
+corresponding child endpoints, preserving the sample-consumption order and all
+witness/severity decisions. No original segment root inherits another segment's
+evidence. A complete early interval lower certificate, including zero, may be
+consumed again only by the same node's final certification when its actual
+mesh lower route depends only on positive witness admission and both first and
+final witnesses have positive lower bounds. A nonpositive admission or null
+result is not such a certificate. Native/native witness-axis kernels recompute.
+Each evidence handoff consumes one logical mesh work unit with a fresh
+checkpoint before publishing its result. A failed charge follows the existing
+exhaustion path; temporal node/leaf budgets and cancellation remain unchanged.
+Every attempted query consumes the unchanged work budget. Exhaustion retains only already established witnesses and marks
 unproved coverage unresolved; it does not invent unvisited endpoint findings.
 This strategy is explicit to the original-part kernel, leaving the historical
 primitive method's ordering unchanged. World-axis bounds use inverse-direction
@@ -159,7 +170,10 @@ clearance classification must agree, with independently conservative bounds.
 Only an immutable mesh object and its immutable positions/indices permit an
 execution-owned topology/index cache. The key is that exact frozen geometry
 object (including resolved scale and source), not an asset name or mutable body.
-Poses and interval bounds are recomputed for every query. A new source object
+Poses and interval bounds are never retained in this geometry cache. The only
+query-result handoff is the explicit pending-node lifetime described above:
+no global pose map, cross-segment, cross-pair or cross-invocation result reuse.
+A new source object
 misses; mutable input misses. One explicit method executor may retain these
 indices across static invocations for the same admitted live input lifetime;
 ordinary formal runs retain their own isolated preparation. Each invocation

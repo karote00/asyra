@@ -1042,7 +1042,8 @@
           'silent method fallback'
         ],
         cacheDimensions: [
-          'one formal execution or live Worker input lifetime and exact immutable resolved mesh geometry/hierarchy mode; each invocation charges equivalent preparation work with fresh checkpoints, and poses and temporal bounds are not retained'
+          'one formal execution or live Worker input lifetime and exact immutable resolved mesh geometry/hierarchy mode; each invocation charges equivalent preparation work with fresh checkpoints, and poses and temporal bounds are not retained in geometry preparation',
+          'Completed static evidence may be handed from a parent to its children only within the same original segment and original-part pair invocation. A completed same-node interval certificate may be handed to final certification only on the actual mesh lower route with positive first and final witness admission. Each handoff charges owned work and checks cancellation; no poses, cross-segment results or query evidence survive pending-node ownership. Generic and native axis-sensitive interval kernels retain their witness dependencies.'
         ],
         implementationBoundary: [
           'apps/asyra-sim/src/analysis/methods/**',

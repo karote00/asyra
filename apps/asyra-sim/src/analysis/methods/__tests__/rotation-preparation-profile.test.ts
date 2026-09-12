@@ -1,3 +1,4 @@
+import { useEvidenceRecomputationControl } from './evidence-recomputation-control'
 import { describe, afterEach, beforeEach, expect, it, vi } from 'vitest'
 import * as meshIndex from '../mesh-index'
 import type { MeshNode } from '../mesh-index'
@@ -15,6 +16,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
   () => {
     // Preserve the historical median-index control instead of applying newer refinement.
     beforeEach(() => {
+      useEvidenceRecomputationControl()
       vi.spyOn(meshIndex, 'refineMeshIndex').mockImplementation(
         (index) => index
       )

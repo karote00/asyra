@@ -11,6 +11,8 @@ afterEach(() => vi.restoreAllMocks())
 it('completes the unchanged representative workcell within the original geometry work budget', async () => {
   const snapshot = await representativeSnapshot(0)
   const counts = {
+    handoffCalls: 0,
+    handoffWork: 0,
     distanceCalls: 0,
     distanceWork: 0,
     lowerCalls: 0,
@@ -40,6 +42,19 @@ it('completes the unchanged representative workcell within the original geometry
   vi.spyOn(convex, 'convexDistance').mockImplementation((...args) => {
     counts.convexCalls++
     return convexDistance(...args)
+  })
+  const handoff = OriginalMeshQuery.prototype.chargeEvidenceHandoff
+  vi.spyOn(
+    OriginalMeshQuery.prototype,
+    'chargeEvidenceHandoff'
+  ).mockImplementation(function (this: OriginalMeshQuery) {
+    const before = this.work
+    counts.handoffCalls++
+    try {
+      return handoff.call(this)
+    } finally {
+      counts.handoffWork += this.work - before
+    }
   })
   const distance = OriginalMeshQuery.prototype.distance
   const lower = OriginalMeshQuery.prototype.lowerOver
@@ -109,11 +124,13 @@ it('completes the unchanged representative workcell within the original geometry
     work: number
     staticWork: number
     intervalWork: number
+    handoffWork: number
     evaluations: number
     clearIntervals: number
   }[] = []
   let previousStatic = 0,
     previousInterval = 0,
+    previousHandoff = 0,
     previousClear = 0
   const evidence = runOriginalPartMethod(
     snapshot,
@@ -121,9 +138,11 @@ it('completes the unchanged representative workcell within the original geometry
     (pair) => {
       const staticWork = counts.distanceWork - previousStatic
       const intervalWork = counts.lowerWork - previousInterval
+      const handoffWork = counts.handoffWork - previousHandoff
       pairCosts.push({
         pairId: pair.pairId,
-        work: staticWork + intervalWork,
+        work: staticWork + intervalWork + handoffWork,
+        handoffWork,
         staticWork,
         intervalWork,
         evaluations: pair.evidence.evaluations,
@@ -131,6 +150,7 @@ it('completes the unchanged representative workcell within the original geometry
       })
       previousStatic = counts.distanceWork
       previousInterval = counts.lowerWork
+      previousHandoff = counts.handoffWork
       previousClear = counts.clearIntervalCertificates
     }
   )
@@ -143,6 +163,7 @@ it('completes the unchanged representative workcell within the original geometry
       profile: 'representative-original-work',
       largestPairCosts: pairCosts.sort((a, b) => b.work - a.work).slice(0, 5),
       ...counts,
+      totalWork: counts.distanceWork + counts.lowerWork + counts.handoffWork,
       traversalWork:
         counts.distanceWork +
         counts.lowerWork -

@@ -722,3 +722,172 @@ with the full G4 gate still red. The next bounded replan may only diagnose
 repeated static/interval work in original segment 115; it does not authorize
 sample/pose reuse or another production change without measured counts and
 review of the exact ownership/identity contract.
+
+
+### Exact segment repetition diagnosis
+
+Step card: method owner, current component baseline `979ca24ad`, original
+segment 115 only. The permanent opt-in `segment-repetition-profile.test.ts`
+executes every static and interval query with the original settings and 500,000
+work guard. It records exact ordered geometry identities, complete poses,
+original segment/time, threshold, tolerance and iterations; interval identity
+also includes the complete witness. Binary64 negative zero is distinguished.
+Repeated completed inputs must produce identical complete outputs. Actual
+static/interval work and original/refinement preparation are recorded separately.
+Reported duplicate work is an optimistic upper bound before any lookup or
+identity cost, not an implemented saving. Exceptions are not reusable evidence.
+No production, cache contract, temporal schedule, severity rule, or full goal
+gate changes are authorized. Run with `SIM_CAPACITY_DIAGNOSTICS=1` and the exact
+file, retaining its twenty-second guard. Review the measured ownership and
+identity contract before proposing any reuse.
+
+
+The passive case completes seven evaluations/four clear leaves in 172,486 work:
+3,176 original preparation, 10,366 refinement, and exactly 158,944 query work,
+reproducing the complete original segment's full-run cost. Thirteen static
+calls contain eight exact-input repeats costing 52,522. Ten interval calls
+contain three exact-input repeats costing 23,045. A separate positive-admission
+comparison that omits the rest of the witness finds the same three calls and
+cost, so no additional witness-equivalence assumption is needed for these
+observed repeats. All repeated complete outputs agree. Combined repeated work
+is 75,567 (47.5% of this segment's query work), before lookup/identity/checkpoint
+costs. This does not estimate whole-workload completion or authorize a cache.
+Focused diagnostic, app typecheck, focused ESLint and naming 11/11 pass.
+Evidence: `tmp/capacity/segment-repetition.log`. The first attempted diagnostic
+assertion referenced a nonexistent snapshot budget field; the formal resource
+profile owner now supplies the unchanged 500,000 limit explicitly.
+
+
+### Subdivision evidence ownership card
+
+Objective: eliminate demonstrated repeated completed work inside one original
+segment while preserving the complete temporal/severity contract. The root approved this bounded card and its explicit Inspector/spec update;
+it does not permit a generic pose cache. Direct owners
+are `continuous-query.ts`, the original-part kernel adapter and its existing
+mesh budget owner; direct tests, manifest/spec and Inspector wording are the
+only accompanying edits. No domain, geometry, threshold, version-history or
+budget changes; no cross-segment or cross-query evidence retention.
+
+The proposed original-only capability has two explicit lifetimes:
+
+- A node records each successfully completed start/middle/end DistanceEvidence.
+  Only when it actually subdivides does it hand start/middle to its left child
+  and middle/end to its right child. Children still visit samples in exactly
+  the existing order and preserve the original best-witness and penetration
+  rules. Original segment roots carry no inherited evidence. The node artifact
+  contains endpoint time and complete evidence, never poses or a pose-key map.
+  Uncompleted/null calls are never handed off. Each actual inherited read pays
+  one mesh work unit and a fresh cancellation checkpoint before returning it.
+- The original kernel explicitly declares eligibility only on its actual
+  `lowerOver` mesh route (at least one side is a mesh). That interval lower
+  certificate depends on a positive static lower bound for containment
+  admission, but not the witness axis, upper bound or other witness metadata.
+  A completed early certificate (including zero) is reusable only within that
+  same node and only when both original and final witnesses have positive
+  lower bounds. Zero admission is not a complete certificate; null is exhaustion.
+  Each successful certificate handoff likewise pays one unit/checkpoint. If
+  either witness is not positively admitted, the final query stays unchanged.
+  Generic/primitive kernels opt into neither lifetime and retain their current
+  sampling, certificate calls and witness dependencies. Native/native shapes
+  inside the original-part adapter use witness-axis separation and must never
+  opt into the interval-certificate handoff; method identity alone is insufficient.
+
+The reuse operation must charge through the same `OriginalMeshQuery` budget
+owner and use the adapter's existing MeshWorkLimit-to-null boundary. A failed
+charge cannot publish a witness or certificate; established earlier evidence
+and unproved lower-zero/unresolved behavior remain unchanged. Node evaluation,
+retained-leaf, wall-time and cancellation budgets are not reduced. Evidence is
+released with pending node ownership and never retained in immutable geometry
+preparation. Snapshot, ordered pair, settings and kernel are fixed for the whole
+query; original segment plus exact parent/child endpoint construction establishes
+identity without fuzzy numerical comparisons or cross-keyframe equality.
+
+Proposed Inspector cache-dimension addition for review: “Completed static
+evidence may be handed from a parent to its children only within the same
+original segment and original-part pair invocation; a completed same-node
+interval certificate may be handed to final certification only under that
+kernel's positive-witness admission contract. Each handoff charges owned work
+and checks cancellation; no poses, cross-segment results or query evidence are
+retained beyond the pending-node lifetime.” The existing immutable preparation
+rule remains intact. The direct method spec must explain these two lifetimes
+and preserve the requirement to consume remaining samples after unsuccessful
+early clearance, including warning-to-later-penetration cases.
+
+Formal red oracles precede implementation: parent/child endpoint actual calls
+and exact evidence against a no-handoff control; repeated midpoint ancestry;
+separate original segments sharing a timestamp cannot share evidence; same-node
+positive-admission lower calls two-to-one with independent rational enclosures;
+zero admission followed by positive admission still recomputes; generic
+witness-axis-dependent kernels and original native/native pairs still recompute; threshold equality/contact,
+midpoint and endpoint penetration, reversal and deterministic reruns; changed
+source/pose/settings and fresh query produce fresh calls. Budget/cancellation
+oracles exercise each handoff and prove no unpaid result publication, unchanged
+node evaluation counts, and preservation of already completed witnesses.
+Permanent tests must assert actual charged reuse work, not only output equality.
+
+Gates: focused correctness/work/lifecycle, independent review, unchanged
+10,000/50,000/576 and two-window work gates, then the current exact segment
+profile and one full representative gate only if prior gates pass. The full
+500,000 representative remains decisive and red until a complete result is
+actually obtained. No browser rerun before that milestone. If the proposed
+lifetime conflicts with Inspector/product semantics or materially changes
+complete evidence, stop and revise the card; do not hide it by weakening tests.
+
+
+Readiness review corrected one eligibility boundary before implementation:
+original native/native queries use witness-axis separation, so only the actual
+mesh `lowerOver` route declares positive-witness-only dependency. Inspector and
+spec now express that exact restriction. The first formal run was five red and
+two green tests (`tmp/capacity/handoff-red.log`): repeated work and missing paid
+handoffs failed, while native-axis and changed-admission protection already held.
+The implementation adds two optional kernel capabilities, explicit child endpoint
+evidence fields, and one actual mesh-budget handoff operation. No result map or
+pose artifact is created.
+
+Focused synthetic source-independent evidence has 13 static / 10 interval calls
+without handoff versus 5 / 7 with 11 charged handoffs; the complete result is
+identical, including seven node evaluations. It uses dyadic sphere radii and
+independent rational separation bounds. Additional tests cover original segment
+separation, fresh queries, changed source/pose/settings, reversal, later
+penetration, native axis dependence, nonpositive-to-positive admission, unpaid
+handoffs and cancellation. The complete original segment source oracle compares
+all PairEvidence fields against the same current kernel without handoff and
+passes: 172,486 becomes 96,930 total work. Original/refinement preparation remains
+13,542, query work is 83,388 including eleven handoff units, and no exact repeated
+static or interval calls remain. This is a 47.5% reduction of that complete
+segment's query work, with original sampling decisions and four clear leaves.
+
+The unchanged 10,000/50,000/576 and two-window gates pass (14 tests), as do source,
+motion, lifetime and independent mesh oracles. Typecheck, focused ESLint and
+naming 11/11 pass; the regenerated Inspector catalog passes 8/8. Evidence is in
+`tmp/capacity/handoff-owner-gates.log`, `handoff-source-equivalence.log`,
+`handoff-segment-profile.log` and `handoff-final-focused.log`. Independent code
+review and the subsequent full representative gate are the remaining boundaries;
+G4 is not yet complete.
+
+
+The independent production review passed and separately reran 26 tests. The
+unchanged full gate still fails complete coverage: 500,197 accounted work,
+20,234 evaluations, first partial joint-2/obstacle-11 at 135 evaluations. Its
+397,818 work includes 279,895 static, 117,903 interval and 20 paid handoffs.
+The preceding obstacle-10 remains 17,357. This improves the previous 20,195
+whole / 96 target evaluations but is not complete G4. Evidence:
+`tmp/capacity/handoff-full-representative.log` (8,111 ms). No browser run follows.
+
+Direct diagnostic compatibility: the historical component transfer comparison
+and the six existing historical hierarchy/bounds adapters (component, SAH,
+rotation, reverse traversal, triangle bounds, source-node bounds) explicitly use
+`evidence-recomputation-control.ts` to retain pre-handoff temporal behavior.
+Their previous refinement controls remain intact. This preserves the recorded
+hypothesis isolation and median control's 20,189 / 90 prefix. Current source
+profiles, segment repetition and actual representative/sibling goal gates keep
+current production. The helper is test-owned and never used by runtime code.
+
+Historical replay closure: the six selected second-two adapters pass; the
+component-transfer median control again reproduces exactly 20,189 total and
+90 target evaluations. Focused closeout typecheck, ESLint and naming 11/11 pass.
+Logs: `tmp/capacity/handoff-historical-replay.log`,
+`handoff-transfer-control.log`, and `handoff-closeout-*.log`. The completed
+handoff slice is frozen for scoped review/commit. The next discovery is limited
+to the new actual original-segment frontier and completed-query cost attribution;
+no new production strategy follows directly from the partial aggregate.

@@ -54,6 +54,10 @@ export interface PairEvidence {
 export interface PairQueryKernel {
   relativeFrames?: boolean
   certifyClearBeforeResampling?: boolean
+  /** Charge and checkpoint one completed pending-node evidence handoff. */
+  handoffEvidence?: () => boolean
+  /** Only this actual route's lower certificate ignores positive witness metadata. */
+  lowerUsesPositiveWitnessOnly?: (a: ConvexShape, b: ConvexShape) => boolean
   distance(a: ConvexShape, b: ConvexShape): DistanceEvidence | null
   lower(
     a: ConvexShape,
@@ -164,6 +168,8 @@ export function queryContinuousPair(
     start: number
     end: number
     segment: number
+    startEvidence?: DistanceEvidence
+    endEvidence?: DistanceEvidence
   }
   const pending: Node[] = [],
     leaves: IntervalEvidence[] = []
@@ -207,6 +213,10 @@ export function queryContinuousPair(
     const node = pending.pop()
     if (!node) break
     const middle = node.start + (node.end - node.start) / 2
+    let startEvidence = node.startEvidence,
+      middleEvidence: DistanceEvidence | undefined,
+      endEvidence = node.endEvidence
+    let completedLower: number | undefined
     let certifiedLower: number | null = null
     let witness: DistanceEvidence | null = null,
       witnessTime = middle
@@ -214,26 +224,37 @@ export function queryContinuousPair(
     // never a substitute for the interval-wide separating certificate below.
     for (const time of new Set([node.start, middle, node.end])) {
       checkpoint()
-      const [a, b] = shapesAt(
-        query,
-        node.segment,
-        interval(time),
-        kernel?.relativeFrames
-      )
-      const result = kernel
-        ? kernel.distance(a, b)
-        : convexDistance(
-            a,
-            b,
-            settings.distanceTolerance,
-            settings.maxIterations
-          )
+      let inherited: DistanceEvidence | undefined
+      if (time === node.start) inherited = node.startEvidence
+      else if (time === node.end) inherited = node.endEvidence
+      let result: DistanceEvidence | null
+      if (inherited && kernel?.handoffEvidence)
+        result = kernel.handoffEvidence() ? inherited : null
+      else {
+        const [a, b] = shapesAt(
+          query,
+          node.segment,
+          interval(time),
+          kernel?.relativeFrames
+        )
+        result = kernel
+          ? kernel.distance(a, b)
+          : convexDistance(
+              a,
+              b,
+              settings.distanceTolerance,
+              settings.maxIterations
+            )
+      }
       if (!result) {
         kernelExhausted = true
         if (witness) break
         pending.push(node)
         break traversal
       }
+      if (time === node.start) startEvidence = result
+      if (time === middle) middleEvidence = result
+      if (time === node.end) endEvidence = result
       if (!witness || result.upper < witness.upper || result.penetration) {
         witness = result
         witnessTime = time
@@ -256,6 +277,12 @@ export function queryContinuousPair(
           kernelExhausted = true
           break
         }
+        if (
+          kernel.handoffEvidence &&
+          witness.lower > 0 &&
+          kernel.lowerUsesPositiveWitnessOnly?.(intervalA, intervalB)
+        )
+          completedLower = candidate
         if (candidate > witness.upper)
           throw new Error('Inconsistent continuous distance certificates')
         if (candidate > settings.threshold) {
@@ -268,6 +295,14 @@ export function queryContinuousPair(
     evaluations++
     let lower: number | null = certifiedLower ?? witness.lower
     if (kernelExhausted) lower = null
+    else if (
+      certifiedLower === null &&
+      node.start !== node.end &&
+      completedLower !== undefined &&
+      witness.lower > 0 &&
+      kernel?.handoffEvidence
+    )
+      lower = kernel.handoffEvidence() ? completedLower : null
     else if (certifiedLower === null && node.start !== node.end) {
       const [a, b] = shapesAt(
         query,
@@ -333,8 +368,22 @@ export function queryContinuousPair(
       })
     else
       pending.push(
-        { start: node.start, end: middle, segment: node.segment },
-        { start: middle, end: node.end, segment: node.segment }
+        {
+          start: node.start,
+          end: middle,
+          segment: node.segment,
+          ...(kernel?.handoffEvidence
+            ? { startEvidence, endEvidence: middleEvidence }
+            : {})
+        },
+        {
+          start: middle,
+          end: node.end,
+          segment: node.segment,
+          ...(kernel?.handoffEvidence
+            ? { startEvidence: middleEvidence, endEvidence }
+            : {})
+        }
       )
     if (kernelExhausted) break
   }

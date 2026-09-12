@@ -1,4 +1,5 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { useEvidenceRecomputationControl } from './evidence-recomputation-control'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as kinematics from '../../../domain/kinematic-algebra'
 import * as meshIndex from '../mesh-index'
 import * as projections from '../mesh-projection'
@@ -10,6 +11,9 @@ import { runOriginalPartMethod } from '../original-part-method'
 import { representativeSnapshot } from './representative-fixture'
 
 afterEach(() => vi.restoreAllMocks())
+beforeEach(() => {
+  useEvidenceRecomputationControl()
+})
 describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
   'exact representative component transfer',
   () => {

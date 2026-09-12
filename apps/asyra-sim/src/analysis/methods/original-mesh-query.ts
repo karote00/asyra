@@ -61,6 +61,9 @@ export class OriginalMeshQuery {
     if (this.work > this.maxWork)
       throw new MeshWorkLimit('The original-triangle work budget was exhausted')
   }
+  chargeEvidenceHandoff(): void {
+    this.tick()
+  }
   private index(shape: ConvexShape): MeshIndex | undefined {
     const geometry = shape.geometry
     if (geometry.kind !== 'mesh') return undefined
