@@ -530,12 +530,14 @@ const data = {
         'artifact:admitted-proof-contract',
         'artifact:admitted-runtime-source',
         'authorized run identity',
+        'complete retained snapshot manifest and task-owned fixed canonical source location for read-only byte verification',
         'declared source roots and dependency metadata',
         'completed source-owned verification descriptor and trusted canonical candidate attempt source location for fixed derived execution generation/admission',
         'server-selected accepted Git base and integration revision'
       ],
       outputs: ['artifact:proof-source-snapshot'],
       conditions: [
+        'For retained candidate admission, verify every actual full-manifest entry once through the source-owned safe path, regular file, size and hash boundary at its trusted fixed source root. Write nothing and return no identity or authority flag; descriptor/full-inventory admission remains a separate single direct evidence operation in the same startup lifetime, with neither operation repeated by reads or replay.',
         'For the fixed contained-native-typescript-v1 derived execution policy, generate the exact configuration/bootstrap bytes and canonical executionSource identity from the original admitted verification descriptor and trusted attempt source location. Construction alone grants no authority. A present descriptor requires one shared full/runtime/verification admission plus exact fixed-byte/full-inventory/configuration binding, with the location supplied separately by its trusted owner; never trust a saved sourceRoot or caller-selected policy, paths or contents. Missing, changed, extra, unsupported or overlapping inputs fail closed. Historical absence is not upgraded, ordinary composition remains restricted, and actual runner/containment use must be proved by later producer consumers.',
         'Before an ordinary verification reference handoff, the source owner may validate its already admitted retained runtime and exact five-role bytes through a read-only operation. Require the same canonical repository/attempt/source tree and configuration authority; read each entry once, write nothing, and return no new source identity or persistent verified status. Later composition must still validate the bytes it actually uses.',
         'For explicit ordinary composition, consume two already admitted service-owned source artifacts and their fixed retained attempt trees in the same repository. Require exact verification contract and configuration authority, read and verify each selected runtime or verification entry once, and produce a complete immutable snapshot preserving selected runtime HEAD/digest and chosen verification digest with a new full identity. Undeclared generated execution closure, missing or changed bytes, unsafe paths and cross-repository inputs fail before runner dispatch. This later composition route does not gate initial capture or its admission.',
@@ -556,7 +558,7 @@ const data = {
         'tools/flow-inspector/control-plane/ci-context.cjs',
         'tools/flow-inspector/control-plane/__tests__/ci-context.test.cjs'
       ],
-      specRefs: ['#source-and-evidence', '#runtime-identity-producer-contract', '#frozen-verification-source', '#derived-execution-source'],
+      specRefs: ['#source-and-evidence', '#runtime-identity-producer-contract', '#frozen-verification-source', '#derived-execution-source', '#retained-snapshot-byte-verification'],
       failureOwnerStepId: 'capture-proof-source'
     },
     {

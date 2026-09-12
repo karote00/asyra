@@ -1227,6 +1227,32 @@ remain required; generating or admitting a closure proves none of those outcomes
 Later retained admission/replay must use the same exact trusted location and
 validate actual retained bytes at its declared lifetime, without UI recomputation.
 
+### Retained snapshot byte verification
+
+`verifyRetainedSnapshotBytes(repositoryRoot, sourceRoot, fullFiles)` is the
+source owner's read-only byte check for the complete retained snapshot manifest,
+including runtime, original verification roles and generated execution files.
+The task owner supplies the fixed canonical attempt source directory within the
+repository; it must not derive authority from a saved path. Require a canonical
+absolute `source` root and use the existing source entry boundary to reject
+unsafe paths, symlinks, nonregular files, missing bytes, size differences and
+fingerprint mismatches. Read and hash each actual entry exactly once, including
+all runtime and metadata entries, with no writes or checkout repair.
+
+Success returns `undefined`, not an admitted descriptor or a verified flag. This
+helper does not reconstruct or validate full/runtime/verification/execution
+identities and cannot establish complete inventory or replay eligibility by
+itself. The retained task consumer must separately pass that same full manifest,
+its three descriptors and the fixed trusted context through one combined direct
+evidence admission in the same startup lifetime. Cache only the completed task
+admission result; ordinary reads and replay do neither operation again. Existing
+ordinary composition and reference byte APIs keep rejecting derived execution.
+
+The candidate producer and this byte helper are dependencies of the retained
+task owner correction: the existing real passing task restart case must become
+green after exact retained descriptor/context reconstruction. Completing either
+producer alone does not close that restart requirement.
+
 ### Direct derived evidence admission
 
 The evidence owner's `assessEvidence` accepts an optional seventh
