@@ -115,6 +115,7 @@ test('historical evidence keeps its identity without certifying a different curr
     const recordPath = path.join(dir, record.id, 'record.json')
     // A fixture representing a valid retained result from an older contract.
     const historical = JSON.parse(fs.readFileSync(recordPath))
+    delete historical.sourceContract
     historical.snapshot.contractDigest = '0'.repeat(64)
     historical.contractDigest = historical.snapshot.contractDigest
     historical.runner.identity.contractDigest =
@@ -210,7 +211,8 @@ test('admission detaches caller-owned flow selection before asynchronous executi
 test('runtime source admission uses captured files once and reloads one server-owned manifest without work on reads or replay', async (t) => {
   const dir = directory()
   let service = createService(root, { directory: dir })
-  const validate = t.mock.method(sourceOwner, 'validateRuntimeSource')
+  const validate = t.mock.method(sourceOwner, 'validateSourceSnapshot')
+  const runtimeOnly = t.mock.method(sourceOwner, 'validateRuntimeSource')
   const assess = t.mock.method(evidenceOwner, 'assessEvidence')
   const read = t.mock.method(fs, 'readFileSync')
   const manifestReads = () =>
@@ -238,6 +240,19 @@ test('runtime source admission uses captured files once and reloads one server-o
       record.snapshot.runtimeSource.digest
     )
     assert.ok(Object.isFrozen(admission))
+    assert.deepEqual(record.sourceContract, {
+      definition: validate.mock.calls[0].arguments[1].definition,
+      architectureDefinition:
+        validate.mock.calls[0].arguments[1].architectureDefinition
+    })
+    assert.deepEqual(
+      admission.verificationSource,
+      record.snapshot.verificationSource
+    )
+    assert.equal(
+      admission.configurationDigest,
+      record.snapshot.configurationDigest
+    )
     await service.close()
     service = createService(root, { directory: dir })
     assert.equal(
@@ -252,6 +267,11 @@ test('runtime source admission uses captured files once and reloads one server-o
       assert.equal(service.start({ requestId }, LOCAL_ACTOR), id)
     }
     assert.equal(validate.mock.callCount(), 2)
+    assert.equal(
+      runtimeOnly.mock.callCount(),
+      0,
+      'combined admission must not invoke another runtime admission'
+    )
     assert.equal(manifestReads(), 1)
   } finally {
     await service.close()
@@ -268,6 +288,11 @@ test('invalid live runtime source is rejected before runner dispatch and cannot 
     capture: (...args) => {
       const snapshot = sourceOwner.captureSource(...args)
       if (invalid === 'null') return { ...snapshot, runtimeSource: null }
+      if (invalid === 'missing-runtime') {
+        const incomplete = { ...snapshot }
+        delete incomplete.runtimeSource
+        return incomplete
+      }
       if (invalid === 'missing-files') {
         const incomplete = { ...snapshot }
         delete incomplete.files
@@ -298,6 +323,10 @@ test('invalid live runtime source is rejected before runner dispatch and cannot 
       'incomplete live capture must not reread a manifest and dispatch'
     )
     assert.match(incomplete.error, /manifest/i)
+    invalid = 'missing-runtime'
+    const missingRuntime = await service.wait(service.start({}, LOCAL_ACTOR))
+    assert.equal(runs, 0)
+    assert.equal(missingRuntime.phase, 'error')
     invalid = false
     const next = await service.wait(service.start({}, LOCAL_ACTOR))
     assert.notEqual(next.id, rejected.id)
@@ -412,6 +441,7 @@ test('historical absence of runtime source never triggers new manifest reads or 
     await service.close()
     const file = path.join(dir, record.id, 'record.json')
     const historical = JSON.parse(fs.readFileSync(file))
+    delete historical.sourceContract
     delete historical.snapshot.runtimeSource
     delete historical.runner.identity.runtimeSourceDigest
     delete historical.evidence.runtimeSourceDigest
@@ -432,6 +462,93 @@ test('historical absence of runtime source never triggers new manifest reads or 
       ),
       false
     )
+  } finally {
+    await service.close()
+    fs.rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('combined source admission rejects conflicting new authority and keeps absent historical authority runtime-only', async (t) => {
+  const dir = directory()
+  let service = createService(root, { directory: dir })
+  try {
+    const record = await service.wait(service.start({}, LOCAL_ACTOR))
+    await service.close()
+    const file = path.join(dir, record.id, 'record.json')
+    const original = JSON.parse(fs.readFileSync(file))
+    assert.ok(Object.hasOwn(original, 'sourceContract'))
+    for (const corrupt of [
+      (value) => {
+        value.sourceContract = null
+      },
+      (value) => {
+        value.sourceContract.definition = {}
+      },
+      (value) => {
+        value.contractDigest = '0'.repeat(64)
+      },
+      (value) => {
+        delete value.snapshot.verificationSource
+      },
+      (value) => {
+        value.snapshot.verificationSource = null
+      },
+      (value) => {
+        value.snapshot.configurationDigest = '0'.repeat(64)
+      }
+    ]) {
+      const changed = structuredClone(original)
+      corrupt(changed)
+      fs.writeFileSync(file, JSON.stringify(changed))
+      assert.throws(
+        () => createService(root, { directory: dir }),
+        /contract|source|configuration|provenance/i
+      )
+    }
+    const historical = structuredClone(original)
+    delete historical.sourceContract
+    historical.snapshot.verificationSource = null
+    fs.writeFileSync(file, JSON.stringify(historical))
+    const combined = t.mock.method(sourceOwner, 'validateSourceSnapshot')
+    const stored = t.mock.method(evidenceOwner, 'validateStoredEvidence')
+    service = createService(root, { directory: dir })
+    assert.equal(service.get(record.id).evidence.status, 'passed')
+    assert.equal(combined.mock.callCount(), 0)
+    assert.equal(
+      Object.hasOwn(stored.mock.calls[0].arguments[2], 'verificationSource'),
+      false
+    )
+  } finally {
+    await service.close()
+    fs.rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('failure before capture produces no authority and remains readable after restart', async () => {
+  const dir = directory()
+  let service = createService(root, {
+    directory: dir,
+    capture() {
+      throw new Error('capture failed before snapshot')
+    }
+  })
+  try {
+    const record = await service.wait(service.start({}, LOCAL_ACTOR))
+    assert.equal(record.phase, 'error')
+    assert.ok(Object.hasOwn(record, 'sourceContract'))
+    assert.equal(Object.hasOwn(record, 'snapshot'), false)
+    await service.close()
+    service = createService(root, { directory: dir })
+    assert.equal(service.get(record.id).phase, 'error')
+    await service.close()
+    const file = path.join(dir, record.id, 'record.json')
+    const interrupted = JSON.parse(fs.readFileSync(file))
+    interrupted.phase = 'running'
+    delete interrupted.finishedAt
+    fs.writeFileSync(file, JSON.stringify(interrupted))
+    service = createService(root, { directory: dir })
+    assert.equal(service.get(record.id).phase, 'interrupted')
+    assert.equal(Object.hasOwn(service.get(record.id), 'snapshot'), false)
   } finally {
     await service.close()
     fs.rmSync(dir, { recursive: true, force: true })

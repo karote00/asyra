@@ -3,6 +3,7 @@
 const path = require('node:path')
 const fs = require('node:fs')
 const { randomUUID } = require('node:crypto')
+const { isDeepStrictEqual } = require('node:util')
 const { admitContract, loadContract, mappingDiff } = require('./contracts.cjs')
 const sourceOwner = require('./snapshot.cjs')
 const { captureSource, safePath, sha256 } = sourceOwner
@@ -78,9 +79,20 @@ function createService(
   const repository = fs.realpathSync(repositoryRoot)
   const store = openStore(directory)
   const sourceAdmissions = new Map()
-  const admitRuntimeSource = (record, files) => {
+  const admitRuntimeSource = (record, files, liveContract) => {
     const snapshot = record.snapshot
-    const retained = sourceAdmissions.get(record.id)
+    const entry = sourceAdmissions.get(record.id)
+    const retained = entry?.admission
+    const hasContract = Object.hasOwn(record, 'sourceContract')
+    if (
+      snapshot &&
+      hasContract &&
+      (!Object.hasOwn(snapshot, 'verificationSource') ||
+        !Object.hasOwn(snapshot, 'runtimeSource'))
+    ) {
+      sourceAdmissions.delete(record.id)
+      throw new Error('Source runtime or verification descriptor is missing')
+    }
     if (!snapshot || !Object.hasOwn(snapshot, 'runtimeSource')) {
       if (retained) {
         sourceAdmissions.delete(record.id)
@@ -95,11 +107,43 @@ function createService(
         retained.head === snapshot.head &&
         retained.sourceDigest === snapshot.digest &&
         retained.runtimeSource.format === snapshot.runtimeSource?.format &&
-        retained.runtimeSource.digest === snapshot.runtimeSource?.digest
+        retained.runtimeSource.digest === snapshot.runtimeSource?.digest &&
+        isDeepStrictEqual(entry.sourceContract, record.sourceContract) &&
+        (!hasContract ||
+          (retained.contractDigest === record.contractDigest &&
+            retained.contractDigest === snapshot.contractDigest &&
+            retained.mappingVersion === snapshot.mappingVersion &&
+            retained.architectureVersion === snapshot.architectureVersion &&
+            retained.configurationDigest === snapshot.configurationDigest &&
+            isDeepStrictEqual(
+              retained.verificationSource,
+              snapshot.verificationSource
+            )))
       )
         return retained
       sourceAdmissions.delete(record.id)
       throw new Error('Runtime source admission identity changed')
+    }
+    let sourceContract
+    if (hasContract) {
+      const saved = record.sourceContract
+      if (
+        !saved ||
+        Object.keys(saved).length !== 2 ||
+        !saved.definition ||
+        !saved.architectureDefinition
+      )
+        throw new Error('Invalid source contract')
+      sourceContract =
+        liveContract ??
+        admitContract(saved.definition, saved.architectureDefinition)
+      if (
+        sourceContract.digest !== record.contractDigest ||
+        sourceContract.digest !== snapshot.contractDigest ||
+        sourceContract.mappingVersion !== snapshot.mappingVersion ||
+        sourceContract.architectureVersion !== snapshot.architectureVersion
+      )
+        throw new Error('Source contract identity mismatch')
     }
     let manifest = files
     if (!manifest) {
@@ -118,15 +162,38 @@ function createService(
         throw new Error('Source manifest artifact fingerprint mismatch')
       manifest = JSON.parse(bytes)
     }
-    const runtimeSource = sourceOwner.validateRuntimeSource(snapshot, manifest)
+    const sources = hasContract
+      ? sourceOwner.validateSourceSnapshot(snapshot, sourceContract, manifest)
+      : { runtimeSource: sourceOwner.validateRuntimeSource(snapshot, manifest) }
+    if (
+      hasContract &&
+      (!sources.verificationSource ||
+        sources.verificationSource.files.find(
+          (item) => item.path === sourceContract.configFile
+        )?.digest !== snapshot.configurationDigest)
+    )
+      throw new Error('Source execution configuration mismatch')
+    const { runtimeSource } = sources
     const admission = Object.freeze({
       attemptId: record.id,
       repository,
       head: snapshot.head,
       sourceDigest: snapshot.digest,
-      runtimeSource
+      runtimeSource,
+      ...(hasContract
+        ? {
+            verificationSource: sources.verificationSource,
+            contractDigest: sourceContract.digest,
+            mappingVersion: sourceContract.mappingVersion,
+            architectureVersion: sourceContract.architectureVersion,
+            configurationDigest: snapshot.configurationDigest
+          }
+        : {})
     })
-    sourceAdmissions.set(record.id, admission)
+    sourceAdmissions.set(record.id, {
+      admission,
+      sourceContract: record.sourceContract
+    })
     return admission
   }
   try {
@@ -1077,6 +1144,10 @@ function createService(
         mode,
         mappingRevision: store.mapping().revision,
         contractDigest: current.digest,
+        sourceContract: {
+          definition: current.definition,
+          architectureDefinition: current.architectureDefinition
+        },
         id,
         actor: actor.id,
         phase: 'running',
@@ -1098,8 +1169,9 @@ function createService(
           )
             throw new Error('Runtime source: full live manifest required')
           const runtimeAdmission = admitRuntimeSource(
-            { id, snapshot },
-            snapshot.files
+            { ...store.get(id), snapshot },
+            snapshot.files,
+            current
           )
           const ciContext =
             mode === 'ci' || mode === 'ci-demo'
