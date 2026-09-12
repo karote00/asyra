@@ -232,6 +232,39 @@ export function prepareQueryFrame(transform: RigidTransform) {
 export function transformQueryDirection(frame: Inverse, direction: Point3) {
   return inverse(frame, numberVector(direction), true)
 }
+/** Same original coefficients as inverse queries; no rounded world-point handoff. */
+export function prepareQueryForwardFrame(transform: RigidTransform) {
+  return freeze({
+    matrix: rotationMatrix(transform.rotation),
+    position: numberVector(transform.position)
+  })
+}
+export function prepareQueryInstanceFrame(placement: {
+  readonly position: Point3
+  readonly yaw: number
+}) {
+  const c = interval(Math.cos(placement.yaw)),
+    s = interval(Math.sin(placement.yaw)),
+    n = interval(-Math.sin(placement.yaw))
+  const matrix: Matrix = [
+    [c, interval(0), s],
+    numberVector([0, 1, 0]),
+    [n, interval(0), c]
+  ]
+  return freeze({ matrix, position: numberVector(placement.position) })
+}
+export function transformQueryPoint(
+  frame: ReturnType<typeof prepareQueryForwardFrame>,
+  value: readonly Interval[]
+): Vector {
+  if (value.length !== 3) throw new Error('Invalid query point')
+  const rotated = apply(frame.matrix, [value[0], value[1], value[2]])
+  return [
+    add(rotated[0], frame.position[0]),
+    add(rotated[1], frame.position[1]),
+    add(rotated[2], frame.position[2])
+  ]
+}
 function directionBounds(direction: Point3): Vector {
   const scale = interval(Math.max(...direction.map(Math.abs)))
   const scaled = direction.map((value) =>
@@ -552,19 +585,12 @@ export class RayQueries {
         const placement = instances?.[instance]
         let chain = parents
         if (placement) {
-          const c = interval(Math.cos(placement.yaw)),
-            s = interval(Math.sin(placement.yaw)),
-            n = interval(-Math.sin(placement.yaw))
-          const matrix: Matrix = [
-            [c, interval(0), s],
-            numberVector([0, 1, 0]),
-            [n, interval(0), c]
-          ]
+          const forward = prepareQueryInstanceFrame(placement)
           chain = [
             ...parents,
             {
-              matrix: inverseMatrix(matrix),
-              position: numberVector(placement.position)
+              matrix: inverseMatrix(forward.matrix),
+              position: forward.position
             }
           ]
         }
