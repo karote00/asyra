@@ -571,3 +571,21 @@ Feature: Harvest robot feasibility and supervised harvesting
     When the continuous source-pair query intersects the time constraints
     Then it reports swept separation only with a complete common-time proof
     And instantaneous leaf evidence cannot certify the full movement interval
+
+
+  @M3
+  Scenario: Whole-source surface coverage cannot hide unvisited collision pairs
+    Given every original robot part and physical farm and dock instance
+    When a fixed-joints base translation exhausts its budget with required pairs still unvisited
+    Then the report preserves all unvisited pairs as incomplete coverage
+    And it cannot report complete surface separation
+    And same-body, tire, tool and crate pairs are not silently omitted
+
+  @M3
+  Scenario: Surface coverage preserves remaining material and contact obligations
+    Given a complete original-source surface traversal
+    When no triangle pair has a supported intersection
+    Then numerical surface uncertainty remains unknown
+    And unresolved open-shell material occupancy is not reclassified as free
+    And containment and intended support or joint contact still require independent admission
+    And no preserved-quality outcome is inferred from surface geometry

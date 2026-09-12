@@ -527,3 +527,35 @@ geometry stays unknown. Lifetime: batch only, no retained outputs or new cache.
 Gates: continuous middle/brief/endpoint/coplanar controls, relative/common motion,
 non-overlapping axis time windows, uncertain source transforms, validity/clone
 and retirement, original static/ray tests, work counts, full app gates and review.
+
+### D fixed-joints whole-source surface coverage
+
+Owner: `simulation/collision.ts`, same source query helper; no session authority.
+Inputs: issued GeometrySource, clone-once fixed-heading/start-joints pose and common
+robot displacement, closed interval/validity, throughout leaf/fruit assumptions,
+explicit empty-held or unknown retention, and nonnegative integer triangle budget.
+Pair domain: every original robot part×every physical farm/dock instance, plus all
+distinct robot-part pairs including same-body parts. No name/layer/contact bypass;
+no self-triangle pairs within one original part. No omitted crate/tool/tire source.
+Outputs: immutable inventory and queried/bounds-excluded/unvisited counts,
+surface-intersections/surface-separated/unknown, explicit completeness, and at most
+one original intersection plus one uncertainty witness. No motion-clear/volume/
+contact approval. Unknown retention or partial work cannot produce separation.
+Conditions: count domain before Cartesian traversal; safe exact integer counts or
+atomic unsupported rejection. Whole closed interval validity; original source
+current before work and publication. Budget limits predicate work, not truth.
+Allowed: completed QueryGeometry local bounds and original buffers, existing C FK,
+query forward frames and continuous source-pair predicate. One query-local placement
+bounds product reuses original transforms, no source-sized world vertex copy.
+Forbidden: AABB occupancy/contact, blanket self/support exemptions, partial-clear,
+rotation/IK/session/action/UI edits, new geometry, persistent cache or unmeasured
+BVH/index. Material containment/open shells/contact remain subsequent obligations.
+Boundary: `simulation/collision.ts`, `simulation/__tests__/collision.test.ts`,
+API_SURFACES and these current docs. No geometry/C/frame/arithmetic producer edits.
+Spec: whole-source surface coverage plus motion/quality clauses. Failure owner:
+D rejects malformed/stale/unsupported domain, retains uncertainty and unvisited
+coverage. Lifetime: one query; source buffers retain original issued lifetime.
+Gates: independent pair inventory, small complete source cases, actual C full
+inventory/bounded profile, hidden layers/dock/tool/crate/tire, same-body contacts,
+mid-interval/unknown/budget/retirement, one FK/placement reuse/zero generation,
+static/sweep controls, full app unit/type/lint/naming/build and independent review.

@@ -908,3 +908,28 @@ without bounds/source rebuilding. All 390 app unit tests, typecheck/build, lint
 and naming pass; independent code review found no issue. A lint-only Fraction
 interface correction changed no runtime behavior. This closes selected continuous
 surface evidence, not articulated paths, volume/full-body/contact admission or UI.
+
+Next D Step Card: fixed-joints/base-translation whole-source surface coverage.
+Inventory all robot parts×physical environment instances plus all distinct robot
+parts (same-body included) before narrow work. Each robot part shares one world
+displacement; environment is stationary under declared interval assumptions.
+Explicit empty-held is a synthetic prerequisite, later matched to the real session.
+Report covered/excluded/tested/unvisited domain and surface relations only;
+material containment, open-shell occupancy, precise intended-contact admission
+and real retained fruit are not silently solved by this report.
+
+Allowlist: collision.ts/direct test/API and these docs. SurfaceQueries.cover and
+transient coverage input/result names belong to D, no persistence/wire change.
+Reuse existing continuous predicates, original prepared bounds and per-query
+frame/FK output; no new source or index owner. A caller-declared predicate budget
+can leave unknown/incomplete, never partial-clear. Inventory counts establish the
+Cartesian upper bound before expensive traversal; only later measured evidence
+may justify a separate shared derived-index step with lifetime/equivalence gates.
+Formal tests first: independent source pair enumeration, small fully admitted
+source fixtures and complete middle-crossing/unknown controls; real C part/layer/
+instance inventory with a bounded profile; same-body contact, zero/small budget,
+retirement/clone-once and work counts. Then existing static/sweep/ray controls and
+full app gates/review. Stop for missing source provenance, required contact
+permission, inability to preserve conservative bounds, or a needed new index.
+Do not claim normal session movement from this report before its remaining
+material/contact/retention obligations have concrete owners and proofs.
