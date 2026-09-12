@@ -374,3 +374,36 @@ Feature: Harvest robot feasibility and supervised harvesting
     Then the prior rig is retired
     And stale definition inputs are rejected
     And repeated reads and FK evaluations do not generate new robot or crop meshes
+
+
+  @M3
+  Scenario: Dispatch evidence expires at its exclusive deadline
+    Given synthetic dispatch evidence for the current mission and original scene and robot sources
+    When explicit simulation time reaches its validity end
+    Then dispatch is held without creating a run or renewing the evidence
+
+  @M3
+  Scenario: A copied source revision does not restore its owner identity
+    Given a retired scene or robot source
+    When dispatch supplies a copied handle with the same revision number
+    Then admission rejects it before assessment or motion queries
+
+  @M3
+  Scenario: Fresh dispatch screens do not rewrite the authored design
+    Given a design report with unknown survey and battery evidence
+    When complete synthetic dispatch inputs are assessed against its completed route
+    Then the fresh A reports are separate from the unchanged design report
+    And dispatch still requires exact bound movement-query results
+
+
+  @M3
+  Scenario: A current scene cannot refresh an old canonical mission
+    Given current scene and robot sources but a retired canonical mission receipt
+    When dispatch reuses the old route with a caller-written revision
+    Then admission rejects the stale receipt before assessment
+
+  @M3
+  Scenario: Empty movement clearance cannot admit a nonempty patrol
+    Given a stowed robot at its dock and a different selected route start and end
+    When the query provider returns empty or wrong-purpose route coverage
+    Then dispatch remains held even if that unrelated result says clear

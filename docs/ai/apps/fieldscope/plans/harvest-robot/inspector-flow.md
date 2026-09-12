@@ -189,6 +189,35 @@ no crop preparation or full accumulated-ledger scan per read/tick.
 Cache dimensions: none proposed. No persisted/wire format is introduced; session
 identities are neutral, run-scoped and unrelated to design entity identities.
 
+### D dispatch admission
+
+Owner: D contracts admission. Inputs: composition-issued current canonical receipt
+and identity predicate, completed B report including `route`, captured
+canonical farm/mission revision, original current C scene/robot handles, finite
+clock time and explicit synthetic dispatch bundle. Output: immutable admitted
+mission/evidence, fresh A lane/load/energy screens and held/accepted decision;
+no run, clock advance or canonical write. Source identity/currentness and evidence
+validity are checked before downstream work. The receipt binds same-update B/farm/C
+inputs, not an arbitrary revision number. Admission constructs required stowed
+requests from dock -> route start -> end and end -> dock with exact purpose and
+source/interval binding; only a usable rig and complete matching query coverage
+can pass. Missing/empty/wrong-purpose/wrong-route evidence has no bypass.
+Allowed: existing A functions, B's completed positional route, current-source
+predicates and the composition-owned exact movement-query dependency against C.
+Forbidden: D strip identity resolution, cloned source handles as fresh originals,
+caller-asserted clearance, default always-clear adapter, source generation and
+silent evidence renewal. Actual query construction/solver remains the D collision
+owner; this contract slice does not substitute synthetic shapes for that provider.
+Boundary: simulation/contracts.ts and `simulation/__tests__/contracts.test.ts` only;
+API_SURFACES documents the completed admission API. Session/runtime/UI, A/B/C
+production and persisted schemas are outside this slice.
+Spec: D dispatch admission boundary and existing session/clock/motion requirements.
+Failure: D rejects identity/time/schema faults atomically; A retains its reasons;
+the query provider owns movement reasons. No failure creates a run. Reads reuse
+completed products; A/query work occurs only on an explicit admission intent.
+Lifetime: captured canonical revision and current C handles; evidence [from,until)
+never gains time from pause, resume or source replacement. No caches proposed.
+
 ## E - Physical adapter (M4-M6, blocked on physical evidence)
 
 Owner: separately authorized hardware integration and safety engineering.
