@@ -49,3 +49,72 @@ it('shares definition work across mission edits and moves the dock without rebui
   owner.clear()
   build.mockRestore()
 })
+
+it('owns one immutable rig source and rejects retired pose inputs without geometry work', () => {
+  const build = vi.spyOn(model, 'createRobotModel')
+  try {
+    const owner = new RobotProjection()
+    const report = assessRobotDesign(
+      validateRobot(DEFAULT_ROBOT),
+      DEFAULT_CONFIGURATION
+    )
+    const meshes = owner.update(report)
+    const source = owner.getSource()
+    expect(source.parts[0].shape).toBe(meshes[0].descriptor.shape)
+    expect(source.rig?.parts[0].source).toBe(source.parts[0])
+    const joints = { lift: 0, yaw: 0, shoulder: 0, elbow: 0, wrist: 0 }
+    for (let i = 0; i < 10; i++) {
+      expect(owner.getSource()).toBe(source)
+      owner.evaluatePose(source, joints)
+    }
+    owner.update(
+      assessRobotDesign(
+        validateRobot({ ...DEFAULT_ROBOT, dockX: 3, patrolMinutes: 40 }),
+        DEFAULT_CONFIGURATION
+      )
+    )
+    expect(owner.getSource()).toBe(source)
+    expect(build).toHaveBeenCalledTimes(1)
+    owner.update(
+      assessRobotDesign(
+        validateRobot({ ...DEFAULT_ROBOT, tool: 'tomato' }),
+        DEFAULT_CONFIGURATION
+      )
+    )
+    expect(owner.getSource().revision).not.toBe(source.revision)
+    expect(() => owner.evaluatePose(source, joints)).toThrow()
+    expect(build).toHaveBeenCalledTimes(2)
+    const current = owner.getSource()
+    owner.clear()
+    expect(() => owner.getSource()).toThrow()
+    expect(() => owner.evaluatePose(current, joints)).toThrow()
+  } finally {
+    build.mockRestore()
+  }
+})
+
+it('retains parked source while an unsupported full lift stroke remains unavailable', () => {
+  const owner = new RobotProjection()
+  const report = assessRobotDesign(
+    validateRobot(DEFAULT_ROBOT),
+    DEFAULT_CONFIGURATION
+  )
+  const meshes = owner.update({
+    ...report,
+    settings: { ...report.settings, height: 0.6 }
+  })
+  const source = owner.getSource()
+  expect(meshes.some((mesh) => mesh.id === 'robot.chassis')).toBe(true)
+  expect(source.rig).toBeNull()
+  expect(source.unavailable).toBe('unsupported-lift')
+  expect(() =>
+    owner.evaluatePose(source, {
+      lift: 0,
+      yaw: 0,
+      shoulder: 0,
+      elbow: 0,
+      wrist: 0
+    })
+  ).toThrow('lift')
+  expect(owner.getSource()).toBe(source)
+})

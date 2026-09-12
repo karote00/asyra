@@ -1,0 +1,42 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`preserves original parked robot source geometry and materials before articulation 1`] = `
+[
+  {
+    "definition": [
+      0.55,
+      0.9,
+      1.2,
+      "cucumber",
+    ],
+    "hash": "13d0e7150f0d6081f22c0cd40db3756955bc781822614503ac6519703bcab649",
+  },
+  {
+    "definition": [
+      0.55,
+      0.9,
+      1.2,
+      "tomato",
+    ],
+    "hash": "dfb4753df0a00bb089065e843eeee2806b5ec6f8f04d549fafc96902f3a129cf",
+  },
+  {
+    "definition": [
+      0.35,
+      0.6,
+      0.8,
+      "cucumber",
+    ],
+    "hash": "8361e015a22028214e833f5b6cdc9f9bb5bd7e8a7d2aa512600490842d43cb96",
+  },
+  {
+    "definition": [
+      2,
+      3,
+      3,
+      "tomato",
+    ],
+    "hash": "d21dd8d32261744856ca5f8bff393d5c175206754fdaf181defc08becc5dd299",
+  },
+]
+`;
