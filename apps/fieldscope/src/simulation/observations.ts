@@ -3,7 +3,25 @@ import type { CropFruit } from '../domain/crop-models'
 import type { Point3 } from '../domain/greenhouse'
 import type { RigidTransform } from '../domain/robot-kinematics'
 import type { CanonicalMission } from './contracts'
-import { QueryGeometry, type GeometrySource } from './geometry'
+import {
+  QueryGeometry,
+  type GeometrySource,
+  type GeometryMesh
+} from './geometry'
+import {
+  RayQueries,
+  prepareQueryFrame,
+  transformQueryDirection,
+  type RayResult
+} from './ray-query'
+import {
+  interval,
+  add,
+  subtract,
+  multiply,
+  squareRoot,
+  type Interval
+} from './query-arithmetic'
 import { HarvestSession, type SessionSnapshot } from './session'
 
 /** Composition must bind this actual run to its mission, not just current objects. */
@@ -48,6 +66,68 @@ export interface TargetReading {
     contactDamage: 'observed' | 'none-observed' | null
   }
 }
+type ObservationBinding = Pick<
+  TargetReading,
+  | 'id'
+  | 'runId'
+  | 'generation'
+  | 'missionRevision'
+  | 'sceneRevision'
+  | 'robotRevision'
+  | 'dockRevision'
+  | 'observedAt'
+  | 'validFrom'
+  | 'validUntil'
+>
+export interface ViewRequest extends ObservationBinding {
+  source: 'synthetic-viewpoint'
+  assumption: string
+  targetIds: string[]
+  samplesPerTarget: number
+  leaves: 'source-pose' | 'unknown'
+  fruits: 'all-attached' | 'unknown'
+  camera: {
+    pose: RigidTransform
+    halfWidthSlope: number
+    halfHeightSlope: number
+    maxDistance: number
+  }
+}
+interface ViewSample {
+  readonly targetId: string
+  readonly mesh: GeometryMesh
+  readonly instance: number
+  readonly triangle: number
+  readonly point: Point3
+}
+interface SampleResult {
+  readonly requested: ViewSample
+  readonly status: 'visible' | 'occluded' | 'outside-view' | 'unknown'
+  readonly reason?: string
+  readonly ray?: RayResult
+  readonly sampleDistance: Interval
+}
+export interface ViewResult {
+  readonly context: ObservationContext
+  readonly input: Immutable<ViewRequest>
+  readonly samples: readonly SampleResult[]
+  readonly coverage: Readonly<{
+    total: number
+    visible: number
+    occluded: number
+    outsideView: number
+    unknown: number
+  }>
+  readonly work: Readonly<{
+    cameraFrames: number
+    partitionVisits: number
+    placements: number
+    rayBatches: number
+  }>
+  readonly rays?: ReturnType<RayQueries['query']>
+}
+// Work budget for this synthetic sampler, not a calibrated sensor threshold.
+const MAX_VIEW_SAMPLES = 64
 type Immutable<T> = T extends object
   ? { readonly [K in keyof T]: Immutable<T[K]> }
   : T
@@ -181,6 +261,118 @@ function readTarget(raw: TargetReading): Immutable<TargetReading> {
   return freeze(input)
 }
 
+function readView(raw: ViewRequest): Immutable<ViewRequest> {
+  const input = structuredClone(raw)
+  keys(input, [
+    'id',
+    'source',
+    'assumption',
+    'runId',
+    'generation',
+    'missionRevision',
+    'sceneRevision',
+    'robotRevision',
+    'dockRevision',
+    'observedAt',
+    'validFrom',
+    'validUntil',
+    'targetIds',
+    'samplesPerTarget',
+    'leaves',
+    'fruits',
+    'camera'
+  ])
+  if (
+    input.source !== 'synthetic-viewpoint' ||
+    !text(input.assumption) ||
+    !text(input.id) ||
+    !text(input.runId) ||
+    ![
+      input.generation,
+      input.missionRevision,
+      input.sceneRevision,
+      input.robotRevision,
+      input.dockRevision
+    ].every((value) => Number.isSafeInteger(value) && value >= 0) ||
+    ![input.observedAt, input.validFrom, input.validUntil].every(time) ||
+    input.validUntil <= input.validFrom ||
+    input.observedAt < input.validFrom ||
+    input.observedAt >= input.validUntil ||
+    !Array.isArray(input.targetIds) ||
+    !Array.from(input.targetIds).every(text) ||
+    new Set(input.targetIds).size !== input.targetIds.length ||
+    !Number.isSafeInteger(input.samplesPerTarget) ||
+    input.samplesPerTarget <= 0 ||
+    input.samplesPerTarget > MAX_VIEW_SAMPLES ||
+    input.targetIds.length * input.samplesPerTarget > MAX_VIEW_SAMPLES ||
+    !['source-pose', 'unknown'].includes(input.leaves) ||
+    !['all-attached', 'unknown'].includes(input.fruits)
+  )
+    reject()
+  keys(input.camera, [
+    'pose',
+    'halfWidthSlope',
+    'halfHeightSlope',
+    'maxDistance'
+  ])
+  if (
+    ![
+      input.camera.halfWidthSlope,
+      input.camera.halfHeightSlope,
+      input.camera.maxDistance
+    ].every((value) => Number.isFinite(value) && value > 0)
+  )
+    reject()
+  keys(input.camera.pose, ['position', 'rotation'])
+  const { position, rotation } = input.camera.pose
+  const norm =
+    Array.isArray(rotation) && rotation.length === 4
+      ? Math.hypot(...rotation)
+      : NaN
+  if (
+    !point(position) ||
+    !Array.isArray(rotation) ||
+    ![0, 1, 2, 3].every((index) => Number.isFinite(rotation[index])) ||
+    !Number.isFinite(norm) ||
+    Math.abs(norm - 1) > 64 * Number.EPSILON
+  )
+    reject()
+  return freeze(input)
+}
+function inView(
+  direction: readonly Interval[],
+  camera: Immutable<ViewRequest['camera']>
+): 'inside' | 'outside' | 'unknown' {
+  if (
+    !direction.every(
+      (value) => Number.isFinite(value.low) && Number.isFinite(value.high)
+    )
+  )
+    return 'unknown'
+  const [x, y, z] = direction
+  if (z.high <= 0) return 'outside'
+  if (z.low <= 0) return 'unknown'
+  const extent = (value: Interval) => ({
+    low:
+      value.low <= 0 && value.high >= 0
+        ? 0
+        : Math.min(Math.abs(value.low), Math.abs(value.high)),
+    high: Math.max(Math.abs(value.low), Math.abs(value.high))
+  })
+  const axes = [
+    [extent(x), multiply(interval(camera.halfWidthSlope), z)],
+    [extent(y), multiply(interval(camera.halfHeightSlope), z)]
+  ]
+  if (axes.some((pair) => pair[0].low > pair[1].high)) return 'outside'
+  if (
+    axes.every(
+      (pair) => Number.isFinite(pair[1].high) && pair[0].high <= pair[1].low
+    )
+  )
+    return 'inside'
+  return 'unknown'
+}
+
 /** Validates injected assumptions only; no detection, action or inventory owner. */
 export class TargetObservations {
   constructor(
@@ -217,12 +409,11 @@ export class TargetObservations {
       reject()
     return snapshot
   }
-  admit(
+  private match(
     context: ObservationContext,
-    raw: TargetReading
-  ): AdmittedTargetReading {
-    const snapshot = this.current(context)
-    const input = readTarget(raw)
+    input: ObservationBinding,
+    snapshot: SessionSnapshot
+  ) {
     const source = context.geometry.receipt
     if (
       input.runId !== snapshot.run?.id ||
@@ -236,6 +427,219 @@ export class TargetObservations {
       snapshot.now >= input.validUntil
     )
       reject()
+  }
+  view(context: ObservationContext, raw: ViewRequest): ViewResult {
+    const snapshot = this.current(context)
+    const input = readView(raw)
+    this.match(context, input, snapshot)
+    if (input.observedAt !== snapshot.now) reject()
+    const work = {
+      cameraFrames: 0,
+      partitionVisits: 0,
+      placements: 0,
+      rayBatches: 0
+    }
+    const source = context.geometry
+    const targets = input.targetIds.map((id) => {
+      const target = source.fruits.find((fruit) => fruit.id === id)
+      if (!target) reject()
+      return target
+    })
+    const selected: ViewSample[] = []
+    for (const target of targets) {
+      const ranges: {
+        mesh: GeometryMesh
+        instance: number
+        start: number
+        count: number
+      }[] = []
+      let total = 0
+      for (const mesh of source.meshes) {
+        const instance = mesh.plants?.indexOf(target.plant) ?? -1
+        if (instance < 0) continue
+        for (const part of mesh.partitions ?? []) {
+          work.partitionVisits++
+          if (part.fruitId !== target.source.id) continue
+          const count = part.indexCount / 3
+          ranges.push({ mesh, instance, start: part.indexStart / 3, count })
+          total += count
+        }
+      }
+      if (!Number.isSafeInteger(total) || total <= 0) reject()
+      const count = Math.min(input.samplesPerTarget, total)
+      for (let i = 0; i < count; i++) {
+        let ordinal = Math.floor((i * total) / count)
+        const range = ranges.find((item) => {
+          if (ordinal < item.count) return true
+          ordinal -= item.count
+          return false
+        })
+        if (!range || range.mesh.shape.kind !== 'triangles') reject()
+        const shape = range.mesh.shape,
+          triangle = range.start + ordinal
+        const local = [0, 1, 2].map((axis) => {
+          const a = shape.positions[shape.indices[triangle * 3] * 3 + axis]
+          const b = shape.positions[shape.indices[triangle * 3 + 1] * 3 + axis]
+          const c = shape.positions[shape.indices[triangle * 3 + 2] * 3 + axis]
+          return a / 3 + b / 3 + c / 3
+        }) as unknown as Point3
+        const position = this.geometry.placePoint(
+          source,
+          range.mesh,
+          local,
+          range.instance
+        )
+        work.placements++
+        selected.push(
+          Object.freeze({
+            targetId: target.id,
+            mesh: range.mesh,
+            instance: range.instance,
+            triangle,
+            point: Object.freeze(position)
+          })
+        )
+      }
+    }
+    const samples: SampleResult[] = []
+    const eligible: { index: number; direction: [number, number, number] }[] =
+      []
+    const run = snapshot.run
+    if (!run) reject()
+    const known =
+      input.leaves === 'source-pose' &&
+      input.fruits === 'all-attached' &&
+      run.held.length === 0
+    const frame =
+      selected.length && known ? prepareQueryFrame(input.camera.pose) : null
+    if (frame) work.cameraFrames++
+    for (const requested of selected) {
+      const direction = requested.point.map(
+        (value, axis) => value - input.camera.pose.position[axis]
+      ) as [number, number, number]
+      // FOV and ray queries use the actual computed floating direction above.
+      // Occlusion compares against the requested point distance, retaining the
+      // subtraction uncertainty instead of treating that direction as exact.
+      const squared = requested.point.map((value, axis) => {
+        const offset = subtract(
+          interval(value),
+          interval(input.camera.pose.position[axis])
+        )
+        return multiply(offset, offset)
+      })
+      const sampleDistance = squareRoot(
+        add(add(squared[0], squared[1]), squared[2])
+      )
+      let status: SampleResult['status'] = 'unknown',
+        reason: string | undefined = 'missing-current-scene-state'
+      if (known && frame) {
+        if (
+          direction.every(Number.isFinite) &&
+          direction.some((value) => value !== 0) &&
+          Number.isFinite(sampleDistance.high)
+        ) {
+          const projection = inView(
+            transformQueryDirection(frame, direction),
+            input.camera
+          )
+          if (projection === 'inside') {
+            eligible.push({ index: samples.length, direction })
+            reason = undefined
+          } else {
+            status = projection === 'outside' ? 'outside-view' : 'unknown'
+            reason = 'camera-frustum'
+          }
+        } else reason = 'uncertain-sample-direction'
+      }
+      samples.push({ requested, status, reason, sampleDistance })
+    }
+    let rays: ViewResult['rays']
+    if (eligible.length) {
+      work.rayBatches++
+      rays = new RayQueries(this.geometry).query(source, {
+        source: 'synthetic',
+        time: snapshot.now,
+        validFrom: input.validFrom,
+        validUntil: input.validUntil,
+        leaves: input.leaves,
+        fruits: input.fruits,
+        robot: {
+          base: { position: run.pose.base, rotation: [0, 0, 0, 1] },
+          joints: run.pose.joints
+        },
+        rays: eligible.map((item) => ({
+          origin: [...input.camera.pose.position],
+          direction: item.direction,
+          maxDistance: input.camera.maxDistance
+        }))
+      })
+      eligible.forEach((item, index) => {
+        const sample = samples[item.index],
+          ray = rays?.results[index]
+        if (!ray) reject()
+        let status: SampleResult['status'] = 'unknown',
+          reason = 'unresolved-sample'
+        if (ray.status === 'hit') {
+          const target = targets.find(
+            (fruit) => fruit.id === sample.requested.targetId
+          )
+          const same =
+            target &&
+            ray.mesh.plants?.[ray.instance] === target.plant &&
+            ray.mesh.partitions?.some(
+              (part) =>
+                part.fruitId === target.source.id &&
+                ray.triangle * 3 >= part.indexStart &&
+                ray.triangle * 3 < part.indexStart + part.indexCount
+            )
+          if (same) {
+            status = 'visible'
+            reason = 'target-surface-ray'
+          } else if (ray.distanceBounds.high < sample.sampleDistance.low) {
+            status = 'occluded'
+            reason = 'nearer-geometric-surface'
+          } else reason = 'non-target-distance-unresolved'
+        } else if (ray.status === 'unknown') reason = ray.reason
+        samples[item.index] = { ...sample, status, reason, ray }
+      })
+    }
+    const coverage = {
+      total: samples.length,
+      visible: 0,
+      occluded: 0,
+      outsideView: 0,
+      unknown: 0
+    }
+    for (const sample of samples)
+      coverage[
+        sample.status === 'outside-view' ? 'outsideView' : sample.status
+      ]++
+    this.current(context)
+    const result: ViewResult = {
+      context,
+      input,
+      samples,
+      coverage,
+      work,
+      ...(rays ? { rays } : {})
+    }
+    for (const sample of samples) {
+      Object.freeze(sample.sampleDistance)
+      Object.freeze(sample)
+    }
+    Object.freeze(samples)
+    Object.freeze(coverage)
+    Object.freeze(work)
+    // Context and ray/source handles belong to their issuing owners.
+    return Object.freeze(result)
+  }
+  admit(
+    context: ObservationContext,
+    raw: TargetReading
+  ): AdmittedTargetReading {
+    const snapshot = this.current(context)
+    const input = readTarget(raw)
+    this.match(context, input, snapshot)
     // Membership is identity validation, never a visibility/maturity lookup.
     const target = context.geometry.fruits.find(
       (fruit) => fruit.id === input.targetId

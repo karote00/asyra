@@ -17,7 +17,12 @@ import {
 import { REST_JOINTS } from '../../domain/robot-kinematics'
 import * as kinematics from '../../domain/robot-kinematics'
 import { QueryGeometry, type GeometryReceipt } from '../geometry'
-import { RayQueries, type RayBatch } from '../ray-query'
+import {
+  RayQueries,
+  prepareQueryFrame,
+  transformQueryDirection,
+  type RayBatch
+} from '../ray-query'
 
 const emptyFarm = {
   ...DEFAULT_CONFIGURATION,
@@ -106,6 +111,8 @@ it('returns nearest original two-sided hidden source triangle with metre distanc
   expect(hit.triangle).toBe(0)
   expect(hit.instance).toBe(0)
   expect(hit.distance).toBe(5)
+  expect(hit.distanceBounds).toEqual({ low: 5, high: 5 })
+  expect(Object.isFrozen(hit.distanceBounds)).toBe(true)
   expect(hit.barycentric).toEqual([0.25, 0.25, 0.5])
   expect(result.geometry === source).toBe(true)
   request.rays[0].origin[0] = 99
@@ -614,6 +621,11 @@ it('orders exact rational hit distances and preserves true ties without rounding
     if (result.status === 'hit') {
       expect(result.mesh.origin.id).toBe(offset ? second.id : first.id)
       expect(result.distance).toBeCloseTo(4 / 3, 12)
+      expect(result.distanceBounds.low).toBeLessThanOrEqual(4 / 3)
+      expect(result.distanceBounds.high).toBeGreaterThanOrEqual(4 / 3)
+      expect(
+        result.distanceBounds.high - result.distanceBounds.low
+      ).toBeLessThan(1e-14)
     }
   }
 })
@@ -680,5 +692,32 @@ it('preserves fresh-preparation results while time, rays and working joints reus
     }
     expect(retained.work.vertexVisits + retained.work.regionIndexVisits).toBe(0)
     expect(retained.work.fk).toBe(1)
+  }
+})
+
+it('shares the original coefficient inverse as an immutable direction frame', () => {
+  const frame = prepareQueryFrame({
+    position: [100, 10, -30],
+    rotation: [0, 1, 0, 0]
+  })
+  expect(transformQueryDirection(frame, [2, 3, 4])).toEqual([
+    { low: -2, high: -2 },
+    { low: 3, high: 3 },
+    { low: -4, high: -4 }
+  ])
+  expect(Object.isFrozen(frame)).toBe(true)
+  expect(Object.isFrozen(frame.matrix[0])).toBe(true)
+  const rotation = [0, Math.sin(Math.PI / 8), 0, Math.cos(Math.PI / 8)] as const
+  const direction = kinematics.transformRobotPoint(
+    { position: [0, 0, 0], rotation },
+    [1, 2, 3]
+  )
+  const transformed = transformQueryDirection(
+    prepareQueryFrame({ position: [0, 0, 0], rotation }),
+    direction
+  )
+  for (let axis = 0; axis < 3; axis++) {
+    expect(transformed[axis].low).toBeLessThanOrEqual(axis + 1)
+    expect(transformed[axis].high).toBeGreaterThanOrEqual(axis + 1)
   }
 })
