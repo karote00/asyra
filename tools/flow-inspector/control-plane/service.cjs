@@ -6,6 +6,7 @@ const { randomUUID } = require('node:crypto')
 const { isDeepStrictEqual } = require('node:util')
 const { admitContract, loadContract, mappingDiff } = require('./contracts.cjs')
 const sourceOwner = require('./snapshot.cjs')
+const targetEvidenceOwner = require('./target-evidence.cjs')
 const { captureSource, safePath, sha256 } = sourceOwner
 const { runVerification } = require('./runner.cjs')
 const evidenceOwner = require('./evidence.cjs')
@@ -420,6 +421,8 @@ function createService(
     )
   let publicContract = projectContract()
   let active = null
+  let activeAssessment = null
+  let refreshAssessmentProjections = () => undefined
   let tasks
   let reviews
   let closed = false
@@ -537,6 +540,7 @@ function createService(
       ...value,
       fingerprint: sha256(JSON.stringify(value))
     })
+    refreshAssessmentProjections()
   }
   refreshShared()
   const event = (name) => ({ event: name, at: new Date().toISOString() })
@@ -578,7 +582,7 @@ function createService(
     if (!reviewAction && reviews?.active())
       throw new ActionError(409, 'A delivery review is active')
     if (closed) throw new ActionError(409, 'Service is closing')
-    if (active || tasks?.activeId())
+    if (active || activeAssessment || tasks?.activeId())
       throw new ActionError(409, 'An attempt or task is already running')
   }
   const objectRequest = (request, keys) => {
@@ -608,7 +612,7 @@ function createService(
       requireIdle: () => {
         if (reviews?.active())
           throw new ActionError(409, 'A delivery review is active')
-        if (closed || active)
+        if (closed || active || activeAssessment)
           throw new ActionError(
             409,
             'An attempt is running or service is closing'
@@ -823,7 +827,8 @@ function createService(
     mode,
     scenario,
     flowIds,
-    targetProof
+    targetProof,
+    targetAssessmentId
   ) => {
     const id = request.requestId ?? randomUUID()
     const controller = new AbortController()
@@ -833,6 +838,7 @@ function createService(
       mappingRevision: store.mapping().revision,
       contractDigest: current.digest,
       ...(targetProof ? { targetProof } : {}),
+      ...(targetAssessmentId ? { targetAssessmentId } : {}),
       sourceContract: {
         definition: current.definition,
         architectureDefinition: current.architectureDefinition
@@ -1005,7 +1011,532 @@ function createService(
     completion.finally(() => pending.delete(id)).catch(() => undefined)
     return id
   }
+  const assessmentRecords = new Map()
+  const assessmentViews = new Map()
+  const assessmentCurrents = new Map()
+  const selectedSources = new Map()
+  const assessmentFile = path.join(directory, 'target-assessments.json')
+  const assessmentSelection = (selection) => {
+    objectRequest(selection, [
+      'targetId',
+      'allocationRevision',
+      'sourceAttemptId'
+    ])
+    validateTargetProofSelection({ ...selection, role: 'accepted' })
+  }
+  const resolveAssessment = (selection, available) => {
+    assessmentSelection(selection)
+    const accepted = resolveTargetProof(
+      { ...selection, role: 'accepted' },
+      available
+    )
+    const target = resolveTargetProof(
+      { ...selection, role: 'target' },
+      available
+    )
+    const owner = targets.get(selection.targetId)
+    return {
+      accepted,
+      target,
+      pins: {
+        acceptedVersion: owner.acceptedVersion,
+        targetVerification: owner.targetVerification
+      },
+      runtime: accepted.targetProof.runtime
+    }
+  }
+  const currentAssessmentIdentity = (record) => {
+    const source = sourceAdmissions.get(
+      selectedSources.get(record.request.targetId)
+    )?.admission
+    return {
+      targetId: record.request.targetId,
+      allocationRevision: targets.get(record.request.targetId).revision,
+      acceptedBaseline: {
+        revision: store.mapping().revision,
+        contractDigest: contract.digest
+      },
+      source: {
+        repository: source?.repository,
+        head: source?.head,
+        runtimeSourceDigest: source?.runtimeSource.digest
+      }
+    }
+  }
+  refreshAssessmentProjections = () => {
+    for (const record of assessmentRecords.values()) {
+      const current = currentAssessmentIdentity(record)
+      if (
+        assessmentViews.get(record.id)?.result === record.result &&
+        isDeepStrictEqual(current, assessmentCurrents.get(record.id))
+      ) {
+        const previous = assessmentViews.get(record.id)
+        assessmentViews.set(
+          record.id,
+          immutable({ ...record, projection: previous.projection })
+        )
+        continue
+      }
+      assessmentCurrents.set(record.id, immutable(current))
+      assessmentViews.set(
+        record.id,
+        immutable({
+          ...record,
+          projection: targetEvidenceOwner.projectTargetAssessmentCurrentness(
+            record.result,
+            current
+          )
+        })
+      )
+    }
+  }
+  const saveAssessments = () => {
+    writeAtomic(assessmentFile, {
+      format: 1,
+      records: [...assessmentRecords.values()]
+    })
+    refreshAssessmentProjections()
+  }
+  const assessRecord = (record, current) => {
+    const resolved = resolveAssessment(record.request, false)
+    return targetEvidenceOwner.assessTargetSource({
+      target: targets.get(record.request.targetId),
+      allocationRevision: record.request.allocationRevision,
+      acceptedContract: resolved.accepted.contract,
+      targetContract: resolved.target.contract,
+      acceptedVerificationSourceDigest:
+        record.roles.accepted.verificationSourceDigest,
+      targetVerificationSourceDigest:
+        record.roles.target.verificationSourceDigest,
+      sourceAdmission: sourceAdmissions.get(record.request.sourceAttemptId)
+        .admission,
+      proofRequests: record.slots.map((slot) => ({
+        id: slot.id,
+        contractDigest: record.roles[slot.role].contractDigest,
+        verificationSourceDigest:
+          record.roles[slot.role].verificationSourceDigest,
+        flowIds: resolved[slot.role].contract.flows.map((flow) => flow.id),
+        record: store.get(slot.id),
+        sourceAdmission: sourceAdmissions.get(slot.id)?.admission
+      })),
+      current
+    })
+  }
+  const evaluateAssessment = (record) => {
+    const evaluatedCurrent = currentAssessmentIdentity(record)
+    return immutable({
+      ...record,
+      evaluatedCurrent,
+      result: assessRecord(record, evaluatedCurrent)
+    })
+  }
+  const slotIdentity = (resolved, role) => ({
+    contractDigest: resolved[role].contract.digest,
+    verificationSourceDigest:
+      resolved[role].targetProof.verificationSource.descriptor.digest,
+    reference: resolved[role].targetProof.verificationSource
+  })
+  const validateAssessmentRecord = (record, seen) => {
+    objectRequest(record, [
+      'format',
+      'id',
+      'actor',
+      'request',
+      'pins',
+      'runtime',
+      'roles',
+      'slots',
+      'phase',
+      'startedAt',
+      'finishedAt',
+      'evaluatedCurrent',
+      'result',
+      'orchestrationError'
+    ])
+    if (
+      record.format !== 1 ||
+      !validId(record.id) ||
+      typeof record.actor !== 'string' ||
+      !record.actor.trim() ||
+      !Number.isFinite(Date.parse(record.startedAt)) ||
+      ![
+        'running',
+        'completed',
+        'cancelled',
+        'timed-out',
+        'interrupted',
+        'error'
+      ].includes(record.phase) ||
+      (record.phase !== 'running' &&
+        !Number.isFinite(Date.parse(record.finishedAt)))
+    )
+      throw new Error('Invalid target assessment identity')
+    if (
+      Object.hasOwn(record, 'orchestrationError') &&
+      (record.phase !== 'error' ||
+        typeof record.orchestrationError !== 'string' ||
+        !record.orchestrationError.trim())
+    )
+      throw new Error('Invalid target assessment orchestration error')
+    const resolved = resolveAssessment(record.request, false)
+    if (
+      !isDeepStrictEqual(record.pins, resolved.pins) ||
+      !isDeepStrictEqual(record.runtime, resolved.runtime) ||
+      !record.roles ||
+      !Array.isArray(record.slots) ||
+      !record.slots.length ||
+      record.slots.length > 2
+    )
+      throw new Error('Invalid target assessment selection')
+    objectRequest(record.roles, ['accepted', 'target'])
+    for (const role of ['accepted', 'target']) {
+      const saved = record.roles[role]
+      if (
+        !saved ||
+        !validId(saved.slotId) ||
+        !isDeepStrictEqual(saved, {
+          ...slotIdentity(resolved, role),
+          slotId: saved.slotId
+        })
+      )
+        throw new Error('Invalid target assessment role')
+    }
+    const equivalent =
+      record.roles.accepted.contractDigest ===
+        record.roles.target.contractDigest &&
+      record.roles.accepted.verificationSourceDigest ===
+        record.roles.target.verificationSourceDigest
+    if (
+      (record.roles.accepted.slotId === record.roles.target.slotId) !==
+        equivalent ||
+      record.slots.length !== (equivalent ? 1 : 2)
+    )
+      throw new Error('Invalid target assessment sharing')
+    const expectedSlots = [
+      ...new Set([record.roles.accepted.slotId, record.roles.target.slotId])
+    ]
+    for (let index = 0; index < record.slots.length; index++) {
+      const slot = record.slots[index]
+      objectRequest(slot, ['id', 'role', 'phase', 'reason'])
+      if (
+        slot.id !== expectedSlots[index] ||
+        slot.role !== (index === 0 ? 'accepted' : 'target') ||
+        seen.has(slot.id) ||
+        ![
+          'requested',
+          'running',
+          'completed',
+          'cancelled',
+          'timed-out',
+          'interrupted',
+          'error'
+        ].includes(slot.phase) ||
+        (slot.reason !== undefined && typeof slot.reason !== 'string')
+      )
+        throw new Error('Invalid target assessment slot ownership')
+      seen.add(slot.id)
+      const producer = store.get(slot.id)
+      if (
+        !producer &&
+        record.phase !== 'running' &&
+        (typeof slot.reason !== 'string' || !slot.reason.trim())
+      )
+        throw new Error('Target assessment slot terminal reason is missing')
+      if (
+        producer &&
+        (producer.targetAssessmentId !== record.id ||
+          producer.actor !== record.actor ||
+          producer.mode !== 'target-proof' ||
+          !isDeepStrictEqual(
+            producer.targetProof,
+            resolved[slot.role].targetProof
+          ))
+      )
+        throw new Error('Invalid target assessment producer binding')
+      if (
+        record.phase !== 'running' &&
+        producer &&
+        slot.phase !== producer.phase
+      )
+        throw new Error(
+          'Target assessment slot phase differs from its producer'
+        )
+      if (slot.phase === 'completed' && producer?.phase !== 'completed')
+        throw new Error('Missing completed target assessment producer')
+      if (
+        record.phase !== 'running' &&
+        ['requested', 'running'].includes(slot.phase)
+      )
+        throw new Error('Unsettled terminal target assessment slot')
+    }
+    if (
+      record.phase === 'completed' &&
+      record.slots.some((slot) => slot.phase !== 'completed')
+    )
+      throw new Error('Invalid completed target assessment lifecycle')
+    if (
+      ['cancelled', 'timed-out', 'error'].includes(record.phase) &&
+      !record.orchestrationError &&
+      (!record.slots.some((slot) => slot.phase === record.phase) ||
+        record.slots.some(
+          (slot) => !['completed', record.phase].includes(slot.phase)
+        ))
+    )
+      throw new Error('Invalid terminal target assessment lifecycle')
+    return resolved
+  }
+  const settledAssessmentSlot = (slot, fallback, reason) => {
+    const producer = store.get(slot.id)
+    if (producer && producer.phase !== 'running')
+      return { ...slot, phase: producer.phase }
+    return { ...slot, phase: fallback, reason }
+  }
+  try {
+    if (fs.existsSync(assessmentFile)) {
+      if (!fs.lstatSync(assessmentFile).isFile())
+        throw new Error('Invalid target assessment store')
+      const saved = JSON.parse(fs.readFileSync(assessmentFile, 'utf8'))
+      objectRequest(saved, ['format', 'records'])
+      if (saved.format !== 1 || !Array.isArray(saved.records))
+        throw new Error('Invalid target assessment store')
+      const seen = new Set()
+      let changed = false
+      for (const retained of saved.records) {
+        if (assessmentRecords.has(retained.id))
+          throw new Error('Duplicate target assessment identity')
+        validateAssessmentRecord(retained, seen)
+        let record = retained
+        selectedSources.set(
+          record.request.targetId,
+          record.request.sourceAttemptId
+        )
+        if (record.phase === 'running') {
+          record = {
+            ...record,
+            phase: 'interrupted',
+            finishedAt: new Date().toISOString(),
+            slots: record.slots.map((slot) =>
+              settledAssessmentSlot(
+                slot,
+                'interrupted',
+                'Assessment interrupted on restart'
+              )
+            )
+          }
+          record = evaluateAssessment(record)
+          changed = true
+        } else if (
+          !isDeepStrictEqual(
+            assessRecord(record, record.evaluatedCurrent),
+            record.result
+          )
+        )
+          throw new Error(
+            'Retained target assessment differs from admitted observations'
+          )
+        assessmentRecords.set(record.id, immutable(record))
+      }
+      for (const producer of store.list())
+        if (
+          Object.hasOwn(producer, 'targetAssessmentId') &&
+          !seen.has(producer.id)
+        )
+          throw new Error('Orphan target assessment producer')
+      if (changed) saveAssessments()
+      else refreshAssessmentProjections()
+    } else if (
+      store.list().some((record) => Object.hasOwn(record, 'targetAssessmentId'))
+    )
+      throw new Error('Missing target assessment inventory')
+  } catch (error) {
+    store.close()
+    throw error
+  }
+  const readAssessment = (id) => {
+    const value = assessmentViews.get(id)
+    if (!value) throw new ActionError(404, 'Target assessment is unavailable')
+    return value
+  }
+  const stopAssessment = async (id, actor) => {
+    authorize(actor, 'cancel')
+    if (!activeAssessment || activeAssessment.id !== id)
+      throw new ActionError(409, 'Target assessment is not active')
+    activeAssessment.cancelled = true
+    if (active) active.controller.abort()
+    return activeAssessment.completion
+  }
   return {
+    startTargetAssessment(request, actor) {
+      authorize(actor, 'verify')
+      objectRequest(request, [
+        'requestId',
+        'targetId',
+        'allocationRevision',
+        'sourceAttemptId'
+      ])
+      if (!validId(request.requestId))
+        throw new ActionError(400, 'Invalid target assessment request')
+      const { requestId, ...selection } = request
+      assessmentSelection(selection)
+      const previous = assessmentRecords.get(requestId)
+      if (previous) {
+        if (
+          previous.actor !== actor.id ||
+          !isDeepStrictEqual(previous.request, selection)
+        )
+          throw new ActionError(409, 'Target assessment request conflicts')
+        return previous.id
+      }
+      requireIdle()
+      const resolved = taskResult(() => resolveAssessment(selection, true))
+      const roles = {},
+        slots = []
+      for (const role of ['accepted', 'target']) {
+        const identity = slotIdentity(resolved, role)
+        const same =
+          role === 'target' &&
+          roles.accepted.contractDigest === identity.contractDigest &&
+          roles.accepted.verificationSourceDigest ===
+            identity.verificationSourceDigest
+        let id = same ? roles.accepted.slotId : randomUUID()
+        while (
+          !same &&
+          (store.get(id) ||
+            [...assessmentRecords.values()].some((record) =>
+              record.slots.some((slot) => slot.id === id)
+            ))
+        )
+          id = randomUUID()
+        roles[role] = { ...identity, slotId: id }
+        if (!same) slots.push({ id, role, phase: 'requested' })
+      }
+      const previousSource = selectedSources.get(selection.targetId)
+      selectedSources.set(selection.targetId, selection.sourceAttemptId)
+      const record = evaluateAssessment({
+        format: 1,
+        id: requestId,
+        actor: actor.id,
+        request: selection,
+        pins: resolved.pins,
+        runtime: resolved.runtime,
+        roles,
+        slots,
+        phase: 'running',
+        startedAt: new Date().toISOString()
+      })
+      assessmentRecords.set(requestId, record)
+      try {
+        saveAssessments()
+      } catch (error) {
+        assessmentRecords.delete(requestId)
+        if (previousSource === undefined)
+          selectedSources.delete(selection.targetId)
+        else selectedSources.set(selection.targetId, previousSource)
+        throw error
+      }
+      const orchestration = { id: requestId, cancelled: false }
+      activeAssessment = orchestration
+      orchestration.completion = Promise.resolve().then(async () => {
+        try {
+          for (let index = 0; index < slots.length; index++) {
+            let state = assessmentRecords.get(requestId)
+            if (orchestration.cancelled) {
+              state = {
+                ...state,
+                phase: 'cancelled',
+                finishedAt: new Date().toISOString(),
+                slots: state.slots.map((slot) =>
+                  ['requested', 'running'].includes(slot.phase)
+                    ? {
+                        ...slot,
+                        phase: 'cancelled',
+                        reason: 'Assessment cancelled before dispatch'
+                      }
+                    : slot
+                )
+              }
+              assessmentRecords.set(requestId, evaluateAssessment(state))
+              saveAssessments()
+              break
+            }
+            const slot = state.slots[index]
+            state = {
+              ...state,
+              slots: state.slots.map((item) =>
+                item.id === slot.id ? { ...item, phase: 'running' } : item
+              )
+            }
+            assessmentRecords.set(requestId, immutable(state))
+            saveAssessments()
+            const selected = resolved[slot.role]
+            const id = beginAttempt(
+              { requestId: slot.id },
+              actor,
+              selected.contract,
+              'target-proof',
+              'baseline',
+              selected.contract.flows.map((flow) => flow.id),
+              selected.targetProof,
+              requestId
+            )
+            await pending.get(id)
+            const producer = store.get(id)
+            state = assessmentRecords.get(requestId)
+            const stop = producer.phase !== 'completed'
+            let phase = 'running'
+            if (stop) phase = producer.phase
+            else if (index === slots.length - 1) phase = 'completed'
+            state = {
+              ...state,
+              phase,
+              ...(phase !== 'running'
+                ? { finishedAt: new Date().toISOString() }
+                : {}),
+              slots: state.slots.map((item) => {
+                if (item.id === id) return { ...item, phase: producer.phase }
+                if (stop && item.phase === 'requested')
+                  return {
+                    ...item,
+                    phase: producer.phase,
+                    reason: 'Earlier producer terminated assessment'
+                  }
+                return item
+              })
+            }
+            assessmentRecords.set(requestId, evaluateAssessment(state))
+            saveAssessments()
+            if (stop) break
+          }
+        } catch (error) {
+          const state = assessmentRecords.get(requestId)
+          assessmentRecords.set(
+            requestId,
+            evaluateAssessment({
+              ...state,
+              phase: 'error',
+              orchestrationError: error.message,
+              finishedAt: new Date().toISOString(),
+              slots: state.slots.map((slot) =>
+                settledAssessmentSlot(slot, 'error', error.message)
+              )
+            })
+          )
+          saveAssessments()
+        } finally {
+          if (activeAssessment === orchestration) activeAssessment = null
+          refreshShared()
+        }
+        return readAssessment(requestId)
+      })
+      return requestId
+    },
+    getTargetAssessment: readAssessment,
+    targetAssessments: () => Object.freeze([...assessmentViews.values()]),
+    async waitTargetAssessment(id) {
+      if (activeAssessment?.id === id) await activeAssessment.completion
+      return readAssessment(id)
+    },
+    cancelTargetAssessment: stopAssessment,
     startTargetProof(request, actor) {
       authorize(actor, 'verify')
       objectRequest(request, [
@@ -1056,7 +1587,9 @@ function createService(
     decideTarget(request, actor) {
       authorize(actor, TARGET_POLICY.capability)
       requireIdle()
-      return taskResult(() => targets.decide(request, actor.id))
+      const result = taskResult(() => targets.decide(request, actor.id))
+      refreshAssessmentProjections()
+      return result
     },
     getReview: (id) =>
       taskResult(() => {
@@ -1701,6 +2234,8 @@ function createService(
     async close() {
       closed = true
       try {
+        if (activeAssessment)
+          await stopAssessment(activeAssessment.id, LOCAL_ACTOR)
         await reviews.close()
         await tasks.close()
         if (active) {

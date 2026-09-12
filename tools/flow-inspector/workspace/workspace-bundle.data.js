@@ -36008,6 +36008,7 @@
               "artifact:agent-task-state",
               "artifact:pr-review-record",
               "artifact:flow-target-state",
+              "artifact:target-source-assessment",
               "server-selected accepted Git base"
             ],
             "outputs": [
@@ -36016,6 +36017,7 @@
               "artifact:admitted-verification-source"
             ],
             "conditions": [
+              "Register a complete immutable target-assessment producer inventory before dispatch, resolving both exact role references independently and sharing only identical ordinary verification identities. Hold one private orchestration lifetime, preserve every slot and confirmed observation through cancellation or interruption, and never auto-resume on startup. Consume assessed results only after registration or producer settlement; they are never an initial source-admission prerequisite. Retain historical verdicts and cache currentness-only projections at actual owner identity changes, with no computation on reads or replay.",
               "Explicit target-proof production selects an exact target allocation, accepted-version or target-review reference and service-owned runtime attempt. Compose ordinary frozen bytes through the source owner and consume the selected contract through the existing runner and evidence lifecycle. Exact request replay precedes idle and availability checks; new unavailable authority has no attempt side effects, and admitted failures, cancellation and restart interruption never auto-retry. This mode cannot become ordinary accepted conformance or candidate version preparation. Assessment inventory and eligibility remain separate consumers.",
               "Admit retained review metadata once through the version owner against its exact immutable history prefix and compare every owner field before supplying a target callback pair. Keep metadata integrity separate from retained-byte availability: historical pins remain readable, while new pinned target creation requires the exact reference to be available. Public review candidateDigest remains the version-owned fingerprint, with contract identity projected separately. No latest-review substitution or read-time re-admission is permitted.",
               "Source-aware version preparation uses that attempt’s retained contract, test-role identity and registered report. Verify retained bytes once at first reference handoff per attempt/service lifetime, bind the exact tuple privately, and re-admit retained references once on startup. Missing source-tree bytes preserve history but forbid new handoffs; reference presence alone is not availability. Review replay requires the version owner’s full current-base/candidate/relations identity and does not repeat source or report IO. Legacy preparation cannot acquire reference authority.",
@@ -36057,6 +36059,7 @@
               "#controlled-actions-and-retention",
               "#source-admission-in-the-local-service",
               "#frozen-target-proof-production",
+              "#retained-target-assessment-requests",
               "#board",
               "#flow-targets-and-work-decomposition",
               "../../../docs/ai/tools/flow-inspector/PR_REVIEW.md#confirmed-delivery"
@@ -36208,8 +36211,8 @@
             "id": "target-evidence-to-assessment",
             "from": "assess-proof-evidence",
             "to": "assess-target-source",
-            "kind": "required",
-            "predicate": "Required proof producers have settled with source-bound observations.",
+            "kind": "conditional",
+            "predicate": "Consume completed source-bound observations only when they exist; the complete registered request inventory represents missing or unsettled slots as unknown and permits initial assessment before any observation exists.",
             "producedArtifacts": [
               "artifact:assessed-proof-evidence"
             ]
@@ -36217,8 +36220,9 @@
           {
             "id": "target-assessment-result",
             "from": "assess-target-source",
-            "kind": "terminal",
-            "predicate": "The explicit assessment has produced its separated results without admission or baseline mutation.",
+            "to": "serve-proof-actions",
+            "kind": "conditional",
+            "predicate": "Only after complete request registration or a producer settlement, the service retains the separated assessment result without baseline mutation; this result never gates initial source admission or producer registration.",
             "producedArtifacts": [
               "artifact:target-source-assessment"
             ]
@@ -36535,8 +36539,9 @@
             "id": "artifact:target-source-assessment",
             "ownerStepId": "assess-target-source",
             "channel": "source-bound target assessment",
-            "consumerStepIds": [],
-            "terminal": true
+            "consumerStepIds": [
+              "serve-proof-actions"
+            ]
           },
           {
             "id": "artifact:work-admission",

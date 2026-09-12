@@ -643,10 +643,12 @@ const data = {
         'artifact:agent-task-state',
         'artifact:pr-review-record',
         'artifact:flow-target-state',
+        'artifact:target-source-assessment',
         'server-selected accepted Git base'
       ],
       outputs: ['artifact:proof-board-state', 'artifact:admitted-runtime-source', 'artifact:admitted-verification-source'],
       conditions: [
+        'Register a complete immutable target-assessment producer inventory before dispatch, resolving both exact role references independently and sharing only identical ordinary verification identities. Hold one private orchestration lifetime, preserve every slot and confirmed observation through cancellation or interruption, and never auto-resume on startup. Consume assessed results only after registration or producer settlement; they are never an initial source-admission prerequisite. Retain historical verdicts and cache currentness-only projections at actual owner identity changes, with no computation on reads or replay.',
         'Explicit target-proof production selects an exact target allocation, accepted-version or target-review reference and service-owned runtime attempt. Compose ordinary frozen bytes through the source owner and consume the selected contract through the existing runner and evidence lifecycle. Exact request replay precedes idle and availability checks; new unavailable authority has no attempt side effects, and admitted failures, cancellation and restart interruption never auto-retry. This mode cannot become ordinary accepted conformance or candidate version preparation. Assessment inventory and eligibility remain separate consumers.',
         'Admit retained review metadata once through the version owner against its exact immutable history prefix and compare every owner field before supplying a target callback pair. Keep metadata integrity separate from retained-byte availability: historical pins remain readable, while new pinned target creation requires the exact reference to be available. Public review candidateDigest remains the version-owned fingerprint, with contract identity projected separately. No latest-review substitution or read-time re-admission is permitted.',
         'Source-aware version preparation uses that attempt’s retained contract, test-role identity and registered report. Verify retained bytes once at first reference handoff per attempt/service lifetime, bind the exact tuple privately, and re-admit retained references once on startup. Missing source-tree bytes preserve history but forbid new handoffs; reference presence alone is not availability. Review replay requires the version owner’s full current-base/candidate/relations identity and does not repeat source or report IO. Legacy preparation cannot acquire reference authority.',
@@ -688,6 +690,7 @@ const data = {
         '#controlled-actions-and-retention',
         '#source-admission-in-the-local-service',
         '#frozen-target-proof-production',
+        '#retained-target-assessment-requests',
         '#board',
         '#flow-targets-and-work-decomposition',
         '../../../docs/ai/tools/flow-inspector/PR_REVIEW.md#confirmed-delivery'
@@ -752,8 +755,8 @@ const data = {
     { id: 'target-state-to-assessment', from: 'manage-flow-target', to: 'assess-target-source', kind: 'required', predicate: 'An explicit assessment selects a frozen target allocation.', producedArtifacts: ['artifact:flow-target-state'] },
     { id: 'target-contract-to-assessment', from: 'admit-proof-contract', to: 'assess-target-source', kind: 'required', predicate: 'Accepted and target verification contracts are admitted for the selected assessment.', producedArtifacts: ['artifact:admitted-proof-contract'] },
     { id: 'target-source-to-assessment', from: 'capture-proof-source', to: 'assess-target-source', kind: 'required', predicate: 'The source owner supplies one immutable runtime identity for all participating proofs.', producedArtifacts: ['artifact:proof-source-snapshot'] },
-    { id: 'target-evidence-to-assessment', from: 'assess-proof-evidence', to: 'assess-target-source', kind: 'required', predicate: 'Required proof producers have settled with source-bound observations.', producedArtifacts: ['artifact:assessed-proof-evidence'] },
-    { id: 'target-assessment-result', from: 'assess-target-source', kind: 'terminal', predicate: 'The explicit assessment has produced its separated results without admission or baseline mutation.', producedArtifacts: ['artifact:target-source-assessment'] },
+    { id: 'target-evidence-to-assessment', from: 'assess-proof-evidence', to: 'assess-target-source', kind: 'conditional', predicate: 'Consume completed source-bound observations only when they exist; the complete registered request inventory represents missing or unsettled slots as unknown and permits initial assessment before any observation exists.', producedArtifacts: ['artifact:assessed-proof-evidence'] },
+    { id: 'target-assessment-result', from: 'assess-target-source', to: 'serve-proof-actions', kind: 'conditional', predicate: 'Only after complete request registration or a producer settlement, the service retains the separated assessment result without baseline mutation; this result never gates initial source admission or producer registration.', producedArtifacts: ['artifact:target-source-assessment'] },
     { id: 'work-admission-to-task', from: 'manage-flow-target', to: 'admit-agent-task', kind: 'required', predicate: 'Task references an admitted work commitment', producedArtifacts: ['artifact:work-admission'] },
     { id: 'work-admission-to-execution', from: 'manage-flow-target', to: 'execute-agent-task', kind: 'required', predicate: 'Start or resume a task associated with target work', producedArtifacts: ['artifact:work-admission'] },
     {
@@ -981,7 +984,7 @@ const data = {
   artifacts: [
     { id: 'artifact:admitted-verification-source', ownerStepId: 'serve-proof-actions', channel: 'service-owned verification source reference', consumerStepIds: ['review-contract-evolution'] },
     { id: 'artifact:admitted-runtime-source', ownerStepId: 'serve-proof-actions', channel: 'service-owned source admission', consumerStepIds: ['assess-proof-evidence', 'assess-target-source', 'capture-proof-source'] },
-    { id: 'artifact:target-source-assessment', ownerStepId: 'assess-target-source', channel: 'source-bound target assessment', consumerStepIds: [], terminal: true },
+    { id: 'artifact:target-source-assessment', ownerStepId: 'assess-target-source', channel: 'source-bound target assessment', consumerStepIds: ['serve-proof-actions'] },
     { id: 'artifact:work-admission', ownerStepId: 'manage-flow-target', channel: 'immutable source-bound work admission', consumerStepIds: ['admit-agent-task', 'execute-agent-task'] },
     {
       id: 'artifact:flow-target-state',

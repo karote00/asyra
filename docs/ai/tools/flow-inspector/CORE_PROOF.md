@@ -827,6 +827,77 @@ completed target proofs are evidence-admitted against their own source-admitted
 contract once on restart; missing or conflicting new authority fails closed under
 the existing manifest admission rules.
 
+### Retained target assessment requests
+
+`startTargetAssessment({requestId, targetId, allocationRevision,
+sourceAttemptId}, actor)` is an explicit local `verify` action. Its request UUID
+and actor bind that exact selection; exact replay returns the original assessment
+id before availability and idle checks, with no new source lookup, producer or
+assessment computation. Conflicting reuse rejects. New requests resolve both
+immutable version references independently through the same target-proof authority
+and require an idle service. Missing pins or unavailable references reject before
+any inventory or attempt is written. Clients cannot supply producer ids, roles,
+contracts, source descriptors, evidence or a successful result.
+
+The service atomically saves the complete inventory in its fixed
+`target-assessments.json` before dispatching any producer. A format-1 record binds
+its id, actor, original request, exact target and accepted-version pins, selected
+runtime tuple, both role references and contract/verification identities, and all
+server-generated producer UUIDs. Each role names its slot. Only exact identical
+ordinary contract/verification identities share a slot, after both role references
+have independently been resolved. Otherwise accepted and target have distinct
+slots. Every slot is requested from registration, including those not yet started;
+its missing observation remains unknown rather than disappearing as unrequested
+pending work. The saved inventory cannot acquire extra caller-selected attempts.
+
+An orchestration lock covers registration through settlement. Ordinary proof,
+target-proof, task or review work and actions that change target allocation or
+accepted pins cannot interleave. Internal dispatch uses the existing private
+producer lifecycle with its frozen selection, never a client-accessible lock
+bypass. Producers run serially. A confirmed proof failure remains an observation
+and does not discard the other role's scheduled proof. Cancellation, timeout or
+execution error stops remaining dispatches, records a terminal reason for each
+unstarted slot and preserves all completed observations. `cancelTargetAssessment`
+requires `cancel` capability; close cancels and awaits the same orchestration.
+Restart changes incomplete assessment records to interrupted, preserves completed
+attempts and marks unfinished slots unavailable; it never dispatches replacement
+producers automatically. This incomplete-record crash window is the only phase
+normalization on load: retain each existing terminal producer's actual phase;
+slots without a settled producer become interrupted with a reason. Terminal
+records must retain matching producer phases. Completed assessments require all
+slots completed; cancellation or timeout must match the terminating slot and
+any unstarted slots. An orchestration persistence error has its own retained
+`orchestrationError` reason and cannot relabel an already completed producer as
+failed. A new explicit request preserves earlier outcomes.
+
+At registration and producer settlement, the assessment owner consumes exactly
+this full inventory and the already admitted records and source artifacts. The
+service retains the separated result and the trusted current identities used for
+that evaluation with progress, then freezes the terminal historical result. Startup validates inventory shape, exact owner pins and role
+to slot mappings, and binds every existing producer's actor, target-proof
+selection, runtime, contract and verification identities to its slot. A record
+from another assessment cannot be substituted. Every internally dispatched attempt
+retains its service-assigned parent assessment id, and every producer UUID belongs
+to exactly one assessment inventory across the store; standalone proofs cannot
+be retroactively adopted as slots. Retained evidence has already
+passed its own source and evidence admission; the pure assessment result is
+checked once on startup without source/report revalidation. Historical byte
+unavailability does not prevent reading a valid completed assessment or replace
+its immutable references with available alternatives.
+
+`getTargetAssessment`, `targetAssessments` and `waitTargetAssessment` return
+retained records and cached projections; they never execute or re-admit proofs.
+Terminal historical verdicts and their evidence remain unchanged. The current
+source for a target is the source explicitly selected by its newest admitted
+assessment request, retained with the inventory; mutable checkout contents never
+silently change that selection. A new source selection, target allocation change
+or accepted mapping change refreshes currentness through the assessment owner's
+projection helper, reusing verdict objects. Reads and exact replay perform zero
+assessor or projection computations. Formal counts must cover registration,
+settlement, startup and each actual identity change separately. HTTP, CLI, Board
+presentation and explicit acceptance remain subsequent consumers, not effects of
+this service action.
+
 ### One source and distinct verification contracts
 
 Every participating producer must bind the same repository, captured runtime

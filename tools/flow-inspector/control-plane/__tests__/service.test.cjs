@@ -1294,3 +1294,415 @@ test('target proof lifecycle preserves cancellation interruption errors and reta
     fs.rmSync(f.dir, { recursive: true, force: true })
   }
 })
+
+async function assessmentFixture(distinct = true) {
+  const f = referenceFixture()
+  const service = createService(f.repository, { directory: f.runs })
+  const accepted = await service.wait(
+    service.start({ mode: 'candidate' }, LOCAL_ACTOR)
+  )
+  const acceptedReview = service.prepareEvolution(
+    { attemptId: accepted.id },
+    LOCAL_ACTOR
+  )
+  service.decideEvolution(
+    {
+      id: acceptedReview.id,
+      decision: 'accept',
+      reason: 'Accept retained assessment fixture'
+    },
+    LOCAL_ACTOR
+  )
+  let source = accepted,
+    review = acceptedReview
+  if (distinct) {
+    const config = path.join(f.repository, f.contract.configFile)
+    fs.chmodSync(config, 0o600)
+    fs.appendFileSync(config, '\n// Distinct assessment verifier\n')
+    if (distinct === 'failure') {
+      const assertions = path.join(f.repository, f.contract.testFile)
+      const bytes = fs.readFileSync(assertions, 'utf8')
+      fs.chmodSync(assertions, 0o600)
+      fs.writeFileSync(
+        assertions,
+        bytes.replace(
+          'expect(deferred.history).toBe(1)',
+          'expect(deferred.history).toBe(2)'
+        )
+      )
+    }
+    source = await service.wait(
+      service.start({ mode: 'candidate' }, LOCAL_ACTOR)
+    )
+    review = service.prepareEvolution({ attemptId: source.id }, LOCAL_ACTOR)
+  }
+  const request = pinnedTargetRequest(service, review)
+  const obligations = review.candidate.contract.cases.filter(
+    (item) => item.flowId === request.flowId
+  )
+  request.works = obligations.map((item) => ({
+    id: randomUUID(),
+    title: item.id,
+    stepId: item.stepId,
+    obligationIds: [item.id],
+    scope: 'Prove assigned obligation',
+    allowedFiles: ['packages/factory/src/data-transact.ts'],
+    prerequisites: []
+  }))
+  request.pending = []
+  const target = service.decideTarget(request, LOCAL_ACTOR)
+  return {
+    ...f,
+    service,
+    targetRequest: request,
+    request: {
+      requestId: randomUUID(),
+      targetId: target.id,
+      allocationRevision: 1,
+      sourceAttemptId: source.id
+    }
+  }
+}
+
+test('assessment registers complete private inventory before dispatch and retains exact results with zero work on replay or reads', async (t) => {
+  const f = await assessmentFixture()
+  let service = f.service
+  const assessor = require('../target-evidence.cjs')
+  const assess = t.mock.method(assessor, 'assessTargetSource')
+  const project = t.mock.method(assessor, 'projectTargetAssessmentCurrentness')
+  try {
+    const id = service.startTargetAssessment(f.request, LOCAL_ACTOR)
+    const initial = service.getTargetAssessment(id)
+    assert.equal(initial.phase, 'running')
+    assert.equal(initial.slots.length, 2)
+    assert.equal(initial.result.accepted.status, 'unknown')
+    assert.equal(initial.result.integration.status, 'unknown')
+    assert.equal(assess.mock.callCount(), 1)
+    const saved = JSON.parse(
+      fs.readFileSync(path.join(f.runs, 'target-assessments.json'))
+    )
+    assert.equal(saved.records[0].slots.length, 2)
+    assert.throws(() => service.start({}, LOCAL_ACTOR), /running|active/)
+    assert.equal(service.startTargetAssessment(f.request, LOCAL_ACTOR), id)
+    const completed = await service.waitTargetAssessment(id)
+    assert.equal(completed.phase, 'completed')
+    assert.equal(completed.result.accepted.status, 'passed')
+    assert.equal(completed.result.integration.status, 'passed')
+    assert.equal(completed.projection.eligible, true)
+    assert.equal(assess.mock.callCount(), 3)
+    for (const slot of completed.slots)
+      assert.equal(service.get(slot.id).targetAssessmentId, id)
+    const counts = [assess.mock.callCount(), project.mock.callCount()]
+    const reads = t.mock.method(fs, 'readFileSync')
+    for (let i = 0; i < 5; i++) {
+      service.getTargetAssessment(id)
+      service.targetAssessments()
+      assert.equal(service.startTargetAssessment(f.request, LOCAL_ACTOR), id)
+    }
+    assert.deepEqual(
+      [assess.mock.callCount(), project.mock.callCount()],
+      counts
+    )
+    assert.equal(reads.mock.callCount(), 0)
+    assert.throws(
+      () =>
+        service.startTargetAssessment(
+          { ...f.request, sourceAttemptId: randomUUID() },
+          LOCAL_ACTOR
+        ),
+      /conflict/i
+    )
+    reads.mock.restore()
+    await service.close()
+    service = createService(f.repository, { directory: f.runs })
+    const restored = service.getTargetAssessment(id)
+    assert.deepEqual(restored.result, completed.result)
+    assert.equal(restored.projection.eligible, true)
+    assert.equal(assess.mock.callCount(), 4)
+  } finally {
+    await service.close()
+    fs.rmSync(f.dir, { recursive: true, force: true })
+  }
+})
+
+test('assessment registration write failure leaves no ghost request and equivalent roles share one owned slot', async (t) => {
+  const f = await assessmentFixture(false)
+  const service = f.service
+  const assessor = require('../target-evidence.cjs')
+  try {
+    const rename = fs.renameSync
+    const write = t.mock.method(fs, 'renameSync', (from, to) => {
+      if (to === path.join(f.runs, 'target-assessments.json'))
+        throw new Error('Simulated inventory write failure')
+      return rename(from, to)
+    })
+    assert.throws(
+      () => service.startTargetAssessment(f.request, LOCAL_ACTOR),
+      /inventory write failure/
+    )
+    assert.equal(service.targetAssessments().length, 0)
+    assert.throws(
+      () => service.getTargetAssessment(f.request.requestId),
+      /unavailable/
+    )
+    write.mock.restore()
+    const result = await service.waitTargetAssessment(
+      service.startTargetAssessment(f.request, LOCAL_ACTOR)
+    )
+    assert.equal(result.slots.length, 1)
+    assert.equal(result.roles.accepted.slotId, result.roles.target.slotId)
+    assert.equal(result.projection.eligible, true)
+    const assess = t.mock.method(assessor, 'assessTargetSource')
+    const project = t.mock.method(
+      assessor,
+      'projectTargetAssessmentCurrentness'
+    )
+    service.decideTarget(
+      {
+        action: 'revise',
+        targetId: f.request.targetId,
+        requestId: randomUUID(),
+        expectedRevision: 1,
+        reason: 'Explicit changed allocation',
+        objective: f.targetRequest.objective,
+        works: f.targetRequest.works,
+        pending: []
+      },
+      LOCAL_ACTOR
+    )
+    const stale = service.getTargetAssessment(result.id)
+    assert.equal(stale.result, result.result)
+    assert.equal(stale.projection.eligible, false)
+    assert.deepEqual(stale.projection.staleReasons, [
+      'Target allocation changed'
+    ])
+    assert.equal(assess.mock.callCount(), 0)
+    assert.equal(project.mock.callCount(), 1)
+    service.getTargetAssessment(result.id)
+    assert.equal(project.mock.callCount(), 1)
+  } finally {
+    await service.close()
+    fs.rmSync(f.dir, { recursive: true, force: true })
+  }
+})
+
+test('assessment cancellation preserves completed observations and restart never dispatches unfinished slots', async () => {
+  const f = await assessmentFixture()
+  let service = f.service
+  await service.close()
+  let calls = 0,
+    entered
+  const secondStarted = new Promise((resolve) => {
+    entered = resolve
+  })
+  service = createService(f.repository, {
+    directory: f.runs,
+    runner: async (options) => {
+      calls++
+      if (calls === 1) return require('../runner.cjs').runVerification(options)
+      entered()
+      if (!options.signal.aborted)
+        await new Promise((resolve) =>
+          options.signal.addEventListener('abort', resolve, { once: true })
+        )
+      return { code: null, reason: 'cancelled', report: null, output: '' }
+    }
+  })
+  try {
+    const id = service.startTargetAssessment(f.request, LOCAL_ACTOR)
+    await secondStarted
+    const running = service.getTargetAssessment(id)
+    assert.equal(running.result.accepted.status, 'passed')
+    assert.equal(running.slots[1].phase, 'running')
+    const cancelled = await service.cancelTargetAssessment(id, LOCAL_ACTOR)
+    assert.equal(cancelled.phase, 'cancelled')
+    assert.equal(cancelled.result.accepted.status, 'passed')
+    assert.equal(cancelled.result.integration.status, 'unknown')
+    assert.equal(calls, 2)
+    await service.close()
+    const file = path.join(f.runs, 'target-assessments.json')
+    const interrupted = JSON.parse(fs.readFileSync(file))
+    interrupted.records[0].phase = 'running'
+    delete interrupted.records[0].finishedAt
+    interrupted.records[0].slots[1].phase = 'running'
+    fs.writeFileSync(file, JSON.stringify(interrupted))
+    service = createService(f.repository, {
+      directory: f.runs,
+      runner: async () => {
+        calls++
+        throw new Error('Unexpected restart dispatch')
+      }
+    })
+    const restored = service.getTargetAssessment(id)
+    assert.equal(restored.phase, 'interrupted')
+    assert.equal(restored.result.accepted.status, 'passed')
+    assert.equal(restored.result.integration.status, 'unknown')
+    assert.equal(calls, 2)
+    assert.equal(service.startTargetAssessment(f.request, LOCAL_ACTOR), id)
+  } finally {
+    await service.close()
+    fs.rmSync(f.dir, { recursive: true, force: true })
+  }
+})
+
+test('assessment retains a real failed target proof and rejects cross-assessment or standalone inventory substitution', async () => {
+  const f = await assessmentFixture('failure')
+  let service = f.service
+  try {
+    const result = await service.waitTargetAssessment(
+      service.startTargetAssessment(f.request, LOCAL_ACTOR)
+    )
+    assert.equal(result.phase, 'completed')
+    assert.equal(result.result.accepted.status, 'passed')
+    assert.equal(result.result.integration.status, 'failed')
+    assert.equal(result.slots.length, 2)
+    assert.equal(
+      service.get(result.roles.target.slotId).evidence.status,
+      'failed'
+    )
+    await service.close()
+    const file = path.join(f.runs, 'target-assessments.json')
+    const original = fs.readFileSync(file)
+    for (const mutate of [
+      (saved) =>
+        (saved.records[0].roles.accepted.verificationSourceDigest = '0'.repeat(
+          64
+        )),
+      (saved) => {
+        const record = structuredClone(saved.records[0])
+        record.id = randomUUID()
+        saved.records.push(record)
+      },
+      (saved) => {
+        const record = saved.records[0]
+        record.roles.target.slotId = f.request.sourceAttemptId
+        record.slots[1].id = f.request.sourceAttemptId
+      },
+      (saved) => (saved.records[0].slots[0].phase = 'requested'),
+      (saved) => (saved.records[0].slots[0].phase = 'cancelled'),
+      (saved) => (saved.records[0].phase = 'cancelled')
+    ]) {
+      const saved = JSON.parse(original)
+      mutate(saved)
+      fs.writeFileSync(file, JSON.stringify(saved))
+      assert.throws(
+        () => createService(f.repository, { directory: f.runs }),
+        /assessment/i
+      )
+    }
+    fs.writeFileSync(file, original)
+    service = createService(f.repository, { directory: f.runs })
+    assert.equal(
+      service.getTargetAssessment(result.id).result.integration.status,
+      'failed'
+    )
+  } finally {
+    await service.close()
+    fs.rmSync(f.dir, { recursive: true, force: true })
+  }
+})
+
+test('assessment cancelled before dispatch retains requested slots with explicit terminal reasons', async () => {
+  const f = await assessmentFixture()
+  let service = f.service
+  try {
+    const id = service.startTargetAssessment(f.request, LOCAL_ACTOR)
+    const cancelled = await service.cancelTargetAssessment(id, LOCAL_ACTOR)
+    assert.equal(cancelled.phase, 'cancelled')
+    assert.equal(cancelled.result.accepted.status, 'unknown')
+    for (const slot of cancelled.slots) {
+      assert.equal(slot.phase, 'cancelled')
+      assert.ok(slot.reason)
+      assert.throws(() => service.get(slot.id), /not found/i)
+    }
+    await service.close()
+    const file = path.join(f.runs, 'target-assessments.json')
+    const saved = JSON.parse(fs.readFileSync(file))
+    delete saved.records[0].slots[0].reason
+    fs.writeFileSync(file, JSON.stringify(saved))
+    assert.throws(
+      () => createService(f.repository, { directory: f.runs }),
+      /assessment.*reason/i
+    )
+  } finally {
+    await service.close()
+    fs.rmSync(f.dir, { recursive: true, force: true })
+  }
+})
+
+test('assessment orchestration lock blocks task admission before the first producer microtask', async () => {
+  const f = await assessmentFixture(false)
+  let service = f.service
+  await service.close()
+  service = createService(f.repository, {
+    directory: f.runs,
+    agentOptions: {
+      available: () => true,
+      verify: async () => ({ evidence: { status: 'unknown' } })
+    }
+  })
+  try {
+    const id = service.startTargetAssessment(f.request, LOCAL_ACTOR)
+    assert.throws(
+      () =>
+        service.startTask(
+          {
+            requestId: randomUUID(),
+            stepId: 'finalize-transaction-state',
+            objective: 'Test exact idle boundary',
+            allowedFiles: ['packages/factory/src/data-transact.ts'],
+            adapter: 'demonstration',
+            scenario: 'stall',
+            contractDigest: service.contract().digest,
+            revision: service.state().mapping.revision,
+            budgets: { elapsedMs: 60000, toolCalls: 20, attempts: 3 }
+          },
+          LOCAL_ACTOR
+        ),
+      /running|active/
+    )
+    assert.equal(service.state().tasks.records.length, 0)
+    await service.cancelTargetAssessment(id, LOCAL_ACTOR)
+  } finally {
+    await service.close()
+    fs.rmSync(f.dir, { recursive: true, force: true })
+  }
+})
+
+test('assessment settlement persistence failure preserves completed producer phase and records a separate orchestration error', async (t) => {
+  const f = await assessmentFixture(false)
+  let service = f.service
+  try {
+    const rename = fs.renameSync
+    let failed = false
+    const write = t.mock.method(fs, 'renameSync', (from, to) => {
+      if (!failed && to === path.join(f.runs, 'target-assessments.json')) {
+        const saved = JSON.parse(fs.readFileSync(from))
+        if (saved.records[0].phase === 'completed') {
+          failed = true
+          throw new Error('Simulated settlement persistence failure')
+        }
+      }
+      return rename(from, to)
+    })
+    const result = await service.waitTargetAssessment(
+      service.startTargetAssessment(f.request, LOCAL_ACTOR)
+    )
+    write.mock.restore()
+    assert.equal(failed, true)
+    assert.equal(result.phase, 'error')
+    assert.match(result.orchestrationError, /settlement persistence failure/)
+    assert.equal(result.slots[0].phase, 'completed')
+    assert.equal(service.get(result.slots[0].id).phase, 'completed')
+    assert.equal(result.result.accepted.status, 'passed')
+    await service.close()
+    service = createService(f.repository, { directory: f.runs })
+    assert.equal(
+      service.getTargetAssessment(result.id).slots[0].phase,
+      'completed'
+    )
+  } finally {
+    await service.close()
+    fs.rmSync(f.dir, { recursive: true, force: true })
+  }
+})
