@@ -2291,3 +2291,112 @@ Evidence SHA-256 `temporal-opportunity-census.json`: `b79710033eadf5263f17b13744
 Evidence SHA-256 `temporal-opportunity-summary.json`: `7a3983ff6e31df1c92a0d335d53b8abcbd3a6151bb0d4b12f522b2e5f5b05d71`.
 
 Evidence SHA-256 `census-full.log`: `8d4a80edd88641d99048427658d6a51c24cb9e18419af6f9cf4a59060f385727`.
+
+
+### Root-box applicability falsification - frozen prerequisite probe
+
+Authorize only prerequisite 1 of the candidate-29 temporal design: no Taylor
+algebra/provider implementation or full benchmark. Allowlist: permanent
+root-box applicability tests/helpers and this plan. Existing source, canonical
+point FK/interpolation, threshold, original witness/membership and method version
+stay unchanged. Inspector method boxes remain rejection enclosures; this probe
+cannot claim collision, product clearance, G4 or general algorithm impossibility.
+
+Select the frozen 46 first-original-root interval calls that actually demanded
+traversal in the reviewed full census, by event provenance only, never fixture
+IDs. Reuse its full source/input and first static witness records. For each root,
+probe exactly its two endpoints (the first witness already occurs at the left
+endpoint); no adaptive times or extra axes. Build the original complete median
+source indices and use their actual root boxes. Point poses use the same domain
+interpolation, shared-ancestor FK and collider composition as shapesAt.
+
+For each point and each of x/y/z, independently evaluate all eight exact dyadic
+box corners under the canonical point-pose enclosures, using exact BigInt dyadic
+interval add/multiply/comparison for the quaternion transform. Enclose actual
+minimum and maximum box projections from both sides: min[L_i,U_i] lies in
+[min L_i,min U_i], max in [max L_i,max U_i]. Consequently both oriented gaps,
+and their maximum with zero, have exact lower AND upper bounds. Only an upper
+<= the exact binary64 threshold rules out that axis's strict whole-root gap.
+Overlapping outward AABBs alone is not proof. All three axes need certified
+counterexamples (possibly at different fixed endpoints) to rule out this route.
+Box corners are counterexample points for the box certificate, never original
+mesh witnesses or collision evidence.
+
+Freeze one invocation-wide 500000-operation / 20000-ms probe guard. Count each
+exact conversion/add/multiply/comparison, each delegated canonical scalar-algebra
+operation, each source-index preparation tick and each pose/corner/receipt
+allocation. BigInt normalization is part of its bounded primitive and wall cost;
+no predicate/copy/failed attempt is discounted. No per-root reset. Preserve
+partial records on failure and stop; unknown endpoints/axes remain possible.
+This probe's independent costs are research overhead, not a product saving.
+
+Small permanent cases first cover exact overlap, exact separation, uncertain
+pose enclosures where outward overlap proves nothing, rotated boxes, threshold
+equality, input/exhaustion errors, and axis counterexamples at different times.
+Compare canonical point poses with the existing point query route on an existing
+small original-source fixture. Only then run the 46-call probe once. Aggregate
+surviving root suffix opportunity using the existing disjoint charged IDs, with
+first witness/preparation/handoff retained. Losing the large opportunities may
+reject this fixed-box route before algebra; do not manufacture missing benefits
+from unvisited product roots or interpret a negative result as G4 impossibility.
+
+Prerequisite outcome: **all 46 eligible roots are ruled out for the proposed
+three-fixed-world-axis complete-root-box certificate; stop the candidate-29
+route before Taylor algebra/provider implementation**. The single probe completed
+92 fixed endpoint queries in 129.807 ms using 447,234 charged probe operations,
+within the unchanged 500,000-operation/20,000-ms research guard. No full product
+benchmark, alternate times/axes or retry was run.
+
+Every one of the 46 left endpoints already provides certified gap upper<=0.02
+for all three axes. At right endpoints 45 do; the remaining z-gap at root 138 is
+approximately [0.028443381287406432,0.02844338128742306], correctly left possible
+there, but its fixed left endpoint upper is approximately 0.017062089053005578,
+which independently rules out that axis over the full root. Approximate numbers
+are display only: every decision compares exact BigInt dyadics to the exact
+binary64 threshold. Of the 276 axis endpoint enclosures, 271 have exact upper
+zero; the five other bounds and all complete poses/boxes are preserved exactly.
+
+Both expensive missed-clear roots 115 and 132 have exact box-gap upper zero on
+all three axes at both endpoints. This does not say their original concave mesh
+sources collide: the box enclosures, unlike the original triangles, cannot support
+the proposed strict fixed-axis whole-root certificate. Temporal correlation cannot
+turn those actual point-time box projection gaps into >threshold gaps. The proof
+bounds the true box extrema from both sides using transformed box corners; it is
+not the invalid inference that overlapping outward AABBs imply true overlap.
+
+All 42 previously positive eligible suffix opportunities (106,667 gross units)
+are therefore removed. Surviving possible roots=0 and surviving disjoint suffix
+opportunity=0. The generous complete-work floor before any new certificate fee is
+500197+77898=578,095. More directly, a route that gains no certificate before the
+existing default exhaustion can only follow the same paid original traversal,
+plus failed-attempt costs; it cannot reach unvisited roots earlier under the fixed
+order/budget. This rejects this fixed root-box route, not every possible time-
+correlated node certificate, source algorithm or the overall G4 goal. No further
+candidate is authorized automatically.
+
+Probe accounting is explicit: canonical scalar algebra 89,424; exact dyadic
+conversion/add/multiply/negation/comparison 352,084; original complete median
+source preparation 3,653; pose/corner/root/axis/point receipts and source bindings
+2,073; total 447,234. Three actual source geometries were prepared, with no
+per-root budget reset. This diagnostic cost is not claimed as a production
+certificate cost or subtracted from the product work budget.
+
+Seven permanent small oracles passed before the probe: exact overlap/separation,
+uncertain enclosures that cannot prove exclusion, exact threshold equality,
+signed-permutation and half-component quaternion rotations, different endpoint
+axis exclusions, invalid input/interruption, and exact canonical point-pose parity
+with an existing original-geometry query. The one frozen 46-call probe passed;
+scoped TypeScript, ESLint/format and 21 naming/placement/Inspector contracts passed.
+Only test-owned files and this plan changed. Original defaults, source, threshold,
+version and reviewed census/negative evidence remain unchanged.
+
+Reproduce only this prerequisite with `SIM_ROOT_BOX_APPLICABILITY=1` and
+`root-box-applicability.test.ts -t 'tests only the frozen 46'`. Complete exact
+evidence is `tmp/capacity/root-box-applicability.json` (332,057 bytes), with
+canonical point-pose/source-root bounds, exact dyadic lower/upper gaps, every
+axis verdict, input/census hashes, actual operation counts and zero surviving
+opportunity. The bounded run log is `root-box-probe.log`.
+
+Evidence SHA-256 `root-box-applicability.json`: `88b0434ed9b99091130a5adc65bff33b84206676decf3efbe75ac142fd26d0e2`.
+
+Evidence SHA-256 `root-box-probe.log`: `433b96b71522ebb3814206d49c4494a86f636dd8c3671540b7ad305f7c43f836`.
