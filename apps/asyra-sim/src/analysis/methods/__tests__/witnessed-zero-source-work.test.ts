@@ -42,10 +42,23 @@ it.each(['segment71', 'window2', 'window4', 'commonPrefix'] as const)(
     }
     const execute = () => {
       const context = new OriginalMeshQuery()
-      const charges = { static: 0, interval: 0, handoff: 0, derivation: 0 }
-      const calls = { static: 0, interval: 0, handoff: 0, derivation: 0 }
+      const charges = {
+        static: 0,
+        interval: 0,
+        source: 0,
+        handoff: 0,
+        derivation: 0
+      }
+      const calls = {
+        static: 0,
+        interval: 0,
+        source: 0,
+        handoff: 0,
+        derivation: 0
+      }
       const distance = context.distance.bind(context),
         lower = context.lowerOver.bind(context),
+        source = context.chargeSourceWitness.bind(context),
         handoff = context.chargeEvidenceHandoff.bind(context),
         derivation = context.chargeEvidenceDerivation.bind(context)
       const count = <T>(kind: keyof typeof charges, operation: () => T): T => {
@@ -59,6 +72,7 @@ it.each(['segment71', 'window2', 'window4', 'commonPrefix'] as const)(
       }
       context.distance = (...args) => count('static', () => distance(...args))
       context.lowerOver = (...args) => count('interval', () => lower(...args))
+      context.chargeSourceWitness = () => count('source', source)
       context.chargeEvidenceHandoff = () => count('handoff', handoff)
       context.chargeEvidenceDerivation = () => count('derivation', derivation)
       const start = performance.now()
@@ -101,6 +115,8 @@ it.each(['segment71', 'window2', 'window4', 'commonPrefix'] as const)(
     }
     expect(candidate.calls.static).toBe(control.calls.static)
     expect(candidate.charges.static).toBe(control.charges.static)
+    expect(control.charges.source).toBe(control.calls.source)
+    expect(candidate.charges.source).toBe(candidate.calls.source)
     expect(candidate.charges.derivation).toBe(candidate.calls.derivation)
     expect(candidate.work).toBeLessThanOrEqual(control.work)
     // eslint-disable-next-line no-console -- permanent complete-source work and charge evidence
