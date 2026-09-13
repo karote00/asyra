@@ -2618,3 +2618,507 @@ test(
     }
   }
 )
+
+async function scopedWorkFixture(failure = null) {
+  const f = referenceFixture()
+  const service = createService(f.repository, {
+    directory: f.runs,
+    deliveryAdapter: {},
+    agentOptions: {
+      adapterFactory(task) {
+        let turn = 0
+        return {
+          async next(observation) {
+            if (++turn === 1)
+              return { tool: 'read', path: task.allowedFiles[0] }
+            if (turn > 2) return { tool: 'finish' }
+            return {
+              tool: 'replace',
+              path: task.allowedFiles[0],
+              digest: observation.digest,
+              before: observation.content,
+              after:
+                failure === 'preservation'
+                  ? observation.content.replace(
+                      f.contract.definition.scenarios.find(
+                        (item) => item.id === 'inverse-regression'
+                      ).mutation.from,
+                      f.contract.definition.scenarios.find(
+                        (item) => item.id === 'inverse-regression'
+                      ).mutation.to
+                    )
+                  : observation.content.replaceAll(
+                      'DataTransact',
+                      'CandidateTransaction'
+                    )
+            }
+          }
+        }
+      }
+    }
+  })
+  const accepted = await service.wait(
+    service.start({ mode: 'candidate' }, LOCAL_ACTOR)
+  )
+  const first = service.prepareEvolution(
+    { attemptId: accepted.id },
+    LOCAL_ACTOR
+  )
+  service.decideEvolution(
+    {
+      id: first.id,
+      decision: 'accept',
+      reason: 'Preserve original runtime behavior'
+    },
+    LOCAL_ACTOR
+  )
+  const file = path.join(f.repository, f.contract.testFile)
+  const bytes = fs.readFileSync(file, 'utf8')
+  fs.chmodSync(file, 0o600)
+  fs.writeFileSync(
+    file,
+    failure === 'shared'
+      ? bytes
+      : "import DataTransact from '../data-transact.js'\n" +
+          bytes.replace(
+            'expect(deferred.history).toBe(1)',
+            "expect(deferred.history).toBe(1)\n      expect(DataTransact.name).toBe('DataTransact')"
+          )
+  )
+  const baseline = await service.wait(
+    service.start({ mode: 'candidate' }, LOCAL_ACTOR)
+  )
+  assert.equal(baseline.evidence.status, 'passed', baseline.error)
+  const review = service.prepareEvolution(
+    { attemptId: baseline.id },
+    LOCAL_ACTOR
+  )
+  const request = pinnedTargetRequest(
+    service,
+    failure === null ? first : review
+  )
+  const obligation = review.candidate.contract.cases.find(
+    (item) =>
+      item.id === (failure === 'own' ? 'deferred.outcome' : 'deferred.snapshot')
+  )
+  assert.ok(obligation)
+  const work = {
+    id: randomUUID(),
+    title: 'Preserve starting state',
+    stepId: obligation.stepId,
+    obligationIds: [obligation.id],
+    scope: 'Preserve the captured starting state',
+    allowedFiles: ['packages/factory/src/data-transact.ts'],
+    prerequisites: []
+  }
+  request.works = [work]
+  request.pending = request.pending.filter((id) => id !== obligation.id)
+  const target = service.decideTarget(request, LOCAL_ACTOR)
+  const sourceProof = await service.wait(service.start({}, LOCAL_ACTOR))
+  const taskId = randomUUID(),
+    admissionId = randomUUID()
+  const admitted = service.decideTarget(
+    {
+      action: 'admit',
+      targetId: target.id,
+      expectedRevision: target.revision,
+      requestId: admissionId,
+      reason: 'Admit exact independent work',
+      workId: work.id,
+      taskId,
+      sourceAttemptId: sourceProof.id
+    },
+    LOCAL_ACTOR
+  )
+  const dependencies = path.join(f.repository, 'node_modules')
+  fs.rmSync(dependencies, { recursive: true, force: true })
+  fs.symlinkSync(path.join(root, 'node_modules'), dependencies, 'dir')
+  const task = await service.waitTask(
+    service.startTask(
+      {
+        requestId: taskId,
+        stepId: work.stepId,
+        objective: work.scope,
+        allowedFiles: work.allowedFiles,
+        workBinding: { targetId: target.id, workId: work.id, admissionId },
+        adapter: 'demonstration',
+        scenario: 'repair',
+        contractDigest: service.contract().digest,
+        revision: service.state().mapping.revision,
+        budgets: { elapsedMs: 60000, toolCalls: 20, attempts: 3 }
+      },
+      LOCAL_ACTOR
+    )
+  )
+  assert.equal(
+    task.attempts.at(-1).verdict.evidence.status,
+    failure === 'shared' ? 'passed' : 'failed'
+  )
+  const assessmentRequest = {
+    requestId: randomUUID(),
+    targetId: target.id,
+    allocationRevision: admitted.revision,
+    sourceTaskId: task.id,
+    sourceAttemptId: task.attempts.at(-1).id
+  }
+  const assessment = await service.waitTargetAssessment(
+    service.startTargetAssessment(assessmentRequest, LOCAL_ACTOR)
+  )
+  assert.equal(
+    assessment.result.accepted.status,
+    failure === 'preservation' ? 'failed' : 'passed'
+  )
+  assert.equal(
+    assessment.result.works[0].status,
+    ['preservation', 'own'].includes(failure) ? 'failed' : 'passed'
+  )
+  assert.equal(
+    assessment.result.integration.status,
+    ['preservation', 'own'].includes(failure) ? 'failed' : 'pending'
+  )
+  assert.equal(assessment.projection.eligible, false)
+  return {
+    ...f,
+    service,
+    task,
+    work,
+    assessment,
+    assessmentRequest,
+    targetRequest: request
+  }
+}
+
+test(
+  'scoped work handoff preserves failed candidate and incomplete integration using exact current admitted work',
+  { skip: process.platform !== 'darwin', timeout: 40000 },
+  async (t) => {
+    const f = await scopedWorkFixture()
+    const service = f.service
+    try {
+      const attemptId = f.task.attempts.at(-1).id
+      const result = service.scopedWorkFor(
+        f.task.id,
+        attemptId,
+        f.assessment.id,
+        LOCAL_ACTOR
+      )
+      assert.equal(result.taskId, f.task.id)
+      assert.equal(result.attemptId, attemptId)
+      assert.equal(result.assessmentId, f.assessment.id)
+      assert.equal(result.workId, f.work.id)
+      assert.deepEqual(result.workBinding, f.task.task.workBinding)
+      assert.deepEqual(result.runtime, f.assessment.runtime)
+      assert.equal(result.work.status, 'passed')
+      assert.equal(result.producers.length, 1)
+      assert.ok(Object.isFrozen(result))
+      assert.deepEqual(
+        service.scopedWorkFor(
+          f.task.id,
+          attemptId,
+          f.assessment.id,
+          LOCAL_ACTOR
+        ),
+        result
+      )
+      assert.equal(
+        service.getTask(f.task.id).attempts.at(-1).verdict.evidence.status,
+        'failed'
+      )
+      const maps = t.mock.method(Map.prototype, 'get')
+      service.scopedWorkFor(f.task.id, attemptId, f.assessment.id, LOCAL_ACTOR)
+      const sourceCache = maps.mock.calls.find(
+        (call) => call.result?.taskId === f.task.id && call.result?.admission
+      )?.this
+      assert.ok(sourceCache)
+      maps.mock.resetCalls()
+      const reads = t.mock.method(fs, 'readFileSync')
+      const hashPrototype = Object.getPrototypeOf(
+        require('node:crypto').createHash('sha256')
+      )
+      const hashes = t.mock.method(hashPrototype, 'update')
+      const assessor = require('../target-evidence.cjs')
+      const assess = t.mock.method(assessor, 'assessTargetSource')
+      const validate = t.mock.method(sourceOwner, 'validateSourceSnapshot')
+      const next = service.scopedWorkFor(
+        f.task.id,
+        attemptId,
+        f.assessment.id,
+        LOCAL_ACTOR
+      )
+      assert.strictEqual(next.work, f.assessment.result.works[0])
+      assert.strictEqual(next.runtime, f.assessment.runtime)
+      assert.equal(
+        maps.mock.calls.filter((call) => call.this === sourceCache).length,
+        1
+      )
+      assert.deepEqual(
+        [
+          reads.mock.callCount(),
+          hashes.mock.callCount(),
+          assess.mock.callCount(),
+          validate.mock.callCount()
+        ],
+        [0, 0, 0, 0]
+      )
+      maps.mock.resetCalls()
+      for (let i = 0; i < 3; i++) {
+        service.getTargetAssessment(f.assessment.id)
+        service.targetAssessments()
+        service.getTask(f.task.id)
+      }
+      assert.equal(
+        maps.mock.calls.filter((call) => call.this === sourceCache).length,
+        0
+      )
+      maps.mock.restore()
+      reads.mock.restore()
+      hashes.mock.restore()
+      for (const args of [
+        [randomUUID(), attemptId, f.assessment.id, LOCAL_ACTOR],
+        [f.task.id, randomUUID(), f.assessment.id, LOCAL_ACTOR],
+        [f.task.id, attemptId, randomUUID(), LOCAL_ACTOR],
+        [
+          f.task.id,
+          attemptId,
+          f.assessment.id,
+          { id: 'another-actor', capabilities: LOCAL_ACTOR.capabilities }
+        ],
+        [
+          f.task.id,
+          attemptId,
+          f.assessment.id,
+          { id: LOCAL_ACTOR.id, capabilities: [] }
+        ]
+      ])
+        assert.throws(
+          () => service.scopedWorkFor(...args),
+          /unavailable|stale|found|authorized/i
+        )
+      // A completed observation without its private producer authority cannot be
+      // promoted, even while the cached assessed work result remains passing.
+      const originalGet = Map.prototype.get
+      for (const slot of f.assessment.slots) {
+        Map.prototype.get = function (key) {
+          const value = originalGet.call(this, key)
+          return key === slot.id && value?.admission ? undefined : value
+        }
+        try {
+          assert.throws(
+            () =>
+              service.scopedWorkFor(
+                f.task.id,
+                attemptId,
+                f.assessment.id,
+                LOCAL_ACTOR
+              ),
+            /producer authority/
+          )
+        } finally {
+          Map.prototype.get = originalGet
+        }
+      }
+      Map.prototype.get = function (key) {
+        return this === sourceCache && key === f.task.id
+          ? undefined
+          : originalGet.call(this, key)
+      }
+      try {
+        assert.throws(
+          () =>
+            service.scopedWorkFor(
+              f.task.id,
+              attemptId,
+              f.assessment.id,
+              LOCAL_ACTOR
+            ),
+          /source authority/
+        )
+      } finally {
+        Map.prototype.get = originalGet
+      }
+      const taskSource = sourceCache.get(f.task.id)
+      assert.ok(taskSource)
+      for (const field of ['head', 'sourceDigest', 'configurationDigest']) {
+        Map.prototype.get = function (key) {
+          const value = originalGet.call(this, key)
+          return this === sourceCache && key === f.task.id
+            ? {
+                ...value,
+                admission: { ...value.admission, [field]: 'a'.repeat(64) }
+              }
+            : value
+        }
+        try {
+          assert.throws(
+            () =>
+              service.scopedWorkFor(
+                f.task.id,
+                attemptId,
+                f.assessment.id,
+                LOCAL_ACTOR
+              ),
+            /source identity/
+          )
+        } finally {
+          Map.prototype.get = originalGet
+        }
+      }
+      const deniedReview = service.reviewTask(
+        f.task.id,
+        { action: 'prepare' },
+        LOCAL_ACTOR
+      )
+      // Existing review serial owns a live promise before its candidate check;
+      // the private callback must not reject its consuming review lifetime.
+      deniedReview.catch(() => undefined)
+      assert.deepEqual(
+        service.scopedWorkFor(
+          f.task.id,
+          attemptId,
+          f.assessment.id,
+          LOCAL_ACTOR
+        ),
+        result
+      )
+      await assert.rejects(deniedReview, /verified/)
+      const cancelRequest = { ...f.assessmentRequest, requestId: randomUUID() }
+      const cancelId = service.startTargetAssessment(cancelRequest, LOCAL_ACTOR)
+      assert.throws(
+        () =>
+          service.scopedWorkFor(
+            f.task.id,
+            attemptId,
+            f.assessment.id,
+            LOCAL_ACTOR
+          ),
+        /running/
+      )
+      await service.cancelTargetAssessment(cancelId, LOCAL_ACTOR)
+      assert.throws(
+        () =>
+          service.scopedWorkFor(f.task.id, attemptId, cancelId, LOCAL_ACTOR),
+        /unavailable/
+      )
+      service.decideTarget(
+        {
+          action: 'revise',
+          targetId: f.assessment.request.targetId,
+          requestId: randomUUID(),
+          expectedRevision: f.assessment.request.allocationRevision,
+          reason: 'Explicit next allocation review',
+          objective: 'Revised target objective',
+          works: f.targetRequest.works,
+          pending: f.targetRequest.pending
+        },
+        LOCAL_ACTOR
+      )
+      assert.equal(
+        service.getTargetAssessment(f.assessment.id).projection.current,
+        false
+      )
+      assert.throws(
+        () =>
+          service.scopedWorkFor(
+            f.task.id,
+            attemptId,
+            f.assessment.id,
+            LOCAL_ACTOR
+          ),
+        /stale/
+      )
+      await service.controlTask(f.task.id, { action: 'revoke' }, LOCAL_ACTOR)
+      assert.throws(
+        () =>
+          service.scopedWorkFor(
+            f.task.id,
+            attemptId,
+            f.assessment.id,
+            LOCAL_ACTOR
+          ),
+        /unavailable|stale/
+      )
+      assert.strictEqual(
+        service.getTargetAssessment(f.assessment.id).result,
+        f.assessment.result
+      )
+      assert.strictEqual(result.work, f.assessment.result.works[0])
+    } finally {
+      await service.close()
+      fs.rmSync(f.dir, { recursive: true, force: true })
+    }
+  }
+)
+
+test(
+  'scoped work handoff rejects real accepted regression and failed own commitment',
+  { skip: process.platform !== 'darwin', timeout: 40000 },
+  async () => {
+    for (const failure of ['preservation', 'own']) {
+      const f = await scopedWorkFixture(failure)
+      try {
+        assert.throws(
+          () =>
+            f.service.scopedWorkFor(
+              f.task.id,
+              f.task.attempts.at(-1).id,
+              f.assessment.id,
+              LOCAL_ACTOR
+            ),
+          /preservation|commitment/
+        )
+      } finally {
+        await f.service.close()
+        fs.rmSync(f.dir, { recursive: true, force: true })
+      }
+    }
+  }
+)
+
+test(
+  'scoped work handoff retains one exact producer for identical accepted and target verification roles',
+  { skip: process.platform !== 'darwin', timeout: 30000 },
+  async () => {
+    const f = await scopedWorkFixture('shared')
+    try {
+      const handoff = f.service.scopedWorkFor(
+        f.task.id,
+        f.task.attempts.at(-1).id,
+        f.assessment.id,
+        LOCAL_ACTOR
+      )
+      assert.equal(handoff.producers.length, 1)
+      assert.notEqual(
+        f.assessment.roles.accepted.reference.attemptId,
+        f.assessment.roles.target.reference.attemptId
+      )
+      assert.strictEqual(handoff.roles, f.assessment.roles)
+      assert.deepEqual(
+        handoff.targetVerification,
+        f.assessment.pins.targetVerification
+      )
+      assert.deepEqual(handoff.producers[0].roles, ['accepted', 'target'])
+      const producer = f.service.get(handoff.producers[0].id)
+      assert.equal(handoff.producers[0].sourceDigest, producer.snapshot.digest)
+      assert.equal(
+        handoff.producers[0].configurationDigest,
+        producer.snapshot.executionSource.digest
+      )
+      assert.equal(
+        handoff.producers[0].runtimeSourceDigest,
+        producer.snapshot.runtimeSource.digest
+      )
+      assert.equal(
+        handoff.producers[0].verificationSourceDigest,
+        producer.snapshot.verificationSource.digest
+      )
+      assert.equal(
+        handoff.producers[0].executionSourceDigest,
+        producer.snapshot.executionSource.digest
+      )
+      assert.strictEqual(handoff.work, f.assessment.result.works[0])
+    } finally {
+      await f.service.close()
+      fs.rmSync(f.dir, { recursive: true, force: true })
+    }
+  }
+)
