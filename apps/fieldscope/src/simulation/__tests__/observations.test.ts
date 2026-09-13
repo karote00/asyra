@@ -170,7 +170,7 @@ function setup(mutableContext = false) {
     stem: null,
     approach: null,
     extraction: null,
-    quality: { spines: null, calyx: null, contactDamage: null }
+    quality: { spines: null, calyx: null, pedicel: null, contactDamage: null }
   })
   return {
     session,
@@ -203,6 +203,7 @@ it('admits only labeled assumptions without filling unknowns or creating another
     expect(first.reading.quality).toEqual({
       spines: null,
       calyx: null,
+      pedicel: null,
       contactDamage: null
     })
     expect(first.reading.coverage).toBeNull()
@@ -756,4 +757,181 @@ it('freezes owned viewpoint output without freezing the composition context', ()
     result.work
   ])
     expect(Object.isFrozen(owned)).toBe(true)
+})
+
+it('requires explicit distal pedicel evidence instead of accepting an old transient shape', () => {
+  const f = setup(),
+    input = f.reading()
+  const { pedicel, ...oldQuality } = input.quality
+  expect(pedicel).toBeNull()
+  for (const value of [undefined, 'retained', true, 3, []]) {
+    expect(() =>
+      f.observations.admit(f.context(), {
+        ...input,
+        quality: { ...input.quality, pedicel: value }
+      } as TargetReading)
+    ).toThrow()
+  }
+  expect(() =>
+    f.observations.admit(f.context(), {
+      ...input,
+      quality: oldQuality
+    } as TargetReading)
+  ).toThrow()
+})
+
+function qualityReading(
+  f: ReturnType<typeof setup>,
+  cultivar: NonNullable<TargetReading['cultivar']>
+) {
+  const target = f.source.fruits.find(
+    (fruit) => fruit.plant.species === cultivar
+  )
+  if (!target) throw new Error('Missing declared crop fixture')
+  return {
+    ...f.reading(),
+    targetId: target.id,
+    cultivar,
+    quality: {
+      spines: 'intact' as const,
+      calyx: 'intact' as const,
+      pedicel: 'intact' as const,
+      contactDamage: 'none-observed' as const
+    }
+  } as TargetReading
+}
+
+it('assesses declared cucumber requirements without certifying physical or post-pick quality', () => {
+  const f = setup(),
+    input = qualityReading(f, 'cucumber-1914')
+  input.quality.calyx = 'lost'
+  input.quality.pedicel = null
+  const result = f.observations.assessQuality(f.context(), input)
+  expect(result.requirements).toEqual({
+    spines: 'satisfied',
+    calyx: 'not-applicable',
+    pedicel: 'not-applicable',
+    contactDamage: 'satisfied'
+  })
+  expect(result.status).toBe('satisfied')
+  expect(result.physicalIntegrity).toBe('unverified')
+  expect(result.observation.reading).toEqual(input)
+  expect(result).not.toHaveProperty('retained')
+  expect(result).not.toHaveProperty('placementAllowed')
+  expect(Object.isFrozen(result.requirements)).toBe(true)
+  expect(Object.isFrozen(result)).toBe(true)
+  input.quality.spines = 'lost'
+  expect(result.observation.reading.quality.spines).toBe('intact')
+})
+
+it('keeps tomato calyx and distal pedicel independent of stem recognition and contact damage', () => {
+  const f = setup(),
+    input = qualityReading(f, 'tomato-yu-nu')
+  input.stem = {
+    targetId: input.targetId,
+    recognized: true,
+    cutSite: [0, 0, 0]
+  }
+  input.quality.spines = 'lost'
+  input.quality.pedicel = 'lost'
+  input.quality.contactDamage = null
+  const result = f.observations.assessQuality(f.context(), input)
+  expect(result.status).toBe('not-satisfied')
+  expect(result.requirements).toEqual({
+    spines: 'not-applicable',
+    calyx: 'satisfied',
+    pedicel: 'not-satisfied',
+    contactDamage: 'unknown'
+  })
+  input.quality.pedicel = null
+  expect(f.observations.assessQuality(f.context(), input).status).toBe(
+    'unknown'
+  )
+  input.quality.pedicel = 'intact'
+  input.quality.calyx = 'lost'
+  expect(
+    f.observations.assessQuality(f.context(), input).requirements.calyx
+  ).toBe('not-satisfied')
+})
+
+it('retains unknown crop requirements and separate contact failures without hidden-truth inference', () => {
+  const f = setup(),
+    input = qualityReading(f, 'cucumber-1914')
+  input.quality.contactDamage = 'observed'
+  const damaged = f.observations.assessQuality(f.context(), input)
+  expect(damaged.status).toBe('not-satisfied')
+  expect(damaged.requirements.spines).toBe('satisfied')
+  expect(damaged.requirements.contactDamage).toBe('not-satisfied')
+  input.cultivar = null
+  const unknown = f.observations.assessQuality(f.context(), input)
+  expect(unknown.status).toBe('unknown')
+  expect(unknown.requirements).toEqual({
+    spines: 'unknown',
+    calyx: 'unknown',
+    pedicel: 'unknown',
+    contactDamage: 'not-satisfied'
+  })
+  input.cultivar = 'cucumber-1914'
+  input.quality.contactDamage = null
+  input.quality.spines = null
+  input.approach = 'clear'
+  input.extraction = 'clear'
+  expect(f.observations.assessQuality(f.context(), input).status).toBe(
+    'unknown'
+  )
+})
+
+it('assesses one detached current reading with no query, source or session work', () => {
+  const f = setup(true),
+    input = qualityReading(f, 'tomato-yu-nu'),
+    snapshot = f.session.getSnapshot(),
+    context = f.context()
+  let reads = 0
+  Object.defineProperty(input, 'observedAt', {
+    enumerable: true,
+    get: () => (++reads === 1 ? 0 : NaN)
+  })
+  const admit = vi.spyOn(f.observations, 'admit'),
+    ray = vi.spyOn(RayQueries.prototype, 'query'),
+    prepare = vi.spyOn(f.query, 'prepare'),
+    crop = vi.spyOn(crops, 'createCropModels'),
+    model = vi.spyOn(models, 'createRobotModel')
+  try {
+    const result = f.observations.assessQuality(context, input)
+    expect(result.physicalIntegrity).toBe('unverified')
+    expect(admit).toHaveBeenCalledTimes(1)
+    expect(reads).toBe(1)
+    expect(f.session.getSnapshot()).toBe(snapshot)
+    expect(Object.isFrozen(context)).toBe(false)
+    expect(ray).not.toHaveBeenCalled()
+    expect(prepare).not.toHaveBeenCalled()
+    expect(crop).not.toHaveBeenCalled()
+    expect(model).not.toHaveBeenCalled()
+  } finally {
+    admit.mockRestore()
+    ray.mockRestore()
+    prepare.mockRestore()
+    crop.mockRestore()
+    model.mockRestore()
+  }
+  expect(() =>
+    f.observations.assessQuality({ ...context }, f.reading())
+  ).toThrow()
+  f.session.advance(snapshot.generation, 5)
+  f.renew()
+  expect(
+    f.observations.assessQuality(f.context(), qualityReading(f, 'tomato-yu-nu'))
+      .status
+  ).toBe('satisfied')
+  f.session.advance(snapshot.generation, 10)
+  f.renew()
+  expect(() => f.observations.assessQuality(f.context(), f.reading())).toThrow()
+  f.session.cancel(snapshot.generation)
+  f.renew()
+  expect(() =>
+    f.observations.assessQuality(f.context(), {
+      ...f.reading(),
+      validUntil: 100
+    })
+  ).toThrow()
 })
