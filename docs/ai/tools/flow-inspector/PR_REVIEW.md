@@ -14,11 +14,33 @@ From a concrete Inspector step, select an existing candidate and inspect its
 baseline, task/attempt identity, exact before/after source and local verification.
 The service-owned delivery policy selects repository and base; request data
 cannot select commands, endpoints, credentials, files or policy. Preparation
-requires a non-revoked, settled, passing latest attempt with actual allowed source
+on the strict legacy/full-candidate path requires a non-revoked, settled, passing latest attempt with actual allowed source
 changes and unchanged accepted contract/revision. Recheck the captured baseline,
 frozen verification inputs, report and candidate bytes against their retained
 digests. Reject missing/failed evidence, changed source, extra candidate files,
 symlinks and modifications outside the originally admitted runtime scope.
+
+The next explicit scoped path consumes only the service-owned
+`artifact:scoped-work-review` defined in CORE_PROOF.md under Scoped work review
+handoff. It requires exact current task/attempt, admitted work binding, target
+allocation, assessment, source tuple, accepted pins and producer references;
+required accepted preservation and the assessed work (including prerequisites)
+must pass. It may retain a failed full candidate and incomplete target integration,
+which remain visibly separate outcomes. This exception replaces only the strict
+all-flow outcome requirement for that explicitly bounded handoff. Missing or
+failed required work evidence still rejects; it is never a legacy fallback.
+Source-only identity or an arbitrary assessment ID cannot authorize delivery.
+
+Preparation and confirmation both obtain the current private handoff and compare
+its exact identity. The preview and confirmation digest include the complete scoped
+reference; changing assessment, scope, source, task attempt or accepted pins needs
+fresh preparation and approval. Retired/unavailable source cannot authorize a new
+effect, while historical preview reads remain available without reconstruction.
+Keep actor authorization, one-task/attempt delivery, actual source/report integrity,
+allowed changes, trusted metadata, remote base and required CI unchanged. Preview,
+PR and UI text must say bounded work and show full-candidate and integration
+outcomes truthfully, never claim all-flow pass or implicit baseline acceptance.
+This readiness contract does not yet enable the scoped implementation.
 
 The trusted adapter requires a clean checkout and compares every captured source
 input with the selected remote base tree. A different Git HEAD is not itself

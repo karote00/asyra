@@ -626,6 +626,71 @@ Offline fixtures are labeled and never replace live provider evidence. No model,
 external test PR, provider reconciliation or new baseline is activated.
 
 
+### Scoped work review handoff
+
+This is the next bounded service/review consumer contract; implementation is not
+activated by this readiness change. Strict all-flow candidate verification and
+legacy PR preparation remain unchanged. An explicit scoped review may instead
+consume the already assessed result for one admitted work, without relabeling a
+failed candidate or requiring the whole target integration to pass. Explicit
+integrated-target baseline acceptance remains a separate, unimplemented action.
+
+The service alone publishes `artifact:scoped-work-review` from an explicitly
+selected retained assessment and its exact current task source. Publication is
+request-scoped: each trusted prepare/confirm handoff resolves the exact source
+once and consumes the existing current assessment, allocation and accepted pins
+once. It does not eagerly publish on notifications or add a retained handoff
+cache. Changes to source/base/allocation/proof state are checked on that next
+handoff, which either returns the complete current identity or rejects; no stale
+artifact survives by cache fallback. Historical reads request no handoff. The
+initial service-only slice exposes no public action or client-supplied artifact;
+the review consumer is wired in a later owner slice. The detached,
+immutable handoff contains `assessmentId`, `taskId`, `attemptId`, `targetId`,
+`allocationRevision`, `workId`, the original `workBinding`, accepted baseline and
+accepted-version pins, the registered complete task runtime tuple, the assessed
+work result and the complete registered producer references supporting that work,
+its prerequisites and required accepted preservation. These are existing owner
+identities and completed results, not new client claims or a persisted verified
+flag. Resolve the exact private `sourceFor(taskId, attemptId)` artifact and compare
+its full identity with the assessment registration. Require the latest completed,
+non-revoked task attempt and its immutable work admission to match the assessment
+allocation and work. Consume the target owner existing `checkTask` admission
+check rather than duplicating scope matching in the service. A linked legacy task
+without that admission is ineligible.
+
+Require current assessment identity, passing required accepted preservation and
+`work.status === 'passed'`, including its own obligations and prerequisites.
+Consume the assessor result; do not recompute cases or use global `eligible` as
+a substitute. Unassigned or explicitly pending target obligations may keep target
+integration incomplete. Missing, unknown or failed required producers, source-only
+artifacts and an inventory with no proof cannot grant review authority. Preserve
+all original cases, confirmed failures and the separate integration result.
+
+Preparation and explicit confirmation both resolve this current private handoff
+and require exactly the same task/attempt, work binding, allocation, assessment,
+source, producer references and accepted pins. New attempts, revocation, changed
+scope/base or unavailable source invalidate new effects; no latest/green fallback
+is allowed. Historical previews remain readable without source lookup. The review
+owner includes the exact scoped reference in its preview/confirmation identity,
+so a different assessment or scope requires fresh preparation and approval. The
+existing one-task/attempt delivery identity, actor authorization, actual source
+and report integrity, allowed runtime changes, clean checkout, exact remote base,
+trusted metadata and required CI remain mandatory. UI and PR text identify bounded
+work and retain the non-passing full candidate and incomplete integration status.
+No delivery or successful CI implicitly accepts a target baseline.
+
+Owner order is service handoff, review consumer, then transport/presentation.
+The next service-only implementation must prove real admitted work with accepted
+preservation and own/prerequisite success while integration remains pending and
+the original candidate is non-passing. Permanent negatives cover accepted
+regression, missing prerequisites, wrong work binding/HEAD/source, retirement and
+changed approval scope. Work-count oracles prove reuse of assessed results and
+source artifacts, no repeated assessment/hash work and zero lookup on historical
+reads. Subsequent review-owner cases bind the exact scope into confirmation and
+preserve strict legacy behavior. The initial all-six accepted baseline proof gate
+below is unchanged; prerequisite admission, broader runtime coverage and explicit
+baseline acceptance are not closed by this handoff.
+
 ### Work admission before execution
 
 A separate `admit` target decision reserves one task UUID for an unchanged work

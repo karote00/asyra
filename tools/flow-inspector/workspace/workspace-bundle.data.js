@@ -35515,6 +35515,7 @@
             "inputs": [
               "artifact:agent-task-state",
               "artifact:agent-candidate-verdict",
+              "artifact:scoped-work-review",
               "current accepted revision and trusted delivery policy",
               "digest-checked candidate and captured source",
               "captured package manifest and fixed Factory patch metadata policy",
@@ -35524,7 +35525,7 @@
               "artifact:pr-review-record"
             ],
             "conditions": [
-              "Admit only exact passing latest candidate source with unambiguous captured Factory ownership. Prepare one fixed patch Changeset separately from source verification; bind all metadata, source, policy and PR content to explicit actor confirmation. Persist preview and intent before effects; uncertain operations reconcile by query only; ordinary reads do no remote or source work."
+              "Keep strict passing latest candidate admission for legacy/full-candidate preparation. The explicit scoped path instead consumes the service-owned exact current work handoff, retaining original candidate and integration outcomes; prepare and confirm require the same scope/assessment/source/reference identity. Both paths require unambiguous captured Factory ownership. Prepare one fixed patch Changeset separately from source verification; bind all metadata, source, policy and PR content to explicit actor confirmation. Persist preview and intent before effects; uncertain operations reconcile by query only; ordinary reads do no remote or source work."
             ],
             "bypasses": [
               "Disabled integration has no effects. Missing, stale, denied or uncertain inputs cannot grant success."
@@ -35547,7 +35548,8 @@
               "tools/flow-inspector/control-plane/__tests__/pr-review.test.cjs"
             ],
             "specRefs": [
-              "../../../docs/ai/tools/flow-inspector/PR_REVIEW.md#candidate-preview"
+              "../../../docs/ai/tools/flow-inspector/PR_REVIEW.md#candidate-preview",
+              "#scoped-work-review-handoff"
             ],
             "failureOwnerStepId": "prepare-pr-review"
           },
@@ -36065,9 +36067,11 @@
             "outputs": [
               "artifact:proof-board-state",
               "artifact:admitted-runtime-source",
-              "artifact:admitted-verification-source"
+              "artifact:admitted-verification-source",
+              "artifact:scoped-work-review"
             ],
             "conditions": [
+              "For explicit scoped work preparation/confirmation, publish a private detached handoff only from the exact current retained assessment, immutable work admission and task sourceFor identity. Require accepted preservation and the assessor work result including prerequisites to pass; reuse completed results without reassessment or source hashing. Bind task/attempt, allocation/work, accepted pins, complete runtime tuple and producer references. Invalidation denies new effects but historical reads remain available; global integration eligibility and candidate pass are not substitutes for scoped evidence.",
               "Optional sourceTaskId on internal target-proof requests selects only the task owner exact private sourceFor(taskId, attemptId) artifact for new dispatch, preserving failed/partial source identity independently of outcome. Persist the task namespace in the runtime tuple. Compose derived source with each exact ordinary verifier, execute only the shared contained runner, and recheck every output byte after settlement before evidence publication. Integrity failure retires source authority and retains actual runner/report with an error. Startup keeps manifest/descriptor admission strict but noncompleted unavailable bytes yield readable history without a source artifact; completed/live remain strict. Historical task correlation uses exact retained attempts only and cannot authorize new dispatch. Internal assessment consumes this exact task-source lifecycle; existing HTTP/CLI forwarding exposes the additive service selection, with exact task/attempt forwarding and service-owned validation; the Board task picker remains a subsequent consumer.",
               "Persist newly published derived sources as outer attempt format 3, requiring sourceContract and all three non-null descriptors; retain versioned checks, reject missing/unknown formats and never downgrade missing fields. Formats 1/2 remain historical without load-time upgrade. For derived source admission, use only the fixed run-UUID source/manifest locations and exact stored source contract. Perform one combined descriptor admission plus one actual output-tree byte verification before publishing a complete immutable private artifact; preserve bilateral execution presence, full/configuration/contract tuple and invalidate on mismatch. Startup repeats once per lifetime, reads/replay never do. Ordinary live no-source-read behavior remains unchanged; contained task target dispatch additionally requires the shared runner and post-run actual-byte check before evidence.",
               "Internal task-source assessments register the complete exact task runtime tuple and both immutable role references before dispatch. Project only that registered key to assessor sourceIdentity after private source selection or exact startup historical correlation; every producer still needs its own full admission. Cache currentness from exact run/task selection and update only after task save/cache lifetime changes, preserving callbacks and immutable verdicts. Selected task stop/revoke cannot interleave with orchestration; reads and replay perform no source lookup or computation. Shared identical verifier roles keep their actual derived producer execution identity.",
@@ -36110,6 +36114,7 @@
               "tools/flow-inspector/control-plane/__tests__/server.test.cjs"
             ],
             "specRefs": [
+              "#scoped-work-review-handoff",
               "#controlled-actions-and-retention",
               "#source-admission-in-the-local-service",
               "#derived-service-and-evidence-admission",
@@ -36180,6 +36185,16 @@
           }
         ],
         "routes": [
+          {
+            "id": "service-scoped-work-to-review",
+            "from": "serve-proof-actions",
+            "to": "prepare-pr-review",
+            "kind": "conditional",
+            "predicate": "Only explicit scoped preparation or confirmation consumes an exact current service handoff; retained previews and strict legacy review do not require it. The handoff is not a completed PR prerequisite for assessment.",
+            "producedArtifacts": [
+              "artifact:scoped-work-review"
+            ]
+          },
           {
             "id": "reviewed-version-to-target-pin",
             "from": "review-contract-evolution",
@@ -36680,6 +36695,14 @@
           }
         ],
         "artifacts": [
+          {
+            "id": "artifact:scoped-work-review",
+            "ownerStepId": "serve-proof-actions",
+            "channel": "private exact scoped work review handoff",
+            "consumerStepIds": [
+              "prepare-pr-review"
+            ]
+          },
           {
             "id": "artifact:admitted-verification-source",
             "ownerStepId": "serve-proof-actions",

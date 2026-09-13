@@ -75,11 +75,15 @@ retains exact derived authority under attempt format 3; source/evidence and
 candidate producer envelopes separate intact source identity from case outcome.
 The task owner retains that source privately for exact live and startup handoff,
 including failed/partial candidates. The runner now owns shared contained
-execution and the candidate consumes it. The next service producer slice selects
-exact task/attempt sources and performs contained target dispatch with post-run
-integrity. Assessment task-source selection,
-scoped verification, execution/admission consumers and explicit target-baseline
-acceptance remain subsequent slices.
+execution and the candidate consumes it. Exact task/attempt target producers now
+use contained dispatch and post-run integrity; assessment, HTTP/CLI and the Board
+consume exact task sources with explicit selection and retained currentness.
+The next bounded owner is the service-owned scoped work review handoff, followed
+by the review consumer: reuse accepted preservation and assessed work/prerequisite
+results while retaining incomplete integration and the original candidate outcome.
+This readiness does not activate scoped delivery. Initial admission/prerequisite
+consumers, full runtime coverage and explicit target-baseline acceptance remain
+subsequent slices.
 Existing target execution and pending behavior stay in effect until those
 consumers are implemented and verified. Ordinary composition does not cover
 undeclared generated wrappers; the fixed four-package capture scope also does
