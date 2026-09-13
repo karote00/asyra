@@ -15,6 +15,7 @@ import type {
   PreparedMeshIndex
 } from '../mesh-index'
 import { meshMembership } from '../mesh-membership'
+import { terminalNodeGap } from './singleton-projection-fixture'
 import { MeshWorkLimit, OriginalMeshQuery } from '../original-mesh-query'
 
 // Independent three closed boxes: nested solids and an overlapping component.
@@ -384,3 +385,57 @@ it('does not publish a warm invocation before its complete singleton preparation
   expect(query(retry, geometry)).toEqual(result)
   expect(retry.work).toBe(cold.work)
 })
+
+it('bypasses only actual singleton terminal projection without claiming a new bound', () => {
+  const index = mesh.buildMeshIndex(source(), () => undefined)
+  const fine = inspect(refine(index, () => undefined, 1).root)
+  const leaf = [...fine.seen].find((node) => !node.children)
+  if (!leaf) throw new Error('Missing singleton leaf')
+  const original = vi.fn(() => 1 / 8)
+  expect(terminalNodeGap(leaf, leaf, 1 / 32, original)).toBe(1 / 32)
+  expect(original).not.toHaveBeenCalled()
+  for (const [a, b] of [
+    [index.root, leaf],
+    [leaf, index.root],
+    [undefined, leaf],
+    [leaf, undefined]
+  ] as const)
+    expect(terminalNodeGap(a, b, 1 / 32, original)).toBe(1 / 8)
+  expect(original).toHaveBeenCalledTimes(4)
+  const compound = [
+    ...inspect(refine(index, () => undefined, 4).root).seen
+  ].find((node) => !node.children)
+  expect(terminalNodeGap(compound, leaf, 1 / 32, original)).toBe(1 / 8)
+})
+
+it.each([false, true])(
+  'keeps the complete singleton policy inside exact dyadic source distance bounds - reversed %s',
+  (reverse) => {
+    const geometry = source()
+    vi.spyOn(mesh, 'refineMeshIndex').mockImplementation((index, checkpoint) =>
+      refine(index, checkpoint, 1)
+    )
+    const owner = OriginalMeshQuery.prototype as unknown as { nodeGap: NodeGap }
+    const original = owner.nodeGap
+    let omitted = 0
+    vi.spyOn(owner, 'nodeGap').mockImplementation(function (
+      this: OriginalMeshQuery,
+      ...args
+    ) {
+      let delegated = false
+      const result = terminalNodeGap(args[2], args[3], args[4], () => {
+        delegated = true
+        return original.apply(this, args)
+      })
+      if (!delegated) omitted++
+      return result
+    })
+    const result = query(new OriginalMeshQuery(), geometry, reverse)
+    expect(omitted).toBeGreaterThan(0)
+    expect(result.penetration).toBe(false)
+    expect(result.lower).toBeGreaterThanOrEqual(0)
+    expect(result.lower).toBeLessThanOrEqual(1 / 32)
+    expect(result.upper).toBeGreaterThanOrEqual(1 / 32)
+    expect(Number.isFinite(result.upper)).toBe(true)
+  }
+)

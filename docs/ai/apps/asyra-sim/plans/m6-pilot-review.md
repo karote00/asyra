@@ -2082,3 +2082,41 @@ Typecheck, focused lint and naming pass. Evidence is retained in this worktree's
 No combined singleton projection policy or prefix/full comparison runs in this
 stage. Freeze for independent review and root approval before that next stage;
 G4 remains red and the goal branch does not yet contain these experimental entries.
+
+The next isolated stage uses `singleton-projection-profile.test.ts` and the
+shared test-only `singleton-projection-fixture.ts` for the fixed two-strategy
+comparison. Three additional permanent cases first fail on the original
+projection delegation, then pass with the exact singleton rule; all seventeen
+small cases pass. Independent pre-run review verifies real node ownership,
+separate cold strategy contexts, actual refinement charges and unchanged interval
+projection. The finer interval hierarchy can still change its actual cost; this
+is counted, not assumed unchanged. Run once under the previously frozen complete
+evidence, 20% work, 1.2 CPU and 500,000-work/20-second criteria; no full goal run.
+
+The unique singleton comparison fails at complete coverage. Control consumes
+197,028 units, completes 95 evaluations and takes 6,682 ms. The candidate exhausts
+at 500,001 units with only partial coverage after 94 evaluations (9,622 ms).
+The remaining unresolved original root is 114, from 4.582914572864322 to
+4.623115577889447. Control charges distance 127,429, interval 69,459, source 105,
+handoff 19 and derivation 16. Candidate charges distance 305,688, interval 194,188,
+source 91, handoff 19 and derivation 15; both sums equal their actual total work.
+Nested median preparation stays 3,176; refinement becomes 28,446 from 10,366.
+Static-axis work is 161,498 versus control 49,322, and interval-axis work is
+120,817 versus 26,375. The candidate bypasses 12,765 singleton-node projection
+calls but still incurs substantial finer-hierarchy work. Its 11,213 convex calls
+versus control 11,662 and smaller source/derivation totals are partial-population
+observations, never savings on equal completed work.
+
+Coverage fails before complete evidence equality, the 20% work gate or the CPU
+ratio assertion execute; none of those later gates is claimed passed. Both full
+artifacts and the formal red log remain in `tmp/capacity/singleton-projection-`
+files (`control.json`, `candidate.json`, and `profile.log`). Independent review
+confirms exact accounting and this negative conclusion without another run.
+Preserve the explicit opt-in expected-red profile, the candidate and all permanent
+small proofs together on this isolated branch. Do not integrate its experimental
+entries into the goal branch, change leaf size/thresholds or run another prefix
+or full goal. With declared dependencies installed, replay both cases together:
+`SIM_CAPACITY_DIAGNOSTICS=1 yarn workspace @asyra/asyra-sim test:local src/analysis/methods/__tests__/singleton-projection-profile.test.ts --maxWorkers=1`.
+This run used the same repository's existing Vitest binary directly because the
+new worktree has no Yarn installation-state file; no dependencies or runtime were
+installed or upgraded. The goal remains explicitly red.
