@@ -16,7 +16,7 @@ import {
   type GeometryMesh
 } from './geometry'
 import {
-  evaluateRobotPose,
+  evaluateRobotAffinePose,
   type RobotJoints,
   type RigidTransform
 } from '../domain/robot-kinematics'
@@ -71,6 +71,7 @@ export interface RayWork {
   triangles: number
   rays: number
   fk: number
+  bodyMatrices: number
 }
 export interface RayBatchResult {
   readonly geometry: GeometrySource
@@ -237,6 +238,23 @@ export function prepareQueryForwardFrame(transform: RigidTransform) {
   return freeze({
     matrix: rotationMatrix(transform.rotation),
     position: numberVector(transform.position)
+  })
+}
+type BodyAffine = ReturnType<
+  typeof evaluateRobotAffinePose
+>['parts'][number]['affine']
+/** Completed C coefficients are the authority for robot-body queries. */
+export function prepareQueryAffineFrame(affine: BodyAffine) {
+  return freeze({
+    matrix: affine.matrix.map(numberVector) as unknown as Matrix,
+    position: numberVector(affine.position)
+  })
+}
+export function prepareQueryAffineInverse(affine: BodyAffine) {
+  const frame = prepareQueryAffineFrame(affine)
+  return freeze({
+    matrix: inverseMatrix(frame.matrix),
+    position: frame.position
   })
 }
 export function prepareQueryInstanceFrame(placement: {
@@ -525,7 +543,8 @@ export class RayQueries {
       instances: 0,
       triangles: 0,
       rays: input.rays.length,
-      fk: 0
+      fk: 0,
+      bodyMatrices: 0
     }
     const publish = (results: RayResult[]): RayBatchResult => {
       this.geometry.read(source)
@@ -551,15 +570,16 @@ export class RayQueries {
       )
     const rig = source.receipt.robot.rig
     if (!rig) throw new Error('Missing robot rig')
-    const pose = evaluateRobotPose(rig, input.robot.joints)
-    work.fk++
-    const bodyInverses = new Map<RigidTransform, Inverse>()
+    const pose = evaluateRobotAffinePose(rig, input.robot.joints)
+    work.fk += pose.work.fk
+    work.bodyMatrices += pose.work.matrices
+    const bodyInverses = new Map<BodyAffine, Inverse>()
     const transforms = new Map(
       pose.parts.map((part) => {
-        let completed = bodyInverses.get(part.transform)
+        let completed = bodyInverses.get(part.affine)
         if (!completed) {
-          completed = prepareInverse(part.transform)
-          bodyInverses.set(part.transform, completed)
+          completed = prepareQueryAffineInverse(part.affine)
+          bodyInverses.set(part.affine, completed)
         }
         return [part.source, completed] as const
       })
