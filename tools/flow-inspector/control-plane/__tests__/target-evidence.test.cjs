@@ -639,3 +639,81 @@ test('currentness projection reuses historical verdict objects with zero nested 
   assert.equal(nestedReads, 0)
   for (const spy of spies) assert.equal(spy.mock.callCount(), 0)
 })
+
+test('registered source identity selects equivalent real evidence without repeating admission or granting missing proof authority', (t) => {
+  const value = input()
+  const expected = assessTargetSource(value)
+  const sourceIdentity = {
+    repository: value.sourceAdmission.repository,
+    head: value.sourceAdmission.head,
+    runtimeSourceDigest: value.sourceAdmission.runtimeSource.digest
+  }
+  const selected = { ...value, sourceIdentity }
+  delete selected.sourceAdmission
+  const reads = t.mock.method(fs, 'readFileSync')
+  const hashes = t.mock.method(sourceOwner, 'sha256')
+  const source = t.mock.method(sourceOwner, 'validateSourceSnapshot')
+  const runtime = t.mock.method(sourceOwner, 'validateRuntimeSource')
+  const evidence = t.mock.method(evidenceOwner, 'validateStoredEvidence')
+  const actual = assessTargetSource(selected)
+  assert.deepEqual(actual, expected)
+  assert.notStrictEqual(actual.source, sourceIdentity)
+  assert.equal(Object.isFrozen(sourceIdentity), false)
+  const missing = assessTargetSource({ ...selected, proofRequests: [] })
+  assert.equal(missing.eligible, false)
+  assert.notEqual(missing.integration.status, 'passed')
+  const unadmitted = clone(selected)
+  delete unadmitted.proofRequests[1].sourceAdmission
+  assert.notEqual(assessTargetSource(unadmitted).integration.status, 'passed')
+  const wrong = assessTargetSource({
+    ...selected,
+    sourceIdentity: { ...sourceIdentity, runtimeSourceDigest: '0'.repeat(64) }
+  })
+  assert.equal(wrong.eligible, false)
+  assert.notEqual(wrong.accepted.status, 'passed')
+  for (const spy of [reads, hashes, source, runtime, evidence])
+    assert.equal(spy.mock.callCount(), 0)
+})
+
+test('selected source inputs require exact own presence and complete identity instead of null or double-input fallback', () => {
+  const value = input()
+  const sourceIdentity = {
+    repository: value.sourceAdmission.repository,
+    head: value.sourceAdmission.head,
+    runtimeSourceDigest: value.sourceAdmission.runtimeSource.digest
+  }
+  const selected = { ...value, sourceIdentity }
+  delete selected.sourceAdmission
+  for (const invalid of [
+    { ...value, sourceIdentity },
+    { ...selected, sourceAdmission: undefined },
+    { ...selected, sourceAdmission: null },
+    { ...selected, sourceIdentity: undefined },
+    { ...selected, sourceIdentity: null },
+    { ...selected, sourceIdentity: [] },
+    { ...selected, sourceIdentity: { ...sourceIdentity, extra: true } },
+    {
+      ...selected,
+      sourceIdentity: {
+        repository: sourceIdentity.repository,
+        head: sourceIdentity.head
+      }
+    },
+    { ...selected, sourceIdentity: { ...sourceIdentity, repository: '' } },
+    { ...selected, sourceIdentity: { ...sourceIdentity, head: '' } },
+    { ...selected, sourceIdentity: { ...sourceIdentity, head: 1 } },
+    {
+      ...selected,
+      sourceIdentity: { ...sourceIdentity, runtimeSourceDigest: 'bad' }
+    }
+  ])
+    assert.throws(() => assessTargetSource(invalid), /selected owner|source/i)
+  const missing = { ...value }
+  delete missing.sourceAdmission
+  assert.throws(() => assessTargetSource(missing), /selected owner|source/i)
+  const withoutHead = assessTargetSource({
+    ...selected,
+    sourceIdentity: { ...sourceIdentity, head: null }
+  })
+  assert.equal(withoutHead.eligible, false)
+})

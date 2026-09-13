@@ -50,9 +50,36 @@ function assessTargetSource(input) {
     acceptedVerificationSourceDigest,
     targetVerificationSourceDigest,
     sourceAdmission,
+    sourceIdentity,
     proofRequests,
     current
   } = input
+  const identityOnly = Object.hasOwn(input, 'sourceIdentity')
+  const selected = identityOnly
+    ? sourceIdentity
+    : {
+        repository: sourceAdmission?.repository,
+        head: sourceAdmission?.head,
+        runtimeSourceDigest: sourceAdmission?.runtimeSource?.digest
+      }
+  if (
+    Object.hasOwn(input, 'sourceAdmission') === identityOnly ||
+    !selected ||
+    typeof selected !== 'object' ||
+    Array.isArray(selected) ||
+    (identityOnly &&
+      (Object.keys(selected).length !== 3 ||
+        ['repository', 'head', 'runtimeSourceDigest'].some(
+          (key) => !Object.hasOwn(selected, key)
+        ))) ||
+    typeof selected.repository !== 'string' ||
+    !selected.repository.trim() ||
+    (selected.head !== null &&
+      (typeof selected.head !== 'string' || !selected.head.trim())) ||
+    typeof selected.runtimeSourceDigest !== 'string' ||
+    !/^[a-f0-9]{64}$/.test(selected.runtimeSourceDigest)
+  )
+    throw new Error('Target assessment: invalid selected source identity')
   const entry = target?.history?.filter(
     (item) => item.revision === allocationRevision
   )
@@ -69,15 +96,14 @@ function assessTargetSource(input) {
     ![acceptedVerificationSourceDigest, targetVerificationSourceDigest].every(
       (digest) => typeof digest === 'string' && /^[a-f0-9]{64}$/.test(digest)
     ) ||
-    !sourceAdmission?.runtimeSource ||
     !Array.isArray(proofRequests)
   )
     throw new Error('Target assessment: invalid selected owner artifacts')
   const state = entry[0].state
   const source = {
-    repository: sourceAdmission.repository,
-    head: sourceAdmission.head,
-    runtimeSourceDigest: sourceAdmission.runtimeSource.digest
+    repository: selected.repository,
+    head: selected.head,
+    runtimeSourceDigest: selected.runtimeSourceDigest
   }
   const identity = {
     targetId: target.id,
