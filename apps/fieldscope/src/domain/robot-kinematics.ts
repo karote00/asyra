@@ -1,5 +1,16 @@
 import { readSourceRegions } from './source-occupancy'
-import { evaluatePolynomialTrig } from './kinematic-trigonometry'
+import {
+  evaluatePolynomialTrig,
+  boundPolynomialTrig
+} from './kinematic-trigonometry'
+import {
+  interval,
+  add,
+  subtract,
+  multiply,
+  divide,
+  type Interval
+} from './scalar-arithmetic'
 import {
   robotRestFrames,
   type RobotDefinition,
@@ -376,26 +387,43 @@ export function evaluateRobotDomains<T>(
 }
 
 /** Final raw-quaternion coefficients in installed Three Matrix4.compose order. */
-function affineFrame(transform: RigidTransform, work: { matrices: number }) {
+function affineFrame<T>(
+  transform: Transform<T>,
+  work: { matrices: number },
+  algebra: KinematicAlgebra<T>
+) {
   work.matrices++
+  const { literal: n, add, subtract: sub, multiply: mul } = algebra
   const [x, y, z, w] = transform.rotation
-  const x2 = x + x,
-    y2 = y + y,
-    z2 = z + z
-  const xx = x * x2,
-    xy = x * y2,
-    xz = x * z2
-  const yy = y * y2,
-    yz = y * z2,
-    zz = z * z2
-  const wx = w * x2,
-    wy = w * y2,
-    wz = w * z2
+  const x2 = add(x, x),
+    y2 = add(y, y),
+    z2 = add(z, z)
+  const xx = mul(x, x2),
+    xy = mul(x, y2),
+    xz = mul(x, z2)
+  const yy = mul(y, y2),
+    yz = mul(y, z2),
+    zz = mul(z, z2)
+  const wx = mul(w, x2),
+    wy = mul(w, y2),
+    wz = mul(w, z2)
   return Object.freeze({
     matrix: Object.freeze([
-      point((1 - (yy + zz)) * 1, (xy - wz) * 1, (xz + wy) * 1),
-      point((xy + wz) * 1, (1 - (xx + zz)) * 1, (yz - wx) * 1),
-      point((xz - wy) * 1, (yz + wx) * 1, (1 - (xx + yy)) * 1)
+      vector(
+        mul(sub(n(1), add(yy, zz)), n(1)),
+        mul(sub(xy, wz), n(1)),
+        mul(add(xz, wy), n(1))
+      ),
+      vector(
+        mul(add(xy, wz), n(1)),
+        mul(sub(n(1), add(xx, zz)), n(1)),
+        mul(sub(yz, wx), n(1))
+      ),
+      vector(
+        mul(sub(xz, wy), n(1)),
+        mul(add(yz, wx), n(1)),
+        mul(sub(n(1), add(xx, yy)), n(1))
+      )
     ]),
     position: transform.position
   })
@@ -405,12 +433,15 @@ function affineFrame(transform: RigidTransform, work: { matrices: number }) {
 export function evaluateRobotAffinePose(rig: RobotRig, input: RobotJoints) {
   const pose = evaluateRobotPose(rig, input)
   const work = { fk: 1, matrices: 0 }
-  const frames = new Map<RigidTransform, ReturnType<typeof affineFrame>>()
+  const frames = new Map<
+    RigidTransform,
+    ReturnType<typeof affineFrame<number>>
+  >()
   const parts = Object.freeze(
     pose.parts.map((part) => {
       let affine = frames.get(part.transform)
       if (!affine) {
-        affine = affineFrame(part.transform, work)
+        affine = affineFrame(part.transform, work, numberAlgebra)
         frames.set(part.transform, affine)
       }
       return Object.freeze({ ...part, affine })
@@ -421,4 +452,57 @@ export function evaluateRobotAffinePose(rig: RobotRig, input: RobotJoints) {
     parts,
     work: Object.freeze(work)
   })
+}
+
+/** Encloses point-model results for a joint box, not a correlated trajectory. */
+export function evaluateRobotIntervalPose(rig: RobotRig, input: JointDomains) {
+  const work = {
+    fk: 0,
+    matrices: 0,
+    scalarOperations: 0,
+    trigCalls: 0,
+    polynomialEvaluations: 0,
+    terms: 0,
+    maxBigIntBits: 0
+  }
+  const binary = (operation: typeof add) => (a: Interval, b: Interval) => {
+    work.scalarOperations++
+    return Object.freeze(operation(a, b))
+  }
+  const trig = (kind: 'sin' | 'cos', value: Interval) => {
+    work.trigCalls++
+    const result = boundPolynomialTrig(kind, value)
+    work.polynomialEvaluations += result.work.evaluations
+    work.terms += result.work.terms
+    work.maxBigIntBits = Math.max(work.maxBigIntBits, result.work.maxBigIntBits)
+    return result.bounds
+  }
+  const algebra: KinematicAlgebra<Interval> = {
+    range: (low, high) => Object.freeze({ low, high }),
+    literal: (value) => Object.freeze(interval(value)),
+    add: binary(add),
+    subtract: binary(subtract),
+    multiply: binary(multiply),
+    divide: binary(divide),
+    sin: (value) => trig('sin', value),
+    cos: (value) => trig('cos', value)
+  }
+  // This entry performs all domain admission before invoking the algebra.
+  const pose = evaluateRobotDomains(rig, input, algebra)
+  work.fk++
+  const frames = new Map<
+    Transform<Interval>,
+    ReturnType<typeof affineFrame<Interval>>
+  >()
+  const parts = Object.freeze(
+    pose.parts.map((part) => {
+      let affine = frames.get(part.transform)
+      if (!affine) {
+        affine = affineFrame(part.transform, work, algebra)
+        frames.set(part.transform, affine)
+      }
+      return Object.freeze({ ...part, affine })
+    })
+  )
+  return Object.freeze({ rig, pose, parts, work: Object.freeze(work) })
 }

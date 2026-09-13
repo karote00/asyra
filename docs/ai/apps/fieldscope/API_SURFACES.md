@@ -394,3 +394,21 @@ one point evaluation and the existing actual unique-matrix work. Historical
 Math-trig snapshots describe the preceding model, not current compatibility.
 RobotProjection/bootstrap and D affine queries are real consumers of this change;
 no renderer, base/camera schema or query predicate migration is included.
+
+## Joint-domain interval pose
+
+`evaluateRobotIntervalPose(rig, domains)` returns the original `rig`, an immutable
+interval `pose` (including detached admitted domains, frames/tool/part transforms),
+`parts` with original source/body references and shared completed affine intervals,
+and call-local `work`. It encloses canonical point results for all admitted
+binary64 tuples in the closed domain box; it does not encode a time trajectory.
+
+`work.fk` counts the completed chain evaluation, `matrices` counts actual unique-
+transform conversions, `scalarOperations` counts add/subtract/multiply/divide
+invocations across chain and affine preparation, and `trigCalls` counts directed
+polynomial queries. `polynomialEvaluations`, `terms` and `maxBigIntBits` forward
+actual shared polynomial work. No numeric point re-evaluation or cross-call cache.
+Invalid domains and scalar exceptions abort publication; unbounded intervals are
+unresolved evidence, never finite clearance. Rig/source currentness belongs to
+the eventual composition/query consumer. The existing point/affine APIs retain
+their numeric bits and signatures through the shared generic affine formula.
