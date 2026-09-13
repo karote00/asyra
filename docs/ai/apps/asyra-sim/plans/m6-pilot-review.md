@@ -1824,3 +1824,47 @@ A later cost proof still needs actual-source lifetime, paid preflight and comple
 output semantics; no source is fabricated for a root whose first solve was skipped.
 Reproduce the numerical oracle with
 `yarn workspace @asyra/asyra-sim test:local src/analysis/methods/__tests__/boundary-pose-profile.test.ts --maxWorkers=1`.
+
+### First deterministic endpoint preflight - bounded cost card
+
+Use only boundary 198→197, the first descending complete nonpenetrating source
+with upper above the threshold in the retained complete-prefix evidence. Do not
+choose a later boundary after seeing its cost. Allowlist: this plan and permanent
+`endpoint-preflight-profile.test.ts`; no production or prefix/full execution.
+Run source root 198 normally in a fresh context, capturing its actual first
+completed finite positive nonpenetrating distance and canonical ordered inputs.
+A source upper at/below 0.02 already excludes target strict clearance; stop.
+After complete source-root evidence, pay capture/copy one, publication one,
+target endpoint pair-pose construction one, target full-interval pair-pose
+construction one and admission one. Every actual operation checkpoints before
+work; failed admission keeps its paid costs. Require exact fourteen interval
+pose components at the shared endpoint, same immutable geometry/settings and
+canonical segment/time identity. Raw target `lowerOver` then uses threshold 0.02
+and unchanged tolerance/iterations, charging all preparation and traversal.
+A failed/exhausted proof does not clear or skip any target sample.
+If strict clearance is proved, measure the ordinary source198→target197 control
+in a separate fresh context with no shared prepared cache. Both source outputs
+and charges must agree. This prevents preflight preparation from warming the
+control target; candidate preparation remains fully charged even if newly
+created. Report target distance/interval/source charges separately. The entire
+original target query, not just its first static sample, is the optimistic
+replacement upper limit. Subtract all five added operations and raw proof work.
+This is only cost feasibility: changing emitted upper/witnessTime or source
+lifetime is not accepted. A skipped first static supplies no source to another
+root. Keep 500,000 work and 20 seconds per test, report an incomparable or
+exhausted measurement honestly, and stop on failed eligibility/nonpositive net
+without moving to another case.
+
+Boundary 198→197 is eligible but its fixed cost result is negative. Independent
+contexts each spend 3,178 on the identical complete source. All fourteen shared
+endpoint pose components match. Raw preflight proves gap 0.19848731382941417
+for one unit; the five additional operations make six. The ordinary complete
+target costs only two units: static one plus interval one. Candidate total 3,184
+versus control 3,180 gives net upper limit -4. The source upper differs from the
+original target upper, so no new emitted-result equivalence is claimed. Stop
+this fixed experiment without selecting a more expensive boundary; this does
+not establish that every other clear root also has one-unit static cost.
+The permanent case passes in 231 ms; reproduce with
+`SIM_CAPACITY_DIAGNOSTICS=1 yarn workspace @asyra/asyra-sim test:local src/analysis/methods/__tests__/endpoint-preflight-profile.test.ts --maxWorkers=1`.
+Recorded evidence: `tmp/capacity/endpoint-preflight-profile.log`. No production,
+prefix or full-goal query followed this result.
