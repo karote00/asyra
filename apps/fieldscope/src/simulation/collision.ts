@@ -9,7 +9,8 @@ import type { SourceRegion } from '../domain/source-occupancy'
 import {
   QueryGeometry,
   type GeometrySource,
-  type GeometryMesh
+  type GeometryMesh,
+  type GeometryBounds
 } from './geometry'
 import {
   prepareQueryForwardFrame,
@@ -122,6 +123,8 @@ export interface SurfaceWork {
   placements: number
   boundsCorners: number
   meshPairs: number
+  regionPairs: number
+  regionPlacements: number
 }
 type Vector = readonly [Interval, Interval, Interval]
 type Triangle = [Vector, Vector, Vector]
@@ -625,7 +628,9 @@ export class SurfaceQueries {
       regionBounds: 0,
       placements: 0,
       boundsCorners: 0,
-      meshPairs: 0
+      meshPairs: 0,
+      regionPairs: 0,
+      regionPlacements: 0
     }
     const hasRobot = pairs.some(
       (pair) =>
@@ -702,10 +707,10 @@ export class SurfaceQueries {
     }
     const bounds = (
       item: Pick<SurfaceWitness, 'mesh' | 'instance'>,
-      displacement: Point3
+      displacement: Point3,
+      local: GeometryBounds = item.mesh.prepared.bounds
     ): SweptBounds => {
-      const local = item.mesh.prepared.bounds,
-        chain = chainFor(item)
+      const chain = chainFor(item)
       const min: [number, number, number] = [Infinity, Infinity, Infinity],
         max: [number, number, number] = [-Infinity, -Infinity, -Infinity]
       for (let corner = 0; corner < 8; corner++) {
@@ -731,7 +736,8 @@ export class SurfaceQueries {
           interval(Math.max(0, displacement[axis]))
         ).high
       }
-      work.placements++
+      if (local === item.mesh.prepared.bounds) work.placements++
+      else work.regionPlacements++
       return { min, max }
     }
     return { triangle, bounds }
@@ -886,7 +892,9 @@ export class SurfaceQueries {
       regionBounds: 0,
       placements: 0,
       boundsCorners: 0,
-      meshPairs: 0
+      meshPairs: 0,
+      regionPairs: 0,
+      regionPlacements: 0
     }
     const witnesses: SurfaceSweepResult[] = []
     const publish = (missing = false): SurfaceCoverageResult => {
@@ -938,22 +946,56 @@ export class SurfaceQueries {
       }
       return value
     }
-    const compare = (first: CoveragePlacement, second: CoveragePlacement) => {
-      work.meshPairs++
-      const a = bounds(first),
-        b = bounds(second)
-      if (
-        [0, 1, 2].some(
-          (axis) => a.max[axis] < b.min[axis] || b.max[axis] < a.min[axis]
+    interface RegionPlacement {
+      source: SourceRegion
+      bounds: SweptBounds
+    }
+    const completedRegions = new Map<
+      CoveragePlacement,
+      readonly RegionPlacement[]
+    >()
+    const regions = (item: CoveragePlacement) => {
+      let value = completedRegions.get(item)
+      if (!value) {
+        const prepared = new Map(
+          item.mesh.prepared.regions.map((region) => [
+            region.source,
+            region.bounds
+          ])
         )
-      ) {
-        coverage.excluded = count(
-          coverage.excluded + first.triangleCount * second.triangleCount
-        )
-        return
+        value = item.mesh.origin.regions.map((source) => {
+          const local = prepared.get(source)
+          return {
+            source,
+            bounds: local
+              ? geometry.bounds(item, displacement(item), local)
+              : bounds(item)
+          }
+        })
+        completedRegions.set(item, value)
       }
-      for (let left = 0; left < first.triangleCount; left++)
-        for (let right = 0; right < second.triangleCount; right++) {
+      return value
+    }
+    const separated = (a: SweptBounds, b: SweptBounds) =>
+      [0, 1, 2].some(
+        (axis) => a.max[axis] < b.min[axis] || b.max[axis] < a.min[axis]
+      )
+    const compareTriangles = (
+      first: CoveragePlacement,
+      second: CoveragePlacement,
+      a: SourceRegion,
+      b: SourceRegion
+    ) => {
+      for (
+        let left = a.indexStart / 3;
+        left < (a.indexStart + a.indexCount) / 3;
+        left++
+      )
+        for (
+          let right = b.indexStart / 3;
+          right < (b.indexStart + b.indexCount) / 3;
+          right++
+        ) {
           if (coverage.queried >= input.maxTrianglePairs) return
           const pair = {
             first: witness(source, {
@@ -982,6 +1024,25 @@ export class SurfaceQueries {
             if (!witnesses.some((value) => value.status === result.status))
               witnesses.push(result)
           }
+        }
+    }
+    const compare = (first: CoveragePlacement, second: CoveragePlacement) => {
+      work.meshPairs++
+      if (separated(bounds(first), bounds(second))) {
+        coverage.excluded = count(
+          coverage.excluded + first.triangleCount * second.triangleCount
+        )
+        return
+      }
+      for (const a of regions(first))
+        for (const b of regions(second)) {
+          work.regionPairs++
+          if (separated(a.bounds, b.bounds))
+            coverage.excluded = count(
+              coverage.excluded +
+                (a.source.indexCount / 3) * (b.source.indexCount / 3)
+            )
+          else compareTriangles(first, second, a.source, b.source)
         }
     }
     for (let index = 0; index < robots.length; index++) {

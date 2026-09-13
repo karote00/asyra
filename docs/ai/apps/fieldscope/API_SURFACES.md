@@ -257,8 +257,12 @@ Cross-package imports use public `@asyra/*` facades. Do not import another app's
   robot-part pair is included, even within one rigid body.
 - Safe integer inventory precedes traversal. Original prepared local bounds feed
   conservative query-local swept placement bounds, computed once per placement.
-  Strict bounds exclusion covers the corresponding complete triangle product;
-  surviving pairs consume the existing continuous source predicate within budget.
+  Strict bounds exclusion covers the corresponding complete triangle product.
+  Surviving mesh pairs refine exclusion through complete original region spans;
+  exact source-region identity selects existing prepared bounds, while unprepared
+  regions retain the mesh bound. Query-local swept region bounds are reused per
+  placement, never rebuilt as local source products. Remaining region pairs consume
+  the unchanged continuous predicate within budget, in source region/triangle order.
 - `coverage` accounts for excluded, queried and unvisited triangle pairs, with
   intersection/uncertain query counts. `complete` means no unvisited pairs,
   including exact-budget completion or zero-budget strict exclusion. At most one
@@ -268,4 +272,6 @@ Cross-package imports use public `@asyra/*` facades. Do not import another app's
   intended-contact admission. Open-shell interiors, retained fruit, support and
   joint/tool contact obligations remain explicit; no spine/calyx quality follows.
   One FK, shared frame preparation, zero local bounds/source regeneration and
-  bounded predicate work are reported without persistent caches.
+  bounded predicate work are reported without persistent caches. `regionPairs`
+  counts broad-phase region comparisons; `regionPlacements` counts transformed
+  prepared-region products, with their corners included in `boundsCorners`.
