@@ -617,8 +617,9 @@ const data = {
         'artifact:admitted-runtime-source',
         'trusted candidate-owned canonical execution context for direct derived snapshots'
       ],
-      outputs: ['artifact:assessed-proof-evidence'],
+      outputs: ['artifact:assessed-proof-evidence', 'artifact:assessed-proof-source'],
       conditions: [
+        'The direct-derived source/evidence API returns an independent frozen source envelope only after one complete source-owner admission, forwarding the already-computed descriptor values without rehash or IO. Source/contract/configuration/context failures produce no source; case, report and runner outcomes remain independent. Existing evidence-only return shape is unchanged. Ordinary/legacy/service-artifact paths do not create this envelope; candidate publication and task cache consumers are subsequent boundaries.',
         'Exactly one passing observation per required case, successful exit, and no runner errors are necessary for pass; preserve observed step failures and verify source, contract, mapping, architecture, scenario, configuration, runner environment, and report identity. Retained current-contract evidence must preserve that inventory and version identity before admission. For target evidence, validate and retain the runner runtime digest against its source owner snapshot; missing or mismatched runtime provenance never grants target eligibility, while unchanged historical standalone proof remains readable.',
         'On the direct path, any own executionSource field requires exactly one source-owner combined admission with a trusted execution context, even when runtime identity is missing. Reuse its runtime descriptor for evidence comparisons. Missing context or invalid closure is non-pass; runtime-only service artifacts cannot admit derived execution. A complete service-derived artifact requires bilateral execution presence and exact three-descriptor/full/configuration/contract/attempt binding without source revalidation; retained derived records cannot bypass this through the historical wrong-contract early return.'
       ],
@@ -639,7 +640,7 @@ const data = {
         'tools/flow-inspector/control-plane/evidence.cjs',
         'tools/flow-inspector/control-plane/__tests__/evidence.test.cjs'
       ],
-      specRefs: ['#source-and-evidence', '#runtime-identity-producer-contract', '#frozen-verification-source', '#direct-derived-evidence-admission', '#derived-service-and-evidence-admission'],
+      specRefs: ['#source-and-evidence', '#runtime-identity-producer-contract', '#frozen-verification-source', '#direct-derived-evidence-admission', '#derived-service-and-evidence-admission', '#source-identity-and-verification-outcome'],
       failureOwnerStepId: 'assess-proof-evidence'
     },
     {
@@ -1127,6 +1128,13 @@ const data = {
       ownerStepId: 'assess-proof-evidence',
       channel: 'local-proof',
       consumerStepIds: ['serve-proof-actions', 'assess-target-source', 'verify-agent-candidate', 'execute-agent-task']
+    },
+    {
+      id: 'artifact:assessed-proof-source',
+      title: 'Assess proof source output',
+      ownerStepId: 'assess-proof-evidence',
+      channel: 'direct derived source/evidence envelope; source-owner completed identity independent of case outcome',
+      consumerStepIds: []
     },
     {
       id: 'artifact:proof-board-state',

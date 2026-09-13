@@ -1327,6 +1327,54 @@ complete artifact rather than a saved path or a reconstructed context. Historica
 absence preserves existing ordinary and legacy behavior. Neither evidence alone
 nor descriptor presence grants retained replayability.
 
+### Source identity and verification outcome
+
+`assessSourceEvidence` accepts the same inputs as `assessEvidence` and returns
+`{ evidence, source }`. Both APIs use one common evaluation; `assessEvidence`
+keeps its existing evidence-only return shape. A failing assertion, incomplete
+report or runner failure does not itself invalidate the source identity. A valid
+source never implies passing evidence, work completion or acceptance.
+
+In this slice, `source` is produced only for a direct derived snapshot whose
+full source admission succeeds. Ordinary, historical and supplied service-artifact
+paths return `source: null`; they do not reconstruct a second authority. The
+source envelope has exactly `sourceRoot`, `head`, `sourceDigest`,
+`lockfileDigest`, `contractDigest`, `mappingVersion`, `architectureVersion`,
+`configurationDigest`, `runtimeSource`, `verificationSource` and
+`executionSource`. Its location comes only from the trusted seventh context.
+If the snapshot carries `sourceRoot` it must match that location. The remaining
+identity values come from the admitted snapshot and contract, and the three
+frozen descriptors are forwarded directly from the source owner's completed
+combined admission. Freeze the detached envelope; do not clone, rehash or
+revalidate those descriptor outputs. Missing context, malformed closure or
+failed admission yields no source and preserves non-pass evidence, even if the
+report claims success. The source envelope contains no case status, service UUID
+or persistent verified flag.
+
+This evidence-owned envelope separates the completed source-owner result from
+assessment outcome; it does not attest that source bytes remained unchanged
+through execution. The subsequent candidate publisher will use
+`produceCandidateProof` to return `{ verdict, source }`. A non-null source is
+published only after its actual contained runner settles and its existing
+post-run integrity check succeeds.
+That check is independent of assertion outcome: a failed or partial proof may
+still have an intact admitted source. Integrity failure removes the source
+output and remains visible in the verdict. `verifyCandidate` retains its existing
+verdict-only API through the same producer. Neither `verdict.json` nor saved task
+verdicts acquire an authority flag or a duplicate source envelope.
+
+The subsequent task owner may publish a private source artifact only from this
+controlled live producer result, or after its own fixed-location retained-byte
+check and source admission succeed at startup. It adds exact task, attempt and
+repository authority; public JSON and a saved verdict alone cannot populate the
+cache. Missing historical authority remains unavailable. Failed/partial candidate
+source availability is independent of the existing verification/work verdict;
+source admission must not change those outcomes to passed. Exact cache selection,
+lifetime invalidation and the task-to-service route are frozen in that consumer
+slice before implementation. Later composition still verifies the actual bytes
+it selects. This evidence slice does not enable task caching or contained target
+production on its own.
+
 ### Derived service and evidence admission
 
 The trusted service selects `directory/<run UUID>/source` as the exact source
