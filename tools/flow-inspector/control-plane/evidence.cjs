@@ -1,12 +1,16 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 const path = require('node:path')
+const { isDeepStrictEqual } = require('node:util')
 const sourceOwner = require('./snapshot.cjs')
 const { validId } = require('./store.cjs')
 
 const RUNTIME_EXECUTION_ISSUE = 'Runtime execution provenance mismatch'
 function resolveRuntimeSource(snapshot, admission, contract, executionContext) {
-  if (Object.hasOwn(snapshot, 'executionSource')) {
-    if (admission || !contract)
+  const derived =
+    Object.hasOwn(snapshot, 'executionSource') ||
+    Object.hasOwn(admission ?? {}, 'executionSource')
+  if (derived && !admission) {
+    if (!contract)
       throw new Error(
         'Derived execution requires direct trusted source admission'
       )
@@ -16,6 +20,34 @@ function resolveRuntimeSource(snapshot, admission, contract, executionContext) {
       snapshot.files,
       executionContext
     ).runtimeSource
+  }
+  if (derived) {
+    const execution = admission.executionSource
+    if (
+      !Object.hasOwn(snapshot, 'executionSource') ||
+      !Object.hasOwn(admission, 'executionSource') ||
+      !execution ||
+      execution.format !== 1 ||
+      !admission.verificationSource ||
+      !['runtimeSource', 'verificationSource', 'executionSource'].every(
+        (key) =>
+          snapshot[key] && isDeepStrictEqual(snapshot[key], admission[key])
+      ) ||
+      !contract ||
+      snapshot.contractDigest !== contract.digest ||
+      ['mappingVersion', 'architectureVersion'].some(
+        (key) => snapshot[key] !== contract[key]
+      ) ||
+      [
+        'contractDigest',
+        'mappingVersion',
+        'architectureVersion',
+        'configurationDigest'
+      ].some((key) => admission[key] !== snapshot[key]) ||
+      execution.digest !== snapshot.configurationDigest ||
+      execution.verificationSourceDigest !== admission.verificationSource.digest
+    )
+      throw new Error('Derived execution admission does not bind this snapshot')
   }
   if (!Object.hasOwn(snapshot, 'runtimeSource')) {
     if (admission)
@@ -286,9 +318,13 @@ function assessEvidence(
 }
 
 function validateStoredEvidence(contract, record, sourceAdmission) {
+  const derived =
+    Object.hasOwn(record.snapshot ?? {}, 'executionSource') ||
+    Object.hasOwn(sourceAdmission ?? {}, 'executionSource')
   if (
     record.phase === 'completed' &&
-    Object.hasOwn(record.snapshot ?? {}, 'executionSource')
+    derived &&
+    (!sourceAdmission || record.snapshot?.contractDigest !== contract.digest)
   )
     throw new Error('Stored derived execution admission is unavailable')
   if (
@@ -311,7 +347,11 @@ function validateStoredEvidence(contract, record, sourceAdmission) {
     Object.hasOwn(record.evidence ?? {}, 'runtimeSourceDigest') ||
     Boolean(sourceAdmission)
   if (hasRuntime) {
-    const runtime = resolveRuntimeSource(record.snapshot, sourceAdmission)
+    const runtime = resolveRuntimeSource(
+      record.snapshot,
+      sourceAdmission,
+      contract
+    )
     const mismatch = runtimeExecutionMismatch(
       record.snapshot,
       record.runner?.identity,
