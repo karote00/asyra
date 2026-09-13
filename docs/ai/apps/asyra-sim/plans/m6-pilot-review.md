@@ -1613,3 +1613,42 @@ units; that pair uses 398,216 = 306,103 static + 91,548 interval + 462 source +
 11,653; observed duration 12.065 seconds remains within the 20-second guard.
 This does not close G4. No browser or repeated full run follows; bounded complete
 source/prefix evidence and the unchanged full red record remain separate.
+
+### Missed nonwarning boundary source - passive method iteration
+
+Re-read method Inspector and 1.0.2 source restrictions after the full red result.
+The next hypothesis changes neither geometry nor sampling: a completed finite
+nonpenetrating surface witness with `0 < lower <= upper` remains a valid source
+when its old upper is not below the threshold. Only investigate currently missed
+`upper >= threshold` first samples in the fixed complete original prefix 114–198.
+Mutation scope is one permanent opt-in passive test and this card; production,
+Inspector and method strategy remain unchanged. No full or browser gate.
+
+Keep the current solver and existing warning-source route active. Observe actual
+first-root inputs/output and copy immutable source poses/witnesses for one charged
+unit, including captures later discarded. A single test-owned sidecar records
+that root's actual completed whole-interval clearance certificate or finding
+samples; any child traversal invalidates it. At the next complete adjacent root,
+charge publication one and admission/inverse/forward/norm six only for a complete
+clear or nonpenetrating finding source. The final real PairEvidence must confirm
+every claimed original root leaf, exact frame bounds and state. No seed is
+injected and no verdict is transported. Count all attempts and discarded copies,
+actual target work, transported upper eligibility and first-warning work only as
+an upper limit on potential savings. Charge every added operation live within the
+unchanged 500k/20s guard; normal source charges remain separate. Inspect all fixed
+sources, never select successful cases after measurement. Independent rational
+source-point transport covers nonwarning/equal-threshold admission. Stop on
+provenance/accounting failure or insufficient net potential; a positive bound
+alone does not authorize production or establish actual savings.
+
+The single passive run passed both exact nonwarning/equal-threshold source
+oracles and the fixed prefix case in 8.053 seconds. It captured 69 eligible first
+sources, discarded two and published 67; none of their transported upper bounds
+fell below 0.02. Additional work is 69 capture + 67 publication + 402 transport
+= 538. The unchanged production work is exactly 197,028, total 197,566; this
+hypothesis has zero before-warning saving potential and net upper limit -538.
+Evidence is `tmp/capacity/nonwarning-boundary.log`; independent review passed.
+Publication is observed at next-root entry and checked against final exact root
+leaves, not presented as production cancellation proof. This rejects only the
+fixed-prefix extra-warning-source hypothesis, not every numerical use of a
+larger legal upper. Stop this direction; no production expansion or full run.
