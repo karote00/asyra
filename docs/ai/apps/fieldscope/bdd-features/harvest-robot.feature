@@ -598,3 +598,18 @@ Feature: Harvest robot feasibility and supervised harvesting
     And sheets without prepared bounds remain candidates under the mesh bound
     And touching or numerically unresolved bounds are not excluded
     And region exclusion grants no material or intended-contact permission
+
+  @M3
+  Scenario: Synthetic quality evidence does not certify harvested fruit
+    Given an admitted tomato reading with intact calyx and lost distal pedicel
+    When its declared preservation requirements are assessed
+    Then the pedicel requirement is not satisfied independently of calyx integrity
+    And physical fruit integrity remains unverified
+    And the result grants no cut, retention or placement confirmation
+
+  @M3
+  Scenario: Unknown preservation evidence remains explicit
+    Given a cucumber reading with intact spines and unknown contact damage
+    When its declared preservation requirements are assessed
+    Then the overall synthetic quality requirements remain unknown
+    And missing pedicel fields in a transient reading are rejected rather than inferred
