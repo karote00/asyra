@@ -23,6 +23,15 @@ const authorized = (actor, capability) =>
       actor.capabilities?.includes(capability),
     'action is not authorized'
   )
+const targetAcceptanceRequestIdentity = (actorId, request) =>
+  hash({
+    actor: actorId,
+    requestId: request.requestId,
+    targetId: request.targetId,
+    assessmentId: request.assessmentId,
+    reason: request.reason,
+    retirement: request.retirement
+  })
 function validateVerificationReference(version) {
   if (!Object.hasOwn(version, 'verificationSource')) return
   const reference = version.verificationSource
@@ -411,7 +420,7 @@ function acceptTargetBaseline(
     'invalid target acceptance request'
   )
   if (request.retirement.length) authorized(actor, 'retire-contract')
-  const requestIdentity = hash({ actor: actor.id, ...request })
+  const requestIdentity = targetAcceptanceRequestIdentity(actor.id, request)
   const replay = history.decisions.find(
     (item) => item.targetAcceptance?.requestId === request.requestId
   )
@@ -591,8 +600,7 @@ function validateTargetAcceptanceDecision(
       new Set(decision.retirement).size === decision.retirement.length &&
       decision.retirement.every((id) => typeof id === 'string') &&
       decision.requestIdentity ===
-        hash({
-          actor: decision.actor,
+        targetAcceptanceRequestIdentity(decision.actor, {
           requestId: reference.requestId,
           targetId: reference.targetId,
           assessmentId: reference.assessmentId,

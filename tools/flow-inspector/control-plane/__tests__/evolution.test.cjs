@@ -6,7 +6,8 @@ const {
   createHistory,
   compareVersion,
   decideVersion,
-  acceptTargetBaseline
+  acceptTargetBaseline,
+  validateTargetAcceptanceDecision
 } = require('../evolution.cjs')
 const manifest = require('../../../../packages/factory/flow-contracts.json')
 const architecture = require('../../inspectors/transaction-flow-inspector.data.cjs')
@@ -385,6 +386,72 @@ test('authorized exact target acceptance replay precedes currentness work but ne
         candidate,
         stale,
         { ...request, reason: 'Changed replay' },
+        actor
+      ),
+    /request identity/
+  )
+})
+
+test('target acceptance identity is canonical across reordered creation, replay and restart validation', () => {
+  const base = version(),
+    candidate = version((manifest) => {
+      manifest.flows[0].goal += ' integrated'
+    }),
+    history = createHistory(base),
+    comparison = compareVersion(history, candidate),
+    assessment = targetAssessment(base, candidate, comparison),
+    reason = 'Accept the complete offline integrated target',
+    reordered = {
+      targetId,
+      assessmentId,
+      requestId,
+      reason,
+      retirement: []
+    },
+    canonical = {
+      requestId,
+      targetId,
+      assessmentId,
+      reason,
+      retirement: []
+    },
+    accepted = acceptTargetBaseline(
+      history,
+      comparison,
+      candidate,
+      assessment,
+      reordered,
+      actor
+    )
+  assert.strictEqual(
+    acceptTargetBaseline(
+      accepted,
+      comparison,
+      candidate,
+      assessment,
+      canonical,
+      actor
+    ),
+    accepted
+  )
+  assert.equal(
+    validateTargetAcceptanceDecision(
+      accepted,
+      comparison,
+      candidate,
+      { ...assessment, result: assessment.projection },
+      accepted.decisions.at(-1)
+    ),
+    true
+  )
+  assert.throws(
+    () =>
+      acceptTargetBaseline(
+        accepted,
+        comparison,
+        candidate,
+        assessment,
+        { ...canonical, reason: 'Conflicting payload' },
         actor
       ),
     /request identity/

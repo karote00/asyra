@@ -1408,11 +1408,19 @@ test(
       assert.equal(assessment.result.format, 2)
       assert.equal(assessment.result.targetContract.status, 'passed')
       assert.equal(assessment.projection.eligible, true)
+      const requestId = randomUUID()
       const request = {
-        requestId: randomUUID(),
         targetId: target.id,
         assessmentId: assessment.id,
+        requestId,
         reason: 'Accept complete owner-produced offline integration',
+        retirement: []
+      }
+      const canonicalRequest = {
+        requestId,
+        targetId: target.id,
+        assessmentId: assessment.id,
+        reason: request.reason,
         retirement: []
       }
       const mappingFile = path.join(f.runs, 'mapping.json')
@@ -1449,12 +1457,12 @@ test(
         accepted.reference
       )
       assert.deepEqual(
-        service.acceptTargetBaseline(request, LOCAL_ACTOR),
+        service.acceptTargetBaseline(canonicalRequest, LOCAL_ACTOR),
         accepted
       )
       assert.throws(
         () =>
-          service.acceptTargetBaseline(request, {
+          service.acceptTargetBaseline(canonicalRequest, {
             id: LOCAL_ACTOR.id,
             capabilities: []
           }),
@@ -1464,7 +1472,7 @@ test(
       service = createService(f.repository, { directory: f.runs })
       const reads = t.mock.method(sourceOwner, 'verifyRetainedSnapshotBytes')
       assert.deepEqual(
-        service.acceptTargetBaseline(request, LOCAL_ACTOR),
+        service.acceptTargetBaseline(canonicalRequest, LOCAL_ACTOR),
         accepted
       )
       assert.equal(reads.mock.callCount(), 0)
