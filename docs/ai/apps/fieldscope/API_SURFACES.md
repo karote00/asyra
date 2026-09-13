@@ -290,3 +290,17 @@ Cross-package imports use public `@asyra/*` facades. Do not import another app's
   bounded predicate work are reported without persistent caches. `regionPairs`
   counts broad-phase region comparisons; `regionPlacements` counts transformed
   prepared-region products, with their corners included in `boundsCorners`.
+
+## Joint-segment candidate evidence
+
+- `JointSegments.assess` consumes current issued query geometry and a labeled
+  transient `JointSegmentInput` with start/end joint values and from/until times.
+  Clone-once validation rejects malformed or nonpositive intervals.
+- Scalar q(t) is linear over [0,1], without angle wrapping. Original rig limits
+  and speeds determine per-axis checks; exact dyadic comparison preserves equality
+  and rejects proven exceedance without rounded quotient admission.
+- The immutable source-bound result is admissible/invalid candidate
+  evidence only. QueryGeometry rejects unsupported rigs before source issuance;
+  this helper accepts only its current issued source. No FK, source/query generation,
+  session update, TCP reach, collision/contact clearance or motion permission is
+  implied; no new acceleration limit or persisted schema is introduced.

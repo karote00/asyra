@@ -613,3 +613,17 @@ Feature: Harvest robot feasibility and supervised harvesting
     When its declared preservation requirements are assessed
     Then the overall synthetic quality requirements remain unknown
     And missing pedicel fields in a transient reading are rejected rather than inferred
+
+  @M3
+  Scenario: Joint candidate limits do not grant physical movement
+    Given a current synthetic five-axis rig and explicit linear joint-space segment
+    When every endpoint and exact joint-speed requirement is satisfied
+    Then the result is only admissible joint candidate evidence
+    And it does not declare TCP reach, surface clearance or intended contact
+
+  @M3
+  Scenario: Joint speed boundaries cannot be rounded into permission
+    Given a segment whose exact joint delta exceeds its declared rig speed times duration
+    When candidate admissibility is evaluated
+    Then the corresponding speed requirement is invalid
+    And angle wrapping or rounded arithmetic cannot replace the declared path

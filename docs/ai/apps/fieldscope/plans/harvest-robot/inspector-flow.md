@@ -599,3 +599,28 @@ continues to own all confirmation and movement requirements.
 Gates: per-dimension independence, missing pedicel red, unknown cultivar, expiry/
 context/clone-once, zero query/source/session work, existing observation controls,
 app unit/type/lint/naming/build and independent review. No retained computation.
+
+### D explicit joint-segment admissibility
+
+Owner: simulation/motion.ts, a candidate-evidence helper, not the session.
+Inputs: current issued GeometrySource and clone-once labeled synthetic start/end
+five-joint values with finite 0<=from<until. No run, action or clearance receipt
+is fabricated. Original rig.limits/speeds are the sole numerical authority.
+Outputs: immutable original source/input, each joint's limit/speed checks and
+admissible/invalid candidate status. QueryGeometry rejects unavailable rigs before source issuance;
+this helper cannot accept a forged or unsupported replacement handle.
+Conditions: q(t) scalar linear with no angle wrap; endpoints within limits and
+absolute delta<=speed*duration proved with existing interval/dyadic arithmetic.
+Malformed/time inputs reject before calculation; source current before/after work.
+Allowed: original issued rig metadata and query-arithmetic finite dyadic/interval
+primitives. No copied FK chain, numeric limits or speed defaults.
+Forbidden: FK/query/source work, session/material/contact mutations, acceleration
+policy, pose interpolation/command, TCP reach or complete sweep/clearance claims.
+Boundary: simulation/motion.ts, `simulation/__tests__/motion.test.ts`, API and
+these thin contract docs. No C/session/collision/arithmetic producer changes.
+Failure owner: this helper rejects malformed/stale data and reports proven scalar
+violations; future source/sweep/action owners retain their separate obligations.
+Lifetime: one request, issued-source currentness; no retained cache or ledger.
+Gates: five-axis exact/just-over limits/speeds, no-wrap, extreme finite arithmetic,
+invalid/upstream-unavailable/stale/clone-once cases, zero FK/query/source work, full app
+unit/type/build/lint/naming and independent review.
