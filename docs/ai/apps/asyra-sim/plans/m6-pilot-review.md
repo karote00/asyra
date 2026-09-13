@@ -1986,3 +1986,82 @@ artifacts `tmp/capacity/static-projection-control.json` and
 `tmp/capacity/static-projection-profile.log`. Run both cases together with
 `SIM_CAPACITY_DIAGNOSTICS=1 yarn workspace @asyra/asyra-sim test:local src/analysis/methods/__tests__/static-projection-profile.test.ts --maxWorkers=1`.
 No production change, alternative subset, adjusted threshold or full run follows.
+
+### Replan - strict terminal-pair cost boundary
+
+Re-reading the method-query Inspector and actual static traversal separates two
+sites: the pending node pair still invokes optional projection after its node
+checkpoint, whereas the subsequent final triangle pair already uses only world
+gap and the complete original convex query. Membership and demanded preparation
+precede both. For two leaves containing exactly one triangle each, bypassing the
+node projection adds at most one triangle checkpoint. A successful optional
+certificate already costs at least one checkpoint; an unsuccessful or all-cardinal
+attempt reaches that same triangle anyway. This establishes local logical-cost
+nonincrease, not CPU, numeric-evidence or later temporal-work equivalence.
+
+However, the retained source metadata already excludes this site from the fixed
+population. Joint-2 component sizes are 48, 96, 124 and 256; obstacle-11 has five
+124-triangle components. Current component trees split only when their triangle
+count exceeds four, with floor-half partitioning. Such trees cannot create a
+one-triangle leaf: the smallest split is five into two and three. The top component
+tree returns the complete component root at its own terminal case, rather than
+creating a new triangle leaf. Thus the fixed 114–198 pair has zero eligible
+singleton leaf pairs, independent of pose and query outcome. Do not run a new
+comparison, build charged or uncharged lookup metadata, enlarge the cutoff or
+claim this rule can improve G4. The previous broad-omission comparison remains
+expected red. This read-only structural exclusion does not change production,
+Inspector behavior, source geometry or the fixed resource gates.
+
+The next read-only question is a different owner choice: finer triangle leaves
+inside actual-demand admitted-component refinement, paired with the strict
+singleton-node projection rule. Retained SAH and component experiments fixed
+triangle leaves at four; rotations explicitly preserved original leaves. None
+compared this combination. Original median preparation and closed-component
+membership remain separate owners. A future bounded candidate must charge every
+new refinement node, bounds scan, sort chunk and warm preparation, plus every
+actual traversal and triangle query. Finer leaves can increase those costs, so
+local singleton dominance does not prove net benefit. Current builder terminal
+handling at limit one is specifically the top-level component-subtree handoff;
+it does not construct triangle bounds and cannot be reused blindly for singleton
+triangle leaves. This is an unmeasured implementation-boundary review, not an
+approved experiment or a claim that changing leaf size will satisfy G4.
+
+### Proposed comparison - singleton component leaves
+
+Freeze one new generic strategy: triangle leaves of one inside demanded component
+refinement, with optional static node projection omitted only when both actual
+terminal nodes contain one triangle. Root admission, original median preparation,
+component membership, top component handoff and interval projection stay intact.
+This is a proposal pending independent owner review, not production acceptance.
+Avoid a second builder or a bounds-identity scan: the smallest proposed isolation
+is an internal triangle-limit argument on the real refinement builder (default
+four), plus a private static traversal-node gap entry receiving the actual nodes
+and defaulting to the existing projection. Run this experiment on a separate codex/ branch and linked worktree beneath
+the main repository’s .worktrees directory, created from the committed readiness
+head. Preserve its complete candidate and permanent tests together. A negative
+result is not integrated into the goal branch; only a positive, independently
+reviewed result may be integrated. No orphan tests or public multi-policy API
+are left on the goal branch. Tests alone select one and intercept
+that entry; ordinary execution keeps its current policy. Separate top-component
+handoff from singleton triangle bounds construction. Each strategy owns an
+independent preparation map throughout its execution; never mix artifacts built
+with different limits or publish a general runtime policy/cache contract.
+
+Proposed allowlist is this plan, `mesh-index.ts`, `original-mesh-query.ts`, and
+permanent singleton hierarchy oracle/profile tests. First prove unchanged default
+routing, exact source triangle identities/components/representatives, singleton
+bounds and unions, nested/overlapping membership, reversed pairs, penetration,
+unknowns, complete evidence and cancellation. The
+existing three-box source gives an independent preparation count: default 84;
+singleton 204 = 23 original collect visits + 1 grouping chunk + three component
+subtrees each charging 23 builds, 23 bounds scans and 11 sort chunks + 5 top
+visits, 2 top scans and 2 top sorts. Verify those categories with an independent
+per-node/scan/sort oracle, not just two unexplained constants. Charge cold/warm
+preparation equally and retain
+no interrupted artifact. Original runtime checkpoints remain unchanged.
+Only after those proofs and reviewed isolation, compare both cold strategies on
+the same complete roots 114–198 with full PairEvidence equality, at least 20%
+whole-paid-work reduction, CPU ratio at most 1.2 and each existing 500,000-work /
+20-second guard. Record all preparation, traversal, axes and convex work before
+assertions. Any changed evidence, incomplete coverage or failed gate stops for
+review without tuning leaf size, subset or thresholds. No full-goal run follows.
