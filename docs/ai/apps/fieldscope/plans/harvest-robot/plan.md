@@ -1111,3 +1111,12 @@ format/diff checks and independent review. Stop if the extraction requires an
 arithmetic behavior change. A subsequent separate polynomial card will fix S19/C20,
 |x| < 1, eight trig calls per pose, exact growth and latency limits before profiling;
 this extraction does not approve or implement that numerical model.
+
+Shared scalar owner extraction is complete. The 6321-byte implementation moved
+unchanged, with matching pre/post SHA256; the original facade re-exports the same
+eight functions and two types with one module state. A permanent missing-shared-
+module case first failed, then the facade identity and signed-zero/subnormal/
+overflow controls passed. All 81 focused arithmetic/ray/collision/motion cases,
+421 app tests, typecheck/build, lint and naming pass. Independent review verified
+byte equivalence and compatibility. No numerical behavior, trig model or C point
+semantics changed in this segment.
