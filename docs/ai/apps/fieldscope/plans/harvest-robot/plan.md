@@ -1039,3 +1039,17 @@ generation or session mutation. Physical integrity remains unverified even when
 all declared synthetic requirements are satisfied. This closes evidence
 interpretation only, not harvesting, market grading, action/placement permission
 or pending material and collision admission.
+
+Next bounded D Step Card: explicit joint-segment candidate admissibility.
+New motion.ts and direct motion.test.ts only, plus API/thin docs. Read current
+issued C rig limits/speeds, clone one synthetic q0/q1/from/until request, and prove
+scalar linear-segment limits/speeds without angle wrapping or FK interpolation.
+Use existing exact dyadic arithmetic for boundary comparisons; no new C chain,
+trigonometric owner or acceleration policy. Candidate evidence is not motion
+clearance and does not depend on the pending material decision.
+Formal tests first: absent owner API, all five axes/exact boundaries/just-over,
+large finite values, missing/nonfinite/extra keys, nonpositive interval, upstream unavailable-rig rejection, forged/retired source and clone-once isolation with zero FK/query/source work.
+Then focused cases, full app unit/type/build/lint/naming and independent review.
+Names JointSegments/JointSegmentInput belong to transient D motion evidence, with
+no persisted or wire identity. Stop for any required new physical parameter or
+source-chain ownership, not for independently pending material decisions.
