@@ -2145,3 +2145,131 @@ prove the matching upper bound despite overlapping world AABBs. Rational extrema
 reverse order, interval-motion enclosure, degenerate proposals, full source and
 cost/cancellation/cold-warm oracles are prerequisites. This section authorizes
 no fitting code, measurement, benchmark or full run; benefit remains unmeasured.
+
+### Candidate 26 - complete-source hull support admission
+
+Frozen before observation on isolated `codex/asyra-sim-source-hull-separation`,
+base `b9f4a710c`. The user approved only a permanent admission experiment, not
+canonical integration or a method-version change. Candidate 25 was rejected;
+its source-convexity premise is not reused. This candidate treats each complete
+source component's convex hull solely as an outer separation bound.
+
+Execution card: Inspector `method`, fields at lines 1008–1066, original-part
+spec sections “Solid interpretation and limits”, “Numerical method”, and
+“Bounded acceleration decision”. Inputs are the admitted immutable original
+source and domain-owned complete poses; outputs are test-owned support and
+charged-event evidence. Membership, original triangles, uncertainty, cancellation
+and resource exhaustion retain their current owners. No renderer, replacement
+shape, hull witness, native route change, cross-query pose cache or fallback
+output is allowed. The implementation allowlist for this admission is permanent
+method `__fixtures__` helpers, `__tests__` oracles/observer, and this plan. The
+Inspector's runtime contract is not changed merely to authorize diagnostics.
+Failure owner is method. DoD is complete source/interval enclosure, truthful work
+and invalidation proofs, followed by one fixed cold/hot admission comparison.
+
+For complete vertices V, every source triangle is in conv(V). For any fixed
+finite nonzero direction d, outward support over the full query interval gives
+L = max(0, lower((-hA(d)-hB(-d))/norm(d))). A positive numerator uses the norm's
+upper endpoint for the conservative lower quotient. A norm enclosure containing
+zero supplies no certificate. Source concavity, coplanar facets and tiny dents
+do not invalidate containment. Hull overlap, simplex stagnation and ambiguous
+arithmetic supply no certificate and never penetration. Original membership
+remains necessary for solid containment; no hull interpolation is a source
+witness. See <a href="https://doc.cgal.org/latest/Convex_hull_3/index.html"
+target="_blank" rel="noopener noreferrer">CGAL's convex-hull definition</a>.
+No third-party code or dependency is introduced.
+
+The test-owned support search uses the existing complete component BVH. It may
+prune a node only if its outward projection upper endpoint is no greater than
+the largest evaluated original-vertex projection lower endpoint. Leaves scan
+all original triangle vertex occurrences, including duplicates. Approximate
+simplex reduction proposes directions only; outward support independently
+certifies every accepted direction. The fixed iteration limit is 64. An
+immutable snapshot owns all copied component nodes, bounds, points and source
+triangle offsets. Preparation charges every copied node and triangle, every component
+publication and the separate source-bound owner publication pass. Query work separately charges owner lookups, attempts,
+direction preparation, node bounds, each vertex projection, selected-point
+transforms, simplex reduction, norm/certificate calculation and publication.
+Cold/hot invocations pay the same preparation before reuse; cancellation cannot
+publish an interrupted artifact or become ordinary no-certificate fallback.
+
+Fixed admission: representativeSnapshot(0), original joint-2 / obstacle-11,
+complete roots 114–198, unchanged settings/order/geometry and 500k/20-second
+guards. First replay the unmodified control: it must complete for exactly
+197,028 units or stop before candidate observation. The observer leaves all
+canonical results intact. At the first surviving homogeneous node pair for a
+component pair in a query, try the full-component support certificate once.
+Only actual later node/axis/triangle charged event identities dominated by that
+certificate may enter D, each once. Never credit preparation, membership, upper
+witness work, earlier events, a containing parent or hypothetical unvisited
+work. Emit the actual event identities and certificate receipts for independent
+reconstruction. This is an optimistic fixed-query-population screen, not an
+end-to-end cost prediction: changed evidence may change later query population.
+
+For each cold and hot candidate invocation, require complete unchanged control
+PairEvidence and W = 197028 + all added preparation/support/observer work - D
+<= 157622 (20% saving). Stop on either failure, without tuning fixtures,
+directions, iteration counts or thresholds. If added work alone exceeds 157622,
+even erasing every original unit cannot meet the screen; preserve that rigorous
+negative bound and stop the support experiment before further solving. Cold/hot
+still replay the same fixed population; a stopped admission is explicitly
+incomplete, never a successful fallback. Existing prefix evidence and the prior
+whole-source projection rejection are reusable controls, not proof this new
+component certificate saves work. The full goal remains 39 bodies, 30 fixtures,
+200 frames, 298 pairs, three scenarios and 500k/20 seconds. Local admission does
+not prove that goal; canonical integration and versioning need later approval.
+
+Permanent oracle cases cover independent full-vertex supports, node-pruning
+counts, concave/coplanar/tiny-dent sources, overlapping hulls with disjoint
+sources, containment, touching, reversed pairs, interval interior crossings,
+extreme scale, immutable preparation, every cancellation stage and deduplicated
+charged-event credit. Concentrate type/lint/format/naming/placement/Inspector
+contracts and these focused cases before the prefix comparison; preserve one
+reviewable positive or negative package for independent review.
+
+#### Admission result - rejected without canonical integration
+
+The unmodified control completed for exactly 197,028 units and 95 evaluations
+(11,420 ms). The single fixed admission run then stopped both cold and hot at
+157,623 added units, independently exceeding the 157,622 ceiling even if every
+original unit could be erased. This is a completed negative research decision,
+not completed candidate geometry coverage. No full representative run follows.
+
+Both modes have identical logical evidence: 140 begun queries, 44 support
+attempts, 41 published separation certificates, two completed no-certificate
+attempts and one interrupted attempt. The canonical query had charged 43,948
+units when admission stopped. Actual disjoint credited events total 21,848:
+3,620 node units, 7,236 axis units and 10,992 original triangle units. The
+partial optimistic ledger is 43,948 + 157,623 - 21,848 = 179,723; it is explicitly
+not a prediction of the complete workload. The stronger stop proof for this frozen screen uses added work alone and
+requires no extrapolation about later witnesses. All actual observer lookups
+remain charged by the approved admission contract; this is not a lower-bound
+proof for a future integrated traversal that could avoid some of those lookups.
+It rejects this research screen, not every implementation of hull pruning.
+
+Added costs are 15,678 preparation (2,814 copied nodes + 5,024 original triangles
++ 41 component publications + 7,799 source-bound owner publications), 53,797
+actual owner/receipt/admission lookups, and 88,148 support work. Support includes
+17,145 node bounds and 69,824 actual vertex projections; all other attempt,
+direction, point, simplex, norm/certificate and publication units are itemized
+in the JSON. Even those support costs alone already exceed credited work by
+more than four times. This rejects the measured strategy, not the mathematical
+possibility of every future hull algorithm. Cold/hot observed admission times
+were 7,126/4,650 ms; because these were interrupted populations, no end-to-end
+CPU improvement is claimed.
+
+Artifacts: `tmp/capacity/source-hull-{control,cold,hot}.json` and
+`source-hull-admission.log`. The cold/hot JSON includes all 23,202 recorded
+charged-event identities, the disjoint credited IDs and every certificate's
+query/component/strict-threshold/publication boundary. An independent Python
+reconstruction confirmed categories sum to 157,623, every credited ID has an
+eligible prior certificate, and cold/hot categories, attempts, certificates,
+events and original work match exactly. Logs and artifacts remain project-local.
+
+The 15 permanent support/observer correctness cases and ten unchanged original
+mesh oracle cases pass, as do TypeScript,
+scoped ESLint/Prettier and 21 naming/placement/Inspector contracts. The explicit
+`SIM_SOURCE_HULL_ADMISSION=1` experiment retains its frozen positive acceptance
+assertions: control passes and cold/hot fail because admission stopped. Preserve
+this coherent negative package for one independent review; do not retune or
+integrate it. Runtime method version remains 1.0.2, and G4 remains red.
