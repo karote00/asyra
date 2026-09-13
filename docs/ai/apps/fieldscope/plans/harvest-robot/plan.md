@@ -1011,3 +1011,18 @@ traversal, including node-budget exhaustion accounting; three fake-clock failure
 preceded those guards, and all 45 collision tests
 pass. This is not an operating-system hard timeout. Production lifecycle, memory
 limits and an effective full-query budget still need a separate owner decision.
+
+Next D Step Card: admitted synthetic quality-evidence assessment, independent of
+pending material and motion clearance. Extend TargetReading with mandatory
+quality.pedicel and explicit null unknown; app-local transient callers update,
+missing legacy-shaped readings reject, no persistence migration. observations.ts
+assessQuality admits once then interprets crop-specific preservation dimensions
+and separate contact damage. Unknown cultivar does not consult hidden truth;
+synthetic satisfaction never certifies physical integrity or post-harvest retention.
+Allowlist: observations.ts/direct observations.test.ts/API and thin current docs.
+Formal missing-pedicel and missing-method tests first; independent dimensions,
+partial failures/unknowns, context/expiry/clone-once and zero query/source/session
+work, followed by observation controls, full app gates and scoped review.
+Stop for any required new market/placement/action policy, not for pending material
+answers unrelated to this pure assessment. New names are transient observation
+owner APIs, with no wire/persisted identity change.
