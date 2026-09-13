@@ -1319,16 +1319,61 @@ confirmed assertion failures remain visible. The evidence owner neither defines
 generation policy nor reads source bytes. Actual generated-byte use and post-run
 integrity remain candidate producer obligations.
 
-The sixth `sourceAdmission` argument remains the service-owned runtime admission
-artifact. It is not an alternative authority for derived execution: until the
-service's derived admission handoff is implemented, any present execution
-descriptor together with that artifact is rejected rather than falling back to
-runtime-only comparison. `validateStoredEvidence` likewise rejects present derived
-execution for completed records; this bounded slice provides no durable trusted
-location input and does not reconstruct one, read a manifest or grant authority
-from a runtime-only tuple. Historical absence preserves existing ordinary and
-legacy behavior. Neither new evidence results nor descriptor presence claim
-retained replayability.
+The sixth `sourceAdmission` argument remains a service-owned source admission
+artifact. A runtime-only tuple cannot admit derived execution. The complete
+derived service artifact follows the handoff below; the seventh context cannot
+replace missing authority on that path. Retained derived evidence requires that
+complete artifact rather than a saved path or a reconstructed context. Historical
+absence preserves existing ordinary and legacy behavior. Neither evidence alone
+nor descriptor presence grants retained replayability.
+
+### Derived service and evidence admission
+
+The trusted service selects `directory/<run UUID>/source` as the exact source
+location and `directory/<run UUID>/source-manifest.json` as its retained manifest;
+no client or saved snapshot path selects either. For a derived snapshot, require
+its exact stored source contract and all three descriptors. Admit the complete
+manifest once through `validateSourceSnapshot` with that separately supplied
+fixed source context. Independently verify every actual output-tree entry once
+through `verifyRetainedSnapshotBytes`, both at initial live admission and startup.
+Only after both succeed may the private admission map publish its immutable
+artifact. Live output-tree verification does not repeat composition's reads from
+its separate retained input trees. Ordinary live source admission keeps its
+existing no-source-read behavior.
+
+The artifact retains the existing exact repository, attempt UUID, HEAD, full
+source digest, runtime/verification descriptors, contract, mapping, architecture
+and configuration identities, plus the admitted `executionSource`. Its execution
+digest equals actual configuration identity, and its original verification digest
+equals the verification descriptor's digest. Cached admission requires identical
+source contract, complete descriptor values and execution-field presence; removal,
+replacement or mismatch invalidates the artifact. No persisted verified flag or
+public recomputation is introduced. Startup performs the operations once per
+attempt and lifetime; reads and exact replay consume only completed private
+admission. Actual-byte failure does not leave a usable cached artifact.
+
+On raw or retained evidence's service-artifact path, an own `executionSource` on
+either snapshot or artifact requires it on both. Reject null, malformed, partial
+or one-sided presence. Consume only the already admitted immutable artifact:
+compare all three descriptors, repository/attempt/full source/HEAD/lock binding,
+contract/mapping/architecture and configuration identity, including the two
+execution digest relationships above. Do not rehash source or reconstruct
+policy, and do not use the direct seventh context to repair this path. Existing
+runner identity comparisons remain necessary. For a completed retained derived
+record, require the artifact attempt UUID to equal the record ID and the supplied
+contract to match that record's own source identity; the historical wrong-contract
+early return cannot bypass these checks. Genuine absence on both sides preserves
+ordinary and historical validation.
+
+Evidence-owner tests may consume a tuple built from true captured/composed bytes,
+actual contained runner observations, source byte verification and full source
+admission before the service consumer is wired. That is bounded consumer evidence,
+not completed service integration. Production derived target composition must
+still be wired to the contained runner and post-run source integrity check in its
+own producer slice. Execution is a separate validity boundary: a failed post-run
+check invalidates admission and cannot produce passing evidence. This contract
+does not allow an ordinary producer to run candidate runtime, nor does it grant
+baseline acceptance or complete the plan's full runtime coverage.
 
 ### Source admission in the local service
 
@@ -1336,8 +1381,8 @@ The service admits a new runtime source once for each attempt and immutable
 snapshot identity, before runner dispatch or raw/retained evidence assessment.
 This admission depends only on the trusted attempt and captured source; completed
 evidence is consumed later for persistence and projection and is never an
-admission prerequisite. For a live capture it passes the already captured complete
-file manifest to the source owner's admission API; it does not reopen
+admission prerequisite. For an ordinary live capture it passes the already captured
+complete file manifest to the source owner's admission API; it does not reopen
 the manifest or source files. On restart it reads `source-manifest.json` once
 from the service-owned attempt directory selected by the validated attempt UUID.
 The saved `manifestPath` never selects that read. The existing safe-path,

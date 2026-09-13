@@ -35984,7 +35984,7 @@
             ],
             "conditions": [
               "Exactly one passing observation per required case, successful exit, and no runner errors are necessary for pass; preserve observed step failures and verify source, contract, mapping, architecture, scenario, configuration, runner environment, and report identity. Retained current-contract evidence must preserve that inventory and version identity before admission. For target evidence, validate and retain the runner runtime digest against its source owner snapshot; missing or mismatched runtime provenance never grants target eligibility, while unchanged historical standalone proof remains readable.",
-              "Any own executionSource field requires exactly one direct source-owner combined admission with a trusted execution context, even when runtime identity is missing. Reuse its runtime descriptor for evidence comparisons. Missing context or invalid closure is non-pass; runtime-only service artifacts cannot admit derived execution, and retained derived admission remains unavailable without its declared trusted location handoff."
+              "On the direct path, any own executionSource field requires exactly one source-owner combined admission with a trusted execution context, even when runtime identity is missing. Reuse its runtime descriptor for evidence comparisons. Missing context or invalid closure is non-pass; runtime-only service artifacts cannot admit derived execution. A complete service-derived artifact requires bilateral execution presence and exact three-descriptor/full/configuration/contract/attempt binding without source revalidation; retained derived records cannot bypass this through the historical wrong-contract early return."
             ],
             "bypasses": [
               "Missing or invalid reports produce an explicit non-pass, never inferred completion."
@@ -36007,7 +36007,8 @@
               "#source-and-evidence",
               "#runtime-identity-producer-contract",
               "#frozen-verification-source",
-              "#direct-derived-evidence-admission"
+              "#direct-derived-evidence-admission",
+              "#derived-service-and-evidence-admission"
             ],
             "failureOwnerStepId": "assess-proof-evidence"
           },
@@ -36039,6 +36040,7 @@
               "artifact:admitted-verification-source"
             ],
             "conditions": [
+              "For derived source admission, use only the fixed run-UUID source/manifest locations and exact stored source contract. Perform one combined descriptor admission plus one actual output-tree byte verification before publishing a complete immutable private artifact; preserve bilateral execution presence, full/configuration/contract tuple and invalidate on mismatch. Startup repeats once per lifetime, reads/replay never do. Ordinary live no-source-read behavior remains unchanged; contained target dispatch and post-run integrity are a separate producer prerequisite.",
               "Register a complete immutable target-assessment producer inventory before dispatch, resolving both exact role references independently and sharing only identical ordinary verification identities. Hold one private orchestration lifetime, preserve every slot and confirmed observation through cancellation or interruption, and never auto-resume on startup. Consume assessed results only after registration or producer settlement; they are never an initial source-admission prerequisite. Retain historical verdicts and cache currentness-only projections at actual owner identity changes, with no computation on reads or replay.",
               "Explicit target-proof production selects an exact target allocation, accepted-version or target-review reference and service-owned runtime attempt. Compose ordinary frozen bytes through the source owner and consume the selected contract through the existing runner and evidence lifecycle. Exact request replay precedes idle and availability checks; new unavailable authority has no attempt side effects, and admitted failures, cancellation and restart interruption never auto-retry. This mode cannot become ordinary accepted conformance or candidate version preparation. Assessment inventory and eligibility remain separate consumers.",
               "Admit retained review metadata once through the version owner against its exact immutable history prefix and compare every owner field before supplying a target callback pair. Keep metadata integrity separate from retained-byte availability: historical pins remain readable, while new pinned target creation requires the exact reference to be available. Public review candidateDigest remains the version-owned fingerprint, with contract identity projected separately. No latest-review substitution or read-time re-admission is permitted.",
@@ -36080,6 +36082,7 @@
             "specRefs": [
               "#controlled-actions-and-retention",
               "#source-admission-in-the-local-service",
+              "#derived-service-and-evidence-admission",
               "#frozen-target-proof-production",
               "#retained-target-assessment-requests",
               "#target-assessment-http-transport",
