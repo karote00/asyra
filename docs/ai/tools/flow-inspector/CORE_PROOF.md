@@ -1352,6 +1352,20 @@ public recomputation is introduced. Startup performs the operations once per
 attempt and lifetime; reads and exact replay consume only completed private
 admission. Actual-byte failure does not leave a usable cached artifact.
 
+A newly produced derived snapshot is persisted as attempt `format: 3` when
+its complete source identity is published; ordinary attempts remain format 2.
+Format 3 requires its source contract definitions and all three non-null source
+descriptors, including for interrupted or failed records after source publication.
+The store accepts only formats 1, 2 and 3, retaining all existing versioned
+identity and completed-evidence checks for format 3. Source-owned admission still
+validates descriptor contents; store shape checks do not grant source authority.
+Missing or unknown formats reject. Historical formats 1 and 2 stay unchanged on
+load; descriptor presence still selects the new validation path. Format 3 may
+never fall back to historical admission when its fields are removed. This covers
+missing-field downgrade, not adversarial rewriting of the entire trusted local
+record and its outer format into a valid historical record. Public currentness
+and retained evidence preserve versioned checks for both formats 2 and 3.
+
 On raw or retained evidence's service-artifact path, an own `executionSource` on
 either snapshot or artifact requires it on both. Reject null, malformed, partial
 or one-sided presence. Consume only the already admitted immutable artifact:
