@@ -330,3 +330,19 @@ and `Interval`/`Dyadic` types. Public functions remain `interval`, `add`, `subtr
 function identity and one private module state. This extraction changes neither
 rounding/uncertainty nor exact conversion behavior, and supplies no new trig or
 movement guarantees. C may depend on this domain owner without importing D.
+
+## Bounded polynomial scalar evidence
+
+- The shared domain scalar owner adds `roundFraction(numerator, denominator, mode)`
+  with `nearest-even`, `down` and `up` rounding. It rejects invalid/oversized inputs;
+  directed or nearest overflow follows binary64 rounding. The old query facade
+  exports no new function and retains all original arithmetic behavior.
+- `domain/kinematic-trigonometry.ts` adds `evaluatePolynomialTrig(kind, input)` and
+  `boundPolynomialTrig(kind, interval)` for `sin`/`cos`, using fixed S19/C20 on
+  finite |x| < 1. Results expose `value` or `bounds` plus immutable per-call work;
+  interval input is cloned and validated once. Work records evaluations, terms and
+  maximum temporary BigInt width, without a persistent ledger or result cache.
+- Values are rounded exact polynomial approximants, with analytic error bounds
+  separately proved. They are not current C point trig, hardware parameters or
+  movement evidence. The 24000-bit and four fixed profile batch limits in the
+  specification apply before integration with any C/D consumer.
