@@ -15,13 +15,24 @@ import {
 import type { Quaternion, Vec3 } from '../../domain/math'
 import type { MeshGeometry } from '../../domain/part-geometry'
 import { projectBounds } from './bounds-projection'
-import type { Bounds } from './mesh-index'
+import type { Bounds, MeshIndex, MeshNode } from './mesh-index'
 
 const ops = poseOperations(intervalAlgebra)
 
 /** Isolated experimental certificate; no method routing consumes this artifact. */
-export interface SourceFrame {
+export interface NodeSourceSpan {
+  readonly kind: 'node'
   readonly geometry: MeshGeometry
+  readonly index: MeshIndex
+  readonly node: MeshNode
+  readonly offsets: readonly number[]
+  readonly start: number
+  readonly end: number
+}
+export type FrameSource =
+  Readonly<{ kind: 'mesh'; geometry: MeshGeometry }> | NodeSourceSpan
+export interface SourceFrame {
+  readonly source: FrameSource
   readonly pose: AlgebraPose<Interval>
   readonly bounds: Bounds
 }
@@ -36,6 +47,27 @@ export function prepareSourceFrame(
   proposal: Quaternion,
   checkpoint: () => void
 ): SourceFrame | undefined {
+  return prepareFrame(
+    Object.freeze({ kind: 'mesh', geometry }),
+    proposal,
+    checkpoint
+  )
+}
+
+/** The span is a completed frozen source snapshot, not current-node routing authority. */
+export function prepareSourceSpanFrame(
+  source: NodeSourceSpan,
+  proposal: Quaternion,
+  checkpoint: () => void
+): SourceFrame | undefined {
+  return prepareFrame(source, proposal, checkpoint)
+}
+function prepareFrame(
+  source: FrameSource,
+  proposal: Quaternion,
+  checkpoint: () => void
+): SourceFrame | undefined {
+  const geometry = source.geometry
   checkpoint()
   const q: Quaternion = Object.freeze([...proposal]) as Quaternion
   const largest = Math.max(...q.map(Math.abs))
@@ -47,7 +79,15 @@ export function prepareSourceFrame(
     !Object.isFrozen(geometry.indices) ||
     geometry.indices.length === 0 ||
     geometry.indices.length % 3 !== 0 ||
-    geometry.positions.length % 3 !== 0
+    geometry.positions.length % 3 !== 0 ||
+    !Object.isFrozen(source) ||
+    (source.kind === 'node' &&
+      (!Object.isFrozen(source.offsets) ||
+        !Number.isSafeInteger(source.start) ||
+        !Number.isSafeInteger(source.end) ||
+        source.start < 0 ||
+        source.end <= source.start ||
+        source.end > source.offsets.length))
   )
     return undefined
 
@@ -76,9 +116,18 @@ export function prepareSourceFrame(
     [Infinity, -Infinity],
     [Infinity, -Infinity]
   ]
-  for (let occurrence = 0; occurrence < geometry.indices.length; occurrence++) {
+  const count =
+    source.kind === 'mesh'
+      ? geometry.indices.length
+      : 3 * (source.end - source.start)
+  for (let occurrence = 0; occurrence < count; occurrence++) {
     if (occurrence % 256 === 0) checkpoint()
-    const index = geometry.indices[occurrence],
+    const sourceOffset =
+      source.kind === 'mesh'
+        ? occurrence
+        : source.offsets[source.start + Math.floor(occurrence / 3)] +
+          (occurrence % 3)
+    const index = geometry.indices[sourceOffset],
       offset = index * 3
     if (
       !Number.isSafeInteger(index) ||
@@ -107,7 +156,7 @@ export function prepareSourceFrame(
     Object.freeze(interval(0))
   ]) as Vector<Interval>
   return Object.freeze({
-    geometry,
+    source,
     bounds,
     pose: Object.freeze({ position, rotation })
   })

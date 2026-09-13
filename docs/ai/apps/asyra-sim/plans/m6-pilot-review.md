@@ -2182,3 +2182,67 @@ The existing plan prefix is byte-preserved; only this appended section is
 formatted (the pre-existing whole-file formatting discrepancy remains).
 No fitting, hierarchy, routing or performance claim follows from this proof.
 The three-file isolated slice is frozen; the goal branch and G4 red remain unchanged.
+
+### Isolated fitting preparation - bounded step card
+
+Owner: Inspector `method` (complete-source rejection bounds, implementation
+`analysis/methods/**`), original-part 1.0.2 source geometry contract. This isolated
+proof consumes one admitted frozen mesh and its existing component index. It
+produces completed source-span certificates only; no method output, routing,
+pose cache, new tree, leaf size change or product geometry is authorized.
+
+Allowlist: new `fitted-index.ts` and `__tests__/fitted-index.test.ts`, the existing
+`source-frame.ts` and its test for span generalization, a test-only rational-oracle
+fixture extracted from that test, and this plan. Source-frame identity becomes
+explicit whole-mesh or node-span. A charged original DFS snapshots each original
+node's contiguous range of original triangle references and offsets. All indexed
+triangles occur exactly once in the root span; offsets/components are preserved.
+Extrema read frozen original geometry through those offsets, never a copied mesh.
+The caller index is not frozen or mutated. Its raw identities are diagnostic,
+not future routing authority: any later routing must separately establish that
+membership still matches the snapshot. No retained preparation cache is added;
+cold and repeated calls rebuild and pay equally, including after cancellation.
+
+Proposal: leaf moments scan all indexed vertex occurrences; internal nodes merge
+completed count/mean/central-second-moment summaries. One deterministic Jacobi
+sweep visits planes (0,1), (0,2), (1,2), including zero off-diagonal no-ops. Each
+plane uses a fixed atan2 half-angle and accumulated quaternion; finite arithmetic
+is only a direction proposal, not an eigenvalue or orthogonality certificate.
+The existing outward quaternion normalization and full-span extrema certify the
+single exact normalized quaternion. Nonfinite proposals yield no node certificate;
+no fallback collision geometry is introduced. All original nodes still appear.
+
+Actual charges: admission one; collection one per original node; triangle-reference
+append per 256 including tail; leaf moment pass per 256 vertex occurrences including
+tail, or internal merge one; three Jacobi attempts per node; existing frame admission
+one, normalization one, extrema chunks and publication one; completed index publication
+one. Frame admission is additional to the earlier 8N lower estimate, never subtracted.
+Each checkpoint precedes its work; abort returns no completed index. Source span
+metadata construction is covered by node collection/append, not an uncharged walk.
+
+Formal red first, then independent rational full-span enclosure, known improving
+orientation, original node/leaf/reference/offset/component identity and unchanged
+input fingerprint; exact named fee totals including multi-chunk, repeat and every
+cancel stage. Invalid proposal must remain certificate-absent. Existing 25 primitive
+proofs, type/lint/naming and independent numerical review close this slice. No
+benchmark, prefix, full run, query routing or dependency; freeze and stop afterward.
+
+Closeout: eight new preparation cases plus the original 25 primitive cases pass;
+independent review reran all 33 successfully. TypeScript, exact-file ESLint,
+formatting and the 11 naming checks pass. The stub's eight failing cases are
+retained as red evidence. The invalid-moment fixture was corrected from a finite
+moment scale to finite x-only elongated geometry whose moments overflow, retaining
+admitted original topology; this does not change proposal or certificate policy.
+
+Named full preparation totals are 30, 66 and 499 for one, two and fourteen
+closed octahedron components. Every source span is rationally enclosed; original
+node/leaf references, offsets and components survive, with frozen offset snapshots
+remaining authoritative after diagnostic triangle mutation. Repeated calls pay
+fully; all 30 small-case cancellation stages return no artifact. No cache or
+query consumer exists, so this is not a throughput or G4 benefit result.
+
+A future use must enter the private completed component-refinement owner after
+its original paid preparation. Its invocation memo may only publish after full
+fitting charge; any retained receipt must bind owned immutable membership and
+policy, not merely mutable public index identity. That lifecycle is unimplemented
+and needs a separate reviewed card. This six-file isolated slice is frozen.
