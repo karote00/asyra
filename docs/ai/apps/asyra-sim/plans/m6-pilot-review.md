@@ -1793,3 +1793,34 @@ certificate remains valid, but the measured strategy cannot justify reducing the
 500,000-unit goal workload. The one permanent case passes in 7.02 seconds.
 Reproduce with `SIM_CAPACITY_DIAGNOSTICS=1 yarn workspace @asyra/asyra-sim test:local src/analysis/methods/__tests__/interval-census-profile.test.ts --maxWorkers=1`;
 recorded evidence is `tmp/capacity/interval-census-profile.log`. G4 remains red.
+
+### Shared-boundary pose identity - minimum numerical card
+
+Before another prefix census, compare only existing snapshot 0 boundary 114:
+original segment 114 start versus segment 113 end at the same stored time.
+Allowlist: this plan and `boundary-pose-profile.test.ts`. Use all original joint
+keys and the canonical interpolation, shared-pair kinematics and collider compose
+owners, with both Number and outward interval algebras. Keep stored keyframe
+values, actual Number outputs and interval enclosures distinct. The exact
+mathematical endpoint joint values are the stored keyframe scalars; assert both
+interval interpolations enclose them. Number FK is observation, not an exact
+geometric oracle. Compare each endpoint of all fourteen pose intervals using
+binary64 identity including signed zero. Report pose overlap separately; it is
+not a same-pose or outside-membership proof. Any unequal pose stops direct
+boundary evidence handoff. This one bounded numerical test performs no mesh
+query, full prefix or production edit, and does not authorize a tolerance or
+whole-source displacement certificate. Such a certificate needs a separate
+mathematical contract and review.
+
+The minimum numerical result is exact pose identity for this ordered pair:
+all fourteen interval pose components and fourteen Number components match.
+Joint 4 and joint 6 interval enclosures differ between interpolation endpoints,
+but do not change this pair's relative poses. All six joint enclosures contain
+their stored canonical endpoint values. The exploratory assertion predicting a
+pose difference was wrong; retain `tmp/capacity/boundary-pose-identity-prediction-red.log`
+and replace that prediction with the observed exact-identity regression. This
+result supports only boundary 114 of this pair, not generic endpoint equality.
+A later cost proof still needs actual-source lifetime, paid preflight and complete
+output semantics; no source is fabricated for a root whose first solve was skipped.
+Reproduce the numerical oracle with
+`yarn workspace @asyra/asyra-sim test:local src/analysis/methods/__tests__/boundary-pose-profile.test.ts --maxWorkers=1`.
