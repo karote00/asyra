@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto'
+import { Matrix4, Quaternion, Vector3 } from 'three'
 import { expect, it, vi } from 'vitest'
 import type { KinematicAlgebra, JointDomains } from '../robot-kinematics'
 import { createRobotModel } from '../robot-model'
@@ -506,4 +507,154 @@ it('passes complete approved domains once without generating source geometry or 
     generation.mockRestore()
     preparation.mockRestore()
   }
+})
+
+it('prepares final raw-quaternion affine coefficients matching installed Three without changing point output', async () => {
+  const k = await import('../robot-kinematics')
+  const cases = [
+    k.REST_JOINTS,
+    { lift: -0, yaw: -0, shoulder: -0, elbow: -0, wrist: -0 },
+    { lift: -0, yaw: 0, shoulder: -0, elbow: 0, wrist: -0 },
+    { lift: 0.037, yaw: -0.71, shoulder: 0.29, elbow: -0.83, wrist: 0.47 },
+    ...Object.entries(k.ROBOT_JOINT_LIMITS).flatMap(([key, limits]) =>
+      limits.map((value) => ({ ...k.REST_JOINTS, [key]: value }))
+    )
+  ]
+  let associationDifferences = 0
+  for (const definition of definitions) {
+    const rig = k.prepareRobotRig(definition, createRobotModel(definition))
+    for (const joints of cases) {
+      const result = k.evaluateRobotAffinePose(rig, joints)
+      const original = k.evaluateRobotPose(rig, joints)
+      const pointOutput = (pose: typeof original) => ({
+        joints: pose.joints,
+        frames: pose.frames,
+        tool: pose.tool,
+        transforms: pose.parts.map((part) => part.transform)
+      })
+      expect(poseBits(pointOutput(result.pose))).toBe(
+        poseBits(pointOutput(original))
+      )
+      const transforms = new Set(
+        result.pose.parts.map((part) => part.transform)
+      )
+      expect(result.work).toEqual({ fk: 1, matrices: transforms.size })
+      result.parts.forEach((part, index) => {
+        const source = result.pose.parts[index]
+        expect(part.source).toBe(source.source)
+        expect(part.transform).toBe(source.transform)
+        expect(part.affine.position).toBe(source.transform.position)
+        expect(part.affine).toBe(
+          result.parts.find(
+            (candidate) => candidate.transform === part.transform
+          )?.affine
+        )
+        const matrix = new Matrix4().compose(
+          new Vector3().fromArray(source.transform.position),
+          new Quaternion().fromArray(source.transform.rotation),
+          new Vector3(1, 1, 1)
+        )
+        const e = matrix.elements
+        expect(poseBits(part.affine.matrix)).toBe(
+          poseBits([
+            [e[0], e[4], e[8]],
+            [e[1], e[5], e[9]],
+            [e[2], e[6], e[10]]
+          ])
+        )
+        expect(Object.isFrozen(part.affine.matrix)).toBe(true)
+        expect(part.affine.matrix.every((row) => Object.isFrozen(row))).toBe(
+          true
+        )
+        // Source vertices consume the new coefficients with Three's operation
+        // association, not an EPS comparison to the old quaternion point helper.
+        if (part.body === 'shoulder') {
+          for (
+            let offset = 0;
+            offset < part.source.shape.positions.length;
+            offset += 3
+          ) {
+            const point = part.source.shape.positions.slice(
+              offset,
+              offset + 3
+            ) as [number, number, number]
+            const applied = part.affine.matrix.map(
+              (row, axis) =>
+                row[0] * point[0] +
+                row[1] * point[1] +
+                row[2] * point[2] +
+                part.affine.position[axis]
+            )
+            const expected = new Vector3(...point)
+              .applyMatrix4(matrix)
+              .toArray()
+            expect(poseBits(applied)).toBe(poseBits(expected))
+            if (
+              poseBits(applied) !==
+              poseBits(k.transformRobotPoint(part.transform, point))
+            )
+              associationDifferences++
+          }
+        }
+      })
+    }
+  }
+  expect(associationDifferences).toBeGreaterThan(0)
+})
+
+it('evaluates point FK once and reuses completed affine frames without regenerating source', async () => {
+  vi.resetModules()
+  const sine = vi.spyOn(Math, 'sin'),
+    cosine = vi.spyOn(Math, 'cos')
+  const k = await import('../robot-kinematics')
+  const models = await import('../robot-model')
+  const rig = k.prepareRobotRig(
+    DEFAULT_ROBOT,
+    models.createRobotModel(DEFAULT_ROBOT)
+  )
+  const generation = vi.spyOn(models, 'createRobotModel')
+  sine.mockClear()
+  cosine.mockClear()
+  try {
+    const result = k.evaluateRobotAffinePose(rig, {
+      lift: 0.02,
+      yaw: 0.3,
+      shoulder: -0.4,
+      elbow: 0.5,
+      wrist: -0.2
+    })
+    expect(sine).toHaveBeenCalledTimes(4)
+    expect(cosine).toHaveBeenCalledTimes(4)
+    expect(generation).not.toHaveBeenCalled()
+    expect(result.work.matrices).toBe(
+      new Set(result.pose.parts.map((part) => part.transform)).size
+    )
+    expect(Object.isFrozen(result.parts)).toBe(true)
+    expect(() =>
+      k.evaluateRobotAffinePose(rig, { ...k.REST_JOINTS, lift: NaN })
+    ).toThrow()
+    expect(sine).toHaveBeenCalledTimes(4)
+    expect(cosine).toHaveBeenCalledTimes(4)
+  } finally {
+    sine.mockRestore()
+    cosine.mockRestore()
+    generation.mockRestore()
+  }
+})
+
+it('documents why a nonunit algebraic quaternion product is not an affine joint-matrix product', () => {
+  // Deliberately nonunit algebra fixture, not an admitted robot pose. The main
+  // entry is tested above; this independent identity counterexample forbids
+  // replacing its final-quaternion conversion with per-joint matrix chaining.
+  const a = new Quaternion(0.2, 0.1, 0.3, 0.8),
+    b = new Quaternion(-0.1, 0.3, 0.2, 0.7)
+  const scale = new Vector3(1, 1, 1),
+    origin = new Vector3()
+  const final = new Matrix4().compose(origin, a.clone().multiply(b), scale)
+  const chained = new Matrix4()
+    .compose(origin, a, scale)
+    .multiply(new Matrix4().compose(origin, b, scale))
+  expect(a.lengthSq()).not.toBe(1)
+  expect(b.lengthSq()).not.toBe(1)
+  expect(poseBits(final.elements)).not.toBe(poseBits(chained.elements))
 })
