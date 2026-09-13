@@ -1053,3 +1053,17 @@ Then focused cases, full app unit/type/build/lint/naming and independent review.
 Names JointSegments/JointSegmentInput belong to transient D motion evidence, with
 no persisted or wire identity. Stop for any required new physical parameter or
 source-chain ownership, not for independently pending material decisions.
+
+Explicit joint-segment admissibility is implemented. The permanent test first
+failed collection because the new owner module was absent; seven focused cases
+now pass, including every approved joint, exact/just-over speeds and limits,
+non-wrapping input, subnormal/large times, upstream unavailable-rig rejection and
+clone-once source retirement. The lift -0.1 to 0.1 over ten seconds demonstrates
+a rounded-product false pass: exact original dyadics exceed the speed budget;
+the next larger representable end time passes. Future planners must submit their
+chosen intervals to this owner rather than treating a rounded quotient as proof.
+Each assessment performs five scalar/exact comparisons, with no FK, collision
+query or source generation. All 415 app unit tests, typecheck/build, lint and
+naming pass; independent scoped review confirmed exact scaling and ownership.
+This is source-bound candidate evidence only, not articulated surface clearance,
+TCP reach, material/contact policy or executed movement.
