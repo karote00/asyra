@@ -161,6 +161,7 @@ function createTargetOwner({
   getReview,
   getSource = () => null,
   getAssessment = () => null,
+  getAssessmentSource = () => null,
   deferAssessmentValidation = false,
   getVersionReview = () => null,
   getAcceptedVersion
@@ -214,7 +215,8 @@ function createTargetOwner({
     assessmentId,
     actor,
     current,
-    allocationRevision
+    allocationRevision,
+    available = false
   ) => {
     requireValue(validId(assessmentId), 'assessment identity required')
     const assessment = getAssessment(assessmentId)
@@ -270,8 +272,21 @@ function createTargetOwner({
           source.runtimeSourceDigest,
       'assessment source identity is unavailable or conflicting'
     )
+    if (available)
+      requireValue(
+        same(getAssessmentSource(assessmentId), source),
+        'assessment source authority is unavailable or conflicting'
+      )
     return source
   }
+  const validateAssessmentAdmissionSource = (admission, source) =>
+    requireValue(
+      same(admission.source, {
+        digest: source.sourceDigest,
+        head: source.head
+      }),
+      'assessment admission source mismatch'
+    )
   let records = []
   // The service owns the enclosing store lock; this owner never opens another store.
   if (fs.existsSync(file)) {
@@ -417,8 +432,8 @@ function createTargetOwner({
                   entry.request.assessmentId === undefined),
             'invalid retained work admission'
           )
-          if (work.prerequisites.length && !deferAssessmentValidation)
-            assessmentSource(
+          if (work.prerequisites.length && !deferAssessmentValidation) {
+            const source = assessmentSource(
               record,
               work,
               entry.admission.assessmentId,
@@ -426,6 +441,8 @@ function createTargetOwner({
               false,
               entry.admission.allocationRevision
             )
+            validateAssessmentAdmissionSource(entry.admission, source)
+          }
         }
         for (const older of record.history.slice(0, index))
           if (older.admission)
@@ -562,19 +579,18 @@ function createTargetOwner({
             )),
         'work admission identity mismatch'
       )
-      requireValue(
-        !work.prerequisites.length ||
-          (assessmentSource(
-            record,
-            work,
-            admission.assessmentId,
-            admission.actor,
-            false,
-            admission.allocationRevision
-          ) &&
-            admission.allocationRevision < record.history.length),
-        'unconfirmed prerequisite blocks execution'
-      )
+      if (work.prerequisites.length) {
+        const source = assessmentSource(
+          record,
+          work,
+          admission.assessmentId,
+          admission.actor,
+          false,
+          admission.allocationRevision,
+          true
+        )
+        validateAssessmentAdmissionSource(admission, source)
+      }
       matchTask(record, work, task)
       if (snapshot)
         requireValue(
@@ -806,7 +822,8 @@ function createTargetOwner({
               request.assessmentId,
               actor,
               true,
-              request.expectedRevision
+              request.expectedRevision,
+              true
             )
             sourceIdentity = { digest: source.sourceDigest, head: source.head }
           } else {
@@ -955,7 +972,7 @@ function createTargetOwner({
         const work = entry.state.works.find(
           (item) => item.id === admission.workId
         )
-        assessmentSource(
+        const source = assessmentSource(
           record,
           work,
           admission.assessmentId,
@@ -963,6 +980,7 @@ function createTargetOwner({
           false,
           admission.allocationRevision
         )
+        validateAssessmentAdmissionSource(admission, source)
       }
   }
   return owner

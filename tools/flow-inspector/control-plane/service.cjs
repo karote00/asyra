@@ -781,6 +781,7 @@ function createService(
       },
       getSource: (id) => store.get(id),
       getAssessment: (id) => assessmentViews.get(id),
+      getAssessmentSource: (id) => assessmentSourceFor(id),
       deferAssessmentValidation: true,
       getReview: (id) => reviews.get(id)
     })
@@ -889,6 +890,18 @@ function createService(
     sourceDigest: runtime.sourceDigest,
     runtimeSourceDigest: runtime.runtimeSource.digest
   })
+  const assessmentSourceFor = (id) => {
+    const record = assessmentRecords.get(id)
+    if (!record) return null
+    const request = record.request
+    const source = request.sourceTaskId
+      ? tasks.sourceFor(request.sourceTaskId, request.sourceAttemptId)
+          ?.admission
+      : sourceAdmissions.get(request.sourceAttemptId)?.admission
+    if (!source) return null
+    const identity = targetRuntimeIdentity(source, request.sourceTaskId)
+    return isDeepStrictEqual(identity, record.runtime) ? identity : null
+  }
   const resolveTargetProof = (selection, requireAvailable) => {
     validateTargetProofSelection(selection)
     const target = targets.get(selection.targetId)

@@ -2774,7 +2774,11 @@ test(
   }
 )
 
-async function scopedWorkFixture(failure = null, deliveryAdapter = {}) {
+async function scopedWorkFixture(
+  failure = null,
+  deliveryAdapter = {},
+  dependent = false
+) {
   const f = referenceFixture()
   const service = createService(f.repository, {
     directory: f.runs,
@@ -2866,8 +2870,28 @@ async function scopedWorkFixture(failure = null, deliveryAdapter = {}) {
     allowedFiles: ['packages/factory/src/data-transact.ts'],
     prerequisites: []
   }
-  request.works = [work]
-  request.pending = request.pending.filter((id) => id !== obligation.id)
+  const dependentObligation = dependent
+    ? review.candidate.contract.cases.find(
+        (item) => item.id === 'deferred.outcome'
+      )
+    : null
+  const dependentWork = dependent
+    ? {
+        id: randomUUID(),
+        title: 'Consume assessed starting state',
+        stepId: dependentObligation.stepId,
+        obligationIds: [dependentObligation.id],
+        scope: 'Consume the exact assessed starting state',
+        allowedFiles: ['packages/factory/src/data-transact.ts'],
+        prerequisites: [
+          { workId: work.id, handoff: 'Use the assessed source task behavior' }
+        ]
+      }
+    : null
+  request.works = dependent ? [work, dependentWork] : [work]
+  request.pending = request.pending.filter(
+    (id) => id !== obligation.id && id !== dependentObligation?.id
+  )
   const target = service.decideTarget(request, LOCAL_ACTOR)
   const sourceProof = await service.wait(service.start({}, LOCAL_ACTOR))
   const taskId = randomUUID(),
@@ -2937,11 +2961,70 @@ async function scopedWorkFixture(failure = null, deliveryAdapter = {}) {
     service,
     task,
     work,
+    dependentWork,
     assessment,
     assessmentRequest,
     targetRequest: request
   }
 }
+
+test(
+  'dependent task start rejects a retired assessment source task after admission',
+  { skip: process.platform !== 'darwin', timeout: 40000 },
+  async () => {
+    const f = await scopedWorkFixture(null, {}, true)
+    try {
+      assert.equal(
+        f.assessment.result.works.find((item) => item.id === f.dependentWork.id)
+          .status,
+        'passed'
+      )
+      const target = f.service.getTarget(f.assessment.request.targetId)
+      const taskId = randomUUID()
+      const admissionId = randomUUID()
+      f.service.decideTarget(
+        {
+          action: 'admit',
+          targetId: target.id,
+          expectedRevision: target.revision,
+          requestId: admissionId,
+          reason: 'Admit exact assessed dependent work',
+          workId: f.dependentWork.id,
+          taskId,
+          assessmentId: f.assessment.id
+        },
+        LOCAL_ACTOR
+      )
+      await f.service.controlTask(f.task.id, { action: 'revoke' }, LOCAL_ACTOR)
+      assert.throws(
+        () =>
+          f.service.startTask(
+            {
+              requestId: taskId,
+              stepId: f.dependentWork.stepId,
+              objective: f.dependentWork.scope,
+              allowedFiles: f.dependentWork.allowedFiles,
+              workBinding: {
+                targetId: target.id,
+                workId: f.dependentWork.id,
+                admissionId
+              },
+              adapter: 'demonstration',
+              scenario: 'repair',
+              contractDigest: f.service.contract().digest,
+              revision: f.service.state().mapping.revision,
+              budgets: { elapsedMs: 60000, toolCalls: 20, attempts: 3 }
+            },
+            LOCAL_ACTOR
+          ),
+        /assessment source authority.*unavailable/i
+      )
+    } finally {
+      await f.service.close()
+      fs.rmSync(f.dir, { recursive: true, force: true })
+    }
+  }
+)
 
 test(
   'scoped work handoff preserves failed candidate and incomplete integration using exact current admitted work',

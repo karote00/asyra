@@ -736,7 +736,11 @@ service resolves the decision; the task owner checks it before capture, after
 capture and before every resumed attempt. Scope, actor, step, obligations,
 accepted revision, repository and captured source must agree. For dependent work,
 the immutable admission additionally retains the exact assessment id and allocation
-revision; the retained assessment must still match that binding and its source.
+revision; the retained assessment and authoritative runtime must match the persisted
+admission source. Each task start requires that exact registered source authority to
+remain available. The admission's own target revision makes the assessment projection
+historical without invalidating its frozen allocation, but source-task revocation or
+source retirement blocks execution.
 A reserved task cannot omit or substitute its binding. A stale, missing or changed
 relation fails before adapter operations or provider reservations. Task identity
 replay creates no new attempt. Existing provider dispatch blocks remain authoritative.
@@ -761,9 +765,10 @@ capture source or assess raw evidence again.
 
 Permanent cases must prove reservation and restart, immutable commitments,
 assessment-backed dependent admission and execution, prerequisite/status/source/
-actor/allocation/pin/identity rejection before effects, legacy-task compatibility,
-failure then correction with retained attempts, no cross-HEAD aggregation or
-automatic acceptance, and API/CLI parity. The offline integration case uses real
+actor/allocation/pin/identity rejection before effects, source retirement after
+admission, retained admission-source tampering, legacy-task compatibility, failure
+then correction with retained attempts, no cross-HEAD aggregation or automatic
+acceptance, and API/CLI parity. The offline integration case uses real
 retained source assessment producers and labels synthetic task inputs; it does not
 claim a real GitHub review or baseline decision. Existing security, Factory proof
 and browser gates remain mandatory.

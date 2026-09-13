@@ -87,7 +87,8 @@ bounded scope plus original candidate and integration outcomes before confirmati
 The first assessment-bound admission consumer now reserves dependent work from one
 explicitly selected current retained assessment across the service, API, CLI and
 Board. It preserves the exact allocation, source and prerequisite decision while
-leaving the target pending and the baseline unchanged. Full runtime coverage,
+requiring live source authority at task start, and leaves the target pending and the
+baseline unchanged. Full runtime coverage,
 whole-target offline integration and explicit target-baseline acceptance remain
 subsequent slices. Ordinary composition does not cover
 undeclared generated wrappers; the fixed four-package capture scope also does

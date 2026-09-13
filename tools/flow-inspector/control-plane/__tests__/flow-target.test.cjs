@@ -3,7 +3,7 @@ const test = require('node:test')
 const assert = require('node:assert/strict')
 const fs = require('node:fs')
 const path = require('node:path')
-const { randomUUID } = require('node:crypto')
+const { createHash, randomUUID } = require('node:crypto')
 const { loadContract, admitContract } = require('../contracts.cjs')
 const { createTargetOwner } = require('../flow-target.cjs')
 const root = path.resolve(__dirname, '../../../..')
@@ -439,9 +439,11 @@ function dependentAdmissionFixture(t) {
       issues: []
     }
   }
-  const assessments = new Map()
+  const assessments = new Map(),
+    assessmentSources = new Map()
   f.options.getSource = (id) => (id === source.id ? source : null)
   f.options.getAssessment = (id) => assessments.get(id)
+  f.options.getAssessmentSource = (id) => assessmentSources.get(id)
   const changed = structuredClone(f.request)
   changed.works[0].prerequisites = [
     { workId: changed.works[1].id, handoff: 'Use assessed upstream behavior' }
@@ -490,6 +492,7 @@ function dependentAdmissionFixture(t) {
     projection: { current: true }
   }
   assessments.set(assessmentId, assessment)
+  assessmentSources.set(assessmentId, assessment.runtime)
   const taskId = randomUUID()
   const admission = {
     action: 'admit',
@@ -522,6 +525,7 @@ function dependentAdmissionFixture(t) {
     owner,
     source,
     assessments,
+    assessmentSources,
     assessment,
     admission,
     task,
@@ -581,6 +585,37 @@ test('assessment-bound admission enables exact dependent work and survives resta
     result.decision.admission
   )
   assert.equal(restored.get(f.target.id).status, 'pending')
+})
+
+test('assessment-bound task start rejects retired source authority after its own admission revision', (t) => {
+  const f = dependentAdmissionFixture(t)
+  const result = f.owner.decide(f.admission, 'local-developer')
+  assert.equal(result.revision, f.target.revision + 1)
+  f.assessmentSources.delete(f.assessment.id)
+  assert.throws(
+    () => f.owner.checkTask(f.task, f.source.snapshot),
+    /assessment source authority.*unavailable/i
+  )
+})
+
+test('retained assessment admission rejects a changed source even with a recomputed digest', (t) => {
+  const f = dependentAdmissionFixture(t)
+  f.owner.decide(f.admission, 'local-developer')
+  const file = path.join(f.options.directory, 'targets.json')
+  const saved = JSON.parse(fs.readFileSync(file, 'utf8'))
+  const admission = saved.records[0].history.at(-1).admission
+  admission.source = {
+    digest: 'd'.repeat(64),
+    head: 'e'.repeat(40)
+  }
+  saved.records[0].history.at(-1).admissionDigest = createHash('sha256')
+    .update(JSON.stringify(admission))
+    .digest('hex')
+  fs.writeFileSync(file, JSON.stringify(saved))
+  assert.throws(
+    () => createTargetOwner(f.options),
+    /assessment admission source mismatch/i
+  )
 })
 
 test('assessment-bound admission rejects non-current or unsatisfied owner evidence without reservation', (t) => {

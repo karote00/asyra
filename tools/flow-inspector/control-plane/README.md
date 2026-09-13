@@ -754,9 +754,13 @@ complete passing baseline proof from this store, matching accepted revision and
 contract. Dependent admission resolves the selected completed assessment from the
 service and requires the same actor, target, allocation, accepted and verification
 pins, passing accepted/work/prerequisite results and currently registered source.
-It pins both HEAD and source digest plus the assessment/allocation identity. A PR
-merge, green check, task result or client-supplied verdict is not prerequisite
-evidence. Whole-target integration and baseline acceptance remain separate.
+It pins both HEAD and source digest plus the assessment/allocation identity. Startup
+cross-checks that persisted source against the authoritative assessment runtime.
+Every dependent task start also requires the exact registered source authority; the
+admission revision itself may make the assessment historical, while source-task
+revocation or source retirement blocks execution. A PR merge, green check, task
+result or client-supplied verdict is not prerequisite evidence. Whole-target
+integration and baseline acceptance remain separate.
 
 Then use the existing `task-start` request, setting `requestId` to the reserved
 `taskId`, exact step/objective/files from the work, and this additional field:
