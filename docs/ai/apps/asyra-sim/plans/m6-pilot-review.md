@@ -2145,3 +2145,149 @@ prove the matching upper bound despite overlapping world AABBs. Rational extrema
 reverse order, interval-motion enclosure, degenerate proposals, full source and
 cost/cancellation/cold-warm oracles are prerequisites. This section authorizes
 no fitting code, measurement, benchmark or full run; benefit remains unmeasured.
+
+
+### Whole-population temporal opportunity census - frozen passive scope
+
+This is a test-owned measurement, not candidate 29 or a Taylor implementation.
+Use an isolated worktree from current goal b9f4a710c. Inspector method remains
+unchanged: original source, shared-ancestor articulated poses, complete time,
+membership, opaque fresh/adjacent sources, all original charges and unknowns.
+No production/default/version/Inspector edits, geometry probe, changed fixture,
+per-pair budget reset or new dependency is authorized. Test helper identifiers
+are internal and never persisted method identities. Allowlist is permanent
+method census tests/helpers and this concise plan section.
+
+Artifact reuse audit: candidate-28 `frontier-full-0-control.json` already contains
+all pair outputs, input/source hashes, per-pair cost and complete global category
+sums. It lacks per-query original-root/node provenance, first static witness,
+first interval outcome, disjoint charged-event identities and nested preparation
+ownership. The older `actual-frontier-representative-population.json` has detailed
+query/root rows only for joint-2 / obstacle-11, preparation totals without charge
+identity, and no whole-population per-query exit trace. Final leaves alone cannot
+assign paid work to ancestors or identify the first retained witness. Reuse both
+as controls; one new passive full dispatch is necessary for missing fields.
+
+The observer delegates every original function exactly once with unchanged
+arguments, result/error identity and checkpoint semantics; it adds no geometry
+query or charge. Preserve sampler callable behavior and its exact publishBoundary
+operation using transparent forwarding; opaque handles are passed unchanged and
+never minted/copied by the observer. Static origin comes from the actual sampler;
+interval provenance comes from its canonical domain interval interpolation.
+Every actual charged unit has the unique invocation-local work ordinal. Contiguous
+ranges compact those event IDs; nested preparation ranges are retained/excluded
+from proposed savings, not added to global totals. Source, handoff and derivation
+operations remain separately paid and receive no replacement credit. Query exit,
+full first witness, ordered source identity and actual traversal demand are saved.
+
+Permanent small tests must first prove observer output/work/checkpoint equivalence,
+opaque same-node and adjacent-boundary transport, unchanged cancellation/exhaustion,
+and cost union for duplicated/ancestor-overlapping ranges. Finding, incomplete,
+unknown, wrong-root and unavailable-first-witness cases must receive no credit.
+The reducer considers every observed original root across all pairs, takes only
+maximal complete clear roots, retains their actual first static query and all
+preparation/source/handoff work, and deduplicates all removed charge identities.
+It records failed-initial-clear versus already-clear interval cases separately.
+One paid new certificate per credited root is only a deliberately optimistic
+lower cost bound; no actual certificate viability or measured saving is claimed.
+
+After focused observer/reducer proofs, type/lint/naming/placement/Inspector gates,
+run at most once through the existing complete representativeSnapshot(0), with
+39 bodies / 30 fixtures / 200 frames / 298 pairs, all source/settings/order and
+500k/20s/global interval limits unchanged. No prefix or extra probe runs. Save
+all evidence before assertions; require exact control work 500197, evaluations
+20265, target166 and identical serialized pair evidence to the retained control.
+A mismatch stops without using biased opportunity data; correct the observer but
+do not silently consume a second full-run authorization. Partial/unvisited roots
+remain explicitly unknown, not measured zero-cost roots. The 196 exhausted
+attempts stay charged. Complete output is a theorem/optimistic cost opportunity
+and mandatory remaining-work lower bound, never G4 or a new certificate.
+
+Census outcome: the single authorized full-dispatch run passed transparency in
+11,763.003 ms. Work=500,197, evaluations=20,265, target=166; every serialized pair
+receipt is exactly identical to the retained authoritative control. No default,
+geometry, method version, budget or source order changed. The method still returns
+partial, so this is not a product capacity pass. No second run or probe followed.
+
+All 41,258 actual top-level charged operations have disjoint invocation-local
+charge ordinal ranges: 20,510 static, 19,785 interval, 480 zero derivation, 21
+handoff and 462 source operations. Their ranges and category totals both reconcile
+to 500,197. Of 59,302 original roots, 20,254 completed and 39,048 are unresolved;
+38,851 have no attempted query. Only 101/298 pairs completed. The target and 196
+later exhausted pair attempts remain in the records with their paid costs.
+
+| Actual owner/exit             | Calls |   Work | Observed ms |
+| ----------------------------- | ----: | -----: | ----------: |
+| Static before traversal       | 19732 |  48610 |     305.966 |
+| Static membership penetration |   408 |  17204 |      20.458 |
+| Static traversal              |   174 | 308183 |    2720.660 |
+| Static already exhausted      |   196 |    196 |       2.328 |
+| Interval before traversal     | 19729 |  20137 |     124.332 |
+| Interval traversal complete   |    55 | 101101 |    7000.620 |
+| Interval traversal exhausted  |     1 |   3803 |     645.366 |
+
+These are development-host observer timings, not reference-hardware CPU proof.
+The whole-population split confirms static traversal owns logical cost while
+interval convex traversal owns most elapsed geometry time. Original preparation
+is 40,596 nested units and remains paid; source=462, handoff=21 and derivation=480
+also remain paid. No fee label was changed or copied work silently excluded.
+
+For each fully observed original root whose descendants all prove clear, the
+union of those leaves proves clearance over the entire original root. This
+mathematical implication establishes only that a whole-root proof exists; it
+does not prove a Taylor/source-box certificate can compute it or its cost. The
+reducer retains the complete first static source/witness and all preparation,
+source and handoff charges, then unions exact suffix charge identities. Finding,
+unknown, incomplete, wrong-root and nested duplicate contributions receive no
+credit. It considers all observed pairs/roots, not a selected old prefix.
+
+There are 300 roots with more than one removable suffix unit: 107,333 gross
+query-work units. Charging even an ideal one-unit replacement proof per root
+leaves an optimistic net opportunity of 107,033. Two initially unsuccessful
+interval roots (target 115 and 132) contribute gross 61,985 and 27,555, respectively
+(89,540 combined, net 89,538). Their suffix consists of 27,817 static plus 61,723
+interval units; their separately recorded 18 handoffs remain paid. This matches
+the prior target rows without using them to select the new run.
+
+The other 298 opportunities are already-clear roots: gross 17,793, net 17,495.
+They span joint-2 / fixture-table (183 roots), joint-2 / obstacle-10 (107), and
+joint-2 / obstacle-11 (8). One-unit cheap roots have no positive net credit and
+are not proposed as a new universal admission population. No certificate is
+claimed on these 300 roots; their complete first original witness is stored in
+the opportunity receipt, with its valid original-root time.
+
+The remaining-work bound deliberately favors the hypothetical replacement:
+38,851 unvisited roots require at least two canonical units each, plus one more
+for each of the 196 later failed whole-pair attempts (generously reuse the unit
+already paid). The partly completed active failure root is given no additional
+cost. Therefore at least 77,898 units remain, with no new benefit assumed there.
+The idealized completion floor is 500197-107033+77898 = 471,062, leaving 28,938
+below 500,000 before all real coefficient/proof/admission costs and additional
+unvisited geometry. This positive optimistic margin is not demonstrated budget
+feasibility. The single census neither rejects every Taylor approach nor licenses
+full algebra implementation. Return this exact theorem/opportunity/unknown scope
+for parent selection; no candidate 29 is started automatically.
+
+Permanent validation: 16 new observer/reducer/control tests and four existing
+sampler scheduling tests passed, with the full census opt-in excluded from the
+small gate. The one authorized full census test then passed. TypeScript, scoped
+ESLint/format and 21 naming/placement/Inspector contracts passed. Small cases
+prove exact result/error identity, real opaque same-node and adjacent publication,
+unchanged actual original-mesh work/checkpoints and cancellation, and duplicate/
+ancestor/preparation subtraction plus finding/unknown rejection. Full evidence
+comparison guards against the earlier publishBoundary observer regression.
+
+Reproduction entry is `SIM_TEMPORAL_OPPORTUNITY_CENSUS=1` and
+`temporal-opportunity.test.ts -t 'records one unchanged full-population'`.
+Its baseline file is the byte-identical reused control at project-local
+`tmp/capacity/frontier-full-0-control.json`, copied from the preserved candidate-28
+worktree; its SHA-256 is recorded in the census. Raw complete query/pair receipts
+are `tmp/capacity/temporal-opportunity-census.json` (about 67.5 MB); disjoint
+opportunities and bounds are `temporal-opportunity-summary.json` (about 420 KB).
+The original control and prior negative review evidence remain unchanged.
+
+Evidence SHA-256 `temporal-opportunity-census.json`: `b79710033eadf5263f17b13744c754c58ef353abd65f85fedd318cf940014f99`.
+
+Evidence SHA-256 `temporal-opportunity-summary.json`: `7a3983ff6e31df1c92a0d335d53b8abcbd3a6151bb0d4b12f522b2e5f5b05d71`.
+
+Evidence SHA-256 `census-full.log`: `8d4a80edd88641d99048427658d6a51c24cb9e18419af6f9cf4a59060f385727`.
