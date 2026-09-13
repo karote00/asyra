@@ -1283,3 +1283,28 @@ lint (12 console warnings, no errors) passed, including actual projection, D ray
 and articulated surface-pair consumers. Independent scoped numerical/code review
 found no remaining finding. This slice is frozen and stops for root quota review;
 it does not establish joint-interval motion, material/contact or harvest clearance.
+
+Next bounded readiness card: C joint-domain interval pose preparation. The one
+new entry consumes existing numeric domains and uses shared outward arithmetic
+plus directed polynomial bounds through the canonical chain. Generalize the
+existing final-quaternion affine formula once, preserving current point bits, and
+reuse its completed interval output per transform identity. It encloses admitted
+binary64 point tuples, not a correlated time trajectory or collision clearance.
+Exact allowlist and DoD are in the matching Inspector section; no scalar/poly/D
+production or material change is included. Subsequent D domain construction and
+articulated surface coverage must consume this source authority in their own cards.
+
+Future formal gates distinguish mathematical enclosure from sampled regression,
+retain all historical/current point/source evidence, and prove validation/identity/
+immutable ownership plus actual work. Fixed profile uses a full-domain small case
+and four 25-box batches with 200 bound-trig calls each, at most 400 polynomial
+evaluations, 1 second per batch/10 seconds total and existing 24000-bit guards.
+Record complete entry cost and useful finite bounds; do not add a cache or increase
+guards. This segment only writes/reviews readiness, then freezes for root quota
+review. No tests, implementation or following owner is authorized in this segment.
+
+The Inspector fixes tightness before implementation: DEFAULT_ROBOT rest and named
+nonzero singletons both permit widths at most 1e-10 in position/metres
+and quaternion/direction/affine coefficients; ±1e-6 joint box at most 1e-3, refined
+±1e-7 box at most 2e-4 with nonincreasing maxima. These test gates do not introduce
+a collision tolerance or require bit-identical signed zeros from set enclosure.
