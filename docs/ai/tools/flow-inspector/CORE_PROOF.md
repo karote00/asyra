@@ -1353,14 +1353,19 @@ or persistent verified flag.
 
 This evidence-owned envelope separates the completed source-owner result from
 assessment outcome; it does not attest that source bytes remained unchanged
-through execution. The subsequent candidate publisher will use
+through execution. The candidate publisher uses
 `produceCandidateProof` to return `{ verdict, source }`. A non-null source is
 published only after its actual contained runner settles and its existing
 post-run integrity check succeeds.
 That check is independent of assertion outcome: a failed or partial proof may
 still have an intact admitted source. Integrity failure removes the source
 output and remains visible in the verdict. `verifyCandidate` retains its existing
-verdict-only API through the same producer. Neither `verdict.json` nor saved task
+verdict-only API through one call to the same producer. The producer invokes
+`assessSourceEvidence` once and forwards the exact admitted source envelope after
+checking actual post-run bytes once per intact entry; it does not reconstruct or
+rehash descriptor identities. The non-null output is `artifact:candidate-proof-source`,
+which has no task/cache consumer until that next boundary is implemented. Neither
+`verdict.json` nor saved task
 verdicts acquire an authority flag or a duplicate source envelope.
 
 The subsequent task owner may publish a private source artifact only from this
@@ -1372,8 +1377,8 @@ source availability is independent of the existing verification/work verdict;
 source admission must not change those outcomes to passed. Exact cache selection,
 lifetime invalidation and the task-to-service route are frozen in that consumer
 slice before implementation. Later composition still verifies the actual bytes
-it selects. This evidence slice does not enable task caching or contained target
-production on its own.
+it selects. These source outputs do not enable task caching or contained target
+production on their own.
 
 ### Derived service and evidence admission
 

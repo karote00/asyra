@@ -35705,13 +35705,16 @@
               "artifact:admitted-agent-task",
               "artifact:proof-source-snapshot",
               "artifact:assessed-proof-evidence",
+              "artifact:assessed-proof-source",
               "source-owned fixed derived files and execution descriptor for the trusted candidate attempt",
               "abort signal and remaining deadline"
             ],
             "outputs": [
-              "artifact:agent-candidate-verdict"
+              "artifact:agent-candidate-verdict",
+              "artifact:candidate-proof-source"
             ],
             "conditions": [
+              "The source-aware producer returns verdict and independent source after exactly one evidence/source evaluation. Forward the admitted source only after actual contained runner settlement and successful post-run byte integrity, preserving failed or partial case outcomes; source admission or integrity failure yields no source artifact. The existing verifier wrapper consumes the same single producer verdict, and persisted verdict JSON gains no source envelope or verified flag. Task caching remains a later consumer.",
               "Freeze candidate source; execute every retained obligation inside enforced OS containment using trusted captured assertions and existing evidence owner. Recheck source integrity after settlement; unknown containment refuses execution.",
               "Match the full captured baseline manifest and contract identities before new candidate production. Preserve present verification identity; only genuine historical absence permits constructing this new proof descriptor from verified captured role bytes. Write source-owned fixed generated files, execute their actual configuration and bootstrap, and pass the complete candidate snapshot plus trusted context to one direct evidence admission. Retain all three source descriptors in the verdict without granting historical replay authority."
             ],
@@ -35737,7 +35740,8 @@
             "specRefs": [
               "../../../docs/ai/tools/flow-inspector/AGENT_EXECUTION.md#candidate-verification",
               "#derived-execution-source",
-              "#direct-derived-evidence-admission"
+              "#direct-derived-evidence-admission",
+              "#source-identity-and-verification-outcome"
             ],
             "failureOwnerStepId": "verify-agent-candidate"
           },
@@ -36208,6 +36212,16 @@
             "predicate": "After actual runner settlement and before candidate verdict completion, direct evidence returns with one combined source admission using the candidate-owned trusted location parameter; no completed candidate verdict is a prerequisite.",
             "producedArtifacts": [
               "artifact:assessed-proof-evidence"
+            ]
+          },
+          {
+            "id": "admitted-source-to-candidate",
+            "from": "assess-proof-evidence",
+            "to": "verify-agent-candidate",
+            "kind": "conditional",
+            "predicate": "After direct derived source admission succeeds and runner settles, forward its source identity independently of case outcome before candidate post-run publication; no completed candidate verdict or passing evidence is a prerequisite.",
+            "producedArtifacts": [
+              "artifact:assessed-proof-source"
             ]
           },
           {
@@ -36765,6 +36779,15 @@
             "title": "Assess proof source output",
             "ownerStepId": "assess-proof-evidence",
             "channel": "direct derived source/evidence envelope; source-owner completed identity independent of case outcome",
+            "consumerStepIds": [
+              "verify-agent-candidate"
+            ]
+          },
+          {
+            "id": "artifact:candidate-proof-source",
+            "title": "Candidate proof source output",
+            "ownerStepId": "verify-agent-candidate",
+            "channel": "source identity after contained execution and post-run integrity; independent of assertion outcome",
             "consumerStepIds": []
           },
           {
