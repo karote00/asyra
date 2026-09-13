@@ -1191,3 +1191,21 @@ All 433 app tests, build/typecheck, lint (10 console warnings, no errors), namin
 and independent scoped review pass. No snapshot was rewritten, and no C trig,
 consumer, renderer or D query behavior changed. This closes the prepared affine
 handoff only; downstream authority adoption and numerical integration remain open.
+
+Next bounded D Step Card: robot-body completed-affine query adoption. Ray/collision
+consume C evaluateRobotAffinePose once per batch and reuse frames by actual affine
+identity. C binary64 coefficients become singleton inputs; preserve outward forward
+application and true cofactor inverse, with determinant ambiguity unknown. Report
+actual C fk/bodyMatrices, no fixed count or duplicate raw-quaternion producer.
+Only ray-query/collision, direct tests and API/spec/Inspector/plan may change;
+source-hierarchy test helper only if its direct body frame input must adopt the
+same C product, never tree/pruning/budget behavior. No C point/poly, base/camera/
+farm/instance, scalar, predicate or material edits.
+First formal missing-adoption/work red; then actual C/Three source coefficient and
+vertex enclosure, independent body ray/surface-pair and witness controls, inverse
+ambiguity, frame reuse/currentness/zero-generation cases. Preserve unexpected old
+boundary failures and review exact new-authority evidence before any expectation
+change; do not mechanically turn unknown into accepted output. Run all original
+numeric/other-transform controls, full app unit/type/build/lint/naming and scoped
+review. This is a real fixed-pose body consumer adoption, not full-world/GPU or
+joint-trajectory clearance. Stop if an extra transform owner change is required.

@@ -368,3 +368,17 @@ scale operations. They are affine coefficients, not a promise of exact rigid
 orthonormality. The old point API and tool outputs remain unchanged; new matrix
 coefficients need not reproduce old point multiplication bits. Runtime/render/D
 adoption is not part of this preparation entry.
+
+## Robot-body query affine adoption
+
+Ray and surface queries obtain one `evaluateRobotAffinePose` result and consume
+its completed body matrix coefficients and translation. `prepareQueryAffineFrame`
+prepares forward singleton-coefficient frames; `prepareQueryAffineInverse` prepares
+true cofactor inverse frames from the same coefficients;
+matching C affine identities share preparation within a batch. `RayWork` and
+`SurfaceWork` add `bodyMatrices`, forwarding C's actual conversion count, while
+`fk` forwards its actual point-evaluation count. No persistent identity changes.
+
+Base/camera/farm/instance frames and all existing numerical predicates remain
+unchanged. This is robot-body CPU coefficient adoption only; it does not certify
+GPU arithmetic, the entire world transform pipeline or articulated interval FK.
