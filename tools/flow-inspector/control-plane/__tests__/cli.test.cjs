@@ -672,6 +672,101 @@ test('assessment CLI waits for real local and remote production while preserving
     const cancelled = await invoke(['target-assessment-cancel', cancelId], true)
     assert.equal(cancelled.code, 0)
     assert.equal(cancelled.value.phase, 'cancelled')
+    if (process.platform === 'darwin') {
+      holdCancellation = false
+      const dependencies = path.join(repository, 'node_modules')
+      fs.rmSync(dependencies, { recursive: true, force: true })
+      fs.symlinkSync(path.join(root, 'node_modules'), dependencies, 'dir')
+      const task = await service.waitTask(
+        service.startTask(
+          {
+            requestId: randomUUID(),
+            stepId: 'finalize-transaction-state',
+            objective: 'Exercise exact CLI candidate source authority',
+            allowedFiles: ['packages/factory/src/data-transact.ts'],
+            adapter: 'demonstration',
+            scenario: 'repair',
+            contractDigest: service.contract().digest,
+            revision: service.state().mapping.revision,
+            budgets: { elapsedMs: 60000, toolCalls: 20, attempts: 3 }
+          },
+          LOCAL_ACTOR
+        )
+      )
+      const taskRequest = {
+        ...request,
+        requestId: randomUUID(),
+        targetId: failedTarget.id,
+        sourceTaskId: task.id,
+        sourceAttemptId: task.attempts.at(-1).id
+      }
+      fs.writeFileSync(input, JSON.stringify(taskRequest))
+      await server.close()
+      server = undefined
+      const taskLocal = await invoke(['target-assess', 'assessment.json'])
+      assert.equal(taskLocal.code, 1)
+      assert.equal(taskLocal.value.phase, 'completed')
+      assert.equal(taskLocal.value.runtime.taskId, task.id)
+      assert.equal(
+        taskLocal.value.runtime.attemptId,
+        taskRequest.sourceAttemptId
+      )
+      assert.equal(taskLocal.value.result.accepted.status, 'passed')
+      assert.equal(taskLocal.value.result.integration.status, 'failed')
+      server = await startServer(repository, { url: 'http://127.0.0.1:0' })
+      service = server.service
+      assert.deepEqual(
+        await invoke(['target-assess', 'assessment.json'], true),
+        taskLocal
+      )
+      const taskRemoteRequest = { ...taskRequest, requestId: randomUUID() }
+      fs.writeFileSync(input, JSON.stringify(taskRemoteRequest))
+      const taskRemote = await invoke(
+        ['target-assess', 'assessment.json'],
+        true
+      )
+      assert.equal(taskRemote.code, 1)
+      assert.equal(taskRemote.value.phase, 'completed')
+      assert.equal(taskRemote.value.result.accepted.status, 'passed')
+      assert.equal(taskRemote.value.result.integration.status, 'failed')
+      assert.equal(taskRemote.value.runtime.taskId, task.id)
+      for (const slot of taskRemote.value.slots)
+        assert.equal(service.get(slot.id).format, 3)
+      await service.controlTask(task.id, { action: 'revoke' }, LOCAL_ACTOR)
+      const taskReplay = await invoke(
+        ['target-assess', 'assessment.json'],
+        true
+      )
+      assert.equal(taskReplay.code, 1)
+      assert.deepEqual(taskReplay.value.result, taskRemote.value.result)
+      assert.equal(taskReplay.value.projection.current, false)
+      const taskShown = await invoke(
+        ['target-assessment-show', taskRemote.value.id],
+        true
+      )
+      assert.equal(taskShown.code, 0)
+      assert.deepEqual(taskShown.value.result, taskRemote.value.result)
+      fs.writeFileSync(
+        input,
+        JSON.stringify({ ...taskRemoteRequest, requestId: randomUUID() })
+      )
+      await assert.rejects(
+        () => invoke(['target-assess', 'assessment.json'], true),
+        /unavailable/
+      )
+      fs.writeFileSync(
+        input,
+        JSON.stringify({
+          ...taskRequest,
+          requestId: randomUUID(),
+          sourceTaskId: null
+        })
+      )
+      await assert.rejects(
+        () => invoke(['target-assess', 'assessment.json'], true),
+        /Invalid/
+      )
+    }
   } finally {
     if (server) await server.close()
     else await service.close()
