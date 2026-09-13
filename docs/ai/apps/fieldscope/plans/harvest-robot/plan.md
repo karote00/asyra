@@ -1209,3 +1209,21 @@ change; do not mechanically turn unknown into accepted output. Run all original
 numeric/other-transform controls, full app unit/type/build/lint/naming and scoped
 review. This is a real fixed-pose body consumer adoption, not full-world/GPU or
 joint-trajectory clearance. Stop if an extra transform owner change is required.
+
+Robot-body affine adoption is implemented. The initial seven missing-adoption,
+entry and work assertions failed while 60 existing controls passed. The final
+69 focused cases and all 437 app tests pass, including original source/currentness,
+other-frame and numerical controls. Actual articulated tool-guard ray and surface
+pair witnesses use independently composed Three source points; forward intervals
+enclose original vertices and true inverse controls retain singular uncertainty.
+The new ray fixture initially approached an inward-wound face along parallel
+faces and remained unknown; its retained failure is a fixture limitation, not a
+fixed query bug. Its permanent exterior oblique control changes no predicate.
+Each batch uses one C completed affine pose, preserves original affine identity
+reuse, and reports the actual C matrix work. Test-only hierarchy and passive
+profiles changed only their direct body input; original domain counts remain
+unchanged. Build/typecheck, lint (10 existing console warnings, no errors), naming
+and diff checks pass. Independent scoped numerical/code review found no remaining
+finding. This closes fixed-pose body coefficient adoption only;
+C point trig, material/contact decisions and whole joint-trajectory evidence remain
+separate work.

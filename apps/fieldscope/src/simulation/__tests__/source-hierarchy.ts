@@ -2,10 +2,11 @@
 import type { GeometrySource, GeometryMesh, GeometryBounds } from '../geometry'
 import type { SourceRegion } from '../../domain/source-occupancy'
 import type { SurfaceCoverageBatch, SurfaceBatch } from '../collision'
-import { evaluateRobotPose } from '../../domain/robot-kinematics'
+import { evaluateRobotAffinePose } from '../../domain/robot-kinematics'
 import { interval, add, type Interval } from '../query-arithmetic'
 import {
   prepareQueryForwardFrame,
+  prepareQueryAffineFrame,
   prepareQueryInstanceFrame,
   transformQueryPoint
 } from '../ray-query'
@@ -171,8 +172,8 @@ export function queryHierarchy(
     rig = source.receipt.robot.rig
   if (!state || !rig) throw new Error('Expected admitted test pose')
   elapsed(started)
-  const pose = evaluateRobotPose(rig, state.joints),
-    bodies = new Map(pose.parts.map((part) => [part.source, part.transform]))
+  const pose = evaluateRobotAffinePose(rig, state.joints),
+    bodies = new Map(pose.parts.map((part) => [part.source, part.affine]))
   const work = {
     fk: 1,
     corners: 0,
@@ -198,7 +199,7 @@ export function queryHierarchy(
           )
           if (!body) throw new Error('Missing source body')
           frames.push(
-            prepareQueryForwardFrame(body),
+            prepareQueryAffineFrame(body),
             prepareQueryForwardFrame(state.base)
           )
         } else {

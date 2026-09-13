@@ -1,4 +1,5 @@
 import { expect, it, vi } from 'vitest'
+import { Matrix4, Quaternion, Vector3 } from 'three'
 import { prepareHierarchy, queryHierarchy } from './source-hierarchy'
 import { SiteGeometry } from '../../render-app/site-geometry'
 import { RobotProjection } from '../../render-app/robot-projection'
@@ -31,6 +32,7 @@ import {
 import { interval, add, type Interval } from '../query-arithmetic'
 import {
   prepareQueryForwardFrame,
+  prepareQueryAffineFrame,
   prepareQueryInstanceFrame,
   transformQueryPoint
 } from '../ray-query'
@@ -227,7 +229,7 @@ it('uses original instance then installed transforms without replacing source ve
 
 it('rejects malformed or replaced input before FK and preserves unknown validity/dynamics', () => {
   const f = setup([triangle('a', plane), triangle('b', plane)])
-  const fk = vi.spyOn(kinematics, 'evaluateRobotPose')
+  const fk = vi.spyOn(kinematics, 'evaluateRobotAffinePose')
   try {
     for (const value of [NaN, -1, 0.5, 999]) {
       const input = batch()
@@ -297,13 +299,16 @@ it('queries actual farm, robot and installed dock sources with one FK and no gen
   ]
   const crop = vi.spyOn(crops, 'createCropModels'),
     model = vi.spyOn(models, 'createRobotModel'),
-    fk = vi.spyOn(kinematics, 'evaluateRobotPose')
+    fk = vi.spyOn(kinematics, 'evaluateRobotAffinePose')
   try {
     const result = f.query.query(f.source, input)
     expect(
       result.results.every((pair) => pair.status === 'surface-separated')
     ).toBe(true)
     expect(result.work.fk).toBe(1)
+    expect(result.work.bodyMatrices).toBe(
+      fk.mock.results[0]?.value?.work.matrices
+    )
     expect(fk).toHaveBeenCalledTimes(1)
     expect(result.work.frames).toBe(3)
     expect(result.work.vertexVisits).toBe(12)
@@ -604,7 +609,7 @@ it('reuses completed source and batch FK for an actual robot and installed dock 
     firstTranslation: [0.1, 0, 0],
     secondTranslation: [0, 0, 0]
   }))
-  const fk = vi.spyOn(kinematics, 'evaluateRobotPose'),
+  const fk = vi.spyOn(kinematics, 'evaluateRobotAffinePose'),
     prepare = vi.spyOn(f.owner, 'prepare')
   try {
     const result = f.query.sweep(f.source, input)
@@ -920,7 +925,7 @@ it('inventories every real robot and hidden physical instance before bounded Car
     model = vi.spyOn(models, 'createRobotModel'),
     dock = vi.spyOn(models, 'createDockModel'),
     prepare = vi.spyOn(f.owner, 'prepare'),
-    fk = vi.spyOn(kinematics, 'evaluateRobotPose')
+    fk = vi.spyOn(kinematics, 'evaluateRobotAffinePose')
   try {
     const start = performance.now(),
       result = f.query.cover(f.source, input)
@@ -977,10 +982,8 @@ it('profiles existing primitive bounds without dropping unprepared sheets or tra
     rig = f.source.receipt.robot.rig
   if (!robotState || !rig) throw new Error('Expected admitted robot fixture')
   const started = performance.now(),
-    pose = kinematics.evaluateRobotPose(rig, robotState.joints)
-  const bodies = new Map(
-    pose.parts.map((part) => [part.source, part.transform])
-  )
+    pose = kinematics.evaluateRobotAffinePose(rig, robotState.joints)
+  const bodies = new Map(pose.parts.map((part) => [part.source, part.affine]))
   type Frame = ReturnType<typeof prepareQueryForwardFrame>
   let corners = 0,
     missingBounds = 0,
@@ -1002,7 +1005,7 @@ it('profiles existing primitive bounds without dropping unprepared sheets or tra
           )
           if (!body) throw new Error('Missing body')
           frames.push(
-            prepareQueryForwardFrame(body),
+            prepareQueryAffineFrame(body),
             prepareQueryForwardFrame(robotState.base)
           )
         } else {
@@ -1421,4 +1424,71 @@ it('checks elapsed time while accounting for root pairs after node budget exhaus
   } finally {
     clock.mockRestore()
   }
+})
+
+it('intersects an articulated original body face with an independently composed Three source plane', () => {
+  const input = batch(),
+    rig = robot.getSource().rig
+  if (!rig || !input.robot) throw new Error('Missing actual rig')
+  input.robot.joints = {
+    lift: 0.05,
+    yaw: 0.4,
+    shoulder: 0.3,
+    elbow: 0.2,
+    wrist: -0.1
+  }
+  const pose = kinematics.evaluateRobotAffinePose(rig, input.robot.joints)
+  const part = pose.parts.find((part) => part.source.id === 'tool-guard')
+  if (!part) throw new Error('Missing original tool guard')
+  const matrix = new Matrix4().compose(
+    new Vector3().fromArray(part.transform.position),
+    new Quaternion().fromArray(part.transform.rotation),
+    new Vector3(1, 1, 1)
+  )
+  const vertices = [0, 1, 2].map((corner) =>
+    new Vector3()
+      .fromArray(
+        part.source.shape.positions,
+        part.source.shape.indices[corner] * 3
+      )
+      .applyMatrix4(matrix)
+  )
+  const center = vertices[0]
+    .clone()
+    .add(vertices[1])
+    .add(vertices[2])
+    .multiplyScalar(1 / 3)
+  const normal = vertices[1]
+    .clone()
+    .sub(vertices[0])
+    .cross(vertices[2].clone().sub(vertices[0]))
+    .normalize()
+  const tangent = vertices[1].clone().sub(vertices[0]).normalize()
+  // This segment crosses the face interior with a finite margin on both sides.
+  const crossing = [
+    center.clone().addScaledVector(normal, 0.01),
+    center.clone().addScaledVector(normal, -0.01),
+    center.clone().addScaledVector(tangent, 0.002)
+  ]
+  const f = setup([
+    triangle(
+      'independent-crossing',
+      crossing.flatMap((point) => point.toArray())
+    )
+  ])
+  const body = f.source.meshes.findIndex((mesh) => mesh.origin === part.source)
+  expect(body).toBeGreaterThan(0)
+  input.pairs = [
+    {
+      first: { mesh: body, instance: 0, triangle: 0 },
+      second: { mesh: 0, instance: 0, triangle: 0 }
+    }
+  ]
+  const result = f.query.query(f.source, input),
+    pair = result.results[0]
+  expect(pair.status).toBe('surface-intersection')
+  expect(pair.first.mesh.origin).toBe(part.source)
+  expect(pair.first.triangle).toBe(0)
+  expect(result.work.fk).toBe(1)
+  expect(result.work.bodyMatrices).toBe(pose.work.matrices)
 })
