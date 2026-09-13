@@ -4,6 +4,7 @@ import type { MeshGeometry } from '../../../domain/part-geometry'
 import type { Body } from '../../../domain/workcell'
 import type { PairQuery } from '../continuous-query'
 import { queryOriginalPartPair } from '../original-part-method'
+import { OriginalMeshQuery } from '../original-mesh-query'
 
 // Project-authored synthetic solids, not measured hardware, public dataset
 // records, or independent human review. Each cube has eight exact dyadic
@@ -134,22 +135,29 @@ function input(offset: number, reverse: boolean): PairQuery {
   }
 }
 
-it.each([
-  { offset: 0, reverse: false },
-  { offset: 0, reverse: true },
-  { offset: 1 / 2, reverse: false },
-  { offset: 1 / 2, reverse: true }
-])(
-  'encloses exact mesh clearance on every leaf: $offset, reverse $reverse',
-  ({ offset, reverse }) => {
+it.each(
+  [
+    { offset: 0, reverse: false },
+    { offset: 0, reverse: true },
+    { offset: 1 / 2, reverse: false },
+    { offset: 1 / 2, reverse: true }
+  ].flatMap((test) => [false, true].map((frontier) => ({ ...test, frontier })))
+)(
+  'encloses exact mesh clearance on every leaf: $offset, reverse $reverse, frontier $frontier',
+  ({ offset, reverse, frontier }) => {
     const threshold = offset === 0 ? 0 : 1 / 8
-    const result = queryOriginalPartPair(input(offset, reverse), {
-      threshold,
-      distanceTolerance: 1e-6,
-      timeTolerance: 1e-5,
-      maxIntervals: 2048,
-      maxIterations: 48
-    })
+    const result = queryOriginalPartPair(
+      input(offset, reverse),
+      {
+        threshold,
+        distanceTolerance: 1e-6,
+        timeTolerance: 1e-5,
+        maxIntervals: 2048,
+        maxIterations: 48
+      },
+      undefined,
+      new OriginalMeshQuery(undefined, 500000, true, undefined, frontier)
+    )
     // Force both positive-distance leaves and crossing leaves, so the oracle
     // cannot pass by checking only the zero minimum of the whole trajectory.
     expect(result.leaves.length).toBeGreaterThanOrEqual(4)
@@ -224,16 +232,18 @@ function rotatedMinimumSquared(dx: number, dy: number): Rational {
   }, zero)
 }
 
-it.each([
-  { factor: 1, threshold: 0.02, reverse: false },
-  { factor: 1, threshold: 0.02, reverse: true },
-  { factor: 1, threshold: 0.04, reverse: false },
-  { factor: 1, threshold: 0.04, reverse: true },
-  { factor: 1 / 4, threshold: 0, reverse: false },
-  { factor: 1 / 4, threshold: 0, reverse: true }
-])(
-  'bounds rotated original solids: scale $factor, threshold $threshold, reverse $reverse',
-  ({ factor, threshold, reverse }) => {
+it.each(
+  [
+    { factor: 1, threshold: 0.02, reverse: false },
+    { factor: 1, threshold: 0.02, reverse: true },
+    { factor: 1, threshold: 0.04, reverse: false },
+    { factor: 1, threshold: 0.04, reverse: true },
+    { factor: 1 / 4, threshold: 0, reverse: false },
+    { factor: 1 / 4, threshold: 0, reverse: true }
+  ].flatMap((test) => [false, true].map((frontier) => ({ ...test, frontier })))
+)(
+  'bounds rotated original solids: scale $factor, threshold $threshold, reverse $reverse, frontier $frontier',
+  ({ factor, threshold, reverse, frontier }) => {
     const dx = -0.2112 * factor,
       dy = 0.0616 * factor,
       rotation = [0, 0, 0.6, 0.8] as const
@@ -260,13 +270,18 @@ it.each([
     }
     query.trajectory = { version: 1, keyframes: [{ time: 0, joints: {} }] }
     query.interval = [0, 0]
-    const result = queryOriginalPartPair(query, {
-      threshold,
-      distanceTolerance: 1e-6,
-      timeTolerance: 1e-5,
-      maxIntervals: 1,
-      maxIterations: 48
-    })
+    const result = queryOriginalPartPair(
+      query,
+      {
+        threshold,
+        distanceTolerance: 1e-6,
+        timeTolerance: 1e-5,
+        maxIntervals: 1,
+        maxIterations: 48
+      },
+      undefined,
+      new OriginalMeshQuery(undefined, 500000, true, undefined, frontier)
+    )
     const exact = rotatedMinimumSquared(dx, dy)
     expect(result.leaves).toHaveLength(1)
     const leaf = result.leaves[0]

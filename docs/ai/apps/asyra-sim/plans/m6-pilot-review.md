@@ -2145,3 +2145,134 @@ prove the matching upper bound despite overlapping world AABBs. Rational extrema
 reverse order, interval-motion enclosure, degenerate proposals, full source and
 cost/cancellation/cold-warm oracles are prerequisites. This section authorizes
 no fitting code, measurement, benchmark or full run; benefit remains unmeasured.
+
+### Candidate 27 - complete traversal-frontier prerequisite
+
+Frozen before implementation on `codex/asyra-sim-frontier-proof`, from goal
+`b9f4a710c`. Candidate 26's declared screen was rejected and preserved at
+`25a9f793e`; no part of that branch is inherited. This task is a prerequisite
+proof and fixed screen, not production integration or a method-version change.
+
+Execution card: method owner, Inspector `method` inputs/conditions/bypasses and
+cache fields at lines 1008–1066; original-part spec “Solid interpretation and
+limits”, “Numerical method” and “Bounded acceleration decision”. The admitted
+frozen ordered geometry and domain-owned current/full-interval poses are inputs.
+The candidate outputs freshly computed original-source evidence and an internal
+structural partition; no earlier pose, distance, verdict or upper witness is
+retained. Original median membership, demanded component refinement, final
+triangles, uncertainty, cancellation and every segment remain authoritative.
+No renderer, approximate source substitution, global result cache, dependency,
+method catalog or production version change is allowed. The isolated allowlist
+is `original-mesh-query.ts`, a method-owned frontier helper, permanent method
+tests and this plan. The fifth constructor option is default-off and is never
+selected by the installed production method; full integration would require
+new method/Inspector version and lifetime review after evidence passes.
+
+The frontier is a disjoint Cartesian-product cover of the ordered source
+triangle sets. A terminal item is a pair of existing complete nodes, either a
+strictly rejected node pair or a fully processed leaf-node pair. A source leaf
+node still contains all original triangles; its entire Cartesian product is
+rechecked at every target query. Start from the ordinary root pair or a previous
+complete partition. The transaction's only transitions are next, split one
+node into its two exact children, and retain the complete active node pair.
+Publishing with an active or unvisited pair is forbidden. Premature penetration,
+interval zero, uncertainty and exhaustion publish no incomplete replacement.
+The previous complete partition is merely a structural search start, never a
+claim about a later query. Fresh world/pose bounds and unchanged triangle solvers
+provide every current certificate; no additional hull support or fixed-axis
+preflight is inserted.
+
+A single private slot binds ordered immutable geometry identities and both
+actual demanded MeshIndex identities. A different pair clears it; different
+index identities (including median-to-component refinement or rebuilt index)
+start from the roots. Mutable source cannot use retention. The complete node,
+bounds, child, triangle and vertex graph is frozen under charged preparation
+before any reference enters a frontier; each invocation charges this complete
+walk equally even on warm original-index reuse. No frontier survives context
+creation. One charge covers each pair admission, index/partition admission,
+prepared node, prepared triangle, terminal capture/copy, split/reopen and final
+publication. Every actual current node and triangle still pays its original
+query checkpoint and every executed projection its original axis checkpoint.
+The immutable input frontier is cursor-read, not silently copied to a worklist;
+new split pairs use the charged split transition. No baseline-shadow discounts
+or post-hoc event subtraction enter candidate work.
+
+Publication follows complete geometry. If its checkpoint alone exhausts the
+mesh budget, retain the freshly completed geometry evidence, do not publish,
+and defer that same exhaustion to the next owned operation; cancellation still
+propagates. This is the existing evidence-preservation principle, not use of an
+old verdict. All earlier capture/reopen failures interrupt ordinary solving.
+
+Before the fixed screen, permanent exhaustive oracles must establish complete
+Cartesian cover with neither duplicates nor omissions, illegal transition and
+partial-publication rejection, ordered geometry/index invalidation, immutable
+ownership, identical cold/hot preparation and work, and abort boundaries. Query
+cases cover changed pose, full interval interior crossing, concave holes,
+containment/membership, penetration after a warning, and changed initial upper
+or threshold. A retained partition supplies no truth and must remain safe when
+those inputs change. A repeated query must still execute new bounds/triangles.
+
+Fixed screen is original joint-2 / obstacle-11, complete roots 114–198, current
+settings/source/order, and unchanged 500k/20-second guards. First reproduce
+complete control = 197,028 units and 95 evaluations; otherwise stop before
+candidate measurement. Execute the real candidate continuous/query traversal
+in cold and warm-original-preparation contexts. Report all actual charged
+categories before assertions, including failures. Both complete candidates must
+use <=157,622 units. Do not alter source, threshold, roots, iteration count or
+scheduling policy after observing results. The comparison first checks full
+coverage and unchanged original-root finding/penetration classification; source
+bounds/witnesses may differ only where independently validated against original
+triangles and unchanged tolerance. The small formal oracle supplies that
+semantic validation; no unproved source witness is accepted merely because two
+numerical outputs look similar. New unresolved coverage is failure.
+
+Concentrate the permanent tests, type/lint/format/naming/placement and Inspector
+contracts before the single cold/hot prefix screen. On any failed screen,
+preserve the complete negative package and stop. Even a positive prerequisite
+needs independent review and later integration permission before any full goal
+benchmark. G4 remains 39 bodies, 30 fixtures, 200 frames, 298 pairs, three
+scenarios and 500k/20 seconds, and remains unresolved.
+
+Candidate 27 outcome: **rejected by the frozen admission screen**. The one
+control/cold/hot run reproduced control 197,028 and both actual candidates
+190,505, exceeding 157,622 by 32,883. All three completed 95 evaluations and
+90 leaves. The complete serialized `PairEvidence` (including every bound,
+witness time, reason, classification and coverage) was identical to control;
+cold/hot work and every recorded category were identical. Observed times were
+6.70 s control, 9.27 s cold and 9.05 s hot, each within the unchanged 20-second
+guard. These are public representative source results, not hardware or human
+validation, and do not establish the full 500k goal.
+
+Actual frontier charges were admission 184, lookup 64, prepared nodes 2,814,
+prepared triangles 5,024, prepared representatives 41, reopen 1,889,
+capture/copy 39,126 and publication 47: total 49,189. Each prepared representative
+is charged separately in addition to the complete node/triangle preparation.
+The owner totals were static distance 132,138, interval lower 58,227, source
+witness 105, evidence handoff 19 and zero derivation 16, summing exactly to
+190,505. Frontier charges are included in these owner totals, not added twice.
+Subtracting the actual candidate bookkeeping leaves 141,316 actual existing
+query charges; the observed existing-work reduction is 55,712, consumed mostly
+by the 49,189 new charges. Net saving is only 6,523 (3.31%). This arithmetic is a
+post-run explanation of measured work, not shadow credit or an unexecuted
+candidate claim. Repeated complete frontier capture is the principal added
+owner cost (39,126); no free copy, altered charge, coarsening or scheduling
+revision was tried after the failure.
+
+The prerequisite package passed 84 focused tests: 15 structural-cover tests,
+8 actual-query tests, 20 independent exact-rational continuous/source oracles
+(default and candidate), and 41 existing mesh, lifetime and fresh-witness
+regressions. The cover oracle checks every original Cartesian product through
+64 mixed retain/reopen schedules as well as full descent, malformed/missing
+source, duplicate offsets, ordered geometry and refined-index invalidation.
+TypeScript, scoped ESLint/Prettier and 21 naming/placement/Inspector contracts
+passed. The opt-in admission command produced one control pass and two intended
+negative screen failures, both solely at `190505 <= 157622`. Keep that threshold
+assertion; a rejected experiment is not converted into a passing performance
+gate. Reproduce with `SIM_FRONTIER_ADMISSION=1` and the permanent
+`frontier-admission.test.ts`; project-local `tmp/capacity/frontier-{control,cold,hot}.json`
+and `frontier-admission.log` preserve the complete run.
+
+Stop this candidate with production default-off and no method version,
+Inspector semantics, goal integration or G4 claim. Submit this one complete
+negative package for independent review. Do not begin candidate 28 or another
+benchmark without direction.

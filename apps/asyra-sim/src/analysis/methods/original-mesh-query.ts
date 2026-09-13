@@ -25,6 +25,7 @@ import {
 } from './mesh-index'
 import { projectedBoundsGap } from './mesh-projection'
 import { shapeMembership } from './mesh-membership'
+import { MeshFrontier, type FrontierPass } from './mesh-frontier'
 import {
   createFreshStaticSampler,
   type SourceUpper
@@ -80,18 +81,36 @@ export class OriginalMeshQuery {
   }
   private readonly refinedIndices = new WeakMap<MeshGeometry, MeshIndex>()
   private readonly indices = new WeakMap<MeshGeometry, MeshIndex>()
+  private readonly frontier: MeshFrontier | undefined
+  private frontierLimit: MeshWorkLimit | undefined
   constructor(
     private readonly checkpoint: () => void = () => undefined,
     private readonly maxWork: number = EXPERIMENT_RESOURCE_PROFILE.maxWorkUnits,
     private readonly hierarchy = true,
-    private readonly prepared = new WeakMap<MeshGeometry, PreparedMeshIndex>()
-  ) {}
+    private readonly prepared = new WeakMap<MeshGeometry, PreparedMeshIndex>(),
+    experimentalFrontier = false
+  ) {
+    this.frontier = experimentalFrontier
+      ? new MeshFrontier(() => this.tick())
+      : undefined
+  }
 
   private tick = (units = 1) => {
+    if (this.frontierLimit) throw this.frontierLimit
     this.checkpoint()
     this.work += units
     if (this.work > this.maxWork)
       throw new MeshWorkLimit('The original-triangle work budget was exhausted')
+  }
+  /** An optional publication cannot erase geometry that already completed. */
+  private publishFrontier(pass: FrontierPass | undefined): void {
+    if (!pass) return
+    try {
+      pass.publish()
+    } catch (error) {
+      if (!(error instanceof MeshWorkLimit)) throw error
+      this.frontierLimit = error
+    }
   }
   chargeEvidenceHandoff(): void {
     this.tick()
@@ -191,9 +210,12 @@ export class OriginalMeshQuery {
     tolerance: number,
     iterations: number
   ): DistanceEvidence {
-    if (a.geometry.kind !== 'mesh' && b.geometry.kind !== 'mesh')
+    if (a.geometry.kind !== 'mesh' && b.geometry.kind !== 'mesh') {
+      this.frontier?.observe(a.geometry, b.geometry)
       return convexDistance(a, b, tolerance, iterations)
+    }
     this.tick()
+    this.frontier?.observe(a.geometry, b.geometry)
     const ai = this.index(a),
       bi = this.index(b)
     const seed =
@@ -249,11 +271,12 @@ export class OriginalMeshQuery {
     const pending: [MeshNode | undefined, MeshNode | undefined][] = [
       [traversalA?.root, traversalB?.root]
     ]
+    const frontier = this.frontier?.start(traversalA, traversalB)
     let lower = Infinity
     let searchThreshold = result.upper < threshold ? 0 : threshold
-    while (pending.length) {
+    while (frontier ? frontier.hasPending : pending.length) {
       this.tick()
-      const pair = pending.pop()
+      const pair = frontier ? frontier.next() : pending.pop()
       if (!pair) throw new Error('Missing pending mesh pair')
       const [an, bn] = pair
       const ab = an ? worldBounds(an.bounds, a.pose) : shapeBounds(a)
@@ -268,14 +291,17 @@ export class OriginalMeshQuery {
       )
       if (bound > searchThreshold) {
         lower = Math.min(lower, bound)
+        frontier?.retain()
         continue
       }
       if (an?.children && splitLeft(an, bn, ab, bb)) {
-        for (const child of an.children) pending.push([child, bn])
+        if (frontier) frontier.split('a')
+        else for (const child of an.children) pending.push([child, bn])
         continue
       }
       if (bn?.children) {
-        for (const child of bn.children) pending.push([an, child])
+        if (frontier) frontier.split('b')
+        else for (const child of bn.children) pending.push([an, child])
         continue
       }
       for (const at of an?.triangles ?? [undefined])
@@ -311,9 +337,11 @@ export class OriginalMeshQuery {
           if (result.upper < threshold) searchThreshold = 0
           if (result.penetration) return { ...result, lower: 0 }
         }
+      frontier?.retain()
     }
     if (lower > result.upper)
       throw new Error('Inconsistent original mesh distance certificates')
+    if (!unknown) this.publishFrontier(frontier)
     return {
       ...result,
       lower: unknown ? 0 : lower,
@@ -332,6 +360,7 @@ export class OriginalMeshQuery {
     iterations = 48
   ): number {
     this.tick()
+    this.frontier?.observe(a.geometry, b.geometry)
     const ai = this.index(a),
       bi = this.index(b)
     if (!ai && !bi)
@@ -351,10 +380,11 @@ export class OriginalMeshQuery {
     const pending: [MeshNode | undefined, MeshNode | undefined][] = [
       [traversalA?.root, traversalB?.root]
     ]
+    const frontier = this.frontier?.start(traversalA, traversalB)
     let lower = Infinity
-    while (pending.length) {
+    while (frontier ? frontier.hasPending : pending.length) {
       this.tick()
-      const pair = pending.pop()
+      const pair = frontier ? frontier.next() : pending.pop()
       if (!pair) throw new Error('Missing pending mesh pair')
       const [an, bn] = pair
       const ab = an ? worldBounds(an.bounds, a.pose) : shapeBounds(a)
@@ -369,14 +399,17 @@ export class OriginalMeshQuery {
       )
       if (gap > threshold) {
         lower = Math.min(lower, gap)
+        frontier?.retain()
         continue
       }
       if (an?.children && splitLeft(an, bn, ab, bb)) {
-        for (const child of an.children) pending.push([child, bn])
+        if (frontier) frontier.split('a')
+        else for (const child of an.children) pending.push([child, bn])
         continue
       }
       if (bn?.children) {
-        for (const child of bn.children) pending.push([an, child])
+        if (frontier) frontier.split('b')
+        else for (const child of bn.children) pending.push([an, child])
         continue
       }
       for (const at of an?.triangles ?? [undefined])
@@ -406,7 +439,9 @@ export class OriginalMeshQuery {
           }
           lower = Math.min(lower, gap)
         }
+      frontier?.retain()
     }
+    this.publishFrontier(frontier)
     return lower
   }
 }
