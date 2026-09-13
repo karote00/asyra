@@ -179,6 +179,16 @@ export class OriginalMeshQuery {
       projectedBoundsGap(ab, a.pose, bb, b.pose, threshold, this.tick)
     )
   }
+  private nodeGap(
+    a: ConvexShape,
+    b: ConvexShape,
+    an: MeshNode | undefined,
+    bn: MeshNode | undefined,
+    gap: number,
+    threshold: number
+  ): number {
+    return this.projectGap(a, b, an?.bounds, bn?.bounds, gap, threshold)
+  }
   private witness(shape: ConvexShape, index?: MeshIndex): Vector<Interval> {
     return index
       ? worldPoint(shape.pose, index.representatives[0])
@@ -258,11 +268,11 @@ export class OriginalMeshQuery {
       const [an, bn] = pair
       const ab = an ? worldBounds(an.bounds, a.pose) : shapeBounds(a)
       const bb = bn ? worldBounds(bn.bounds, b.pose) : shapeBounds(b)
-      const bound = this.projectGap(
+      const bound = this.nodeGap(
         a,
         b,
-        an?.bounds,
-        bn?.bounds,
+        an,
+        bn,
         boundsGap(ab, bb),
         searchThreshold
       )

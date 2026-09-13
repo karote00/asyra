@@ -167,7 +167,8 @@ export function boundsGap(a: Bounds, b: Bounds): number {
 /** Complete admitted-component grouping; all extra immutable preparation is charged. */
 export function refineMeshIndex(
   index: MeshIndex,
-  checkpoint: () => void
+  checkpoint: () => void,
+  triangleLeafLimit: 1 | 4 = 4
 ): MeshIndex {
   const scan = <T>(items: readonly T[], visit: (item: T) => void) => {
     items.forEach((item, i) => {
@@ -197,10 +198,11 @@ export function refineMeshIndex(
     getBounds: (item: T) => Bounds,
     key: (item: T) => number,
     limit: number,
-    leaf: (items: T[], bounds?: Bounds) => MeshNode
+    leaf: (items: T[], bounds?: Bounds) => MeshNode,
+    resolveLeafBounds = true
   ): MeshNode {
     checkpoint()
-    if (limit === 1 && items.length === 1) return leaf(items)
+    if (!resolveLeafBounds && items.length === 1) return leaf(items)
     const bounds: [[number, number], [number, number], [number, number]] = [
       [Infinity, -Infinity],
       [Infinity, -Infinity],
@@ -231,8 +233,22 @@ export function refineMeshIndex(
       bounds,
       triangles: [],
       children: [
-        build(items.slice(0, middle), getBounds, key, limit, leaf),
-        build(items.slice(middle), getBounds, key, limit, leaf)
+        build(
+          items.slice(0, middle),
+          getBounds,
+          key,
+          limit,
+          leaf,
+          resolveLeafBounds
+        ),
+        build(
+          items.slice(middle),
+          getBounds,
+          key,
+          limit,
+          leaf,
+          resolveLeafBounds
+        )
       ]
     }
   }
@@ -242,7 +258,7 @@ export function refineMeshIndex(
       items,
       (item) => item.bounds,
       (item) => item.offset,
-      4,
+      triangleLeafLimit,
       (items, bounds) => {
         if (!bounds) throw new Error('Missing triangle bounds')
         return { bounds, triangles: items }
@@ -254,7 +270,8 @@ export function refineMeshIndex(
     (item) => item.node.bounds,
     (item) => item.component,
     1,
-    (items) => items[0].node
+    (items) => items[0].node,
+    false
   )
   return { ...index, root }
 }

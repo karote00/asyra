@@ -2065,3 +2065,20 @@ whole-paid-work reduction, CPU ratio at most 1.2 and each existing 500,000-work 
 20-second guard. Record all preparation, traversal, axes and convex work before
 assertions. Any changed evidence, incomplete coverage or failed gate stops for
 review without tuning leaf size, subset or thresholds. No full-goal run follows.
+
+The isolated experiment starts at readiness commit 26ea1110a on
+`codex/asyra-sim-singleton-comparison`. Its first stage adds only the two neutral
+entries and permanent `singleton-index.test.ts`; production defaults remain four
+and the original projection. Formal red records nine failures and three passes
+before those entries. The completed small stage passes fourteen new cases plus
+nine original component-lifetime and ten independent rational-source cases.
+Preparation is exactly 84/204 with explicit count categories; source identities,
+component bounds/membership, reversed source bounds, cold/warm charging, six
+interrupted construction positions, cold retry and interrupted warm admission
+are protected. The node entry receives actual completed refined nodes, excludes
+root/membership-resolved paths and is absent from raw interval projection.
+Typecheck, focused lint and naming pass. Evidence is retained in this worktree's
+`tmp/capacity/singleton-formal-red.log` and `singleton-small-final.log`.
+No combined singleton projection policy or prefix/full comparison runs in this
+stage. Freeze for independent review and root approval before that next stage;
+G4 remains red and the goal branch does not yet contain these experimental entries.
