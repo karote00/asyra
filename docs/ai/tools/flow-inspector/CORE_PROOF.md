@@ -677,7 +677,7 @@ work and retain the non-passing full candidate and incomplete integration status
 No delivery or successful CI implicitly accepts a target baseline.
 
 Owner order is service handoff, review consumer, then transport/presentation.
-The first two owners are implemented. Public transport accepts only exact
+All three owners are implemented. Public transport accepts only exact
 task/attempt/assessment selectors through the existing loopback capability and
 passes them to review preparation without resolving or reassessing evidence.
 Board presentation requires an explicit retained assessment selection for the
@@ -691,7 +691,7 @@ regression, missing prerequisites, wrong work binding/HEAD/source, retirement an
 changed approval scope. Work-count oracles prove reuse of assessed results and
 source artifacts, no repeated assessment/hash work and zero lookup on historical
 reads. Review-owner cases bind the exact scope into confirmation and preserve strict
-legacy behavior. HTTP/CLI/Board cases must prove exact selector parity, capability
+legacy behavior. HTTP/CLI/Board cases prove exact selector parity, capability
 refusal, zero effect on preparation, visible bounded status and three-viewport
 operation. The initial all-six accepted baseline proof gate below is unchanged;
 prerequisite admission, broader runtime coverage and explicit baseline acceptance
