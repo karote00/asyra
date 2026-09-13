@@ -624,3 +624,28 @@ Lifetime: one request, issued-source currentness; no retained cache or ledger.
 Gates: five-axis exact/just-over limits/speeds, no-wrap, extreme finite arithmetic,
 invalid/upstream-unavailable/stale/clone-once cases, zero FK/query/source work, full app
 unit/type/build/lint/naming and independent review.
+
+### C canonical FK algebra handoff
+
+Owner: domain/robot-kinematics.ts, one private rotate/compose/about/body chain.
+Inputs: original prepared rig and either existing numeric point joints or new
+clone-once numeric domains with exact keys/finite ordered original-limit endpoints.
+Outputs: unchanged point API bits/references; generic results over a caller's pure
+scalar algebra, retaining original part/source/body ownership. New evaluateRobotDomains
+uses range/literal/add/subtract/multiply/divide/sin/cos; it does not accept a new chain.
+Conditions: new numeric-domain validation before any adapter callback; original
+point validation/acceptance stays unchanged. Preserve original angle/2, operation
+order, signed zero and fixed/shared transform references. No quaternion normalize.
+Allowed: one C formula implementation and an original-number adapter. Adapter scalar
+soundness belongs to its subsequent D numerical owner, not to this generic API.
+Forbidden: D chain duplication, interval/trig proof claims, geometry/material edits,
+new joints/limits/speeds, global rig registry, source cloning or runtime/UI changes.
+Boundary: domain/robot-kinematics.ts, its direct robot-kinematics.test.ts and existing
+snapshot fixture, API/spec/Inspector/plan/BDD. No D/arithmetic producer edits.
+Failure owner: C rejects malformed numeric domains or propagates callback failure
+without publication; current-source checks remain existing projection/query owners.
+Lifetime: existing rig definition/source; no new retained expression graph or cache.
+Gates: pre-edit Float64 point oracle (including signed zero), original source hashes/
+references/rest reconstruction, singleton adapter equality, domain/failure/ownership
+cases, existing rig/projection tests and full app unit/type/build/lint/naming/review.
+This segment closes chain sharing only, not complete interval or movement evidence.

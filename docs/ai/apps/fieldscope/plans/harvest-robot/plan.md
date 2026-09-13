@@ -1067,3 +1067,20 @@ query or source generation. All 415 app unit tests, typecheck/build, lint and
 naming pass; independent scoped review confirmed exact scaling and ownership.
 This is source-bound candidate evidence only, not articulated surface clearance,
 TCP reach, material/contact policy or executed movement.
+
+Next bounded C Step Card: canonical FK algebra extraction. Only robot-kinematics.ts,
+its direct test/established snapshot, API and thin contract docs. First freeze
+pre-edit point Float64 bits across rest/limits/asymmetric/nondefault/±0 inputs and
+source/reference oracles. Add missing generic-entry and callback-admission tests,
+then one shared chain with the unchanged point adapter and a new numeric-domain
+entry. Preserve divide-by-two and all original numeric operation order; no source
+formula, material or point numeric authority changes in this segment.
+New evaluateRobotDomains/JointDomains/KinematicAlgebra names belong to C transient
+kinematics. Validate cloned numeric ranges before adapter callbacks; keep the old
+point input acceptance domain. Generic scalar soundness belongs to the next D
+adapter and is not asserted here. No expression graph/cache or duplicate D chain.
+Run focused bitwise/identity/validation/work cases, existing projection controls,
+full app unit/type/build/lint/naming and independent review. Stop for any required
+point semantic change or extra owner. A later numerical replan can establish a
+proved canonical point-plus-interval trig contract; Math.sin plus EPS and sampled
+endpoint envelopes do not close that proof.

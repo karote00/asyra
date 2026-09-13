@@ -322,6 +322,43 @@ M2 runtime/history and ordinary bilingual desktop/mobile robot/browser checks;
 inspect the same parked source close-up. Later D and motion UI must separately
 prove speed boundaries, retained-fruit transforms and interval collisions.
 
+### Canonical FK algebra handoff
+
+C owns one rotate/compose/about/body-chain implementation, shared by the original
+point API and a generic scalar-algebra entry. Extraction preserves every original
+point operation, including angle/2 division, evaluation order and signed zero;
+no normalization or equivalent-looking matrix rewrite changes point results.
+Rig parts/order, source shapes/regions, frames, limits and speeds remain original.
+
+The new entry accepts numeric joint domains [lower,upper]. Clone them once, then
+validate exact joint keys, finite ordered endpoints within original rig limits
+before invoking any algebra callback. Singleton domains preserve their supplied
+signed zeros, without sorting or normalization. The original evaluateRobotPose
+keeps its existing numeric validation and acceptance domain and passes original
+numbers into the same private chain; it does not adopt the new range schema.
+
+The generic algebra provides range/literal, add/subtract/multiply/divide, sin/cos.
+Callbacks are pure scalar operations; their scalar values and numerical soundness
+belong to the adapter. C validates numeric domains, not arbitrary scalar objects.
+Exceptions publish no partial C result. Freeze only new result containers, not
+callback-owned scalars or the passed rig. Source lifetime/currentness remains
+with the original projection/query consumer, not a new global rig registry.
+
+A joint domain is a set of possible scalar values, not a time-correlated path.
+This handoff does not prove a caller's interval arithmetic, analytic trig bounds,
+runtime Math.sin/cos error, reach or articulated collision clearance. D later owns
+trajectory-to-domain conversion and a numerical adapter, consuming this sole C
+chain. A subsequent explicit numerical-owner replan may change point/interval
+trig semantics with formal proofs; this extraction itself preserves original bits.
+
+Acceptance freezes pre-edit complete point Float64 bit fingerprints for rest,
+limits, asymmetric joints, nondefault definitions and signed-zero inputs. Require
+unchanged source/reference identity and zero-state reconstruction, singleton
+number-algebra equivalence, malformed-domain rejection before callbacks, callback
+failure without publication and no source regeneration. Existing point input
+acceptance remains unchanged; new independent validation bugs require their own
+bounded regression decision. No D adapter or production interval claim is included.
+
 ## C - M3 installed dock source handoff
 
 The charging station's existing platform, pedestal, contacts and exchange stand
