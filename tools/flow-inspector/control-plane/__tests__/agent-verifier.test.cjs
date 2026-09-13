@@ -436,6 +436,8 @@ test(
       }
     )
     const admission = t.mock.method(source, 'validateSourceSnapshot')
+    const runnerOwner = require('../runner.cjs')
+    const contained = t.mock.method(runnerOwner, 'runContainedVerification')
     const modulePath = require.resolve('../agent-verifier.cjs'),
       saved = require.cache[modulePath]
     Reflect.deleteProperty(require.cache, modulePath)
@@ -452,6 +454,21 @@ test(
       timeoutMs: 15000
     })
     const proof = produced.verdict
+    assert.equal(contained.mock.callCount(), 1)
+    assert.strictEqual(contained.mock.calls[0].arguments[0].contract, contract)
+    assert.deepEqual(
+      contained.mock.calls[0].arguments[0].flowIds,
+      contract.flows.map((flow) => flow.id)
+    )
+    assert.equal(
+      Object.hasOwn(contained.mock.calls[0].arguments[0], 'processRunner'),
+      false
+    )
+    assert.strictEqual(counted.containedProcess, runnerOwner.containedProcess)
+    assert.strictEqual(
+      counted.containmentAvailable,
+      runnerOwner.containmentAvailable
+    )
     assert.equal(assess.mock.callCount(), 1)
     assert.equal(admission.mock.callCount(), 1)
     assert.equal(

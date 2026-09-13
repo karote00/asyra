@@ -1,7 +1,11 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 const fs = require('node:fs')
 const path = require('node:path')
-const { runProcess, runVerification } = require('./runner.cjs')
+const {
+  runContainedVerification,
+  containedProcess,
+  containmentAvailable
+} = require('./runner.cjs')
 const {
   safePath,
   sha256,
@@ -11,39 +15,6 @@ const {
 } = require('./snapshot.cjs')
 const { assessSourceEvidence } = require('./evidence.cjs')
 const { writeAtomic } = require('./store.cjs')
-const containmentAvailable = (platform = process.platform) =>
-  platform === 'darwin' && fs.existsSync('/usr/bin/sandbox-exec')
-const literal = (value) => JSON.stringify(fs.realpathSync(value))
-function containedProcess(options, { repositoryRoot, readRoots, writeRoot }) {
-  if (!containmentAvailable())
-    throw new Error('OS containment unavailable; candidate execution denied')
-  const dependencies = path.join(repositoryRoot, 'node_modules')
-  const node = fs.realpathSync(process.execPath)
-  const reads = [...readRoots, dependencies, __dirname]
-  const probes = []
-  for (let parent = repositoryRoot; ; parent = path.dirname(parent)) {
-    probes.push(path.join(parent, 'package.json'))
-    if (path.dirname(parent) === parent) break
-  }
-  const profile = `(version 1)
-(deny default)
-(allow file-read-metadata)
-(allow file-read-data (vnode-type DIRECTORY))
-(allow file-map-executable)
-(allow sysctl-read)
-(allow signal (target same-sandbox))
-(allow process-exec (literal ${JSON.stringify(node)}))
-(allow file-read* (subpath "/System") (subpath "/usr/lib") (subpath "/usr/share") (literal ${JSON.stringify(node)}) (literal "/dev/null") (literal "/dev/urandom") (literal "/dev/random") (literal "/private/etc/hosts") (literal "/private/etc/resolv.conf") ${reads.map((file) => '(subpath ' + literal(file) + ')').join(' ')})
-(allow file-read* file-write* (subpath ${literal(writeRoot)}))
-${readRoots.map((file) => '(deny file-write* (subpath ' + literal(file) + '))').join('\n')}
-(allow file-read-data ${probes.map((file) => '(literal ' + JSON.stringify(file) + ')').join(' ')})
-(allow file-write* (literal "/dev/null"))`
-  return runProcess({
-    ...options,
-    executable: '/usr/bin/sandbox-exec',
-    args: ['-p', profile, options.executable, ...options.args]
-  })
-}
 async function produceCandidateProof({
   repositoryRoot,
   directory,
@@ -94,8 +65,6 @@ async function produceCandidateProof({
     ? structuredClone(snapshot.verificationSource)
     : createVerificationSource(snapshot.files, contract)
   const generated = createDerivedExecution({ sourceRoot, verificationSource })
-  const { configuration: configFile, bootstrap: bootstrapFile } =
-    generated.executionSource.roles
   for (const { path: file, content } of generated.files) {
     const destination = path.join(sourceRoot, file)
     fs.mkdirSync(path.dirname(destination), { recursive: true })
@@ -121,35 +90,16 @@ async function produceCandidateProof({
     digest: sha256(JSON.stringify(files)),
     manifestPath: path.relative(repositoryRoot, manifestPath)
   }
-  const result = await runVerification({
+  const result = await runContainedVerification({
     repositoryRoot,
     runDirectory,
     snapshot: candidate,
-    contract: { ...contract, configFile },
+    contract,
     scenario: 'baseline',
     flowIds: contract.flows.map((flow) => flow.id),
     signal,
     timeoutMs,
-    onSpawn,
-    processRunner: (options) =>
-      containedProcess(
-        {
-          ...options,
-          args: [
-            path.join(sourceRoot, bootstrapFile),
-            String(process.pid),
-            ...options.args.slice(3),
-            '--configLoader',
-            'native'
-          ],
-          cwd: sourceRoot
-        },
-        {
-          repositoryRoot,
-          readRoots: [sourceRoot],
-          writeRoot: runDirectory
-        }
-      )
+    onSpawn
   })
   const assessed = assessSourceEvidence(
     contract,
