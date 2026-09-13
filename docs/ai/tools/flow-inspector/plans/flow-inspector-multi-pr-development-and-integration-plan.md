@@ -78,12 +78,14 @@ including failed/partial candidates. The runner now owns shared contained
 execution and the candidate consumes it. Exact task/attempt target producers now
 use contained dispatch and post-run integrity; assessment, HTTP/CLI and the Board
 consume exact task sources with explicit selection and retained currentness.
-The next bounded owner is the service-owned scoped work review handoff, followed
-by the review consumer: reuse accepted preservation and assessed work/prerequisite
-results while retaining incomplete integration and the original candidate outcome.
-This readiness does not activate scoped delivery. Initial admission/prerequisite
-consumers, full runtime coverage and explicit target-baseline acceptance remain
-subsequent slices.
+The service-owned scoped work review handoff, review consumer and public
+loopback/CLI/Board integration now reuse accepted preservation and assessed
+work/prerequisite results while retaining incomplete integration and the original
+candidate outcome. Public callers accept only exact task/attempt/assessment selectors,
+leave all evidence interpretation in the existing service/review owners, and show
+bounded scope plus original candidate and integration outcomes before confirmation.
+Initial admission/prerequisite consumers, full runtime coverage and explicit
+target-baseline acceptance remain subsequent slices.
 Existing target execution and pending behavior stay in effect until those
 consumers are implemented and verified. Ordinary composition does not cover
 undeclared generated wrappers; the fixed four-package capture scope also does

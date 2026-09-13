@@ -33,6 +33,10 @@ test(
     const server = await startServer(initial.sourceRoot, {
       serviceOptions: {
         directory: path.join(initial.sourceRoot, 'tmp/flow-inspector/runs'),
+        deliveryAdapter: {
+          repository: 'offline/scoped-presentation',
+          base: 'main'
+        },
         runner: async (options) => {
           if (hold && !options.signal.aborted)
             await new Promise((resolve) =>
@@ -550,6 +554,170 @@ test(
         )
         await page.unroute('**/api/state')
         await page.unroute('**' + taskPath)
+        const scopedAssessment = {
+          ...structuredClone(taskAssessment),
+          id: randomUUID(),
+          request: {
+            ...taskAssessment.request,
+            requestId: randomUUID(),
+            sourceTaskId: candidate.id,
+            sourceAttemptId: nextAttempt
+          },
+          result: {
+            ...structuredClone(taskAssessment.result),
+            works: [
+              {
+                id: 'deterministic-offline-bounded-work',
+                status: 'passed',
+                cases: []
+              }
+            ],
+            integration: {
+              status: 'pending',
+              cases: [],
+              blockers: ['Deterministic offline pending target allocation']
+            }
+          },
+          projection: {
+            ...taskAssessment.projection,
+            current: true,
+            eligible: false,
+            staleReasons: []
+          }
+        }
+        await page.route('**/api/target-assessments', async (route) => {
+          if (route.request().method() !== 'GET') return route.continue()
+          const response = await route.fetch()
+          const records = await response.json()
+          await route.fulfill({
+            response,
+            json: [...records, scopedAssessment]
+          })
+        })
+        await frame.locator('#refresh').click()
+        await frame.locator('#pr-controls > summary').click()
+        await expect(frame.locator('#pr-prepare-scoped')).toBeDisabled()
+        await expect(
+          frame.locator(
+            '#pr-assessment option[value="' + scopedAssessment.id + '"]'
+          )
+        ).toHaveCount(1)
+        await frame.locator('#pr-assessment').selectOption(scopedAssessment.id)
+        await expect(frame.locator('#pr-prepare-scoped')).toBeEnabled()
+        let scopedRequest
+        const scopedRoute = '**/api/tasks/' + candidate.id + '/review/scoped'
+        await page.route(scopedRoute, async (route) => {
+          scopedRequest = route.request().postDataJSON()
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+              format: 2,
+              taskId: candidate.id,
+              actor: 'local-developer',
+              state: 'preview',
+              previewDigest: 'e'.repeat(64),
+              preview: {
+                repository: 'offline/scoped-presentation',
+                draft: false,
+                base: 'main',
+                baseSha: 'a'.repeat(40),
+                branch: 'flow-review-' + candidate.id,
+                taskId: candidate.id,
+                attemptId: nextAttempt,
+                sourceHead: candidate.snapshot.head,
+                candidateVerification: 'failed',
+                scopedWork: {
+                  assessmentId: scopedAssessment.id,
+                  workId: 'deterministic-offline-bounded-work',
+                  work: { status: 'passed' },
+                  integration: { status: 'pending' }
+                },
+                deliveryFiles: [
+                  'packages/factory/src/data-transact.ts',
+                  '.changeset/flow-review-fixture.md'
+                ],
+                changes: [{ path: 'packages/factory/src/data-transact.ts' }],
+                title: 'Bounded work - deterministic offline fixture',
+                body: 'Bounded work deterministic offline presentation fixture.\nCandidate verification: failed\nTarget integration: pending',
+                sourceDiff: 'Deterministic offline source difference',
+                metadata: {
+                  packageName: '@asyra/factory',
+                  releaseType: 'patch',
+                  ownership: {
+                    path: 'packages/factory/package.json'
+                  },
+                  reason: 'Deterministic offline review fixture',
+                  validation: {
+                    status: 'passed',
+                    scope: 'delivery metadata only'
+                  },
+                  path: '.changeset/flow-review-fixture.md',
+                  digest: 'f'.repeat(64),
+                  content: 'Deterministic offline metadata fixture'
+                }
+              },
+              audit: []
+            })
+          })
+        })
+        await frame.locator('#pr-prepare-scoped').click()
+        await expect(frame.locator('#pr-result')).toContainText(
+          'Review scope: bounded work'
+        )
+        await expect(frame.locator('#pr-result')).toContainText(
+          'Original candidate verification: failed'
+        )
+        await expect(frame.locator('#pr-result')).toContainText(
+          'Target integration: pending'
+        )
+        assert.deepEqual(scopedRequest, {
+          attemptId: nextAttempt,
+          assessmentId: scopedAssessment.id
+        })
+        await expect(frame.locator('#pr-confirm')).toBeDisabled()
+        await frame.locator('#pr-approve').check()
+        await expect(frame.locator('#pr-confirm')).toBeEnabled()
+        await frame.locator('#refresh').evaluate((element) => element.click())
+        await expect(frame.locator('#pr-assessment')).toHaveValue(
+          scopedAssessment.id
+        )
+        for (const [name, viewport] of [
+          ['scoped-review-desktop', { width: 1440, height: 1000 }],
+          ['scoped-review-tablet', { width: 900, height: 1100 }],
+          ['scoped-review-narrow', { width: 430, height: 1100 }]
+        ]) {
+          await page.setViewportSize(viewport)
+          await frame.locator('#pr-assessment').scrollIntoViewIfNeeded()
+          const controlsScreenshot = path.join(
+            artifacts,
+            name + '-controls.png'
+          )
+          await page.screenshot({ path: controlsScreenshot })
+          screenshots.push({
+            path: controlsScreenshot,
+            viewport,
+            fixture: 'deterministic offline scoped review controls'
+          })
+          await frame.locator('#pr-result').scrollIntoViewIfNeeded()
+          const screenshot = path.join(artifacts, name + '.png')
+          await page.screenshot({ path: screenshot })
+          screenshots.push({
+            path: screenshot,
+            viewport,
+            fixture: 'deterministic offline scoped review presentation'
+          })
+          assert.equal(
+            await frame
+              .locator('#pr-controls')
+              .evaluate(
+                (element) => element.scrollWidth <= element.clientWidth + 2
+              ),
+            true
+          )
+        }
+        await page.unroute(scopedRoute)
+        await page.unroute('**/api/target-assessments')
         for (const [name, viewport] of [
           ['task-desktop', { width: 1440, height: 1000 }],
           ['task-tablet', { width: 900, height: 1100 }],

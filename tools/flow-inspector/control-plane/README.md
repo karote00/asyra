@@ -708,7 +708,6 @@ candidate verification on macOS and an explicitly offline GitHub adapter; its
 PR observations make no external requests. Full cross-PR integration assessment
 and explicit target-baseline acceptance remain unimplemented.
 
-
 ### Admit work before execution
 
 After `verify` passes all six obligations, use its returned attempt UUID as
@@ -767,3 +766,26 @@ The original target/work decomposition and new admission browser cases use the
 same `FLOW_PROOF_URL` contract and cover desktop, tablet and narrow detail views.
 No new model request, candidate PR, prerequisite issuer or protected integration
 verification is required for these deterministic formal fixtures.
+
+### Prepare an assessed bounded work review
+
+After a task-source target assessment completes, select the same task in the
+Inspector and open **Candidate GitHub PR review**. Choose its exact retained
+assessment and use **Prepare bounded work preview**. This path permits a passing
+bounded work result with accepted preservation while the original candidate remains
+failed and the whole target remains pending. The preview states all three outcomes;
+it does not claim full-flow verification or accept a baseline.
+
+The matching attached or direct CLI command is:
+
+```bash
+node tools/flow-inspector/control-plane/cli.cjs --url http://127.0.0.1:4318 pr-prepare-scoped <task-id> <attempt-id> <assessment-id>
+```
+
+The HTTP action is `POST /api/tasks/<task-id>/review/scoped` with exactly
+`{ "attemptId": "<attempt-id>", "assessmentId": "<assessment-id>" }` and the
+existing loopback capability. Preparation creates no branch or PR. Inspect the
+complete preview, source difference, trusted Changeset, bounded work result and
+integration result before using the existing explicit confirmation. A stale target,
+new attempt, changed assessment, revoked task or unavailable source requires a fresh
+eligible assessment and preview; the service never selects a replacement.
