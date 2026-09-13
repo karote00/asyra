@@ -8,10 +8,11 @@ only the Phase 5 entry dependency; the original Phase 4 mandatory-CI DoD,
 independent verifier/issuer and remote refusal/recovery requirements remain open.
 Phase 6, merge, publication, deployment and protection changes are excluded.
 
-The first supported task selects one of the three admitted Factory owner steps,
-its complete architecture contract and all six retained obligations. Mutations
-are a nonempty explicit list of existing `.ts` runtime files within that step's
-implementation boundary. Tests, configuration, mapping, package metadata,
+Each task selects one admitted architecture step and its primary public
+`@asyra/<name>` owner. Mutations are a nonempty explicit list of existing
+`.ts` runtime files that are both inside that package's `src` root and the
+step's exact implementation boundary. Transitive runtime packages are execution
+inputs, not mutation owners. Tests, configuration, mapping, package metadata,
 control-plane code and accepted histories are never candidate-write capabilities.
 No new package or tool is required. Source-writing execution requires macOS's
 existing OS sandbox; unavailable containment fails closed.
@@ -196,8 +197,9 @@ exact admitted contract. Never read current checkout verification files, repair
 missing bytes, rewrite historical descriptors or upgrade a saved reference.
 
 Use `createDerivedExecution` with the canonical containment-checked new attempt
-source directory and that original verification descriptor. Write its exact two
-fixed files; bind `executionSource` and its digest as the candidate configuration
+source directory, the original verification descriptor and the validated
+`runtimeAuthority`. Write its exact two fixed files; bind format-2
+`executionSource`, its `runtimeAuthorityDigest` and its digest as the candidate configuration
 identity. Delegate the actual generated configuration and bootstrap to the runner
 owner's `runContainedVerification` exactly once. Forward the original admitted
 contract, fixed snapshot/root, complete registered flows, baseline scenario,
@@ -214,7 +216,8 @@ runner identity, cancellation, watchdog and post-run source integrity checks
 remain mandatory. A malformed original descriptor or altered generated closure
 cannot produce passing verification.
 
-The verdict retains `runtimeSource`, `verificationSource` and `executionSource`
+The verdict retains `runtimeSource`, `runtimeAuthority`,
+`verificationSource` and `executionSource`
 for this new candidate identity alongside its complete manifest, configuration
 identity and actual runner evidence. These fields are input to the subsequent
 task retention owner; writing them does not grant durable admission or replay.
@@ -238,8 +241,9 @@ anything through their ordinary review workflow.
 On startup, a task retaining passing candidate verification must re-admit that
 proof before exposing `needs-review`. Newly created task records use `format: 2`.
 Loading supports only task formats 1 and 2; missing, null and unknown formats
-reject. A format-2 task's passing latest verdict requires `runtimeSource`,
-`verificationSource` and `executionSource`, even if all three have been deleted.
+reject. A scoped format-2 task's passing latest verdict requires
+`runtimeSource`, `runtimeAuthority`, `verificationSource` and
+`executionSource`, even if all four have been deleted.
 Present-null, partial or unsupported identities reject admission. Format-1
 historical records keep their existing validation when all three are absent;
 descriptor presence still selects the new admission path for transitional records.
@@ -292,7 +296,8 @@ open task owner. It never substitutes a newer or passing attempt. The frozen
 output `artifact:admitted-task-source` has `taskId`, `sourceRoot` and `admission`.
 The admission has exactly `attemptId`, `repository`, `head`, `sourceDigest`,
 `lockfileDigest`, `contractDigest`, `mappingVersion`, `architectureVersion`,
-`configurationDigest`, `runtimeSource`, `verificationSource` and `executionSource`.
+`configurationDigest`, `runtimeSource`, `runtimeAuthority`,
+`verificationSource` and `executionSource`.
 Repository identity is canonical and the attempt UUID belongs to this task. Its source location
 is only the canonical task-owned `verification/<attemptId>/source` directory.
 No saved source path, report path or client-selected directory chooses it.
@@ -301,7 +306,8 @@ For live verification, the default controlled producer is
 `produceCandidateProof`. Consume its ephemeral `{ verdict, source }` result;
 only a non-null completed source may be published. Before publication, match its
 exact root, source/configuration digests and descriptor values to the returned
-verdict, and its contract, mapping, architecture, HEAD, lock and baseline binding
+verdict, including deep equality of `runtimeAuthority`, and its contract,
+mapping, architecture, HEAD, lock and baseline binding
 to this task's admitted inputs. Add task/repository/attempt authority and freeze
 the detached private tuple without hashing or revalidating the completed source.
 Publish only after the corresponding task save succeeds. The existing optional
@@ -383,7 +389,6 @@ static contracts, React tests, naming, lint, typecheck/build, browser tests and
 inspect generated screenshots. Latest PR HEAD checks must pass before review.
 Close only the demonstrated local adapter scope; real provider acceptance and
 original remote enforcement requirements remain visible if unselected.
-
 
 ## Target work admission
 

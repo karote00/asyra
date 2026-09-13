@@ -69,6 +69,13 @@ function validateAllocation(state, binding, previousWorks = []) {
     const step = binding.steps.find((s) => s.id === work.stepId)
     requireValue(step, 'unknown step')
     requireValue(
+      typeof step.ownerPackage === 'string' &&
+        step.ownerPackage.startsWith('@asyra/'),
+      'unsupported primary package owner'
+    )
+    const primarySourcePrefix =
+      'packages/' + step.ownerPackage.slice('@asyra/'.length) + '/src/'
+    requireValue(
       Array.isArray(work.obligationIds) && work.obligationIds.length,
       'obligations required'
     )
@@ -91,7 +98,8 @@ function validateAllocation(state, binding, previousWorks = []) {
     for (const file of work.allowedFiles)
       requireValue(
         canonicalFile(file) &&
-          /^packages\/factory\/src\/.+\.ts$/.test(file) &&
+          file.startsWith(primarySourcePrefix) &&
+          file.endsWith('.ts') &&
           !file.includes('/__tests__/') &&
           step.implementationBoundary.some(
             (b) =>
@@ -224,6 +232,14 @@ function createTargetOwner({
       (item) => item.id === work.id
     )
     const source = assessment?.runtime
+    const authorityKeys = [
+      'runtimeAuthorityFormat',
+      'runtimeAuthorityDigest',
+      'contractScopeDigest'
+    ]
+    const authorityPresent = authorityKeys.filter((key) =>
+      Object.hasOwn(source ?? {}, key)
+    )
     requireValue(
       assessment?.id === assessmentId &&
         assessment.actor === actor &&
@@ -266,6 +282,11 @@ function createTargetOwner({
         /^[a-f0-9]{40}$/.test(source.head ?? '') &&
         /^[a-f0-9]{64}$/.test(source.sourceDigest ?? '') &&
         /^[a-f0-9]{64}$/.test(source.runtimeSourceDigest ?? '') &&
+        (authorityPresent.length === 0 ||
+          (authorityPresent.length === authorityKeys.length &&
+            source.runtimeAuthorityFormat === 1 &&
+            /^[a-f0-9]{64}$/.test(source.runtimeAuthorityDigest ?? '') &&
+            /^[a-f0-9]{64}$/.test(source.contractScopeDigest ?? ''))) &&
         assessment.result.source?.repository === source.repository &&
         assessment.result.source?.head === source.head &&
         assessment.result.source?.runtimeSourceDigest ===

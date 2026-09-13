@@ -722,6 +722,14 @@ async function runAssessmentCliLifecycle() {
         taskLocal.value.runtime.attemptId,
         taskRequest.sourceAttemptId
       )
+      assert.equal(
+        taskLocal.value.runtime.runtimeAuthorityDigest,
+        task.snapshot.runtimeAuthority.digest
+      )
+      assert.equal(
+        taskLocal.value.runtime.contractScopeDigest,
+        task.snapshot.runtimeAuthority.contractScopeDigest
+      )
       assert.equal(taskLocal.value.result.accepted.status, 'passed')
       assert.equal(taskLocal.value.result.integration.status, 'failed')
       server = await startServer(repository, { url: 'http://127.0.0.1:0' })

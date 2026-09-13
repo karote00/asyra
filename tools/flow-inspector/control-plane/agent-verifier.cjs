@@ -11,7 +11,8 @@ const {
   sha256,
   createRuntimeSource,
   createVerificationSource,
-  createDerivedExecution
+  createDerivedExecution,
+  admitRuntimeAuthoritySource
 } = require('./snapshot.cjs')
 const { assessSourceEvidence } = require('./evidence.cjs')
 const { writeAtomic } = require('./store.cjs')
@@ -45,26 +46,40 @@ async function produceCandidateProof({
       path.join(directory, 'verification', attemptId)
     )
   )
+  const runtimeAdmission = Object.hasOwn(snapshot, 'runtimeAuthority')
+    ? admitRuntimeAuthoritySource(snapshot.sourceRoot, snapshot, contract)
+    : null
+  const runtimeAuthority = runtimeAdmission?.runtimeAuthority
   fs.mkdirSync(runDirectory, { recursive: true })
   const sourceRoot = path.join(runDirectory, 'source')
   const files = []
   for (const entry of snapshot.files) {
     const original = safePath(snapshot.sourceRoot, entry.path)
-    if (sha256(fs.readFileSync(original)) !== entry.digest)
+    const admittedBytes = runtimeAdmission?.bytesByPath.get(entry.path)
+    const originalBytes = admittedBytes ?? fs.readFileSync(original)
+    if (!admittedBytes && sha256(originalBytes) !== entry.digest)
       throw new Error('Baseline source changed')
-    const source = allowedFiles.includes(entry.path)
-      ? safePath(candidateRoot, entry.path)
-      : original
-    const bytes = fs.readFileSync(source)
+    const candidateOwned = allowedFiles.includes(entry.path)
+    const bytes = candidateOwned
+      ? fs.readFileSync(safePath(candidateRoot, entry.path))
+      : originalBytes
     const destination = path.join(sourceRoot, entry.path)
     fs.mkdirSync(path.dirname(destination), { recursive: true })
     fs.writeFileSync(destination, bytes, { flag: 'wx', mode: 0o444 })
-    files.push({ path: entry.path, size: bytes.length, digest: sha256(bytes) })
+    files.push({
+      path: entry.path,
+      size: bytes.length,
+      digest: candidateOwned ? sha256(bytes) : entry.digest
+    })
   }
   const verificationSource = Object.hasOwn(snapshot, 'verificationSource')
     ? structuredClone(snapshot.verificationSource)
-    : createVerificationSource(snapshot.files, contract)
-  const generated = createDerivedExecution({ sourceRoot, verificationSource })
+    : createVerificationSource(snapshot.files, contract, runtimeAuthority)
+  const generated = createDerivedExecution({
+    sourceRoot,
+    verificationSource,
+    ...(runtimeAuthority ? { runtimeAuthority } : {})
+  })
   for (const { path: file, content } of generated.files) {
     const destination = path.join(sourceRoot, file)
     fs.mkdirSync(path.dirname(destination), { recursive: true })
@@ -81,7 +96,8 @@ async function produceCandidateProof({
   })
   const candidate = {
     ...snapshot,
-    runtimeSource: createRuntimeSource(files),
+    runtimeSource: createRuntimeSource(files, runtimeAuthority),
+    ...(runtimeAuthority ? { runtimeAuthority } : {}),
     verificationSource,
     executionSource: generated.executionSource,
     sourceRoot,
@@ -134,6 +150,7 @@ async function produceCandidateProof({
     evidence,
     sourceDigest: candidate.digest,
     runtimeSource: candidate.runtimeSource,
+    ...(runtimeAuthority ? { runtimeAuthority } : {}),
     verificationSource: candidate.verificationSource,
     executionSource: candidate.executionSource,
     configurationDigest: candidate.configurationDigest,

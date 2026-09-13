@@ -176,7 +176,8 @@ test('derived attempt format three requires source authority and retains version
     )
     const generated = source.createDerivedExecution({
       sourceRoot: captured.sourceRoot,
-      verificationSource: captured.verificationSource
+      verificationSource: captured.verificationSource,
+      runtimeAuthority: captured.runtimeAuthority
     })
     Object.assign(record, {
       contractDigest: contract.digest,
@@ -189,6 +190,10 @@ test('derived attempt format three requires source authority and retains version
     assert.doesNotThrow(
       () => store.save(record),
       'store shape is not full source admission'
+    )
+    assert.equal(
+      store.get(record.id).snapshot.runtimeAuthority.digest,
+      captured.runtimeAuthority.digest
     )
     const legacy = {
       ...attempt(),
@@ -218,6 +223,18 @@ test('derived attempt format three requires source authority and retains version
       [
         'missing descriptor',
         (value) => Reflect.deleteProperty(value.snapshot, 'executionSource')
+      ],
+      [
+        'invalid runtime authority',
+        (value) => {
+          value.snapshot.runtimeAuthority.digest = 'wrong'
+        }
+      ],
+      [
+        'execution authority mismatch',
+        (value) => {
+          value.snapshot.executionSource.runtimeAuthorityDigest = '0'.repeat(64)
+        }
       ],
       [
         'invalid mapping revision',

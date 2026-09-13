@@ -114,6 +114,7 @@ function createTaskOwner(
       'verification/' + attempt.id + '/source'
     )
     const snapshot = record.snapshot
+    const scoped = Object.hasOwn(verdict ?? {}, 'runtimeAuthority')
     if (
       source.sourceRoot !== sourceRoot ||
       source.head !== snapshot.head ||
@@ -125,6 +126,17 @@ function createTaskOwner(
       source.sourceDigest !== verdict?.sourceDigest ||
       source.configurationDigest !== verdict.configurationDigest ||
       verdict.baselineDigest !== snapshot.digest ||
+      Object.hasOwn(source, 'runtimeAuthority') !== scoped ||
+      Object.hasOwn(snapshot, 'runtimeAuthority') !== scoped ||
+      (scoped &&
+        (!isDeepStrictEqual(
+          source.runtimeAuthority,
+          verdict.runtimeAuthority
+        ) ||
+          !isDeepStrictEqual(
+            snapshot.runtimeAuthority,
+            verdict.runtimeAuthority
+          ))) ||
       ['runtimeSource', 'verificationSource', 'executionSource'].some(
         (key) => !source[key] || !isDeepStrictEqual(source[key], verdict[key])
       )
@@ -145,6 +157,7 @@ function createTaskOwner(
           architectureVersion: source.architectureVersion,
           configurationDigest: source.configurationDigest,
           runtimeSource: source.runtimeSource,
+          ...(scoped ? { runtimeAuthority: source.runtimeAuthority } : {}),
           verificationSource: source.verificationSource,
           executionSource: source.executionSource
         }
@@ -161,6 +174,7 @@ function createTaskOwner(
       'verificationSource',
       'executionSource'
     ]
+    const scoped = Object.hasOwn(verdict ?? {}, 'runtimeAuthority')
     const derived =
       record.format === 2 ||
       descriptors.some((key) => Object.hasOwn(verdict ?? {}, key))
@@ -227,6 +241,7 @@ function createTaskOwner(
       ...(derived
         ? {
             runtimeSource: verdict.runtimeSource,
+            ...(scoped ? { runtimeAuthority: verdict.runtimeAuthority } : {}),
             verificationSource: verdict.verificationSource,
             executionSource: verdict.executionSource
           }

@@ -93,7 +93,7 @@ test(
     )
     assert.equal(
       baseline.executionSource.policy,
-      'contained-native-typescript-v1'
+      'contained-native-typescript-v2'
     )
     assert.equal(baseline.configurationDigest, baseline.executionSource.digest)
     assert.equal(
@@ -102,11 +102,13 @@ test(
     )
     assert.deepEqual(baseline.verificationSource, snapshot.verificationSource)
     assert.equal(baseline.runtimeSource.digest, snapshot.runtimeSource.digest)
+    assert.deepEqual(baseline.runtimeAuthority, snapshot.runtimeAuthority)
     const source = require('../snapshot.cjs')
     const frozenRoot = path.join(root, baseline.artifactDirectory, 'source')
     const generated = source.createDerivedExecution({
       sourceRoot: frozenRoot,
-      verificationSource: baseline.verificationSource
+      verificationSource: baseline.verificationSource,
+      runtimeAuthority: baseline.runtimeAuthority
     })
     assert.deepEqual(baseline.executionSource, generated.executionSource)
     for (const file of generated.files)
@@ -118,6 +120,10 @@ test(
     assert.equal(
       baseline.evidence.runtimeSourceDigest,
       snapshot.runtimeSource.digest
+    )
+    assert.equal(
+      baseline.evidence.runtimeAuthorityDigest,
+      snapshot.runtimeAuthority.digest
     )
     const file = path.join(candidateRoot, sourceFile)
     const original = fs.readFileSync(file, 'utf8')
@@ -288,6 +294,23 @@ test(
         /Baseline.*identity/
       )
     }
+    const changedAuthority = structuredClone(snapshot)
+    changedAuthority.runtimeAuthority.digest = '0'.repeat(64)
+    await assert.rejects(
+      () =>
+        verifyCandidate({
+          repositoryRoot: root,
+          directory,
+          contract,
+          snapshot: changedAuthority,
+          candidateRoot: snapshot.sourceRoot,
+          allowedFiles: [],
+          attemptId: 'bad-runtime-authority',
+          timeoutMs: 15000,
+          onSpawn: () => spawned++
+        }),
+      /runtime authority/i
+    )
     assert.equal(spawned, 0)
   }
 )
@@ -330,6 +353,20 @@ test(
     assert.deepEqual(proof.verificationSource, snapshot.verificationSource)
     assert.deepEqual(legacy, original)
     assert.notEqual(proof.configurationDigest, legacy.configurationDigest)
+    const historical = structuredClone(snapshot)
+    delete historical.runtimeAuthority
+    delete historical.verificationSource
+    const historicalProof = await verifyCandidate({
+      ...input,
+      snapshot: historical,
+      attemptId: 'historical-legacy'
+    })
+    assert.equal(Object.hasOwn(historicalProof, 'runtimeAuthority'), false)
+    assert.equal(historicalProof.executionSource.format, 1)
+    assert.equal(
+      historicalProof.executionSource.policy,
+      'contained-native-typescript-v1'
+    )
     await assert.rejects(
       () =>
         verifyCandidate({
@@ -409,7 +446,8 @@ test(
     const source = require('../snapshot.cjs')
     const generated = source.createDerivedExecution({
       sourceRoot: path.join(directory, 'verification/count-generated/source'),
-      verificationSource: snapshot.verificationSource
+      verificationSource: snapshot.verificationSource,
+      runtimeAuthority: snapshot.runtimeAuthority
     })
     const actualReads = []
     const originalRead = fs.readFileSync

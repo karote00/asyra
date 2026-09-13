@@ -478,6 +478,10 @@ test(
       retainedSource.admission.sourceDigest,
       result.attempts.at(-1).verdict.sourceDigest
     )
+    assert.deepEqual(
+      retainedSource.admission.runtimeAuthority,
+      result.attempts.at(-1).verdict.runtimeAuthority
+    )
     assert.equal(bytes.mock.callCount(), 1)
     assert.equal(combined.mock.callCount(), 1)
     const verdict = result.attempts.at(-1).verdict
@@ -608,6 +612,12 @@ test(
       })
     for (const mutate of [
       (record) => {
+        delete record.attempts.at(-1).verdict.runtimeAuthority
+      },
+      (record) => {
+        record.attempts.at(-1).verdict.runtimeAuthority.digest = '0'.repeat(64)
+      },
+      (record) => {
         delete record.attempts.at(-1).verdict.executionSource
       },
       (record) => {
@@ -719,6 +729,7 @@ test(
       verdict.runtimeSource.digest,
       result.snapshot.runtimeSource.digest
     )
+    assert.deepEqual(verdict.runtimeAuthority, result.snapshot.runtimeAuthority)
     assert.equal(verdict.evidence.passedCount, 6)
     assert.equal(
       verdict.runner.identity.configurationDigest,
@@ -729,6 +740,7 @@ test(
     const record = JSON.parse(fs.readFileSync(recordPath, 'utf8'))
     for (const key of [
       'runtimeSource',
+      'runtimeAuthority',
       'verificationSource',
       'executionSource'
     ])
@@ -814,6 +826,11 @@ test(
       assert.equal(live.admission.attemptId, attempt.id)
       assert.equal(live.admission.repository, fs.realpathSync(root))
       assert.equal(live.admission.sourceDigest, attempt.verdict.sourceDigest)
+      assert.deepEqual(
+        live.admission.runtimeAuthority,
+        attempt.verdict.runtimeAuthority
+      )
+      assert.ok(Object.isFrozen(live.admission.runtimeAuthority))
       assert.ok(Object.isFrozen(live.admission.executionSource))
       assert.equal(f.owner.sourceFor(failed.id, randomUUID()), null)
       await f.owner.close()
@@ -904,6 +921,39 @@ test('legacy verify injection cannot publish task source authority', async () =>
     await f.owner.close()
   }
 })
+
+test(
+  'task source requires exact runtime authority equality with the retained verdict',
+  { skip: process.platform !== 'darwin', timeout: 30000 },
+  async () => {
+    const { produceCandidateProof } = require('../agent-verifier.cjs')
+    const f = fixture({
+      produce: async (options) => {
+        const produced = await produceCandidateProof(options)
+        return {
+          verdict: produced.verdict,
+          source: {
+            ...produced.source,
+            runtimeAuthority: {
+              ...produced.source.runtimeAuthority,
+              digest: '0'.repeat(64)
+            }
+          }
+        }
+      }
+    })
+    try {
+      const id = f.owner.start(f.request, 'human')
+      await assert.rejects(f.owner.wait(id), /task source identity/i)
+      assert.equal(
+        f.owner.sourceFor(id, f.owner.get(id).attempts.at(-1).id),
+        null
+      )
+    } finally {
+      await f.owner.close().catch(() => undefined)
+    }
+  }
+)
 
 test(
   'task source publication follows successful persistence and cannot survive a successor or closing settlement',

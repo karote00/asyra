@@ -100,13 +100,17 @@ function createService(
       record.format === 3 ||
       Object.hasOwn(snapshot ?? {}, 'executionSource') ||
       Object.hasOwn(retained ?? {}, 'executionSource')
+    const scoped =
+      Object.hasOwn(snapshot ?? {}, 'runtimeAuthority') ||
+      Object.hasOwn(retained ?? {}, 'runtimeAuthority')
     if (
       snapshot &&
       derived &&
       (!hasContract ||
         !['runtimeSource', 'verificationSource', 'executionSource'].every(
           (key) => Object.hasOwn(snapshot, key)
-        ))
+        ) ||
+        (scoped && !Object.hasOwn(snapshot, 'runtimeAuthority')))
     ) {
       sourceAdmissions.delete(record.id)
       verificationReferences.delete(record.id)
@@ -137,6 +141,12 @@ function createService(
         retained.head === snapshot.head &&
         retained.sourceDigest === snapshot.digest &&
         isDeepStrictEqual(retained.runtimeSource, snapshot.runtimeSource) &&
+        Object.hasOwn(retained, 'runtimeAuthority') ===
+          Object.hasOwn(snapshot, 'runtimeAuthority') &&
+        isDeepStrictEqual(
+          retained.runtimeAuthority,
+          snapshot.runtimeAuthority
+        ) &&
         Object.hasOwn(retained, 'executionSource') ===
           Object.hasOwn(snapshot, 'executionSource') &&
         isDeepStrictEqual(retained.executionSource, snapshot.executionSource) &&
@@ -251,6 +261,9 @@ function createService(
       head: snapshot.head,
       sourceDigest: snapshot.digest,
       runtimeSource,
+      ...(Object.hasOwn(sources, 'runtimeAuthority')
+        ? { runtimeAuthority: sources.runtimeAuthority }
+        : {}),
       ...(derived ? { executionSource: sources.executionSource } : {}),
       ...(hasContract
         ? {
@@ -846,12 +859,19 @@ function createService(
       (item) => item.id === selection.sourceAttemptId
     )
     const verdict = attempt?.verdict
+    const scoped = Object.hasOwn(verdict ?? {}, 'runtimeAuthority')
     if (
       attempt?.phase !== 'completed' ||
       !Array.isArray(verdict?.files) ||
       verdict.baselineDigest !== task.snapshot.digest ||
       task.task.contractDigest !== task.snapshot.contractDigest ||
       !verdict.runtimeSource ||
+      Object.hasOwn(task.snapshot, 'runtimeAuthority') !== scoped ||
+      (scoped &&
+        !isDeepStrictEqual(
+          verdict.runtimeAuthority,
+          task.snapshot.runtimeAuthority
+        )) ||
       !verdict.verificationSource ||
       !verdict.executionSource ||
       verdict.configurationDigest !== verdict.executionSource.digest ||
@@ -871,6 +891,7 @@ function createService(
         architectureVersion: task.snapshot.architectureVersion,
         configurationDigest: verdict.configurationDigest,
         runtimeSource: verdict.runtimeSource,
+        ...(scoped ? { runtimeAuthority: verdict.runtimeAuthority } : {}),
         verificationSource: verdict.verificationSource,
         executionSource: verdict.executionSource
       }
@@ -893,7 +914,14 @@ function createService(
     repository: runtime.repository,
     head: runtime.head,
     sourceDigest: runtime.sourceDigest,
-    runtimeSourceDigest: runtime.runtimeSource.digest
+    runtimeSourceDigest: runtime.runtimeSource.digest,
+    ...(Object.hasOwn(runtime, 'runtimeAuthority')
+      ? {
+          runtimeAuthorityFormat: runtime.runtimeAuthority.format,
+          runtimeAuthorityDigest: runtime.runtimeAuthority.digest,
+          contractScopeDigest: runtime.runtimeAuthority.contractScopeDigest
+        }
+      : {})
   })
   const assessmentSourceFor = (id) => {
     const record = assessmentRecords.get(id)
@@ -1768,7 +1796,15 @@ function createService(
           sourceDigest: admitted.sourceDigest,
           configurationDigest: admitted.configurationDigest,
           runtimeSourceDigest: admitted.runtimeSource.digest,
-          executionSourceDigest: admitted.executionSource.digest
+          executionSourceDigest: admitted.executionSource.digest,
+          ...(Object.hasOwn(admitted, 'runtimeAuthority')
+            ? {
+                runtimeAuthorityFormat: admitted.runtimeAuthority.format,
+                runtimeAuthorityDigest: admitted.runtimeAuthority.digest,
+                contractScopeDigest:
+                  admitted.runtimeAuthority.contractScopeDigest
+              }
+            : {})
         })
       })
       // All nested owner values are already detached and frozen; do not clone,

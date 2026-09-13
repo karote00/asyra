@@ -55,6 +55,17 @@ explicit negative demonstration; it must never change the assertions.
 
 ## Source and Evidence
 
+New contract admission also publishes a detached `runtimeScope` format 1.
+Its steps are the union selected by all mapped flows, retained once in the
+architecture's step order, with each step's owner package and exact implementation
+boundary. A separate digest binds this authority. Mapping format 2, Inspector
+schema 2 and the existing mapping/architecture contract digest retain their
+original meanings. This descriptor does not grant every selected package to
+every task: a task still requires one retained step's primary package and exact
+boundary. Historical records cannot acquire non-Factory permission merely by
+re-admitting their saved definitions with newer code. Source capture owns public
+package admission and dependency closure; contract admission does not read them.
+
 Every attempt copies the declared Factory, Reactive Events, Utils, and Persistence source
 closure plus test mapping, architecture, runner configuration, and package/lock
 metadata into a task-owned snapshot under `tmp/flow-inspector/`. Symlinked inputs
@@ -1299,18 +1310,34 @@ original verdict and identity instead of being relabeled as current.
 
 ### Runtime identity producer contract
 
-For this supported local slice, the source owner creates `runtimeSource` with
-`format: 1`, `files` and `digest` from bytes already captured in the immutable
-snapshot. Its complete inventory is every regular file recursively below
-`packages/{factory,reactive-events,utils,persistence}/src` except `__tests__`
-directories, those four packages' `package.json`, root `package.json`, and
-`yarn.lock`. No caller supplies exclusions, roots or an alternative manifest.
-Undeclared local package imports and unsupported source roots remain errors under
-the existing capture policy. Verification-owned manifest, architecture, spec,
-test and runner configuration files remain in the full snapshot manifest and
-its existing digest; they do not become runtime-source files merely because a
-proof references them. If a verification path overlaps the declared runtime
-inventory, reject capture instead of excluding the runtime file.
+The source owner preserves the bytes-only `runtimeSource` format 1 contract:
+`digest` remains SHA-256 of the exact `JSON.stringify(files)` bytes. Package
+scope is carried separately by `runtimeAuthority` format 1. It binds the
+admitted `contractScopeDigest`, architecture-ordered step closures, a sorted
+canonical package inventory, a sorted deduplicated package-name union and its
+own payload digest.
+
+Capture resolves each selected step's public `@asyra/<name>` package through
+the root `packages/*` workspace declaration. The package manifest name,
+`repository.directory`, public `exports["."]`, regular non-symlink
+`src/index.ts` entry and non-private status must agree. Only
+`dependencies` entries using `@asyra/*: workspace:*` extend the closure.
+Internal optional or peer dependencies, non-workspace internal ranges, missing
+or spoofed paths, ambiguous packages and cycles reject before any destination
+write. The actual Factory closure is Factory, Reactive Events, Persistence and
+Utils; collaboration adds Collaboration; UI Context resolves UI Context, Scene
+Tree, Selection, Props Manager, Reactive Events, Persistence and Utils.
+External packages such as Lodash and RxJS never become captured aliases or
+owners.
+
+The runtime inventory contains each selected package manifest and every regular
+non-`__tests__` file below its `src` directory, plus root package/lock and
+verification roles in the full snapshot. Discovery caches manifest and source
+bytes so every unique path is read and fingerprinted once, and those bytes are
+reused for capture. Before writing, capture re-admits the cached contract and
+checks both contract digests, every closure, regular-file rule, role overlap and
+destination canonicality. Verification roles remain outside `runtimeSource`;
+overlap rejects rather than silently excluding a runtime file.
 
 Each runtime manifest entry has exactly `path`, `size`, `digest` in that key
 order: a repository-relative slash path, captured byte length, and lowercase
@@ -1339,11 +1366,13 @@ snapshot, alongside every existing provenance check, and retains the runtime
 digest with its completed evidence. Its retained-evidence admission applies the
 same binding before another owner can consume that evidence. A missing,
 unsupported-format or mismatched new identity can never pass target assessment.
-Existing records without `runtimeSource` retain their established standalone
-proof behavior and original bytes; they are ineligible for target source
-assessment and require a new run. New malformed identities are rejected, not
-silently handled as historical records. Candidate snapshot construction must
-follow this same source-owner contract before candidate evidence is eligible.
+New runner, evidence, service-task and target identities retain
+`runtimeAuthorityFormat`, `runtimeAuthorityDigest` and
+`contractScopeDigest` alongside `runtimeSourceDigest`. Existing records
+without their own `runtimeAuthority` retain the fixed legacy Factory
+`sourcePackages` and runtime-path checks. Reloading today's contract cannot
+synthesize authority, widen their closure or make them eligible for new
+non-Factory work. New malformed or partially present identities reject.
 
 Implement and prove the source, runner and evidence producer handoffs before
 implementing `assess-target-source`. Formal tests must bind real captured bytes
@@ -1456,9 +1485,10 @@ activate version retention, composition, service assessment or baseline acceptan
 
 ### Derived execution source
 
-The source owner defines the fixed `contained-native-typescript-v1` policy for
-the candidate verifier's existing generated configuration and parent-watch
-bootstrap. `createDerivedExecution({sourceRoot, verificationSource})` consumes a
+For scoped authority the source owner defines
+`contained-native-typescript-v2` for the candidate verifier's generated
+configuration and parent-watch bootstrap.
+`createDerivedExecution({sourceRoot, verificationSource, runtimeAuthority})` consumes a
 completed source-owned five-role descriptor and the trusted candidate/service
 owner's canonical absolute attempt source directory. It generates UTF-8 content
 for exactly `tools/flow-inspector/control-plane/candidate-config.mjs` and
@@ -1471,10 +1501,17 @@ is a detached frozen `{files, executionSource}`; each generated file has `path`
 and `content`. Construction is pure and confers no source admission or execution
 success. Path shape checking is not filesystem authority: its upstream owner
 must supply the already containment-checked attempt location, never a client path.
+For scoped generation, the authority object itself must have been admitted in
+the same process lifetime by capture or by complete actual-byte and manifest-graph
+revalidation. Serialized or cloned descriptors carry no private admission and
+must repeat that source-owner revalidation before they can generate aliases.
 
-The canonical `executionSource` payload has `format: 1`,
-`policy: 'contained-native-typescript-v1'`, `verificationSourceDigest`, `roles`
-and `files`, in that order. The two roles are `configuration` and `bootstrap`,
+The scoped `executionSource` payload has `format: 2`,
+`policy: 'contained-native-typescript-v2'`, `verificationSourceDigest`,
+`runtimeAuthorityDigest`, `roles` and `files`, in that order. Its generated
+configuration contains one exact alias per authority package, mapping the public
+package name to the captured `entryPath`; it never falls back to `dist` or
+changes the legacy Factory fixture. The two roles are `configuration` and `bootstrap`,
 in that order, mapped to the fixed paths above. Entries use canonical path order
 and exact `path`, `size`, `digest` fields for the generated UTF-8 bytes. Append
 `digest` as SHA-256 of the UTF-8 canonical payload JSON. The original configuration
@@ -1503,8 +1540,9 @@ written and no full/runtime/verification admission is repeated for this branch;
 formal hash-work counts distinguish those computations from generation of the
 two new byte fingerprints and the execution payload digest.
 
-Historical absence remains readable under its existing rules, without new
-derived authority or relabeling of historical configuration digests. The ordinary
+Historical absence remains readable with format 1 and
+`contained-native-typescript-v1`, without new derived authority or relabeling
+of historical configuration digests. The ordinary
 composition and retained-reference byte APIs continue rejecting derived execution
 configuration; descriptor presence does not make it ordinary or replayable.
 This source-only constructor/admission slice does not wire candidate, runner,
@@ -1529,8 +1567,9 @@ admitted original contract, registered scenario, flow inventory, deadline,
 cancellation signal and spawn observer as `runVerification`. The new entry point
 has no caller-provided process runner, executable, argument, configuration or
 sandbox-policy override. It requires an own non-null execution descriptor with
-format 1 and policy `contained-native-typescript-v1`, the source owner's two fixed
-configuration/bootstrap roles, an exact original verification digest link and
+format 2 and policy `contained-native-typescript-v2`, the source owner's two fixed
+configuration/bootstrap roles, an exact original verification digest link,
+`runtimeAuthorityDigest` link and
 `configurationDigest === executionSource.digest`. Missing, partial or unsupported
 closure inputs reject before dispatch; ordinary execution is not a fallback.
 
@@ -1559,8 +1598,8 @@ acceptance.
 ### Derived source composition
 
 `composeDerivedSource(repositoryRoot, runDirectory, runtimeInput,
-verificationInput, contract)` composes an execution snapshot under the existing
-fixed `contained-native-typescript-v1` source policy. Both inputs retain the
+verificationInput, contract)` composes an execution snapshot under the scoped
+`contained-native-typescript-v2` source policy. Both inputs retain the
 trusted `{sourceRoot, admission}` boundary: canonical repository and attempt
 location, with the owning service's exact attempt UUID, repository, HEAD, full
 source digest, contract/mapping/architecture identities, actual configuration
@@ -1570,6 +1609,12 @@ full snapshot through `validateSourceSnapshot` with the trusted location. A
 candidate verdict is not that admission artifact. The task-to-service tuple
 handoff remains a separate consumer prerequisite; callers cannot confer it by
 providing paths or claiming their object was admitted.
+
+Scoped runtime input requires scoped verification input with the same contract
+scope digest, step closures and package union. Mixed scoped/legacy inputs reject.
+Two legacy inputs preserve the fixed Factory format-1 composition and cannot
+gain package authority. Runtime package bytes and manifest identity always come
+from the runtime input.
 
 Only this derived composition API may consume a runtime admission with an own
 `executionSource` field. Ordinary `composeSource` rejects that presence, including
@@ -1669,8 +1714,9 @@ full source admission succeeds. Ordinary, historical and supplied service-artifa
 paths return `source: null`; they do not reconstruct a second authority. The
 source envelope has exactly `sourceRoot`, `head`, `sourceDigest`,
 `lockfileDigest`, `contractDigest`, `mappingVersion`, `architectureVersion`,
-`configurationDigest`, `runtimeSource`, `verificationSource` and
-`executionSource`. Its location comes only from the trusted seventh context.
+`configurationDigest`, `runtimeSource`, `runtimeAuthority`,
+`verificationSource` and `executionSource`. Its location comes only from the
+trusted seventh context.
 If the snapshot carries `sourceRoot` it must match that location. The remaining
 identity values come from the admitted snapshot and contract, and the three
 frozen descriptors are forwarded directly from the source owner's completed
@@ -1724,7 +1770,8 @@ existing no-source-read behavior.
 
 The artifact retains the existing exact repository, attempt UUID, HEAD, full
 source digest, runtime/verification descriptors, contract, mapping, architecture
-and configuration identities, plus the admitted `executionSource`. Its execution
+and configuration identities, plus the admitted `runtimeAuthority` and
+`executionSource`. Its execution
 digest equals actual configuration identity, and its original verification digest
 equals the verification descriptor's digest. Cached admission requires identical
 source contract, complete descriptor values and execution-field presence; removal,
@@ -1735,8 +1782,9 @@ admission. Actual-byte failure does not leave a usable cached artifact.
 
 A newly produced derived snapshot is persisted as attempt `format: 3` when
 its complete source identity is published; ordinary attempts remain format 2.
-Format 3 requires its source contract definitions and all three non-null source
-descriptors, including for interrupted or failed records after source publication.
+Format 3 requires its source contract definitions and the three legacy source
+descriptors, plus `runtimeAuthority` whenever scoped execution format 2 is
+present, including for interrupted or failed records after source publication.
 The store accepts only formats 1, 2 and 3, retaining all existing versioned
 identity and completed-evidence checks for format 3. Source-owned admission still
 validates descriptor contents; store shape checks do not grant source authority.
@@ -1750,7 +1798,8 @@ and retained evidence preserve versioned checks for both formats 2 and 3.
 On raw or retained evidence's service-artifact path, an own `executionSource` on
 either snapshot or artifact requires it on both. Reject null, malformed, partial
 or one-sided presence. Consume only the already admitted immutable artifact:
-compare all three descriptors, repository/attempt/full source/HEAD/lock binding,
+compare the scoped authority and all three source descriptors,
+repository/attempt/full source/HEAD/lock binding,
 contract/mapping/architecture and configuration identity, including the two
 execution digest relationships above. Do not rehash source or reconstruct
 policy, and do not use the direct seventh context to repair this path. Existing

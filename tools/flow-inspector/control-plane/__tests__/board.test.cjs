@@ -229,6 +229,12 @@ test(
       await expect(frame.locator('#assessment-source-identity')).toContainText(
         assessment.runtime.repository
       )
+      await expect(frame.locator('#assessment-source-identity')).toContainText(
+        assessment.runtime.runtimeAuthorityDigest
+      )
+      await expect(frame.locator('#assessment-source-identity')).toContainText(
+        assessment.runtime.contractScopeDigest
+      )
       const dependentWork = frame
         .locator('#target-items > article')
         .filter({ hasText: 'Preserve deferred outcome' })

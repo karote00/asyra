@@ -8,7 +8,10 @@ const { sha256 } = require('../snapshot.cjs')
 const { createReviewOwner } = require('../pr-review.cjs')
 const root = path.resolve(__dirname, '../../../..')
 const file = 'packages/factory/src/data-transact.ts'
-function fixture() {
+function fixture({
+  packageName = '@asyra/factory',
+  file = 'packages/factory/src/data-transact.ts'
+} = {}) {
   const parent = path.join(root, 'tmp/flow-inspector/review-tests')
   fs.mkdirSync(parent, { recursive: true })
   const directory = fs.mkdtempSync(path.join(parent, 'case-'))
@@ -40,6 +43,7 @@ function fixture() {
     deliveryStatus: 'not-delivered',
     task: {
       stepId: 'finalize-transaction-state',
+      step: { ownerPackage: packageName },
       revision: 1,
       contractDigest: 'contract',
       allowedFiles: [file],
@@ -116,8 +120,9 @@ function fixture() {
     candidateDirectory: () => candidateRoot,
     adapter
   }
-  const manifestPath = 'packages/factory/package.json'
-  const manifest = JSON.stringify({ name: '@asyra/factory', version: '1.0.0' })
+  const packageDirectory = packageName.slice('@asyra/'.length)
+  const manifestPath = 'packages/' + packageDirectory + '/package.json'
+  const manifest = JSON.stringify({ name: packageName, version: '1.0.0' })
   for (const dir of [sourceRoot, verifiedRoot])
     fs.writeFileSync(path.join(dir, manifestPath), manifest)
   const manifestFile = {
@@ -126,6 +131,23 @@ function fixture() {
     size: Buffer.byteLength(manifest)
   }
   record.snapshot.files.push(manifestFile)
+  record.snapshot.runtimeAuthority = {
+    format: 1,
+    contractScopeDigest: 'e'.repeat(64),
+    stepClosures: [],
+    packages: [
+      {
+        name: packageName,
+        repositoryDirectory: 'packages/' + packageDirectory,
+        manifestPath,
+        entryPath: 'packages/' + packageDirectory + '/src/index.ts',
+        manifestDigest: manifestFile.digest,
+        directWorkspaceDependencies: []
+      }
+    ],
+    packageNames: [packageName],
+    digest: 'f'.repeat(64)
+  }
   files.push(manifestFile)
   record.attempts[0].verdict.sourceDigest = sha256(JSON.stringify(files))
   const owner = createReviewOwner(root, options)
@@ -417,13 +439,35 @@ test('trusted Changeset is complete, correctly owned and separate from source ve
   )
   assert.match(metadata.content, /^---\n"@asyra\/factory": patch\n---\n/)
   assert.match(metadata.content, /Deterministic demonstration/)
-  assert.match(metadata.reason, /Factory/)
+  assert.match(metadata.reason, /@asyra\/factory/)
   assert.deepEqual(p.preview.deliveryFiles, [file, metadata.path])
   assert.equal(p.preview.changes.length, 1)
   assert.equal(fs.existsSync(path.join(f.candidateRoot, metadata.path)), false)
   assert.equal(fs.existsSync(path.join(f.sourceRoot, metadata.path)), false)
   await confirm(f, p)
   assert.equal(f.counts.deliver, 1)
+})
+
+test('trusted Changeset uses the task primary package captured manifest', async () => {
+  const sourceFile = 'packages/collaboration/src/index.ts'
+  const f = fixture({
+    packageName: '@asyra/collaboration',
+    file: sourceFile
+  })
+  const p = await prepare(f)
+  assert.equal(p.preview.packageOwnership.packageName, '@asyra/collaboration')
+  assert.equal(
+    p.preview.packageOwnership.path,
+    'packages/collaboration/package.json'
+  )
+  assert.match(
+    p.preview.metadata.content,
+    /^---\n"@asyra\/collaboration": patch\n---\n/
+  )
+  assert.deepEqual(p.preview.deliveryFiles, [
+    sourceFile,
+    p.preview.metadata.path
+  ])
 })
 for (const [name, mutate] of [
   ['missing package ownership', (f) => f.record.snapshot.files.splice(1, 1)],
