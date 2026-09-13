@@ -128,15 +128,17 @@ desktop/tablet/narrow usability. Strict `pr-prepare` behavior remains unchanged.
 
 ## Trusted delivery metadata
 
-Activated 2026-09-09: delivery supports only existing Factory runtime source
-owned by `packages/factory/package.json`, declaring public `@asyra/factory`,
-and release type `patch`. Ownership must match the captured, verified manifest
-and exact remote base; absent, conflicting or nested package ownership rejects.
-Repository prose, candidate output and PR text cannot select policy. No arbitrary
-package, release type, summary or metadata path is accepted from an action.
+Delivery selects exactly the task step's primary public `@asyra/<name>`
+package from its validated `runtimeAuthority`. The package name, repository
+directory, manifest path and manifest digest must match that captured authority;
+dependency packages remain execution inputs and never become preview owners.
+Legacy records without authority retain only the fixed Factory policy. Release
+type remains `patch`. Ownership must match the captured, verified manifest and
+exact remote base; absent, conflicting or nested package ownership rejects.
+Repository prose, candidate output and PR text cannot select policy.
 
 The review owner generates exactly one new `.changeset/flow-review-<task>-<attempt>.md`
-with the fixed package patch entry and a bounded, truthful summary identifying
+with that primary package's patch entry and a bounded, truthful summary identifying
 local candidate review. Demonstrations are labeled deterministic demonstrations,
 not model output. The path must be absent from the base; no metadata overwrite
 or symlink ancestor is allowed. Preparation writes only the existing delivery

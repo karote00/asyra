@@ -555,11 +555,12 @@ GitHub review configuration grants no provider dispatch authority.
    checkout and the remote base's captured inputs. Preparation creates no remote
    objects. A differing source closure or dirty checkout refuses delivery.
 3. Review the exact repository, base SHA, branch, all delivery files, title and body.
-   The trusted owner prepares an `@asyra/factory` patch Changeset separately
-   from candidate source evidence. Its package ownership, reason, exact content
-   and metadata validation appear in **Trusted owner Changeset**. Only existing
-   Factory runtime candidates are supported; requests cannot select arbitrary
-   packages, release types, summaries or paths. Metadata changes invalidate confirmation.
+   The trusted owner prepares a patch Changeset for the selected step's primary
+   captured public package separately from candidate source evidence. Its package
+   ownership, reason, exact content and metadata validation appear in
+   **Trusted owner Changeset**. Dependency packages do not become delivery
+   owners; requests cannot select arbitrary packages, release types, summaries
+   or paths. Metadata changes invalidate confirmation.
    Open the frozen source diff and local evidence links. Check the explicit
    confirmation only when this exact preview is approved, then select
    **Create confirmed PR**. Branch and PR creation stay in the trusted
@@ -596,6 +597,15 @@ case requires a separate exact preview and user confirmation. Required-check
 protection, independent verifier/issuer, model reconciliation, ticket/team work,
 hosting and standalone dynamic installation remain deferred. The package records
 a patch Changeset outside the Framework bulk-release allowlist.
+
+New source capture retains the unchanged bytes-only `runtimeSource` format 1
+and a separate `runtimeAuthority` format 1. Authority is derived from the
+admitted step owners and actual public workspace manifests, includes each
+step's transitive `workspace:*` dependency closure, and drives exact generated
+source aliases. Candidate, retained task, service, target, review, API, CLI and
+Board consumers carry its version and digests without rebuilding it. Historical
+records without authority stay on the fixed Factory runtime and cannot acquire
+new package scope during reload.
 
 ## Flow targets and bounded work
 

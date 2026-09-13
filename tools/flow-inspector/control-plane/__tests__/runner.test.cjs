@@ -147,6 +147,14 @@ test(
         result.identity.runtimeSourceDigest,
         snapshot.runtimeSource.digest
       )
+      assert.equal(
+        result.identity.runtimeAuthorityDigest,
+        snapshot.runtimeAuthority.digest
+      )
+      assert.equal(
+        result.identity.contractScopeDigest,
+        snapshot.runtimeAuthority.contractScopeDigest
+      )
       assert.equal(result.identity.lockfileDigest, snapshot.lockfileDigest)
       assert.equal(result.identity.sourceDigest, snapshot.digest)
       assert.equal(result.identity.mappingVersion, contract.mappingVersion)
@@ -211,6 +219,10 @@ test('verification consumes the trusted execution boundary once without bypassin
     result.identity.runtimeSourceDigest,
     snapshot.runtimeSource.digest
   )
+  assert.equal(
+    result.identity.runtimeAuthorityDigest,
+    snapshot.runtimeAuthority.digest
+  )
   assert.equal(result.identity.lockfileDigest, snapshot.lockfileDigest)
   assert.equal(result.identity.sourceDigest, snapshot.digest)
   assert.equal(
@@ -256,10 +268,24 @@ test('runner carries producer runtime identity without traversing its manifest a
     current.identity.runtimeSourceDigest,
     snapshot.runtimeSource.digest
   )
+  assert.deepEqual(
+    {
+      format: current.identity.runtimeAuthorityFormat,
+      digest: current.identity.runtimeAuthorityDigest,
+      contractScopeDigest: current.identity.contractScopeDigest
+    },
+    {
+      format: snapshot.runtimeAuthority.format,
+      digest: snapshot.runtimeAuthority.digest,
+      contractScopeDigest: snapshot.runtimeAuthority.contractScopeDigest
+    }
+  )
   const historical = { ...snapshot }
   delete historical.runtimeSource
+  delete historical.runtimeAuthority
   const old = await invoke(historical, 'historical')
   assert.equal(Object.hasOwn(old.identity, 'runtimeSourceDigest'), false)
+  assert.equal(Object.hasOwn(old.identity, 'runtimeAuthorityDigest'), false)
   assert.equal(old.identity.sourceDigest, snapshot.digest)
   assert.equal(executions, 2)
 })
@@ -274,7 +300,8 @@ function derivedRunnerFixture() {
   const snapshot = captureSource(root, runDirectory, contract)
   const generated = source.createDerivedExecution({
     sourceRoot: snapshot.sourceRoot,
-    verificationSource: snapshot.verificationSource
+    verificationSource: snapshot.verificationSource,
+    runtimeAuthority: snapshot.runtimeAuthority
   })
   for (const entry of generated.files) {
     const file = path.join(snapshot.sourceRoot, entry.path)
@@ -373,6 +400,10 @@ test(
       options.snapshot.runtimeSource.digest
     )
     assert.equal(
+      result.identity.runtimeAuthorityDigest,
+      options.snapshot.runtimeAuthority.digest
+    )
+    assert.equal(
       assessEvidence(
         options.contract,
         options.snapshot,
@@ -433,13 +464,19 @@ test(
         value.snapshot.executionSource.policy = 'unknown'
       },
       (value) => {
-        value.snapshot.executionSource.format = 2
+        value.snapshot.executionSource.format = 1
       },
       (value) => {
         value.snapshot.executionSource.roles.bootstrap = 'other.cjs'
       },
       (value) => {
         value.snapshot.executionSource.verificationSourceDigest = '0'.repeat(64)
+      },
+      (value) => {
+        value.snapshot.executionSource.runtimeAuthorityDigest = '0'.repeat(64)
+      },
+      (value) => {
+        delete value.snapshot.runtimeAuthority
       },
       (value) => {
         delete value.snapshot.executionSource.verificationSourceDigest

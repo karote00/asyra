@@ -570,6 +570,14 @@ test('HTTP target assessment actions retain service authority and cached results
       assert.equal(settled.phase, 'completed')
       assert.equal(settled.runtime.taskId, task.id)
       assert.equal(settled.runtime.attemptId, taskRequest.sourceAttemptId)
+      assert.equal(
+        settled.runtime.runtimeAuthorityDigest,
+        task.snapshot.runtimeAuthority.digest
+      )
+      assert.equal(
+        settled.runtime.contractScopeDigest,
+        task.snapshot.runtimeAuthority.contractScopeDigest
+      )
       assert.equal(settled.result.accepted.status, 'passed')
       assert.equal(settled.projection.eligible, false)
       for (const slot of settled.slots) {

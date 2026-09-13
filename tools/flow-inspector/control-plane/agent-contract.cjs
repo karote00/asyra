@@ -172,10 +172,14 @@ function admitTask(
       new Set(files).size === files.length,
     'invalid file scope'
   )
+  const primaryPackageRoot =
+    'packages/' + step.ownerPackage.slice('@asyra/'.length) + '/'
   for (const file of files) {
     requireTask(
       canonicalFile(file) &&
-        /^packages\/factory\/src\/.+\.ts$/.test(file) &&
+        step.ownerPackage.startsWith('@asyra/') &&
+        file.startsWith(primaryPackageRoot + 'src/') &&
+        file.endsWith('.ts') &&
         !file.includes('/__tests__/'),
       'non-runtime or noncanonical path'
     )

@@ -468,7 +468,10 @@ function dependentAdmissionFixture(t) {
       repository: root,
       head: source.snapshot.head,
       sourceDigest: source.snapshot.digest,
-      runtimeSourceDigest: 'c'.repeat(64)
+      runtimeSourceDigest: 'c'.repeat(64),
+      runtimeAuthorityFormat: 1,
+      runtimeAuthorityDigest: 'd'.repeat(64),
+      contractScopeDigest: 'e'.repeat(64)
     },
     result: {
       targetId: target.id,
@@ -595,6 +598,15 @@ test('assessment-bound task start rejects retired source authority after its own
   assert.throws(
     () => f.owner.checkTask(f.task, f.source.snapshot),
     /assessment source authority.*unavailable/i
+  )
+})
+
+test('assessment source authority requires one complete versioned identity', (t) => {
+  const f = dependentAdmissionFixture(t)
+  delete f.assessment.runtime.contractScopeDigest
+  assert.throws(
+    () => f.owner.decide(f.admission, 'local-developer'),
+    /assessment source identity/i
   )
 })
 
@@ -909,7 +921,8 @@ async function pinnedSetup(t) {
     repository: root,
     head: snapshot.head,
     sourceDigest: snapshot.digest,
-    runtimeSource: admitted.runtimeSource
+    runtimeSource: admitted.runtimeSource,
+    runtimeAuthority: admitted.runtimeAuthority
   }
   const evidence = evidenceOwner.assessEvidence(
     contract,

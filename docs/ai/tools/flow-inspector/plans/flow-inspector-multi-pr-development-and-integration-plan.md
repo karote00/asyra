@@ -93,9 +93,13 @@ candidate contract and whole-target integration passing at one exact retained
 source. Only a separate authorized action atomically appends the accepted version;
 authorized replay is idempotent across restart, and generic target-pinned contract
 acceptance is refused. HTTP, local/attached CLI and Board expose the same exact
-request and retained decision. Full runtime coverage remains open. Ordinary composition does not cover
-undeclared generated wrappers; the fixed four-package capture scope also does
-not close the original Factory/collaboration/UI cross-PR product cases.
+request and retained decision. Full runtime product evidence remains open.
+Source capture now derives the selected Factory, collaboration and UI Context
+package closures from actual public workspace manifests, retains a separate
+versioned runtime authority and generates exact captured-entry aliases. Tasks
+still own only their selected step's primary package boundary. This authority
+prerequisite does not close the original Factory/collaboration/UI cross-PR
+product cases.
 
 Historical full snapshot digests and missing verification authority are never
 relabeled or reconstructed from a mutable checkout. Formal readiness uses real

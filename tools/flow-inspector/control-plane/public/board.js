@@ -1275,7 +1275,8 @@
           ? {
               head: assessmentTask?.snapshot?.head,
               digest: attempt?.verdict?.sourceDigest,
-              runtimeSource: attempt?.verdict?.runtimeSource
+              runtimeSource: attempt?.verdict?.runtimeSource,
+              runtimeAuthority: attempt?.verdict?.runtimeAuthority
             }
           : source?.snapshot
         const emptySource = taskMode
@@ -1292,6 +1293,14 @@
               (snapshot?.head ?? 'unavailable') +
               '\nRuntime: ' +
               (snapshot?.runtimeSource?.digest ?? 'unavailable') +
+              '\nRuntime authority: ' +
+              (runtime?.runtimeAuthorityDigest ??
+                snapshot?.runtimeAuthority?.digest ??
+                'legacy') +
+              '\nContract scope: ' +
+              (runtime?.contractScopeDigest ??
+                snapshot?.runtimeAuthority?.contractScopeDigest ??
+                'legacy') +
               '\nFull source: ' +
               (snapshot?.digest ?? 'unavailable') +
               (taskMode

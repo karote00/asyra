@@ -177,13 +177,18 @@ async function runContainedVerification(options) {
     throw new Error('Invalid contained execution location')
   }
   const execution = snapshot.executionSource
+  const runtimeAuthority = snapshot.runtimeAuthority
+  const scoped = Object.hasOwn(snapshot, 'runtimeAuthority')
   if (
     !Object.hasOwn(snapshot, 'executionSource') ||
     !execution ||
     typeof execution !== 'object' ||
     Array.isArray(execution) ||
-    execution.format !== 1 ||
-    execution.policy !== 'contained-native-typescript-v1' ||
+    execution.format !== (scoped ? 2 : 1) ||
+    execution.policy !==
+      (scoped
+        ? 'contained-native-typescript-v2'
+        : 'contained-native-typescript-v1') ||
     execution.roles?.configuration !==
       'tools/flow-inspector/control-plane/candidate-config.mjs' ||
     execution.roles?.bootstrap !==
@@ -192,7 +197,12 @@ async function runContainedVerification(options) {
     snapshot.configurationDigest !== execution.digest ||
     !snapshot.verificationSource ||
     !/^[a-f0-9]{64}$/.test(execution.verificationSourceDigest ?? '') ||
-    execution.verificationSourceDigest !== snapshot.verificationSource.digest
+    execution.verificationSourceDigest !== snapshot.verificationSource.digest ||
+    (scoped &&
+      (runtimeAuthority?.format !== 1 ||
+        !/^[a-f0-9]{64}$/.test(runtimeAuthority.digest ?? '') ||
+        !/^[a-f0-9]{64}$/.test(runtimeAuthority.contractScopeDigest ?? '') ||
+        execution.runtimeAuthorityDigest !== runtimeAuthority.digest))
   )
     throw new Error('Invalid contained execution closure')
   if (!containmentAvailable())
@@ -296,6 +306,13 @@ async function runVerification({
       sourceDigest: snapshot.digest,
       ...(snapshot.runtimeSource
         ? { runtimeSourceDigest: snapshot.runtimeSource.digest }
+        : {}),
+      ...(snapshot.runtimeAuthority
+        ? {
+            runtimeAuthorityFormat: snapshot.runtimeAuthority.format,
+            runtimeAuthorityDigest: snapshot.runtimeAuthority.digest,
+            contractScopeDigest: snapshot.runtimeAuthority.contractScopeDigest
+          }
         : {}),
       lockfileDigest: snapshot.lockfileDigest,
       contractDigest: contract.digest,

@@ -32,6 +32,25 @@ const METADATA_POLICY = freeze({
   sourcePrefix: 'packages/factory/src/',
   releaseType: 'patch'
 })
+function metadataPolicy(ownership) {
+  const match = /^@asyra\/([a-z0-9]+(?:-[a-z0-9]+)*)$/.exec(
+    ownership?.packageName ?? ''
+  )
+  const manifestPath = match && 'packages/' + match[1] + '/package.json'
+  need(
+    match &&
+      ownership.path === manifestPath &&
+      /^[a-f0-9]{64}$/.test(ownership.digest ?? ''),
+    'invalid metadata package ownership'
+  )
+  return {
+    version: METADATA_POLICY.version,
+    packageName: ownership.packageName,
+    manifestPath,
+    sourcePrefix: 'packages/' + match[1] + '/src/',
+    releaseType: METADATA_POLICY.releaseType
+  }
+}
 function scopedSelection(selection) {
   need(
     selection &&
@@ -68,6 +87,29 @@ function scopedPayload(scope) {
     Number.isInteger(value.revision) &&
     value.revision > 0 &&
     digest(value.contractDigest)
+  const runtimeFields = [
+    'taskId',
+    'attemptId',
+    'repository',
+    'head',
+    'sourceDigest',
+    'runtimeSourceDigest',
+    'configurationDigest',
+    'verificationSourceDigest',
+    'executionSourceDigest',
+    'contractDigest',
+    'mappingVersion',
+    'architectureVersion',
+    'lockfileDigest'
+  ]
+  const authorityFields = [
+    'runtimeAuthorityFormat',
+    'runtimeAuthorityDigest',
+    'contractScopeDigest'
+  ]
+  const runtimeScoped = authorityFields.some((key) =>
+    Object.hasOwn(scope?.runtime ?? {}, key)
+  )
   const reference = (value) =>
     shape(value, [
       'attemptId',
@@ -154,19 +196,8 @@ function scopedPayload(scope) {
       digest(scope.targetVerification.reviewId) &&
       digest(scope.targetVerification.candidateDigest) &&
       shape(scope.runtime, [
-        'taskId',
-        'attemptId',
-        'repository',
-        'head',
-        'sourceDigest',
-        'runtimeSourceDigest',
-        'configurationDigest',
-        'verificationSourceDigest',
-        'executionSourceDigest',
-        'contractDigest',
-        'mappingVersion',
-        'architectureVersion',
-        'lockfileDigest'
+        ...runtimeFields,
+        ...(runtimeScoped ? authorityFields : [])
       ]) &&
       scope.runtime.taskId === scope.taskId &&
       scope.runtime.attemptId === scope.attemptId &&
@@ -186,6 +217,10 @@ function scopedPayload(scope) {
       ].every((key) => digest(scope.runtime[key])) &&
       scope.runtime.configurationDigest ===
         scope.runtime.executionSourceDigest &&
+      (!runtimeScoped ||
+        (scope.runtime.runtimeAuthorityFormat === 1 &&
+          digest(scope.runtime.runtimeAuthorityDigest) &&
+          digest(scope.runtime.contractScopeDigest))) &&
       scope.runtime.contractDigest === scope.acceptedBaseline.contractDigest &&
       shape(scope.roles, ['accepted', 'target']) &&
       ['accepted', 'target'].every((role) => {
@@ -246,7 +281,8 @@ function scopedPayload(scope) {
             'sourceDigest',
             'configurationDigest',
             'runtimeSourceDigest',
-            'executionSourceDigest'
+            'executionSourceDigest',
+            ...(runtimeScoped ? authorityFields : [])
           ]) &&
           validId(item.id) &&
           Array.isArray(item.roles) &&
@@ -279,6 +315,13 @@ function scopedPayload(scope) {
             'executionSourceDigest'
           ].every((key) => digest(item[key])) &&
           item.runtimeSourceDigest === scope.runtime.runtimeSourceDigest &&
+          (!runtimeScoped ||
+            (item.runtimeAuthorityFormat ===
+              scope.runtime.runtimeAuthorityFormat &&
+              item.runtimeAuthorityDigest ===
+                scope.runtime.runtimeAuthorityDigest &&
+              item.contractScopeDigest ===
+                scope.runtime.contractScopeDigest)) &&
           item.configurationDigest === item.executionSourceDigest
       ) &&
       ['accepted', 'target'].every(
@@ -313,19 +356,16 @@ function reviewFormat(record) {
 }
 function prepareMetadata(input) {
   const ownership = input.packageOwnership
+  const policy = metadataPolicy(ownership)
   need(
-    ownership?.path === METADATA_POLICY.manifestPath &&
-      ownership.packageName === METADATA_POLICY.packageName &&
-      /^[a-f0-9]{64}$/.test(ownership.digest) &&
-      validId(input.taskId) &&
-      validId(input.attemptId),
+    validId(input.taskId) && validId(input.attemptId),
     'invalid metadata package ownership'
   )
   need(
     input.changes.every(
       (c) =>
         canonicalFile(c.path) &&
-        c.path.startsWith(METADATA_POLICY.sourcePrefix) &&
+        c.path.startsWith(policy.sourcePrefix) &&
         c.path.endsWith('.ts') &&
         !c.path.includes('/__tests__/')
     ),
@@ -333,27 +373,33 @@ function prepareMetadata(input) {
   )
   const summary =
     input.adapter === 'demonstration'
-      ? 'Deterministic demonstration - retain a Factory runtime candidate for human review.'
-      : 'Retain a locally verified Factory runtime candidate for human review.'
+      ? 'Deterministic demonstration - retain a ' +
+        policy.packageName +
+        ' runtime candidate for human review.'
+      : 'Retain a locally verified ' +
+        policy.packageName +
+        ' runtime candidate for human review.'
   const content =
     '---\n"' +
-    METADATA_POLICY.packageName +
+    policy.packageName +
     '": ' +
-    METADATA_POLICY.releaseType +
+    policy.releaseType +
     '\n---\n\n' +
     summary +
     '\n'
   return {
-    policyVersion: METADATA_POLICY.version,
-    packageName: METADATA_POLICY.packageName,
-    releaseType: METADATA_POLICY.releaseType,
+    policyVersion: policy.version,
+    packageName: policy.packageName,
+    releaseType: policy.releaseType,
     ownership,
     path:
       '.changeset/flow-review-' + input.taskId + '-' + input.attemptId + '.md',
     content,
     digest: sha256(content),
     reason:
-      'Changed runtime source belongs to the captured public Factory package; the fixed delivery policy records patch release intent.',
+      'Changed runtime source belongs to the captured public ' +
+      policy.packageName +
+      ' package; the fixed delivery policy records patch release intent.',
     validation: {
       status: 'passed',
       scope: 'delivery metadata only - not source verification'
@@ -451,7 +497,9 @@ function preparePreview(input, remote, adapter) {
           ]
         : []),
       'This is not independently protected verification. PR creation and GitHub checks do not accept the local baseline.',
-      'Trusted delivery metadata: @asyra/factory patch Changeset; metadata validation is separate from local source verification.',
+      'Trusted delivery metadata: ' +
+        input.packageOwnership.packageName +
+        ' patch Changeset; metadata validation is separate from local source verification.',
       'Source provenance: ' +
         (input.adapter === 'demonstration'
           ? 'deterministic demonstration, not model output.'
@@ -612,8 +660,47 @@ function createReviewOwner(
     )
     for (const item of verdict.files)
       read(path.join(reportRoot, 'source'), item.path, item.digest)
+    const authority = task.snapshot.runtimeAuthority
+    const ownerPackage = task.task.step?.ownerPackage
+    const scopedAuthority = authority
+      ? authority.packages?.filter((item) => item.name === ownerPackage)
+      : []
+    if (authority) {
+      need(
+        authority.format === 1 &&
+          /^[a-f0-9]{64}$/.test(authority.digest ?? '') &&
+          /^[a-f0-9]{64}$/.test(authority.contractScopeDigest ?? '') &&
+          scopedAuthority.length === 1 &&
+          (!scopedWork ||
+            (scopedWork.runtime.runtimeAuthorityFormat === authority.format &&
+              scopedWork.runtime.runtimeAuthorityDigest === authority.digest &&
+              scopedWork.runtime.contractScopeDigest ===
+                authority.contractScopeDigest)),
+        'invalid runtime package authority'
+      )
+    } else
+      need(
+        !scopedWork ||
+          !Object.hasOwn(scopedWork.runtime, 'runtimeAuthorityDigest'),
+        'runtime package authority is missing'
+      )
+    const selectedPackage = authority
+      ? scopedAuthority[0]
+      : {
+          name: METADATA_POLICY.packageName,
+          manifestPath: METADATA_POLICY.manifestPath,
+          repositoryDirectory: 'packages/factory',
+          manifestDigest: task.snapshot.files.find(
+            (item) => item.path === METADATA_POLICY.manifestPath
+          )?.digest
+        }
+    const selectedPolicy = metadataPolicy({
+      path: selectedPackage.manifestPath,
+      packageName: selectedPackage.name,
+      digest: selectedPackage.manifestDigest
+    })
     const manifests = task.snapshot.files.filter(
-      (item) => item.path === METADATA_POLICY.manifestPath
+      (item) => item.path === selectedPolicy.manifestPath
     )
     need(manifests.length === 1, 'missing or ambiguous package ownership')
     const manifest = manifests[0]
@@ -626,14 +713,15 @@ function createReviewOwner(
       throw new Error('PR review: invalid package ownership manifest')
     }
     need(
-      packageInfo.name === METADATA_POLICY.packageName &&
-        packageInfo.private !== true,
+      packageInfo.name === selectedPolicy.packageName &&
+        packageInfo.private !== true &&
+        manifest.digest === selectedPackage.manifestDigest,
       'unsupported package ownership'
     )
     need(
       !task.snapshot.files.some(
         (item) =>
-          item.path.startsWith(METADATA_POLICY.sourcePrefix) &&
+          item.path.startsWith(selectedPolicy.sourcePrefix) &&
           item.path.endsWith('/package.json')
       ),
       'ambiguous nested package ownership'
@@ -661,7 +749,8 @@ function createReviewOwner(
       need(
         canonicalFile(change.path) &&
           task.task.allowedFiles.includes(change.path) &&
-          /^packages\/factory\/src\/.+\.ts$/.test(change.path) &&
+          change.path.startsWith(selectedPolicy.sourcePrefix) &&
+          change.path.endsWith('.ts') &&
           !change.path.includes('/__tests__/'),
         'outside allowed source difference'
       )

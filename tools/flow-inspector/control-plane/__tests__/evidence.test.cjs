@@ -302,7 +302,7 @@ async function realRuntimeProof(t) {
     repository: root,
     head: captured.head,
     sourceDigest: captured.digest,
-    runtimeSource: sourceOwner.validateRuntimeSource(captured)
+    ...sourceOwner.validateSourceSnapshot(captured, contract)
   })
   return { id, captured, runner, admission }
 }
@@ -312,6 +312,10 @@ test('runtime evidence binds real captured source through the runner and durable
   const evidence = assessEvidence(contract, captured, runner, flowIds)
   assert.equal(evidence.status, 'passed')
   assert.equal(evidence.runtimeSourceDigest, captured.runtimeSource.digest)
+  assert.equal(
+    evidence.runtimeAuthorityDigest,
+    captured.runtimeAuthority.digest
+  )
   const validate = t.mock.method(sourceOwner, 'validateRuntimeSource')
   const reused = assessEvidence(
     contract,
@@ -347,8 +351,12 @@ test('runtime evidence binds real captured source through the runner and durable
   )
   const legacySnapshot = { ...captured }
   delete legacySnapshot.runtimeSource
+  delete legacySnapshot.runtimeAuthority
   const legacyRunner = structuredClone(runner)
   delete legacyRunner.identity.runtimeSourceDigest
+  delete legacyRunner.identity.runtimeAuthorityFormat
+  delete legacyRunner.identity.runtimeAuthorityDigest
+  delete legacyRunner.identity.contractScopeDigest
   const legacy = assessEvidence(contract, legacySnapshot, legacyRunner, flowIds)
   assert.equal(legacy.status, 'passed')
   assert.equal(Object.hasOwn(legacy, 'runtimeSourceDigest'), false)
@@ -607,12 +615,18 @@ async function realDerivedProof(t, outcome = 'passed') {
       ...captured,
       files,
       runtimeSource: sourceOwner.createRuntimeSource(files),
-      verificationSource: sourceOwner.createVerificationSource(files, contract)
+      runtimeAuthority: captured.runtimeAuthority,
+      verificationSource: sourceOwner.createVerificationSource(
+        files,
+        contract,
+        captured.runtimeAuthority
+      )
     }
   }
   const generated = sourceOwner.createDerivedExecution({
     sourceRoot: captured.sourceRoot,
-    verificationSource: captured.verificationSource
+    verificationSource: captured.verificationSource,
+    runtimeAuthority: captured.runtimeAuthority
   })
   for (const file of generated.files) {
     const destination = path.join(captured.sourceRoot, file.path)
@@ -703,7 +717,7 @@ test(
     assert.equal(evidence.status, 'passed', JSON.stringify(evidence.issues))
     assert.equal(combined.mock.callCount(), 1)
     assert.equal(runtime.mock.callCount(), 0)
-    assert.equal(hash.mock.callCount(), 6)
+    assert.equal(hash.mock.callCount(), 7)
     assert.equal(reads.mock.callCount(), 0)
     assert.equal(
       runner.identity.configurationDigest,
@@ -1033,6 +1047,7 @@ test(
           'architectureVersion',
           'configurationDigest',
           'runtimeSource',
+          'runtimeAuthority',
           'verificationSource',
           'executionSource'
         ].sort()
@@ -1042,6 +1057,7 @@ test(
       assert.equal(source.sourceDigest, derived.digest)
       for (const key of [
         'runtimeSource',
+        'runtimeAuthority',
         'verificationSource',
         'executionSource'
       ])
@@ -1051,7 +1067,7 @@ test(
           'forward completed descriptor without cloning'
         )
       assert.equal(combined.mock.callCount(), index * 2 + 1)
-      assert.equal(hash.mock.callCount(), (index * 2 + 1) * 6)
+      assert.equal(hash.mock.callCount(), (index * 2 + 1) * 7)
       assert.deepEqual(
         assessEvidence(...args),
         evidence,
@@ -1059,7 +1075,7 @@ test(
       )
     }
     assert.equal(combined.mock.callCount(), 6)
-    assert.equal(hash.mock.callCount(), 36)
+    assert.equal(hash.mock.callCount(), 42)
     assert.equal(runtime.mock.callCount(), 0)
     assert.equal(reads.mock.callCount(), 0)
   }
