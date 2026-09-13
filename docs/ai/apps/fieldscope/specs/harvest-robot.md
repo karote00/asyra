@@ -1018,6 +1018,40 @@ product. Bounds use the original prepared output, with one forward placement
 product per query and one required FK. No C generation, local bounds regeneration,
 retained world geometry, persistent query cache or unmeasured index is introduced.
 
+### Explicit joint-segment candidate admissibility
+
+D may validate a labeled synthetic joint-space segment against the current issued
+C rig. Each approved joint follows q(t)=q0+(q1-q0)t for the same normalized
+t in [0,1], over a finite nonnegative start time and strictly later finite end.
+Angles follow their given numeric values, without wrapping or shortest-path
+selection. This is not linear TCP motion or interpolation between endpoint FK
+transforms. No acceleration or additional TCP-speed limits are introduced.
+
+Clone the transient request once, validate that snapshot and preserve explicit
+start/end values. Every joint endpoint must lie within its original C rig limits;
+convex scalar interpolation then stays within those limits. Check each joint's
+absolute delta against its original rig speed multiplied by the duration using
+conservative intervals or exact finite-dyadic arithmetic. Rounded subtraction,
+division or multiplication alone cannot certify a boundary. Exact equality passes;
+a proven exceedance fails. No intermediate overflow becomes an admissible result.
+
+Return source-bound immutable candidate evidence with per-joint limit/speed checks
+and overall admissible/invalid. Malformed, nonfinite, missing/extra joint
+fields or nonpositive time intervals reject atomically. QueryGeometry already rejects unavailable rigs before issuing a source; this
+helper accepts only its issued current product, with no substitute definition. The issued geometry
+and all source handles must remain current before work and publication. This
+app-local transient request has no persistence or external wire compatibility.
+
+Admissible means only these declared scalar conditions hold. It grants no
+reachable TCP, surface separation, material/contact approval, commanded pose or
+movement permission. No FK, geometry/query generation, session/clock update or
+retained cache occurs. Articulated source evidence still needs a separately owned
+conservative C chain/interval handoff before any complete sweep claim.
+
+Acceptance: all five axes, exact speed and limit boundaries, just-over controls,
+non-wrapping invalid angles, large finite arithmetic, upstream-unavailable/stale/forged
+sources, clone-once isolation and zero FK/query/source/session work.
+
 ### Motion and collision admission
 
 A's straight-lane screen is not motion clearance. Every proposed base, arm/tool,
