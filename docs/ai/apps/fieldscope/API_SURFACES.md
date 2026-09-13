@@ -298,7 +298,10 @@ Cross-package imports use public `@asyra/*` facades. Do not import another app's
   Clone-once validation rejects malformed or nonpositive intervals.
 - Scalar q(t) is linear over [0,1], without angle wrapping. Original rig limits
   and speeds determine per-axis checks; exact dyadic comparison preserves equality
-  and rejects proven exceedance without rounded quotient admission.
+  and rejects proven exceedance without rounded quotient admission. Per-joint
+  `checks` separately report limits/speed as within/outside; `work` counts evaluated
+  joints and exact comparisons. Future planners must submit generated intervals to
+  this owner rather than treating a rounded duration estimate as admission.
 - The immutable source-bound result is admissible/invalid candidate
   evidence only. QueryGeometry rejects unsupported rigs before source issuance;
   this helper accepts only its current issued source. No FK, source/query generation,
