@@ -6,6 +6,7 @@ const path = require('node:path')
 const vm = require('node:vm')
 const { randomBytes, timingSafeEqual } = require('node:crypto')
 const { createService, LOCAL_ACTOR, ActionError } = require('./service.cjs')
+const { validId } = require('./store.cjs')
 
 function parseLocalUrl(value) {
   if (!value)
@@ -200,6 +201,13 @@ async function startServer(
                 ? service.taskChanges(taskRoute[1])
                 : service.getTask(taskRoute[1])
             )
+          if (route.pathname === '/api/target-assessments')
+            return send(200, service.targetAssessments())
+          const assessmentRoute = route.pathname.match(
+            /^\/api\/target-assessments\/([a-f0-9-]{36})$/
+          )
+          if (assessmentRoute && validId(assessmentRoute[1]))
+            return send(200, service.getTargetAssessment(assessmentRoute[1]))
           if (route.pathname === '/api/targets')
             return send(200, service.targets())
           const targetRoute = route.pathname.match(
@@ -295,6 +303,32 @@ async function startServer(
             200,
             await service.reviewTask(reviewAction[1], body, LOCAL_ACTOR)
           )
+        if (route.pathname === '/api/target-assessments')
+          return send(202, {
+            id: service.startTargetAssessment(body, LOCAL_ACTOR)
+          })
+        const assessmentCancel = route.pathname.match(
+          /^\/api\/target-assessments\/([a-f0-9-]{36})\/cancel$/
+        )
+        if (assessmentCancel && validId(assessmentCancel[1])) {
+          if (
+            !body ||
+            typeof body !== 'object' ||
+            Array.isArray(body) ||
+            Object.keys(body).length
+          )
+            throw new ActionError(
+              400,
+              'Invalid target assessment cancellation request'
+            )
+          return send(
+            200,
+            await service.cancelTargetAssessment(
+              assessmentCancel[1],
+              LOCAL_ACTOR
+            )
+          )
+        }
         if (route.pathname === '/api/targets/decide')
           return send(200, service.decideTarget(body, LOCAL_ACTOR))
         if (route.pathname === '/api/tasks')

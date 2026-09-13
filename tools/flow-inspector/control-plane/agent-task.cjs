@@ -3,6 +3,7 @@
 const fs = require('node:fs')
 const path = require('node:path')
 const { randomUUID } = require('node:crypto')
+const { isDeepStrictEqual } = require('node:util')
 const {
   admitTask,
   TASK_POLICY,
@@ -12,10 +13,16 @@ const {
 const { demonstrationAdapter } = require('./agent-adapter.cjs')
 const { providerAdapter, reportedUsage } = require('./agent-provider.cjs')
 const { loadContract } = require('./contracts.cjs')
-const { assessEvidence } = require('./evidence.cjs')
-const { captureSource, safePath, sha256 } = require('./snapshot.cjs')
+const { assessSourceEvidence } = require('./evidence.cjs')
 const {
-  verifyCandidate,
+  captureSource,
+  safePath,
+  sha256,
+  verifyRetainedSnapshotBytes,
+  validateSourceSnapshot
+} = require('./snapshot.cjs')
+const {
+  produceCandidateProof,
   containmentAvailable
 } = require('./agent-verifier.cjs')
 const { validId, writeAtomic } = require('./store.cjs')
@@ -38,7 +45,8 @@ function createTaskOwner(
     directory,
     getBaseline,
     capture = captureSource,
-    verify = verifyCandidate,
+    verify = null,
+    produce = produceCandidateProof,
     adapterFactory = demonstrationAdapter,
     providerAuthorization = null,
     providerComplete = null,
@@ -56,6 +64,8 @@ function createTaskOwner(
   safePath(repositoryRoot, path.relative(repositoryRoot, directory))
   fs.mkdirSync(directory, { recursive: true })
   const records = new Map()
+  const sources = new Map()
+  const repository = fs.realpathSync(repositoryRoot)
   let ordered = []
   let active = null
   let closed = false
@@ -71,13 +81,207 @@ function createTaskOwner(
       path.relative(repositoryRoot, path.join(directory, id))
     )
   }
-  function save(record, name, actor = record.actor) {
+  function save(record, name, actor = record.actor, source = null) {
     const next = { ...record, audit: [...record.audit, event(name, actor)] }
+    const artifact = source ? taskSource(next, source) : null
     writeAtomic(path.join(taskDirectory(record.id), 'task.json'), next)
     const frozen = freeze(structuredClone(next))
     records.set(record.id, frozen)
+    const previous = sources.get(record.id)
+    if (
+      closed ||
+      record.phase !== 'completed' ||
+      record.revoked ||
+      previous?.admission.attemptId !== record.attempts.at(-1)?.id
+    )
+      sources.delete(record.id)
+    if (!closed && artifact) sources.set(record.id, artifact)
     onChange()
     return frozen
+  }
+  function taskSource(record, source) {
+    const attempt = record.attempts.at(-1)
+    const verdict = attempt?.verdict
+    if (
+      record.phase !== 'completed' ||
+      record.revoked ||
+      !validId(attempt?.id) ||
+      attempt.phase !== 'completed'
+    )
+      return null
+    const sourceRoot = safePath(
+      taskDirectory(record.id),
+      'verification/' + attempt.id + '/source'
+    )
+    const snapshot = record.snapshot
+    if (
+      source.sourceRoot !== sourceRoot ||
+      source.head !== snapshot.head ||
+      source.lockfileDigest !== snapshot.lockfileDigest ||
+      source.contractDigest !== record.task.contractDigest ||
+      source.contractDigest !== snapshot.contractDigest ||
+      source.mappingVersion !== snapshot.mappingVersion ||
+      source.architectureVersion !== snapshot.architectureVersion ||
+      source.sourceDigest !== verdict?.sourceDigest ||
+      source.configurationDigest !== verdict.configurationDigest ||
+      verdict.baselineDigest !== snapshot.digest ||
+      ['runtimeSource', 'verificationSource', 'executionSource'].some(
+        (key) => !source[key] || !isDeepStrictEqual(source[key], verdict[key])
+      )
+    )
+      throw new Error('Invalid completed task source identity')
+    return freeze(
+      structuredClone({
+        taskId: record.id,
+        sourceRoot,
+        admission: {
+          attemptId: attempt.id,
+          repository,
+          head: source.head,
+          sourceDigest: source.sourceDigest,
+          lockfileDigest: source.lockfileDigest,
+          contractDigest: source.contractDigest,
+          mappingVersion: source.mappingVersion,
+          architectureVersion: source.architectureVersion,
+          configurationDigest: source.configurationDigest,
+          runtimeSource: source.runtimeSource,
+          verificationSource: source.verificationSource,
+          executionSource: source.executionSource
+        }
+      })
+    )
+  }
+  function retainedSource(record) {
+    const id = record.id
+    const passed = record.verificationStatus === 'passed'
+    const attempt = record.attempts.at(-1)
+    const verdict = attempt?.verdict
+    const descriptors = [
+      'runtimeSource',
+      'verificationSource',
+      'executionSource'
+    ]
+    const derived =
+      record.format === 2 ||
+      descriptors.some((key) => Object.hasOwn(verdict ?? {}, key))
+    if (
+      !passed &&
+      !descriptors.some((key) => Object.hasOwn(verdict ?? {}, key))
+    )
+      return null
+    let executionContext
+    if (derived) {
+      if (
+        !descriptors.every((key) => Object.hasOwn(verdict ?? {}, key)) ||
+        !validId(attempt.id)
+      )
+        throw new Error('Invalid retained candidate source descriptors')
+      const verificationDirectory = safePath(
+        taskDirectory(id),
+        'verification/' + attempt.id
+      )
+      const sourceRoot = safePath(verificationDirectory, 'source')
+      const reportPath = safePath(verificationDirectory, 'vitest.json')
+      if (
+        (passed && verdict.runner?.reportPath !== reportPath) ||
+        verdict.artifactDirectory !==
+          path.relative(repositoryRoot, verificationDirectory) ||
+        verdict.baselineDigest !== record.snapshot.digest
+      )
+        throw new Error('Invalid retained candidate source identity')
+      const baselineRoot = record.snapshot.sourceRoot
+      if (typeof baselineRoot !== 'string')
+        throw new Error('Invalid retained baseline source')
+      const inputName = path.basename(path.dirname(baselineRoot))
+      if (
+        !inputName.startsWith('input-') ||
+        !validId(inputName.slice(6)) ||
+        baselineRoot !== safePath(taskDirectory(id), inputName + '/source')
+      )
+        throw new Error('Invalid retained baseline source identity')
+      executionContext = { sourceRoot }
+    }
+    if (
+      (passed && !verdict?.runner?.reportPath) ||
+      !verdict.files ||
+      (!derived &&
+        verdict.sourceDigest !== sha256(JSON.stringify(verdict.files)))
+    )
+      throw new Error('Invalid task verification evidence')
+    const retainedContract = loadContract(record.snapshot.sourceRoot)
+    if (
+      derived &&
+      (retainedContract.digest !== record.task.contractDigest ||
+        retainedContract.digest !== record.snapshot.contractDigest ||
+        retainedContract.mappingVersion !== record.snapshot.mappingVersion ||
+        retainedContract.architectureVersion !==
+          record.snapshot.architectureVersion)
+    )
+      throw new Error('Invalid retained baseline contract identity')
+    const candidate = {
+      ...record.snapshot,
+      files: verdict.files,
+      sourceRoot:
+        executionContext?.sourceRoot ??
+        path.join(path.dirname(verdict.runner.reportPath), 'source'),
+      ...(derived
+        ? {
+            runtimeSource: verdict.runtimeSource,
+            verificationSource: verdict.verificationSource,
+            executionSource: verdict.executionSource
+          }
+        : {}),
+      configurationDigest:
+        verdict.configurationDigest ?? record.snapshot.configurationDigest,
+      digest: verdict.sourceDigest
+    }
+    if (derived)
+      verifyRetainedSnapshotBytes(
+        repositoryRoot,
+        executionContext.sourceRoot,
+        candidate.files
+      )
+    if (!passed) {
+      const admitted = validateSourceSnapshot(
+        candidate,
+        retainedContract,
+        candidate.files,
+        executionContext
+      )
+      return taskSource(record, {
+        sourceRoot: executionContext.sourceRoot,
+        head: candidate.head,
+        sourceDigest: candidate.digest,
+        lockfileDigest: candidate.lockfileDigest,
+        contractDigest: retainedContract.digest,
+        mappingVersion: retainedContract.mappingVersion,
+        architectureVersion: retainedContract.architectureVersion,
+        configurationDigest: candidate.configurationDigest,
+        ...admitted
+      })
+    }
+    const reportFile = safePath(
+      taskDirectory(id),
+      path.relative(taskDirectory(id), verdict.runner.reportPath)
+    )
+    const reportBytes = fs.readFileSync(reportFile)
+    if (sha256(reportBytes) !== verdict.runner.reportDigest)
+      throw new Error('Task report fingerprint changed')
+    const assessed = assessSourceEvidence(
+      retainedContract,
+      candidate,
+      { ...verdict.runner, report: JSON.parse(reportBytes) },
+      record.task.flowIds,
+      'baseline',
+      undefined,
+      executionContext
+    )
+    if (
+      assessed.evidence.status !== 'passed' ||
+      JSON.stringify(assessed.evidence) !== JSON.stringify(verdict.evidence)
+    )
+      throw new Error('Invalid retained candidate evidence')
+    return assessed.source ? taskSource(record, assessed.source) : null
   }
   for (const id of fs.readdirSync(directory)) {
     if (!validId(id)) continue
@@ -85,7 +289,7 @@ function createTaskOwner(
     if (!fs.existsSync(file)) continue
     const record = JSON.parse(fs.readFileSync(file, 'utf8'))
     if (
-      record.format !== 1 ||
+      ![1, 2].includes(record.format) ||
       record.id !== id ||
       !phases.includes(record.phase) ||
       !Array.isArray(record.audit) ||
@@ -148,42 +352,17 @@ function createTaskOwner(
       (record.verificationStatus === 'passed')
     )
       throw new Error('Invalid task work and evidence relationship')
-    if (record.verificationStatus === 'passed') {
-      const verdict = record.attempts.at(-1)?.verdict
-      if (
-        !verdict?.runner?.reportPath ||
-        !verdict.files ||
-        verdict.sourceDigest !== sha256(JSON.stringify(verdict.files))
-      )
-        throw new Error('Invalid task verification evidence')
-      const reportFile = safePath(
-        taskDirectory(id),
-        path.relative(taskDirectory(id), verdict.runner.reportPath)
-      )
-      const reportBytes = fs.readFileSync(reportFile)
-      if (sha256(reportBytes) !== verdict.runner.reportDigest)
-        throw new Error('Task report fingerprint changed')
-      const retainedContract = loadContract(record.snapshot.sourceRoot)
-      const candidate = {
-        ...record.snapshot,
-        files: verdict.files,
-        sourceRoot: path.join(path.dirname(reportFile), 'source'),
-        configurationDigest:
-          verdict.configurationDigest ?? record.snapshot.configurationDigest,
-        digest: verdict.sourceDigest
+    if (
+      record.verificationStatus === 'passed' ||
+      record.phase === 'completed'
+    ) {
+      try {
+        const source = retainedSource(record)
+        if (source && record.phase === 'completed' && !record.revoked)
+          sources.set(id, source)
+      } catch (error) {
+        if (record.verificationStatus === 'passed') throw error
       }
-      const assessed = assessEvidence(
-        retainedContract,
-        candidate,
-        { ...verdict.runner, report: JSON.parse(reportBytes) },
-        record.task.flowIds,
-        'baseline'
-      )
-      if (
-        assessed.status !== 'passed' ||
-        JSON.stringify(assessed) !== JSON.stringify(verdict.evidence)
-      )
-        throw new Error('Invalid retained candidate evidence')
     }
     if (record.phase === 'running') {
       if (Number.isInteger(record.runnerPid) && record.runnerPid > 0) {
@@ -329,6 +508,7 @@ function createTaskOwner(
       let observation = null
       let progressed = false
       let verdict = null
+      let proofSource = null
       let failure = null
       let verifying = false
       let pendingOperation
@@ -430,7 +610,7 @@ function createTaskOwner(
             if (!progressed)
               throw new Error('Agent produced no source progress')
             verifying = true
-            verdict = await verify({
+            const options = {
               repositoryRoot,
               directory: taskDirectory(id),
               contract,
@@ -445,7 +625,13 @@ function createTaskOwner(
               ),
               onSpawn: (pid) =>
                 save({ ...get(id), runnerPid: pid }, 'verification-started')
-            })
+            }
+            if (verify) verdict = await verify(options)
+            else {
+              const produced = await produce(options)
+              verdict = produced.verdict
+              proofSource = produced.source
+            }
             if (!controller.signal.aborted) reason = 'completed'
             break
           }
@@ -523,6 +709,7 @@ function createTaskOwner(
         save(
           {
             ...current,
+            format: phase === 'completed' && verdict ? 2 : current.format,
             ...(current.task.provider
               ? {
                   providerRequests: current.providerRequests.map((request) =>
@@ -541,7 +728,9 @@ function createTaskOwner(
               verificationStatus === 'passed' ? 'needs-review' : 'incomplete',
             error: failure
           },
-          phase
+          phase,
+          current.actor,
+          phase === 'completed' ? proofSource : null
         )
         active = null
       }
@@ -552,6 +741,11 @@ function createTaskOwner(
   }
   return {
     activeId: () => active?.id ?? null,
+    sourceFor(taskId, attemptId) {
+      if (closed || !validId(taskId) || !validId(attemptId)) return null
+      const source = sources.get(taskId)
+      return source?.admission.attemptId === attemptId ? source : null
+    },
     get,
     list: () => ordered.map((id) => get(id)),
     start(request, actor) {
@@ -592,7 +786,7 @@ function createTaskOwner(
         })
       }
       const record = {
-        format: 1,
+        format: 2,
         id,
         actor,
         task,
@@ -689,6 +883,7 @@ function createTaskOwner(
     },
     async close() {
       closed = true
+      sources.clear()
       if (active) {
         active.stop('interrupted')
         await active.promise

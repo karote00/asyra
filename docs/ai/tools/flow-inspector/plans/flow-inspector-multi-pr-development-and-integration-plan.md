@@ -18,6 +18,16 @@ Both developing targets and accepted behavior enter verification from the start.
 Feature completion determines eligibility for explicit baseline acceptance; it
 does not determine when CI begins observing and assessing the work.
 
+## Current delivery branch
+
+The original target/work admission PR 193 was merged into main at `bb32a7209`
+after its eight required checks passed. Its prior failed artifact run remains
+historical evidence; the successful rerun used the same source. Subsequent work
+continues on `codex/flow-integration-goal`, created from that updated main with
+the reviewed source-assessment contract and producer commits retained. This goal
+branch and its final PR must not merge into main without a new explicit user
+instruction. Authorized sub-PR integration may continue into the goal branch.
+
 ## First bounded slice - target and work decomposition
 
 [The living target contract](../CORE_PROOF.md#flow-targets-and-work-decomposition)
@@ -37,6 +47,48 @@ source-bound prerequisite verification, full cross-PR integration assessment and
 explicit target-baseline acceptance below remain unimplemented. This slice covers
 target/work admission and its usable projections only; it does not close the
 full required product cases or DoD of this plan.
+
+## Active next owner slice - source-bound assessment
+
+The [target source assessment contract](../CORE_PROOF.md#target-source-assessment)
+and `assess-target-source` separate accepted preservation, bounded
+work/prerequisite results and target integration eligibility. The pure assessor,
+real captured-source producer chain, runtime/verification descriptors, combined
+service admission, ordinary retained-byte composition and read-only byte checks
+have passed their owner gates. Version preparation now retains exact verifier
+references; the service validates reviewed pairs against their original history
+base and supplies immutable target pins with explicit creation/load/replay
+availability semantics.
+
+The local service now registers complete authoritative assessment inventories,
+selects exact accepted-version and reviewed-target pins, and composes both real
+producers on one selected runtime. Durable results preserve independent role
+verifiers, cancellation and restart outcomes, with currentness-only cached
+projections. The loopback HTTP, CLI and Board consumers now expose registered
+actions, exact source selection and separated retained results, with real-producer
+browser and lifecycle evidence. Candidate verification now consumes the fixed
+source-owned configuration/bootstrap closure; retained task admission checks real
+bytes and exact descriptors once, with task format 2 preventing missing-field
+legacy fallback. Source composition now combines independent frozen verifiers
+with candidate runtime under a new derived closure. Service/evidence admission
+retains exact derived authority under attempt format 3; source/evidence and
+candidate producer envelopes separate intact source identity from case outcome.
+The task owner retains that source privately for exact live and startup handoff,
+including failed/partial candidates. The next runner slice shares the existing
+contained execution policy before candidate and service consumers adopt it.
+Contained target dispatch,
+scoped verification, execution/admission consumers and explicit target-baseline
+acceptance remain subsequent slices.
+Existing target execution and pending behavior stay in effect until those
+consumers are implemented and verified. Ordinary composition does not cover
+undeclared generated wrappers; the fixed four-package capture scope also does
+not close the original Factory/collaboration/UI cross-PR product cases.
+
+Historical full snapshot digests and missing verification authority are never
+relabeled or reconstructed from a mutable checkout. Formal readiness uses real
+captured bytes through the registered runner and evidence owners, not hand-built
+trusted passing records. All original product cases, software DoD and deferred
+external boundaries below remain in force.
 
 ## Product outcome
 

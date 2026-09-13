@@ -3,16 +3,16 @@
 const path = require('node:path')
 const fs = require('node:fs')
 const { randomUUID } = require('node:crypto')
+const { isDeepStrictEqual } = require('node:util')
 const { admitContract, loadContract, mappingDiff } = require('./contracts.cjs')
-const { captureSource, safePath, sha256 } = require('./snapshot.cjs')
+const sourceOwner = require('./snapshot.cjs')
+const targetEvidenceOwner = require('./target-evidence.cjs')
+const { captureSource, safePath, sha256 } = sourceOwner
 const { runVerification } = require('./runner.cjs')
 const evidenceOwner = require('./evidence.cjs')
 const { openStore, validId, writeAtomic } = require('./store.cjs')
-const {
-  createHistory,
-  compareVersion,
-  decideVersion
-} = require('./evolution.cjs')
+const versionOwner = require('./evolution.cjs')
+const { createHistory, compareVersion, decideVersion } = versionOwner
 const { prepareCIContext } = require('./ci-context.cjs')
 const { assessCI } = require('./ci-evidence.cjs')
 const { createTaskOwner } = require('./agent-task.cjs')
@@ -74,7 +74,300 @@ function createService(
   ciAdmission = ciAdmission ? structuredClone(ciAdmission) : null
   let contract = loadContract(repositoryRoot)
   safePath(repositoryRoot, path.relative(repositoryRoot, directory))
+  const repository = fs.realpathSync(repositoryRoot)
   const store = openStore(directory)
+  const immutable = (value) => {
+    if (value && typeof value === 'object' && !Object.isFrozen(value)) {
+      Object.values(value).forEach(immutable)
+      Object.freeze(value)
+    }
+    return value
+  }
+  const sourceAdmissions = new Map()
+  const verificationReferences = new Map()
+  const reviewAdmissions = new Map()
+  const admitRuntimeSource = (record, files, liveContract) => {
+    const snapshot = record.snapshot
+    const entry = sourceAdmissions.get(record.id)
+    const retained = entry?.admission
+    const hasContract = Object.hasOwn(record, 'sourceContract')
+    const derived =
+      record.format === 3 ||
+      Object.hasOwn(snapshot ?? {}, 'executionSource') ||
+      Object.hasOwn(retained ?? {}, 'executionSource')
+    if (
+      snapshot &&
+      derived &&
+      (!hasContract ||
+        !['runtimeSource', 'verificationSource', 'executionSource'].every(
+          (key) => Object.hasOwn(snapshot, key)
+        ))
+    ) {
+      sourceAdmissions.delete(record.id)
+      verificationReferences.delete(record.id)
+      throw new Error('Derived source authority is missing')
+    }
+    if (
+      snapshot &&
+      hasContract &&
+      (!Object.hasOwn(snapshot, 'verificationSource') ||
+        !Object.hasOwn(snapshot, 'runtimeSource'))
+    ) {
+      sourceAdmissions.delete(record.id)
+      verificationReferences.delete(record.id)
+      throw new Error('Source runtime or verification descriptor is missing')
+    }
+    if (!snapshot || !Object.hasOwn(snapshot, 'runtimeSource')) {
+      if (retained) {
+        sourceAdmissions.delete(record.id)
+        verificationReferences.delete(record.id)
+        throw new Error('Runtime source admission identity was removed')
+      }
+      return
+    }
+    if (retained) {
+      if (
+        retained.repository === repository &&
+        retained.attemptId === record.id &&
+        retained.head === snapshot.head &&
+        retained.sourceDigest === snapshot.digest &&
+        isDeepStrictEqual(retained.runtimeSource, snapshot.runtimeSource) &&
+        Object.hasOwn(retained, 'executionSource') ===
+          Object.hasOwn(snapshot, 'executionSource') &&
+        isDeepStrictEqual(retained.executionSource, snapshot.executionSource) &&
+        isDeepStrictEqual(entry.sourceContract, record.sourceContract) &&
+        (!hasContract ||
+          (retained.contractDigest === record.contractDigest &&
+            retained.contractDigest === snapshot.contractDigest &&
+            retained.mappingVersion === snapshot.mappingVersion &&
+            retained.architectureVersion === snapshot.architectureVersion &&
+            retained.configurationDigest === snapshot.configurationDigest &&
+            isDeepStrictEqual(
+              retained.verificationSource,
+              snapshot.verificationSource
+            )))
+      )
+        return retained
+      sourceAdmissions.delete(record.id)
+      verificationReferences.delete(record.id)
+      throw new Error('Runtime source admission identity changed')
+    }
+    const sourceRoot = derived
+      ? safePath(
+          repositoryRoot,
+          path.relative(
+            repositoryRoot,
+            path.join(directory, record.id, 'source')
+          )
+        )
+      : undefined
+    if (
+      derived &&
+      files &&
+      Object.hasOwn(snapshot, 'sourceRoot') &&
+      snapshot.sourceRoot !== sourceRoot
+    )
+      throw new Error('Derived source location does not match the attempt')
+    let sourceContract
+    if (hasContract) {
+      const saved = record.sourceContract
+      if (
+        !saved ||
+        Object.keys(saved).length !== 2 ||
+        !saved.definition ||
+        !saved.architectureDefinition
+      )
+        throw new Error('Invalid source contract')
+      sourceContract =
+        liveContract ??
+        admitContract(saved.definition, saved.architectureDefinition)
+      if (
+        sourceContract.digest !== record.contractDigest ||
+        sourceContract.digest !== snapshot.contractDigest ||
+        sourceContract.mappingVersion !== snapshot.mappingVersion ||
+        sourceContract.architectureVersion !== snapshot.architectureVersion
+      )
+        throw new Error('Source contract identity mismatch')
+    }
+    let manifest = files
+    if (!manifest) {
+      const file = safePath(
+        repositoryRoot,
+        path.relative(
+          repositoryRoot,
+          path.join(directory, record.id, 'source-manifest.json')
+        )
+      )
+      const stat = fs.statSync(file)
+      if (!stat.isFile() || stat.size > 2097152)
+        throw new Error('Source manifest artifact is invalid or oversized')
+      const bytes = fs.readFileSync(file)
+      if (sha256(bytes) !== snapshot.digest)
+        throw new Error('Source manifest artifact fingerprint mismatch')
+      manifest = JSON.parse(bytes)
+    }
+    const sources = hasContract
+      ? sourceOwner.validateSourceSnapshot(
+          snapshot,
+          sourceContract,
+          manifest,
+          derived ? { sourceRoot } : undefined
+        )
+      : { runtimeSource: sourceOwner.validateRuntimeSource(snapshot, manifest) }
+    if (
+      hasContract &&
+      (!sources.verificationSource ||
+        (derived
+          ? !sources.executionSource ||
+            sources.executionSource.digest !== snapshot.configurationDigest
+          : sources.verificationSource.files.find(
+              (item) => item.path === sourceContract.configFile
+            )?.digest !== snapshot.configurationDigest))
+    )
+      throw new Error('Source execution configuration mismatch')
+    if (derived)
+      sourceOwner.verifyRetainedSnapshotBytes(
+        repositoryRoot,
+        sourceRoot,
+        manifest
+      )
+    const { runtimeSource } = sources
+    const admission = Object.freeze({
+      attemptId: record.id,
+      repository,
+      head: snapshot.head,
+      sourceDigest: snapshot.digest,
+      runtimeSource,
+      ...(derived ? { executionSource: sources.executionSource } : {}),
+      ...(hasContract
+        ? {
+            verificationSource: sources.verificationSource,
+            contractDigest: sourceContract.digest,
+            mappingVersion: sourceContract.mappingVersion,
+            architectureVersion: sourceContract.architectureVersion,
+            configurationDigest: snapshot.configurationDigest
+          }
+        : {})
+    })
+    sourceAdmissions.set(record.id, {
+      admission,
+      sourceContract: record.sourceContract,
+      contract: sourceContract
+    })
+    return admission
+  }
+  const referenceIdentity = (record) => {
+    const admission = record && sourceAdmissions.get(record.id)?.admission
+    if (
+      !admission?.verificationSource ||
+      Object.hasOwn(admission, 'executionSource')
+    )
+      return null
+    return Object.freeze({
+      attemptId: admission.attemptId,
+      repository: admission.repository,
+      head: admission.head,
+      sourceDigest: admission.sourceDigest,
+      configurationDigest: admission.configurationDigest,
+      descriptor: admission.verificationSource
+    })
+  }
+  const referenceFor = (record, expected) => {
+    const entry = record && sourceAdmissions.get(record.id)
+    const admission = entry?.admission
+    if (
+      !entry?.contract ||
+      !admission?.verificationSource ||
+      Object.hasOwn(admission, 'executionSource')
+    )
+      return null
+    const reference = referenceIdentity(record)
+    if (expected && !isDeepStrictEqual(reference, expected)) return null
+    if (verificationReferences.has(record.id)) {
+      const retained = verificationReferences.get(record.id)
+      if (retained && !isDeepStrictEqual(retained, reference)) {
+        verificationReferences.set(record.id, null)
+        return null
+      }
+      return retained
+    }
+    try {
+      sourceOwner.verifyRetainedSource(
+        repositoryRoot,
+        {
+          sourceRoot: path.join(directory, record.id, 'source'),
+          admission
+        },
+        entry.contract
+      )
+      verificationReferences.set(record.id, reference)
+      return reference
+    } catch {
+      verificationReferences.set(record.id, null)
+      return null
+    }
+  }
+  const admitReviewMetadata = (retained, completed) => {
+    const history = store.mapping().evolution.history
+    const invalid = () => {
+      throw new Error('Invalid retained version review metadata')
+    }
+    if (
+      !Number.isInteger(retained.baseRevision) ||
+      retained.baseRevision < 1 ||
+      retained.baseRevision > history.versions.length ||
+      !validId(retained.attemptId)
+    )
+      invalid()
+    const comparison =
+      completed ??
+      versionOwner.compareVersion(
+        {
+          ...history,
+          revision: retained.baseRevision,
+          versions: history.versions.slice(0, retained.baseRevision)
+        },
+        retained.candidate,
+        { relations: retained.relations }
+      )
+    if (
+      !Object.entries(comparison).every(([key, value]) =>
+        isDeepStrictEqual(retained[key], value)
+      )
+    )
+      invalid()
+    const decision = history.decisions.find(
+      (item) => item.reviewId === retained.id
+    )
+    if (retained.status !== (decision?.decision ?? 'pending')) invalid()
+    const record = store.get(retained.attemptId)
+    if (
+      record &&
+      (record.mode !== 'candidate' ||
+        record.phase !== 'completed' ||
+        record.contractDigest !== retained.candidate.contract.digest)
+    )
+      invalid()
+    const reference = retained.candidate.verificationSource
+    if (Object.hasOwn(retained.candidate, 'verificationSource')) {
+      if (
+        reference.attemptId !== retained.attemptId ||
+        reference.repository !== repository
+      )
+        invalid()
+      const identity = referenceIdentity(record)
+      if (identity && !isDeepStrictEqual(identity, reference)) invalid()
+    }
+    return {
+      comparison,
+      pair: immutable({
+        ...comparison,
+        candidate: structuredClone(retained.candidate),
+        attemptId: retained.attemptId,
+        status: retained.status
+      })
+    }
+  }
   try {
     if (!store.mapping())
       store.saveMapping({
@@ -91,8 +384,24 @@ function createService(
       throw new Error(
         'Accepted architecture changed; a new contract activation is required'
       )
-    for (const record of store.list())
-      evidenceOwner.validateStoredEvidence(contract, record)
+    for (const record of store.list()) {
+      const admission = admitRuntimeSource(record)
+      const evidenceContract =
+        record.mode === 'target-proof'
+          ? sourceAdmissions.get(record.id)?.contract
+          : contract
+      if (
+        record.mode === 'target-proof' &&
+        record.phase === 'completed' &&
+        !evidenceContract
+      )
+        throw new Error('Target proof contract authority is unavailable')
+      evidenceOwner.validateStoredEvidence(
+        evidenceContract ?? contract,
+        record,
+        admission
+      )
+    }
     if (!store.mapping().evolution) {
       const contentDigest = sha256(
         fs.readFileSync(safePath(repositoryRoot, contract.testFile))
@@ -122,6 +431,18 @@ function createService(
       if (restored.digest !== version.contract.digest)
         throw new Error('Invalid retained contract version')
     }
+    for (const version of [
+      ...history.versions,
+      ...store.mapping().evolution.reviews.map((review) => review.candidate)
+    ]) {
+      if (Object.hasOwn(version, 'verificationSource'))
+        referenceFor(
+          store.get(version.verificationSource?.attemptId),
+          version.verificationSource
+        )
+    }
+    for (const review of store.mapping().evolution.reviews)
+      reviewAdmissions.set(review.id, admitReviewMetadata(review))
     for (const delivery of store.mapping().ciDeliveries ?? []) {
       const version = history.versions.find(
         (item) => item.contract.digest === delivery.contractDigest
@@ -144,6 +465,9 @@ function createService(
     if (history.versions.at(-1).contract.digest !== contract.digest)
       throw new Error('Accepted version history differs from mapping')
   } catch (error) {
+    sourceAdmissions.clear()
+    verificationReferences.clear()
+    reviewAdmissions.clear()
     store.close()
     throw error
   }
@@ -155,6 +479,8 @@ function createService(
     )
   let publicContract = projectContract()
   let active = null
+  let activeAssessment = null
+  let refreshAssessmentProjections = () => undefined
   let tasks
   let reviews
   let closed = false
@@ -163,13 +489,6 @@ function createService(
   let publicEvolution
   let publicCI
   let publicWork
-  const immutable = (value) => {
-    if (value && typeof value === 'object' && !Object.isFrozen(value)) {
-      Object.values(value).forEach(immutable)
-      Object.freeze(value)
-    }
-    return value
-  }
   const projectDelivery = (value) =>
     Object.fromEntries(
       Object.entries(value).filter(
@@ -189,7 +508,7 @@ function createService(
       decisions: evolution.history.decisions,
       reviews: evolution.reviews.map(({ candidate, ...review }) => ({
         ...review,
-        candidateDigest: candidate.contract.digest
+        candidateContractDigest: candidate.contract.digest
       }))
     }
     publicWork = [...new Set(contract.cases.map((item) => item.stepId))].map(
@@ -228,7 +547,7 @@ function createService(
         (record) =>
           record.phase === 'completed' &&
           record.scenario === 'baseline' &&
-          record.mode !== 'candidate' &&
+          !['candidate', 'target-proof'].includes(record.mode) &&
           record.mappingRevision === store.mapping().revision &&
           record.contractDigest === contract.digest
       )
@@ -279,6 +598,7 @@ function createService(
       ...value,
       fingerprint: sha256(JSON.stringify(value))
     })
+    refreshAssessmentProjections()
   }
   refreshShared()
   const event = (name) => ({ event: name, at: new Date().toISOString() })
@@ -289,18 +609,25 @@ function createService(
       ...patch,
       audit: [...previous.audit, event(eventName)]
     }
-    if (next.phase === 'completed')
-      evidenceOwner.validateStoredEvidence(contract, next)
+    if (next.phase === 'completed') {
+      const admission = admitRuntimeSource(next)
+      const evidenceContract =
+        next.mode === 'target-proof'
+          ? sourceAdmissions.get(id)?.contract
+          : contract
+      if (!evidenceContract)
+        throw new Error('Target proof contract authority is unavailable')
+      evidenceOwner.validateStoredEvidence(evidenceContract, next, admission)
+    }
     store.save(next)
     return store.get(id)
   }
   const publicRecord = (record) => {
     if (!record) throw new ActionError(404, 'Attempt not found')
     const matchesCurrentContract =
-      record.mode !== 'candidate' &&
+      !['candidate', 'target-proof'].includes(record.mode) &&
       record.snapshot?.contractDigest === contract.digest &&
-      (record.format !== 2 ||
-        record.mappingRevision === store.mapping().revision)
+      (record.format < 2 || record.mappingRevision === store.mapping().revision)
     return {
       ...record,
       matchesCurrentContract,
@@ -312,7 +639,7 @@ function createService(
     if (!reviewAction && reviews?.active())
       throw new ActionError(409, 'A delivery review is active')
     if (closed) throw new ActionError(409, 'Service is closing')
-    if (active || tasks?.activeId())
+    if (active || activeAssessment || tasks?.activeId())
       throw new ActionError(409, 'An attempt or task is already running')
   }
   const objectRequest = (request, keys) => {
@@ -342,7 +669,7 @@ function createService(
       requireIdle: () => {
         if (reviews?.active())
           throw new ActionError(409, 'A delivery review is active')
-        if (closed || active)
+        if (closed || active || activeAssessment)
           throw new ActionError(
             409,
             'An attempt is running or service is closing'
@@ -350,6 +677,9 @@ function createService(
       }
     })
   } catch (error) {
+    sourceAdmissions.clear()
+    verificationReferences.clear()
+    reviewAdmissions.clear()
     store.close()
     throw error
   }
@@ -366,6 +696,9 @@ function createService(
       adapter: deliveryAdapter
     })
   } catch (error) {
+    sourceAdmissions.clear()
+    verificationReferences.clear()
+    reviewAdmissions.clear()
     store.close()
     throw error
   }
@@ -385,6 +718,33 @@ function createService(
       repositoryRoot,
       directory,
       getContracts: targetContracts,
+      getAcceptedVersion: (revision) => {
+        const history = store.mapping().evolution.history
+        const selected = revision === undefined ? history.revision : revision
+        if (
+          !Number.isInteger(selected) ||
+          selected < 1 ||
+          selected > history.versions.length
+        )
+          return null
+        return {
+          revision: selected,
+          contractDigest: history.versions[selected - 1].contract.digest
+        }
+      },
+      getVersionReview: (id, { requireAvailable }) => {
+        const pair = reviewAdmissions.get(id)?.pair
+        if (!pair) return null
+        if (
+          requireAvailable &&
+          !referenceFor(
+            store.get(pair.attemptId),
+            pair.candidate.verificationSource
+          )
+        )
+          return null
+        return pair
+      },
       getBaseline: () => ({
         revision: store.mapping().revision,
         contractDigest: contract.digest
@@ -401,6 +761,9 @@ function createService(
       getReview: (id) => reviews.get(id)
     })
   } catch (error) {
+    sourceAdmissions.clear()
+    verificationReferences.clear()
+    reviewAdmissions.clear()
     store.close()
     throw error
   }
@@ -411,7 +774,871 @@ function createService(
       throw new ActionError(409, error.message)
     }
   }
+  const validateTargetProofSelection = (selection) => {
+    objectRequest(selection, [
+      'targetId',
+      'allocationRevision',
+      'sourceAttemptId',
+      'role'
+    ])
+    if (
+      !validId(selection.targetId) ||
+      !validId(selection.sourceAttemptId) ||
+      !Number.isInteger(selection.allocationRevision) ||
+      selection.allocationRevision < 1 ||
+      !['accepted', 'target'].includes(selection.role)
+    )
+      throw new ActionError(400, 'Invalid target proof selection')
+  }
+  const resolveTargetProof = (selection, requireAvailable) => {
+    validateTargetProofSelection(selection)
+    const target = targets.get(selection.targetId)
+    if (
+      !target.history.some(
+        (entry) => entry.revision === selection.allocationRevision
+      )
+    )
+      throw new ActionError(409, 'Target allocation is unavailable')
+    let version
+    if (selection.role === 'accepted') {
+      const pin = target.acceptedVersion
+      version =
+        pin && store.mapping().evolution.history.versions[pin.revision - 1]
+      if (!version || version.contract.digest !== pin.contractDigest)
+        throw new ActionError(
+          409,
+          'Accepted verification source is unavailable'
+        )
+    } else {
+      const pin = target.targetVerification
+      const pair = pin && reviewAdmissions.get(pin.reviewId)?.pair
+      if (!pair || pair.candidateDigest !== pin.candidateDigest)
+        throw new ActionError(409, 'Target verification source is unavailable')
+      version = pair.candidate
+    }
+    const reference = version.verificationSource
+    const verificationRecord = reference && store.get(reference.attemptId)
+    const admittedReference = requireAvailable
+      ? referenceFor(verificationRecord, reference)
+      : referenceIdentity(verificationRecord)
+    if (
+      !reference ||
+      !admittedReference ||
+      !isDeepStrictEqual(reference, admittedReference)
+    )
+      throw new ActionError(409, 'Verification source is unavailable')
+    const runtime = sourceAdmissions.get(selection.sourceAttemptId)?.admission
+    const selectedContract = sourceAdmissions.get(reference.attemptId)?.contract
+    if (
+      !runtime?.runtimeSource ||
+      !selectedContract ||
+      selectedContract.digest !== version.contract.digest
+    )
+      throw new ActionError(409, 'Selected source authority is unavailable')
+    return {
+      contract: selectedContract,
+      targetProof: immutable({
+        request: structuredClone(selection),
+        runtime: {
+          attemptId: runtime.attemptId,
+          repository: runtime.repository,
+          head: runtime.head,
+          sourceDigest: runtime.sourceDigest,
+          runtimeSourceDigest: runtime.runtimeSource.digest
+        },
+        verificationSource: reference
+      })
+    }
+  }
+  try {
+    for (const record of store.list()) {
+      if (record.mode !== 'target-proof') continue
+      const resolved = resolveTargetProof(record.targetProof?.request, false)
+      if (
+        !isDeepStrictEqual(resolved.targetProof, record.targetProof) ||
+        record.contractDigest !== resolved.contract.digest ||
+        record.scenario !== 'baseline' ||
+        (record.snapshot &&
+          (record.snapshot.head !== resolved.targetProof.runtime.head ||
+            record.snapshot.runtimeSource?.digest !==
+              resolved.targetProof.runtime.runtimeSourceDigest ||
+            record.snapshot.verificationSource?.digest !==
+              resolved.targetProof.verificationSource.descriptor.digest ||
+            record.snapshot.configurationDigest !==
+              resolved.targetProof.verificationSource.configurationDigest)) ||
+        !isDeepStrictEqual(
+          record.flowIds,
+          resolved.contract.flows.map((flow) => flow.id)
+        )
+      )
+        throw new Error('Invalid retained target proof selection')
+    }
+  } catch (error) {
+    store.close()
+    throw error
+  }
+  const beginAttempt = (
+    request,
+    actor,
+    current,
+    mode,
+    scenario,
+    flowIds,
+    targetProof,
+    targetAssessmentId
+  ) => {
+    const id = request.requestId ?? randomUUID()
+    const controller = new AbortController()
+    const record = {
+      format: 2,
+      mode,
+      mappingRevision: store.mapping().revision,
+      contractDigest: current.digest,
+      ...(targetProof ? { targetProof } : {}),
+      ...(targetAssessmentId ? { targetAssessmentId } : {}),
+      sourceContract: {
+        definition: current.definition,
+        architectureDefinition: current.architectureDefinition
+      },
+      id,
+      actor: actor.id,
+      phase: 'running',
+      scenario,
+      flowIds,
+      startedAt: new Date().toISOString(),
+      audit: [event('admitted')]
+    }
+    store.save(record)
+    active = { id, controller }
+    refreshShared()
+    const completion = Promise.resolve().then(async () => {
+      try {
+        const runDirectory = path.join(directory, id)
+        const snapshot = targetProof
+          ? sourceOwner.composeSource(
+              repositoryRoot,
+              runDirectory,
+              {
+                sourceRoot: path.join(
+                  directory,
+                  targetProof.runtime.attemptId,
+                  'source'
+                ),
+                admission: sourceAdmissions.get(targetProof.runtime.attemptId)
+                  .admission
+              },
+              {
+                sourceRoot: path.join(
+                  directory,
+                  targetProof.verificationSource.attemptId,
+                  'source'
+                ),
+                admission: sourceAdmissions.get(
+                  targetProof.verificationSource.attemptId
+                ).admission
+              },
+              current
+            )
+          : capture(repositoryRoot, runDirectory, current)
+        if (
+          Object.hasOwn(snapshot, 'runtimeSource') &&
+          !Array.isArray(snapshot.files)
+        )
+          throw new Error('Runtime source: full live manifest required')
+        const runtimeAdmission = admitRuntimeSource(
+          { ...store.get(id), snapshot },
+          snapshot.files,
+          current
+        )
+        const ciContext =
+          mode === 'ci' || mode === 'ci-demo'
+            ? prepareCIContext(repositoryRoot, acceptedBase, snapshot, {
+                runId: process.env.GITHUB_RUN_ID ?? id,
+                attempt: Number(process.env.GITHUB_RUN_ATTEMPT ?? 1),
+                head: process.env.FLOW_CI_HEAD
+              })
+            : null
+        const identity = Object.fromEntries(
+          Object.entries(snapshot).filter(
+            ([key]) => !['sourceRoot', 'files'].includes(key)
+          )
+        )
+        update(
+          id,
+          {
+            snapshot: identity,
+            ...(Object.hasOwn(snapshot, 'executionSource') ? { format: 3 } : {})
+          },
+          'source-captured'
+        )
+        const result = await runner({
+          repositoryRoot,
+          runDirectory,
+          snapshot,
+          contract: current,
+          scenario,
+          flowIds,
+          signal: controller.signal,
+          timeoutMs,
+          onSpawn: (pid) => update(id, { runnerPid: pid }, 'runner-started')
+        })
+        const evidence = evidenceOwner.assessEvidence(
+          current,
+          snapshot,
+          result,
+          flowIds,
+          scenario,
+          runtimeAdmission
+        )
+        let ciFields = {}
+        if (ciContext) {
+          const report = fs.existsSync(result.reportPath ?? '')
+            ? fs.readFileSync(result.reportPath, 'utf8')
+            : ''
+          const envelope = {
+            format: 1,
+            ...ciContext.expected,
+            provider:
+              process.env.GITHUB_ACTIONS === 'true'
+                ? 'github-actions'
+                : 'local-ci-trial',
+            policyDigest: ciContext.candidatePolicyDigest,
+            observedAt: new Date().toISOString(),
+            snapshot,
+            runner: { ...result, report: undefined, reportPath: undefined },
+            report
+          }
+          const ci = assessCI(
+            ciContext.accepted,
+            current,
+            ciContext.expected,
+            envelope
+          )
+          ci.blockers.push(...ciContext.policyIssues)
+          if (ciContext.policyIssues.length) {
+            ci.deliveryStatus = 'blocked'
+            if (ci.verificationStatus === 'passed')
+              ci.verificationStatus = 'unknown'
+          }
+          const envelopePath = path.join(runDirectory, 'ci-envelope.json')
+          writeAtomic(envelopePath, envelope)
+          ciFields = {
+            ci,
+            ciEnvelopeDigest: sha256(fs.readFileSync(envelopePath))
+          }
+        }
+        let phase = 'completed'
+        if (result.reason === 'cancelled') phase = 'cancelled'
+        else if (result.reason === 'timeout') phase = 'timed-out'
+        else if (result.reason || result.reportError) phase = 'error'
+        update(
+          id,
+          {
+            phase,
+            ...ciFields,
+            finishedAt: new Date().toISOString(),
+            evidence,
+            runner: {
+              code: result.code,
+              reason: result.reason,
+              version: result.version,
+              environment: result.environment,
+              identity: result.identity,
+              reportDigest: result.reportDigest,
+              output: result.output,
+              reportPath: path.relative(
+                repositoryRoot,
+                result.reportPath ?? runDirectory
+              )
+            },
+            artifactDirectory: path.relative(repositoryRoot, runDirectory)
+          },
+          'runner-settled'
+        )
+      } catch (error) {
+        update(
+          id,
+          {
+            phase: 'error',
+            finishedAt: new Date().toISOString(),
+            error: error.message
+          },
+          'attempt-error'
+        )
+      } finally {
+        if (active?.id === id) active = null
+        refreshShared()
+      }
+      return store.get(id)
+    })
+    pending.set(id, completion)
+    completion.finally(() => pending.delete(id)).catch(() => undefined)
+    return id
+  }
+  const assessmentRecords = new Map()
+  const assessmentViews = new Map()
+  const assessmentCurrents = new Map()
+  const selectedSources = new Map()
+  const assessmentFile = path.join(directory, 'target-assessments.json')
+  const assessmentSelection = (selection) => {
+    objectRequest(selection, [
+      'targetId',
+      'allocationRevision',
+      'sourceAttemptId'
+    ])
+    validateTargetProofSelection({ ...selection, role: 'accepted' })
+  }
+  const resolveAssessment = (selection, available) => {
+    assessmentSelection(selection)
+    const accepted = resolveTargetProof(
+      { ...selection, role: 'accepted' },
+      available
+    )
+    const target = resolveTargetProof(
+      { ...selection, role: 'target' },
+      available
+    )
+    const owner = targets.get(selection.targetId)
+    return {
+      accepted,
+      target,
+      pins: {
+        acceptedVersion: owner.acceptedVersion,
+        targetVerification: owner.targetVerification
+      },
+      runtime: accepted.targetProof.runtime
+    }
+  }
+  const currentAssessmentIdentity = (record) => {
+    const source = sourceAdmissions.get(
+      selectedSources.get(record.request.targetId)
+    )?.admission
+    return {
+      targetId: record.request.targetId,
+      allocationRevision: targets.get(record.request.targetId).revision,
+      acceptedBaseline: {
+        revision: store.mapping().revision,
+        contractDigest: contract.digest
+      },
+      source: {
+        repository: source?.repository,
+        head: source?.head,
+        runtimeSourceDigest: source?.runtimeSource.digest
+      }
+    }
+  }
+  refreshAssessmentProjections = () => {
+    for (const record of assessmentRecords.values()) {
+      const current = currentAssessmentIdentity(record)
+      if (
+        assessmentViews.get(record.id)?.result === record.result &&
+        isDeepStrictEqual(current, assessmentCurrents.get(record.id))
+      ) {
+        const previous = assessmentViews.get(record.id)
+        assessmentViews.set(
+          record.id,
+          immutable({ ...record, projection: previous.projection })
+        )
+        continue
+      }
+      assessmentCurrents.set(record.id, immutable(current))
+      assessmentViews.set(
+        record.id,
+        immutable({
+          ...record,
+          projection: targetEvidenceOwner.projectTargetAssessmentCurrentness(
+            record.result,
+            current
+          )
+        })
+      )
+    }
+  }
+  const saveAssessments = () => {
+    writeAtomic(assessmentFile, {
+      format: 1,
+      records: [...assessmentRecords.values()]
+    })
+    refreshAssessmentProjections()
+  }
+  const assessRecord = (record, current) => {
+    const resolved = resolveAssessment(record.request, false)
+    return targetEvidenceOwner.assessTargetSource({
+      target: targets.get(record.request.targetId),
+      allocationRevision: record.request.allocationRevision,
+      acceptedContract: resolved.accepted.contract,
+      targetContract: resolved.target.contract,
+      acceptedVerificationSourceDigest:
+        record.roles.accepted.verificationSourceDigest,
+      targetVerificationSourceDigest:
+        record.roles.target.verificationSourceDigest,
+      sourceAdmission: sourceAdmissions.get(record.request.sourceAttemptId)
+        .admission,
+      proofRequests: record.slots.map((slot) => ({
+        id: slot.id,
+        contractDigest: record.roles[slot.role].contractDigest,
+        verificationSourceDigest:
+          record.roles[slot.role].verificationSourceDigest,
+        flowIds: resolved[slot.role].contract.flows.map((flow) => flow.id),
+        record: store.get(slot.id),
+        sourceAdmission: sourceAdmissions.get(slot.id)?.admission
+      })),
+      current
+    })
+  }
+  const evaluateAssessment = (record) => {
+    const evaluatedCurrent = currentAssessmentIdentity(record)
+    return immutable({
+      ...record,
+      evaluatedCurrent,
+      result: assessRecord(record, evaluatedCurrent)
+    })
+  }
+  const slotIdentity = (resolved, role) => ({
+    contractDigest: resolved[role].contract.digest,
+    verificationSourceDigest:
+      resolved[role].targetProof.verificationSource.descriptor.digest,
+    reference: resolved[role].targetProof.verificationSource
+  })
+  const validateAssessmentRecord = (record, seen) => {
+    objectRequest(record, [
+      'format',
+      'id',
+      'actor',
+      'request',
+      'pins',
+      'runtime',
+      'roles',
+      'slots',
+      'phase',
+      'startedAt',
+      'finishedAt',
+      'evaluatedCurrent',
+      'result',
+      'orchestrationError'
+    ])
+    if (
+      record.format !== 1 ||
+      !validId(record.id) ||
+      typeof record.actor !== 'string' ||
+      !record.actor.trim() ||
+      !Number.isFinite(Date.parse(record.startedAt)) ||
+      ![
+        'running',
+        'completed',
+        'cancelled',
+        'timed-out',
+        'interrupted',
+        'error'
+      ].includes(record.phase) ||
+      (record.phase !== 'running' &&
+        !Number.isFinite(Date.parse(record.finishedAt)))
+    )
+      throw new Error('Invalid target assessment identity')
+    if (
+      Object.hasOwn(record, 'orchestrationError') &&
+      (record.phase !== 'error' ||
+        typeof record.orchestrationError !== 'string' ||
+        !record.orchestrationError.trim())
+    )
+      throw new Error('Invalid target assessment orchestration error')
+    const resolved = resolveAssessment(record.request, false)
+    if (
+      !isDeepStrictEqual(record.pins, resolved.pins) ||
+      !isDeepStrictEqual(record.runtime, resolved.runtime) ||
+      !record.roles ||
+      !Array.isArray(record.slots) ||
+      !record.slots.length ||
+      record.slots.length > 2
+    )
+      throw new Error('Invalid target assessment selection')
+    objectRequest(record.roles, ['accepted', 'target'])
+    for (const role of ['accepted', 'target']) {
+      const saved = record.roles[role]
+      if (
+        !saved ||
+        !validId(saved.slotId) ||
+        !isDeepStrictEqual(saved, {
+          ...slotIdentity(resolved, role),
+          slotId: saved.slotId
+        })
+      )
+        throw new Error('Invalid target assessment role')
+    }
+    const equivalent =
+      record.roles.accepted.contractDigest ===
+        record.roles.target.contractDigest &&
+      record.roles.accepted.verificationSourceDigest ===
+        record.roles.target.verificationSourceDigest
+    if (
+      (record.roles.accepted.slotId === record.roles.target.slotId) !==
+        equivalent ||
+      record.slots.length !== (equivalent ? 1 : 2)
+    )
+      throw new Error('Invalid target assessment sharing')
+    const expectedSlots = [
+      ...new Set([record.roles.accepted.slotId, record.roles.target.slotId])
+    ]
+    for (let index = 0; index < record.slots.length; index++) {
+      const slot = record.slots[index]
+      objectRequest(slot, ['id', 'role', 'phase', 'reason'])
+      if (
+        slot.id !== expectedSlots[index] ||
+        slot.role !== (index === 0 ? 'accepted' : 'target') ||
+        seen.has(slot.id) ||
+        ![
+          'requested',
+          'running',
+          'completed',
+          'cancelled',
+          'timed-out',
+          'interrupted',
+          'error'
+        ].includes(slot.phase) ||
+        (slot.reason !== undefined && typeof slot.reason !== 'string')
+      )
+        throw new Error('Invalid target assessment slot ownership')
+      seen.add(slot.id)
+      const producer = store.get(slot.id)
+      if (
+        !producer &&
+        record.phase !== 'running' &&
+        (typeof slot.reason !== 'string' || !slot.reason.trim())
+      )
+        throw new Error('Target assessment slot terminal reason is missing')
+      if (
+        producer &&
+        (producer.targetAssessmentId !== record.id ||
+          producer.actor !== record.actor ||
+          producer.mode !== 'target-proof' ||
+          !isDeepStrictEqual(
+            producer.targetProof,
+            resolved[slot.role].targetProof
+          ))
+      )
+        throw new Error('Invalid target assessment producer binding')
+      if (
+        record.phase !== 'running' &&
+        producer &&
+        slot.phase !== producer.phase
+      )
+        throw new Error(
+          'Target assessment slot phase differs from its producer'
+        )
+      if (slot.phase === 'completed' && producer?.phase !== 'completed')
+        throw new Error('Missing completed target assessment producer')
+      if (
+        record.phase !== 'running' &&
+        ['requested', 'running'].includes(slot.phase)
+      )
+        throw new Error('Unsettled terminal target assessment slot')
+    }
+    if (
+      record.phase === 'completed' &&
+      record.slots.some((slot) => slot.phase !== 'completed')
+    )
+      throw new Error('Invalid completed target assessment lifecycle')
+    if (
+      ['cancelled', 'timed-out', 'error'].includes(record.phase) &&
+      !record.orchestrationError &&
+      (!record.slots.some((slot) => slot.phase === record.phase) ||
+        record.slots.some(
+          (slot) => !['completed', record.phase].includes(slot.phase)
+        ))
+    )
+      throw new Error('Invalid terminal target assessment lifecycle')
+    return resolved
+  }
+  const settledAssessmentSlot = (slot, fallback, reason) => {
+    const producer = store.get(slot.id)
+    if (producer && producer.phase !== 'running')
+      return { ...slot, phase: producer.phase }
+    return { ...slot, phase: fallback, reason }
+  }
+  try {
+    if (fs.existsSync(assessmentFile)) {
+      if (!fs.lstatSync(assessmentFile).isFile())
+        throw new Error('Invalid target assessment store')
+      const saved = JSON.parse(fs.readFileSync(assessmentFile, 'utf8'))
+      objectRequest(saved, ['format', 'records'])
+      if (saved.format !== 1 || !Array.isArray(saved.records))
+        throw new Error('Invalid target assessment store')
+      const seen = new Set()
+      let changed = false
+      for (const retained of saved.records) {
+        if (assessmentRecords.has(retained.id))
+          throw new Error('Duplicate target assessment identity')
+        validateAssessmentRecord(retained, seen)
+        let record = retained
+        selectedSources.set(
+          record.request.targetId,
+          record.request.sourceAttemptId
+        )
+        if (record.phase === 'running') {
+          record = {
+            ...record,
+            phase: 'interrupted',
+            finishedAt: new Date().toISOString(),
+            slots: record.slots.map((slot) =>
+              settledAssessmentSlot(
+                slot,
+                'interrupted',
+                'Assessment interrupted on restart'
+              )
+            )
+          }
+          record = evaluateAssessment(record)
+          changed = true
+        } else if (
+          !isDeepStrictEqual(
+            assessRecord(record, record.evaluatedCurrent),
+            record.result
+          )
+        )
+          throw new Error(
+            'Retained target assessment differs from admitted observations'
+          )
+        assessmentRecords.set(record.id, immutable(record))
+      }
+      for (const producer of store.list())
+        if (
+          Object.hasOwn(producer, 'targetAssessmentId') &&
+          !seen.has(producer.id)
+        )
+          throw new Error('Orphan target assessment producer')
+      if (changed) saveAssessments()
+      else refreshAssessmentProjections()
+    } else if (
+      store.list().some((record) => Object.hasOwn(record, 'targetAssessmentId'))
+    )
+      throw new Error('Missing target assessment inventory')
+  } catch (error) {
+    store.close()
+    throw error
+  }
+  const readAssessment = (id) => {
+    const value = assessmentViews.get(id)
+    if (!value) throw new ActionError(404, 'Target assessment is unavailable')
+    return value
+  }
+  const stopAssessment = async (id, actor) => {
+    authorize(actor, 'cancel')
+    if (!activeAssessment || activeAssessment.id !== id)
+      throw new ActionError(409, 'Target assessment is not active')
+    activeAssessment.cancelled = true
+    if (active) active.controller.abort()
+    return activeAssessment.completion
+  }
   return {
+    startTargetAssessment(request, actor) {
+      authorize(actor, 'verify')
+      objectRequest(request, [
+        'requestId',
+        'targetId',
+        'allocationRevision',
+        'sourceAttemptId'
+      ])
+      if (!validId(request.requestId))
+        throw new ActionError(400, 'Invalid target assessment request')
+      const { requestId, ...selection } = request
+      assessmentSelection(selection)
+      const previous = assessmentRecords.get(requestId)
+      if (previous) {
+        if (
+          previous.actor !== actor.id ||
+          !isDeepStrictEqual(previous.request, selection)
+        )
+          throw new ActionError(409, 'Target assessment request conflicts')
+        return previous.id
+      }
+      requireIdle()
+      const resolved = taskResult(() => resolveAssessment(selection, true))
+      const roles = {},
+        slots = []
+      for (const role of ['accepted', 'target']) {
+        const identity = slotIdentity(resolved, role)
+        const same =
+          role === 'target' &&
+          roles.accepted.contractDigest === identity.contractDigest &&
+          roles.accepted.verificationSourceDigest ===
+            identity.verificationSourceDigest
+        let id = same ? roles.accepted.slotId : randomUUID()
+        while (
+          !same &&
+          (store.get(id) ||
+            [...assessmentRecords.values()].some((record) =>
+              record.slots.some((slot) => slot.id === id)
+            ))
+        )
+          id = randomUUID()
+        roles[role] = { ...identity, slotId: id }
+        if (!same) slots.push({ id, role, phase: 'requested' })
+      }
+      const previousSource = selectedSources.get(selection.targetId)
+      selectedSources.set(selection.targetId, selection.sourceAttemptId)
+      const record = evaluateAssessment({
+        format: 1,
+        id: requestId,
+        actor: actor.id,
+        request: selection,
+        pins: resolved.pins,
+        runtime: resolved.runtime,
+        roles,
+        slots,
+        phase: 'running',
+        startedAt: new Date().toISOString()
+      })
+      assessmentRecords.set(requestId, record)
+      try {
+        saveAssessments()
+      } catch (error) {
+        assessmentRecords.delete(requestId)
+        if (previousSource === undefined)
+          selectedSources.delete(selection.targetId)
+        else selectedSources.set(selection.targetId, previousSource)
+        throw error
+      }
+      const orchestration = { id: requestId, cancelled: false }
+      activeAssessment = orchestration
+      orchestration.completion = Promise.resolve().then(async () => {
+        try {
+          for (let index = 0; index < slots.length; index++) {
+            let state = assessmentRecords.get(requestId)
+            if (orchestration.cancelled) {
+              state = {
+                ...state,
+                phase: 'cancelled',
+                finishedAt: new Date().toISOString(),
+                slots: state.slots.map((slot) =>
+                  ['requested', 'running'].includes(slot.phase)
+                    ? {
+                        ...slot,
+                        phase: 'cancelled',
+                        reason: 'Assessment cancelled before dispatch'
+                      }
+                    : slot
+                )
+              }
+              assessmentRecords.set(requestId, evaluateAssessment(state))
+              saveAssessments()
+              break
+            }
+            const slot = state.slots[index]
+            state = {
+              ...state,
+              slots: state.slots.map((item) =>
+                item.id === slot.id ? { ...item, phase: 'running' } : item
+              )
+            }
+            assessmentRecords.set(requestId, immutable(state))
+            saveAssessments()
+            const selected = resolved[slot.role]
+            const id = beginAttempt(
+              { requestId: slot.id },
+              actor,
+              selected.contract,
+              'target-proof',
+              'baseline',
+              selected.contract.flows.map((flow) => flow.id),
+              selected.targetProof,
+              requestId
+            )
+            await pending.get(id)
+            const producer = store.get(id)
+            state = assessmentRecords.get(requestId)
+            const stop = producer.phase !== 'completed'
+            let phase = 'running'
+            if (stop) phase = producer.phase
+            else if (index === slots.length - 1) phase = 'completed'
+            state = {
+              ...state,
+              phase,
+              ...(phase !== 'running'
+                ? { finishedAt: new Date().toISOString() }
+                : {}),
+              slots: state.slots.map((item) => {
+                if (item.id === id) return { ...item, phase: producer.phase }
+                if (stop && item.phase === 'requested')
+                  return {
+                    ...item,
+                    phase: producer.phase,
+                    reason: 'Earlier producer terminated assessment'
+                  }
+                return item
+              })
+            }
+            assessmentRecords.set(requestId, evaluateAssessment(state))
+            saveAssessments()
+            if (stop) break
+          }
+        } catch (error) {
+          const state = assessmentRecords.get(requestId)
+          assessmentRecords.set(
+            requestId,
+            evaluateAssessment({
+              ...state,
+              phase: 'error',
+              orchestrationError: error.message,
+              finishedAt: new Date().toISOString(),
+              slots: state.slots.map((slot) =>
+                settledAssessmentSlot(slot, 'error', error.message)
+              )
+            })
+          )
+          saveAssessments()
+        } finally {
+          if (activeAssessment === orchestration) activeAssessment = null
+          refreshShared()
+        }
+        return readAssessment(requestId)
+      })
+      return requestId
+    },
+    getTargetAssessment: readAssessment,
+    targetAssessments: () => Object.freeze([...assessmentViews.values()]),
+    async waitTargetAssessment(id) {
+      if (activeAssessment?.id === id) await activeAssessment.completion
+      return readAssessment(id)
+    },
+    cancelTargetAssessment: stopAssessment,
+    startTargetProof(request, actor) {
+      authorize(actor, 'verify')
+      objectRequest(request, [
+        'requestId',
+        'targetId',
+        'allocationRevision',
+        'sourceAttemptId',
+        'role'
+      ])
+      if (!validId(request.requestId))
+        throw new ActionError(400, 'Invalid target proof request')
+      const { requestId, ...selection } = request
+      validateTargetProofSelection(selection)
+      const previous = store.get(requestId)
+      if (previous) {
+        if (
+          previous.mode !== 'target-proof' ||
+          previous.actor !== actor.id ||
+          !isDeepStrictEqual(previous.targetProof?.request, selection)
+        )
+          throw new ActionError(
+            409,
+            'Target proof request identity conflicts with an existing attempt'
+          )
+        return previous.id
+      }
+      requireIdle()
+      const resolved = taskResult(() => resolveTargetProof(selection, true))
+      return beginAttempt(
+        request,
+        actor,
+        resolved.contract,
+        'target-proof',
+        'baseline',
+        resolved.contract.flows.map((flow) => flow.id),
+        resolved.targetProof
+      )
+    },
     targets: () => ({
       records: targets.list(),
       catalog: targetContracts().map((c) => ({
@@ -424,7 +1651,9 @@ function createService(
     decideTarget(request, actor) {
       authorize(actor, TARGET_POLICY.capability)
       requireIdle()
-      return taskResult(() => targets.decide(request, actor.id))
+      const result = taskResult(() => targets.decide(request, actor.id))
+      refreshAssessmentProjections()
+      return result
     },
     getReview: (id) =>
       taskResult(() => {
@@ -614,43 +1843,81 @@ function createService(
         record.phase !== 'completed'
       )
         throw new ActionError(409, 'A completed candidate proof is required')
-      const candidateContract = loadContract(repositoryRoot)
-      if (record.contractDigest !== candidateContract.digest)
-        throw new ActionError(409, 'Candidate changed since preview')
-      const report = JSON.parse(this.readArtifact(record.id, 'report'))
-      const files = JSON.parse(this.readArtifact(record.id, 'source-manifest'))
-      const contentDigest = files.find(
-        (file) => file.path === candidateContract.testFile
-      )?.digest
-      const selectors = report.testResults
-        .flatMap((suite) => suite.assertionResults)
-        .filter((item) => ['passed', 'failed'].includes(item.status))
-        .map((item) => ({
-          caseId:
-            candidateContract.cases.find((c) => c.testName === item.fullName)
-              ?.id ?? 'unknown-' + sha256(item.fullName),
-          testName: item.fullName,
-          file: candidateContract.testFile,
-          contentDigest
-        }))
-      const candidate = { contract: candidateContract, selectors }
       const state = store.mapping(),
         evolution = state.evolution
+      const sourceAware = Object.hasOwn(record, 'sourceContract')
+      const retainedCandidate =
+        sourceAware &&
+        evolution.reviews.find(
+          (item) =>
+            item.attemptId === record.id &&
+            Object.hasOwn(item.candidate, 'verificationSource')
+        )?.candidate
+      let candidate = retainedCandidate
+      if (!candidate) {
+        const candidateContract = sourceAware
+          ? sourceAdmissions.get(record.id)?.contract
+          : loadContract(repositoryRoot)
+        if (
+          !candidateContract ||
+          record.contractDigest !== candidateContract.digest
+        )
+          throw new ActionError(409, 'Candidate source contract is unavailable')
+        const verificationSource = sourceAware
+          ? referenceFor(record)
+          : undefined
+        if (sourceAware && !verificationSource)
+          throw new ActionError(
+            409,
+            'Candidate verification source is unavailable'
+          )
+        const report = JSON.parse(this.readArtifact(record.id, 'report'))
+        const contentDigest = sourceAware
+          ? verificationSource.descriptor.files.find(
+              (file) => file.path === candidateContract.testFile
+            )?.digest
+          : JSON.parse(this.readArtifact(record.id, 'source-manifest')).find(
+              (file) => file.path === candidateContract.testFile
+            )?.digest
+        const selectors = report.testResults
+          .flatMap((suite) => suite.assertionResults)
+          .filter((item) => ['passed', 'failed'].includes(item.status))
+          .map((item) => ({
+            caseId:
+              candidateContract.cases.find((c) => c.testName === item.fullName)
+                ?.id ?? 'unknown-' + sha256(item.fullName),
+            testName: item.fullName,
+            file: candidateContract.testFile,
+            contentDigest
+          }))
+        candidate = {
+          contract: candidateContract,
+          selectors,
+          ...(sourceAware ? { verificationSource } : {})
+        }
+      }
       const review = compareVersion(evolution.history, candidate, {
         relations: request.relations ?? []
       })
       const existing = evolution.reviews.find((item) => item.id === review.id)
       if (existing) return existing
+      if (sourceAware && !referenceFor(record, candidate.verificationSource))
+        throw new ActionError(
+          409,
+          'Candidate verification source is unavailable'
+        )
       const retained = {
         ...review,
         candidate,
         attemptId: record.id,
         status: 'pending'
       }
+      const admittedReview = admitReviewMetadata(retained, review)
       store.saveMapping({
         ...state,
         evolution: { ...evolution, reviews: [...evolution.reviews, retained] }
       })
+      reviewAdmissions.set(retained.id, admittedReview)
       refreshShared()
       return retained
     },
@@ -698,6 +1965,16 @@ function createService(
           )
         }
       })
+      const retainedReview = store
+        .mapping()
+        .evolution.reviews.find((item) => item.id === review.id)
+      reviewAdmissions.set(
+        review.id,
+        admitReviewMetadata(
+          retainedReview,
+          reviewAdmissions.get(review.id)?.comparison
+        )
+      )
       contract = accepted
       publicContract = projectContract()
       refreshShared()
@@ -773,7 +2050,11 @@ function createService(
           throw new ActionError(409, 'Mapping candidate changed after review')
         mappingDiff(contract, accepted)
         for (const record of store.list())
-          evidenceOwner.validateStoredEvidence(accepted, record)
+          evidenceOwner.validateStoredEvidence(
+            accepted,
+            record,
+            admitRuntimeSource(record)
+          )
       }
       const decided = {
         ...review,
@@ -1000,144 +2281,7 @@ function createService(
           409,
           'Working mapping differs from the accepted contract; prepare a mapping review before verification'
         )
-      const id = request.requestId ?? randomUUID()
-      const controller = new AbortController()
-      const record = {
-        format: 2,
-        mode,
-        mappingRevision: store.mapping().revision,
-        contractDigest: current.digest,
-        id,
-        actor: actor.id,
-        phase: 'running',
-        scenario,
-        flowIds,
-        startedAt: new Date().toISOString(),
-        audit: [event('admitted')]
-      }
-      store.save(record)
-      active = { id, controller }
-      refreshShared()
-      const completion = Promise.resolve().then(async () => {
-        try {
-          const runDirectory = path.join(directory, id)
-          const snapshot = capture(repositoryRoot, runDirectory, current)
-          const ciContext =
-            mode === 'ci' || mode === 'ci-demo'
-              ? prepareCIContext(repositoryRoot, acceptedBase, snapshot, {
-                  runId: process.env.GITHUB_RUN_ID ?? id,
-                  attempt: Number(process.env.GITHUB_RUN_ATTEMPT ?? 1),
-                  head: process.env.FLOW_CI_HEAD
-                })
-              : null
-          const identity = Object.fromEntries(
-            Object.entries(snapshot).filter(
-              ([key]) => !['sourceRoot', 'files'].includes(key)
-            )
-          )
-          update(id, { snapshot: identity }, 'source-captured')
-          const result = await runner({
-            repositoryRoot,
-            runDirectory,
-            snapshot,
-            contract: current,
-            scenario,
-            flowIds,
-            signal: controller.signal,
-            timeoutMs,
-            onSpawn: (pid) => update(id, { runnerPid: pid }, 'runner-started')
-          })
-          const evidence = evidenceOwner.assessEvidence(
-            current,
-            snapshot,
-            result,
-            flowIds,
-            scenario
-          )
-          let ciFields = {}
-          if (ciContext) {
-            const report = fs.existsSync(result.reportPath ?? '')
-              ? fs.readFileSync(result.reportPath, 'utf8')
-              : ''
-            const envelope = {
-              format: 1,
-              ...ciContext.expected,
-              provider:
-                process.env.GITHUB_ACTIONS === 'true'
-                  ? 'github-actions'
-                  : 'local-ci-trial',
-              policyDigest: ciContext.candidatePolicyDigest,
-              observedAt: new Date().toISOString(),
-              snapshot,
-              runner: { ...result, report: undefined, reportPath: undefined },
-              report
-            }
-            const ci = assessCI(
-              ciContext.accepted,
-              current,
-              ciContext.expected,
-              envelope
-            )
-            ci.blockers.push(...ciContext.policyIssues)
-            if (ciContext.policyIssues.length) {
-              ci.deliveryStatus = 'blocked'
-              if (ci.verificationStatus === 'passed')
-                ci.verificationStatus = 'unknown'
-            }
-            const envelopePath = path.join(runDirectory, 'ci-envelope.json')
-            writeAtomic(envelopePath, envelope)
-            ciFields = {
-              ci,
-              ciEnvelopeDigest: sha256(fs.readFileSync(envelopePath))
-            }
-          }
-          let phase = 'completed'
-          if (result.reason === 'cancelled') phase = 'cancelled'
-          else if (result.reason === 'timeout') phase = 'timed-out'
-          else if (result.reason || result.reportError) phase = 'error'
-          update(
-            id,
-            {
-              phase,
-              ...ciFields,
-              finishedAt: new Date().toISOString(),
-              evidence,
-              runner: {
-                code: result.code,
-                reason: result.reason,
-                version: result.version,
-                environment: result.environment,
-                identity: result.identity,
-                reportDigest: result.reportDigest,
-                output: result.output,
-                reportPath: path.relative(
-                  repositoryRoot,
-                  result.reportPath ?? runDirectory
-                )
-              },
-              artifactDirectory: path.relative(repositoryRoot, runDirectory)
-            },
-            'runner-settled'
-          )
-        } catch (error) {
-          update(
-            id,
-            {
-              phase: 'error',
-              finishedAt: new Date().toISOString(),
-              error: error.message
-            },
-            'attempt-error'
-          )
-        } finally {
-          if (active?.id === id) active = null
-          refreshShared()
-        }
-        return store.get(id)
-      })
-      pending.set(id, completion)
-      completion.finally(() => pending.delete(id)).catch(() => undefined)
-      return id
+      return beginAttempt(request, actor, current, mode, scenario, flowIds)
     },
     async wait(id) {
       if (pending.has(id)) await pending.get(id)
@@ -1154,6 +2298,8 @@ function createService(
     async close() {
       closed = true
       try {
+        if (activeAssessment)
+          await stopAssessment(activeAssessment.id, LOCAL_ACTOR)
         await reviews.close()
         await tasks.close()
         if (active) {
@@ -1162,6 +2308,9 @@ function createService(
           await pending.get(id)
         }
       } finally {
+        sourceAdmissions.clear()
+        verificationReferences.clear()
+        reviewAdmissions.clear()
         store.close()
       }
     }

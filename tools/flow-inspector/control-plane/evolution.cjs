@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 const { createHash } = require('node:crypto')
+const path = require('node:path')
+const { validId } = require('./store.cjs')
 const hash = (value) =>
   createHash('sha256').update(JSON.stringify(value)).digest('hex')
 const fingerprint = (value) =>
@@ -21,6 +23,96 @@ const authorized = (actor, capability) =>
       actor.capabilities?.includes(capability),
     'action is not authorized'
   )
+function validateVerificationReference(version) {
+  if (!Object.hasOwn(version, 'verificationSource')) return
+  const reference = version.verificationSource
+  const descriptor = reference?.descriptor
+  const contract = version.contract
+  const roles = {
+    manifest: contract.manifestPath,
+    architecture: contract.architecturePath,
+    spec: contract.specPath,
+    test: contract.testFile,
+    configuration: contract.configFile
+  }
+  const shape = (value, keys) =>
+    value &&
+    typeof value === 'object' &&
+    !Array.isArray(value) &&
+    Object.keys(value).length === keys.length &&
+    keys.every((key) => Object.hasOwn(value, key))
+  requireValue(
+    shape(reference, [
+      'attemptId',
+      'repository',
+      'head',
+      'sourceDigest',
+      'configurationDigest',
+      'descriptor'
+    ]) &&
+      validId(reference.attemptId) &&
+      typeof reference.repository === 'string' &&
+      path.isAbsolute(reference.repository) &&
+      typeof reference.head === 'string' &&
+      reference.head.trim() &&
+      fingerprint(reference.sourceDigest) &&
+      fingerprint(reference.configurationDigest),
+    'invalid verification source reference'
+  )
+  requireValue(
+    shape(descriptor, [
+      'format',
+      'contractDigest',
+      'mappingVersion',
+      'architectureVersion',
+      'roles',
+      'files',
+      'digest'
+    ]) &&
+      descriptor.format === 1 &&
+      descriptor.contractDigest === contract.digest &&
+      descriptor.mappingVersion === contract.mappingVersion &&
+      descriptor.architectureVersion === contract.architectureVersion &&
+      fingerprint(descriptor.digest) &&
+      shape(descriptor.roles, Object.keys(roles)) &&
+      Object.entries(roles).every(
+        ([role, file]) => descriptor.roles[role] === file
+      ) &&
+      new Set(Object.values(roles)).size === 5 &&
+      Object.values(roles).every(
+        (file) =>
+          typeof file === 'string' &&
+          !file.includes('\\') &&
+          !file.includes('\0') &&
+          file.split('/').every((part) => part && part !== '.' && part !== '..')
+      ) &&
+      Array.isArray(descriptor.files) &&
+      descriptor.files.length === 5,
+    'verification descriptor disagrees with admitted contract'
+  )
+  const paths = Object.values(roles).sort()
+  requireValue(
+    descriptor.files.every(
+      (file, index) =>
+        shape(file, ['path', 'size', 'digest']) &&
+        file.path === paths[index] &&
+        Number.isSafeInteger(file.size) &&
+        file.size >= 0 &&
+        fingerprint(file.digest)
+    ),
+    'invalid verification role entries'
+  )
+  const testDigest = descriptor.files.find(
+    (file) => file.path === roles.test
+  ).digest
+  requireValue(
+    version.selectors.every(
+      (selector) =>
+        selector.file === roles.test && selector.contentDigest === testDigest
+    ),
+    'verification selector does not bind captured test bytes'
+  )
+}
 function validateVersion(version) {
   requireValue(
     fingerprint(version?.contract?.digest) &&
@@ -46,6 +138,7 @@ function validateVersion(version) {
     )
     identities.add(item.caseId)
   }
+  validateVerificationReference(version)
 }
 function createHistory(version) {
   validateVersion(version)
@@ -65,6 +158,31 @@ function compareVersion(history, candidate, { relations = [] } = {}) {
   const observed = new Map(candidate.selectors.map((s) => [s.caseId, s]))
   const changes = [],
     blockers = []
+  if (base.verificationSource && !candidate.verificationSource)
+    blockers.push({ kind: 'missing-verification-source' })
+  const verificationIdentity = (version) =>
+    version.verificationSource
+      ? {
+          descriptorDigest: version.verificationSource.descriptor.digest,
+          configurationDigest: version.verificationSource.configurationDigest
+        }
+      : null
+  const beforeVerification = verificationIdentity(base),
+    afterVerification = verificationIdentity(candidate)
+  if (JSON.stringify(beforeVerification) !== JSON.stringify(afterVerification))
+    changes.push({
+      kind: 'content-change',
+      subject: 'verification-source',
+      before: beforeVerification,
+      after: afterVerification,
+      affectedFlowIds: [
+        ...new Set(
+          [...base.contract.flows, ...candidate.contract.flows].map(
+            (flow) => flow.id
+          )
+        )
+      ]
+    })
   for (const item of candidate.contract.cases) {
     const observation = observed.get(item.id)
     if (!observation || observation.testName !== item.testName)

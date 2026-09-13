@@ -278,3 +278,215 @@ test('HTTP preserves canvas assets and rejects unauthorized, cross-origin, and a
     fs.rmSync(directory, { recursive: true, force: true })
   }
 })
+
+test('HTTP target assessment actions retain service authority and cached results through start replay read and cancel', async (t) => {
+  const { randomUUID } = require('node:crypto')
+  const { LOCAL_ACTOR } = require('../service.cjs')
+  const sourceOwner = require('../snapshot.cjs')
+  const targetEvidenceOwner = require('../target-evidence.cjs')
+  const contract = require('../contracts.cjs').loadContract(root)
+  const parent = path.join(root, 'tmp/flow-inspector/server-assessment-tests')
+  fs.mkdirSync(parent, { recursive: true })
+  const directory = fs.mkdtempSync(path.join(parent, 'run-'))
+  const captured = sourceOwner.captureSource(
+    root,
+    path.join(directory, 'initial'),
+    contract
+  )
+  let holdCancellation = false
+  const server = await startServer(captured.sourceRoot, {
+    url: 'http://127.0.0.1:0',
+    serviceOptions: {
+      directory: path.join(captured.sourceRoot, 'runs'),
+      runner: async (options) => {
+        if (holdCancellation && !options.signal.aborted)
+          await new Promise((resolve) =>
+            options.signal.addEventListener('abort', resolve, { once: true })
+          )
+        return require('../runner.cjs').runVerification(options)
+      }
+    }
+  })
+  try {
+    const service = server.service
+    const proof = await service.wait(
+      service.start({ mode: 'candidate' }, LOCAL_ACTOR)
+    )
+    const review = service.prepareEvolution(
+      { attemptId: proof.id },
+      LOCAL_ACTOR
+    )
+    service.decideEvolution(
+      {
+        id: review.id,
+        decision: 'accept',
+        reason: 'Explicit HTTP accepted reference'
+      },
+      LOCAL_ACTOR
+    )
+    const flow = contract.flows[0]
+    const target = service.decideTarget(
+      {
+        action: 'create',
+        requestId: randomUUID(),
+        expectedRevision: 0,
+        reason: 'HTTP retained target',
+        flowId: flow.id,
+        targetRevision: contract.digest,
+        targetReviewId: review.id,
+        acceptedBaseline: {
+          revision: service.state().mapping.revision,
+          contractDigest: contract.digest
+        },
+        objective: 'Assess frozen source',
+        works: [],
+        pending: contract.cases
+          .filter((item) => item.flowId === flow.id)
+          .map((item) => item.id)
+      },
+      LOCAL_ACTOR
+    )
+    const request = {
+      requestId: randomUUID(),
+      targetId: target.id,
+      allocationRevision: 1,
+      sourceAttemptId: proof.id
+    }
+    const session = await fetch(server.origin + '/api/session').then(
+      (response) => response.json()
+    )
+    const headers = {
+      'content-type': 'application/json',
+      'x-proof-capability': session.capability,
+      origin: server.origin
+    }
+    const post = (pathname, body, extra = headers) =>
+      fetch(server.origin + pathname, {
+        method: 'POST',
+        headers: extra,
+        body: JSON.stringify(body)
+      })
+    assert.equal(
+      (
+        await post('/api/target-assessments', request, {
+          'content-type': 'application/json'
+        })
+      ).status,
+      403
+    )
+    assert.equal(
+      (
+        await post('/api/target-assessments', request, {
+          ...headers,
+          origin: 'http://foreign.invalid'
+        })
+      ).status,
+      403
+    )
+    assert.equal(
+      (
+        await post('/api/target-assessments', {
+          ...request,
+          evidence: 'passed'
+        })
+      ).status,
+      400
+    )
+    assert.equal(
+      (
+        await post('/api/target-assessments', {
+          ...request,
+          extra: 'x'.repeat(5000)
+        })
+      ).status,
+      413
+    )
+    assert.equal(service.targetAssessments().length, 0)
+    const started = await post('/api/target-assessments', request)
+    assert.equal(started.status, 202)
+    const { id } = await started.json()
+    const completed = await service.waitTargetAssessment(id)
+    assert.equal(completed.result.accepted.status, 'passed')
+    assert.equal(completed.result.integration.status, 'pending')
+    const reads = t.mock.method(fs, 'readFileSync')
+    const assess = t.mock.method(targetEvidenceOwner, 'assessTargetSource')
+    const project = t.mock.method(
+      targetEvidenceOwner,
+      'projectTargetAssessmentCurrentness'
+    )
+    for (let i = 0; i < 3; i++) {
+      const detail = await fetch(
+        server.origin + '/api/target-assessments/' + id
+      )
+      assert.equal(detail.status, 200)
+      assert.deepEqual(await detail.json(), completed)
+      const list = await fetch(server.origin + '/api/target-assessments').then(
+        (response) => response.json()
+      )
+      assert.deepEqual(list, [completed])
+      assert.deepEqual(
+        await post('/api/target-assessments', request).then((response) =>
+          response.json()
+        ),
+        { id }
+      )
+    }
+    assert.equal(reads.mock.callCount(), 0)
+    assert.equal(assess.mock.callCount(), 0)
+    assert.equal(project.mock.callCount(), 0)
+    reads.mock.restore()
+    assess.mock.restore()
+    project.mock.restore()
+    assert.equal(
+      (
+        await post('/api/target-assessments', {
+          ...request,
+          allocationRevision: 2
+        })
+      ).status,
+      409
+    )
+    assert.equal(
+      (await fetch(server.origin + '/api/target-assessments/' + randomUUID()))
+        .status,
+      404
+    )
+    assert.equal(
+      (await fetch(server.origin + '/api/target-assessments/not-a-uuid'))
+        .status,
+      404
+    )
+    assert.equal((await post('/api/target-proofs', request)).status, 404)
+    assert.equal(
+      (
+        await post('/api/target-assessments/' + id + '/cancel', {
+          actor: 'replacement'
+        })
+      ).status,
+      400
+    )
+    assert.equal(
+      (await post('/api/target-assessments/' + id + '/cancel', {})).status,
+      409
+    )
+    assert.equal(
+      (await post('/api/target-assessments/' + randomUUID() + '/cancel', {}))
+        .status,
+      409
+    )
+    holdCancellation = true
+    const second = await post('/api/target-assessments', {
+      ...request,
+      requestId: randomUUID()
+    }).then((response) => response.json())
+    const cancelled = await post(
+      '/api/target-assessments/' + second.id + '/cancel',
+      {}
+    )
+    assert.equal(cancelled.status, 200)
+    assert.equal((await cancelled.json()).phase, 'cancelled')
+  } finally {
+    await server.close()
+    fs.rmSync(directory, { recursive: true, force: true })
+  }
+})

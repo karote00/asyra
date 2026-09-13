@@ -35,6 +35,11 @@
       let targetItemsSignature = ''
       let targetDecisionId = window.crypto.randomUUID()
       let targetBusy = false
+      let assessmentRecords = []
+      let selectedAssessmentId = ''
+      let assessmentSource = null
+      let assessmentBusy = false
+      let assessmentSignature = ''
       let preparedWork = null
       let taskState
       let taskRecord
@@ -1076,6 +1081,266 @@
           (c) => c.revision === byId('target-revision').value
         )
       }
+      function retainOptions(select, choices) {
+        if (
+          select.options.length === choices.length &&
+          choices.every(
+            ([value, label], index) =>
+              select.options[index].value === value &&
+              select.options[index].textContent === label
+          )
+        )
+          return
+        const selected = select.value
+        select.replaceChildren(
+          ...choices.map(([value, label]) => targetOption(value, label))
+        )
+        select.value = choices.some(([value]) => value === selected)
+          ? selected
+          : ''
+      }
+      function renderTargetReview() {
+        const select = byId('target-review')
+        const reviews = (operationState?.evolution.reviews ?? []).filter(
+          (item) =>
+            item.candidateContractDigest === byId('target-revision').value
+        )
+        retainOptions(select, [
+          ['', 'No reviewed source - standalone target only'],
+          ...reviews.map((item) => [
+            item.id,
+            item.id.slice(0, 12) + ' - ' + item.status
+          ])
+        ])
+        select.disabled = Boolean(targetRecord)
+        const review = reviews.find((item) => item.id === select.value)
+        byId('target-review-identity').textContent = review
+          ? 'Review: ' +
+            review.id +
+            '\nCandidate contract: ' +
+            review.candidateContractDigest +
+            '\nReviewed candidate: ' +
+            review.candidateDigest
+          : 'Select a reviewed verification source explicitly to enable assessment.'
+      }
+      function renderAssessmentSource() {
+        const id = byId('assessment-source').value
+        const source = assessmentSource?.id === id ? assessmentSource : null
+        const runtime = assessmentRecords.find(
+          (item) => item.request.sourceAttemptId === id
+        )?.runtime
+        byId('assessment-source-identity').textContent = source
+          ? 'Source attempt: ' +
+            id +
+            '\nRepository: ' +
+            (runtime?.repository ?? 'unavailable before assessment') +
+            '\nHEAD: ' +
+            (source.snapshot?.head ?? 'unavailable') +
+            '\nRuntime: ' +
+            (source.snapshot?.runtimeSource?.digest ?? 'unavailable') +
+            '\nFull source: ' +
+            (source.snapshot?.digest ?? 'unavailable')
+          : 'Select a captured source attempt explicitly.'
+      }
+      function renderAssessment() {
+        const records = assessmentRecords.filter(
+          (item) => item.request.targetId === targetRecord?.id
+        )
+        const select = byId('assessment-history')
+        retainOptions(select, [
+          ['', 'Choose retained assessment'],
+          ...records.map((item) => [
+            item.id,
+            item.id.slice(0, 12) +
+              ' - allocation ' +
+              item.request.allocationRevision +
+              ' - ' +
+              item.phase
+          ])
+        ])
+        // A coalesced refresh may still contain the inventory from before the
+        // action. Preserve its selected id until a fresh response can render it.
+        select.value = selectedAssessmentId
+        const selected = records.find(
+          (item) => item.id === selectedAssessmentId
+        )
+        const running = assessmentRecords.some(
+          (item) => item.phase === 'running'
+        )
+        byId('assessment-start').disabled =
+          !capability ||
+          assessmentBusy ||
+          running ||
+          Boolean(activeId) ||
+          !targetRecord?.targetVerification ||
+          !targetRecord?.acceptedVersion ||
+          assessmentSource?.id !== byId('assessment-source').value ||
+          !byId('assessment-source').value
+        byId('assessment-cancel').disabled =
+          !capability || assessmentBusy || selected?.phase !== 'running'
+        byId('target-pins').textContent = targetRecord
+          ? 'Accepted mapping revision: ' +
+            targetRecord.acceptedBaseline.revision +
+            '\nAccepted history version: ' +
+            (targetRecord.acceptedVersion?.revision ?? 'unavailable') +
+            '\nTarget review: ' +
+            (targetRecord.targetVerification?.reviewId ?? 'unavailable') +
+            '\nReviewed candidate: ' +
+            (targetRecord.targetVerification?.candidateDigest ??
+              'unavailable') +
+            (!targetRecord.targetVerification || !targetRecord.acceptedVersion
+              ? '\nAssessment unavailable - this saved target lacks immutable pins.'
+              : '')
+          : 'Immutable source pins appear after target creation.'
+        renderAssessmentSource()
+        // Settlement and currentness are service-owned; these small lifecycle
+        // fields identify presentation changes without traversing verdict data.
+        const signature = selected
+          ? [
+              selected.id,
+              selected.phase,
+              selected.finishedAt,
+              selected.projection.current,
+              selected.projection.eligible,
+              ...selected.projection.staleReasons,
+              ...selected.slots.flatMap((slot) => [
+                slot.id,
+                slot.phase,
+                slot.reason
+              ])
+            ].join('|')
+          : ''
+        if (
+          assessmentSignature === signature &&
+          byId('assessment-summary').textContent
+        )
+          return
+        assessmentSignature = signature
+        byId('assessment-summary').textContent = selected
+          ? 'Assessment ' +
+            selected.id +
+            '\nAllocation ' +
+            selected.request.allocationRevision +
+            ' - ' +
+            selected.phase +
+            '\n' +
+            (selected.projection.current ? 'current' : 'stale') +
+            ' - ' +
+            (selected.projection.eligible
+              ? 'Eligible for explicit acceptance'
+              : 'Not eligible') +
+            '\n' +
+            selected.projection.staleReasons.join('\n') +
+            '\nEligibility does not accept history.'
+          : 'Choose a retained assessment or assess this saved allocation.'
+        const describeProof = (value) =>
+          value
+            ? [
+                value.status,
+                ...(value.cases ?? []).map(
+                  (item) =>
+                    item.id +
+                    ' - ' +
+                    item.status +
+                    (item.blockers.length
+                      ? '\n' + item.blockers.join('\n')
+                      : '')
+                ),
+                ...(value.blockers ?? []),
+                ...(value.pending?.length
+                  ? ['Pending allocation: ' + value.pending.join(', ')]
+                  : [])
+              ].join('\n')
+            : 'No assessment evidence'
+        byId('assessment-accepted').textContent = describeProof(
+          selected?.projection.accepted
+        )
+        byId('assessment-integration').textContent = describeProof(
+          selected?.projection.integration
+        )
+        byId('assessment-works').textContent = selected
+          ? selected.projection.works
+              .map((work) =>
+                [
+                  (targetRecord.history
+                    .find(
+                      (entry) =>
+                        entry.revision === selected.request.allocationRevision
+                    )
+                    ?.state.works.find((item) => item.id === work.id)?.title ??
+                    work.id) +
+                    ' - ' +
+                    work.status,
+                  'Work: ' + work.id,
+                  'Own promise: ' + describeProof(work.own),
+                  'Prerequisites: ' + describeProof(work.prerequisites),
+                  ...work.prerequisites.routes.map(
+                    (route) =>
+                      route.routeId + ' - ' + describeProof(route.proof)
+                  )
+                ].join('\n')
+              )
+              .join('\n\n') || 'No assigned work - obligations remain pending.'
+          : 'No assessment evidence'
+        byId('assessment-progress').textContent = selected
+          ? JSON.stringify(
+              {
+                runtime: selected.runtime,
+                roles: selected.roles,
+                slots: selected.slots
+              },
+              null,
+              2
+            )
+          : 'No assessment evidence'
+      }
+      async function readAssessmentSource() {
+        const id = byId('assessment-source').value
+        assessmentSource = null
+        renderAssessment()
+        if (!id) return
+        try {
+          const value = await api('/api/runs/' + id)
+          if (disposed || byId('assessment-source').value !== id) return
+          assessmentSource = value
+          renderAssessment()
+        } catch (error) {
+          if (!disposed) byId('assessment-notice').textContent = error.message
+        }
+      }
+      async function assessmentAction(cancel = false) {
+        if (assessmentBusy || !capability || !targetRecord) return
+        assessmentBusy = true
+        byId('assessment-notice').textContent = cancel
+          ? 'Cancelling assessment…'
+          : 'Registering exact source assessment…'
+        renderAssessment()
+        try {
+          const result = cancel
+            ? await api(
+                '/api/target-assessments/' + selectedAssessmentId + '/cancel',
+                {}
+              )
+            : await api('/api/target-assessments', {
+                requestId: window.crypto.randomUUID(),
+                targetId: targetRecord.id,
+                allocationRevision: targetRecord.revision,
+                sourceAttemptId: byId('assessment-source').value
+              })
+          selectedAssessmentId = result.id
+          if (disposed) return
+          revision++
+          byId('assessment-notice').textContent = cancel
+            ? 'Cancellation settled; original observations remain in history.'
+            : 'Assessment registered. Results are separate from acceptance.'
+          await refresh()
+        } catch (error) {
+          if (!disposed) byId('assessment-notice').textContent = error.message
+        } finally {
+          assessmentBusy = false
+          if (!disposed) renderAssessment()
+        }
+      }
       function targetFlow() {
         return targetDefinition()?.flows.find(
           (f) => f.id === byId('target-flow').value
@@ -1339,6 +1604,7 @@
       }
       async function loadTarget(id) {
         targetRecord = id ? await api('/api/targets/' + id) : null
+        byId('target-review').value = ''
         if (targetRecord) {
           byId('target-revision').value = targetRecord.targetRevision
           chooseTargetRevision()
@@ -1363,6 +1629,8 @@
         chooseTargetFlow()
         renderTargetDraft()
         renderTargetRecord()
+        renderTargetReview()
+        renderAssessment()
       }
       function chooseTargetRevision() {
         byId('target-flow').replaceChildren(
@@ -1371,8 +1639,37 @@
           )
         )
         chooseTargetFlow()
+        renderTargetReview()
       }
       async function refreshTargets(state) {
+        renderTargetReview()
+        const sourceSelect = byId('assessment-source')
+        const sourceOptions = [
+          ['', 'Choose captured source attempt'],
+          ...state.runs.map((item) => [
+            item.id,
+            item.id.slice(0, 12) +
+              ' - ' +
+              item.phase +
+              ' - ' +
+              (item.digest?.slice(0, 12) ?? 'no snapshot')
+          ])
+        ]
+        if (
+          sourceSelect.value &&
+          !sourceOptions.some(([id]) => id === sourceSelect.value)
+        )
+          sourceOptions.push([
+            sourceSelect.value,
+            sourceSelect.selectedOptions[0].textContent
+          ])
+        retainOptions(sourceSelect, sourceOptions)
+        try {
+          assessmentRecords = await api('/api/target-assessments')
+        } catch (error) {
+          byId('assessment-notice').textContent = error.message
+          throw error
+        }
         const savedSelection = byId('target-select').value
         byId('target-select').replaceChildren(
           targetOption('', 'New target'),
@@ -1395,6 +1692,7 @@
           renderTargetRecord()
         }
         targetReadSignature = signature
+        renderAssessment()
       }
       async function targetAction(action) {
         if (targetBusy || !capability) return
@@ -1409,6 +1707,9 @@
           }
           if (action === 'create')
             Object.assign(request, {
+              ...(byId('target-review').value
+                ? { targetReviewId: byId('target-review').value }
+                : {}),
               flowId: byId('target-flow').value,
               targetRevision: byId('target-revision').value,
               acceptedBaseline: {
@@ -1457,6 +1758,14 @@
         renderTargetDraft()
         renderTargetRecord()
         listen(byId('target-revision'), 'change', chooseTargetRevision)
+        listen(byId('target-review'), 'change', renderTargetReview)
+        listen(byId('assessment-source'), 'change', readAssessmentSource)
+        listen(byId('assessment-history'), 'change', (event) => {
+          selectedAssessmentId = event.target.value
+          renderAssessment()
+        })
+        listen(byId('assessment-start'), 'click', () => assessmentAction())
+        listen(byId('assessment-cancel'), 'click', () => assessmentAction(true))
         listen(byId('target-flow'), 'change', chooseTargetFlow)
         listen(byId('target-work-step'), 'change', renderTargetObligations)
         listen(byId('target-reload'), 'click', () =>
@@ -1535,7 +1844,10 @@
           refreshing = false
           if (
             !disposed &&
-            (activeId || taskState?.activeId || requestRevision !== revision)
+            (activeId ||
+              assessmentRecords.some((item) => item.phase === 'running') ||
+              taskState?.activeId ||
+              requestRevision !== revision)
           )
             timer = window.setTimeout(refresh, 500)
         }
@@ -1633,10 +1945,28 @@
             <p>Plan bounded commitments for one flow. Candidate verification and PR state do not complete this target.</p>
             <label>Saved target<select id="target-select"><option value="">New target</option></select></label>
             <label>Target contract revision<select id="target-revision"></select></label>
+            <label>Reviewed verification source<select id="target-review"><option value="">No reviewed source - standalone target only</option></select></label>
+            <pre id="target-review-identity"></pre>
             <label>Concrete flow<select id="target-flow"></select></label>
             <label>Development objective<input id="target-objective" maxlength="2000" /></label>
             <button id="target-create" type="button">Create flow target</button>
             <pre id="target-result" role="status"></pre><p id="target-pending"></p>
+            <pre id="target-pins"></pre>
+            <section id="target-assessment" aria-label="Target source assessment">
+              <h3>Assess one captured source</h3>
+              <label>Integration source attempt<select id="assessment-source"><option value="">Choose captured source attempt</option></select></label>
+              <pre id="assessment-source-identity"></pre>
+              <button id="assessment-start" type="button" disabled>Assess saved allocation</button>
+              <button id="assessment-cancel" type="button" disabled>Cancel assessment</button>
+              <p id="assessment-notice" role="status"></p>
+              <label>Assessment history<select id="assessment-history"><option value="">Choose retained assessment</option></select></label>
+              <pre id="assessment-summary" role="status"></pre>
+              <h4>Accepted behavior preservation</h4><pre id="assessment-accepted"></pre>
+              <h4>Bounded work and prerequisites</h4><pre id="assessment-works"></pre>
+              <h4>Whole-target integration</h4><pre id="assessment-integration"></pre>
+              <details><summary>Exact source, verification identities and producer progress</summary><pre id="assessment-progress"></pre></details>
+              <p>Work controls below retain their task-linked evidence and existing admission requirements, separately from this selected source assessment.</p>
+            </section>
             <div id="target-items" aria-label="Saved work commitments"></div>
             <details><summary>Work editor and revision preview</summary>
               <label>Work title<input id="target-work-title" maxlength="200" /></label>

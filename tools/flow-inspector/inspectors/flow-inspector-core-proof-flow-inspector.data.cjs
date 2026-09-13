@@ -50,6 +50,52 @@ const data = {
   ],
   steps: [
     {
+      id: 'assess-target-source',
+      order: 17,
+      laneId: 'proof',
+      title: 'Assess target at one source',
+      ownerPackage: 'tools/flow-inspector/control-plane',
+      purpose: 'Target source assessment',
+      inputs: [
+        'artifact:flow-target-state',
+        'artifact:admitted-proof-contract',
+        'artifact:proof-source-snapshot',
+        'artifact:admitted-runtime-source',
+        'artifact:assessed-proof-evidence',
+        'trusted current accepted revision and selected target allocation revision',
+        'complete service-owned proof request inventory and admitted completed records',
+        'exact accepted-version and target-review verification source identities',
+        'trusted current target allocation and source identity for staleness'
+      ],
+      outputs: ['artifact:target-source-assessment'],
+      conditions: [
+        'Consume the exact target history revision, frozen work coverage and admitted case-backed handoffs. Consume the complete trusted request inventory without choosing only green producers; Only identical accepted/target contract and admitted verification-source identities share observations once, with full source, runtime, configuration and request bindings intact; same-contract different verification bytes remain distinct proof roles. Consume combined source-owner verification admission without rehashing source or reports. Current identity changes only staleness and eligibility, not historical verdicts. The assessment owner provides a currentness-only projection from retained result identities, reusing exact verdict objects without walking obligations or evidence; consumers cache it at identity changes and never recompute it on reads or replay. Assess accepted preservation, bounded work and complete integration separately against one captured runtime source and each admitted verification contract. Required producers must settle; missing or contradictory identities never pass. Preserve failed obligations and pending work. Full integration grants eligibility only; source, allocation or accepted-base changes make its current use stale.'
+      ],
+      bypasses: [
+        'Only an admitted case-backed route bypass may satisfy a handoff. Historical records without source-bound evidence remain readable but cannot grant readiness.'
+      ],
+      allowedContributors: [
+        'trusted local service resolving retained owner artifacts',
+        'source owner runtime identity',
+        'proof evidence owner completed observations',
+        'target owner frozen allocation and obligation coverage'
+      ],
+      forbiddenContributors: [
+        'caller-supplied pass or source equivalence',
+        'PR merge or provider status as handoff proof',
+        'natural-language handoff interpretation',
+        'raw source reads or raw report reassessment',
+        'task execution or accepted history mutation'
+      ],
+      cacheDimensions: [],
+      implementationBoundary: [
+        'tools/flow-inspector/control-plane/target-evidence.cjs',
+        'tools/flow-inspector/control-plane/__tests__/target-evidence.test.cjs'
+      ],
+      specRefs: ['#target-source-assessment'],
+      failureOwnerStepId: 'assess-target-source'
+    },
+    {
       id: 'manage-flow-target',
       order: 16,
       laneId: 'proof',
@@ -58,6 +104,7 @@ const data = {
       purpose: 'Flow targets and work decomposition',
       inputs: [
         'artifact:admitted-proof-contract',
+        'artifact:reviewed-contract-evolution',
         'retained accepted versions and prepared evolution contracts',
         'explicit local actor decision and expected target revision',
         'artifact:agent-task-state',
@@ -66,7 +113,7 @@ const data = {
       ],
       outputs: ['artifact:flow-target-state', 'artifact:work-admission'],
       conditions: [
-        'Bind one flow and exact target revision and accepted baseline. Require complete assigned-or-pending coverage, exact references, disjoint responsibility and acyclic explicit handoffs. Persist immutable revisions and audit atomically under the existing store lock. Link only exact admitted task scope. Project task and PR observations separately; prerequisites remain unconfirmed and full target pending. Reserve exact task, work promise, actor and baseline source before execution; unresolved prerequisites reject. Admitted commitments cannot be removed. Validate linked task execution against retained admission; bounded candidate assessments never complete the target.'
+        'Bind one flow and exact target revision and accepted baseline. A new targetReviewId resolves the exact trusted reviewed candidate and verification reference once at creation; the target-owned callback context requires availability only for a new creation after replay checking, while retained loading requests metadata only and replay invokes no resolver; retain its reviewId/candidateDigest pin immutably, check that same review on load, and reject missing or conflicting identity before writes. Preserve legacy absence without new authority and never replace a pin using latest/green status. Keep acceptedBaseline mapping revision separate from an additive acceptedVersion history pin supplied by the trusted service. On new creation retain the exact version metadata at top level and in the first owner audit entry; load cross-checks both and resolves the saved revision, later actions preserve it, and replay does no lookup. Callback absence preserves unpinned standalone compatibility without assessment authority; configured invalid metadata fails closed. Never select by equal mapping revision, contract digest or latest version. Require complete assigned-or-pending coverage, exact references, disjoint responsibility and acyclic explicit handoffs. Persist immutable revisions and audit atomically under the existing store lock. Link only exact admitted task scope. Project task and PR observations separately; prerequisites remain unconfirmed and full target pending. Reserve exact task, work promise, actor and baseline source before execution; unresolved prerequisites reject. Admitted commitments cannot be removed. Validate linked task execution against retained admission; bounded candidate assessments never complete the target.'
       ],
       bypasses: [
         'Exact request replay returns the original revision without writes. Invalid, stale or conflicting decisions have no effects. No partial verification bypass or automatic acceptance.'
@@ -276,10 +323,17 @@ const data = {
         'trusted provider transport settlement and usage observations',
         'human stop, cancel, resume, revoke or handoff request',
         'artifact:agent-candidate-verdict',
-        'artifact:work-admission'
+        'artifact:candidate-proof-source',
+        'artifact:assessed-proof-source',
+        'artifact:proof-source-snapshot',
+        'artifact:assessed-proof-evidence',
+        'artifact:work-admission',
+        'source-owned retained snapshot byte verification and direct evidence admission for the fixed retained attempt'
       ],
-      outputs: ['artifact:agent-task-state', 'artifact:agent-candidate-source'],
+      outputs: ['artifact:agent-task-state', 'artifact:agent-candidate-source', 'artifact:admitted-task-source'],
       conditions: [
+        'Publish a private exact task/attempt/repository source artifact only after a controlled source-aware producer result and successful task save, or completed startup source admission. Passed startup retains strict report/evidence checks; completed non-pass startup verifies fixed bytes plus source identity once without reassessing or replacing its historical outcome. Legacy verify-only strategies cannot supply authority. Exact sourceFor reads only the private map; new attempts, noncompleted state, revocation and close retire availability, and failed publication cannot resurrect it. No source hash, IO or history scan occurs on reads/replay, and later composition verifies its own selected bytes.',
+        'New task records use format 2; load only formats 1 and 2. Format-2 passing latest verdicts require all three exact source descriptors even when all are missing; format-1 descriptor presence also uses new admission, while true historical absence retains its previous validation. Upgrade a format-1 task only when an explicit new candidate proof completes and is saved, preserving older attempts. New admission requires fixed last-attempt UUID source/report locations, baseline/full/configuration binding, actual retained bytes verified once by the source owner and one direct evidence admission with trusted context. Reads and identical replay do no source work.',
         'Broker operations before effects; persist cumulative budgets and audit with task state. Reserve adapter turns before dispatch against the authorization lifetime; internal HTTP retries remain unmeasured and are not a supported hard limit; retain unknown usage and unresolved remote requests across cancellation and restart and block replay until trusted reconciliation. Preserve partial source and history across cancellation and restart. Finish requires actual source progress; candidate verdict never authorizes baseline acceptance. Consume the target owner admission check before capture, after capture, and on resume before any operation or provider reservation.'
       ],
       bypasses: [
@@ -296,7 +350,7 @@ const data = {
         'unregistered tools',
         'candidate-selected verifier or accepted baseline'
       ],
-      cacheDimensions: [],
+      cacheDimensions: ['task identity', 'latest completed attempt identity', 'full source and contract/configuration/descriptor identity', 'task lifecycle and revocation', 'task owner lifetime'],
       implementationBoundary: [
         'tools/flow-inspector/control-plane/agent-task.cjs',
         'tools/flow-inspector/control-plane/agent-adapter.cjs',
@@ -307,7 +361,9 @@ const data = {
         'tools/flow-inspector/control-plane/__tests__/agent-task.test.cjs'
       ],
       specRefs: [
-        '../../../docs/ai/tools/flow-inspector/AGENT_EXECUTION.md#controlled-execution'
+        '../../../docs/ai/tools/flow-inspector/AGENT_EXECUTION.md#controlled-execution',
+        '../../../docs/ai/tools/flow-inspector/AGENT_EXECUTION.md#retained-candidate-admission',
+        '../../../docs/ai/tools/flow-inspector/AGENT_EXECUTION.md#private-candidate-source-handoff'
       ],
       failureOwnerStepId: 'execute-agent-task'
     },
@@ -321,11 +377,17 @@ const data = {
       inputs: [
         'artifact:agent-candidate-source',
         'artifact:admitted-agent-task',
+        'artifact:proof-source-snapshot',
+        'artifact:assessed-proof-evidence',
+        'artifact:assessed-proof-source',
+        'source-owned fixed derived files and execution descriptor for the trusted candidate attempt',
         'abort signal and remaining deadline'
       ],
-      outputs: ['artifact:agent-candidate-verdict'],
+      outputs: ['artifact:agent-candidate-verdict', 'artifact:candidate-proof-source'],
       conditions: [
-        'Freeze candidate source; execute every retained obligation inside enforced OS containment using trusted captured assertions and existing evidence owner. Recheck source integrity after settlement; unknown containment refuses execution.'
+        'The source-aware producer returns verdict and independent source after exactly one evidence/source evaluation. Forward the admitted source only after actual contained runner settlement and successful post-run byte integrity, preserving failed or partial case outcomes; source admission or integrity failure yields no source artifact. The existing verifier wrapper consumes the same single producer verdict, and persisted verdict JSON gains no source envelope or verified flag. Task caching remains a later consumer.',
+        'Freeze candidate source; execute every retained obligation inside enforced OS containment using trusted captured assertions and existing evidence owner. Recheck source integrity after settlement; unknown containment refuses execution.',
+        'Match the full captured baseline manifest and contract identities before new candidate production. Preserve present verification identity; only genuine historical absence permits constructing this new proof descriptor from verified captured role bytes. Write source-owned fixed generated files, execute their actual configuration and bootstrap, and pass the complete candidate snapshot plus trusted context to one direct evidence admission. Retain all three source descriptors in the verdict without granting historical replay authority.'
       ],
       bypasses: [
         'No unknown, stale, denied or missing input may become success.'
@@ -347,7 +409,10 @@ const data = {
         'tools/flow-inspector/control-plane/__tests__/agent-verifier.test.cjs'
       ],
       specRefs: [
-        '../../../docs/ai/tools/flow-inspector/AGENT_EXECUTION.md#candidate-verification'
+        '../../../docs/ai/tools/flow-inspector/AGENT_EXECUTION.md#candidate-verification',
+        '#derived-execution-source',
+        '#direct-derived-evidence-admission',
+        '#source-identity-and-verification-outcome'
       ],
       failureOwnerStepId: 'verify-agent-candidate'
     },
@@ -361,6 +426,7 @@ const data = {
       purpose: 'Contract evolution',
       inputs: [
         'accepted version history',
+        'artifact:admitted-verification-source',
         'admitted candidate contract',
         'observed selector identities and source digests',
         'explicit successor relations and retirement request',
@@ -368,7 +434,7 @@ const data = {
       ],
       outputs: ['artifact:reviewed-contract-evolution'],
       conditions: [
-        'Compare stable obligations and source observations once per requested review; preserve immutable accepted versions. Accept only exact current base and candidate inputs with authorized reason; removal requires separately authorized explicit retirement. Missing selectors and unknown evidence remain unresolved.'
+        'Compare stable obligations and source observations once per requested review; preserve immutable accepted versions. Accept only exact current base and candidate inputs with authorized reason; removal requires separately authorized explicit retirement. Missing selectors and unknown evidence remain unresolved. When a service-admitted verification reference is supplied, bind its exact source tuple, descriptor and execution configuration into review and immutable history without source reads or revalidation. Expose verification-content changes, forbid accepting removal of existing verification authority, and preserve legacy absence without granting new authority.'
       ],
       bypasses: [
         'No implicit retirement, heuristic acceptance, or preserved green evidence after revision.'
@@ -388,7 +454,7 @@ const data = {
         'tools/flow-inspector/control-plane/evolution.cjs',
         'tools/flow-inspector/control-plane/__tests__/evolution.test.cjs'
       ],
-      specRefs: ['#contract-evolution'],
+      specRefs: ['#contract-evolution', '#version-verification-references'],
       failureOwnerStepId: 'review-contract-evolution'
     },
     {
@@ -474,18 +540,27 @@ const data = {
       purpose: 'Source and Evidence',
       inputs: [
         'artifact:admitted-proof-contract',
+        'artifact:admitted-runtime-source',
         'authorized run identity',
+        'complete retained snapshot manifest and task-owned fixed canonical source location for read-only byte verification',
         'declared source roots and dependency metadata',
+        'completed source-owned verification descriptor and trusted canonical candidate attempt source location for fixed derived execution generation/admission',
         'server-selected accepted Git base and integration revision'
       ],
       outputs: ['artifact:proof-source-snapshot'],
       conditions: [
-        'Read accepted-base contract and protected gate inputs once for CI admission; compare captured integration bytes with Git identity and preserve explicit policy drift blockers. Copy regular source files once into one attempt-owned tree, retain the immutable file manifest, bind source, mapping, architecture, configuration and lockfile digests, and reject symlinks.'
+        'Explicit derived composition alone may select a previously full-source-admitted derived runtime tuple; a candidate verdict or client path cannot replace that authority. Both APIs require the exact ordinary verification bundle and reject its execution descriptor presence. Ordinary composition also rejects runtime execution descriptor presence. Recheck selected actual bytes once, generate the fixed two files at the new trusted root with reused entry metadata, preserve runtime/verifier identities and bind a new execution/full identity. Keep all immutable output/alias guards; downstream candidate execution must use containment, and service handoff remains a separate prerequisite.',
+        'For retained candidate admission, verify every actual full-manifest entry once through the source-owned safe path, regular file, size and hash boundary at its trusted fixed source root. Write nothing and return no identity or authority flag; descriptor/full-inventory admission remains a separate single direct evidence operation in the same startup lifetime, with neither operation repeated by reads or replay.',
+        'For the fixed contained-native-typescript-v1 derived execution policy, generate the exact configuration/bootstrap bytes and canonical executionSource identity from the original admitted verification descriptor and trusted attempt source location. Construction alone grants no authority. A present descriptor requires one shared full/runtime/verification admission plus exact fixed-byte/full-inventory/configuration binding, with the location supplied separately by its trusted owner; never trust a saved sourceRoot or caller-selected policy, paths or contents. Missing, changed, extra, unsupported or overlapping inputs fail closed. Historical absence is not upgraded, ordinary composition remains restricted, and actual runner/containment use must be proved by later producer consumers.',
+        'Before an ordinary verification reference handoff, the source owner may validate its already admitted retained runtime and exact five-role bytes through a read-only operation. Require the same canonical repository/attempt/source tree and configuration authority; read each entry once, write nothing, and return no new source identity or persistent verified status. Later composition must still validate the bytes it actually uses.',
+        'For explicit ordinary composition, consume two already admitted service-owned source artifacts and their fixed retained attempt trees in the same repository. Require exact verification contract and configuration authority, read and verify each selected runtime or verification entry once, and produce a complete immutable snapshot preserving selected runtime HEAD/digest and chosen verification digest with a new full identity. Undeclared generated execution closure, missing or changed bytes, unsafe paths and cross-repository inputs fail before runner dispatch. This later composition route does not gate initial capture or its admission.',
+        'Read accepted-base contract and protected gate inputs once for CI admission; compare captured integration bytes with Git identity and preserve explicit policy drift blockers. Copy regular source files once into one attempt-owned tree, retain the immutable file manifest, bind source, mapping, architecture, configuration and lockfile digests, and reject symlinks. For target assessment, also identify the captured runtime file inventory independently of the admitted verification metadata; preserve full snapshot identity and never infer equivalence by stripping historical digests. Construct a frozen verificationSource descriptor for the admitted contract’s exact five metadata roles from captured entries, with no extra reads; validate both source descriptors against the complete full manifest. Descriptor presence alone does not prove retained bytes, replay readiness or accepted-version authority.'
       ],
       bypasses: [
         'No previous snapshot or mutable checkout may replace the captured runtime source.'
       ],
       allowedContributors: [
+        'trusted candidate/service owner supplying completed source artifacts and a canonical attempt location',
         'filesystem reads inside declared repository roots'
       ],
       forbiddenContributors: ['arbitrary paths', 'ambient secret files'],
@@ -496,7 +571,7 @@ const data = {
         'tools/flow-inspector/control-plane/ci-context.cjs',
         'tools/flow-inspector/control-plane/__tests__/ci-context.test.cjs'
       ],
-      specRefs: ['#source-and-evidence'],
+      specRefs: ['#source-and-evidence', '#runtime-identity-producer-contract', '#frozen-verification-source', '#derived-execution-source', '#retained-snapshot-byte-verification', '#derived-source-composition'],
       failureOwnerStepId: 'capture-proof-source'
     },
     {
@@ -509,11 +584,13 @@ const data = {
       inputs: [
         'artifact:proof-source-snapshot',
         'registered scenario',
-        'deadline and cancellation signal'
+        'deadline and cancellation signal',
+        'trusted canonical attempt location and source-owned derived execution descriptor when contained execution is selected'
       ],
       outputs: ['artifact:proof-runner-result'],
       conditions: [
-        'Run one registered Vitest process group against captured source; await settlement on success, error, deadline, or cancellation.'
+        'Contained derived execution consumes the source-owned fixed configuration/bootstrap roles and exact verification/configuration relationship without re-admitting source. Execute the captured bootstrap with the native loader under the existing OS sandbox; reject missing/unsupported closure or unavailable containment before dispatch, with no caller argv/configuration/process override or ordinary fallback. Return existing report/identity and process settlement; post-run source integrity remains the publisher responsibility.',
+        'Run one registered Vitest process group against captured source; await settlement on success, error, deadline, or cancellation. Bind the source owner runtime digest into runner identity without recomputing it, alongside the existing full verification identity.'
       ],
       bypasses: [
         'Denied requests never reach execution; a process failure produces a non-passing runner result.'
@@ -533,7 +610,7 @@ const data = {
         'tools/flow-inspector/control-plane/runner.cjs',
         'tools/flow-inspector/control-plane/__tests__/runner.test.cjs'
       ],
-      specRefs: ['#controlled-actions-and-retention'],
+      specRefs: ['#controlled-actions-and-retention', '#runtime-identity-producer-contract', '#contained-derived-proof-execution'],
       failureOwnerStepId: 'execute-proof-run'
     },
     {
@@ -546,16 +623,24 @@ const data = {
       inputs: [
         'artifact:admitted-proof-contract',
         'artifact:proof-source-snapshot',
-        'artifact:proof-runner-result'
+        'artifact:proof-runner-result',
+        'artifact:admitted-runtime-source',
+        'trusted candidate-owned canonical execution context for direct derived snapshots'
       ],
-      outputs: ['artifact:assessed-proof-evidence'],
+      outputs: ['artifact:assessed-proof-evidence', 'artifact:assessed-proof-source'],
       conditions: [
-        'Exactly one passing observation per required case, successful exit, and no runner errors are necessary for pass; preserve observed step failures and verify source, contract, mapping, architecture, scenario, configuration, runner environment, and report identity. Retained current-contract evidence must preserve that inventory and version identity before admission.'
+        'The direct-derived source/evidence API returns an independent frozen source envelope only after one complete source-owner admission, forwarding the already-computed descriptor values without rehash or IO. Source/contract/configuration/context failures produce no source; case, report and runner outcomes remain independent. Existing evidence-only return shape is unchanged. Ordinary/legacy/service-artifact paths do not create this envelope; candidate publication and task cache consumers are subsequent boundaries.',
+        'Exactly one passing observation per required case, successful exit, and no runner errors are necessary for pass; preserve observed step failures and verify source, contract, mapping, architecture, scenario, configuration, runner environment, and report identity. Retained current-contract evidence must preserve that inventory and version identity before admission. For target evidence, validate and retain the runner runtime digest against its source owner snapshot; missing or mismatched runtime provenance never grants target eligibility, while unchanged historical standalone proof remains readable.',
+        'On the direct path, any own executionSource field requires exactly one source-owner combined admission with a trusted execution context, even when runtime identity is missing. Reuse its runtime descriptor for evidence comparisons. Missing context or invalid closure is non-pass; runtime-only service artifacts cannot admit derived execution. A complete service-derived artifact requires bilateral execution presence and exact three-descriptor/full/configuration/contract/attempt binding without source revalidation; retained derived records cannot bypass this through the historical wrong-contract early return.'
       ],
       bypasses: [
         'Missing or invalid reports produce an explicit non-pass, never inferred completion.'
       ],
-      allowedContributors: ['validated Vitest JSON result'],
+      allowedContributors: [
+        'validated Vitest JSON result',
+        'source owner validation of a complete captured manifest',
+        'service-retained full-source-bound admission'
+      ],
       forbiddenContributors: [
         'test-file existence as behavioral evidence',
         'exit code alone'
@@ -565,7 +650,7 @@ const data = {
         'tools/flow-inspector/control-plane/evidence.cjs',
         'tools/flow-inspector/control-plane/__tests__/evidence.test.cjs'
       ],
-      specRefs: ['#source-and-evidence'],
+      specRefs: ['#source-and-evidence', '#runtime-identity-producer-contract', '#frozen-verification-source', '#direct-derived-evidence-admission', '#derived-service-and-evidence-admission', '#source-identity-and-verification-outcome'],
       failureOwnerStepId: 'assess-proof-evidence'
     },
     {
@@ -578,6 +663,7 @@ const data = {
       inputs: [
         'artifact:admitted-proof-contract',
         'artifact:assessed-proof-evidence',
+        'artifact:proof-source-snapshot',
         'registered local request',
         'attempt store',
         'existing static workspace and catalog-declared local resources',
@@ -586,12 +672,21 @@ const data = {
         'artifact:agent-task-state',
         'artifact:pr-review-record',
         'artifact:flow-target-state',
+        'artifact:target-source-assessment',
         'server-selected accepted Git base'
       ],
-      outputs: ['artifact:proof-board-state'],
+      outputs: ['artifact:proof-board-state', 'artifact:admitted-runtime-source', 'artifact:admitted-verification-source'],
       conditions: [
-        'Keep reported step work completion independent from execution, verification and delivery. Separate candidate verification from accepted conformance, persist version decisions and accepted mapping atomically, admit CI results against a server-selected base, and produce baseline-bound read-only manager snapshots only at state changes. Authorize before work, admit one run against the explicitly accepted mapping, durably record state with audit, and expose immutable snapshot-bound evidence; restart interrupts incomplete attempts. Mapping prepare and decide actions bind the exact base revision and candidate digest, preserve all obligations, and atomically retain the decision with the accepted mapping. Duplicate request identities do not repeat execution; repeated reads consume already admitted evidence.',
-        'Serve allowlisted existing workspace assets and compose the proof adapter into target documents; preserve static paths, target routing, and same-origin isolation. Serve Overview at root and catalog-slug pages with an explicit path-routing marker and workspace asset base; unknown public paths return a 404 route error without a selected target. Catalog-declared standalone HTML paths redirect to their exact short workspace target, and declared documentation/source links remain readable in a separate tab.'
+        'Persist newly published derived sources as outer attempt format 3, requiring sourceContract and all three non-null descriptors; retain versioned checks, reject missing/unknown formats and never downgrade missing fields. Formats 1/2 remain historical without load-time upgrade. For derived source admission, use only the fixed run-UUID source/manifest locations and exact stored source contract. Perform one combined descriptor admission plus one actual output-tree byte verification before publishing a complete immutable private artifact; preserve bilateral execution presence, full/configuration/contract tuple and invalidate on mismatch. Startup repeats once per lifetime, reads/replay never do. Ordinary live no-source-read behavior remains unchanged; contained target dispatch and post-run integrity are a separate producer prerequisite.',
+        'Register a complete immutable target-assessment producer inventory before dispatch, resolving both exact role references independently and sharing only identical ordinary verification identities. Hold one private orchestration lifetime, preserve every slot and confirmed observation through cancellation or interruption, and never auto-resume on startup. Consume assessed results only after registration or producer settlement; they are never an initial source-admission prerequisite. Retain historical verdicts and cache currentness-only projections at actual owner identity changes, with no computation on reads or replay.',
+        'Explicit target-proof production selects an exact target allocation, accepted-version or target-review reference and service-owned runtime attempt. Compose ordinary frozen bytes through the source owner and consume the selected contract through the existing runner and evidence lifecycle. Exact request replay precedes idle and availability checks; new unavailable authority has no attempt side effects, and admitted failures, cancellation and restart interruption never auto-retry. This mode cannot become ordinary accepted conformance or candidate version preparation. Assessment inventory and eligibility remain separate consumers.',
+        'Admit retained review metadata once through the version owner against its exact immutable history prefix and compare every owner field before supplying a target callback pair. Keep metadata integrity separate from retained-byte availability: historical pins remain readable, while new pinned target creation requires the exact reference to be available. Public review candidateDigest remains the version-owned fingerprint, with contract identity projected separately. No latest-review substitution or read-time re-admission is permitted.',
+        'Source-aware version preparation uses that attempt’s retained contract, test-role identity and registered report. Verify retained bytes once at first reference handoff per attempt/service lifetime, bind the exact tuple privately, and re-admit retained references once on startup. Missing source-tree bytes preserve history but forbid new handoffs; reference presence alone is not availability. Review replay requires the version owner’s full current-base/candidate/relations identity and does not repeat source or report IO. Legacy preparation cannot acquire reference authority.',
+        'New attempts retain the exact server-admitted sourceContract definitions. Restore them through the contract owner on restart and bind attempt and snapshot contract, mapping and architecture identities. Present malformed or conflicting sourceContract rejects admission; historical absence remains runtime-only and grants no verification authority. Paired new verification descriptors use one combined source-owner manifest admission; retain the verification descriptor and execution configuration in the same immutable attempt artifact. Reads and replay do not repeat it. Descriptor admission alone does not prove retained source-tree bytes or enable composition.',
+        'Before supplying a verification reference to the version owner, resolve and admit that attempt’s source descriptor and actual execution configuration within this repository. Retain the exact reference and immutable bytes; absent historical descriptors grant no new verification authority. This source admission is independent of version acceptance and does not imply target eligibility.',
+        'Before runner dispatch or evidence assessment, admit runtime sources through the source owner once per attempt and immutable source identity using only the trusted attempt and captured source. Completed evidence is a later persistence/projection input, never a source admission prerequisite. Ordinary live capture uses its complete manifest without IO; restart reads the bounded server-owned attempt manifest once. Retain the full-source-bound admission for evidence consumers; failed or changed identities cannot reuse it. Legacy absence grants no runtime identity and reads or request replay never redo admission.',
+        'Keep reported step work completion independent from execution, verification and delivery. Separate candidate verification from accepted conformance, persist version decisions and accepted mapping atomically, admit CI results against a server-selected base, and produce baseline-bound read-only manager snapshots only at state changes. Authorize before work, admit ordinary conformance runs against the explicitly accepted mapping, durably record state with audit, and expose immutable snapshot-bound evidence; restart interrupts incomplete attempts. Mapping prepare and decide actions bind the exact base revision and candidate digest, preserve all obligations, and atomically retain the decision with the accepted mapping. Duplicate request identities do not repeat execution; repeated reads consume already admitted evidence.',
+        'Expose registered target-assessment list/detail/start/cancel through the existing loopback request and capability boundary and matching local/remote CLI adapters; CLI start waits for settlement before closing its local service, and reports eligibility separately from successful inspection/control, consuming service-retained results without transport-side assessment or private producer dispatch. Serve allowlisted existing workspace assets and compose the proof adapter into target documents; preserve static paths, target routing, and same-origin isolation. Serve Overview at root and catalog-slug pages with an explicit path-routing marker and workspace asset base; unknown public paths return a 404 route error without a selected target. Catalog-declared standalone HTML paths redirect to their exact short workspace target, and declared documentation/source links remain readable in a separate tab.'
       ],
       bypasses: [
         'Unauthorized, conflicting, oversized, malformed, or unknown actions have no runner side effects.'
@@ -623,6 +718,12 @@ const data = {
       ],
       specRefs: [
         '#controlled-actions-and-retention',
+        '#source-admission-in-the-local-service',
+        '#derived-service-and-evidence-admission',
+        '#frozen-target-proof-production',
+        '#retained-target-assessment-requests',
+        '#target-assessment-http-transport',
+        '#target-assessment-cli-transport',
         '#board',
         '#flow-targets-and-work-decomposition',
         '../../../docs/ai/tools/flow-inspector/PR_REVIEW.md#confirmed-delivery'
@@ -639,10 +740,12 @@ const data = {
       inputs: [
         'artifact:proof-board-state',
         'existing workspace canvas DOM and selected architecture target',
-        'user-selected flow and scenario'
+        'user-selected flow and scenario',
+        'explicit user-selected retained review and source attempt; cached assessment records and projections supplied by the action service'
       ],
       outputs: ['artifact:proof-board-view'],
       conditions: [
+        'Project retained assessment history, immutable target/accepted version pins, separate accepted/work-prerequisite/integration results, progress, blockers and currentness from the service. New target creation passes only an explicitly selected review id; new assessment passes the saved allocation and explicitly selected source attempt. Refresh never selects source or review authority. Legacy absence remains unavailable, errors stay visible, and eligibility never accepts history. Poll through producer gaps without reassessment or redundant detail reads; preserve unchanged work controls, drafts, focus and canvas state.',
         'Prepare target work through an explicit source-bound admission before filling the task form. Project pending reservations and bounded assessments without replacing work controls on task updates; unknown prerequisites cannot launch work.',
         'Preserve the existing canvas cards, routes, geometry, controls, and details; project exact selected-flow results and actions into that surface without replacing the graph.',
         'On a newly selected failed attempt, select the first failing flow if the current flow has no failures; request viewer-owned framing of that flow’s failed step IDs once per changed result; preserve subsequent manual selection, pan and zoom on unchanged refresh. Success and unknown results do not move the viewport. Show a persistent run-level failure alert with named owner navigation and geometry-preserving failed card highlights; clear them on recovery.',
@@ -671,6 +774,7 @@ const data = {
       ],
       specRefs: [
         '#board',
+        '#target-assessment-board-consumer',
         '#flow-targets-and-work-decomposition',
         '../../../docs/ai/tools/flow-inspector/PR_REVIEW.md#review-observations'
       ],
@@ -678,6 +782,24 @@ const data = {
     }
   ],
   routes: [
+    { id: 'reviewed-version-to-target-pin', from: 'review-contract-evolution', to: 'manage-flow-target', kind: 'conditional', predicate: 'A new target explicitly selects an exact version-owner-admitted review and an available verification reference; the trusted service supplies the immutable review/candidate pair, and the target pins its version-owned digest without rehashing. The target callback requests requireAvailable only for a new creation after exact replay checking; retained loading requests metadata only, and replay does not invoke the resolver.', producedArtifacts: ['artifact:reviewed-contract-evolution'] },
+    { id: 'verification-admission-to-version', from: 'serve-proof-actions', to: 'review-contract-evolution', kind: 'conditional', predicate: 'A version review supplies a verification reference only after the service binds its own attempt, admitted source descriptor and execution configuration; historical absence cannot be promoted.', producedArtifacts: ['artifact:admitted-verification-source'] },
+    { id: 'source-snapshot-to-service-admission', from: 'capture-proof-source', to: 'serve-proof-actions', kind: 'required', predicate: 'Before runner dispatch or evidence assessment, a trusted service-owned attempt captures or restores source with a runtime identity; no completed evidence is required.', producedArtifacts: ['artifact:proof-source-snapshot'] },
+    { id: 'runtime-admission-to-composition', from: 'serve-proof-actions', to: 'capture-proof-source', kind: 'conditional', predicate: 'Only an explicit later composition consumes previously completed source admissions and fixed retained trees for its selected runtime and exact verification bundle; initial capture and admission never depend on composition or assessed evidence.', producedArtifacts: ['artifact:admitted-runtime-source'] },
+    { id: 'source-derived-generation-to-candidate', from: 'capture-proof-source', to: 'verify-agent-candidate', kind: 'conditional', predicate: 'During explicit new candidate verification, source-owned construction supplies the fixed generated bytes and execution descriptor before runner dispatch; construction does not claim completed evidence or retained replayability.', producedArtifacts: ['artifact:proof-source-snapshot'] },
+    { id: 'derived-evidence-to-candidate', from: 'assess-proof-evidence', to: 'verify-agent-candidate', kind: 'conditional', predicate: 'After actual runner settlement and before candidate verdict completion, direct evidence returns with one combined source admission using the candidate-owned trusted location parameter; no completed candidate verdict is a prerequisite.', producedArtifacts: ['artifact:assessed-proof-evidence'] },
+    { id: 'admitted-source-to-candidate', from: 'assess-proof-evidence', to: 'verify-agent-candidate', kind: 'conditional', predicate: 'After direct derived source admission succeeds and runner settles, forward its source identity independently of case outcome before candidate post-run publication; no completed candidate verdict or passing evidence is a prerequisite.', producedArtifacts: ['artifact:assessed-proof-source'] },
+    { id: 'candidate-proof-source-to-task', from: 'verify-agent-candidate', to: 'execute-agent-task', kind: 'conditional', predicate: 'A controlled live producer has completed source admission and post-run integrity; forward source independently of case outcome before task persistence and private publication, never from public verdict JSON.', producedArtifacts: ['artifact:candidate-proof-source'] },
+    { id: 'retained-candidate-source-to-task', from: 'capture-proof-source', to: 'execute-agent-task', kind: 'conditional', predicate: 'For completed non-passing startup candidates, validate the full retained source and original captured contract at the task-owned fixed root before private publication; case assessment and a passing report are not prerequisites.', producedArtifacts: ['artifact:proof-source-snapshot'] },
+    { id: 'retained-source-to-task', from: 'assess-proof-evidence', to: 'execute-agent-task', kind: 'conditional', predicate: 'For passing startup records only, exact retained evidence re-admission also returns completed source identity before task source publication; non-passing source-only startup uses its source-owner input directly and does not assess an invented report.', producedArtifacts: ['artifact:assessed-proof-source'] },
+    { id: 'retained-evidence-to-task', from: 'assess-proof-evidence', to: 'execute-agent-task', kind: 'conditional', predicate: 'At startup after the retained verdict and actual candidate bytes are available, return exact re-admitted evidence before publishing task needs-review; no completed task projection is a prerequisite.', producedArtifacts: ['artifact:assessed-proof-evidence'] },
+    { id: 'runtime-admission-to-evidence', from: 'serve-proof-actions', to: 'assess-proof-evidence', kind: 'conditional', predicate: 'After source admission and before raw or retained evidence assessment, service-owned evidence consumes its full-source admission; direct full snapshots use source-owner admission and historical absence grants no runtime conformance.', producedArtifacts: ['artifact:admitted-runtime-source'] },
+    { id: 'runtime-admission-to-target-assessment', from: 'serve-proof-actions', to: 'assess-target-source', kind: 'required', predicate: 'An explicit target assessment selects the service-owned admitted source and complete retained proof requests; source admission has completed independently of assessment.', producedArtifacts: ['artifact:admitted-runtime-source'] },
+    { id: 'target-state-to-assessment', from: 'manage-flow-target', to: 'assess-target-source', kind: 'required', predicate: 'An explicit assessment selects a frozen target allocation.', producedArtifacts: ['artifact:flow-target-state'] },
+    { id: 'target-contract-to-assessment', from: 'admit-proof-contract', to: 'assess-target-source', kind: 'required', predicate: 'Accepted and target verification contracts are admitted for the selected assessment.', producedArtifacts: ['artifact:admitted-proof-contract'] },
+    { id: 'target-source-to-assessment', from: 'capture-proof-source', to: 'assess-target-source', kind: 'required', predicate: 'The source owner supplies one immutable runtime identity for all participating proofs.', producedArtifacts: ['artifact:proof-source-snapshot'] },
+    { id: 'target-evidence-to-assessment', from: 'assess-proof-evidence', to: 'assess-target-source', kind: 'conditional', predicate: 'Consume completed source-bound observations only when they exist; the complete registered request inventory represents missing or unsettled slots as unknown and permits initial assessment before any observation exists.', producedArtifacts: ['artifact:assessed-proof-evidence'] },
+    { id: 'target-assessment-result', from: 'assess-target-source', to: 'serve-proof-actions', kind: 'conditional', predicate: 'Only after complete request registration or a producer settlement, the service retains the separated assessment result without baseline mutation; this result never gates initial source admission or producer registration.', producedArtifacts: ['artifact:target-source-assessment'] },
     { id: 'work-admission-to-task', from: 'manage-flow-target', to: 'admit-agent-task', kind: 'required', predicate: 'Task references an admitted work commitment', producedArtifacts: ['artifact:work-admission'] },
     { id: 'work-admission-to-execution', from: 'manage-flow-target', to: 'execute-agent-task', kind: 'required', predicate: 'Start or resume a task associated with target work', producedArtifacts: ['artifact:work-admission'] },
     {
@@ -883,7 +1005,7 @@ const data = {
       from: 'assess-proof-evidence',
       to: 'serve-proof-actions',
       kind: 'handoff',
-      predicate: 'The producer completed its declared boundary.',
+      predicate: 'After source admission and runner settlement, completed evidence returns for persistence and projection only; it is not an input prerequisite for earlier source admission.',
       producedArtifacts: ['artifact:assessed-proof-evidence']
     },
     {
@@ -891,7 +1013,7 @@ const data = {
       from: 'serve-proof-actions',
       to: 'render-proof-board',
       kind: 'handoff',
-      predicate: 'The producer completed its declared boundary.',
+      predicate: 'Consume service-owned board state, exact retained review/target pins and cached assessment records/currentness projections through public HTTP reads; explicit create/start/cancel actions return through the same service authority, without client assessment or private role dispatch.',
       producedArtifacts: ['artifact:proof-board-state']
     },
     {
@@ -903,13 +1025,16 @@ const data = {
     }
   ],
   artifacts: [
+    { id: 'artifact:admitted-verification-source', ownerStepId: 'serve-proof-actions', channel: 'service-owned verification source reference', consumerStepIds: ['review-contract-evolution'] },
+    { id: 'artifact:admitted-runtime-source', ownerStepId: 'serve-proof-actions', channel: 'service-owned source admission', consumerStepIds: ['assess-proof-evidence', 'assess-target-source', 'capture-proof-source'] },
+    { id: 'artifact:target-source-assessment', ownerStepId: 'assess-target-source', channel: 'source-bound target assessment', consumerStepIds: ['serve-proof-actions'] },
     { id: 'artifact:work-admission', ownerStepId: 'manage-flow-target', channel: 'immutable source-bound work admission', consumerStepIds: ['admit-agent-task', 'execute-agent-task'] },
     {
       id: 'artifact:flow-target-state',
       title: 'Flow target revisions and work observations',
       ownerStepId: 'manage-flow-target',
       channel: 'local-target',
-      consumerStepIds: ['serve-proof-actions']
+      consumerStepIds: ['serve-proof-actions', 'assess-target-source']
     },
     {
       id: 'artifact:workflow-result-summary',
@@ -981,7 +1106,7 @@ const data = {
       title: 'Reviewed contract evolution',
       ownerStepId: 'review-contract-evolution',
       channel: 'contract-evolution',
-      consumerStepIds: ['serve-proof-actions']
+      consumerStepIds: ['serve-proof-actions', 'manage-flow-target']
     },
     {
       id: 'artifact:admitted-proof-contract',
@@ -993,7 +1118,8 @@ const data = {
         'assess-proof-evidence',
         'serve-proof-actions',
         'admit-agent-task',
-        'manage-flow-target'
+        'manage-flow-target',
+        'assess-target-source'
       ]
     },
     {
@@ -1001,7 +1127,7 @@ const data = {
       title: 'Capture proof source output',
       ownerStepId: 'capture-proof-source',
       channel: 'local-proof',
-      consumerStepIds: ['execute-proof-run', 'assess-proof-evidence']
+      consumerStepIds: ['execute-proof-run', 'assess-proof-evidence', 'assess-target-source', 'serve-proof-actions', 'verify-agent-candidate', 'execute-agent-task']
     },
     {
       id: 'artifact:proof-runner-result',
@@ -1015,7 +1141,28 @@ const data = {
       title: 'Assess proof evidence output',
       ownerStepId: 'assess-proof-evidence',
       channel: 'local-proof',
-      consumerStepIds: ['serve-proof-actions']
+      consumerStepIds: ['serve-proof-actions', 'assess-target-source', 'verify-agent-candidate', 'execute-agent-task']
+    },
+    {
+      id: 'artifact:assessed-proof-source',
+      title: 'Assess proof source output',
+      ownerStepId: 'assess-proof-evidence',
+      channel: 'direct derived source/evidence envelope; source-owner completed identity independent of case outcome',
+      consumerStepIds: ['verify-agent-candidate', 'execute-agent-task']
+    },
+    {
+      id: 'artifact:candidate-proof-source',
+      title: 'Candidate proof source output',
+      ownerStepId: 'verify-agent-candidate',
+      channel: 'source identity after contained execution and post-run integrity; independent of assertion outcome',
+      consumerStepIds: ['execute-agent-task']
+    },
+    {
+      id: 'artifact:admitted-task-source',
+      title: 'Task source admission output',
+      ownerStepId: 'execute-agent-task',
+      channel: 'private exact task and attempt source admission',
+      consumerStepIds: []
     },
     {
       id: 'artifact:proof-board-state',

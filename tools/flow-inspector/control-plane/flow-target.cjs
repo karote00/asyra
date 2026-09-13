@@ -159,8 +159,52 @@ function createTargetOwner({
   getBaseline,
   getTask,
   getReview,
-  getSource = () => null
+  getSource = () => null,
+  getVersionReview = () => null,
+  getAcceptedVersion
 }) {
+  const resolveAcceptedVersion = (contractDigest, revision) => {
+    requireValue(
+      typeof getAcceptedVersion === 'function',
+      'accepted version resolver unavailable'
+    )
+    const version = getAcceptedVersion(revision)
+    requireValue(
+      version &&
+        Object.keys(version).length === 2 &&
+        Object.hasOwn(version, 'revision') &&
+        Object.hasOwn(version, 'contractDigest') &&
+        Number.isInteger(version.revision) &&
+        version.revision > 0 &&
+        (revision === undefined || version.revision === revision) &&
+        /^[a-f0-9]{64}$/.test(version.contractDigest ?? '') &&
+        version.contractDigest === contractDigest,
+      'accepted version identity unavailable or conflicting'
+    )
+    return freeze({
+      revision: version.revision,
+      contractDigest: version.contractDigest
+    })
+  }
+  const resolveVerification = (reviewId, targetRevision, requireAvailable) => {
+    const digest = (value) =>
+      typeof value === 'string' && /^[a-f0-9]{64}$/.test(value)
+    requireValue(digest(reviewId), 'invalid target version review identity')
+    const review = getVersionReview(reviewId, { requireAvailable })
+    const candidate = review?.candidate
+    const reference = candidate?.verificationSource
+    requireValue(
+      review?.id === reviewId &&
+        digest(review.candidateDigest) &&
+        candidate?.contract?.digest === targetRevision &&
+        reference &&
+        typeof reference === 'object' &&
+        reference.descriptor?.contractDigest === targetRevision &&
+        digest(reference.descriptor?.digest),
+      'target verification review or candidate is unavailable or conflicting'
+    )
+    return freeze({ reviewId, candidateDigest: review.candidateDigest })
+  }
   const file = path.join(directory, 'targets.json')
   let records = []
   // The service owns the enclosing store lock; this owner never opens another store.
@@ -180,6 +224,74 @@ function createTargetOwner({
         'invalid retained target'
       )
       ids.add(record.id)
+      requireValue(
+        record.history
+          .slice(1)
+          .every((entry) => !Object.hasOwn(entry, 'acceptedVersion')),
+        'accepted version is only allowed in the creation entry'
+      )
+      const acceptedPin = record.acceptedVersion
+      const creationPin = record.history[0].acceptedVersion
+      requireValue(
+        Object.hasOwn(record, 'acceptedVersion') ===
+          Object.hasOwn(record.history[0], 'acceptedVersion'),
+        'accepted version pin was changed'
+      )
+      if (Object.hasOwn(record, 'acceptedVersion')) {
+        requireValue(
+          acceptedPin &&
+            creationPin &&
+            Object.keys(acceptedPin).length === 2 &&
+            Object.hasOwn(acceptedPin, 'revision') &&
+            Object.hasOwn(acceptedPin, 'contractDigest') &&
+            Number.isInteger(acceptedPin.revision) &&
+            acceptedPin.revision > 0 &&
+            Object.keys(creationPin).length === 2 &&
+            Object.hasOwn(creationPin, 'revision') &&
+            Object.hasOwn(creationPin, 'contractDigest') &&
+            acceptedPin.revision === creationPin.revision &&
+            acceptedPin.contractDigest === creationPin.contractDigest,
+          'accepted version creation pin mismatch'
+        )
+        const resolvedVersion = resolveAcceptedVersion(
+          record.acceptedBaseline?.contractDigest,
+          acceptedPin.revision
+        )
+        requireValue(
+          acceptedPin.revision === resolvedVersion.revision &&
+            acceptedPin.contractDigest === resolvedVersion.contractDigest,
+          'accepted version pin differs from retained version'
+        )
+      }
+      const selectedReview = record.history[0].request?.targetReviewId
+      requireValue(
+        Object.hasOwn(record, 'targetVerification') ===
+          Object.hasOwn(record.history[0].request ?? {}, 'targetReviewId'),
+        'retained target verification pin was changed'
+      )
+      if (Object.hasOwn(record, 'targetVerification')) {
+        const pin = record.targetVerification
+        requireValue(
+          pin &&
+            Object.keys(pin).length === 2 &&
+            pin.reviewId === selectedReview &&
+            record.history
+              .slice(1)
+              .every(
+                (entry) => !Object.hasOwn(entry.request, 'targetReviewId')
+              ),
+          'invalid retained target verification pin'
+        )
+        const resolved = resolveVerification(
+          pin.reviewId,
+          record.targetRevision,
+          false
+        )
+        requireValue(
+          pin.candidateDigest === resolved.candidateDigest,
+          'retained target verification review changed'
+        )
+      }
       const contract = getContracts().find(
         (c) => c.digest === record.targetRevision
       )
@@ -454,6 +566,7 @@ function createTargetOwner({
         'reason',
         'flowId',
         'targetRevision',
+        'targetReviewId',
         'acceptedBaseline',
         'objective',
         'works',
@@ -483,6 +596,10 @@ function createTargetOwner({
         'source only allowed for admission'
       )
       const create = request.action === 'create'
+      requireValue(
+        create || !Object.hasOwn(request, 'targetReviewId'),
+        'target verification review is immutable after creation'
+      )
       let record, state, admission
       if (create) {
         requireValue(
@@ -507,6 +624,22 @@ function createTargetOwner({
           id: request.requestId,
           flowId: flow.id,
           targetRevision: contract.digest,
+          ...(Object.hasOwn(request, 'targetReviewId')
+            ? {
+                targetVerification: resolveVerification(
+                  request.targetReviewId,
+                  contract.digest,
+                  true
+                )
+              }
+            : {}),
+          ...(getAcceptedVersion !== undefined
+            ? {
+                acceptedVersion: resolveAcceptedVersion(
+                  request.acceptedBaseline.contractDigest
+                )
+              }
+            : {}),
           acceptedBaseline: request.acceptedBaseline,
           obligations: contract.cases.filter((c) => c.flowId === flow.id),
           steps: flow.steps,
@@ -664,6 +797,9 @@ function createTargetOwner({
             requireValue(exists, 'runtime file missing or unsafe')
           }
       const entry = {
+        ...(create && Object.hasOwn(record, 'acceptedVersion')
+          ? { acceptedVersion: record.acceptedVersion }
+          : {}),
         ...(admission
           ? { admission, admissionDigest: sha256(JSON.stringify(admission)) }
           : {}),

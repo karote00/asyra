@@ -447,18 +447,62 @@ test('verifier infrastructure failure is distinct from a rejected agent operatio
 test(
   'real passing task evidence survives restart and report tampering is rejected',
   { skip: process.platform !== 'darwin', timeout: 20000 },
-  async () => {
+  async (t) => {
     const { owner, request, directory, contract } = fixture()
     const result = await owner.wait(owner.start(request, 'human'))
     assert.equal(result.verificationStatus, 'passed', result.error)
     await owner.close()
+    const source = require('../snapshot.cjs')
+    const bytes = t.mock.method(source, 'verifyRetainedSnapshotBytes')
+    const fingerprint = t.mock.method(source, 'sha256')
+    const combined = t.mock.method(source, 'validateSourceSnapshot')
+    const modulePath = require.resolve('../agent-task.cjs'),
+      saved = require.cache[modulePath]
+    Reflect.deleteProperty(require.cache, modulePath)
+    const retainedOwner = require('../agent-task.cjs').createTaskOwner
+    require.cache[modulePath] = saved
+    const reads = t.mock.method(fs, 'readFileSync')
     const open = () =>
-      createTaskOwner(root, {
+      retainedOwner(root, {
         directory,
         getBaseline: () => ({ contract, revision: 1 }),
         available: () => true
       })
     const reopened = open()
+    const retainedSource = reopened.sourceFor(
+      result.id,
+      result.attempts.at(-1).id
+    )
+    assert.ok(retainedSource)
+    assert.equal(
+      retainedSource.admission.sourceDigest,
+      result.attempts.at(-1).verdict.sourceDigest
+    )
+    assert.equal(bytes.mock.callCount(), 1)
+    assert.equal(combined.mock.callCount(), 1)
+    const verdict = result.attempts.at(-1).verdict
+    assert.equal(
+      fingerprint.mock.calls.filter(
+        (call) => call.arguments[0] === JSON.stringify(verdict.files)
+      ).length,
+      0,
+      'task does not duplicate combined source full-manifest hashing'
+    )
+    const sourceRoot = path.join(root, verdict.artifactDirectory, 'source')
+    for (const entry of verdict.files)
+      assert.equal(
+        reads.mock.calls.filter(
+          (call) => call.arguments[0] === path.join(sourceRoot, entry.path)
+        ).length,
+        1
+      )
+    reads.mock.resetCalls()
+    reopened.get(result.id)
+    reopened.list()
+    assert.equal(reopened.start(request, 'human'), result.id)
+    assert.equal(reads.mock.callCount(), 0)
+    assert.equal(bytes.mock.callCount(), 1)
+    assert.equal(combined.mock.callCount(), 1)
     assert.equal(reopened.get(result.id).workStatus, 'needs-review')
     assert.equal(reopened.get(result.id).usage.attempts, 1)
     await reopened.close()
@@ -545,3 +589,418 @@ test('work admission blocks before capture and rejects source before adapter eff
   assert.equal(operations, priorOperations)
   assert.ok(checks >= 5)
 })
+
+test(
+  'retained derived task rejects substituted locations descriptors and actual source bytes',
+  { skip: process.platform !== 'darwin', timeout: 30000 },
+  async () => {
+    const { owner, request, directory, contract } = fixture()
+    const result = await owner.wait(owner.start(request, 'human'))
+    assert.equal(result.verificationStatus, 'passed', result.error)
+    await owner.close()
+    const recordPath = path.join(directory, result.id, 'task.json')
+    const original = fs.readFileSync(recordPath, 'utf8')
+    const open = () =>
+      createTaskOwner(root, {
+        directory,
+        getBaseline: () => ({ contract, revision: 1 }),
+        available: () => true
+      })
+    for (const mutate of [
+      (record) => {
+        delete record.attempts.at(-1).verdict.executionSource
+      },
+      (record) => {
+        record.attempts.at(-1).verdict.runtimeSource = null
+      },
+      (record) => {
+        record.attempts.at(-1).verdict.verificationSource.digest = '0'.repeat(
+          64
+        )
+      },
+      (record) => {
+        record.attempts.at(-1).verdict.configurationDigest = '0'.repeat(64)
+      },
+      (record) => {
+        record.attempts.at(-1).verdict.baselineDigest = '0'.repeat(64)
+      },
+      (record) => {
+        record.attempts.at(-1).id = randomUUID()
+      },
+      (record) => {
+        record.attempts.at(-1).verdict.runner.reportPath = path.join(
+          directory,
+          result.id,
+          'other/vitest.json'
+        )
+      },
+      (record) => {
+        record.attempts.at(-1).verdict.artifactDirectory += '/other'
+      },
+      (record) => {
+        record.snapshot.sourceRoot = root
+      },
+      (record) => {
+        record.snapshot.sourceRoot = path.join(
+          directory,
+          randomUUID(),
+          'input-' + randomUUID(),
+          'source'
+        )
+      }
+    ]) {
+      const changed = JSON.parse(original)
+      mutate(changed)
+      fs.writeFileSync(recordPath, JSON.stringify(changed))
+      assert.throws(open, /candidate|source|path|identity|descriptor|baseline/i)
+      fs.writeFileSync(recordPath, original)
+    }
+    const verdict = result.attempts.at(-1).verdict
+    for (const entry of [
+      verdict.runtimeSource.files[0],
+      verdict.executionSource.files[0]
+    ]) {
+      const file = path.join(
+        root,
+        verdict.artifactDirectory,
+        'source',
+        entry.path
+      )
+      const bytes = fs.readFileSync(file)
+      fs.chmodSync(file, 0o600)
+      fs.writeFileSync(file, Buffer.concat([bytes, Buffer.from('tampered')]))
+      assert.throws(open, /fingerprint/)
+      fs.writeFileSync(file, bytes)
+      fs.chmodSync(file, 0o444)
+    }
+    const restored = open()
+    assert.equal(restored.get(result.id).verificationStatus, 'passed')
+    await restored.close()
+  }
+)
+
+test(
+  'retained candidate cannot discard every source descriptor and bypass byte admission when runtime returns to baseline',
+  { skip: process.platform !== 'darwin', timeout: 30000 },
+  async () => {
+    const { owner, request, directory, contract } = fixture({
+      adapterFactory: () => {
+        let turn = 0
+        return {
+          async next(observation) {
+            turn++
+            if (turn === 1 || turn === 3)
+              return { tool: 'read', path: sourceFile }
+            if (turn === 2)
+              return {
+                tool: 'replace',
+                path: sourceFile,
+                digest: observation.digest,
+                before: observation.content,
+                after: '// formal reversible change\n' + observation.content
+              }
+            if (turn === 4)
+              return {
+                tool: 'replace',
+                path: sourceFile,
+                digest: observation.digest,
+                before: '// formal reversible change\n',
+                after: ''
+              }
+            return { tool: 'finish' }
+          }
+        }
+      }
+    })
+    const result = await owner.wait(owner.start(request, 'human'))
+    assert.equal(result.verificationStatus, 'passed', result.error)
+    const verdict = result.attempts.at(-1).verdict
+    assert.equal(
+      verdict.runtimeSource.digest,
+      result.snapshot.runtimeSource.digest
+    )
+    assert.equal(verdict.evidence.passedCount, 6)
+    assert.equal(
+      verdict.runner.identity.configurationDigest,
+      verdict.executionSource.digest
+    )
+    await owner.close()
+    const recordPath = path.join(directory, result.id, 'task.json')
+    const record = JSON.parse(fs.readFileSync(recordPath, 'utf8'))
+    for (const key of [
+      'runtimeSource',
+      'verificationSource',
+      'executionSource'
+    ])
+      Reflect.deleteProperty(record.attempts.at(-1).verdict, key)
+    fs.writeFileSync(recordPath, JSON.stringify(record))
+    const bootstrap = path.join(
+      root,
+      verdict.artifactDirectory,
+      'source',
+      verdict.executionSource.roles.bootstrap
+    )
+    fs.chmodSync(bootstrap, 0o600)
+    fs.appendFileSync(bootstrap, '\n// formal post-proof tamper\n')
+    assert.throws(
+      () =>
+        createTaskOwner(root, {
+          directory,
+          getBaseline: () => ({ contract, revision: 1 }),
+          available: () => true
+        }),
+      /candidate|source|fingerprint|descriptor/i
+    )
+  }
+)
+
+test(
+  'task format requires supported versions and upgrades legacy only after a new completed proof',
+  { skip: process.platform !== 'darwin', timeout: 30000 },
+  async () => {
+    const { owner, request, directory, contract } = fixture()
+    request.scenario = 'regression'
+    const failed = await owner.wait(owner.start(request, 'human'))
+    assert.equal(failed.verificationStatus, 'failed')
+    assert.equal(failed.format, 2)
+    await owner.close()
+    const recordPath = path.join(directory, failed.id, 'task.json')
+    const retained = JSON.parse(fs.readFileSync(recordPath, 'utf8'))
+    const open = () =>
+      createTaskOwner(root, {
+        directory,
+        getBaseline: () => ({ contract, revision: 1 }),
+        available: () => true
+      })
+    for (const format of [undefined, null, 0, 3, '2']) {
+      const changed = structuredClone(retained)
+      if (format === undefined) delete changed.format
+      else changed.format = format
+      fs.writeFileSync(recordPath, JSON.stringify(changed))
+      assert.throws(open, /persisted task/)
+    }
+    const legacy = { ...retained, format: 1 }
+    fs.writeFileSync(recordPath, JSON.stringify(legacy))
+    const reopened = open()
+    assert.equal(reopened.get(failed.id).format, 1)
+    assert.deepEqual(JSON.parse(fs.readFileSync(recordPath, 'utf8')), legacy)
+    const passed = await reopened.wait(
+      reopened.resume(failed.id, 'repair', 'human')
+    )
+    assert.equal(passed.verificationStatus, 'passed', passed.error)
+    assert.equal(passed.format, 2)
+    assert.deepEqual(passed.attempts[0], legacy.attempts[0])
+    await reopened.close()
+    const admitted = open()
+    assert.equal(admitted.get(failed.id).format, 2)
+    await admitted.close()
+  }
+)
+
+test(
+  'task private sources preserve real failed outcomes without report reads and retire exact attempt availability',
+  { skip: process.platform !== 'darwin', timeout: 30000 },
+  async (t) => {
+    const f = fixture()
+    let reopened
+    try {
+      f.request.scenario = 'regression'
+      const failed = await f.owner.wait(f.owner.start(f.request, 'human'))
+      assert.equal(failed.verificationStatus, 'failed', failed.error)
+      const attempt = failed.attempts.at(-1)
+      const live = f.owner.sourceFor(failed.id, attempt.id)
+      assert.ok(live)
+      assert.equal(live.taskId, failed.id)
+      assert.equal(live.admission.attemptId, attempt.id)
+      assert.equal(live.admission.repository, fs.realpathSync(root))
+      assert.equal(live.admission.sourceDigest, attempt.verdict.sourceDigest)
+      assert.ok(Object.isFrozen(live.admission.executionSource))
+      assert.equal(f.owner.sourceFor(failed.id, randomUUID()), null)
+      await f.owner.close()
+      assert.equal(f.owner.sourceFor(failed.id, attempt.id), null)
+      fs.unlinkSync(attempt.verdict.runner.reportPath)
+      const evidence = require('../evidence.cjs')
+      const assess = t.mock.method(evidence, 'assessSourceEvidence')
+      const source = require('../snapshot.cjs')
+      const combined = t.mock.method(source, 'validateSourceSnapshot')
+      const bytes = t.mock.method(source, 'verifyRetainedSnapshotBytes')
+      const modulePath = require.resolve('../agent-task.cjs')
+      const saved = require.cache[modulePath]
+      Reflect.deleteProperty(require.cache, modulePath)
+      const retainedOwner = require('../agent-task.cjs').createTaskOwner
+      require.cache[modulePath] = saved
+      const reads = t.mock.method(fs, 'readFileSync')
+      const open = () =>
+        retainedOwner(root, {
+          directory: f.directory,
+          getBaseline: () => ({ contract: f.contract, revision: 1 }),
+          available: () => true
+        })
+      reopened = open()
+      assert.deepEqual(
+        reopened.get(failed.id),
+        JSON.parse(JSON.stringify(failed))
+      )
+      assert.deepEqual(reopened.sourceFor(failed.id, attempt.id), live)
+      assert.equal(assess.mock.callCount(), 0)
+      assert.equal(combined.mock.callCount(), 1)
+      assert.equal(bytes.mock.callCount(), 1)
+      assert.equal(
+        reads.mock.calls.filter(
+          (call) => call.arguments[0] === attempt.verdict.runner.reportPath
+        ).length,
+        0
+      )
+      for (const entry of attempt.verdict.files)
+        assert.equal(
+          reads.mock.calls.filter(
+            (call) =>
+              call.arguments[0] === path.join(live.sourceRoot, entry.path)
+          ).length,
+          1
+        )
+      reads.mock.resetCalls()
+      assert.equal(reopened.start(f.request, 'human'), failed.id)
+      reopened.get(failed.id)
+      reopened.list()
+      assert.strictEqual(
+        reopened.sourceFor(failed.id, attempt.id),
+        reopened.sourceFor(failed.id, attempt.id)
+      )
+      assert.equal(reads.mock.callCount(), 0)
+      await reopened.close()
+      reopened = null
+      const bootstrap = path.join(
+        live.sourceRoot,
+        attempt.verdict.executionSource.roles.bootstrap
+      )
+      fs.chmodSync(bootstrap, 0o600)
+      fs.appendFileSync(bootstrap, '\n// altered retained bytes\n')
+      reopened = open()
+      assert.deepEqual(
+        reopened.get(failed.id),
+        JSON.parse(JSON.stringify(failed))
+      )
+      assert.equal(reopened.sourceFor(failed.id, attempt.id), null)
+    } finally {
+      await reopened?.close()
+      await f.owner.close()
+    }
+  }
+)
+
+test('legacy verify injection cannot publish task source authority', async () => {
+  const f = fixture({
+    verify: async () => ({
+      evidence: { status: 'unknown' },
+      source: { forged: true }
+    })
+  })
+  try {
+    const record = await f.owner.wait(f.owner.start(f.request, 'human'))
+    assert.equal(record.phase, 'completed')
+    assert.equal(f.owner.sourceFor(record.id, record.attempts.at(-1).id), null)
+  } finally {
+    await f.owner.close()
+  }
+})
+
+test(
+  'task source publication follows successful persistence and cannot survive a successor or closing settlement',
+  { skip: process.platform !== 'darwin', timeout: 30000 },
+  async (t) => {
+    const { produceCandidateProof } = require('../agent-verifier.cjs')
+    let release
+    let ready
+    let gate = false
+    let produced
+    const f = fixture({
+      produce: async (options) => {
+        const result = await produceCandidateProof(options)
+        produced = result
+        if (gate) {
+          ready()
+          await new Promise((resolve) => {
+            release = resolve
+          })
+        }
+        return result
+      }
+    })
+    try {
+      f.request.scenario = 'regression'
+      const first = await f.owner.wait(f.owner.start(f.request, 'human'))
+      const firstAttempt = first.attempts.at(-1).id
+      const source = f.owner.sourceFor(first.id, firstAttempt)
+      assert.ok(source)
+      const fingerprint = t.mock.method(require('../snapshot.cjs'), 'sha256')
+      const reads = t.mock.method(fs, 'readFileSync')
+      for (let i = 0; i < 3; i++)
+        assert.strictEqual(f.owner.sourceFor(first.id, firstAttempt), source)
+      assert.equal(fingerprint.mock.callCount(), 0)
+      assert.equal(reads.mock.callCount(), 0)
+      reads.mock.restore()
+      fingerprint.mock.restore()
+      gate = true
+      const waiting = new Promise((resolve) => {
+        ready = resolve
+      })
+      f.owner.resume(first.id, 'repair', 'human')
+      assert.equal(f.owner.sourceFor(first.id, firstAttempt), null)
+      await waiting
+      assert.ok(produced.source)
+      const closing = f.owner.close()
+      release()
+      await closing
+      const current = f.owner.get(first.id)
+      assert.equal(current.phase, 'interrupted')
+      assert.equal(
+        f.owner.sourceFor(first.id, current.attempts.at(-1).id),
+        null
+      )
+      assert.equal(f.owner.sourceFor(first.id, firstAttempt), null)
+    } finally {
+      release?.()
+      await f.owner.close()
+    }
+  }
+)
+
+test(
+  'task source cannot publish when the completed task save fails',
+  { skip: process.platform !== 'darwin', timeout: 20000 },
+  async (t) => {
+    const { produceCandidateProof } = require('../agent-verifier.cjs')
+    let fail = false
+    let completedSource
+    const f = fixture({
+      produce: async (options) => {
+        const result = await produceCandidateProof(options)
+        completedSource = result.source
+        fail = true
+        return result
+      }
+    })
+    const rename = fs.renameSync
+    const mocked = t.mock.method(fs, 'renameSync', (from, to) => {
+      if (
+        fail &&
+        to === path.join(f.directory, f.request.requestId, 'task.json')
+      )
+        throw new Error('completed-save-failure')
+      return rename(from, to)
+    })
+    try {
+      const id = f.owner.start(f.request, 'human')
+      await assert.rejects(f.owner.wait(id), /completed-save-failure/)
+      assert.ok(completedSource)
+      assert.equal(
+        f.owner.sourceFor(id, f.owner.get(id).attempts.at(-1).id),
+        null
+      )
+    } finally {
+      mocked.mock.restore()
+      await f.owner.close().catch(() => undefined)
+    }
+  }
+)

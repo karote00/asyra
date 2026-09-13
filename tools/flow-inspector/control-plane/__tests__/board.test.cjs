@@ -10,6 +10,441 @@ const { loadContract, MANIFEST_PATH } = require('../contracts.cjs')
 const { captureSource } = require('../snapshot.cjs')
 
 test(
+  'target assessment board preserves explicit source authority and separated real results across refresh and layouts',
+  { timeout: 90000 },
+  async () => {
+    const { randomUUID } = require('node:crypto')
+    const { LOCAL_ACTOR } = require('../service.cjs')
+    const root = path.resolve(__dirname, '../../../..')
+    const parent = path.join(root, 'tmp/flow-inspector/visual-review')
+    fs.mkdirSync(parent, { recursive: true })
+    const artifacts = fs.mkdtempSync(path.join(parent, 'target-assessment-'))
+    const temporary = path.join(artifacts, 'browser-tmp')
+    fs.mkdirSync(temporary)
+    const previous = process.env.TMPDIR
+    process.env.TMPDIR = temporary
+    const initial = captureSource(
+      root,
+      path.join(artifacts, 'initial'),
+      loadContract(root)
+    )
+    let hold = false,
+      browser
+    const server = await startServer(initial.sourceRoot, {
+      serviceOptions: {
+        directory: path.join(initial.sourceRoot, 'tmp/flow-inspector/runs'),
+        runner: async (options) => {
+          if (hold && !options.signal.aborted)
+            await new Promise((resolve) =>
+              options.signal.addEventListener('abort', resolve, { once: true })
+            )
+          return require('../runner.cjs').runVerification(options)
+        }
+      }
+    })
+    try {
+      const source = await server.service.wait(
+        server.service.start({ mode: 'candidate' }, LOCAL_ACTOR)
+      )
+      assert.equal(source.evidence.status, 'passed')
+      const review = server.service.prepareEvolution(
+        { attemptId: source.id },
+        LOCAL_ACTOR
+      )
+      server.service.decideEvolution(
+        {
+          id: review.id,
+          decision: 'accept',
+          reason: 'Explicit browser accepted source'
+        },
+        LOCAL_ACTOR
+      )
+      browser = await chromium.launch({
+        channel: process.env.FLOW_PROOF_BROWSER_CHANNEL || undefined,
+        downloadsPath: temporary
+      })
+      const page = await browser.newPage({
+        viewport: { width: 1600, height: 1100 }
+      })
+      const errors = [],
+        requests = []
+      page.on('pageerror', (error) => errors.push(error.message))
+      page.on('request', (request) =>
+        requests.push(new URL(request.url()).pathname)
+      )
+      await page.goto(server.origin + '/transaction-atomicity')
+      const frame = page.frameLocator('iframe')
+      await frame.locator('[data-step-id="finalize-transaction-state"]').click()
+      await frame.locator('#proof-controls > summary').click()
+      await frame.locator('#target-controls > summary').click()
+      await expect(frame.locator('#target-review')).toHaveValue('')
+      await expect(frame.locator('#assessment-source')).toHaveValue('')
+      await frame.locator('#target-review').selectOption(review.id)
+      await expect(frame.locator('#target-review-identity')).toContainText(
+        review.candidateDigest
+      )
+      await frame
+        .locator('#target-objective')
+        .fill('Browser frozen verification target')
+      await frame
+        .getByText('Work editor and revision preview', { exact: true })
+        .click()
+      await frame
+        .locator('#target-work-title')
+        .fill('Preserve deferred outcome')
+      await frame
+        .locator('#target-work-step')
+        .selectOption('finalize-transaction-state')
+      await frame.locator('#target-obligations input').first().check()
+      await frame
+        .locator('#target-work-scope')
+        .fill('Prove the exact assigned outcome')
+      await frame.locator('#target-add-work').click()
+      await frame.locator('#target-create').click()
+      await expect(frame.locator('#target-result')).toContainText('Revision 1')
+      const target = server.service.getTarget(
+        server.service.targets().records[0].id
+      )
+      assert.equal(target.targetVerification.reviewId, review.id)
+      await expect(frame.locator('#target-pins')).toContainText(review.id)
+      await expect(frame.locator('#target-review')).toBeDisabled()
+      await expect(frame.locator('#assessment-start')).toBeDisabled()
+      await frame.locator('#assessment-source').selectOption(source.id)
+      await expect(frame.locator('#assessment-source-identity')).toContainText(
+        source.snapshot.runtimeSource.digest
+      )
+      await expect(frame.locator('#assessment-source-identity')).toContainText(
+        'Repository: unavailable'
+      )
+      let releaseList
+      const oldListGate = new Promise((resolve) => {
+        releaseList = resolve
+      })
+      let oldListReady = false,
+        freshLists = 0
+      await page.route('**/api/target-assessments', async (route) => {
+        if (route.request().method() !== 'GET') return route.continue()
+        if (oldListReady) {
+          freshLists++
+          return route.continue()
+        }
+        const response = await route.fetch()
+        oldListReady = true
+        await oldListGate
+        await route.fulfill({ response })
+      })
+      try {
+        await frame.locator('#refresh').evaluate((element) => element.click())
+        await expect.poll(() => oldListReady).toBe(true)
+        await frame.locator('#assessment-start').click()
+        await expect
+          .poll(() => server.service.targetAssessments().length)
+          .toBe(1)
+      } finally {
+        releaseList()
+      }
+      await expect(frame.locator('#assessment-summary')).toContainText(
+        'completed',
+        { timeout: 30000 }
+      )
+      assert.ok(
+        freshLists >= 1,
+        'Action must schedule a fresh inventory after the delayed old response'
+      )
+      await expect(frame.locator('#assessment-history')).toHaveValue(
+        server.service.targetAssessments()[0].id
+      )
+      await page.unroute('**/api/target-assessments')
+      await expect(frame.locator('#assessment-accepted')).toContainText(
+        'passed'
+      )
+      await expect(frame.locator('#assessment-works')).toContainText('passed')
+      await expect(frame.locator('#assessment-integration')).toContainText(
+        'pending'
+      )
+      await expect(frame.locator('#assessment-integration')).toContainText(
+        'Pending allocation: deferred.snapshot, deferred.delivery'
+      )
+      const assessment = server.service.targetAssessments()[0]
+      assert.equal(assessment.projection.accepted.status, 'passed')
+      assert.equal(assessment.projection.integration.status, 'pending')
+      await expect(frame.locator('#assessment-summary')).toContainText(
+        'Not eligible'
+      )
+      await expect(frame.locator('#assessment-source-identity')).toContainText(
+        assessment.runtime.repository
+      )
+      const workNode = await frame
+        .locator('#target-items > :first-child')
+        .elementHandle()
+      await frame.locator('#target-work-title').fill('Keep my unsaved draft')
+      await frame.locator('#target-work-title').focus()
+      const before = requests.length
+      let reads = 0,
+        assessments = 0,
+        projections = 0
+      const sourceRead = fs.readFileSync
+      const owner = require('../target-evidence.cjs')
+      const assess = owner.assessTargetSource,
+        project = owner.projectTargetAssessmentCurrentness
+      fs.readFileSync = (...args) => {
+        reads++
+        return sourceRead(...args)
+      }
+      owner.assessTargetSource = (...args) => {
+        assessments++
+        return assess(...args)
+      }
+      owner.projectTargetAssessmentCurrentness = (...args) => {
+        projections++
+        return project(...args)
+      }
+      try {
+        await frame.locator('#refresh').evaluate((element) => element.click())
+        await expect
+          .poll(
+            () =>
+              requests
+                .slice(before)
+                .filter((url) => url === '/api/target-assessments').length
+          )
+          .toBe(1)
+        await expect(frame.locator('#target-work-title')).toBeFocused()
+        await expect(frame.locator('#target-work-title')).toHaveValue(
+          'Keep my unsaved draft'
+        )
+        await expect(frame.locator('#assessment-source')).toHaveValue(source.id)
+        assert.equal(
+          await workNode.evaluate(
+            (element) =>
+              element === document.querySelector('#target-items > :first-child')
+          ),
+          true
+        )
+        assert.deepEqual(
+          { reads, assessments, projections },
+          { reads: 0, assessments: 0, projections: 0 }
+        )
+      } finally {
+        fs.readFileSync = sourceRead
+        owner.assessTargetSource = assess
+        owner.projectTargetAssessmentCurrentness = project
+      }
+      assert.equal(
+        requests
+          .slice(before)
+          .filter((url) => url.startsWith('/api/target-assessments/')).length,
+        0
+      )
+      const screenshots = []
+      for (const [name, width, height] of [
+        ['desktop', 1600, 1100],
+        ['tablet', 900, 1000],
+        ['narrow', 430, 920]
+      ]) {
+        await page.setViewportSize({ width, height })
+        if (width <= 900 && (await page.locator('.sidebar').isVisible()))
+          await page
+            .getByRole('button', { name: 'Close Inspector catalog' })
+            .click()
+        await frame.locator('#assessment-summary').scrollIntoViewIfNeeded()
+        const file = path.join(artifacts, name + '.png')
+        await page.screenshot({ path: file })
+        screenshots.push({ path: file, viewport: { width, height } })
+        await frame.locator('#assessment-integration').scrollIntoViewIfNeeded()
+        const integrationFile = path.join(artifacts, name + '-integration.png')
+        await page.screenshot({ path: integrationFile })
+        screenshots.push({ path: integrationFile, viewport: { width, height } })
+        const detail = frame.locator('#detail')
+        assert.equal(
+          await detail.evaluate(
+            (element) => element.scrollWidth <= element.clientWidth + 1
+          ),
+          true
+        )
+      }
+      hold = true
+      await frame.locator('#assessment-start').click()
+      await expect(frame.locator('#assessment-cancel')).toBeEnabled()
+      const cancelledPath = '**/api/target-assessments/*/cancel'
+      await page.route(cancelledPath, (route) =>
+        route.fulfill({
+          status: 409,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Cancellation unavailable' })
+        })
+      )
+      await frame.locator('#assessment-cancel').click()
+      await expect(frame.locator('#assessment-notice')).toContainText(
+        'Cancellation unavailable'
+      )
+      await page.unroute(cancelledPath)
+      await frame.locator('#assessment-cancel').click()
+      await expect(frame.locator('#assessment-summary')).toContainText(
+        'cancelled'
+      )
+      hold = false
+      await frame.locator('#assessment-history').selectOption(assessment.id)
+      await expect(frame.locator('#assessment-accepted')).toContainText(
+        'passed'
+      )
+      await expect(frame.locator('#assessment-source')).toHaveValue(source.id)
+      server.service.decideTarget(
+        {
+          action: 'revise',
+          targetId: target.id,
+          requestId: randomUUID(),
+          expectedRevision: 1,
+          objective: target.objective,
+          reason: 'Make historical assessment stale',
+          works: target.history[0].state.works.map((work) => {
+            const value = structuredClone(work)
+            delete value.taskIds
+            return value
+          }),
+          pending: target.pending
+        },
+        LOCAL_ACTOR
+      )
+      await frame.locator('#refresh').click()
+      await expect(frame.locator('#assessment-summary')).toContainText('stale')
+      await expect(frame.locator('#assessment-accepted')).toContainText(
+        'passed'
+      )
+      await page.route('**/api/target-assessments', (route) =>
+        route.fulfill({
+          status: 409,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Retained source unavailable' })
+        })
+      )
+      await frame.locator('#assessment-start').click()
+      await expect(frame.locator('#assessment-notice')).toContainText(
+        'Retained source unavailable'
+      )
+      await page.unroute('**/api/target-assessments')
+      const assertions = path.join(
+        initial.sourceRoot,
+        loadContract(root).testFile
+      )
+      const bytes = fs.readFileSync(assertions, 'utf8')
+      fs.chmodSync(assertions, 0o600)
+      fs.writeFileSync(
+        assertions,
+        bytes.replace(
+          'expect(deferred.history).toBe(1)',
+          'expect(deferred.history).toBe(2)'
+        )
+      )
+      const failedSource = await server.service.wait(
+        server.service.start({ mode: 'candidate' }, LOCAL_ACTOR)
+      )
+      assert.equal(failedSource.evidence.status, 'failed')
+      const failedReview = server.service.prepareEvolution(
+        { attemptId: failedSource.id },
+        LOCAL_ACTOR
+      )
+      await frame.locator('#refresh').click()
+      await frame.locator('#target-select').selectOption('')
+      await expect(frame.locator('#target-review')).toHaveValue('')
+      await frame.locator('#target-review').selectOption(failedReview.id)
+      await frame
+        .locator('#target-objective')
+        .fill('Show distinct failing target verification')
+      await frame.locator('#target-create').click()
+      await expect(frame.locator('#target-pins')).toContainText(failedReview.id)
+      await frame.locator('#assessment-start').click()
+      await expect(frame.locator('#assessment-summary')).toContainText(
+        'completed',
+        { timeout: 30000 }
+      )
+      await expect(frame.locator('#assessment-accepted')).toContainText(
+        'passed'
+      )
+      await expect(frame.locator('#assessment-integration')).toContainText(
+        'deferred.outcome - failed'
+      )
+      await frame.locator('#assessment-integration').scrollIntoViewIfNeeded()
+      const failedScreenshot = path.join(artifacts, 'failed-target.png')
+      await page.screenshot({ path: failedScreenshot })
+      screenshots.push({
+        path: failedScreenshot,
+        viewport: page.viewportSize(),
+        assessment: server.service.getTargetAssessment(
+          await frame.locator('#assessment-history').inputValue()
+        )
+      })
+      await page.route('**/api/target-assessments', (route) =>
+        route.fulfill({
+          status: 503,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Assessment history unavailable' })
+        })
+      )
+      await frame.locator('#refresh').click()
+      await expect(frame.locator('#assessment-notice')).toContainText(
+        'Assessment history unavailable'
+      )
+      await expect(frame.locator('#assessment-integration')).toContainText(
+        'deferred.outcome - failed'
+      )
+      await page.unroute('**/api/target-assessments')
+      await frame.locator('#target-select').selectOption('')
+      await expect(frame.locator('#target-review')).toHaveValue('')
+      await frame.locator('#target-objective').fill('Legacy standalone target')
+      await frame.locator('#target-create').click()
+      await expect(frame.locator('#target-pins')).toContainText(
+        'Assessment unavailable'
+      )
+      await expect(frame.locator('#assessment-start')).toBeDisabled()
+      // Retirement must stop the assessment polling even while its producer
+      // continues under service ownership until explicit teardown cancellation.
+      await frame.locator('#target-select').selectOption(target.id)
+      hold = true
+      await frame.locator('#assessment-start').click()
+      await expect(frame.locator('#assessment-cancel')).toBeEnabled()
+      await page.goto(server.origin + '/core-proof')
+      await expect(frame.locator('#target-assessment')).toHaveCount(0)
+      const retiredRequests = requests.length
+      await page.waitForTimeout(1100)
+      assert.equal(
+        requests
+          .slice(retiredRequests)
+          .filter((url) => url === '/api/target-assessments').length,
+        0
+      )
+      assert.deepEqual(errors, [])
+      fs.writeFileSync(
+        path.join(artifacts, 'review.json'),
+        JSON.stringify(
+          {
+            origin: server.origin,
+            scope: 'files:board.test.cjs target assessment board',
+            command:
+              'FLOW_PROOF_URL=http://127.0.0.1:4318 FLOW_PROOF_BROWSER_CHANNEL=chrome node --test --test-name-pattern="target assessment board" tools/flow-inspector/control-plane/__tests__/board.test.cjs',
+            target: target.id,
+            sourceAttemptId: source.id,
+            selectedStepId: 'finalize-transaction-state',
+            surface:
+              'Original Board detail panel; exact verification identity details collapsed',
+            runtimeSourceDigest: source.snapshot.runtimeSource.digest,
+            assessment,
+            screenshots
+          },
+          null,
+          2
+        )
+      )
+    } finally {
+      await browser?.close()
+      await server.close()
+      if (previous === undefined) delete process.env.TMPDIR
+      else process.env.TMPDIR = previous
+    }
+  }
+)
+
+test(
   'offline provider fixture renders request provenance and unresolved cancellation on the original board',
   { skip: process.platform !== 'darwin', timeout: 30000 },
   async () => {
@@ -656,7 +1091,10 @@ test(
         canvas.locator('.proof-badge[data-status="passed"]')
       ).toHaveCount(3)
       await page.goto(server.origin + '/core-proof')
-      await expect(canvas.locator('.step-card')).toHaveCount(15)
+      await expect(canvas.locator('.step-card')).toHaveCount(16)
+      await expect(
+        canvas.locator('[data-step-id="assess-target-source"]')
+      ).toHaveCount(1)
       await expect(
         canvas.locator('[data-step-id="manage-flow-target"]')
       ).toHaveCount(1)

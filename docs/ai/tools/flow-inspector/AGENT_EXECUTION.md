@@ -182,6 +182,39 @@ local test process, so arbitrary hostile JavaScript evidence forgery is not
 claimed prevented. Human review remains mandatory; the deferred independent
 verifier and issuer requirements remain open.
 
+The candidate owner consumes the source owner's fixed derived execution policy;
+it does not maintain another configuration or bootstrap template. Before freezing
+candidate bytes, match the complete retained baseline manifest fingerprint and
+contract, mapping and architecture identities to the admitted input. Verify each
+baseline entry's actual bytes before selecting the admitted candidate runtime
+changes. The source owner constructs the new runtime descriptor from the complete
+candidate manifest. Preserve a present baseline verification descriptor, including
+malformed presence, for exact source admission rather than replacing it. Only
+when that field is truly absent may this explicit new verification construct its
+own five-role descriptor from the fully verified captured baseline manifest and
+exact admitted contract. Never read current checkout verification files, repair
+missing bytes, rewrite historical descriptors or upgrade a saved reference.
+
+Use `createDerivedExecution` with the canonical containment-checked new attempt
+source directory and that original verification descriptor. Write its exact two
+fixed files; bind `executionSource` and its digest as the candidate configuration
+identity. Run the actual generated configuration and bootstrap through the existing
+contained runner. After settlement, the evidence owner receives the full new
+snapshot and the separately supplied trusted execution context for one combined
+source admission. The candidate owner does not forge the service's admission
+tuple or separately repeat that same full candidate admission. Existing real
+runner identity, cancellation, watchdog and post-run source integrity checks
+remain mandatory. A malformed original descriptor or altered generated closure
+cannot produce passing verification.
+
+The verdict retains `runtimeSource`, `verificationSource` and `executionSource`
+for this new candidate identity alongside its complete manifest, configuration
+identity and actual runner evidence. These fields are input to the subsequent
+task retention owner; writing them does not grant durable admission or replay.
+Ordinary composition and retained-reference APIs remain restrictive. Historical
+baseline records and their original execution identities remain unchanged even
+when a new candidate proof was explicitly generated from their captured bytes.
+
 A successful run means execution finished; verification can independently be
 passed, failed or unknown. Work is `needs-review` only with complete passing
 all-flow evidence and actual source progress, otherwise incomplete. Delivery is
@@ -192,6 +225,112 @@ merge, publish or establish a protected baseline. Potential consumers are all
 supported flows sharing the step; confirmed failures come only from assertions.
 A human can inspect source changes, retained report and audit before applying
 anything through their ordinary review workflow.
+
+## Retained candidate admission
+
+On startup, a task retaining passing candidate verification must re-admit that
+proof before exposing `needs-review`. Newly created task records use `format: 2`.
+Loading supports only task formats 1 and 2; missing, null and unknown formats
+reject. A format-2 task's passing latest verdict requires `runtimeSource`,
+`verificationSource` and `executionSource`, even if all three have been deleted.
+Present-null, partial or unsupported identities reject admission. Format-1
+historical records keep their existing validation when all three are absent;
+descriptor presence still selects the new admission path for transitional records.
+A format-1 task upgrades to format 2 only when an explicit new candidate proof
+actually completes and is saved. Its older attempts and their evidence remain
+unchanged; loading or reading alone never upgrades history. This existing task
+schema version closes missing-field fallback without inferring versions from
+filenames or reverse-engineering configuration digests. It does not claim
+protection against rewriting an entire trusted local record, including its
+format, into an otherwise valid historical record.
+
+For the new path, the last retained attempt must have a valid UUID. Select its
+verification directory only as the fixed task-owned
+`verification/<attemptId>` child, its source as `source` and its actual runner
+report as `vitest.json`. Require the saved report path and artifact directory to
+match those exact locations; do not derive source authority from either saved
+path. Bind the verdict's baseline digest to the task's captured snapshot, and
+require its complete manifest fingerprint through the single combined source
+admission, without a preliminary task-owned rehash of that same candidate
+manifest. Preserve the old standalone fingerprint check only for the legacy
+branch. Load the exact original captured contract through the existing contract
+owner only after checking its canonical task-owned `input-<UUID>/source` location,
+never another task or the mutable checkout, and
+match its contract, mapping and architecture identities with the saved task and
+baseline. Keep that baseline metadata source distinct from the candidate tree.
+
+Reconstruct the candidate using its verdict's full manifest, configuration and
+all three source descriptors, with the task-owned fixed source directory.
+Call the source owner's retained byte helper once for every entry, then the
+evidence owner once with the actual retained report and the separately supplied
+trusted execution context. This is one byte-verification operation and one
+combined candidate source/identity admission in the same startup lifetime;
+no service admission tuple is synthesized. Preserve report fingerprint checks
+and require exact agreement with the immutable saved evidence. Missing or changed
+source bytes, wrong locations, descriptor substitutions and execution identity
+mismatches reject passing admission. Cache the admitted task state; ordinary
+get/list and identical creation replay perform no source reads or reassessment.
+Non-passing task history keeps its existing lifecycle and evidence semantics.
+
+This owner closes the existing real passing task restart regression caused by
+the new candidate descriptor handoff. It does not make derived snapshots valid
+inputs to ordinary reference composition or grant baseline acceptance.
+
+## Private candidate source handoff
+
+The task owner exposes internal `sourceFor(taskId, attemptId)` as a lookup of a
+completed private admission, never as a public JSON admission API. It returns
+null unless both exact UUIDs select the latest completed attempt of a non-revoked
+open task owner. It never substitutes a newer or passing attempt. The frozen
+output `artifact:admitted-task-source` has `taskId`, `sourceRoot` and `admission`.
+The admission has exactly `attemptId`, `repository`, `head`, `sourceDigest`,
+`lockfileDigest`, `contractDigest`, `mappingVersion`, `architectureVersion`,
+`configurationDigest`, `runtimeSource`, `verificationSource` and `executionSource`.
+Repository identity is canonical and the attempt UUID belongs to this task. Its source location
+is only the canonical task-owned `verification/<attemptId>/source` directory.
+No saved source path, report path or client-selected directory chooses it.
+
+For live verification, the default controlled producer is
+`produceCandidateProof`. Consume its ephemeral `{ verdict, source }` result;
+only a non-null completed source may be published. Before publication, match its
+exact root, source/configuration digests and descriptor values to the returned
+verdict, and its contract, mapping, architecture, HEAD, lock and baseline binding
+to this task's admitted inputs. Add task/repository/attempt authority and freeze
+the detached private tuple without hashing or revalidating the completed source.
+Publish only after the corresponding task save succeeds. The existing optional
+`verify` injection retains verdict-only behavior and cannot supply source
+admission; when present it takes precedence over the new optional `produce`
+strategy. Neither injected/public verdicts nor an optional saved field create a
+trusted cache entry. The trusted `produce` strategy must implement the same
+completed source publisher contract as the default producer.
+
+On startup, passing records retain the strict report and evidence requirements
+above, using `assessSourceEvidence` once to consume its independent source output.
+For a completed non-passing latest attempt with complete derived source material,
+verify every fixed-tree entry once and call source-owned
+`validateSourceSnapshot` once with the same full manifest, original captured
+contract and fixed execution context. Build the private tuple only from that
+completed admission and the matched task/candidate identities. Do not rehash the
+full manifest in the task owner, and do not run an evidence assessment merely to
+discard its result. The failed/partial verdict and case observations remain
+unchanged. Its report is not a prerequisite for source identity, so it is not read
+or replaced with a fabricated report on this source-only path. Missing, changed,
+partial or unsupported non-passing source material remains readable but has no
+available source artifact. Truly historical absence is not upgraded. A source
+artifact proves source identity and current retained-byte availability, not
+passing work or accepted behavior.
+
+The cache belongs to this task-owner lifetime and exact immutable task, attempt,
+full-source, contract/configuration and descriptor identity. Starting a new
+attempt, leaving completed state, revocation and close remove its availability;
+failed actions before a state change do not invalidate an existing artifact.
+A failed save must not publish a source, and closing while a producer settles
+must not resurrect one. Ordinary get/list, identical creation replay and repeated
+`sourceFor` calls do no source reads, descriptor hashing, evidence assessment or
+history scans. Current accepted-baseline changes do not rewrite historical source
+identity; later service selection owns currentness and policy. Service consumption
+and derived target dispatch remain subsequent owners, and composition must still
+verify the actual bytes it selects at that later time.
 
 ## Shared surfaces and work lifetime
 
@@ -214,8 +353,9 @@ store is not a reconciliation mechanism. No manual unblock action is provided.
 
 Admission captures source once. Operations update one task-owned retained record;
 reads of already admitted state do no filesystem capture, history scan, evidence
-assessment or graph replacement. Source is revalidated only at resume and the
-verification boundary. No computation cache is introduced. Permanent tests count
+assessment or graph replacement. Source is revalidated at its explicit startup, resume and verification
+boundaries. The private source admission lifetime above avoids read-time work.
+Permanent tests count
 capture/operation work alongside immutable record and invalidation correctness.
 
 ## Cases and bounded DoD
