@@ -1096,3 +1096,18 @@ focused run, typecheck/build, lint and naming pass. Independent review confirmed
 original arithmetic association, angle division, chain order, source references
 and caller-owned scalar isolation. This completes only C chain sharing. It does
 not certify an interval adapter, analytic trig bound, trajectory or movement.
+
+Next bounded Step Card: shared scalar arithmetic owner extraction. Move the complete
+existing query-arithmetic implementation unchanged to domain/scalar-arithmetic.ts;
+retain the simulation path as direct named function/type re-exports. Only those two
+files, existing query-arithmetic.test.ts and API/Inspector/plan may change. Freeze
+original implementation text hash and export inventory first; add a permanent
+shared/facade identity and boundary-result case before the move, then prove original
+body equivalence and existing independent arithmetic/ray/collision/motion controls.
+One module owns the DataView and all operations; no duplicate scalar engine, wrapper,
+consumer migration, cache, trig, point-FK semantic change or material policy.
+Run naming before implementation, focused and full app unit/type/build/lint/naming,
+format/diff checks and independent review. Stop if the extraction requires an
+arithmetic behavior change. A subsequent separate polynomial card will fix S19/C20,
+|x| < 1, eight trig calls per pose, exact growth and latency limits before profiling;
+this extraction does not approve or implement that numerical model.
