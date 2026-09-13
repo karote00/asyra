@@ -511,7 +511,7 @@ function createTargetOwner({
         revision: record.history.length,
         status: 'pending',
         limitation:
-          'Strict all-flow candidate verification remains required. Integration assessment and baseline acceptance are not implemented for targets.',
+          'Strict all-flow candidate verification remains required. Source-bound integration assessment is available through the assessment service. Explicit target baseline acceptance is not implemented.',
         baselineCurrent: same(record.acceptedBaseline, getBaseline()),
         works: tasks.length
           ? works.map((work) => {

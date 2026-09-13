@@ -232,6 +232,10 @@ test('exact task scope, multiple PR records and unknown handoffs never complete 
   assert.equal(value.works[1].status, 'blocked')
   assert.equal(value.works[1].prerequisites[0].status, 'unconfirmed')
   assert.equal(value.status, 'pending')
+  assert.equal(
+    value.limitation,
+    'Strict all-flow candidate verification remains required. Source-bound integration assessment is available through the assessment service. Explicit target baseline acceptance is not implemented.'
+  )
   assert.deepEqual(createTargetOwner(options).get(saved.id), value)
   const wrong = task({ ...request.works[2], scope: 'Different scope' })
   assert.throws(
