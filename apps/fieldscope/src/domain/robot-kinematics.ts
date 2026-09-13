@@ -373,3 +373,51 @@ export function evaluateRobotDomains<T>(
     ...evaluateChain(rig, joints, algebra, rest)
   })
 }
+
+/** Final raw-quaternion coefficients in installed Three Matrix4.compose order. */
+function affineFrame(transform: RigidTransform, work: { matrices: number }) {
+  work.matrices++
+  const [x, y, z, w] = transform.rotation
+  const x2 = x + x,
+    y2 = y + y,
+    z2 = z + z
+  const xx = x * x2,
+    xy = x * y2,
+    xz = x * z2
+  const yy = y * y2,
+    yz = y * z2,
+    zz = z * z2
+  const wx = w * x2,
+    wy = w * y2,
+    wz = w * z2
+  return Object.freeze({
+    matrix: Object.freeze([
+      point((1 - (yy + zz)) * 1, (xy - wz) * 1, (xz + wy) * 1),
+      point((xy + wz) * 1, (1 - (xx + zz)) * 1, (yz - wx) * 1),
+      point((xz - wy) * 1, (yz + wx) * 1, (1 - (xx + yy)) * 1)
+    ]),
+    position: transform.position
+  })
+}
+
+/** Prepared handoff only; existing renderer/query consumers are unchanged. */
+export function evaluateRobotAffinePose(rig: RobotRig, input: RobotJoints) {
+  const pose = evaluateRobotPose(rig, input)
+  const work = { fk: 1, matrices: 0 }
+  const frames = new Map<RigidTransform, ReturnType<typeof affineFrame>>()
+  const parts = Object.freeze(
+    pose.parts.map((part) => {
+      let affine = frames.get(part.transform)
+      if (!affine) {
+        affine = affineFrame(part.transform, work)
+        frames.set(part.transform, affine)
+      }
+      return Object.freeze({ ...part, affine })
+    })
+  )
+  return Object.freeze({
+    pose,
+    parts,
+    work: Object.freeze(work)
+  })
+}

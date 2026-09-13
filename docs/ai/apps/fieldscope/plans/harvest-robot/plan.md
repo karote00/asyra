@@ -1176,3 +1176,18 @@ independent review. This is an unused prepared handoff, not downstream authority
 adoption: no runtime/engine/D edits. Stop for any required point semantic change or
 consumer mismatch rather than broadening this owner. Later C polynomial integration
 and D interval/frame adoption remain separately gated numerical work.
+
+Completed-pose affine preparation is implemented. Two missing-entry cases first
+failed, then all 15 focused rig cases passed, retaining the original 56-pose
+fingerprints. New coefficients match installed Three compose bits; original source
+vertices consume them with Three matrix association, while the test explicitly
+records differences from the old point helper rather than using EPS equality.
+The nonunit algebra counterexample is labeled separately from admitted robot poses.
+One point evaluation performs four sine/four cosine calls, with each actual unique
+transform converted once and shared among its parts; no source is regenerated.
+Conversion work increments at the actual converter entry, not from cache size;
+the final counter-only correction passed focused/type/lint/naming and scoped review.
+All 433 app tests, build/typecheck, lint (10 console warnings, no errors), naming
+and independent scoped review pass. No snapshot was rewritten, and no C trig,
+consumer, renderer or D query behavior changed. This closes the prepared affine
+handoff only; downstream authority adoption and numerical integration remain open.
