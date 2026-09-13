@@ -2100,3 +2100,48 @@ complete-source work argument, a small independent certificate oracle, all cold/
 warm preparation and execution charges, and unchanged complete evidence gates.
 No new candidate, measurement, cache, production edit or full run is authorized
 by this replan. G4 remains unresolved at its unchanged 500,000-work goal.
+
+### Read-only readiness - source-fitted node frames
+
+<a href="https://www.cs.cornell.edu/courses/cs667/2005sp/readings/gottschalk96.pdf" target="_blank" rel="noopener noreferrer">OBBTree (1996), section 4</a>
+provides a different hypothesis: covariance proposes an orientation, while all
+source extrema certify its box. Keep the current component hierarchy, triangle
+objects, partition order and leaf size four; no hull, splitter, package or
+black-box PCA. The paper does not establish benefit for this method or budget.
+
+Leaf MeshTriangle vertices provide the complete source. A charged geometry pass
+could record node spans into original triangle references and combine moments.
+Propose one fixed Jacobi sweep, planes (0,1), (0,2), (1,2), not an exact eigensolver.
+For its finite nonzero quaternion q, the certificate frame is the single exact
+unit quaternion q/||q||. Outward normalization encloses that frame; independent
+interval components must not be treated as an arbitrary orthonormal matrix.
+Every node needs outward extrema over all its original vertices in that frame;
+child boxes in different frames cannot replace that scan. An invalid proposal
+supplies no additional certificate. This normalization/enclosure implication is
+the first unresolved technical proof, before any fit-quality experiment.
+
+Proposed fees: node collection/span record one; triangle-reference appends per 256
+including tail; leaf vertex moments per 256 including tail or internal merge one;
+three rotation attempts per node including no-ops; normalization one; full-source
+vertex extrema per 256 per node including tail; node-artifact publication one.
+Original preparation remains paid. Fully fitting N nodes and T triangles costs
+at least 8N + ceil(T/256). Here T=5,024 and N >= 2,510, giving 20,100 extra units
+before larger scan chunks and runtime. This lower bound does not disprove
+viability. Warm use pays equivalent cost; only completed artifacts tied to exact
+immutable geometry, refinement identity and fixed policy may be retained.
+Cancellation retains no partial artifact, and no query poses are cached.
+
+A future node query keeps the cheap world gap, then charges each needed
+domain-pose/frame composition and each actual noncardinal face certificate.
+No nine cross axes are added. Positive projected separation is lower-bound-only;
+root membership, original triangle solving, witnesses and temporal/uncertainty
+semantics stay authoritative. Full evidence and whole paid cost must be tested.
+
+The independent small source oracle is a closed octahedron with vertices
+±(12,16,0), ±(-4,3,0), ±(0,0,5/8), and a copy shifted by (-12,9,0).
+Exact q=(0,0,1,2)/sqrt(5) gives extents 20, 5, 5/8 and distance five: axis
+(-4/5,3/5,0) proves separation, while actual source tips differing by (-4,3,0)
+prove the matching upper bound despite overlapping world AABBs. Rational extrema,
+reverse order, interval-motion enclosure, degenerate proposals, full source and
+cost/cancellation/cold-warm oracles are prerequisites. This section authorizes
+no fitting code, measurement, benchmark or full run; benefit remains unmeasured.
