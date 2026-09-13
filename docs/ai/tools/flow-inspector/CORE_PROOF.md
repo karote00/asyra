@@ -1364,21 +1364,17 @@ verdict-only API through one call to the same producer. The producer invokes
 `assessSourceEvidence` once and forwards the exact admitted source envelope after
 checking actual post-run bytes once per intact entry; it does not reconstruct or
 rehash descriptor identities. The non-null output is `artifact:candidate-proof-source`,
-which has no task/cache consumer until that next boundary is implemented. Neither
-`verdict.json` nor saved task
-verdicts acquire an authority flag or a duplicate source envelope.
+which feeds the task handoff contract below; its task/cache implementation is the
+next bounded slice. Neither `verdict.json` nor saved task verdicts acquire an
+authority flag or a duplicate source envelope.
 
-The subsequent task owner may publish a private source artifact only from this
-controlled live producer result, or after its own fixed-location retained-byte
-check and source admission succeed at startup. It adds exact task, attempt and
-repository authority; public JSON and a saved verdict alone cannot populate the
-cache. Missing historical authority remains unavailable. Failed/partial candidate
-source availability is independent of the existing verification/work verdict;
-source admission must not change those outcomes to passed. Exact cache selection,
-lifetime invalidation and the task-to-service route are frozen in that consumer
-slice before implementation. Later composition still verifies the actual bytes
-it selects. These source outputs do not enable task caching or contained target
-production on their own.
+The task owner's [private source handoff](AGENT_EXECUTION.md#private-candidate-source-handoff)
+adds exact task, attempt and repository authority only from the controlled live
+producer output or a completed retained source admission. Passing, failed and
+partial proof outcomes remain separate from source availability. Public JSON and
+saved verdicts alone cannot create its cache. Later composition still verifies
+the actual bytes it selects; these source outputs do not enable contained target
+production or acceptance on their own.
 
 ### Derived service and evidence admission
 

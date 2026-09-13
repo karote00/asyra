@@ -35651,15 +35651,20 @@
               "trusted provider transport settlement and usage observations",
               "human stop, cancel, resume, revoke or handoff request",
               "artifact:agent-candidate-verdict",
+              "artifact:candidate-proof-source",
+              "artifact:assessed-proof-source",
+              "artifact:proof-source-snapshot",
               "artifact:assessed-proof-evidence",
               "artifact:work-admission",
               "source-owned retained snapshot byte verification and direct evidence admission for the fixed retained attempt"
             ],
             "outputs": [
               "artifact:agent-task-state",
-              "artifact:agent-candidate-source"
+              "artifact:agent-candidate-source",
+              "artifact:admitted-task-source"
             ],
             "conditions": [
+              "Publish a private exact task/attempt/repository source artifact only after a controlled source-aware producer result and successful task save, or completed startup source admission. Passed startup retains strict report/evidence checks; completed non-pass startup verifies fixed bytes plus source identity once without reassessing or replacing its historical outcome. Legacy verify-only strategies cannot supply authority. Exact sourceFor reads only the private map; new attempts, noncompleted state, revocation and close retire availability, and failed publication cannot resurrect it. No source hash, IO or history scan occurs on reads/replay, and later composition verifies its own selected bytes.",
               "New task records use format 2; load only formats 1 and 2. Format-2 passing latest verdicts require all three exact source descriptors even when all are missing; format-1 descriptor presence also uses new admission, while true historical absence retains its previous validation. Upgrade a format-1 task only when an explicit new candidate proof completes and is saved, preserving older attempts. New admission requires fixed last-attempt UUID source/report locations, baseline/full/configuration binding, actual retained bytes verified once by the source owner and one direct evidence admission with trusted context. Reads and identical replay do no source work.",
               "Broker operations before effects; persist cumulative budgets and audit with task state. Reserve adapter turns before dispatch against the authorization lifetime; internal HTTP retries remain unmeasured and are not a supported hard limit; retain unknown usage and unresolved remote requests across cancellation and restart and block replay until trusted reconciliation. Preserve partial source and history across cancellation and restart. Finish requires actual source progress; candidate verdict never authorizes baseline acceptance. Consume the target owner admission check before capture, after capture, and on resume before any operation or provider reservation."
             ],
@@ -35677,7 +35682,13 @@
               "unregistered tools",
               "candidate-selected verifier or accepted baseline"
             ],
-            "cacheDimensions": [],
+            "cacheDimensions": [
+              "task identity",
+              "latest completed attempt identity",
+              "full source and contract/configuration/descriptor identity",
+              "task lifecycle and revocation",
+              "task owner lifetime"
+            ],
             "implementationBoundary": [
               "tools/flow-inspector/control-plane/agent-task.cjs",
               "tools/flow-inspector/control-plane/agent-adapter.cjs",
@@ -35689,7 +35700,8 @@
             ],
             "specRefs": [
               "../../../docs/ai/tools/flow-inspector/AGENT_EXECUTION.md#controlled-execution",
-              "../../../docs/ai/tools/flow-inspector/AGENT_EXECUTION.md#retained-candidate-admission"
+              "../../../docs/ai/tools/flow-inspector/AGENT_EXECUTION.md#retained-candidate-admission",
+              "../../../docs/ai/tools/flow-inspector/AGENT_EXECUTION.md#private-candidate-source-handoff"
             ],
             "failureOwnerStepId": "execute-agent-task"
           },
@@ -36225,6 +36237,36 @@
             ]
           },
           {
+            "id": "candidate-proof-source-to-task",
+            "from": "verify-agent-candidate",
+            "to": "execute-agent-task",
+            "kind": "conditional",
+            "predicate": "A controlled live producer has completed source admission and post-run integrity; forward source independently of case outcome before task persistence and private publication, never from public verdict JSON.",
+            "producedArtifacts": [
+              "artifact:candidate-proof-source"
+            ]
+          },
+          {
+            "id": "retained-candidate-source-to-task",
+            "from": "capture-proof-source",
+            "to": "execute-agent-task",
+            "kind": "conditional",
+            "predicate": "For completed non-passing startup candidates, validate the full retained source and original captured contract at the task-owned fixed root before private publication; case assessment and a passing report are not prerequisites.",
+            "producedArtifacts": [
+              "artifact:proof-source-snapshot"
+            ]
+          },
+          {
+            "id": "retained-source-to-task",
+            "from": "assess-proof-evidence",
+            "to": "execute-agent-task",
+            "kind": "conditional",
+            "predicate": "For passing startup records only, exact retained evidence re-admission also returns completed source identity before task source publication; non-passing source-only startup uses its source-owner input directly and does not assess an invented report.",
+            "producedArtifacts": [
+              "artifact:assessed-proof-source"
+            ]
+          },
+          {
             "id": "retained-evidence-to-task",
             "from": "assess-proof-evidence",
             "to": "execute-agent-task",
@@ -36750,7 +36792,8 @@
               "assess-proof-evidence",
               "assess-target-source",
               "serve-proof-actions",
-              "verify-agent-candidate"
+              "verify-agent-candidate",
+              "execute-agent-task"
             ]
           },
           {
@@ -36780,7 +36823,8 @@
             "ownerStepId": "assess-proof-evidence",
             "channel": "direct derived source/evidence envelope; source-owner completed identity independent of case outcome",
             "consumerStepIds": [
-              "verify-agent-candidate"
+              "verify-agent-candidate",
+              "execute-agent-task"
             ]
           },
           {
@@ -36788,6 +36832,15 @@
             "title": "Candidate proof source output",
             "ownerStepId": "verify-agent-candidate",
             "channel": "source identity after contained execution and post-run integrity; independent of assertion outcome",
+            "consumerStepIds": [
+              "execute-agent-task"
+            ]
+          },
+          {
+            "id": "artifact:admitted-task-source",
+            "title": "Task source admission output",
+            "ownerStepId": "execute-agent-task",
+            "channel": "private exact task and attempt source admission",
             "consumerStepIds": []
           },
           {

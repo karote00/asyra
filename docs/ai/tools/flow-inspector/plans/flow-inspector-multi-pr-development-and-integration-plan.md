@@ -69,11 +69,14 @@ actions, exact source selection and separated retained results, with real-produc
 browser and lifecycle evidence. Candidate verification now consumes the fixed
 source-owned configuration/bootstrap closure; retained task admission checks real
 bytes and exact descriptors once, with task format 2 preventing missing-field
-legacy fallback. The next source slice composes independently retained verifier
-bundles onto candidate runtime under a new derived closure. Service/evidence
-handoff and contained target producers must follow before scoped execution can
-consume that authority. Scoped verification, execution/admission consumers and
-explicit target-baseline acceptance remain subsequent slices.
+legacy fallback. Source composition now combines independent frozen verifiers
+with candidate runtime under a new derived closure. Service/evidence admission
+retains exact derived authority under attempt format 3; source/evidence and
+candidate producer envelopes separate intact source identity from case outcome.
+The next task-owned slice retains that source privately for exact live and
+startup handoff, including failed/partial candidates. Contained target dispatch,
+scoped verification, execution/admission consumers and explicit target-baseline
+acceptance remain subsequent slices.
 Existing target execution and pending behavior stay in effect until those
 consumers are implemented and verified. Ordinary composition does not cover
 undeclared generated wrappers; the fixed four-package capture scope also does
