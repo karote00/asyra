@@ -179,3 +179,79 @@ export function fractionInterval(
   }
   return uncertain
 }
+
+/** Exact rational rounding, independent of the legacy bounded interval search. */
+export function roundFraction(
+  numerator: bigint,
+  denominator: bigint,
+  mode: 'nearest-even' | 'down' | 'up',
+  onWidth?: (bits: number) => void
+): number {
+  if (
+    typeof numerator !== 'bigint' ||
+    typeof denominator !== 'bigint' ||
+    denominator === 0n ||
+    !['nearest-even', 'down', 'up'].includes(mode) ||
+    (onWidth !== undefined && typeof onWidth !== 'function')
+  )
+    throw new Error('Invalid rational rounding input')
+  const width = (value: bigint) => {
+    const bits = (value < 0n ? -value : value).toString(2).length
+    if (bits > 24000) throw new Error('Exact arithmetic bit budget exceeded')
+    onWidth?.(bits)
+    return bits
+  }
+  const shift = (value: bigint, amount: number) => {
+    if (value !== 0n && width(value) + amount > 24000)
+      throw new Error('Exact arithmetic bit budget exceeded')
+    const result = value << BigInt(amount)
+    width(result)
+    return result
+  }
+  width(numerator)
+  width(denominator)
+  if (denominator < 0n) {
+    numerator = -numerator
+    denominator = -denominator
+  }
+  if (numerator === 0n) return 0
+  const negative = numerator < 0n
+  const n = negative ? -numerator : numerator
+  let exponent = width(n) - width(denominator)
+  if (
+    exponent >= 0
+      ? n < shift(denominator, exponent)
+      : shift(n, -exponent) < denominator
+  )
+    exponent--
+  const away = mode === 'up' ? !negative : mode === 'down' && negative
+  if (exponent > 1023) {
+    const magnitude =
+      mode === 'nearest-even' || away ? Infinity : Number.MAX_VALUE
+    return negative ? -magnitude : magnitude
+  }
+  if (exponent < -1075) {
+    const magnitude = away ? Number.MIN_VALUE : 0
+    return negative ? -magnitude : magnitude
+  }
+  const scale = Math.max(-1074, exponent - 52)
+  const dividend = scale < 0 ? shift(n, -scale) : n
+  const divisor = scale > 0 ? shift(denominator, scale) : denominator
+  let significand = dividend / divisor
+  const remainder = dividend % divisor
+  width(significand)
+  width(remainder)
+  if (remainder !== 0n) {
+    const twice = shift(remainder, 1)
+    if (
+      mode === 'nearest-even'
+        ? twice > divisor || (twice === divisor && significand % 2n !== 0n)
+        : away
+    ) {
+      significand += 1n
+      width(significand)
+    }
+  }
+  const magnitude = Number(significand) * 2 ** scale
+  return negative ? -magnitude : magnitude
+}
