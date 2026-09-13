@@ -862,7 +862,7 @@ one C interval-pose implementation slice after root release of readiness commit
 36ec0a102. Complete only its declared gates, then freeze and stop for root quota
 review. No subsequent owner is authorized; a quota stop overrides remaining work.
 
-### D joint segment point-time domains - readiness
+### D joint segment point-time domains
 
 Owner: simulation/motion.ts, JointSegments.enclose with one private exact point-
 time producer. Inputs: current issued GeometrySource, original synthetic raw
@@ -883,7 +883,7 @@ assembly with checked pre-operation shifts/products, existing admission and sour
 read. Forbidden: duplicated converter, float ratio/duration interpolation, clamping,
 Math/EPS patches, point/interval FK, mesh generation, C/scalar changes, session or
 material/contact decisions, result caches or new current-source registries.
-Boundary for future implementation: simulation/motion.ts and its direct
+Implementation boundary: simulation/motion.ts and its direct
 `simulation/__tests__/motion.test.ts`, API/spec/Inspector/plan. No other producer
 may change. Failure owner: existing segment/source rejection, window schema/range
 rejection and 24000-bit resource rejection; no partial publication. Returned
@@ -909,6 +909,6 @@ on one prepared source, at most 1000 conversions per batch; 1 second per batch,
 conversion/domain/work cost; never raise guards or add a cache to pass. After
 focused proof, full app/type/build/lint/naming and independent numerical review.
 
-Current authorization is readiness only: freeze these documents and stop for
-root quota review before any tests or implementation. No source-affine consumer
-or subsequent owner is authorized by this card.
+Root released readiness commit a06511279 for this one D motion enclose
+implementation and its declared gates. Freeze and stop after completion for root
+quota review. No source-affine consumer or subsequent owner is authorized.
