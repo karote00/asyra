@@ -743,7 +743,7 @@ participating producer still requires its own complete source and evidence
 admission below. This alternative preserves historical verification and separates
 currentness after the original task source retires, without promoting public JSON
 to an admitted artifact or rehashing historical source. The service consumer is a
-subsequent owner slice; this pure input does not enable task-source assessment
+subsequent service owner boundary described below; this pure input alone does not enable task-source assessment
 requests by itself.
 
 `proofRequests` is the trusted service's complete retained request
@@ -998,6 +998,55 @@ assessor or projection computations. Formal counts must cover registration,
 settlement, startup and each actual identity change separately. HTTP, CLI, Board
 presentation and explicit acceptance remain subsequent consumers, not effects of
 this service action.
+
+### Task source target assessment
+
+The internal `startTargetAssessment` selection also accepts optional
+`sourceTaskId`, with the same exact task/attempt namespace validation as the
+private target-proof producer. New registration resolves the exact private
+`sourceFor(taskId, sourceAttemptId)` artifact and both immutable verifier
+references before saving any inventory. The complete existing thirteen-field
+task runtime tuple, exact pins, role identities and all server-assigned slots
+are saved atomically before dispatch. Missing authority cannot be repaired from
+historical verdicts, public records, another attempt or the latest source.
+
+For this task branch the assessor receives only the three-field `sourceIdentity`
+projection of that complete registered runtime tuple. Startup first validates the
+full registration and exact retained task/attempt correlation, then projects the
+same key; this does not create a source artifact or authorize new dispatch.
+Every slot still consumes its own fully admitted producer source and evidence.
+Both roles independently resolve their references. Exact equal contract and
+verification identities may share one actual derived producer, including that
+producer's own generated execution configuration; distinct verifier identities
+retain separate slots. Do not bind derived execution to the original ordinary
+configuration digest. Each slot uses the existing derived composition, shared
+contained runner and post-run byte verification lifecycle.
+
+The private current-source selection retains the exact run/task discriminator
+and attempt for each target. Task currentness reads only that exact private task
+source and compares its complete registered tuple before projecting the selected
+runtime key; it never falls back to an older or latest available attempt. Task
+save notifications refresh cached currentness only after durable save and cache
+publication or retirement, and preserve any existing task notification callback.
+An actual source lifetime change may make a historical assessment stale without
+reassessing its verdict or rewriting its saved evaluated-current identity.
+Unchanged notifications reuse the cached projection. GET, list, wait and identical
+request replay perform no source lookup, source admission, assessment or currentness
+computation. Restart may correlate an exact older completed task attempt after
+successor or revocation without restoring its dispatch availability.
+
+During orchestration, stop/revoke of the selected source task rejects before any
+task mutation; ordinary task start/resume already follow the existing idle gate.
+This does not add restrictions to control of unrelated tasks. Assessment
+cancellation remains its existing authorized action. Unstarted registered slots
+remain requested with explicit unavailable terminal reasons, including cancellation
+before first dispatch. The original inventory, parent ownership, crash normalization
+and terminal producer correlation rules remain unchanged. Existing HTTP and CLI
+forwarding exposes this additive service field; service validation remains the
+authority and invalid task identities still reject. Existing Host, Origin and
+capability checks remain unchanged. Dedicated transport product cases and the
+Board task picker are subsequent consumer slices, without a duplicate transport
+schema or a second service entry point.
 
 ### Target assessment HTTP transport
 
