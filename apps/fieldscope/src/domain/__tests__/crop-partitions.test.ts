@@ -1,31 +1,49 @@
-import { createHash } from 'node:crypto'
 import { expect, it, vi } from 'vitest'
 import * as fruitSource from '../crop-fruit'
 import * as hairSource from '../crop-hairs'
 import { createCropModels } from '../crop-models'
+import {
+  digest,
+  exactSourceStructure,
+  renderHandoff
+} from './source-geometry-oracle'
 
 const required = <T>(value: T | undefined): T => {
   if (value === undefined) throw new Error('Missing source product')
   return value
 }
 
-const digest = (value: unknown) =>
-  createHash('sha256').update(JSON.stringify(value)).digest('hex')
 const models = createCropModels({ netTop: 3, netBottom: 0.45 })
 
-it('preserves canonical botanical geometry and materials before source partitioning', () => {
+it('preserves exact botanical structure and materials plus the render handoff', () => {
   expect(
     models.map((model) => ({
       species: model.species,
       variant: model.variant,
-      parts: model.parts.map((part) =>
-        digest({
+      structure: digest(
+        model.parts.map((part) => ({
+          id: part.id,
           color: part.color,
           roughness: part.roughness,
           ...(part.surface ? { surface: part.surface } : {}),
-          shape: part.shape,
+          partitions: part.partitions,
+          distantPartitions: part.distantPartitions,
+          regions: part.regions,
+          distantRegions: part.distantRegions,
+          shape: exactSourceStructure(part.shape),
           distantShape: part.distantShape
-        })
+            ? exactSourceStructure(part.distantShape)
+            : null
+        }))
+      ),
+      renderHandoff: digest(
+        model.parts.map((part) => ({
+          id: part.id,
+          shape: renderHandoff(part.shape),
+          distantShape: part.distantShape
+            ? renderHandoff(part.distantShape)
+            : null
+        }))
       )
     }))
   ).toMatchSnapshot()
@@ -173,6 +191,7 @@ it('assigns every generated fruit surface, calyx and late hair to its source own
     )
   try {
     const generated = createCropModels({ netTop: 3, netBottom: 0.45 })
+    expect(digest(generated)).toBe(digest(models))
     expect(
       generated.some((model) =>
         model.fruits.some((fruit) => fruit.spineCount === 84)

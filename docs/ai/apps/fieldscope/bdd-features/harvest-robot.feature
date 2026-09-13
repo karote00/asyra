@@ -352,6 +352,23 @@ Feature: Harvest robot feasibility and supervised harvesting
     And no primitive fruit or changed cultivar shape is substituted
 
   @M3
+  Scenario: Source geometry evidence remains meaningful across supported runtimes
+    Given canonical robot and cultivar sources include runtime-transcendental coordinates
+    When source conformance is checked on a supported Node 24 platform
+    Then integer topology, material metadata and same-runtime regeneration remain exact
+    And the existing Float32 presentation handoff has one portable exact identity
+    And unrounded coordinates satisfy their authored source-space relations
+    And simulation consumes those unrounded coordinates conservatively
+    And a different whole-buffer Float64 digest is diagnostic evidence rather than a replacement golden
+
+  @M3
+  Scenario: Numerical profiles run without package-test competition
+    Given fixed scalar, point and interval profiles retain their original work and elapsed guards
+    When continuous integration completes ordinary Turbo tests
+    Then FieldScope runs those profiles serially in one worker
+    And every one-second batch and ten-second overall guard remains enforced
+
+  @M3
   Scenario: Scene consumers reuse preparation across presentation and simulation updates
     Given an admitted scene revision with prepared fruit identities and geometry
     When camera, locale, visibility, clock and completed pose inputs change

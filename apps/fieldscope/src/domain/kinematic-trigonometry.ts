@@ -1,3 +1,4 @@
+import { bigIntBitLength } from './bigint-bit-length'
 import { dyadic, roundFraction, type Interval } from './scalar-arithmetic'
 
 type Kind = 'sin' | 'cos'
@@ -27,7 +28,7 @@ function observe(work: Work, bits: number) {
   work.maxBigIntBits = Math.max(work.maxBigIntBits, bits)
 }
 function width(value: bigint, work: Work) {
-  const bits = (value < 0n ? -value : value).toString(2).length
+  const bits = bigIntBitLength(value)
   observe(work, bits)
   return bits
 }

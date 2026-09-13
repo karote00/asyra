@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`preserves exact parked structure and materials plus the render handoff 1`] = `
+exports[`preserves original parked robot source geometry and materials before articulation 1`] = `
 [
   {
     "definition": [
@@ -9,8 +9,7 @@ exports[`preserves exact parked structure and materials plus the render handoff 
       1.2,
       "cucumber",
     ],
-    "renderHandoff": "d957283df82c77e14b99f2dea25a7552de040a4cc4000a03967597fdff9fc98f",
-    "structure": "d77da2c3adeca14e3df9bc054a7f094fbfdd259eff7796424575e1769da9f84e",
+    "hash": "13d0e7150f0d6081f22c0cd40db3756955bc781822614503ac6519703bcab649",
   },
   {
     "definition": [
@@ -19,8 +18,7 @@ exports[`preserves exact parked structure and materials plus the render handoff 
       1.2,
       "tomato",
     ],
-    "renderHandoff": "84f2b14a19c7ead6c55e169c4fea24ed3b0411422969cf06bd51c5f8f2feac1f",
-    "structure": "27c4685d62fcc692d209dded61297d6585137ce0d2e117e0d94687b3f495b09f",
+    "hash": "dfb4753df0a00bb089065e843eeee2806b5ec6f8f04d549fafc96902f3a129cf",
   },
   {
     "definition": [
@@ -29,8 +27,7 @@ exports[`preserves exact parked structure and materials plus the render handoff 
       0.8,
       "cucumber",
     ],
-    "renderHandoff": "b2dbcc7d6be496fcb9c034daa52db4e5a719563691f42ac05dc830365b6fc6d9",
-    "structure": "d77da2c3adeca14e3df9bc054a7f094fbfdd259eff7796424575e1769da9f84e",
+    "hash": "8361e015a22028214e833f5b6cdc9f9bb5bd7e8a7d2aa512600490842d43cb96",
   },
   {
     "definition": [
@@ -39,8 +36,7 @@ exports[`preserves exact parked structure and materials plus the render handoff 
       3,
       "tomato",
     ],
-    "renderHandoff": "760812641e2a29ebd3306fd4a9a6701f87f3e2559bab890aeca353f634eab04e",
-    "structure": "27c4685d62fcc692d209dded61297d6585137ce0d2e117e0d94687b3f495b09f",
+    "hash": "d21dd8d32261744856ca5f8bff393d5c175206754fdaf181defc08becc5dd299",
   },
 ]
 `;

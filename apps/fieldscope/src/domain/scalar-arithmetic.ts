@@ -1,3 +1,5 @@
+import { bigIntBitLength } from './bigint-bit-length'
+
 /** Conservative IEEE-754 query arithmetic; bounds never imply material or clearance. */
 export interface Interval {
   readonly low: number
@@ -196,7 +198,7 @@ export function roundFraction(
   )
     throw new Error('Invalid rational rounding input')
   const width = (value: bigint) => {
-    const bits = (value < 0n ? -value : value).toString(2).length
+    const bits = bigIntBitLength(value)
     if (bits > 24000) throw new Error('Exact arithmetic bit budget exceeded')
     onWidth?.(bits)
     return bits

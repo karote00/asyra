@@ -15,6 +15,7 @@
     "typecheck": "tsc --noEmit",
     "test:local": "vitest run",
     "test:ci": "vitest run",
+    "test:profiles": "vitest run --config vitest.profile.config.ts",
     "test:e2e": "playwright test",
     "test:e2e:ci": "APP_URL=http://127.0.0.1:5178 node scripts/run-e2e-ci.mjs",
     "test:e2e:contracts": "node --test scripts/__tests__/e2e-ci-groups.test.mjs",

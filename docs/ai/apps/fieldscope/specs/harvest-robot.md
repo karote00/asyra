@@ -312,8 +312,13 @@ joint path must eventually feed queries and presentation. This source slice only
 provides immutable rig/body frames, bounds/speeds, tool reference and candidate FK;
 it starts no simulation and applies no UI motion.
 
-Acceptance: freeze original robot geometry/material hashes before edits for both
-tools and representative nondefault dimensions. Prove zero-rest exact source
+Acceptance: freeze original robot topology, material and source-coordinate
+semantics before edits for both tools and representative nondefault dimensions.
+Integer topology, identifiers, metadata and same-runtime regeneration remain exact.
+Source coordinates produced through runtime transcendental functions follow the
+portable numerical-source contract in the material-region section below; a digest
+of every binary64 value is historical environment evidence rather than a
+cross-runtime product identity. Prove zero-rest exact source
 reconstruction, unique body ownership, single-axis pivots, chain composition,
 constant link lengths, tool-reference orientation, valid/invalid lift envelopes,
 exact joint limits and nonfinite rejection. Prove definition retirement and no
@@ -371,6 +376,13 @@ Report all four costs, evaluation counts and temporary widths. Cooperative elaps
 checks cannot forcibly interrupt one synchronous BigInt operation. Exceeding any
 budget fails and stops this plan rather than increasing it. No real-time capability
 or articulated clearance is inferred from the scalar profile.
+
+Elapsed numerical profiles are a required CI stage after ordinary Turbo tests have
+finished. They run serially in one FieldScope worker, without package-test or
+same-suite file competition. Moving them out of the ordinary parallel suite changes
+only scheduling: all fixed inputs, work assertions, one-second batch guards,
+ten-second overall guards and failure behavior remain mandatory in local and CI
+profile commands.
 
 A later C point switch must separately verify RigidTransform/quaternion semantics,
 rest/source identity and D normalization against the actual canonical point model.
@@ -537,10 +549,23 @@ their original ray/swept surfaces; provenance is not a contact exemption.
 
 Acceptance: permanent complete/disjoint triangle coverage, explicit box/capped or
 unverified-cylinder/open-tube/sheet cases and mixed-source region identity. Original
-robot and all cultivar near/distant geometry/material hashes remain exact, including
-spines, calyx and late hairs. Canonical C scene/rig/station handoffs retain metadata,
-original shapes and preparation counts. The paused D room-air and numerical ray
-regressions are closed only in the subsequent D predicate segment.
+robot and all cultivar near/distant identifiers, triangle indices, array lengths,
+region/partition ranges, material fields and same-runtime regeneration remain exact,
+including spines, calyx and late hairs. Binary64 values produced through runtime
+`Math` transcendental functions are compared individually by semantic coordinate;
+supported Node 24 platforms need not share an all-buffer binary64 digest. The
+portable presentation oracle requires exact equality after the existing Float32
+render handoff, while unrounded source values must remain finite and satisfy the
+authored dimensional, geometric, color and conservative-query relations. Float32
+is the existing renderer storage boundary, not a new source rounding step. D
+continues to consume every platform's original binary64 coordinates as exact
+singleton inputs and its interval/exact predicates must preserve conservative
+outcomes; render equality cannot weaken that simulation contract. A bounded
+cross-platform diagnostic reports original binary64 bits, absolute delta and ULP
+distance. Observed deltas may inform review but never become an automatic tolerance
+or replacement snapshot. Canonical C scene/rig/station handoffs retain the original
+unrounded arrays, metadata and preparation counts. The paused D room-air and
+numerical ray regressions are closed only in the subsequent D predicate segment.
 
 ## D - M3 deterministic simulation contract (planned)
 
@@ -1391,12 +1416,12 @@ incidentally frozen. Reuse affine and local-bounds products only within this cal
 with actual work counters. No geometry generation, position/index scan, cross-call
 cache, contact exemption or session mutation is introduced.
 
-### Point-time robot/environment surface domain exclusion - readiness
+### Point-time robot/environment surface domain exclusion
 
-The next D surface consumer may classify the complete original triangle-pair
-domain using whole-window envelopes, without a new articulated intersection
-solver. Its domain is every robot part against every physical farm/dock instance,
-plus every unordered pair of distinct robot parts, including same-body parts.
+`SurfaceQueries.coverMotion` classifies the complete original triangle-pair domain
+using whole-window envelopes, without a new articulated intersection solver. Its
+domain is every robot part against every physical farm/dock instance, plus every
+unordered pair of distinct robot parts, including same-body parts.
 Environment source shapes, descriptor/instance poses, leaves and attached fruit
 must explicitly remain at their source state throughout the same closed window.
 These are synthetic assumptions, not inferred material, optical or physical facts.

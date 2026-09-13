@@ -162,6 +162,13 @@ robot, cultivar, farm and installed station products. No geometric replacement.
 Conditions: every triangle covered exactly once; source closure evidence precedes
 closed-solid claims. Missing/overlapping/unclassified metadata is unavailable.
 Mixed builders preserve primitive regions; no whole-plant or layer shortcut.
+Exact portable identity covers integer topology, identifiers, metadata, array
+lengths and same-runtime regeneration. Runtime-transcendental binary64 values are
+not a portable digest identity: compare their semantic coordinates at the existing
+Float32 render handoff and their unrounded source-space dimensional, geometric and
+color relations. D still consumes the original unrounded values as exact singleton
+inputs under its conservative interval/exact predicates; the Float32 oracle grants
+no simulation tolerance or clearance.
 Allowed: original TriangleBuilder construction provenance, source producer region
 declarations, existing spatial shape admission and C lifecycle/products.
 Forbidden: new caps/welding/thickness, changed source formulas or materials,
@@ -704,7 +711,9 @@ consumer arithmetic controls, independent direct-sum oracle, domain/±0/subnorma
 ties/overflow/extrema/analytic-error cases and clone-once rejection; four fixed
 100-pose/800-evaluation profile batches (normal first/repeated, subnormal first/
 repeated), 1s each and 10s overall, all temporary widths <=24000 bits. Elapsed guards
-are cooperative, not synchronous-operation preemption. Then full app unit/type/
+are cooperative, not synchronous-operation preemption. The elapsed profile is a
+separate required CI command after Turbo tests and runs serially in one worker;
+ordinary correctness tests do not compete with it. Then full app unit/type/
 build/lint/naming and independent review. No C point or whole-motion closure.
 
 Direct work handoff: roundFraction may report actual guarded temporary widths to
@@ -796,6 +805,8 @@ point/tool/frame and matrix work. Four fixed 100-pose batches (normal first/repe
 nonzero subnormal first/repeated) must each stay within 1 second, overall 10 seconds,
 and every scalar temporary within 24000 bits. These are cooperative guards on a
 prepared rig, not process-cold claims or hard preemption; never raise them to pass.
+This elapsed profile runs in the same separate required serial CI command after
+ordinary Turbo tests; scheduling isolation cannot change its fixed work or guards.
 After focused correctness, run app unit/type/build/lint/naming and bounded review.
 
 Current execution restriction: root has released the completed baseline and
@@ -856,8 +867,10 @@ of 25 boxes (normal narrow and nonzero subnormal, first/repeated). Each batch ha
 200 bound-trig calls and at most 400 actual polynomial evaluations; retain 24000-
 bit guards, 1 second per batch and 10 seconds total, cooperatively checked. Measure
 all validation/adapter/chain/affine/work cost on a prepared rig, not just trig.
-No parameter search or guard increase. After focused proof, run full app/type/
-build/lint/naming and independent numerical review. Current authorization is
+Run this elapsed profile in the separate required serial FieldScope CI command
+after ordinary Turbo tests. No parameter search or guard increase. After focused
+proof, run full app/type/build/lint/naming and independent numerical review.
+Current authorization is
 one C interval-pose implementation slice after root release of readiness commit
 36ec0a102. Complete only its declared gates, then freeze and stop for root quota
 review. No subsequent owner is authorized; a quota stop overrides remaining work.
@@ -988,7 +1001,7 @@ independent numerical review. Root released readiness commit 6432d959b for this 
 frozen gates. Freeze and STOP after completion for root quota review; no later
 owner is authorized.
 
-### D point-time surface domain exclusion - readiness
+### D point-time surface domain exclusion
 
 Owner: simulation/collision.ts, SurfaceQueries.coverMotion. Inputs: original
 current GeometrySource, raw motion segment/window/robot assumptions and separately
@@ -1069,6 +1082,7 @@ region comparisons each. Each complete entry stays within 1 second, combined
 10 seconds, and original 24000-bit limits; do not raise budgets/guards after a
 failure. Report total/excluded/candidate/unresolved/unvisited, actual mesh/region
 work, environment preparation and nested C costs. No claim of full narrow coverage
-or speedup follows from candidate reduction. Future focused proof precedes full
-app/type/build/lint/naming and independent review. Current authorization is three-
-doc readiness only: freeze and STOP for root quota review; no implementation.
+or speedup follows from candidate reduction. Focused proof precedes full app/type/
+build/lint/naming and independent review. The implemented owner remains limited to
+this domain accounting entry; no narrow solver, material/contact decision or
+session/runtime consumer is part of it.

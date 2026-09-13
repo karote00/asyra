@@ -24,6 +24,8 @@ import * as kinematics from '../../domain/robot-kinematics'
 import * as crops from '../../domain/crop-models'
 import * as models from '../../domain/robot-model'
 import { TriangleBuilder } from '../../domain/mesh'
+import { RobotMotionBounds, type MotionAssumptions } from '../motion-bounds'
+import type { JointSegmentInput } from '../motion'
 import {
   QueryGeometry,
   type GeometryReceipt,
@@ -701,7 +703,8 @@ function smallCoverage(
   meshes: SiteMesh[] = [],
   overlapping = false,
   degenerate = false,
-  firstRegions = 1
+  firstRegions = 1,
+  firstHorizontal = false
 ) {
   // A deliberately small admitted source fixture proves exhaustive traversal.
   // Actual generated robot/farm inventory is independently covered below.
@@ -721,12 +724,12 @@ function smallCoverage(
   const parts = ids.map((id, i) => {
     const builder = new TriangleBuilder(),
       x = overlapping && i === 7 ? 60 : i * 10
-    for (let region = 0; region < (i === 0 ? firstRegions : 1); region++)
-      builder.triangle(
-        [x, 0, 0],
-        [x + 4, 0, 0],
-        degenerate && i === 0 ? [x + 2, 0, 0] : [x, 4, 0]
-      )
+    for (let region = 0; region < (i === 0 ? firstRegions : 1); region++) {
+      let third: Point3 = [x, 4, 0]
+      if (degenerate && i === 0) third = [x + 2, 0, 0]
+      else if (firstHorizontal && i === 0) third = [x, 0, 4]
+      builder.triangle([x, 0, 0], [x + 4, 0, 0], third)
+    }
     return {
       id,
       color: 0xffffff,
@@ -1491,4 +1494,339 @@ it('intersects an articulated original body face with an independently composed 
   expect(pair.first.triangle).toBe(0)
   expect(result.work.fk).toBe(1)
   expect(result.work.bodyMatrices).toBe(pose.work.matrices)
+})
+
+const motionSegment = (): JointSegmentInput => ({
+  source: 'synthetic',
+  assumption: 'Explicit window joint model',
+  from: 0,
+  until: 100,
+  start: { ...REST_JOINTS },
+  end: { ...REST_JOINTS }
+})
+const motionWindow = {
+  queryFrom: 0,
+  queryUntil: 100,
+  validFrom: 0,
+  validUntil: 101
+}
+const robotAssumptions = (): MotionAssumptions => ({
+  source: 'synthetic',
+  assumption: 'Fixed robot base and original empty shape for full window',
+  base: {
+    kind: 'fixed-pose',
+    transform: { position: [0, 0, 0], rotation: [0, 0, 0, 1] }
+  },
+  shapes: 'rigid-source-shapes-throughout',
+  held: 'empty-held-throughout'
+})
+const environmentAssumptions = () => ({
+  source: 'synthetic' as const,
+  assumption:
+    'All original environment surfaces remain at source poses for full window',
+  shapes: 'source-shapes-throughout' as const,
+  poses: 'source-poses-throughout' as const,
+  leaves: 'source-pose-throughout' as const,
+  fruits: 'all-attached-throughout' as const,
+  maxMeshPairs: 300000,
+  maxRegionPairs: 10000
+})
+function motionCover(
+  f: ReturnType<typeof smallCoverage>,
+  environment = environmentAssumptions(),
+  raw = motionSegment(),
+  base = robotAssumptions()
+) {
+  return f.query.coverMotion(f.source, raw, motionWindow, base, environment)
+}
+function accounted(result: ReturnType<SurfaceQueries['coverMotion']>) {
+  expect(
+    Object.values(result.coverage).reduce((sum, value) => sum + value, 0)
+  ).toBe(result.inventory.trianglePairs)
+  expect(result.status).toBe(
+    result.coverage.excluded === result.inventory.trianglePairs && result.motion
+      ? 'surface-separated'
+      : 'unknown'
+  )
+}
+it('accounts complete motion window pair domains and same-body candidates without narrow queries', () => {
+  for (const overlapping of [false, true])
+    for (const moving of [false, true]) {
+      const f = smallCoverage([], overlapping),
+        base = robotAssumptions(),
+        raw = motionSegment()
+      const yaw = moving ? 0.2 : -0.15
+      base.base.transform = {
+        position: [1, 0, 2],
+        rotation: [0, Math.sin(yaw / 2), 0, Math.cos(yaw / 2)]
+      }
+      if (moving) raw.end.lift = 0.04
+      const result = motionCover(f, environmentAssumptions(), raw, base)
+      expect(result.inventory).toEqual(expectedInventory(f.source))
+      expect(result.inventory).toEqual({
+        robotParts: 11,
+        environmentInstances: 0,
+        meshPairs: 55,
+        trianglePairs: 55
+      })
+      accounted(result)
+      expect(result.coverage).toEqual({
+        excluded: overlapping ? 54 : 55,
+        candidate: overlapping ? 1 : 0,
+        unresolved: 0,
+        unvisited: 0
+      })
+      expect(result.work.pairs).toBe(0)
+      expect(result.work.vertexVisits).toBe(0)
+      expect(result.work.fk).toBe(0)
+      expect(result.motion?.work.pose.fk).toBe(1)
+      if (overlapping) expect(result.coverage.candidate).toBeGreaterThan(0)
+      else expect(result.status).toBe('surface-separated')
+      expect(result).not.toHaveProperty('movementClear')
+    }
+})
+it('keeps interior-window lift overlap although both endpoint surfaces are separate', () => {
+  const obstacle = triangle(
+    'middle-lift-sheet',
+    [0, 0.02, 0, 4, 0.02, 0, 0, 0.02, 4]
+  )
+  const f = smallCoverage([obstacle], false, false, 1, true),
+    raw = motionSegment()
+  raw.end.lift = 0.04
+  for (const lift of [0, 0.04]) {
+    const input = batch()
+    if (!input.robot) throw new Error('Missing fixture robot')
+    input.robot.joints.lift = lift
+    input.pairs = [
+      {
+        first: { mesh: 1, instance: 0, triangle: 0 },
+        second: { mesh: 0, instance: 0, triangle: 0 }
+      }
+    ]
+    expect(f.query.query(f.source, input).results[0].status).toBe(
+      'surface-separated'
+    )
+  }
+  const result = motionCover(f, environmentAssumptions(), raw)
+  accounted(result)
+  expect(result.coverage.candidate).toBeGreaterThan(0)
+  expect(result.status).toBe('unknown')
+  expect(result.coverage.unvisited).toBe(0)
+})
+it('delegates raw motion admission once and keeps expired motion separate from unknown environment state', () => {
+  const f = smallCoverage(),
+    raw = motionSegment(),
+    window = { ...motionWindow },
+    robot = robotAssumptions(),
+    original = RobotMotionBounds.prototype.enclose,
+    downstream = vi
+      .spyOn(RobotMotionBounds.prototype, 'enclose')
+      .mockImplementation(function (
+        this: RobotMotionBounds,
+        ...args: Parameters<RobotMotionBounds['enclose']>
+      ) {
+        return original.apply(this, args)
+      })
+  try {
+    const result = f.query.coverMotion(
+      f.source,
+      raw,
+      window,
+      robot,
+      environmentAssumptions()
+    )
+    expect(downstream).toHaveBeenCalledTimes(1)
+    expect(downstream.mock.calls[0]).toEqual([f.source, raw, window, robot])
+    expect(result.motion?.source).toBe(f.source)
+    expect(result.motion?.domain.segment.input).not.toBe(raw)
+    expect(result.motion?.domain.window).not.toBe(window)
+    expect(result.motion?.assumptions).not.toBe(robot)
+
+    const expired = { ...motionWindow, validUntil: motionWindow.queryUntil }
+    expect(() =>
+      f.query.coverMotion(
+        f.source,
+        raw,
+        expired,
+        robot,
+        environmentAssumptions()
+      )
+    ).toThrow()
+    const missing = {
+      ...environmentAssumptions(),
+      poses: 'unknown' as const
+    }
+    const unresolved = f.query.coverMotion(
+      f.source,
+      { ...raw, source: 'invalid' } as unknown as JointSegmentInput,
+      expired,
+      robot,
+      missing
+    )
+    expect(unresolved.motion).toBeNull()
+    expect(unresolved.status).toBe('unknown')
+    expect(unresolved.coverage.unvisited).toBe(
+      unresolved.inventory.trianglePairs
+    )
+    expect(downstream).toHaveBeenCalledTimes(2)
+  } finally {
+    vi.restoreAllMocks()
+  }
+})
+it('bounds actual mesh and region comparisons and accounts skipped Cartesian domains directly', () => {
+  const f = smallCoverage([triangle('overlap', plane)], false, false, 710)
+  for (const maxMeshPairs of [0, 1, 66])
+    for (const maxRegionPairs of [0, 1, 710]) {
+      const result = motionCover(f, {
+        ...environmentAssumptions(),
+        maxMeshPairs,
+        maxRegionPairs
+      })
+      accounted(result)
+      expect(result.work.meshPairs).toBeLessThanOrEqual(maxMeshPairs)
+      expect(result.work.regionPairs).toBeLessThanOrEqual(maxRegionPairs)
+      if (!maxMeshPairs)
+        expect(result.coverage.unvisited).toBe(result.inventory.trianglePairs)
+      if (!maxRegionPairs) expect(result.coverage.candidate).toBe(0)
+      if (maxMeshPairs === 66 && maxRegionPairs === 710)
+        expect(result.coverage.unvisited).toBe(0)
+    }
+  const separated = smallCoverage(),
+    exact = motionCover(separated, {
+      ...environmentAssumptions(),
+      maxMeshPairs: 55,
+      maxRegionPairs: 0
+    })
+  expect(exact.status).toBe('surface-separated')
+  expect(exact.work.meshPairs).toBe(55)
+})
+it('preserves explicit unknown environment and nonfinite bounds without invented finite outcomes', () => {
+  const f = smallCoverage(),
+    call = vi.spyOn(kinematics, 'evaluateRobotIntervalPose')
+  try {
+    const missing = { ...environmentAssumptions(), leaves: 'unknown' as never }
+    const result = motionCover(f, missing)
+    expect(result.motion).toBeNull()
+    expect(result.status).toBe('unknown')
+    expect(result.coverage.unvisited).toBe(result.inventory.trianglePairs)
+    expect(call).not.toHaveBeenCalled()
+    const base = robotAssumptions()
+    base.base.transform = {
+      ...base.base.transform,
+      position: [Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE]
+    }
+    const overflow = motionCover(
+      f,
+      environmentAssumptions(),
+      motionSegment(),
+      base
+    )
+    accounted(overflow)
+    expect(overflow.coverage.unresolved).toBeGreaterThan(0)
+  } finally {
+    vi.restoreAllMocks()
+  }
+})
+it('keeps motion coverage admission cloned once and current after all downstream work', () => {
+  const f = smallCoverage(),
+    environment = environmentAssumptions()
+  let reads = 0
+  Object.defineProperty(environment, 'assumption', {
+    enumerable: true,
+    get: () => (++reads === 1 ? 'One captured environment' : '')
+  })
+  const result = motionCover(f, environment)
+  expect(reads).toBe(1)
+  environment.maxMeshPairs = 0
+  expect(result.input.maxMeshPairs).toBe(300000)
+  for (const value of [-1, 0.5, NaN, Infinity])
+    expect(() =>
+      motionCover(f, { ...environmentAssumptions(), maxRegionPairs: value })
+    ).toThrow()
+  expect(() =>
+    f.query.coverMotion(
+      { ...f.source },
+      motionSegment(),
+      motionWindow,
+      robotAssumptions(),
+      environmentAssumptions()
+    )
+  ).toThrow()
+  const original = RobotMotionBounds.prototype.enclose
+  const downstream = vi
+    .spyOn(RobotMotionBounds.prototype, 'enclose')
+    .mockImplementation(function (
+      this: RobotMotionBounds,
+      ...args: Parameters<RobotMotionBounds['enclose']>
+    ) {
+      const value = original.apply(this, args)
+      f.owner.clear()
+      return value
+    })
+  try {
+    expect(() => motionCover(f)).toThrow()
+    expect(downstream).toHaveBeenCalledTimes(1)
+  } finally {
+    vi.restoreAllMocks()
+  }
+})
+it('profiles the fixed actual point-time source domain without a triangle Cartesian solver', () => {
+  const configuration = { ...DEFAULT_CONFIGURATION, length: 2.2 },
+    site = new SiteGeometry()
+  const f = setup(buildSiteMeshes(configuration, site), configuration, site),
+    started = performance.now()
+  const call = vi.spyOn(kinematics, 'evaluateRobotIntervalPose'),
+    fixed = vi.spyOn(kinematics, 'evaluateRobotAffinePose'),
+    build = vi.spyOn(f.owner, 'prepare')
+  try {
+    for (const narrow of [false, true]) {
+      const raw = motionSegment()
+      if (narrow) {
+        const centre = {
+          lift: 0.02,
+          yaw: 0.3,
+          shoulder: -0.4,
+          elbow: 0.5,
+          wrist: -0.2
+        }
+        raw.start = Object.fromEntries(
+          Object.entries(centre).map(([key, value]) => [key, value - 1e-6])
+        ) as unknown as typeof raw.start
+        raw.end = Object.fromEntries(
+          Object.entries(centre).map(([key, value]) => [key, value + 1e-6])
+        ) as unknown as typeof raw.end
+      }
+      const before = performance.now(),
+        result = motionCover(f, environmentAssumptions(), raw),
+        elapsed = performance.now() - before
+      expect(elapsed).toBeLessThanOrEqual(1000)
+      expect(performance.now() - started).toBeLessThanOrEqual(10000)
+      expect(result.inventory).toEqual(expectedInventory(f.source))
+      expect(result.inventory.trianglePairs).toBe(43429284640)
+      accounted(result)
+      expect(result.work.meshPairs).toBeLessThanOrEqual(300000)
+      expect(result.work.meshPairs).toBe(result.inventory.meshPairs)
+      expect(result.work.regionPairs).toBe(10000)
+      expect(result.work.vertexVisits).toBe(0)
+      expect(result.coverage.unvisited).toBeGreaterThan(0)
+      expect(result.status).toBe('unknown')
+      expect(result.motion?.work.pose.maxBigIntBits).toBeLessThanOrEqual(24000)
+      console.log(
+        'Motion coverage profile',
+        JSON.stringify({
+          narrow,
+          elapsed,
+          inventory: result.inventory,
+          coverage: result.coverage,
+          work: result.work,
+          motion: result.motion?.work
+        })
+      )
+    }
+    expect(call).toHaveBeenCalledTimes(2)
+    expect(fixed).not.toHaveBeenCalled()
+    expect(build).not.toHaveBeenCalled()
+  } finally {
+    vi.restoreAllMocks()
+  }
 })

@@ -1,3 +1,9 @@
+import {
+  RobotMotionBounds,
+  type MotionAssumptions,
+  type MotionEnvelope
+} from './motion-bounds'
+import type { JointSegmentInput, JointDomainWindow } from './motion'
 import type { Point3 } from '../domain/greenhouse'
 import {
   evaluateRobotAffinePose,
@@ -601,6 +607,101 @@ function sweepWitness(
   }
 }
 
+function coverageDomain(source: GeometrySource) {
+  const robots: CoveragePlacement[] = [],
+    environment: CoveragePlacement[] = []
+  const count = (value: number) => {
+    if (!Number.isSafeInteger(value) || value < 0) fail()
+    return value
+  }
+  let robotTriangles = 0,
+    environmentTriangles = 0,
+    squaredRobotTriangles = 0
+  source.meshes.forEach((mesh, meshIndex) => {
+    if (mesh.shape.kind !== 'triangles') fail()
+    const triangleCount = count(mesh.shape.indices.length / 3)
+    const instances = mesh.descriptor?.instances?.length ?? 1
+    for (let instance = 0; instance < instances; instance++) {
+      const placement = { mesh, meshIndex, instance, triangleCount }
+      if (mesh.kind === 'robot') {
+        robots.push(placement)
+        robotTriangles = count(robotTriangles + triangleCount)
+        squaredRobotTriangles = count(
+          squaredRobotTriangles + triangleCount * triangleCount
+        )
+      } else {
+        environment.push(placement)
+        environmentTriangles = count(environmentTriangles + triangleCount)
+      }
+    }
+  })
+  // Topology counts precede all Cartesian narrow traversal. No pair array is
+  // materialized and no huge triangle domain is explored just to discover cost.
+  const inventory = Object.freeze({
+    robotParts: robots.length,
+    environmentInstances: environment.length,
+    meshPairs: count(
+      robots.length * environment.length +
+        (robots.length * (robots.length - 1)) / 2
+    ),
+    trianglePairs: count(
+      count(robotTriangles * environmentTriangles) +
+        count(count(robotTriangles * robotTriangles) - squaredRobotTriangles) /
+          2
+    )
+  })
+  function* pairs() {
+    for (let index = 0; index < robots.length; index++) {
+      for (const item of environment) yield [robots[index], item] as const
+      for (let other = index + 1; other < robots.length; other++)
+        yield [robots[index], robots[other]] as const
+    }
+  }
+  return { count, robots, environment, inventory, pairs }
+}
+export interface MotionEnvironment {
+  source: 'synthetic'
+  assumption: string
+  shapes: 'source-shapes-throughout' | 'unknown'
+  poses: 'source-poses-throughout' | 'unknown'
+  leaves: 'source-pose-throughout' | 'unknown'
+  fruits: 'all-attached-throughout' | 'unknown'
+  maxMeshPairs: number
+  maxRegionPairs: number
+}
+function readEnvironment(raw: MotionEnvironment) {
+  const input = structuredClone(raw)
+  if (!input || typeof input !== 'object' || Array.isArray(input)) fail()
+  const keys = [
+    'source',
+    'assumption',
+    'shapes',
+    'poses',
+    'leaves',
+    'fruits',
+    'maxMeshPairs',
+    'maxRegionPairs'
+  ]
+  if (
+    Object.keys(input).length !== keys.length ||
+    Object.keys(input).some((key) => !keys.includes(key)) ||
+    input.source !== 'synthetic' ||
+    typeof input.assumption !== 'string' ||
+    !input.assumption.trim()
+  )
+    fail()
+  for (const [key, known] of [
+    ['shapes', 'source-shapes-throughout'],
+    ['poses', 'source-poses-throughout'],
+    ['leaves', 'source-pose-throughout'],
+    ['fruits', 'all-attached-throughout']
+  ] as const)
+    if (input[key] !== known && input[key] !== 'unknown') fail()
+  for (const value of [input.maxMeshPairs, input.maxRegionPairs])
+    if (!Number.isSafeInteger(value) || value < 0) fail()
+  return Object.freeze(input)
+}
+
 /** Source surface evidence only; never material, contact or movement clearance. */
 export class SurfaceQueries {
   constructor(private readonly geometry: QueryGeometry) {}
@@ -840,56 +941,177 @@ export class SurfaceQueries {
     })
     return this.publish(source, input, work, results)
   }
+  coverMotion(
+    source: GeometrySource,
+    raw: JointSegmentInput,
+    window: JointDomainWindow,
+    robot: MotionAssumptions,
+    environment: MotionEnvironment
+  ) {
+    this.geometry.read(source)
+    const input = readEnvironment(environment)
+    const domain = coverageDomain(source),
+      { count, inventory } = domain
+    const coverage = {
+      excluded: 0,
+      candidate: 0,
+      unresolved: 0,
+      unvisited: inventory.trianglePairs
+    }
+    const work: SurfaceWork = {
+      pairs: 0,
+      vertexVisits: 0,
+      frames: 0,
+      fk: 0,
+      bodyMatrices: 0,
+      axes: 0,
+      exactPredicates: 0,
+      shapeBounds: 0,
+      regionBounds: 0,
+      placements: 0,
+      boundsCorners: 0,
+      meshPairs: 0,
+      regionPairs: 0,
+      regionPlacements: 0
+    }
+    let motion: ReturnType<RobotMotionBounds['enclose']> | null = null
+    const publish = () => {
+      coverage.unvisited = count(
+        inventory.trianglePairs -
+          coverage.excluded -
+          coverage.candidate -
+          coverage.unresolved
+      )
+      this.geometry.read(source)
+      return Object.freeze({
+        geometry: source,
+        input,
+        motion,
+        inventory,
+        coverage: Object.freeze(coverage),
+        work: Object.freeze(work),
+        status:
+          motion && coverage.excluded === inventory.trianglePairs
+            ? ('surface-separated' as const)
+            : ('unknown' as const)
+      })
+    }
+    if (
+      [input.shapes, input.poses, input.leaves, input.fruits].includes(
+        'unknown'
+      )
+    )
+      return publish()
+    motion = new RobotMotionBounds(this.geometry).enclose(
+      source,
+      raw,
+      window,
+      robot
+    )
+    const robotBounds = new Map(motion.meshes.map((item) => [item.mesh, item]))
+    const geometry = this.geometryFor(source, null, false, work)
+    const environmentBounds = new Map<
+      CoveragePlacement,
+      Map<GeometryBounds, MotionEnvelope>
+    >()
+    const regionProducts = new Map<
+      CoveragePlacement,
+      readonly { source: SourceRegion; local?: GeometryBounds }[]
+    >()
+    const regions = (item: CoveragePlacement) => {
+      let result = regionProducts.get(item)
+      if (!result) {
+        const prepared = new Map(
+          item.mesh.prepared.regions.map((region) => [
+            region.source,
+            region.bounds
+          ])
+        )
+        result = item.mesh.origin.regions.map((source) => ({
+          source,
+          local: prepared.get(source)
+        }))
+        regionProducts.set(item, result)
+      }
+      return result
+    }
+    const bound = (
+      item: CoveragePlacement,
+      region?: { source: SourceRegion; local?: GeometryBounds }
+    ): MotionEnvelope => {
+      if (item.mesh.kind === 'robot') {
+        const completed = robotBounds.get(item.mesh)
+        if (!completed) fail()
+        if (!region) return completed.envelope
+        const part = completed.regions.find(
+          (value) => value.source === region.source
+        )
+        if (!part) fail()
+        return part.envelope
+      }
+      const local = region?.local ?? item.mesh.prepared.bounds
+      let products = environmentBounds.get(item)
+      if (!products) {
+        products = new Map()
+        environmentBounds.set(item, products)
+      }
+      let result = products.get(local)
+      if (!result) {
+        const bounds = geometry.bounds(item, [0, 0, 0], local)
+        result = [...bounds.min, ...bounds.max].every(Number.isFinite)
+          ? { status: 'bounded', bounds }
+          : { status: 'unresolved' }
+        products.set(local, result)
+      }
+      return result
+    }
+    const separated = (a: MotionEnvelope, b: MotionEnvelope) =>
+      a.status === 'bounded' &&
+      b.status === 'bounded' &&
+      [0, 1, 2].some(
+        (axis) =>
+          a.bounds.max[axis] < b.bounds.min[axis] ||
+          b.bounds.max[axis] < a.bounds.min[axis]
+      )
+    for (const [first, second] of domain.pairs()) {
+      if (work.meshPairs >= input.maxMeshPairs) break
+      work.meshPairs++
+      if (separated(bound(first), bound(second))) {
+        coverage.excluded = count(
+          coverage.excluded + first.triangleCount * second.triangleCount
+        )
+        continue
+      }
+      if (work.regionPairs >= input.maxRegionPairs) continue
+      regionPairs: for (const a of regions(first))
+        for (const b of regions(second)) {
+          if (work.regionPairs >= input.maxRegionPairs) break regionPairs
+          work.regionPairs++
+          const left = bound(first, a),
+            right = bound(second, b)
+          const amount = count(
+            (a.source.indexCount / 3) * (b.source.indexCount / 3)
+          )
+          if (separated(left, right))
+            coverage.excluded = count(coverage.excluded + amount)
+          else if (
+            left.status === 'unresolved' ||
+            right.status === 'unresolved'
+          )
+            coverage.unresolved = count(coverage.unresolved + amount)
+          else coverage.candidate = count(coverage.candidate + amount)
+        }
+    }
+    return publish()
+  }
   cover(
     source: GeometrySource,
     raw: SurfaceCoverageBatch
   ): SurfaceCoverageResult {
     this.geometry.read(source)
     const input = readCoverage(raw)
-    const robots: CoveragePlacement[] = [],
-      environment: CoveragePlacement[] = []
-    const count = (value: number) => {
-      if (!Number.isSafeInteger(value) || value < 0) fail()
-      return value
-    }
-    let robotTriangles = 0,
-      environmentTriangles = 0,
-      squaredRobotTriangles = 0
-    source.meshes.forEach((mesh, meshIndex) => {
-      if (mesh.shape.kind !== 'triangles') fail()
-      const triangleCount = count(mesh.shape.indices.length / 3)
-      const instances = mesh.descriptor?.instances?.length ?? 1
-      for (let instance = 0; instance < instances; instance++) {
-        const placement = { mesh, meshIndex, instance, triangleCount }
-        if (mesh.kind === 'robot') {
-          robots.push(placement)
-          robotTriangles = count(robotTriangles + triangleCount)
-          squaredRobotTriangles = count(
-            squaredRobotTriangles + triangleCount * triangleCount
-          )
-        } else {
-          environment.push(placement)
-          environmentTriangles = count(environmentTriangles + triangleCount)
-        }
-      }
-    })
-    // Topology counts precede all Cartesian narrow traversal. No pair array is
-    // materialized and no huge triangle domain is explored just to discover cost.
-    const inventory = Object.freeze({
-      robotParts: robots.length,
-      environmentInstances: environment.length,
-      meshPairs: count(
-        robots.length * environment.length +
-          (robots.length * (robots.length - 1)) / 2
-      ),
-      trianglePairs: count(
-        count(robotTriangles * environmentTriangles) +
-          count(
-            count(robotTriangles * robotTriangles) - squaredRobotTriangles
-          ) /
-            2
-      )
-    })
+    const domain = coverageDomain(source)
+    const { count, robots, inventory } = domain
     const coverage = {
       excluded: 0,
       queried: 0,
@@ -1062,11 +1284,7 @@ export class SurfaceQueries {
           else compareTriangles(first, second, a.source, b.source)
         }
     }
-    for (let index = 0; index < robots.length; index++) {
-      for (const item of environment) compare(robots[index], item)
-      for (let other = index + 1; other < robots.length; other++)
-        compare(robots[index], robots[other])
-    }
+    for (const [first, second] of domain.pairs()) compare(first, second)
     return publish()
   }
 }

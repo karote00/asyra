@@ -5,6 +5,11 @@ import { evaluatePolynomialTrig } from '../kinematic-trigonometry'
 import type { KinematicAlgebra, JointDomains } from '../robot-kinematics'
 import { createRobotModel } from '../robot-model'
 import { DEFAULT_ROBOT } from '../robot-configuration'
+import {
+  digest,
+  exactSourceStructure,
+  renderHandoff
+} from './source-geometry-oracle'
 
 const definitions = [
   DEFAULT_ROBOT,
@@ -12,8 +17,6 @@ const definitions = [
   { ...DEFAULT_ROBOT, width: 0.35, length: 0.6, height: 0.8 },
   { ...DEFAULT_ROBOT, width: 2, length: 3, height: 3, tool: 'tomato' as const }
 ]
-const digest = (value: unknown) =>
-  createHash('sha256').update(JSON.stringify(value)).digest('hex')
 
 it('isolates caller-owned material regions even when the part and shape are frozen', async () => {
   const { prepareRobotRig } = await import('../robot-kinematics')
@@ -33,24 +36,35 @@ it('isolates caller-owned material regions even when the part and shape are froz
   expect(Object.isFrozen(rig.parts[0].source.regions)).toBe(true)
 })
 
-it('preserves original parked robot source geometry and materials before articulation', () => {
+it('preserves exact parked structure and materials plus the render handoff', () => {
   expect(
-    definitions.map((definition) => ({
-      definition: [
-        definition.width,
-        definition.length,
-        definition.height,
-        definition.tool
-      ],
-      hash: digest(
-        createRobotModel(definition).map(({ id, color, metalness, shape }) => ({
-          id,
-          color,
-          metalness,
-          shape
-        }))
-      )
-    }))
+    definitions.map((definition) => {
+      const source = createRobotModel(definition)
+      expect(digest(createRobotModel(definition))).toBe(digest(source))
+      return {
+        definition: [
+          definition.width,
+          definition.length,
+          definition.height,
+          definition.tool
+        ],
+        structure: digest(
+          source.map(({ id, color, metalness, regions, shape }) => ({
+            id,
+            color,
+            metalness,
+            regions,
+            shape: exactSourceStructure(shape)
+          }))
+        ),
+        renderHandoff: digest(
+          source.map(({ id, shape }) => ({
+            id,
+            shape: renderHandoff(shape)
+          }))
+        )
+      }
+    })
   ).toMatchSnapshot()
 })
 

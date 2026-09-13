@@ -450,3 +450,32 @@ nested motion/C work, parts, regions, envelopes, corners and baseFrames. Product
 are shared only for the same affine/local-bounds identities within this request;
 source is checked again before publication. The result does not cover environment
 surfaces or authorize material, collision, contact or movement outcomes.
+
+## Point-time surface domain exclusion
+
+`SurfaceQueries.coverMotion(source, rawSegment, window, robot, environment)`
+classifies the complete original robot/environment and distinct-part robot
+triangle-pair domain for one closed joint-motion window. `environment` is a
+clone-once `MotionEnvironment` with an explicit synthetic assumption, full-window
+source-shape, source-pose, leaf and attached-fruit declarations, and nonnegative
+safe-integer mesh/region comparison budgets. Any recognized unknown environment
+state returns the whole domain as unvisited with `motion: null`; it does not admit
+or validate the unused motion inputs.
+
+Known environment state invokes `RobotMotionBounds.enclose` exactly once with the
+original current source and raw motion inputs. Robot mesh/region envelopes are
+reused from that completed result. Stationary environment placements use the
+existing descriptor/instance frame order and prepared local bounds, with
+unprepared regions retaining their whole-mesh envelope. The shared coverage
+inventory and mesh-pair traversal are the same producer used by
+`SurfaceQueries.cover`; no full pair array, triangle predicate, source-buffer scan,
+or persistent cache is introduced.
+
+The immutable result reports complete `inventory`, `motion` evidence or `null`,
+and an exact partition of triangle pairs into `excluded`, `candidate`,
+`unresolved` and `unvisited`. Only strict separation of finite whole-window bounds
+excludes a domain. Finite survivors are candidates, nonfinite compared products
+are unresolved, and budget remainders remain unvisited. `surface-separated` is
+reported only when every pair is excluded; every other result is `unknown`.
+Neither result is movement clearance, material occupancy, intended-contact,
+support, or retained-quality evidence.
