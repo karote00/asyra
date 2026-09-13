@@ -1354,3 +1354,19 @@ uses 100 normal and 100 extreme/subnormal windows with complete entry costs:
 1 second per batch, 10 seconds overall, unchanged 24000-bit guards. No runtime
 cache or new scalar producer. This segment writes/reviews readiness only, freezes
 and stops for root quota review; no tests or implementation are started.
+
+Root released a06511279 for one D motion enclose implementation and its frozen
+gates. Complete only this owner, then freeze and stop; quota stop instructions
+take precedence. No source-affine or later consumer work is authorized.
+
+D point-time domain preparation is implemented. Four missing-entry cases first
+failed; all 13 focused cases and 454 app tests across 46 files passed. Independent
+rational/tie-even oracles cover endpoint bits, monotone domains, subnormal and
+extreme times; clone-once, forged input, source retirement during conversion and
+zero FK/bounds/source generation controls passed. The fixed profiles used 100
+normal and 100 extreme windows: 17.1/15.6 ms, each 200 point evaluations and 995
+conversions, with maximum temporary widths 2156/3146 bits. All original guards
+remain unchanged. Build/typecheck, naming and lint (14 console warnings, no
+errors) passed. Independent scoped code/numerical review found no remaining
+finding. This six-file slice freezes and stops for root quota review; the output
+is point-time joint-domain evidence, not source-affine or movement clearance.

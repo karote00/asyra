@@ -1,6 +1,7 @@
-import type { RobotJoints } from '../domain/robot-kinematics'
+import type { RobotJoints, JointDomains } from '../domain/robot-kinematics'
 import { QueryGeometry, type GeometrySource } from './geometry'
 import { dyadic } from './query-arithmetic'
+import { roundFraction } from '../domain/scalar-arithmetic'
 
 export interface JointSegmentInput {
   source: 'synthetic'
@@ -9,6 +10,26 @@ export interface JointSegmentInput {
   until: number
   start: RobotJoints
   end: RobotJoints
+}
+export interface JointDomainWindow {
+  queryFrom: number
+  queryUntil: number
+  validFrom: number
+  validUntil: number
+}
+interface DomainWork {
+  pointEvaluations: number
+  conversions: number
+  maxBigIntBits: number
+}
+export interface JointDomainEvidence {
+  readonly source: GeometrySource
+  readonly segment: JointSegmentEvidence
+  readonly window: Readonly<JointDomainWindow>
+  readonly start: Readonly<RobotJoints>
+  readonly end: Readonly<RobotJoints>
+  readonly domains: JointDomains
+  readonly work: Readonly<DomainWork>
 }
 interface JointCheck {
   readonly limits: 'within' | 'outside'
@@ -80,9 +101,137 @@ function withinSpeed(
   )
 }
 
+function readWindow(raw: JointDomainWindow) {
+  const value = structuredClone(raw)
+  keys(value, ['queryFrom', 'queryUntil', 'validFrom', 'validUntil'])
+  if (
+    Object.values(value).some((item) => !Number.isFinite(item) || item < 0) ||
+    value.validFrom >= value.validUntil ||
+    value.queryFrom > value.queryUntil ||
+    value.validFrom > value.queryFrom ||
+    value.queryUntil >= value.validUntil
+  )
+    reject()
+  return Object.freeze(value)
+}
+function pointAt(
+  segment: JointSegmentEvidence,
+  time: number,
+  work: DomainWork
+): Readonly<RobotJoints> {
+  work.pointEvaluations++
+  const input = segment.input
+  if (time === input.from) return input.start
+  if (time === input.until) return input.end
+  const observe = (bits: number) => {
+    if (bits > 24000) throw new Error('Joint domain arithmetic budget exceeded')
+    work.maxBigIntBits = Math.max(work.maxBigIntBits, bits)
+  }
+  const width = (value: bigint) => {
+    const bits = (value < 0n ? -value : value).toString(2).length
+    observe(bits)
+    return bits
+  }
+  const shift = (value: bigint, count: number) => {
+    if (
+      !Number.isSafeInteger(count) ||
+      count < 0 ||
+      width(value) + count > 24000
+    )
+      throw new Error('Joint domain shift budget exceeded')
+    const result = value << BigInt(count)
+    width(result)
+    return result
+  }
+  const product = (a: bigint, b: bigint) => {
+    if (width(a) + width(b) > 24000)
+      throw new Error('Joint domain product budget exceeded')
+    const result = a * b
+    width(result)
+    return result
+  }
+  const sum = (a: bigint, b: bigint) => {
+    if (Math.max(width(a), width(b)) + 1 > 24000)
+      throw new Error('Joint domain sum budget exceeded')
+    const result = a + b
+    width(result)
+    return result
+  }
+  const times = [input.from, input.until, time].map(dyadic)
+  const exponent = Math.min(...times.map((value) => value.exponent))
+  const [first, last, current] = times.map((value) =>
+    shift(value.significand, value.exponent - exponent)
+  )
+  const left = sum(last, -current),
+    right = sum(current, -first),
+    duration = sum(last, -first)
+  const result = {} as RobotJoints
+  for (const key of Object.keys(input.start) as (keyof RobotJoints)[]) {
+    const a = dyadic(input.start[key]),
+      b = dyadic(input.end[key]),
+      e = Math.min(a.exponent, b.exponent)
+    let numerator = sum(
+      product(shift(a.significand, a.exponent - e), left),
+      product(shift(b.significand, b.exponent - e), right)
+    )
+    let denominator = duration
+    if (e < 0) denominator = shift(denominator, -e)
+    else numerator = shift(numerator, e)
+    work.conversions++
+    result[key] = roundFraction(numerator, denominator, 'nearest-even', observe)
+  }
+  return Object.freeze(result)
+}
+
 /** Scalar candidate evidence only. No FK, collision, physical or action admission. */
 export class JointSegments {
   constructor(private readonly geometry: QueryGeometry) {}
+  enclose(
+    source: GeometrySource,
+    raw: JointSegmentInput,
+    rawWindow: JointDomainWindow
+  ): JointDomainEvidence {
+    this.geometry.read(source)
+    const window = readWindow(rawWindow)
+    const segment = this.assess(source, raw)
+    if (
+      segment.status !== 'admissible' ||
+      window.queryFrom < segment.input.from ||
+      window.queryUntil > segment.input.until
+    )
+      reject()
+    const work: DomainWork = {
+      pointEvaluations: 0,
+      conversions: 0,
+      maxBigIntBits: 0
+    }
+    const start = pointAt(segment, window.queryFrom, work)
+    const end =
+      window.queryUntil === window.queryFrom
+        ? start
+        : pointAt(segment, window.queryUntil, work)
+    const domains = Object.freeze(
+      Object.fromEntries(
+        (Object.keys(start) as (keyof RobotJoints)[]).map((key) => [
+          key,
+          Object.freeze([
+            Math.min(start[key], end[key]),
+            Math.max(start[key], end[key])
+          ])
+        ])
+      )
+    ) as JointDomains
+    this.geometry.read(source)
+    return Object.freeze({
+      source,
+      segment,
+      window,
+      start,
+      end,
+      domains,
+      work: Object.freeze(work)
+    })
+  }
   assess(source: GeometrySource, raw: JointSegmentInput): JointSegmentEvidence {
     this.geometry.read(source)
     const rig = source.receipt.robot.rig
