@@ -993,7 +993,7 @@ test('combined source admission hashes the full manifest once and each descripto
   assert.equal(hash.mock.callCount(), 3)
 })
 
-function compositionInput(repository, snapshot, contract) {
+function compositionInput(repository, snapshot, contract, executionContext) {
   return {
     sourceRoot: snapshot.sourceRoot,
     admission: Object.freeze({
@@ -1005,7 +1005,12 @@ function compositionInput(repository, snapshot, contract) {
       mappingVersion: contract.mappingVersion,
       architectureVersion: contract.architectureVersion,
       configurationDigest: snapshot.configurationDigest,
-      ...validateSourceSnapshot(snapshot, contract)
+      ...validateSourceSnapshot(
+        snapshot,
+        contract,
+        snapshot.files,
+        executionContext
+      )
     })
   }
 }
@@ -1398,4 +1403,405 @@ test('retained snapshot bytes reject unsafe roots and missing changed symlinked 
       ),
     /regular/
   )
+})
+
+function derivedRuntimeInput(repository, snapshot, contract) {
+  const source = require('../snapshot.cjs')
+  const generated = source.createDerivedExecution({
+    sourceRoot: snapshot.sourceRoot,
+    verificationSource: snapshot.verificationSource
+  })
+  for (const file of generated.files) {
+    const destination = path.join(snapshot.sourceRoot, file.path)
+    fs.mkdirSync(path.dirname(destination), { recursive: true })
+    fs.writeFileSync(destination, file.content, { flag: 'wx', mode: 0o444 })
+  }
+  const files = [...snapshot.files, ...generated.executionSource.files].sort(
+    (a, b) => a.path.localeCompare(b.path)
+  )
+  const derived = {
+    ...snapshot,
+    files,
+    executionSource: generated.executionSource,
+    configurationDigest: generated.executionSource.digest,
+    digest: createHash('sha256').update(JSON.stringify(files)).digest('hex')
+  }
+  return compositionInput(repository, derived, contract, {
+    sourceRoot: snapshot.sourceRoot
+  })
+}
+
+test('ordinary composition cannot downgrade derived runtime or verification inputs', (t) => {
+  const { repository, capture } = copiedSource(t)
+  const contract = loadContract(repository)
+  const ordinary = compositionInput(
+    repository,
+    capture(randomUUID(), contract),
+    contract
+  )
+  const runtime = derivedRuntimeInput(
+    repository,
+    capture(randomUUID(), contract),
+    contract
+  )
+  const write = t.mock.method(fs, 'writeFileSync')
+  assert.throws(
+    () =>
+      composeSource(
+        repository,
+        path.join(repository, 'attempts', randomUUID()),
+        runtime,
+        ordinary,
+        contract
+      ),
+    /derived|execution/i
+  )
+  assert.throws(
+    () =>
+      composeSource(
+        repository,
+        path.join(repository, 'attempts', randomUUID()),
+        {
+          ...ordinary,
+          admission: { ...ordinary.admission, executionSource: null }
+        },
+        ordinary,
+        contract
+      ),
+    /derived|execution/i
+  )
+  assert.throws(
+    () =>
+      composeSource(
+        repository,
+        path.join(repository, 'attempts', randomUUID()),
+        ordinary,
+        {
+          ...ordinary,
+          admission: { ...ordinary.admission, executionSource: null }
+        },
+        contract
+      ),
+    /ordinary|execution/i
+  )
+  assert.equal(write.mock.callCount(), 0)
+})
+
+test(
+  'derived composition executes two retained ordinary verifier bundles on one admitted candidate runtime',
+  { skip: process.platform !== 'darwin', timeout: 30000 },
+  async (t) => {
+    const source = require('../snapshot.cjs')
+    const { repository, capture } = copiedSource(t)
+    const contract = loadContract(repository)
+    const accepted = compositionInput(
+      repository,
+      capture(randomUUID(), contract),
+      contract
+    )
+    fs.appendFileSync(
+      path.join(repository, contract.testFile),
+      '\n// distinct developing verifier\n'
+    )
+    fs.appendFileSync(
+      path.join(repository, contract.configFile),
+      '\n// distinct developing configuration\n'
+    )
+    const target = compositionInput(
+      repository,
+      capture(randomUUID(), contract),
+      contract
+    )
+    fs.appendFileSync(
+      path.join(repository, 'packages/factory/src/data-transact.ts'),
+      '\n// candidate runtime\n'
+    )
+    const runtime = derivedRuntimeInput(
+      repository,
+      capture(randomUUID(), contract),
+      contract
+    )
+    assert.notEqual(
+      accepted.admission.verificationSource.digest,
+      target.admission.verificationSource.digest
+    )
+    fs.writeFileSync(
+      path.join(repository, contract.testFile),
+      'throw new Error("checkout is not authority")'
+    )
+    const { runVerification } = require('../runner.cjs')
+    const { containedProcess } = require('../agent-verifier.cjs')
+    const { assessEvidence } = require('../evidence.cjs')
+    for (const verification of [accepted, target]) {
+      const output = path.join(repository, 'attempts', randomUUID())
+      const read = t.mock.method(fs, 'readFileSync')
+      const snapshot = source.composeDerivedSource(
+        repository,
+        output,
+        runtime,
+        verification,
+        contract
+      )
+      assert.equal(
+        read.mock.callCount(),
+        runtime.admission.runtimeSource.files.length +
+          verification.admission.verificationSource.files.length
+      )
+      assert.equal(snapshot.readCount, read.mock.callCount())
+      assert.equal(snapshot.fileCount, snapshot.readCount + 2)
+      assert.ok(
+        read.mock.calls.every(
+          (call) =>
+            String(call.arguments[0]).startsWith(
+              runtime.sourceRoot + path.sep
+            ) ||
+            String(call.arguments[0]).startsWith(
+              verification.sourceRoot + path.sep
+            )
+        )
+      )
+      read.mock.restore()
+      assert.equal(
+        snapshot.runtimeSource.digest,
+        runtime.admission.runtimeSource.digest
+      )
+      assert.equal(
+        snapshot.verificationSource.digest,
+        verification.admission.verificationSource.digest
+      )
+      assert.notEqual(
+        snapshot.executionSource.digest,
+        runtime.admission.executionSource.digest
+      )
+      assert.equal(
+        snapshot.configurationDigest,
+        snapshot.executionSource.digest
+      )
+      assert.equal(snapshot.head, runtime.admission.head)
+      const flows = contract.flows.map((flow) => flow.id)
+      const result = await runVerification({
+        repositoryRoot: root,
+        runDirectory: output,
+        snapshot,
+        contract: {
+          ...contract,
+          configFile: snapshot.executionSource.roles.configuration
+        },
+        flowIds: flows,
+        scenario: 'baseline',
+        timeoutMs: 15000,
+        processRunner: (options) =>
+          containedProcess(
+            {
+              ...options,
+              args: [
+                path.join(
+                  snapshot.sourceRoot,
+                  snapshot.executionSource.roles.bootstrap
+                ),
+                String(process.pid),
+                ...options.args.slice(3),
+                '--configLoader',
+                'native'
+              ],
+              cwd: snapshot.sourceRoot
+            },
+            {
+              repositoryRoot: root,
+              readRoots: [snapshot.sourceRoot],
+              writeRoot: output
+            }
+          )
+      })
+      const evidence = assessEvidence(
+        contract,
+        snapshot,
+        result,
+        flows,
+        'baseline',
+        undefined,
+        { sourceRoot: snapshot.sourceRoot }
+      )
+      assert.equal(
+        evidence.status,
+        'passed',
+        JSON.stringify({ runner: result, issues: evidence.issues })
+      )
+      assert.equal(evidence.passedCount, 6)
+    }
+  }
+)
+
+test('derived composition counts selected bytes once and reuses both generated fingerprints', (t) => {
+  const source = require('../snapshot.cjs')
+  const { repository, capture } = copiedSource(t)
+  const contract = loadContract(repository)
+  const verifier = compositionInput(
+    repository,
+    capture(randomUUID(), contract),
+    contract
+  )
+  const runtime = derivedRuntimeInput(
+    repository,
+    capture(randomUUID(), contract),
+    contract
+  )
+  const output = path.join(repository, 'attempts', randomUUID())
+  const generated = source.createDerivedExecution({
+    sourceRoot: path.join(output, 'source'),
+    verificationSource: verifier.admission.verificationSource
+  })
+  const crypto = require('node:crypto'),
+    originalHash = crypto.createHash,
+    hashed = []
+  t.mock.method(crypto, 'createHash', (...args) => {
+    const value = originalHash(...args),
+      update = value.update
+    value.update = function (bytes) {
+      hashed.push(bytes)
+      return update.call(this, bytes)
+    }
+    return value
+  })
+  const modulePath = require.resolve('../snapshot.cjs'),
+    saved = require.cache[modulePath]
+  Reflect.deleteProperty(require.cache, modulePath)
+  const counted = require('../snapshot.cjs')
+  require.cache[modulePath] = saved
+  const read = t.mock.method(fs, 'readFileSync'),
+    write = t.mock.method(fs, 'writeFileSync')
+  const snapshot = counted.composeDerivedSource(
+    repository,
+    output,
+    runtime,
+    verifier,
+    contract
+  )
+  const count =
+    runtime.admission.runtimeSource.files.length +
+    verifier.admission.verificationSource.files.length
+  assert.equal(read.mock.callCount(), count)
+  assert.equal(hashed.filter(Buffer.isBuffer).length, count)
+  assert.ok(read.mock.calls.every((call) => hashed.includes(call.result)))
+  assert.equal(
+    hashed.length,
+    count + 6,
+    'selected bytes plus runtime/verifier/full identities and three fixed generation hashes'
+  )
+  for (const file of generated.files)
+    assert.equal(hashed.filter((bytes) => bytes === file.content).length, 1)
+  assert.equal(write.mock.callCount(), count + 3)
+  assert.ok(
+    write.mock.calls.every(
+      (call) =>
+        call.arguments[2].flag === 'wx' && call.arguments[2].mode === 0o444
+    )
+  )
+  assert.deepEqual(snapshot.executionSource, generated.executionSource)
+})
+
+test('derived composition rejects invalid authority and immutable destination aliases before usable output', (t) => {
+  const source = require('../snapshot.cjs')
+  const { repository, capture } = copiedSource(t)
+  const contract = loadContract(repository)
+  const verifier = compositionInput(
+    repository,
+    capture(randomUUID(), contract),
+    contract
+  )
+  const runtime = derivedRuntimeInput(
+    repository,
+    capture(randomUUID(), contract),
+    contract
+  )
+  const write = t.mock.method(fs, 'writeFileSync'),
+    mkdir = t.mock.method(fs, 'mkdirSync')
+  for (const mutate of [
+    (value) => {
+      value.admission.executionSource = null
+    },
+    (value) => {
+      value.admission.executionSource.policy = 'unknown'
+    },
+    (value) => {
+      value.admission.executionSource.verificationSourceDigest = '0'.repeat(64)
+    },
+    (value) => {
+      value.admission.configurationDigest = '0'.repeat(64)
+    },
+    (value) => {
+      value.admission.attemptId = randomUUID()
+    },
+    (value) => {
+      value.sourceRoot += '/../source'
+    }
+  ]) {
+    const invalid = structuredClone(runtime)
+    mutate(invalid)
+    assert.throws(
+      () =>
+        source.composeDerivedSource(
+          repository,
+          path.join(repository, 'attempts', randomUUID()),
+          invalid,
+          verifier,
+          contract
+        ),
+      /source|execution|attempt|canonical/i
+    )
+  }
+  assert.throws(
+    () =>
+      source.composeDerivedSource(
+        repository,
+        path.join(repository, 'attempts', randomUUID()),
+        runtime,
+        runtime,
+        contract
+      ),
+    /ordinary/
+  )
+  assert.throws(
+    () =>
+      source.composeDerivedSource(
+        repository,
+        path.join(runtime.sourceRoot, 'nested'),
+        runtime,
+        verifier,
+        contract
+      ),
+    /overlap/
+  )
+  assert.throws(
+    () =>
+      source.composeDerivedSource(
+        repository,
+        path.dirname(runtime.sourceRoot),
+        runtime,
+        verifier,
+        contract
+      ),
+    /already exists/
+  )
+  assert.equal(write.mock.callCount(), 0)
+  assert.equal(mkdir.mock.callCount(), 0)
+  write.mock.restore()
+  mkdir.mock.restore()
+  const entry = runtime.admission.runtimeSource.files[0]
+  const file = path.join(runtime.sourceRoot, entry.path)
+  fs.chmodSync(file, 0o600)
+  fs.appendFileSync(file, 'changed')
+  const output = path.join(repository, 'attempts', randomUUID())
+  assert.throws(
+    () =>
+      source.composeDerivedSource(
+        repository,
+        output,
+        runtime,
+        verifier,
+        contract
+      ),
+    /fingerprint/
+  )
+  assert.equal(fs.existsSync(path.join(output, 'source-manifest.json')), false)
 })

@@ -10,6 +10,8 @@ const { admitContract } = require('./contracts.cjs')
 const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex')
 const sourcePackages = ['factory', 'reactive-events', 'utils', 'persistence']
 
+const derivedExecutionPolicy = 'contained-native-typescript-v1'
+
 const runtimeMetadata = [
   'package.json',
   'yarn.lock',
@@ -153,7 +155,7 @@ import(pathToFileURL(runner).href).catch(() => process.exit(2));`
   ])
   const payload = {
     format: 1,
-    policy: 'contained-native-typescript-v1',
+    policy: derivedExecutionPolicy,
     verificationSourceDigest: verificationSource.digest,
     roles: Object.freeze({
       configuration: configurationFile,
@@ -331,7 +333,8 @@ function selectSourceEntries(
   repositoryRoot,
   runtimeInput,
   verificationInput,
-  contract
+  contract,
+  deriveExecution = false
 ) {
   const repository = fs.realpathSync(repositoryRoot)
   for (const input of [runtimeInput, verificationInput]) {
@@ -352,6 +355,24 @@ function selectSourceEntries(
     )
       throw new Error('Source composition requires canonical source roots')
   }
+  const execution = runtimeInput.admission.executionSource
+  if (
+    Object.hasOwn(runtimeInput.admission, 'executionSource') &&
+    (!deriveExecution ||
+      execution?.format !== 1 ||
+      execution.policy !== derivedExecutionPolicy ||
+      !/^[a-f0-9]{64}$/.test(execution.digest ?? '') ||
+      execution.digest !== runtimeInput.admission.configurationDigest ||
+      execution.verificationSourceDigest !==
+        runtimeInput.admission.verificationSource?.digest)
+  )
+    throw new Error(
+      'Source composition requires ordinary runtime or admitted derived execution'
+    )
+  if (Object.hasOwn(verificationInput.admission, 'executionSource'))
+    throw new Error(
+      'Source composition requires ordinary verification without execution wrappers'
+    )
   const runtime = runtimeInput.admission.runtimeSource
   const verification = verificationInput.admission.verificationSource
   if (
@@ -438,18 +459,20 @@ function verifyRetainedSource(repositoryRoot, input, contract) {
   verifySourceDescriptors(files, runtime, verification, contract)
 }
 
-function composeSource(
+function composeSnapshot(
   repositoryRoot,
   runDirectory,
   runtimeInput,
   verificationInput,
-  contract
+  contract,
+  deriveExecution
 ) {
   const { repository, runtime, verification, selected } = selectSourceEntries(
     repositoryRoot,
     runtimeInput,
     verificationInput,
-    contract
+    contract,
+    deriveExecution
   )
   const sourceRoot = safePath(
     repository,
@@ -469,6 +492,9 @@ function composeSource(
     )
       throw new Error('Source composition destination overlaps retained source')
   }
+  const generated = deriveExecution
+    ? createDerivedExecution({ sourceRoot, verificationSource: verification })
+    : null
   const files = readSourceEntries(selected, (entry, bytes) => {
     const output = safePath(sourceRoot, entry.path)
     fs.mkdirSync(path.dirname(output), { recursive: true })
@@ -480,6 +506,22 @@ function composeSource(
     verification,
     contract
   )
+  const readCount = files.length
+  if (generated) {
+    for (const file of generated.files) {
+      const output = safePath(sourceRoot, file.path)
+      fs.mkdirSync(path.dirname(output), { recursive: true })
+      fs.writeFileSync(output, file.content, { flag: 'wx', mode: 0o444 })
+      files.push(
+        Object.freeze({
+          ...generated.executionSource.files.find(
+            (entry) => entry.path === file.path
+          )
+        })
+      )
+    }
+    files.sort((a, b) => a.path.localeCompare(b.path))
+  }
   const manifest = JSON.stringify(files)
   fs.writeFileSync(manifestPath, manifest, { flag: 'wx', mode: 0o444 })
   return Object.freeze({
@@ -491,14 +533,50 @@ function composeSource(
     contractDigest: contract.digest,
     mappingVersion: contract.mappingVersion,
     architectureVersion: contract.architectureVersion,
-    configurationDigest: verificationInput.admission.configurationDigest,
+    configurationDigest:
+      generated?.executionSource.digest ??
+      verificationInput.admission.configurationDigest,
+    ...(generated ? { executionSource: generated.executionSource } : {}),
     lockfileDigest: files.find((entry) => entry.path === 'yarn.lock').digest,
     manifestPath: path.relative(repository, manifestPath),
     head: runtimeInput.admission.head,
     files: Object.freeze(files),
     fileCount: files.length,
-    readCount: files.length
+    readCount
   })
+}
+
+function composeSource(
+  repositoryRoot,
+  runDirectory,
+  runtimeInput,
+  verificationInput,
+  contract
+) {
+  return composeSnapshot(
+    repositoryRoot,
+    runDirectory,
+    runtimeInput,
+    verificationInput,
+    contract,
+    false
+  )
+}
+function composeDerivedSource(
+  repositoryRoot,
+  runDirectory,
+  runtimeInput,
+  verificationInput,
+  contract
+) {
+  return composeSnapshot(
+    repositoryRoot,
+    runDirectory,
+    runtimeInput,
+    verificationInput,
+    contract,
+    true
+  )
 }
 
 function captureSource(repositoryRoot, runDirectory, contract) {
@@ -609,6 +687,7 @@ function captureSource(repositoryRoot, runDirectory, contract) {
 }
 
 module.exports = {
+  composeDerivedSource,
   verifyRetainedSnapshotBytes,
   createDerivedExecution,
   verifyRetainedSource,
