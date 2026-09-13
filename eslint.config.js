@@ -83,7 +83,11 @@ export default tseslint.config(
     }
   },
   {
-    files: ['scripts/**/*.{js,mjs}', 'create-app/**/*.js', 'tools/**/*.cjs'],
+    files: [
+      'scripts/**/*.{js,mjs,cjs}',
+      'create-app/**/*.js',
+      'tools/**/*.cjs'
+    ],
     languageOptions: {
       globals: {
         console: 'readonly',
@@ -97,6 +101,12 @@ export default tseslint.config(
         clearTimeout: 'readonly',
         module: 'readonly'
       }
+    }
+  },
+  {
+    files: ['scripts/agent-coordination/**/*.cjs'],
+    rules: {
+      '@typescript-eslint/no-require-imports': 'off'
     }
   },
   {

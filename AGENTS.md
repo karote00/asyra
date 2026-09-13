@@ -26,6 +26,11 @@ These rules apply to every task without requiring additional document reads:
   directory, never inside `.git/`. Follow the worktree location and collision
   rules in `docs/ai/workflows/git-commit-push-policy.md`.
 - Do not overwrite unrelated user changes in a dirty worktree.
+- For coordinated multi-agent writes, register the task and follow
+  `docs/ai/workflows/agent-coordination-guards.md`. Hook installation, native
+  activation, task completion and PR integration are separate states. Never
+  treat a pending CI run as completed delivery or silently refresh unknown file
+  changes into an accepted task snapshot.
 - For new apps and app feature/refactor work, read
   `docs/public/start/custom-composition.md` (the reusable App implementation
   guide) and

@@ -36,7 +36,7 @@
     "rebuild:design-system": "yarn workspace @asyra/design-system rebuild:design-system",
     "react:build": "yarn gen:turbo:check && turbo run react:build",
     "test": "turbo run test",
-    "test:scripts": "node --test scripts/__tests__/deps-validate.test.mjs scripts/__tests__/workspace-automation.test.mjs scripts/__tests__/release-automation.test.mjs scripts/__tests__/release-records.test.mjs scripts/__tests__/changeset-all-patch.test.mjs scripts/__tests__/changeset-pr-check.test.mjs scripts/__tests__/test-file-placement.test.mjs scripts/__tests__/brand-neutral-code.test.mjs scripts/__tests__/display-name-separators.test.mjs scripts/__tests__/create-app-cli.test.mjs scripts/docs/__tests__/public-documentation-inputs.test.mjs scripts/docs/__tests__/public-content-contract.test.mjs scripts/docs/__tests__/public-package-reference.test.mjs scripts/docs/__tests__/public-documentation.test.mjs scripts/docs/__tests__/public-documentation-validation.test.mjs scripts/docs/__tests__/public-readme-inputs.test.mjs scripts/docs/__tests__/public-package-readmes.test.mjs scripts/docs/__tests__/public-readme-validation.test.mjs scripts/__tests__/app-release-plan.test.mjs scripts/__tests__/app-release-service.test.mjs scripts/__tests__/app-release-workflow.test.mjs",
+    "test:scripts": "node --test scripts/__tests__/deps-validate.test.mjs scripts/__tests__/workspace-automation.test.mjs scripts/__tests__/release-automation.test.mjs scripts/__tests__/release-records.test.mjs scripts/__tests__/changeset-all-patch.test.mjs scripts/__tests__/changeset-pr-check.test.mjs scripts/__tests__/test-file-placement.test.mjs scripts/__tests__/brand-neutral-code.test.mjs scripts/__tests__/display-name-separators.test.mjs scripts/__tests__/create-app-cli.test.mjs scripts/docs/__tests__/public-documentation-inputs.test.mjs scripts/docs/__tests__/public-content-contract.test.mjs scripts/docs/__tests__/public-package-reference.test.mjs scripts/docs/__tests__/public-documentation.test.mjs scripts/docs/__tests__/public-documentation-validation.test.mjs scripts/docs/__tests__/public-readme-inputs.test.mjs scripts/docs/__tests__/public-package-readmes.test.mjs scripts/docs/__tests__/public-readme-validation.test.mjs scripts/__tests__/app-release-plan.test.mjs scripts/__tests__/app-release-service.test.mjs scripts/__tests__/app-release-workflow.test.mjs scripts/agent-coordination/__tests__/guard-core.test.cjs scripts/__tests__/agent-hook-adapter.test.mjs scripts/__tests__/merge-agent-subpr.test.mjs",
     "test:local": "yarn test:scripts && turbo run test:local",
     "test:ci": "yarn test:scripts && turbo run test:ci",
     "test:e2e": "yarn workspace @asyra/asyra-design test:e2e",
@@ -77,7 +77,8 @@
     "release:full:asyra-design": "node scripts/release-full.js --prod=asyra-design",
     "dev:description": "Run in watch mode: all packages including design-system, asyra-design app",
     "build:production-artifacts": "yarn gen:turbo:check && turbo run react:build build:asyra-framework-site --concurrency=2",
-    "test:production-artifacts": "node --test --test-concurrency=1 scripts/__tests__/production-artifacts.browser.test.mjs"
+    "test:production-artifacts": "node --test --test-concurrency=1 scripts/__tests__/production-artifacts.browser.test.mjs",
+    "test:agent-guards": "node --test scripts/agent-coordination/__tests__/guard-core.test.cjs scripts/__tests__/agent-hook-adapter.test.mjs scripts/__tests__/merge-agent-subpr.test.mjs"
   },
   "workspaces": [
     "apps/*",
