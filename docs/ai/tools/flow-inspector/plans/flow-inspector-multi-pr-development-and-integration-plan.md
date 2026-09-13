@@ -73,8 +73,10 @@ legacy fallback. Source composition now combines independent frozen verifiers
 with candidate runtime under a new derived closure. Service/evidence admission
 retains exact derived authority under attempt format 3; source/evidence and
 candidate producer envelopes separate intact source identity from case outcome.
-The next task-owned slice retains that source privately for exact live and
-startup handoff, including failed/partial candidates. Contained target dispatch,
+The task owner retains that source privately for exact live and startup handoff,
+including failed/partial candidates. The next runner slice shares the existing
+contained execution policy before candidate and service consumers adopt it.
+Contained target dispatch,
 scoped verification, execution/admission consumers and explicit target-baseline
 acceptance remain subsequent slices.
 Existing target execution and pending behavior stay in effect until those

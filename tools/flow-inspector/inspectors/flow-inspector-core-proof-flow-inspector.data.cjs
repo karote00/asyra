@@ -584,10 +584,12 @@ const data = {
       inputs: [
         'artifact:proof-source-snapshot',
         'registered scenario',
-        'deadline and cancellation signal'
+        'deadline and cancellation signal',
+        'trusted canonical attempt location and source-owned derived execution descriptor when contained execution is selected'
       ],
       outputs: ['artifact:proof-runner-result'],
       conditions: [
+        'Contained derived execution consumes the source-owned fixed configuration/bootstrap roles and exact verification/configuration relationship without re-admitting source. Execute the captured bootstrap with the native loader under the existing OS sandbox; reject missing/unsupported closure or unavailable containment before dispatch, with no caller argv/configuration/process override or ordinary fallback. Return existing report/identity and process settlement; post-run source integrity remains the publisher responsibility.',
         'Run one registered Vitest process group against captured source; await settlement on success, error, deadline, or cancellation. Bind the source owner runtime digest into runner identity without recomputing it, alongside the existing full verification identity.'
       ],
       bypasses: [
@@ -608,7 +610,7 @@ const data = {
         'tools/flow-inspector/control-plane/runner.cjs',
         'tools/flow-inspector/control-plane/__tests__/runner.test.cjs'
       ],
-      specRefs: ['#controlled-actions-and-retention', '#runtime-identity-producer-contract'],
+      specRefs: ['#controlled-actions-and-retention', '#runtime-identity-producer-contract', '#contained-derived-proof-execution'],
       failureOwnerStepId: 'execute-proof-run'
     },
     {

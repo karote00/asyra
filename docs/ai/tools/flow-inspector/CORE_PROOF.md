@@ -1227,6 +1227,45 @@ remain required; generating or admitting a closure proves none of those outcomes
 Later retained admission/replay must use the same exact trusted location and
 validate actual retained bytes at its declared lifetime, without UI recomputation.
 
+### Contained derived proof execution
+
+The runner owner provides `runContainedVerification(options)` for a trusted
+caller that has selected a source-owned derived snapshot at its fixed canonical
+attempt `sourceRoot`: `snapshot.sourceRoot` must equal the canonical
+`runDirectory/source`, with the canonical run directory inside the trusted
+repository. Missing locations, aliases and path mismatches reject before dispatch.
+It consumes the same repository, run directory, snapshot,
+admitted original contract, registered scenario, flow inventory, deadline,
+cancellation signal and spawn observer as `runVerification`. The new entry point
+has no caller-provided process runner, executable, argument, configuration or
+sandbox-policy override. It requires an own non-null execution descriptor with
+format 1 and policy `contained-native-typescript-v1`, the source owner's two fixed
+configuration/bootstrap roles, an exact original verification digest link and
+`configurationDigest === executionSource.digest`. Missing, partial or unsupported
+closure inputs reject before dispatch; ordinary execution is not a fallback.
+
+These checks consume upstream completed identities; they do not regenerate the
+source policy, hash descriptors or read source bytes to admit them again. The
+caller remains responsible for full source admission and the applicable actual
+byte checks at its owner boundary. The runner uses the descriptor's generated
+configuration, the captured bootstrap, the existing native TypeScript loader and
+the canonical source tree as working directory. Its existing OS sandbox denies
+ambient network and candidate source writes, permits only the existing dependency
+and system read boundaries, and confines runner output to the controlled attempt.
+Unavailable OS containment fails closed. The existing process-group settlement,
+parent-death guard, bounded output, deadline, cancellation and spawn observations
+remain in force; the existing runner report and full/runtime/configuration identity
+are returned unchanged in `artifact:proof-runner-result`.
+
+The sandbox process strategy and containment availability check have one owner in
+`runner.cjs`; existing candidate exports may forward those functions for direct
+consumer compatibility. The candidate and service callers migrate in separate
+owner slices. Execution does not establish source validity after an untrusted
+process has run: each publisher still performs its required post-run actual-byte
+check before publishing usable source or evidence. This shared runner entry point
+alone does not enable task-source selection, retained target assessment or
+acceptance.
+
 ### Derived source composition
 
 `composeDerivedSource(repositoryRoot, runDirectory, runtimeInput,
