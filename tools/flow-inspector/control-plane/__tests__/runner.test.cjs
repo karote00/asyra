@@ -263,3 +263,239 @@ test('runner carries producer runtime identity without traversing its manifest a
   assert.equal(old.identity.sourceDigest, snapshot.digest)
   assert.equal(executions, 2)
 })
+
+function derivedRunnerFixture() {
+  const source = require('../snapshot.cjs')
+  const root = path.resolve(__dirname, '../../../..')
+  const parent = path.join(root, 'tmp/flow-inspector/contained-runner-tests')
+  fs.mkdirSync(parent, { recursive: true })
+  const runDirectory = fs.mkdtempSync(path.join(parent, 'run-'))
+  const contract = loadContract(root)
+  const snapshot = captureSource(root, runDirectory, contract)
+  const generated = source.createDerivedExecution({
+    sourceRoot: snapshot.sourceRoot,
+    verificationSource: snapshot.verificationSource
+  })
+  for (const entry of generated.files) {
+    const file = path.join(snapshot.sourceRoot, entry.path)
+    fs.mkdirSync(path.dirname(file), { recursive: true })
+    fs.writeFileSync(file, entry.content, { flag: 'wx', mode: 0o444 })
+  }
+  const files = [...snapshot.files, ...generated.executionSource.files].sort(
+    (a, b) => a.path.localeCompare(b.path)
+  )
+  const candidate = {
+    ...snapshot,
+    files,
+    digest: source.sha256(JSON.stringify(files)),
+    configurationDigest: generated.executionSource.digest,
+    executionSource: generated.executionSource
+  }
+  source.validateSourceSnapshot(candidate, contract, files, {
+    sourceRoot: candidate.sourceRoot
+  })
+  return {
+    repositoryRoot: root,
+    runDirectory,
+    snapshot: candidate,
+    contract,
+    scenario: 'baseline',
+    flowIds: contract.flows.map((flow) => flow.id),
+    timeoutMs: 10000
+  }
+}
+
+test(
+  'contained derived runner executes the captured bootstrap and native configuration with real settlement',
+  { skip: process.platform !== 'darwin', timeout: 30000 },
+  async (t) => {
+    const options = derivedRunnerFixture()
+    const childProcess = require('node:child_process')
+    const spawnSpy = t.mock.method(childProcess, 'spawn')
+    const hashes = t.mock.method(require('node:crypto'), 'createHash')
+    const reads = t.mock.method(fs, 'readFileSync')
+    const modulePath = require.resolve('../runner.cjs')
+    const saved = require.cache[modulePath]
+    Reflect.deleteProperty(require.cache, modulePath)
+    const { runContainedVerification } = require('../runner.cjs')
+    require.cache[modulePath] = saved
+    let spawned = 0
+    const result = await runContainedVerification({
+      ...options,
+      onSpawn: () => spawned++
+    })
+    assert.equal(result.code, 0, result.output)
+    assert.equal(result.reason, null)
+    assert.equal(spawned, 1)
+    assert.equal(spawnSpy.mock.callCount(), 1)
+    assert.equal(
+      hashes.mock.callCount(),
+      1,
+      'runner hashes only its report, not source descriptors'
+    )
+    for (const entry of options.snapshot.files)
+      assert.equal(
+        reads.mock.calls.filter(
+          (call) =>
+            call.arguments[0] ===
+            path.join(options.snapshot.sourceRoot, entry.path)
+        ).length,
+        0
+      )
+    const [executable, args, actual] = spawnSpy.mock.calls[0].arguments
+    assert.equal(executable, '/usr/bin/sandbox-exec')
+    assert.ok(
+      args.includes(
+        path.join(
+          options.snapshot.sourceRoot,
+          options.snapshot.executionSource.roles.bootstrap
+        )
+      )
+    )
+    assert.ok(
+      args.includes(
+        path.join(
+          options.snapshot.sourceRoot,
+          options.snapshot.executionSource.roles.configuration
+        )
+      )
+    )
+    assert.deepEqual(args.slice(-2), ['--configLoader', 'native'])
+    assert.equal(actual.cwd, options.snapshot.sourceRoot)
+    assert.match(args[1], /\(deny default\)/)
+    assert.match(args[1], /deny file-write/)
+    assert.equal(
+      result.identity.configurationDigest,
+      options.snapshot.executionSource.digest
+    )
+    assert.equal(
+      result.identity.runtimeSourceDigest,
+      options.snapshot.runtimeSource.digest
+    )
+    assert.equal(
+      assessEvidence(
+        options.contract,
+        options.snapshot,
+        result,
+        options.flowIds,
+        'baseline',
+        undefined,
+        { sourceRoot: options.snapshot.sourceRoot }
+      ).status,
+      'passed'
+    )
+    assert.throws(() => process.kill(result.pid, 0), { code: 'ESRCH' })
+    const controller = new AbortController()
+    const cancelled = await runContainedVerification({
+      ...options,
+      signal: controller.signal,
+      onSpawn: () => controller.abort()
+    })
+    assert.equal(cancelled.reason, 'cancelled')
+    assert.throws(() => process.kill(cancelled.pid, 0), { code: 'ESRCH' })
+    const timedOut = await runContainedVerification({
+      ...options,
+      timeoutMs: 1
+    })
+    assert.equal(timedOut.reason, 'timeout')
+    assert.throws(() => process.kill(timedOut.pid, 0), { code: 'ESRCH' })
+    const count = spawnSpy.mock.callCount()
+    const preAborted = await runContainedVerification({
+      ...options,
+      signal: controller.signal
+    })
+    assert.equal(preAborted.reason, 'cancelled')
+    assert.equal(spawnSpy.mock.callCount(), count)
+  }
+)
+
+test(
+  'contained derived runner rejects unsupported closure locations and process overrides before dispatch',
+  { skip: process.platform !== 'darwin', timeout: 20000 },
+  async (t) => {
+    const options = derivedRunnerFixture()
+    const childProcess = require('node:child_process')
+    const spawned = t.mock.method(childProcess, 'spawn')
+    const modulePath = require.resolve('../runner.cjs')
+    const saved = require.cache[modulePath]
+    Reflect.deleteProperty(require.cache, modulePath)
+    const { runContainedVerification } = require('../runner.cjs')
+    require.cache[modulePath] = saved
+    assert.equal(typeof runContainedVerification, 'function')
+    for (const mutate of [
+      (value) => {
+        delete value.snapshot.executionSource
+      },
+      (value) => {
+        value.snapshot.executionSource = null
+      },
+      (value) => {
+        value.snapshot.executionSource.policy = 'unknown'
+      },
+      (value) => {
+        value.snapshot.executionSource.format = 2
+      },
+      (value) => {
+        value.snapshot.executionSource.roles.bootstrap = 'other.cjs'
+      },
+      (value) => {
+        value.snapshot.executionSource.verificationSourceDigest = '0'.repeat(64)
+      },
+      (value) => {
+        delete value.snapshot.executionSource.verificationSourceDigest
+        delete value.snapshot.verificationSource.digest
+      },
+      (value) => {
+        value.snapshot.executionSource.verificationSourceDigest = ''
+        value.snapshot.verificationSource.digest = ''
+      },
+      (value) => {
+        value.snapshot.configurationDigest = '0'.repeat(64)
+      },
+      (value) => {
+        delete value.snapshot.sourceRoot
+      },
+      (value) => {
+        value.snapshot.sourceRoot = value.repositoryRoot
+      },
+      (value) => {
+        value.snapshot.sourceRoot += '/.'
+      },
+      (value) => {
+        value.runDirectory += '/.'
+      },
+      (value) => {
+        value.runDirectory = path.dirname(value.repositoryRoot)
+      },
+      (value) => {
+        value.processRunner = () => {
+          throw new Error('override')
+        }
+      },
+      (value) => {
+        value.args = []
+      },
+      (value) => {
+        value.configFile = 'other.ts'
+      }
+    ]) {
+      const changed = structuredClone(options)
+      mutate(changed)
+      await assert.rejects(
+        async () => runContainedVerification(changed),
+        /contained|closure|execution|location|override|option/i
+      )
+    }
+    assert.equal(spawned.mock.callCount(), 0)
+    const exists = fs.existsSync
+    const unavailable = t.mock.method(fs, 'existsSync', (value) =>
+      value === '/usr/bin/sandbox-exec' ? false : exists(value)
+    )
+    await assert.rejects(
+      () => runContainedVerification(options),
+      /containment unavailable/
+    )
+    unavailable.mock.restore()
+    assert.equal(spawned.mock.callCount(), 0)
+  }
+)

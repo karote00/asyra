@@ -102,6 +102,126 @@ function runnerEnvironment(sourceRoot, scenario, temporaryDirectory) {
   }
 }
 
+const containmentAvailable = (platform = process.platform) =>
+  platform === 'darwin' && fs.existsSync('/usr/bin/sandbox-exec')
+const literal = (value) => JSON.stringify(fs.realpathSync(value))
+function containedProcess(options, { repositoryRoot, readRoots, writeRoot }) {
+  if (!containmentAvailable())
+    throw new Error('OS containment unavailable; candidate execution denied')
+  const dependencies = path.join(repositoryRoot, 'node_modules')
+  const node = fs.realpathSync(process.execPath)
+  const reads = [...readRoots, dependencies, __dirname]
+  const probes = []
+  for (let parent = repositoryRoot; ; parent = path.dirname(parent)) {
+    probes.push(path.join(parent, 'package.json'))
+    if (path.dirname(parent) === parent) break
+  }
+  const profile = `(version 1)
+(deny default)
+(allow file-read-metadata)
+(allow file-read-data (vnode-type DIRECTORY))
+(allow file-map-executable)
+(allow sysctl-read)
+(allow signal (target same-sandbox))
+(allow process-exec (literal ${JSON.stringify(node)}))
+(allow file-read* (subpath "/System") (subpath "/usr/lib") (subpath "/usr/share") (literal ${JSON.stringify(node)}) (literal "/dev/null") (literal "/dev/urandom") (literal "/dev/random") (literal "/private/etc/hosts") (literal "/private/etc/resolv.conf") ${reads.map((file) => '(subpath ' + literal(file) + ')').join(' ')})
+(allow file-read* file-write* (subpath ${literal(writeRoot)}))
+${readRoots.map((file) => '(deny file-write* (subpath ' + literal(file) + '))').join('\n')}
+(allow file-read-data ${probes.map((file) => '(literal ' + JSON.stringify(file) + ')').join(' ')})
+(allow file-write* (literal "/dev/null"))`
+  return runProcess({
+    ...options,
+    executable: '/usr/bin/sandbox-exec',
+    args: ['-p', profile, options.executable, ...options.args]
+  })
+}
+async function runContainedVerification(options) {
+  const keys = [
+    'repositoryRoot',
+    'runDirectory',
+    'snapshot',
+    'contract',
+    'scenario',
+    'flowIds',
+    'signal',
+    'timeoutMs',
+    'onSpawn'
+  ]
+  if (
+    !options ||
+    typeof options !== 'object' ||
+    Array.isArray(options) ||
+    Object.keys(options).some((key) => !keys.includes(key))
+  )
+    throw new Error('Invalid contained execution option override')
+  const { repositoryRoot, runDirectory, snapshot, contract } = options
+  const canonical = (value) =>
+    typeof value === 'string' &&
+    path.isAbsolute(value) &&
+    value === path.resolve(value) &&
+    value === fs.realpathSync(value)
+  try {
+    if (
+      !canonical(repositoryRoot) ||
+      !canonical(runDirectory) ||
+      !canonical(snapshot?.sourceRoot) ||
+      runDirectory === repositoryRoot ||
+      path
+        .relative(repositoryRoot, runDirectory)
+        .split(path.sep)
+        .includes('..') ||
+      snapshot.sourceRoot !== path.join(runDirectory, 'source')
+    )
+      throw new Error('Invalid location')
+  } catch {
+    throw new Error('Invalid contained execution location')
+  }
+  const execution = snapshot.executionSource
+  if (
+    !Object.hasOwn(snapshot, 'executionSource') ||
+    !execution ||
+    typeof execution !== 'object' ||
+    Array.isArray(execution) ||
+    execution.format !== 1 ||
+    execution.policy !== 'contained-native-typescript-v1' ||
+    execution.roles?.configuration !==
+      'tools/flow-inspector/control-plane/candidate-config.mjs' ||
+    execution.roles?.bootstrap !==
+      'tools/flow-inspector/control-plane/candidate-bootstrap.cjs' ||
+    !/^[a-f0-9]{64}$/.test(execution.digest ?? '') ||
+    snapshot.configurationDigest !== execution.digest ||
+    !snapshot.verificationSource ||
+    !/^[a-f0-9]{64}$/.test(execution.verificationSourceDigest ?? '') ||
+    execution.verificationSourceDigest !== snapshot.verificationSource.digest
+  )
+    throw new Error('Invalid contained execution closure')
+  if (!containmentAvailable())
+    throw new Error('OS containment unavailable; derived execution denied')
+  return runVerification({
+    ...options,
+    contract: { ...contract, configFile: execution.roles.configuration },
+    processRunner: (processOptions) =>
+      containedProcess(
+        {
+          ...processOptions,
+          args: [
+            path.join(snapshot.sourceRoot, execution.roles.bootstrap),
+            String(process.pid),
+            ...processOptions.args.slice(3),
+            '--configLoader',
+            'native'
+          ],
+          cwd: snapshot.sourceRoot
+        },
+        {
+          repositoryRoot,
+          readRoots: [snapshot.sourceRoot],
+          writeRoot: runDirectory
+        }
+      )
+  })
+}
+
 async function runVerification({
   repositoryRoot,
   runDirectory,
@@ -188,7 +308,14 @@ async function runVerification({
   }
 }
 
-module.exports = { runProcess, runVerification, runnerEnvironment }
+module.exports = {
+  runProcess,
+  runVerification,
+  runContainedVerification,
+  containedProcess,
+  containmentAvailable,
+  runnerEnvironment
+}
 
 // The group leader also watches its owner: an abrupt server death must not
 // leave a detached test tree running after the owner's deadline disappears.
