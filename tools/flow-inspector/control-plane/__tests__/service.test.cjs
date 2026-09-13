@@ -1295,9 +1295,12 @@ test('target proof lifecycle preserves cancellation interruption errors and reta
   }
 })
 
-async function assessmentFixture(distinct = true) {
+async function assessmentFixture(distinct = true, agentOptions = {}) {
   const f = referenceFixture()
-  const service = createService(f.repository, { directory: f.runs })
+  const service = createService(f.repository, {
+    directory: f.runs,
+    agentOptions
+  })
   const accepted = await service.wait(
     service.start({ mode: 'candidate' }, LOCAL_ACTOR)
   )
@@ -2081,8 +2084,8 @@ test(
   }
 )
 
-async function candidateTargetFixture(distinct = 'failure') {
-  const f = await assessmentFixture(distinct)
+async function candidateTargetFixture(distinct = 'failure', agentOptions = {}) {
+  const f = await assessmentFixture(distinct, agentOptions)
   // The captured repository needs an installed dependency root for OS containment;
   // ordinary Vitest created only its local cache while resolving ancestor packages.
   const dependencies = path.join(f.repository, 'node_modules')
@@ -2412,6 +2415,203 @@ test(
         () => isolated(f.repository, { directory: f.runs }),
         /manifest.*fingerprint/i
       )
+    } finally {
+      await service.close()
+      fs.rmSync(f.dir, { recursive: true, force: true })
+    }
+  }
+)
+
+test(
+  'task assessments register all derived producers and retain independent outcomes through exact source retirement',
+  { skip: process.platform !== 'darwin', timeout: 40000 },
+  async (t) => {
+    let notifications = 0
+    const f = await candidateTargetFixture('failure', {
+      onChange: () => notifications++
+    })
+    let service = f.service
+    const { role, ...request } = f.proofRequest
+    assert.equal(role, 'target')
+    const assessor = require('../target-evidence.cjs')
+    const assess = t.mock.method(assessor, 'assessTargetSource')
+    const project = t.mock.method(
+      assessor,
+      'projectTargetAssessmentCurrentness'
+    )
+    try {
+      const selectionLookups = t.mock.method(Map.prototype, 'get')
+      const id = service.startTargetAssessment(request, LOCAL_ACTOR)
+      const sourceCache = selectionLookups.mock.calls.find(
+        (call) => call.result?.taskId === f.task.id && call.result?.admission
+      )?.this
+      assert.ok(sourceCache)
+      selectionLookups.mock.restore()
+      const registered = service.getTargetAssessment(id)
+      assert.equal(registered.runtime.taskId, f.task.id)
+      assert.equal(registered.slots.length, 2)
+      assert.equal(registered.result.accepted.status, 'unknown')
+      assert.equal(assess.mock.callCount(), 1)
+      assert.equal(
+        Object.hasOwn(assess.mock.calls[0].arguments[0], 'sourceAdmission'),
+        false
+      )
+      assert.deepEqual(assess.mock.calls[0].arguments[0].sourceIdentity, {
+        repository: registered.runtime.repository,
+        head: registered.runtime.head,
+        runtimeSourceDigest: registered.runtime.runtimeSourceDigest
+      })
+      const before = service.getTask(f.task.id)
+      await assert.rejects(
+        service.controlTask(f.task.id, { action: 'revoke' }, LOCAL_ACTOR),
+        /assessment|active|running/i
+      )
+      assert.deepEqual(service.getTask(f.task.id), before)
+      const result = await service.waitTargetAssessment(id)
+      assert.equal(result.phase, 'completed')
+      assert.equal(result.result.accepted.status, 'passed')
+      assert.equal(result.result.integration.status, 'failed')
+      assert.equal(assess.mock.callCount(), 3)
+      for (const slot of result.slots) {
+        const producer = service.get(slot.id)
+        assert.equal(producer.format, 3)
+        assert.equal(producer.targetProof.runtime.taskId, f.task.id)
+        assert.equal(producer.targetAssessmentId, id)
+      }
+      const verdict = result.result
+      const evaluated = result.evaluatedCurrent
+      const beforeNotifications = notifications
+      const beforeRetirementProjects = project.mock.callCount()
+      await service.controlTask(f.task.id, { action: 'revoke' }, LOCAL_ACTOR)
+      assert.equal(notifications, beforeNotifications + 1)
+      assert.equal(project.mock.callCount(), beforeRetirementProjects + 1)
+      assert.equal(assess.mock.callCount(), 3)
+      assert.equal(service.getTargetAssessment(id).projection.current, false)
+      assert.strictEqual(service.getTargetAssessment(id).result, verdict)
+      assert.deepEqual(
+        service.getTargetAssessment(id).evaluatedCurrent,
+        evaluated
+      )
+      await service.controlTask(f.task.id, { action: 'revoke' }, LOCAL_ACTOR)
+      assert.equal(notifications, beforeNotifications + 2)
+      assert.equal(project.mock.callCount(), beforeRetirementProjects + 1)
+      assert.equal(assess.mock.callCount(), 3)
+      const counts = [assess.mock.callCount(), project.mock.callCount()]
+      const lookups = t.mock.method(Map.prototype, 'get')
+      const reads = t.mock.method(fs, 'readFileSync')
+      for (let i = 0; i < 3; i++) {
+        service.getTargetAssessment(id)
+        service.targetAssessments()
+        assert.equal(service.startTargetAssessment(request, LOCAL_ACTOR), id)
+      }
+      assert.equal(reads.mock.callCount(), 0)
+      assert.deepEqual(
+        [assess.mock.callCount(), project.mock.callCount()],
+        counts
+      )
+      assert.equal(
+        lookups.mock.calls.filter((call) => call.this === sourceCache).length,
+        0
+      )
+      lookups.mock.restore()
+      reads.mock.restore()
+      assert.throws(
+        () =>
+          service.startTargetAssessment(
+            { ...request, requestId: randomUUID() },
+            LOCAL_ACTOR
+          ),
+        /unavailable/
+      )
+      await service.close()
+      service = createService(f.repository, { directory: f.runs })
+      assert.deepEqual(service.getTargetAssessment(id).result, verdict)
+      assert.deepEqual(
+        service.getTargetAssessment(id).evaluatedCurrent,
+        evaluated
+      )
+      assert.equal(service.getTargetAssessment(id).projection.current, false)
+      assert.equal(service.startTargetAssessment(request, LOCAL_ACTOR), id)
+    } finally {
+      await service.close()
+      fs.rmSync(f.dir, { recursive: true, force: true })
+    }
+  }
+)
+
+test(
+  'task assessment sharing and pre-dispatch cancellation retain complete requested authority without fallback',
+  { skip: process.platform !== 'darwin', timeout: 30000 },
+  async (t) => {
+    const f = await candidateTargetFixture(false)
+    let service = f.service
+    const { role, ...request } = f.proofRequest
+    assert.equal(role, 'target')
+    try {
+      const runs = service.state().runs.length
+      for (const sourceTaskId of [null, '', undefined, randomUUID()]) {
+        assert.throws(() =>
+          service.startTargetAssessment(
+            { ...request, requestId: randomUUID(), sourceTaskId },
+            LOCAL_ACTOR
+          )
+        )
+        assert.equal(service.state().runs.length, runs)
+        assert.equal(service.targetAssessments().length, 0)
+      }
+      const completed = await service.waitTargetAssessment(
+        service.startTargetAssessment(request, LOCAL_ACTOR)
+      )
+      assert.equal(completed.slots.length, 1)
+      assert.equal(
+        completed.roles.accepted.slotId,
+        completed.roles.target.slotId
+      )
+      assert.equal(completed.result.accepted.status, 'passed')
+      assert.equal(completed.result.integration.status, 'passed')
+      assert.equal(completed.projection.eligible, true)
+      const producer = service.get(completed.slots[0].id)
+      assert.equal(
+        producer.snapshot.configurationDigest,
+        producer.snapshot.executionSource.digest
+      )
+      assert.notEqual(
+        producer.snapshot.configurationDigest,
+        completed.roles.target.reference.configurationDigest
+      )
+      const pendingRequest = { ...request, requestId: randomUUID() }
+      const pendingId = service.startTargetAssessment(
+        pendingRequest,
+        LOCAL_ACTOR
+      )
+      const cancelled = await service.cancelTargetAssessment(
+        pendingId,
+        LOCAL_ACTOR
+      )
+      assert.equal(cancelled.phase, 'cancelled')
+      assert.equal(cancelled.slots.length, 1)
+      assert.equal(cancelled.slots[0].phase, 'cancelled')
+      assert.ok(cancelled.slots[0].reason)
+      assert.throws(() => service.get(cancelled.slots[0].id), /not found/)
+      assert.equal(cancelled.result.integration.status, 'unknown')
+      await service.controlTask(f.task.id, { action: 'revoke' }, LOCAL_ACTOR)
+      await service.close()
+      service = createService(f.repository, { directory: f.runs })
+      assert.deepEqual(
+        service.getTargetAssessment(pendingId).result,
+        cancelled.result
+      )
+      assert.equal(
+        service.startTargetAssessment(pendingRequest, LOCAL_ACTOR),
+        pendingId
+      )
+      const read = t.mock.method(fs, 'readFileSync')
+      assert.equal(
+        service.getTargetAssessment(pendingId).projection.current,
+        false
+      )
+      assert.equal(read.mock.callCount(), 0)
+      read.mock.restore()
     } finally {
       await service.close()
       fs.rmSync(f.dir, { recursive: true, force: true })

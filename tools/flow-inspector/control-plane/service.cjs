@@ -671,6 +671,10 @@ function createService(
   try {
     tasks = createTaskOwner(repositoryRoot, {
       ...agentOptions,
+      onChange: () => {
+        refreshAssessmentProjections()
+        agentOptions.onChange?.()
+      },
       checkWork: (task, snapshot) => targets.checkTask(task, snapshot),
       directory: path.join(directory, 'tasks'),
       getBaseline: () => ({ contract, revision: store.mapping().revision }),
@@ -1210,7 +1214,8 @@ function createService(
     objectRequest(selection, [
       'targetId',
       'allocationRevision',
-      'sourceAttemptId'
+      'sourceAttemptId',
+      'sourceTaskId'
     ])
     validateTargetProofSelection({ ...selection, role: 'accepted' })
   }
@@ -1236,9 +1241,29 @@ function createService(
     }
   }
   const currentAssessmentIdentity = (record) => {
-    const source = sourceAdmissions.get(
-      selectedSources.get(record.request.targetId)
-    )?.admission
+    const selection = selectedSources.get(record.request.targetId)
+    let source
+    if (selection?.request.sourceTaskId) {
+      const artifact = tasks.sourceFor(
+        selection.request.sourceTaskId,
+        selection.request.sourceAttemptId
+      )
+      if (
+        artifact &&
+        isDeepStrictEqual(
+          targetRuntimeIdentity(
+            artifact.admission,
+            selection.request.sourceTaskId
+          ),
+          selection.runtime
+        )
+      )
+        source = artifact.admission
+    } else {
+      source = sourceAdmissions.get(
+        selection?.request.sourceAttemptId
+      )?.admission
+    }
     return {
       targetId: record.request.targetId,
       allocationRevision: targets.get(record.request.targetId).revision,
@@ -1298,8 +1323,19 @@ function createService(
         record.roles.accepted.verificationSourceDigest,
       targetVerificationSourceDigest:
         record.roles.target.verificationSourceDigest,
-      sourceAdmission: sourceAdmissions.get(record.request.sourceAttemptId)
-        .admission,
+      ...(record.request.sourceTaskId
+        ? {
+            sourceIdentity: {
+              repository: record.runtime.repository,
+              head: record.runtime.head,
+              runtimeSourceDigest: record.runtime.runtimeSourceDigest
+            }
+          }
+        : {
+            sourceAdmission: sourceAdmissions.get(
+              record.request.sourceAttemptId
+            ).admission
+          }),
       proofRequests: record.slots.map((slot) => ({
         id: slot.id,
         contractDigest: record.roles[slot.role].contractDigest,
@@ -1496,10 +1532,10 @@ function createService(
           throw new Error('Duplicate target assessment identity')
         validateAssessmentRecord(retained, seen)
         let record = retained
-        selectedSources.set(
-          record.request.targetId,
-          record.request.sourceAttemptId
-        )
+        selectedSources.set(record.request.targetId, {
+          request: record.request,
+          runtime: record.runtime
+        })
         if (record.phase === 'running') {
           record = {
             ...record,
@@ -1562,7 +1598,8 @@ function createService(
         'requestId',
         'targetId',
         'allocationRevision',
-        'sourceAttemptId'
+        'sourceAttemptId',
+        'sourceTaskId'
       ])
       if (!validId(request.requestId))
         throw new ActionError(400, 'Invalid target assessment request')
@@ -1601,7 +1638,10 @@ function createService(
         if (!same) slots.push({ id, role, phase: 'requested' })
       }
       const previousSource = selectedSources.get(selection.targetId)
-      selectedSources.set(selection.targetId, selection.sourceAttemptId)
+      selectedSources.set(selection.targetId, {
+        request: selection,
+        runtime: resolved.runtime
+      })
       const record = evaluateAssessment({
         format: 1,
         id: requestId,
@@ -1820,6 +1860,14 @@ function createService(
         throw new ActionError(409, 'A delivery review is active')
       authorize(actor, 'control-task')
       objectRequest(request, ['action', 'scenario'])
+      if (
+        activeAssessment &&
+        assessmentRecords.get(activeAssessment.id)?.request.sourceTaskId === id
+      )
+        throw new ActionError(
+          409,
+          'Source task belongs to an active assessment'
+        )
       if (request.action === 'resume') {
         taskResult(() => tasks.resume(id, request.scenario, actor.id))
         return tasks.get(id)
