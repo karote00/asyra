@@ -74,9 +74,10 @@ with candidate runtime under a new derived closure. Service/evidence admission
 retains exact derived authority under attempt format 3; source/evidence and
 candidate producer envelopes separate intact source identity from case outcome.
 The task owner retains that source privately for exact live and startup handoff,
-including failed/partial candidates. The next runner slice shares the existing
-contained execution policy before candidate and service consumers adopt it.
-Contained target dispatch,
+including failed/partial candidates. The runner now owns shared contained
+execution and the candidate consumes it. The next service producer slice selects
+exact task/attempt sources and performs contained target dispatch with post-run
+integrity. Assessment task-source selection,
 scoped verification, execution/admission consumers and explicit target-baseline
 acceptance remain subsequent slices.
 Existing target execution and pending behavior stay in effect until those

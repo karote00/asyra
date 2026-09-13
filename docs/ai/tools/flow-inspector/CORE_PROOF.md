@@ -827,6 +827,84 @@ completed target proofs are evidence-admitted against their own source-admitted
 contract once on restart; missing or conflicting new authority fails closed under
 the existing manifest admission rules.
 
+### Task source target proof production
+
+The internal `startTargetProof` request additionally accepts optional
+`sourceTaskId`. Absence preserves ordinary run selection; own presence requires a
+canonical task UUID, paired with the exact existing `sourceAttemptId` UUID. Null,
+unknown fields and malformed identities reject before effects. Clients still
+cannot supply paths, snapshots, descriptors or evidence. This bounded producer
+extension does not add task selection to assessment requests, HTTP, CLI or Board.
+
+For a new task-source request, resolve only
+`tasks.sourceFor(sourceTaskId, sourceAttemptId)`. Require its exact task/attempt and
+canonical repository binding. The task runtime tuple has exactly these keys:
+`taskId`, `attemptId`, `repository`, `head`, `sourceDigest`,
+`runtimeSourceDigest`, `verificationSourceDigest`, `executionSourceDigest`,
+`configurationDigest`, `contractDigest`, `mappingVersion`, `architectureVersion`
+and `lockfileDigest`. Forward these identities from the completed private artifact;
+do not hash descriptors again. Ordinary runtime tuples keep their existing keys
+and have no taskId; presence must agree with the request in both directions, so
+run and task UUID namespaces cannot substitute for one another. Both role
+verification references still resolve independently through their exact immutable
+version pins and retain their original ordinary five-role configuration authority.
+A source with failed or partial assertions may be selected; source availability is
+not task success. Missing, retired, wrong-attempt or legacy unavailable source has
+no new attempt side effects. Never repair it from task history, public verdicts,
+current checkout bytes or a newer/passing attempt.
+
+After registering the target-proof attempt, obtain the exact private task source
+again at the composition boundary; retirement cannot trigger a fallback. Pass its
+completed source artifact and fixed sourceRoot to `composeDerivedSource`, with the
+selected ordinary verifier reference at its server-owned source location. The
+source owner regenerates the closure for the new run UUID directory. The service
+performs its existing combined admission and actual output-tree check, publishes
+format 3, then calls the runner-owned `runContainedVerification` with the original
+selected contract and complete registered flow inventory. Ordinary composition,
+an ordinary runner injection or a caller process override cannot execute this
+candidate runtime. No stage treats task status as verification evidence.
+
+After the actual contained runner settles, verify every output-tree manifest
+entry once more through the source owner's byte helper before assessing or
+publishing usable evidence. This is the post-untrusted-execution lifetime, distinct
+from composition input checks and pre-execution output admission. On integrity
+failure retire the private source artifact, settle the attempt as error, and
+retain the real runner identity/report and explicit failure reason without
+creating assessed passing evidence. Preserve the runner's actual outcome; do not
+fabricate a failed assertion report. Successful integrity continues through the
+existing evidence owner and own-contract retention, preserving failed assertions,
+cancellation, deadline and process errors. This producer is never ordinary
+accepted conformance, a version acceptance or target eligibility by itself.
+
+Historical selection validation is separate from new dispatch authority. Resolve
+an exact retained task attempt from the already loaded task owner's immutable
+history even if a later attempt exists or the task is now revoked. Require that
+attempt to be completed with full source materials, and compare task/baseline,
+full/runtime/configuration/descriptor identities and HEAD with the saved runtime
+selection; the task repository remains the trusted service repository. This is
+reference correlation only: the target producer's own full-manifest admission
+provides its source authority. It neither rebuilds a task cache nor grants new
+execution. Missing historical task/attempt or conflicting tuple rejects load;
+there is no latest or equal-digest search. A derived target producer's generated
+configuration is bound to its own execution descriptor, while its original
+verification descriptor must still match the pinned ordinary bundle.
+
+All retained derived attempts keep strict manifest, contract and descriptor
+admission. At startup only, a non-completed error/interrupted/cancelled/timed-out
+attempt whose actual source bytes are unavailable remains readable without a
+private source artifact; this does not supply evidence or dispatch authority.
+Only actual-byte availability failures may take this path, after strict metadata
+admission completes. Do not catch manifest, contract or descriptor errors as byte
+unavailability. Historical correlation may consume completed descriptor metadata
+without publishing a partial source artifact.
+Completed attempts and every live admission remain strict on actual bytes. This
+allows an explicitly recorded post-run integrity failure to survive restart
+without concealing the error or weakening completed evidence. No durable verified
+flag or source-status rewrite is introduced. Exact replay still precedes current
+availability and idle checks, and returns the original request without source
+lookup or execution; actor/selection conflicts and automatic restart dispatch
+remain forbidden.
+
 ### Retained target assessment requests
 
 `startTargetAssessment({requestId, targetId, allocationRevision,
@@ -1424,6 +1502,9 @@ its exact stored source contract and all three descriptors. Admit the complete
 manifest once through `validateSourceSnapshot` with that separately supplied
 fixed source context. Independently verify every actual output-tree entry once
 through `verifyRetainedSnapshotBytes`, both at initial live admission and startup.
+The non-completed retained-byte-unavailability rule in
+[task source target production](#task-source-target-proof-production) preserves
+error history without an admitted source; completed and live admission stay strict.
 Only after both succeed may the private admission map publish its immutable
 artifact. Live output-tree verification does not repeat composition's reads from
 its separate retained input trees. Ordinary live source admission keeps its

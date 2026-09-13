@@ -672,6 +672,8 @@ const data = {
         'artifact:reviewed-contract-evolution',
         'artifact:ci-aggregate-evidence',
         'artifact:agent-task-state',
+        'artifact:admitted-task-source',
+        'artifact:proof-runner-result',
         'artifact:pr-review-record',
         'artifact:flow-target-state',
         'artifact:target-source-assessment',
@@ -679,7 +681,8 @@ const data = {
       ],
       outputs: ['artifact:proof-board-state', 'artifact:admitted-runtime-source', 'artifact:admitted-verification-source'],
       conditions: [
-        'Persist newly published derived sources as outer attempt format 3, requiring sourceContract and all three non-null descriptors; retain versioned checks, reject missing/unknown formats and never downgrade missing fields. Formats 1/2 remain historical without load-time upgrade. For derived source admission, use only the fixed run-UUID source/manifest locations and exact stored source contract. Perform one combined descriptor admission plus one actual output-tree byte verification before publishing a complete immutable private artifact; preserve bilateral execution presence, full/configuration/contract tuple and invalidate on mismatch. Startup repeats once per lifetime, reads/replay never do. Ordinary live no-source-read behavior remains unchanged; contained target dispatch and post-run integrity are a separate producer prerequisite.',
+        'Optional sourceTaskId on internal target-proof requests selects only the task owner exact private sourceFor(taskId, attemptId) artifact for new dispatch, preserving failed/partial source identity independently of outcome. Persist the task namespace in the runtime tuple. Compose derived source with each exact ordinary verifier, execute only the shared contained runner, and recheck every output byte after settlement before evidence publication. Integrity failure retires source authority and retains actual runner/report with an error. Startup keeps manifest/descriptor admission strict but noncompleted unavailable bytes yield readable history without a source artifact; completed/live remain strict. Historical task correlation uses exact retained attempts only and cannot authorize new dispatch. Assessment and public transport task selection remain subsequent consumers.',
+        'Persist newly published derived sources as outer attempt format 3, requiring sourceContract and all three non-null descriptors; retain versioned checks, reject missing/unknown formats and never downgrade missing fields. Formats 1/2 remain historical without load-time upgrade. For derived source admission, use only the fixed run-UUID source/manifest locations and exact stored source contract. Perform one combined descriptor admission plus one actual output-tree byte verification before publishing a complete immutable private artifact; preserve bilateral execution presence, full/configuration/contract tuple and invalidate on mismatch. Startup repeats once per lifetime, reads/replay never do. Ordinary live no-source-read behavior remains unchanged; contained task target dispatch additionally requires the shared runner and post-run actual-byte check before evidence.',
         'Register a complete immutable target-assessment producer inventory before dispatch, resolving both exact role references independently and sharing only identical ordinary verification identities. Hold one private orchestration lifetime, preserve every slot and confirmed observation through cancellation or interruption, and never auto-resume on startup. Consume assessed results only after registration or producer settlement; they are never an initial source-admission prerequisite. Retain historical verdicts and cache currentness-only projections at actual owner identity changes, with no computation on reads or replay.',
         'Explicit target-proof production selects an exact target allocation, accepted-version or target-review reference and service-owned runtime attempt. Compose ordinary frozen bytes through the source owner and consume the selected contract through the existing runner and evidence lifecycle. Exact request replay precedes idle and availability checks; new unavailable authority has no attempt side effects, and admitted failures, cancellation and restart interruption never auto-retry. This mode cannot become ordinary accepted conformance or candidate version preparation. Assessment inventory and eligibility remain separate consumers.',
         'Admit retained review metadata once through the version owner against its exact immutable history prefix and compare every owner field before supplying a target callback pair. Keep metadata integrity separate from retained-byte availability: historical pins remain readable, while new pinned target creation requires the exact reference to be available. Public review candidateDigest remains the version-owned fingerprint, with contract identity projected separately. No latest-review substitution or read-time re-admission is permitted.',
@@ -723,6 +726,7 @@ const data = {
         '#source-admission-in-the-local-service',
         '#derived-service-and-evidence-admission',
         '#frozen-target-proof-production',
+        '#task-source-target-proof-production',
         '#retained-target-assessment-requests',
         '#target-assessment-http-transport',
         '#target-assessment-cli-transport',
@@ -994,6 +998,8 @@ const data = {
       predicate: 'The producer completed its declared boundary.',
       producedArtifacts: ['artifact:proof-source-snapshot']
     },
+    { id: 'task-source-to-target-proof', from: 'execute-agent-task', to: 'serve-proof-actions', kind: 'conditional', predicate: 'For a new explicit exact task/attempt target-proof selection, consume the current private task source artifact before composition; historical task metadata cannot substitute for this authority.', producedArtifacts: ['artifact:admitted-task-source'] },
+    { id: 'contained-runner-to-target-proof', from: 'execute-proof-run', to: 'serve-proof-actions', kind: 'conditional', predicate: 'After task-source target contained execution settles, retain its actual runner result and perform post-run byte verification before evidence publication; no passing outcome is prerequisite.', producedArtifacts: ['artifact:proof-runner-result'] },
     { id: 'contained-runner-to-candidate', from: 'execute-proof-run', to: 'verify-agent-candidate', kind: 'conditional', predicate: 'After the controlled derived runner settles, return its actual report and identity before candidate evidence assessment and source publication; no completed verdict or passing outcome is required.', producedArtifacts: ['artifact:proof-runner-result'] },
     {
       id: 'execute-proof-run-to-assess-proof-evidence',
@@ -1137,7 +1143,7 @@ const data = {
       title: 'Execute proof run output',
       ownerStepId: 'execute-proof-run',
       channel: 'local-proof',
-      consumerStepIds: ['assess-proof-evidence', 'verify-agent-candidate']
+      consumerStepIds: ['assess-proof-evidence', 'verify-agent-candidate', 'serve-proof-actions']
     },
     {
       id: 'artifact:assessed-proof-evidence',
@@ -1165,7 +1171,7 @@ const data = {
       title: 'Task source admission output',
       ownerStepId: 'execute-agent-task',
       channel: 'private exact task and attempt source admission',
-      consumerStepIds: []
+      consumerStepIds: ['serve-proof-actions']
     },
     {
       id: 'artifact:proof-board-state',
