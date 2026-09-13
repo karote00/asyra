@@ -705,6 +705,11 @@ function createService(
         if (!validId(id)) throw new ActionError(400, 'Invalid task identity')
         return path.join(directory, 'tasks', id, 'candidate')
       },
+      getScopedWork: (taskId, attemptId, assessmentId, actor) =>
+        scopedWorkFor(taskId, attemptId, assessmentId, {
+          id: actor,
+          capabilities: [REVIEW_POLICY.capability]
+        }),
       adapter: deliveryAdapter
     })
   } catch (error) {
@@ -1591,6 +1596,137 @@ function createService(
     if (active) active.controller.abort()
     return activeAssessment.completion
   }
+  const scopedWorkFor = (taskId, attemptId, assessmentId, actor) => {
+    authorize(actor, REVIEW_POLICY.capability)
+    if (![taskId, attemptId, assessmentId].every(validId))
+      throw new ActionError(400, 'Invalid scoped work selection')
+    requireIdle(true)
+    return taskResult(() => {
+      const task = tasks.get(taskId)
+      const attempt = task.attempts.at(-1)
+      const binding = task.task.workBinding
+      const record = assessmentRecords.get(assessmentId)
+      const view = assessmentViews.get(assessmentId)
+      if (
+        task.revoked ||
+        task.actor !== actor.id ||
+        attempt?.id !== attemptId ||
+        attempt.phase !== 'completed' ||
+        !binding ||
+        !record ||
+        record.actor !== actor.id ||
+        record.phase !== 'completed' ||
+        !view?.projection.current ||
+        record.request.sourceTaskId !== taskId ||
+        record.request.sourceAttemptId !== attemptId ||
+        record.request.targetId !== binding.targetId
+      )
+        throw new Error('Scoped work selection is unavailable or stale')
+      const admission = targets.checkTask(task.task, task.snapshot)
+      const target = targets.get(binding.targetId)
+      const work = record.result.works.find(
+        (item) => item.id === binding.workId
+      )
+      if (
+        !admission ||
+        admission.id !== binding.admissionId ||
+        target.revision !== record.request.allocationRevision ||
+        !isDeepStrictEqual(
+          target.acceptedBaseline,
+          record.result.acceptedBaseline
+        ) ||
+        !isDeepStrictEqual(
+          target.acceptedVersion,
+          record.pins.acceptedVersion
+        ) ||
+        !isDeepStrictEqual(
+          target.targetVerification,
+          record.pins.targetVerification
+        ) ||
+        record.result.accepted.status !== 'passed' ||
+        work?.status !== 'passed'
+      )
+        throw new Error(
+          'Scoped work preservation or commitment is not satisfied'
+        )
+      const source = taskRuntime(record.request, true)
+      if (
+        !isDeepStrictEqual(
+          targetRuntimeIdentity(source.admission, taskId),
+          record.runtime
+        )
+      )
+        throw new Error('Scoped work source identity mismatch')
+      const roles = ['accepted', 'target']
+      const ids = [...new Set(roles.map((role) => record.roles[role].slotId))]
+      if (
+        !ids.length ||
+        ids.length !== record.slots.length ||
+        record.slots.some((slot) => !ids.includes(slot.id))
+      )
+        throw new Error('Scoped work proof inventory is incomplete')
+      const producers = record.slots.map((slot) => {
+        const producer = store.get(slot.id)
+        const admitted = sourceAdmissions.get(slot.id)?.admission
+        const identity = record.roles[slot.role]
+        if (
+          slot.phase !== 'completed' ||
+          producer?.phase !== 'completed' ||
+          producer.targetAssessmentId !== record.id ||
+          producer.actor !== actor.id ||
+          !admitted ||
+          !producer.evidence ||
+          !isDeepStrictEqual(producer.targetProof?.request, {
+            ...record.request,
+            role: slot.role
+          }) ||
+          !isDeepStrictEqual(producer.targetProof.runtime, record.runtime) ||
+          !isDeepStrictEqual(
+            producer.targetProof.verificationSource,
+            identity.reference
+          ) ||
+          admitted.attemptId !== slot.id ||
+          admitted.repository !== repository ||
+          admitted.contractDigest !== identity.contractDigest ||
+          admitted.verificationSource?.digest !==
+            identity.verificationSourceDigest
+        )
+          throw new Error('Scoped work producer authority is unavailable')
+        return Object.freeze({
+          id: slot.id,
+          roles: Object.freeze(
+            roles.filter((role) => record.roles[role].slotId === slot.id)
+          ),
+          contractDigest: identity.contractDigest,
+          verificationSourceDigest: identity.verificationSourceDigest,
+          reference: identity.reference,
+          sourceDigest: admitted.sourceDigest,
+          configurationDigest: admitted.configurationDigest,
+          runtimeSourceDigest: admitted.runtimeSource.digest,
+          executionSourceDigest: admitted.executionSource.digest
+        })
+      })
+      // All nested owner values are already detached and frozen; do not clone,
+      // traverse, hash or reassess the completed work evidence at this boundary.
+      return Object.freeze({
+        assessmentId,
+        taskId,
+        attemptId,
+        targetId: binding.targetId,
+        allocationRevision: target.revision,
+        workId: binding.workId,
+        workBinding: binding,
+        acceptedBaseline: target.acceptedBaseline,
+        acceptedVersion: target.acceptedVersion,
+        targetVerification: target.targetVerification,
+        roles: record.roles,
+        runtime: record.runtime,
+        work,
+        integration: record.result.integration,
+        producers: Object.freeze(producers)
+      })
+    })
+  }
   return {
     startTargetAssessment(request, actor) {
       authorize(actor, 'verify')
@@ -1760,137 +1896,7 @@ function createService(
       })
       return requestId
     },
-    // Internal review handoff; public transports do not expose this method.
-    scopedWorkFor(taskId, attemptId, assessmentId, actor) {
-      authorize(actor, REVIEW_POLICY.capability)
-      if (![taskId, attemptId, assessmentId].every(validId))
-        throw new ActionError(400, 'Invalid scoped work selection')
-      requireIdle(true)
-      return taskResult(() => {
-        const task = tasks.get(taskId)
-        const attempt = task.attempts.at(-1)
-        const binding = task.task.workBinding
-        const record = assessmentRecords.get(assessmentId)
-        const view = assessmentViews.get(assessmentId)
-        if (
-          task.revoked ||
-          task.actor !== actor.id ||
-          attempt?.id !== attemptId ||
-          attempt.phase !== 'completed' ||
-          !binding ||
-          !record ||
-          record.actor !== actor.id ||
-          record.phase !== 'completed' ||
-          !view?.projection.current ||
-          record.request.sourceTaskId !== taskId ||
-          record.request.sourceAttemptId !== attemptId ||
-          record.request.targetId !== binding.targetId
-        )
-          throw new Error('Scoped work selection is unavailable or stale')
-        const admission = targets.checkTask(task.task, task.snapshot)
-        const target = targets.get(binding.targetId)
-        const work = record.result.works.find(
-          (item) => item.id === binding.workId
-        )
-        if (
-          !admission ||
-          admission.id !== binding.admissionId ||
-          target.revision !== record.request.allocationRevision ||
-          !isDeepStrictEqual(
-            target.acceptedBaseline,
-            record.result.acceptedBaseline
-          ) ||
-          !isDeepStrictEqual(
-            target.acceptedVersion,
-            record.pins.acceptedVersion
-          ) ||
-          !isDeepStrictEqual(
-            target.targetVerification,
-            record.pins.targetVerification
-          ) ||
-          record.result.accepted.status !== 'passed' ||
-          work?.status !== 'passed'
-        )
-          throw new Error(
-            'Scoped work preservation or commitment is not satisfied'
-          )
-        const source = taskRuntime(record.request, true)
-        if (
-          !isDeepStrictEqual(
-            targetRuntimeIdentity(source.admission, taskId),
-            record.runtime
-          )
-        )
-          throw new Error('Scoped work source identity mismatch')
-        const roles = ['accepted', 'target']
-        const ids = [...new Set(roles.map((role) => record.roles[role].slotId))]
-        if (
-          !ids.length ||
-          ids.length !== record.slots.length ||
-          record.slots.some((slot) => !ids.includes(slot.id))
-        )
-          throw new Error('Scoped work proof inventory is incomplete')
-        const producers = record.slots.map((slot) => {
-          const producer = store.get(slot.id)
-          const admitted = sourceAdmissions.get(slot.id)?.admission
-          const identity = record.roles[slot.role]
-          if (
-            slot.phase !== 'completed' ||
-            producer?.phase !== 'completed' ||
-            producer.targetAssessmentId !== record.id ||
-            producer.actor !== actor.id ||
-            !admitted ||
-            !producer.evidence ||
-            !isDeepStrictEqual(producer.targetProof?.request, {
-              ...record.request,
-              role: slot.role
-            }) ||
-            !isDeepStrictEqual(producer.targetProof.runtime, record.runtime) ||
-            !isDeepStrictEqual(
-              producer.targetProof.verificationSource,
-              identity.reference
-            ) ||
-            admitted.attemptId !== slot.id ||
-            admitted.repository !== repository ||
-            admitted.contractDigest !== identity.contractDigest ||
-            admitted.verificationSource?.digest !==
-              identity.verificationSourceDigest
-          )
-            throw new Error('Scoped work producer authority is unavailable')
-          return Object.freeze({
-            id: slot.id,
-            roles: Object.freeze(
-              roles.filter((role) => record.roles[role].slotId === slot.id)
-            ),
-            contractDigest: identity.contractDigest,
-            verificationSourceDigest: identity.verificationSourceDigest,
-            reference: identity.reference,
-            sourceDigest: admitted.sourceDigest,
-            configurationDigest: admitted.configurationDigest,
-            runtimeSourceDigest: admitted.runtimeSource.digest,
-            executionSourceDigest: admitted.executionSource.digest
-          })
-        })
-        // All nested owner values are already detached and frozen; do not clone,
-        // traverse, hash or reassess the completed work evidence at this boundary.
-        return Object.freeze({
-          assessmentId,
-          taskId,
-          attemptId,
-          targetId: binding.targetId,
-          allocationRevision: target.revision,
-          workId: binding.workId,
-          workBinding: binding,
-          acceptedBaseline: target.acceptedBaseline,
-          acceptedVersion: target.acceptedVersion,
-          targetVerification: target.targetVerification,
-          roles: record.roles,
-          runtime: record.runtime,
-          work,
-          producers: Object.freeze(producers)
-        })
-      })
-    },
+    scopedWorkFor,
     getTargetAssessment: readAssessment,
     targetAssessments: () => Object.freeze([...assessmentViews.values()]),
     async waitTargetAssessment(id) {
@@ -1958,6 +1964,15 @@ function createService(
         tasks.get(id)
         return reviews.get(id)
       }),
+    async prepareScopedReview(id, selection, actor) {
+      authorize(actor, REVIEW_POLICY.capability)
+      requireIdle(true)
+      try {
+        return await reviews.prepareScoped(id, selection, actor.id)
+      } catch (error) {
+        throw new ActionError(409, error.message)
+      }
+    },
     async reviewTask(id, request, actor) {
       authorize(actor, REVIEW_POLICY.capability)
       objectRequest(request, ['action', 'previewDigest', 'confirm'])

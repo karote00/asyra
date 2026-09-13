@@ -2619,11 +2619,11 @@ test(
   }
 )
 
-async function scopedWorkFixture(failure = null) {
+async function scopedWorkFixture(failure = null, deliveryAdapter = {}) {
   const f = referenceFixture()
   const service = createService(f.repository, {
     directory: f.runs,
-    deliveryAdapter: {},
+    deliveryAdapter,
     agentOptions: {
       adapterFactory(task) {
         let turn = 0
@@ -3116,8 +3116,595 @@ test(
         producer.snapshot.executionSource.digest
       )
       assert.strictEqual(handoff.work, f.assessment.result.works[0])
+      assert.strictEqual(handoff.integration, f.assessment.result.integration)
     } finally {
       await f.service.close()
+      fs.rmSync(f.dir, { recursive: true, force: true })
+    }
+  }
+)
+
+test(
+  'scoped review prepares and confirms exact real bounded evidence without changing the failed candidate or baseline',
+  { skip: process.platform !== 'darwin', timeout: 40000 },
+  async (t) => {
+    const counts = { inspect: 0, deliver: 0 }
+    const adapter = {
+      repository: 'offline/scoped-review',
+      base: 'main',
+      async inspect() {
+        counts.inspect++
+        return { baseSha: 'b'.repeat(40), baseTree: 'c'.repeat(40) }
+      },
+      async deliver(preview, checkpoint) {
+        counts.deliver++
+        await checkpoint('create-branch')
+        return {
+          number: 1,
+          state: 'open',
+          headSha: 'd'.repeat(40),
+          draft: false
+        }
+      }
+    }
+    const f = await scopedWorkFixture(null, adapter)
+    let service = f.service
+    const attemptId = f.task.attempts.at(-1).id
+    const selection = { attemptId, assessmentId: f.assessment.id }
+    const baseline = service.state().mapping
+    try {
+      await assert.rejects(
+        service.reviewTask(f.task.id, { action: 'prepare' }, LOCAL_ACTOR),
+        /verified/
+      )
+      let preview = await service.prepareScopedReview(
+        f.task.id,
+        selection,
+        LOCAL_ACTOR
+      )
+      assert.equal(preview.format, 2)
+      assert.equal(preview.preview.candidateVerification, 'failed')
+      assert.deepEqual(
+        preview.preview.scopedWork,
+        service.scopedWorkFor(
+          f.task.id,
+          attemptId,
+          f.assessment.id,
+          LOCAL_ACTOR
+        )
+      )
+      assert.match(preview.preview.title, /bounded work/i)
+      assert.match(preview.preview.body, /Candidate verification: failed/)
+      assert.match(preview.preview.body, /Target integration: pending/)
+      assert.doesNotMatch(
+        preview.preview.body,
+        /Local verification passed the retained obligations/
+      )
+      assert.equal(counts.deliver, 0)
+      const firstPreview = preview
+      const secondAssessment = await service.waitTargetAssessment(
+        service.startTargetAssessment(
+          { ...f.assessmentRequest, requestId: randomUUID() },
+          LOCAL_ACTOR
+        )
+      )
+      preview = await service.prepareScopedReview(
+        f.task.id,
+        { ...selection, assessmentId: secondAssessment.id },
+        LOCAL_ACTOR
+      )
+      assert.notEqual(preview.previewDigest, firstPreview.previewDigest)
+      assert.equal(preview.preview.scopedWork.assessmentId, secondAssessment.id)
+      await assert.rejects(
+        service.reviewTask(
+          f.task.id,
+          {
+            action: 'confirm',
+            confirm: true,
+            previewDigest: firstPreview.previewDigest
+          },
+          LOCAL_ACTOR
+        ),
+        /exact preview/
+      )
+      assert.equal(counts.deliver, 0)
+      const saved = service.getReview(f.task.id)
+      const reads = t.mock.method(fs, 'readFileSync')
+      assert.strictEqual(service.getReview(f.task.id), saved)
+      assert.equal(reads.mock.callCount(), 0)
+      reads.mock.restore()
+      await service.close()
+      service = createService(f.repository, {
+        directory: f.runs,
+        deliveryAdapter: adapter
+      })
+      assert.deepEqual(service.getReview(f.task.id), preview)
+      const maps = t.mock.method(Map.prototype, 'get')
+      const result = await service.reviewTask(
+        f.task.id,
+        {
+          action: 'confirm',
+          confirm: true,
+          previewDigest: preview.previewDigest
+        },
+        LOCAL_ACTOR
+      )
+      assert.equal(
+        maps.mock.calls.filter(
+          (call) => call.result?.taskId === f.task.id && call.result?.admission
+        ).length,
+        1
+      )
+      maps.mock.restore()
+      assert.equal(result.state, 'submitted-for-review')
+      assert.equal(counts.deliver, 1)
+      await assert.rejects(
+        service.prepareScopedReview(f.task.id, selection, LOCAL_ACTOR),
+        /another scope/
+      )
+      assert.equal(counts.deliver, 1)
+      assert.deepEqual(service.state().mapping, baseline)
+      assert.equal(
+        service.getTask(f.task.id).attempts.at(-1).verdict.evidence.status,
+        'failed'
+      )
+    } finally {
+      await service.close()
+      fs.rmSync(f.dir, { recursive: true, force: true })
+    }
+  }
+)
+
+test(
+  'scoped review selector is detached before asynchronous preparation begins',
+  { skip: process.platform !== 'darwin', timeout: 30000 },
+  async () => {
+    const adapter = {
+      repository: 'offline/scoped',
+      base: 'main',
+      async inspect() {
+        return { baseSha: 'b'.repeat(40), baseTree: 'c'.repeat(40) }
+      }
+    }
+    const f = await scopedWorkFixture(null, adapter)
+    try {
+      const selection = {
+        attemptId: f.task.attempts.at(-1).id,
+        assessmentId: f.assessment.id
+      }
+      const preparing = f.service.prepareScopedReview(
+        f.task.id,
+        selection,
+        LOCAL_ACTOR
+      )
+      selection.assessmentId = randomUUID()
+      const preview = await preparing
+      assert.equal(preview.preview.scopedWork.assessmentId, f.assessment.id)
+      const reads = { attemptId: 0, assessmentId: 0 }
+      const accessorPreview = await f.service.prepareScopedReview(
+        f.task.id,
+        {
+          get attemptId() {
+            reads.attemptId++
+            return reads.attemptId === 1 ? selection.attemptId : 'invalid'
+          },
+          get assessmentId() {
+            reads.assessmentId++
+            return reads.assessmentId === 1 ? f.assessment.id : randomUUID()
+          }
+        },
+        LOCAL_ACTOR
+      )
+      assert.deepEqual(reads, { attemptId: 1, assessmentId: 1 })
+      assert.equal(accessorPreview.preview.attemptId, selection.attemptId)
+      assert.equal(
+        accessorPreview.preview.scopedWork.assessmentId,
+        f.assessment.id
+      )
+    } finally {
+      await f.service.close()
+      fs.rmSync(f.dir, { recursive: true, force: true })
+    }
+  }
+)
+
+test(
+  'scoped review durable format rejects removed and partial source identities without legacy downgrade',
+  { skip: process.platform !== 'darwin', timeout: 30000 },
+  async () => {
+    const adapter = {
+      repository: 'offline/scoped',
+      base: 'main',
+      async inspect() {
+        return { baseSha: 'b'.repeat(40), baseTree: 'c'.repeat(40) }
+      }
+    }
+    const f = await scopedWorkFixture(null, adapter)
+    let service = f.service
+    try {
+      const preview = await service.prepareScopedReview(
+        f.task.id,
+        { attemptId: f.task.attempts.at(-1).id, assessmentId: f.assessment.id },
+        LOCAL_ACTOR
+      )
+      await service.close()
+      const file = path.join(f.runs, 'reviews', f.task.id + '.json')
+      const mutations = [
+        (p) => {
+          p.preview.scopedWork.roles.accepted.reference.descriptor.format = 99
+        },
+        (p) => {
+          p.preview.scopedWork.roles.accepted.reference.descriptor.files.pop()
+        },
+        (p) => {
+          const producer = p.preview.scopedWork.producers[0]
+          producer.reference = {
+            ...producer.reference,
+            attemptId: randomUUID()
+          }
+        },
+
+        (p) => {
+          delete p.preview.scopedWork.runtime.sourceDigest
+        },
+        (p) => {
+          p.preview.scopedWork.runtime = {}
+        },
+        (p) => {
+          delete p.preview.scopedWork.acceptedVersion.revision
+        },
+        (p) => {
+          p.preview.scopedWork.roles.target.reference = {}
+        },
+        (p) => {
+          p.preview.scopedWork.workBinding.workId = randomUUID()
+        },
+        (p) => {
+          p.preview.scopedWork.runtime.taskId = randomUUID()
+        },
+        (p) => {
+          p.preview.scopedWork.producers = []
+        },
+        (p) => {
+          delete p.preview.scopedWork
+        },
+        (p) => {
+          p.preview.scopedWork = null
+        },
+        (p) => {
+          p.format = 1
+        },
+        (p) => {
+          p.format = null
+        },
+        (p) => {
+          p.format = 99
+        }
+      ]
+      const required = [
+        ...[
+          'assessmentId',
+          'taskId',
+          'attemptId',
+          'targetId',
+          'allocationRevision',
+          'workId',
+          'workBinding',
+          'acceptedBaseline',
+          'acceptedVersion',
+          'targetVerification',
+          'roles',
+          'runtime',
+          'work',
+          'integration',
+          'producers'
+        ].map((key) => [key]),
+        ...[
+          'taskId',
+          'attemptId',
+          'repository',
+          'head',
+          'sourceDigest',
+          'runtimeSourceDigest',
+          'configurationDigest',
+          'verificationSourceDigest',
+          'executionSourceDigest',
+          'contractDigest',
+          'mappingVersion',
+          'architectureVersion',
+          'lockfileDigest'
+        ].map((key) => ['runtime', key]),
+        ...['revision', 'contractDigest'].flatMap((key) => [
+          ['acceptedBaseline', key],
+          ['acceptedVersion', key]
+        ]),
+        ...['targetId', 'workId', 'admissionId'].map((key) => [
+          'workBinding',
+          key
+        ]),
+        ...['reviewId', 'candidateDigest'].map((key) => [
+          'targetVerification',
+          key
+        ]),
+        ...['accepted', 'target'].flatMap((role) => [
+          ...[
+            'slotId',
+            'contractDigest',
+            'verificationSourceDigest',
+            'reference'
+          ].map((key) => ['roles', role, key]),
+          ...[
+            'attemptId',
+            'repository',
+            'head',
+            'sourceDigest',
+            'configurationDigest',
+            'descriptor'
+          ].map((key) => ['roles', role, 'reference', key]),
+          ...[
+            'format',
+            'contractDigest',
+            'mappingVersion',
+            'architectureVersion',
+            'roles',
+            'files',
+            'digest'
+          ].map((key) => ['roles', role, 'reference', 'descriptor', key]),
+          ...['manifest', 'architecture', 'spec', 'test', 'configuration'].map(
+            (key) => ['roles', role, 'reference', 'descriptor', 'roles', key]
+          )
+        ]),
+        ...[
+          'id',
+          'roles',
+          'contractDigest',
+          'verificationSourceDigest',
+          'reference',
+          'sourceDigest',
+          'configurationDigest',
+          'runtimeSourceDigest',
+          'executionSourceDigest'
+        ].map((key) => ['producers', 0, key])
+      ]
+      const changes = mutations.map((mutate, index) => ({
+        name: 'identity mutation ' + index,
+        mutate
+      }))
+      for (const keys of required)
+        changes.push({
+          name: keys.join('.'),
+          mutate(value) {
+            let parent = value.preview.scopedWork
+            for (const key of keys.slice(0, -1)) parent = parent[key]
+            Reflect.deleteProperty(parent, keys.at(-1))
+          }
+        })
+      changes.push({
+        name: 'aliased role paths',
+        mutate(value) {
+          const roles =
+            value.preview.scopedWork.roles.accepted.reference.descriptor.roles
+          roles.test = roles.configuration
+        }
+      })
+      changes.push({
+        name: 'uncanonical producer roles',
+        mutate(value) {
+          value.preview.scopedWork.producers[0].roles.reverse()
+        }
+      })
+      const { createReviewOwner } = require('../pr-review.cjs')
+      for (const { name, mutate } of changes) {
+        const value = structuredClone(preview)
+        mutate(value)
+        value.previewDigest = sourceOwner.sha256(JSON.stringify(value.preview))
+        fs.writeFileSync(file, JSON.stringify(value))
+        assert.throws(
+          () =>
+            createReviewOwner(f.repository, { directory: path.dirname(file) }),
+          /scoped|format|identity/i,
+          name
+        )
+      }
+      fs.writeFileSync(file, JSON.stringify(preview))
+      service = createService(f.repository, {
+        directory: f.runs,
+        deliveryAdapter: adapter
+      })
+      assert.deepEqual(service.getReview(f.task.id), preview)
+    } finally {
+      await service.close()
+      fs.rmSync(f.dir, { recursive: true, force: true })
+    }
+  }
+)
+
+test(
+  'scoped review serial lifetime blocks different scope and source mutation while preparation is pending',
+  { skip: process.platform !== 'darwin', timeout: 30000 },
+  async (t) => {
+    let release,
+      entered,
+      inspections = 0
+    const gate = new Promise((resolve) => {
+      release = resolve
+    })
+    const started = new Promise((resolve) => {
+      entered = resolve
+    })
+    const adapter = {
+      repository: 'offline/scoped',
+      base: 'main',
+      async inspect() {
+        inspections++
+        entered()
+        await gate
+        return { baseSha: 'b'.repeat(40), baseTree: 'c'.repeat(40) }
+      }
+    }
+    const f = await scopedWorkFixture(null, adapter)
+    try {
+      const selection = {
+        attemptId: f.task.attempts.at(-1).id,
+        assessmentId: f.assessment.id
+      }
+      for (const invalid of [
+        null,
+        {},
+        { ...selection, extra: true },
+        { ...selection, attemptId: null }
+      ])
+        await assert.rejects(
+          f.service.prepareScopedReview(f.task.id, invalid, LOCAL_ACTOR),
+          /selection/
+        )
+      const reads = t.mock.method(fs, 'readFileSync')
+      const hashPrototype = Object.getPrototypeOf(
+        require('node:crypto').createHash('sha256')
+      )
+      const hashes = t.mock.method(hashPrototype, 'update')
+      const maps = t.mock.method(Map.prototype, 'get')
+      const preparing = f.service.prepareScopedReview(
+        f.task.id,
+        selection,
+        LOCAL_ACTOR
+      )
+      await started
+      const sourceCalls = maps.mock.calls.filter(
+        (call) => call.result?.taskId === f.task.id && call.result?.admission
+      )
+      assert.equal(sourceCalls.length, 1)
+      const same = f.service.prepareScopedReview(
+        f.task.id,
+        { ...selection },
+        LOCAL_ACTOR
+      )
+      await assert.rejects(
+        f.service.prepareScopedReview(
+          f.task.id,
+          { ...selection, assessmentId: randomUUID() },
+          LOCAL_ACTOR
+        ),
+        /different review/
+      )
+      await assert.rejects(
+        f.service.controlTask(f.task.id, { action: 'revoke' }, LOCAL_ACTOR),
+        /review is active/
+      )
+      assert.throws(
+        () => f.service.decideTarget({}, LOCAL_ACTOR),
+        /review is active/
+      )
+      assert.throws(
+        () =>
+          f.service.startTargetAssessment(
+            { ...f.assessmentRequest, requestId: randomUUID() },
+            LOCAL_ACTOR
+          ),
+        /review is active/
+      )
+      assert.equal(inspections, 1)
+      const manifest = path.join(
+        f.task.snapshot.sourceRoot,
+        'packages/factory/package.json'
+      )
+      assert.equal(
+        reads.mock.calls.filter((call) => call.arguments[0] === manifest)
+          .length,
+        1
+      )
+      const manifestIdentity = JSON.stringify(
+        f.task.attempts.at(-1).verdict.files
+      )
+      assert.equal(
+        hashes.mock.calls.filter(
+          (call) => call.arguments[0] === manifestIdentity
+        ).length,
+        0
+      )
+      maps.mock.restore()
+      reads.mock.restore()
+      hashes.mock.restore()
+      release()
+      assert.strictEqual(await same, await preparing)
+      const preview = f.service.getReview(f.task.id)
+      await f.service.controlTask(f.task.id, { action: 'revoke' }, LOCAL_ACTOR)
+      await assert.rejects(
+        f.service.reviewTask(
+          f.task.id,
+          {
+            action: 'confirm',
+            confirm: true,
+            previewDigest: preview.previewDigest
+          },
+          LOCAL_ACTOR
+        ),
+        /unavailable|stale/
+      )
+      const historyLookups = t.mock.method(Map.prototype, 'get')
+      const historyReads = t.mock.method(fs, 'readFileSync')
+      for (let i = 0; i < 3; i++) f.service.getReview(f.task.id)
+      assert.equal(
+        historyLookups.mock.calls.filter(
+          (call) => call.this === sourceCalls[0].this
+        ).length,
+        0
+      )
+      assert.equal(historyReads.mock.callCount(), 0)
+      historyLookups.mock.restore()
+      historyReads.mock.restore()
+      assert.strictEqual(f.service.getReview(f.task.id), preview)
+      assert.equal(inspections, 1)
+    } finally {
+      release()
+      await f.service.close()
+      fs.rmSync(f.dir, { recursive: true, force: true })
+    }
+  }
+)
+
+test(
+  'scoped review rejects a non-passing task report redirected outside its fixed attempt location',
+  { skip: process.platform !== 'darwin', timeout: 30000 },
+  async () => {
+    let inspections = 0
+    const adapter = {
+      repository: 'offline/scoped',
+      base: 'main',
+      async inspect() {
+        inspections++
+        return { baseSha: 'b'.repeat(40), baseTree: 'c'.repeat(40) }
+      }
+    }
+    const f = await scopedWorkFixture(null, adapter)
+    let service = f.service
+    try {
+      await service.close()
+      const file = path.join(f.runs, 'tasks', f.task.id, 'task.json')
+      const record = JSON.parse(fs.readFileSync(file, 'utf8'))
+      const verdict = record.attempts.at(-1).verdict
+      const substitute = path.join(f.runs, 'substitute-report.json')
+      fs.writeFileSync(substitute, fs.readFileSync(verdict.runner.reportPath))
+      verdict.runner.reportPath = substitute
+      fs.writeFileSync(file, JSON.stringify(record))
+      service = createService(f.repository, {
+        directory: f.runs,
+        deliveryAdapter: adapter
+      })
+      await assert.rejects(
+        service.prepareScopedReview(
+          f.task.id,
+          {
+            attemptId: record.attempts.at(-1).id,
+            assessmentId: f.assessment.id
+          },
+          LOCAL_ACTOR
+        ),
+        /report location/
+      )
+      assert.equal(inspections, 0)
+    } finally {
+      await service.close()
       fs.rmSync(f.dir, { recursive: true, force: true })
     }
   }

@@ -478,3 +478,18 @@ for (const forbidden of [
     await assert.rejects(() => prepare(f), /candidate/)
     assert.equal(f.counts.deliver, 0)
   })
+
+test('strict review entry cannot accept a third scoped argument or upgrade a failed candidate', async () => {
+  const f = fixture()
+  f.record.verificationStatus = 'failed'
+  await assert.rejects(
+    () =>
+      f.owner.prepare(f.record.id, 'human', {
+        attemptId: f.record.attempts[0].id,
+        assessmentId: randomUUID()
+      }),
+    /verified/
+  )
+  assert.equal(f.counts.inspect, 0)
+  assert.equal(f.counts.deliver, 0)
+})
