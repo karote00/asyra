@@ -5,7 +5,7 @@ const sourceOwner = require('./snapshot.cjs')
 const { validId } = require('./store.cjs')
 
 const RUNTIME_EXECUTION_ISSUE = 'Runtime execution provenance mismatch'
-function resolveRuntimeSource(snapshot, admission, contract, executionContext) {
+function resolveSource(snapshot, admission, contract, executionContext) {
   const derived =
     Object.hasOwn(snapshot, 'executionSource') ||
     Object.hasOwn(admission ?? {}, 'executionSource')
@@ -14,12 +14,33 @@ function resolveRuntimeSource(snapshot, admission, contract, executionContext) {
       throw new Error(
         'Derived execution requires direct trusted source admission'
       )
-    return sourceOwner.validateSourceSnapshot(
+    if (
+      Object.hasOwn(snapshot, 'sourceRoot') &&
+      snapshot.sourceRoot !== executionContext?.sourceRoot
+    )
+      throw new Error('Derived source location conflicts with trusted context')
+    const admitted = sourceOwner.validateSourceSnapshot(
       snapshot,
       contract,
       snapshot.files,
       executionContext
-    ).runtimeSource
+    )
+    return {
+      runtime: admitted.runtimeSource,
+      source: Object.freeze({
+        sourceRoot: executionContext.sourceRoot,
+        head: snapshot.head,
+        sourceDigest: snapshot.digest,
+        lockfileDigest: snapshot.lockfileDigest,
+        contractDigest: snapshot.contractDigest,
+        mappingVersion: snapshot.mappingVersion,
+        architectureVersion: snapshot.architectureVersion,
+        configurationDigest: snapshot.configurationDigest,
+        runtimeSource: admitted.runtimeSource,
+        verificationSource: admitted.verificationSource,
+        executionSource: admitted.executionSource
+      })
+    }
   }
   if (derived) {
     const execution = admission.executionSource
@@ -52,9 +73,13 @@ function resolveRuntimeSource(snapshot, admission, contract, executionContext) {
   if (!Object.hasOwn(snapshot, 'runtimeSource')) {
     if (admission)
       throw new Error('Runtime source admission lacks source identity')
-    return
+    return { runtime: undefined, source: null }
   }
-  if (!admission) return sourceOwner.validateRuntimeSource(snapshot)
+  if (!admission)
+    return {
+      runtime: sourceOwner.validateRuntimeSource(snapshot),
+      source: null
+    }
   const runtime = snapshot.runtimeSource
   const admitted = admission.runtimeSource
   const same =
@@ -88,7 +113,7 @@ function resolveRuntimeSource(snapshot, admission, contract, executionContext) {
       !snapshot.sourceRoot.startsWith(admission.repository + path.sep))
   )
     throw new Error('Runtime source admission does not bind this snapshot')
-  return admitted
+  return { runtime: admitted, source: null }
 }
 function runtimeExecutionMismatch(
   snapshot,
@@ -112,7 +137,7 @@ function runtimeExecutionMismatch(
   )
 }
 
-function assessEvidence(
+function assessSourceEvidence(
   contract,
   snapshot,
   runner,
@@ -144,14 +169,15 @@ function assessEvidence(
     Object.hasOwn(identity ?? {}, 'runtimeSourceDigest') ||
     Boolean(sourceAdmission)
   let runtime
+  let source = null
   if (hasRuntime) {
     try {
-      runtime = resolveRuntimeSource(
+      ;({ runtime, source } = resolveSource(
         snapshot,
         sourceAdmission,
         contract,
         executionContext
-      )
+      ))
     } catch {
       issues.push('Runtime source provenance mismatch')
     }
@@ -303,7 +329,7 @@ function assessEvidence(
       return 'unknown'
     return 'passed'
   }
-  return {
+  const evidence = {
     status: statusFor(cases),
     ...(hasRuntime ? { runtimeSourceDigest: runtime?.digest ?? null } : {}),
     issues,
@@ -315,6 +341,11 @@ function assessEvidence(
       status: statusFor(cases.filter((item) => item.flowId === id))
     }))
   }
+  return { evidence, source }
+}
+
+function assessEvidence(...args) {
+  return assessSourceEvidence(...args).evidence
 }
 
 function validateStoredEvidence(contract, record, sourceAdmission) {
@@ -347,7 +378,7 @@ function validateStoredEvidence(contract, record, sourceAdmission) {
     Object.hasOwn(record.evidence ?? {}, 'runtimeSourceDigest') ||
     Boolean(sourceAdmission)
   if (hasRuntime) {
-    const runtime = resolveRuntimeSource(
+    const { runtime } = resolveSource(
       record.snapshot,
       sourceAdmission,
       contract
@@ -419,4 +450,8 @@ function validateStoredEvidence(contract, record, sourceAdmission) {
     )
 }
 
-module.exports = { assessEvidence, validateStoredEvidence }
+module.exports = {
+  assessEvidence,
+  assessSourceEvidence,
+  validateStoredEvidence
+}
