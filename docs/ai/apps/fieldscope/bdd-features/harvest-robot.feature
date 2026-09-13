@@ -627,3 +627,18 @@ Feature: Harvest robot feasibility and supervised harvesting
     When candidate admissibility is evaluated
     Then the corresponding speed requirement is invalid
     And angle wrapping or rounded arithmetic cannot replace the declared path
+
+  @M3
+  Scenario: Shared FK algebra preserves the original point robot
+    Given the original five-axis rig and finite point joint values including signed zero
+    When C evaluates its shared canonical chain through the point adapter
+    Then every point output preserves its original floating-point bits
+    And source part identities, order, limits and speeds remain unchanged
+
+  @M3
+  Scenario: Generic joint domains do not certify articulated clearance
+    Given finite ordered joint domains within the original rig limits
+    When C evaluates its sole chain using a declared scalar algebra
+    Then the result preserves source ownership without proving that algebra's interval soundness
+    And malformed domains are rejected before algebra callbacks
+    And no time-correlated path or physical movement is authorized
