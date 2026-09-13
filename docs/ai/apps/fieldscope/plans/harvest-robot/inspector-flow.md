@@ -988,7 +988,7 @@ independent numerical review. Root released readiness commit 6432d959b for this 
 frozen gates. Freeze and STOP after completion for root quota review; no later
 owner is authorized.
 
-### D point-time surface domain exclusion - readiness
+### D point-time surface domain exclusion
 
 Owner: simulation/collision.ts, SurfaceQueries.coverMotion. Inputs: original
 current GeometrySource, raw motion segment/window/robot assumptions and separately
@@ -1069,6 +1069,7 @@ region comparisons each. Each complete entry stays within 1 second, combined
 10 seconds, and original 24000-bit limits; do not raise budgets/guards after a
 failure. Report total/excluded/candidate/unresolved/unvisited, actual mesh/region
 work, environment preparation and nested C costs. No claim of full narrow coverage
-or speedup follows from candidate reduction. Future focused proof precedes full
-app/type/build/lint/naming and independent review. Current authorization is three-
-doc readiness only: freeze and STOP for root quota review; no implementation.
+or speedup follows from candidate reduction. Focused proof precedes full app/type/
+build/lint/naming and independent review. The implemented owner remains limited to
+this domain accounting entry; no narrow solver, material/contact decision or
+session/runtime consumer is part of it.

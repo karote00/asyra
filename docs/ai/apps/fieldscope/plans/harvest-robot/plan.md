@@ -1428,3 +1428,25 @@ reuse gates plus two fixed actual-source profiles. Material/contact decisions ar
 still pending independent owners and receive no implied approval from these surface
 counts. This segment changes only existing spec/Inspector/plan readiness, obtains
 independent review, then freezes and stops for root quota review.
+
+Root released 475823c61 for this one coverMotion implementation and its fixed
+gates. No narrow solver, material or later owner is authorized. Freeze and stop
+after completion for root quota review.
+
+D point-time surface domain exclusion is implemented. The inherited six missing-
+entry/API cases first failed and then passed; the completed focused suite now has
+53 collision cases, including two joint windows at fixed nonzero base poses, exact
+four-way domain accounting, interior-window overlap, strict budget handling,
+unknown/expired state, clone/currentness and the single RobotMotionBounds handoff.
+All 468 app tests across 47 files, build/typecheck, naming, scoped formatting and
+app lint (16 console warnings, no errors) pass.
+
+Both fixed actual-source entries retain the 43,429,284,640-pair inventory and
+269,533 mesh comparisons. With the unchanged 10,000 region-comparison budget, the
+rest case measured 119.3 ms and left 22,993,872 pairs unvisited; the centre
++/-1e-6 case measured 89.4 ms and left 21,079,856 unvisited. Both remain `unknown`,
+perform zero triangle/source-buffer visits, use one interval FK product and stay
+within the unchanged 24000-bit guard. This is complete conservative surface-domain
+accounting for the bounded owner, not articulated narrow coverage, movement
+clearance, material/contact permission or physical evidence. Independent sub-PR
+review remains the merge gate.

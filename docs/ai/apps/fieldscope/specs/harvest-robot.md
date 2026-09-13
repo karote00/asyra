@@ -1391,12 +1391,12 @@ incidentally frozen. Reuse affine and local-bounds products only within this cal
 with actual work counters. No geometry generation, position/index scan, cross-call
 cache, contact exemption or session mutation is introduced.
 
-### Point-time robot/environment surface domain exclusion - readiness
+### Point-time robot/environment surface domain exclusion
 
-The next D surface consumer may classify the complete original triangle-pair
-domain using whole-window envelopes, without a new articulated intersection
-solver. Its domain is every robot part against every physical farm/dock instance,
-plus every unordered pair of distinct robot parts, including same-body parts.
+`SurfaceQueries.coverMotion` classifies the complete original triangle-pair domain
+using whole-window envelopes, without a new articulated intersection solver. Its
+domain is every robot part against every physical farm/dock instance, plus every
+unordered pair of distinct robot parts, including same-body parts.
 Environment source shapes, descriptor/instance poses, leaves and attached fruit
 must explicitly remain at their source state throughout the same closed window.
 These are synthetic assumptions, not inferred material, optical or physical facts.
