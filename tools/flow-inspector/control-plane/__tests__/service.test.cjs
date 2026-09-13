@@ -1380,21 +1380,10 @@ async function assessmentFixture(
 }
 
 test(
-  'current offline assessment admits and starts exact dependent work without accepting the baseline',
+  'current offline assessment admits exact dependent work and survives restart without accepting the baseline',
   { timeout: 50000 },
   async (t) => {
-    let agentCalls = 0
-    const agentOptions = {
-      adapterFactory() {
-        return {
-          async next() {
-            agentCalls++
-            return { tool: 'finish' }
-          }
-        }
-      }
-    }
-    const f = await assessmentFixture(false, agentOptions, true)
+    const f = await assessmentFixture(false, {}, true)
     let service = f.service,
       server
     try {
@@ -1439,7 +1428,7 @@ test(
       const { main } = require('../cli.cjs')
       server = await startServer(f.repository, {
         url: 'http://127.0.0.1:0',
-        serviceOptions: { directory: f.runs, agentOptions }
+        serviceOptions: { directory: f.runs }
       })
       service = server.service
       const assessor = require('../target-evidence.cjs')
@@ -1487,36 +1476,113 @@ test(
       await server.close()
       server = null
       service = createService(f.repository, {
-        directory: f.runs,
-        agentOptions
+        directory: f.runs
       })
-      const taskRequest = {
-        requestId: taskId,
-        stepId: work.stepId,
-        objective: work.scope,
-        allowedFiles: work.allowedFiles,
-        workBinding: {
-          targetId: target.id,
-          workId: work.id,
-          admissionId: request.requestId
-        },
-        adapter: 'demonstration',
-        scenario: 'repair',
-        contractDigest: service.contract().digest,
-        revision: service.state().mapping.revision,
-        budgets: { elapsedMs: 60000, toolCalls: 20, attempts: 3 }
-      }
-      const task = await service.waitTask(
-        service.startTask(taskRequest, LOCAL_ACTOR)
+      const restored = service.getTarget(target.id)
+      assert.equal(
+        restored.history.at(-1).admission.assessmentId,
+        assessment.id
       )
-      assert.equal(task.id, taskId)
-      assert.equal(task.attempts.length, 1)
-      assert.equal(agentCalls, 1)
-      assert.equal(service.getTarget(target.id).status, 'pending')
+      assert.equal(restored.history.at(-1).admission.taskId, taskId)
+      assert.equal(restored.status, 'pending')
       assert.deepEqual(service.state().mapping, baseline)
     } finally {
       if (server) await server.close()
       else await service.close()
+      fs.rmSync(f.dir, { recursive: true, force: true })
+    }
+  }
+)
+
+async function admittedDependentTaskFixture() {
+  const f = await assessmentFixture(false, {}, true)
+  let service = f.service
+  const assessment = await service.waitTargetAssessment(
+    service.startTargetAssessment(f.request, LOCAL_ACTOR)
+  )
+  const target = service.getTarget(f.request.targetId)
+  const work = f.targetRequest.works[1]
+  const taskId = randomUUID()
+  const admissionId = randomUUID()
+  service.decideTarget(
+    {
+      action: 'admit',
+      targetId: target.id,
+      expectedRevision: target.revision,
+      requestId: admissionId,
+      reason: 'Consume retained offline prerequisite evidence',
+      workId: work.id,
+      taskId,
+      assessmentId: assessment.id
+    },
+    LOCAL_ACTOR
+  )
+  await service.close()
+  service = createService(f.repository, { directory: f.runs })
+  return {
+    ...f,
+    service,
+    assessment,
+    target,
+    work,
+    taskId,
+    taskRequest: {
+      requestId: taskId,
+      stepId: work.stepId,
+      objective: work.scope,
+      allowedFiles: work.allowedFiles,
+      workBinding: {
+        targetId: target.id,
+        workId: work.id,
+        admissionId
+      },
+      adapter: 'demonstration',
+      scenario: 'repair',
+      contractDigest: service.contract().digest,
+      revision: service.state().mapping.revision,
+      budgets: { elapsedMs: 60000, toolCalls: 20, attempts: 3 }
+    }
+  }
+}
+
+test(
+  'supported containment executes exact assessment-bound dependent work without accepting the baseline',
+  { skip: process.platform !== 'darwin', timeout: 50000 },
+  async () => {
+    const f = await admittedDependentTaskFixture()
+    try {
+      const baseline = f.service.state().mapping
+      const task = await f.service.waitTask(
+        f.service.startTask(f.taskRequest, LOCAL_ACTOR)
+      )
+      assert.equal(task.id, f.taskId)
+      assert.equal(task.phase, 'completed')
+      assert.equal(task.attempts.length, 1)
+      assert.ok(task.changes.length > 0)
+      assert.equal(f.service.getTarget(f.target.id).status, 'pending')
+      assert.deepEqual(f.service.state().mapping, baseline)
+    } finally {
+      await f.service.close()
+      fs.rmSync(f.dir, { recursive: true, force: true })
+    }
+  }
+)
+
+test(
+  'unsupported containment denies assessment-bound dependent execution without task effects',
+  { skip: process.platform === 'darwin', timeout: 50000 },
+  async () => {
+    const f = await admittedDependentTaskFixture()
+    try {
+      assert.equal(f.service.state().tasks.available, false)
+      assert.throws(
+        () => f.service.startTask(f.taskRequest, LOCAL_ACTOR),
+        /OS containment unavailable; task execution denied/
+      )
+      assert.throws(() => f.service.getTask(f.taskId), /Task not found/)
+      assert.equal(f.service.getTarget(f.target.id).status, 'pending')
+    } finally {
+      await f.service.close()
       fs.rmSync(f.dir, { recursive: true, force: true })
     }
   }
