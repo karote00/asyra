@@ -14,21 +14,71 @@ import {
 import {
   boundsGap,
   buildMeshIndex,
+  refineMeshIndex,
   shapeBounds,
   worldBounds,
   worldPoint,
+  type Bounds,
   type MeshIndex,
   type PreparedMeshIndex,
   type MeshNode
 } from './mesh-index'
+import { projectedBoundsGap } from './mesh-projection'
 import { shapeMembership } from './mesh-membership'
+import {
+  createFreshStaticSampler,
+  type SourceUpper
+} from './fresh-static-sampler'
 
 const ops = poseOperations(intervalAlgebra)
 export class MeshWorkLimit extends Error {}
 
+/** Deterministic dual-tree descent; bounds select work, never replace geometry. */
+function splitLeft(
+  a: MeshNode | undefined,
+  b: MeshNode | undefined,
+  ab: Bounds,
+  bb: Bounds
+): boolean {
+  if (!a?.children) return false
+  if (!b?.children) return true
+  const width = (bounds: Bounds) =>
+    Math.max(...bounds.map((axis) => axis[1] - axis[0]))
+  return width(ab) >= width(bb)
+}
+
 /** One execution-owned query context. No renderer, document mutation or global state. */
 export class OriginalMeshQuery {
   work = 0
+  #sourceUpper:
+    { a: ConvexShape; b: ConvexShape; seed: SourceUpper } | undefined
+  createStaticSampler(settings: {
+    threshold: number
+    distanceTolerance: number
+    maxIterations: number
+  }) {
+    const { threshold, distanceTolerance, maxIterations } = settings
+    return createFreshStaticSampler(
+      threshold,
+      () => this.chargeSourceWitness(),
+      (a, b, seed) => {
+        this.#sourceUpper = seed ? { a, b, seed } : undefined
+        try {
+          return this.distance(
+            a,
+            b,
+            threshold,
+            distanceTolerance,
+            maxIterations
+          )
+        } finally {
+          this.#sourceUpper = undefined
+        }
+      },
+      (error) => error instanceof MeshWorkLimit
+    )
+  }
+  private readonly refinedIndices = new WeakMap<MeshGeometry, MeshIndex>()
   private readonly indices = new WeakMap<MeshGeometry, MeshIndex>()
   constructor(
     private readonly checkpoint: () => void = () => undefined,
@@ -42,6 +92,15 @@ export class OriginalMeshQuery {
     this.work += units
     if (this.work > this.maxWork)
       throw new MeshWorkLimit('The original-triangle work budget was exhausted')
+  }
+  chargeEvidenceHandoff(): void {
+    this.tick()
+  }
+  chargeEvidenceDerivation(): void {
+    this.tick()
+  }
+  chargeSourceWitness(): void {
+    this.tick()
   }
   private index(shape: ConvexShape): MeshIndex | undefined {
     const geometry = shape.geometry
@@ -72,6 +131,54 @@ export class OriginalMeshQuery {
     if (immutable) this.indices.set(geometry, index)
     return index
   }
+  private traversalIndex(
+    shape: ConvexShape,
+    index?: MeshIndex
+  ): MeshIndex | undefined {
+    if (!index || !this.hierarchy || shape.geometry.kind !== 'mesh')
+      return index
+    const geometry = shape.geometry
+    const immutable =
+      Object.isFrozen(geometry) &&
+      Object.isFrozen(geometry.positions) &&
+      Object.isFrozen(geometry.indices)
+    const retained = immutable ? this.refinedIndices.get(geometry) : undefined
+    if (retained) return retained
+    const prepared = immutable ? this.prepared.get(geometry) : undefined
+    const compatible =
+      prepared?.index === index && prepared.hierarchy === this.hierarchy
+    const cached = compatible ? prepared.refinement : undefined
+    if (cached) {
+      this.tick(cached.work)
+      this.refinedIndices.set(geometry, cached.index)
+      return cached.index
+    }
+    const before = this.work
+    const refined = refineMeshIndex(index, this.tick)
+    if (immutable) {
+      this.refinedIndices.set(geometry, refined)
+      if (compatible)
+        this.prepared.set(geometry, {
+          ...prepared,
+          refinement: { index: refined, work: this.work - before }
+        })
+    }
+    return refined
+  }
+  private projectGap(
+    a: ConvexShape,
+    b: ConvexShape,
+    ab: Bounds | undefined,
+    bb: Bounds | undefined,
+    gap: number,
+    threshold: number
+  ): number {
+    if (gap > threshold || !ab || !bb) return gap
+    return Math.max(
+      gap,
+      projectedBoundsGap(ab, a.pose, bb, b.pose, threshold, this.tick)
+    )
+  }
   private witness(shape: ConvexShape, index?: MeshIndex): Vector<Interval> {
     return index
       ? worldPoint(shape.pose, index.representatives[0])
@@ -89,11 +196,15 @@ export class OriginalMeshQuery {
     this.tick()
     const ai = this.index(a),
       bi = this.index(b)
-    const wa = this.witness(a, ai),
-      wb = this.witness(b, bi)
+    const seed =
+      this.#sourceUpper?.a === a && this.#sourceUpper.b === b
+        ? this.#sourceUpper.seed
+        : undefined
+    const wa = seed?.a ?? this.witness(a, ai),
+      wb = seed?.b ?? this.witness(b, bi)
     let result: DistanceEvidence = {
       lower: 0,
-      upper: ops.norm(ops.sub(wa, wb))[1],
+      upper: seed?.upper ?? ops.norm(ops.sub(wa, wb))[1],
       penetration: false,
       converged: false,
       iterations: 0,
@@ -101,7 +212,14 @@ export class OriginalMeshQuery {
       witnessA: wa,
       witnessB: wb
     }
-    const gap = boundsGap(shapeBounds(a, ai), shapeBounds(b, bi))
+    const gap = this.projectGap(
+      a,
+      b,
+      ai?.root.bounds,
+      bi?.root.bounds,
+      boundsGap(shapeBounds(a, ai), shapeBounds(b, bi)),
+      threshold
+    )
     if (gap > threshold) return { ...result, lower: gap }
     let unknown = false
     for (const [from, fi, to, ti] of [
@@ -126,8 +244,10 @@ export class OriginalMeshQuery {
         unknown ||= membership === 'unknown'
       }
     }
+    const traversalA = this.traversalIndex(a, ai),
+      traversalB = this.traversalIndex(b, bi)
     const pending: [MeshNode | undefined, MeshNode | undefined][] = [
-      [ai?.root, bi?.root]
+      [traversalA?.root, traversalB?.root]
     ]
     let lower = Infinity
     let searchThreshold = result.upper < threshold ? 0 : threshold
@@ -136,15 +256,21 @@ export class OriginalMeshQuery {
       const pair = pending.pop()
       if (!pair) throw new Error('Missing pending mesh pair')
       const [an, bn] = pair
-      const bound = boundsGap(
-        an ? worldBounds(an.bounds, a.pose) : shapeBounds(a),
-        bn ? worldBounds(bn.bounds, b.pose) : shapeBounds(b)
+      const ab = an ? worldBounds(an.bounds, a.pose) : shapeBounds(a)
+      const bb = bn ? worldBounds(bn.bounds, b.pose) : shapeBounds(b)
+      const bound = this.projectGap(
+        a,
+        b,
+        an?.bounds,
+        bn?.bounds,
+        boundsGap(ab, bb),
+        searchThreshold
       )
       if (bound > searchThreshold) {
         lower = Math.min(lower, bound)
         continue
       }
-      if (an?.children) {
+      if (an?.children && splitLeft(an, bn, ab, bb)) {
         for (const child of an.children) pending.push([child, bn])
         continue
       }
@@ -210,11 +336,20 @@ export class OriginalMeshQuery {
       bi = this.index(b)
     if (!ai && !bi)
       throw new Error('Native interval queries use their analytical kernel')
-    const overall = boundsGap(shapeBounds(a, ai), shapeBounds(b, bi))
+    const overall = this.projectGap(
+      a,
+      b,
+      ai?.root.bounds,
+      bi?.root.bounds,
+      boundsGap(shapeBounds(a, ai), shapeBounds(b, bi)),
+      threshold
+    )
     if (overall > threshold) return overall
     if (witness.lower <= 0) return 0
+    const traversalA = this.traversalIndex(a, ai),
+      traversalB = this.traversalIndex(b, bi)
     const pending: [MeshNode | undefined, MeshNode | undefined][] = [
-      [ai?.root, bi?.root]
+      [traversalA?.root, traversalB?.root]
     ]
     let lower = Infinity
     while (pending.length) {
@@ -222,15 +357,21 @@ export class OriginalMeshQuery {
       const pair = pending.pop()
       if (!pair) throw new Error('Missing pending mesh pair')
       const [an, bn] = pair
-      const gap = boundsGap(
-        an ? worldBounds(an.bounds, a.pose) : shapeBounds(a),
-        bn ? worldBounds(bn.bounds, b.pose) : shapeBounds(b)
+      const ab = an ? worldBounds(an.bounds, a.pose) : shapeBounds(a)
+      const bb = bn ? worldBounds(bn.bounds, b.pose) : shapeBounds(b)
+      const gap = this.projectGap(
+        a,
+        b,
+        an?.bounds,
+        bn?.bounds,
+        boundsGap(ab, bb),
+        threshold
       )
       if (gap > threshold) {
         lower = Math.min(lower, gap)
         continue
       }
-      if (an?.children) {
+      if (an?.children && splitLeft(an, bn, ab, bb)) {
         for (const child of an.children) pending.push([child, bn])
         continue
       }

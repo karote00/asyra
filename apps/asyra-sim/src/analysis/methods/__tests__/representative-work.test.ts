@@ -1,0 +1,245 @@
+import { afterEach, expect, it, vi } from 'vitest'
+import { runOriginalPartMethod } from '../original-part-method'
+import { OriginalMeshQuery } from '../original-mesh-query'
+import * as meshIndex from '../mesh-index'
+import * as membership from '../mesh-membership'
+import * as convex from '../convex-query'
+import { representativeSnapshot } from './representative-fixture'
+
+afterEach(() => vi.restoreAllMocks())
+
+it('completes the unchanged representative workcell within the original geometry work budget', async () => {
+  const snapshot = await representativeSnapshot(0)
+  const counts = {
+    handoffCalls: 0,
+    handoffWork: 0,
+    sourceWitnessCalls: 0,
+    sourceWitnessWork: 0,
+    derivationCalls: 0,
+    derivationWork: 0,
+    distanceCalls: 0,
+    distanceWork: 0,
+    lowerCalls: 0,
+    lowerWork: 0,
+    indexBuilds: 0,
+    preparationWork: 0,
+    refinementBuilds: 0,
+    refinementPreparationWork: 0,
+    membershipCalls: 0,
+    membershipWork: 0,
+    worldBoundsCalls: 0,
+    repeatedWorldBounds: 0,
+    convexCalls: 0,
+    clearIntervalCertificates: 0
+  }
+  const observedContexts = new Set<OriginalMeshQuery>()
+  let transformed = new WeakMap<object, WeakSet<object>>()
+  const worldBounds = meshIndex.worldBounds
+  vi.spyOn(meshIndex, 'worldBounds').mockImplementation((bounds, pose) => {
+    counts.worldBoundsCalls++
+    const poses = transformed.get(bounds) ?? new WeakSet<object>()
+    if (poses.has(pose)) counts.repeatedWorldBounds++
+    poses.add(pose)
+    transformed.set(bounds, poses)
+    return worldBounds(bounds, pose)
+  })
+  const convexDistance = convex.convexDistance
+  vi.spyOn(convex, 'convexDistance').mockImplementation((...args) => {
+    counts.convexCalls++
+    return convexDistance(...args)
+  })
+  const handoff = OriginalMeshQuery.prototype.chargeEvidenceHandoff
+  vi.spyOn(
+    OriginalMeshQuery.prototype,
+    'chargeEvidenceHandoff'
+  ).mockImplementation(function (this: OriginalMeshQuery) {
+    observedContexts.add(this)
+    const before = this.work
+    counts.handoffCalls++
+    try {
+      return handoff.call(this)
+    } finally {
+      counts.handoffWork += this.work - before
+    }
+  })
+  const distance = OriginalMeshQuery.prototype.distance
+  const sourceWitness = OriginalMeshQuery.prototype.chargeSourceWitness
+  vi.spyOn(
+    OriginalMeshQuery.prototype,
+    'chargeSourceWitness'
+  ).mockImplementation(function (this: OriginalMeshQuery) {
+    observedContexts.add(this)
+    const before = this.work
+    counts.sourceWitnessCalls++
+    try {
+      return sourceWitness.call(this)
+    } finally {
+      counts.sourceWitnessWork += this.work - before
+    }
+  })
+  const derivation = OriginalMeshQuery.prototype.chargeEvidenceDerivation
+  vi.spyOn(
+    OriginalMeshQuery.prototype,
+    'chargeEvidenceDerivation'
+  ).mockImplementation(function (this: OriginalMeshQuery) {
+    observedContexts.add(this)
+    const before = this.work
+    counts.derivationCalls++
+    try {
+      return derivation.call(this)
+    } finally {
+      counts.derivationWork += this.work - before
+    }
+  })
+  const lower = OriginalMeshQuery.prototype.lowerOver
+  vi.spyOn(OriginalMeshQuery.prototype, 'distance').mockImplementation(
+    function (this: OriginalMeshQuery, ...args) {
+      transformed = new WeakMap()
+      observedContexts.add(this)
+      const before = this.work
+      counts.distanceCalls++
+      try {
+        return distance.apply(this, args)
+      } finally {
+        counts.distanceWork += this.work - before
+      }
+    }
+  )
+  vi.spyOn(OriginalMeshQuery.prototype, 'lowerOver').mockImplementation(
+    function (this: OriginalMeshQuery, ...args) {
+      transformed = new WeakMap()
+      observedContexts.add(this)
+      const before = this.work
+      counts.lowerCalls++
+      try {
+        const result = lower.apply(this, args)
+        if (result > args[2]) counts.clearIntervalCertificates++
+        return result
+      } finally {
+        counts.lowerWork += this.work - before
+      }
+    }
+  )
+  const build = meshIndex.buildMeshIndex
+  vi.spyOn(meshIndex, 'buildMeshIndex').mockImplementation(
+    (geometry, checkpoint, hierarchy) => {
+      counts.indexBuilds++
+      return build(
+        geometry,
+        () => {
+          counts.preparationWork++
+          checkpoint()
+        },
+        hierarchy
+      )
+    }
+  )
+  const refine = meshIndex.refineMeshIndex
+  vi.spyOn(meshIndex, 'refineMeshIndex').mockImplementation(
+    (index, checkpoint) => {
+      counts.refinementBuilds++
+      return refine(index, () => {
+        counts.refinementPreparationWork++
+        checkpoint()
+      })
+    }
+  )
+  const contains = membership.shapeMembership
+  vi.spyOn(membership, 'shapeMembership').mockImplementation(
+    (point, shape, index, checkpoint) => {
+      counts.membershipCalls++
+      return contains(point, shape, index, () => {
+        counts.membershipWork++
+        checkpoint()
+      })
+    }
+  )
+  const start = performance.now()
+  const pairCosts: {
+    pairId: string
+    work: number
+    staticWork: number
+    intervalWork: number
+    handoffWork: number
+    sourceWitnessWork: number
+    derivationWork: number
+    evaluations: number
+    clearIntervals: number
+  }[] = []
+  let previousStatic = 0,
+    previousInterval = 0,
+    previousHandoff = 0,
+    previousSourceWitness = 0,
+    previousDerivation = 0,
+    previousClear = 0
+  const evidence = runOriginalPartMethod(
+    snapshot,
+    () => undefined,
+    (pair) => {
+      const staticWork = counts.distanceWork - previousStatic
+      const intervalWork = counts.lowerWork - previousInterval
+      const handoffWork = counts.handoffWork - previousHandoff
+      const sourceWitnessWork = counts.sourceWitnessWork - previousSourceWitness
+      const derivationWork = counts.derivationWork - previousDerivation
+      pairCosts.push({
+        pairId: pair.pairId,
+        work:
+          staticWork +
+          intervalWork +
+          handoffWork +
+          derivationWork +
+          sourceWitnessWork,
+        sourceWitnessWork,
+        handoffWork,
+        derivationWork,
+        staticWork,
+        intervalWork,
+        evaluations: pair.evidence.evaluations,
+        clearIntervals: counts.clearIntervalCertificates - previousClear
+      })
+      previousStatic = counts.distanceWork
+      previousInterval = counts.lowerWork
+      previousHandoff = counts.handoffWork
+      previousSourceWitness = counts.sourceWitnessWork
+      previousDerivation = counts.derivationWork
+      previousClear = counts.clearIntervalCertificates
+    }
+  )
+  const first = evidence.pairs.find(
+    (pair) => pair.evidence.coverage === 'partial'
+  )
+  // eslint-disable-next-line no-console -- permanent bounded logical-work evidence
+  console.info(
+    JSON.stringify({
+      profile: 'representative-original-work',
+      largestPairCosts: pairCosts.sort((a, b) => b.work - a.work).slice(0, 5),
+      ...counts,
+      totalWork:
+        counts.distanceWork +
+        counts.lowerWork +
+        counts.handoffWork +
+        counts.derivationWork +
+        counts.sourceWitnessWork,
+      traversalWork:
+        counts.distanceWork +
+        counts.lowerWork -
+        counts.preparationWork -
+        counts.refinementPreparationWork -
+        counts.membershipWork,
+      pairs: evidence.pairs.length,
+      evaluations: evidence.evaluations,
+      firstPartialPair: first?.pairId,
+      firstPartialEvaluations: first?.evidence.evaluations,
+      durationMs: Math.round(performance.now() - start)
+    })
+  )
+  expect(
+    counts.distanceWork +
+      counts.lowerWork +
+      counts.handoffWork +
+      counts.derivationWork +
+      counts.sourceWitnessWork
+  ).toBe([...observedContexts].reduce((sum, context) => sum + context.work, 0))
+  expect(evidence.pairs).toHaveLength(298)
+  expect(evidence.coverage).toBe('complete')
+}, 20000)

@@ -49,9 +49,9 @@ export const ORIGINAL_PART_METHOD: InstalledMethodDescriptor = {
     controls:
       'distanceTolerance bounds requested search width, timeTolerance stops time subdivision, maxIterations bounds each triangle/primitive convex search. Uncertain boundary predicates remain unresolved.',
     reproducibility:
-      'Deterministic source-order geometry and median hierarchy; fixed ray directions with enclosed predicates. No random seed. Chromium arithmetic conformance required.',
+      'Deterministic source-order median trees; complete component refinement follows root/membership admission. Original and demanded preparation cost the same cold/warm. Dual-tree splits the larger world extent, left on ties. Temporal start precedes interval-clear proof; failed attempts stay charged, otherwise remaining samples execute. Within one original segment, completed endpoints pass to child endpoints. Same-node complete mesh lower passes to final certification only with positive first/final admission. Each handoff costs one. An in-node consumed upper at/below threshold derives exact mesh lower zero for one; complete-certificate handoff wins, native axis-sensitive lower recomputes. Only fresh finite nonpenetrating positive warnings issue opaque sampler sources with copied frozen poses/witnesses. Capture costs one; admission, two inverse/two forward transforms and norm cost six. Ordinary sources seed only the next fresh same-node sample, never inherited/final samples. A complete nonpenetrating finding original root may publish its first source for one extra unit to the immediately lower complete adjacent root only with temporal evaluations remaining. The one invocation slot is taken and cleared at the next root; only its opaque boundary brand permits reverse-time upper seeding. Clamped, child, point, native, incomplete and nonadjacent roots cannot use it. Capture/publication exhaustion retains completed evidence and stops; consumption cannot publish unpaid output. Full target geometry, membership, penetration, metadata and sample/severity decisions remain. Whole boxes use inverse world-axis projection; roots/BVH nodes add source-order midpoint pose axes, omitting cardinal repeats and charging every attempt. Final triangles use world gap then full convex search with the original triangle charge. Fixed enclosed ray predicates, no randomness; Chromium arithmetic conformance required.',
     resources:
-      'At most 500000 logical mesh work units per invocation plus the global temporal/evidence/byte budgets. One owned Worker; topology and triangle traversal checkpoint cancellation and wall-time. Immutable indices may be reused within its admitted live input lifetime; preparation work is charged equivalently on hits.',
+      'At most 500000 logical mesh work units per invocation plus the global temporal/evidence/byte budgets. One owned Worker; topology and triangle traversal checkpoint cancellation and wall-time. Immutable indices may be reused within its admitted live input lifetime; preparation work is charged equivalently on hits. Completed distance results live only in pending-node ownership. One opaque upper-source packet may cross the immediately descending adjacent complete-root boundary within the same pair invocation; it is consumed or discarded at the next root. No global pose map or other cross-segment retention is allowed.',
     services: {
       network: false,
       additionalFiles: false,
@@ -80,7 +80,23 @@ export function queryOriginalPartPair(
     }
   }
   return queryContinuousPair(query, settings, checkpoint, {
+    sample: context.createStaticSampler(settings),
     relativeFrames: true,
+    certifyClearBeforeResampling: true,
+    handoffEvidence: () =>
+      bounded(() => {
+        context.chargeEvidenceHandoff()
+        return true
+      }) === true,
+    lowerUsesPositiveWitnessOnly: (a, b) =>
+      a.geometry.kind === 'mesh' || b.geometry.kind === 'mesh',
+    deriveZeroLower: (a, b) =>
+      a.geometry.kind === 'mesh' || b.geometry.kind === 'mesh'
+        ? bounded(() => {
+            context.chargeEvidenceDerivation()
+            return 0 as const
+          })
+        : undefined,
     distance: (a, b) =>
       bounded(() =>
         context.distance(
