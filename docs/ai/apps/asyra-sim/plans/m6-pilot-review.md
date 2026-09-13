@@ -1868,3 +1868,52 @@ The permanent case passes in 231 ms; reproduce with
 `SIM_CAPACITY_DIAGNOSTICS=1 yarn workspace @asyra/asyra-sim test:local src/analysis/methods/__tests__/endpoint-preflight-profile.test.ts --maxWorkers=1`.
 Recorded evidence: `tmp/capacity/endpoint-preflight-profile.log`. No production,
 prefix or full-goal query followed this result.
+
+### Current static-work population - task iteration replan
+
+Stop selecting isolated replacement cases. Current retained full evidence has
+306,103 static units but only pair aggregates; the older frontier log exposes
+only a stale top-six sample. The first unresolved owner question is which
+actual static samples and primitive operations accumulate that current cost.
+Allowlist: this plan and the existing `actual-frontier-profile.test.ts` only.
+Extend its already collected rows into a complete project-local artifact, with
+actual sampler-origin node/segment/start/end/time and root-first/middle/end or
+child role. Do not infer static ownership from the last interpolation call.
+Inherited endpoints have no distance row; record their charged handoff separately.
+Classify source capture/consume/publication through actual sampler and publication
+wrappers; publication must not borrow a stale sample origin. Preparation and
+refinement are nested subitems of query work, never additional total charges.
+Run exactly one current `representative` mode under the original 500,000-unit,
+20-second limits with no extra geometry calls or changed source/query order.
+Require the recorded 20,265 evaluations, 166 target evaluations and unchanged
+partial target, with all distance/lower/source/handoff/derivation charges summing
+to the actual invocation delta. Retain complete and exhausted rows separately,
+all segment totals and final leaves; unvisited regions remain unknown. Write the
+full artifact before numerical expectations so a mismatch is preserved, then
+stop on any mismatch without another replay. Console output is a bounded bucket
+summary and artifact path, not another top-N-only record. This diagnostic does
+not pass G4 and cannot authorize a production strategy before distribution review.
+
+The single current diagnostic passes in 12.23 seconds and reproduces 20,265/166
+evaluations and 398,216 target units. The full query-population artifact is
+`tmp/capacity/actual-frontier-representative-population.json`: 299 query rows,
+156 observed segments, and all source-operation events. Static work 306,103 is
+175,841 root-first (156 calls), 59,659 root-middle (30), 56,388 root-end (26),
+and 14,215 child-middle (3); all static calls complete. Interval work is 87,745
+complete plus 3,803 exhausted. The actual frontier is original segment 43,
+[1.728643216080402, 1.7688442211055277], not the old frame-67 frontier.
+Source work is capture 45 + consume 396 + publication 21; handoff 21 and derived
+zero 82 close the exact invocation sum. Static axes 131,901, membership 7,612
+and refinement 1,287 are nested subitems, not extra charges. First samples of
+entirely clear segments cost only 22,138 (7.2% of static); finding-segment static
+calls total 252,646. Thus cheap clear-first replacement is not the main route.
+The recorded artifact includes existing complete-prefix and frontier-neighbor
+leaf subsets, alongside every query and segment outcome. A direct writer addition
+now includes all target leaves on future authorized runs; no replay was made
+only to enrich those leaf fields. This run is complete cost attribution of the
+observed execution, not complete G4 coverage; unvisited intervals remain unknown.
+Reproduce only at the next authorized diagnostic checkpoint with
+`SIM_CAPACITY_DIAGNOSTICS=1 yarn workspace @asyra/asyra-sim test:local src/analysis/methods/__tests__/actual-frontier-profile.test.ts -t 'attributes completed and exhausted queries - representative' --maxWorkers=1`.
+Next bounded review uses this population to identify actual finding-root axis
+costs and repeated bound work before proposing any correction. No new full run
+or production change follows the diagnostic alone.

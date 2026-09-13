@@ -1,3 +1,6 @@
+import { mkdirSync, writeFileSync } from 'node:fs'
+import { dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as kinematics from '../../../domain/kinematic-algebra'
 import * as meshIndex from '../mesh-index'
@@ -35,6 +38,14 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         const derivations = new Map<number, number>()
         interface Row {
           kind: 'static' | 'interval'
+          origin?: {
+            node: number
+            segment: number
+            start: number
+            end: number
+            time: number
+            role: string
+          }
           segment: number
           time: readonly [number, number]
           input: string
@@ -72,10 +83,37 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           }
         }
         let seededUpper: number | undefined
+        let sampleOrigin: samplers.StaticSampleOrigin | undefined
+        let sourceOrigin: samplers.StaticSampleOrigin | undefined
+        let sourceAction: 'capture' | 'consume' | 'publication' | undefined
+        const sourceCharges: {
+          action: string
+          segment: number
+          start: number
+          end: number
+          time: number
+          work: number
+        }[] = []
+        let targetContext: OriginalMeshQuery | undefined
+        let targetBefore = 0
+        let targetAfter: number | undefined
+        const originalCreate = OriginalMeshQuery.prototype.createStaticSampler
+        vi.spyOn(
+          OriginalMeshQuery.prototype,
+          'createStaticSampler'
+        ).mockImplementation(function (this: OriginalMeshQuery, options) {
+          if (active) {
+            // eslint-disable-next-line @typescript-eslint/no-this-alias -- observe the actual shared invocation, never create another context
+            targetContext = this
+            targetBefore = this.work
+          }
+          return originalCreate.call(this, options)
+        })
         const createSampler = samplers.createFreshStaticSampler
         vi.spyOn(samplers, 'createFreshStaticSampler').mockImplementation(
-          (threshold, tick, solve, exhausted) =>
-            createSampler(
+          (threshold, tick, solve, exhausted) => {
+            const sources = new Map<unknown, samplers.StaticSampleOrigin>()
+            const sample = createSampler(
               threshold,
               tick,
               (a, b, seed) => {
@@ -84,10 +122,46 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
                   return solve(a, b, seed)
                 } finally {
                   seededUpper = undefined
+                  sourceAction = 'capture'
                 }
               },
               exhausted
             )
+            const observe: samplers.StaticSampler = (
+              a,
+              b,
+              origin,
+              previous
+            ) => {
+              sampleOrigin = origin
+              sourceOrigin = origin
+              sourceAction = 'consume'
+              try {
+                const result = sample(a, b, origin, previous)
+                if (result?.source !== undefined)
+                  sources.set(result.source, origin)
+                return result
+              } finally {
+                sampleOrigin = undefined
+                sourceOrigin = undefined
+                sourceAction = undefined
+              }
+            }
+            if (sample.publishBoundary) {
+              const publish = sample.publishBoundary
+              observe.publishBoundary = (source) => {
+                sourceOrigin = sources.get(source)
+                sourceAction = 'publication'
+                try {
+                  return publish(source)
+                } finally {
+                  sourceOrigin = undefined
+                  sourceAction = undefined
+                }
+              }
+            }
+            return observe
+          }
         )
         const rows: Row[] = []
         let current: Row | undefined
@@ -156,7 +230,10 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
                   request.b.bodyId === 'obstacle-11'
                 try {
                   const result = query(request, settings, check)
-                  if (active) target = result
+                  if (active) {
+                    target = result
+                    targetAfter = targetContext?.work
+                  }
                   return result
                 } finally {
                   active = false
@@ -187,10 +264,26 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           call: () => T
         ): T => {
           if (!active) return call()
+          if (kind === 'static' && !sampleOrigin)
+            throw new Error('Missing actual static sampler origin')
+          const origin = kind === 'static' ? sampleOrigin : undefined
+          let sampleRole = 'middle'
+          if (origin?.time === origin?.start) sampleRole = 'first'
+          else if (origin?.time === origin?.end) sampleRole = 'end'
           const row: Row = {
             kind,
-            segment,
-            time,
+            origin: origin
+              ? {
+                  node: identity(origin.node),
+                  segment: origin.segment,
+                  start: origin.start,
+                  end: origin.end,
+                  time: origin.time,
+                  role: `${origin.originalRoot ? 'root' : 'child'}-${sampleRole}`
+                }
+              : undefined,
+            segment: origin?.segment ?? segment,
+            time: origin ? [origin.time, origin.time] : time,
             input: JSON.stringify(
               [
                 identity(args[0].geometry),
@@ -305,10 +398,20 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             return sourceWitness.call(this)
           } finally {
             if (active) {
+              sourceCharges.push({
+                action: sourceAction ?? 'unknown',
+                segment: sourceOrigin?.segment ?? -1,
+                start: sourceOrigin?.start ?? NaN,
+                end: sourceOrigin?.end ?? NaN,
+                time: sourceOrigin?.time ?? NaN,
+                work: this.work - before
+              })
               sourceWitnessWork += this.work - before
               sourceWitnesses.set(
-                segment,
-                (sourceWitnesses.get(segment) ?? 0) + this.work - before
+                sourceOrigin?.segment ?? -1,
+                (sourceWitnesses.get(sourceOrigin?.segment ?? -1) ?? 0) +
+                  this.work -
+                  before
               )
             }
           }
@@ -421,9 +524,6 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         if (mode === 'representative') {
           const evidence = runOriginalPartMethod(snapshot)
           evaluations = evidence.evaluations
-          expect(evaluations).toBe(20265)
-          expect(target?.evaluations).toBe(166)
-          expect(target?.coverage).toBe('partial')
         } else {
           const pair = snapshot.pairs.find(
             (pair) =>
@@ -451,6 +551,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             () => undefined,
             new OriginalMeshQuery()
           )
+          targetAfter = targetContext?.work
           active = false
           evaluations = target.evaluations
           expect(target.coverage).toBe('complete')
@@ -458,7 +559,6 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         if (!target) throw new Error('Missing measured target')
         const targetLeaves = target.leaves
         const exhausted = rows.filter((row) => row.status === 'exhausted')
-        expect(exhausted).toHaveLength(mode === 'representative' ? 1 : 0)
         const frontier = exhausted[0]
         const frontierSegment = frontier?.segment ?? 74
         const summary = (selected: Row[]) => ({
@@ -520,66 +620,152 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             1
         })
         const common = segmentRows.filter((row) => row.segment >= 114)
-        expect(common.every((row) => !row.states.unresolved)).toBe(true)
-        // eslint-disable-next-line no-console -- bounded current frontier and completed query attribution, not a goal pass
+        const detail = {
+          profile: 'actual-frontier',
+          mode,
+          geometryPolicy: 'current',
+          recordedBeforeFreshSource: {
+            source: '910d0ad74',
+            evaluations: 20240,
+            targetEvaluations: 141
+          },
+          recordedBeforeDerivation: {
+            source: '6862daf58',
+            evaluations: 20237,
+            targetEvaluations: 138
+          },
+          evaluations,
+          targetEvaluations: target.evaluations,
+          target: summary(rows),
+          handoffWork,
+          derivationWork,
+          sourceWitnessWork,
+          commonPrefix: {
+            fromSegment: 114,
+            query: summary(rows.filter((row) => row.segment >= 114)),
+            leaves: targetLeaves.filter(
+              (leaf) => leaf.start >= snapshot.trajectory.keyframes[114].time
+            ),
+            segments: common.length,
+            work: common.reduce(
+              (sum, row) =>
+                sum +
+                row.work +
+                row.handoffWork +
+                row.derivationWork +
+                row.sourceWitnessWork,
+              0
+            )
+          },
+          frontier: frontier ? compact(frontier) : null,
+          largestComplete: rows
+            .filter((row) => row.status === 'complete')
+            .sort((a, b) => b.work - a.work)
+            .slice(0, 6)
+            .map(compact),
+          largestSegments: segmentRows
+            .slice()
+            .sort((a, b) => b.work - a.work)
+            .slice(0, 6),
+          adjacentLeaves: targetLeaves.filter(
+            (leaf) =>
+              leaf.start >=
+                snapshot.trajectory.keyframes[Math.max(0, frontierSegment - 1)]
+                  .time &&
+              leaf.end <=
+                snapshot.trajectory.keyframes[frontierSegment + 2].time
+          )
+        }
+        const buckets = [
+          ...new Set(
+            rows.map(
+              (row) =>
+                `${row.kind}:${row.origin?.role ?? 'interval'}:${row.status}`
+            )
+          )
+        ].map((key) => {
+          const selected = rows.filter(
+            (row) =>
+              `${row.kind}:${row.origin?.role ?? 'interval'}:${row.status}` ===
+              key
+          )
+          return { key, calls: selected.length, ...summary(selected) }
+        })
+        const sourceBuckets = Object.fromEntries(
+          ['capture', 'consume', 'publication'].map((action) => [
+            action,
+            sourceCharges
+              .filter((row) => row.action === action)
+              .reduce((sum, row) => sum + row.work, 0)
+          ])
+        )
+        const charged =
+          summary(rows).work + handoffWork + derivationWork + sourceWitnessWork
+        const invocationWork =
+          targetAfter === undefined ? null : targetAfter - targetBefore
+        const artifactPath = fileURLToPath(
+          new URL(
+            `../../../../../../tmp/capacity/actual-frontier-${mode}-population.json`,
+            import.meta.url
+          )
+        )
+        mkdirSync(dirname(artifactPath), { recursive: true })
+        writeFileSync(
+          artifactPath,
+          JSON.stringify(
+            {
+              ...detail,
+              rows,
+              segments: segmentRows,
+              sourceCharges,
+              targetLeaves,
+              buckets,
+              sourceBuckets,
+              charged,
+              invocationWork,
+              note: 'Preparation, refinement, membership and axes are nested query-work subitems. Unvisited leaves are unknown, not measured costs.'
+            },
+            null,
+            2
+          ) + '\n'
+        )
+        // eslint-disable-next-line no-console -- bounded complete-population buckets; full rows live in the artifact
         console.info(
           JSON.stringify({
-            profile: 'actual-frontier',
+            profile: 'actual-frontier-population',
             mode,
-            geometryPolicy: 'current',
-            recordedBeforeFreshSource: {
-              source: '910d0ad74',
-              evaluations: 20240,
-              targetEvaluations: 141
-            },
-            recordedBeforeDerivation: {
-              source: '6862daf58',
-              evaluations: 20237,
-              targetEvaluations: 138
-            },
             evaluations,
             targetEvaluations: target.evaluations,
+            charged,
+            invocationWork,
             target: summary(rows),
+            sourceBuckets,
             handoffWork,
             derivationWork,
-            sourceWitnessWork,
-            commonPrefix: {
-              fromSegment: 114,
-              query: summary(rows.filter((row) => row.segment >= 114)),
-              leaves: targetLeaves.filter(
-                (leaf) => leaf.start >= snapshot.trajectory.keyframes[114].time
-              ),
-              segments: common.length,
-              work: common.reduce(
-                (sum, row) =>
-                  sum +
-                  row.work +
-                  row.handoffWork +
-                  row.derivationWork +
-                  row.sourceWitnessWork,
-                0
-              )
-            },
+            buckets,
             frontier: frontier ? compact(frontier) : null,
-            largestComplete: rows
-              .filter((row) => row.status === 'complete')
-              .sort((a, b) => b.work - a.work)
-              .slice(0, 6)
-              .map(compact),
-            largestSegments: segmentRows
-              .sort((a, b) => b.work - a.work)
-              .slice(0, 6),
-            adjacentLeaves: targetLeaves.filter(
-              (leaf) =>
-                leaf.start >=
-                  snapshot.trajectory.keyframes[
-                    Math.max(0, frontierSegment - 1)
-                  ].time &&
-                leaf.end <=
-                  snapshot.trajectory.keyframes[frontierSegment + 2].time
-            )
+            artifactPath
           })
         )
+        expect(
+          sourceCharges.every(
+            (row) => row.action !== 'unknown' && row.segment >= 0
+          )
+        ).toBe(true)
+        expect(common.every((row) => !row.states.unresolved)).toBe(true)
+        expect(charged).toBe(invocationWork)
+        expect(
+          Object.values(sourceBuckets).reduce((sum, value) => sum + value, 0)
+        ).toBe(sourceWitnessWork)
+        expect(exhausted).toHaveLength(mode === 'representative' ? 1 : 0)
+        if (mode === 'representative') {
+          expect(evaluations).toBe(20265)
+          expect(target.evaluations).toBe(166)
+          expect(target.coverage).toBe('partial')
+          expect(summary(rows).staticWork).toBe(306103)
+          expect(summary(rows).intervalWork).toBe(91548)
+          expect(charged).toBe(398216)
+        }
       },
       20000
     )
