@@ -981,3 +981,33 @@ regeneration. Different bounded representatives reflect the declared region
 traversal, not a changed continuous predicate or an earliest-contact claim.
 This closes measured region exclusion only; partial coverage and the unresolved
 material, intended-contact, retention and articulated-motion obligations remain.
+
+Next bounded Step Card is test-only hierarchy profiling, not production indexing.
+Permanent collision tests and a private test helper inventory unique shapes,
+shape/region mappings, triangles and regions before building leaf-capacity-eight
+stable-median local trees per original region. Preserve canonical buffers and
+exact triangle/region identity. Two small fixtures/two poses compare every
+nonseparated exhaustive sweep relation; actual source queries only count strict
+node exclusions, leaf candidates and unvisited domains. Count cold build, payload
+estimate, node transforms and two warm pose costs against the same region baseline.
+Guards are one million unique/built triangles, 300,000 nodes, 500,000 node visits
+per query and the existing ten-second test timeout; no parameter sweep or guard
+increase. Over-budget query domains stay unvisited. Runtime/C/material changes
+remain excluded; useful results require a later QueryGeometry owner/lifetime card.
+
+The fixed test-owned hierarchy profile preserves both fixtures/two-pose exhaustive
+relations and all original triangle/region mappings. The actual source has 378
+shapes/mappings, 749,807 triangles and 59,160 regions. Cold build reads 2,249,421
+vertices, creates 240,814 nodes and takes about 853 ms; estimated numeric/reference
+payload is 21.4 MB, excluding JavaScript object overhead. At yaw zero, candidates
+fall from 14,371,872 to 2,810,792 with 171,377 node visits; at yaw 0.4 they fall
+from 10,909,616 to 729,408 with 90,023 visits. Both complete the bound-domain
+accounting without node-budget exhaustion. Warm bound queries take about 141/171
+ms versus the region baseline's 52/55 ms: this is candidate reduction, not measured
+end-to-end collision acceleration. Hundreds of thousands to millions of exact
+predicates remain, so no production index or real-time movement claim follows.
+The test helper now cooperatively checks elapsed time during construction and
+traversal, including node-budget exhaustion accounting; three fake-clock failures
+preceded those guards, and all 45 collision tests
+pass. This is not an operating-system hard timeout. Production lifecycle, memory
+limits and an effective full-query budget still need a separate owner decision.
