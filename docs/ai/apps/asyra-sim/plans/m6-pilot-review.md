@@ -1917,3 +1917,28 @@ Reproduce only at the next authorized diagnostic checkpoint with
 Next bounded review uses this population to identify actual finding-root axis
 costs and repeated bound work before proposing any correction. No new full run
 or production change follows the diagnostic alone.
+
+### Read-only axis ownership replan
+
+The complete population does not justify a pose cache: 27 repeated public
+static argument tuples cost 57,643 units, but 24 have different initial upper
+inputs and 15 have different recorded distance outputs. Only three occurrences
+have no source-consumption work on either side; the nonadjacent 127→52 occurrence
+is outside an adjacent-source lifetime. The two adjacent unseeded occurrences
+cost 5,678 units (1.85% of static), not the claimed full repeated-work population.
+Unrecorded witness metadata is not assumed equal.
+`projectedBoundsGap` charges one checkpoint for each actual noncardinal
+source-bounds separation query. The 131,901 units are those queries, not direction
+construction work; 110,705 belong to finding segments. Same-query poses do allow
+reusing fixed direction proposals, their norms and each side's inverse-direction
+and translation coefficients. This differs from the previously rejected complete
+bounds-pair gap lookup. Nevertheless each new node pair still requires its
+bounds-dependent dot/gap certificate and the unchanged query checkpoint. Merely
+preparing coefficients therefore saves zero logical units; charged preparation
+would add work. Existing timing is 2,794 ms for static queries and 769 ms for all
+node projections, including bounds-dependent arithmetic, not a measured saving.
+Independent numerical/ownership review agrees: do not implement or profile this
+CPU-only extraction as a solution to the fixed 500,000-work G4 goal. A useful next
+owner strategy must reduce actual visited pairs/certificate queries or establish
+an independently valid evidence handoff, not rename arithmetic to lower its bill.
+No new cache, production change or geometry run follows this read-only replan.
