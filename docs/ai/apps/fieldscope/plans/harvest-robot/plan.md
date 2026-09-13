@@ -1331,3 +1331,26 @@ required one ownership case plus build/type recheck, without runtime changes or
 a repeated full suite. Independent scoped numerical/code review found no remaining
 finding. This six-file slice freezes and stops for root quota review; interval
 set enclosure is not correlated joint trajectory, material or movement clearance.
+
+Next bounded readiness card: D motion point-time joint-domain preparation, before
+source-affine bounds. JointSegments.enclose internally assesses one raw segment
+against the current issued source; it never trusts a caller's admissible flag.
+The once-detached segment plus once-detached closed window feed one exact rational
+point producer with a single nearest-even conversion. Preserve declared segment
+endpoint bits; derive domains from endpoint min/max using the monotonicity proof,
+not rounded intermediate interpolation or a clamp. Zero-length query windows are
+allowed; half-open validity must strictly extend beyond the closed window end.
+
+The matching Inspector fixes inputs, failure/lifetime ownership and direct
+motion/test allowlist. Existing ideal speed evidence is separate from rounded
+point-time values. No C/FK, source surface, material or contact work enters this
+first dependent slice. A later D source-affine owner must supply explicit whole-
+window source/dynamic state and cannot treat these domains as clearance.
+
+Future gates retain exact speed/source controls, independent rational extrema/
+rounding and invalid/forged/retired/clone-once cases. Each request evaluates at most
+two distinct times across five joints, at most ten conversions. The fixed profile
+uses 100 normal and 100 extreme/subnormal windows with complete entry costs:
+1 second per batch, 10 seconds overall, unchanged 24000-bit guards. No runtime
+cache or new scalar producer. This segment writes/reviews readiness only, freezes
+and stops for root quota review; no tests or implementation are started.
