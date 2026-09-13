@@ -92,7 +92,6 @@ user instructions identify the exact file, controls and success/failure outcome.
 Self-review: this implements existing pilot/distribution contracts within ui;
 it does not add product semantics, expand Inspector boundaries or replace G7.
 
-
 ## UI slice evidence before candidate generation
 
 The new supplied-file E2E fails with ENOENT before the fixture exists. The
@@ -723,7 +722,6 @@ repeated static/interval work in original segment 115; it does not authorize
 sample/pose reuse or another production change without measured counts and
 review of the exact ownership/identity contract.
 
-
 ### Exact segment repetition diagnosis
 
 Step card: method owner, current component baseline `979ca24ad`, original
@@ -741,7 +739,6 @@ gate changes are authorized. Run with `SIM_CAPACITY_DIAGNOSTICS=1` and the exact
 file, retaining its twenty-second guard. Review the measured ownership and
 identity contract before proposing any reuse.
 
-
 The passive case completes seven evaluations/four clear leaves in 172,486 work:
 3,176 original preparation, 10,366 refinement, and exactly 158,944 query work,
 reproducing the complete original segment's full-run cost. Thirteen static
@@ -756,7 +753,6 @@ Focused diagnostic, app typecheck, focused ESLint and naming 11/11 pass.
 Evidence: `tmp/capacity/segment-repetition.log`. The first attempted diagnostic
 assertion referenced a nonexistent snapshot budget field; the formal resource
 profile owner now supplies the unchanged 500,000 limit explicitly.
-
 
 ### Subdivision evidence ownership card
 
@@ -833,7 +829,6 @@ actually obtained. No browser rerun before that milestone. If the proposed
 lifetime conflicts with Inspector/product semantics or materially changes
 complete evidence, stop and revise the card; do not hide it by weakening tests.
 
-
 Readiness review corrected one eligibility boundary before implementation:
 original native/native queries use witness-axis separation, so only the actual
 mesh `lowerOver` route declares positive-witness-only dependency. Inspector and
@@ -865,7 +860,6 @@ naming 11/11 pass; the regenerated Inspector catalog passes 8/8. Evidence is in
 review and the subsequent full representative gate are the remaining boundaries;
 G4 is not yet complete.
 
-
 The independent production review passed and separately reran 26 tests. The
 unchanged full gate still fails complete coverage: 500,197 accounted work,
 20,234 evaluations, first partial joint-2/obstacle-11 at 135 evaluations. Its
@@ -891,7 +885,6 @@ Logs: `tmp/capacity/handoff-historical-replay.log`,
 handoff slice is frozen for scoped review/commit. The next discovery is limited
 to the new actual original-segment frontier and completed-query cost attribution;
 no new production strategy follows directly from the partial aggregate.
-
 
 ### Actual frontier cost attribution card
 
@@ -931,7 +924,6 @@ triangle-level rejection avoids one convex call after its triangle-pair tick
 has already been paid; node rejection can avoid descendant work. Unknown
 metadata is reported separately, never guessed from bounds values. This is
 passive accounting, not authorization to remove any rejection policy.
-
 
 The passive replay reproduces 20,234 / 135. Its actual exhausted call is the
 static endpoint at 3.0150753768844223 in original segment 74
@@ -977,7 +969,6 @@ same test-owned adapter, preserving their assertions and original guard. If
 any required correctness or cost gate fails, stop/replan; do not redefine units,
 tune axes, or claim success merely because fewer axes were charged. Production
 requires a separately reviewed formal red/correction card after this evidence.
-
 
 ### Final triangle projection policy - validated owner correction
 
@@ -2243,3 +2234,94 @@ Reproduction entry is `SIM_PLANAR_REGION_SCREEN=1` with
 `planar-region.test.ts -t 'screens all original source bindings once under the frozen preparation ceiling'`.
 No second source run is needed for closure. Current default authority remains
 method 1.0.2 and G4 remains RED; independent review is the next boundary.
+
+### Iteration-local convex support arithmetic reuse - frozen owner slice
+
+The canonical convex query currently repeats the inverse direction rotation and
+triangle interval dot products (or radial norm) when a nonconverged iteration
+consumes both its support lower bound and its next source witness. Reuse is owned
+by that single synchronous iteration and its two shapes/directions. A private
+completed directional record may serve the bound and, only after the existing
+convergence check, the point. Initial and zero-axis spanning vertices remain
+point-only. Records cannot survive an iteration, query, changed pose or source.
+No retained cache, public observer, method/default/version or Inspector change
+is authorized. The existing pure analytical method owner remains authoritative.
+
+Permanent tests first freeze full binary64 evidence and actual rotate/dot/norm
+counts for triangle, native, interval, early-return, tied and changed-pose cases.
+They must fail on duplicate work before implementation, then prove fresh query
+and iteration lifetimes. Instrumentation is a test-owned isolated module closure.
+Original triangle membership, interval predicates, simplex order and all mesh
+charge/checkpoint order remain unchanged. Private record allocation and field
+reads are additional CPU operations, not a logical fee discount; savings claims
+are limited to physically eliminated arithmetic. Existing owner/cancellation
+regressions, type, lint, naming and format gates precede independent review.
+
+Only after that review may the one opt-in scenario-zero population parity gate
+run against the reviewed census SHA-256
+`b79710033eadf5263f17b13744c754c58ef353abd65f85fedd318cf940014f99`.
+It preserves the original 39-body/30-fixture/200-frame/298-pair input, recorded
+pair evidence, 500197 charged mesh work and 20265 evaluations with partial
+coverage. The runtime's existing 30000 ms deadline remains distinct from test
+harness timeout. No evidence comparison may be widened after observation, and
+parity with incomplete evidence is not G4 passage or a 500k capacity improvement.
+
+The bounded implementation now shares two private support records per regular
+iteration; standalone lower bounds and point-only initial/spanning calls retain
+their original arithmetic route. Each record adds one fixed object allocation
+and constant field accesses; no lookup table, persistent lifetime or fee relabeling
+exists. Triangle dots and radial norms are the same already-produced interval
+values. Selected triangle witnesses still refer to original vertices, with the
+same earliest tie, and world point transforms remain after the convergence check.
+
+Before implementation, all nine binary64 evidence hashes matched, while the
+permanent operation-count assertion failed on the expected duplicates. Afterward
+those same hashes match: rotate calls 210 to 168, explicit dot calls 677 to 623,
+and norm calls 103 to 83 across the frozen cases. These count actual canonical
+operations, not mesh logical work, CPU milliseconds, or a full-population saving.
+The early-converged case stays at 6/8/4, and point-only spanning work is preserved.
+Four focused tests cover these cases, repeated and changed-input invocations,
+all eight rotation interruption sites of the one-iteration case, and reentrant
+execution. Interval and original mesh owner regressions pass (58 tests); eight
+existing pair-profile diagnostics remain opt-in and were not executed as a new
+benchmark. Naming, placement and Inspector checks pass (21 contracts), with type,
+ESLint and format checks. Population parity required independent review before
+execution. Its frozen comparator is exact persisted pair JSON, matching the
+reviewed census format; that artifact cannot distinguish signed zero. The small
+binary64 receipts separately preserve signed zero and every full output field.
+
+Independent geometry review accepted the exact implementation/test/fixture/plan
+hashes. The single authorized full-population parity gate then passed on
+2026-09-13: all 298 persisted pair records exactly match the reviewed census,
+with 500197 logical mesh work units, 20265 evaluations and partial coverage.
+The first partial pair remains index 101,
+`example:joint-2/main-body::obstacle-11/main-body`. All remaining unresolved
+coverage is retained. This validates unchanged recorded evidence and charges;
+G4 remains RED and this does not establish a 500k capacity improvement.
+
+The measured geometry invocation wall time was 10004.961167 ms within the
+unchanged 30000 ms runtime deadline. The Vitest case took 10493 ms and its
+complete harness 10.89 s, within the 45000 ms test allowance. No complete CPU
+time measurement or paired CPU comparison was captured; no speedup percentage
+is claimed. Deterministic eliminated arithmetic remains the bounded CPU-work
+evidence. The one approved run was not repeated for timing or reporting.
+
+Formal generated local evidence is `tmp/capacity/convex-support-reuse.json`
+(22048120 bytes), SHA-256
+`fa685329ffc68c295d4f369b43687202a2c57a87fb312122d20a1a67687475a6`.
+It preserves every pair record, full input/control hashes, measured wall time,
+work, evaluations, coverage and first partial pair. It may remain a local generated
+artifact rather than a 22 MB Git source file. The control census SHA-256 remains
+`b79710033eadf5263f17b13744c754c58ef353abd65f85fedd318cf940014f99`;
+input SHA-256 remains
+`4c7b21228a7b621bf2e94b8991c25bebea78fe6c3f1d63203c141d0dca788291`.
+The permanent opt-in reproduction entry, from the candidate worktree root, is:
+
+```sh
+cd apps/asyra-sim
+SIM_SUPPORT_REUSE_POPULATION=1 SIM_SUPPORT_REUSE_CONTROL_FILE=/Users/asa/Desktop/workspace/asra/.worktrees/asyra-sim-temporal-opportunity-census/tmp/capacity/temporal-opportunity-census.json node ../../../../node_modules/vitest/vitest.mjs run src/analysis/methods/__tests__/convex-support-reuse.test.ts -t 'preserves the complete recorded scenario-zero population and charged work' --maxWorkers=1
+```
+
+The reviewed census path must refer to the exact hash above; the test verifies it
+before geometry work. No method identity/version, production budget, geometry,
+continuous coverage, containment, witness or Inspector contract changed.
