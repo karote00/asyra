@@ -2,15 +2,15 @@ import {
   intervalAlgebra,
   poseOperations,
   type Vector
-} from '../../domain/kinematic-algebra'
-import type { Interval } from '../../domain/interval'
-import type { MeshGeometry } from '../../domain/part-geometry'
-import { EXPERIMENT_RESOURCE_PROFILE } from '../contracts'
+} from '../../../domain/kinematic-algebra'
+import type { Interval } from '../../../domain/interval'
+import type { MeshGeometry } from '../../../domain/part-geometry'
+import { EXPERIMENT_RESOURCE_PROFILE } from '../../contracts'
 import {
   convexDistance,
   type ConvexShape,
   type DistanceEvidence
-} from './convex-query'
+} from '../convex-query'
 import {
   boundsGap,
   buildMeshIndex,
@@ -22,14 +22,14 @@ import {
   type MeshIndex,
   type PreparedMeshIndex,
   type MeshNode
-} from './mesh-index'
-import { projectedBoundsGap } from './mesh-projection'
-import { shapeMembership } from './mesh-membership'
-import { MeshFrontier } from './mesh-frontier'
+} from '../mesh-index'
+import { projectedBoundsGap } from '../mesh-projection'
+import { shapeMembership } from '../mesh-membership'
+import { MeshFrontier, type FrontierPass } from './immutable-frontier'
 import {
   createFreshStaticSampler,
   type SourceUpper
-} from './fresh-static-sampler'
+} from '../fresh-static-sampler'
 
 const ops = poseOperations(intervalAlgebra)
 export class MeshWorkLimit extends Error {}
@@ -103,13 +103,12 @@ export class OriginalMeshQuery {
       throw new MeshWorkLimit('The original-triangle work budget was exhausted')
   }
   /** An optional publication cannot erase geometry that already completed. */
-  private publishFrontier(pass: MeshFrontier | undefined): void {
+  private publishFrontier(pass: FrontierPass | undefined): void {
     if (!pass) return
     try {
       pass.publish()
     } catch (error) {
       if (!(error instanceof MeshWorkLimit)) throw error
-      this.frontier?.cancel()
       this.frontierLimit = error
     }
   }
@@ -211,36 +210,6 @@ export class OriginalMeshQuery {
     tolerance: number,
     iterations: number
   ): DistanceEvidence {
-    if (!this.frontier)
-      return this.solveDistance(a, b, threshold, tolerance, iterations)
-    this.frontier.enter()
-    try {
-      const result = this.solveDistance(a, b, threshold, tolerance, iterations)
-      this.finishFrontier()
-      return result
-    } catch (error) {
-      this.frontier.cancel()
-      throw error
-    } finally {
-      this.frontier.leave()
-    }
-  }
-  private finishFrontier(): void {
-    try {
-      this.frontier?.finish()
-    } catch (error) {
-      if (!(error instanceof MeshWorkLimit)) throw error
-      this.frontier?.cancel()
-      this.frontierLimit = error
-    }
-  }
-  private solveDistance(
-    a: ConvexShape,
-    b: ConvexShape,
-    threshold: number,
-    tolerance: number,
-    iterations: number
-  ): DistanceEvidence {
     if (a.geometry.kind !== 'mesh' && b.geometry.kind !== 'mesh') {
       this.frontier?.observe(a.geometry, b.geometry)
       return convexDistance(a, b, tolerance, iterations)
@@ -322,6 +291,7 @@ export class OriginalMeshQuery {
       )
       if (bound > searchThreshold) {
         lower = Math.min(lower, bound)
+        frontier?.retain()
         continue
       }
       if (an?.children && splitLeft(an, bn, ab, bb)) {
@@ -367,6 +337,7 @@ export class OriginalMeshQuery {
           if (result.upper < threshold) searchThreshold = 0
           if (result.penetration) return { ...result, lower: 0 }
         }
+      frontier?.retain()
     }
     if (lower > result.upper)
       throw new Error('Inconsistent original mesh distance certificates')
@@ -381,35 +352,6 @@ export class OriginalMeshQuery {
   /** A positive surface gap plus an outside static witness excludes containment
    * throughout a connected time interval: entering requires a surface crossing. */
   lowerOver(
-    a: ConvexShape,
-    b: ConvexShape,
-    threshold: number,
-    witness: DistanceEvidence,
-    tolerance = 1e-6,
-    iterations = 48
-  ): number {
-    if (!this.frontier)
-      return this.solveLower(a, b, threshold, witness, tolerance, iterations)
-    this.frontier.enter()
-    try {
-      const result = this.solveLower(
-        a,
-        b,
-        threshold,
-        witness,
-        tolerance,
-        iterations
-      )
-      this.finishFrontier()
-      return result
-    } catch (error) {
-      this.frontier.cancel()
-      throw error
-    } finally {
-      this.frontier.leave()
-    }
-  }
-  private solveLower(
     a: ConvexShape,
     b: ConvexShape,
     threshold: number,
@@ -457,6 +399,7 @@ export class OriginalMeshQuery {
       )
       if (gap > threshold) {
         lower = Math.min(lower, gap)
+        frontier?.retain()
         continue
       }
       if (an?.children && splitLeft(an, bn, ab, bb)) {
@@ -496,6 +439,7 @@ export class OriginalMeshQuery {
           }
           lower = Math.min(lower, gap)
         }
+      frontier?.retain()
     }
     this.publishFrontier(frontier)
     return lower

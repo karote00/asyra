@@ -2145,3 +2145,246 @@ prove the matching upper bound despite overlapping world AABBs. Rational extrema
 reverse order, interval-motion enclosure, degenerate proposals, full source and
 cost/cancellation/cold-warm oracles are prerequisites. This section authorizes
 no fitting code, measurement, benchmark or full run; benefit remains unmeasured.
+
+### Candidate 27 - complete traversal-frontier prerequisite
+
+Frozen before implementation on `codex/asyra-sim-frontier-proof`, from goal
+`b9f4a710c`. Candidate 26's declared screen was rejected and preserved at
+`25a9f793e`; no part of that branch is inherited. This task is a prerequisite
+proof and fixed screen, not production integration or a method-version change.
+
+Execution card: method owner, Inspector `method` inputs/conditions/bypasses and
+cache fields at lines 1008–1066; original-part spec “Solid interpretation and
+limits”, “Numerical method” and “Bounded acceleration decision”. The admitted
+frozen ordered geometry and domain-owned current/full-interval poses are inputs.
+The candidate outputs freshly computed original-source evidence and an internal
+structural partition; no earlier pose, distance, verdict or upper witness is
+retained. Original median membership, demanded component refinement, final
+triangles, uncertainty, cancellation and every segment remain authoritative.
+No renderer, approximate source substitution, global result cache, dependency,
+method catalog or production version change is allowed. The isolated allowlist
+is `original-mesh-query.ts`, a method-owned frontier helper, permanent method
+tests and this plan. The fifth constructor option is default-off and is never
+selected by the installed production method; full integration would require
+new method/Inspector version and lifetime review after evidence passes.
+
+The frontier is a disjoint Cartesian-product cover of the ordered source
+triangle sets. A terminal item is a pair of existing complete nodes, either a
+strictly rejected node pair or a fully processed leaf-node pair. A source leaf
+node still contains all original triangles; its entire Cartesian product is
+rechecked at every target query. Start from the ordinary root pair or a previous
+complete partition. The transaction's only transitions are next, split one
+node into its two exact children, and retain the complete active node pair.
+Publishing with an active or unvisited pair is forbidden. Premature penetration,
+interval zero, uncertainty and exhaustion publish no incomplete replacement.
+The previous complete partition is merely a structural search start, never a
+claim about a later query. Fresh world/pose bounds and unchanged triangle solvers
+provide every current certificate; no additional hull support or fixed-axis
+preflight is inserted.
+
+A single private slot binds ordered immutable geometry identities and both
+actual demanded MeshIndex identities. A different pair clears it; different
+index identities (including median-to-component refinement or rebuilt index)
+start from the roots. Mutable source cannot use retention. The complete node,
+bounds, child, triangle and vertex graph is frozen under charged preparation
+before any reference enters a frontier; each invocation charges this complete
+walk equally even on warm original-index reuse. No frontier survives context
+creation. One charge covers each pair admission, index/partition admission,
+prepared node, prepared triangle, terminal capture/copy, split/reopen and final
+publication. Every actual current node and triangle still pays its original
+query checkpoint and every executed projection its original axis checkpoint.
+The immutable input frontier is cursor-read, not silently copied to a worklist;
+new split pairs use the charged split transition. No baseline-shadow discounts
+or post-hoc event subtraction enter candidate work.
+
+Publication follows complete geometry. If its checkpoint alone exhausts the
+mesh budget, retain the freshly completed geometry evidence, do not publish,
+and defer that same exhaustion to the next owned operation; cancellation still
+propagates. This is the existing evidence-preservation principle, not use of an
+old verdict. All earlier capture/reopen failures interrupt ordinary solving.
+
+Before the fixed screen, permanent exhaustive oracles must establish complete
+Cartesian cover with neither duplicates nor omissions, illegal transition and
+partial-publication rejection, ordered geometry/index invalidation, immutable
+ownership, identical cold/hot preparation and work, and abort boundaries. Query
+cases cover changed pose, full interval interior crossing, concave holes,
+containment/membership, penetration after a warning, and changed initial upper
+or threshold. A retained partition supplies no truth and must remain safe when
+those inputs change. A repeated query must still execute new bounds/triangles.
+
+Fixed screen is original joint-2 / obstacle-11, complete roots 114–198, current
+settings/source/order, and unchanged 500k/20-second guards. First reproduce
+complete control = 197,028 units and 95 evaluations; otherwise stop before
+candidate measurement. Execute the real candidate continuous/query traversal
+in cold and warm-original-preparation contexts. Report all actual charged
+categories before assertions, including failures. Both complete candidates must
+use <=157,622 units. Do not alter source, threshold, roots, iteration count or
+scheduling policy after observing results. The comparison first checks full
+coverage and unchanged original-root finding/penetration classification; source
+bounds/witnesses may differ only where independently validated against original
+triangles and unchanged tolerance. The small formal oracle supplies that
+semantic validation; no unproved source witness is accepted merely because two
+numerical outputs look similar. New unresolved coverage is failure.
+
+Concentrate the permanent tests, type/lint/format/naming/placement and Inspector
+contracts before the single cold/hot prefix screen. On any failed screen,
+preserve the complete negative package and stop. Even a positive prerequisite
+needs independent review and later integration permission before any full goal
+benchmark. G4 remains 39 bodies, 30 fixtures, 200 frames, 298 pairs, three
+scenarios and 500k/20 seconds, and remains unresolved.
+
+Candidate 27 outcome: **rejected by the frozen admission screen**. The one
+control/cold/hot run reproduced control 197,028 and both actual candidates
+190,505, exceeding 157,622 by 32,883. All three completed 95 evaluations and
+90 leaves. The complete serialized `PairEvidence` (including every bound,
+witness time, reason, classification and coverage) was identical to control;
+cold/hot work and every recorded category were identical. Observed times were
+6.70 s control, 9.27 s cold and 9.05 s hot, each within the unchanged 20-second
+guard. These are public representative source results, not hardware or human
+validation, and do not establish the full 500k goal.
+
+Actual frontier charges were admission 184, lookup 64, prepared nodes 2,814,
+prepared triangles 5,024, prepared representatives 41, reopen 1,889,
+capture/copy 39,126 and publication 47: total 49,189. Each prepared representative
+is charged separately in addition to the complete node/triangle preparation.
+The owner totals were static distance 132,138, interval lower 58,227, source
+witness 105, evidence handoff 19 and zero derivation 16, summing exactly to
+190,505. Frontier charges are included in these owner totals, not added twice.
+Subtracting the actual candidate bookkeeping leaves 141,316 actual existing
+query charges; the observed existing-work reduction is 55,712, consumed mostly
+by the 49,189 new charges. Net saving is only 6,523 (3.31%). This arithmetic is a
+post-run explanation of measured work, not shadow credit or an unexecuted
+candidate claim. Repeated complete frontier capture is the principal added
+owner cost (39,126); no free copy, altered charge, coarsening or scheduling
+revision was tried after the failure.
+
+The prerequisite package passed 84 focused tests: 15 structural-cover tests,
+8 actual-query tests, 20 independent exact-rational continuous/source oracles
+(default and candidate), and 41 existing mesh, lifetime and fresh-witness
+regressions. The cover oracle checks every original Cartesian product through
+64 mixed retain/reopen schedules as well as full descent, malformed/missing
+source, duplicate offsets, ordered geometry and refined-index invalidation.
+TypeScript, scoped ESLint/Prettier and 21 naming/placement/Inspector contracts
+passed. The opt-in admission command produced one control pass and two intended
+negative screen failures, both solely at `190505 <= 157622`. Keep that threshold
+assertion; a rejected experiment is not converted into a passing performance
+gate. Reproduce with `SIM_FRONTIER_ADMISSION=1` and the permanent
+`frontier-admission.test.ts`; project-local `tmp/capacity/frontier-{control,cold,hot}.json`
+and `frontier-admission.log` preserve the complete run.
+
+Stop this candidate with production default-off and no method version,
+Inspector semantics, goal integration or G4 claim. Submit this one complete
+negative package for independent review. Do not begin candidate 28 or another
+benchmark without direction.
+
+### Candidate 28 - private frontier lifecycle
+
+Frozen before implementation from goal `b9f4a710c` on
+`codex/asyra-sim-frontier-lifecycle`; candidate 27's source and formal proofs are
+carried as the explicit comparison baseline, with its branch/evidence preserved.
+This is one complete lifecycle candidate, default-off, not a production method
+version or G4 integration. The method Inspector route and source authority in
+candidate 27 still apply. The bounded allowlist is the method-owned frontier and
+query owner, permanent method fixtures/tests and this plan. No new dependencies,
+source/settings/order changes, full benchmark, or candidate 29 are authorized.
+
+Use a single invocation-private linked Cartesian cover and split-only undo
+journal. No reader or handle escapes the query owner. Source geometry and exact
+index identity, complete paid sealing, lazy-refinement invalidation, root
+admission, membership and every current/full-interval geometry operation remain.
+A cell stores only the original two nodes and its next link. Ordinary traversal
+reads the cell and advances the cursor under its existing node charge. Terminal
+completion performs no capture, clone, freeze, append or marking operation.
+Canonical query control reaches publication only after its complete geometry
+loop; the list cursor alone is not a geometry certificate. Early returns cannot
+publish. Splitting replaces the active region by right then left children before
+its previous successor, preserving the exact old stack visit order.
+
+Freeze fees before observing results: retain all existing preparation/admission/
+lookup/publication fees; add one exclusive-entry per query, one begin and one
+reserved constant cleanup per started transaction, and one root-cell allocation
+on a miss. Each split pays separately for journal record allocation/copy, new
+child-cell allocation, and existing cell/link/cursor mutation. Each actual undo
+pays one constant-size restore. Query guards/cleanup and drop of list/journal
+heads use those fixed fees. No uncharged linear scan or destructor is allowed;
+GC CPU remains inside the wall guard. An ordinary early return/uncertainty uses
+reverse split undo to restore exactly the preceding complete partition; true
+cancellation/exhaustion invalidates the private slot using reserved cleanup and
+propagates. Optional rollback/publication exhaustion after a completed static
+answer preserves that fresh answer, invalidates the frontier, and latches the
+same error for the next owned operation. No old verdict or witness is returned.
+
+The conditional arithmetic is 190505 - 39126 + 3*1889 + H <= 157422 with H<=376,
+leaving only 200 units against the unchanged 157622 screen. This relies on exact
+visit/split sequence conservation, at most one undo for each split, and zero new
+per-terminal operations. It is a prerequisite to prove, never a promised result.
+Every real inspection, allocation or mutation must appear in the operation model;
+if the implementation requires additional work, count it and reject before the
+screen when 3*S+H exceeds 6243. Fees cannot be relabelled to fit.
+
+Permanent proofs precede the screen: exhaustive Cartesian/visit order comparison
+with the immutable candidate 27 on mixed split/retain and rollback schedules;
+identity/index/lazy-refinement lifetime; cancellation at every charged operation
+and mutation boundary; exclusive reentrancy; no allocation before payment; no
+partial publication; unchanged pose/interval/membership/upper semantics; exact
+fresh-result/exhaustion behavior after optional rollback/publication. A test-owned
+operation observer must prove retained terminal count introduces no new copy,
+mark, allocation or extra scan, and that all cell/journal writes have their
+frozen fee. No separate review is requested between small stages.
+
+After the complete formal proofs/type/lint/naming/placement/Inspector gates,
+run only the fixed roots 114–198 control=197028/95 evaluations, then actual cold/
+hot candidates, each <=157622 and within unchanged 500k/20-second guards. Keep
+full classification/coverage and source evidence comparison; record exact visits
+against the immutable reference on formal cases. Preserve all actual costs
+before assertions. Failure is saved and stops this candidate. A positive prefix
+only admits later review: it does not prove 39 bodies/30 fixtures/200 frames/
+298 pairs or G4. Deliver the complete candidate for one independent review.
+
+Candidate 28 outcome: **the fixed prefix admission passed; G4 remains open**.
+The single control/cold/hot run reproduced control 197,028, then cold=hot=156,206,
+which is 1,416 below 157,622. All three completed 95 evaluations and 90 leaves;
+the complete serialized `PairEvidence`, including every bound, witness time,
+reason and classification, was identical. Cold/hot fees and every recorded
+category were identical. Net saving from control is 40,822 (20.72%); no full
+39-body/30-fixture/200-frame/298-pair case was run or inferred to pass.
+
+The conditional sequence premise held in this prefix: splits remained 1,889,
+with 736 actual undos. Charges were entry 184, admission 184, lookup 64, prepared
+nodes 2,814, prepared triangles 5,024, prepared representatives 41, begin 64,
+reserved cleanup 64, root cell 1, journal records 1,889, child cells 1,889, updates
+1,889, undos 736 and publication 47: total 14,890. Existing query work is exactly
+141,316, unchanged from candidate 27. Additional lifecycle H=313; the initial
+conditional bound paid for 1,889 undos and 64 root cells, whereas only 736 and 1
+were needed. No terminal fee was renamed: the old 39,126 capture/clone/freeze/
+append operations are absent. An independent test-owned accessor observer checks
+actual unchanged-cell successor/payload reads and writes, cell identity and
+freezing, in addition to the paid event counts.
+
+Owner totals are static distance 107,720, interval lower 48,346, source witness
+105, evidence handoff 19 and zero derivation 16, summing to 156,206. Frontier fees
+are included, not added again. Observed times were 6.74 s control, 9.12 s cold,
+9.13 s hot: within the unchanged 20-second guard but slower than control, so no
+wall-time improvement is claimed. Journal allocation/GC time is included. These
+are public representative source results, not hardware or human validation.
+
+Permanent focused validation passed 106 tests: 22 new lifecycle proofs and the
+84 carried source/oracle/lifetime tests. Lifecycle schedules compare all source
+Cartesian products and exact immutable traversal order across 128 schedules,
+each with completion, ordinary interruption/rollback, and subsequent full descent.
+Cancellation is injected at each operation kind and every actual checkpoint of
+a complete synthetic query; reentrancy, unpaid cell changes, source identity,
+lazy refinement and true rollback-budget exhaustion are covered. Both fresh
+static and interval-zero outputs survive optional rollback exhaustion with the
+same limit exposed before later solving. Twenty-one naming/placement/Inspector
+contracts, TypeScript, scoped ESLint and changed-source formatting passed. The
+immutable candidate-27 fixtures are test-owned reference code; production never
+selects that reference or the new default-off candidate automatically.
+
+Reproduce only the authorized fixed screen with
+`SIM_FRONTIER_LIFECYCLE_ADMISSION=1` and `frontier-admission.test.ts`. Complete
+project-local artifacts are `tmp/capacity/lifecycle-frontier-{control,cold,hot}.json`
+and `lifecycle-admission.log`. Keep the same source/settings/order and 157622
+assertion. Submit this complete candidate for one independent review. Stop here
+pending direction; no integration, method version/Inspector change, full goal
+benchmark or candidate 29 is implied by this positive prefix.
