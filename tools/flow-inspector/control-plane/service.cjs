@@ -8,7 +8,7 @@ const { admitContract, loadContract, mappingDiff } = require('./contracts.cjs')
 const sourceOwner = require('./snapshot.cjs')
 const targetEvidenceOwner = require('./target-evidence.cjs')
 const { captureSource, safePath, sha256 } = sourceOwner
-const { runVerification } = require('./runner.cjs')
+const { runVerification, runContainedVerification } = require('./runner.cjs')
 const evidenceOwner = require('./evidence.cjs')
 const { openStore, validId, writeAtomic } = require('./store.cjs')
 const versionOwner = require('./evolution.cjs')
@@ -225,12 +225,20 @@ function createService(
             )?.digest !== snapshot.configurationDigest))
     )
       throw new Error('Source execution configuration mismatch')
-    if (derived)
-      sourceOwner.verifyRetainedSnapshotBytes(
-        repositoryRoot,
-        sourceRoot,
-        manifest
-      )
+    if (derived) {
+      try {
+        sourceOwner.verifyRetainedSnapshotBytes(
+          repositoryRoot,
+          sourceRoot,
+          manifest
+        )
+      } catch (error) {
+        sourceAdmissions.delete(record.id)
+        verificationReferences.delete(record.id)
+        if (!files && record.phase !== 'completed') return
+        throw error
+      }
+    }
     const { runtimeSource } = sources
     const admission = Object.freeze({
       attemptId: record.id,
@@ -779,17 +787,92 @@ function createService(
       'targetId',
       'allocationRevision',
       'sourceAttemptId',
+      'sourceTaskId',
       'role'
     ])
     if (
       !validId(selection.targetId) ||
       !validId(selection.sourceAttemptId) ||
+      (Object.hasOwn(selection, 'sourceTaskId') &&
+        !validId(selection.sourceTaskId)) ||
       !Number.isInteger(selection.allocationRevision) ||
       selection.allocationRevision < 1 ||
       !['accepted', 'target'].includes(selection.role)
     )
       throw new ActionError(400, 'Invalid target proof selection')
   }
+  const taskRuntime = (selection, requireAvailable) => {
+    if (requireAvailable) {
+      const source = tasks.sourceFor(
+        selection.sourceTaskId,
+        selection.sourceAttemptId
+      )
+      if (
+        !source ||
+        source.taskId !== selection.sourceTaskId ||
+        source.admission.attemptId !== selection.sourceAttemptId ||
+        source.admission.repository !== repository
+      )
+        throw new ActionError(
+          409,
+          'Selected task source authority is unavailable'
+        )
+      return source
+    }
+    const task = tasks.get(selection.sourceTaskId)
+    const attempt = task.attempts.find(
+      (item) => item.id === selection.sourceAttemptId
+    )
+    const verdict = attempt?.verdict
+    if (
+      attempt?.phase !== 'completed' ||
+      !Array.isArray(verdict?.files) ||
+      verdict.baselineDigest !== task.snapshot.digest ||
+      task.task.contractDigest !== task.snapshot.contractDigest ||
+      !verdict.runtimeSource ||
+      !verdict.verificationSource ||
+      !verdict.executionSource ||
+      verdict.configurationDigest !== verdict.executionSource.digest ||
+      verdict.executionSource.verificationSourceDigest !==
+        verdict.verificationSource.digest
+    )
+      throw new Error('Invalid retained task source reference')
+    return {
+      admission: {
+        attemptId: attempt.id,
+        repository,
+        head: task.snapshot.head,
+        sourceDigest: verdict.sourceDigest,
+        lockfileDigest: task.snapshot.lockfileDigest,
+        contractDigest: task.snapshot.contractDigest,
+        mappingVersion: task.snapshot.mappingVersion,
+        architectureVersion: task.snapshot.architectureVersion,
+        configurationDigest: verdict.configurationDigest,
+        runtimeSource: verdict.runtimeSource,
+        verificationSource: verdict.verificationSource,
+        executionSource: verdict.executionSource
+      }
+    }
+  }
+  const targetRuntimeIdentity = (runtime, taskId) => ({
+    ...(taskId
+      ? {
+          taskId,
+          configurationDigest: runtime.configurationDigest,
+          verificationSourceDigest: runtime.verificationSource.digest,
+          executionSourceDigest: runtime.executionSource.digest,
+          contractDigest: runtime.contractDigest,
+          mappingVersion: runtime.mappingVersion,
+          architectureVersion: runtime.architectureVersion,
+          lockfileDigest: runtime.lockfileDigest
+        }
+      : {}),
+    attemptId: runtime.attemptId,
+    repository: runtime.repository,
+    head: runtime.head,
+    sourceDigest: runtime.sourceDigest,
+    runtimeSourceDigest: runtime.runtimeSource.digest
+  })
   const resolveTargetProof = (selection, requireAvailable) => {
     validateTargetProofSelection(selection)
     const target = targets.get(selection.targetId)
@@ -827,7 +910,9 @@ function createService(
       !isDeepStrictEqual(reference, admittedReference)
     )
       throw new ActionError(409, 'Verification source is unavailable')
-    const runtime = sourceAdmissions.get(selection.sourceAttemptId)?.admission
+    const runtime = Object.hasOwn(selection, 'sourceTaskId')
+      ? taskRuntime(selection, requireAvailable).admission
+      : sourceAdmissions.get(selection.sourceAttemptId)?.admission
     const selectedContract = sourceAdmissions.get(reference.attemptId)?.contract
     if (
       !runtime?.runtimeSource ||
@@ -839,13 +924,7 @@ function createService(
       contract: selectedContract,
       targetProof: immutable({
         request: structuredClone(selection),
-        runtime: {
-          attemptId: runtime.attemptId,
-          repository: runtime.repository,
-          head: runtime.head,
-          sourceDigest: runtime.sourceDigest,
-          runtimeSourceDigest: runtime.runtimeSource.digest
-        },
+        runtime: targetRuntimeIdentity(runtime, selection.sourceTaskId),
         verificationSource: reference
       })
     }
@@ -865,7 +944,10 @@ function createService(
             record.snapshot.verificationSource?.digest !==
               resolved.targetProof.verificationSource.descriptor.digest ||
             record.snapshot.configurationDigest !==
-              resolved.targetProof.verificationSource.configurationDigest)) ||
+              (Object.hasOwn(resolved.targetProof.runtime, 'taskId')
+                ? record.snapshot.executionSource?.digest
+                : resolved.targetProof.verificationSource
+                    .configurationDigest))) ||
         !isDeepStrictEqual(
           record.flowIds,
           resolved.contract.flows.map((flow) => flow.id)
@@ -914,11 +996,30 @@ function createService(
     const completion = Promise.resolve().then(async () => {
       try {
         const runDirectory = path.join(directory, id)
+        const taskSource =
+          targetProof && Object.hasOwn(targetProof.runtime, 'taskId')
+            ? taskRuntime(targetProof.request, true)
+            : null
+        if (
+          taskSource &&
+          !isDeepStrictEqual(
+            targetRuntimeIdentity(
+              taskSource.admission,
+              targetProof.runtime.taskId
+            ),
+            targetProof.runtime
+          )
+        )
+          throw new Error(
+            'Selected task source identity changed before composition'
+          )
         const snapshot = targetProof
-          ? sourceOwner.composeSource(
+          ? (taskSource
+              ? sourceOwner.composeDerivedSource
+              : sourceOwner.composeSource)(
               repositoryRoot,
               runDirectory,
-              {
+              taskSource ?? {
                 sourceRoot: path.join(
                   directory,
                   targetProof.runtime.attemptId,
@@ -971,7 +1072,7 @@ function createService(
           },
           'source-captured'
         )
-        const result = await runner({
+        const result = await (taskSource ? runContainedVerification : runner)({
           repositoryRoot,
           runDirectory,
           snapshot,
@@ -982,6 +1083,43 @@ function createService(
           timeoutMs,
           onSpawn: (pid) => update(id, { runnerPid: pid }, 'runner-started')
         })
+        const retainedRunner = {
+          code: result.code,
+          reason: result.reason,
+          version: result.version,
+          environment: result.environment,
+          identity: result.identity,
+          reportDigest: result.reportDigest,
+          output: result.output,
+          reportPath: path.relative(
+            repositoryRoot,
+            result.reportPath ?? runDirectory
+          )
+        }
+        if (taskSource) {
+          try {
+            sourceOwner.verifyRetainedSnapshotBytes(
+              repositoryRoot,
+              snapshot.sourceRoot,
+              snapshot.files
+            )
+          } catch (error) {
+            sourceAdmissions.delete(id)
+            verificationReferences.delete(id)
+            update(
+              id,
+              {
+                phase: 'error',
+                finishedAt: new Date().toISOString(),
+                error: 'Post-run source integrity failed: ' + error.message,
+                runner: retainedRunner,
+                artifactDirectory: path.relative(repositoryRoot, runDirectory)
+              },
+              'source-integrity-failed'
+            )
+            return store.get(id)
+          }
+        }
         const evidence = evidenceOwner.assessEvidence(
           current,
           snapshot,
@@ -1038,19 +1176,7 @@ function createService(
             ...ciFields,
             finishedAt: new Date().toISOString(),
             evidence,
-            runner: {
-              code: result.code,
-              reason: result.reason,
-              version: result.version,
-              environment: result.environment,
-              identity: result.identity,
-              reportDigest: result.reportDigest,
-              output: result.output,
-              reportPath: path.relative(
-                repositoryRoot,
-                result.reportPath ?? runDirectory
-              )
-            },
+            runner: retainedRunner,
             artifactDirectory: path.relative(repositoryRoot, runDirectory)
           },
           'runner-settled'
@@ -1608,6 +1734,7 @@ function createService(
         'targetId',
         'allocationRevision',
         'sourceAttemptId',
+        'sourceTaskId',
         'role'
       ])
       if (!validId(request.requestId))

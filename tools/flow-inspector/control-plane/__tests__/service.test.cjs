@@ -2080,3 +2080,341 @@ test(
     }
   }
 )
+
+async function candidateTargetFixture(distinct = 'failure') {
+  const f = await assessmentFixture(distinct)
+  // The captured repository needs an installed dependency root for OS containment;
+  // ordinary Vitest created only its local cache while resolving ancestor packages.
+  const dependencies = path.join(f.repository, 'node_modules')
+  fs.rmSync(dependencies, { recursive: true, force: true })
+  fs.symlinkSync(path.join(root, 'node_modules'), dependencies, 'dir')
+  const task = await f.service.waitTask(
+    f.service.startTask(
+      {
+        requestId: randomUUID(),
+        stepId: 'finalize-transaction-state',
+        objective:
+          'Produce an exact candidate runtime for independent frozen verifiers',
+        allowedFiles: ['packages/factory/src/data-transact.ts'],
+        adapter: 'demonstration',
+        scenario: 'repair',
+        contractDigest: f.service.contract().digest,
+        revision: f.service.state().mapping.revision,
+        budgets: { elapsedMs: 60000, toolCalls: 20, attempts: 3 }
+      },
+      LOCAL_ACTOR
+    )
+  )
+  return {
+    ...f,
+    task,
+    proofRequest: {
+      ...f.request,
+      sourceTaskId: task.id,
+      sourceAttemptId: task.attempts.at(-1).id,
+      role: 'target'
+    }
+  }
+}
+
+test(
+  'task source target production separates exact frozen verifier outcomes and survives source retirement without new authority',
+  { skip: process.platform !== 'darwin', timeout: 30000 },
+  async (t) => {
+    const f = await candidateTargetFixture()
+    let service = f.service
+    try {
+      assert.equal(
+        f.task.verificationStatus,
+        'failed',
+        JSON.stringify({
+          error: f.task.error,
+          issues: f.task.attempts.at(-1).verdict?.evidence.issues,
+          runner: f.task.attempts.at(-1).verdict?.runner
+        })
+      )
+      const baseline = service.state().shared
+      const compose = t.mock.method(sourceOwner, 'composeDerivedSource')
+      const accepted = await service.wait(
+        service.startTargetProof(
+          { ...f.proofRequest, requestId: randomUUID(), role: 'accepted' },
+          LOCAL_ACTOR
+        )
+      )
+      const target = await service.wait(
+        service.startTargetProof(f.proofRequest, LOCAL_ACTOR)
+      )
+      assert.equal(accepted.evidence?.status, 'passed', accepted.error)
+      assert.equal(target.evidence?.status, 'failed', target.error)
+      assert.equal(accepted.format, 3)
+      assert.equal(target.format, 3)
+      assert.equal(compose.mock.callCount(), 2)
+      assert.equal(target.targetProof.runtime.taskId, f.task.id)
+      assert.equal(
+        target.targetProof.runtime.attemptId,
+        f.task.attempts.at(-1).id
+      )
+      assert.equal(
+        target.snapshot.runtimeSource.digest,
+        accepted.snapshot.runtimeSource.digest
+      )
+      assert.notEqual(
+        target.snapshot.verificationSource.digest,
+        accepted.snapshot.verificationSource.digest
+      )
+      assert.equal(
+        target.snapshot.configurationDigest,
+        target.snapshot.executionSource.digest
+      )
+      assert.notEqual(
+        target.snapshot.configurationDigest,
+        target.targetProof.verificationSource.configurationDigest
+      )
+      const {
+        observedAt: previousObserved,
+        fingerprint: previousFingerprint,
+        ...previousShared
+      } = baseline
+      const {
+        observedAt: currentObserved,
+        fingerprint: currentFingerprint,
+        ...currentShared
+      } = service.state().shared
+      assert.ok(
+        previousObserved &&
+          currentObserved &&
+          previousFingerprint &&
+          currentFingerprint
+      )
+      assert.deepEqual(currentShared, previousShared)
+      await service.close()
+      service = createService(f.repository, {
+        directory: f.runs,
+        runner: () => {
+          throw new Error('ordinary runner forbidden')
+        }
+      })
+      assert.equal(service.get(target.id).evidence.status, 'failed')
+      await service.controlTask(
+        f.task.id,
+        { action: 'resume', scenario: 'repair' },
+        LOCAL_ACTOR
+      )
+      const successor = await service.waitTask(f.task.id)
+      assert.notEqual(
+        successor.attempts.at(-1).id,
+        f.proofRequest.sourceAttemptId
+      )
+      assert.throws(
+        () =>
+          service.startTargetProof(
+            { ...f.proofRequest, requestId: randomUUID() },
+            LOCAL_ACTOR
+          ),
+        /unavailable/
+      )
+      await service.controlTask(f.task.id, { action: 'revoke' }, LOCAL_ACTOR)
+      const reads = t.mock.method(fs, 'readFileSync')
+      const count = compose.mock.callCount()
+      assert.equal(
+        service.startTargetProof(f.proofRequest, LOCAL_ACTOR),
+        target.id
+      )
+      service.get(target.id)
+      assert.equal(reads.mock.callCount(), 0)
+      assert.equal(compose.mock.callCount(), count)
+      reads.mock.restore()
+      assert.throws(
+        () =>
+          service.startTargetProof(
+            { ...f.proofRequest, requestId: randomUUID() },
+            LOCAL_ACTOR
+          ),
+        /unavailable/
+      )
+      assert.throws(
+        () =>
+          service.startTargetProof(
+            { ...f.proofRequest, sourceTaskId: undefined },
+            LOCAL_ACTOR
+          ),
+        /Invalid/
+      )
+      assert.throws(
+        () =>
+          service.startTargetProof(
+            { ...f.proofRequest, sourceTaskId: randomUUID() },
+            LOCAL_ACTOR
+          ),
+        /conflict/
+      )
+      await service.close()
+      service = createService(f.repository, { directory: f.runs })
+      assert.equal(service.get(target.id).evidence.status, 'failed')
+      assert.equal(
+        service.startTargetProof(f.proofRequest, LOCAL_ACTOR),
+        target.id
+      )
+      await service.close()
+      const recordFile = path.join(f.runs, target.id, 'record.json')
+      const originalRecord = JSON.parse(fs.readFileSync(recordFile))
+      for (const alter of [
+        (value) => {
+          delete value.targetProof.runtime.taskId
+        },
+        (value) => {
+          value.targetProof.runtime.configurationDigest = '0'.repeat(64)
+        },
+        (value) => {
+          value.targetProof.request.sourceAttemptId =
+            successor.attempts.at(-1).id
+        }
+      ]) {
+        const changed = structuredClone(originalRecord)
+        alter(changed)
+        fs.writeFileSync(recordFile, JSON.stringify(changed))
+        assert.throws(
+          () => createService(f.repository, { directory: f.runs }),
+          /target proof selection|task source|target proof/i
+        )
+      }
+      const taskFile = path.join(f.runs, 'tasks', f.task.id, 'task.json')
+      const originalTask = JSON.parse(fs.readFileSync(taskFile))
+      const incompleteTask = structuredClone(originalTask)
+      const oldVerdict = incompleteTask.attempts.find(
+        (attempt) => attempt.id === f.proofRequest.sourceAttemptId
+      ).verdict
+      delete oldVerdict.configurationDigest
+      delete oldVerdict.executionSource.digest
+      delete oldVerdict.verificationSource.digest
+      delete oldVerdict.executionSource.verificationSourceDigest
+      fs.writeFileSync(taskFile, JSON.stringify(incompleteTask))
+      const acceptedFile = path.join(f.runs, accepted.id, 'record.json')
+      const originalAccepted = JSON.parse(fs.readFileSync(acceptedFile))
+      const referringRecords = [
+        [recordFile, originalRecord],
+        [acceptedFile, originalAccepted]
+      ]
+      for (const omitSavedScalars of [false, true]) {
+        for (const [file, original] of referringRecords) {
+          const changed = structuredClone(original)
+          assert.equal(changed.targetProof.runtime.taskId, f.task.id)
+          assert.equal(
+            changed.targetProof.runtime.attemptId,
+            f.proofRequest.sourceAttemptId
+          )
+          if (omitSavedScalars) {
+            delete changed.targetProof.runtime.configurationDigest
+            delete changed.targetProof.runtime.executionSourceDigest
+            delete changed.targetProof.runtime.verificationSourceDigest
+          }
+          fs.writeFileSync(file, JSON.stringify(changed))
+        }
+        let unexpected
+        try {
+          assert.throws(() => {
+            unexpected = createService(f.repository, { directory: f.runs })
+          }, /target proof selection/)
+        } finally {
+          await unexpected?.close()
+        }
+      }
+      fs.writeFileSync(taskFile, JSON.stringify(originalTask))
+      for (const [file, original] of referringRecords)
+        fs.writeFileSync(file, JSON.stringify(original))
+    } finally {
+      await service.close()
+      fs.rmSync(f.dir, { recursive: true, force: true })
+    }
+  }
+)
+
+test(
+  'task target post-run source corruption retains the actual runner and readable unavailable error after restart',
+  { skip: process.platform !== 'darwin', timeout: 30000 },
+  async (t) => {
+    const f = await candidateTargetFixture(false)
+    let service = f.service
+    try {
+      assert.equal(
+        f.task.verificationStatus,
+        'passed',
+        JSON.stringify({
+          error: f.task.error,
+          issues: f.task.attempts.at(-1).verdict?.evidence.issues,
+          runner: f.task.attempts.at(-1).verdict?.runner
+        })
+      )
+      await service.close()
+      const runnerOwner = require('../runner.cjs')
+      const original = runnerOwner.runContainedVerification
+      const contained = t.mock.method(
+        runnerOwner,
+        'runContainedVerification',
+        async (options) => {
+          const result = await original(options)
+          const file = path.join(
+            options.snapshot.sourceRoot,
+            options.snapshot.executionSource.roles.bootstrap
+          )
+          fs.chmodSync(file, 0o600)
+          fs.appendFileSync(file, '\n// post-run corruption\n')
+          return result
+        }
+      )
+      const modulePath = require.resolve('../service.cjs'),
+        saved = require.cache[modulePath]
+      Reflect.deleteProperty(require.cache, modulePath)
+      const isolated = require('../service.cjs').createService
+      require.cache[modulePath] = saved
+      service = isolated(f.repository, {
+        directory: f.runs,
+        runner: () => {
+          throw new Error('ordinary runner forbidden')
+        }
+      })
+      const bytes = t.mock.method(sourceOwner, 'verifyRetainedSnapshotBytes')
+      const record = await service.wait(
+        service.startTargetProof(f.proofRequest, LOCAL_ACTOR)
+      )
+      assert.equal(contained.mock.callCount(), 1)
+      assert.equal(bytes.mock.callCount(), 2)
+      assert.equal(record.phase, 'error')
+      assert.match(record.error, /source|fingerprint|integrity/i)
+      assert.equal(record.runner.code, 0)
+      assert.equal(record.evidence, undefined)
+      const report = JSON.parse(
+        fs.readFileSync(path.join(f.repository, record.runner.reportPath))
+      )
+      assert.ok(report.numPassedTests > 0)
+      await service.close()
+      service = isolated(f.repository, { directory: f.runs })
+      assert.equal(service.get(record.id).phase, 'error')
+      assert.equal(
+        service.startTargetProof(f.proofRequest, LOCAL_ACTOR),
+        record.id
+      )
+      const ordinary = {
+        ...f.proofRequest,
+        requestId: randomUUID(),
+        sourceAttemptId: record.id
+      }
+      delete ordinary.sourceTaskId
+      assert.throws(
+        () => service.startTargetProof(ordinary, LOCAL_ACTOR),
+        /unavailable/
+      )
+      await service.close()
+      const manifest = path.join(f.runs, record.id, 'source-manifest.json')
+      fs.chmodSync(manifest, 0o600)
+      fs.writeFileSync(manifest, '[]')
+      assert.throws(
+        () => isolated(f.repository, { directory: f.runs }),
+        /manifest.*fingerprint/i
+      )
+    } finally {
+      await service.close()
+      fs.rmSync(f.dir, { recursive: true, force: true })
+    }
+  }
+)
