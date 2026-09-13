@@ -1370,3 +1370,21 @@ remain unchanged. Build/typecheck, naming and lint (14 console warnings, no
 errors) passed. Independent scoped code/numerical review found no remaining
 finding. This six-file slice freezes and stops for root quota review; the output
 is point-time joint-domain evidence, not source-affine or movement clearance.
+
+Next bounded readiness card: D RobotMotionBounds.enclose directly consumes one
+internal motion.enclose and one C interval pose for the same current issued source.
+The exact Inspector limits this first surface-envelope owner to all original robot
+parts/regions under explicit fixed base position/raw quaternion, unchanged shapes and
+empty-held assumptions. Environment state is outside its coverage; material and
+intended-contact decisions remain pending independent owners. Cached original
+bounds and C affine identities supply call-local shared envelopes, without source
+triangle scans or a new derived-data cache. Existing query matrix application is
+the direct arithmetic owner; no formula is copied or point-C behavior changed.
+
+The Inspector predeclares actual source/Three enclosure, mapping/lifetime/schema
+and zero-generation gates, singleton/narrow usefulness thresholds and four fixed
+ten-entry complete-cost batches. Unprepared region bounds conservatively retain
+the mesh envelope with explicit provenance. A finite envelope is neither a solid
+nor a collision decision. This segment writes/reviews only the three existing
+readiness documents, then freezes and stops for root quota review. Future API,
+formal tests and implementation require the next explicit release.

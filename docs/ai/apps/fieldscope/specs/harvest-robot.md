@@ -1350,3 +1350,43 @@ It does not run C FK or certify source stationarity, leaf motion, attached/held
 fruit state or material/contact clearance. A later source-affine bound consumer
 must bind the same current source tuple and explicit whole-window shape/pose
 assumptions; missing dynamic state cannot be inferred from this numeric result.
+
+### Robot source point-time affine bounds - readiness
+
+A bounded D consumer may combine its own JointSegments.enclose admission with one
+C evaluateRobotIntervalPose call for the same original current GeometrySource rig.
+The resulting bounds enclose original robot source surfaces over the closed query
+window under the declared numeric point-time model. This first consumer covers
+robot parts and their original regions only, not farm/dock surfaces, occupied
+material, pair relations or movement clearance.
+
+The caller explicitly declares a fixed base position and raw quaternion throughout
+the window, unchanged rigid robot local shapes and empty held contents.
+These are synthetic assumptions, not inferred stationarity or a default for absent
+state. Base motion, deformation or held contents is rejected. Fixed base admission
+uses the existing collision input condition: three/four finite position/quaternion
+slots, finite Math.hypot norm and absolute norm deviation at most 1e-12. This is
+the existing numeric input policy, not a new Math.hypot error bound or a claim of
+exact orthogonality. Preserve the raw coefficients without normalization; the
+existing prepareQueryForwardFrame supplies the unchanged base arithmetic model. Attached farm fruit and leaves are outside this robot-only result; no
+stationary environment or fruit state is inferred. Window validity follows the
+motion owner, including its exclusive validity end beyond the closed query end.
+
+Use C completed interval affine coefficients and original part identities without
+reconstructing quaternion matrices or interpolating endpoint vertices. Apply the
+existing outward body-then-base query transform order to the eight corners of
+cached original local bounds. Coordinatewise monotonicity of the affine point
+operations for fixed coefficients, together with outward interval arithmetic,
+encloses the entire local box and its source triangles; the joint box may lose
+correlation and is not an exact swept shape. Keep every original region identity.
+A region without prepared bounds retains the original mesh bounds, explicitly
+labelled mesh-envelope, rather than being omitted or given invented tight bounds.
+Bounds do not fill an open shell or convert a sheet into material.
+
+Results retain original source/mesh/region references and expose finite bounds or
+an explicit unresolved result per envelope. Nonfinite arithmetic cannot publish a
+finite success. Validate detached caller assumptions once and check the same source
+before work and immediately before publication; no source handle is cloned or
+incidentally frozen. Reuse affine and local-bounds products only within this call,
+with actual work counters. No geometry generation, position/index scan, cross-call
+cache, contact exemption or session mutation is introduced.

@@ -912,3 +912,77 @@ focused proof, full app/type/build/lint/naming and independent numerical review.
 Root released readiness commit a06511279 for this one D motion enclose
 implementation and its declared gates. Freeze and stop after completion for root
 quota review. No source-affine consumer or subsequent owner is authorized.
+
+### D robot source point-time affine bounds - readiness
+
+Owner: new simulation/motion-bounds.ts, RobotMotionBounds.enclose. Inputs: original
+issued GeometrySource, raw segment/window for internal JointSegments.enclose, and
+explicit synthetic assumptions with nonempty explanation, base kind fixed-pose
+with a complete RigidTransform, rigid-source-shapes throughout
+and empty-held throughout. Missing/unknown/other modes reject; no implicit state.
+Outputs: admitted domain evidence, original C interval pose/part and GeometryMesh
+references, every robot mesh envelope and original region envelope, finite-bounded
+or unresolved status, plus actual call-local work. No environment/pair/material/
+contact/clearance output. All robot parts, including fixed, tool, crate and tires,
+remain covered regardless of body identity or presentation visibility.
+
+Conditions: source read before work; clone/validate assumptions once before FK;
+internal segment/window admission once; C interval pose once using that source rig;
+match parts to meshes by original part.source identity and verify body agreement,
+never by shape/name alone. Reject missing/duplicate correspondence atomically.
+Use original C interval affine matrix/position directly, then the fixed base frame
+through existing prepareQueryForwardFrame/transformQueryPoint operation order.
+Base admission uses collision's existing finite-slot and finite Math.hypot norm
+condition with |norm-1|<=1e-12; validate every slot (including sparse-array holes)
+on the detached input. No normalization, new trig or orthogonality assumption.
+The same explicit base transform remains constant throughout the entire window. Only cached GeometryBounds
+are inputs: eight corners per distinct (original affine identity, local bounds
+identity); reuse mesh-envelope for unprepared regions. Lookup prepared regions by
+original region identity and retain all original index spans. No scans or copies
+of source vertices/indices, no point FK samples in production. Actual computation
+counters increment at work execution; Map size alone is not an execution counter.
+
+Allowed: existing motion, C interval, shared scalar and query forward/apply APIs
+unchanged. Boundary: new `simulation/motion-bounds.ts` and
+`simulation/__tests__/motion-bounds.test.ts`, API/spec/Inspector/plan. The direct
+ray-query transform helper may receive a readonly type-signature clarification
+only if required to accept C's existing interval frame; no arithmetic or other
+query behavior changes. Forbidden: C/scalar producers, collision predicates,
+region generation/index/BVH, base motion, held transforms, material/contact policy,
+UI/session or a second source registry. Failure owner: source/admission/schema or
+correspondence rejection; numerical nonfinite envelope remains unresolved, with
+no partial public result before the final source read. Freeze only owned outputs.
+
+Lifetime: one request, no cache across source replacement or window changes.
+Expose nested original domain/C work and actual part/region/envelope/corner work;
+FK=1, trig calls=8, actual C affine conversions unchanged, at most two point times
+and ten rational conversions. Corner work equals eight times actual distinct
+frame/bounds conversions; repeated parts sharing both references reuse output.
+Source/bounds preparation and source vertex/index visits must remain zero.
+
+Gates: missing-entry red; independent actual Three completed point-affine/source
+vertices at window endpoints and interior times enclosed for rest/nonzero/narrow/
+subnormal and nondefault robot inputs; independent interval proof remains the
+soundness authority, sampling is regression only. Check all original robot meshes
+and region spans, same-shape/different-region mappings, unprepared sheet regions,
+source/body identity, frozen outputs, caller mutation/clone-once sparse rejection,
+forged/stale sources and retirement during downstream work. Explicit moving
+base/unsupported shape/held assumptions reject before FK. Include nonzero fixed
+heading and near-unit admitted raw quaternion against the existing base frame
+model; verify no silent heading-zero substitution. Arithmetic overflow remains unresolved.
+Predeclared usefulness: DEFAULT_ROBOT rest and nonzero singleton at
+(lift=.02,yaw=.3,shoulder=-.4,elbow=.5,wrist=-.2), base position [1,0,2] and identity quaternion, mesh envelope excess
+beyond independent completed point affine local-box corner extrema <=1e-8 metres
+per face. Same centre +/-1e-6 joint window: excess beyond the union of endpoint
+point-box extrema <=1e-2 metres per face. These are test-only limits, not runtime
+contact tolerances or a general correlation theorem. One full approved-domain
+control must retain finite robot envelopes without claiming tightness.
+
+Fixed profile: actual prepared DEFAULT_ROBOT source, four batches of ten complete
+entries (normal narrow first/repeated and nonzero subnormal first/repeated), 80
+bound-trig calls and at most 160 polynomial evaluations per batch; 1 second each,
+10 seconds total and unchanged 24000-bit guards. Include admission, C interval,
+all robot mesh/region envelopes and freezing/work costs; report actual counts and
+no source rebuilds. After future focused proof, full app/type/build/lint/naming and
+independent numerical review. Current authorization is readiness only: freeze and
+STOP for root quota review, with no tests or implementation in this segment.
