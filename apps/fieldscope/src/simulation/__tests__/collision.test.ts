@@ -1,4 +1,5 @@
 import { expect, it, vi } from 'vitest'
+import { prepareHierarchy, queryHierarchy } from './source-hierarchy'
 import { SiteGeometry } from '../../render-app/site-geometry'
 import { RobotProjection } from '../../render-app/robot-projection'
 import {
@@ -694,7 +695,8 @@ function coverage(): SurfaceCoverageBatch {
 function smallCoverage(
   meshes: SiteMesh[] = [],
   overlapping = false,
-  degenerate = false
+  degenerate = false,
+  firstRegions = 1
 ) {
   // A deliberately small admitted source fixture proves exhaustive traversal.
   // Actual generated robot/farm inventory is independently covered below.
@@ -714,11 +716,12 @@ function smallCoverage(
   const parts = ids.map((id, i) => {
     const builder = new TriangleBuilder(),
       x = overlapping && i === 7 ? 60 : i * 10
-    builder.triangle(
-      [x, 0, 0],
-      [x + 4, 0, 0],
-      degenerate && i === 0 ? [x + 2, 0, 0] : [x, 4, 0]
-    )
+    for (let region = 0; region < (i === 0 ? firstRegions : 1); region++)
+      builder.triangle(
+        [x, 0, 0],
+        [x + 4, 0, 0],
+        degenerate && i === 0 ? [x + 2, 0, 0] : [x, 4, 0]
+      )
     return {
       id,
       color: 0xffffff,
@@ -1213,4 +1216,209 @@ it('retains exact region-bound contact at the closed translation endpoint', () =
   expect(result.complete).toBe(true)
   expect(result.status).toBe('surface-intersections')
   expect(result.witnesses[0].contactFraction).toEqual({ low: 0, high: 0 })
+})
+
+it('keeps every original region triangle and exhaustive nonseparated pair across two fixtures and poses', () => {
+  for (const height of [0, 1]) {
+    const mesh = triangle('hierarchy-sheet', shiftedPlane(height))
+    const builder = new TriangleBuilder()
+    builder.box([1, 1, height], [2, 2, 1])
+    builder.quad([0, 0, height], [2, 0, height], [2, 2, height], [0, 2, height])
+    mesh.regions = builder.regions()
+    mesh.descriptor = readSpatialDescriptor({
+      ...mesh.descriptor,
+      shape: builder.shape()
+    }) as SiteMesh['descriptor']
+    const alternate = {
+      ...mesh,
+      id: 'alternate-region-mapping',
+      regions: Object.freeze([
+        Object.freeze({
+          id: 'complete-sheet',
+          kind: 'sheet' as const,
+          indexStart: 0,
+          indexCount: (mesh.descriptor.shape as { indices: readonly number[] })
+            .indices.length
+        })
+      ])
+    }
+    const f = smallCoverage(height === 0 ? [mesh] : [mesh, alternate]),
+      tree = prepareHierarchy(f.source)
+    if (height !== 0) expect(tree.work.mappings).toBe(tree.work.shapes + 1)
+    for (const sourceMesh of f.source.meshes) {
+      const ordinals: number[] = []
+      const visit = (node: ReturnType<typeof tree.roots>[number]) => {
+        expect(sourceMesh.origin.regions.includes(node.region)).toBe(true)
+        if (node.children) {
+          expect(node.children[0].count + node.children[1].count).toBe(
+            node.count
+          )
+          node.children.forEach(visit)
+        } else
+          for (const ordinal of node.triangles ?? []) {
+            expect(ordinal * 3).toBeGreaterThanOrEqual(node.region.indexStart)
+            expect(ordinal * 3).toBeLessThan(
+              node.region.indexStart + node.region.indexCount
+            )
+            ordinals.push(ordinal)
+          }
+      }
+      tree.roots(sourceMesh).forEach(visit)
+      if (sourceMesh.shape.kind !== 'triangles')
+        throw new Error('Expected source')
+      expect(ordinals.sort((a, b) => a - b)).toEqual(
+        Array.from({ length: sourceMesh.shape.indices.length / 3 }, (_, i) => i)
+      )
+    }
+    expect(() => tree.roots(smallCoverage([mesh]).source.meshes[0])).toThrow()
+    for (const yaw of [0, 0.4]) {
+      const input = coverage()
+      if (!input.robot) throw new Error('Expected robot')
+      input.robot = {
+        ...input.robot,
+        base: {
+          position: [0, 0, 0],
+          rotation: [0, Math.sin(yaw / 2), 0, Math.cos(yaw / 2)]
+        }
+      }
+      const report = queryHierarchy(tree, input, true)
+      const pairs: SurfaceSweepBatch['pairs'] = []
+      const meshes = f.source.meshes
+      for (let a = 0; a < meshes.length; a++) {
+        if (meshes[a].kind !== 'robot') continue
+        for (let b = 0; b < meshes.length; b++) {
+          if (meshes[b].kind === 'robot' && b <= a) continue
+          const first = meshes[a].shape,
+            second = meshes[b].shape
+          if (first.kind !== 'triangles' || second.kind !== 'triangles')
+            throw new Error('Expected triangles')
+          for (let x = 0; x < first.indices.length / 3; x++)
+            for (let y = 0; y < second.indices.length / 3; y++)
+              pairs.push({
+                first: { mesh: a, instance: 0, triangle: x },
+                second: { mesh: b, instance: 0, triangle: y },
+                firstTranslation: input.displacement,
+                secondTranslation:
+                  meshes[b].kind === 'robot' ? input.displacement : [0, 0, 0]
+              })
+        }
+      }
+      const key = (pair: (typeof report.candidates)[number]) =>
+        `${pair.first.mesh}:${pair.first.triangle}:${pair.second.mesh}:${pair.second.triangle}`
+      const candidates = new Set(report.candidates.map(key))
+      expect(candidates.size).toBe(report.candidates.length)
+      expect(report.work.unvisited).toBe(0)
+      expect(report.work.total).toBe(pairs.length)
+      expect(report.work.excluded + report.work.candidates).toBe(pairs.length)
+      const full = f.query.sweep(f.source, { ...input, pairs })
+      full.results.forEach((result, index) => {
+        if (result.status !== 'swept-separated')
+          expect(candidates.has(key(pairs[index]))).toBe(true)
+      })
+      const selected = f.query.sweep(f.source, {
+        ...input,
+        pairs: pairs.filter((pair) => candidates.has(key(pair)))
+      })
+      for (const status of ['swept-intersection', 'unknown'])
+        expect(
+          selected.results.filter((value) => value.status === status).length
+        ).toBe(full.results.filter((value) => value.status === status).length)
+    }
+  }
+})
+
+it('profiles cold source hierarchy and two warm poses without Cartesian triangle traversal', () => {
+  const configuration = { ...DEFAULT_CONFIGURATION, length: 2.2 },
+    site = new SiteGeometry()
+  const f = setup(buildSiteMeshes(configuration, site), configuration, site),
+    tree = prepareHierarchy(f.source)
+  expect(tree.work.leafReferences).toBe(tree.work.builtTriangles)
+  console.log(
+    'hierarchy cold source profile',
+    JSON.stringify({
+      work: tree.work,
+      milliseconds: tree.milliseconds,
+      payloadBytes: tree.payloadBytes
+    })
+  )
+  for (const yaw of [0, 0.4]) {
+    const input = coverage()
+    if (!input.robot) throw new Error('Expected robot')
+    input.robot = {
+      ...input.robot,
+      base: {
+        position: [0, 0, 0],
+        rotation: [0, Math.sin(yaw / 2), 0, Math.cos(yaw / 2)]
+      }
+    }
+    const baselineStart = performance.now(),
+      baseline = f.query.cover(f.source, { ...input, maxTrianglePairs: 0 }),
+      baselineMs = performance.now() - baselineStart
+    const report = queryHierarchy(tree, input)
+    expect(report.work.total).toBe(expectedInventory(f.source).trianglePairs)
+    expect(
+      report.work.excluded + report.work.candidates + report.work.unvisited
+    ).toBe(report.work.total)
+    expect(report.work.nodePairs).toBeLessThanOrEqual(500000)
+    expect(report.candidates).toHaveLength(0)
+    console.log(
+      'hierarchy warm pose profile',
+      JSON.stringify({
+        yaw,
+        baselineRemaining: baseline.coverage.unvisited,
+        baselineMs,
+        work: report.work,
+        milliseconds: report.milliseconds
+      })
+    )
+  }
+})
+
+it.each(['build', 'query'] as const)(
+  'stops synchronous hierarchy %s after the fixed elapsed budget',
+  (operation) => {
+    const f = smallCoverage(),
+      tree = prepareHierarchy(f.source)
+    const clock = vi
+      .spyOn(performance, 'now')
+      .mockReturnValue(10001)
+      .mockReturnValueOnce(0)
+    try {
+      expect(() =>
+        operation === 'build'
+          ? prepareHierarchy(f.source)
+          : queryHierarchy(tree, coverage())
+      ).toThrow('Hierarchy experiment time guard exceeded')
+    } finally {
+      clock.mockRestore()
+    }
+  }
+)
+
+it('checks elapsed time while accounting for root pairs after node budget exhaustion', () => {
+  const builder = new TriangleBuilder()
+  for (let i = 0; i < 710; i++)
+    builder.triangle([0, 0, 0], [4, 0, 0], [0, 4, 0])
+  const mesh = triangle('many-original-regions', [0, 0, 0, 4, 0, 0, 0, 4, 0])
+  mesh.regions = builder.regions()
+  mesh.descriptor = readSpatialDescriptor({
+    ...mesh.descriptor,
+    shape: builder.shape()
+  }) as SiteMesh['descriptor']
+  const f = smallCoverage([mesh], false, false, 710),
+    tree = prepareHierarchy(f.source)
+  // 710×710 original root pairs exceed the fixed 500,000 node budget.
+  // The synthetic clock advances only after the periodic active-work checks,
+  // requiring continued cooperative checks while the remainder is accounted.
+  let reads = 0
+  const clock = vi
+    .spyOn(performance, 'now')
+    .mockImplementation(() => (++reads >= 2000 ? 10001 : 0))
+  try {
+    expect(() => queryHierarchy(tree, coverage())).toThrow(
+      'Hierarchy experiment time guard exceeded'
+    )
+  } finally {
+    clock.mockRestore()
+  }
 })
