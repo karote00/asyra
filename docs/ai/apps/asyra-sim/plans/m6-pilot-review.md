@@ -1708,3 +1708,44 @@ oracle and passive case both pass. Reproduce with
 `SIM_CAPACITY_DIAGNOSTICS=1 yarn workspace @asyra/asyra-sim test:local src/analysis/methods/__tests__/cross-axis-profile.test.ts --maxWorkers=1`;
 recorded evidence is `tmp/capacity/cross-axis-profile.log`. This negative
 upper-bound result does not claim measured production savings or close G4.
+
+### Whole-interval nonpenetration - bounded passive card
+
+Objective: test whether the existing original-mesh interval owner can prove a
+strictly positive source-surface gap cheaply enough to replace repeated static
+penetration work. This is a measurement, not permission to skip samples or
+change their witnesses. Allowlist: this plan and a permanent
+`interval-separation-profile.test.ts`; production and Inspector remain unchanged.
+Freeze the already studied complete original root 114 for joint-2/obstacle-11.
+Run its three current samples in their original order and same context, recording
+actual paid source seeds and full sample costs. Retain the first completed
+positive, finite, nonpenetrating static evidence, including its original full
+membership query. Capture the actual canonical complete-root interval inputs
+from the existing interval request; do not substitute endpoint hulls.
+After the unchanged root completes, call raw `lowerOver` once with threshold
+zero and otherwise unchanged tolerance, iterations and work guard. Charge every
+operation in that same context, bypassing no predicates and never deriving zero
+from the warning threshold. Zero or exhaustion is no proof. Only if the two
+remaining samples actually received paid warning seed enclosures and the full
+interval gap is positive may their recorded full sample costs form an optimistic
+replacement upper limit. Subtract the entire extra interval work; source handling
+would still need payment in any real strategy. Preserve the original emitted
+result, all geometry identities and late penetration evidence. This one opt-in
+case keeps the 500,000-unit and 20-second guards. A positive result requires a
+new output-owner contract and independent oracle before any actual-delta or
+production change; otherwise stop without another full gate.
+
+The one root 114 run completed: baseline 27,351 units, added raw interval query
+3,261, total 30,612. Its positive gap is 0.00003580624320353997, so a complete
+nonpenetration certificate exists on this source interval. The frozen replacement
+eligibility nevertheless fails: middle's paid seed upper is 0.016053481245753624,
+but end's is 0.021907327376442704, above the 0.02 warning threshold. The original
+end solve returns lower 0.02000268079160805 and upper 0.02042792871405647;
+its 5,600 units and middle's 2,059 units are not claimed replaced. Under this
+card the replacement upper limit is zero and net is -3,261. Preserve the complete
+original three samples and unchanged finding; no production or full run follows.
+This rejects the frozen two-warning-seed eligibility, not the mathematical
+positive-gap certificate or an unreviewed alternative output contract.
+The permanent opt-in case passes (374 ms); reproduce with
+`SIM_CAPACITY_DIAGNOSTICS=1 yarn workspace @asyra/asyra-sim test:local src/analysis/methods/__tests__/interval-separation-profile.test.ts --maxWorkers=1`.
+Recorded evidence: `tmp/capacity/interval-separation-profile.log`.
