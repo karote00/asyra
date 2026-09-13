@@ -9,7 +9,7 @@ const {
   createVerificationSource,
   createDerivedExecution
 } = require('./snapshot.cjs')
-const { assessEvidence } = require('./evidence.cjs')
+const { assessSourceEvidence } = require('./evidence.cjs')
 const { writeAtomic } = require('./store.cjs')
 const containmentAvailable = (platform = process.platform) =>
   platform === 'darwin' && fs.existsSync('/usr/bin/sandbox-exec')
@@ -44,7 +44,7 @@ ${readRoots.map((file) => '(deny file-write* (subpath ' + literal(file) + '))').
     args: ['-p', profile, options.executable, ...options.args]
   })
 }
-async function verifyCandidate({
+async function produceCandidateProof({
   repositoryRoot,
   directory,
   contract,
@@ -151,7 +151,7 @@ async function verifyCandidate({
         }
       )
   })
-  const evidence = assessEvidence(
+  const assessed = assessSourceEvidence(
     contract,
     candidate,
     result,
@@ -160,6 +160,8 @@ async function verifyCandidate({
     undefined,
     { sourceRoot }
   )
+  const evidence = assessed.evidence
+  let source = assessed.source
   if (
     files.some((entry) => {
       try {
@@ -172,6 +174,7 @@ async function verifyCandidate({
       }
     })
   ) {
+    source = null
     evidence.status = 'unknown'
     evidence.issues.push(
       'Frozen verification source was modified during execution'
@@ -192,6 +195,14 @@ async function verifyCandidate({
     deliveryStatus: 'not-delivered'
   }
   writeAtomic(path.join(runDirectory, 'verdict.json'), verdict)
-  return verdict
+  return { verdict, source }
 }
-module.exports = { containmentAvailable, containedProcess, verifyCandidate }
+async function verifyCandidate(options) {
+  return (await produceCandidateProof(options)).verdict
+}
+module.exports = {
+  containmentAvailable,
+  containedProcess,
+  verifyCandidate,
+  produceCandidateProof
+}
