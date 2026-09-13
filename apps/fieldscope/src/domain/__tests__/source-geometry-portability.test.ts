@@ -4,6 +4,11 @@ import { expect, it } from 'vitest'
 import { createCropModels } from '../crop-models'
 import { DEFAULT_ROBOT } from '../robot-configuration'
 import { createRobotModel, type RobotPart } from '../robot-model'
+import {
+  digest,
+  exactSourceStructure,
+  renderHandoff
+} from './source-geometry-oracle'
 
 interface SourceSeries {
   readonly path: string
@@ -12,6 +17,14 @@ interface SourceSeries {
 
 const reference = new URL(
   './fixtures/source-float64.darwin-node-24.13.json.gz',
+  import.meta.url
+)
+const historicalCropDigests = new URL(
+  './fixtures/source-float64-digests.crop.darwin-node-24.13.txt',
+  import.meta.url
+)
+const historicalRobotDigests = new URL(
+  './fixtures/source-float64-digests.robot.darwin-node-24.13.txt',
   import.meta.url
 )
 const sign = 1n << 63n
@@ -62,7 +75,40 @@ function captureRepresentativeSourceValues() {
   ]
 }
 
-it('retains a rerunnable per-value source portability diagnostic', () => {
+it('keeps historical whole-buffer digests as evidence without using them as portable acceptance', () => {
+  expect(readFileSync(historicalCropDigests, 'utf8')).toContain(
+    'd748ad0da95f25d5fa40bf841fea5740234873904bd784aae3e3a8b6e11da6ab'
+  )
+  expect(readFileSync(historicalRobotDigests, 'utf8')).toContain(
+    '13d0e7150f0d6081f22c0cd40db3756955bc781822614503ac6519703bcab649'
+  )
+})
+
+it('detects exact topology and render-visible source mutations independently', () => {
+  const source = {
+    kind: 'triangles' as const,
+    positions: [0, 0, 0, 1, 0, 0, 0, 1, 0],
+    indices: [0, 1, 2]
+  }
+  const structure = digest(exactSourceStructure(source))
+  const presentation = digest(renderHandoff(source))
+  expect(
+    digest(exactSourceStructure({ ...source, indices: [0, 2, 1] }))
+  ).not.toBe(structure)
+  expect(
+    digest(renderHandoff({ ...source, positions: [0, 0, 0, 2, 0, 0, 0, 1, 0] }))
+  ).not.toBe(presentation)
+  expect(
+    digest(
+      exactSourceStructure({
+        ...source,
+        positions: [0, 0, 0, 2, 0, 0, 0, 1, 0]
+      })
+    )
+  ).toBe(structure)
+})
+
+it('reports rerunnable per-value source portability diagnostics without setting acceptance', () => {
   const actual = captureRepresentativeSourceValues()
   if (process.env.FIELDSCOPE_WRITE_SOURCE_TRACE === '1') {
     writeFileSync(reference, gzipSync(`${JSON.stringify(actual)}\n`))
@@ -75,6 +121,7 @@ it('retains a rerunnable per-value source portability diagnostic', () => {
   expect(actual).toHaveLength(expected.length)
   const differences = []
   let compared = 0
+  let changed = 0
   let maxUlps = 0n
   let maxAbsoluteDifference = 0
   for (let seriesIndex = 0; seriesIndex < expected.length; seriesIndex++) {
@@ -86,6 +133,7 @@ it('retains a rerunnable per-value source portability diagnostic', () => {
       compared++
       const distance = ulps(after.values[valueIndex], before.values[valueIndex])
       if (!distance) continue
+      changed++
       const absoluteDifference = Math.abs(
         fromBits(after.values[valueIndex]) - fromBits(before.values[valueIndex])
       )
@@ -107,12 +155,12 @@ it('retains a rerunnable per-value source portability diagnostic', () => {
     runtime: `${process.platform} ${process.version}`,
     series: actual.length,
     compared,
-    changed: differences.length,
+    changed,
     maxAbsoluteDifference,
     maxUlps: maxUlps.toString(),
     firstDifferences: differences
   }
-  if (process.env.FIELDSCOPE_REPORT_SOURCE_TRACE === '1')
+  if (changed || process.env.FIELDSCOPE_REPORT_SOURCE_TRACE === '1')
     console.info('source Float64 portability', JSON.stringify(report))
-  expect(report.changed).toBe(0)
+  expect(report).toMatchObject({ series: 135, compared: 179390 })
 })

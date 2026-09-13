@@ -174,19 +174,23 @@ test('CI bounds workspace test concurrency without dropping test owners', () => 
   assert.match(workflow, /^\s+run: yarn test:ci --concurrency=2$/m)
   assert.equal(scripts['test:ci'], 'yarn test:scripts && turbo run test:ci')
   assert.equal(
-    scripts['test:fieldscope-profiles'],
-    'yarn workspace @asyra/fieldscope test:profiles'
-  )
-  assert.equal(
     fieldscopeScripts['test:profiles'],
     'vitest run --config vitest.profile.config.ts'
   )
-  assert.match(fieldscopeVitest, /exclude: \['src\/\*\*\/__tests__\/\*\*\/\*\.profile\.test\.ts'\]/)
-  assert.match(profileVitest, /include: \['src\/\*\*\/__tests__\/\*\*\/\*\.profile\.test\.ts'\]/)
+  assert.match(
+    fieldscopeVitest,
+    /exclude: \['src\/\*\*\/__tests__\/\*\*\/\*\.profile\.test\.ts'\]/
+  )
+  assert.match(
+    profileVitest,
+    /include: \['src\/\*\*\/__tests__\/\*\*\/\*\.profile\.test\.ts'\]/
+  )
   assert.match(profileVitest, /fileParallelism: false/)
   assert.match(profileVitest, /maxWorkers: 1/)
   const ordinaryTests = workflow.indexOf('run: yarn test:ci --concurrency=2')
-  const fieldscopeProfiles = workflow.indexOf('run: yarn test:fieldscope-profiles')
+  const fieldscopeProfiles = workflow.indexOf(
+    'run: yarn workspace @asyra/fieldscope test:profiles'
+  )
   assert.ok(ordinaryTests >= 0 && fieldscopeProfiles > ordinaryTests)
 })
 

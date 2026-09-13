@@ -867,9 +867,10 @@ of 25 boxes (normal narrow and nonzero subnormal, first/repeated). Each batch ha
 200 bound-trig calls and at most 400 actual polynomial evaluations; retain 24000-
 bit guards, 1 second per batch and 10 seconds total, cooperatively checked. Measure
 all validation/adapter/chain/affine/work cost on a prepared rig, not just trig.
-Run this elapsed profile in the separate required serial FieldScope CI command after
-ordinary Turbo tests. No parameter search or guard increase. After focused proof, run full app/type/
-build/lint/naming and independent numerical review. Current authorization is
+Run this elapsed profile in the separate required serial FieldScope CI command
+after ordinary Turbo tests. No parameter search or guard increase. After focused
+proof, run full app/type/build/lint/naming and independent numerical review.
+Current authorization is
 one C interval-pose implementation slice after root release of readiness commit
 36ec0a102. Complete only its declared gates, then freeze and stop for root quota
 review. No subsequent owner is authorized; a quota stop overrides remaining work.

@@ -1456,7 +1456,8 @@ test-oracle and scheduling failures outside the changed collision owner. Base an
 head domain blobs are identical. The two whole-source snapshots hash binary64 arrays
 containing runtime `Math` transcendental outputs, so a different Linux digest does
 not identify a source change. Preserve the existing snapshot values as historical
-evidence; do not replace them with received Linux hashes. First obtain bounded
+evidence in named runtime fixtures; do not replace them with received Linux
+hashes. First obtain bounded
 per-value evidence on the unchanged head, recording semantic path, both Float64 bit
 patterns, absolute delta and ULP distance. Keep that diagnostic as a formally
 runnable test artifact. It does not set acceptance.
@@ -1486,8 +1487,8 @@ performance.
 
 Correction allowlist: the four harvest-robot contract documents; robot/crop source
 tests and a direct shared test oracle; the three domain profile tests; FieldScope
-Vitest/profile configuration and package scripts; root test script, CI workflow and
-one direct workflow-contract test. Required gates are focused red/green mutation
+Vitest/profile configuration and package scripts; CI workflow and one direct
+workflow-contract test. Required gates are focused red/green mutation
 controls, workflow sequencing, ordinary FieldScope tests, isolated profiles, root
 script tests, app typecheck/lint/naming/build and final PR CI. Stop for a source
 semantic mismatch, a profile that still exceeds its unchanged guard while isolated,
