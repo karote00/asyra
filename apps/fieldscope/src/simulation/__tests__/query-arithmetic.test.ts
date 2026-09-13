@@ -112,3 +112,41 @@ it('encloses exact rational predicate ratios without losing large integer signif
   }
   expect(fractionInterval(5n, 1n)).toEqual({ low: 5, high: 5 })
 })
+
+it('shares exactly one scalar implementation through the supported query facade', async () => {
+  const common = await import('../../domain/scalar-arithmetic')
+  const facade = await import('../query-arithmetic')
+  const exports = [
+    'interval',
+    'add',
+    'subtract',
+    'multiply',
+    'divide',
+    'squareRoot',
+    'dyadic',
+    'fractionInterval'
+  ] as const
+  expect(Object.keys(common).sort()).toEqual([...exports].sort())
+  expect(Object.keys(facade).sort()).toEqual([...exports].sort())
+  for (const name of exports) expect(facade[name]).toBe(common[name])
+  expect(Object.is(common.interval(-0).low, -0)).toBe(true)
+  expect(
+    common.add(
+      common.interval(Number.MAX_VALUE),
+      common.interval(Number.MAX_VALUE)
+    )
+  ).toEqual({ low: -Infinity, high: Infinity })
+  expect(common.dyadic(Number.MIN_VALUE)).toEqual({
+    significand: 1n,
+    exponent: -1074
+  })
+  expect(common.fractionInterval(1n, 2n)).toEqual({ low: 0.5, high: 0.5 })
+  expect(common.fractionInterval(1n, 0n)).toEqual({
+    low: -Infinity,
+    high: Infinity
+  })
+  expect(common.divide(common.interval(1), common.interval(0))).toEqual({
+    low: -Infinity,
+    high: Infinity
+  })
+})
