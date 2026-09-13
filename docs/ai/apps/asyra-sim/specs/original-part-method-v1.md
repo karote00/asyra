@@ -121,7 +121,8 @@ The 1.0.2 adjacent-boundary strategy permits one invocation-owned source slot.
 Only an unclamped original root's first fresh, actually completed eligible warning
 may supply its existing opaque source. After that entire root becomes a complete
 nonpenetrating finding, without exhaustion or subdivision, publication pays one
-additional checkpointed unit. The next root consumes or discards the slot exactly
+additional checkpointed unit, only while the temporal evaluation budget permits
+the next root to execute. The next root consumes or discards the slot exactly
 once. Admission requires the immediately lower original segment, complete frame
 bounds, the identical shared keyframe boundary and its first fresh static sample;
 this route alone permits decreasing source-to-target time. Clamped, point, child,

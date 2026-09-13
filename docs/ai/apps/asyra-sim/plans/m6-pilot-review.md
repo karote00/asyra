@@ -1573,3 +1573,43 @@ type/lint/naming and independent review. Preserve emitted semantic certificates;
 log and review any nonunique witness difference before changing an oracle. Stop
 on provenance, accounting, correctness or fixed-budget regression. No full or
 browser run until the root agent reviews this complete bounded correction.
+
+The formal owner regression was red (20 failures, one existing rejection pass)
+before implementation and now passes 22 cases including the temporal-limit
+regression; the unchanged fresh provenance
+and schedule cases add 29 passes. Production uses the sampler publication
+operation and a separately retained first source, never a later sample's handle.
+The actual 114-to-113 source control disables only boundary publication while
+keeping ordinary fresh sampling. Its complete emitted evidence is exactly equal:
+37,128 to 33,908 total units, complete target sample 5,209 to 1,988 and
+390 to 40 convex queries. These target counts include both samples' actual
+capture charge; the earlier 5,208/1,987 diagnostic excluded that common unit.
+Source charges rise 28 to 35: publication one plus consumption six; the original
+capture was already charged and is not duplicated. Every category sums exactly.
+
+Original 10k/50k/576, rational and subdivision gates passed. The existing complete
+114-to-198 prefix keeps its previously approved single-upper oracle unchanged:
+95 evaluations, 90 leaves, current work 197,028 versus the preceding fresh-only
+record 202,102. This is a bounded complete-prefix result, not G4. Manifest text
+initially exceeded its existing schema bound; a concise 1.0.2 strategy summary
+fixed that direct consumer failure without changing schema limits. Version and
+source tests now pass. The historical adjacent probe explicitly disables boundary
+publication to replay the bf510dd43 source policy; current production work is
+proved separately by `adjacent-witness-source-work.test.ts`. Original red logs
+remain. Independent final review and root checkpoint precede any full gate.
+
+Root review added a formal temporal-limit boundary: when maxIntervals prevents
+another root, no publication is charged. The test was red before the single
+remaining-evaluations guard; the completed source leaf and partial remainder
+remain intact. Per-target work now measures every actual source charge at the
+exact target time, including capture, instead of adding a presumed six units.
+
+The independently reviewed correction received one unchanged full representative
+run, retained in `tmp/capacity/adjacent-full-representative.log`. It remains red:
+partial coverage, 20,265 evaluations and first partial joint-2/obstacle-11 at
+166 evaluations with 75 clear intervals. All categories total 500,197 observed
+units; that pair uses 398,216 = 306,103 static + 91,548 interval + 462 source +
+21 handoff + 82 derivation. Original preparation is 28,943 and demanded refinement
+11,653; observed duration 12.065 seconds remains within the 20-second guard.
+This does not close G4. No browser or repeated full run follows; bounded complete
+source/prefix evidence and the unchanged full red record remain separate.

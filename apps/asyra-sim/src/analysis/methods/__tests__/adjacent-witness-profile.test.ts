@@ -12,6 +12,18 @@ import { queryOriginalPartPair } from '../original-part-method'
 import { representativeSnapshot } from './representative-fixture'
 import { withSourceWitness } from './witness-transport-control'
 
+// Historical pre-boundary source policy (bf510dd43), replayed with the new
+// boundary publication disabled. Current production work has its own formal file.
+function historicalContext(): OriginalMeshQuery {
+  const context = new OriginalMeshQuery()
+  const make = context.createStaticSampler.bind(context)
+  context.createStaticSampler = (settings) => {
+    const sample = make(settings)
+    return (a, b, origin, source) => sample(a, b, origin, source)
+  }
+  return context
+}
+
 const ops = kinematics.poseOperations(kinematics.intervalAlgebra)
 interface Packet {
   shapes: readonly [ConvexShape, ConvexShape]
@@ -160,7 +172,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
       if (!pair) throw new Error('Missing admitted pair')
       const sourceTime = snapshot.trajectory.keyframes[114].time,
         targetTime = snapshot.trajectory.keyframes[113].time
-      const context = new OriginalMeshQuery()
+      const context = historicalContext()
       let segment = -1,
         time: Interval | undefined,
         packet: Packet | undefined,
@@ -398,7 +410,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         targetTime = snapshot.trajectory.keyframes[113].time
       const run = (enabled: boolean) => {
         vi.restoreAllMocks()
-        const context = new OriginalMeshQuery()
+        const context = historicalContext()
         let segment = -1,
           time: Interval | undefined,
           packet: Packet | undefined

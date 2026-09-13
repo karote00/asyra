@@ -10,18 +10,21 @@ export interface StaticSampleOrigin {
   end: number
   time: number
   capture: boolean
+  originalRoot?: boolean
 }
 export interface StaticSample {
   evidence: DistanceEvidence
   source?: unknown
   exhausted?: boolean
 }
-export type StaticSampler = (
+export type StaticSampler = ((
   a: ConvexShape,
   b: ConvexShape,
   origin: StaticSampleOrigin,
   source?: unknown
-) => StaticSample | null
+) => StaticSample | null) & {
+  publishBoundary?: (source: unknown) => unknown | null
+}
 export interface SourceUpper {
   a: DistanceEvidence['witnessA']
   b: DistanceEvidence['witnessB']
@@ -58,7 +61,8 @@ class FreshSource {
     readonly origin: Readonly<StaticSampleOrigin>,
     readonly shapes: readonly [ConvexShape, ConvexShape],
     readonly a: DistanceEvidence['witnessA'],
-    readonly b: DistanceEvidence['witnessB']
+    readonly b: DistanceEvidence['witnessB'],
+    readonly boundary = false
   ) {
     this.#scope = scope
     Object.freeze(this)
@@ -85,7 +89,7 @@ export function createFreshStaticSampler(
   exhausted: (error: unknown) => boolean
 ): StaticSampler {
   const scope = {}
-  return (a, b, origin, previous) => {
+  const sample: StaticSampler = (a, b, origin, previous) => {
     let evidence: DistanceEvidence | undefined
     try {
       let seed: SourceUpper | undefined
@@ -93,13 +97,21 @@ export function createFreshStaticSampler(
         tick()
         if (
           FreshSource.belongs(previous, scope) &&
-          previous.origin.node === origin.node &&
-          previous.origin.segment === origin.segment &&
-          previous.origin.start === origin.start &&
-          previous.origin.end === origin.end &&
-          previous.origin.time >= origin.start &&
-          previous.origin.time <= origin.time &&
-          origin.time <= origin.end &&
+          (previous.boundary
+            ? origin.originalRoot === true &&
+              previous.origin.originalRoot === true &&
+              previous.origin.segment === origin.segment + 1 &&
+              previous.origin.time === previous.origin.start &&
+              previous.origin.start === origin.end &&
+              origin.time === origin.start &&
+              origin.start < origin.end
+            : previous.origin.node === origin.node &&
+              previous.origin.segment === origin.segment &&
+              previous.origin.start === origin.start &&
+              previous.origin.end === origin.end &&
+              previous.origin.time >= origin.start &&
+              previous.origin.time <= origin.time &&
+              origin.time <= origin.end) &&
           previous.shapes[0].geometry === a.geometry &&
           previous.shapes[1].geometry === b.geometry &&
           immutableMesh(a) &&
@@ -167,4 +179,29 @@ export function createFreshStaticSampler(
       return evidence ? { evidence, exhausted: true } : null
     }
   }
+  sample.publishBoundary = (source) => {
+    try {
+      tick()
+      if (
+        !FreshSource.belongs(source, scope) ||
+        source.boundary ||
+        source.origin.originalRoot !== true ||
+        source.origin.time !== source.origin.start ||
+        source.origin.start >= source.origin.end
+      )
+        return undefined
+      return new FreshSource(
+        scope,
+        source.origin,
+        source.shapes,
+        source.a,
+        source.b,
+        true
+      )
+    } catch (error) {
+      if (!exhausted(error)) throw error
+      return null
+    }
+  }
+  return sample
 }

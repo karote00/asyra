@@ -421,8 +421,8 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         if (mode === 'representative') {
           const evidence = runOriginalPartMethod(snapshot)
           evaluations = evidence.evaluations
-          expect(evaluations).toBe(20262)
-          expect(target?.evaluations).toBe(163)
+          expect(evaluations).toBe(20265)
+          expect(target?.evaluations).toBe(166)
           expect(target?.coverage).toBe('partial')
         } else {
           const pair = snapshot.pairs.find(

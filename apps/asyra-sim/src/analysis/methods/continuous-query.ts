@@ -172,6 +172,7 @@ export function queryContinuousPair(
     start: number
     end: number
     segment: number
+    originalRoot?: boolean
     startEvidence?: DistanceEvidence
     endEvidence?: DistanceEvidence
   }
@@ -188,7 +189,14 @@ export function queryContinuousPair(
     for (let segment = 0; segment < frames.length - 1; segment++) {
       const a = Math.max(start, frames[segment].time),
         b = Math.min(end, frames[segment + 1].time)
-      if (a < b) pending.push({ start: a, end: b, segment })
+      if (a < b)
+        pending.push({
+          start: a,
+          end: b,
+          segment,
+          originalRoot:
+            a === frames[segment].time && b === frames[segment + 1].time
+        })
     }
   if (pending.length > maxLeaves)
     return {
@@ -212,10 +220,14 @@ export function queryContinuousPair(
     }
   let evaluations = 0
   let kernelExhausted = false
+  let boundarySource: unknown
   traversal: while (pending.length && evaluations < settings.maxIntervals) {
     checkpoint()
     const node = pending.pop()
     if (!node) break
+    // Take once before admission; neither mismatches nor descendants retain it.
+    const previousBoundary = boundarySource
+    boundarySource = undefined
     const middle = node.start + (node.end - node.start) / 2
     let startEvidence = node.startEvidence,
       middleEvidence: DistanceEvidence | undefined,
@@ -245,7 +257,8 @@ export function queryContinuousPair(
     // Endpoints matter for both minima and keyframe contacts. They are evidence,
     // never a substitute for the interval-wide separating certificate below.
     const sampleTimes = [...new Set([node.start, middle, node.end])]
-    let source: unknown
+    let source: unknown = node.originalRoot ? previousBoundary : undefined
+    let firstSource: unknown
     for (const [sampleIndex, time] of sampleTimes.entries()) {
       checkpoint()
       let inherited: DistanceEvidence | undefined
@@ -277,12 +290,14 @@ export function queryContinuousPair(
               start: node.start,
               end: node.end,
               time,
-              capture: Boolean(capture)
+              capture: Boolean(capture),
+              originalRoot: node.originalRoot === true
             },
             source
           )
           result = sampled?.evidence ?? null
           source = sampled?.source
+          if (sampleIndex === 0) firstSource = source
           sampleExhausted = sampled?.exhausted === true
         } else
           result = kernel
@@ -441,7 +456,27 @@ export function queryContinuousPair(
         }
       )
     if (kernelExhausted) break
+    const next = pending[pending.length - 1]
+    if (
+      evaluations < settings.maxIntervals &&
+      node.originalRoot &&
+      next?.originalRoot &&
+      next.segment === node.segment - 1 &&
+      next.end === node.start &&
+      !witness.penetration &&
+      witness.upper < settings.threshold &&
+      firstSource !== undefined &&
+      kernel?.sample?.publishBoundary
+    ) {
+      const published = kernel.sample.publishBoundary(firstSource)
+      if (published === null) {
+        kernelExhausted = true
+        break
+      }
+      boundarySource = published
+    }
   }
+  boundarySource = undefined
   for (const node of pending)
     leaves.push({
       start: node.start,
