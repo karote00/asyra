@@ -2145,3 +2145,156 @@ prove the matching upper bound despite overlapping world AABBs. Rational extrema
 reverse order, interval-motion enclosure, degenerate proposals, full source and
 cost/cancellation/cold-warm oracles are prerequisites. This section authorizes
 no fitting code, measurement, benchmark or full run; benefit remains unmeasured.
+
+### Certified original components - complete candidate contract
+
+Candidate family 25 starts from goal b9f4a710c on isolated branch
+`codex/asyra-sim-certified-components`. The completed fitted-frame candidate
+remains rejected on its own branch. This candidate must either establish a
+complete source-preserving component query with all required evidence, or retain
+an exact applicability/cost rejection without implementing an unjustified solver.
+Production and the goal branch remain unchanged until the complete candidate is
+reviewed and passes its fixed full representative gates. No dependency or external
+implementation copy is authorized.
+
+Owner and failure owner: Inspector `method`, current data lines 1008–1065; inputs
+are admitted detached immutable mesh geometry, canonical domain point/interval
+poses, current settings and owned checkpoints. Existing spec sections Numerical
+method, Permanent product cases and Bounded acceleration remain authoritative.
+Allowlist: `analysis/methods/**`, its permanent tests/fixtures, method constants
+and directly required method spec/manifest/Inspector projections, plus this plan.
+Internal geometry proof identifiers are brand-neutral and never persisted.
+No runtime, UI, source generator, precision, workload or budget changes belong here.
+
+Mathematical prerequisite: the boundary must be exactly the original complete
+connected consistently oriented nondegenerate closed two-manifold triangulation,
+including coplanar facets and all original vertices. No convex hull substitution,
+vertex adjustment, epsilon welding or tolerance-based convexity is allowed.
+Theorem 10 in <a href="https://people.mpi-inf.mpg.de/~mehlhorn/ftp/CertifyingAlgorithms.pdf" target="_blank" rel="noopener noreferrer">McConnell et al., Certifying Algorithms, section 9.1</a>
+characterizes such simplicial surfaces using local convexity at every ridge,
+the exact vertex centroid strictly inside every oriented facet halfspace, and a
+ray from that centroid through one facet centroid intersecting no other closed
+facet. All three conditions are needed: local tests alone permit self-intersecting
+surfaces. This applies to the original triangulated surface, not a new hull whose
+input containment is assumed. Reversing a component's orientation changes every
+side consistently. Exact zero allows genuinely coplanar triangles; an arbitrarily
+small nonzero reflex fold is not coplanar. A successful full proof establishes
+that the original component itself is the convex solid. A failed or incomplete
+proof produces no source capability, never an assumed convex body.
+
+Before implementing a positive capability, perform one complete source applicability
+census on the unchanged representative snapshot. A test-owned exact necessary
+condition records positive, negative and zero adjacent-face determinants and
+original source-offset witnesses. Both nonzero signs in one consistently oriented
+component disprove convexity independent of outward/inward orientation. One sign
+alone is only undecided; it cannot bypass the centroid, self-intersection/ray or
+complete-source proofs. This census covers all 39 bodies and every admitted
+component, not selected triangles or a chosen root. If all components of both
+known bottleneck sources are disproved, the proposed compressed query has zero
+eligible component pair there, so current frontier work cannot decrease: retain
+that complete negative result and stop without support/query/version changes.
+Otherwise complete the full theorem checks before any experimental query uses a
+capability. No passing local predicate is promoted to a certificate.
+
+Predicates: outward interval determinant filtering may accept only strict signed
+separation; uncertain results use exact binary64 dyadic arithmetic. The first
+applicability proof uses exact arithmetic directly to avoid trusting a new filter.
+It records exact signed determinants for replay. Every original coordinate remains
+unchanged. The closed topology owner establishes adjacency; the method-owned
+receipt binds copied offsets/vertices and complete membership. No public flag or
+caller-supplied convex assertion can issue the eventual runtime-opaque capability.
+Exact centroid and ray predicates must be independently tested; degenerate ray
+cases are rejected rather than numerically displaced. Topology admission by itself
+does not certify absence of geometric self-intersection.
+
+Charging is frozen before source measurement. Existing topology/median/refinement
+work remains paid. Additional input offset/vertex collection charges each 256
+records including tail; every unique undirected edge construction and actual
+ridge determinant costs one; publication costs one per completed component.
+The exact-only predicate is one explicit operation, not a hidden uncharged retry.
+A subsequent filtered predicate pays the filter and any exact retry separately.
+Positive certification additionally charges every centroid source accumulation,
+every facet-side predicate, every actual ray/facet predicate and publication;
+all scans, references and copies include full chunk/tail charges. The support
+consumer charges its component-pair attempt and every actual full-source support
+scan (256 source records per chunk including tail), in addition to unchanged
+node, membership and temporal units. No new helper turns variable source work
+into the old fixed triangle cost. Cold/warm preparation pays equivalently at the
+first demanded use in each invocation; no pose is retained and cancellation
+cannot publish partially paid work. Census is capped at 500,000 added/attributed
+units and 20 seconds, one worker; exhaustion is incomplete census, not rejection.
+
+If applicability permits implementation, the completed method obtains both
+geometry capabilities before consuming pending component roots. It preserves the
+existing top-component hierarchy, original root/membership and temporal owners.
+Certified components use their full original support vertices; unproved components
+retain explicit ordinary triangle processing, never a successful certificate.
+Warning witnesses cannot suppress possible later penetration. Native inputs and
+1.0.2 historical output remain unchanged. A new 1.0.3 strategy identity is required
+before candidate output; it is not an alias for 1.0.2 and cannot rewrite history.
+The exact new capability route must be added to method spec/Inspector before
+runtime edits; the test-only applicability census needs no product-route change.
+
+Pre-fixed comparison contract: unchanged source bytes/poses/settings/pair order,
+full 39-body/30-fixture/200-frame/298-pair scope for each of the three candidates,
+500k work, 20 seconds, original numerical/time controls and all completeness and
+severity obligations. Unmodified routes retain complete equality. For the new
+version, nonunique valid witnesses/axes and conservative bound widths may differ;
+independent rational/analytical/exhaustive oracles must prove their source
+membership and enclosure. Full source/time coverage and every established
+penetration/finding remain binding. No post-result field exclusion or relaxed
+oracle is permitted. Current partial full baseline is not a complete correctness
+oracle; unvisited regions need the normal formal product certificates.
+
+One complete test/implementation package precedes concentrated gates and one
+independent review. Formal cases include coplanar triangulations, convex and
+inward-oriented components, one-ulp reflex folds, holes, self-intersecting locally
+convex surfaces, nested/contained/tangent solids, disconnected components, late
+penetration after warning, rigid rotation/full intervals and reversed pairs,
+source replacement and exact every-stage cancellation/work counts. Reuse the
+existing membership, source, rational, witness and temporal oracles plus fixed
+10k/50k/576 gates. Naming runs before identifier edits and after their first slice;
+focused lint/type/format, Inspector/catalog and build are required for completed
+runtime work. Only a fully reviewed valid candidate proceeds to one complete
+three-candidate representative comparison. No root/seed tuning, new policy on
+failure, omitted fees, source simplification or full-goal merge. Applicability
+failure is a coherent final checkpoint with permanent tests and retained evidence.
+
+Applicability outcome: family 25 is rejected before a positive source capability
+or query implementation. The complete source census covers all 39 bodies, all
+298 selected pairs, 323 components and 40,388 triangles. Exact mixed ridge signs
+disprove 294 components (36,792 triangles); 29 components remain undecided, one
+in each repeated post source. All robot/workpiece components are disproved,
+including all 36 joint-2 components. Every selected body pair has at least one
+side whose complete component set is disproved. Therefore no selected pair has
+two eligible original convex components for the proposed atomic component query.
+The remaining post components are not convex certificates. They do not rescue
+the failed whole-source premise, and no mixed triangle/component, decomposition
+or outer-hull alternative is implemented as an unreviewed continuation.
+
+Census work is exactly 122,629 = 179 existing topology checkpoints + 122,450
+owned collection/edge/predicate/publication units; the initial census took 637 ms.
+The complete formal negative replay preserves the same counts and takes 681 ms.
+This is source applicability evidence, not measured query savings or a reference
+hardware benchmark. The exact source receipt includes geometry source hashes,
+original face/neighbor offsets and opposite vertex, all four binary64 coordinates,
+and integer-times-power-of-two determinants for both fold signs. Independent
+read-only Python Fraction reconstruction verifies all 617 retained signed
+witnesses; the permanent TypeScript sign/magnitude, one-ulp dent, orientation
+reversal, coplanar, locally convex self-intersection and cancellation cases remain
+the formal oracle. No positive claim depends on the local predicate.
+
+The first stub produced four failing and one passing formal case. The completed
+package passes six formal cases with the explicit census enabled, TypeScript,
+exact-file ESLint/format and 21 naming/placement/catalog checks. No runtime change
+was made, so no production build, query benchmark, method-version publication or
+full representative run follows this source stop. Production method 1.0.2,
+Inspector behavior, the goal branch and all previous evidence remain unchanged.
+Original red, initial census and completed verified artifacts are retained under
+`tmp/capacity/certified-components-red.log`, `certified-component-admission.log`,
+`certified-component-admission.json`, `certified-components-final-tests.log` and
+`certified-component-admission-verified.json`. Replay the complete formal census
+with `SIM_CERTIFIED_COMPONENT_ADMISSION=1` and the two component-convexity test
+files using one worker. A hypothetical different exact geometric representation
+or rejection-only outer bound is not disproved by this source-convexity result;
+that would require another complete candidate contract, not a local workaround.
