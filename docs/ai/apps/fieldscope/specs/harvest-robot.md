@@ -377,6 +377,38 @@ rest/source identity and D normalization against the actual canonical point mode
 This scalar slice does not perform that switch or certify whole-chain rounding,
 interval FK, material occupancy, intended contacts or motion execution.
 
+### Robot-body fixed-pose affine query adoption
+
+D robot-body ray and surface queries consume one C evaluateRobotAffinePose result
+per batch. Each completed binary64 body matrix coefficient is an exact singleton
+input to the query arithmetic, with its original affine translation. Do not infer
+it again from raw quaternion or reconstruct a per-joint matrix chain. Parts with
+the same C affine identity share query-frame preparation for that batch. Query
+work records C's actual fk/bodyMatrices counters, never a hard-coded body count.
+
+Forward queries use the existing outward interval matrix application. Ray inverse
+queries use the actual completed coefficient matrix's cofactor/determinant inverse;
+a determinant interval containing zero remains unresolved. No transpose-as-inverse
+or quaternion normalization is allowed. Body then base/world order remains the
+existing order. Source/context currentness is checked before work and publication.
+
+This adoption is deliberately limited to robot bodies. Base, synthetic camera,
+farm descriptor and instance transformations retain their original contracts.
+It aligns robot-body query coefficients with the chosen Three CPU compose source,
+not with every GPU Float32 operation or all world-space processing. Raw-q interval
+reconstruction may previously have returned wider uncertainty; a changed body
+boundary outcome requires independent exact source evidence under the new matrix
+authority, not an automatic expectation update or fallback. Other transform and
+predicate controls remain unchanged.
+
+Acceptance uses actual C completed matrices, installed Three coefficient/source-
+vertex evidence, independent body ray and surface-pair cases, determinant-unknown
+controls, original source witnesses, one C pose/actual matrix work, shared affine
+frames, retirement and zero source/bounds regeneration. The existing hierarchy
+experiment may update its direct body-frame input if necessary, but not its tree,
+pruning, budget or evidence claims. This does not switch polynomial point trig,
+prove a joint trajectory or resolve material occupancy/intended contacts.
+
 ### Completed-pose affine handoff
 
 C may provide evaluateRobotAffinePose as a preparation entry over its existing
