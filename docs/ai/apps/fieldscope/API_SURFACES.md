@@ -307,3 +307,16 @@ Cross-package imports use public `@asyra/*` facades. Do not import another app's
   this helper accepts only its current issued source. No FK, source/query generation,
   session update, TCP reach, collision/contact clearance or motion permission is
   implied; no new acceleration limit or persisted schema is introduced.
+
+## Canonical FK algebra
+
+- `evaluateRobotDomains` consumes original rig metadata, clone-once numeric
+  `JointDomains` and a pure `KinematicAlgebra`. Domains are exact-key finite ordered
+  lower/upper pairs within rig limits, validated before callbacks.
+- The original `evaluateRobotPose` and the generic entry share one C chain. Point
+  bits, signed zero, original validation and source/reference ownership remain
+  unchanged; no new source graph or geometry is constructed.
+- Algebra range/literal/arithmetic/sin/cos operations own scalar interpretation.
+  Generic C evaluation does not certify a numerical adapter, time correlation or
+  articulated clearance. Result containers are immutable; foreign scalar objects
+  and rig references are not recursively frozen. Existing consumers own currentness.
