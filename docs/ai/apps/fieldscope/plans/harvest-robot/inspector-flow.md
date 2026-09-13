@@ -802,3 +802,61 @@ Current execution restriction: root has released the completed baseline and
 authorized this one C point production integration and its frozen gates. Freeze
 after completion; no joint-interval or further owner begins. The quota stop
 instruction takes precedence over remaining gates.
+
+### C joint-domain interval pose preparation - readiness
+
+Owner: domain/robot-kinematics.ts, new evaluateRobotIntervalPose entry and private
+interval algebra over the existing evaluateRobotDomains/single chain. Inputs:
+original C rig plus closed numeric JointDomains. Outputs: original rig/source/body
+references, detached domains, interval frames/tool/part transforms and final affine
+coefficients, with actual call-local chain/scalar/trig/matrix work. This is point-
+model set enclosure, not time trajectory or movement admission.
+Conditions: validate/clone domains before any adapter work; preserve signed-zero
+and half-angle subnormal rounding. Basic arithmetic uses the existing shared
+scalar owner; trig uses boundPolynomialTrig. Generic final-affine extraction must
+preserve every current number operation/order and source/translation identity.
+Allowed: existing scalar and polynomial APIs unchanged, one generic C chain and
+one generic final-affine formula; direct formal independent point/Three/rational
+oracles. Forbidden: duplicated chain/matrix formula, Math trig with EPS, endpoint
+interpolation, inverse-as-transpose, per-joint matrix product, D solver/runtime
+wiring, world-space geometry copies, material/contact exemptions or pose cache.
+Boundary for future implementation: robot-kinematics.ts and its existing direct
+test, new `domain/__tests__/robot-intervals.test.ts`, API/spec/Inspector/plan. Existing
+scalar/poly tests and D consumers are regression gates, not mutation contributors.
+Failure owner: existing domain/scalar rejection; unresolved intervals stay unknown
+for subsequent consumers. Never clamp or publish a partial interval pose.
+Lifetime: one call; original rig/source refs are not cloned/frozen incidentally.
+Owned interval values and containers are frozen. Reuse final affine work by actual
+transform identity, count converter execution rather than Map size. Source
+retirement is checked by the eventual consuming owner, not a new C registry.
+
+Gates: missing-entry red; singleton rest/limits/asymmetric/nondefault/±0 and
+subnormal domains enclose actual point/affine outputs; interior domain samples
+plus independent exact arithmetic/trig proof (sampling alone is not the proof).
+Include zero-crossing trig extrema, rounded half-angle underflow, narrow versus
+full approved boxes, source/body/reference/order preservation, malformed/sparse/
+accessor clone-once rejection before scalar work, frozen outputs and no source
+generation. Exact rest and singleton results must remain usefully bounded; no
+blanket infinite enclosure. Numeric zero containment does not promise signed-zero
+point-bit identity. No all-operation exactness is assumed at rest.
+Predeclared tightness uses DEFAULT_ROBOT: both the rest singleton and the
+nonzero singleton (lift=.02, yaw=.3, shoulder=-.4, elbow=.5, wrist=-.2) permit
+maximum position width <=1e-10 metres and
+maximum quaternion/tool-direction/affine coefficient width <=1e-10. Around that
+same centre, each joint expanded by ±1e-6 has corresponding maxima <=1e-3 metres
+and <=1e-3 dimensionless. Refinement to ±1e-7 must not increase either maximum
+and must remain <=2e-4 in the corresponding units. These fixed test thresholds
+measure enclosure usefulness; they are not runtime geometry/contact tolerances.
+Current point/source/historical snapshots remain
+unchanged. Count one chain, eight bound-trig calls, actual polynomial evaluations/
+terms/maximum bits and unique affine conversions; no numeric point re-evaluation.
+
+Fixed future profile: one full approved box as a small control, then four batches
+of 25 boxes (normal narrow and nonzero subnormal, first/repeated). Each batch has
+200 bound-trig calls and at most 400 actual polynomial evaluations; retain 24000-
+bit guards, 1 second per batch and 10 seconds total, cooperatively checked. Measure
+all validation/adapter/chain/affine/work cost on a prepared rig, not just trig.
+No parameter search or guard increase. After focused proof, run full app/type/
+build/lint/naming and independent numerical review. Current authorization is
+readiness only: freeze these docs and stop for root quota review before tests or
+production.

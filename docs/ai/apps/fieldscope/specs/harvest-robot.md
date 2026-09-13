@@ -1286,3 +1286,30 @@ completed-body ray/collision frames. Their original source and boundary oracles
 must pass or receive independent new-coefficient analysis; never change predicates
 to hide a failed migration. This stage does not prove articulated interval motion,
 material occupancy, intended contact or harvesting quality.
+
+### Canonical joint-domain point enclosure - readiness
+
+The next C owner prepares an interval pose for a closed box of the five existing
+joint domains. It encloses the current polynomial point model for every admitted
+binary64 joint tuple in that box. The box does not encode time correlation, a
+continuous real-valued trajectory, IK, speed admission or motion clearance.
+Trajectory-to-domain construction and complete articulated queries remain later
+D consumers; this preparation alone cannot release a movement.
+
+Use the existing numeric-domain admission and single generic C chain. The private
+interval adapter uses only shared outward add/subtract/multiply/divide and directed
+S19/C20 bounds, including rounding of each existing half-angle operation. Every
+basic operation encloses its rounded point result; polynomial bounds enclose the
+rounded polynomial model, not an implementation-dependent Math approximation.
+Final raw-quaternion affine coefficients use the same C formula and operation
+order as the point producer. Generalizing that one formula must preserve current
+point/affine bits; no per-joint matrix chain, normalization or transpose inverse.
+
+Keep original rig/source/body identities, detached immutable numeric domains and
+owned immutable interval values. Share each completed affine by its original
+interval-transform identity within one call. Do not cache across calls, source
+replacements or joint domains. Rig currentness remains the composition/query
+consumer's responsibility; this C helper issues no run or current-source receipt.
+Unbounded scalar results remain explicit unresolved enclosures, never finite
+geometry or clearance; invalid domains and resource rejection publish no partial
+result. Material, joint/tire support and carried-fruit contact policies are unchanged.
