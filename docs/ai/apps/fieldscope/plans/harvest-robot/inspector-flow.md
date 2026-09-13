@@ -740,3 +740,32 @@ actual unique-reference work counts, same-frame reuse and zero source generation
 full app unit/type/build/lint/naming and independent review. This prepares a C
 handoff only: no consumer adopts it yet, so no unified query/render authority or
 interval/movement proof follows from these gates.
+
+### D robot-body completed-affine query adoption
+
+Owner: simulation/ray-query.ts prepareQueryAffineFrame/prepareQueryAffineInverse
+and its existing simulation/collision.ts consumer. Inputs: current issued C geometry/rig, one C
+completed affine pose per batch, original query intent and same currentness guards.
+Outputs: existing body ray/surface evidence under C completed coefficient authority;
+work fk/bodyMatrices forwarded from the actual C invocation, shared per-affine
+forward/inverse frames. No second pose or source product is generated.
+Conditions: exact singleton C binary64 coefficients and original position, existing
+body→base/world order. Forward uses outward interval apply; inverse uses actual
+matrix cofactors/determinant, with unresolved determinant retaining unknown.
+Allowed: evaluateRobotAffinePose and its immutable affine identities, original
+shared scalar operations and unchanged query predicates/lifetime checks.
+Forbidden: body raw-q matrix reconstruction, per-joint chain, transpose inverse,
+normalization, polynomial switch, material/contact exemptions, base/camera/farm/
+instance changes or GPU/full-scene authority claims.
+Boundary: ray-query.ts, collision.ts, their direct tests, API/spec/Inspector/plan.
+The existing test-only source-hierarchy.ts may change only its direct robot-body
+pose/frame input if required for the same authority; no index/tree/pruning change.
+Failure owner: existing D invalid/source-retired/unknown paths; a supported outcome
+change needs independent new-matrix source evidence, not fallback or snapshot edits.
+Lifetime: one query batch/C affine pose; no result or frame cache across calls.
+Gates: formal missing-adoption/work counter red, actual C/Three coefficients and
+source-vertex enclosure, independent body ray/surface pair/witness, true inverse
+and singular-uncertainty controls, affine identity reuse, one C call/actual work,
+retirement and zero geometry/bounds generation. Preserve other transform and
+numerical controls, then full app unit/type/build/lint/naming and independent review.
+Do not interpret this fixed-pose adoption as articulated or material clearance.
