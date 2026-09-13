@@ -967,3 +967,17 @@ original collision controls, app unit/type/lint/build/naming and scoped review.
 Stop if correct source region mapping is missing or new local bounds/index
 production becomes necessary; pending robot material decisions do not authorize
 C changes here. Transient region work counters belong to D, with no persisted API.
+
+Region refinement is implemented: the measured exclusion mismatch and missing
+region work handoff failed first; 40 collision controls and all 398 app unit tests
+pass with typecheck/build, lint, naming and independent scoped review. A mixed
+prepared-box/unprepared-sheet fixture preserves the complete exhaustive surface
+relation counts; exact contact at the closed translation endpoint is not excluded.
+Production matches the independent source-bound profile. The actual 32-predicate
+query now leaves 14,371,840 unvisited pairs and reports 18 surface intersections,
+using 57,773 region comparisons and 222 additional transformed region products
+(22,360 total bound corners), about 64 ms with one FK and no local bounds/source
+regeneration. Different bounded representatives reflect the declared region
+traversal, not a changed continuous predicate or an earliest-contact claim.
+This closes measured region exclusion only; partial coverage and the unresolved
+material, intended-contact, retention and articulated-motion obligations remain.
