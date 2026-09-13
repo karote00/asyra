@@ -412,3 +412,20 @@ Invalid domains and scalar exceptions abort publication; unbounded intervals are
 unresolved evidence, never finite clearance. Rig/source currentness belongs to
 the eventual composition/query consumer. The existing point/affine APIs retain
 their numeric bits and signatures through the shared generic affine formula.
+
+## Joint segment point-time domains
+
+`JointSegments.enclose(source, rawSegment, window)` internally calls the existing
+segment assessment once and accepts only its admitted detached input. Window
+fields are `queryFrom`, `queryUntil`, `validFrom`, `validUntil`; they are finite,
+nonnegative, independently cloned once and validated against the closed segment
+and half-open validity. The result preserves `source`/`segment` identity, frozen
+`window`, endpoint `start`/`end` joints, closed `domains` and `work` containing
+actual `pointEvaluations`, `conversions` and `maxBigIntBits`. A singleton window
+reuses one endpoint tuple; declared segment endpoints need no rational conversion.
+
+Interior point joints use exact dyadic barycentric interpolation followed by one
+shared nearest-even conversion. Domain extrema enclose the rounded point model;
+existing ideal-linear speed checks remain separate. No C/FK or surface work occurs.
+The result is evidence, not an authorization token; invalid/stale inputs or
+resource failure abort publication, and no cache or source clone is introduced.

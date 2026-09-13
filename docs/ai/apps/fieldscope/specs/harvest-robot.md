@@ -1314,9 +1314,9 @@ Unbounded scalar results remain explicit unresolved enclosures, never finite
 geometry or clearance; invalid domains and resource rejection publish no partial
 result. Material, joint/tire support and carried-fruit contact policies are unchanged.
 
-### Joint segment point-time domain preparation - readiness
+### Joint segment point-time domain preparation
 
-The next D motion owner defines the numeric point-time model separately from the
+The D motion owner defines the numeric point-time model separately from the
 existing ideal-linear speed screen. For original segment endpoints a/b and times
 s/e, an interior finite time t evaluates exact rational
 `(a*(e-t)+b*(t-s))/(e-s)`, then rounds once to nearest-even binary64 using the
