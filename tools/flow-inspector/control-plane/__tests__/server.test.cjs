@@ -485,6 +485,118 @@ test('HTTP target assessment actions retain service authority and cached results
     )
     assert.equal(cancelled.status, 200)
     assert.equal((await cancelled.json()).phase, 'cancelled')
+    if (process.platform === 'darwin') {
+      holdCancellation = false
+      const dependencies = path.join(captured.sourceRoot, 'node_modules')
+      fs.rmSync(dependencies, { recursive: true, force: true })
+      fs.symlinkSync(path.join(root, 'node_modules'), dependencies, 'dir')
+      const task = await service.waitTask(
+        service.startTask(
+          {
+            requestId: randomUUID(),
+            stepId: 'finalize-transaction-state',
+            objective: 'Verify exact HTTP task source forwarding',
+            allowedFiles: ['packages/factory/src/data-transact.ts'],
+            adapter: 'demonstration',
+            scenario: 'repair',
+            contractDigest: service.contract().digest,
+            revision: service.state().mapping.revision,
+            budgets: { elapsedMs: 60000, toolCalls: 20, attempts: 3 }
+          },
+          LOCAL_ACTOR
+        )
+      )
+      const taskRequest = {
+        ...request,
+        requestId: randomUUID(),
+        sourceTaskId: task.id,
+        sourceAttemptId: task.attempts.at(-1).id
+      }
+      const count = service.state().runs.length
+      for (const [sourceTaskId, status] of [
+        [null, 400],
+        ['bad-task', 400],
+        [randomUUID(), 409]
+      ])
+        assert.equal(
+          (
+            await post('/api/target-assessments', {
+              ...taskRequest,
+              sourceTaskId
+            })
+          ).status,
+          status
+        )
+      assert.equal(
+        (
+          await post('/api/target-assessments', taskRequest, {
+            ...headers,
+            origin: 'https://foreign.example'
+          })
+        ).status,
+        403
+      )
+      assert.equal(
+        (
+          await post('/api/target-assessments', taskRequest, {
+            ...headers,
+            'x-proof-capability': 'invalid'
+          })
+        ).status,
+        403
+      )
+      assert.equal(service.state().runs.length, count)
+      const response = await post('/api/target-assessments', taskRequest)
+      assert.equal(response.status, 202)
+      const taskAssessmentId = (await response.json()).id
+      const settled = await service.waitTargetAssessment(taskAssessmentId)
+      assert.equal(settled.phase, 'completed')
+      assert.equal(settled.runtime.taskId, task.id)
+      assert.equal(settled.runtime.attemptId, taskRequest.sourceAttemptId)
+      assert.equal(settled.result.accepted.status, 'passed')
+      assert.equal(settled.projection.eligible, false)
+      for (const slot of settled.slots) {
+        assert.equal(service.get(slot.id).targetAssessmentId, taskAssessmentId)
+        assert.equal(service.get(slot.id).format, 3)
+      }
+      await service.controlTask(task.id, { action: 'revoke' }, LOCAL_ACTOR)
+      const io = t.mock.method(fs, 'readFileSync')
+      const taskAssess = t.mock.method(
+        targetEvidenceOwner,
+        'assessTargetSource'
+      )
+      const taskProject = t.mock.method(
+        targetEvidenceOwner,
+        'projectTargetAssessmentCurrentness'
+      )
+      const computations = [
+        taskAssess.mock.callCount(),
+        taskProject.mock.callCount()
+      ]
+      const replay = await post('/api/target-assessments', taskRequest)
+      assert.equal(replay.status, 202)
+      assert.equal((await replay.json()).id, taskAssessmentId)
+      const detail = await fetch(
+        server.origin + '/api/target-assessments/' + taskAssessmentId
+      ).then((value) => value.json())
+      assert.deepEqual(detail.result, settled.result)
+      assert.equal(detail.projection.current, false)
+      assert.equal(io.mock.callCount(), 0)
+      assert.deepEqual(
+        [taskAssess.mock.callCount(), taskProject.mock.callCount()],
+        computations
+      )
+      io.mock.restore()
+      assert.equal(
+        (
+          await post('/api/target-assessments', {
+            ...taskRequest,
+            requestId: randomUUID()
+          })
+        ).status,
+        409
+      )
+    }
   } finally {
     await server.close()
     fs.rmSync(directory, { recursive: true, force: true })
