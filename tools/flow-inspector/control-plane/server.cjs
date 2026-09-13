@@ -295,6 +295,18 @@ async function startServer(
         if (route.pathname === '/api/ci/ingest') bodyLimit = 2097152
         if (route.pathname === '/api/targets/decide') bodyLimit = 131072
         const body = await readBody(request, bodyLimit)
+        const scopedReviewAction = route.pathname.match(
+          /^\/api\/tasks\/([a-f0-9-]{36})\/review\/scoped$/
+        )
+        if (scopedReviewAction)
+          return send(
+            200,
+            await service.prepareScopedReview(
+              scopedReviewAction[1],
+              body,
+              LOCAL_ACTOR
+            )
+          )
         const reviewAction = route.pathname.match(
           /^\/api\/tasks\/([a-f0-9-]{36})\/review$/
         )

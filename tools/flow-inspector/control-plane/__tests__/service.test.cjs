@@ -1,3 +1,4 @@
+/* global fetch */
 /* eslint-disable @typescript-eslint/no-require-imports */
 const assert = require('node:assert/strict')
 const fs = require('node:fs')
@@ -3705,6 +3706,112 @@ test(
       assert.equal(inspections, 0)
     } finally {
       await service.close()
+      fs.rmSync(f.dir, { recursive: true, force: true })
+    }
+  }
+)
+
+test(
+  'scoped review HTTP and CLI forward one exact selector to the real service owner without delivery effects',
+  { skip: process.platform !== 'darwin', timeout: 50000 },
+  async () => {
+    const counts = { inspect: 0, deliver: 0 }
+    const adapter = {
+      repository: 'offline/scoped-public',
+      base: 'main',
+      async inspect() {
+        counts.inspect++
+        return { baseSha: 'b'.repeat(40), baseTree: 'c'.repeat(40) }
+      },
+      async deliver() {
+        counts.deliver++
+        throw new Error('Preparation must not deliver')
+      }
+    }
+    const f = await scopedWorkFixture(null, adapter)
+    const { startServer } = require('../server.cjs')
+    const { main } = require('../cli.cjs')
+    let server
+    try {
+      await f.service.close()
+      server = await startServer(f.repository, {
+        url: 'http://127.0.0.1:0',
+        serviceOptions: { directory: f.runs, deliveryAdapter: adapter }
+      })
+      const attemptId = f.task.attempts.at(-1).id
+      const selection = { attemptId, assessmentId: f.assessment.id }
+      const endpoint =
+        server.origin + '/api/tasks/' + f.task.id + '/review/scoped'
+      const session = await fetch(server.origin + '/api/session').then(
+        (response) => response.json()
+      )
+      const post = (body, authorized = true) =>
+        fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            ...(authorized ? { 'x-proof-capability': session.capability } : {})
+          },
+          body: JSON.stringify(body)
+        })
+      assert.equal((await post(selection, false)).status, 403)
+      assert.equal(counts.inspect, 0)
+      assert.equal((await post({ ...selection, extra: true })).status, 409)
+      assert.equal(counts.inspect, 0)
+      const response = await post(selection)
+      assert.equal(response.status, 200)
+      const httpReview = await response.json()
+      assert.equal(httpReview.format, 2)
+      assert.equal(httpReview.preview.taskId, f.task.id)
+      assert.equal(httpReview.preview.attemptId, attemptId)
+      assert.equal(httpReview.preview.scopedWork.assessmentId, f.assessment.id)
+      assert.equal(httpReview.preview.candidateVerification, 'failed')
+      assert.equal(httpReview.preview.scopedWork.work.status, 'passed')
+      assert.equal(httpReview.preview.scopedWork.integration.status, 'pending')
+      assert.deepEqual(counts, { inspect: 1, deliver: 0 })
+
+      const output = []
+      assert.equal(
+        await main(
+          [
+            '--url',
+            server.origin,
+            'pr-prepare-scoped',
+            f.task.id,
+            attemptId,
+            f.assessment.id
+          ],
+          {
+            repositoryRoot: f.repository,
+            write: (value) => output.push(value)
+          }
+        ),
+        0
+      )
+      const cliReview = JSON.parse(output.join(''))
+      assert.equal(cliReview.previewDigest, httpReview.previewDigest)
+      assert.deepEqual(
+        cliReview.preview.scopedWork,
+        httpReview.preview.scopedWork
+      )
+      assert.deepEqual(counts, { inspect: 2, deliver: 0 })
+      await assert.rejects(
+        () =>
+          main(['--url', server.origin, 'pr-prepare', f.task.id], {
+            repositoryRoot: f.repository,
+            write: () => undefined
+          }),
+        /verified/
+      )
+      assert.deepEqual(counts, { inspect: 2, deliver: 0 })
+      const retained = await fetch(
+        server.origin + '/api/tasks/' + f.task.id + '/review'
+      ).then((value) => value.json())
+      assert.equal(retained.previewDigest, httpReview.previewDigest)
+      assert.deepEqual(counts, { inspect: 2, deliver: 0 })
+    } finally {
+      await server?.close()
+      await f.service.close()
       fs.rmSync(f.dir, { recursive: true, force: true })
     }
   }

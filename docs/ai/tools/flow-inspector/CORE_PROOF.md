@@ -625,12 +625,10 @@ React, naming, lint, typecheck/build and latest implementation PR CI must pass.
 Offline fixtures are labeled and never replace live provider evidence. No model,
 external test PR, provider reconciliation or new baseline is activated.
 
-
 ### Scoped work review handoff
 
-This is the next bounded service/review consumer contract; implementation is not
-activated by this readiness change. Strict all-flow candidate verification and
-legacy PR preparation remain unchanged. An explicit scoped review may instead
+Strict all-flow candidate verification and legacy PR preparation remain unchanged.
+An explicit scoped review may instead
 consume the already assessed result for one admitted work, without relabeling a
 failed candidate or requiring the whole target integration to pass. Explicit
 integrated-target baseline acceptance remains a separate, unimplemented action.
@@ -642,10 +640,9 @@ once and consumes the existing current assessment, allocation and accepted pins
 once. It does not eagerly publish on notifications or add a retained handoff
 cache. Changes to source/base/allocation/proof state are checked on that next
 handoff, which either returns the complete current identity or rejects; no stale
-artifact survives by cache fallback. Historical reads request no handoff. The
-initial service-only slice exposes no public action or client-supplied artifact;
-the review consumer is wired in a later owner slice. The detached,
-immutable handoff contains `assessmentId`, `taskId`, `attemptId`, `targetId`,
+artifact survives by cache fallback. Historical reads request no handoff. No public
+action accepts a client-supplied artifact. The detached, immutable handoff contains
+`assessmentId`, `taskId`, `attemptId`, `targetId`,
 `allocationRevision`, `workId`, the original `workBinding`, accepted baseline and
 accepted-version pins, the registered complete task runtime tuple, the assessed
 work result, original integration result and the complete registered producer references supporting that work,
@@ -680,16 +677,25 @@ work and retain the non-passing full candidate and incomplete integration status
 No delivery or successful CI implicitly accepts a target baseline.
 
 Owner order is service handoff, review consumer, then transport/presentation.
-The next service-only implementation must prove real admitted work with accepted
-preservation and own/prerequisite success while integration remains pending and
-the original candidate is non-passing. Permanent negatives cover accepted
+The first two owners are implemented. Public transport accepts only exact
+task/attempt/assessment selectors through the existing loopback capability and
+passes them to review preparation without resolving or reassessing evidence.
+Board presentation requires an explicit retained assessment selection for the
+selected task and attempt, then shows bounded scope, the original candidate outcome
+and the separate integration result before the existing exact confirmation.
+
+Permanent owner evidence proves real admitted work with accepted preservation and
+own/prerequisite success while integration remains pending and the original
+candidate is non-passing. Permanent negatives cover accepted
 regression, missing prerequisites, wrong work binding/HEAD/source, retirement and
 changed approval scope. Work-count oracles prove reuse of assessed results and
 source artifacts, no repeated assessment/hash work and zero lookup on historical
-reads. Subsequent review-owner cases bind the exact scope into confirmation and
-preserve strict legacy behavior. The initial all-six accepted baseline proof gate
-below is unchanged; prerequisite admission, broader runtime coverage and explicit
-baseline acceptance are not closed by this handoff.
+reads. Review-owner cases bind the exact scope into confirmation and preserve strict
+legacy behavior. HTTP/CLI/Board cases must prove exact selector parity, capability
+refusal, zero effect on preparation, visible bounded status and three-viewport
+operation. The initial all-six accepted baseline proof gate below is unchanged;
+prerequisite admission, broader runtime coverage and explicit baseline acceptance
+are not closed by this handoff.
 
 ### Work admission before execution
 
@@ -737,7 +743,6 @@ prerequisite/scope/source/actor/identity rejection before execution, legacy-task
 compatibility, failure then correction with retained attempts, no cross-HEAD
 aggregation or automatic acceptance, and API/CLI parity. Existing security,
 Factory proof and browser gates remain mandatory.
-
 
 The Board's Prepare task action first records admission against the selected
 completed baseline proof, then fills the existing task form with that reserved

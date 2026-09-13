@@ -105,6 +105,8 @@ async function connect(repositoryRoot, origin) {
       getTarget: async (id) => service.getTarget(id),
       decideTarget: async (body) => service.decideTarget(body, LOCAL_ACTOR),
       getReview: async (id) => service.getReview(id),
+      prepareScopedReview: (id, selection) =>
+        service.prepareScopedReview(id, selection, LOCAL_ACTOR),
       reviewTask: (id, body) => service.reviewTask(id, body, LOCAL_ACTOR),
       startTask: async (body) => service.startTask(body, LOCAL_ACTOR),
       getTask: async (id) => service.getTask(id),
@@ -173,6 +175,11 @@ async function connect(repositoryRoot, origin) {
     decideTarget: (body) => request('/api/targets/decide', body),
     getReview: (id) =>
       request('/api/tasks/' + encodeURIComponent(id) + '/review'),
+    prepareScopedReview: (id, selection) =>
+      request(
+        '/api/tasks/' + encodeURIComponent(id) + '/review/scoped',
+        selection
+      ),
     reviewTask: (id, body) =>
       request('/api/tasks/' + encodeURIComponent(id) + '/review', body),
     startTask: async (body) => (await request('/api/tasks', body)).id,
@@ -233,6 +240,7 @@ async function main(
   const [command, ...parameters] = args
   const arity = {
     'pr-prepare': [1],
+    'pr-prepare-scoped': [3],
     'pr-show': [1],
     'pr-confirm': [3],
     'pr-refresh': [1],
@@ -281,7 +289,7 @@ async function main(
     (command === 'serve' && origin)
   )
     throw new Error(
-      'Usage: cli.cjs [--url loopback-origin] serve | targets | target-show target-id | target-decide request.json | target-assess request.json | target-assessments | target-assessment-show assessment-id | target-assessment-wait assessment-id | target-assessment-cancel assessment-id | verify [flow-id] | negative [flow-id] | scenario scenario-id [flow-id] | prove | status | show attempt-id | cancel attempt-id | mapping-diff | mapping-accept review-id reason | mapping-reject review-id reason | candidate | ci | ci-trial | ci-demo [scenario-id] | pr-prepare task-id | pr-show task-id | pr-confirm task-id preview-digest confirm | pr-refresh task-id | task-start request.json | task-show task-id | task-changes task-id | task-wait task-id | task-cancel task-id | task-stop task-id | task-handoff task-id | task-revoke task-id | task-resume task-id scenario | shared | ci-ingest envelope.json | contract-diff attempt-id [relations.json] | contract-accept review-id reason [retirement.json] | contract-reject review-id reason. Target assessment start/wait print the full settled record and exit 0 only when completed and currently eligible; inspection/control success is independent of verification outcome.'
+      'Usage: cli.cjs [--url loopback-origin] serve | targets | target-show target-id | target-decide request.json | target-assess request.json | target-assessments | target-assessment-show assessment-id | target-assessment-wait assessment-id | target-assessment-cancel assessment-id | verify [flow-id] | negative [flow-id] | scenario scenario-id [flow-id] | prove | status | show attempt-id | cancel attempt-id | mapping-diff | mapping-accept review-id reason | mapping-reject review-id reason | candidate | ci | ci-trial | ci-demo [scenario-id] | pr-prepare task-id | pr-prepare-scoped task-id attempt-id assessment-id | pr-show task-id | pr-confirm task-id preview-digest confirm | pr-refresh task-id | task-start request.json | task-show task-id | task-changes task-id | task-wait task-id | task-cancel task-id | task-stop task-id | task-handoff task-id | task-revoke task-id | task-resume task-id scenario | shared | ci-ingest envelope.json | contract-diff attempt-id [relations.json] | contract-accept review-id reason [retirement.json] | contract-reject review-id reason. Target assessment start/wait print the full settled record and exit 0 only when completed and currently eligible; inspection/control success is independent of verification outcome.'
     )
   if (command === 'serve') {
     const server = await startServer(repositoryRoot, {
@@ -355,6 +363,11 @@ async function main(
     if (command.startsWith('pr-')) {
       let value
       if (command === 'pr-show') value = await client.getReview(parameters[0])
+      else if (command === 'pr-prepare-scoped')
+        value = await client.prepareScopedReview(parameters[0], {
+          attemptId: parameters[1],
+          assessmentId: parameters[2]
+        })
       else {
         const action = command.slice(3)
         if (action === 'confirm' && parameters[2] !== 'confirm')

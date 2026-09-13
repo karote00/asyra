@@ -62,9 +62,9 @@ The internal `prepareScoped(taskId, {attemptId, assessmentId}, actor)` path acce
 exactly those two UUID selector fields. The service wires `getScopedWork` to its
 existing private publisher, including the original integration result by reference;
 review code does not resolve scope or reassess evidence. Its internal preparation
-adapter does not add an HTTP/CLI/Board selection action. Existing confirmation of
-a retained preview remains reachable through the existing capability boundary and
-must enforce the scoped contract; this is not a claim that confirmation is disabled.
+adapter supplies the service boundary used by public consumers. Existing
+confirmation of a retained preview remains reachable through the existing
+capability boundary and must enforce the scoped contract.
 
 Strict previews retain outer format 1. Newly prepared scoped previews use outer
 format 2 and require the complete `scopedWork` handoff in the preview, including
@@ -94,6 +94,37 @@ digest; changed assessment/pins/source or retirement rejected before effects;
 missing scoped persistence fields; distinct concurrent selectors; restart/history
 reads with zero callbacks and fresh prepare/confirm callbacks once each. No real
 GitHub mutation, model request or baseline acceptance is authorized by these tests.
+
+## Scoped review public integration
+
+The loopback server exposes `POST /api/tasks/<taskId>/review/scoped` with a JSON
+body containing exactly `attemptId` and `assessmentId`. The capability-authenticated
+route forwards the selector once to `prepareScopedReview`; HTTP does not read task
+source, select a latest assessment or interpret assessment status. Invalid, stale,
+retired, conflicting or incomplete selections return the service-owned refusal
+before any delivery effect. `GET /api/tasks/<taskId>/review` and the existing
+confirmation action remain the retained preview read and confirmation paths.
+
+The local and attached CLI expose the same action as
+`pr-prepare-scoped <taskId> <attemptId> <assessmentId>`. Both modes print the
+complete retained review record. The CLI cannot supply a handoff, work identity,
+target pin or producer result and does not convert a rejected preparation into a
+successful inspection.
+
+The Board lists retained assessments that explicitly name the selected task and
+attempt. The user chooses one assessment and requests **Prepare bounded work
+preview**. The client forwards only the exact selector and never decides whether
+the work is deliverable. The resulting preview visibly labels bounded work and
+shows the original candidate verification plus target integration result before
+confirmation. A task or attempt change clears an unavailable selection. Ordinary
+refresh and historical preview reads do not prepare, confirm, inspect source or
+perform GitHub work.
+
+Permanent HTTP/CLI cases use real service-admitted scoped work and prove identical
+format 2 identity, capability and selector refusal, and zero delivery effects.
+Board cases prove explicit selection, exact request bytes, distinct failed-candidate
+and pending-integration presentation, confirmation gating, refresh preservation and
+desktop/tablet/narrow usability. Strict `pr-prepare` behavior remains unchanged.
 
 ## Trusted delivery metadata
 

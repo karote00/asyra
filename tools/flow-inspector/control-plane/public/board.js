@@ -37,6 +37,7 @@
       let targetBusy = false
       let assessmentRecords = []
       let selectedAssessmentId = ''
+      let selectedScopedAssessmentId = ''
       let assessmentSource = null
       let assessmentTask = null
       let assessmentTaskSignature = ''
@@ -687,14 +688,54 @@
         const review =
           reviewRecord?.taskId === matching?.id ? reviewRecord : null
         const preview = review?.preview
-        const currentAttempt =
-          !preview || preview.attemptId === matching?.attempts.at(-1)?.id
+        const attemptId = matching?.attempts.at(-1)?.id
+        const scopedAssessments = assessmentRecords.filter(
+          (item) =>
+            item.request.sourceTaskId === matching?.id &&
+            item.request.sourceAttemptId === attemptId
+        )
+        if (
+          selectedScopedAssessmentId &&
+          !scopedAssessments.some(
+            (item) => item.id === selectedScopedAssessmentId
+          )
+        )
+          selectedScopedAssessmentId = ''
+        retainOptions(byId('pr-assessment'), [
+          ['', 'Choose exact bounded work assessment'],
+          ...scopedAssessments.map((item) => [
+            item.id,
+            item.id.slice(0, 12) +
+              ' - ' +
+              item.phase +
+              ' - work ' +
+              ((item.result?.works ?? []).find(
+                (work) => work.id === matching?.task.workBinding?.workId
+              )?.status ?? 'unavailable') +
+              ' - integration ' +
+              (item.result?.integration?.status ?? 'unavailable')
+          ])
+        ])
+        byId('pr-assessment').value = selectedScopedAssessmentId
+        const scopedAssessment = scopedAssessments.find(
+          (item) => item.id === selectedScopedAssessmentId
+        )
+        const currentAttempt = !preview || preview.attemptId === attemptId
         byId('pr-prepare').disabled =
           !matching ||
           !reviewPolicy ||
           acting ||
           !capability ||
           matching.phase === 'running'
+        byId('pr-prepare-scoped').disabled =
+          !matching ||
+          !reviewPolicy ||
+          !scopedAssessment ||
+          acting ||
+          !capability ||
+          matching.phase === 'running'
+        byId('pr-assessment').disabled =
+          !matching || acting || matching.phase === 'running'
         byId('pr-confirm').disabled =
           !preview ||
           preview.draft !== false ||
@@ -707,11 +748,25 @@
         byId('pr-approve').disabled =
           !preview || acting || !['preview', 'blocked'].includes(review.state)
         const observation = review?.observation
+        const scopedWork = preview?.scopedWork
         byId('pr-result').textContent = [
+          'Review scope: ' + (scopedWork ? 'bounded work' : 'full candidate'),
           'Local verification: ' +
             (currentAttempt
               ? (matching?.verificationStatus ?? 'no candidate selected')
               : 'historical attempt - open retained evidence'),
+          ...(scopedWork
+            ? [
+                'Bounded work: ' +
+                  scopedWork.workId +
+                  ' - ' +
+                  scopedWork.work.status,
+                'Assessment: ' + scopedWork.assessmentId,
+                'Original candidate verification: ' +
+                  preview.candidateVerification,
+                'Target integration: ' + scopedWork.integration.status
+              ]
+            : []),
           'Metadata validation: ' +
             (preview?.metadata?.validation.status ?? 'not prepared'),
           'Delivery: ' + (review?.state ?? 'not prepared'),
@@ -750,6 +805,19 @@
               'Branch: ' + preview.branch,
               'Task: ' + preview.taskId,
               'Attempt: ' + preview.attemptId,
+              ...(scopedWork
+                ? [
+                    'Scope: bounded work',
+                    'Assessment: ' + scopedWork.assessmentId,
+                    'Work: ' +
+                      scopedWork.workId +
+                      ' - ' +
+                      scopedWork.work.status,
+                    'Original candidate verification: ' +
+                      preview.candidateVerification,
+                    'Target integration: ' + scopedWork.integration.status
+                  ]
+                : ['Scope: full candidate']),
               'Source baseline: ' + preview.sourceHead,
               'All delivery files: ' +
                 (
@@ -793,18 +861,28 @@
       async function reviewAction(action) {
         if (acting || !taskId || !capability) return
         const selected = taskId
+        const selectedAssessment = selectedScopedAssessmentId
         acting = true
         renderTask()
         try {
-          const value = await api('/api/tasks/' + selected + '/review', {
-            action,
-            ...(action === 'confirm'
+          const scoped = action === 'prepare-scoped'
+          const value = await api(
+            '/api/tasks/' + selected + '/review' + (scoped ? '/scoped' : ''),
+            scoped
               ? {
-                  confirm: byId('pr-approve').checked,
-                  previewDigest: reviewRecord?.previewDigest
+                  attemptId: taskRecord.attempts.at(-1).id,
+                  assessmentId: selectedAssessment
                 }
-              : {})
-          })
+              : {
+                  action,
+                  ...(action === 'confirm'
+                    ? {
+                        confirm: byId('pr-approve').checked,
+                        previewDigest: reviewRecord?.previewDigest
+                      }
+                    : {})
+                }
+          )
           if (taskId === selected) reviewRecord = value
           byId('pr-approve').checked = false
         } catch (error) {
@@ -1005,7 +1083,9 @@
         const options = (taskState?.records ?? []).filter(
           (item) => item.stepId === stepId
         )
+        const previousTaskId = taskId
         if (!options.some((item) => item.id === taskId)) taskId = options[0]?.id
+        if (taskId !== previousTaskId) selectedScopedAssessmentId = ''
         const history = options.map((item) => item.id + item.phase).join(',')
         if (history !== taskHistorySignature) {
           taskHistorySignature = history
@@ -2193,7 +2273,8 @@
           </details>
           <details id="pr-controls"><summary>Candidate GitHub PR review</summary>
             <p>Prepare an exact preview from the selected task. Confirm only after reviewing source, evidence and the destination below.</p>
-            <div class="proof-actions"><button id="pr-prepare" type="button">Prepare PR preview</button><button id="pr-refresh" type="button">Refresh GitHub review</button></div>
+            <label>Bounded work assessment<select id="pr-assessment"><option value="">Choose exact bounded work assessment</option></select></label>
+            <div class="proof-actions"><button id="pr-prepare-scoped" type="button">Prepare bounded work preview</button><button id="pr-prepare" type="button">Prepare full candidate preview</button><button id="pr-refresh" type="button">Refresh GitHub review</button></div>
             <pre id="pr-result" role="status"></pre>
             <pre id="pr-preview"></pre>
             <details><summary>Review source difference</summary><p>Candidate runtime source - local verification evidence is separate from delivery metadata.</p><pre id="pr-source-diff"></pre></details>
@@ -2331,12 +2412,22 @@
           'revoke'
         ])
           listen(byId('agent-' + action), 'click', () => taskAction(action))
-        for (const action of ['prepare', 'confirm', 'refresh'])
+        for (const action of [
+          'prepare-scoped',
+          'prepare',
+          'confirm',
+          'refresh'
+        ])
           listen(byId('pr-' + action), 'click', () => reviewAction(action))
+        listen(byId('pr-assessment'), 'change', (event) => {
+          selectedScopedAssessmentId = event.target.value
+          renderTask()
+        })
         listen(byId('pr-approve'), 'change', renderTask)
         listen(byId('agent-adapter'), 'change', renderTask)
         listen(byId('agent-history'), 'change', async (event) => {
           taskId = event.target.value
+          selectedScopedAssessmentId = ''
           taskSignature = ''
           await refreshTask()
         })
