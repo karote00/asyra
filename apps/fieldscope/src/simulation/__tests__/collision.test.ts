@@ -22,7 +22,17 @@ import * as kinematics from '../../domain/robot-kinematics'
 import * as crops from '../../domain/crop-models'
 import * as models from '../../domain/robot-model'
 import { TriangleBuilder } from '../../domain/mesh'
-import { QueryGeometry, type GeometryReceipt } from '../geometry'
+import {
+  QueryGeometry,
+  type GeometryReceipt,
+  type GeometryBounds
+} from '../geometry'
+import { interval, add, type Interval } from '../query-arithmetic'
+import {
+  prepareQueryForwardFrame,
+  prepareQueryInstanceFrame,
+  transformQueryPoint
+} from '../ray-query'
 import {
   SurfaceQueries,
   type SurfaceBatch,
@@ -953,4 +963,254 @@ it('inventories every real robot and hidden physical instance before bounded Car
     prepare.mockRestore()
     fk.mockRestore()
   }
+})
+
+it('profiles existing primitive bounds without dropping unprepared sheets or traversing triangle products', () => {
+  const configuration = { ...DEFAULT_CONFIGURATION, length: 2.2 },
+    site = new SiteGeometry()
+  const f = setup(buildSiteMeshes(configuration, site), configuration, site),
+    input = coverage()
+  const robotState = input.robot,
+    rig = f.source.receipt.robot.rig
+  if (!robotState || !rig) throw new Error('Expected admitted robot fixture')
+  const started = performance.now(),
+    pose = kinematics.evaluateRobotPose(rig, robotState.joints)
+  const bodies = new Map(
+    pose.parts.map((part) => [part.source, part.transform])
+  )
+  type Frame = ReturnType<typeof prepareQueryForwardFrame>
+  let corners = 0,
+    missingBounds = 0,
+    regionPairs = 0,
+    excluded = 0,
+    remaining = 0
+  const placements = f.source.meshes.flatMap((mesh) => {
+    const shape = mesh.shape
+    if (shape.kind !== 'triangles') throw new Error('Expected triangles')
+    return Array.from(
+      { length: mesh.descriptor?.instances?.length ?? 1 },
+      (_, instance) => {
+        const frames: Frame[] = [],
+          placement = mesh.descriptor?.instances?.[instance]
+        if (placement) frames.push(prepareQueryInstanceFrame(placement))
+        if (mesh.kind === 'robot') {
+          const body = bodies.get(
+            mesh.origin as (typeof pose.parts)[number]['source']
+          )
+          if (!body) throw new Error('Missing body')
+          frames.push(
+            prepareQueryForwardFrame(body),
+            prepareQueryForwardFrame(robotState.base)
+          )
+        } else {
+          if (!mesh.descriptor) throw new Error('Missing descriptor')
+          frames.push(prepareQueryForwardFrame(mesh.descriptor))
+        }
+        const displacement =
+          mesh.kind === 'robot' ? input.displacement : [0, 0, 0]
+        const transform = (local: GeometryBounds): GeometryBounds => {
+          const min = [Infinity, Infinity, Infinity],
+            max = [-Infinity, -Infinity, -Infinity]
+          for (let corner = 0; corner < 8; corner++) {
+            let point = [
+              interval(corner & 1 ? local.max[0] : local.min[0]),
+              interval(corner & 2 ? local.max[1] : local.min[1]),
+              interval(corner & 4 ? local.max[2] : local.min[2])
+            ] as readonly [Interval, Interval, Interval]
+            for (const frame of frames)
+              point = transformQueryPoint(frame, point)
+            corners++
+            for (let axis = 0; axis < 3; axis++) {
+              min[axis] = Math.min(min[axis], point[axis].low)
+              max[axis] = Math.max(max[axis], point[axis].high)
+            }
+          }
+          for (let axis = 0; axis < 3; axis++) {
+            min[axis] = add(
+              interval(min[axis]),
+              interval(Math.min(0, displacement[axis]))
+            ).low
+            max[axis] = add(
+              interval(max[axis]),
+              interval(Math.max(0, displacement[axis]))
+            ).high
+          }
+          return {
+            min: min as unknown as Point3,
+            max: max as unknown as Point3
+          }
+        }
+        const bounds = transform(mesh.prepared.bounds)
+        let regions: { count: number; bounds: GeometryBounds }[] | undefined
+        return {
+          mesh,
+          count: shape.indices.length / 3,
+          bounds,
+          regions: () => {
+            if (!regions) {
+              const prepared = new Map(
+                mesh.prepared.regions.map((region) => [
+                  region.source,
+                  region.bounds
+                ])
+              )
+              regions = mesh.origin.regions.map((region) => {
+                const local = prepared.get(region)
+                if (!local) missingBounds++
+                return {
+                  count: region.indexCount / 3,
+                  bounds: local ? transform(local) : bounds
+                }
+              })
+              expect(
+                regions.reduce((sum, region) => sum + region.count, 0)
+              ).toBe(shape.indices.length / 3)
+            }
+            return regions
+          }
+        }
+      }
+    )
+  })
+  const separate = (a: GeometryBounds, b: GeometryBounds) =>
+    a.min.some(
+      (value, axis) => value > b.max[axis] || a.max[axis] < b.min[axis]
+    )
+  const compare = (
+    a: (typeof placements)[number],
+    b: (typeof placements)[number]
+  ) => {
+    if (separate(a.bounds, b.bounds)) {
+      excluded += a.count * b.count
+      return
+    }
+    for (const first of a.regions())
+      for (const second of b.regions()) {
+        regionPairs++
+        if (separate(first.bounds, second.bounds))
+          excluded += first.count * second.count
+        else remaining += first.count * second.count
+      }
+  }
+  const robots = placements.filter((value) => value.mesh.kind === 'robot'),
+    environment = placements.filter((value) => value.mesh.kind !== 'robot')
+  for (let i = 0; i < robots.length; i++) {
+    for (const item of environment) compare(robots[i], item)
+    for (let j = i + 1; j < robots.length; j++) compare(robots[i], robots[j])
+  }
+  expect(excluded + remaining).toBe(expectedInventory(f.source).trianglePairs)
+  expect(missingBounds).toBeGreaterThan(0)
+  expect(remaining).toBeGreaterThan(0)
+  const milliseconds = performance.now() - started
+  const production = f.query.cover(f.source, { ...input, maxTrianglePairs: 0 })
+  expect(production.coverage).toMatchObject({
+    excluded,
+    unvisited: remaining,
+    queried: 0
+  })
+  console.log(
+    'passive original-region profile',
+    JSON.stringify({
+      regionPairs,
+      excluded,
+      remaining,
+      missingBounds,
+      corners,
+      milliseconds
+    })
+  )
+})
+
+it('preserves exhaustive surface relations through prepared and unprepared original regions', () => {
+  const builder = new TriangleBuilder()
+  builder.box([100, 0, 1], [2, 2, 0.5])
+  builder.box([0, 0, 1], [2, 2, 0.5])
+  builder.quad([0, 0, 1], [2, 0, 1], [2, 2, 1], [0, 2, 1])
+  const mesh = triangle('mixed-regions', [0, 0, 0, 1, 0, 0, 0, 1, 0])
+  mesh.regions = builder.regions()
+  mesh.descriptor = readSpatialDescriptor({
+    ...mesh.descriptor,
+    shape: builder.shape()
+  }) as SiteMesh['descriptor']
+  const f = smallCoverage([mesh]),
+    input = coverage()
+  const robots = f.source.meshes
+    .map((item, index) => ({ item, index }))
+    .filter((value) => value.item.kind === 'robot')
+  const environment = f.source.meshes
+    .map((item, index) => ({ item, index }))
+    .filter((value) => value.item.kind !== 'robot')
+  const pairs: SurfaceSweepBatch['pairs'] = []
+  const collect = (
+    first: (typeof robots)[number],
+    second: (typeof robots)[number]
+  ) => {
+    if (
+      first.item.shape.kind !== 'triangles' ||
+      second.item.shape.kind !== 'triangles'
+    )
+      throw new Error('Expected triangles')
+    for (let a = 0; a < first.item.shape.indices.length / 3; a++)
+      for (let b = 0; b < second.item.shape.indices.length / 3; b++) {
+        pairs.push({
+          first: { mesh: first.index, instance: 0, triangle: a },
+          second: { mesh: second.index, instance: 0, triangle: b },
+          firstTranslation: input.displacement,
+          secondTranslation:
+            second.item.kind === 'robot' ? input.displacement : [0, 0, 0]
+        })
+      }
+  }
+  for (let i = 0; i < robots.length; i++) {
+    for (const item of environment) collect(robots[i], item)
+    for (let j = i + 1; j < robots.length; j++) collect(robots[i], robots[j])
+  }
+  const exhaustive = f.query.sweep(f.source, { ...input, pairs })
+  const result = f.query.cover(f.source, {
+    ...input,
+    maxTrianglePairs: pairs.length
+  })
+  expect(result.complete).toBe(true)
+  expect(result.inventory.trianglePairs).toBe(pairs.length)
+  expect(result.coverage.intersections).toBe(
+    exhaustive.results.filter((value) => value.status === 'swept-intersection')
+      .length
+  )
+  expect(result.coverage.uncertain).toBe(
+    exhaustive.results.filter((value) => value.status === 'unknown').length
+  )
+  expect(result.coverage.intersections).toBeGreaterThan(0)
+  expect(result.coverage.excluded + result.coverage.queried).toBe(pairs.length)
+  expect(result.work).toMatchObject({
+    regionPairs: expect.any(Number),
+    fk: 1,
+    shapeBounds: 0,
+    regionBounds: 0
+  })
+  expect(result.work.boundsCorners).toBe(112)
+  const sourceMesh = f.source.meshes.find(
+    (value) => value.origin.id === 'mixed-regions'
+  )
+  expect(sourceMesh?.origin.regions.length).toBe(3)
+  expect(sourceMesh?.prepared.regions.length).toBe(2)
+})
+
+it('retains exact region-bound contact at the closed translation endpoint', () => {
+  const builder = new TriangleBuilder()
+  builder.box([1, 1, 0.5], [2, 2, 1])
+  const mesh = triangle('contact-box', [0, 0, 0, 1, 0, 0, 0, 1, 0])
+  mesh.regions = builder.regions()
+  mesh.descriptor = readSpatialDescriptor({
+    ...mesh.descriptor,
+    shape: builder.shape()
+  }) as SiteMesh['descriptor']
+  const f = smallCoverage([mesh]),
+    input = { ...coverage(), displacement: [0, 0, -2] as Point3 }
+  const limited = f.query.cover(f.source, { ...input, maxTrianglePairs: 0 })
+  expect(limited.complete).toBe(false)
+  expect(limited.coverage.unvisited).toBe(12)
+  const result = f.query.cover(f.source, input)
+  expect(result.complete).toBe(true)
+  expect(result.status).toBe('surface-intersections')
+  expect(result.witnesses[0].contactFraction).toEqual({ low: 0, high: 0 })
 })
