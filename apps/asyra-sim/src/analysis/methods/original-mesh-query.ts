@@ -23,6 +23,7 @@ import {
   type PreparedMeshIndex,
   type MeshNode
 } from './mesh-index'
+import { prepareFittedIndex, type FittedIndex } from './fitted-index'
 import { projectedBoundsGap } from './mesh-projection'
 import { shapeMembership } from './mesh-membership'
 import {
@@ -80,11 +81,13 @@ export class OriginalMeshQuery {
   }
   private readonly refinedIndices = new WeakMap<MeshGeometry, MeshIndex>()
   private readonly indices = new WeakMap<MeshGeometry, MeshIndex>()
+  readonly #fitted = new WeakMap<MeshGeometry, FittedIndex>()
   constructor(
     private readonly checkpoint: () => void = () => undefined,
     private readonly maxWork: number = EXPERIMENT_RESOURCE_PROFILE.maxWorkUnits,
     private readonly hierarchy = true,
-    private readonly prepared = new WeakMap<MeshGeometry, PreparedMeshIndex>()
+    private readonly prepared = new WeakMap<MeshGeometry, PreparedMeshIndex>(),
+    private readonly fittedTraversal = false
   ) {}
 
   private tick = (units = 1) => {
@@ -165,6 +168,72 @@ export class OriginalMeshQuery {
     }
     return refined
   }
+  private fittedIndex(
+    shape: ConvexShape,
+    index?: MeshIndex
+  ): FittedIndex | undefined {
+    if (!index || shape.geometry.kind !== 'mesh') return
+    const retained = this.#fitted.get(shape.geometry)
+    if (retained) return retained
+    const fitted = prepareFittedIndex(shape.geometry, index, this.tick, true)
+    if (fitted) this.#fitted.set(shape.geometry, fitted)
+    return fitted
+  }
+  private traversalPair(
+    a: ConvexShape,
+    b: ConvexShape,
+    ai?: MeshIndex,
+    bi?: MeshIndex
+  ) {
+    const first = this.traversalIndex(a, ai),
+      second = this.traversalIndex(b, bi)
+    if (
+      !this.fittedTraversal ||
+      !this.hierarchy ||
+      a.geometry.kind !== 'mesh' ||
+      b.geometry.kind !== 'mesh'
+    )
+      return { first, second }
+    const af = this.fittedIndex(a, first),
+      bf = this.fittedIndex(b, second)
+    return {
+      first: af?.traversal ?? first,
+      second: bf?.traversal ?? second,
+      af,
+      bf
+    }
+  }
+  private nodeGap(
+    a: ConvexShape,
+    b: ConvexShape,
+    an: MeshNode | undefined,
+    bn: MeshNode | undefined,
+    gap: number,
+    threshold: number,
+    af?: FittedIndex,
+    bf?: FittedIndex
+  ): number {
+    if (gap > threshold) return gap
+    const frameA = an && af?.frameFor?.(an),
+      frameB = bn && bf?.frameFor?.(bn)
+    if (!frameA || !frameB)
+      return this.projectGap(a, b, an?.bounds, bn?.bounds, gap, threshold)
+    this.tick()
+    const ap = ops.compose(a.pose, frameA.pose)
+    this.tick()
+    const bp = ops.compose(b.pose, frameB.pose)
+    return Math.max(
+      gap,
+      projectedBoundsGap(
+        frameA.bounds,
+        ap,
+        frameB.bounds,
+        bp,
+        threshold,
+        this.tick
+      )
+    )
+  }
   private projectGap(
     a: ConvexShape,
     b: ConvexShape,
@@ -244,8 +313,12 @@ export class OriginalMeshQuery {
         unknown ||= membership === 'unknown'
       }
     }
-    const traversalA = this.traversalIndex(a, ai),
-      traversalB = this.traversalIndex(b, bi)
+    const {
+      first: traversalA,
+      second: traversalB,
+      af,
+      bf
+    } = this.traversalPair(a, b, ai, bi)
     const pending: [MeshNode | undefined, MeshNode | undefined][] = [
       [traversalA?.root, traversalB?.root]
     ]
@@ -258,13 +331,15 @@ export class OriginalMeshQuery {
       const [an, bn] = pair
       const ab = an ? worldBounds(an.bounds, a.pose) : shapeBounds(a)
       const bb = bn ? worldBounds(bn.bounds, b.pose) : shapeBounds(b)
-      const bound = this.projectGap(
+      const bound = this.nodeGap(
         a,
         b,
-        an?.bounds,
-        bn?.bounds,
+        an,
+        bn,
         boundsGap(ab, bb),
-        searchThreshold
+        searchThreshold,
+        af,
+        bf
       )
       if (bound > searchThreshold) {
         lower = Math.min(lower, bound)
@@ -346,8 +421,12 @@ export class OriginalMeshQuery {
     )
     if (overall > threshold) return overall
     if (witness.lower <= 0) return 0
-    const traversalA = this.traversalIndex(a, ai),
-      traversalB = this.traversalIndex(b, bi)
+    const {
+      first: traversalA,
+      second: traversalB,
+      af,
+      bf
+    } = this.traversalPair(a, b, ai, bi)
     const pending: [MeshNode | undefined, MeshNode | undefined][] = [
       [traversalA?.root, traversalB?.root]
     ]
@@ -359,13 +438,15 @@ export class OriginalMeshQuery {
       const [an, bn] = pair
       const ab = an ? worldBounds(an.bounds, a.pose) : shapeBounds(a)
       const bb = bn ? worldBounds(bn.bounds, b.pose) : shapeBounds(b)
-      const gap = this.projectGap(
+      const gap = this.nodeGap(
         a,
         b,
-        an?.bounds,
-        bn?.bounds,
+        an,
+        bn,
         boundsGap(ab, bb),
-        threshold
+        threshold,
+        af,
+        bf
       )
       if (gap > threshold) {
         lower = Math.min(lower, gap)

@@ -2303,3 +2303,78 @@ comparison: independent cold strategies, complete whole PairEvidence equality,
 at least 20% whole paid reduction, CPU at most 1.2, unchanged 500k/20s guards.
 Any failed completeness/equality/material gate stops and preserves evidence; no
 partial ratio or local fit quality establishes benefit. This readiness is frozen.
+
+### Fitted traversal candidate - implementation and proof card
+
+The root released the invocation-owned integration described above as one complete
+candidate. Owner and failure owner remain Inspector `method` (data source lines
+1008–1065), consuming admitted snapshot/domain geometry, poses and current budgets.
+The original-part spec's numerical method, permanent product cases and bounded
+acceleration contract remain authoritative. No new product route is introduced.
+
+Allowlist: `original-mesh-query.ts`, `fitted-index.ts`, their direct permanent
+method tests and this plan. Internal fitted traversal identifiers have no public,
+persisted or wire identity. The explicit fifth query-constructor policy defaults
+to false. Only two-mesh hierarchical traversal after membership or positive
+interval admission demands the private completed receipt. Native, exhaustive,
+root-rejected and nonpositive-admission paths retain their original work.
+
+The same copied immutable hierarchy supplies fitting and pending iteration. Copy
+node bounds, original triangle offsets/components and source-derived vertices;
+retain the original partition and order. Copy representatives in chunks of 256,
+including the tail, with one additional checkpoint per chunk. These fees add to
+all original fees: the one-octahedron receipt costs 30 fitting + 3 node copies +
+1 triangle-copy chunk + 1 representative-copy chunk = 35. Node/frame lookup is
+built inside those paid node operations, not by an uncharged subsequent tree walk.
+Only fully paid completed receipts enter the invocation memo. Exact immutable
+geometry identity owns invalidation; later invocations pay original preparation
+and fresh receipt construction again, while changing poses only reruns queries.
+Two pair-local compositions are charged before the existing six face proposals.
+No pose, lower/contact evidence, other partition, cross-axis policy or fallback
+product geometry is retained or introduced.
+
+Complete the formal query suite before one concentrated validation: source and
+fitting rational proofs; exact default neutrality; immutable traversal/source
+identity under foreign refinement mutation; source replacement; static/interval
+and reversed-pair correctness; unknown and late-penetration preservation; exact
+cold/warm/repeated whole fees; no publication at each cancelled receipt stage;
+composed-pair cancellation and complete-other-geometry survival. Run existing
+method regression and 10k/50k/576 gates, naming, focused lint/format and typecheck.
+Independent review follows the completed package once; no benchmark or full goal
+run precedes that review. After review, the root releases only the previously
+fixed 114–198 comparison and its equality, whole-paid 20%, CPU 1.2 and original
+500k/20s stop gates. A failed candidate is preserved and reported, not retuned.
+
+Pre-implementation evidence: the inherited eight formal query tests produce six
+expected failures on HEAD 62637d97d; the receipt has no query consumer and costs
+30 rather than 35. Naming's 11 formal tests pass. Yarn cannot locate this linked
+worktree's install state; the exact package-script commands use the repository's
+already-installed Node tools without installing or upgrading dependencies.
+
+Candidate outcome: rejected at the unchanged prior resource gates. The completed
+integration has 33 original rational/frame preparation cases and 18 query receipt
+cases passing. Reusing the five existing product suites with the candidate policy
+produces 97 passing and four failing cases (101 total): disjoint-component repeated
+static-plus-interval work is 1,068 in both directions, exceeding 576; complete
+obstacle-10 query work is 54,112 forward and 54,478 reversed, exceeding 50,000.
+The remaining correctness cases, including original late penetration, containment,
+holes, source replacement, immutable receipts and every small receipt cancellation
+stage pass. This establishes the fixed candidate's failure, not a mathematical
+limit on fitted bounds or the unresolved G4 goal.
+
+The default-off regression set passes 86 cases with one explicit experimental
+adapter skip; its original disjoint-component work remains 382 + 78 = 460. The
+failed adapter is retained under `SIM_FITTED_TRAVERSAL_EXPERIMENT=1`, preserving the
+original assertions rather than weakening or removing them. No 114–198 comparison,
+CPU benchmark, full goal run, source-specific tuning or goal-branch integration
+follows. The complete candidate and its tests remain together on this branch.
+Evidence: `tmp/capacity/fitted-query-red.log`, `fitted-query-complete.log`,
+`fitted-query-default.log`, `fitted-query-contracts.log`, `fitted-query-type.log`,
+`fitted-query-lint.log` and `fitted-query-build.log`. These are local synthetic and
+project-fixture development-host proofs, not reference-hardware or pilot evidence.
+TypeScript, exact-file ESLint/formatting, 21 naming/test-placement/catalog contract
+cases, Vite production build and bounded diff review pass. The existing Vite
+large-chunk advisory remains. Final Inspector review confirms one method owner,
+unchanged source/temporal/severity boundaries and no goal-branch adoption. An
+independent review of this complete preserved candidate remains the next review
+step; its failing fixed gates already prohibit benchmark advancement.

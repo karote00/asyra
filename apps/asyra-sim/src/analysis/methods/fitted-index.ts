@@ -1,6 +1,13 @@
-import { multiply, type Quaternion } from '../../domain/math'
+import { multiply, type Quaternion, type Vec3 } from '../../domain/math'
 import type { MeshGeometry } from '../../domain/part-geometry'
-import type { MeshIndex, MeshNode, MeshTriangle } from './mesh-index'
+import {
+  boundsOf,
+  meshPoint,
+  type Bounds,
+  type MeshIndex,
+  type MeshNode,
+  type MeshTriangle
+} from './mesh-index'
 import { prepareSourceSpanFrame, type SourceFrame } from './source-frame'
 
 interface Span {
@@ -8,9 +15,11 @@ interface Span {
   start: number
   end: number
   children?: readonly [number, number]
+  bounds?: Bounds
 }
 export interface FittedNode {
   readonly node: MeshNode
+  readonly traversalNode?: MeshNode
   readonly start: number
   readonly end: number
   readonly proposal: Quaternion
@@ -24,6 +33,8 @@ export interface FittedIndex {
   readonly triangles: readonly MeshTriangle[]
   readonly entries: readonly FittedNode[]
   readonly work: number
+  readonly traversal?: MeshIndex
+  readonly frameFor?: (node: MeshNode) => SourceFrame | undefined
 }
 interface Moments {
   count: number
@@ -94,11 +105,12 @@ function propose(moments: Moments, tick: () => void): Quaternion {
   return Object.freeze(q)
 }
 
-/** No retained cache or routing authority: raw node identities are diagnostic only. */
+/** Original identities are diagnostic; optional owned traversal binds fitting and iteration. */
 export function prepareFittedIndex(
   geometry: MeshGeometry,
   index: MeshIndex,
-  checkpoint: () => void
+  checkpoint: () => void,
+  ownTraversal = false
 ): FittedIndex | undefined {
   let work = 0
   const tick = () => {
@@ -135,6 +147,10 @@ export function prepareFittedIndex(
     seenNodes.add(node)
     const position = spans.length,
       span: Span = { node, start: offsets.length, end: 0 }
+    if (ownTraversal)
+      span.bounds = Object.freeze(
+        node.bounds.map((axis) => Object.freeze([...axis]))
+      ) as Bounds
     spans.push(span)
     if (task.parent !== undefined && task.side !== undefined) {
       const parent = spans[task.parent]
@@ -177,8 +193,24 @@ export function prepareFittedIndex(
   Object.freeze(offsets)
   Object.freeze(components)
   Object.freeze(triangles)
+  const representatives: Vec3[] = []
+  if (ownTraversal)
+    for (let i = 0; i < index.representatives.length; i++) {
+      if (i % 256 === 0) tick()
+      representatives.push(Object.freeze([...index.representatives[i]]) as Vec3)
+    }
+  const traversal: MeshIndex | undefined = ownTraversal
+    ? {
+        root: index.root,
+        representatives: Object.freeze(representatives),
+        componentCount: index.componentCount
+      }
+    : undefined
   const summaries: Moments[] = [],
-    entries: FittedNode[] = []
+    entries: FittedNode[] = [],
+    ownedNodes: MeshNode[] = [],
+    frames = new WeakMap<MeshNode, SourceFrame>()
+  let copiedTriangles = 0
   for (let n = spans.length - 1; n >= 0; n--) {
     const span = spans[n]
     let moments: Moments
@@ -205,19 +237,62 @@ export function prepareFittedIndex(
       }
     }
     summaries[n] = moments
+    let traversalNode: MeshNode | undefined
+    if (traversal) {
+      tick()
+      const copied: MeshTriangle[] = []
+      if (!span.children)
+        for (let i = span.start; i < span.end; i++) {
+          if (copiedTriangles++ % 256 === 0) tick()
+          const vertices = Object.freeze(
+            [0, 1, 2].map((corner) =>
+              Object.freeze(
+                meshPoint(geometry, geometry.indices[offsets[i] + corner])
+              )
+            )
+          ) as MeshTriangle['vertices']
+          const bounds = Object.freeze(
+            boundsOf(vertices).map((axis) => Object.freeze(axis))
+          ) as Bounds
+          copied.push(
+            Object.freeze({
+              offset: offsets[i],
+              component: components[i],
+              vertices,
+              bounds
+            })
+          )
+        }
+      if (!span.bounds) throw new Error('Missing owned source bounds')
+      traversalNode = Object.freeze({
+        bounds: span.bounds,
+        triangles: Object.freeze(copied),
+        ...(span.children
+          ? {
+              children: Object.freeze([
+                ownedNodes[span.children[0]],
+                ownedNodes[span.children[1]]
+              ]) as readonly [MeshNode, MeshNode]
+            }
+          : {})
+      })
+      ownedNodes[n] = traversalNode
+    }
     const proposal = propose(moments, tick),
       source = Object.freeze({
         kind: 'node' as const,
         geometry,
-        index,
-        node: span.node,
+        index: traversal ?? index,
+        node: traversalNode ?? span.node,
         offsets,
         start: span.start,
         end: span.end
       })
     const frame = prepareSourceSpanFrame(source, proposal, tick)
+    if (traversalNode && frame) frames.set(traversalNode, frame)
     entries[n] = Object.freeze({
       node: span.node,
+      traversalNode,
       start: span.start,
       end: span.end,
       proposal,
@@ -225,7 +300,13 @@ export function prepareFittedIndex(
     })
   }
   tick()
+  if (traversal) {
+    traversal.root = ownedNodes[0]
+    Object.freeze(traversal)
+  }
   return Object.freeze({
+    traversal,
+    ...(traversal ? { frameFor: (node: MeshNode) => frames.get(node) } : {}),
     geometry,
     index,
     offsets,
