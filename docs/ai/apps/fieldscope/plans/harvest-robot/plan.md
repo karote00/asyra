@@ -1120,3 +1120,25 @@ overflow controls passed. All 81 focused arithmetic/ray/collision/motion cases,
 421 app tests, typecheck/build, lint and naming pass. Independent review verified
 byte equivalence and compatibility. No numerical behavior, trig model or C point
 semantics changed in this segment.
+
+Next bounded Step Card: exact bounded polynomial scalar evidence, before any C
+point integration. Fixed S19/C20 and |x|<1; common 20! rational Horner coefficients,
+shared roundFraction nearest-even/down/up conversion and monotonic endpoint/zero
+extrema. Names evaluatePolynomialTrig/boundPolynomialTrig belong to the new scalar
+numerical owner. Only domain/scalar-arithmetic.ts, new kinematic-trigonometry.ts,
+their direct tests, the old facade export assertion and API/spec/Inspector/plan.
+Do not change old arithmetic/functions/facade exports, C chain or point semantics.
+Formal missing-owner/converter tests first, then independent rational direct-sum,
+nearest-even tie/normal/subnormal/overflow, interval extrema and analytic remainder
+oracles, invalid/clone-once input and resource rejection. Original numeric/consumer
+tests remain required. All stored and temporary BigInts have fixed 24000-bit limit;
+20!B^20 <=21542 bits, coefficient-sum bound gives about21544-bit Horner intermediates,
+with converter shifts/products checked separately. Fixed profile: normal first and
+repeated plus subnormal first and repeated; 100 poses/800 trig calls each, 1s per
+batch, 10s overall. Record counts/widths and all four costs, no result cache or
+parameter search. Cooperative guards stop at checkpoints, not inside BigInt ops.
+Exceeding a bound stops for bounded replan, never silent fallback or raised limits.
+After focused proofs/profile, run full app unit/type/build/lint/naming and scoped
+independent review. Later C integration separately audits RigidTransform, quaternion
+normalization, source/rest identity and every chain rounding operation; scalar
+success alone cannot close articulated FK/sweep or the pending material decision.
