@@ -1250,3 +1250,39 @@ Close-up browser review must show the same admitted arm/net/crate and fruit stat
 in both languages and desktop/mobile layouts. App unit/typecheck/lint/build,
 naming and current-head CI must pass. M3 completion leaves M4-M6 planned and does
 not certify a real harvesting system.
+
+### Canonical polynomial point model
+
+The next C point model replaces only the numeric trig adapter: each existing
+binary64-rounded `angle / 2` is evaluated as exact S19/C20 followed by nearest-even
+binary64 conversion through the shared scalar owner. This is a specified
+polynomial model, not correctly rounded analytic sine/cosine. Approved half-angles
+remain strictly within the existing scalar domain; no clamp, normalization, model
+flag or runtime legacy fallback is introduced. Other arithmetic association, the
+canonical chain, final-quaternion affine conversion, source/rig identities, rest
+geometry, limits and speeds remain unchanged.
+
+Historical Math-trig evidence remains immutable: preserve the original 56 hashes
+and capture pre-switch numeric outputs for the same fixtures as Float64 bits of
+unique body transforms, frames and tool outputs. A labeled test-only Math adapter
+may reproduce that history through the shared chain; it is not the new-model
+oracle. New point evidence uses polynomial scalar semantics and installed Three
+final affine coefficients. Report old/new quaternion, tool and original source-
+vertex drift and bit changes without presenting tolerance equality as compatibility.
+
+The global mathematical check uses u=2^-53, axis component error delta=2u and
+E0=0, E(k+1)=4(Ek+delta+Ek*delta)+128u for four quaternion compositions. Exact
+rational evaluation gives E4<2^-39 and exact Euclidean norm deviation at most
+2^-38; squared-norm deviation is at most 2^-37+2^-76, below 1e-8. The bound uses
+the shared polynomial truncation/rounding proof and a conservative four-product/
+three-sum component rounding bound, including subnormals; E<1 closes the operand
+magnitude bound of 2. This is not an ECMAScript Math.hypot error guarantee or
+permission to treat a body quaternion as caller base input. Existing admission
+checks remain unchanged and require regression evidence. Raw near-unit quaternions
+still do not imply exact orthogonal affine matrices.
+
+Actual consumers include RobotProjection/bootstrap read-only pose APIs and D
+completed-body ray/collision frames. Their original source and boundary oracles
+must pass or receive independent new-coefficient analysis; never change predicates
+to hide a failed migration. This stage does not prove articulated interval motion,
+material occupancy, intended contact or harvesting quality.

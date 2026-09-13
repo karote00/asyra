@@ -642,3 +642,12 @@ Feature: Harvest robot feasibility and supervised harvesting
     Then the result preserves source ownership without proving that algebra's interval soundness
     And malformed domains are rejected before algebra callbacks
     And no time-correlated path or physical movement is authorized
+
+  Scenario: A canonical point model change preserves honest numerical evidence
+    Given the original robot geometry and approved five joint limits
+    And immutable pre-switch Math-trig point outputs for the declared fixtures
+    When the C numeric adapter uses the specified rounded-half-angle polynomial model
+    Then the original source geometry and rest pose remain preserved
+    And new point and affine evidence is checked against the declared polynomial model
+    And historical bit differences are reported instead of hidden as compatibility
+    And no articulated movement or material contact is admitted by that point evidence

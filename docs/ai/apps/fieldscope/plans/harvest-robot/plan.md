@@ -1227,3 +1227,26 @@ and diff checks pass. Independent scoped numerical/code review found no remainin
 finding. This closes fixed-pose body coefficient adoption only;
 C point trig, material/contact decisions and whole joint-trajectory evidence remain
 separate work.
+
+Next bounded C Step Card: canonical polynomial point integration. Replace only
+the number adapter sin/cos with existing S19/C20 nearest-even results at the actual
+rounded half-angle. Preserve chain, other arithmetic, final affine association,
+source/rig identities and rest; no new API/model flag/cache or D predicate changes.
+Exact boundary is the matching Inspector section and its direct test/snapshot
+allowlist. The historical 56 hashes stay unchanged; first freeze pre-switch unique
+body transforms, frames/tool Float64 outputs, with independent source mapping and
+reference controls. New-model rational/scalar integration and Three source evidence
+are separate from the historical Math adapter. Global norm recurrence is exact
+mathematical evidence, not a Math.hypot or base-admission guarantee.
+
+Future implementation gates: formal missing-integration red, original source/rest,
+all approved limits and half-angle subnormal rounding, actual eight trig calls,
+new-model and old/new drift evidence, actual projection/D ray/surface consumers,
+then full app/type/build/lint/naming and independent review. Four full affine-entry
+batches of 100 poses each, normal/subnormal first and repeated, retain 1 second
+per batch, 10 seconds total and 24000-bit guards. Stop for failed numerical/consumer
+proof or exceeded guards rather than changing tolerance or scope.
+
+This quota-limited segment executes only thin readiness and the pre-switch formal
+baseline, then freezes and waits for root. It does not authorize continuing into
+the production switch, another owner, or unrelated broad gates in the same segment.
