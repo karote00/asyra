@@ -559,3 +559,19 @@ Gates: independent pair inventory, small complete source cases, actual C full
 inventory/bounded profile, hidden layers/dock/tool/crate/tire, same-body contacts,
 mid-interval/unknown/budget/retirement, one FK/placement reuse/zero generation,
 static/sweep controls, full app unit/type/lint/naming/build and independent review.
+
+#### D coverage original-region refinement
+
+Same owner, input/output and allowlist as whole-source coverage above. Actual
+source profiling measured 86,913,056 mesh-surviving triangle pairs; reusing existing
+region bounds leaves 14,371,872 in 57,773 region pairs, with 794 unprepared regions
+retained using mesh bounds. No new source/index producer is justified by this step.
+Allowed: complete origin.regions spans, exact prepared-region identity lookup,
+existing forward arithmetic and one query-local swept bound per placement/region.
+Forbidden: omitting sheets without prepared bounds, relying on region names or
+shape identity alone, rebuilding local bounds, persistent caches or changed
+continuous predicates. Missing region bounds conservatively retain candidates.
+Gates: passive actual-source profile, independent full domain accounting, mixed
+prepared/unprepared region fixture, exact-touch non-exclusion, complete-query
+relation equivalence, budget controls, original mapping/lifetime and work counts.
+No material/contact permission or new movement output is introduced.

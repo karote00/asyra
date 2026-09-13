@@ -589,3 +589,12 @@ Feature: Harvest robot feasibility and supervised harvesting
     And unresolved open-shell material occupancy is not reclassified as free
     And containment and intended support or joint contact still require independent admission
     And no preserved-quality outcome is inferred from surface geometry
+
+  @M3
+  Scenario: Region exclusion preserves every original surface obligation
+    Given a physical mesh containing prepared material regions and unprepared sheets
+    When a fixed-joints coverage query refines strict swept bounds by original region
+    Then every original triangle remains in exactly one accounted pair domain
+    And sheets without prepared bounds remain candidates under the mesh bound
+    And touching or numerically unresolved bounds are not excluded
+    And region exclusion grants no material or intended-contact permission
