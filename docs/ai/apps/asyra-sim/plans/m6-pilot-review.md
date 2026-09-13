@@ -1942,3 +1942,47 @@ CPU-only extraction as a solution to the fixed 500,000-work G4 goal. A useful ne
 owner strategy must reduce actual visited pairs/certificate queries or establish
 an independently valid evidence handoff, not rename arithmetic to lower its bill.
 No new cache, production change or geometry run follows this read-only replan.
+
+### Static optional projection policy - fixed comparison card
+
+No retained experiment has compared omitting static noncardinal node-box
+certificates across the current fixed population. Earlier triangle omission kept
+node projections; gap-cache profiles ran the original certificates. Freeze a
+single control/candidate comparison on complete original roots 114–198, each in
+its own cold context and under the existing 500,000-work/20-second limits.
+Allowlist: this plan and `static-projection-profile.test.ts`, using a test-private
+synchronous distance scope. The candidate returns the already computed world
+AABB gap instead of invoking optional noncardinal projection only in static
+queries. Full interval projection, original triangles, membership, source seeding,
+publication and all remaining solver work remain unchanged and charged. This
+removes actual certificate operations, never their charge alone. Every new
+membership/refinement/triangle query caused by weaker pruning remains paid.
+Soundness review confirms weaker rejection cannot itself establish false
+clearance, but it may alter witnesses, lower bounds, unknowns, subdivision and
+cost. Therefore retain complete PairEvidence equality with the current control;
+write both full results and cost artifacts before asserting equality. Do not
+exempt upper or severity fields after observing a mismatch. A mismatch stops for
+review, as does incomplete coverage or resource exhaustion. At least 20 percent
+less whole paid work is required for further study; candidate measured runtime
+must not exceed 1.2 times the control or the unchanged per-case 20-second guard.
+CPU observations from this single comparison are not a hardware benchmark.
+Both actual pipelines produce their own private seeds; no fabricated seed or
+replayed bare public-argument tuple is accepted. The existing rational/full-source
+oracles remain necessary for any subsequent accepted strategy. No production or
+full-goal run follows this comparison, and no different subset is chosen on failure.
+
+The unique two-strategy comparison is rejected at its material-work gate.
+Complete PairEvidence equality passes, but control 197,028 becomes candidate
+185,288: only 5.96% saved, below the frozen 20%. Removing 49,322 static-axis
+queries adds 37,582 other distance-work units, leaving only 11,740 net saved.
+Convex queries increase from 11,662 to 15,877; observed CPU rises from 6,746 ms
+to 8,031 ms (1.1905 ratio). Interval 69,459, source 105, handoff 19, derivation 16,
+median preparation 3,176, refinement 10,366 and nested membership 138 remain
+identical. The recorded ratio lies below 1.2, but the preceding work assertion
+stops the test before its CPU assertion; no broader performance pass is claimed.
+Preserve the explicit opt-in expected-red comparison and both complete result
+artifacts `tmp/capacity/static-projection-control.json` and
+`tmp/capacity/static-projection-candidate.json`, plus
+`tmp/capacity/static-projection-profile.log`. Run both cases together with
+`SIM_CAPACITY_DIAGNOSTICS=1 yarn workspace @asyra/asyra-sim test:local src/analysis/methods/__tests__/static-projection-profile.test.ts --maxWorkers=1`.
+No production change, alternative subset, adjusted threshold or full run follows.
