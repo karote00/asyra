@@ -35369,6 +35369,7 @@
               "artifact:admitted-proof-contract",
               "artifact:proof-source-snapshot",
               "artifact:admitted-runtime-source",
+              "trusted exact selected runtime identity from full service registration or exact historical correlation",
               "artifact:assessed-proof-evidence",
               "trusted current accepted revision and selected target allocation revision",
               "complete service-owned proof request inventory and admitted completed records",
@@ -35379,6 +35380,7 @@
               "artifact:target-source-assessment"
             ],
             "conditions": [
+              "Select exactly one top-level admitted source artifact or strict three-field sourceIdentity key. The identity-only key is a trusted registration projection or exact immutable historical correlation, not source availability or dispatch authority; null, partial, unknown or double inputs reject. It never replaces per-producer full source/evidence admission or makes an empty inventory pass. Preserve original verdict/currentness policy without source reads or repeated admission.",
               "Consume the exact target history revision, frozen work coverage and admitted case-backed handoffs. Consume the complete trusted request inventory without choosing only green producers; Only identical accepted/target contract and admitted verification-source identities share observations once, with full source, runtime, configuration and request bindings intact; same-contract different verification bytes remain distinct proof roles. Consume combined source-owner verification admission without rehashing source or reports. Current identity changes only staleness and eligibility, not historical verdicts. The assessment owner provides a currentness-only projection from retained result identities, reusing exact verdict objects without walking obligations or evidence; consumers cache it at identity changes and never recompute it on reads or replay. Assess accepted preservation, bounded work and complete integration separately against one captured runtime source and each admitted verification contract. Required producers must settle; missing or contradictory identities never pass. Preserve failed obligations and pending work. Full integration grants eligibility only; source, allocation or accepted-base changes make its current use stale."
             ],
             "bypasses": [
@@ -36299,8 +36301,8 @@
             "id": "runtime-admission-to-target-assessment",
             "from": "serve-proof-actions",
             "to": "assess-target-source",
-            "kind": "required",
-            "predicate": "An explicit target assessment selects the service-owned admitted source and complete retained proof requests; source admission has completed independently of assessment.",
+            "kind": "conditional",
+            "predicate": "Consume current selected or completed producer source artifacts when supplied; each producer admission remains required for its observation, while a trusted registered identity-only selection does not require a currently available selected artifact.",
             "producedArtifacts": [
               "artifact:admitted-runtime-source"
             ]
@@ -36329,8 +36331,8 @@
             "id": "target-source-to-assessment",
             "from": "capture-proof-source",
             "to": "assess-target-source",
-            "kind": "required",
-            "predicate": "The source owner supplies one immutable runtime identity for all participating proofs.",
+            "kind": "conditional",
+            "predicate": "Consume source-owned full snapshots when available for selected or completed producer artifacts. A trusted registered identity-only comparison key does not rebuild or replace these source admissions.",
             "producedArtifacts": [
               "artifact:proof-source-snapshot"
             ]

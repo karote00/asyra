@@ -712,7 +712,8 @@ Unknown impact uses that complete conservative scope, never an empty exemption.
 
 The internal `assessTargetSource` input is `{target, allocationRevision,
 acceptedContract, targetContract, acceptedVerificationSourceDigest,
-targetVerificationSourceDigest, sourceAdmission, proofRequests, current}`.
+targetVerificationSourceDigest, sourceAdmission, proofRequests, current}`, with
+`sourceIdentity` as an alternative to the top-level `sourceAdmission`.
 `target` is the target owner's immutable artifact. Select its exact history entry
 whose `revision` equals `allocationRevision`; use that entry's frozen `state`,
 the target's `obligations`, `id`, `targetRevision` and `acceptedBaseline`.
@@ -722,8 +723,30 @@ The selected flow and obligation inventory must agree with the admitted target
 contract. Missing, conflicting or ambiguous selections reject the request.
 The assessor consumes this allocation; it does not rebuild coverage from tasks.
 
-`sourceAdmission` is the source-owner-validated, service-owned artifact described
-below. `proofRequests` is the trusted service's complete retained request
+Exactly one of the top-level own fields `sourceAdmission` and `sourceIdentity`
+must be present. `sourceAdmission` is the source-owner-validated, service-owned
+artifact described below. The alternative `sourceIdentity` has exactly
+`{repository, head, runtimeSourceDigest}`: repository is a nonempty string, head
+is null or a nonempty string matching the retained source value, and runtime digest
+is a lowercase 64-hex fingerprint. Missing, null, partial, unknown-key or double
+inputs reject rather than falling back. Both inputs select the same three-field
+runtime comparison key; neither re-admits source.
+
+The identity-only input comes only from a trusted service projection of the full
+source artifact at complete request registration, or from the complete immutable
+registered tuple correlated with exact retained source-owner history at startup.
+It is not a source-availability claim, a replacement for missing producer
+admission, or authority to dispatch. Clients cannot provide it and latest/equal-
+digest guesses cannot construct it. Historical requests with no producer may
+remain unknown or pending; this key alone cannot make any obligation pass. Every
+participating producer still requires its own complete source and evidence
+admission below. This alternative preserves historical verification and separates
+currentness after the original task source retires, without promoting public JSON
+to an admitted artifact or rehashing historical source. The service consumer is a
+subsequent owner slice; this pure input does not enable task-source assessment
+requests by itself.
+
+`proofRequests` is the trusted service's complete retained request
 inventory for the selected assessment, not a client-selected list of green
 results. The two required verification digests come from the exact accepted-version
 and target-review references resolved by the service, never from contract digest
