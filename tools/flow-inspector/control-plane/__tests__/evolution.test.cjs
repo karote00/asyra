@@ -5,7 +5,8 @@ const { admitContract } = require('../contracts.cjs')
 const {
   createHistory,
   compareVersion,
-  decideVersion
+  decideVersion,
+  acceptTargetBaseline
 } = require('../evolution.cjs')
 const manifest = require('../../../../packages/factory/flow-contracts.json')
 const architecture = require('../../inspectors/transaction-flow-inspector.data.cjs')
@@ -29,6 +30,69 @@ function version(edit) {
 }
 const review = (base, candidate, options) =>
   compareVersion(createHistory(base), candidate, options)
+
+const targetId = '11111111-1111-4111-8111-111111111111'
+const assessmentId = '22222222-2222-4222-8222-222222222222'
+const requestId = '33333333-3333-4333-8333-333333333333'
+function targetAssessment(base, candidate, comparison) {
+  const source = {
+    repository: '/tmp/offline-target',
+    head: 'offline-head',
+    runtimeSourceDigest: 'b'.repeat(64)
+  }
+  const identity = {
+    targetId,
+    allocationRevision: 3,
+    acceptedBaseline: { revision: 1, contractDigest: base.contract.digest },
+    source
+  }
+  return {
+    id: assessmentId,
+    actor: actor.id,
+    phase: 'completed',
+    pins: {
+      acceptedVersion: { revision: 1, contractDigest: base.contract.digest },
+      targetVerification: {
+        reviewId: comparison.id,
+        candidateDigest: comparison.candidateDigest
+      }
+    },
+    projection: {
+      format: 2,
+      ...identity,
+      current: true,
+      eligible: true,
+      staleReasons: [],
+      accepted: { ...identity, status: 'passed' },
+      targetContract: {
+        ...identity,
+        contractDigest: candidate.contract.digest,
+        requiredObligationIds: candidate.contract.cases.map((item) => item.id),
+        cases: candidate.contract.cases.map((item) => ({
+          id: item.id,
+          status: 'passed'
+        })),
+        blockers: [],
+        status: 'passed'
+      },
+      works: [
+        {
+          id: 'work-a',
+          ...identity,
+          status: 'passed',
+          own: { status: 'passed' },
+          prerequisites: { status: 'passed' }
+        }
+      ],
+      integration: {
+        ...identity,
+        contractDigest: candidate.contract.digest,
+        pending: [],
+        status: 'passed'
+      }
+    }
+  }
+}
 
 test('stable identity exposes rename, move and content change independently', () => {
   const base = version()
@@ -217,6 +281,213 @@ test('acceptance binds exact base, all observed bytes, actor, reason and replay 
   )
   assert.equal(rejected.revision, 1)
   assert.deepEqual(rejected.versions, history.versions)
+})
+
+test('target baseline acceptance binds complete current assessment and keeps eligibility separate from the explicit decision', () => {
+  const base = version(),
+    candidate = version((manifest) => {
+      manifest.flows[0].goal += ' integrated'
+    }),
+    history = createHistory(base),
+    comparison = compareVersion(history, candidate),
+    assessment = targetAssessment(base, candidate, comparison),
+    request = {
+      requestId,
+      targetId,
+      assessmentId,
+      reason: 'Accept the complete offline integrated target',
+      retirement: []
+    }
+  const before = JSON.stringify({ history, assessment })
+  assert.equal(assessment.projection.eligible, true)
+  assert.equal(history.revision, 1)
+  const accepted = acceptTargetBaseline(
+    history,
+    comparison,
+    candidate,
+    assessment,
+    request,
+    actor
+  )
+  assert.equal(accepted.revision, 2)
+  assert.equal(
+    accepted.versions.at(-1).contract.digest,
+    candidate.contract.digest
+  )
+  assert.deepEqual(accepted.decisions.at(-1).targetAcceptance, {
+    format: 1,
+    requestId,
+    targetId,
+    assessmentId,
+    allocationRevision: 3,
+    acceptedBaseline: assessment.projection.acceptedBaseline,
+    acceptedVersion: assessment.pins.acceptedVersion,
+    targetVerification: assessment.pins.targetVerification,
+    contractDigest: candidate.contract.digest,
+    source: assessment.projection.source,
+    resultingMappingRevision: 2,
+    resultingVersionRevision: 2
+  })
+  assert.equal(JSON.stringify({ history, assessment }), before)
+  assert.ok(Object.isFrozen(accepted))
+})
+
+test('authorized exact target acceptance replay precedes currentness work but never authorization', () => {
+  const base = version(),
+    candidate = version((manifest) => {
+      manifest.flows[0].goal += ' integrated'
+    }),
+    history = createHistory(base),
+    comparison = compareVersion(history, candidate),
+    assessment = targetAssessment(base, candidate, comparison),
+    request = {
+      requestId,
+      targetId,
+      assessmentId,
+      reason: 'Accept the complete offline integrated target',
+      retirement: []
+    },
+    accepted = acceptTargetBaseline(
+      history,
+      comparison,
+      candidate,
+      assessment,
+      request,
+      actor
+    )
+  const stale = structuredClone(assessment)
+  stale.projection.current = false
+  stale.projection.eligible = false
+  assert.strictEqual(
+    acceptTargetBaseline(
+      accepted,
+      comparison,
+      candidate,
+      stale,
+      request,
+      actor
+    ),
+    accepted
+  )
+  assert.throws(
+    () =>
+      acceptTargetBaseline(accepted, comparison, candidate, stale, request, {
+        id: actor.id,
+        capabilities: []
+      }),
+    /authorized/
+  )
+  assert.throws(
+    () =>
+      acceptTargetBaseline(
+        accepted,
+        comparison,
+        candidate,
+        stale,
+        { ...request, reason: 'Changed replay' },
+        actor
+      ),
+    /request identity/
+  )
+})
+
+test('target acceptance rejects incomplete evidence and generic target-pinned acceptance', () => {
+  const base = version(),
+    candidate = version((manifest) => {
+      manifest.flows[0].goal += ' integrated'
+    }),
+    history = createHistory(base),
+    comparison = compareVersion(history, candidate),
+    request = {
+      requestId,
+      targetId,
+      assessmentId,
+      reason: 'Accept the complete offline integrated target',
+      retirement: []
+    }
+  assert.throws(
+    () =>
+      decideVersion(
+        history,
+        comparison,
+        candidate,
+        { decision: 'accept', reason: 'Bypass target assessment' },
+        actor,
+        { targetPinned: true }
+      ),
+    /target assessment/
+  )
+  for (const mutate of [
+    (value) => (value.format = 1),
+    (value) => (value.current = false),
+    (value) => (value.targetContract.status = 'failed'),
+    (value) => (value.accepted.status = 'failed'),
+    (value) => value.integration.pending.push('pending.case'),
+    (value) => (value.works[0].prerequisites.status = 'unknown')
+  ]) {
+    const assessment = targetAssessment(base, candidate, comparison)
+    mutate(assessment.projection)
+    assert.throws(
+      () =>
+        acceptTargetBaseline(
+          history,
+          comparison,
+          candidate,
+          assessment,
+          request,
+          actor
+        ),
+      /assessment/
+    )
+    assert.equal(history.revision, 1)
+  }
+})
+
+test('target acceptance requires separate exact retirement authority', () => {
+  const base = version((value) => {
+      value.flows[0].cases.push({
+        ...value.flows[0].cases[0],
+        id: 'retired.target.case',
+        testName: 'retired target proof'
+      })
+    }),
+    candidate = version(),
+    history = createHistory(base),
+    comparison = compareVersion(history, candidate),
+    assessment = targetAssessment(base, candidate, comparison),
+    request = {
+      requestId,
+      targetId,
+      assessmentId,
+      reason: 'Retire the exact removed target obligation',
+      retirement: ['retired.target.case']
+    }
+  assert.throws(
+    () =>
+      acceptTargetBaseline(
+        history,
+        comparison,
+        candidate,
+        assessment,
+        request,
+        {
+          id: actor.id,
+          capabilities: ['decide-contract']
+        }
+      ),
+    /authorized/
+  )
+  const accepted = acceptTargetBaseline(
+    history,
+    comparison,
+    candidate,
+    assessment,
+    request,
+    actor
+  )
+  assert.deepEqual(accepted.decisions.at(-1).retirement, [
+    'retired.target.case'
+  ])
 })
 
 test('duplicate or malformed selector identity cannot create accepted evidence', () => {

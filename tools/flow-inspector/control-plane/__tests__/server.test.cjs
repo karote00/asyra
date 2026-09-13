@@ -408,6 +408,23 @@ test('HTTP target assessment actions retain service authority and cached results
     const completed = await service.waitTargetAssessment(id)
     assert.equal(completed.result.accepted.status, 'passed')
     assert.equal(completed.result.integration.status, 'pending')
+    const acceptance = {
+      requestId: randomUUID(),
+      targetId: target.id,
+      assessmentId: completed.id,
+      reason: 'HTTP must forward only the explicit target acceptance request',
+      retirement: []
+    }
+    assert.equal(
+      (
+        await post('/api/targets/accept', acceptance, {
+          'content-type': 'application/json'
+        })
+      ).status,
+      403
+    )
+    assert.equal((await post('/api/targets/accept', acceptance)).status, 409)
+    assert.equal(service.state().evolution.revision, 2)
     const reads = t.mock.method(fs, 'readFileSync')
     const assess = t.mock.method(targetEvidenceOwner, 'assessTargetSource')
     const project = t.mock.method(

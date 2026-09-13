@@ -104,6 +104,8 @@ async function connect(repositoryRoot, origin) {
       targets: async () => service.targets(),
       getTarget: async (id) => service.getTarget(id),
       decideTarget: async (body) => service.decideTarget(body, LOCAL_ACTOR),
+      acceptTargetBaseline: async (body) =>
+        service.acceptTargetBaseline(body, LOCAL_ACTOR),
       getReview: async (id) => service.getReview(id),
       prepareScopedReview: (id, selection) =>
         service.prepareScopedReview(id, selection, LOCAL_ACTOR),
@@ -173,6 +175,7 @@ async function connect(repositoryRoot, origin) {
     targets: () => request('/api/targets'),
     getTarget: (id) => request('/api/targets/' + encodeURIComponent(id)),
     decideTarget: (body) => request('/api/targets/decide', body),
+    acceptTargetBaseline: (body) => request('/api/targets/accept', body),
     getReview: (id) =>
       request('/api/tasks/' + encodeURIComponent(id) + '/review'),
     prepareScopedReview: (id, selection) =>
@@ -261,6 +264,7 @@ async function main(
     targets: [0],
     'target-show': [1],
     'target-decide': [1],
+    'target-accept': [1],
     serve: [0],
     candidate: [0],
     ci: [0],
@@ -289,7 +293,7 @@ async function main(
     (command === 'serve' && origin)
   )
     throw new Error(
-      'Usage: cli.cjs [--url loopback-origin] serve | targets | target-show target-id | target-decide request.json | target-assess request.json | target-assessments | target-assessment-show assessment-id | target-assessment-wait assessment-id | target-assessment-cancel assessment-id | verify [flow-id] | negative [flow-id] | scenario scenario-id [flow-id] | prove | status | show attempt-id | cancel attempt-id | mapping-diff | mapping-accept review-id reason | mapping-reject review-id reason | candidate | ci | ci-trial | ci-demo [scenario-id] | pr-prepare task-id | pr-prepare-scoped task-id attempt-id assessment-id | pr-show task-id | pr-confirm task-id preview-digest confirm | pr-refresh task-id | task-start request.json | task-show task-id | task-changes task-id | task-wait task-id | task-cancel task-id | task-stop task-id | task-handoff task-id | task-revoke task-id | task-resume task-id scenario | shared | ci-ingest envelope.json | contract-diff attempt-id [relations.json] | contract-accept review-id reason [retirement.json] | contract-reject review-id reason. Target assessment start/wait print the full settled record and exit 0 only when completed and currently eligible; inspection/control success is independent of verification outcome.'
+      'Usage: cli.cjs [--url loopback-origin] serve | targets | target-show target-id | target-decide request.json | target-accept request.json | target-assess request.json | target-assessments | target-assessment-show assessment-id | target-assessment-wait assessment-id | target-assessment-cancel assessment-id | verify [flow-id] | negative [flow-id] | scenario scenario-id [flow-id] | prove | status | show attempt-id | cancel attempt-id | mapping-diff | mapping-accept review-id reason | mapping-reject review-id reason | candidate | ci | ci-trial | ci-demo [scenario-id] | pr-prepare task-id | pr-prepare-scoped task-id attempt-id assessment-id | pr-show task-id | pr-confirm task-id preview-digest confirm | pr-refresh task-id | task-start request.json | task-show task-id | task-changes task-id | task-wait task-id | task-cancel task-id | task-stop task-id | task-handoff task-id | task-revoke task-id | task-resume task-id scenario | shared | ci-ingest envelope.json | contract-diff attempt-id [relations.json] | contract-accept review-id reason [retirement.json] | contract-reject review-id reason. Target assessment start/wait print the full settled record and exit 0 only when completed and currently eligible; target-accept is the separate explicit baseline mutation; inspection/control success is independent of verification outcome.'
     )
   if (command === 'serve') {
     const server = await startServer(repositoryRoot, {
@@ -350,13 +354,19 @@ async function main(
           : 1
       return 0
     }
-    if (['targets', 'target-show', 'target-decide'].includes(command)) {
+    if (
+      ['targets', 'target-show', 'target-decide', 'target-accept'].includes(
+        command
+      )
+    ) {
       let value
       if (command === 'targets') value = await client.targets()
       if (command === 'target-show')
         value = await client.getTarget(parameters[0])
       if (command === 'target-decide')
         value = await client.decideTarget(inputFile(parameters[0]))
+      if (command === 'target-accept')
+        value = await client.acceptTargetBaseline(inputFile(parameters[0]))
       write(JSON.stringify(value, null, 2))
       return 0
     }

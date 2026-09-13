@@ -21,6 +21,7 @@ let directory,
   acceptedProof,
   targetProof,
   targetFailure,
+  targetOtherFlowFailure,
   sameContractProof,
   sameContractFailure
 
@@ -145,6 +146,22 @@ test.before(async () => {
       .map((item) => item.id),
     ['deferred.outcome']
   )
+  const otherFlowFailure = original.replace(
+    'expect(cancelled.history).toBe(0)',
+    'expect(cancelled.history).toBe(1)'
+  )
+  assert.notEqual(otherFlowFailure, original)
+  fs.writeFileSync(assertions, otherFlowFailure)
+  targetOtherFlowFailure = (
+    await produce('target-other-flow-failure', 'failed')
+  ).request
+  fs.writeFileSync(assertions, original)
+  assert.deepEqual(
+    targetOtherFlowFailure.record.evidence.cases
+      .filter((item) => item.status === 'failed')
+      .map((item) => item.id),
+    ['cancel.outcome']
+  )
   assert.equal(
     targetFailure.sourceAdmission.runtimeSource.digest,
     acceptedProof.sourceAdmission.runtimeSource.digest
@@ -216,6 +233,7 @@ function input({
   )
   const sourceAdmission = proof.sourceAdmission
   return {
+    format: 2,
     target: owner.get(id),
     allocationRevision: 1,
     acceptedContract,
@@ -244,6 +262,12 @@ test('real distinct-contract producers prove exact accepted preservation, bounde
   const value = input()
   const before = JSON.stringify(value)
   const result = assessTargetSource(value)
+  assert.equal(result.format, 2)
+  assert.equal(result.targetContract.status, 'passed')
+  assert.deepEqual(
+    result.targetContract.requiredObligationIds,
+    targetContract.cases.map((item) => item.id)
+  )
   assert.equal(result.accepted.status, 'passed')
   assert.equal(
     result.works.every((work) => work.status === 'passed'),
@@ -262,6 +286,43 @@ test('real distinct-contract producers prove exact accepted preservation, bounde
   assert.ok(Object.isFrozen(result))
   assert.ok(Object.isFrozen(result.works))
   assert.ok(Object.isFrozen(result.works[0].own))
+  assert.strictEqual(
+    result.integration.cases[0],
+    result.targetContract.cases.find(
+      (item) => item.id === result.integration.cases[0].id
+    )
+  )
+})
+
+test('a non-target candidate flow failure preserves target eligibility but denies complete candidate-contract authority', () => {
+  const value = clone(input())
+  value.proofRequests[1] = targetOtherFlowFailure
+  value.targetVerificationSourceDigest =
+    targetOtherFlowFailure.verificationSourceDigest
+  const result = assessTargetSource(value)
+  assert.equal(result.accepted.status, 'passed')
+  assert.equal(result.integration.status, 'passed')
+  assert.equal(result.eligible, true)
+  assert.equal(result.targetContract.status, 'failed')
+  assert.deepEqual(
+    result.targetContract.cases
+      .filter((item) => item.status === 'failed')
+      .map((item) => item.id),
+    ['cancel.outcome']
+  )
+})
+
+test('format 1 remains readable without complete candidate-contract acceptance authority', () => {
+  const value = input()
+  value.format = 1
+  const result = assessTargetSource(value)
+  assert.equal(result.format, 1)
+  assert.equal(Object.hasOwn(result, 'targetContract'), false)
+  for (const format of [undefined, 0, 3]) {
+    const invalid = input()
+    invalid.format = format
+    assert.throws(() => assessTargetSource(invalid), /format/)
+  }
 })
 
 test('explicit pending allocation keeps integration pending while a source-proven independent promise passes', () => {

@@ -1380,6 +1380,180 @@ async function assessmentFixture(
 }
 
 test(
+  'complete offline candidate proof remains eligible until exact authorized target baseline acceptance commits atomically',
+  { timeout: 50000 },
+  async (t) => {
+    const f = await assessmentFixture()
+    let service = f.service
+    try {
+      const target = service.getTarget(f.request.targetId)
+      const reviewId = target.targetVerification.reviewId
+      const beforeGeneric = JSON.stringify(service.state())
+      assert.throws(
+        () =>
+          service.decideEvolution(
+            {
+              id: reviewId,
+              decision: 'accept',
+              reason: 'Must not bypass target assessment'
+            },
+            LOCAL_ACTOR
+          ),
+        /target assessment/i
+      )
+      assert.equal(JSON.stringify(service.state()), beforeGeneric)
+      const assessment = await service.waitTargetAssessment(
+        service.startTargetAssessment(f.request, LOCAL_ACTOR)
+      )
+      assert.equal(assessment.result.format, 2)
+      assert.equal(assessment.result.targetContract.status, 'passed')
+      assert.equal(assessment.projection.eligible, true)
+      const request = {
+        requestId: randomUUID(),
+        targetId: target.id,
+        assessmentId: assessment.id,
+        reason: 'Accept complete owner-produced offline integration',
+        retirement: []
+      }
+      const mappingFile = path.join(f.runs, 'mapping.json')
+      const diskBefore = fs.readFileSync(mappingFile, 'utf8')
+      const liveBefore = JSON.stringify(service.state())
+      const rename = fs.renameSync
+      let fail = true
+      const write = t.mock.method(fs, 'renameSync', (from, to) => {
+        if (fail && to === mappingFile) {
+          fail = false
+          throw new Error('Injected mapping rename failure')
+        }
+        return rename(from, to)
+      })
+      assert.throws(
+        () => service.acceptTargetBaseline(request, LOCAL_ACTOR),
+        /rename failure/
+      )
+      assert.equal(fs.readFileSync(mappingFile, 'utf8'), diskBefore)
+      assert.equal(JSON.stringify(service.state()), liveBefore)
+      write.mock.restore()
+      const accepted = service.acceptTargetBaseline(request, LOCAL_ACTOR)
+      assert.equal(accepted.targetId, target.id)
+      assert.equal(accepted.assessmentId, assessment.id)
+      assert.equal(accepted.resultingVersionRevision, 3)
+      assert.equal(accepted.resultingBaseline.revision, 3)
+      assert.equal(service.contract().digest, target.targetRevision)
+      assert.equal(
+        service.getTargetAssessment(assessment.id).projection.current,
+        false
+      )
+      assert.deepEqual(
+        service.state().evolution.decisions.at(-1).targetAcceptance,
+        accepted.reference
+      )
+      assert.deepEqual(
+        service.acceptTargetBaseline(request, LOCAL_ACTOR),
+        accepted
+      )
+      assert.throws(
+        () =>
+          service.acceptTargetBaseline(request, {
+            id: LOCAL_ACTOR.id,
+            capabilities: []
+          }),
+        /authorized/
+      )
+      await service.close()
+      service = createService(f.repository, { directory: f.runs })
+      const reads = t.mock.method(sourceOwner, 'verifyRetainedSnapshotBytes')
+      assert.deepEqual(
+        service.acceptTargetBaseline(request, LOCAL_ACTOR),
+        accepted
+      )
+      assert.equal(reads.mock.callCount(), 0)
+      assert.equal(service.contract().digest, target.targetRevision)
+      await service.close()
+      const mapping = JSON.parse(fs.readFileSync(mappingFile, 'utf8'))
+      mapping.evolution.history.decisions.at(
+        -1
+      ).targetAcceptance.source.runtimeSourceDigest = '0'.repeat(64)
+      fs.writeFileSync(mappingFile, JSON.stringify(mapping))
+      assert.throws(
+        () => createService(f.repository, { directory: f.runs }),
+        /target acceptance/i
+      )
+    } finally {
+      await service.close()
+      fs.rmSync(f.dir, { recursive: true, force: true })
+    }
+  }
+)
+
+test(
+  'assessment formats preserve legacy history without downgrade acceptance authority',
+  { timeout: 50000 },
+  async () => {
+    const f = await assessmentFixture(false)
+    let service = f.service
+    const assessment = await service.waitTargetAssessment(
+      service.startTargetAssessment(f.request, LOCAL_ACTOR)
+    )
+    const request = {
+      requestId: randomUUID(),
+      targetId: f.request.targetId,
+      assessmentId: assessment.id,
+      reason: 'Attempt legacy acceptance',
+      retirement: []
+    }
+    const file = path.join(f.runs, 'target-assessments.json')
+    try {
+      await service.close()
+      const original = JSON.parse(fs.readFileSync(file, 'utf8'))
+      const legacy = structuredClone(original)
+      legacy.format = 1
+      legacy.records[0].format = 1
+      legacy.records[0].result.format = 1
+      delete legacy.records[0].result.targetContract
+      fs.writeFileSync(file, JSON.stringify(legacy))
+      service = createService(f.repository, { directory: f.runs })
+      assert.equal(
+        Object.hasOwn(
+          service.getTargetAssessment(assessment.id).result,
+          'targetContract'
+        ),
+        false
+      )
+      assert.throws(
+        () => service.acceptTargetBaseline(request, LOCAL_ACTOR),
+        /format 2|assessment/i
+      )
+      await service.close()
+      for (const mutate of [
+        (saved) => delete saved.records[0].format,
+        (saved) => {
+          saved.records[0].format = 1
+          saved.records[0].result.format = 1
+          saved.records[0].result.targetContract = { status: 'passed' }
+        },
+        (saved) => {
+          saved.records[0].format = 2
+          saved.records[0].result.format = 2
+          delete saved.records[0].result.targetContract
+        }
+      ]) {
+        const invalid = structuredClone(original)
+        mutate(invalid)
+        fs.writeFileSync(file, JSON.stringify(invalid))
+        assert.throws(
+          () => createService(f.repository, { directory: f.runs }),
+          /assessment|format/i
+        )
+      }
+    } finally {
+      if (service) await service.close().catch(() => undefined)
+      fs.rmSync(f.dir, { recursive: true, force: true })
+    }
+  }
+)
+
+test(
   'current offline assessment admits exact dependent work and survives restart without accepting the baseline',
   { timeout: 50000 },
   async (t) => {

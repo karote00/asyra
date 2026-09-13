@@ -767,6 +767,60 @@ test('assessment CLI waits for real local and remote production while preserving
         /Invalid/
       )
     }
+    fs.writeFileSync(assertions, bytes + '\n')
+    const passingProof = await service.wait(
+      service.start({ mode: 'candidate' }, LOCAL_ACTOR)
+    )
+    assert.equal(passingProof.evidence.status, 'passed')
+    const passingReview = service.prepareEvolution(
+      { attemptId: passingProof.id },
+      LOCAL_ACTOR
+    )
+    const { target: acceptanceTarget } = makeTarget(passingReview)
+    await assert.rejects(
+      () =>
+        invoke(
+          ['contract-accept', passingReview.id, 'Cannot bypass target proof'],
+          true
+        ),
+      /target assessment/i
+    )
+    const acceptanceAssessmentRequest = {
+      requestId: randomUUID(),
+      targetId: acceptanceTarget.id,
+      allocationRevision: 1,
+      sourceAttemptId: passingProof.id
+    }
+    fs.writeFileSync(input, JSON.stringify(acceptanceAssessmentRequest))
+    const eligible = await invoke(['target-assess', 'assessment.json'], true)
+    assert.equal(eligible.code, 0)
+    assert.equal(eligible.value.projection.targetContract.status, 'passed')
+    assert.equal(service.contract().digest, contract.digest)
+    const acceptanceFile = path.join(repository, 'target-acceptance.json')
+    const acceptanceRequest = {
+      requestId: randomUUID(),
+      targetId: acceptanceTarget.id,
+      assessmentId: eligible.value.id,
+      reason: 'Accept exact complete offline CLI target',
+      retirement: []
+    }
+    fs.writeFileSync(acceptanceFile, JSON.stringify(acceptanceRequest))
+    await server.close()
+    server = undefined
+    const localAcceptance = await invoke([
+      'target-accept',
+      'target-acceptance.json'
+    ])
+    assert.equal(localAcceptance.code, 0)
+    assert.equal(localAcceptance.value.assessmentId, eligible.value.id)
+    server = await startServer(repository, { url: 'http://127.0.0.1:0' })
+    service = server.service
+    const remoteReplay = await invoke(
+      ['target-accept', 'target-acceptance.json'],
+      true
+    )
+    assert.deepEqual(remoteReplay, localAcceptance)
+    await assert.rejects(() => invoke(['target-accept'], true), /Usage/)
   } finally {
     if (server) await server.close()
     else await service.close()

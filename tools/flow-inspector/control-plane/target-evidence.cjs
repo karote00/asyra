@@ -43,6 +43,7 @@ function projectTargetAssessmentCurrentness(result, current) {
 
 function assessTargetSource(input) {
   const {
+    format,
     target,
     allocationRevision,
     acceptedContract,
@@ -54,6 +55,8 @@ function assessTargetSource(input) {
     proofRequests,
     current
   } = input
+  if (![1, 2].includes(format))
+    throw new Error('Target assessment: invalid result format')
   const identityOnly = Object.hasOwn(input, 'sourceIdentity')
   const selected = identityOnly
     ? sourceIdentity
@@ -112,6 +115,7 @@ function assessTargetSource(input) {
     source
   }
   const observations = new Map()
+  const assessedCases = new Map()
   const requested = new Set()
   const requestIds = new Map()
   for (const request of proofRequests)
@@ -252,25 +256,32 @@ function assessTargetSource(input) {
     const blockers = [...globalBlockers]
     const results = cases.map((item) => {
       const found = observations.get(proofIdentity + ':' + item.id) ?? []
-      const reasons = found.flatMap((value) => value.blockers)
-      if (found.length > 1)
-        reasons.push('Multiple producers for one obligation')
       const missing = requested.has(proofIdentity + ':' + item.flowId)
         ? 'unknown'
         : absent
-      if (!found.length && missing === 'unknown')
-        reasons.push('Required proof is unavailable')
-      blockers.push(...reasons)
-      return {
-        id: item.id,
-        status: statusFor(
-          found.map((value) => value.status),
-          reasons,
-          missing
-        ),
-        blockers: reasons,
-        evidence: found.map((value) => value.evidence)
+      const key =
+        proofIdentity + ':' + item.id + ':' + (found.length ? '' : missing)
+      let result = assessedCases.get(key)
+      if (!result) {
+        const reasons = found.flatMap((value) => value.blockers)
+        if (found.length > 1)
+          reasons.push('Multiple producers for one obligation')
+        if (!found.length && missing === 'unknown')
+          reasons.push('Required proof is unavailable')
+        result = {
+          id: item.id,
+          status: statusFor(
+            found.map((value) => value.status),
+            reasons,
+            missing
+          ),
+          blockers: reasons,
+          evidence: found.map((value) => value.evidence)
+        }
+        assessedCases.set(key, result)
       }
+      blockers.push(...result.blockers)
+      return result
     })
     return {
       ...identity,
@@ -291,6 +302,14 @@ function assessTargetSource(input) {
     acceptedContract.cases,
     acceptedVerificationSourceDigest
   )
+  const completeTargetContract =
+    format === 2
+      ? assessCases(
+          targetContract,
+          targetContract.cases,
+          targetVerificationSourceDigest
+        )
+      : null
   const worksById = new Map(state.works.map((work) => [work.id, work]))
   const ownById = new Map(
     state.works.map((work) => {
@@ -450,7 +469,16 @@ function assessTargetSource(input) {
   )
   return projectTargetAssessmentCurrentness(
     freeze(
-      structuredClone({ format: 1, ...identity, accepted, works, integration })
+      structuredClone({
+        format,
+        ...identity,
+        accepted,
+        ...(completeTargetContract
+          ? { targetContract: completeTargetContract }
+          : {}),
+        works,
+        integration
+      })
     ),
     current
   )

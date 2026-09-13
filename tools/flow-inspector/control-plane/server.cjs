@@ -343,6 +343,8 @@ async function startServer(
         }
         if (route.pathname === '/api/targets/decide')
           return send(200, service.decideTarget(body, LOCAL_ACTOR))
+        if (route.pathname === '/api/targets/accept')
+          return send(200, service.acceptTargetBaseline(body, LOCAL_ACTOR))
         if (route.pathname === '/api/tasks')
           return send(202, { id: service.startTask(body, LOCAL_ACTOR) })
         const taskControl = route.pathname.match(

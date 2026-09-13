@@ -2,9 +2,10 @@
 
 ## Status and decision
 
-Date: 2026-09-10. Direction approved. The first bounded target/work slice is
-implemented on 2026-09-12; this does not complete the broader architecture or
-Phase 5/6 work. Its initial scope is one local owner,
+Date: 2026-09-10. Direction approved. The bounded target/work slice is
+implemented on 2026-09-12, followed by source-bound integration and explicit
+local acceptance on 2026-09-13; this does not complete the broader architecture
+or Phase 5/6 work. Its initial scope is one local owner,
 one repository and one evolving flow split into several tasks and PRs.
 Parallel agent scheduling, multiple repositories and team accounts are excluded.
 
@@ -40,15 +41,13 @@ Permanent owner, API/CLI and desktop/tablet/narrow browser cases cover this scop
 The [bounded closeout](completed/flow-inspector-target-work-admission-closeout.md)
 records first-slice completion without closing this plan.
 
-The strict candidate verifier remains unchanged. Dependencies stay unconfirmed,
-dependent work stays blocked and complete targets stay pending. Bounded
-assessments use existing strict all-flow task verdicts; broader scoped verification,
-source-bound prerequisite verification, full cross-PR integration assessment and
-explicit target-baseline acceptance below remain unimplemented. This slice covers
-target/work admission and its usable projections only; it does not close the
-full required product cases or DoD of this plan.
+The strict candidate verifier remains unchanged. The initial slice keeps
+dependencies unconfirmed, dependent work blocked and complete targets pending.
+Later owner slices add source-bound prerequisite admission, complete one-source
+integration assessment and the explicit target-baseline action below without
+changing that initial target/work contract.
 
-## Active next owner slice - source-bound assessment
+## Implemented source-bound assessment and acceptance owners
 
 The [target source assessment contract](../CORE_PROOF.md#target-source-assessment)
 and `assess-target-source` separate accepted preservation, bounded
@@ -88,9 +87,13 @@ The first assessment-bound admission consumer now reserves dependent work from o
 explicitly selected current retained assessment across the service, API, CLI and
 Board. It preserves the exact allocation, source and prerequisite decision while
 requiring live source authority at task start, and leaves the target pending and the
-baseline unchanged. Full runtime coverage,
-whole-target offline integration and explicit target-baseline acceptance remain
-subsequent slices. Ordinary composition does not cover
+baseline unchanged. The next integrated-target consumer now requires a format-2
+assessment with accepted preservation, every work and prerequisite, the complete
+candidate contract and whole-target integration passing at one exact retained
+source. Only a separate authorized action atomically appends the accepted version;
+authorized replay is idempotent across restart, and generic target-pinned contract
+acceptance is refused. HTTP, local/attached CLI and Board expose the same exact
+request and retained decision. Full runtime coverage remains open. Ordinary composition does not cover
 undeclared generated wrappers; the fixed four-package capture scope also does
 not close the original Factory/collaboration/UI cross-PR product cases.
 

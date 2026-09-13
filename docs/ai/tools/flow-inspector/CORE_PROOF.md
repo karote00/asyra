@@ -480,7 +480,8 @@ without merging; production changes are delivered separately.
 This bounded local slice supports one repository and one human. A development
 target is distinct from a flow contract, work item, task, attempt and PR. The
 multi-PR direction in PR 188 is not itself runtime capability. Full integration
-assessment and explicit new-baseline acceptance remain separate future slices.
+assessment and explicit new-baseline acceptance are separate owners implemented
+later in this contract; target creation alone still grants neither.
 
 A target binds one admitted flow, a target contract revision (its content digest,
 resolved from retained accepted versions or prepared contract-evolution reviews),
@@ -633,7 +634,8 @@ Strict all-flow candidate verification and legacy PR preparation remain unchange
 An explicit scoped review may instead
 consume the already assessed result for one admitted work, without relabeling a
 failed candidate or requiring the whole target integration to pass. Explicit
-integrated-target baseline acceptance remains a separate, unimplemented action.
+integrated-target baseline acceptance remains the separate action defined below
+and never follows from bounded review preparation or delivery.
 
 The service alone publishes `artifact:scoped-work-review` from an explicitly
 selected retained assessment and its exact current task source. Publication is
@@ -696,8 +698,8 @@ reads. Review-owner cases bind the exact scope into confirmation and preserve st
 legacy behavior. HTTP/CLI/Board cases prove exact selector parity, capability
 refusal, zero effect on preparation, visible bounded status and three-viewport
 operation. The initial all-six accepted baseline proof gate below is unchanged;
-prerequisite admission, broader runtime coverage and explicit baseline acceptance
-are not closed by this handoff.
+prerequisite admission, broader runtime coverage and integrated-target acceptance
+remain independent consumers and are not closed by this handoff.
 
 ### Work admission before execution
 
@@ -789,8 +791,9 @@ assessment selection and keyboard focus.
 The assessment owner and first dependent-admission consumer implement the initial
 multi-PR contract: one explicitly selected current retained assessment may reserve
 dependent work while the target remains pending and its baseline stays unchanged.
-Broader runtime coverage, whole-target integration and explicit acceptance remain
-later slices. The assessment owner is `assess-target-source`; target allocation,
+The format-2 complete candidate result and explicit acceptance consumer below add
+whole-target integration without changing that admission behavior. Broader runtime
+coverage remains open. The assessment owner is `assess-target-source`; target allocation,
 candidate verification, source capture, raw evidence assessment and accepted
 history keep their existing owners.
 
@@ -1044,10 +1047,12 @@ any inventory or attempt is written. Clients cannot supply producer ids, roles,
 contracts, source descriptors, evidence or a successful result.
 
 The service atomically saves the complete inventory in its fixed
-`target-assessments.json` before dispatching any producer. A format-1 record binds
-its id, actor, original request, exact target and accepted-version pins, selected
-runtime tuple, both role references and contract/verification identities, and all
-server-generated producer UUIDs. Each role names its slot. Only exact identical
+`target-assessments.json` before dispatching any producer. A new format-2 record
+binds its id, actor, original request, exact target and accepted-version pins,
+selected runtime tuple, both role references and contract/verification identities,
+and all server-generated producer UUIDs. Existing format-1 records retain the
+same historical fields and remain readable without complete-candidate acceptance
+authority. Each role names its slot. Only exact identical
 ordinary contract/verification identities share a slot, after both role references
 have independently been resolved. Otherwise accepted and target have distinct
 slots. Every slot is requested from registration, including those not yet started;
@@ -1763,7 +1768,7 @@ still be wired to the contained runner and post-run source integrity check in it
 own producer slice. Execution is a separate validity boundary: a failed post-run
 check invalidates admission and cannot produce passing evidence. This contract
 does not allow an ordinary producer to run candidate runtime, nor does it grant
-baseline acceptance or complete the plan's full runtime coverage.
+baseline acceptance by itself or complete the plan's full runtime coverage.
 
 ### Source admission in the local service
 
@@ -1899,3 +1904,41 @@ React, consumer, naming, lint, typecheck/build and browser gates, inspect the th
 viewports, and demonstrate offline multi-PR success and integration regression.
 No new model request, external test PR, required-check enforcement or provider
 reconciliation is implied.
+
+### Integrated target baseline acceptance
+
+A new target assessment uses format 2 and adds `targetContract`, the complete
+candidate-contract obligation result produced once from the same admitted
+observation inventory as accepted preservation, bounded work and target
+integration. Existing format-1 assessments remain readable historical evidence
+and cannot authorize acceptance. Missing format, a format-1 `targetContract`, or
+a format-2 record without its complete valid result rejects admission; restart
+never upgrades or reconstructs authority.
+
+Whole-target integration and feature eligibility remain read-only. The user must
+separately submit an exact target, assessment, request identity, reason and any
+explicit retirement set. The version owner alone accepts the target's pinned
+review. Before its one atomic mapping write, the service requires an authorized
+actor, completed current assessment, matching target/allocation/base/version/
+review/source pins, passing accepted preservation, every work and prerequisite,
+no pending obligations, passing integration and passing `targetContract`. It also
+requires the assessment's exact private source authority and complete retained
+producer inventory. Client verdicts, task or PR status, provider green state and
+generic acceptance of a target-pinned review cannot substitute.
+
+Authorization precedes request replay. An exact authorized replay returns the
+immutable decision without currentness checks, source work or a second write;
+conflicting or unauthorized replay fails. The mapping revision, accepted
+contract, evolution history and review status commit together. A failed temporary
+write or rename leaves both disk and live service state unchanged. Restart
+validates the evidence-bound decision from retained metadata, while later source
+unavailability keeps accepted history readable and grants no new authority.
+
+HTTP, CLI and Board forward only the exact selection and intent. The Board shows
+target-contract conformance and eligibility before a deliberate **Accept
+integrated target baseline** action, and projects the accepted decision separately
+after the assessment becomes historical because the baseline advanced. Offline
+formal cases use real source-, runner- and evidence-owner case results at one
+captured source. Synthetic work or PR observations are labeled presentation data,
+never proof. No test performs acceptance in the repository's real local store or
+any external provider.

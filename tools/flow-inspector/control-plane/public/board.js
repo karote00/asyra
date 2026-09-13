@@ -652,13 +652,16 @@
         const contractReview = operationState?.evolution.reviews.find(
           (r) => r.id === selectedContractReview
         )
+        const targetPinnedReview =
+          targetRecord?.targetVerification?.reviewId === selectedContractReview
         for (const id of ['contract-accept', 'contract-reject'])
           byId(id).disabled =
             !capability ||
             Boolean(activeId) ||
             acting ||
             contractReview?.status !== 'pending' ||
-            !byId('contract-reason').value.trim()
+            !byId('contract-reason').value.trim() ||
+            (id === 'contract-accept' && targetPinnedReview)
         byId('work-save').disabled =
           !capability ||
           Boolean(activeId) ||
@@ -1386,6 +1389,9 @@
         const selected = records.find(
           (item) => item.id === selectedAssessmentId
         )
+        const accepted = operationState?.evolution.decisions.find(
+          (item) => item.targetAcceptance?.assessmentId === selected?.id
+        )
         const running = assessmentRecords.some(
           (item) => item.phase === 'running'
         )
@@ -1400,6 +1406,17 @@
           !sourceReady
         byId('assessment-cancel').disabled =
           !capability || assessmentBusy || selected?.phase !== 'running'
+        byId('assessment-accept').disabled =
+          !capability ||
+          assessmentBusy ||
+          !selected ||
+          selected.phase !== 'completed' ||
+          selected.projection.format !== 2 ||
+          !selected.projection.current ||
+          !selected.projection.eligible ||
+          selected.projection.targetContract?.status !== 'passed' ||
+          !byId('assessment-accept-reason').value.trim() ||
+          Boolean(accepted)
         byId('target-pins').textContent = targetRecord
           ? 'Accepted mapping revision: ' +
             targetRecord.acceptedBaseline.revision +
@@ -1477,6 +1494,9 @@
         byId('assessment-accepted').textContent = describeProof(
           selected?.projection.accepted
         )
+        byId('assessment-target-contract').textContent = describeProof(
+          selected?.projection.targetContract
+        )
         byId('assessment-integration').textContent = describeProof(
           selected?.projection.integration
         )
@@ -1515,6 +1535,26 @@
               2
             )
           : 'No assessment evidence'
+        byId('assessment-acceptance').textContent = accepted
+          ? 'Accepted by ' +
+            accepted.actor +
+            ' at ' +
+            accepted.at +
+            '\nRequest: ' +
+            accepted.targetAcceptance.requestId +
+            '\nAssessment: ' +
+            accepted.targetAcceptance.assessmentId +
+            '\nContract: ' +
+            accepted.targetAcceptance.contractDigest +
+            '\nSource: ' +
+            JSON.stringify(accepted.targetAcceptance.source) +
+            '\nRetirement: ' +
+            (accepted.retirement.join(', ') || 'none') +
+            '\nResulting mapping revision: ' +
+            accepted.targetAcceptance.resultingMappingRevision +
+            '\nResulting version revision: ' +
+            accepted.targetAcceptance.resultingVersionRevision
+          : 'No baseline acceptance. Eligibility is read-only.'
       }
       async function readAssessmentSource() {
         const id = byId('assessment-source').value
@@ -1555,6 +1595,35 @@
           byId('assessment-notice').textContent = cancel
             ? 'Cancellation settled; original observations remain in history.'
             : 'Assessment registered. Results are separate from acceptance.'
+          await refresh()
+        } catch (error) {
+          if (!disposed) byId('assessment-notice').textContent = error.message
+        } finally {
+          assessmentBusy = false
+          if (!disposed) renderAssessment()
+        }
+      }
+      async function acceptTargetBaseline() {
+        if (assessmentBusy || !capability || !targetRecord) return
+        assessmentBusy = true
+        byId('assessment-notice').textContent =
+          'Committing explicit integrated target baseline acceptance…'
+        renderAssessment()
+        try {
+          await api('/api/targets/accept', {
+            requestId: window.crypto.randomUUID(),
+            targetId: targetRecord.id,
+            assessmentId: selectedAssessmentId,
+            reason: byId('assessment-accept-reason').value,
+            retirement: byId('assessment-retirement')
+              .value.split(',')
+              .map((value) => value.trim())
+              .filter(Boolean)
+          })
+          if (disposed) return
+          revision++
+          byId('assessment-notice').textContent =
+            'Integrated target baseline accepted. The source assessment remains as historical evidence.'
           await refresh()
         } catch (error) {
           if (!disposed) byId('assessment-notice').textContent = error.message
@@ -2056,6 +2125,8 @@
         })
         listen(byId('assessment-start'), 'click', () => assessmentAction())
         listen(byId('assessment-cancel'), 'click', () => assessmentAction(true))
+        listen(byId('assessment-accept'), 'click', acceptTargetBaseline)
+        listen(byId('assessment-accept-reason'), 'input', renderAssessment)
         listen(byId('target-flow'), 'change', chooseTargetFlow)
         listen(byId('target-work-step'), 'change', renderTargetObligations)
         listen(byId('target-reload'), 'click', () =>
@@ -2255,9 +2326,14 @@
               <label>Assessment history<select id="assessment-history"><option value="">Choose retained assessment</option></select></label>
               <pre id="assessment-summary" role="status"></pre>
               <h4>Accepted behavior preservation</h4><pre id="assessment-accepted"></pre>
+              <h4>Complete candidate contract</h4><pre id="assessment-target-contract"></pre>
               <h4>Bounded work and prerequisites</h4><pre id="assessment-works"></pre>
               <h4>Whole-target integration</h4><pre id="assessment-integration"></pre>
               <details><summary>Exact source, verification identities and producer progress</summary><pre id="assessment-progress"></pre></details>
+              <label>Explicit baseline acceptance reason<input id="assessment-accept-reason" maxlength="1000" /></label>
+              <label>Exact retired obligation ids (comma-separated)<input id="assessment-retirement" /></label>
+              <button id="assessment-accept" type="button" disabled>Accept integrated target baseline</button>
+              <pre id="assessment-acceptance" role="status">No baseline acceptance. Eligibility is read-only.</pre>
               <p>Work controls below retain their task-linked evidence and existing admission requirements, separately from this selected source assessment.</p>
             </section>
             <div id="target-items" aria-label="Saved work commitments"></div>

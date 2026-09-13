@@ -226,3 +226,18 @@ The [bounded closeout](../../plans/completed/flow-inspector-target-work-admissio
 closes only the first slice. Integration verification, explicit acceptance and
 the existing provider/protection gaps remain open. No merge, version or release
 operation is authorized by this record.
+
+## Integrated target baseline acceptance - 2026-09-13
+
+Add a format-2 target assessment that proves the complete candidate obligation
+inventory from the same real source-, runner- and evidence-owner observations as
+accepted preservation, work prerequisites and integration. Eligibility remains
+read-only until one exact authorized `target-accept` request commits the target's
+pinned review through the version owner.
+
+The mapping, accepted contract, evolution history and review status replace
+atomically; exact authorized replay survives restart without re-reading source or
+reassessing evidence. Format-1 history stays readable and cannot acquire this
+authority. HTTP, local/attached CLI and Board share the request and retained
+decision. This offline local slice performs no real project baseline acceptance,
+external delivery, provider request, publication or goal-to-main merge.

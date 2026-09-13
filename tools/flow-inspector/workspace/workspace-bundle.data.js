@@ -35381,7 +35381,7 @@
             ],
             "conditions": [
               "Select exactly one top-level admitted source artifact or strict three-field sourceIdentity key. The identity-only key is a trusted registration projection or exact immutable historical correlation, not source availability or dispatch authority; null, partial, unknown or double inputs reject. It never replaces per-producer full source/evidence admission or makes an empty inventory pass. Preserve original verdict/currentness policy without source reads or repeated admission.",
-              "Consume the exact target history revision, frozen work coverage and admitted case-backed handoffs. Consume the complete trusted request inventory without choosing only green producers; Only identical accepted/target contract and admitted verification-source identities share observations once, with full source, runtime, configuration and request bindings intact; same-contract different verification bytes remain distinct proof roles. Consume combined source-owner verification admission without rehashing source or reports. Current identity changes only staleness and eligibility, not historical verdicts. The assessment owner provides a currentness-only projection from retained result identities, reusing exact verdict objects without walking obligations or evidence; consumers cache it at identity changes and never recompute it on reads or replay. Assess accepted preservation, bounded work and complete integration separately against one captured runtime source and each admitted verification contract. Required producers must settle; missing or contradictory identities never pass. Preserve failed obligations and pending work. Full integration grants eligibility only; source, allocation or accepted-base changes make its current use stale."
+              "Consume the exact target history revision, frozen work coverage and admitted case-backed handoffs. Consume the complete trusted request inventory without choosing only green producers; Only identical accepted/target contract and admitted verification-source identities share observations once, with full source, runtime, configuration and request bindings intact; same-contract different verification bytes remain distinct proof roles. Consume combined source-owner verification admission without rehashing source or reports. Current identity changes only staleness and eligibility, not historical verdicts. The assessment owner provides a currentness-only projection from retained result identities, reusing exact verdict objects without walking obligations or evidence; consumers cache it at identity changes and never recompute it on reads or replay. Format 2 additionally produces one complete targetContract result from the same owner-produced candidate case inventory; format 1 remains readable but never gains this authority through missing fields, partial fields or restart. Assess accepted preservation, bounded work and complete integration separately against one captured runtime source and each admitted verification contract. Required producers must settle; missing or contradictory identities never pass. Preserve failed obligations and pending work. Full integration grants eligibility only; source, allocation or accepted-base changes make its current use stale."
             ],
             "bypasses": [
               "Only an admitted case-backed route bypass may satisfy a handoff. Historical records without source-bound evidence remain readable but cannot grant readiness."
@@ -35405,7 +35405,8 @@
               "tools/flow-inspector/control-plane/__tests__/target-evidence.test.cjs"
             ],
             "specRefs": [
-              "#target-source-assessment"
+              "#target-source-assessment",
+              "#integrated-target-baseline-acceptance"
             ],
             "failureOwnerStepId": "assess-target-source"
           },
@@ -35784,13 +35785,15 @@
               "admitted candidate contract",
               "observed selector identities and source digests",
               "explicit successor relations and retirement request",
-              "actor capability and exact-base decision"
+              "actor capability and exact-base decision",
+              "artifact:target-source-assessment"
             ],
             "outputs": [
               "artifact:reviewed-contract-evolution"
             ],
             "conditions": [
-              "Compare stable obligations and source observations once per requested review; preserve immutable accepted versions. Accept only exact current base and candidate inputs with authorized reason; removal requires separately authorized explicit retirement. Missing selectors and unknown evidence remain unresolved. When a service-admitted verification reference is supplied, bind its exact source tuple, descriptor and execution configuration into review and immutable history without source reads or revalidation. Expose verification-content changes, forbid accepting removal of existing verification authority, and preserve legacy absence without granting new authority."
+              "Compare stable obligations and source observations once per requested review; preserve immutable accepted versions. Accept only exact current base and candidate inputs with authorized reason; removal requires separately authorized explicit retirement. Missing selectors and unknown evidence remain unresolved. When a service-admitted verification reference is supplied, bind its exact source tuple, descriptor and execution configuration into review and immutable history without source reads or revalidation. Expose verification-content changes, forbid accepting removal of existing verification authority, and preserve legacy absence without granting new authority.",
+              "A review pinned by a development target can be accepted only through an explicit target-baseline decision consuming the exact current format-2 target assessment. Require matching target, allocation, accepted version, target review, candidate, source and complete producer identities plus passing accepted preservation, targetContract, every work/prerequisite and whole-target integration with no pending obligations. Authorization and retirement capability checks precede idempotent replay. Commit accepted mapping/history/review state atomically; persistence failure changes neither disk nor live state. Eligibility, client verdicts, PR status and format-1 evidence cannot accept history."
             ],
             "bypasses": [
               "No implicit retirement, heuristic acceptance, or preserved green evidence after revision."
@@ -35798,6 +35801,7 @@
             "allowedContributors": [
               "admitted contracts",
               "registered selector observations",
+              "assess-target-source exact retained assessment",
               "explicit actor decision"
             ],
             "forbiddenContributors": [
@@ -35812,7 +35816,8 @@
             ],
             "specRefs": [
               "#contract-evolution",
-              "#version-verification-references"
+              "#version-verification-references",
+              "#integrated-target-baseline-acceptance"
             ],
             "failureOwnerStepId": "review-contract-evolution"
           },
@@ -36093,7 +36098,8 @@
               "Before runner dispatch or evidence assessment, admit runtime sources through the source owner once per attempt and immutable source identity using only the trusted attempt and captured source. Completed evidence is a later persistence/projection input, never a source admission prerequisite. Ordinary live capture uses its complete manifest without IO; restart reads the bounded server-owned attempt manifest once. Retain the full-source-bound admission for evidence consumers; failed or changed identities cannot reuse it. Legacy absence grants no runtime identity and reads or request replay never redo admission.",
               "Keep reported step work completion independent from execution, verification and delivery. Separate candidate verification from accepted conformance, persist version decisions and accepted mapping atomically, admit CI results against a server-selected base, and produce baseline-bound read-only manager snapshots only at state changes. Authorize before work, admit ordinary conformance runs against the explicitly accepted mapping, durably record state with audit, and expose immutable snapshot-bound evidence; restart interrupts incomplete attempts. Mapping prepare and decide actions bind the exact base revision and candidate digest, preserve all obligations, and atomically retain the decision with the accepted mapping. Duplicate request identities do not repeat execution; repeated reads consume already admitted evidence.",
               "Expose registered target-assessment list/detail/start/cancel through the existing loopback request and capability boundary and matching local/remote CLI adapters; Forward optional exact task/attempt selection without transport-owned source lookup or a duplicate schema; accepted HTTP registration does not assert proof eligibility. CLI start waits for settlement before closing its local service, and reports eligibility separately from successful inspection/control, consuming service-retained results without transport-side assessment or private producer dispatch. Serve allowlisted existing workspace assets and compose the proof adapter into target documents; preserve static paths, target routing, and same-origin isolation. Serve Overview at root and catalog-slug pages with an explicit path-routing marker and workspace asset base; unknown public paths return a 404 route error without a selected target. Catalog-declared standalone HTML paths redirect to their exact short workspace target, and declared documentation/source links remain readable in a separate tab.",
-              "Expose exact scoped review preparation as one capability-authenticated loopback action and matching local/remote CLI action. Forward only task/attempt/assessment selectors to the review owner; do not read source, select latest evidence, interpret a verdict or accept a client handoff in transport. Reuse the existing review GET and confirmation paths, and preserve strict preparation unchanged."
+              "Expose exact scoped review preparation as one capability-authenticated loopback action and matching local/remote CLI action. Forward only task/attempt/assessment selectors to the review owner; do not read source, select latest evidence, interpret a verdict or accept a client handoff in transport. Reuse the existing review GET and confirmation paths, and preserve strict preparation unchanged.",
+              "Expose one capability-authenticated target-baseline acceptance action through the same local service, HTTP and local/remote CLI. Authorize before exact request replay; resolve one explicit target and format-2 assessment, require the exact live assessment source and version-owner acceptance predicates, and forward the assessor-owned immutable results without transport interpretation. Publish live accepted mapping/history only after the atomic store save succeeds. Exact authorized replay performs no currentness/source work; generic contract acceptance refuses target-pinned reviews."
             ],
             "bypasses": [
               "Unauthorized, conflicting, oversized, malformed, or unknown actions have no runner side effects."
@@ -36134,6 +36140,7 @@
               "#task-source-target-assessment",
               "#target-assessment-http-transport",
               "#target-assessment-cli-transport",
+              "#integrated-target-baseline-acceptance",
               "#board",
               "#flow-targets-and-work-decomposition",
               "../../../docs/ai/tools/flow-inspector/PR_REVIEW.md#scoped-review-public-integration",
@@ -36168,6 +36175,7 @@
               "Project explicit work reports separately from verification and delivery. Project candidate verification, exact version review with retirement, all-flow CI blockers and artifacts, retry, and baseline/time-labeled shared viewing through the same action service. Show every registered negative scenario, snapshot and version identity, runner environment, named artifact links, and retained attempts; unsupported targets and untested steps receive no successful evidence. Prepare and decide mapping reviews through the action service with an explicit reason; never accept mapping changes in the client.",
               "Project the selected task/attempt complete delivery preview with source evidence and trusted Changeset content/reason separately, exact confirmation, audit and GitHub HEAD-bound observations through the common action service. Never combine local verification with remote checks or accept baseline from a PR.",
               "For bounded work preview, list only retained assessments that explicitly name the selected task and attempt, require the user to select one, and forward that selector without deciding eligibility. Show bounded scope, original candidate verification and target integration separately before the existing exact confirmation. Task or attempt retirement clears unavailable selection; refresh and historical reads perform no preparation or external effect.",
+              "For integrated target baseline acceptance, require an explicit current format-2 assessment selection and reason, show accepted preservation, complete targetContract conformance, every work/prerequisite, whole-target integration, exact source/base/review pins and retirement set, then forward only the ids and intent. Eligibility and refresh never accept history. After success, show the immutable accepted decision separately from the now-historical assessment.",
               "Loaded canvas step contracts must match admitted verification steps before projecting evidence or enabling launch."
             ],
             "bypasses": [
@@ -36191,6 +36199,7 @@
             "specRefs": [
               "#board",
               "#target-assessment-board-consumer",
+              "#integrated-target-baseline-acceptance",
               "#flow-targets-and-work-decomposition",
               "../../../docs/ai/tools/flow-inspector/PR_REVIEW.md#scoped-review-public-integration",
               "../../../docs/ai/tools/flow-inspector/PR_REVIEW.md#review-observations"
@@ -36205,6 +36214,16 @@
             "to": "manage-flow-target",
             "kind": "conditional",
             "predicate": "Only dependent work admission consumes an explicitly selected current completed assessment with matching actor, target allocation, pins, passing accepted/work/prerequisite results and an available registered source. Independent work keeps baseline-proof admission; no assessment accepts history or completes integration.",
+            "producedArtifacts": [
+              "artifact:target-source-assessment"
+            ]
+          },
+          {
+            "id": "target-assessment-to-version-acceptance",
+            "from": "assess-target-source",
+            "to": "review-contract-evolution",
+            "kind": "conditional",
+            "predicate": "Only an explicit authorized target-baseline action consumes a current completed format-2 assessment with passing accepted preservation, complete targetContract, every work/prerequisite and whole-target integration, no pending obligations, exact target/base/review/source identities and available private source authority. Eligibility and format-1 history never mutate the baseline.",
             "producedArtifacts": [
               "artifact:target-source-assessment"
             ]
@@ -36751,7 +36770,8 @@
             "channel": "source-bound target assessment",
             "consumerStepIds": [
               "serve-proof-actions",
-              "manage-flow-target"
+              "manage-flow-target",
+              "review-contract-evolution"
             ]
           },
           {
