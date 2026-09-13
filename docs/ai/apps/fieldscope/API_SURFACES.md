@@ -181,11 +181,26 @@ Cross-package imports use public `@asyra/*` facades. Do not import another app's
   can be admitted at the current snapshot without extending their expiry.
 - Coverage is a declared visible/total sample count; zero total has no coverage.
   Pose, maturity, target-scoped pedicel/cutsite, corridor and independent
-  spine/calyx/contact-damage fields remain assumptions. Source membership checks
+  spine/calyx/distal-pedicel/contact-damage fields remain assumptions. Source membership checks
   validate identity without filling them from hidden scene truth.
 - This helper changes no session, clock, inventory or action state. It rejects
   support/cut/retention/placement confirmations and additional undeclared claims;
   later viewpoint and expected-action owners must provide their own evidence.
+
+## Synthetic quality-evidence assessment
+
+- `TargetObservations.assessQuality` admits one current target reading, then returns
+  the admitted observation, per-dimension requirement interpretations and overall
+  synthetic requirements status. Physical integrity remains unverified.
+- `quality.pedicel` is required (`intact`, `lost` or null), independently of calyx,
+  stem recognition and cutsite. This transient input extension requires callers to
+  supply explicit null for unknown; missing fields reject, with no disk migration.
+- Cucumber uses spines; tomato uses calyx and distal pedicel. Contact damage is
+  separate. Unrelated dimensions are not applicable to requirements but remain in
+  the reading. Unknown cultivar leaves overall unknown without consulting C truth.
+  Known-crop failure is reported alongside any other unknown dimensions.
+- No market grading, placement permission, action confirmation, post-pick retention
+  proof, session mutation, query, source generation or additional ledger occurs.
 
 ## Synthetic viewpoint samples
 

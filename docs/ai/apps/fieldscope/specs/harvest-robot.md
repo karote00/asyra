@@ -571,7 +571,7 @@ rachis, a neighboring fruit or an anatomical AZ. Sample counts are nonnegative
 safe integers with visible <= total; total zero means no sampled coverage, never
 complete visibility. A supplied pose has finite coordinates and a valid rigid
 rotation. Pedicel and cutsite values remain injected assumptions, not inferred
-identifications. Spine integrity, calyx integrity
+identifications. Spine integrity, calyx integrity, distal pedicel integrity
 and observed contact damage are independent synthetic quality fields; no value is
 filled from renderer truth or inferred from another field. Source membership
 validation may identify the existing fruit, but cannot certify these observations.
@@ -584,6 +584,40 @@ a later current expected-action receipt from the action owner. No target reading
 including declared clear corridors or intact quality, admits those actions.
 The next viewpoint adapter must produce bounded camera/sample-ray evidence over
 real near sources; injection alone does not complete observation or M3 UI gates.
+
+### Admitted synthetic preservation quality
+
+D may assess declared quality through the same target observation admission.
+`quality.pedicel` independently describes distal fruit-side pedicel integrity as
+intact, lost or null; stem recognition, cutsite geometry and calyx integrity do not
+fill it. It is required alongside the existing quality fields. These app-local
+transient inputs have no persisted schema or hardware wire protocol: current
+callers must supply explicit null for unknown pedicel quality. A missing property
+rejects, rather than silently assigning intact or accepting an ambiguous old shape.
+
+The assessment first admits one reading against the actual current run/context,
+then returns that admitted observation and immutable per-dimension interpretations.
+Cucumber preservation requires declared intact spines; tomato preservation requires
+declared intact calyx and distal pedicel. Unrelated dimensions are not applicable
+to that crop's requirements but remain unchanged in the original reading. Contact
+damage is independent: observed fails its requirement, none-observed satisfies
+only the declared synthetic observation, and null is unknown.
+
+Each applicable dimension is satisfied, not-satisfied or unknown. For a known
+cultivar, any failed requirement makes the synthetic requirements not satisfied,
+even while other dimensions remain unknown; otherwise missing evidence leaves
+unknown, and all explicit requirements yield synthetic requirements satisfied.
+Unknown cultivar leaves overall assessment unknown without reading hidden C
+species to choose requirements; independent contact evidence remains visible.
+Physical integrity is always unverified. This is not a market grade, placement
+permission, a harvest outcome or proof the pedicel remained after picking.
+Support, cut, retention and placement still require their separate expected-action
+receipts. No action, pose, inventory, evidence ledger or clock changes here.
+
+Acceptance includes missing/invalid pedicel, independent lost/unknown dimensions,
+intact calyx with lost pedicel, intact spines with contact damage, unknown cultivar,
+synthetic satisfaction with physical unverified, stale/forged contexts, clone-once
+inputs and zero source/query/session work. All existing observation contracts hold.
 
 ### Synthetic viewpoint sampling
 

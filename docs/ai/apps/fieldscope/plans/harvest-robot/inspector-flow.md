@@ -575,3 +575,27 @@ Gates: passive actual-source profile, independent full domain accounting, mixed
 prepared/unprepared region fixture, exact-touch non-exclusion, complete-query
 relation equivalence, budget controls, original mapping/lifetime and work counts.
 No material/contact permission or new movement output is introduced.
+
+### D admitted synthetic quality assessment
+
+Owner: observations.ts, consuming its own target admission once per request.
+Inputs: the existing current ObservationContext and TargetReading, with required
+independent quality.pedicel (intact/lost/null). Missing transient fields reject;
+no persisted input migration or hardware protocol is introduced.
+Outputs: original admitted observation, immutable per-dimension requirement results,
+synthetic overall satisfied/not-satisfied/unknown and physical integrity unverified.
+Conditions: current run/source/time/target and clone-once schema precede assessment;
+known observed cultivar chooses applicable preservation dimensions, never C truth.
+Unknown cultivar stays overall unknown; unrelated input fields are preserved.
+A failed applicable requirement dominates other unknowns for a known cultivar,
+without hiding their individual states. Original assumption/evidence identity stays.
+Allowed: existing admit/currentness helpers and pure dimension interpretation.
+Forbidden: A policy/query/source generation, session mutations, new ledgers/caches,
+market grading, placement/action approval or inferred post-pick retention.
+Boundary: observations.ts, direct observations.test.ts, API and these contract docs.
+No session/contracts/C/material/collision/viewpoint/runtime/UI behavior changes.
+Failure owner: observations rejects malformed/stale inputs; dependent action owner
+continues to own all confirmation and movement requirements.
+Gates: per-dimension independence, missing pedicel red, unknown cultivar, expiry/
+context/clone-once, zero query/source/session work, existing observation controls,
+app unit/type/lint/naming/build and independent review. No retained computation.
