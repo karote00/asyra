@@ -1749,3 +1749,47 @@ positive-gap certificate or an unreviewed alternative output contract.
 The permanent opt-in case passes (374 ms); reproduce with
 `SIM_CAPACITY_DIAGNOSTICS=1 yarn workspace @asyra/asyra-sim test:local src/analysis/methods/__tests__/interval-separation-profile.test.ts --maxWorkers=1`.
 Recorded evidence: `tmp/capacity/interval-separation-profile.log`.
+
+### Fixed-prefix interval certificate census
+
+Replan the previous single-root eligibility result into one complete passive
+census of the already studied original roots 114–198. The method-query Inspector
+still permits only current production source lifetimes; this diagnostic does not
+add a product cache, witness route or sample bypass. Allowlist: this plan and
+`interval-census-profile.test.ts`. Keep the full current baseline once, expecting
+197,028 charged units and complete coverage. Collect every original root in its
+actual descending pop order, not a selection ranked by likely savings. A root is
+eligible only with its first completed finite positive nonpenetrating witness,
+no subdivision/exhaustion/penetration, exactly three fresh samples and two actual
+paid warning seeds. Match one complete original leaf and the actual canonical
+full-root interval request. Record all exclusions; root 114 is naturally excluded
+and its already measured certificate is not rerun.
+For every eligible root, then call raw threshold-zero `lowerOver` once in that
+same context, keeping tolerance/iterations/checkpoints and the aggregate
+500,000-unit/20-second guards. Prove each geometry's original median and component
+refinement had already completed and been paid before that root's first sample
+completed; otherwise stop instead of borrowing future preparation for free.
+Every successful and failed certificate cost counts. On exhaustion stop in
+original order, report the remaining untested population and incomplete census;
+partial results are not a completed positive or negative census.
+Only positive-gap roots may contribute their original middle/end sample costs
+to an optimistic replacement upper limit, from which all certificate costs are
+subtracted. Post-baseline preparation is warm and the upper limit includes
+source charges a real replacement still needs, so this is not a real execution
+saving. A positive result needs a separately reviewed original-order actual-delta
+protocol paying all preparation, source and certificate operations anew. Retain
+all original evidence and late-penetration decisions; no production/full gate.
+
+The complete census reproduced baseline 197,028 units across all 85 roots:
+66 had fewer than three fresh samples, two subdivided, three failed seed
+eligibility and eleven had penetration. All three eligible roots were measured
+in original order: 130 returned zero for 2,125 units; 118 returned zero for 1,343;
+117 returned positive gap 0.0004905192849552485 for 1,859. Only root 117 contributes
+3,138 units of optimistic replacement work. Total certificate work 5,327 exceeds
+that bound by 2,189; aggregate actual work is 202,355. Census is complete with
+zero untested roots. Reject this fixed policy across the full frozen population;
+do not select root 117 alone as a success or expand production. The mathematical
+certificate remains valid, but the measured strategy cannot justify reducing the
+500,000-unit goal workload. The one permanent case passes in 7.02 seconds.
+Reproduce with `SIM_CAPACITY_DIAGNOSTICS=1 yarn workspace @asyra/asyra-sim test:local src/analysis/methods/__tests__/interval-census-profile.test.ts --maxWorkers=1`;
+recorded evidence is `tmp/capacity/interval-census-profile.log`. G4 remains red.
