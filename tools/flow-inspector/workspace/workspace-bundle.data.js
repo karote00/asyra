@@ -35525,7 +35525,7 @@
               "artifact:pr-review-record"
             ],
             "conditions": [
-              "Keep strict passing latest candidate admission for legacy/full-candidate preparation. The explicit scoped path instead consumes the service-owned exact current work handoff, retaining original candidate and integration outcomes; prepare and confirm require the same scope/assessment/source/reference identity. Both paths require unambiguous captured Factory ownership. Prepare one fixed patch Changeset separately from source verification; bind all metadata, source, policy and PR content to explicit actor confirmation. Persist preview and intent before effects; uncertain operations reconcile by query only; ordinary reads do no remote or source work."
+              "Keep strict passing latest candidate admission for legacy/full-candidate preparation. The explicit scoped path instead consumes the service-owned exact current work handoff, retaining original candidate and integration outcomes; prepare and confirm require the same scope/assessment/source/reference identity. Scoped outer format 2 requires the complete saved handoff, while strict format 1 stays unchanged. Bind serial preparation to exact attempt/assessment IDs, select confirmation by retained format, and resolve scoped report/source only at fixed task-owned verification paths. Reuse checked bytes only within one input validation; preserve fresh confirmation checks. Both paths require unambiguous captured Factory ownership. Prepare one fixed patch Changeset separately from source verification; bind all metadata, source, policy and PR content to explicit actor confirmation. Persist preview and intent before effects; uncertain operations reconcile by query only; ordinary reads do no remote or source work."
             ],
             "bypasses": [
               "Disabled integration has no effects. Missing, stale, denied or uncertain inputs cannot grant success."
@@ -35544,11 +35544,14 @@
             ],
             "cacheDimensions": [],
             "implementationBoundary": [
+              "tools/flow-inspector/control-plane/service.cjs",
+              "tools/flow-inspector/control-plane/__tests__/service.test.cjs",
               "tools/flow-inspector/control-plane/pr-review.cjs",
               "tools/flow-inspector/control-plane/__tests__/pr-review.test.cjs"
             ],
             "specRefs": [
               "../../../docs/ai/tools/flow-inspector/PR_REVIEW.md#candidate-preview",
+              "../../../docs/ai/tools/flow-inspector/PR_REVIEW.md#scoped-review-consumer",
               "#scoped-work-review-handoff"
             ],
             "failureOwnerStepId": "prepare-pr-review"

@@ -40,7 +40,7 @@ Keep actor authorization, one-task/attempt delivery, actual source/report integr
 allowed changes, trusted metadata, remote base and required CI unchanged. Preview,
 PR and UI text must say bounded work and show full-candidate and integration
 outcomes truthfully, never claim all-flow pass or implicit baseline acceptance.
-This readiness contract does not yet enable the scoped implementation.
+The scoped implementation follows the consumer boundary below.
 
 The trusted adapter requires a clean checkout and compares every captured source
 input with the selected remote base tree. A different Git HEAD is not itself
@@ -55,6 +55,45 @@ branch, changed paths and digests, PR title/body and `draft: false`, task/attemp
 report digest and limitations. It creates no remote objects. Preview text is
 review data, never authority. Ordinary reads reuse retained records without
 source capture, GitHub polling or history reconstruction.
+
+## Scoped review consumer
+
+The internal `prepareScoped(taskId, {attemptId, assessmentId}, actor)` path accepts
+exactly those two UUID selector fields. The service wires `getScopedWork` to its
+existing private publisher, including the original integration result by reference;
+review code does not resolve scope or reassess evidence. Its internal preparation
+adapter does not add an HTTP/CLI/Board selection action. Existing confirmation of
+a retained preview remains reachable through the existing capability boundary and
+must enforce the scoped contract; this is not a claim that confirmation is disabled.
+
+Strict previews retain outer format 1. Newly prepared scoped previews use outer
+format 2 and require the complete `scopedWork` handoff in the preview, including
+two role references/pins even when they share a producer. Missing/null/partial
+scope or unknown format fails closed. Reading format 1 never upgrades it; format
+2 never selects legacy validation by field truthiness. Preparation serial identity
+includes both exact selector UUIDs, so different scope requests cannot share one
+pending promise. A delivered/non-preview record keeps its existing task/attempt
+and scope; a new scope cannot silently reuse it.
+
+Scoped preparation binds the failed or passed original candidate outcome and
+original integration result into the preview and confirmation digest. Confirmation
+uses the saved exact selector to obtain one fresh service handoff and compares its
+complete identity before effects. Historical reads do neither lookup nor source IO.
+Use the task-owned canonical `verification/<attemptId>/vitest.json` and `source`
+locations under the fixed task directory; a saved report path cannot choose another
+source. Require its report digest and every actual source byte to agree. The scoped
+full source fingerprint comes from the admitted handoff, without a second manifest
+identity hash; actual byte checks remain necessary. Within one input validation,
+reuse already checked bytes at the same canonical path and expected digest rather
+than rereading its package manifest. A later confirmation performs fresh checks.
+
+Permanent cases use real service-admitted work/candidate/assessment and an offline
+controlled delivery adapter: original failed candidate with passing bounded work
+and pending integration; unchanged strict rejection; exact scope in title/body and
+digest; changed assessment/pins/source or retirement rejected before effects;
+missing scoped persistence fields; distinct concurrent selectors; restart/history
+reads with zero callbacks and fresh prepare/confirm callbacks once each. No real
+GitHub mutation, model request or baseline acceptance is authorized by these tests.
 
 ## Trusted delivery metadata
 

@@ -648,7 +648,7 @@ the review consumer is wired in a later owner slice. The detached,
 immutable handoff contains `assessmentId`, `taskId`, `attemptId`, `targetId`,
 `allocationRevision`, `workId`, the original `workBinding`, accepted baseline and
 accepted-version pins, the registered complete task runtime tuple, the assessed
-work result and the complete registered producer references supporting that work,
+work result, original integration result and the complete registered producer references supporting that work,
 its prerequisites and required accepted preservation. These are existing owner
 identities and completed results, not new client claims or a persisted verified
 flag. Resolve the exact private `sourceFor(taskId, attemptId)` artifact and compare
