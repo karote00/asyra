@@ -617,14 +617,17 @@ Reload the Board after preparing a new contract revision to load its catalog.
 3. Review the draft and pending inventory, provide a decision reason and select
    **Save scope revision**. Missing coverage, overlap and cyclic or unknown
    prerequisites reject the complete decision. Nothing is silently discarded.
-4. First **Run all flows** and select that completed baseline proof.
-   **Prepare task from this promise** durably reserves its source and task UUID,
-   then fills the existing task-admission controls with the exact step, objective,
-   files and work binding. Review those controls and explicitly
-   launch the existing deterministic demonstration if desired. This button does
-   not dispatch a model. Dependent work remains blocked because this slice has no
-   source-bound prerequisite verifier. The strict all-flow candidate verifier is
-   unchanged and can refuse partial contributions.
+4. For independent work, first **Run all flows** and select that completed baseline
+   proof. **Prepare task from this promise** durably reserves its source and task
+   UUID. For dependent work, assess the saved allocation on the integration source,
+   select that retained assessment, then use **Prepare task from assessed
+   prerequisites**. The service requires passing accepted preservation, the exact
+   work and its prerequisites; the Board forwards only the assessment id. Both
+   actions fill the existing task-admission controls with the exact step, objective,
+   files and work binding. Review those controls and explicitly launch the existing
+   deterministic demonstration if desired. Neither button dispatches a model. The
+   strict all-flow candidate verifier is unchanged and can refuse partial
+   contributions.
 5. For historical independent tasks, under **Connect an admitted task**, select the saved work and an existing task,
    enter the decision reason and **Link exact task**. Objective, step, files,
    retained obligations and accepted baseline must match. Linking neither starts
@@ -637,11 +640,13 @@ Reload the Board after preparing a new contract revision to load its catalog.
    A stale editor is rejected even after refreshing observations. **Reload saved
    revision into editor** explicitly replaces the local draft with saved state.
 
-A work item with prerequisites shows `blocked`; prerequisites show `unconfirmed`.
-Other work and the whole goal show `pending`, including after candidate success
-or a merged PR. These are not full-flow integration results. A target does not
-retire accepted obligations, accept a baseline, reconcile provider requests, skip
-CI or combine passing checks from different source identities.
+A work item with prerequisites shows `blocked`; prerequisites show `unconfirmed`
+until an exact assessment-bound admission is retained. That admission changes the
+work to `pending` and its prerequisite projection to `passed`, while the work and
+whole goal remain pending until their separate evidence and integration owners
+complete. Candidate success or a merged PR alone changes none of these states. A
+target does not retire accepted obligations, accept a baseline, reconcile provider
+requests, skip CI or combine passing checks from different source identities.
 
 ### Target API and CLI
 
@@ -710,8 +715,8 @@ and explicit target-baseline acceptance remain unimplemented.
 
 ### Admit work before execution
 
-After `verify` passes all six obligations, use its returned attempt UUID as
-`sourceAttemptId`. Submit this decision with `target-decide` or
+For independent work, after `verify` passes all six obligations, use its returned
+attempt UUID as `sourceAttemptId`. Submit this decision with `target-decide` or
 `POST /api/targets/decide`:
 
 ```json
@@ -727,11 +732,35 @@ After `verify` passes all six obligations, use its returned attempt UUID as
 }
 ```
 
+For work with prerequisites, omit `sourceAttemptId` and provide the exact retained
+assessment instead:
+
+```json
+{
+  "action": "admit",
+  "targetId": "<target UUID>",
+  "requestId": "<new admission UUID>",
+  "expectedRevision": 1,
+  "reason": "Consume assessed prerequisites on this source",
+  "workId": "<dependent work UUID>",
+  "taskId": "<reserved task UUID>",
+  "assessmentId": "<target assessment UUID>"
+}
+```
+
 Use the target's actual current revision. Admission increments it and appends
-immutable audit without running a candidate. It requires a complete passing
-baseline proof from this store, matching accepted revision and contract. It pins
-both HEAD and source digest. Any unconfirmed prerequisite refuses admission.
-A PR merge or green check is not prerequisite evidence.
+immutable audit without running a candidate. Independent admission requires a
+complete passing baseline proof from this store, matching accepted revision and
+contract. Dependent admission resolves the selected completed assessment from the
+service and requires the same actor, target, allocation, accepted and verification
+pins, passing accepted/work/prerequisite results and currently registered source.
+It pins both HEAD and source digest plus the assessment/allocation identity. Startup
+cross-checks that persisted source against the authoritative assessment runtime.
+Every dependent task start also requires the exact registered source authority; the
+admission revision itself may make the assessment historical, while source-task
+revocation or source retirement blocks execution. A PR merge, green check, task
+result or client-supplied verdict is not prerequisite evidence. Whole-target
+integration and baseline acceptance remain separate.
 
 Then use the existing `task-start` request, setting `requestId` to the reserved
 `taskId`, exact step/objective/files from the work, and this additional field:

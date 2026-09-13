@@ -1296,7 +1296,11 @@ test('target proof lifecycle preserves cancellation interruption errors and reta
   }
 })
 
-async function assessmentFixture(distinct = true, agentOptions = {}) {
+async function assessmentFixture(
+  distinct = true,
+  agentOptions = {},
+  dependent = false
+) {
   const f = referenceFixture()
   const service = createService(f.repository, {
     directory: f.runs,
@@ -1353,6 +1357,13 @@ async function assessmentFixture(distinct = true, agentOptions = {}) {
     allowedFiles: ['packages/factory/src/data-transact.ts'],
     prerequisites: []
   }))
+  if (dependent)
+    request.works[1].prerequisites = [
+      {
+        workId: request.works[0].id,
+        handoff: 'Use the assessed upstream offline behavior'
+      }
+    ]
   request.pending = []
   const target = service.decideTarget(request, LOCAL_ACTOR)
   return {
@@ -1367,6 +1378,215 @@ async function assessmentFixture(distinct = true, agentOptions = {}) {
     }
   }
 }
+
+test(
+  'current offline assessment admits exact dependent work and survives restart without accepting the baseline',
+  { timeout: 50000 },
+  async (t) => {
+    const f = await assessmentFixture(false, {}, true)
+    let service = f.service,
+      server
+    try {
+      const assessment = await service.waitTargetAssessment(
+        service.startTargetAssessment(f.request, LOCAL_ACTOR)
+      )
+      assert.equal(assessment.result.accepted.status, 'passed')
+      assert.equal(assessment.result.works[1].status, 'passed')
+      assert.equal(assessment.result.works[1].prerequisites.status, 'passed')
+      const work = f.targetRequest.works[1]
+      const target = service.getTarget(f.request.targetId)
+      const taskId = randomUUID()
+      const request = {
+        action: 'admit',
+        targetId: target.id,
+        expectedRevision: target.revision,
+        requestId: randomUUID(),
+        reason: 'Consume retained offline prerequisite evidence',
+        workId: work.id,
+        taskId,
+        assessmentId: assessment.id
+      }
+      assert.throws(
+        () =>
+          service.decideTarget(
+            { ...request, assessmentId: randomUUID() },
+            LOCAL_ACTOR
+          ),
+        /assessment/i
+      )
+      assert.throws(
+        () =>
+          service.decideTarget(
+            { ...request, sourceAttemptId: f.request.sourceAttemptId },
+            LOCAL_ACTOR
+          ),
+        /source|assessment/i
+      )
+      assert.equal(service.getTarget(target.id).history.length, target.revision)
+      await service.close()
+      const { startServer } = require('../server.cjs')
+      const { main } = require('../cli.cjs')
+      server = await startServer(f.repository, {
+        url: 'http://127.0.0.1:0',
+        serviceOptions: { directory: f.runs }
+      })
+      service = server.service
+      const assessor = require('../target-evidence.cjs')
+      const assess = t.mock.method(assessor, 'assessTargetSource')
+      const validate = t.mock.method(sourceOwner, 'validateSourceSnapshot')
+      const baseline = service.state().mapping
+      const input = path.join(f.repository, 'offline-admission-request.json')
+      fs.writeFileSync(input, JSON.stringify(request))
+      const messages = []
+      await main(
+        [
+          '--url',
+          server.origin,
+          'target-decide',
+          path.relative(f.repository, input)
+        ],
+        {
+          repositoryRoot: f.repository,
+          write: (value) => messages.push(value)
+        }
+      )
+      fs.rmSync(input)
+      const admitted = JSON.parse(messages.join(''))
+      assert.equal(assess.mock.callCount(), 0)
+      assert.equal(validate.mock.callCount(), 0)
+      assert.equal(admitted.decision.admission.assessmentId, assessment.id)
+      assert.deepEqual(admitted.decision.admission.source, {
+        digest: assessment.runtime.sourceDigest,
+        head: assessment.runtime.head
+      })
+      assert.equal(service.getTarget(target.id).status, 'pending')
+      assert.equal(service.getTarget(target.id).works[1].status, 'pending')
+      assert.equal(
+        service.getTarget(target.id).works[1].prerequisites[0].status,
+        'passed'
+      )
+      assert.deepEqual(service.state().mapping, baseline)
+      const api = await fetch(server.origin + '/api/targets/' + target.id).then(
+        (response) => response.json()
+      )
+      assert.deepEqual(api, service.getTarget(target.id))
+      assert.equal(api.works[1].prerequisites[0].status, 'passed')
+      assess.mock.restore()
+      validate.mock.restore()
+      await server.close()
+      server = null
+      service = createService(f.repository, {
+        directory: f.runs
+      })
+      const restored = service.getTarget(target.id)
+      assert.equal(
+        restored.history.at(-1).admission.assessmentId,
+        assessment.id
+      )
+      assert.equal(restored.history.at(-1).admission.taskId, taskId)
+      assert.equal(restored.status, 'pending')
+      assert.deepEqual(service.state().mapping, baseline)
+    } finally {
+      if (server) await server.close()
+      else await service.close()
+      fs.rmSync(f.dir, { recursive: true, force: true })
+    }
+  }
+)
+
+async function admittedDependentTaskFixture() {
+  const f = await assessmentFixture(false, {}, true)
+  let service = f.service
+  const assessment = await service.waitTargetAssessment(
+    service.startTargetAssessment(f.request, LOCAL_ACTOR)
+  )
+  const target = service.getTarget(f.request.targetId)
+  const work = f.targetRequest.works[1]
+  const taskId = randomUUID()
+  const admissionId = randomUUID()
+  service.decideTarget(
+    {
+      action: 'admit',
+      targetId: target.id,
+      expectedRevision: target.revision,
+      requestId: admissionId,
+      reason: 'Consume retained offline prerequisite evidence',
+      workId: work.id,
+      taskId,
+      assessmentId: assessment.id
+    },
+    LOCAL_ACTOR
+  )
+  await service.close()
+  service = createService(f.repository, { directory: f.runs })
+  return {
+    ...f,
+    service,
+    assessment,
+    target,
+    work,
+    taskId,
+    taskRequest: {
+      requestId: taskId,
+      stepId: work.stepId,
+      objective: work.scope,
+      allowedFiles: work.allowedFiles,
+      workBinding: {
+        targetId: target.id,
+        workId: work.id,
+        admissionId
+      },
+      adapter: 'demonstration',
+      scenario: 'repair',
+      contractDigest: service.contract().digest,
+      revision: service.state().mapping.revision,
+      budgets: { elapsedMs: 60000, toolCalls: 20, attempts: 3 }
+    }
+  }
+}
+
+test(
+  'supported containment executes exact assessment-bound dependent work without accepting the baseline',
+  { skip: process.platform !== 'darwin', timeout: 50000 },
+  async () => {
+    const f = await admittedDependentTaskFixture()
+    try {
+      const baseline = f.service.state().mapping
+      const task = await f.service.waitTask(
+        f.service.startTask(f.taskRequest, LOCAL_ACTOR)
+      )
+      assert.equal(task.id, f.taskId)
+      assert.equal(task.phase, 'completed')
+      assert.equal(task.attempts.length, 1)
+      assert.ok(task.changes.length > 0)
+      assert.equal(f.service.getTarget(f.target.id).status, 'pending')
+      assert.deepEqual(f.service.state().mapping, baseline)
+    } finally {
+      await f.service.close()
+      fs.rmSync(f.dir, { recursive: true, force: true })
+    }
+  }
+)
+
+test(
+  'unsupported containment denies assessment-bound dependent execution without task effects',
+  { skip: process.platform === 'darwin', timeout: 50000 },
+  async () => {
+    const f = await admittedDependentTaskFixture()
+    try {
+      assert.equal(f.service.state().tasks.available, false)
+      assert.throws(
+        () => f.service.startTask(f.taskRequest, LOCAL_ACTOR),
+        /OS containment unavailable; task execution denied/
+      )
+      assert.throws(() => f.service.getTask(f.taskId), /Task not found/)
+      assert.equal(f.service.getTarget(f.target.id).status, 'pending')
+    } finally {
+      await f.service.close()
+      fs.rmSync(f.dir, { recursive: true, force: true })
+    }
+  }
+)
 
 test('assessment registers complete private inventory before dispatch and retains exact results with zero work on replay or reads', async (t) => {
   const f = await assessmentFixture()
@@ -2620,7 +2840,11 @@ test(
   }
 )
 
-async function scopedWorkFixture(failure = null, deliveryAdapter = {}) {
+async function scopedWorkFixture(
+  failure = null,
+  deliveryAdapter = {},
+  dependent = false
+) {
   const f = referenceFixture()
   const service = createService(f.repository, {
     directory: f.runs,
@@ -2712,8 +2936,28 @@ async function scopedWorkFixture(failure = null, deliveryAdapter = {}) {
     allowedFiles: ['packages/factory/src/data-transact.ts'],
     prerequisites: []
   }
-  request.works = [work]
-  request.pending = request.pending.filter((id) => id !== obligation.id)
+  const dependentObligation = dependent
+    ? review.candidate.contract.cases.find(
+        (item) => item.id === 'deferred.outcome'
+      )
+    : null
+  const dependentWork = dependent
+    ? {
+        id: randomUUID(),
+        title: 'Consume assessed starting state',
+        stepId: dependentObligation.stepId,
+        obligationIds: [dependentObligation.id],
+        scope: 'Consume the exact assessed starting state',
+        allowedFiles: ['packages/factory/src/data-transact.ts'],
+        prerequisites: [
+          { workId: work.id, handoff: 'Use the assessed source task behavior' }
+        ]
+      }
+    : null
+  request.works = dependent ? [work, dependentWork] : [work]
+  request.pending = request.pending.filter(
+    (id) => id !== obligation.id && id !== dependentObligation?.id
+  )
   const target = service.decideTarget(request, LOCAL_ACTOR)
   const sourceProof = await service.wait(service.start({}, LOCAL_ACTOR))
   const taskId = randomUUID(),
@@ -2783,11 +3027,70 @@ async function scopedWorkFixture(failure = null, deliveryAdapter = {}) {
     service,
     task,
     work,
+    dependentWork,
     assessment,
     assessmentRequest,
     targetRequest: request
   }
 }
+
+test(
+  'dependent task start rejects a retired assessment source task after admission',
+  { skip: process.platform !== 'darwin', timeout: 40000 },
+  async () => {
+    const f = await scopedWorkFixture(null, {}, true)
+    try {
+      assert.equal(
+        f.assessment.result.works.find((item) => item.id === f.dependentWork.id)
+          .status,
+        'passed'
+      )
+      const target = f.service.getTarget(f.assessment.request.targetId)
+      const taskId = randomUUID()
+      const admissionId = randomUUID()
+      f.service.decideTarget(
+        {
+          action: 'admit',
+          targetId: target.id,
+          expectedRevision: target.revision,
+          requestId: admissionId,
+          reason: 'Admit exact assessed dependent work',
+          workId: f.dependentWork.id,
+          taskId,
+          assessmentId: f.assessment.id
+        },
+        LOCAL_ACTOR
+      )
+      await f.service.controlTask(f.task.id, { action: 'revoke' }, LOCAL_ACTOR)
+      assert.throws(
+        () =>
+          f.service.startTask(
+            {
+              requestId: taskId,
+              stepId: f.dependentWork.stepId,
+              objective: f.dependentWork.scope,
+              allowedFiles: f.dependentWork.allowedFiles,
+              workBinding: {
+                targetId: target.id,
+                workId: f.dependentWork.id,
+                admissionId
+              },
+              adapter: 'demonstration',
+              scenario: 'repair',
+              contractDigest: f.service.contract().digest,
+              revision: f.service.state().mapping.revision,
+              budgets: { elapsedMs: 60000, toolCalls: 20, attempts: 3 }
+            },
+            LOCAL_ACTOR
+          ),
+        /assessment source authority.*unavailable/i
+      )
+    } finally {
+      await f.service.close()
+      fs.rmSync(f.dir, { recursive: true, force: true })
+    }
+  }
+)
 
 test(
   'scoped work handoff preserves failed candidate and incomplete integration using exact current admitted work',

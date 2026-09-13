@@ -62,6 +62,14 @@ test('production proof is included in PR CI and never starts Vite dev or preview
     /gen:turbo:check.*turbo run react:build build:asyra-framework-site --concurrency=2/
   )
   assert.match(workflow, /run: yarn test:production-artifacts/)
+  const evidenceGate =
+    'node --test scripts/__tests__/production-artifact-resource-evidence.test.mjs'
+  assert.match(workflow, new RegExp(evidenceGate.replaceAll('/', '\\/')))
+  assert.ok(
+    workflow.indexOf(evidenceGate) <
+      workflow.indexOf('run: yarn test:production-artifacts'),
+    'Verify bounded resource evidence before running the artifact journey'
+  )
   assert.ok(
     workflow.indexOf('run: yarn build:production-artifacts') <
       workflow.indexOf('run: yarn workspace @asyra/asyra-design typecheck'),

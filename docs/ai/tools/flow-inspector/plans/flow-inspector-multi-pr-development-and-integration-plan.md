@@ -84,10 +84,13 @@ work/prerequisite results while retaining incomplete integration and the origina
 candidate outcome. Public callers accept only exact task/attempt/assessment selectors,
 leave all evidence interpretation in the existing service/review owners, and show
 bounded scope plus original candidate and integration outcomes before confirmation.
-Initial admission/prerequisite consumers, full runtime coverage and explicit
-target-baseline acceptance remain subsequent slices.
-Existing target execution and pending behavior stay in effect until those
-consumers are implemented and verified. Ordinary composition does not cover
+The first assessment-bound admission consumer now reserves dependent work from one
+explicitly selected current retained assessment across the service, API, CLI and
+Board. It preserves the exact allocation, source and prerequisite decision while
+requiring live source authority at task start, and leaves the target pending and the
+baseline unchanged. Full runtime coverage,
+whole-target offline integration and explicit target-baseline acceptance remain
+subsequent slices. Ordinary composition does not cover
 undeclared generated wrappers; the fixed four-package capture scope also does
 not close the original Factory/collaboration/UI cross-PR product cases.
 
