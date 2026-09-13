@@ -1308,3 +1308,26 @@ nonzero singletons both permit widths at most 1e-10 in position/metres
 and quaternion/direction/affine coefficients; ±1e-6 joint box at most 1e-3, refined
 ±1e-7 box at most 2e-4 with nonincreasing maxima. These test gates do not introduce
 a collision tolerance or require bit-identical signed zeros from set enclosure.
+
+Root released readiness commit 36ec0a102 for one C interval-pose implementation
+and its frozen gates. No D consumer or subsequent owner is included. Complete
+this slice, freeze and stop for root quota review; the quota stop takes priority.
+
+C interval-pose preparation is implemented. Six missing-entry cases first failed;
+five small correctness cases and then 31 focused cases passed with the original
+scalar, polynomial and point/Three evidence. The private interval adapter reuses
+the single chain and generalized final-affine formula; no scalar/poly/D producer
+changed. Predeclared rest/nonzero/narrow/refined tightness gates pass unchanged.
+Actual call-local scalar/trig work and per-transform affine reuse are verified;
+caller mutation, clone-once rejection and zero source generation remain explicit.
+
+Four full 25-box batches measured 23.5/21.1/233.7/230.6 ms: each performed 200
+bound-trig calls, 400 polynomial evaluations, 4200 terms, 150 matrix conversions
+and 20100 binary operations; maximum temporary width was 21595 bits. All fixed
+guards passed. All 448 app tests across 46 files passed, including existing D
+consumers and historical/current point evidence. Build/typecheck, naming and lint
+(13 console warnings, no errors) passed; a test-only readonly cast clarification
+required one ownership case plus build/type recheck, without runtime changes or
+a repeated full suite. Independent scoped numerical/code review found no remaining
+finding. This six-file slice freezes and stops for root quota review; interval
+set enclosure is not correlated joint trajectory, material or movement clearance.

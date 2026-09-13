@@ -803,7 +803,7 @@ authorized this one C point production integration and its frozen gates. Freeze
 after completion; no joint-interval or further owner begins. The quota stop
 instruction takes precedence over remaining gates.
 
-### C joint-domain interval pose preparation - readiness
+### C joint-domain interval pose preparation
 
 Owner: domain/robot-kinematics.ts, new evaluateRobotIntervalPose entry and private
 interval algebra over the existing evaluateRobotDomains/single chain. Inputs:
@@ -820,7 +820,7 @@ one generic final-affine formula; direct formal independent point/Three/rational
 oracles. Forbidden: duplicated chain/matrix formula, Math trig with EPS, endpoint
 interpolation, inverse-as-transpose, per-joint matrix product, D solver/runtime
 wiring, world-space geometry copies, material/contact exemptions or pose cache.
-Boundary for future implementation: robot-kinematics.ts and its existing direct
+Boundary: robot-kinematics.ts and its existing direct
 test, new `domain/__tests__/robot-intervals.test.ts`, API/spec/Inspector/plan. Existing
 scalar/poly tests and D consumers are regression gates, not mutation contributors.
 Failure owner: existing domain/scalar rejection; unresolved intervals stay unknown
@@ -851,12 +851,13 @@ Current point/source/historical snapshots remain
 unchanged. Count one chain, eight bound-trig calls, actual polynomial evaluations/
 terms/maximum bits and unique affine conversions; no numeric point re-evaluation.
 
-Fixed future profile: one full approved box as a small control, then four batches
+Fixed profile: one full approved box as a small control, then four batches
 of 25 boxes (normal narrow and nonzero subnormal, first/repeated). Each batch has
 200 bound-trig calls and at most 400 actual polynomial evaluations; retain 24000-
 bit guards, 1 second per batch and 10 seconds total, cooperatively checked. Measure
 all validation/adapter/chain/affine/work cost on a prepared rig, not just trig.
 No parameter search or guard increase. After focused proof, run full app/type/
 build/lint/naming and independent numerical review. Current authorization is
-readiness only: freeze these docs and stop for root quota review before tests or
-production.
+one C interval-pose implementation slice after root release of readiness commit
+36ec0a102. Complete only its declared gates, then freeze and stop for root quota
+review. No subsequent owner is authorized; a quota stop overrides remaining work.

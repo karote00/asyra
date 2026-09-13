@@ -1287,9 +1287,9 @@ must pass or receive independent new-coefficient analysis; never change predicat
 to hide a failed migration. This stage does not prove articulated interval motion,
 material occupancy, intended contact or harvesting quality.
 
-### Canonical joint-domain point enclosure - readiness
+### Canonical joint-domain point enclosure
 
-The next C owner prepares an interval pose for a closed box of the five existing
+The C owner prepares an interval pose for a closed box of the five existing
 joint domains. It encloses the current polynomial point model for every admitted
 binary64 joint tuple in that box. The box does not encode time correlation, a
 continuous real-valued trajectory, IK, speed admission or motion clearance.
