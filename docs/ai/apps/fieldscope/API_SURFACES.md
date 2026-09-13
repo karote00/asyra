@@ -320,3 +320,13 @@ Cross-package imports use public `@asyra/*` facades. Do not import another app's
   Generic C evaluation does not certify a numerical adapter, time correlation or
   articulated clearance. Result containers are immutable; foreign scalar objects
   and rig references are not recursively frozen. Existing consumers own currentness.
+
+## Shared scalar arithmetic
+
+`domain/scalar-arithmetic.ts` owns the existing scalar implementation; the supported
+`simulation/query-arithmetic.ts` import path directly re-exports the same functions
+and `Interval`/`Dyadic` types. Public functions remain `interval`, `add`, `subtract`,
+`multiply`, `divide`, `squareRoot`, `dyadic` and `fractionInterval`. Both paths share
+function identity and one private module state. This extraction changes neither
+rounding/uncertainty nor exact conversion behavior, and supplies no new trig or
+movement guarantees. C may depend on this domain owner without importing D.

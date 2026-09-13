@@ -649,3 +649,26 @@ Gates: pre-edit Float64 point oracle (including signed zero), original source ha
 references/rest reconstruction, singleton adapter equality, domain/failure/ownership
 cases, existing rig/projection tests and full app unit/type/build/lint/naming/review.
 This segment closes chain sharing only, not complete interval or movement evidence.
+
+### Shared scalar arithmetic ownership
+
+Owner: domain/scalar-arithmetic.ts, the single engine-neutral scalar computation
+module. The established simulation/query-arithmetic.ts path remains a direct
+re-export facade with unchanged public types and function identities.
+Inputs/outputs: existing Interval/Dyadic and interval/add/subtract/multiply/divide/
+squareRoot/dyadic/fractionInterval contracts and exact original Number behavior.
+Conditions: move the entire implementation unchanged; only one copy of private
+DataView/state and arithmetic functions exists. No wrapper or second implementation.
+Allowed: C and D consumers can use the common domain owner; existing D imports
+continue through the supported facade, without migration or deprecation.
+Forbidden: changing any arithmetic/predicate, adding trigonometry/conversion policy,
+changing C point semantics, source state, material/contact rules or query outcomes.
+Boundary: domain/scalar-arithmetic.ts, simulation/query-arithmetic.ts, its existing
+query-arithmetic.test.ts and API/Inspector/plan. Existing independent exact/ray/
+collision/motion tests are regression gates, not mutation targets.
+Failure owner/lifetime: original scalar failure and uncertainty behavior unchanged;
+module scratch state remains synchronous/shared, with no new cache or lifecycle.
+Gates: pre-move body hash/export inventory, exact body preservation, facade/shared
+function identity, original independent arithmetic and consumer controls, full app
+unit/type/build/lint/naming and scoped independent review. No new product capability
+or numerical proof follows merely from moving this owner.
