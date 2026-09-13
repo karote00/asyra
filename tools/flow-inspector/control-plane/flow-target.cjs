@@ -160,6 +160,8 @@ function createTargetOwner({
   getTask,
   getReview,
   getSource = () => null,
+  getAssessment = () => null,
+  deferAssessmentValidation = false,
   getVersionReview = () => null,
   getAcceptedVersion
 }) {
@@ -206,6 +208,70 @@ function createTargetOwner({
     return freeze({ reviewId, candidateDigest: review.candidateDigest })
   }
   const file = path.join(directory, 'targets.json')
+  const assessmentSource = (
+    record,
+    work,
+    assessmentId,
+    actor,
+    current,
+    allocationRevision
+  ) => {
+    requireValue(validId(assessmentId), 'assessment identity required')
+    const assessment = getAssessment(assessmentId)
+    const workResult = assessment?.result?.works?.filter(
+      (item) => item.id === work.id
+    )
+    const source = assessment?.runtime
+    requireValue(
+      assessment?.id === assessmentId &&
+        assessment.actor === actor &&
+        assessment.phase === 'completed' &&
+        assessment.request?.targetId === record.id &&
+        assessment.request.allocationRevision === allocationRevision &&
+        assessment.request.allocationRevision ===
+          assessment.result?.allocationRevision &&
+        assessment.result.targetId === record.id &&
+        same(assessment.result.acceptedBaseline, record.acceptedBaseline) &&
+        Object.hasOwn(assessment.pins ?? {}, 'acceptedVersion') ===
+          Object.hasOwn(record, 'acceptedVersion') &&
+        (!Object.hasOwn(record, 'acceptedVersion') ||
+          same(assessment.pins.acceptedVersion, record.acceptedVersion)) &&
+        Object.hasOwn(assessment.pins ?? {}, 'targetVerification') ===
+          Object.hasOwn(record, 'targetVerification') &&
+        (!Object.hasOwn(record, 'targetVerification') ||
+          same(
+            assessment.pins.targetVerification,
+            record.targetVerification
+          )) &&
+        (!current || assessment.projection?.current === true) &&
+        assessment.result.accepted?.status === 'passed' &&
+        workResult?.length === 1 &&
+        workResult[0].targetId === record.id &&
+        workResult[0].allocationRevision ===
+          assessment.request.allocationRevision &&
+        workResult[0].status === 'passed' &&
+        workResult[0].prerequisites?.status === 'passed',
+      'assessment does not satisfy this work and its prerequisites'
+    )
+    requireValue(
+      source &&
+        source.attemptId === assessment.request.sourceAttemptId &&
+        Object.hasOwn(source, 'taskId') ===
+          Object.hasOwn(assessment.request, 'sourceTaskId') &&
+        (!Object.hasOwn(source, 'taskId') ||
+          source.taskId === assessment.request.sourceTaskId) &&
+        source.repository === repositoryRoot &&
+        /^[a-f0-9]{40}$/.test(source.head ?? '') &&
+        /^[a-f0-9]{64}$/.test(source.sourceDigest ?? '') &&
+        /^[a-f0-9]{64}$/.test(source.runtimeSourceDigest ?? '') &&
+        assessment.result.source?.repository === source.repository &&
+        assessment.result.source?.head === source.head &&
+        assessment.result.source?.runtimeSourceDigest ===
+          source.runtimeSourceDigest,
+      'assessment source identity is unavailable or conflicting'
+    )
+    return source
+  }
   let records = []
   // The service owns the enclosing store lock; this owner never opens another store.
   if (fs.existsSync(file)) {
@@ -325,6 +391,9 @@ function createTargetOwner({
         )
         requests.add(entry.request.requestId)
         if (entry.admission) {
+          const work = entry.state.works.find(
+            (item) => item.id === entry.admission.workId
+          )
           requireValue(
             entry.admissionDigest === sha256(JSON.stringify(entry.admission)) &&
               entry.request.action === 'admit' &&
@@ -335,13 +404,28 @@ function createTargetOwner({
               entry.admission.repositoryRoot === repositoryRoot &&
               /^[a-f0-9]{64}$/.test(entry.admission.source?.digest ?? '') &&
               /^[a-f0-9]{40}$/.test(entry.admission.source?.head ?? '') &&
-              entry.state.works.some(
-                (w) =>
-                  w.id === entry.admission.workId &&
-                  w.taskIds.includes(entry.admission.taskId)
-              ),
+              work?.taskIds.includes(entry.admission.taskId) &&
+              (work.prerequisites.length
+                ? validId(entry.admission.assessmentId) &&
+                  Number.isInteger(entry.admission.allocationRevision) &&
+                  entry.admission.allocationRevision > 0 &&
+                  entry.admission.allocationRevision === entry.revision - 1 &&
+                  entry.request.assessmentId === entry.admission.assessmentId &&
+                  entry.request.sourceAttemptId === undefined
+                : entry.admission.assessmentId === undefined &&
+                  entry.admission.allocationRevision === undefined &&
+                  entry.request.assessmentId === undefined),
             'invalid retained work admission'
           )
+          if (work.prerequisites.length && !deferAssessmentValidation)
+            assessmentSource(
+              record,
+              work,
+              entry.admission.assessmentId,
+              entry.actor,
+              false,
+              entry.admission.allocationRevision
+            )
         }
         for (const older of record.history.slice(0, index))
           if (older.admission)
@@ -396,15 +480,21 @@ function createTargetOwner({
         })
       }
     const works = freeze(
-      record.history.at(-1).state.works.map((w) => ({
-        ...w,
-        status: w.prerequisites.length ? 'blocked' : 'pending',
-        assessment: { status: 'pending', attempts: [] },
-        prerequisites: w.prerequisites.map((dep) => ({
-          ...dep,
-          status: 'unconfirmed'
-        }))
-      }))
+      record.history.at(-1).state.works.map((w) => {
+        const assessed = record.history.some(
+          (entry) =>
+            entry.admission?.workId === w.id && entry.admission.assessmentId
+        )
+        return {
+          ...w,
+          status: w.prerequisites.length && !assessed ? 'blocked' : 'pending',
+          assessment: { status: 'pending', attempts: [] },
+          prerequisites: w.prerequisites.map((dep) => ({
+            ...dep,
+            status: assessed ? 'passed' : 'unconfirmed'
+          }))
+        }
+      })
     )
     projections.set(record.id, { links, works })
   }
@@ -473,7 +563,16 @@ function createTargetOwner({
         'work admission identity mismatch'
       )
       requireValue(
-        !work.prerequisites.length,
+        !work.prerequisites.length ||
+          (assessmentSource(
+            record,
+            work,
+            admission.assessmentId,
+            admission.actor,
+            false,
+            admission.allocationRevision
+          ) &&
+            admission.allocationRevision < record.history.length),
         'unconfirmed prerequisite blocks execution'
       )
       matchTask(record, work, task)
@@ -573,7 +672,8 @@ function createTargetOwner({
         'pending',
         'workId',
         'taskId',
-        'sourceAttemptId'
+        'sourceAttemptId',
+        'assessmentId'
       ])
       const request = structuredClone(input)
       requireValue(
@@ -592,7 +692,9 @@ function createTargetOwner({
         'unknown action'
       )
       requireValue(
-        request.action === 'admit' || request.sourceAttemptId === undefined,
+        request.action === 'admit' ||
+          (request.sourceAttemptId === undefined &&
+            request.assessmentId === undefined),
         'source only allowed for admission'
       )
       const create = request.action === 'create'
@@ -689,42 +791,63 @@ function createTargetOwner({
         requireValue(work && validId(request.taskId), 'unknown work or task')
         if (request.action === 'admit') {
           requireValue(
-            !work.prerequisites.length,
-            'unconfirmed prerequisite blocks admission'
-          )
-          requireValue(
             !taskBindings.get(request.taskId)?.admission,
             'task admission already reserved'
           )
-          const source = getSource(request.sourceAttemptId)
-          requireValue(
-            source?.format === 2 &&
-              source.phase === 'completed' &&
-              source.scenario === 'baseline' &&
-              (source.mode === undefined || source.mode === 'verify') &&
-              source.contractDigest ===
-                record.acceptedBaseline.contractDigest &&
-              source.mappingRevision === record.acceptedBaseline.revision &&
-              source.snapshot?.contractDigest === source.contractDigest &&
-              source.evidence?.status === 'passed' &&
-              !source.evidence.issues.length &&
-              /^[a-f0-9]{40}$/.test(source.snapshot.head) &&
-              /^[a-f0-9]{64}$/.test(source.snapshot.digest),
-            'ineligible baseline source proof'
-          )
-          const accepted = getContracts().find(
-            (c) => c.digest === record.acceptedBaseline.contractDigest
-          )
-          requireValue(
-            accepted &&
-              accepted.cases.every(
-                (c) =>
-                  source.evidence.cases.filter(
-                    (v) => v.id === c.id && v.status === 'passed'
-                  ).length === 1
-              ),
-            'incomplete baseline source proof'
-          )
+          let sourceIdentity
+          if (work.prerequisites.length) {
+            requireValue(
+              request.sourceAttemptId === undefined,
+              'dependent prerequisite admission cannot select a baseline source'
+            )
+            const source = assessmentSource(
+              record,
+              work,
+              request.assessmentId,
+              actor,
+              true,
+              request.expectedRevision
+            )
+            sourceIdentity = { digest: source.sourceDigest, head: source.head }
+          } else {
+            requireValue(
+              request.assessmentId === undefined,
+              'independent admission cannot select a target assessment'
+            )
+            const source = getSource(request.sourceAttemptId)
+            requireValue(
+              source?.format === 2 &&
+                source.phase === 'completed' &&
+                source.scenario === 'baseline' &&
+                (source.mode === undefined || source.mode === 'verify') &&
+                source.contractDigest ===
+                  record.acceptedBaseline.contractDigest &&
+                source.mappingRevision === record.acceptedBaseline.revision &&
+                source.snapshot?.contractDigest === source.contractDigest &&
+                source.evidence?.status === 'passed' &&
+                !source.evidence.issues.length &&
+                /^[a-f0-9]{40}$/.test(source.snapshot.head) &&
+                /^[a-f0-9]{64}$/.test(source.snapshot.digest),
+              'ineligible baseline source proof'
+            )
+            const accepted = getContracts().find(
+              (c) => c.digest === record.acceptedBaseline.contractDigest
+            )
+            requireValue(
+              accepted &&
+                accepted.cases.every(
+                  (c) =>
+                    source.evidence.cases.filter(
+                      (v) => v.id === c.id && v.status === 'passed'
+                    ).length === 1
+                ),
+              'incomplete baseline source proof'
+            )
+            sourceIdentity = {
+              digest: source.snapshot.digest,
+              head: source.snapshot.head
+            }
+          }
           requireValue(
             same(record.acceptedBaseline, getBaseline()),
             'stale accepted source baseline'
@@ -734,8 +857,8 @@ function createTargetOwner({
             matchTask(record, work, oldTask.task)
             requireValue(
               oldTask.actor === actor &&
-                oldTask.snapshot.digest === source.snapshot.digest &&
-                oldTask.snapshot.head === source.snapshot.head,
+                oldTask.snapshot.digest === sourceIdentity.digest &&
+                oldTask.snapshot.head === sourceIdentity.head,
               'retained task source or actor mismatch'
             )
           }
@@ -745,10 +868,13 @@ function createTargetOwner({
             workId: work.id,
             actor,
             repositoryRoot,
-            source: {
-              digest: source.snapshot.digest,
-              head: source.snapshot.head
-            },
+            source: sourceIdentity,
+            ...(work.prerequisites.length
+              ? {
+                  assessmentId: request.assessmentId,
+                  allocationRevision: request.expectedRevision
+                }
+              : {}),
             legacyTask: !!oldTask
           }
         } else {
@@ -820,6 +946,24 @@ function createTargetOwner({
       projectRevision(find(next.id))
       return decisionResult(find(next.id), find(next.id).history.at(-1))
     }
+  }
+  owner.validateAssessmentAdmissions = () => {
+    for (const record of records)
+      for (const entry of record.history) {
+        const admission = entry.admission
+        if (!admission?.assessmentId) continue
+        const work = entry.state.works.find(
+          (item) => item.id === admission.workId
+        )
+        assessmentSource(
+          record,
+          work,
+          admission.assessmentId,
+          admission.actor,
+          false,
+          admission.allocationRevision
+        )
+      }
   }
   return owner
 }

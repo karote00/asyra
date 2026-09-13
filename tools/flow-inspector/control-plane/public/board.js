@@ -1431,6 +1431,7 @@
               ])
             ].join('|')
           : ''
+        renderTargetRecord()
         if (
           assessmentSignature === signature &&
           byId('assessment-summary').textContent
@@ -1646,12 +1647,21 @@
         byId('target-pending').textContent =
           'Unassigned obligations - pending: ' +
           (targetRecord?.pending.join(', ') || 'none')
+        const selectedAdmissionRecord = assessmentRecords.find(
+          (record) => record.id === selectedAssessmentId
+        )
         const itemsSignature = targetRecord
           ? targetRecord.id +
             ':' +
             targetRecord.revision +
             ':' +
-            targetRecord.baselineCurrent
+            targetRecord.baselineCurrent +
+            ':' +
+            selectedAssessmentId +
+            ':' +
+            (selectedAdmissionRecord?.phase ?? '') +
+            ':' +
+            (selectedAdmissionRecord?.projection.current ?? false)
           : 'none'
         if (itemsSignature !== targetItemsSignature) {
           targetItemsSignature = itemsSignature
@@ -1683,15 +1693,33 @@
                 )
               const prepare = node('button', 'Prepare task from this promise')
               prepare.type = 'button'
+              const dependent = work.prerequisites.length > 0
+              const selectedAdmissionAssessment = assessmentRecords.find(
+                (record) =>
+                  record.id === selectedAssessmentId &&
+                  record.phase === 'completed' &&
+                  record.request.targetId === targetRecord.id &&
+                  record.request.allocationRevision === targetRecord.revision &&
+                  record.projection.current
+              )
+              if (dependent)
+                prepare.textContent = 'Prepare task from assessed prerequisites'
               prepare.disabled =
-                work.status === 'blocked' || !targetRecord.baselineCurrent
+                !targetRecord.baselineCurrent ||
+                (dependent
+                  ? !selectedAdmissionAssessment
+                  : work.status === 'blocked')
               prepare.onclick = async () => {
                 if (acting || !capability) return
                 acting = true
                 try {
-                  if (!selectedId)
+                  if (!dependent && !selectedId)
                     throw new Error(
                       'Select a completed all-flow baseline proof before preparing work.'
+                    )
+                  if (dependent && !selectedAdmissionAssessment)
+                    throw new Error(
+                      'Select a current retained assessment before preparing dependent work.'
                     )
                   const taskId = window.crypto.randomUUID()
                   const admissionId = window.crypto.randomUUID()
@@ -1701,11 +1729,14 @@
                     targetId,
                     expectedRevision: targetRecord.revision,
                     requestId: admissionId,
-                    reason:
-                      'Prepare this saved work promise against the selected baseline proof',
+                    reason: dependent
+                      ? 'Prepare this saved work promise from assessed prerequisites'
+                      : 'Prepare this saved work promise against the selected baseline proof',
                     workId: work.id,
                     taskId,
-                    sourceAttemptId: selectedId
+                    ...(dependent
+                      ? { assessmentId: selectedAdmissionAssessment.id }
+                      : { sourceAttemptId: selectedId })
                   })
                   preparedWork = {
                     taskId,

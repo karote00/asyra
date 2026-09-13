@@ -600,10 +600,12 @@ The original task scope and strict all-flow candidate verifier stay intact; link
 An evolved target incompatible with current task admission stays visibly limited;
 it cannot use partial delivery to bypass that verifier.
 
-Prerequisites always remain `unconfirmed` in this slice: linked tasks, passed
-candidate checks and merged PRs do not prove their handoffs in the current source.
-Dependent work displays `blocked`; allocation status and the complete target remain
-`pending`. Source-admitted bounded assessments are exposed separately below. Task verification and PR observations are displayed under their original
+Prerequisites without an assessment-bound admission remain `unconfirmed`: linked
+tasks, passed candidate checks and merged PRs do not prove their handoffs in the
+current source. Dependent work displays `blocked` until an exact current retained
+assessment proves its own promise and prerequisites and is consumed by the target
+owner as described below. Allocation status and the complete target remain
+`pending`. Task verification and PR observations are displayed under their original
 identities, separately from work completion. No aggregation of different HEADs,
 client conformance decision, automatic acceptance or dependency dispatch exists.
 
@@ -700,11 +702,24 @@ are not closed by this handoff.
 ### Work admission before execution
 
 A separate `admit` target decision reserves one task UUID for an unchanged work
-commitment before execution. It requires the current target revision, actor,
-reason and a retained completed baseline proof attempt from this store. The proof
-must bind the same accepted revision/contract and contain all six passing
-obligations. The owner pins its exact source digest and HEAD plus repository
-identity; neither a PR observation nor a caller-supplied pass is eligible.
+commitment before execution. Independent work keeps the existing request with the
+current target revision, actor, reason and `sourceAttemptId` naming a retained
+completed baseline proof attempt from this store. The proof must bind the same
+accepted revision/contract and contain all six passing obligations. The owner pins
+its exact source digest and HEAD plus repository identity; neither a PR observation
+nor a caller-supplied pass is eligible.
+
+Work with prerequisites instead requires `assessmentId` and forbids
+`sourceAttemptId`. The trusted service resolves that exact retained assessment and
+its currently available registered source; the client cannot supply its result or
+source. The assessment must be completed by the same actor, current for this exact
+target and allocation revision, and retain the target's accepted-version and
+target-verification pins. Accepted preservation, the selected work and its
+prerequisite result must all be `passed`. The work's own assessment identity and
+the registered runtime source must match the target owner artifact exactly.
+Whole-target integration may remain pending or failed and grants no admission or
+acceptance authority. Missing, stale, unknown, failed, mismatched or unavailable
+assessment evidence rejects before a target write.
 This initial source proof protects accepted behavior, not completion of new work.
 
 The decision appends immutable admission and audit to the target history and
@@ -719,15 +734,21 @@ snapshot; it does not overwrite its task or attempt history.
 Task start supplies `workBinding: {targetId, workId, admissionId}`. The trusted
 service resolves the decision; the task owner checks it before capture, after
 capture and before every resumed attempt. Scope, actor, step, obligations,
-accepted revision, repository and captured source must agree. A reserved task
-cannot omit or substitute its binding. A stale, missing or changed relation
-fails before adapter operations or provider reservations. Task identity replay
-creates no new attempt. Existing provider dispatch blocks remain authoritative.
+accepted revision, repository and captured source must agree. For dependent work,
+the immutable admission additionally retains the exact assessment id and allocation
+revision; the retained assessment must still match that binding and its source.
+A reserved task cannot omit or substitute its binding. A stale, missing or changed
+relation fails before adapter operations or provider reservations. Task identity
+replay creates no new attempt. Existing provider dispatch blocks remain authoritative.
 
-Prerequisites remain unconfirmed in this slice and therefore prevent admission
-and execution. No prerequisite confirmation endpoint is introduced. This permits
-independent work only; proving usable prerequisite behavior on an integrated
-source is a later verification slice.
+This is assessment-backed admission, not a prerequisite confirmation endpoint or
+manual override. The assessor remains the only prerequisite evidence owner, and
+the target owner consumes its completed artifact without rerunning proof, reading
+source or interpreting handoff text. A passing upstream PR or task alone remains
+insufficient. An assessment-bound dependent admission changes that work's projected
+prerequisite state from `unconfirmed` to the retained passing result and allows its
+exact task to start; the target remains pending until separate integration and
+acceptance owners complete their contracts.
 
 Board/API/CLI target detail exposes each admitted work's bounded `assessment` with its
 exact task/attempt and candidate source identity. Unassigned obligations remain
@@ -739,27 +760,34 @@ tasks without admission are observations only. Reads use retained records, never
 capture source or assess raw evidence again.
 
 Permanent cases must prove reservation and restart, immutable commitments,
-prerequisite/scope/source/actor/identity rejection before execution, legacy-task
-compatibility, failure then correction with retained attempts, no cross-HEAD
-aggregation or automatic acceptance, and API/CLI parity. Existing security,
-Factory proof and browser gates remain mandatory.
+assessment-backed dependent admission and execution, prerequisite/status/source/
+actor/allocation/pin/identity rejection before effects, legacy-task compatibility,
+failure then correction with retained attempts, no cross-HEAD aggregation or
+automatic acceptance, and API/CLI parity. The offline integration case uses real
+retained source assessment producers and labels synthetic task inputs; it does not
+claim a real GitHub review or baseline decision. Existing security, Factory proof
+and browser gates remain mandatory.
 
 The Board's Prepare task action first records admission against the selected
-completed baseline proof, then fills the existing task form with that reserved
-binding. Missing or ineligible proof shows an error without starting work. The
-form visibly identifies the prepared work; editing scope cannot bypass server
-validation. Successful start consumes the prepared form binding. Unexecuted
-reservations show their task UUID without a broken task-artifact link. Bounded
-assessment updates preserve the existing work controls and keyboard focus.
+completed baseline proof for independent work or an explicitly selected retained
+target assessment for dependent work, then fills the existing task form with that
+reserved binding. The Board forwards only the selected identity and does not decide
+eligibility. Missing or ineligible proof shows an error without starting work. The
+form visibly identifies the prepared work and assessment-bound prerequisites;
+editing scope cannot bypass server validation. Successful start consumes the
+prepared form binding. Unexecuted reservations show their task UUID without a broken
+task-artifact link. Bounded assessment updates preserve the existing work controls,
+assessment selection and keyboard focus.
 
 ## Target source assessment
 
-This is the next multi-PR implementation contract, not a claim that the current
-Board or task admission supports dependency execution. Until its producer and
-consumer slices pass their gates, the existing unconfirmed-prerequisite and
-pending-target behavior above remains the runtime boundary. The assessment owner
-is `assess-target-source`; target allocation, candidate verification, source
-capture, raw evidence assessment and accepted history keep their existing owners.
+The assessment owner and first dependent-admission consumer implement the initial
+multi-PR contract: one explicitly selected current retained assessment may reserve
+dependent work while the target remains pending and its baseline stays unchanged.
+Broader runtime coverage, whole-target integration and explicit acceptance remain
+later slices. The assessment owner is `assess-target-source`; target allocation,
+candidate verification, source capture, raw evidence assessment and accepted
+history keep their existing owners.
 
 An explicit local assessment identifies a frozen target allocation revision, its
 target contract, the current accepted revision, and one captured integration
@@ -1828,8 +1856,9 @@ agent task ran. Already-present behavior may satisfy a commitment through curren
 formal source evidence without an agent task or a merged PR. Prerequisite
 readiness is reported separately from the work's own evidence, and an unsatisfied
 prerequisite blocks completion even when its own cases pass. Neither this result
-nor PR delivery alone authorizes task execution; a later admission slice must
-consume a current source-bound assessment before enabling dependent work.
+nor PR delivery alone authorizes task execution. The initial admission consumer
+enables only selected work whose current source-bound assessment passes its own
+obligations, prerequisites and accepted preservation.
 
 Whole-target integration requires no pending obligations, all current commitments
 and their handoffs proven on the same source, and passing accepted preservation.

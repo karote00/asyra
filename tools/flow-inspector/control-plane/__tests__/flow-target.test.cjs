@@ -418,6 +418,118 @@ function admissionFixture(t) {
   return { ...f, owner, source, admission, task, target }
 }
 
+function dependentAdmissionFixture(t) {
+  const f = setup(t)
+  const contract = f.options.getContracts()[0]
+  const source = {
+    id: randomUUID(),
+    format: 2,
+    phase: 'completed',
+    scenario: 'baseline',
+    mappingRevision: 1,
+    contractDigest: contract.digest,
+    snapshot: {
+      head: 'a'.repeat(40),
+      digest: 'b'.repeat(64),
+      contractDigest: contract.digest
+    },
+    evidence: {
+      status: 'passed',
+      cases: contract.cases.map((item) => ({ ...item, status: 'passed' })),
+      issues: []
+    }
+  }
+  const assessments = new Map()
+  f.options.getSource = (id) => (id === source.id ? source : null)
+  f.options.getAssessment = (id) => assessments.get(id)
+  const changed = structuredClone(f.request)
+  changed.works[0].prerequisites = [
+    { workId: changed.works[1].id, handoff: 'Use assessed upstream behavior' }
+  ]
+  const owner = createTargetOwner(f.options)
+  const created = owner.decide(changed, 'local-developer')
+  const target = owner.get(created.id)
+  const work = changed.works[0]
+  const assessmentId = randomUUID()
+  const assessment = {
+    id: assessmentId,
+    actor: 'local-developer',
+    phase: 'completed',
+    request: {
+      targetId: target.id,
+      allocationRevision: target.revision,
+      sourceAttemptId: source.id
+    },
+    pins: {},
+    runtime: {
+      attemptId: source.id,
+      repository: root,
+      head: source.snapshot.head,
+      sourceDigest: source.snapshot.digest,
+      runtimeSourceDigest: 'c'.repeat(64)
+    },
+    result: {
+      targetId: target.id,
+      allocationRevision: target.revision,
+      acceptedBaseline: target.acceptedBaseline,
+      source: {
+        repository: root,
+        head: source.snapshot.head,
+        runtimeSourceDigest: 'c'.repeat(64)
+      },
+      accepted: { status: 'passed' },
+      works: changed.works.map((item) => ({
+        id: item.id,
+        targetId: target.id,
+        allocationRevision: target.revision,
+        status: 'passed',
+        prerequisites: { status: 'passed' }
+      })),
+      integration: { status: 'pending' }
+    },
+    projection: { current: true }
+  }
+  assessments.set(assessmentId, assessment)
+  const taskId = randomUUID()
+  const admission = {
+    action: 'admit',
+    targetId: target.id,
+    expectedRevision: target.revision,
+    requestId: randomUUID(),
+    reason: 'Consume exact assessed prerequisites before work',
+    workId: work.id,
+    taskId,
+    assessmentId
+  }
+  const task = {
+    requestId: taskId,
+    actor: 'local-developer',
+    stepId: work.stepId,
+    step: contract.flows[0].steps.find((item) => item.id === work.stepId),
+    objective: work.scope,
+    allowedFiles: work.allowedFiles,
+    revision: 1,
+    contractDigest: contract.digest,
+    obligations: contract.cases,
+    workBinding: {
+      targetId: target.id,
+      workId: work.id,
+      admissionId: admission.requestId
+    }
+  }
+  return {
+    ...f,
+    owner,
+    source,
+    assessments,
+    assessment,
+    admission,
+    task,
+    target,
+    work
+  }
+}
+
 test('admission reserves source and task before execution and survives restart without changing baseline', (t) => {
   const f = admissionFixture(t)
   const before = f.options.getBaseline()
@@ -442,6 +554,99 @@ test('admission reserves source and task before execution and survives restart w
     () => restored.decide(revise(changed, f.target.id, 2), 'local-developer'),
     /admitted commitment/i
   )
+})
+
+test('assessment-bound admission enables exact dependent work and survives restart without accepting the target', (t) => {
+  const f = dependentAdmissionFixture(t)
+  const before = f.options.getBaseline()
+  const result = f.owner.decide(f.admission, 'local-developer')
+  assert.equal(result.decision.admission.assessmentId, f.assessment.id)
+  assert.equal(result.decision.admission.allocationRevision, f.target.revision)
+  assert.deepEqual(result.decision.admission.source, {
+    digest: f.assessment.runtime.sourceDigest,
+    head: f.assessment.runtime.head
+  })
+  assert.deepEqual(
+    f.owner.checkTask(f.task, f.source.snapshot),
+    result.decision.admission
+  )
+  const current = f.owner.get(f.target.id)
+  assert.equal(current.status, 'pending')
+  assert.equal(current.works[0].status, 'pending')
+  assert.equal(current.works[0].prerequisites[0].status, 'passed')
+  assert.deepEqual(f.options.getBaseline(), before)
+  const restored = createTargetOwner(f.options)
+  assert.deepEqual(
+    restored.checkTask(f.task, f.source.snapshot),
+    result.decision.admission
+  )
+  assert.equal(restored.get(f.target.id).status, 'pending')
+})
+
+test('assessment-bound admission rejects non-current or unsatisfied owner evidence without reservation', (t) => {
+  const f = dependentAdmissionFixture(t)
+  const mutations = [
+    ['missing', null],
+    [
+      'stale',
+      (value) => {
+        value.projection.current = false
+      }
+    ],
+    [
+      'actor',
+      (value) => {
+        value.actor = 'another-human'
+      }
+    ],
+    [
+      'allocation',
+      (value) => {
+        value.request.allocationRevision--
+      }
+    ],
+    [
+      'accepted preservation',
+      (value) => {
+        value.result.accepted.status = 'failed'
+      }
+    ],
+    [
+      'prerequisite',
+      (value) => {
+        value.result.works[0].prerequisites.status = 'failed'
+        value.result.works[0].status = 'failed'
+      }
+    ],
+    [
+      'source',
+      (value) => {
+        value.runtime.repository = '/other/repository'
+      }
+    ]
+  ]
+  for (const [name, mutate] of mutations) {
+    const value = structuredClone(f.assessment)
+    if (mutate) mutate(value)
+    if (name === 'missing') f.assessments.delete(f.assessment.id)
+    else f.assessments.set(f.assessment.id, value)
+    assert.throws(
+      () => f.owner.decide(f.admission, 'local-developer'),
+      /assessment|prerequisite|preservation|source|actor|allocation/i,
+      name
+    )
+    assert.equal(f.owner.get(f.target.id).history.length, f.target.revision)
+  }
+  f.assessments.set(f.assessment.id, f.assessment)
+  assert.throws(
+    () =>
+      f.owner.decide(
+        { ...f.admission, sourceAttemptId: f.source.id },
+        'local-developer'
+      ),
+    /source|assessment/i
+  )
+  assert.equal(f.owner.get(f.target.id).history.length, f.target.revision)
 })
 
 test('admission denies unresolved prerequisites before reserving work', (t) => {

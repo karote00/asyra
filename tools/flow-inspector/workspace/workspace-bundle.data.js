@@ -35423,14 +35423,15 @@
               "explicit local actor decision and expected target revision",
               "artifact:agent-task-state",
               "artifact:pr-review-record",
-              "retained completed baseline proof and source identity"
+              "retained completed baseline proof and source identity",
+              "artifact:target-source-assessment"
             ],
             "outputs": [
               "artifact:flow-target-state",
               "artifact:work-admission"
             ],
             "conditions": [
-              "Bind one flow and exact target revision and accepted baseline. A new targetReviewId resolves the exact trusted reviewed candidate and verification reference once at creation; the target-owned callback context requires availability only for a new creation after replay checking, while retained loading requests metadata only and replay invokes no resolver; retain its reviewId/candidateDigest pin immutably, check that same review on load, and reject missing or conflicting identity before writes. Preserve legacy absence without new authority and never replace a pin using latest/green status. Keep acceptedBaseline mapping revision separate from an additive acceptedVersion history pin supplied by the trusted service. On new creation retain the exact version metadata at top level and in the first owner audit entry; load cross-checks both and resolves the saved revision, later actions preserve it, and replay does no lookup. Callback absence preserves unpinned standalone compatibility without assessment authority; configured invalid metadata fails closed. Never select by equal mapping revision, contract digest or latest version. Require complete assigned-or-pending coverage, exact references, disjoint responsibility and acyclic explicit handoffs. Persist immutable revisions and audit atomically under the existing store lock. Link only exact admitted task scope. Project task and PR observations separately; prerequisites remain unconfirmed and full target pending. Reserve exact task, work promise, actor and baseline source before execution; unresolved prerequisites reject. Admitted commitments cannot be removed. Validate linked task execution against retained admission; bounded candidate assessments never complete the target."
+              "Bind one flow and exact target revision and accepted baseline. A new targetReviewId resolves the exact trusted reviewed candidate and verification reference once at creation; the target-owned callback context requires availability only for a new creation after replay checking, while retained loading requests metadata only and replay invokes no resolver; retain its reviewId/candidateDigest pin immutably, check that same review on load, and reject missing or conflicting identity before writes. Preserve legacy absence without new authority and never replace a pin using latest/green status. Keep acceptedBaseline mapping revision separate from an additive acceptedVersion history pin supplied by the trusted service. On new creation retain the exact version metadata at top level and in the first owner audit entry; load cross-checks both and resolves the saved revision, later actions preserve it, and replay does no lookup. Callback absence preserves unpinned standalone compatibility without assessment authority; configured invalid metadata fails closed. Never select by equal mapping revision, contract digest or latest version. Require complete assigned-or-pending coverage, exact references, disjoint responsibility and acyclic explicit handoffs. Persist immutable revisions and audit atomically under the existing store lock. Link only exact admitted task scope. Project task and PR observations separately; prerequisites remain unconfirmed until an assessment-bound admission and the full target stays pending. Independent admission retains the exact baseline source. Dependent admission instead consumes one exact current completed service-retained target assessment with passing accepted preservation, selected work and prerequisites, matching allocation, actor, target pins and available registered source; persist its assessment/source binding without recomputation. Missing, stale, failed or client-supplied evidence rejects before writes. Admitted commitments cannot be removed. Validate linked task execution against the retained source and assessment-bound admission; neither bounded work nor delivery completes the target or accepts history."
             ],
             "bypasses": [
               "Exact request replay returns the original revision without writes. Invalid, stale or conflicting decisions have no effects. No partial verification bypass or automatic acceptance."
@@ -35438,19 +35439,23 @@
             "allowedContributors": [
               "trusted local action service",
               "retained admitted contracts and task/review records",
+              "service-retained current target assessment artifact",
               "existing exclusive store ownership"
             ],
             "forbiddenContributors": [
               "candidate self-authorization",
               "PR status as prerequisite evidence",
               "client-side conformance",
+              "caller-supplied assessment result or source",
               "model or remote dispatch",
               "accepted history mutation"
             ],
             "cacheDimensions": [],
             "implementationBoundary": [
               "tools/flow-inspector/control-plane/flow-target.cjs",
-              "tools/flow-inspector/control-plane/__tests__/flow-target.test.cjs"
+              "tools/flow-inspector/control-plane/service.cjs",
+              "tools/flow-inspector/control-plane/__tests__/flow-target.test.cjs",
+              "tools/flow-inspector/control-plane/__tests__/service.test.cjs"
             ],
             "specRefs": [
               "#flow-targets-and-work-decomposition",
@@ -36074,6 +36079,7 @@
               "artifact:scoped-work-review"
             ],
             "conditions": [
+              "For dependent work admission, resolve only the explicitly selected retained assessment and its registered source, then supply that complete immutable owner artifact to manage-flow-target. Require matching actor, current target/allocation and retained pins before the target decision; do not accept client result/source fields, recompute prerequisite evidence or treat integration eligibility as admission authority. Existing independent baseline-proof admission remains unchanged.",
               "For explicit scoped work preparation/confirmation, publish a private detached handoff only from the exact current retained assessment, immutable work admission and task sourceFor identity. Require accepted preservation and the assessor work result including prerequisites to pass; reuse completed results without reassessment or source hashing. Bind task/attempt, allocation/work, accepted pins, complete runtime tuple and producer references. Invalidation denies new effects but historical reads remain available; global integration eligibility and candidate pass are not substitutes for scoped evidence.",
               "Optional sourceTaskId on internal target-proof requests selects only the task owner exact private sourceFor(taskId, attemptId) artifact for new dispatch, preserving failed/partial source identity independently of outcome. Persist the task namespace in the runtime tuple. Compose derived source with each exact ordinary verifier, execute only the shared contained runner, and recheck every output byte after settlement before evidence publication. Integrity failure retires source authority and retains actual runner/report with an error. Startup keeps manifest/descriptor admission strict but noncompleted unavailable bytes yield readable history without a source artifact; completed/live remain strict. Historical task correlation uses exact retained attempts only and cannot authorize new dispatch. Internal assessment consumes this exact task-source lifecycle; existing HTTP/CLI forwarding exposes the additive service selection, with exact task/attempt forwarding and service-owned validation; the Board task picker remains a subsequent consumer.",
               "Persist newly published derived sources as outer attempt format 3, requiring sourceContract and all three non-null descriptors; retain versioned checks, reject missing/unknown formats and never downgrade missing fields. Formats 1/2 remain historical without load-time upgrade. For derived source admission, use only the fixed run-UUID source/manifest locations and exact stored source contract. Perform one combined descriptor admission plus one actual output-tree byte verification before publishing a complete immutable private artifact; preserve bilateral execution presence, full/configuration/contract tuple and invalidate on mismatch. Startup repeats once per lifetime, reads/replay never do. Ordinary live no-source-read behavior remains unchanged; contained task target dispatch additionally requires the shared runner and post-run actual-byte check before evidence.",
@@ -36152,6 +36158,7 @@
               "artifact:proof-board-view"
             ],
             "conditions": [
+              "For dependent work preparation, require an explicit retained assessment selection for the selected target and current allocation and forward only its id with the target decision. Present the selected work and prerequisite status from the service projection; do not infer eligibility or use PR/task state as proof. Independent work continues to use the explicit completed baseline-proof selector.",
               "Project retained assessment history, immutable target/accepted version pins, separate accepted/work-prerequisite/integration results, progress, blockers and currentness from the service. New target creation passes only an explicitly selected review id; new assessment passes the saved allocation and explicitly selected source attempt. Refresh never selects source or review authority. Legacy absence remains unavailable, errors stay visible, and eligibility never accepts history. Poll through producer gaps without reassessment or redundant detail reads; preserve unchanged work controls, drafts, focus and canvas state.",
               "Offer separate explicit run and task/attempt source controls without adopting agent-history automatic selection. Public task/verdict data is display metadata, never source authority; repository display requires an exact public task/attempt assessment tuple. Share only task-detail GET output between the agent panel and source picker by exact task id and public summary signature, bounded to their two current selections and adapter lifetime. Coalesce pending reads, evict failures for retry, and commit consumer signatures only on still-current success; stale responses cannot overwrite new selection. Keep review GET separate, preserve focus/attempt choices on refresh and abort/discard on retirement.",
               "Prepare target work through an explicit source-bound admission before filling the task form. Project pending reservations and bounded assessments without replacing work controls on task updates; unknown prerequisites cannot launch work.",
@@ -36192,6 +36199,16 @@
           }
         ],
         "routes": [
+          {
+            "id": "target-assessment-to-work-admission",
+            "from": "assess-target-source",
+            "to": "manage-flow-target",
+            "kind": "conditional",
+            "predicate": "Only dependent work admission consumes an explicitly selected current completed assessment with matching actor, target allocation, pins, passing accepted/work/prerequisite results and an available registered source. Independent work keeps baseline-proof admission; no assessment accepts history or completes integration.",
+            "producedArtifacts": [
+              "artifact:target-source-assessment"
+            ]
+          },
           {
             "id": "service-scoped-work-to-review",
             "from": "serve-proof-actions",
@@ -36733,7 +36750,8 @@
             "ownerStepId": "assess-target-source",
             "channel": "source-bound target assessment",
             "consumerStepIds": [
-              "serve-proof-actions"
+              "serve-proof-actions",
+              "manage-flow-target"
             ]
           },
           {

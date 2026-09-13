@@ -1296,7 +1296,11 @@ test('target proof lifecycle preserves cancellation interruption errors and reta
   }
 })
 
-async function assessmentFixture(distinct = true, agentOptions = {}) {
+async function assessmentFixture(
+  distinct = true,
+  agentOptions = {},
+  dependent = false
+) {
   const f = referenceFixture()
   const service = createService(f.repository, {
     directory: f.runs,
@@ -1353,6 +1357,13 @@ async function assessmentFixture(distinct = true, agentOptions = {}) {
     allowedFiles: ['packages/factory/src/data-transact.ts'],
     prerequisites: []
   }))
+  if (dependent)
+    request.works[1].prerequisites = [
+      {
+        workId: request.works[0].id,
+        handoff: 'Use the assessed upstream offline behavior'
+      }
+    ]
   request.pending = []
   const target = service.decideTarget(request, LOCAL_ACTOR)
   return {
@@ -1367,6 +1378,149 @@ async function assessmentFixture(distinct = true, agentOptions = {}) {
     }
   }
 }
+
+test(
+  'current offline assessment admits and starts exact dependent work without accepting the baseline',
+  { timeout: 50000 },
+  async (t) => {
+    let agentCalls = 0
+    const agentOptions = {
+      adapterFactory() {
+        return {
+          async next() {
+            agentCalls++
+            return { tool: 'finish' }
+          }
+        }
+      }
+    }
+    const f = await assessmentFixture(false, agentOptions, true)
+    let service = f.service,
+      server
+    try {
+      const assessment = await service.waitTargetAssessment(
+        service.startTargetAssessment(f.request, LOCAL_ACTOR)
+      )
+      assert.equal(assessment.result.accepted.status, 'passed')
+      assert.equal(assessment.result.works[1].status, 'passed')
+      assert.equal(assessment.result.works[1].prerequisites.status, 'passed')
+      const work = f.targetRequest.works[1]
+      const target = service.getTarget(f.request.targetId)
+      const taskId = randomUUID()
+      const request = {
+        action: 'admit',
+        targetId: target.id,
+        expectedRevision: target.revision,
+        requestId: randomUUID(),
+        reason: 'Consume retained offline prerequisite evidence',
+        workId: work.id,
+        taskId,
+        assessmentId: assessment.id
+      }
+      assert.throws(
+        () =>
+          service.decideTarget(
+            { ...request, assessmentId: randomUUID() },
+            LOCAL_ACTOR
+          ),
+        /assessment/i
+      )
+      assert.throws(
+        () =>
+          service.decideTarget(
+            { ...request, sourceAttemptId: f.request.sourceAttemptId },
+            LOCAL_ACTOR
+          ),
+        /source|assessment/i
+      )
+      assert.equal(service.getTarget(target.id).history.length, target.revision)
+      await service.close()
+      const { startServer } = require('../server.cjs')
+      const { main } = require('../cli.cjs')
+      server = await startServer(f.repository, {
+        url: 'http://127.0.0.1:0',
+        serviceOptions: { directory: f.runs, agentOptions }
+      })
+      service = server.service
+      const assessor = require('../target-evidence.cjs')
+      const assess = t.mock.method(assessor, 'assessTargetSource')
+      const validate = t.mock.method(sourceOwner, 'validateSourceSnapshot')
+      const baseline = service.state().mapping
+      const input = path.join(f.repository, 'offline-admission-request.json')
+      fs.writeFileSync(input, JSON.stringify(request))
+      const messages = []
+      await main(
+        [
+          '--url',
+          server.origin,
+          'target-decide',
+          path.relative(f.repository, input)
+        ],
+        {
+          repositoryRoot: f.repository,
+          write: (value) => messages.push(value)
+        }
+      )
+      fs.rmSync(input)
+      const admitted = JSON.parse(messages.join(''))
+      assert.equal(assess.mock.callCount(), 0)
+      assert.equal(validate.mock.callCount(), 0)
+      assert.equal(admitted.decision.admission.assessmentId, assessment.id)
+      assert.deepEqual(admitted.decision.admission.source, {
+        digest: assessment.runtime.sourceDigest,
+        head: assessment.runtime.head
+      })
+      assert.equal(service.getTarget(target.id).status, 'pending')
+      assert.equal(service.getTarget(target.id).works[1].status, 'pending')
+      assert.equal(
+        service.getTarget(target.id).works[1].prerequisites[0].status,
+        'passed'
+      )
+      assert.deepEqual(service.state().mapping, baseline)
+      const api = await fetch(server.origin + '/api/targets/' + target.id).then(
+        (response) => response.json()
+      )
+      assert.deepEqual(api, service.getTarget(target.id))
+      assert.equal(api.works[1].prerequisites[0].status, 'passed')
+      assess.mock.restore()
+      validate.mock.restore()
+      await server.close()
+      server = null
+      service = createService(f.repository, {
+        directory: f.runs,
+        agentOptions
+      })
+      const taskRequest = {
+        requestId: taskId,
+        stepId: work.stepId,
+        objective: work.scope,
+        allowedFiles: work.allowedFiles,
+        workBinding: {
+          targetId: target.id,
+          workId: work.id,
+          admissionId: request.requestId
+        },
+        adapter: 'demonstration',
+        scenario: 'repair',
+        contractDigest: service.contract().digest,
+        revision: service.state().mapping.revision,
+        budgets: { elapsedMs: 60000, toolCalls: 20, attempts: 3 }
+      }
+      const task = await service.waitTask(
+        service.startTask(taskRequest, LOCAL_ACTOR)
+      )
+      assert.equal(task.id, taskId)
+      assert.equal(task.attempts.length, 1)
+      assert.equal(agentCalls, 1)
+      assert.equal(service.getTarget(target.id).status, 'pending')
+      assert.deepEqual(service.state().mapping, baseline)
+    } finally {
+      if (server) await server.close()
+      else await service.close()
+      fs.rmSync(f.dir, { recursive: true, force: true })
+    }
+  }
+)
 
 test('assessment registers complete private inventory before dispatch and retains exact results with zero work on replay or reads', async (t) => {
   const f = await assessmentFixture()

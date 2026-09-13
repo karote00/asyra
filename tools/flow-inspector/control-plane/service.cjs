@@ -667,6 +667,11 @@ function createService(
       candidateMappingVersion: candidate.mappingVersion
     }
   }
+  const assessmentRecords = new Map()
+  const assessmentViews = new Map()
+  const assessmentCurrents = new Map()
+  const selectedSources = new Map()
+  const assessmentFile = path.join(directory, 'target-assessments.json')
   let targets
   try {
     tasks = createTaskOwner(repositoryRoot, {
@@ -775,6 +780,8 @@ function createService(
         }
       },
       getSource: (id) => store.get(id),
+      getAssessment: (id) => assessmentViews.get(id),
+      deferAssessmentValidation: true,
       getReview: (id) => reviews.get(id)
     })
   } catch (error) {
@@ -1210,11 +1217,6 @@ function createService(
     completion.finally(() => pending.delete(id)).catch(() => undefined)
     return id
   }
-  const assessmentRecords = new Map()
-  const assessmentViews = new Map()
-  const assessmentCurrents = new Map()
-  const selectedSources = new Map()
-  const assessmentFile = path.join(directory, 'target-assessments.json')
   const assessmentSelection = (selection) => {
     objectRequest(selection, [
       'targetId',
@@ -1579,6 +1581,7 @@ function createService(
       store.list().some((record) => Object.hasOwn(record, 'targetAssessmentId'))
     )
       throw new Error('Missing target assessment inventory')
+    targets.validateAssessmentAdmissions()
   } catch (error) {
     store.close()
     throw error

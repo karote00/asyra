@@ -98,6 +98,17 @@ test(
         .click()
       await frame
         .locator('#target-work-title')
+        .fill('Record reversible journal')
+      await frame
+        .locator('#target-work-step')
+        .selectOption('record-reversible-journal')
+      await frame.locator('#target-obligations input').first().check()
+      await frame
+        .locator('#target-work-scope')
+        .fill('Prove the exact upstream journal')
+      await frame.locator('#target-add-work').click()
+      await frame
+        .locator('#target-work-title')
         .fill('Preserve deferred outcome')
       await frame
         .locator('#target-work-step')
@@ -105,7 +116,11 @@ test(
       await frame.locator('#target-obligations input').first().check()
       await frame
         .locator('#target-work-scope')
-        .fill('Prove the exact assigned outcome')
+        .fill('Prove the exact dependent outcome')
+      await frame.locator('#target-prerequisites').selectOption({ index: 0 })
+      await frame
+        .locator('#target-handoff')
+        .fill('Consume the assessed upstream journal')
       await frame.locator('#target-add-work').click()
       await frame.locator('#target-create').click()
       await expect(frame.locator('#target-result')).toContainText('Revision 1')
@@ -170,7 +185,7 @@ test(
         'pending'
       )
       await expect(frame.locator('#assessment-integration')).toContainText(
-        'Pending allocation: deferred.snapshot, deferred.delivery'
+        'Pending allocation: deferred.delivery'
       )
       const assessment = server.service.targetAssessments()[0]
       assert.equal(assessment.projection.accepted.status, 'passed')
@@ -181,6 +196,38 @@ test(
       await expect(frame.locator('#assessment-source-identity')).toContainText(
         assessment.runtime.repository
       )
+      const dependentWork = frame
+        .locator('#target-items > article')
+        .filter({ hasText: 'Preserve deferred outcome' })
+      const dependentPrepare = dependentWork.getByRole('button', {
+        name: 'Prepare task from assessed prerequisites'
+      })
+      await expect(dependentPrepare).toBeEnabled()
+      let admissionRequest
+      await page.route('**/api/targets/decide', async (route) => {
+        const body = route.request().postDataJSON()
+        if (body.action !== 'admit') return route.continue()
+        admissionRequest = body
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ id: target.id, revision: 2 })
+        })
+      })
+      await dependentPrepare.click()
+      assert.equal(admissionRequest.assessmentId, assessment.id)
+      assert.equal(admissionRequest.sourceAttemptId, undefined)
+      assert.equal(admissionRequest.workId, target.works[1].id)
+      await expect(frame.locator('#agent-work-binding')).toContainText(
+        target.works[1].id
+      )
+      await page.unroute('**/api/targets/decide')
+      await dependentWork.scrollIntoViewIfNeeded()
+      const admissionScreenshot = path.join(
+        artifacts,
+        'dependent-admission-controls.png'
+      )
+      await page.screenshot({ path: admissionScreenshot })
       const workNode = await frame
         .locator('#target-items > :first-child')
         .elementHandle()
@@ -243,7 +290,13 @@ test(
           .filter((url) => url.startsWith('/api/target-assessments/')).length,
         0
       )
-      const screenshots = []
+      const screenshots = [
+        {
+          path: admissionScreenshot,
+          viewport: page.viewportSize(),
+          evidence: 'deterministic offline dependent admission controls'
+        }
+      ]
       for (const [name, width, height] of [
         ['desktop', 1600, 1100],
         ['tablet', 900, 1000],
