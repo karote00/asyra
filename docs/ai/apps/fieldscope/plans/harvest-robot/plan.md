@@ -1450,3 +1450,45 @@ within the unchanged 24000-bit guard. This is complete conservative surface-doma
 accounting for the bounded owner, not articulated narrow coverage, movement
 clearance, material/contact permission or physical evidence. Independent sub-PR
 review remains the merge gate.
+
+PR #199 CI correction card: the Ubuntu validation of head `96bec5688` exposed five
+test-oracle and scheduling failures outside the changed collision owner. Base and
+head domain blobs are identical. The two whole-source snapshots hash binary64 arrays
+containing runtime `Math` transcendental outputs, so a different Linux digest does
+not identify a source change. Preserve the existing snapshot values as historical
+evidence; do not replace them with received Linux hashes. First obtain bounded
+per-value evidence on the unchanged head, recording semantic path, both Float64 bit
+patterns, absolute delta and ULP distance. Keep that diagnostic as a formally
+runnable test artifact. It does not set acceptance.
+
+Source-oracle owner: the existing C source tests. Inputs are current robot/cultivar
+products and their original metadata. Outputs are exact topology/identity/region/
+partition/material and repeat-generation checks, exact digests at the existing
+Float32 render storage boundary, plus unrounded finite dimensional, geometric,
+color and conservative-query relations. Float32 comparison is presentation evidence
+and does not alter source buffers or create a D tolerance. D continues to consume
+each platform's original binary64 source values as exact singleton inputs; existing
+unknown and outward interval behavior remains mandatory. Production generators,
+kinematics, scalar owners, collision and existing snapshot values are outside this
+correction allowlist. Mutation controls must prove topology and numeric semantic
+changes are detected before retiring the nonportable cross-runtime digest assertion.
+No rounded Linux hash becomes a new golden.
+
+Profile scheduling owner: FieldScope test configuration/package scripts and the
+root CI test sequence. Move the three existing scalar/point/interval elapsed cases
+unchanged into a formal profile suite excluded from ordinary FieldScope Vitest.
+After `yarn test:ci --concurrency=2` finishes, CI must invoke one FieldScope profile
+command with one worker and no file parallelism. A workflow contract test first
+fails while this stage is absent. Keep every fixed input, work assertion, 24000-bit
+bound, one-second batch limit, ten-second total limit and fail-fast error. Do not
+change production, add dependencies, upgrade tools, add caches or infer runtime
+performance.
+
+Correction allowlist: the four harvest-robot contract documents; robot/crop source
+tests and a direct shared test oracle; the three domain profile tests; FieldScope
+Vitest/profile configuration and package scripts; root test script, CI workflow and
+one direct workflow-contract test. Required gates are focused red/green mutation
+controls, workflow sequencing, ordinary FieldScope tests, isolated profiles, root
+script tests, app typecheck/lint/naming/build and final PR CI. Stop for a source
+semantic mismatch, a profile that still exceeds its unchanged guard while isolated,
+or any required production/tool/dependency change.

@@ -58,8 +58,16 @@ jobs:
 
       - name: Test
         if: success()
+        env:
+          # Keep the cross-runtime Float64 comparison available in CI evidence.
+          FIELDSCOPE_REPORT_SOURCE_TRACE: '1'
         # Each workspace also owns test workers; avoid multiplying both pools.
         run: yarn test:ci --concurrency=2
+
+      - name: Profile FieldScope numerical owners
+        if: success()
+        # Preserve elapsed guards while removing Turbo and workspace contention.
+        run: yarn test:fieldscope-profiles
 
       - name: Verify Flow Inspector core proof
         env:
