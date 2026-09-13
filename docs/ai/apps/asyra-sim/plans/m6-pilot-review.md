@@ -2065,3 +2065,38 @@ whole-paid-work reduction, CPU ratio at most 1.2 and each existing 500,000-work 
 20-second guard. Record all preparation, traversal, axes and convex work before
 assertions. Any changed evidence, incomplete coverage or failed gate stops for
 review without tuning leaf size, subset or thresholds. No full-goal run follows.
+
+### Isolated comparison result and bounded replan
+
+The singleton experiment is preserved with its permanent tests on
+`codex/asyra-sim-singleton-comparison`, head `32e414137`, under the main repository's
+`.worktrees/asyra-sim-singleton-comparison`. The goal branch contains neither
+experimental entry. Its fixed 114–198 control completes 95 evaluations for 197,028
+work; the singleton candidate exhausts 500,001 work after 94 evaluations with
+partial coverage. Nested refinement is 28,446, static axes 161,498 and interval
+axes 120,817. Coverage fails before complete-evidence, 20% work and CPU assertions;
+partial totals cannot establish savings. The isolated plan and two complete JSON
+artifacts retain the detailed result. Do not integrate or retune this candidate.
+
+This next read-only iteration finds no currently supported material candidate.
+The saved population contains 306,103 static work and 131,901 axis work. Nested
+membership kernels account for 7,612; even adding the conservative maximum of
+215 static calls times all 41 component-representative admission checkpoints
+bounds that membership work at 16,427. For the fixed complete prefix, the analogous
+bound is 138 + 105 times 41 = 4,443 out of 197,028. These are optimistic removable
+work ceilings, not permission to omit membership or mathematical limits on G4.
+They provide no standalone basis for the frozen comparison's 20% work target.
+
+The final triangle's original checkpoint remains necessary, while iterations
+inside its convex solver have no additional logical charge. A different triangle
+solver would therefore need a conservative, independently proved lower/upper
+certificate that avoids subsequent actual node or triangle work, rather than only
+faster arithmetic. Current saved data do not establish that benefit or the source
+provenance needed to retain such results. Broad projection omission and the finer
+hierarchy have measured negative results; pose-coefficient reuse instead has no
+logical-work saving under the current accounting model. Neither observation
+proves other algorithms impossible. Any future proposal needs a falsifiable
+complete-source work argument, a small independent certificate oracle, all cold/
+warm preparation and execution charges, and unchanged complete evidence gates.
+No new candidate, measurement, cache, production edit or full run is authorized
+by this replan. G4 remains unresolved at its unchanged 500,000-work goal.
