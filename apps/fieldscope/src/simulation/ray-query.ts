@@ -163,7 +163,7 @@ const vectorCross = (a: Vector, b: Vector): Vector => [
   subtract(multiply(a[2], b[0]), multiply(a[0], b[2])),
   subtract(multiply(a[0], b[1]), multiply(a[1], b[0]))
 ]
-const vectorDot = (a: Vector, b: Vector) =>
+const vectorDot = (a: readonly Interval[], b: readonly Interval[]) =>
   add(add(multiply(a[0], b[0]), multiply(a[1], b[1])), multiply(a[2], b[2]))
 const finiteInterval = (a: Interval) =>
   Number.isFinite(a.low) && Number.isFinite(a.high)
@@ -171,7 +171,7 @@ const finiteVector = (v: Vector) => v.every(finiteInterval)
 const zero = (a: Interval) => a.low === 0 && a.high === 0
 const containsZero = (a: Interval) => a.low <= 0 && a.high >= 0
 const midpoint = (a: Interval) => a.low + (a.high - a.low) / 2
-const apply = (m: Matrix, v: Vector): Vector => [
+const apply = (m: readonly (readonly Interval[])[], v: Vector): Vector => [
   vectorDot(m[0], v),
   vectorDot(m[1], v),
   vectorDot(m[2], v)
@@ -272,7 +272,10 @@ export function prepareQueryInstanceFrame(placement: {
   return freeze({ matrix, position: numberVector(placement.position) })
 }
 export function transformQueryPoint(
-  frame: ReturnType<typeof prepareQueryForwardFrame>,
+  frame: {
+    readonly matrix: readonly (readonly Interval[])[]
+    readonly position: readonly Interval[]
+  },
   value: readonly Interval[]
 ): Vector {
   if (value.length !== 3) throw new Error('Invalid query point')

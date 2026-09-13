@@ -1388,3 +1388,28 @@ the mesh envelope with explicit provenance. A finite envelope is neither a solid
 nor a collision decision. This segment writes/reviews only the three existing
 readiness documents, then freezes and stops for root quota review. Future API,
 formal tests and implementation require the next explicit release.
+
+Root released 6432d959b for one RobotMotionBounds implementation and its fixed
+gates. No C/scalar/predicate/session/material changes or subsequent owner are
+authorized. Complete this slice, freeze and stop for root quota review.
+
+Robot source point-time bounds are implemented. The initial formal red was a
+missing-module collection failure. Seven new cases and 89 focused tests passed;
+the complete original vertex/region oracle initially exceeded 10 seconds because
+of per-coordinate assertion overhead. Keeping every original vertex/index visit
+while using direct comparisons with failure details reduced that oracle below
+one second; no test coverage, production behavior or time guard was relaxed.
+Independent Three/source, arbitrary fixed near-unit base, original mapping and
+mesh-envelope provenance controls pass. A tracked source-buffer fixture proves
+zero position/index reads after preparation, including same-shape/different-region
+mapping and shared affine/local-bound work. Source retirement and clone-once
+schema/mutation checks preserve atomic publication.
+
+Four ten-entry complete-cost batches measured 62.7/43.6/118.2/114.3 ms, each with
+80 bound-trig calls, 160 polynomial evaluations and 17120 corner transformations;
+maximum temporary width was 21595 bits. All predeclared usefulness and resource
+guards passed. All 461 app tests across 47 files, build/typecheck, naming and lint
+(15 console warnings, no errors) passed. Independent scoped numerical/code review
+found no remaining finding. This seven-file slice freezes and stops for root
+quota review. Robot surface envelopes do not provide pair, environment, material,
+contact or movement clearance, and no next owner begins automatically.

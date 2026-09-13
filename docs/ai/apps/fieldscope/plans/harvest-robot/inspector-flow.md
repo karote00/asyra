@@ -913,7 +913,7 @@ Root released readiness commit a06511279 for this one D motion enclose
 implementation and its declared gates. Freeze and stop after completion for root
 quota review. No source-affine consumer or subsequent owner is authorized.
 
-### D robot source point-time affine bounds - readiness
+### D robot source point-time affine bounds
 
 Owner: new simulation/motion-bounds.ts, RobotMotionBounds.enclose. Inputs: original
 issued GeometrySource, raw segment/window for internal JointSegments.enclose, and
@@ -984,5 +984,6 @@ bound-trig calls and at most 160 polynomial evaluations per batch; 1 second each
 10 seconds total and unchanged 24000-bit guards. Include admission, C interval,
 all robot mesh/region envelopes and freezing/work costs; report actual counts and
 no source rebuilds. After future focused proof, full app/type/build/lint/naming and
-independent numerical review. Current authorization is readiness only: freeze and
-STOP for root quota review, with no tests or implementation in this segment.
+independent numerical review. Root released readiness commit 6432d959b for this one implementation and its
+frozen gates. Freeze and STOP after completion for root quota review; no later
+owner is authorized.

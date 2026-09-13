@@ -1351,7 +1351,7 @@ fruit state or material/contact clearance. A later source-affine bound consumer
 must bind the same current source tuple and explicit whole-window shape/pose
 assumptions; missing dynamic state cannot be inferred from this numeric result.
 
-### Robot source point-time affine bounds - readiness
+### Robot source point-time affine bounds
 
 A bounded D consumer may combine its own JointSegments.enclose admission with one
 C evaluateRobotIntervalPose call for the same original current GeometrySource rig.

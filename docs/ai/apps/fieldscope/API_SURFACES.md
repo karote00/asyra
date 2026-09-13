@@ -429,3 +429,24 @@ shared nearest-even conversion. Domain extrema enclose the rounded point model;
 existing ideal-linear speed checks remain separate. No C/FK or surface work occurs.
 The result is evidence, not an authorization token; invalid/stale inputs or
 resource failure abort publication, and no cache or source clone is introduced.
+
+## Robot source point-time bounds
+
+`RobotMotionBounds` in `simulation/motion-bounds.ts` takes the existing QueryGeometry
+owner. `enclose(source, rawSegment, window, assumptions)` internally admits the
+segment/window through JointSegments.enclose once and evaluates one C interval
+pose. MotionAssumptions requires source='synthetic', a nonempty assumption, an
+explicit fixed-pose base RigidTransform, rigid-source-shapes-throughout and
+empty-held-throughout. Inputs are detached before validation; fixed base admission
+retains the existing collision finite-slot/norm policy without normalization.
+
+The immutable result retains source/domain/pose and detached assumptions, plus
+all robot mesh/part and original region references. Each envelope is bounded with
+finite min/max or unresolved. Region provenance is region-bounds when its original
+prepared region exists, otherwise mesh-envelope with the shared original mesh
+bound result. No source geometry is scanned or copied. Original C interval affine
+then existing base/query application order is preserved. Work includes the actual
+nested motion/C work, parts, regions, envelopes, corners and baseFrames. Products
+are shared only for the same affine/local-bounds identities within this request;
+source is checked again before publication. The result does not cover environment
+surfaces or authorize material, collision, contact or movement outcomes.
