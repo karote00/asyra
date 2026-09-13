@@ -2246,3 +2246,60 @@ its original paid preparation. Its invocation memo may only publish after full
 fitting charge; any retained receipt must bind owned immutable membership and
 policy, not merely mutable public index identity. That lifecycle is unimplemented
 and needs a separate reviewed card. This six-file isolated slice is frozen.
+
+### Read-only integration readiness - invocation-owned fitted traversal
+
+Inspector `method` remains the complete-source conservative-bound owner. The next
+experimental implementation boundary, if released, is `original-mesh-query.ts`,
+`fitted-index.ts`, the frame primitive only where composition reuse requires it,
+and their focused tests here. Default behavior stays unchanged. This card itself
+changes only this plan; it authorizes no routing, cache, benchmark or full run.
+
+An explicit default-off experimental policy may demand fitting only at the existing
+post-membership (or positive interval admission) traversal entry, with hierarchy
+and two original meshes. Root rejection, native routes, membership, source witnesses,
+all static samples and temporal/severity handling retain their current owners.
+Both completed receipts must exist before pending roots are captured.
+
+The minimum safe receipt is a private immutable projection of the completed
+component hierarchy, preserving every edge, child order, leaf and original source
+offset/component. Copy all six node-bound scalars; leaf records derive immutable
+vertices/bounds from the unchanged frozen geometry and numeric offsets. The same
+frozen receipt is authoritative for fitting and subsequent pending iteration.
+Do not keep traversing foreign mutable children, bounds or triangle records after
+snapshotting. No source mesh, splitter or alternate partition is created. Foreign
+prepared indexes are neither mutated nor frozen; raw identities remain diagnostic.
+
+Memoization belongs only to one `OriginalMeshQuery`, which the actual method runner
+creates once per invocation across its pairs. A completed geometry receipt may be
+used by later static/interval calls in that invocation without rebuilding; no pose
+or query bound is retained. The next invocation rebuilds the receipt and fitting.
+The existing Worker-owned median/refinement cache is unchanged, including full warm
+charges before invocation memo publication. Fitting receives no cross-invocation
+cache or generic caller-supplied receipt API. Abort cannot publish either partial
+receipt or a paid-success memo; an already complete other-geometry receipt survives.
+
+Retain all original median/refinement/query ticks and the measured fitting fees.
+Additionally charge each immutable node construction one and triangle-record copy
+per 256 including tail; copying source fields is not free metadata. Reuse the paid
+collection span instead of another uncounted tree walk. After the cheap world gap,
+a node pair with both valid frames charges its two domain/frame compositions once;
+the completed pair-local poses then feed the existing fixed six face-proposal loop,
+with each actual projection certificate charged at its existing rate. An unsuccessful
+optional fitted certificate returns zero; the outer rejection retains
+max(already-paid world gap, optional certificate), as before. Missing frames retain
+the original source-bound route; no contact or witness comes from a fitted box. No cross axes or cutoff tuning.
+Composition artifacts live only for that node-pair attempt, not across poses.
+
+Formal red must cover default exact neutrality; complete source/snapshot identity
+under later foreign-refinement mutation (only private fitting/iteration isolation,
+not immunity of the unchanged median root/membership owners to external mutation);
+unused root/native/negative-admission paths; multiple calls in one invocation versus a fresh invocation; exact cold and warm-prepared
+whole costs; and cancellation before every construction, fitting, composition and
+memo publication. Preserve rational rotated/full-component/interval source oracles,
+late penetration, unknown, reversed pairs, and unchanged 10k/50k/576 work gates.
+Only after small proof and independent review may root release the fixed 114–198
+comparison: independent cold strategies, complete whole PairEvidence equality,
+at least 20% whole paid reduction, CPU at most 1.2, unchanged 500k/20s guards.
+Any failed completeness/equality/material gate stops and preserves evidence; no
+partial ratio or local fit quality establishes benefit. This readiness is frozen.
