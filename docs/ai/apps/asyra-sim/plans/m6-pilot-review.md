@@ -2416,3 +2416,190 @@ scoped type/lint/format/contracts clean. The already recorded successful prefix
 never takes this exception path, so its normal operation counts and cost evidence
 remain applicable; no representative prefix was rerun for this correction. Submit
 this exact small diff for bounded independent re-review before any full gate.
+
+### Candidate 28 - frozen whole-workcell validation
+
+The complete candidate and entry-cleanup correction `98fa74325` passed independent
+review. This stage changes only permanent method tests and this plan. Existing
+production defaults, method `original-part-clearance-v1@1.0.2`, catalog, Inspector,
+goal worktree and source remain unchanged. No version alias, fixture modification,
+resource relaxation, new dependency or further algorithm candidate is authorized.
+
+Inspector `method` remains the exact owner: detached admitted snapshot and
+shared-ancestor domain poses in; complete original triangles, median membership,
+demanded immutable component refinement and outward current/full-interval
+certificates provide evidence. Frontier topology supplies no pose/bound/witness.
+The reviewed private lifetime and every charge remain those of candidate 28;
+this stage only selects it inside a test-owned invocation. The failure owner is
+still method. No renderer, fallback result, source substitution, new cache or
+cross-invocation frontier may contribute. G4/reference-hardware and wall-time
+claims remain open regardless of this development-host result.
+
+Existing formal full-case entry is
+`methods/__tests__/representative-work.test.ts`: 298 pairs and complete coverage,
+20-second case timeout, one scenario (0), with all static/interval/source/handoff/
+derivation work reconciled to the query context. It is not environment-opt-in;
+Vitest's current config includes it normally. The existing
+`representative-resource.browser.spec.ts` covers scenarios 0,1,2 through the
+installed Worker, but its snapshot defaults to 30 seconds and its current outer
+assertion allows that budget plus 5 seconds. That broader browser condition is
+not this stage's 20-second acceptance. No browser/default change is needed or
+allowed now.
+
+Use the same `representativeSnapshot(0|1|2)` without changing its generator:
+39 bodies, 30 fixtures (the two supplied fixtures plus 28 complete original
+posts), six actuated joints, 200 frames over [0,8], 298 ordered selected pairs,
+unchanged original source, settings, rule, exclusions and adaptive limits. Record
+the complete workload/source hashes and actual triangle count before execution.
+A new permanent opt-in `frontier-full-work.test.ts` invokes the existing
+`runClearanceQueries` owner with `queryOriginalPartPair` and one fresh candidate-
+enabled `OriginalMeshQuery`. This is precisely the existing method dispatch;
+it requires no production edit. Raw research evidence is labelled candidate 28,
+not persisted or represented as installed 1.0.2 execution evidence.
+
+Freeze order: scenario 0 authoritative default control, then scenario 0 candidate.
+Only if that complete candidate passes every comparison/resource condition may
+scenarios 1 and 2 run in that order, each with its own default control. Any failure
+stops the loop before another scenario. Each method invocation retains the exact
+500,000 logical-work maximum and an explicit checkpoint wall guard of 20,000 ms;
+this stricter research guard does not change the admitted snapshot budget. All
+original preparation, source traversal, membership, frontier preparation,
+entry/lookup/begin/cleanup, root/journal/child allocations, updates/undo/publication,
+source witness and evidence fees remain paid. Failed post-budget attempts remain
+visible in recorded actual work; they cannot be discounted into a passing total.
+No prefix is rerun. No extrapolation of the 20.72% prefix gain is permitted.
+
+Scenario 0's authoritative existing profile at goal `b9f4a710c` records 500,197
+actual charges and 20,265 evaluations, first partial pair joint-2 / obstacle-11
+(zero-based pair 101); 101 earlier pairs completed, 196 later pairs are not useful
+measured work. Require the fresh default replay to reproduce this work/evaluation/
+first-failure identity before candidate observation. The control may be partial;
+it cannot be treated as an oracle for its unvisited source/time. Capture all
+completed pair evidence even on a wall exception and record the active pair,
+first failed pair/leaf, exact charged owner categories and wall time before tests
+assert. Nested frontier fees are a subset of enclosing query totals, never added
+twice. Pair costs must sum to the invocation total including failed active work.
+
+Predeclared comparator: exact input hash, pair identity/order and interval/root
+coverage are mandatory. On every complete original root of the authoritative
+control, require the same finding/penetration flags and no candidate unresolved
+coverage. Identical leaf evidence is accepted directly. The only other admitted
+bound/witness differences on control-completed coverage are independently
+conservative reuse of that existing evidence: candidate lower may be no greater
+than the minimum lower of covering complete control leaves; its finite upper must
+be no smaller than a complete control upper at the same witness time, with that
+time inside the candidate leaf. This permits wider bounds and another already
+certified control witness, never a tighter unproved bound or a new unvalidated
+witness. No epsilon/rounding slack is introduced. Any other difference is an
+incomparable result and stops the stage, even if potentially mathematically valid;
+do not loosen the comparator after observation. The comparator never seeds the
+candidate from control evidence.
+
+For coverage the baseline never completed, validity rests on the unchanged
+full-source owner, reviewed Cartesian/sequence/cancellation proof and permanent
+exact-rational/membership/interval oracles, not invented baseline answers.
+Every candidate pair must tile the full [0,8] without gaps or overlaps; all 298
+pairs must complete with no unresolved leaf. Bounds must be finite/nonnegative,
+lower<=upper when present, clear requires lower>threshold, finding requires a
+finite upper<=threshold and an in-leaf witness time, and penetration requires
+zero lower/upper with a witness. Additional newly completed source/time is
+reported distinctly from direct control comparison. There is no permission to
+trade new unknowns or missing witnesses for cost.
+
+Pass only if complete candidate evidence and comparison succeed with actual
+work<=500000 and elapsed<=20000 for all three unchanged scenarios. A scenario 0
+failure saves all evidence and stops this full stage; do not run two more known-
+failing cases or tune any parameter. If all three pass, run consolidated owner/
+default/compatibility gates and submit the complete stage for review. Production
+integration would still need separate permission, a distinct future method
+version (not a 1.0.2 alias), exact catalog/Worker dispatch, preserved readable old
+snapshots with incompatible reruns blocked, updated Inspector lifetime/fees and
+normal-path browser/resource evidence. None of those edits is authorized here.
+
+The initial full-stage control assertion correctly stopped before candidate
+execution: a test-only sampler wrapper discarded `publishBoundary`, producing
+20,262 evaluations rather than the frozen 20,265 (both charged 500,197). Current
+`StaticSampler` and continuous owner require that callable capability for the
+existing adjacent-root source transport. Remove that observer entirely; retain
+the canonical sampler identity, all frozen expectations and source behavior.
+The rejected observer output/log are preserved as
+`tmp/capacity/frontier-full-0-invalid-observer.json` and
+`frontier-full-invalid-observer.log`, explicitly not authoritative evidence.
+The permanent full-case control assertion is the demonstrated failing regression;
+no product implementation or comparator expectation changes in this correction.
+
+Candidate 28 whole-stage outcome: **scenario 0 failed; stop without scenarios
+1/2, integration or tuning**. The corrected sampler-preserving control reproduced
+500,197 charges / 20,265 evaluations / first partial pair index 101 exactly.
+Its elapsed time was 11,723.959 ms. The candidate used 500,197 / 20,260 evaluations
+in 14,943.898 ms and remained partial. Both emitted all 298 pair records, but
+only the first 101 pairs completed. The full input hash was
+`4c7b21228a7b621bf2e94b8991c25bebea78fe6c3f1d63203c141d0dca788291`:
+39 bodies / 30 fixtures / 200 frames / 298 pairs / 40,388 source triangles.
+These are public-source development-host measurements, not G4, hardware or human
+validation. The candidate's previously passing prefix does not override this
+whole-stage rejection.
+
+The unchanged logical limit first failed at work 500,001 on joint-2 / obstacle-11:
+control in `lowerOver`, candidate in `distance`. The remaining 196 pairs each
+attempted and charged one already-exhausted call, so total 500,197 is retained,
+not reclassified as within the 500,000 limit. No wall guard fired. The candidate
+is slower by 3,219.939 ms here. Full pair-cost and owner-cost sums both reconcile
+exactly to 500,197, including preparation, failed operations and cleanup.
+
+| Charged owner       | Control | Candidate |
+| ------------------- | ------: | --------: |
+| Static distance     |  374193 |    355997 |
+| Full-interval lower |  125041 |    143311 |
+| Source witness      |     462 |       392 |
+| Evidence handoff    |      21 |        21 |
+| Zero derivation     |     480 |       476 |
+| Total               |  500197 |    500197 |
+
+Candidate frontier charges are a nested subset of those totals: entry 40,283;
+admission 40,087; lookup 218; preparation nodes 3,133 / triangles 5,644 /
+representatives 46; begin 218; reserved cleanup 218; root cells 2; journal 2,778;
+child cells 2,778; update 2,777; publish 159; undo 1,481. They sum to 99,822.
+The unequal last child/update counts reflect paid allocation before the next
+checkpoint exhausted, with cancellation cleanup; no unpaid update is inferred.
+Entry+admission alone are 80,370. Before the difficult target pair, actual work
+was 190,246 vs control 101,785 (88,461 additional units). Target work was 309,755
+vs 398,216, but the candidate stopped earlier; these differently completed target
+amounts are not a savings comparison.
+
+Both results contain 59,307 leaves. Candidate unresolved leaves are 39,052 vs
+control 39,048. At the target, 156 leaves completed vs control 160; the highest
+remaining unresolved interval is [1.8894472361809045,1.92964824120603], with no
+upper/witness. Control instead reached [1.728643216080402,1.7688442211055277],
+retaining upper 0.022913658862772593 and witness time 1.728643216080402.
+
+The frozen comparator inspected 20,254 complete control roots, accepted 20,240
+identical leaves and 16 conservative differences, and found no newly completed
+root beyond control. It recorded seven issues: three unadmitted bound/witness
+differences at joint-2 / obstacle-10 intervals
+[3.698492462311558,3.7386934673366836],
+[3.85929648241206,3.899497487437186], and
+[3.899497487437186,3.9396984924623117]; plus loss of complete control coverage at
+target roots 44–47. The three differences are incomparable under the predeclared
+contract, not asserted to be a demonstrated geometric error. No comparator
+relaxation or additional unknown is accepted to rescue the resource result.
+
+Reproduction entry is `SIM_FRONTIER_FULL_WORK=1` with
+`frontier-full-work.test.ts`. Its opt-in full test fails at the required complete
+coverage assertion after writing all raw evidence; the ordinary comparator
+regression passes. Raw control/candidate results, complete per-pair leaves,
+workload/source hashes, paid categories and comparison remain in
+`tmp/capacity/frontier-full-0-{control,candidate,comparison}.json`; full log is
+`frontier-full-work.log`. No candidate scenario 1/2 artifact was produced. The
+previous 110 owner/lifecycle proofs and prefix measurements apply unchanged:
+this stage edited only the permanent full-case test and this plan. Scoped
+TypeScript, ESLint, comparator/default-path and naming/placement/Inspector gates
+are the closure checks for that test-only diff. No full/prefix rerun is needed.
+
+Evidence SHA-256 `frontier-full-0-control.json`: `9d644eb8d9875ccafc5c802e5543d88e5fee25c5c7fe9ea7f24d178443c1754a`.
+
+Evidence SHA-256 `frontier-full-0-candidate.json`: `cb3d2f0045aeb35fe4ac58d217940dcde96cff04afb7adf7dfb22275388ee3e4`.
+
+Evidence SHA-256 `frontier-full-0-comparison.json`: `519f2f04e7d4d098eee174a99bf3c798ad2b8db4ae5e13492994854d48b93a1f`.
+
+Evidence SHA-256 `frontier-full-work.log`: `5cdea21408ae2bf13aa83d39b1763c210a2f22617d62d4bfbf8eebbca5dc7547`.
