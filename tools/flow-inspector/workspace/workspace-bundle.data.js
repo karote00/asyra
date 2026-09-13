@@ -36136,13 +36136,14 @@
               "artifact:proof-board-state",
               "existing workspace canvas DOM and selected architecture target",
               "user-selected flow and scenario",
-              "explicit user-selected retained review and source attempt; cached assessment records and projections supplied by the action service"
+              "explicit user-selected retained review and run or task/attempt source; public task summaries/detail and cached assessment projections supplied by the action service"
             ],
             "outputs": [
               "artifact:proof-board-view"
             ],
             "conditions": [
               "Project retained assessment history, immutable target/accepted version pins, separate accepted/work-prerequisite/integration results, progress, blockers and currentness from the service. New target creation passes only an explicitly selected review id; new assessment passes the saved allocation and explicitly selected source attempt. Refresh never selects source or review authority. Legacy absence remains unavailable, errors stay visible, and eligibility never accepts history. Poll through producer gaps without reassessment or redundant detail reads; preserve unchanged work controls, drafts, focus and canvas state.",
+              "Offer separate explicit run and task/attempt source controls without adopting agent-history automatic selection. Public task/verdict data is display metadata, never source authority; repository display requires an exact public task/attempt assessment tuple. Share only task-detail GET output between the agent panel and source picker by exact task id and public summary signature, bounded to their two current selections and adapter lifetime. Coalesce pending reads, evict failures for retry, and commit consumer signatures only on still-current success; stale responses cannot overwrite new selection. Keep review GET separate, preserve focus/attempt choices on refresh and abort/discard on retirement.",
               "Prepare target work through an explicit source-bound admission before filling the task form. Project pending reservations and bounded assessments without replacing work controls on task updates; unknown prerequisites cannot launch work.",
               "Preserve the existing canvas cards, routes, geometry, controls, and details; project exact selected-flow results and actions into that surface without replacing the graph.",
               "On a newly selected failed attempt, select the first failing flow if the current flow has no failures; request viewer-owned framing of that flow’s failed step IDs once per changed result; preserve subsequent manual selection, pan and zoom on unchanged refresh. Success and unknown results do not move the viewport. Show a persistent run-level failure alert with named owner navigation and geometry-preserving failed card highlights; clear them on recovery.",

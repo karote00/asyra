@@ -1110,7 +1110,7 @@ nor a later refresh upgrades them.
 Assessment requires a separately and explicitly selected retained source attempt;
 show its captured HEAD and runtime identity from the public run snapshot. Display
 repository identity only from an already public assessment runtime tuple for that
-exact source attempt; otherwise label it unavailable before assessment, never
+exact source attempt with no task namespace; otherwise label it unavailable before assessment, never
 infer it from checkout paths or another reference. The source selector starts
 empty and refresh preserves the user's selection without choosing the latest or
 green attempt. Start submits only a new request id, saved target id, exact displayed
@@ -1118,6 +1118,33 @@ allocation revision and selected source attempt id to the existing assessment HT
 API. The service determines reference availability, authorization and producer
 selection. Cancellation addresses the selected running assessment. Start, cancel
 and read failures remain visible rather than rendering successful or empty evidence.
+
+The source controls also offer an explicit task mode, separate from the existing
+run selector and the agent panel's task history. A task choice uses the public task
+summary list; its attempt selector starts empty and is populated from that exact
+public task detail. Selecting a task never selects its latest or passing attempt.
+Display retained attempt phase/outcome and available full/runtime/verification/
+execution identities as metadata, not source availability. Repository identity
+comes only from an already public assessment tuple matching both task and attempt;
+otherwise show unavailable. Start adds exactly `sourceTaskId` and the selected
+`sourceAttemptId` to the existing request. The service alone decides whether that
+source remains authoritative. Inspecting assessment history cannot alter these
+new-request selections. A selected task absent from the current summary window
+keeps its selected id with an unavailable indication, never a replacement.
+
+The Board owns one shared task-detail read for the agent panel and source picker.
+The semantic key is task id and its exact public summary signature. Concurrent
+consumers reuse the same pending read and completed detail; review-record reads
+remain separate and are not a source prerequisite. Retention is bounded to the
+two currently selected consumer task ids and this adapter lifetime. A changed
+signature replaces that id's entry; failed reads are evicted so the same selection
+can retry. Each consumer commits its signature only after a successful response
+that still matches its selected id and summary generation. A late response cannot
+overwrite a newer task, attempt selection or summary. Retirement aborts all reads
+and discards retained detail. Unchanged refresh preserves source controls and
+focus, while actual summary changes refresh metadata once without choosing an
+attempt or granting authority. Formal browser counts cover same-key sharing,
+changed-key reads, failure retry, stale responses and retired consumers.
 
 Retained assessment history and details come from the cached service projections.
 Display accepted preservation, each bounded work and its prerequisites, and full
