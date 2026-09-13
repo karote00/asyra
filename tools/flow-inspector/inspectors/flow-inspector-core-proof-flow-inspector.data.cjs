@@ -378,6 +378,7 @@ const data = {
         'artifact:agent-candidate-source',
         'artifact:admitted-agent-task',
         'artifact:proof-source-snapshot',
+        'artifact:proof-runner-result',
         'artifact:assessed-proof-evidence',
         'artifact:assessed-proof-source',
         'source-owned fixed derived files and execution descriptor for the trusted candidate attempt',
@@ -385,7 +386,8 @@ const data = {
       ],
       outputs: ['artifact:agent-candidate-verdict', 'artifact:candidate-proof-source'],
       conditions: [
-        'The source-aware producer returns verdict and independent source after exactly one evidence/source evaluation. Forward the admitted source only after actual contained runner settlement and successful post-run byte integrity, preserving failed or partial case outcomes; source admission or integrity failure yields no source artifact. The existing verifier wrapper consumes the same single producer verdict, and persisted verdict JSON gains no source envelope or verified flag. Task caching remains a later consumer.',
+        'The source-aware producer returns verdict and independent source after exactly one evidence/source evaluation. Forward the admitted source only after actual contained runner settlement and successful post-run byte integrity, preserving failed or partial case outcomes; source admission or integrity failure yields no source artifact. The existing verifier wrapper consumes the same single producer verdict, and persisted verdict JSON gains no source envelope or verified flag. The task owner consumes this independent source through its exact private handoff contract.',
+        'Delegate the generated closure exactly once to the shared contained runner with original contract, complete flow inventory, cancellation/deadline and spawn observer; consume its settled result before evidence/publication. Candidate exports only alias the runner containment functions and do not retain duplicate sandbox or argument policy.',
         'Freeze candidate source; execute every retained obligation inside enforced OS containment using trusted captured assertions and existing evidence owner. Recheck source integrity after settlement; unknown containment refuses execution.',
         'Match the full captured baseline manifest and contract identities before new candidate production. Preserve present verification identity; only genuine historical absence permits constructing this new proof descriptor from verified captured role bytes. Write source-owned fixed generated files, execute their actual configuration and bootstrap, and pass the complete candidate snapshot plus trusted context to one direct evidence admission. Retain all three source descriptors in the verdict without granting historical replay authority.'
       ],
@@ -992,6 +994,7 @@ const data = {
       predicate: 'The producer completed its declared boundary.',
       producedArtifacts: ['artifact:proof-source-snapshot']
     },
+    { id: 'contained-runner-to-candidate', from: 'execute-proof-run', to: 'verify-agent-candidate', kind: 'conditional', predicate: 'After the controlled derived runner settles, return its actual report and identity before candidate evidence assessment and source publication; no completed verdict or passing outcome is required.', producedArtifacts: ['artifact:proof-runner-result'] },
     {
       id: 'execute-proof-run-to-assess-proof-evidence',
       from: 'execute-proof-run',
@@ -1134,7 +1137,7 @@ const data = {
       title: 'Execute proof run output',
       ownerStepId: 'execute-proof-run',
       channel: 'local-proof',
-      consumerStepIds: ['assess-proof-evidence']
+      consumerStepIds: ['assess-proof-evidence', 'verify-agent-candidate']
     },
     {
       id: 'artifact:assessed-proof-evidence',

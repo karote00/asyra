@@ -198,8 +198,15 @@ missing bytes, rewrite historical descriptors or upgrade a saved reference.
 Use `createDerivedExecution` with the canonical containment-checked new attempt
 source directory and that original verification descriptor. Write its exact two
 fixed files; bind `executionSource` and its digest as the candidate configuration
-identity. Run the actual generated configuration and bootstrap through the existing
-contained runner. After settlement, the evidence owner receives the full new
+identity. Delegate the actual generated configuration and bootstrap to the runner
+owner's `runContainedVerification` exactly once. Forward the original admitted
+contract, fixed snapshot/root, complete registered flows, baseline scenario,
+remaining deadline, cancellation signal and spawn observer; the candidate does
+not override process arguments, configuration selection or sandbox policy.
+Consume its settled `artifact:proof-runner-result` before evidence assessment and
+candidate publication. Keep the candidate's existing `containedProcess` and
+`containmentAvailable` exports as direct aliases to their runner-owned functions
+for compatibility, without retaining a second implementation. After settlement, the evidence owner receives the full new
 snapshot and the separately supplied trusted execution context for one combined
 source admission. The candidate owner does not forge the service's admission
 tuple or separately repeat that same full candidate admission. Existing real
