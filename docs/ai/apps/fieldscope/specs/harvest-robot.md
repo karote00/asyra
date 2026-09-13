@@ -1313,3 +1313,40 @@ consumer's responsibility; this C helper issues no run or current-source receipt
 Unbounded scalar results remain explicit unresolved enclosures, never finite
 geometry or clearance; invalid domains and resource rejection publish no partial
 result. Material, joint/tire support and carried-fruit contact policies are unchanged.
+
+### Joint segment point-time domain preparation - readiness
+
+The next D motion owner defines the numeric point-time model separately from the
+existing ideal-linear speed screen. For original segment endpoints a/b and times
+s/e, an interior finite time t evaluates exact rational
+`(a*(e-t)+b*(t-s))/(e-s)`, then rounds once to nearest-even binary64 using the
+shared converter. Exact segment endpoints return their original declared values,
+including signed zero; an interior exact zero uses the converter's positive zero.
+There is no rounded intermediate duration, ratio or delta, no angle wrapping and
+no clamp. This defines canonical numeric point inputs, not a promise that each
+jump of the rounded staircase satisfies an instantaneous physical speed bound.
+The existing exact ideal-linear speed assessment remains unchanged.
+
+A closed query window may be a singleton and must lie wholly within the segment.
+All four window/validity values are finite and nonnegative, with validFrom strictly
+before validUntil. Declared half-open validity must satisfy
+`validFrom <= queryFrom <= queryUntil < validUntil`; equality with the segment end
+is valid when validity extends beyond it. For each joint, min/max of the two
+actual rounded endpoint values encloses every representable time in the window:
+exact affine interpolation is monotone (or constant), and nearest-even rounding
+is monotone. Endpoint evaluation and domain preparation share this one producer.
+Point signed-zero bits and numeric set enclosure remain distinct.
+
+The method internally assesses the raw segment once against the current issued
+GeometrySource, consumes that admitted detached input, and independently clones
+its window/validity request once. It does not trust caller-supplied admissible
+status or cloned evidence, and never clones owner-issued source handles. Reject
+an inadmissible segment or malformed/out-of-range window before domain work;
+recheck the same source before publication. No source, session or inventory is
+mutated. Returned evidence is not an authorization token for a later owner.
+
+This first dependent owner produces joint domains and endpoint point values only.
+It does not run C FK or certify source stationarity, leaf motion, attached/held
+fruit state or material/contact clearance. A later source-affine bound consumer
+must bind the same current source tuple and explicit whole-window shape/pose
+assumptions; missing dynamic state cannot be inferred from this numeric result.

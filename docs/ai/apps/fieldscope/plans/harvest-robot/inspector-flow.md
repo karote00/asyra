@@ -861,3 +861,54 @@ build/lint/naming and independent numerical review. Current authorization is
 one C interval-pose implementation slice after root release of readiness commit
 36ec0a102. Complete only its declared gates, then freeze and stop for root quota
 review. No subsequent owner is authorized; a quota stop overrides remaining work.
+
+### D joint segment point-time domains - readiness
+
+Owner: simulation/motion.ts, JointSegments.enclose with one private exact point-
+time producer. Inputs: current issued GeometrySource, original synthetic raw
+JointSegmentInput, and numeric queryFrom/queryUntil/validFrom/validUntil. Outputs:
+original source/admitted segment references, detached frozen window, its two
+point joint tuples and closed JointDomains, with actual call-local exact work.
+No C pose, source surface or movement authorization is produced.
+Conditions: internally assess the raw segment once; consume its once-cloned input
+only if admissible. The window is also cloned/validated once. An object containing
+caller status/checks is not a substitute for this admission. Source currentness
+is checked before work and after exact calculations, before result publication.
+Allow a zero-length closed window; require finite nonnegative window/validity
+values, validFrom < validUntil, segment containment and strict queryUntil < validUntil. Endpoint values preserve original ±0; interior rational
+zero follows the converter's +0. Original ideal speed checks are not redefined.
+
+Allowed: existing dyadic/roundFraction shared scalar APIs, exact finite-integer
+assembly with checked pre-operation shifts/products, existing admission and source
+read. Forbidden: duplicated converter, float ratio/duration interpolation, clamping,
+Math/EPS patches, point/interval FK, mesh generation, C/scalar changes, session or
+material/contact decisions, result caches or new current-source registries.
+Boundary for future implementation: simulation/motion.ts and its direct
+`simulation/__tests__/motion.test.ts`, API/spec/Inspector/plan. No other producer
+may change. Failure owner: existing segment/source rejection, window schema/range
+rejection and 24000-bit resource rejection; no partial publication. Returned
+frozen evidence remains non-authorizing: the later consumer must perform its own
+bound current-source admission rather than trusting a copied result.
+Lifetime: one request; at most two distinct endpoint evaluations, shared when
+queryFrom=queryUntil, five axes each. Preserve source identity, freeze only owned
+containers, count actual rational conversions and temporary widths (including
+shared converter work). No FK, bounds preparation or scene generation is allowed.
+
+Gates: formal missing-entry red, independent exact rational point/domain oracle
+for increasing/decreasing/constant axes, endpoints, subwindows, midpoint ties,
+signed zero, subnormal and extreme finite times. Verify monotone endpoint-domain
+proof separately from sampled containment. Include zero-length windows, segment
+end admitted only with sufficient validity, validity endpoint rejection, future/
+outside/invalid windows, inadmissible or forged-status segments, accessor source
+retirement and clone-once mutation isolation. Preserve existing exact speed and
+source lifetime controls. Fixed work bounds: at most two point evaluations and
+ten scalar conversions per request; endpoint passthrough does not count as a
+conversion. Fixed profile: 100 normal windows and 100 extreme/subnormal windows
+on one prepared source, at most 1000 conversions per batch; 1 second per batch,
+10 seconds overall and unchanged 24000-bit guards. Include complete admission/
+conversion/domain/work cost; never raise guards or add a cache to pass. After
+focused proof, full app/type/build/lint/naming and independent numerical review.
+
+Current authorization is readiness only: freeze these documents and stop for
+root quota review before any tests or implementation. No source-affine consumer
+or subsequent owner is authorized by this card.
