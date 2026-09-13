@@ -90,6 +90,7 @@ export async function bootstrap(
   })
   const geometry = new SiteGeometry()
   let meshes = buildSiteMeshes(config, geometry)
+  geometry.prepareScene(config, meshes)
   let localBounds = new WeakMap<object, SceneBounds>()
   let sceneBounds = measureScene(meshes, localBounds)
   const configurationType = 'farm-configuration'
@@ -164,6 +165,7 @@ export async function bootstrap(
   ) => {
     config = next
     meshes = prepared
+    geometry.prepareScene(config, meshes)
     sceneBounds = measureScene(meshes, localBounds)
     referenceCamera = cameraPreset(view.camera, config)
     camera = referenceCamera
@@ -503,8 +505,36 @@ export async function bootstrap(
     return {
       focusRobot: cameraFeature.api.focusRobot,
       getRobot: robot.get,
+      getDockSource: () => {
+        assertLive()
+        return robotProjection.getDockSource()
+      },
+      isCurrentDockSource: (
+        source: import('../render-app/robot-projection').DockSource
+      ) => !closed && robotProjection.isCurrentDockSource(source),
+      getRobotSource: () => {
+        assertLive()
+        return robotProjection.getSource()
+      },
+      isCurrentRobotSource: (
+        source: import('../render-app/robot-projection').RobotSource
+      ) => !closed && robotProjection.isCurrentSource(source),
+      evaluateRobotPose: (
+        source: import('../render-app/robot-projection').RobotSource,
+        joints: import('../domain/robot-kinematics').RobotJoints
+      ) => {
+        assertLive()
+        return robotProjection.evaluatePose(source, joints)
+      },
       subscribeRobot: robot.subscribe,
       patchRobot: robot.patch,
+      getScene: () => {
+        assertLive()
+        return geometry.getScene()
+      },
+      isCurrentScene: (
+        scene: import('../render-app/site-geometry').PreparedScene
+      ) => !closed && geometry.isCurrentScene(scene),
       getConfiguration: () => config,
       subscribeConfiguration: (listener: () => void) => {
         configListeners.add(listener)

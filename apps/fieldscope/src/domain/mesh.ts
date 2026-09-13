@@ -1,4 +1,5 @@
 import type { Point3, Member } from './greenhouse'
+import { readSourceRegions, type SourceRegion } from './source-occupancy'
 
 /** Engine-neutral triangle buffers. Construction belongs to the site lifetime. */
 export class TriangleBuilder {
@@ -7,14 +8,38 @@ export class TriangleBuilder {
   readonly colors: number[] = []
   readonly uvs: number[] = []
   readonly indices: number[] = []
+  private sourceRegions: SourceRegion[] = []
+
+  /** An enclosing source primitive may replace its own child face declarations. */
+  region(kind: SourceRegion['kind'], indexStart: number) {
+    if (indexStart === this.indices.length) return
+    while (
+      this.sourceRegions.length &&
+      this.sourceRegions[this.sourceRegions.length - 1].indexStart >= indexStart
+    )
+      this.sourceRegions.pop()
+    this.sourceRegions.push({
+      id: `region-${this.sourceRegions.length}`,
+      kind,
+      indexStart,
+      indexCount: this.indices.length - indexStart
+    })
+  }
+
+  regions() {
+    return readSourceRegions(this.sourceRegions, this.indices.length)
+  }
 
   triangle(a: Point3, b: Point3, c: Point3) {
+    const start = this.indices.length
     const offset = this.positions.length / 3
     this.positions.push(...a, ...b, ...c)
     this.indices.push(offset, offset + 1, offset + 2)
+    this.region('sheet', start)
   }
 
   quad(a: Point3, b: Point3, c: Point3, d: Point3) {
+    const start = this.indices.length
     const offset = this.positions.length / 3
     this.positions.push(...a, ...b, ...c, ...d)
     this.indices.push(
@@ -25,9 +50,11 @@ export class TriangleBuilder {
       offset + 2,
       offset + 3
     )
+    this.region('sheet', start)
   }
 
   box(center: Point3, size: Point3) {
+    const start = this.indices.length
     const [x, y, z] = center,
       [w, h, l] = size.map((v) => v / 2)
     const p = (a: number, b: number, c: number): Point3 => [
@@ -41,9 +68,16 @@ export class TriangleBuilder {
     this.quad(p(1, -1, -1), p(1, -1, 1), p(1, 1, 1), p(1, 1, -1))
     this.quad(p(-1, 1, -1), p(1, 1, -1), p(1, 1, 1), p(-1, 1, 1))
     this.quad(p(-1, -1, 1), p(1, -1, 1), p(1, -1, -1), p(-1, -1, -1))
+    this.region(
+      size.every((value) => Number.isFinite(value) && value > 0)
+        ? 'closed-solid'
+        : 'open-shell',
+      start
+    )
   }
 
   tube(member: Pick<Member, 'points' | 'diameter'>, sides = this.tubeSides) {
+    const start = this.indices.length
     const { points, diameter } = member
     const offset = this.positions.length / 3
     let previousTangent: Point3 | undefined
@@ -92,6 +126,7 @@ export class TriangleBuilder {
         this.indices.push(a, b, b + sides, a, b + sides, a + sides)
       }
     })
+    this.region('open-shell', start)
   }
 
   shape() {

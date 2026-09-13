@@ -17,6 +17,7 @@ const regularCucumberVariants = Array.from(
 ).filter((variant) => !CROP_LAYOUT.overgrownVariants.includes(variant))
 
 export interface CropPosition {
+  id: string
   species: CropSpecies
   variant: number
   bay: number
@@ -49,6 +50,7 @@ export function createCropPositions(config: FarmConfiguration): CropPosition[] {
     const direction = row.side === 'left' ? -1 : 1
     return Array.from({ length: count }, (_, index) => ({
       ...row,
+      id: `plant-${row.bay}-${row.row}-${row.side}-${index}`,
       species: row.bay < 2 ? 'cucumber-1914' : 'tomato-yu-nu',
       variant:
         row.bay < 2

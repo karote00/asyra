@@ -16,6 +16,47 @@ import { createPlantingNet } from '../../domain/planting-net'
 import { TriangleBuilder } from '../../domain/mesh'
 import { sameSpatialShape } from '../../engine/spatial-contract'
 
+it('carries complete source material regions with every original near scene mesh', () => {
+  const owner = new SiteGeometry()
+  const config = { ...DEFAULT_CONFIGURATION, length: 2.2 }
+  const meshes = buildSiteMeshes(config, owner)
+  const scene = owner.prepareScene(config, meshes)
+  for (const mesh of scene.meshes) {
+    expect(mesh.regions).toBeDefined()
+    expect(Object.isFrozen(mesh.regions)).toBe(true)
+    const shape = mesh.descriptor.shape
+    if (shape.kind !== 'triangles')
+      throw new Error('Expected original triangles')
+    expect(
+      mesh.regions.reduce((sum, region) => sum + region.indexCount, 0)
+    ).toBe(shape.indices.length)
+    if (mesh.layer === 'film')
+      expect(mesh.regions.every((region) => region.kind === 'sheet')).toBe(true)
+  }
+  expect(owner.prepareScene(config, meshes) === scene).toBe(true)
+})
+
+it('detaches direct scene region input and rejects incomplete replacement before publishing', () => {
+  const owner = new SiteGeometry()
+  const config = {
+    ...DEFAULT_CONFIGURATION,
+    strips: [{ id: 'soil', kind: 'soil' as const, width: 6.3 }]
+  }
+  const original = buildSiteMeshes(config, owner)
+  const regions = original[0].regions.map((region) => ({ ...region }))
+  const meshes = original.map((mesh, index) =>
+    index ? mesh : { ...mesh, regions }
+  )
+  const first = owner.prepareScene(config, meshes)
+  regions[0].kind = 'sheet'
+  expect(first.meshes[0].regions[0].kind).toBe('closed-solid')
+  const invalid = original.map((mesh, index) =>
+    index ? mesh : { ...mesh, regions: [] }
+  )
+  expect(() => owner.prepareScene(config, invalid)).toThrow()
+  expect(owner.getScene() === first).toBe(true)
+})
+
 it('retains admitted cultivar shapes only for matching net dimensions and clears them on retirement', () => {
   const build = vi.spyOn(crops, 'createCropModels')
   try {
@@ -131,10 +172,11 @@ it('projects shared hardware vertices back to the canonical installed geometry a
 
 it('bounds admitted primitive retention and rebuilds evicted entries', () => {
   const owner = new SiteGeometry()
-  const produce = vi.fn(() => ({
-    kind: 'box' as const,
-    size: [1, 1, 1] as const
-  }))
+  const produce = vi.fn(() => {
+    const builder = new TriangleBuilder()
+    builder.box([0, 0, 0], [1, 1, 1])
+    return { shape: builder.shape(), regions: builder.regions() }
+  })
   const first = owner.primitive('tube:0', produce)
   expect(owner.primitive('tube:0', produce)).toBe(first)
   expect(produce).toHaveBeenCalledTimes(1)
@@ -192,7 +234,7 @@ const projectionChanges: { name: string; patch: Partial<FarmConfiguration> }[] =
     },
     {
       name: 'empty planting rows',
-      patch: { strips: [{ kind: 'soil', width: 6.3 }] }
+      patch: { strips: [{ id: 'fixture-1', kind: 'soil', width: 6.3 }] }
     }
   ]
 
@@ -251,5 +293,76 @@ it('keeps cultivar assignments and admitted instance arrays when only the net he
     expect(build).toHaveBeenCalledTimes(3)
   } finally {
     build.mockRestore()
+  }
+})
+
+it('prepares one immutable canonical scene handoff with distinct installed fruit identities', () => {
+  const generation = vi.spyOn(crops, 'createCropModels')
+  const placement = vi.spyOn(planting, 'createCropPositions')
+  const owner = new SiteGeometry()
+  const config = { ...DEFAULT_CONFIGURATION, length: 2.2 }
+  try {
+    const meshes = buildSiteMeshes(config, owner)
+    const scene = owner.prepareScene(config, meshes)
+    expect(owner.prepareScene(config, meshes)).toBe(scene)
+    expect(generation).toHaveBeenCalledTimes(1)
+    expect(placement).toHaveBeenCalledTimes(1)
+    expect(new Set(scene.fruits.map((fruit) => fruit.id)).size).toBe(
+      scene.fruits.length
+    )
+    expect(scene.fruits.length).toBeGreaterThan(scene.plants.length)
+    expect(scene.meshes.map((mesh) => mesh.id)).toEqual(
+      meshes.map((mesh) => mesh.id)
+    )
+    expect(scene.meshes.some((mesh) => mesh.layer === 'net')).toBe(true)
+    const rotated = scene.fruits.find((fruit) => fruit.plant.yaw === Math.PI)
+    if (!rotated) throw new Error('Missing rotated source fruit')
+    expect(rotated.position[0]).toBeCloseTo(
+      rotated.plant.position[0] - rotated.source.center[0]
+    )
+    expect(rotated.position[2]).toBeCloseTo(
+      rotated.plant.position[2] - rotated.source.center[2]
+    )
+    expect(Object.isFrozen(scene)).toBe(true)
+    expect(Object.isFrozen(scene.fruits)).toBe(true)
+    expect(Object.isFrozen(rotated.source)).toBe(true)
+    expect(Object.isFrozen(rotated.model.parts[0].partitions)).toBe(true)
+    const source = rotated.model.parts[0].shape
+    expect(meshes.some((mesh) => mesh.descriptor.shape === source)).toBe(true)
+    for (let i = 0; i < 10; i++) expect(owner.getScene()).toBe(scene)
+    expect(generation).toHaveBeenCalledTimes(1)
+    expect(placement).toHaveBeenCalledTimes(1)
+    const next = { ...config, netTop: 2.8 }
+    const changed = owner.prepareScene(next, buildSiteMeshes(next, owner))
+    expect(changed.revision).not.toBe(scene.revision)
+    expect(owner.isCurrentScene(scene)).toBe(false)
+    expect(owner.isCurrentScene(changed)).toBe(true)
+    expect(generation).toHaveBeenCalledTimes(2)
+    expect(placement).toHaveBeenCalledTimes(1)
+    owner.clear()
+    expect(owner.isCurrentScene(changed)).toBe(false)
+    expect(() => owner.getScene()).toThrow()
+  } finally {
+    generation.mockRestore()
+    placement.mockRestore()
+  }
+})
+
+it('prepares an empty planted population without manufacturing cultivar geometry', () => {
+  const generation = vi.spyOn(crops, 'createCropModels')
+  try {
+    const owner = new SiteGeometry()
+    const config: FarmConfiguration = {
+      ...DEFAULT_CONFIGURATION,
+      length: 2.2,
+      strips: [{ id: 'drain-only', kind: 'drain', width: 0.3 }]
+    }
+    const scene = owner.prepareScene(config, buildSiteMeshes(config, owner))
+    expect(scene.fruits).toEqual([])
+    expect(scene.plants).toEqual([])
+    expect(scene.meshes.some((mesh) => mesh.layer === 'steel')).toBe(true)
+    expect(generation).not.toHaveBeenCalled()
+  } finally {
+    generation.mockRestore()
   }
 })

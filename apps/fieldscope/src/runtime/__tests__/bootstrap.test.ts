@@ -8,6 +8,8 @@ import { InstancedMesh, type BufferGeometry } from 'three'
 // @vitest-environment jsdom
 import { expect, it, vi } from 'vitest'
 import * as crops from '../../domain/crop-models'
+import * as robotModel from '../../domain/robot-model'
+import { REST_JOINTS } from '../../domain/robot-kinematics'
 import * as projection from '../../render-app/site-projection'
 import { ThreeEngine, type GraphicsDriver } from '../../engine/three-engine'
 import { bootstrap } from '../bootstrap'
@@ -20,6 +22,7 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
     const updates = vi.spyOn(RenderMesh.prototype, 'update')
     const build = vi.spyOn(projection, 'buildSiteMeshes')
     const cropBuild = vi.spyOn(crops, 'createCropModels')
+    const robotBuild = vi.spyOn(robotModel, 'createRobotModel')
     const preset = vi.spyOn(projection, 'cameraPreset')
     let measurementMs = 0
     const measureScene = navigation.measureScene
@@ -75,6 +78,17 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
     }
     try {
       flush()
+      const initialScene = runtime.getScene()
+      const dockSource = runtime.getDockSource()
+      expect(runtime.isCurrentDockSource(dockSource)).toBe(true)
+      const robotSource = runtime.getRobotSource()
+      expect(runtime.isCurrentRobotSource(robotSource)).toBe(true)
+      for (let i = 0; i < 3; i++) {
+        expect(runtime.getDockSource() === dockSource).toBe(true)
+        expect(runtime.getRobotSource()).toBe(robotSource)
+        runtime.evaluateRobotPose(robotSource, REST_JOINTS)
+      }
+      expect(robotBuild).toHaveBeenCalledTimes(1)
       const notify = vi.fn(),
         unsubscribe = runtime.subscribe(notify)
       if (mode === 'navigation') {
@@ -188,6 +202,8 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
         expect(measure).toHaveBeenCalledTimes(1)
         expect(notify).not.toHaveBeenCalled()
         expect(runtime.getView()).toBe(initial)
+        expect(runtime.getScene()).toBe(initialScene)
+        expect(runtime.isCurrentScene(initialScene)).toBe(true)
         expect(build).toHaveBeenCalledTimes(1)
         await Promise.all([
           runtime.setLayer('film', false),
@@ -344,10 +360,10 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
           startInset: 0.4,
           endInset: 0.8,
           strips: [
-            { kind: 'drain' as const, width: 0.3 },
-            { kind: 'soil' as const, width: 1 },
-            { kind: 'drain' as const, width: 0.3 },
-            { kind: 'soil' as const, width: 2 }
+            { id: 'fixture-1', kind: 'drain' as const, width: 0.3 },
+            { id: 'fixture-2', kind: 'soil' as const, width: 1 },
+            { id: 'fixture-3', kind: 'drain' as const, width: 0.3 },
+            { id: 'fixture-4', kind: 'soil' as const, width: 2 }
           ]
         }
         if (mode === 'history') {
@@ -356,6 +372,8 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
           flush()
           expect(preset).toHaveBeenCalledTimes(configurationPresetCount + 1)
           expect(runtime.getConfiguration()).toEqual(changedConfig)
+          expect(runtime.isCurrentScene(initialScene)).toBe(false)
+          expect(runtime.getScene().revision).not.toBe(initialScene.revision)
           expect(runtime.getUndoDepth()).toBe(depth + 1)
           expect(build).toHaveBeenCalledTimes(2)
           expect(measure).toHaveBeenCalledTimes(2)
@@ -373,12 +391,16 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
           await runtime.redo()
           flush()
           expect(runtime.getConfiguration()).toEqual(changedConfig)
+          expect(runtime.isCurrentScene(initialScene)).toBe(false)
+          expect(runtime.getScene().revision).not.toBe(initialScene.revision)
           expect(preset).toHaveBeenCalledTimes(configurationPresetCount + 3)
           expect(build).toHaveBeenCalledTimes(4)
           await expect(
             runtime.setConfiguration({ ...changedConfig, netBottom: 4 })
           ).rejects.toThrow()
           expect(runtime.getConfiguration()).toEqual(changedConfig)
+          expect(runtime.isCurrentScene(initialScene)).toBe(false)
+          expect(runtime.getScene().revision).not.toBe(initialScene.revision)
           expect(build).toHaveBeenCalledTimes(4)
           expect(runtime.getUndoDepth()).toBe(depth + 1)
           await runtime.setConfiguration(changedConfig)
@@ -394,12 +416,17 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
         }
         stopConfig()
       }
+      expect(runtime.getRobotSource()).toBe(robotSource)
+      expect(robotBuild).toHaveBeenCalledTimes(1)
       unsubscribe()
     } finally {
       await runtime.dispose()
       expect(driver.dispose).toHaveBeenCalledTimes(1)
       expect(disconnect).toHaveBeenCalledTimes(1)
       expect(() => runtime.orbit(1, 1)).toThrow()
+      expect(() => runtime.getScene()).toThrow()
+      expect(() => runtime.getRobotSource()).toThrow()
+      expect(() => runtime.getDockSource()).toThrow()
       await runtime.dispose()
       expect(cropBuild).toHaveBeenCalledTimes(
         mode === 'soil-edit' || mode === 'navigation' ? 1 : 2
@@ -407,6 +434,7 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
       structure.mockRestore()
       updates.mockRestore()
       cropBuild.mockRestore()
+      robotBuild.mockRestore()
       build.mockRestore()
       preset.mockRestore()
       measure.mockRestore()

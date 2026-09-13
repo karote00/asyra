@@ -10,6 +10,24 @@ The right panel contains the editor; the left contains presentation controls. Ic
 
 Each strip row ends with an up triangle, down triangle, and red X. Controls occupy one row and use 24×24 SVG viewports with drawing contained in the central 16×16 area. Reordering/removal commit immediately; first/last reordering and removal of the final strip are disabled.
 
+## Canonical strip identity
+
+Every configured strip has a nonempty, unique, app-owned `id` in addition to kind
+and width. Defaults and Add create identities before canonical admission. Width
+or kind edits, reordering and removal of other strips preserve the same strip ID;
+Undo/Redo restores exactly the IDs recorded by the action. Newly added strips do
+not reuse a removed strip's identity. Missing or duplicate IDs reject the whole
+edit before state/history mutation. Validation never repairs IDs or infers them
+from the current array position.
+
+The ordered position remains geometry input, not identity. Robot missions bind to
+strip ID within the chosen bay; consumers resolve that ID against the completed
+canonical configuration before supplying a positional index to layout assessment.
+Removing the selected strip makes the route invalid. Removing a preceding strip
+or reordering the selected strip follows its same ID, not another occupant of the
+old index. Reload still starts from defaults; there is no disk-format migration or
+legacy positional mission fallback in this correction.
+
 ## Workbench usability
 
 The editor uses compact 28px fields, with labels on the left and numeric values plus metre suffixes on the right. Group headings provide context (greenhouse, poles, net); field labels do not repeat that context. Strip actions retain 24px icons with central 16px drawing while providing 32px targets. Camera presets, fit/zoom and speed form a responsive toolbar above the viewport. Technical references and optional modeling assumptions are accessible from the header Reference Library dialog, with keyboard dismissal and focus return. External sources open in a new tab.
