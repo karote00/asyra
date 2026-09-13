@@ -1253,7 +1253,7 @@ not certify a real harvesting system.
 
 ### Canonical polynomial point model
 
-The next C point model replaces only the numeric trig adapter: each existing
+The C point model replaces only the numeric trig adapter: each existing
 binary64-rounded `angle / 2` is evaluated as exact S19/C20 followed by nearest-even
 binary64 conversion through the shared scalar owner. This is a specified
 polynomial model, not correctly rounded analytic sine/cosine. Approved half-angles

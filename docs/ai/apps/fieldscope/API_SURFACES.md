@@ -383,10 +383,10 @@ Base/camera/farm/instance frames and all existing numerical predicates remain
 unchanged. This is robot-body CPU coefficient adoption only; it does not certify
 GPU arithmetic, the entire world transform pipeline or articulated interval FK.
 
-## Canonical point polynomial model - planned integration
+## Canonical point polynomial model
 
-The next implementation keeps point/affine signatures and return shapes. The C
-number adapter will consume shared S19/C20 nearest-even results on actual rounded
+The implementation keeps point/affine signatures and return shapes. The C
+number adapter consumes shared S19/C20 nearest-even results on actual rounded
 half-angles, preserving other operation order and completed source identities.
 No model-selection API or new work field is needed. Direct tests observe actual
 shared trig calls/results: eight per point evaluation; an affine entry includes

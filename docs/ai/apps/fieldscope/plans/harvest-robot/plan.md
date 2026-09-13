@@ -1258,3 +1258,28 @@ Invariant mapping is stored once per definition; no source buffers are copied.
 The new baseline and original 56-hash case both pass. The historical snapshot is
 byte-for-byte unchanged; scoped type/lint/naming/format checks pass. Production
 has not switched. This bounded segment stops here pending root quota review.
+
+Root released baseline commit 8be82417d for the single C point production
+integration and its declared gates. This supersedes the preceding baseline-only
+execution restriction, without expanding the owner. Freeze after this slice and
+wait for root; the quota stop instruction overrides continued work.
+
+C point polynomial integration is complete. Two formal missing-adoption cases
+first failed (four old Math calls and zero shared polynomial calls); 25 focused
+cases then passed. The adapter alone changed to shared S19/C20 values; rounded
+half-angle, canonical chain and affine association remain unchanged. The two
+historical snapshots remain byte-for-byte identical, reproduced by the explicitly
+test-only preceding-model adapter through the shared chain. All 56 declared
+fixtures showed zero quaternion/tool/source-vertex drift; this measured result is
+not a claim of universal bit compatibility.
+
+Permanent exact rational recurrence proves the stated mathematical norm bound,
+separate from sampled admission checks. Complete affine-entry batches measured
+34.5/33.1 ms for normal first/repeated and 449.2/468.7 ms for subnormal first/repeated:
+each contains 100 poses, 800 trig evaluations, 8400 terms and 600 actual matrices;
+maximum temporary width was 21595 bits. All original fixed guards passed.
+All 442 app tests across 45 files, build/typecheck, naming, format/diff checks and
+lint (12 console warnings, no errors) passed, including actual projection, D ray
+and articulated surface-pair consumers. Independent scoped numerical/code review
+found no remaining finding. This slice is frozen and stops for root quota review;
+it does not establish joint-interval motion, material/contact or harvest clearance.

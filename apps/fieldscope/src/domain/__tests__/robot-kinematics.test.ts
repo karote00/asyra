@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto'
 import { Matrix4, Quaternion, Vector3 } from 'three'
 import { expect, it, vi } from 'vitest'
+import { evaluatePolynomialTrig } from '../kinematic-trigonometry'
 import type { KinematicAlgebra, JointDomains } from '../robot-kinematics'
 import { createRobotModel } from '../robot-model'
 import { DEFAULT_ROBOT } from '../robot-configuration'
@@ -253,7 +254,7 @@ function poseBits(value: unknown): string {
 it('preserves pre-extraction Float64 pose outputs including signed zero and every approved limit', async () => {
   const {
     prepareRobotRig,
-    evaluateRobotPose,
+    evaluateRobotDomains,
     REST_JOINTS,
     ROBOT_JOINT_LIMITS
   } = await import('../robot-kinematics')
@@ -271,7 +272,18 @@ it('preserves pre-extraction Float64 pose outputs including signed zero and ever
     definitions.map((definition) => {
       const rig = prepareRobotRig(definition, createRobotModel(definition))
       return cases.map((joints) => {
-        const pose = evaluateRobotPose(rig, joints)
+        // Historical model only; preserve the original snapshot key and values.
+        const domains = Object.fromEntries(
+          Object.entries(joints).map(([key, value]) => [key, [value, value]])
+        ) as unknown as JointDomains
+        const pose = {
+          joints,
+          ...evaluateRobotDomains(rig, domains, {
+            ...scalarAlgebra,
+            sin: Math.sin,
+            cos: Math.cos
+          })
+        }
         const numeric = {
           joints: pose.joints,
           parts: pose.parts.map((part) => ({
@@ -299,8 +311,8 @@ const scalarAlgebra: KinematicAlgebra<number> = {
   subtract: (a, b) => a - b,
   multiply: (a, b) => a * b,
   divide: (a, b) => a / b,
-  sin: Math.sin,
-  cos: Math.cos
+  sin: (value) => evaluatePolynomialTrig('sin', value).value,
+  cos: (value) => evaluatePolynomialTrig('cos', value).value
 }
 
 it('shares the canonical FK chain with singleton number algebra and original source identities', async () => {
@@ -623,8 +635,8 @@ it('evaluates point FK once and reuses completed affine frames without regenerat
       elbow: 0.5,
       wrist: -0.2
     })
-    expect(sine).toHaveBeenCalledTimes(4)
-    expect(cosine).toHaveBeenCalledTimes(4)
+    expect(sine).not.toHaveBeenCalled()
+    expect(cosine).not.toHaveBeenCalled()
     expect(generation).not.toHaveBeenCalled()
     expect(result.work.matrices).toBe(
       new Set(result.pose.parts.map((part) => part.transform)).size
@@ -633,8 +645,8 @@ it('evaluates point FK once and reuses completed affine frames without regenerat
     expect(() =>
       k.evaluateRobotAffinePose(rig, { ...k.REST_JOINTS, lift: NaN })
     ).toThrow()
-    expect(sine).toHaveBeenCalledTimes(4)
-    expect(cosine).toHaveBeenCalledTimes(4)
+    expect(sine).not.toHaveBeenCalled()
+    expect(cosine).not.toHaveBeenCalled()
   } finally {
     sine.mockRestore()
     cosine.mockRestore()

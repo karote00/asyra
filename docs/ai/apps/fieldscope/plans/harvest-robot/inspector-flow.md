@@ -798,6 +798,7 @@ and every scalar temporary within 24000 bits. These are cooperative guards on a
 prepared rig, not process-cold claims or hard preemption; never raise them to pass.
 After focused correctness, run app unit/type/build/lint/naming and bounded review.
 
-Current execution restriction: only readiness and pre-switch formal baseline may
-advance before freezing for root. No production switch or further owner begins
-in this bounded quota-limited segment.
+Current execution restriction: root has released the completed baseline and
+authorized this one C point production integration and its frozen gates. Freeze
+after completion; no joint-interval or further owner begins. The quota stop
+instruction takes precedence over remaining gates.
