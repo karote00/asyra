@@ -79,6 +79,9 @@ test(
       await frame.locator('#target-controls > summary').click()
       await expect(frame.locator('#target-review')).toHaveValue('')
       await expect(frame.locator('#assessment-source')).toHaveValue('')
+      await expect(frame.locator('#assessment-source-kind')).toHaveValue('run')
+      await expect(frame.locator('#assessment-task')).toHaveValue('')
+      await expect(frame.locator('#assessment-attempt')).toHaveValue('')
       await frame.locator('#target-review').selectOption(review.id)
       await expect(frame.locator('#target-review-identity')).toContainText(
         review.candidateDigest
@@ -374,6 +377,295 @@ test(
           await frame.locator('#assessment-history').inputValue()
         )
       })
+      if (process.platform === 'darwin') {
+        const dependencies = path.join(initial.sourceRoot, 'node_modules')
+        fs.rmSync(dependencies, { recursive: true, force: true })
+        fs.symlinkSync(path.join(root, 'node_modules'), dependencies, 'dir')
+        const makeTask = () =>
+          server.service.startTask(
+            {
+              requestId: randomUUID(),
+              stepId: 'finalize-transaction-state',
+              objective: 'Explicit Board candidate source',
+              allowedFiles: ['packages/factory/src/data-transact.ts'],
+              adapter: 'demonstration',
+              scenario: 'repair',
+              contractDigest: server.service.contract().digest,
+              revision: server.service.state().mapping.revision,
+              budgets: { elapsedMs: 60000, toolCalls: 20, attempts: 3 }
+            },
+            LOCAL_ACTOR
+          )
+        let candidate = await server.service.waitTask(makeTask())
+        assert.equal(candidate.verificationStatus, 'failed')
+        const taskPath = '/api/tasks/' + candidate.id
+        let releaseTask
+        const taskGate = new Promise((resolve) => {
+          releaseTask = resolve
+        })
+        let taskReads = 0
+        await page.route('**' + taskPath, async (route) => {
+          taskReads++
+          await taskGate
+          await route.continue()
+        })
+        await frame.locator('#refresh').click()
+        await expect.poll(() => taskReads).toBe(1)
+        await frame.locator('#assessment-source-kind').selectOption('task')
+        await expect(frame.locator('#assessment-task')).toHaveValue('')
+        await frame.locator('#assessment-task').selectOption(candidate.id)
+        await expect(frame.locator('#assessment-attempt')).toHaveValue('')
+        assert.equal(taskReads, 1)
+        releaseTask()
+        const originalAttempt = candidate.attempts.at(-1).id
+        await expect(
+          frame.locator(
+            '#assessment-attempt option[value="' + originalAttempt + '"]'
+          )
+        ).toHaveCount(1)
+        await frame.locator('#assessment-attempt').selectOption(originalAttempt)
+        await expect(
+          frame.locator('#assessment-source-identity')
+        ).toContainText('Verification: failed')
+        await expect(
+          frame.locator('#assessment-source-identity')
+        ).toContainText(
+          candidate.attempts.at(-1).verdict.verificationSource.digest
+        )
+        await expect(
+          frame.locator('#assessment-attempt option:checked')
+        ).toContainText('failed')
+        await expect(
+          frame.locator('#assessment-source-identity')
+        ).toContainText('Repository: unavailable')
+        await frame.locator('#assessment-attempt').focus()
+        await frame.locator('#refresh').evaluate((element) => element.click())
+        await expect(frame.locator('#assessment-attempt')).toHaveValue(
+          originalAttempt
+        )
+        assert.equal(taskReads, 1)
+        await expect(frame.locator('#assessment-attempt')).toBeFocused()
+        await page.unroute('**' + taskPath)
+        await server.service.controlTask(
+          candidate.id,
+          { action: 'resume', scenario: 'repair' },
+          LOCAL_ACTOR
+        )
+        candidate = await server.service.waitTask(candidate.id)
+        let retries = 0
+        await page.route('**' + taskPath, (route) => {
+          retries++
+          if (retries === 1)
+            return route.fulfill({
+              status: 503,
+              contentType: 'application/json',
+              body: JSON.stringify({
+                error: 'Task detail temporarily unavailable'
+              })
+            })
+          return route.continue()
+        })
+        await frame.locator('#refresh').click()
+        await expect(frame.locator('#assessment-notice')).toContainText(
+          'Task detail temporarily unavailable'
+        )
+        await frame.locator('#refresh').click()
+        const nextAttempt = candidate.attempts.at(-1).id
+        await expect(
+          frame.locator(
+            '#assessment-attempt option[value="' + nextAttempt + '"]'
+          )
+        ).toHaveCount(1)
+        await expect(frame.locator('#assessment-attempt')).toHaveValue(
+          originalAttempt
+        )
+        assert.equal(retries, 2)
+        await frame.locator('#assessment-start').click()
+        await expect(frame.locator('#assessment-notice')).toContainText(
+          'unavailable'
+        )
+        await frame.locator('#assessment-attempt').selectOption(nextAttempt)
+        await page.unroute('**' + taskPath)
+        await page.route('**' + taskPath, (route) =>
+          route.fulfill({
+            status: 503,
+            contentType: 'application/json',
+            body: JSON.stringify({
+              error: 'Selected task metadata unavailable during assessment'
+            })
+          })
+        )
+        await page.route('**/api/state', async (route) => {
+          const response = await route.fetch()
+          const state = await response.json()
+          state.tasks.records = state.tasks.records.map((item) =>
+            item.id === candidate.id
+              ? { ...item, reviewRevision: item.reviewRevision + 1 }
+              : item
+          )
+          await route.fulfill({ response, json: state })
+        })
+        await frame.locator('#assessment-start').click()
+        await expect
+          .poll(
+            () =>
+              server.service
+                .targetAssessments()
+                .find(
+                  (item) =>
+                    item.request.sourceTaskId === candidate.id &&
+                    item.request.sourceAttemptId === nextAttempt
+                )?.id
+          )
+          .toBeTruthy()
+        const registeredTaskAssessment = server.service
+          .targetAssessments()
+          .find(
+            (item) =>
+              item.request.sourceTaskId === candidate.id &&
+              item.request.sourceAttemptId === nextAttempt
+          )
+        await server.service.waitTargetAssessment(registeredTaskAssessment.id)
+        await expect(frame.locator('#assessment-history')).toHaveValue(
+          registeredTaskAssessment.id
+        )
+
+        await expect(frame.locator('#assessment-summary')).toContainText(
+          'completed',
+          { timeout: 30000 }
+        )
+        await expect(frame.locator('#assessment-accepted')).toContainText(
+          'passed'
+        )
+        await expect(frame.locator('#assessment-integration')).toContainText(
+          'deferred.outcome - failed'
+        )
+        const taskAssessment = server.service.getTargetAssessment(
+          await frame.locator('#assessment-history').inputValue()
+        )
+        assert.equal(taskAssessment.request.sourceTaskId, candidate.id)
+        assert.equal(taskAssessment.request.sourceAttemptId, nextAttempt)
+        await expect(frame.locator('#assessment-notice')).toContainText(
+          'Selected task metadata unavailable during assessment'
+        )
+        await page.unroute('**/api/state')
+        await page.unroute('**' + taskPath)
+        for (const [name, viewport] of [
+          ['task-desktop', { width: 1440, height: 1000 }],
+          ['task-tablet', { width: 900, height: 1100 }],
+          ['task-narrow', { width: 430, height: 1100 }]
+        ]) {
+          await page.setViewportSize(viewport)
+          await frame
+            .locator('#assessment-source-kind')
+            .scrollIntoViewIfNeeded()
+          const screenshot = path.join(artifacts, name + '.png')
+          await page.screenshot({ path: screenshot })
+          screenshots.push({
+            path: screenshot,
+            viewport,
+            assessment: taskAssessment
+          })
+        }
+        await page.route('**/api/state', async (route) => {
+          const response = await route.fetch()
+          const state = await response.json()
+          state.tasks.records = state.tasks.records.filter(
+            (item) => item.id !== candidate.id
+          )
+          await route.fulfill({ response, json: state })
+        })
+        await frame.locator('#refresh').click()
+        await expect(frame.locator('#assessment-task')).toHaveValue(
+          candidate.id
+        )
+        await expect(frame.locator('#assessment-notice')).toContainText(
+          'unavailable in the current summary window'
+        )
+        await expect(frame.locator('#assessment-start')).toBeDisabled()
+        await page.unroute('**/api/state')
+        await frame.locator('#refresh').click()
+        await expect(frame.locator('#assessment-attempt')).toHaveValue(
+          nextAttempt
+        )
+        await page.setViewportSize({ width: 1440, height: 1000 })
+        const other = await server.service.waitTask(makeTask())
+        await frame.locator('#refresh').click()
+        await expect(
+          frame.locator('#assessment-task option[value="' + other.id + '"]')
+        ).toHaveCount(1)
+        let releaseOld, deliveredOld
+        let oldReady = false
+        const oldDelivery = new Promise((resolve) => {
+          deliveredOld = resolve
+        })
+        const oldTaskGate = new Promise((resolve) => {
+          releaseOld = resolve
+        })
+        await page.route('**' + taskPath, async (route) => {
+          const response = await route.fetch()
+          oldReady = true
+          await oldTaskGate
+          await route.fulfill({ response })
+          deliveredOld()
+        })
+        // Changed summary invalidates this task detail; a late response must not
+        // replace the newly selected other task, even if its bytes remain readable.
+        await server.service.controlTask(
+          candidate.id,
+          { action: 'revoke' },
+          LOCAL_ACTOR
+        )
+        await frame.locator('#refresh').click()
+        await expect.poll(() => oldReady).toBe(true)
+        await frame.locator('#assessment-task').selectOption(other.id)
+        await expect(
+          frame.locator(
+            '#assessment-attempt option[value="' +
+              other.attempts.at(-1).id +
+              '"]'
+          )
+        ).toHaveCount(1)
+        releaseOld()
+        await oldDelivery
+        await page.unroute('**' + taskPath)
+        await expect(frame.locator('#assessment-task')).toHaveValue(other.id)
+        await expect(frame.locator('#assessment-attempt')).toHaveValue('')
+        let releaseFailure, deliveredFailure
+        let failureReady = false
+        const failureGate = new Promise((resolve) => {
+          releaseFailure = resolve
+        })
+        const failureDelivery = new Promise((resolve) => {
+          deliveredFailure = resolve
+        })
+        await page.route('**' + taskPath, async (route) => {
+          failureReady = true
+          await failureGate
+          await route.fulfill({
+            status: 503,
+            contentType: 'application/json',
+            body: JSON.stringify({ error: 'Retired task detail failure' })
+          })
+          deliveredFailure()
+        })
+        await server.service.controlTask(
+          candidate.id,
+          { action: 'stop' },
+          LOCAL_ACTOR
+        )
+        await frame.locator('#refresh').click()
+        await expect.poll(() => failureReady).toBe(true)
+        await frame.locator('#assessment-task').selectOption(candidate.id)
+        await frame.locator('#assessment-source-kind').selectOption('run')
+        releaseFailure()
+        await failureDelivery
+        await page.unroute('**' + taskPath)
+        await expect(frame.locator('#assessment-notice')).not.toContainText(
+          'Retired task detail failure'
+        )
+        await expect(frame.locator('#assessment-source')).toHaveValue(source.id)
+      }
       await page.route('**/api/target-assessments', (route) =>
         route.fulfill({
           status: 503,

@@ -38,6 +38,9 @@
       let assessmentRecords = []
       let selectedAssessmentId = ''
       let assessmentSource = null
+      let assessmentTask = null
+      let assessmentTaskSignature = ''
+      const taskDetails = new Map()
       let assessmentBusy = false
       let assessmentSignature = ''
       let preparedWork = null
@@ -79,6 +82,7 @@
           observer?.disconnect()
           window.clearTimeout(timer)
           lifetime.abort()
+          taskDetails.clear()
         },
         { once: true }
       )
@@ -974,6 +978,28 @@
         byId('agent-audit').href = '/api/tasks/' + matching.id
         byId('agent-audit').hidden = false
       }
+      function taskSummary(id) {
+        return taskState?.records.find((item) => item.id === id)
+      }
+      function readTaskDetail(id, signature) {
+        const selected = new Set([
+          taskId,
+          byId('assessment-source-kind').value === 'task'
+            ? byId('assessment-task').value
+            : ''
+        ])
+        for (const key of taskDetails.keys())
+          if (!selected.has(key)) taskDetails.delete(key)
+        const retained = taskDetails.get(id)
+        if (retained?.signature === signature) return retained.promise
+        const entry = { signature }
+        entry.promise = api('/api/tasks/' + id).catch((error) => {
+          if (taskDetails.get(id) === entry) taskDetails.delete(id)
+          throw error
+        })
+        taskDetails.set(id, entry)
+        return entry.promise
+      }
       async function refreshTask() {
         const stepId = graph.querySelector('.is-selected')?.dataset.stepId
         const options = (taskState?.records ?? []).filter(
@@ -998,15 +1024,23 @@
         const selected = options.find((item) => item.id === taskId)
         const signature = selected ? JSON.stringify(selected) : ''
         if (signature !== taskSignature) {
-          taskSignature = signature
           const selectedTask = taskId
           const [nextTask, nextReview] = selectedTask
             ? await Promise.all([
-                api('/api/tasks/' + selectedTask),
+                readTaskDetail(selectedTask, signature),
                 api('/api/tasks/' + selectedTask + '/review')
               ])
             : [null, null]
-          if (selectedTask !== taskId) return
+          if (
+            disposed ||
+            selectedTask !== taskId ||
+            (selectedTask &&
+              JSON.stringify(taskSummary(selectedTask)) !== signature)
+          )
+            return
+          if (taskSignature === signature && taskRecord?.id === selectedTask)
+            return
+          taskSignature = signature
           taskRecord = nextTask
           reviewRecord = nextReview
           byId('pr-approve').checked = false
@@ -1123,24 +1157,132 @@
             review.candidateDigest
           : 'Select a reviewed verification source explicitly to enable assessment.'
       }
+      function assessmentSelection() {
+        if (byId('assessment-source-kind').value === 'task')
+          return {
+            sourceTaskId: byId('assessment-task').value,
+            sourceAttemptId: byId('assessment-attempt').value
+          }
+        return { sourceAttemptId: byId('assessment-source').value }
+      }
       function renderAssessmentSource() {
-        const id = byId('assessment-source').value
-        const source = assessmentSource?.id === id ? assessmentSource : null
+        const selection = assessmentSelection()
+        const taskMode = byId('assessment-source-kind').value === 'task'
+        byId('assessment-run-field').hidden = taskMode
+        byId('assessment-task-field').hidden = !taskMode
+        byId('assessment-attempt-field').hidden = !taskMode
+        const attempt =
+          taskMode && assessmentTask?.id === selection.sourceTaskId
+            ? assessmentTask.attempts.find(
+                (item) => item.id === selection.sourceAttemptId
+              )
+            : null
+        const source =
+          !taskMode && assessmentSource?.id === selection.sourceAttemptId
+            ? assessmentSource
+            : null
         const runtime = assessmentRecords.find(
-          (item) => item.request.sourceAttemptId === id
+          (item) =>
+            item.request.sourceAttemptId === selection.sourceAttemptId &&
+            (taskMode
+              ? item.request.sourceTaskId === selection.sourceTaskId
+              : !Object.hasOwn(item.request, 'sourceTaskId'))
         )?.runtime
-        byId('assessment-source-identity').textContent = source
-          ? 'Source attempt: ' +
-            id +
-            '\nRepository: ' +
-            (runtime?.repository ?? 'unavailable before assessment') +
-            '\nHEAD: ' +
-            (source.snapshot?.head ?? 'unavailable') +
-            '\nRuntime: ' +
-            (source.snapshot?.runtimeSource?.digest ?? 'unavailable') +
-            '\nFull source: ' +
-            (source.snapshot?.digest ?? 'unavailable')
+        const snapshot = taskMode
+          ? {
+              head: assessmentTask?.snapshot?.head,
+              digest: attempt?.verdict?.sourceDigest,
+              runtimeSource: attempt?.verdict?.runtimeSource
+            }
+          : source?.snapshot
+        const emptySource = taskMode
+          ? 'Select a task and its exact attempt explicitly.'
           : 'Select a captured source attempt explicitly.'
+        byId('assessment-source-identity').textContent =
+          attempt || source
+            ? (taskMode ? 'Task: ' + selection.sourceTaskId + '\n' : '') +
+              'Source attempt: ' +
+              selection.sourceAttemptId +
+              '\nRepository: ' +
+              (runtime?.repository ?? 'unavailable before assessment') +
+              '\nHEAD: ' +
+              (snapshot?.head ?? 'unavailable') +
+              '\nRuntime: ' +
+              (snapshot?.runtimeSource?.digest ?? 'unavailable') +
+              '\nFull source: ' +
+              (snapshot?.digest ?? 'unavailable') +
+              (taskMode
+                ? '\nAttempt phase: ' +
+                  attempt.phase +
+                  '\nVerification: ' +
+                  (attempt.verdict?.evidence?.status ?? 'unavailable') +
+                  '\nVerification identity: ' +
+                  (attempt.verdict?.verificationSource?.digest ??
+                    'unavailable') +
+                  '\nExecution: ' +
+                  (attempt.verdict?.executionSource?.digest ?? 'unavailable') +
+                  '\nSource availability is checked by the service on start.'
+                : '')
+            : emptySource
+        return Boolean(
+          taskMode ? attempt && taskSummary(selection.sourceTaskId) : source
+        )
+      }
+      async function readAssessmentTask() {
+        if (byId('assessment-source-kind').value !== 'task') return
+        const id = byId('assessment-task').value
+        const summary = taskSummary(id)
+        const signature = summary ? JSON.stringify(summary) : ''
+        if (!id || !summary) {
+          assessmentTask = null
+          assessmentTaskSignature = ''
+          if (id)
+            byId('assessment-notice').textContent =
+              'Selected task is unavailable in the current summary window.'
+          renderAssessment()
+          return
+        }
+        if (assessmentTask?.id === id && assessmentTaskSignature === signature)
+          return
+        try {
+          const value = await readTaskDetail(id, signature)
+          if (
+            disposed ||
+            byId('assessment-source-kind').value !== 'task' ||
+            byId('assessment-task').value !== id ||
+            JSON.stringify(taskSummary(id)) !== signature
+          )
+            return
+          if (
+            assessmentTask?.id === id &&
+            assessmentTaskSignature === signature
+          )
+            return
+          assessmentTask = value
+          assessmentTaskSignature = signature
+          retainOptions(byId('assessment-attempt'), [
+            ['', 'Choose exact task attempt'],
+            ...value.attempts.map((attempt) => [
+              attempt.id,
+              attempt.id.slice(0, 12) +
+                ' - ' +
+                attempt.phase +
+                ' - ' +
+                (attempt.verdict?.evidence?.status ?? 'unavailable')
+            ])
+          ])
+          renderAssessment()
+        } catch (error) {
+          if (
+            !disposed &&
+            byId('assessment-source-kind').value === 'task' &&
+            byId('assessment-task').value === id &&
+            JSON.stringify(taskSummary(id)) === signature
+          ) {
+            byId('assessment-notice').textContent = error.message
+            throw error
+          }
+        }
       }
       function renderAssessment() {
         const records = assessmentRecords.filter(
@@ -1167,6 +1309,7 @@
         const running = assessmentRecords.some(
           (item) => item.phase === 'running'
         )
+        const sourceReady = renderAssessmentSource()
         byId('assessment-start').disabled =
           !capability ||
           assessmentBusy ||
@@ -1174,8 +1317,7 @@
           Boolean(activeId) ||
           !targetRecord?.targetVerification ||
           !targetRecord?.acceptedVersion ||
-          assessmentSource?.id !== byId('assessment-source').value ||
-          !byId('assessment-source').value
+          !sourceReady
         byId('assessment-cancel').disabled =
           !capability || assessmentBusy || selected?.phase !== 'running'
         byId('target-pins').textContent = targetRecord
@@ -1192,7 +1334,6 @@
               ? '\nAssessment unavailable - this saved target lacks immutable pins.'
               : '')
           : 'Immutable source pins appear after target creation.'
-        renderAssessmentSource()
         // Settlement and currentness are service-owned; these small lifecycle
         // fields identify presentation changes without traversing verdict data.
         const signature = selected
@@ -1325,7 +1466,7 @@
                 requestId: window.crypto.randomUUID(),
                 targetId: targetRecord.id,
                 allocationRevision: targetRecord.revision,
-                sourceAttemptId: byId('assessment-source').value
+                ...assessmentSelection()
               })
           selectedAssessmentId = result.id
           if (disposed) return
@@ -1664,6 +1805,29 @@
             sourceSelect.selectedOptions[0].textContent
           ])
         retainOptions(sourceSelect, sourceOptions)
+        const taskSelect = byId('assessment-task')
+        const taskOptions = [
+          ['', 'Choose task source'],
+          ...(state.tasks?.records ?? []).map((item) => [
+            item.id,
+            item.id.slice(0, 12) +
+              ' - ' +
+              item.phase +
+              ' - ' +
+              item.verificationStatus
+          ])
+        ]
+        if (
+          taskSelect.value &&
+          !taskOptions.some(([id]) => id === taskSelect.value)
+        )
+          taskOptions.push([
+            taskSelect.value,
+            taskSelect.value.slice(0, 12) + ' - unavailable'
+          ])
+        retainOptions(taskSelect, taskOptions)
+        readAssessmentTask().catch(() => undefined)
+
         try {
           assessmentRecords = await api('/api/target-assessments')
         } catch (error) {
@@ -1760,6 +1924,21 @@
         listen(byId('target-revision'), 'change', chooseTargetRevision)
         listen(byId('target-review'), 'change', renderTargetReview)
         listen(byId('assessment-source'), 'change', readAssessmentSource)
+        listen(byId('assessment-source-kind'), 'change', () => {
+          renderAssessment()
+          readAssessmentTask().catch(showError)
+        })
+        listen(byId('assessment-task'), 'change', () => {
+          assessmentTask = null
+          assessmentTaskSignature = ''
+          retainOptions(byId('assessment-attempt'), [
+            ['', 'Choose exact task attempt']
+          ])
+          renderAssessment()
+          readAssessmentTask().catch(showError)
+        })
+        listen(byId('assessment-attempt'), 'change', renderAssessment)
+
         listen(byId('assessment-history'), 'change', (event) => {
           selectedAssessmentId = event.target.value
           renderAssessment()
@@ -1829,7 +2008,7 @@
           taskState = state.tasks
           reviewPolicy = state.reviewPolicy
           await refreshTargets(state)
-          await refreshTask()
+          refreshTask().catch(showError)
           if (!selectedId && state.runs.length) selectedId = state.runs[0].id
           const id = selectedId
           const value = id ? await api('/api/runs/' + id) : null
@@ -1954,7 +2133,10 @@
             <pre id="target-pins"></pre>
             <section id="target-assessment" aria-label="Target source assessment">
               <h3>Assess one captured source</h3>
-              <label>Integration source attempt<select id="assessment-source"><option value="">Choose captured source attempt</option></select></label>
+              <label>Integration source kind<select id="assessment-source-kind"><option value="run">Captured run</option><option value="task">Task candidate</option></select></label>
+              <label id="assessment-run-field">Integration source attempt<select id="assessment-source"><option value="">Choose captured source attempt</option></select></label>
+              <label id="assessment-task-field" hidden>Task source<select id="assessment-task"><option value="">Choose task source</option></select></label>
+              <label id="assessment-attempt-field" hidden>Exact task attempt<select id="assessment-attempt"><option value="">Choose exact task attempt</option></select></label>
               <pre id="assessment-source-identity"></pre>
               <button id="assessment-start" type="button" disabled>Assess saved allocation</button>
               <button id="assessment-cancel" type="button" disabled>Cancel assessment</button>
