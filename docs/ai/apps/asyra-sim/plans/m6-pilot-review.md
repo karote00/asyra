@@ -2319,7 +2319,7 @@ The permanent opt-in reproduction entry, from the candidate worktree root, is:
 
 ```sh
 cd apps/asyra-sim
-SIM_SUPPORT_REUSE_POPULATION=1 SIM_SUPPORT_REUSE_CONTROL_FILE=/Users/asa/Desktop/workspace/asra/.worktrees/asyra-sim-temporal-opportunity-census/tmp/capacity/temporal-opportunity-census.json node ../../../../node_modules/vitest/vitest.mjs run src/analysis/methods/__tests__/convex-support-reuse.test.ts -t 'preserves the complete recorded scenario-zero population and charged work' --maxWorkers=1
+SIM_SUPPORT_REUSE_POPULATION=1 SIM_SUPPORT_REUSE_CONTROL_FILE=../../../asyra-sim-temporal-opportunity-census/tmp/capacity/temporal-opportunity-census.json node ../../../../node_modules/vitest/vitest.mjs run src/analysis/methods/__tests__/convex-support-reuse.test.ts -t 'preserves the complete recorded scenario-zero population and charged work' --maxWorkers=1
 ```
 
 The reviewed census path must refer to the exact hash above; the test verifies it
