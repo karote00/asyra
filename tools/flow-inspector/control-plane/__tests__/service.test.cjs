@@ -1706,3 +1706,377 @@ test('assessment settlement persistence failure preserves completed producer pha
     fs.rmSync(f.dir, { recursive: true, force: true })
   }
 })
+
+function captureDerivedSource(...args) {
+  const snapshot = sourceOwner.captureSource(...args)
+  const generated = sourceOwner.createDerivedExecution({
+    sourceRoot: snapshot.sourceRoot,
+    verificationSource: snapshot.verificationSource
+  })
+  for (const file of generated.files) {
+    const destination = path.join(snapshot.sourceRoot, file.path)
+    fs.mkdirSync(path.dirname(destination), { recursive: true })
+    fs.writeFileSync(destination, file.content, { flag: 'wx', mode: 0o444 })
+  }
+  const files = [...snapshot.files, ...generated.executionSource.files].sort(
+    (a, b) => a.path.localeCompare(b.path)
+  )
+  const bytes = JSON.stringify(files)
+  fs.rmSync(path.join(root, snapshot.manifestPath))
+  fs.writeFileSync(path.join(root, snapshot.manifestPath), bytes, {
+    flag: 'wx',
+    mode: 0o444
+  })
+  return {
+    ...snapshot,
+    files,
+    fileCount: files.length,
+    digest: require('node:crypto')
+      .createHash('sha256')
+      .update(bytes)
+      .digest('hex'),
+    executionSource: generated.executionSource,
+    configurationDigest: generated.executionSource.digest
+  }
+}
+async function runDerivedSource(options) {
+  const { containedProcess } = require('../agent-verifier.cjs')
+  return require('../runner.cjs').runVerification({
+    ...options,
+    contract: {
+      ...options.contract,
+      configFile: options.snapshot.executionSource.roles.configuration
+    },
+    processRunner: (input) =>
+      containedProcess(
+        {
+          ...input,
+          cwd: options.snapshot.sourceRoot,
+          args: [
+            path.join(
+              options.snapshot.sourceRoot,
+              options.snapshot.executionSource.roles.bootstrap
+            ),
+            String(process.pid),
+            ...input.args.slice(3),
+            '--configLoader',
+            'native'
+          ]
+        },
+        {
+          repositoryRoot: root,
+          readRoots: [options.snapshot.sourceRoot],
+          writeRoot: options.runDirectory
+        }
+      )
+  })
+}
+
+test(
+  'service admits complete derived source once per live and restart lifetime with actual bytes and cached reads',
+  { skip: process.platform !== 'darwin', timeout: 30000 },
+  async (t) => {
+    const dir = directory()
+    let service = createService(root, {
+      directory: dir,
+      capture: captureDerivedSource,
+      runner: runDerivedSource
+    })
+    const combined = t.mock.method(sourceOwner, 'validateSourceSnapshot')
+    const bytes = t.mock.method(sourceOwner, 'verifyRetainedSnapshotBytes')
+    const read = t.mock.method(fs, 'readFileSync')
+    const assess = t.mock.method(evidenceOwner, 'assessEvidence')
+    const requestId = randomUUID()
+    try {
+      const id = service.start({ requestId }, LOCAL_ACTOR)
+      const record = await service.wait(id)
+      assert.equal(
+        record.evidence?.status,
+        'passed',
+        JSON.stringify({
+          phase: record.phase,
+          error: record.error,
+          issues: record.evidence?.issues
+        })
+      )
+      assert.equal(record.format, 3)
+      const sourceRoot = path.join(dir, id, 'source')
+      const sourceReads = () =>
+        read.mock.calls.filter((call) =>
+          String(call.arguments[0]).startsWith(sourceRoot + path.sep)
+        ).length
+      assert.equal(combined.mock.callCount(), 1)
+      assert.equal(bytes.mock.callCount(), 1)
+      assert.equal(sourceReads(), record.snapshot.fileCount)
+      assert.deepEqual(combined.mock.calls[0].arguments[3], { sourceRoot })
+      const artifact = assess.mock.calls[0].arguments[5]
+      assert.deepEqual(
+        artifact.executionSource,
+        record.snapshot.executionSource
+      )
+      assert.equal(
+        artifact.configurationDigest,
+        artifact.executionSource.digest
+      )
+      assert.ok(Object.isFrozen(artifact.executionSource))
+      await service.close()
+      service = createService(root, { directory: dir })
+      assert.equal(combined.mock.callCount(), 2)
+      assert.equal(bytes.mock.callCount(), 2)
+      assert.equal(sourceReads(), record.snapshot.fileCount * 2)
+      const count = read.mock.callCount()
+      for (let index = 0; index < 10; index++) {
+        assert.equal(service.get(id).evidence.status, 'passed')
+        service.state()
+        assert.equal(service.start({ requestId }, LOCAL_ACTOR), id)
+      }
+      assert.equal(read.mock.callCount(), count)
+      assert.equal(combined.mock.callCount(), 2)
+      assert.equal(bytes.mock.callCount(), 2)
+    } finally {
+      await service.close()
+      fs.rmSync(dir, { recursive: true, force: true })
+    }
+  }
+)
+
+test('derived service admission rejects missing authority and actual bytes before dispatch', async () => {
+  for (const [label, mutate] of [
+    [
+      'missing runtime',
+      (snapshot) => Reflect.deleteProperty(snapshot, 'runtimeSource')
+    ],
+    [
+      'missing verification',
+      (snapshot) => Reflect.deleteProperty(snapshot, 'verificationSource')
+    ],
+    [
+      'null execution',
+      (snapshot) => {
+        snapshot.executionSource = null
+      }
+    ],
+    [
+      'wrong live location',
+      (snapshot) => {
+        snapshot.sourceRoot = path.join(root, 'other/source')
+      }
+    ],
+    [
+      'changed bytes',
+      (snapshot) => {
+        const file = path.join(
+          snapshot.sourceRoot,
+          snapshot.executionSource.roles.bootstrap
+        )
+        fs.chmodSync(file, 0o644)
+        fs.appendFileSync(file, '\n// changed\n')
+      }
+    ],
+    [
+      'missing bytes',
+      (snapshot) =>
+        fs.rmSync(
+          path.join(snapshot.sourceRoot, snapshot.runtimeSource.files[0].path)
+        )
+    ]
+  ]) {
+    const dir = directory()
+    let executions = 0
+    const service = createService(root, {
+      directory: dir,
+      capture: (...args) => {
+        const snapshot = captureDerivedSource(...args)
+        mutate(snapshot)
+        return snapshot
+      },
+      runner: async () => {
+        executions++
+        throw new Error('Must not dispatch')
+      }
+    })
+    try {
+      const record = await service.wait(service.start({}, LOCAL_ACTOR))
+      assert.equal(record.phase, 'error', label)
+      assert.equal(executions, 0, label)
+    } finally {
+      await service.close()
+      fs.rmSync(dir, { recursive: true, force: true })
+    }
+  }
+})
+
+test(
+  'retained derived source requires exact contract and actual fixed-tree bytes on restart',
+  { skip: process.platform !== 'darwin', timeout: 30000 },
+  async () => {
+    const dir = directory()
+    let service = createService(root, {
+      directory: dir,
+      capture: captureDerivedSource,
+      runner: runDerivedSource
+    })
+    try {
+      const record = await service.wait(service.start({}, LOCAL_ACTOR))
+      assert.equal(record.evidence?.status, 'passed', record.error)
+      await service.close()
+      const recordPath = path.join(dir, record.id, 'record.json')
+      const saved = fs.readFileSync(recordPath)
+      const bootstrap = path.join(
+        dir,
+        record.id,
+        'source',
+        record.snapshot.executionSource.roles.bootstrap
+      )
+      const original = fs.readFileSync(bootstrap)
+      for (const [label, mutate] of [
+        [
+          'removed execution and source contract with tampered generated bytes',
+          (value) => {
+            Reflect.deleteProperty(value, 'sourceContract')
+            Reflect.deleteProperty(value.snapshot, 'executionSource')
+            fs.chmodSync(bootstrap, 0o644)
+            fs.appendFileSync(
+              bootstrap,
+              '\n// tampered after removing authority\n'
+            )
+          }
+        ],
+        [
+          'missing source contract',
+          (value) => Reflect.deleteProperty(value, 'sourceContract')
+        ],
+        [
+          'missing execution',
+          (value) => Reflect.deleteProperty(value.snapshot, 'executionSource')
+        ],
+        [
+          'null execution',
+          (value) => {
+            value.snapshot.executionSource = null
+          }
+        ],
+        [
+          'unsupported execution',
+          (value) => {
+            value.snapshot.executionSource.format = 2
+          }
+        ],
+        [
+          'missing runtime',
+          (value) => Reflect.deleteProperty(value.snapshot, 'runtimeSource')
+        ],
+        [
+          'missing verifier',
+          (value) =>
+            Reflect.deleteProperty(value.snapshot, 'verificationSource')
+        ],
+        [
+          'tampered bytes',
+          () => {
+            fs.chmodSync(bootstrap, 0o644)
+            fs.appendFileSync(bootstrap, '\n// tampered\n')
+          }
+        ],
+        ['missing bytes', () => fs.rmSync(bootstrap)]
+      ]) {
+        const value = JSON.parse(saved)
+        mutate(value)
+        fs.writeFileSync(recordPath, JSON.stringify(value))
+        assert.throws(
+          () => {
+            service = createService(root, { directory: dir })
+          },
+          /source|execution|configuration|ENOENT|fingerprint/i,
+          label
+        )
+        fs.writeFileSync(recordPath, saved)
+        fs.rmSync(bootstrap, { force: true })
+        fs.writeFileSync(bootstrap, original, { flag: 'wx', mode: 0o444 })
+      }
+      const stale = JSON.parse(saved)
+      stale.mappingRevision++
+      fs.writeFileSync(recordPath, JSON.stringify(stale))
+      service = createService(root, { directory: dir })
+      assert.equal(service.get(record.id).evidence.status, 'passed')
+      assert.equal(service.get(record.id).format, 3)
+      assert.equal(service.get(record.id).matchesCurrentContract, false)
+    } finally {
+      await service.close()
+      fs.rmSync(dir, { recursive: true, force: true })
+    }
+  }
+)
+
+test(
+  'derived service cannot retain a passing result when live execution presence or complete descriptors change',
+  { skip: process.platform !== 'darwin', timeout: 30000 },
+  async () => {
+    for (const mutate of [
+      (snapshot) => Reflect.deleteProperty(snapshot, 'executionSource'),
+      (snapshot) => {
+        snapshot.runtimeSource.files[0].size++
+      },
+      (snapshot) => {
+        snapshot.executionSource.files[0].size++
+      }
+    ]) {
+      const dir = directory()
+      const service = createService(root, {
+        directory: dir,
+        capture: (...args) => structuredClone(captureDerivedSource(...args)),
+        runner: async (options) => {
+          const result = await runDerivedSource(options)
+          assert.equal(result.code, 0, result.output)
+          mutate(options.snapshot)
+          return result
+        }
+      })
+      try {
+        const record = await service.wait(service.start({}, LOCAL_ACTOR))
+        assert.equal(record.phase, 'error')
+        assert.match(record.error, /source|identity|provenance/i)
+        assert.notEqual(record.evidence?.status, 'passed')
+        assert.throws(
+          () => service.prepareEvolution({ attemptId: record.id }, LOCAL_ACTOR),
+          /source|completed|unavailable|evidence/i
+        )
+      } finally {
+        await service.close()
+        fs.rmSync(dir, { recursive: true, force: true })
+      }
+    }
+  }
+)
+
+test(
+  'ordinary verification references cannot consume a service-admitted derived configuration',
+  { skip: process.platform !== 'darwin', timeout: 30000 },
+  async (t) => {
+    const dir = directory()
+    const service = createService(root, {
+      directory: dir,
+      capture: captureDerivedSource,
+      runner: runDerivedSource
+    })
+    const verify = t.mock.method(sourceOwner, 'verifyRetainedSource')
+    try {
+      const record = await service.wait(
+        service.start({ mode: 'candidate' }, LOCAL_ACTOR)
+      )
+      assert.equal(record.evidence?.status, 'passed', record.error)
+      assert.throws(
+        () => service.prepareEvolution({ attemptId: record.id }, LOCAL_ACTOR),
+        /unavailable|source|verification/i
+      )
+      assert.equal(
+        verify.mock.callCount(),
+        0,
+        'ordinary reference rejects the derived authority before byte verification'
+      )
+    } finally {
+      await service.close()
+      fs.rmSync(dir, { recursive: true, force: true })
+    }
+  }
+)

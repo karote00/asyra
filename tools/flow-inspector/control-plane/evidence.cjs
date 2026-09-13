@@ -333,7 +333,7 @@ function validateStoredEvidence(contract, record, sourceAdmission) {
   )
     return
   if (
-    record.format === 2 &&
+    record.format >= 2 &&
     ['mappingVersion', 'architectureVersion'].some(
       (key) => record.snapshot[key] !== contract[key]
     )

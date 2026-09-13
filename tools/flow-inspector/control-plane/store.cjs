@@ -31,7 +31,7 @@ const writeAtomic = (file, value) => {
 function validateRecord(value, id) {
   if (
     !value ||
-    ![1, 2].includes(value.format) ||
+    ![1, 2, 3].includes(value.format) ||
     value.id !== id ||
     !validId(id) ||
     ![
@@ -56,7 +56,7 @@ function validateRecord(value, id) {
   )
     throw new Error('Invalid attempt record: ' + id)
   if (
-    value.format === 2 &&
+    value.format >= 2 &&
     (!Number.isInteger(value.mappingRevision) ||
       value.mappingRevision < 1 ||
       !/^[a-f0-9]{64}$/.test(value.contractDigest ?? '') ||
@@ -64,6 +64,22 @@ function validateRecord(value, id) {
         !Number.isFinite(Date.parse(value.finishedAt))))
   )
     throw new Error('Invalid versioned attempt identity: ' + id)
+  if (value.format === 3) {
+    const object = (item) =>
+      item !== null && typeof item === 'object' && !Array.isArray(item)
+    if (
+      !object(value.sourceContract) ||
+      !['definition', 'architectureDefinition'].every((key) =>
+        object(value.sourceContract[key])
+      ) ||
+      !object(value.snapshot) ||
+      !['runtimeSource', 'verificationSource', 'executionSource'].every(
+        (key) =>
+          Object.hasOwn(value.snapshot, key) && object(value.snapshot[key])
+      )
+    )
+      throw new Error('Invalid derived source authority: ' + id)
+  }
   if (value.phase === 'completed') {
     const evidence = value.evidence
     if (
@@ -96,7 +112,7 @@ function validateRecord(value, id) {
         evidence.passedCount !== evidence.cases.length)
     )
       throw new Error('Incomplete persisted pass: ' + id)
-    if (value.format === 2) {
+    if (value.format >= 2) {
       const snapshot = value.snapshot
       const runner = value.runner
       if (

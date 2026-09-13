@@ -91,6 +91,22 @@ function createService(
     const entry = sourceAdmissions.get(record.id)
     const retained = entry?.admission
     const hasContract = Object.hasOwn(record, 'sourceContract')
+    const derived =
+      record.format === 3 ||
+      Object.hasOwn(snapshot ?? {}, 'executionSource') ||
+      Object.hasOwn(retained ?? {}, 'executionSource')
+    if (
+      snapshot &&
+      derived &&
+      (!hasContract ||
+        !['runtimeSource', 'verificationSource', 'executionSource'].every(
+          (key) => Object.hasOwn(snapshot, key)
+        ))
+    ) {
+      sourceAdmissions.delete(record.id)
+      verificationReferences.delete(record.id)
+      throw new Error('Derived source authority is missing')
+    }
     if (
       snapshot &&
       hasContract &&
@@ -115,8 +131,10 @@ function createService(
         retained.attemptId === record.id &&
         retained.head === snapshot.head &&
         retained.sourceDigest === snapshot.digest &&
-        retained.runtimeSource.format === snapshot.runtimeSource?.format &&
-        retained.runtimeSource.digest === snapshot.runtimeSource?.digest &&
+        isDeepStrictEqual(retained.runtimeSource, snapshot.runtimeSource) &&
+        Object.hasOwn(retained, 'executionSource') ===
+          Object.hasOwn(snapshot, 'executionSource') &&
+        isDeepStrictEqual(retained.executionSource, snapshot.executionSource) &&
         isDeepStrictEqual(entry.sourceContract, record.sourceContract) &&
         (!hasContract ||
           (retained.contractDigest === record.contractDigest &&
@@ -134,6 +152,22 @@ function createService(
       verificationReferences.delete(record.id)
       throw new Error('Runtime source admission identity changed')
     }
+    const sourceRoot = derived
+      ? safePath(
+          repositoryRoot,
+          path.relative(
+            repositoryRoot,
+            path.join(directory, record.id, 'source')
+          )
+        )
+      : undefined
+    if (
+      derived &&
+      files &&
+      Object.hasOwn(snapshot, 'sourceRoot') &&
+      snapshot.sourceRoot !== sourceRoot
+    )
+      throw new Error('Derived source location does not match the attempt')
     let sourceContract
     if (hasContract) {
       const saved = record.sourceContract
@@ -173,16 +207,30 @@ function createService(
       manifest = JSON.parse(bytes)
     }
     const sources = hasContract
-      ? sourceOwner.validateSourceSnapshot(snapshot, sourceContract, manifest)
+      ? sourceOwner.validateSourceSnapshot(
+          snapshot,
+          sourceContract,
+          manifest,
+          derived ? { sourceRoot } : undefined
+        )
       : { runtimeSource: sourceOwner.validateRuntimeSource(snapshot, manifest) }
     if (
       hasContract &&
       (!sources.verificationSource ||
-        sources.verificationSource.files.find(
-          (item) => item.path === sourceContract.configFile
-        )?.digest !== snapshot.configurationDigest)
+        (derived
+          ? !sources.executionSource ||
+            sources.executionSource.digest !== snapshot.configurationDigest
+          : sources.verificationSource.files.find(
+              (item) => item.path === sourceContract.configFile
+            )?.digest !== snapshot.configurationDigest))
     )
       throw new Error('Source execution configuration mismatch')
+    if (derived)
+      sourceOwner.verifyRetainedSnapshotBytes(
+        repositoryRoot,
+        sourceRoot,
+        manifest
+      )
     const { runtimeSource } = sources
     const admission = Object.freeze({
       attemptId: record.id,
@@ -190,6 +238,7 @@ function createService(
       head: snapshot.head,
       sourceDigest: snapshot.digest,
       runtimeSource,
+      ...(derived ? { executionSource: sources.executionSource } : {}),
       ...(hasContract
         ? {
             verificationSource: sources.verificationSource,
@@ -209,7 +258,11 @@ function createService(
   }
   const referenceIdentity = (record) => {
     const admission = record && sourceAdmissions.get(record.id)?.admission
-    if (!admission?.verificationSource) return null
+    if (
+      !admission?.verificationSource ||
+      Object.hasOwn(admission, 'executionSource')
+    )
+      return null
     return Object.freeze({
       attemptId: admission.attemptId,
       repository: admission.repository,
@@ -222,7 +275,12 @@ function createService(
   const referenceFor = (record, expected) => {
     const entry = record && sourceAdmissions.get(record.id)
     const admission = entry?.admission
-    if (!entry?.contract || !admission?.verificationSource) return null
+    if (
+      !entry?.contract ||
+      !admission?.verificationSource ||
+      Object.hasOwn(admission, 'executionSource')
+    )
+      return null
     const reference = referenceIdentity(record)
     if (expected && !isDeepStrictEqual(reference, expected)) return null
     if (verificationReferences.has(record.id)) {
@@ -569,8 +627,7 @@ function createService(
     const matchesCurrentContract =
       !['candidate', 'target-proof'].includes(record.mode) &&
       record.snapshot?.contractDigest === contract.digest &&
-      (record.format !== 2 ||
-        record.mappingRevision === store.mapping().revision)
+      (record.format < 2 || record.mappingRevision === store.mapping().revision)
     return {
       ...record,
       matchesCurrentContract,
@@ -906,7 +963,14 @@ function createService(
             ([key]) => !['sourceRoot', 'files'].includes(key)
           )
         )
-        update(id, { snapshot: identity }, 'source-captured')
+        update(
+          id,
+          {
+            snapshot: identity,
+            ...(Object.hasOwn(snapshot, 'executionSource') ? { format: 3 } : {})
+          },
+          'source-captured'
+        )
         const result = await runner({
           repositoryRoot,
           runDirectory,

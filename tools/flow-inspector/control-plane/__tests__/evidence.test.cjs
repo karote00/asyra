@@ -257,20 +257,24 @@ test('durable evidence admission checks the required inventory before consumers 
   )
 })
 
-for (const key of ['mappingVersion', 'architectureVersion'])
-  test('durable evidence rejects a mismatched ' + key, () => {
-    const record = {
-      format: 2,
-      phase: 'completed',
-      snapshot: { ...snapshot, [key]: '0'.repeat(64) },
-      flowIds,
-      evidence: assess(result())
-    }
-    assert.throws(
-      () => validateStoredEvidence(contract, record),
-      /Stored evidence provenance/
+for (const format of [2, 3])
+  for (const key of ['mappingVersion', 'architectureVersion'])
+    test(
+      'durable format ' + format + ' evidence rejects a mismatched ' + key,
+      () => {
+        const record = {
+          format,
+          phase: 'completed',
+          snapshot: { ...snapshot, [key]: '0'.repeat(64) },
+          flowIds,
+          evidence: assess(result())
+        }
+        assert.throws(
+          () => validateStoredEvidence(contract, record),
+          /Stored evidence provenance/
+        )
+      }
     )
-  })
 
 async function realRuntimeProof(t) {
   const root = path.resolve(__dirname, '../../../..')
@@ -757,7 +761,7 @@ test(
     assert.equal(evidence.status, 'passed', JSON.stringify(evidence.issues))
     const record = {
       id: admission.attemptId,
-      format: 2,
+      format: 3,
       phase: 'completed',
       scenario: 'baseline',
       snapshot: derived,
