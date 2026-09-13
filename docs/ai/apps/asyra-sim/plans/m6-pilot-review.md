@@ -2145,3 +2145,101 @@ prove the matching upper bound despite overlapping world AABBs. Rational extrema
 reverse order, interval-motion enclosure, degenerate proposals, full source and
 cost/cancellation/cold-warm oracles are prerequisites. This section authorizes
 no fitting code, measurement, benchmark or full run; benefit remains unmeasured.
+
+### Candidate 30 - planar-region prerequisite (frozen before implementation)
+
+Only the source-only prerequisite steps 1/2 are authorized. Inspector `method`
+(original-source completeness, numerical uncertainty and paid immutable preparation;
+implementation allowlist `analysis/methods/**`) remains unchanged. Input is the
+unaltered representativeSnapshot(0), all 39 bindings in source order; the reviewed
+census is read-only provenance for the sources reached by 174 static traversals.
+Output is only exact coplanar adjacency regions and a research admission receipt,
+never a convex patch, witness, collision result or method capability. The frozen
+allowlist is two permanent test-owned planar-region files and this plan.
+
+Step contract: construct complete exact-coordinate adjacency, classify each
+shared edge's four vertices for exact coplanarity, and count maximal connected
+coplanar regions. A common coordinate plane is an exact fast path; otherwise use
+exact binary64-to-integer dyadics and the determinant directly (no tolerance or
+rounded zero). All graph operations, key construction, reads/allocations and
+exact primitives are charged. The original admitted topology is still required;
+this test does not replace topology admission or certify self-intersection.
+All complete bindings are processed; an exhausted binding remains incomplete and
+later bindings unvisited. No partial count is a positive admission.
+
+No output cache or pose state is introduced: repeat preparation on unchanged
+inputs performs the same operations/charges, including warm use. No asset-hash
+alias combines separately bound geometry. The complete source-only invocation
+has a single 230088 charged-preparation ceiling and 20-second guard; reaching the
+ceiling cannot leave a positive query-work reserve and rejects this route.
+The arithmetic is the optimistic static-replacement ceiling 308183 minus required
+net saving 78095. It gives old membership/preparation as free removable credit,
+so it is generous, not a predicted runtime. Stop at the ceiling; do not retry.
+
+For every source appearing in the census static-traversal population, require
+optimistic region count <= triangle count / 4. The factor four is a frozen
+research admission against existing four-triangle leaves, not an impossibility
+theorem. This pure region partition cannot certify convex unions: even a planar
+annulus stays one optimistic region. No arrangement, new hull, feature walking,
+new pose probe, full benchmark, production/default/version or geometry change.
+Only a passing complete screen returns to the parent for step 3 authorization.
+
+Before the single source run, permanent oracles cover exact non-cardinal planes,
+small noncoplanarity, planar fans/holes, disconnected regions, complete original
+triangle partition, invalid adjacency, deterministic charges, fresh/warm lifetime
+and interruption at every checkpoint. Focused tests, TypeScript, lint/format and
+naming/placement/Inspector contracts precede the source run; final scoped review
+and one independent review follow the complete package. No per-edit full runs.
+
+Candidate 30 prerequisite outcome: **preparation-cost rejection; stop before
+step 3**. The single source-only invocation reached the frozen 230088 charge
+ceiling in 18.89375 ms. One binding completed, one was interrupted, and 37 remain
+unvisited. The complete base binding has 1400 original triangles, 884 maximal
+coplanar regions and 148295 preparation charges; the next joint-1 binding used
+the remaining 81793 charges without publishing any region result. All three
+bindings required by the static-traversal census are unvisited. Their factor-four
+test is therefore UNKNOWN, not failed. The base's ratio is descriptive only and
+does not stand in for the required population.
+
+The complete-work optimistic floor is 578095. Giving this static-only route all
+308183 observed static traversal charges as removable, including original work
+which actually must remain, adding just the paid incomplete preparation already
+gives 500000. Finishing preparation and any positive new query work exceed that
+ceiling. This rejects the frozen all-binding preparation route and fee contract;
+it does not establish that every planar-patch decomposition, demand-owned
+preparation, nonplanar SWIFT++ design or the overall G4 goal is impossible. No
+source filter, binding order, predicate fee or limit was changed after observation.
+No arrangement, convex-union/global-intersection proof, feature walk, original
+distance query, full capacity gate or production/version change was performed.
+
+The result is an exact-coplanar-region prerequisite, not a certified surface
+patch. Plane tests use exact shared-coordinate identities or exact binary64
+dyadic determinants. Existing complete source topology is an input precondition;
+this helper does not claim to detect geometric self-intersection. Each predicate
+primitive includes its bounded scalar/record storage; variable source scans,
+map accesses, graph visits and transitions carry explicit individual charges.
+Snapshot creation, read-only census decoding and output receipt serialization
+are test harness work outside the measured preparation owner. There is no
+retained geometry/asset alias or result cache; repeat preparation reconstructs
+its scratch and pays the same work. No partial binding product survives a throw.
+
+Before the source run, seven small permanent oracles passed, along with
+TypeScript, ESLint, Prettier checks and 21 naming/placement/Inspector contracts.
+The known fan oracle was corrected before that run: its eight boundary points
+contain a midpoint on each square side, so a nonzero center dent makes exactly
+four planes, two triangles per straight side, rather than eight. Its exact
+subnormal departure still distinguishes the flat one-region source. The census
+file is caller-supplied and checked against the reviewed exact SHA-256 rather
+than a worktree path serving as a code identifier. Existing failed focused/lint
+logs remain preserved; successful corrected gate output is retained in the task.
+The one source-screen test passed as a correctly recorded negative admission.
+
+Evidence: `tmp/capacity/planar-region-screen.json` (56255 bytes), including all
+39 bindings, complete source/input hashes, explicit incomplete/unvisited states,
+the completed original triangle partition and every charge category. SHA-256:
+`2882fa4f46153c632c516813de37988d58f66e8cc6bfcb87cd551057cfb90405`.
+Reproduction entry is `SIM_PLANAR_REGION_SCREEN=1` with
+`SIM_PLANAR_CENSUS_FILE` pointing to the preserved reviewed census, running
+`planar-region.test.ts -t 'screens all original source bindings once under the frozen preparation ceiling'`.
+No second source run is needed for closure. Current default authority remains
+method 1.0.2 and G4 remains RED; independent review is the next boundary.
