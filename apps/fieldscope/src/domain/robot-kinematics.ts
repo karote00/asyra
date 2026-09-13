@@ -1,4 +1,5 @@
 import { readSourceRegions } from './source-occupancy'
+import { evaluatePolynomialTrig } from './kinematic-trigonometry'
 import {
   robotRestFrames,
   type RobotDefinition,
@@ -89,8 +90,8 @@ const numberAlgebra: KinematicAlgebra<number> = {
   subtract: (a, b) => a - b,
   multiply: (a, b) => a * b,
   divide: (a, b) => a / b,
-  sin: Math.sin,
-  cos: Math.cos
+  sin: (value) => evaluatePolynomialTrig('sin', value).value,
+  cos: (value) => evaluatePolynomialTrig('cos', value).value
 }
 const vector = <T>(x: T, y: T, z: T): Vector<T> =>
   Object.freeze([x, y, z] as const)
@@ -400,7 +401,7 @@ function affineFrame(transform: RigidTransform, work: { matrices: number }) {
   })
 }
 
-/** Prepared handoff only; existing renderer/query consumers are unchanged. */
+/** Completed CPU body coefficients consumed by fixed-pose source queries. */
 export function evaluateRobotAffinePose(rig: RobotRig, input: RobotJoints) {
   const pose = evaluateRobotPose(rig, input)
   const work = { fk: 1, matrices: 0 }
