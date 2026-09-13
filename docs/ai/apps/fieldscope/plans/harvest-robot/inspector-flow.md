@@ -987,3 +987,88 @@ no source rebuilds. After future focused proof, full app/type/build/lint/naming 
 independent numerical review. Root released readiness commit 6432d959b for this one implementation and its
 frozen gates. Freeze and STOP after completion for root quota review; no later
 owner is authorized.
+
+### D point-time surface domain exclusion - readiness
+
+Owner: simulation/collision.ts, SurfaceQueries.coverMotion. Inputs: original
+current GeometrySource, raw motion segment/window/robot assumptions and separately
+once-detached environment request: source=synthetic, nonempty assumption,
+shapes=source-shapes-throughout or unknown, poses=source-poses-throughout or unknown,
+leaves=source-pose-throughout or unknown, fruits=all-attached-throughout or unknown. All declarations bind the same full closed query window, with
+its existing half-open validity. Numeric maxMeshPairs/maxRegionPairs are required
+nonnegative safe integers. Malformed environment input rejects; recognized unknown
+environment state returns all domain unvisited/unknown without FK or source sampling,
+with null motion evidence (no claim that unused raw motion inputs were admitted).
+Known environment state delegates all raw motion/window/robot validation to the
+internal RobotMotionBounds entry. Outputs: original source, detached environment
+request, internally admitted motion-bounds evidence or null, complete safe-integer inventory,
+excluded/candidate/unresolved/unvisited triangle counts and actual work. Status is
+surface-separated only when excluded equals the entire domain; otherwise unknown.
+No intersection/first-contact/time-of-impact, material or movement output exists.
+
+Conditions: current source read before work and immediately before publication;
+never accept caller-issued motion-bound/domain results. For known state call
+RobotMotionBounds.enclose once; reuse every original robot mesh/region envelope.
+Prepare environment geometry through the existing geometryFor path with no robot
+pose request, preserving instance then descriptor order, zero displacement and
+original prepared bounds. Original region identity controls lookup; missing sheet
+region bounds use the existing whole mesh envelope, explicitly preserved in any
+reported provenance. Unknown/nonfinite bounds never qualify for strict exclusion.
+
+Inventory and original mesh-pair ordering have one shared producer inside this
+existing coverage owner, consumed by both cover and coverMotion. A minimal private
+extraction must preserve old cover outputs and work; do not copy its inventory
+formula/traversal into a second implementation. All robot parts cross all physical
+farm/dock instances, plus distinct-part unordered self pairs, without body/contact
+exceptions. Count safe totals before any Cartesian comparison; allocate no full
+pair array. Traverse original mesh order, then original region order. A strict
+mesh exclusion accounts for its full triangle product; otherwise region products
+partition it exactly. Each compared finite non-separated region product is a
+candidate; a nonfinite one is unresolved. Remaining products after budgets are
+unvisited. No triangle-pair enumeration or narrow predicate runs in this slice.
+After the region budget ends, account the current mesh domain remainder by safe
+subtraction of already classified counts, without visiting remaining region pairs.
+Remaining mesh comparisons may still strictly exclude whole domains until the
+mesh budget ends; account the rest from the global total without traversing the
+remaining mesh Cartesian domain. Do not double-count or perform hidden comparisons.
+
+Allowed: current motion-bounds/C interval products as consumers only, cached
+QueryGeometry bounds and existing static environment frame/bounds arithmetic.
+Boundary: collision.ts, its direct `simulation/__tests__/collision.test.ts`,
+API/spec/Inspector/plan. No C/scalar/ray/motion-bounds/source producers may change.
+Forbidden: index/BVH/new local bounds, source-buffer copies/scans, endpoint-only
+separation, fixed-joint sweep substitution, session/runtime/material/contact edits.
+Failure owner: existing source/request rejection, missing-state unknown and explicit
+numeric/resource unresolved; no partial public publication. Original source/mesh/
+region references remain unchanged; only newly owned records are frozen.
+
+Lifetime: one call. Reuse original robot envelope output and each environment
+placement/local-bounds product, with original descriptor/instance frame identity.
+Expose actual nested motion/C work, mesh/region comparisons, environment bounds/
+corners/frames and zero narrow-triangle work. No second robot FK and no cross-call
+cache. Budget values count actual comparison executions, not attempted or skipped
+pairs; no counter based solely on cache size.
+
+Gates: formal missing-entry red; independently enumerate a small complete original
+triangle-pair domain and prove category partition/count conservation for two joint
+windows and fixed nonzero base poses. Exact interior-window overlap must remain
+candidate/unresolved even when endpoints are separated; touch/coplanar and same-
+body pairs cannot be excluded by a blanket rule. Include complete separated,
+finite-overlap candidate, nonfinite unresolved, empty domain, zero/exact budgets,
+partial budgets and unknown/expired window assumptions; no incomplete result can
+report separation. Actual C farm/dock/film/net/leaves/soil/robot part inventory must
+match original sources, including multiple instances, unprepared sheets and
+same-shape different-region mappings. Verify getter clone-once, forged/stale source,
+retirement during work, caller isolation and zero source vertex/index generation.
+Preserve all existing cover/ray/static/translation controls without new predicates.
+
+Fixed cost gate uses the existing actual C coverage-profile source and its canonical
+inventory (43,429,284,640 triangle pairs), a rest singleton and a centre +/-1e-6
+joint window with explicit fixed base, budgets 300000 mesh comparisons and 10000
+region comparisons each. Each complete entry stays within 1 second, combined
+10 seconds, and original 24000-bit limits; do not raise budgets/guards after a
+failure. Report total/excluded/candidate/unresolved/unvisited, actual mesh/region
+work, environment preparation and nested C costs. No claim of full narrow coverage
+or speedup follows from candidate reduction. Future focused proof precedes full
+app/type/build/lint/naming and independent review. Current authorization is three-
+doc readiness only: freeze and STOP for root quota review; no implementation.

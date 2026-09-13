@@ -1413,3 +1413,18 @@ guards passed. All 461 app tests across 47 files, build/typecheck, naming and li
 found no remaining finding. This seven-file slice freezes and stops for root
 quota review. Robot surface envelopes do not provide pair, environment, material,
 contact or movement clearance, and no next owner begins automatically.
+
+Next bounded readiness card: SurfaceQueries.coverMotion accounts for the complete
+robot/environment and distinct-part self triangle domain using whole-window robot
+envelopes and explicitly stationary environment source state. The current collision
+owner shares its inventory/traversal and static environment bounds; no new numerical
+or source producer is introduced. Finite strict bounds exclude domains, surviving
+finite domains remain candidates, nonfinite domains unresolved, and declared
+mesh/region budget remainders unvisited. This stage deliberately has no articulated
+narrow predicate: endpoints and fixed-translation evidence cannot close that gap.
+
+The Inspector freezes the exact four-way accounting, identity/lifetime and work
+reuse gates plus two fixed actual-source profiles. Material/contact decisions are
+still pending independent owners and receive no implied approval from these surface
+counts. This segment changes only existing spec/Inspector/plan readiness, obtains
+independent review, then freezes and stops for root quota review.

@@ -1390,3 +1390,34 @@ before work and immediately before publication; no source handle is cloned or
 incidentally frozen. Reuse affine and local-bounds products only within this call,
 with actual work counters. No geometry generation, position/index scan, cross-call
 cache, contact exemption or session mutation is introduced.
+
+### Point-time robot/environment surface domain exclusion - readiness
+
+The next D surface consumer may classify the complete original triangle-pair
+domain using whole-window envelopes, without a new articulated intersection
+solver. Its domain is every robot part against every physical farm/dock instance,
+plus every unordered pair of distinct robot parts, including same-body parts.
+Environment source shapes, descriptor/instance poses, leaves and attached fruit
+must explicitly remain at their source state throughout the same closed window.
+These are synthetic assumptions, not inferred material, optical or physical facts.
+Unknown environment state cannot produce surface separation.
+
+Robot envelopes come from one internal RobotMotionBounds.enclose call on the same
+current source and raw segment/window/robot assumptions. Static environment bounds
+use the existing source descriptor/instance frame order and cached local bounds.
+Only strict separation of finite whole-window bounds excludes an original mesh or
+region triangle product. Touching/overlap never proves intersection; a finite
+surviving region product is a candidate for the future solver. Nonfinite envelopes
+are unresolved; a declared work-budget remainder is unvisited. Neither endpoints
+nor fixed-translation triangle predicates can replace articulated interval proof.
+
+Preserve the original source-order mesh/instance/region traversal and exact safe-
+integer domain counts. Every required triangle pair is in exactly one excluded,
+candidate, unresolved or unvisited category; their sum equals the complete domain.
+Caller-declared nonnegative safe-integer mesh-pair and region-pair budgets bound
+actual comparisons. Budget exhaustion with remaining work cannot imply separation;
+exact exhaustion after complete processing is not itself an error. Only exclusion
+of the entire domain supports surface-separated, otherwise the result is unknown.
+Even surface-separated does not prove occupied volumes disjoint, allowed contact,
+support, retained quality or movement clearance. Open-shell, sheet, crate cavity,
+tire and joint semantics receive no exemption or material reinterpretation.
