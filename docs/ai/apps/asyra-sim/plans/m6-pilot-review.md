@@ -2145,3 +2145,40 @@ prove the matching upper bound despite overlapping world AABBs. Rational extrema
 reverse order, interval-motion enclosure, degenerate proposals, full source and
 cost/cancellation/cold-warm oracles are prerequisites. This section authorizes
 no fitting code, measurement, benchmark or full run; benefit remains unmeasured.
+
+### Isolated first frame-certificate proof
+
+Scope: this plan, internal experimental `source-frame.ts` and permanent
+`source-frame.test.ts`, on `codex/asyra-sim-fitted-frame-proof`. This proves the
+method-query Inspector's complete-source conservative-bound contributor only;
+no product route or Inspector behavior changes. No Jacobi, per-node fitting,
+hierarchy preparation, cache, benchmark or full query is included.
+
+Given a frozen admitted original mesh and finite nonzero quaternion proposal,
+copy the proposal at paid admission, normalize it outward with positive exact
+power-of-two scaling, then scan all original indexed vertex occurrences for
+inverse-frame extrema. The artifact binds the unchanged geometry reference and
+freezes its interval frame/bounds. Charges are admission one, normalization one,
+every 256 indexed vertices including tail one, and publication one. Invalid
+proposals establish no artifact; cancellation propagates without publishing.
+A projection query charges each domain/frame composition once and one complete
+fixed-direction certificate over both fitted boxes. It returns source projection
+intervals and a conservative lower bound, never contact or distance evidence.
+No caller receives uncompleted work and no global retention is introduced.
+
+Test first with independent binary64-to-rational quaternion rotation and squared
+normalization oracles, the exact octahedron gap, reversed pairs, interval poses,
+all source vertices, invalid proposals and interruption at every charged stage.
+Retain default source/pose/interval routines; only the new module consumes them.
+Small type/lint/naming and numerical review close this slice, then freeze/stop.
+
+The isolated proof passed 25 permanent tests, TypeScript, exact-file ESLint and
+the 11 naming checks; independent numerical review reran all 25 tests and passed.
+The initial unimplemented-module red is retained. A subsequent parameterized-test
+argument-shape error was corrected without changing the certificate math.
+Preparation charges are exactly four for 24 indexed occurrences and five for
+336; projection charges three. Each preparation/query checkpoint is cancellable.
+The existing plan prefix is byte-preserved; only this appended section is
+formatted (the pre-existing whole-file formatting discrepancy remains).
+No fitting, hierarchy, routing or performance claim follows from this proof.
+The three-file isolated slice is frozen; the goal branch and G4 red remain unchanged.
