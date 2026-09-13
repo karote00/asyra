@@ -933,3 +933,19 @@ full app gates/review. Stop for missing source provenance, required contact
 permission, inability to preserve conservative bounds, or a needed new index.
 Do not claim normal session movement from this report before its remaining
 material/contact/retention obligations have concrete owners and proofs.
+
+Whole-source surface coverage is implemented. Five missing-method regressions
+failed first; all 37 collision cases and 395 app unit tests pass, alongside
+typecheck/build, lint and naming. Independent scoped code review found no issue.
+Small admitted source fixtures prove exact-budget completion, zero-budget strict
+exclusion, middle contact, same-body contact and complete numerical uncertainty.
+The actual C scene contains 107 robot parts and 2,466 environment instances:
+269,533 mesh pairs and 43,429,284,640 triangle pairs. A 32-predicate query excludes
+43,342,371,584 pairs by strict swept bounds, queries 32 and explicitly leaves
+86,913,024 unvisited, with 12 supported surface intersections. It is incomplete
+and grants no movement permission. The bounded query took about 62 ms, using one
+FK and 20,584 bound corners for 2,573 placements, with no local bounds/source
+regeneration. A lint-only status expression rewrite preserved classification.
+Material occupancy, intended support/joint/tool contact, retained fruit and
+articulated motion remain necessary before session movement and ordinary UI
+harvesting; spine/calyx preservation and contact damage are independent outcomes.
