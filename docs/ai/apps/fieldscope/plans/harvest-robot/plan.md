@@ -1493,3 +1493,27 @@ controls, workflow sequencing, ordinary FieldScope tests, isolated profiles, roo
 script tests, app typecheck/lint/naming/build and final PR CI. Stop for a source
 semantic mismatch, a profile that still exceeds its unchanged guard while isolated,
 or any required production/tool/dependency change.
+
+The isolated Ubuntu run for `ad2ee1536` accepted the exact structure and Float32
+render handoff for all 135 semantic source paths while retaining the Float64
+diagnostic: 69 of 179390 values differed, by at most 4 ULP and
+5.551115123125783e-17. The interval profile passed its subnormal batches in
+733/716 ms, but the scalar and point profiles reached their unchanged one-second
+batch guard in 1203/1237 ms. Source inspection located the shared cost in exact
+BigInt width accounting: every Horner operation repeatedly materialized a binary
+digit string solely to measure the same mathematical width. A fixed-size diagnostic
+confirmed hexadecimal digit measurement reduced this output-free work without
+changing the measured width; it was supporting evidence, not a replacement profile.
+
+The missing shared bit-length helper first failed its independent direct test.
+The implemented helper derives the exact mathematical width from hexadecimal
+length and its leading nibble, with zero remaining one bit and negative values
+measured by magnitude. Its private sibling module leaves the supported scalar
+namespace unchanged while both existing scalar width consumers reuse it;
+polynomial values, operation order, rounding, observer calls, evaluation/term
+counters, maximum-width reporting and 24000-bit rejection remain unchanged.
+Direct scalar, point and interval tests pass. The unchanged local fixed profiles
+now measure subnormal scalar batches at 137.1/136.9 ms, point batches at
+143.6/141.6 ms and interval batches at 79.4/77.3 ms. Exact-head isolated Ubuntu
+profiles remain the required portability and merge gate; no timing result supplies
+a motion or hardware claim.
