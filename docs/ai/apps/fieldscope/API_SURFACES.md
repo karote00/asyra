@@ -247,3 +247,25 @@ Cross-package imports use public `@asyra/*` facades. Do not import another app's
   Existing scalar arithmetic and complete static axes provide interval/exact
   time constraints; one required FK, zero bounds/source regeneration and no
   persistent cache remain the batch work contract.
+
+## Whole-source translation surface coverage
+
+- `SurfaceQueries.cover` consumes a clone-once `SurfaceCoverageBatch`, with fixed
+  joints/base heading, one robot world displacement, explicit empty-held and
+  throughout scene assumptions, and a nonnegative safe-integer predicate budget.
+  Every robot part pairs with every physical environment instance; every distinct
+  robot-part pair is included, even within one rigid body.
+- Safe integer inventory precedes traversal. Original prepared local bounds feed
+  conservative query-local swept placement bounds, computed once per placement.
+  Strict bounds exclusion covers the corresponding complete triangle product;
+  surviving pairs consume the existing continuous source predicate within budget.
+- `coverage` accounts for excluded, queried and unvisited triangle pairs, with
+  intersection/uncertain query counts. `complete` means no unvisited pairs,
+  including exact-budget completion or zero-budget strict exclusion. At most one
+  intersection and one unknown witness retain original source identities.
+  An incomplete report may establish an intersection but never separation.
+- These are surface relations, not movement permission, volume occupancy or
+  intended-contact admission. Open-shell interiors, retained fruit, support and
+  joint/tool contact obligations remain explicit; no spine/calyx quality follows.
+  One FK, shared frame preparation, zero local bounds/source regeneration and
+  bounded predicate work are reported without persistent caches.

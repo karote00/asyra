@@ -62,6 +62,42 @@ export interface SurfaceSweepResult extends Omit<SurfaceResult, 'status'> {
   readonly contactFraction?: Interval
   readonly contactTime?: Interval
 }
+export interface SurfaceCoverageBatch extends Omit<SurfaceSweepBatch, 'pairs'> {
+  displacement: Point3
+  held: 'empty' | 'unknown'
+  maxTrianglePairs: number
+}
+interface CoveragePlacement {
+  mesh: GeometryMesh
+  meshIndex: number
+  instance: number
+  triangleCount: number
+}
+interface SweptBounds {
+  min: Point3
+  max: Point3
+}
+export interface SurfaceCoverageResult {
+  readonly geometry: GeometrySource
+  readonly input: Readonly<SurfaceCoverageBatch>
+  readonly status: 'surface-intersections' | 'surface-separated' | 'unknown'
+  readonly complete: boolean
+  readonly inventory: Readonly<{
+    robotParts: number
+    environmentInstances: number
+    meshPairs: number
+    trianglePairs: number
+  }>
+  readonly coverage: Readonly<{
+    excluded: number
+    queried: number
+    unvisited: number
+    intersections: number
+    uncertain: number
+  }>
+  readonly witnesses: readonly SurfaceSweepResult[]
+  readonly work: Readonly<SurfaceWork>
+}
 export interface SurfaceWitness {
   readonly mesh: GeometryMesh
   readonly instance: number
@@ -83,6 +119,9 @@ export interface SurfaceWork {
   exactPredicates: number
   shapeBounds: number
   regionBounds: number
+  placements: number
+  boundsCorners: number
+  meshPairs: number
 }
 type Vector = readonly [Interval, Interval, Interval]
 type Triangle = [Vector, Vector, Vector]
@@ -172,8 +211,7 @@ function readBatch(raw: SurfaceBatch) {
     fail()
   return freeze(input)
 }
-function readSweep(raw: SurfaceSweepBatch) {
-  const input = structuredClone(raw)
+function validateInterval(input: Omit<SurfaceSweepBatch, 'pairs'>) {
   validateState(input)
   if (
     !Number.isFinite(input.from) ||
@@ -181,10 +219,14 @@ function readSweep(raw: SurfaceSweepBatch) {
     !Number.isFinite(input.until) ||
     input.until <= input.from ||
     !['source-pose-throughout', 'unknown'].includes(input.leaves) ||
-    !['all-attached-throughout', 'unknown'].includes(input.fruits) ||
-    !Array.isArray(input.pairs)
+    !['all-attached-throughout', 'unknown'].includes(input.fruits)
   )
     fail()
+}
+function readSweep(raw: SurfaceSweepBatch) {
+  const input = structuredClone(raw)
+  validateInterval(input)
+  if (!Array.isArray(input.pairs)) fail()
   for (const pair of input.pairs)
     if (
       !pair ||
@@ -192,6 +234,18 @@ function readSweep(raw: SurfaceSweepBatch) {
       !point(pair.secondTranslation, 3)
     )
       fail()
+  return freeze(input)
+}
+function readCoverage(raw: SurfaceCoverageBatch) {
+  const input = structuredClone(raw)
+  validateInterval(input)
+  if (
+    !point(input.displacement, 3) ||
+    !['empty', 'unknown'].includes(input.held) ||
+    !Number.isSafeInteger(input.maxTrianglePairs) ||
+    input.maxTrianglePairs < 0
+  )
+    fail()
   return freeze(input)
 }
 function witness(
@@ -507,7 +561,42 @@ function sweptRelation(
   return { status: 'unknown', reason: 'uncertain-continuous-time-constraints' }
 }
 
-/** Selected surface evidence only; never full-body, contact or movement clearance. */
+function sweepWitness(
+  pair: { first: SurfaceWitness; second: SurfaceWitness },
+  proof: SweepProof,
+  input: Pick<SurfaceSweepBatch, 'from' | 'until'>
+): SurfaceSweepResult {
+  if (proof.status !== 'surface-intersection' || !proof.fraction)
+    return {
+      ...pair,
+      status:
+        proof.status === 'surface-separated' ? 'swept-separated' : 'unknown',
+      reason: proof.reason
+    }
+  const contactFraction = Object.freeze(proof.fraction)
+  const converted = add(
+    interval(input.from),
+    multiply(
+      subtract(interval(input.until), interval(input.from)),
+      contactFraction
+    )
+  )
+  // The proven fraction is in [0,1], so the closed request interval is an
+  // independent enclosure even if floating time conversion overflows.
+  const contactTime = Object.freeze({
+    low: Math.max(input.from, converted.low),
+    high: Math.min(input.until, converted.high)
+  })
+  return {
+    ...pair,
+    status: 'swept-intersection',
+    reason: proof.reason,
+    contactFraction,
+    contactTime
+  }
+}
+
+/** Source surface evidence only; never material, contact or movement clearance. */
 export class SurfaceQueries {
   constructor(private readonly geometry: QueryGeometry) {}
   private prepare(
@@ -533,71 +622,119 @@ export class SurfaceQueries {
       axes: 0,
       exactPredicates: 0,
       shapeBounds: 0,
-      regionBounds: 0
+      regionBounds: 0,
+      placements: 0,
+      boundsCorners: 0,
+      meshPairs: 0
     }
     const hasRobot = pairs.some(
       (pair) =>
         pair.first.mesh.frame === 'robot' || pair.second.mesh.frame === 'robot'
     )
-    const triangles = () => {
-      const transforms = new Map<GeometryMesh['origin'], RigidTransform>()
-      if (hasRobot && robot) {
-        const rig = source.receipt.robot.rig
-        if (!rig) fail()
-        const pose = evaluateRobotPose(rig, robot.joints)
-        work.fk++
-        for (const part of pose.parts)
-          transforms.set(part.source, part.transform)
+    const triangles = () =>
+      this.geometryFor(source, robot, hasRobot, work).triangle
+    return { pairs, work, hasRobot, triangles }
+  }
+  private geometryFor(
+    source: GeometrySource,
+    robot: SurfaceBatch['robot'],
+    hasRobot: boolean,
+    work: SurfaceWork
+  ) {
+    const transforms = new Map<GeometryMesh['origin'], RigidTransform>()
+    if (hasRobot && robot) {
+      const rig = source.receipt.robot.rig
+      if (!rig) fail()
+      const pose = evaluateRobotPose(rig, robot.joints)
+      work.fk++
+      for (const part of pose.parts) transforms.set(part.source, part.transform)
+    }
+    const frames = new Map<object, Frame>()
+    const forward = (key: RigidTransform) => {
+      let value = frames.get(key)
+      if (!value) {
+        value = prepareQueryForwardFrame(key)
+        frames.set(key, value)
+        work.frames++
       }
-      const frames = new Map<object, Frame>()
-      const forward = (key: RigidTransform) => {
-        let value = frames.get(key)
-        if (!value) {
-          value = prepareQueryForwardFrame(key)
-          frames.set(key, value)
+      return value
+    }
+
+    const chainFor = (item: Pick<SurfaceWitness, 'mesh' | 'instance'>) => {
+      const mesh = item.mesh
+      const chain: Frame[] = []
+      const placement = mesh.descriptor?.instances?.[item.instance]
+      if (placement) {
+        let frame = frames.get(placement)
+        if (!frame) {
+          frame = prepareQueryInstanceFrame(placement)
+          frames.set(placement, frame)
           work.frames++
         }
-        return value
+        chain.push(frame)
       }
-      const triangle = (item: SurfaceWitness): Triangle => {
-        const mesh = item.mesh,
-          shape = mesh.shape
-        if (shape.kind !== 'triangles') fail()
-        const chain: Frame[] = []
-        const placement = mesh.descriptor?.instances?.[item.instance]
-        if (placement) {
-          let frame = frames.get(placement)
-          if (!frame) {
-            frame = prepareQueryInstanceFrame(placement)
-            frames.set(placement, frame)
-            work.frames++
-          }
-          chain.push(frame)
-        }
-        if (mesh.frame === 'robot') {
-          const body = transforms.get(mesh.origin)
-          if (!body || !robot) fail()
-          chain.push(forward(body), forward(robot.base))
-        } else {
-          if (!mesh.descriptor) fail()
-          chain.push(forward(mesh.descriptor))
-        }
-        return [0, 1, 2].map((corner) => {
-          const offset = shape.indices[item.triangle * 3 + corner] * 3
-          work.vertexVisits++
-          let p = vector([
-            shape.positions[offset],
-            shape.positions[offset + 1],
-            shape.positions[offset + 2]
-          ])
-          for (const frame of chain) p = transformQueryPoint(frame, p)
-          return p
-        }) as Triangle
+      if (mesh.frame === 'robot') {
+        const body = transforms.get(mesh.origin)
+        if (!body || !robot) fail()
+        chain.push(forward(body), forward(robot.base))
+      } else {
+        if (!mesh.descriptor) fail()
+        chain.push(forward(mesh.descriptor))
       }
 
-      return triangle
+      return chain
     }
-    return { pairs, work, hasRobot, triangles }
+    const triangle = (item: SurfaceWitness): Triangle => {
+      const shape = item.mesh.shape
+      if (shape.kind !== 'triangles') fail()
+      const chain = chainFor(item)
+      return [0, 1, 2].map((corner) => {
+        const offset = shape.indices[item.triangle * 3 + corner] * 3
+        work.vertexVisits++
+        let p = vector([
+          shape.positions[offset],
+          shape.positions[offset + 1],
+          shape.positions[offset + 2]
+        ])
+        for (const frame of chain) p = transformQueryPoint(frame, p)
+        return p
+      }) as Triangle
+    }
+    const bounds = (
+      item: Pick<SurfaceWitness, 'mesh' | 'instance'>,
+      displacement: Point3
+    ): SweptBounds => {
+      const local = item.mesh.prepared.bounds,
+        chain = chainFor(item)
+      const min: [number, number, number] = [Infinity, Infinity, Infinity],
+        max: [number, number, number] = [-Infinity, -Infinity, -Infinity]
+      for (let corner = 0; corner < 8; corner++) {
+        let p = vector([
+          corner & 1 ? local.max[0] : local.min[0],
+          corner & 2 ? local.max[1] : local.min[1],
+          corner & 4 ? local.max[2] : local.min[2]
+        ])
+        for (const frame of chain) p = transformQueryPoint(frame, p)
+        work.boundsCorners++
+        for (let axis = 0; axis < 3; axis++) {
+          min[axis] = Math.min(min[axis], p[axis].low)
+          max[axis] = Math.max(max[axis], p[axis].high)
+        }
+      }
+      for (let axis = 0; axis < 3; axis++) {
+        min[axis] = add(
+          interval(min[axis]),
+          interval(Math.min(0, displacement[axis]))
+        ).low
+        max[axis] = add(
+          interval(max[axis]),
+          interval(Math.max(0, displacement[axis]))
+        ).high
+      }
+      work.placements++
+      return { min, max }
+    }
+    return { triangle, bounds }
   }
   private publish<I, R>(
     source: GeometrySource,
@@ -677,37 +814,181 @@ export class SurfaceQueries {
         [movement.firstTranslation, movement.secondTranslation],
         work
       )
-      if (proof.status !== 'surface-intersection' || !proof.fraction)
-        return {
-          ...pair,
-          status:
-            proof.status === 'surface-separated'
-              ? 'swept-separated'
-              : 'unknown',
-          reason: proof.reason
-        }
-      const contactFraction = Object.freeze(proof.fraction)
-      const converted = add(
-        interval(input.from),
-        multiply(
-          subtract(interval(input.until), interval(input.from)),
-          contactFraction
-        )
-      )
-      // The proven fraction is in [0,1], so the closed request interval is an
-      // independent enclosure even if floating time conversion overflows.
-      const contactTime = Object.freeze({
-        low: Math.max(input.from, converted.low),
-        high: Math.min(input.until, converted.high)
-      })
-      return {
-        ...pair,
-        status: 'swept-intersection',
-        reason: proof.reason,
-        contactFraction,
-        contactTime
-      }
+      return sweepWitness(pair, proof, input)
     })
     return this.publish(source, input, work, results)
+  }
+  cover(
+    source: GeometrySource,
+    raw: SurfaceCoverageBatch
+  ): SurfaceCoverageResult {
+    this.geometry.read(source)
+    const input = readCoverage(raw)
+    const robots: CoveragePlacement[] = [],
+      environment: CoveragePlacement[] = []
+    const count = (value: number) => {
+      if (!Number.isSafeInteger(value) || value < 0) fail()
+      return value
+    }
+    let robotTriangles = 0,
+      environmentTriangles = 0,
+      squaredRobotTriangles = 0
+    source.meshes.forEach((mesh, meshIndex) => {
+      if (mesh.shape.kind !== 'triangles') fail()
+      const triangleCount = count(mesh.shape.indices.length / 3)
+      const instances = mesh.descriptor?.instances?.length ?? 1
+      for (let instance = 0; instance < instances; instance++) {
+        const placement = { mesh, meshIndex, instance, triangleCount }
+        if (mesh.kind === 'robot') {
+          robots.push(placement)
+          robotTriangles = count(robotTriangles + triangleCount)
+          squaredRobotTriangles = count(
+            squaredRobotTriangles + triangleCount * triangleCount
+          )
+        } else {
+          environment.push(placement)
+          environmentTriangles = count(environmentTriangles + triangleCount)
+        }
+      }
+    })
+    // Topology counts precede all Cartesian narrow traversal. No pair array is
+    // materialized and no huge triangle domain is explored just to discover cost.
+    const inventory = Object.freeze({
+      robotParts: robots.length,
+      environmentInstances: environment.length,
+      meshPairs: count(
+        robots.length * environment.length +
+          (robots.length * (robots.length - 1)) / 2
+      ),
+      trianglePairs: count(
+        count(robotTriangles * environmentTriangles) +
+          count(
+            count(robotTriangles * robotTriangles) - squaredRobotTriangles
+          ) /
+            2
+      )
+    })
+    const coverage = {
+      excluded: 0,
+      queried: 0,
+      unvisited: inventory.trianglePairs,
+      intersections: 0,
+      uncertain: 0
+    }
+    const work: SurfaceWork = {
+      pairs: 0,
+      vertexVisits: 0,
+      frames: 0,
+      fk: 0,
+      axes: 0,
+      exactPredicates: 0,
+      shapeBounds: 0,
+      regionBounds: 0,
+      placements: 0,
+      boundsCorners: 0,
+      meshPairs: 0
+    }
+    const witnesses: SurfaceSweepResult[] = []
+    const publish = (missing = false): SurfaceCoverageResult => {
+      this.geometry.read(source)
+      coverage.unvisited = count(
+        inventory.trianglePairs - coverage.excluded - coverage.queried
+      )
+      const complete = coverage.unvisited === 0
+      let status: SurfaceCoverageResult['status'] = 'surface-separated'
+      if (missing || !complete || coverage.uncertain) status = 'unknown'
+      if (coverage.intersections) status = 'surface-intersections'
+      return Object.freeze({
+        geometry: source,
+        input,
+        inventory,
+        coverage: Object.freeze(coverage),
+        work: Object.freeze(work),
+        witnesses: Object.freeze(
+          witnesses.map((value) => Object.freeze(value))
+        ),
+        complete,
+        status
+      })
+    }
+    if (
+      input.from < input.validFrom ||
+      input.until >= input.validUntil ||
+      input.leaves !== 'source-pose-throughout' ||
+      input.fruits !== 'all-attached-throughout' ||
+      input.held !== 'empty' ||
+      (robots.length > 0 && !input.robot)
+    )
+      return publish(true)
+    const geometry = this.geometryFor(
+      source,
+      input.robot,
+      robots.length > 0,
+      work
+    )
+    const stationary: Point3 = [0, 0, 0]
+    const displacement = (item: CoveragePlacement) =>
+      item.mesh.kind === 'robot' ? input.displacement : stationary
+    const completedBounds = new Map<CoveragePlacement, SweptBounds>()
+    const bounds = (item: CoveragePlacement) => {
+      let value = completedBounds.get(item)
+      if (!value) {
+        value = geometry.bounds(item, displacement(item))
+        completedBounds.set(item, value)
+      }
+      return value
+    }
+    const compare = (first: CoveragePlacement, second: CoveragePlacement) => {
+      work.meshPairs++
+      const a = bounds(first),
+        b = bounds(second)
+      if (
+        [0, 1, 2].some(
+          (axis) => a.max[axis] < b.min[axis] || b.max[axis] < a.min[axis]
+        )
+      ) {
+        coverage.excluded = count(
+          coverage.excluded + first.triangleCount * second.triangleCount
+        )
+        return
+      }
+      for (let left = 0; left < first.triangleCount; left++)
+        for (let right = 0; right < second.triangleCount; right++) {
+          if (coverage.queried >= input.maxTrianglePairs) return
+          const pair = {
+            first: witness(source, {
+              mesh: first.meshIndex,
+              instance: first.instance,
+              triangle: left
+            }),
+            second: witness(source, {
+              mesh: second.meshIndex,
+              instance: second.instance,
+              triangle: right
+            })
+          }
+          const proof = sweptRelation(
+            geometry.triangle(pair.first),
+            geometry.triangle(pair.second),
+            [displacement(first), displacement(second)],
+            work
+          )
+          coverage.queried++
+          work.pairs++
+          if (proof.status === 'surface-intersection') coverage.intersections++
+          else if (proof.status === 'unknown') coverage.uncertain++
+          if (proof.status !== 'surface-separated') {
+            const result = sweepWitness(pair, proof, input)
+            if (!witnesses.some((value) => value.status === result.status))
+              witnesses.push(result)
+          }
+        }
+    }
+    for (let index = 0; index < robots.length; index++) {
+      for (const item of environment) compare(robots[index], item)
+      for (let other = index + 1; other < robots.length; other++)
+        compare(robots[index], robots[other])
+    }
+    return publish()
   }
 }

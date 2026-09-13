@@ -16,7 +16,8 @@ import {
   validateRobot
 } from '../../domain/robot-configuration'
 import type { Point3 } from '../../domain/greenhouse'
-import { REST_JOINTS } from '../../domain/robot-kinematics'
+import { REST_JOINTS, prepareRobotRig } from '../../domain/robot-kinematics'
+import type { RobotSource, DockSource } from '../../render-app/robot-projection'
 import * as kinematics from '../../domain/robot-kinematics'
 import * as crops from '../../domain/crop-models'
 import * as models from '../../domain/robot-model'
@@ -25,7 +26,8 @@ import { QueryGeometry, type GeometryReceipt } from '../geometry'
 import {
   SurfaceQueries,
   type SurfaceBatch,
-  type SurfaceSweepBatch
+  type SurfaceSweepBatch,
+  type SurfaceCoverageBatch
 } from '../collision'
 
 const farm = {
@@ -661,4 +663,294 @@ it('keeps relative displacement and large finite simulation-time conversion cons
   expect(contact.contactTime.high).toBeGreaterThanOrEqual(1.2e308)
   expect(contact.contactTime.low).toBeGreaterThanOrEqual(input.from)
   expect(contact.contactTime.high).toBeLessThanOrEqual(input.until)
+})
+
+function coverage(): SurfaceCoverageBatch {
+  const input = sweep()
+  return {
+    source: input.source,
+    from: input.from,
+    until: input.until,
+    validFrom: input.validFrom,
+    validUntil: input.validUntil,
+    robot: input.robot,
+    leaves: input.leaves,
+    fruits: input.fruits,
+    displacement: [0, 0, 2],
+    held: 'empty',
+    maxTrianglePairs: 100
+  }
+}
+function smallCoverage(
+  meshes: SiteMesh[] = [],
+  overlapping = false,
+  degenerate = false
+) {
+  // A deliberately small admitted source fixture proves exhaustive traversal.
+  // Actual generated robot/farm inventory is independently covered below.
+  const ids = [
+    'lift-carriage',
+    'shoulder',
+    'upper-arm',
+    'elbow',
+    'forearm',
+    'wrist',
+    'tool-guard',
+    'pad--1',
+    'pad-1',
+    'crate-bottom',
+    'tire--1--1'
+  ]
+  const parts = ids.map((id, i) => {
+    const builder = new TriangleBuilder(),
+      x = overlapping && i === 7 ? 60 : i * 10
+    builder.triangle(
+      [x, 0, 0],
+      [x + 4, 0, 0],
+      degenerate && i === 0 ? [x + 2, 0, 0] : [x, 4, 0]
+    )
+    return {
+      id,
+      color: 0xffffff,
+      metalness: 0,
+      regions: builder.regions(),
+      shape: builder.shape()
+    }
+  })
+  const rig = prepareRobotRig(DEFAULT_ROBOT, parts)
+  const sourceRobot: RobotSource = Object.freeze({
+    revision: 100,
+    parts: Object.freeze(rig.parts.map((part) => part.source)),
+    rig,
+    unavailable: null
+  })
+  const dock: DockSource = Object.freeze({
+    revision: 100,
+    meshes: Object.freeze([])
+  })
+  const site = new SiteGeometry(),
+    scene = site.prepareScene(farm, meshes)
+  const receipt: GeometryReceipt = Object.freeze({
+    revision: 100,
+    scene,
+    robot: sourceRobot,
+    dock
+  })
+  const owner = new QueryGeometry({
+    isCurrentReceipt: (value) => value === receipt,
+    isCurrentScene: site.isCurrentScene.bind(site),
+    isCurrentRobot: (value) => value === sourceRobot,
+    isCurrentDock: (value) => value === dock
+  })
+  return {
+    site,
+    owner,
+    source: owner.prepare(receipt),
+    query: new SurfaceQueries(owner)
+  }
+}
+function expectedInventory(source: ReturnType<typeof setup>['source']) {
+  const robots = source.meshes.filter((mesh) => mesh.kind === 'robot'),
+    environment = source.meshes.filter((mesh) => mesh.kind !== 'robot')
+  const triangles = (mesh: (typeof robots)[number]) => {
+    if (mesh.shape.kind !== 'triangles')
+      throw new Error('Invalid fixture source')
+    return mesh.shape.indices.length / 3
+  }
+  let meshPairs = 0,
+    trianglePairs = 0,
+    environmentInstances = 0
+  for (const mesh of environment)
+    environmentInstances += mesh.descriptor?.instances?.length ?? 1
+  for (let i = 0; i < robots.length; i++) {
+    for (const mesh of environment) {
+      const instances = mesh.descriptor?.instances?.length ?? 1
+      meshPairs += instances
+      trianglePairs += triangles(robots[i]) * triangles(mesh) * instances
+    }
+    for (let j = i + 1; j < robots.length; j++) {
+      meshPairs++
+      trianglePairs += triangles(robots[i]) * triangles(robots[j])
+    }
+  }
+  return {
+    robotParts: robots.length,
+    environmentInstances,
+    meshPairs,
+    trianglePairs
+  }
+}
+
+it('covers the complete original pair domain with exact-budget middle contact', () => {
+  const f = smallCoverage([triangle('obstacle', shiftedPlane(1))]),
+    input = coverage()
+  input.maxTrianglePairs = 1
+  const result = f.query.cover(f.source, input)
+  expect(result.inventory).toEqual(expectedInventory(f.source))
+  expect(result.inventory).toMatchObject({
+    robotParts: 11,
+    environmentInstances: 1,
+    meshPairs: 66,
+    trianglePairs: 66
+  })
+  expect(result.complete).toBe(true)
+  expect(result.status).toBe('surface-intersections')
+  expect(result.coverage).toMatchObject({
+    excluded: 65,
+    queried: 1,
+    unvisited: 0,
+    intersections: 1,
+    uncertain: 0
+  })
+  expect(result.witnesses).toHaveLength(1)
+  expect(result.witnesses[0].first.mesh.origin.id).toBe('lift-carriage')
+  expect(result.witnesses[0].second.mesh.origin.id).toBe('obstacle')
+  expect(result).not.toHaveProperty('movementClear')
+})
+
+it('permits complete strict exclusion at zero budget but never hides a remaining pair', () => {
+  const separated = smallCoverage(),
+    input = coverage()
+  input.maxTrianglePairs = 0
+  const complete = separated.query.cover(separated.source, input)
+  expect(complete.complete).toBe(true)
+  expect(complete.status).toBe('surface-separated')
+  expect(complete.coverage).toMatchObject({
+    excluded: 55,
+    queried: 0,
+    unvisited: 0
+  })
+  const crossing = smallCoverage([triangle('obstacle', shiftedPlane(1))]),
+    partial = crossing.query.cover(crossing.source, input)
+  expect(partial.complete).toBe(false)
+  expect(partial.status).toBe('unknown')
+  expect(partial.coverage).toMatchObject({
+    excluded: 65,
+    queried: 0,
+    unvisited: 1
+  })
+})
+
+it('includes distinct same-body parts and preserves complete numerical uncertainty', () => {
+  const f = smallCoverage([], true),
+    result = f.query.cover(f.source, coverage())
+  expect(result.complete).toBe(true)
+  expect(result.status).toBe('surface-intersections')
+  const witness = result.witnesses[0]
+  expect(witness.first.mesh.body).toBe('wrist')
+  expect(witness.second.mesh.body).toBe('wrist')
+  expect(witness.first.mesh.origin.id).not.toBe(witness.second.mesh.origin.id)
+  const degenerate = smallCoverage(
+      [triangle('obstacle', shiftedPlane(1))],
+      false,
+      true
+    ),
+    unknown = degenerate.query.cover(degenerate.source, coverage())
+  expect(unknown.complete).toBe(true)
+  expect(unknown.status).toBe('unknown')
+  expect(unknown.coverage.uncertain).toBe(1)
+})
+
+it('keeps whole-source coverage input atomic, retained fruit unknown and work bounded', () => {
+  const f = smallCoverage([triangle('obstacle', shiftedPlane(1))])
+  for (const value of [-1, 0.5, NaN, Infinity]) {
+    const input = coverage()
+    input.maxTrianglePairs = value
+    expect(() => f.query.cover(f.source, input)).toThrow()
+  }
+  const input = coverage()
+  input.held = 'unknown'
+  const held = f.query.cover(f.source, input)
+  expect(held.status).toBe('unknown')
+  expect(held.complete).toBe(false)
+  expect(held.work.fk).toBe(0)
+  expect(held.coverage.queried).toBe(0)
+  const malformed = coverage()
+  let reads = 0
+  Object.defineProperty(malformed, 'displacement', {
+    enumerable: true,
+    get() {
+      reads++
+      return new Array(3)
+    }
+  })
+  expect(() => f.query.cover(f.source, malformed)).toThrow()
+  expect(reads).toBe(1)
+  const valid = coverage(),
+    result = f.query.cover(f.source, valid)
+  valid.displacement = [0, 0, 99]
+  expect(result.input.displacement).toEqual([0, 0, 2])
+  expect(Object.isFrozen(result.coverage)).toBe(true)
+  expect(Object.isFrozen(result.inventory)).toBe(true)
+  expect(Object.isFrozen(result.witnesses)).toBe(true)
+  expect(result.work).toMatchObject({
+    fk: 1,
+    boundsCorners: 96,
+    placements: 12,
+    shapeBounds: 0,
+    regionBounds: 0
+  })
+  f.site.clear()
+  expect(() => f.query.cover(f.source, coverage())).toThrow()
+})
+
+it('inventories every real robot and hidden physical instance before bounded Cartesian traversal', () => {
+  const configuration = { ...DEFAULT_CONFIGURATION, length: 2.2 },
+    site = new SiteGeometry()
+  const f = setup(buildSiteMeshes(configuration, site), configuration, site),
+    expected = expectedInventory(f.source),
+    input = coverage()
+  input.maxTrianglePairs = 32
+  // Counts are obtained from source topology before any triangle Cartesian loop.
+  console.log('whole-source Cartesian inventory', JSON.stringify(expected))
+  const crop = vi.spyOn(crops, 'createCropModels'),
+    model = vi.spyOn(models, 'createRobotModel'),
+    dock = vi.spyOn(models, 'createDockModel'),
+    prepare = vi.spyOn(f.owner, 'prepare'),
+    fk = vi.spyOn(kinematics, 'evaluateRobotPose')
+  try {
+    const start = performance.now(),
+      result = f.query.cover(f.source, input)
+    expect(result.inventory).toEqual(expected)
+    expect(result.coverage.queried).toBeLessThanOrEqual(32)
+    expect(
+      result.coverage.excluded +
+        result.coverage.queried +
+        result.coverage.unvisited
+    ).toBe(expected.trianglePairs)
+    expect(result.complete).toBe(result.coverage.unvisited === 0)
+    expect(result.complete).toBe(false)
+    expect(result.status).not.toBe('surface-separated')
+    expect(result.witnesses.length).toBeLessThanOrEqual(2)
+    for (const id of ['tool-guard', 'crate-bottom', 'tire--1--1'])
+      expect(
+        f.source.meshes.some(
+          (mesh) => mesh.kind === 'robot' && mesh.origin.id === id
+        )
+      ).toBe(true)
+    for (const layer of ['film', 'net', 'soil', 'cucumbers', 'tomatoes'])
+      expect(f.source.meshes.some((mesh) => mesh.layer === layer)).toBe(true)
+    expect(f.source.meshes.some((mesh) => mesh.kind === 'dock')).toBe(true)
+    expect(fk).toHaveBeenCalledTimes(1)
+    expect(prepare).not.toHaveBeenCalled()
+    expect(crop).not.toHaveBeenCalled()
+    expect(model).not.toHaveBeenCalled()
+    expect(dock).not.toHaveBeenCalled()
+    expect(result.work.shapeBounds).toBe(0)
+    expect(result.work.regionBounds).toBe(0)
+    console.log(
+      'whole-source bounded profile',
+      JSON.stringify({
+        work: result.work,
+        coverage: result.coverage,
+        milliseconds: performance.now() - start
+      })
+    )
+  } finally {
+    crop.mockRestore()
+    model.mockRestore()
+    dock.mockRestore()
+    prepare.mockRestore()
+    fk.mockRestore()
+  }
 })
