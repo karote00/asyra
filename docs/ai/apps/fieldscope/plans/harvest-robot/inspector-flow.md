@@ -706,3 +706,10 @@ ties/overflow/extrema/analytic-error cases and clone-once rejection; four fixed
 repeated), 1s each and 10s overall, all temporary widths <=24000 bits. Elapsed guards
 are cooperative, not synchronous-operation preemption. Then full app unit/type/
 build/lint/naming and independent review. No C point or whole-motion closure.
+
+Direct work handoff: roundFraction may report actual guarded temporary widths to
+an optional synchronous read-only observer. Validate its function type before
+work; exceptions abort publication. Each conversion keeps call-local arithmetic
+state under reentry. Formal with/without bitwise equality, normal/subnormal shifts,
+rounding temporary widths and observer failure prove this reporting boundary;
+no conservative width estimate is mislabeled as measured work.
