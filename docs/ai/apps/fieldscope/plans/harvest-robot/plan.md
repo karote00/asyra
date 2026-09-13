@@ -1159,3 +1159,20 @@ the focused extrema case. Independent numerical and work-handoff reviews found n
 remaining issue; the original shared scalar body is unchanged. Original C trig,
 RigidTransform, normalization and source geometry remain untouched. Their numerical
 integration requires a separate canonical-model and consumer review before use.
+
+Next bounded C Step Card: completed-pose affine handoff preparation. Add
+evaluateRobotAffinePose in robot-kinematics.ts over exactly one existing point
+evaluation, with final raw quaternion/unit-scale Matrix4.compose coefficients.
+Keep old point/tool bits and source refs; no polynomial switch, normalized rotation
+or per-joint matrix-chain substitution. Return completed pose plus affine parts
+and actual per-call unique-transform work count, sharing matching frames.
+Only this C file, its direct test/new snapshot evidence and API/spec/Inspector/plan
+may change. Formal missing-entry red first; then installed Three per-coefficient
+bit oracle across original 56-pose domain, source/translation identity, unique
+transform reuse and zero source generation. Preserve historical point fingerprints
+unchanged; matrix association may differ from old point multiplication.
+Run focused/old consumer controls, full app unit/type/build/lint/naming and scoped
+independent review. This is an unused prepared handoff, not downstream authority
+adoption: no runtime/engine/D edits. Stop for any required point semantic change or
+consumer mismatch rather than broadening this owner. Later C polynomial integration
+and D interval/frame adoption remain separately gated numerical work.
