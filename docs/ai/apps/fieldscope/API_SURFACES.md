@@ -346,3 +346,10 @@ movement guarantees. C may depend on this domain owner without importing D.
   separately proved. They are not current C point trig, hardware parameters or
   movement evidence. The 24000-bit and four fixed profile batch limits in the
   specification apply before integration with any C/D consumer.
+
+`roundFraction` also accepts an optional synchronous read-only `onWidth(bits)`
+observer for actual guarded BigInt widths. It retains its numeric result; the
+polynomial owner accumulates only its own per-call work. Reject a non-function
+observer before work; observer exceptions publish no result. Conversion state is
+call-local, including during observer reentry, with no global counter or mutation
+of caller-owned objects. The observer changes no rounding decision.

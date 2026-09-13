@@ -126,7 +126,9 @@ it('shares exactly one scalar implementation through the supported query facade'
     'dyadic',
     'fractionInterval'
   ] as const
-  expect(Object.keys(common).sort()).toEqual([...exports].sort())
+  expect(Object.keys(common).sort()).toEqual(
+    [...exports, 'roundFraction'].sort()
+  )
   expect(Object.keys(facade).sort()).toEqual([...exports].sort())
   for (const name of exports) expect(facade[name]).toBe(common[name])
   expect(Object.is(common.interval(-0).low, -0)).toBe(true)

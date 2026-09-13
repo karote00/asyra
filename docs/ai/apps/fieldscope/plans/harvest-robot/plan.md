@@ -1142,3 +1142,20 @@ After focused proofs/profile, run full app unit/type/build/lint/naming and scope
 independent review. Later C integration separately audits RigidTransform, quaternion
 normalization, source/rest identity and every chain rounding operation; scalar
 success alone cannot close articulated FK/sweep or the pending material decision.
+
+Bounded polynomial scalar evidence is implemented without connecting C point FK.
+Three converter cases first failed against the absent API; the polynomial suite
+first failed collection against its absent module, and the width-observer case
+separately failed before that handoff existed. Eight focused numerical/ownership
+cases now pass, using independent direct rational sums and rounding controls.
+The fixed normal first/repeated batches took 30.9/29.3ms; subnormal first/repeated
+batches took 452.4/444.9ms. Each performed 800 trig evaluations/8400 terms; actual
+maximum temporary width was 21595 bits, below the unchanged 24000-bit guard.
+All four batches passed the original 1s bound and the whole profile stayed below
+10s; these are scalar costs, not a real-time movement guarantee. Full app tests
+passed 430 cases, build/typecheck and naming pass; lint passes with 10 console-log
+warnings and no errors. Its equivalent extrema branch style correction also passed
+the focused extrema case. Independent numerical and work-handoff reviews found no
+remaining issue; the original shared scalar body is unchanged. Original C trig,
+RigidTransform, normalization and source geometry remain untouched. Their numerical
+integration requires a separate canonical-model and consumer review before use.
