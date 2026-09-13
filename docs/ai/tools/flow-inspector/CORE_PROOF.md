@@ -1044,16 +1044,20 @@ before first dispatch. The original inventory, parent ownership, crash normaliza
 and terminal producer correlation rules remain unchanged. Existing HTTP and CLI
 forwarding exposes this additive service field; service validation remains the
 authority and invalid task identities still reject. Existing Host, Origin and
-capability checks remain unchanged. Dedicated transport product cases and the
-Board task picker are subsequent consumer slices, without a duplicate transport
-schema or a second service entry point.
+capability checks remain unchanged. The transport contract below covers this
+additive selection without a duplicate schema or a second service entry point;
+the Board task picker remains a subsequent consumer.
 
 ### Target assessment HTTP transport
 
 The existing loopback server exposes `GET /api/target-assessments` for the retained
 list and `GET /api/target-assessments/:id` for one cached record/projection.
 `POST /api/target-assessments` forwards the exact registered assessment request
-and returns `202 {id}`; `POST /api/target-assessments/:id/cancel` accepts an empty
+and returns `202 {id}`; an optional `sourceTaskId` is forwarded together with the
+exact `sourceAttemptId`, without selecting a task or attempt at the transport.
+Status 202 confirms registration, not eligibility or a passing proof. Malformed
+task identities and unavailable exact sources retain the service error boundary.
+`POST /api/target-assessments/:id/cancel` accepts an empty
 JSON object and returns the settled record with status 200. Route ids use the
 existing canonical attempt UUID format. GET of an unknown id or an unknown route
 returns 404; invalid requests return 400, oversized bodies 413, conflicting or
@@ -1070,7 +1074,8 @@ remain subsequent consumers of these same public actions.
 ### Target assessment CLI transport
 
 `target-assess request.json` reads the existing bounded repository-local JSON
-input, starts the registered assessment, waits for settlement and prints the full
+input, including an optional exact `sourceTaskId`/`sourceAttemptId` pair, starts
+the registered assessment, waits for settlement and prints the full
 retained record with its currentness projection. Waiting is mandatory for this
 command in both local and `--url` modes, so closing a one-command local service
 cannot cancel its newly started assessment. `target-assessments` lists retained
