@@ -1,6 +1,6 @@
 import type { Point3 } from '../domain/greenhouse'
 import {
-  evaluateRobotPose,
+  evaluateRobotAffinePose,
   ROBOT_JOINT_LIMITS,
   type RigidTransform,
   type RobotJoints
@@ -14,6 +14,7 @@ import {
 } from './geometry'
 import {
   prepareQueryForwardFrame,
+  prepareQueryAffineFrame,
   prepareQueryInstanceFrame,
   transformQueryPoint
 } from './ray-query'
@@ -116,6 +117,7 @@ export interface SurfaceWork {
   vertexVisits: number
   frames: number
   fk: number
+  bodyMatrices: number
   axes: number
   exactPredicates: number
   shapeBounds: number
@@ -622,6 +624,7 @@ export class SurfaceQueries {
       vertexVisits: 0,
       frames: 0,
       fk: 0,
+      bodyMatrices: 0,
       axes: 0,
       exactPredicates: 0,
       shapeBounds: 0,
@@ -646,13 +649,17 @@ export class SurfaceQueries {
     hasRobot: boolean,
     work: SurfaceWork
   ) {
-    const transforms = new Map<GeometryMesh['origin'], RigidTransform>()
+    type BodyAffine = ReturnType<
+      typeof evaluateRobotAffinePose
+    >['parts'][number]['affine']
+    const transforms = new Map<GeometryMesh['origin'], BodyAffine>()
     if (hasRobot && robot) {
       const rig = source.receipt.robot.rig
       if (!rig) fail()
-      const pose = evaluateRobotPose(rig, robot.joints)
-      work.fk++
-      for (const part of pose.parts) transforms.set(part.source, part.transform)
+      const pose = evaluateRobotAffinePose(rig, robot.joints)
+      work.fk += pose.work.fk
+      work.bodyMatrices += pose.work.matrices
+      for (const part of pose.parts) transforms.set(part.source, part.affine)
     }
     const frames = new Map<object, Frame>()
     const forward = (key: RigidTransform) => {
@@ -665,6 +672,15 @@ export class SurfaceQueries {
       return value
     }
 
+    const bodyForward = (key: BodyAffine) => {
+      let value = frames.get(key)
+      if (!value) {
+        value = prepareQueryAffineFrame(key)
+        frames.set(key, value)
+        work.frames++
+      }
+      return value
+    }
     const chainFor = (item: Pick<SurfaceWitness, 'mesh' | 'instance'>) => {
       const mesh = item.mesh
       const chain: Frame[] = []
@@ -681,7 +697,7 @@ export class SurfaceQueries {
       if (mesh.frame === 'robot') {
         const body = transforms.get(mesh.origin)
         if (!body || !robot) fail()
-        chain.push(forward(body), forward(robot.base))
+        chain.push(bodyForward(body), forward(robot.base))
       } else {
         if (!mesh.descriptor) fail()
         chain.push(forward(mesh.descriptor))
@@ -886,6 +902,7 @@ export class SurfaceQueries {
       vertexVisits: 0,
       frames: 0,
       fk: 0,
+      bodyMatrices: 0,
       axes: 0,
       exactPredicates: 0,
       shapeBounds: 0,

@@ -1,3 +1,4 @@
+import { Matrix4, Quaternion, Vector3 } from 'three'
 import * as cropSource from '../../domain/crop-models'
 import * as robotSource from '../../domain/robot-model'
 import { expect, it, vi } from 'vitest'
@@ -17,10 +18,12 @@ import {
 import { REST_JOINTS } from '../../domain/robot-kinematics'
 import * as kinematics from '../../domain/robot-kinematics'
 import { QueryGeometry, type GeometryReceipt } from '../geometry'
-import { interval } from '../query-arithmetic'
+import { interval, add, multiply, subtract } from '../query-arithmetic'
 import {
   RayQueries,
   prepareQueryFrame,
+  prepareQueryAffineFrame,
+  prepareQueryAffineInverse,
   transformQueryDirection,
   prepareQueryForwardFrame,
   prepareQueryInstanceFrame,
@@ -183,11 +186,15 @@ it('reports relevant coplanar ambiguity instead of fabricating a miss', () => {
 
 it('evaluates one C robot pose per batch and refuses retired or copied source products', () => {
   const { queries, source, site } = fixture([triangle('surface', 5)])
-  const fk = vi.spyOn(kinematics, 'evaluateRobotPose')
+  const fk = vi.spyOn(kinematics, 'evaluateRobotAffinePose')
   try {
     const input = batch()
     input.rays.push({ ...input.rays[0] })
-    expect(queries.query(source, input).work.fk).toBe(1)
+    const result = queries.query(source, input)
+    expect(result.work.fk).toBe(1)
+    expect(result.work.bodyMatrices).toBe(
+      fk.mock.results[0]?.value?.work.matrices
+    )
     expect(fk).toHaveBeenCalledTimes(1)
     expect(() => queries.query({ ...source }, input)).toThrow()
     site.clear()
@@ -642,7 +649,7 @@ it('validates the single detached accessor snapshot before FK or query work', ()
     enumerable: true,
     get: () => (++reads <= 2 ? 0 : NaN)
   })
-  const fk = vi.spyOn(kinematics, 'evaluateRobotPose')
+  const fk = vi.spyOn(kinematics, 'evaluateRobotAffinePose')
   try {
     const result = queries.query(source, input)
     expect(reads).toBe(1)
@@ -752,4 +759,170 @@ it('shares original forward quaternion and instance frames with surface queries'
     expect(placed[axis].high).toBeGreaterThanOrEqual(value)
   })
   expect(Object.isFrozen(frame)).toBe(true)
+})
+
+it('consumes actual C body coefficient singletons and encloses installed Three source vertices with a true inverse', () => {
+  const source = projection.getSource()
+  if (!source.rig) throw new Error('Missing admitted rig')
+  const pose = kinematics.evaluateRobotAffinePose(source.rig, {
+    lift: 0.037,
+    yaw: -0.71,
+    shoulder: 0.29,
+    elbow: -0.83,
+    wrist: 0.47
+  })
+  for (const part of pose.parts.filter(
+    (part) => part.body === 'shoulder' || part.body === 'wrist'
+  )) {
+    const forward = prepareQueryAffineFrame(part.affine),
+      backward = prepareQueryAffineInverse(part.affine)
+    part.affine.matrix.forEach((row, axis) =>
+      row.forEach((value, column) =>
+        expect(forward.matrix[axis][column]).toEqual(interval(value))
+      )
+    )
+    const matrix = new Matrix4().compose(
+      new Vector3().fromArray(part.transform.position),
+      new Quaternion().fromArray(part.transform.rotation),
+      new Vector3(1, 1, 1)
+    )
+    for (
+      let offset = 0;
+      offset < part.source.shape.positions.length;
+      offset += 3
+    ) {
+      const point = part.source.shape.positions.slice(offset, offset + 3) as [
+        number,
+        number,
+        number
+      ]
+      const actual = transformQueryPoint(forward, point.map(interval))
+      const expected = new Vector3(...point).applyMatrix4(matrix).toArray()
+      expected.forEach((value, axis) => {
+        expect(actual[axis].low).toBeLessThanOrEqual(value)
+        expect(actual[axis].high).toBeGreaterThanOrEqual(value)
+      })
+      // Interval round-trip includes forward subtraction/multiplication error;
+      // the nonorthogonal diagonal fixture separately rules out transpose.
+      const delta = actual.map((value, axis) =>
+        subtract(value, interval(part.affine.position[axis]))
+      )
+      backward.matrix.forEach((row, axis) => {
+        const recovered = row.reduce(
+          (total, value, column) => add(total, multiply(value, delta[column])),
+          interval(0)
+        )
+        expect(recovered.low).toBeLessThanOrEqual(point[axis])
+        expect(recovered.high).toBeGreaterThanOrEqual(point[axis])
+      })
+    }
+    expect(Object.isFrozen(forward)).toBe(true)
+    expect(Object.isFrozen(backward)).toBe(true)
+  }
+})
+
+it('keeps singular affine inversion unresolved instead of treating transpose as inverse', () => {
+  // Algebra fixture for the frame helper, not an issued C source or robot pose.
+  const singular = {
+    matrix: [
+      [1, 0, 0],
+      [0, 0, 0],
+      [0, 0, 1]
+    ],
+    position: [0, 0, 0]
+  } as const
+  const inverse = prepareQueryAffineInverse(singular)
+  expect(
+    inverse.matrix.some((row) =>
+      row.some(
+        (value) => !Number.isFinite(value.low) || !Number.isFinite(value.high)
+      )
+    )
+  ).toBe(true)
+  const affine = {
+    matrix: [
+      [2, 0, 0],
+      [0, 3, 0],
+      [0, 0, 4]
+    ],
+    position: [0, 0, 0]
+  } as const
+  const trueInverse = prepareQueryAffineInverse(affine)
+  transformQueryDirection(trueInverse, [2, 3, 4]).forEach((value) => {
+    expect(value.low).toBeLessThanOrEqual(1)
+    expect(value.high).toBeGreaterThanOrEqual(1)
+    expect(value.high).toBeLessThan(2)
+  })
+})
+
+it('hits an actual articulated body source face using the completed Three CPU matrix', () => {
+  const f = fixture([]),
+    input = batch(),
+    rig = f.source.receipt.robot.rig
+  if (!rig) throw new Error('Missing actual rig')
+  input.robot = {
+    base: { position: [0, 0, 0], rotation: [0, 0, 0, 1] },
+    joints: { lift: 0.05, yaw: 0.4, shoulder: 0.3, elbow: 0.2, wrist: -0.1 }
+  }
+  const pose = kinematics.evaluateRobotAffinePose(rig, input.robot.joints)
+  const part = pose.parts.find((part) => part.source.id === 'tool-guard')
+  if (!part) throw new Error('Missing original tool guard')
+  const matrix = new Matrix4().compose(
+    new Vector3().fromArray(part.transform.position),
+    new Quaternion().fromArray(part.transform.rotation),
+    new Vector3(1, 1, 1)
+  )
+  const points = [0, 1, 2].map((corner) => {
+    const offset = part.source.shape.indices[corner] * 3
+    return new Vector3()
+      .fromArray(part.source.shape.positions, offset)
+      .applyMatrix4(matrix)
+  })
+  const center = points[0]
+    .clone()
+    .add(points[1])
+    .add(points[2])
+    .multiplyScalar(1 / 3)
+  const normal = points[1]
+    .clone()
+    .sub(points[0])
+    .cross(points[2].clone().sub(points[0]))
+    .normalize()
+  // The first box face winds toward its interior. Approach its exterior at
+  // an oblique angle so unrelated parallel faces are not ambiguous candidates.
+  const origin = center
+    .clone()
+    .addScaledVector(normal, -0.01)
+    .addScaledVector(points[1].clone().sub(points[0]), 0.03)
+    .addScaledVector(points[2].clone().sub(points[0]), 0.02)
+  const direction = center.clone().sub(origin)
+  input.rays = [
+    {
+      origin: origin.toArray(),
+      direction: direction.toArray(),
+      maxDistance: 0.02
+    }
+  ]
+  const result = f.queries.query(f.source, input),
+    hit = result.results[0]
+  expect(
+    hit.status,
+    hit.status === 'unknown'
+      ? JSON.stringify({
+          reason: hit.reason,
+          witnesses: hit.witnesses?.map((w) => ({
+            id: w.mesh.origin.id,
+            triangle: w.triangle,
+            distance: w.distance
+          }))
+        })
+      : undefined
+  ).toBe('hit')
+  if (hit.status !== 'hit') throw new Error('Missing actual body hit')
+  expect(hit.mesh.origin).toBe(part.source)
+  expect(hit.triangle).toBe(0)
+  expect(hit.distanceBounds.low).toBeLessThanOrEqual(direction.length())
+  expect(hit.distanceBounds.high).toBeGreaterThanOrEqual(direction.length())
+  expect(result.work.fk).toBe(1)
+  expect(result.work.bodyMatrices).toBe(pose.work.matrices)
 })
