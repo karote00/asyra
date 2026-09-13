@@ -131,7 +131,7 @@ They are local artifacts and are not committed or published.
 ## Formal Tests
 
 ```bash
-node --test --test-concurrency=1 tools/flow-inspector/control-plane/__tests__/{contracts,snapshot,runner,evidence,store,service,server,mapping,cli,evolution,ci-context,ci-evidence,operations}.test.cjs
+node --test --test-concurrency=1 tools/flow-inspector/control-plane/__tests__/{contracts,snapshot,runner,evidence,store,service,server,mapping,cli,evolution,ci-context,ci-evidence,operations,target-evidence}.test.cjs
 FLOW_PROOF_URL=http://127.0.0.1:4318 node --test tools/flow-inspector/control-plane/__tests__/board.test.cjs
 ```
 
@@ -710,8 +710,43 @@ Permanent `flow-target.test.cjs`, CLI and Board cases cover this slice. The
 three-work-plus-pending case uses a structurally admitted four-obligation offline
 contract, not invented Factory evidence. The browser test uses actual local
 candidate verification on macOS and an explicitly offline GitHub adapter; its
-PR observations make no external requests. Full cross-PR integration assessment
-and explicit target-baseline acceptance remain unimplemented.
+PR observations make no external requests. Complete one-source integration and
+explicit target-baseline acceptance use the separate action below.
+
+### Assess and accept an integrated target
+
+`target-assess <request.json>` registers real accepted and candidate proof
+producers for one saved allocation. New records use format 2: `targetContract`
+covers every candidate obligation at the selected source in addition to accepted
+preservation, work/prerequisite and integration results. An eligible result is
+read-only and does not change accepted history.
+
+After reviewing the exact source tuple, target/base/review pins, complete
+candidate result, every work and prerequisite, empty pending inventory and
+passing integration, submit the separate action:
+
+```json
+{
+  "requestId": "<fresh UUID>",
+  "targetId": "<saved target UUID>",
+  "assessmentId": "<completed current format-2 assessment UUID>",
+  "reason": "Accept this exact integrated target source",
+  "retirement": []
+}
+```
+
+```bash
+node tools/flow-inspector/control-plane/cli.cjs --url http://127.0.0.1:4318 target-accept tmp/target-acceptance.json
+```
+
+The HTTP equivalent is capability-authenticated `POST /api/targets/accept` with
+the same body. The Board requires the same explicit assessment selection, reason
+and **Accept integrated target baseline** button. `contract-accept` refuses a
+review pinned by a target; eligibility, refresh and ordinary target actions do
+not accept it. Exact authorized replay returns the retained decision without
+source work or another revision. Conflicting requests, format-1 history, stale or
+incomplete evidence, unavailable source authority and failed persistence cause
+no baseline mutation.
 
 ### Admit work before execution
 

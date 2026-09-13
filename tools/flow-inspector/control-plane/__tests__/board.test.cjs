@@ -47,20 +47,34 @@ test(
       }
     })
     try {
+      const acceptedSource = await server.service.wait(
+        server.service.start({ mode: 'candidate' }, LOCAL_ACTOR)
+      )
+      assert.equal(acceptedSource.evidence.status, 'passed')
+      const acceptedReview = server.service.prepareEvolution(
+        { attemptId: acceptedSource.id },
+        LOCAL_ACTOR
+      )
+      server.service.decideEvolution(
+        {
+          id: acceptedReview.id,
+          decision: 'accept',
+          reason: 'Establish the source-aware accepted browser baseline'
+        },
+        LOCAL_ACTOR
+      )
+      const candidateTestFile = path.join(
+        initial.sourceRoot,
+        loadContract(root).testFile
+      )
+      fs.chmodSync(candidateTestFile, 0o600)
+      fs.appendFileSync(candidateTestFile, '\n')
       const source = await server.service.wait(
         server.service.start({ mode: 'candidate' }, LOCAL_ACTOR)
       )
       assert.equal(source.evidence.status, 'passed')
       const review = server.service.prepareEvolution(
         { attemptId: source.id },
-        LOCAL_ACTOR
-      )
-      server.service.decideEvolution(
-        {
-          id: review.id,
-          decision: 'accept',
-          reason: 'Explicit browser accepted source'
-        },
         LOCAL_ACTOR
       )
       browser = await chromium.launch({
@@ -122,6 +136,21 @@ test(
         .locator('#target-handoff')
         .fill('Consume the assessed upstream journal')
       await frame.locator('#target-add-work').click()
+      await frame
+        .locator('#target-work-title')
+        .fill('Publish shared projection')
+      await frame
+        .locator('#target-work-step')
+        .selectOption('settle-local-shared-projection')
+      await frame.locator('#target-obligations input').first().check()
+      await frame
+        .locator('#target-work-scope')
+        .fill('Prove the exact downstream delivery')
+      await frame.locator('#target-prerequisites').selectOption({ index: 1 })
+      await frame
+        .locator('#target-handoff')
+        .fill('Consume the finalized transaction outcome')
+      await frame.locator('#target-add-work').click()
       await frame.locator('#target-create').click()
       await expect(frame.locator('#target-result')).toContainText('Revision 1')
       const target = server.service.getTarget(
@@ -182,16 +211,20 @@ test(
       )
       await expect(frame.locator('#assessment-works')).toContainText('passed')
       await expect(frame.locator('#assessment-integration')).toContainText(
-        'pending'
+        'passed'
       )
-      await expect(frame.locator('#assessment-integration')).toContainText(
-        'Pending allocation: deferred.delivery'
+      await expect(frame.locator('#assessment-target-contract')).toContainText(
+        'passed'
       )
       const assessment = server.service.targetAssessments()[0]
       assert.equal(assessment.projection.accepted.status, 'passed')
-      assert.equal(assessment.projection.integration.status, 'pending')
+      assert.equal(assessment.projection.integration.status, 'passed')
       await expect(frame.locator('#assessment-summary')).toContainText(
-        'Not eligible'
+        'Eligible for explicit acceptance'
+      )
+      await expect(frame.locator('#assessment-accept')).toBeDisabled()
+      await expect(frame.locator('#assessment-acceptance')).toContainText(
+        'Eligibility is read-only'
       )
       await expect(frame.locator('#assessment-source-identity')).toContainText(
         assessment.runtime.repository
@@ -349,28 +382,40 @@ test(
         'passed'
       )
       await expect(frame.locator('#assessment-source')).toHaveValue(source.id)
-      server.service.decideTarget(
-        {
-          action: 'revise',
-          targetId: target.id,
-          requestId: randomUUID(),
-          expectedRevision: 1,
-          objective: target.objective,
-          reason: 'Make historical assessment stale',
-          works: target.history[0].state.works.map((work) => {
-            const value = structuredClone(work)
-            delete value.taskIds
-            return value
-          }),
-          pending: target.pending
-        },
-        LOCAL_ACTOR
-      )
-      await frame.locator('#refresh').click()
+      let acceptanceRequest
+      await page.route('**/api/targets/accept', async (route) => {
+        acceptanceRequest = route.request().postDataJSON()
+        await route.continue()
+      })
+      await frame
+        .locator('#assessment-accept-reason')
+        .fill('Accept complete offline browser target')
+      await expect(frame.locator('#assessment-accept')).toBeEnabled()
+      await frame.locator('#assessment-accept').click()
       await expect(frame.locator('#assessment-summary')).toContainText('stale')
       await expect(frame.locator('#assessment-accepted')).toContainText(
         'passed'
       )
+      await expect(frame.locator('#assessment-acceptance')).toContainText(
+        'Resulting version revision'
+      )
+      assert.equal(acceptanceRequest.targetId, target.id)
+      assert.equal(acceptanceRequest.assessmentId, assessment.id)
+      assert.equal(
+        acceptanceRequest.reason,
+        'Accept complete offline browser target'
+      )
+      assert.deepEqual(acceptanceRequest.retirement, [])
+      assert.equal(server.service.state().evolution.revision, 3)
+      await page.unroute('**/api/targets/accept')
+      const acceptedScreenshot = path.join(artifacts, 'target-accepted.png')
+      await frame.locator('#assessment-acceptance').scrollIntoViewIfNeeded()
+      await page.screenshot({ path: acceptedScreenshot })
+      screenshots.push({
+        path: acceptedScreenshot,
+        viewport: page.viewportSize(),
+        evidence: 'actual offline target baseline acceptance'
+      })
       await page.route('**/api/target-assessments', (route) =>
         route.fulfill({
           status: 409,

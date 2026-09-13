@@ -12,7 +12,12 @@ const { runVerification, runContainedVerification } = require('./runner.cjs')
 const evidenceOwner = require('./evidence.cjs')
 const { openStore, validId, writeAtomic } = require('./store.cjs')
 const versionOwner = require('./evolution.cjs')
-const { createHistory, compareVersion, decideVersion } = versionOwner
+const {
+  createHistory,
+  compareVersion,
+  decideVersion,
+  acceptTargetBaseline: acceptTargetBaselineVersion
+} = versionOwner
 const { prepareCIContext } = require('./ci-context.cjs')
 const { assessCI } = require('./ci-evidence.cjs')
 const { createTaskOwner } = require('./agent-task.cjs')
@@ -1327,7 +1332,7 @@ function createService(
   }
   const saveAssessments = () => {
     writeAtomic(assessmentFile, {
-      format: 1,
+      format: 2,
       records: [...assessmentRecords.values()]
     })
     refreshAssessmentProjections()
@@ -1335,6 +1340,7 @@ function createService(
   const assessRecord = (record, current) => {
     const resolved = resolveAssessment(record.request, false)
     return targetEvidenceOwner.assessTargetSource({
+      format: record.format,
       target: targets.get(record.request.targetId),
       allocationRevision: record.request.allocationRevision,
       acceptedContract: resolved.accepted.contract,
@@ -1400,7 +1406,7 @@ function createService(
       'orchestrationError'
     ])
     if (
-      record.format !== 1 ||
+      ![1, 2].includes(record.format) ||
       !validId(record.id) ||
       typeof record.actor !== 'string' ||
       !record.actor.trim() ||
@@ -1417,6 +1423,15 @@ function createService(
         !Number.isFinite(Date.parse(record.finishedAt)))
     )
       throw new Error('Invalid target assessment identity')
+    if (
+      record.result?.format !== record.format ||
+      (record.format === 1 &&
+        Object.hasOwn(record.result ?? {}, 'targetContract')) ||
+      (record.format === 2 &&
+        (!record.result?.targetContract ||
+          record.result.targetContract.status === undefined))
+    )
+      throw new Error('Invalid target assessment result format')
     if (
       Object.hasOwn(record, 'orchestrationError') &&
       (record.phase !== 'error' ||
@@ -1543,13 +1558,15 @@ function createService(
         throw new Error('Invalid target assessment store')
       const saved = JSON.parse(fs.readFileSync(assessmentFile, 'utf8'))
       objectRequest(saved, ['format', 'records'])
-      if (saved.format !== 1 || !Array.isArray(saved.records))
+      if (![1, 2].includes(saved.format) || !Array.isArray(saved.records))
         throw new Error('Invalid target assessment store')
       const seen = new Set()
       let changed = false
       for (const retained of saved.records) {
         if (assessmentRecords.has(retained.id))
           throw new Error('Duplicate target assessment identity')
+        if (saved.format === 1 && retained.format !== 1)
+          throw new Error('Invalid target assessment format upgrade')
         validateAssessmentRecord(retained, seen)
         let record = retained
         selectedSources.set(record.request.targetId, {
@@ -1588,6 +1605,38 @@ function createService(
           !seen.has(producer.id)
         )
           throw new Error('Orphan target assessment producer')
+      const history = store.mapping().evolution.history
+      for (const decision of history.decisions) {
+        if (!Object.hasOwn(decision, 'targetAcceptance')) continue
+        const reference = decision.targetAcceptance
+        const review = store
+          .mapping()
+          .evolution.reviews.find((item) => item.id === decision.reviewId)
+        const candidate =
+          history.versions[reference.resultingVersionRevision - 1]
+        const assessment = assessmentRecords.get(reference.assessmentId)
+        versionOwner.validateTargetAcceptanceDecision(
+          history,
+          review,
+          candidate,
+          assessment,
+          decision
+        )
+        const target = targets.get(reference.targetId)
+        if (
+          target.targetRevision !== candidate.contract.digest ||
+          !isDeepStrictEqual(
+            target.targetVerification,
+            reference.targetVerification
+          ) ||
+          !isDeepStrictEqual(
+            target.acceptedBaseline,
+            reference.acceptedBaseline
+          ) ||
+          !isDeepStrictEqual(target.acceptedVersion, reference.acceptedVersion)
+        )
+          throw new Error('Invalid retained target acceptance binding')
+      }
       if (changed) saveAssessments()
       else refreshAssessmentProjections()
     } else if (
@@ -1795,7 +1844,7 @@ function createService(
         runtime: resolved.runtime
       })
       const record = evaluateAssessment({
-        format: 1,
+        format: 2,
         id: requestId,
         actor: actor.id,
         request: selection,
@@ -1967,7 +2016,14 @@ function createService(
         obligations: c.cases
       }))
     }),
-    getTarget: (id) => taskResult(() => targets.get(id)),
+    getTarget: (id) =>
+      taskResult(() =>
+        immutable({
+          ...targets.get(id),
+          limitation:
+            'Strict all-flow candidate verification and a complete current source-bound target assessment are required before explicit target baseline acceptance. Eligibility alone does not accept history.'
+        })
+      ),
     decideTarget(request, actor) {
       authorize(actor, TARGET_POLICY.capability)
       requireIdle()
@@ -2287,7 +2343,18 @@ function createService(
         review,
         review.candidate,
         decision,
-        actor
+        actor,
+        {
+          targetPinned:
+            request.decision === 'accept' &&
+            targets
+              .list()
+              .some(
+                (target) =>
+                  targets.get(target.id).targetVerification?.reviewId ===
+                  review.id
+              )
+        }
       )
       if (history === evolution.history) return review
       const accepted = history.versions.at(-1).contract
@@ -2318,6 +2385,123 @@ function createService(
       return store
         .mapping()
         .evolution.reviews.find((item) => item.id === review.id)
+    },
+    acceptTargetBaseline(request, actor) {
+      authorize(actor, 'decide-contract')
+      objectRequest(request, [
+        'requestId',
+        'targetId',
+        'assessmentId',
+        'reason',
+        'retirement'
+      ])
+      if (Array.isArray(request?.retirement) && request.retirement.length)
+        authorize(actor, 'retire-contract')
+      if (
+        !validId(request?.requestId) ||
+        !validId(request?.targetId) ||
+        !validId(request?.assessmentId) ||
+        typeof request?.reason !== 'string' ||
+        !request.reason.trim() ||
+        request.reason.length > 1000 ||
+        !Array.isArray(request?.retirement)
+      )
+        throw new ActionError(400, 'Invalid target acceptance request')
+      const state = store.mapping(),
+        evolution = state.evolution
+      const replay = evolution.history.decisions.find(
+        (item) => item.targetAcceptance?.requestId === request.requestId
+      )
+      const projectAcceptance = (decision) => {
+        const reference = decision.targetAcceptance
+        const retainedHistory = store.mapping().evolution.history
+        return immutable({
+          ...reference,
+          actor: decision.actor,
+          reason: decision.reason,
+          retirement: decision.retirement,
+          at: decision.at,
+          resultingBaseline: {
+            revision: reference.resultingMappingRevision,
+            contractDigest:
+              retainedHistory.versions[reference.resultingVersionRevision - 1]
+                .contract.digest
+          },
+          reference
+        })
+      }
+      if (replay) {
+        taskResult(() =>
+          acceptTargetBaselineVersion(
+            evolution.history,
+            null,
+            null,
+            null,
+            request,
+            actor
+          )
+        )
+        return projectAcceptance(replay)
+      }
+      requireIdle()
+      const target = taskResult(() => targets.get(request.targetId))
+      const assessment = assessmentViews.get(request.assessmentId)
+      const retained = assessmentRecords.get(request.assessmentId)
+      const review = evolution.reviews.find(
+        (item) => item.id === target.targetVerification?.reviewId
+      )
+      if (
+        !assessment ||
+        !retained ||
+        assessment.actor !== actor.id ||
+        assessment.phase !== 'completed' ||
+        target.revision !== assessment.projection?.allocationRevision ||
+        target.targetRevision !==
+          assessment.projection?.targetContract?.contractDigest ||
+        !isDeepStrictEqual(assessment.pins, {
+          acceptedVersion: target.acceptedVersion,
+          targetVerification: target.targetVerification
+        }) ||
+        !isDeepStrictEqual(assessmentSourceFor(assessment.id), retained.runtime)
+      )
+        throw new ActionError(
+          409,
+          'Target assessment source authority is unavailable or stale'
+        )
+      if (
+        !review ||
+        review.status !== 'pending' ||
+        review.candidate.contract.digest !== target.targetRevision
+      )
+        throw new ActionError(409, 'Target review is unavailable or stale')
+      const history = taskResult(() =>
+        acceptTargetBaselineVersion(
+          evolution.history,
+          review,
+          review.candidate,
+          assessment,
+          request,
+          actor
+        )
+      )
+      const accepted = history.versions.at(-1).contract
+      const next = {
+        ...state,
+        revision: state.revision + 1,
+        accepted,
+        evolution: {
+          history,
+          reviews: evolution.reviews.map((item) =>
+            item.id === review.id ? { ...item, status: 'accept' } : item
+          )
+        }
+      }
+      store.saveMapping(next)
+      contract = accepted
+      publicContract = projectContract()
+      refreshShared()
+      refreshAssessmentProjections()
+      return projectAcceptance(history.decisions.at(-1))
     },
     prepareMapping(request, actor) {
       authorize(actor, 'prepare-mapping')
