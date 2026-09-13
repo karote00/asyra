@@ -1428,3 +1428,92 @@ reuse gates plus two fixed actual-source profiles. Material/contact decisions ar
 still pending independent owners and receive no implied approval from these surface
 counts. This segment changes only existing spec/Inspector/plan readiness, obtains
 independent review, then freezes and stops for root quota review.
+
+Root released 475823c61 for this one coverMotion implementation and its fixed
+gates. No narrow solver, material or later owner is authorized. Freeze and stop
+after completion for root quota review.
+
+D point-time surface domain exclusion is implemented. The inherited six missing-
+entry/API cases first failed and then passed; the completed focused suite now has
+53 collision cases, including two joint windows at fixed nonzero base poses, exact
+four-way domain accounting, interior-window overlap, strict budget handling,
+unknown/expired state, clone/currentness and the single RobotMotionBounds handoff.
+All 468 app tests across 47 files, build/typecheck, naming, scoped formatting and
+app lint (16 console warnings, no errors) pass.
+
+Both fixed actual-source entries retain the 43,429,284,640-pair inventory and
+269,533 mesh comparisons. With the unchanged 10,000 region-comparison budget, the
+rest case measured 119.3 ms and left 22,993,872 pairs unvisited; the centre
++/-1e-6 case measured 89.4 ms and left 21,079,856 unvisited. Both remain `unknown`,
+perform zero triangle/source-buffer visits, use one interval FK product and stay
+within the unchanged 24000-bit guard. This is complete conservative surface-domain
+accounting for the bounded owner, not articulated narrow coverage, movement
+clearance, material/contact permission or physical evidence. Independent sub-PR
+review remains the merge gate.
+
+PR #199 CI correction card: the Ubuntu validation of head `96bec5688` exposed five
+test-oracle and scheduling failures outside the changed collision owner. Base and
+head domain blobs are identical. The two whole-source snapshots hash binary64 arrays
+containing runtime `Math` transcendental outputs, so a different Linux digest does
+not identify a source change. Preserve the existing snapshot values as historical
+evidence in named runtime fixtures; do not replace them with received Linux
+hashes. First obtain bounded
+per-value evidence on the unchanged head, recording semantic path, both Float64 bit
+patterns, absolute delta and ULP distance. Keep that diagnostic as a formally
+runnable test artifact. It does not set acceptance.
+
+Source-oracle owner: the existing C source tests. Inputs are current robot/cultivar
+products and their original metadata. Outputs are exact topology/identity/region/
+partition/material and repeat-generation checks, exact digests at the existing
+Float32 render storage boundary, plus unrounded finite dimensional, geometric,
+color and conservative-query relations. Float32 comparison is presentation evidence
+and does not alter source buffers or create a D tolerance. D continues to consume
+each platform's original binary64 source values as exact singleton inputs; existing
+unknown and outward interval behavior remains mandatory. Production generators,
+kinematics, scalar owners, collision and existing snapshot values are outside this
+correction allowlist. Mutation controls must prove topology and numeric semantic
+changes are detected before retiring the nonportable cross-runtime digest assertion.
+No rounded Linux hash becomes a new golden.
+
+Profile scheduling owner: FieldScope test configuration/package scripts and the
+root CI test sequence. Move the three existing scalar/point/interval elapsed cases
+unchanged into a formal profile suite excluded from ordinary FieldScope Vitest.
+After `yarn test:ci --concurrency=2` finishes, CI must invoke one FieldScope profile
+command with one worker and no file parallelism. A workflow contract test first
+fails while this stage is absent. Keep every fixed input, work assertion, 24000-bit
+bound, one-second batch limit, ten-second total limit and fail-fast error. Do not
+change production, add dependencies, upgrade tools, add caches or infer runtime
+performance.
+
+Correction allowlist: the four harvest-robot contract documents; robot/crop source
+tests and a direct shared test oracle; the three domain profile tests; FieldScope
+Vitest/profile configuration and package scripts; CI workflow and one direct
+workflow-contract test. Required gates are focused red/green mutation
+controls, workflow sequencing, ordinary FieldScope tests, isolated profiles, root
+script tests, app typecheck/lint/naming/build and final PR CI. Stop for a source
+semantic mismatch, a profile that still exceeds its unchanged guard while isolated,
+or any required production/tool/dependency change.
+
+The isolated Ubuntu run for `ad2ee1536` accepted the exact structure and Float32
+render handoff for all 135 semantic source paths while retaining the Float64
+diagnostic: 69 of 179390 values differed, by at most 4 ULP and
+5.551115123125783e-17. The interval profile passed its subnormal batches in
+733/716 ms, but the scalar and point profiles reached their unchanged one-second
+batch guard in 1203/1237 ms. Source inspection located the shared cost in exact
+BigInt width accounting: every Horner operation repeatedly materialized a binary
+digit string solely to measure the same mathematical width. A fixed-size diagnostic
+confirmed hexadecimal digit measurement reduced this output-free work without
+changing the measured width; it was supporting evidence, not a replacement profile.
+
+The missing shared bit-length helper first failed its independent direct test.
+The implemented helper derives the exact mathematical width from hexadecimal
+length and its leading nibble, with zero remaining one bit and negative values
+measured by magnitude. Its private sibling module leaves the supported scalar
+namespace unchanged while both existing scalar width consumers reuse it;
+polynomial values, operation order, rounding, observer calls, evaluation/term
+counters, maximum-width reporting and 24000-bit rejection remain unchanged.
+Direct scalar, point and interval tests pass. The unchanged local fixed profiles
+now measure subnormal scalar batches at 137.1/136.9 ms, point batches at
+143.6/141.6 ms and interval batches at 79.4/77.3 ms. Exact-head isolated Ubuntu
+profiles remain the required portability and merge gate; no timing result supplies
+a motion or hardware claim.

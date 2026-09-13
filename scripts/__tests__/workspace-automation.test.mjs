@@ -167,9 +167,31 @@ test('Draft filtering preserves non-PR CI triggers and label validation', () => 
 test('CI bounds workspace test concurrency without dropping test owners', () => {
   const workflow = readText('.github/workflows/main.yml')
   const scripts = readJSON('package.json').scripts
+  const fieldscopeScripts = readJSON('apps/fieldscope/package.json').scripts
+  const fieldscopeVitest = readText('apps/fieldscope/vitest.config.ts')
+  const profileVitest = readText('apps/fieldscope/vitest.profile.config.ts')
 
   assert.match(workflow, /^\s+run: yarn test:ci --concurrency=2$/m)
   assert.equal(scripts['test:ci'], 'yarn test:scripts && turbo run test:ci')
+  assert.equal(
+    fieldscopeScripts['test:profiles'],
+    'vitest run --config vitest.profile.config.ts'
+  )
+  assert.match(
+    fieldscopeVitest,
+    /exclude: \['src\/\*\*\/__tests__\/\*\*\/\*\.profile\.test\.ts'\]/
+  )
+  assert.match(
+    profileVitest,
+    /include: \['src\/\*\*\/__tests__\/\*\*\/\*\.profile\.test\.ts'\]/
+  )
+  assert.match(profileVitest, /fileParallelism: false/)
+  assert.match(profileVitest, /maxWorkers: 1/)
+  const ordinaryTests = workflow.indexOf('run: yarn test:ci --concurrency=2')
+  const fieldscopeProfiles = workflow.indexOf(
+    'run: yarn workspace @asyra/fieldscope test:profiles'
+  )
+  assert.ok(ordinaryTests >= 0 && fieldscopeProfiles > ordinaryTests)
 })
 
 test('Dependabot separates routine, major, and security update lanes', () => {
