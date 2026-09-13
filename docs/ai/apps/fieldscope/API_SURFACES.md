@@ -353,3 +353,18 @@ polynomial owner accumulates only its own per-call work. Reject a non-function
 observer before work; observer exceptions publish no result. Conversion state is
 call-local, including during observer reentry, with no global counter or mutation
 of caller-owned objects. The observer changes no rounding decision.
+
+## Completed robot affine pose
+
+`evaluateRobotAffinePose(rig, joints)` calls the original point evaluator once and
+returns its `pose`, `parts` carrying the same source/body/transform references plus
+an immutable `affine` frame, and `work` with `fk` and `matrices`. Each affine has a
+row-major 3x3 `matrix` and the original transform `position` reference. Matrices
+are computed once per actual unique transform reference and reused by matching
+parts; no retained pose cache is introduced.
+
+Coefficients follow installed Three Matrix4.compose's final raw quaternion/unit-
+scale operations. They are affine coefficients, not a promise of exact rigid
+orthonormality. The old point API and tool outputs remain unchanged; new matrix
+coefficients need not reproduce old point multiplication bits. Runtime/render/D
+adoption is not part of this preparation entry.

@@ -377,6 +377,40 @@ rest/source identity and D normalization against the actual canonical point mode
 This scalar slice does not perform that switch or certify whole-chain rounding,
 interval FK, material occupancy, intended contacts or motion execution.
 
+### Completed-pose affine handoff
+
+C may provide evaluateRobotAffinePose as a preparation entry over its existing
+point evaluation: evaluateRobotPose once, then convert each unique completed
+part.transform reference once to an immutable affine frame. Return the original
+completed pose alongside its parts with original source/body/transform references,
+row-major 3x3 matrix coefficients and the original translation position reference.
+Work records one point evaluation and the actual number of unique transform
+references converted, including the fixed transform when present.
+
+The matrix uses each final raw quaternion and unit scale, in the exact coefficient
+operation order of the installed Three Matrix4.compose. Explicitly map Three's
+column-major storage to the handoff's row-major matrix. Do not multiply per-joint
+matrices, normalize quaternion, change chain order or switch to polynomial trig.
+Raw quaternion being numerically near unit does not prove exact orthonormality;
+the affine output cannot promise inverse=transpose, exact distance preservation
+or occupied-volume clearance. Future D consumers need actual coefficients and a
+true inverse or conservative numerical treatment.
+
+Existing evaluateRobotPose, transformRobotPoint, tool output, source identity and
+56 pre-extraction pose fingerprints remain unchanged. A separately added oracle
+compares every new matrix coefficient bit to installed Three compose at rest,
+limits, asymmetric/nondefault poses and signed zero. Old point evaluation and
+matrix multiplication may differ by floating association; this slice does not
+rewrite old fingerprints or pretend those point operations are bit-identical.
+
+Only new result containers are frozen; the original source is neither cloned nor
+mutated. Computed frames are shared among parts with the same completed transform
+within one call, not cached across source lifetimes. This new entry has no working-
+pose runtime/render/query consumer yet. It prepares a single C-owned handoff, but
+does not unify downstream numeric authority or certify interval FK/trajectory.
+Subsequent consumer adoption and polynomial integration require their own cases
+and contract review, preserving the distinction from pending material decisions.
+
 ### Canonical FK algebra handoff
 
 C owns one rotate/compose/about/body-chain implementation, shared by the original

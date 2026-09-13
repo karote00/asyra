@@ -713,3 +713,30 @@ work; exceptions abort publication. Each conversion keeps call-local arithmetic
 state under reentry. Formal with/without bitwise equality, normal/subnormal shifts,
 rounding temporary widths and observer failure prove this reporting boundary;
 no conservative width estimate is mislabeled as measured work.
+
+### C completed-pose affine handoff
+
+Owner: domain/robot-kinematics.ts, over the existing completed point pose.
+Inputs: original rig and original point joints/validation. Outputs: unchanged
+completed pose, parts retaining source/body/transform identity with frozen affine
+matrix/translation, work fk=1 and actual unique-transform conversion count.
+Conditions: final raw quaternion plus unit scale only; reproduce installed Three
+Matrix4.compose coefficient operation order, map column-major to row-major.
+Each unique part.transform reference is converted once per call, including fixed
+when present; matching parts consume the same completed affine object.
+Allowed: existing one C chain and its point evaluation, original source references,
+installed Three only as an independent direct-test coefficient oracle.
+Forbidden: per-joint matrix-chain replacement, quaternion normalization, polynomial
+point switch, changed old point/tool bits, renderer/runtime/D consumer migration,
+material/contact assumptions or exact orthonormality/transpose-inverse claims.
+Boundary: domain/robot-kinematics.ts, its existing direct test and snapshot only for
+new evidence (never rewriting the original 56-pose oracle), API/spec/Inspector/plan.
+Failure owner: original C point validation; no partially returned affine pose.
+Lifetime: one completed pose/call, no cross-source registry or pose cache. Freeze
+new containers only; retain original source/position refs without deep mutation.
+Gates: missing-entry red; installed Three coefficient Object.is/Float64 comparison
+for rest/limits/asymmetric/nondefault/±0; unchanged old point/tool/source oracles;
+actual unique-reference work counts, same-frame reuse and zero source generation;
+full app unit/type/build/lint/naming and independent review. This prepares a C
+handoff only: no consumer adopts it yet, so no unified query/render authority or
+interval/movement proof follows from these gates.
