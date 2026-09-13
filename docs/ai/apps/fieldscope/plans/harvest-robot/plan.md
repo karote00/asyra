@@ -1084,3 +1084,15 @@ full app unit/type/build/lint/naming and independent review. Stop for any requir
 point semantic change or extra owner. A later numerical replan can establish a
 proved canonical point-plus-interval trig contract; Math.sin plus EPS and sampled
 endpoint envelopes do not close that proof.
+
+Canonical FK algebra extraction is implemented. The pre-edit Float64 snapshot
+covers 56 poses across four source definitions, including each joint limit,
+asymmetric joints and signed zero; every fingerprint remains unchanged. Three
+new entry/validation/ownership cases first failed against the missing API, then
+passed with the shared chain. Twelve focused cases now pass, including complete
+numeric-domain forwarding once and zero robot generation/preparation. The full
+app checkpoint passed 419 tests before that last isolated control; its final
+focused run, typecheck/build, lint and naming pass. Independent review confirmed
+original arithmetic association, angle division, chain order, source references
+and caller-owned scalar isolation. This completes only C chain sharing. It does
+not certify an interval adapter, analytic trig bound, trajectory or movement.
