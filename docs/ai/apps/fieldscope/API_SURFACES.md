@@ -382,3 +382,15 @@ matching C affine identities share preparation within a batch. `RayWork` and
 Base/camera/farm/instance frames and all existing numerical predicates remain
 unchanged. This is robot-body CPU coefficient adoption only; it does not certify
 GPU arithmetic, the entire world transform pipeline or articulated interval FK.
+
+## Canonical point polynomial model - planned integration
+
+The next implementation keeps point/affine signatures and return shapes. The C
+number adapter will consume shared S19/C20 nearest-even results on actual rounded
+half-angles, preserving other operation order and completed source identities.
+No model-selection API or new work field is needed. Direct tests observe actual
+shared trig calls/results: eight per point evaluation; an affine entry includes
+one point evaluation and the existing actual unique-matrix work. Historical
+Math-trig snapshots describe the preceding model, not current compatibility.
+RobotProjection/bootstrap and D affine queries are real consumers of this change;
+no renderer, base/camera schema or query predicate migration is included.

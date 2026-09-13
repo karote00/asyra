@@ -769,3 +769,35 @@ and singular-uncertainty controls, affine identity reuse, one C call/actual work
 retirement and zero geometry/bounds generation. Preserve other transform and
 numerical controls, then full app unit/type/build/lint/naming and independent review.
 Do not interpret this fixed-pose adoption as articulated or material clearance.
+
+### C polynomial point integration
+
+Owner: domain/robot-kinematics.ts numeric sin/cos adapter. Inputs: existing rig and
+validated numeric joints; each existing rounded half-angle. Outputs: the same
+point/affine shapes under shared S19/C20 nearest-even scalar semantics. Conditions:
+keep the single chain and every non-trig operation/association; no normalization.
+Allowed: existing domain/kinematic-trigonometry.ts and scalar conversion products
+without changing their implementation; actual read-only projection and D consumers
+only as regression gates. Forbidden: runtime model flags, legacy fallback, D
+predicate/base/camera changes, joint-interval proof, material/contact exemptions.
+Boundary: robot-kinematics.ts, its direct test and existing snapshot, a permanent
+robot-point-model.test.ts with its snapshot, API/spec/Inspector/plan/BDD. No other
+production contributor is allowed. Failure owner: existing input rejection, scalar
+resource rejection and unresolved consumer regressions; no partial publication.
+Lifetime: call-local computation, no trig/pose cache or new shared mutable counters.
+
+First freeze pre-switch 56-case numeric outputs and original hash/source evidence.
+Test-only historical Math algebra must use the same chain, never duplicate it.
+New formal evidence proves scalar integration, signed zero/subnormal half-angle
+rounding, all approved limits, source/body mapping and identities, rest, Three
+coefficients, exact global norm-bound recurrence and independent consumer outcomes.
+Observe actual eight scalar calls/result work; full evaluateRobotAffinePose includes
+point/tool/frame and matrix work. Four fixed 100-pose batches (normal first/repeated,
+nonzero subnormal first/repeated) must each stay within 1 second, overall 10 seconds,
+and every scalar temporary within 24000 bits. These are cooperative guards on a
+prepared rig, not process-cold claims or hard preemption; never raise them to pass.
+After focused correctness, run app unit/type/build/lint/naming and bounded review.
+
+Current execution restriction: only readiness and pre-switch formal baseline may
+advance before freezing for root. No production switch or further owner begins
+in this bounded quota-limited segment.
