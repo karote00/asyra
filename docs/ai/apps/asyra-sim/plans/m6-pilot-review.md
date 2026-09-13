@@ -1652,3 +1652,59 @@ Publication is observed at next-root entry and checked against final exact root
 leaves, not presented as production cancellation proof. This rejects only the
 fixed-prefix extra-warning-source hypothesis, not every numerical use of a
 larger legal upper. Stop this direction; no production expansion or full run.
+
+### Edge-cross directions - bounded passive method card
+
+The method re-audit separates CPU work from charged traversal: replacing generic
+triangle convex iteration alone cannot reduce the unchanged per-triangle logical
+charge. Rejected sibling order, SAH/rotation, source-bound tightening and seed
+variants remain closed. Current source-box rejection tests only the two poses'
+six face directions; prior root and triangle probes did not test the nine pairwise
+edge-cross directions. The geometric candidate follows
+<a href="https://www.geometrictools.com/Documentation/DynamicCollisionDetection.pdf" target="_blank" rel="noopener noreferrer">Eberly, section 2.1</a>;
+boxes remain rejection enclosures, never product geometry or contact witnesses.
+
+Freeze one existing original point: joint-2/obstacle-11, frame 67 at
+2.693467336683417. This is the recorded exhausted operation in
+`current141-frontier.log`, independently completed for 16,564 units in the
+existing component-source probe. Later fresh/adjacent strategies preserve static
+point behavior. Use the unchanged source snapshot/settings, 500k work and 20s
+guard; no new full replay or case selection. Allowed edits are one permanent
+opt-in passive test and this card, not production or Inspector semantics.
+
+Run the original distance owner unchanged. Only after its ordinary face-direction
+rejection fails, evaluate the fixed three-by-three edge-cross family. Directions
+are fixed proposals from the actual normalized static poses; outward projection
+of complete source bounds and a positive norm certify every result. Degenerate
+proposals provide no conclusion. Prepare six pose directions and nine crosses
+lazily once for this exact query, charging fifteen units; all nine attempted
+certificates charge one each, including degenerates. No axes, poses or evidence
+survive the query, no triangle/final-pair policy changes, and no selected axis is
+tuned from results. All diagnostic operations checkpoint the original live guard.
+
+Test-only exact Bounds/node identity and actual parent lineage record the visited
+node-pair order. Bound the already-observed descendant work a positive certificate
+could avoid; union nested spans so no work is counted twice. Keep legacy work at
+the rejecting node paid. Report original preparation separately, all actually
+paid diagnostic overhead, and prospective attempt cost only for nodes outside
+those pruned spans. This is an optimistic work upper limit, never claimed actual
+savings. Unknown lineage or incomplete baseline stops the profile. Independent
+rational skew boxes must have overlapping face projections but a positive
+edge-cross gap; every successful source-root certificate must agree with the
+unchanged original result. Preserve all source membership/penetration paths.
+If no positive net upper limit exists, reject without implementation; a positive
+bound requires a separately reviewed actual-delta plan and all unchanged gates.
+No production or full gate follows this card automatically.
+
+The fixed frame 67 passive run is negative: original work 16,564 reproduced
+(3,176 median preparation, 10,366 component refinement, 3,022 query work).
+Across 808 visited node pairs, 454 eligible pairs paid all nine attempts:
+4,101 additional actual units including the 15 direction preparations. Thirty
+maximal positive certificates could avoid at most 1,648 observed descendant
+units; even after removing attempts inside those pruned spans, prospective
+cost is 2,283 and optimistic net savings are -635. Reject this fixed policy
+without production changes or another full run. The independent rational
+oracle and passive case both pass. Reproduce with
+`SIM_CAPACITY_DIAGNOSTICS=1 yarn workspace @asyra/asyra-sim test:local src/analysis/methods/__tests__/cross-axis-profile.test.ts --maxWorkers=1`;
+recorded evidence is `tmp/capacity/cross-axis-profile.log`. This negative
+upper-bound result does not claim measured production savings or close G4.
