@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto'
-import { expect, it } from 'vitest'
+import { expect, it, vi } from 'vitest'
+import type { KinematicAlgebra, JointDomains } from '../robot-kinematics'
 import { createRobotModel } from '../robot-model'
 import { DEFAULT_ROBOT } from '../robot-configuration'
 
@@ -230,5 +231,279 @@ it('rotates each pitch around its source pivot and leaves upstream bodies fixed'
     expect(
       transformRobotPoint(upstreamPart.transform, rig.tool.position)
     ).toEqual(rig.tool.position)
+  }
+})
+
+// Float64 encoding preserves signed zero, unlike JSON numeric serialization.
+function poseBits(value: unknown): string {
+  if (typeof value === 'number') {
+    const bytes = new DataView(new ArrayBuffer(8))
+    bytes.setFloat64(0, value)
+    return bytes.getBigUint64(0).toString(16).padStart(16, '0')
+  }
+  if (Array.isArray(value)) return `[${value.map(poseBits).join(',')}]`
+  if (value && typeof value === 'object')
+    return `{${Object.entries(value)
+      .map(([key, entry]) => `${key}:${poseBits(entry)}`)
+      .join(',')}}`
+  return JSON.stringify(value)
+}
+
+it('preserves pre-extraction Float64 pose outputs including signed zero and every approved limit', async () => {
+  const {
+    prepareRobotRig,
+    evaluateRobotPose,
+    REST_JOINTS,
+    ROBOT_JOINT_LIMITS
+  } = await import('../robot-kinematics')
+  const cases = [
+    REST_JOINTS,
+    { lift: -0, yaw: -0, shoulder: -0, elbow: -0, wrist: -0 },
+    { lift: -0, yaw: 0, shoulder: -0, elbow: 0, wrist: -0 },
+    { lift: 0.037, yaw: -0.71, shoulder: 0.29, elbow: -0.83, wrist: 0.47 },
+    ...Object.entries(ROBOT_JOINT_LIMITS).flatMap(([key, bounds]) =>
+      bounds.map((value) => ({ ...REST_JOINTS, [key]: value }))
+    )
+  ]
+  expect(poseBits(-0)).not.toBe(poseBits(0))
+  expect(
+    definitions.map((definition) => {
+      const rig = prepareRobotRig(definition, createRobotModel(definition))
+      return cases.map((joints) => {
+        const pose = evaluateRobotPose(rig, joints)
+        const numeric = {
+          joints: pose.joints,
+          parts: pose.parts.map((part) => ({
+            id: part.source.id,
+            body: part.body,
+            transform: part.transform
+          })),
+          frames: pose.frames,
+          tool: pose.tool
+        }
+        return createHash('sha256').update(poseBits(numeric)).digest('hex')
+      })
+    })
+  ).toMatchSnapshot()
+})
+
+const scalarAlgebra: KinematicAlgebra<number> = {
+  literal: (value) => value,
+  range: (lower, upper) => {
+    if (!Object.is(lower, upper))
+      throw new Error('Singleton number domains only')
+    return lower
+  },
+  add: (a, b) => a + b,
+  subtract: (a, b) => a - b,
+  multiply: (a, b) => a * b,
+  divide: (a, b) => a / b,
+  sin: Math.sin,
+  cos: Math.cos
+}
+
+it('shares the canonical FK chain with singleton number algebra and original source identities', async () => {
+  const {
+    prepareRobotRig,
+    evaluateRobotPose,
+    evaluateRobotDomains,
+    REST_JOINTS,
+    ROBOT_JOINT_LIMITS
+  } = await import('../robot-kinematics')
+  const cases = [
+    REST_JOINTS,
+    { lift: -0, yaw: -0, shoulder: -0, elbow: -0, wrist: -0 },
+    { lift: 0.037, yaw: -0.71, shoulder: 0.29, elbow: -0.83, wrist: 0.47 },
+    ...Object.entries(ROBOT_JOINT_LIMITS).flatMap(([key, bounds]) =>
+      bounds.map((value) => ({ ...REST_JOINTS, [key]: value }))
+    )
+  ]
+  for (const definition of definitions) {
+    const rig = prepareRobotRig(definition, createRobotModel(definition))
+    for (const joints of cases) {
+      const domains = Object.fromEntries(
+        Object.entries(joints).map(([key, value]) => [key, [value, value]])
+      ) as unknown as JointDomains
+      const actual = evaluateRobotDomains(rig, domains, scalarAlgebra)
+      const expected = evaluateRobotPose(rig, joints)
+      expect(
+        poseBits({
+          parts: actual.parts.map((p) => p.transform),
+          frames: actual.frames,
+          tool: actual.tool
+        })
+      ).toBe(
+        poseBits({
+          parts: expected.parts.map((p) => p.transform),
+          frames: expected.frames,
+          tool: expected.tool
+        })
+      )
+      actual.parts.forEach((part, index) => {
+        expect(part.source).toBe(rig.parts[index].source)
+        expect(part.body).toBe(rig.parts[index].body)
+        expect(part.source.shape).toBe(rig.parts[index].source.shape)
+        const peer = actual.parts.find(
+          (candidate) => candidate.body === part.body
+        )
+        expect(part.transform).toBe(peer?.transform)
+      })
+      expect(Object.isFrozen(actual.parts)).toBe(true)
+      expect(Object.isFrozen(actual.domains)).toBe(true)
+    }
+    const first = evaluateRobotPose(rig, REST_JOINTS)
+    const second = evaluateRobotPose(
+      rig,
+      Object.assign({ ...REST_JOINTS }, { extra: 1 })
+    )
+    expect(second.joints).toHaveProperty('extra', 1)
+    expect(first.parts.find((part) => part.body === 'fixed')?.transform).toBe(
+      second.parts.find((part) => part.body === 'fixed')?.transform
+    )
+    expect(
+      first.parts.find((part) => part.body === 'lift')?.transform.rotation
+    ).toBe(
+      second.parts.find((part) => part.body === 'fixed')?.transform.rotation
+    )
+  }
+})
+
+it('validates a single detached numeric domain snapshot before any algebra callback', async () => {
+  const { prepareRobotRig, evaluateRobotDomains } =
+    await import('../robot-kinematics')
+  const rig = prepareRobotRig(DEFAULT_ROBOT, createRobotModel(DEFAULT_ROBOT))
+  const domains = {
+    lift: [0, 0],
+    yaw: [0, 0],
+    shoulder: [0, 0],
+    elbow: [0, 0],
+    wrist: [0, 0]
+  }
+  const callback = vi.fn(() => 0)
+  const algebra = Object.fromEntries(
+    Object.keys(scalarAlgebra).map((key) => [key, callback])
+  ) as unknown as KinematicAlgebra<number>
+  for (const invalid of [
+    null,
+    { ...domains, extra: [0, 0] },
+    { ...domains, lift: undefined },
+    { ...domains, yaw: [1, -1] },
+    { ...domains, lift: [-0.11, 0] },
+    { ...domains, wrist: [0, Infinity] },
+    { ...domains, elbow: new Array(2) },
+    { ...domains, shoulder: [NaN, 0] },
+    { ...domains, yaw: [0, 0, 0] }
+  ]) {
+    expect(() =>
+      evaluateRobotDomains(rig, invalid as unknown as JointDomains, algebra)
+    ).toThrow()
+    expect(callback).not.toHaveBeenCalled()
+  }
+  let reads = 0
+  const getter = {
+    ...domains,
+    get yaw() {
+      reads++
+      return reads === 1 ? [NaN, 0] : [0, 0]
+    }
+  }
+  expect(() =>
+    evaluateRobotDomains(rig, getter as unknown as JointDomains, algebra)
+  ).toThrow()
+  expect(reads).toBe(1)
+  expect(callback).not.toHaveBeenCalled()
+  const mutating = {
+    ...scalarAlgebra,
+    range: (lower: number, upper: number) => {
+      domains.yaw[0] = 1
+      return scalarAlgebra.range(lower, upper)
+    }
+  }
+  const result = evaluateRobotDomains(
+    rig,
+    domains as unknown as JointDomains,
+    mutating
+  )
+  expect(result.domains.yaw).toEqual([0, 0])
+  expect(Object.isFrozen(domains)).toBe(false)
+})
+
+it('freezes only C-owned containers and does not publish after a scalar callback throws', async () => {
+  const {
+    prepareRobotRig,
+    evaluateRobotDomains,
+    evaluateRobotPose,
+    REST_JOINTS
+  } = await import('../robot-kinematics')
+  const rig = prepareRobotRig(DEFAULT_ROBOT, createRobotModel(DEFAULT_ROBOT))
+  const domains = {
+    lift: [0, 0],
+    yaw: [0, 0],
+    shoulder: [0, 0],
+    elbow: [0, 0],
+    wrist: [0, 0]
+  } as JointDomains
+  const scalars: { value: number }[] = []
+  const box = (value: number) => {
+    const scalar = { value }
+    scalars.push(scalar)
+    return scalar
+  }
+  const algebra: KinematicAlgebra<{ value: number }> = {
+    literal: box,
+    range: (lower, upper) => box(scalarAlgebra.range(lower, upper)),
+    add: (a, b) => box(a.value + b.value),
+    subtract: (a, b) => box(a.value - b.value),
+    multiply: (a, b) => box(a.value * b.value),
+    divide: (a, b) => box(a.value / b.value),
+    sin: (a) => box(Math.sin(a.value)),
+    cos: (a) => box(Math.cos(a.value))
+  }
+  const result = evaluateRobotDomains(rig, domains, algebra)
+  expect(Object.isFrozen(result)).toBe(true)
+  expect(Object.isFrozen(result.tool.position)).toBe(true)
+  expect(scalars.every((scalar) => !Object.isFrozen(scalar))).toBe(true)
+  const before = poseBits(evaluateRobotPose(rig, REST_JOINTS).tool)
+  expect(() =>
+    evaluateRobotDomains(rig, domains, {
+      ...algebra,
+      sin: () => {
+        throw new Error('algebra stopped')
+      }
+    })
+  ).toThrow('algebra stopped')
+  expect(poseBits(evaluateRobotPose(rig, REST_JOINTS).tool)).toBe(before)
+})
+
+it('passes complete approved domains once without generating source geometry or admitting a trajectory', async () => {
+  const kinematics = await import('../robot-kinematics')
+  const models = await import('../robot-model')
+  const rig = kinematics.prepareRobotRig(
+    DEFAULT_ROBOT,
+    models.createRobotModel(DEFAULT_ROBOT)
+  )
+  const generation = vi.spyOn(models, 'createRobotModel')
+  const preparation = vi.spyOn(kinematics, 'prepareRobotRig')
+  const ranges: (readonly [number, number])[] = []
+  // This test adapter records numeric domains; it is not an interval proof.
+  const algebra = {
+    ...scalarAlgebra,
+    range: (lower: number, upper: number) => {
+      ranges.push([lower, upper])
+      return lower
+    }
+  }
+  try {
+    const first = kinematics.evaluateRobotDomains(rig, rig.limits, algebra)
+    expect(ranges).toEqual(Object.values(rig.limits))
+    expect(first).not.toHaveProperty('clear')
+    expect(first).not.toHaveProperty('trajectory')
+    expect(first).not.toHaveProperty('intervalProof')
+    expect(generation).not.toHaveBeenCalled()
+    expect(preparation).not.toHaveBeenCalled()
+    expect(first.parts[0].source).toBe(rig.parts[0].source)
+  } finally {
+    generation.mockRestore()
+    preparation.mockRestore()
   }
 })

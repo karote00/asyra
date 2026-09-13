@@ -64,58 +64,103 @@ const identity: RigidTransform = Object.freeze({
   position: point(0, 0, 0),
   rotation: Object.freeze([0, 0, 0, 1] as const)
 })
-function rotate(rotation: RigidTransform['rotation'], p: Point3): Point3 {
-  const [x, y, z, w] = rotation
-  const tx = 2 * (y * p[2] - z * p[1]),
-    ty = 2 * (z * p[0] - x * p[2]),
-    tz = 2 * (x * p[1] - y * p[0])
-  return point(
-    p[0] + w * tx + y * tz - z * ty,
-    p[1] + w * ty + z * tx - x * tz,
-    p[2] + w * tz + x * ty - y * tx
-  )
+export type JointDomains = Readonly<
+  Record<keyof RobotJoints, readonly [number, number]>
+>
+export interface KinematicAlgebra<T> {
+  range(lower: number, upper: number): T
+  literal(value: number): T
+  add(a: T, b: T): T
+  subtract(a: T, b: T): T
+  multiply(a: T, b: T): T
+  divide(a: T, b: T): T
+  sin(value: T): T
+  cos(value: T): T
 }
+type Vector<T> = readonly [T, T, T]
+interface Transform<T> {
+  readonly position: Vector<T>
+  readonly rotation: readonly [T, T, T, T]
+}
+const numberAlgebra: KinematicAlgebra<number> = {
+  literal: (value) => value,
+  range: (lower) => lower,
+  add: (a, b) => a + b,
+  subtract: (a, b) => a - b,
+  multiply: (a, b) => a * b,
+  divide: (a, b) => a / b,
+  sin: Math.sin,
+  cos: Math.cos
+}
+const vector = <T>(x: T, y: T, z: T): Vector<T> =>
+  Object.freeze([x, y, z] as const)
+function operations<T>(algebra: KinematicAlgebra<T>) {
+  const {
+    literal: n,
+    add: add,
+    subtract: sub,
+    multiply: mul,
+    divide: div
+  } = algebra
+  const fromPoint = (p: Point3) => vector(n(p[0]), n(p[1]), n(p[2]))
+  function rotate(rotation: Transform<T>['rotation'], p: Vector<T>): Vector<T> {
+    const [x, y, z, w] = rotation
+    const tx = mul(n(2), sub(mul(y, p[2]), mul(z, p[1]))),
+      ty = mul(n(2), sub(mul(z, p[0]), mul(x, p[2]))),
+      tz = mul(n(2), sub(mul(x, p[1]), mul(y, p[0])))
+    return vector(
+      sub(add(add(p[0], mul(w, tx)), mul(y, tz)), mul(z, ty)),
+      sub(add(add(p[1], mul(w, ty)), mul(z, tx)), mul(x, tz)),
+      sub(add(add(p[2], mul(w, tz)), mul(x, ty)), mul(y, tx))
+    )
+  }
+  function transform(a: Transform<T>, value: Vector<T>): Vector<T> {
+    const p = rotate(a.rotation, value)
+    return vector(
+      add(p[0], a.position[0]),
+      add(p[1], a.position[1]),
+      add(p[2], a.position[2])
+    )
+  }
+  function compose(a: Transform<T>, b: Transform<T>): Transform<T> {
+    const [x, y, z, w] = a.rotation,
+      [u, v, s, t] = b.rotation
+    return Object.freeze({
+      position: transform(a, b.position),
+      rotation: Object.freeze([
+        sub(add(add(mul(w, u), mul(x, t)), mul(y, s)), mul(z, v)),
+        add(add(sub(mul(w, v), mul(x, s)), mul(y, t)), mul(z, u)),
+        add(sub(add(mul(w, s), mul(x, v)), mul(y, u)), mul(z, t)),
+        sub(sub(sub(mul(w, t), mul(x, u)), mul(y, v)), mul(z, s))
+      ] as const)
+    })
+  }
+  function about(pivot: Vector<T>, axis: 'x' | 'y', angle: T): Transform<T> {
+    const sine = algebra.sin(div(angle, n(2)))
+    const rotation = Object.freeze([
+      axis === 'x' ? sine : n(0),
+      axis === 'y' ? sine : n(0),
+      n(0),
+      algebra.cos(div(angle, n(2)))
+    ] as const)
+    const rotated = rotate(rotation, pivot)
+    return Object.freeze({
+      rotation,
+      position: vector(
+        sub(pivot[0], rotated[0]),
+        sub(pivot[1], rotated[1]),
+        sub(pivot[2], rotated[2])
+      )
+    })
+  }
+  return { fromPoint, rotate, transform, compose, about }
+}
+const numericOperations = operations(numberAlgebra)
 export function transformRobotPoint(
   transform: RigidTransform,
   value: Point3
 ): Point3 {
-  const p = rotate(transform.rotation, value)
-  return point(
-    p[0] + transform.position[0],
-    p[1] + transform.position[1],
-    p[2] + transform.position[2]
-  )
-}
-function compose(a: RigidTransform, b: RigidTransform): RigidTransform {
-  const [x, y, z, w] = a.rotation,
-    [u, v, s, t] = b.rotation
-  return Object.freeze({
-    position: transformRobotPoint(a, b.position),
-    rotation: Object.freeze([
-      w * u + x * t + y * s - z * v,
-      w * v - x * s + y * t + z * u,
-      w * s + x * v - y * u + z * t,
-      w * t - x * u - y * v - z * s
-    ] as const)
-  })
-}
-function about(pivot: Point3, axis: 'x' | 'y', angle: number): RigidTransform {
-  const sine = Math.sin(angle / 2)
-  const rotation = Object.freeze([
-    axis === 'x' ? sine : 0,
-    axis === 'y' ? sine : 0,
-    0,
-    Math.cos(angle / 2)
-  ] as const)
-  const rotated = rotate(rotation, pivot)
-  return Object.freeze({
-    rotation,
-    position: point(
-      pivot[0] - rotated[0],
-      pivot[1] - rotated[1],
-      pivot[2] - rotated[2]
-    )
-  })
+  return numericOperations.transform(transform, value)
 }
 function bodyFor(id: string): RobotBody {
   if (id === 'lift-carriage') return 'lift'
@@ -228,35 +273,103 @@ export function evaluateRobotPose(rig: RobotRig, input: RobotJoints) {
       throw new Error(`Invalid robot joint: ${key}`)
   }
   const joints = Object.freeze({ ...input })
-  const lift: RigidTransform = Object.freeze({
-    position: point(0, joints.lift, 0),
-    rotation: identity.rotation
-  })
-  const yaw = compose(lift, about(rig.frames.shoulder, 'y', joints.yaw))
-  const shoulder = compose(
-    yaw,
-    about(rig.frames.shoulder, 'x', joints.shoulder)
-  )
-  const elbow = compose(shoulder, about(rig.frames.elbow, 'x', joints.elbow))
-  const wrist = compose(elbow, about(rig.frames.wrist, 'x', joints.wrist))
-  const transforms = { fixed: identity, lift, yaw, shoulder, elbow, wrist }
   return Object.freeze({
     joints,
+    ...evaluateChain(rig, joints, numberAlgebra, identity)
+  })
+}
+
+// The chain is C-owned; an algebra supplies scalar operations, never topology.
+function evaluateChain<T>(
+  rig: RobotRig,
+  joints: Readonly<Record<keyof RobotJoints, T>>,
+  algebra: KinematicAlgebra<T>,
+  rest: Transform<T>
+) {
+  const { fromPoint, rotate, transform, compose, about } = operations(algebra)
+  const shoulderPivot = fromPoint(rig.frames.shoulder)
+  const elbowPivot = fromPoint(rig.frames.elbow)
+  const wristPivot = fromPoint(rig.frames.wrist)
+  const lift: Transform<T> = Object.freeze({
+    position: vector(algebra.literal(0), joints.lift, algebra.literal(0)),
+    rotation: rest.rotation
+  })
+  const yaw = compose(lift, about(shoulderPivot, 'y', joints.yaw))
+  const shoulder = compose(yaw, about(shoulderPivot, 'x', joints.shoulder))
+  const elbow = compose(shoulder, about(elbowPivot, 'x', joints.elbow))
+  const wrist = compose(elbow, about(wristPivot, 'x', joints.wrist))
+  const transforms = { fixed: rest, lift, yaw, shoulder, elbow, wrist }
+  return Object.freeze({
     parts: Object.freeze(
       rig.parts.map((part) =>
         Object.freeze({ ...part, transform: transforms[part.body] })
       )
     ),
     frames: Object.freeze({
-      shoulder: transformRobotPoint(shoulder, rig.frames.shoulder),
-      elbow: transformRobotPoint(elbow, rig.frames.elbow),
-      wrist: transformRobotPoint(wrist, rig.frames.wrist)
+      shoulder: transform(shoulder, shoulderPivot),
+      elbow: transform(elbow, elbowPivot),
+      wrist: transform(wrist, wristPivot)
     }),
     tool: Object.freeze({
-      position: transformRobotPoint(wrist, rig.tool.position),
-      closing: rotate(wrist.rotation, rig.tool.closing),
-      approach: rotate(wrist.rotation, rig.tool.approach),
-      up: rotate(wrist.rotation, rig.tool.up)
+      position: transform(wrist, fromPoint(rig.tool.position)),
+      closing: rotate(wrist.rotation, fromPoint(rig.tool.closing)),
+      approach: rotate(wrist.rotation, fromPoint(rig.tool.approach)),
+      up: rotate(wrist.rotation, fromPoint(rig.tool.up))
     })
+  })
+}
+
+export function evaluateRobotDomains<T>(
+  rig: RobotRig,
+  input: JointDomains,
+  algebra: KinematicAlgebra<T>
+) {
+  const domains = structuredClone(input)
+  const keys = Object.keys(ROBOT_JOINT_LIMITS) as (keyof RobotJoints)[]
+  if (
+    !domains ||
+    typeof domains !== 'object' ||
+    Object.keys(domains).length !== keys.length
+  )
+    throw new Error('Invalid robot joint domains')
+  for (const key of keys) {
+    const domain = domains[key],
+      [min, max] = rig.limits[key]
+    if (
+      !Object.hasOwn(domains, key) ||
+      !Array.isArray(domain) ||
+      domain.length !== 2 ||
+      typeof domain[0] !== 'number' ||
+      !Number.isFinite(domain[0]) ||
+      typeof domain[1] !== 'number' ||
+      !Number.isFinite(domain[1]) ||
+      domain[0] > domain[1] ||
+      domain[0] < min ||
+      domain[1] > max
+    )
+      throw new Error(`Invalid robot joint domain: ${key}`)
+  }
+  // Freeze only detached numeric domains and C-owned containers, not scalar T.
+  keys.forEach((key) => Object.freeze(domains[key]))
+  Object.freeze(domains)
+  const joints = Object.fromEntries(
+    keys.map((key) => [key, algebra.range(domains[key][0], domains[key][1])])
+  ) as Record<keyof RobotJoints, T>
+  const rest: Transform<T> = Object.freeze({
+    position: vector(
+      algebra.literal(0),
+      algebra.literal(0),
+      algebra.literal(0)
+    ),
+    rotation: Object.freeze([
+      algebra.literal(0),
+      algebra.literal(0),
+      algebra.literal(0),
+      algebra.literal(1)
+    ] as const)
+  })
+  return Object.freeze({
+    domains,
+    ...evaluateChain(rig, joints, algebra, rest)
   })
 }
