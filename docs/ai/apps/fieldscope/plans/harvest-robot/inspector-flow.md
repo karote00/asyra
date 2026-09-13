@@ -672,3 +672,37 @@ Gates: pre-move body hash/export inventory, exact body preservation, facade/shar
 function identity, original independent arithmetic and consumer controls, full app
 unit/type/build/lint/naming and scoped independent review. No new product capability
 or numerical proof follows merely from moving this owner.
+
+### Shared bounded polynomial scalar evidence
+
+Owner: domain/kinematic-trigonometry.ts; exact binary64 conversion belongs to the
+existing shared domain/scalar-arithmetic.ts, not a second dyadic engine.
+Inputs: sin/cos kind and finite |x|<1 scalar, or clone-once finite ordered interval
+with both endpoints strictly in (-1,1); converter accepts exact bounded rationals
+and declared nearest-even/down/up mode. No source, rig or trajectory input.
+Outputs: immutable rounded S19/C20 value or certified extrema bounds and per-call
+work. Analytic error bounds are distinct from canonical polynomial rounding.
+Conditions: fixed 20! coefficients/exact Horner, monotonic/extrema proof, exact
+normal/subnormal conversion, signed zero, all temporaries <=24000 bits. Invalid
+inputs fail before polynomial work; overflow conversion has explicit binary64
+semantics, never a hidden approximate fallback. No Math.sin/cos error assumption.
+Allowed: original shared dyadic decomposition, new exact converter and independent
+formal rational/rounding/analytic bounds tests. Original query facade retains its
+exact eight-function/two-type export list and unchanged functions.
+Forbidden: C point switch, chain/normalization changes, interval FK/rotation sweep,
+material/contact policy, scene/session reads or mutation, dynamic degree search,
+result cache and unbounded BigInt growth.
+Boundary: domain/scalar-arithmetic.ts, new domain/kinematic-trigonometry.ts, their
+direct domain tests, `simulation/__tests__/query-arithmetic.test.ts` only for the
+shared-versus-facade export assertion, API/spec/Inspector/plan. Existing consumers
+and independent old numeric tests are regression gates only.
+Failure owner: scalar admission/budget rejection; no partially published result.
+Lifetime: immutable fixed coefficients reused as program constants; each call owns
+its temporary work, with no retained result keyed by input.
+Gates: permanent exact point/interval/rounding regressions before production, old
+consumer arithmetic controls, independent direct-sum oracle, domain/±0/subnormal/
+ties/overflow/extrema/analytic-error cases and clone-once rejection; four fixed
+100-pose/800-evaluation profile batches (normal first/repeated, subnormal first/
+repeated), 1s each and 10s overall, all temporary widths <=24000 bits. Elapsed guards
+are cooperative, not synchronous-operation preemption. Then full app unit/type/
+build/lint/naming and independent review. No C point or whole-motion closure.

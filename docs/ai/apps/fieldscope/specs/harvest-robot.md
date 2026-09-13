@@ -322,6 +322,61 @@ M2 runtime/history and ordinary bilingual desktop/mobile robot/browser checks;
 inspect the same parked source close-up. Later D and motion UI must separately
 prove speed boundaries, retained-fruit transforms and interval collisions.
 
+### Bounded polynomial trigonometric evidence
+
+A separate scalar owner may evaluate fixed synthetic numerical approximants
+S19(x) = sum(k=0..9, (-1)^k x^(2k+1)/(2k+1)!) and
+C20(x) = sum(k=0..10, (-1)^k x^(2k)/(2k)!) for finite |x| < 1.
+Point values are exact rational polynomial values rounded once to binary64,
+nearest with ties to even. They are not correctly rounded analytic sin/cos and
+are not the current C point model until a separate integration contract changes it.
+Sin preserves signed zero; cosine at either zero is exactly one. No Math.sin/cos,
+fixed EPS, degree search or sampled endpoint approximation proves these values.
+
+Use original finite dyadics and common 20! integer coefficients in exact Horner
+arithmetic. Analytic approximation error is independently bounded by
+|x|^21/21! for S19 and |x|^22/22! for C20. For this domain S19'=C18 >= 1-x²/2 > 0;
+C20'=-S19 and S19(x) >= x-x³/6 > 0 for positive x. Thus sine extrema are ordered
+endpoints, and cosine extrema follow absolute endpoints with maximum one if the
+interval includes zero. An interval result uses those exact polynomial extrema
+and directed binary64 conversion to enclose every rounded polynomial point value.
+This does not enclose unbounded implementation error from runtime Math.sin/cos.
+
+The shared scalar owner supplies exact rational-to-binary64 conversion for nearest-
+even/down/up modes, including normal/subnormal/overflow boundaries. Zero denominator,
+invalid rounding modes and arithmetic exceeding the declared resource bound reject;
+negative denominators normalize without changing value. The existing query facade,
+its eight functions/two types and fractionInterval behavior remain unchanged.
+New converter exports belong only to the shared domain owner.
+
+Admission clones interval input once, then validates both finite ordered endpoints
+strictly within (-1,1) before polynomial work. Outputs freeze only owned values,
+bounds and per-call work summaries. Coefficients are fixed immutable constants;
+no query/result cache, source lookup, C chain, pose, trajectory or session mutation.
+The owner records polynomial evaluations/terms and maximum temporary BigInt width.
+
+Before implementation, fix a 24000-bit maximum for every stored or temporary BigInt,
+including converter shifts/products; reject oversized arbitrary rational inputs.
+For binary64 inputs B <= 2^1074, cosine denominator 20! B^20 uses at most 21542 bits,
+and the absolute coefficient sum < 3*20! bounds Horner terms near 21544 bits.
+Conversion shifts are at most 1074 bits on the polynomial path; each intermediate
+must be checked, not just the final fraction. Tests must include cancellation and
+worst subnormal inputs; no hidden growth, silent approximate fallback or cap increase.
+
+The permanent profile has four fixed batches: normal cold/repeated and subnormal
+cold/repeated, each 100 synthetic poses with eight trig evaluations per pose,
+one second per batch and ten seconds overall. Cold means the first measured pass
+for that input class; repeated passes reuse program constants but no result cache.
+Report all four costs, evaluation counts and temporary widths. Cooperative elapsed
+checks cannot forcibly interrupt one synchronous BigInt operation. Exceeding any
+budget fails and stops this plan rather than increasing it. No real-time capability
+or articulated clearance is inferred from the scalar profile.
+
+A later C point switch must separately verify RigidTransform/quaternion semantics,
+rest/source identity and D normalization against the actual canonical point model.
+This scalar slice does not perform that switch or certify whole-chain rounding,
+interval FK, material occupancy, intended contacts or motion execution.
+
 ### Canonical FK algebra handoff
 
 C owns one rotate/compose/about/body-chain implementation, shared by the original
