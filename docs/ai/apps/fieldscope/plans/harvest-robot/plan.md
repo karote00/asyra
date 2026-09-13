@@ -1250,3 +1250,11 @@ proof or exceeded guards rather than changing tolerance or scope.
 This quota-limited segment executes only thin readiness and the pre-switch formal
 baseline, then freezes and waits for root. It does not authorize continuing into
 the production switch, another owner, or unrelated broad gates in the same segment.
+
+Pre-switch baseline is frozen from the unchanged real point entry: 56 fixture
+outputs preserve unique transform, frame/tool and signed-zero Float64 values, with
+part/source/body/order and transform-reference mapping verified independently.
+Invariant mapping is stored once per definition; no source buffers are copied.
+The new baseline and original 56-hash case both pass. The historical snapshot is
+byte-for-byte unchanged; scoped type/lint/naming/format checks pass. Production
+has not switched. This bounded segment stops here pending root quota review.
