@@ -550,3 +550,107 @@ it('observes actual existing-cell reads and writes independently of fee labels o
   expect(writes).toBe(0)
   expect(freezes).not.toHaveBeenCalled()
 })
+it.each([new Error('entry cancelled'), new MeshWorkLimit('entry exhausted')])(
+  'retires a previously completed frontier on its own failed entry: %s',
+  (sentinel) => {
+    const g = frontierPrism(),
+      a = shape(g, 0),
+      b = shape(g, 1.25),
+      q = new OriginalMeshQuery(undefined, 500000, true, undefined, true)
+    const f = (
+      q as unknown as {
+        frontier: {
+          charge: (kind: FrontierWork) => void
+          head?: unknown
+          cursor?: unknown
+          active?: unknown
+          journal?: unknown
+          busy: boolean
+        }
+      }
+    ).frontier
+    const charge = f.charge,
+      events: FrontierWork[] = []
+    let armed = false
+    f.charge = (kind) => {
+      if (armed && kind === 'entry') throw sentinel
+      events.push(kind)
+      charge(kind)
+    }
+    const expected = q.distance(a, b, 0.1, 1e-6, 64)
+    expect(f.head !== undefined).toBe(true)
+    expect(events.filter((k) => k === 'cleanup')).toHaveLength(1)
+    const before = q.work,
+      recorded = events.length
+    armed = true
+    let thrown: unknown
+    try {
+      q.distance(a, b, 0.1, 1e-6, 64)
+    } catch (error) {
+      thrown = error
+    }
+    expect(thrown).toBe(sentinel)
+    expect(f.head === undefined).toBe(true)
+    expect(f.cursor).toBeUndefined()
+    expect(f.active).toBeUndefined()
+    expect(f.journal).toBeUndefined()
+    expect(f.busy).toBe(false)
+    // The completed structure already holds its paid invalidation reservation;
+    // cleanup cannot call another failing checkpoint or consume query work.
+    expect(q.work).toBe(before)
+    expect(events).toHaveLength(recorded)
+    armed = false
+    expect(q.distance(a, b, 0.1, 1e-6, 64)).toEqual(expected)
+    expect(events.filter((k) => k === 'root-cell')).toHaveLength(2)
+    expect(events.filter((k) => k === 'cleanup')).toHaveLength(2)
+  }
+)
+it('clears a completed frontier when the actual next entry exceeds the logical budget', () => {
+  const g = frontierPrism(),
+    a = shape(g, 0),
+    b = shape(g, 1.25),
+    control = new OriginalMeshQuery(undefined, 500000, true, undefined, true)
+  const expected = control.distance(a, b, 0.1, 1e-6, 64),
+    q = new OriginalMeshQuery(undefined, control.work, true, undefined, true)
+  expect(q.distance(a, b, 0.1, 1e-6, 64)).toEqual(expected)
+  const f = (q as unknown as { frontier: { head?: unknown; busy: boolean } })
+    .frontier
+  expect(f.head !== undefined).toBe(true)
+  expect(() => q.distance(a, b, 0.1, 1e-6, 64)).toThrow(MeshWorkLimit)
+  expect(f.head === undefined).toBe(true)
+  expect(f.busy).toBe(false)
+  expect(q.work).toBe(control.work + 1)
+})
+it('does not retire the outer completed frontier when a checkpoint attempts reentrant entry', () => {
+  const g = frontierPrism(),
+    a = shape(g, 0),
+    b = shape(g, 1.25),
+    q = new OriginalMeshQuery(undefined, 500000, true, undefined, true)
+  const expected = q.distance(a, b, 0.1, 1e-6, 64)
+  const f = (
+      q as unknown as {
+        frontier: {
+          charge: (kind: FrontierWork) => void
+          head?: unknown
+          busy: boolean
+        }
+      }
+    ).frontier,
+    head = f.head,
+    charge = f.charge
+  let armed = true,
+    rejected = false
+  f.charge = (k) => {
+    if (armed && k === 'entry') {
+      armed = false
+      expect(() => q.distance(a, b, 0.1, 1e-6, 64)).toThrow('Reentrant')
+      expect(f.head).toBe(head)
+      expect(f.busy).toBe(true)
+      rejected = true
+    }
+    charge(k)
+  }
+  expect(q.distance(a, b, 0.1, 1e-6, 64)).toEqual(expected)
+  expect(rejected).toBe(true)
+  expect(f.busy).toBe(false)
+})

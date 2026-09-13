@@ -2388,3 +2388,31 @@ and `lifecycle-admission.log`. Keep the same source/settings/order and 157622
 assertion. Submit this complete candidate for one independent review. Stop here
 pending direction; no integration, method version/Inspector change, full goal
 benchmark or candidate 29 is implied by this positive prefix.
+
+Candidate 28 independent-review correction: a failed own-entry checkpoint was
+outside the query wrapper's catch, so a previously completed private cover could
+remain retained. The new permanent seeded-cover cancellation/exhaustion tests
+failed three cases on `51baf8ed9`; the seeded reentrant-entry case already passed.
+The correction retires an existing cover in the own-entry catch before releasing
+the busy guard and rethrows the identical error. Reentrant rejection remains
+before that try/catch and cannot invalidate the outer active owner.
+
+Accounting is explicit: every retained cover was admitted by a paid `cleanup`
+reservation. Normal transaction phase work is paid by the fixed entry/begin and
+any publication/undo operations; publishing/restoring a cover does not consume
+its future invalidation reservation. The failed entry retires that cover once,
+without a new checkpoint after cancellation. Clearing head consumes that lifetime;
+a later failed entry with no head performs no repeated retirement. A retry must
+start from original roots and pay a new cleanup reservation/root cell. The
+regression asserts the earlier paid reservation, no additional fee/work on the
+injected failed checkpoint, identical error propagation, cleared private state,
+and newly charged root/cleanup lifetime on retry. Actual next-entry logical
+budget exhaustion is tested separately from injected errors.
+
+The executable change is confined to the entry-charge failure catch; successful
+entry, traversal, publication, undo and every normal charge are unchanged. The
+106 prior focused tests plus four new seeded-entry cases pass (110 total), with
+scoped type/lint/format/contracts clean. The already recorded successful prefix
+never takes this exception path, so its normal operation counts and cost evidence
+remain applicable; no representative prefix was rerun for this correction. Submit
+this exact small diff for bounded independent re-review before any full gate.

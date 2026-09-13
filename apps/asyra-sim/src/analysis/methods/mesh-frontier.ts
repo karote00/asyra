@@ -54,6 +54,9 @@ export class MeshFrontier {
     try {
       this.charge('entry')
     } catch (error) {
+      // A retained cover keeps its previously paid cleanup reservation.
+      // Reentrant rejection occurs above, outside this own-entry cleanup.
+      if (this.head) this.cancel()
       this.busy = false
       throw error
     }
@@ -186,7 +189,9 @@ export class MeshFrontier {
     this.seal(a, this.pair[0])
     this.seal(b, this.pair[1])
     this.charge('begin')
-    this.charge('cleanup') // Reserve constant cleanup even if later checkpoints fail.
+    // A completed/restored cover retains this invalidation reservation until
+    // discarded. Entry/begin and publication/undo pay normal phase work.
+    this.charge('cleanup')
     if (this.indices?.[0] !== a || this.indices?.[1] !== b)
       this.head = undefined
     this.indices = [a, b]
