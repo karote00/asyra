@@ -949,3 +949,21 @@ regeneration. A lint-only status expression rewrite preserved classification.
 Material occupancy, intended support/joint/tool contact, retained fruit and
 articulated motion remain necessary before session movement and ordinary UI
 harvesting; spine/calyx preservation and contact damage are independent outcomes.
+
+Next D Step Card: original-region refinement of whole-source surface coverage.
+The permanent passive source profile used the same actual scene/rest pose/linear
+displacement and no triangle predicates: 57,773 region pairs reduced the surviving
+triangle domain from 86,913,056 to 14,371,872 (about 83.5%), taking about 74 ms
+with 22,360 bound corners. All 794 unprepared regions remained candidates through
+mesh bounds. This supports reusing existing region output before adding an index.
+
+Allowlist: collision.ts/direct collision.test.ts/API and current contract docs.
+Use original complete contiguous region spans and identity-matched prepared bounds;
+reuse world swept region products only within one query. Preserve budget accounting,
+continuous predicates and all material/contact/quality limitations. Formal tests
+first prove production narrows the measured domain, complete small-domain relation
+equivalence, mixed sheet/solid coverage, touch conservatism and work reuse. Then
+original collision controls, app unit/type/lint/build/naming and scoped review.
+Stop if correct source region mapping is missing or new local bounds/index
+production becomes necessary; pending robot material decisions do not authorize
+C changes here. Transient region work counters belong to D, with no persisted API.

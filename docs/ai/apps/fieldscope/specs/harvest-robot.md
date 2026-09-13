@@ -957,6 +957,18 @@ witnesses, not a global collision ledger. All source currentness checks occur be
 work and before publication. Unsupported non-representable inventory counts reject
 before traversal rather than returning a fabricated total.
 
+For surviving mesh pairs, D may refine strict exclusion by the original contiguous
+source regions. The complete ordered region array, not only prepared non-sheet
+regions, partitions every original triangle exactly once. Reuse a prepared region
+bound only for that exact source-region identity. A region without prepared bounds
+retains the conservative mesh bound; it is never omitted or reclassified as sheet
+clearance. Region products account for the same complete triangle domain.
+World swept region bounds are query-local completed products reused per placement
+and original region identity; no new local bounds, source buffers or persistent
+index is generated. Predicate budget semantics remain unchanged. Traversal follows
+original mesh, region and triangle order, with bounded representative witnesses;
+partial-budget representatives are not an exhaustive or earliest collision list.
+
 This report does not admit movement. Even complete surface separation leaves
 closed-solid containment, unresolved open-shell occupancy, intended contact and
 carried-fruit coverage as separate obligations. Unknown geometry is never turned
