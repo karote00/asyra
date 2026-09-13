@@ -1026,3 +1026,16 @@ work, followed by observation controls, full app gates and scoped review.
 Stop for any required new market/placement/action policy, not for pending material
 answers unrelated to this pure assessment. New names are transient observation
 owner APIs, with no wire/persisted identity change.
+
+Admitted synthetic quality assessment is implemented. Missing distal-pedicel
+evidence and the absent assessment method produced five formal failures first;
+25 observation/viewpoint cases and all 408 app unit tests pass, with build/type,
+lint and naming. Independent scoped code review found no issue. Final focused controls also verify invalid pedicel values,
+clear-corridor non-inference, valid earlier evidence, expiry and cancellation.
+Cucumber spines, tomato calyx/distal pedicel and contact damage remain independent;
+unknown cultivar never borrows hidden source truth. Assessment admits once,
+preserves the foreign context without freezing it, and performs no ray, source
+generation or session mutation. Physical integrity remains unverified even when
+all declared synthetic requirements are satisfied. This closes evidence
+interpretation only, not harvesting, market grading, action/placement permission
+or pending material and collision admission.

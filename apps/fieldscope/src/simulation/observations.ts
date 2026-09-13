@@ -63,6 +63,7 @@ export interface TargetReading {
   quality: {
     spines: 'intact' | 'lost' | null
     calyx: 'intact' | 'lost' | null
+    pedicel: 'intact' | 'lost' | null
     contactDamage: 'observed' | 'none-observed' | null
   }
 }
@@ -134,6 +135,16 @@ type Immutable<T> = T extends object
 export interface AdmittedTargetReading {
   readonly context: ObservationContext
   readonly reading: Immutable<TargetReading>
+}
+type QualityRequirement =
+  'satisfied' | 'not-satisfied' | 'unknown' | 'not-applicable'
+export interface SyntheticQualityAssessment {
+  readonly observation: AdmittedTargetReading
+  readonly requirements: Readonly<
+    Record<keyof TargetReading['quality'], QualityRequirement>
+  >
+  readonly status: 'satisfied' | 'not-satisfied' | 'unknown'
+  readonly physicalIntegrity: 'unverified'
 }
 function reject(): never {
   throw new Error('Invalid or stale synthetic target observation')
@@ -251,10 +262,11 @@ function readTarget(raw: TargetReading): Immutable<TargetReading> {
     )
       reject()
   }
-  keys(input.quality, ['spines', 'calyx', 'contactDamage'])
+  keys(input.quality, ['spines', 'calyx', 'pedicel', 'contactDamage'])
   if (
     !choice(input.quality.spines, ['intact', 'lost']) ||
     !choice(input.quality.calyx, ['intact', 'lost']) ||
+    !choice(input.quality.pedicel, ['intact', 'lost']) ||
     !choice(input.quality.contactDamage, ['observed', 'none-observed'])
   )
     reject()
@@ -632,6 +644,47 @@ export class TargetObservations {
     Object.freeze(work)
     // Context and ray/source handles belong to their issuing owners.
     return Object.freeze(result)
+  }
+  assessQuality(
+    context: ObservationContext,
+    raw: TargetReading
+  ): SyntheticQualityAssessment {
+    const observation = this.admit(context, raw)
+    const { cultivar, quality } = observation.reading
+    const preservation = (
+      value: 'intact' | 'lost' | null
+    ): QualityRequirement => {
+      if (value === null) return 'unknown'
+      return value === 'intact' ? 'satisfied' : 'not-satisfied'
+    }
+    const applicable = (
+      crop: CropSpecies,
+      value: 'intact' | 'lost' | null
+    ): QualityRequirement => {
+      if (cultivar === null) return 'unknown'
+      return cultivar === crop ? preservation(value) : 'not-applicable'
+    }
+    let contactDamage: QualityRequirement = 'unknown'
+    if (quality.contactDamage === 'observed') contactDamage = 'not-satisfied'
+    if (quality.contactDamage === 'none-observed') contactDamage = 'satisfied'
+    const requirements = Object.freeze({
+      spines: applicable('cucumber-1914', quality.spines),
+      calyx: applicable('tomato-yu-nu', quality.calyx),
+      pedicel: applicable('tomato-yu-nu', quality.pedicel),
+      contactDamage
+    })
+    let status: SyntheticQualityAssessment['status'] = 'unknown'
+    if (cultivar !== null) {
+      const values = Object.values(requirements)
+      if (values.includes('not-satisfied')) status = 'not-satisfied'
+      else if (!values.includes('unknown')) status = 'satisfied'
+    }
+    return Object.freeze({
+      observation,
+      requirements,
+      status,
+      physicalIntegrity: 'unverified'
+    })
   }
   admit(
     context: ObservationContext,
