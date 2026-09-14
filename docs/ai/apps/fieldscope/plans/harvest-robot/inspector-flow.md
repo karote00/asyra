@@ -148,12 +148,22 @@ needs a whole-locus subset proof and original triangle witness. Explicit current
 target patch/partition selections only request W5 refinement; volume and all
 other region relations retain their own outcomes. Sliding support feet remain
 unknown. Version-one requests retain explicit missing-source-relation status.
+The explicitly versioned constrained-projection owner accepts three exact
+source sole anchors, one rational base orientation, a current admitted fixed
+preset and an authored support-arc interval. It proves the fixed conjugate-joint
+template and exact station compatibility before constructing one shared root.
+Its point and bound leaves use the existing polynomial trigonometry owner;
+rational quaternion similarity never assumes unit norm. Full sole certificates
+and outward body/part frames use that recipe, while final rounded display frames
+are separate. Unproved dependencies, incompatible anchors or layouts are
+unavailable. Legacy FK and interval products retain their existing semantics;
+this projection alone admits no swing, terrain contact, collision or full gait.
 Forbidden contributors: endpoint-only clearance, scalar width subtraction,
 flat-rendered-ground inference, teleport, wheel semantics, omitted swing bodies,
 blanket crop/contact exemptions, alternate routes and terrain fabricated from a
 passing pose.
 Implementation boundary: walking-motion contract, walking-source-relation,
-walking-motion and terrain-contact modules with source-space, interval,
+walking-constrained-kinematics, walking-motion and terrain-contact modules with source-space, interval,
 accounting and stale-identity tests; no UI decision or W1/W2/W4 recomputation.
 Spec: Active product reset - walking, wet uneven soil and obstacle cases.
 Failure owner: W3 owns path/contact invalidity and unresolved clearance.

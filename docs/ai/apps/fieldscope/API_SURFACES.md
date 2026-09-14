@@ -790,6 +790,41 @@ Synthetic provenance remains attached to all evidence. Results report
 `clear`, `blocked` or `unknown`; a blocked turn reports `no-turn`. Every result
 retains `quasiStatic: 'pending-W4'` and makes no stability or safety claim.
 
+## Constrained support projection
+
+`WalkingConstrainedKinematicsOwner` prepares the explicit
+`walking-constrained-kinematic-projection/1` recipe. Its inputs bind the exact
+current source, three complementary tripod chain/part/sole-patch references,
+canonical rational anchor origins, one rational base quaternion, one exact
+current source preset for fixed joints, the support parameter interval and
+finite operation/bit budgets. Mutable fractions are detached and canonicalized;
+source references remain exact. Invalid or incompatible inputs are unavailable.
+
+This arithmetic is explicitly polynomial/quaternion-similarity semantics.
+Dynamic point leaves come once each from `evaluatePolynomialTrig` at the shared
+half parameter; bound leaves come from `boundPolynomialTrig` on the directed
+half-parameter interval. Hip uses that same quaternion's conjugate. Internal
+similarity and composition are exact rational operations with positive norm
+proved, without assuming unit norm. No legacy FK or real-sine Taylor enclosure
+is substituted for this recipe.
+
+The fixed support template admits matching actual leg geometry and proves
+`L_i = M_i + D`. Exact anchor differences must equal the shared base rotation
+of `M_i - M_reference`; rounded station sums are rejected. One root expression
+cancels the one shared displacement before interval boxing. Every original
+sole-patch vertex is fixed by that certificate. Other body/part frames and every
+source part's vertices receive outward bounds; unresolved dependencies remain
+wide. The product owns all entries under its exact source/recipe/interval
+identity. `evaluate` returns exact point frames and separately final-rounded
+per-body display frames, never display angles for re-evaluation through legacy FK.
+
+One owner retains one admitted preparation and its latest point result. Exact
+admitted recipe reads and repeated point reads do no geometric work. Replacement,
+failed admission or disposal retires prior handles; work counters and budgets
+include leaf, rational, frame and source-vertex work. This owner proves constrained
+projection only. Swing, terrain contact, collision, stance transitions and full
+gait remain pending, and request versions 1/2 retain their existing semantics.
+
 ## Walking quasi-static configuration assessment
 
 `readWalkingQuasiStaticRequest` admits `walking-quasi-static-request/1`, detaches

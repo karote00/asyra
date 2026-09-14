@@ -248,6 +248,20 @@ acceptance remains a separate milestone; app plan completion is not certificatio
 
 ## Current execution
 
+Constrained support projection Step Card: a new explicitly versioned polynomial
+leaf / rational quaternion-similarity recipe owns one shared root expression for
+three full source sole patches. Exact rational anchors must match the actual
+source station offsets. Shared conjugate hip/knee dependencies are certified
+before interval boxes; display frames round only at final publication. The first
+owner accepts a current source preset as its fixed non-support joint state.
+Only the new constrained domain module, its formal test and these four contracts
+may change. Legacy FK, interval arithmetic, request formats, default definitions
+and source geometry are excluded. Missing API and naive rounded-anchor regressions
+precede implementation; focused/type/naming/lint/build and independent review
+precede one full-app gate. Failure to prove all three anchors from one root stops
+this owner; no per-foot correction, tolerances or general symbolic solver.
+Swing, terrain contact, collision and continuous gait remain pending W3 work.
+
 W3 source-relation slice: request version 1 remains identifiable; version 2
 explicitly binds current W1/W2 products, complete external source region
 partitions, one-segment target contacts and finite region/predicate budgets.

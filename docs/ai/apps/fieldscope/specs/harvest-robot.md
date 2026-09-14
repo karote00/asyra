@@ -136,6 +136,21 @@ topological proof requires one shared chain, a whole-interval nonsingularity
 proof and zero metric margin; independently rounded per-body world transforms
 are not that chain. Fixed parent/child source interfaces keep their separately
 declared authored parent-local authority.
+
+A separate versioned constrained-projection recipe may prove one support arc.
+It must bind three complete actual sole patches through one exact rational base
+orientation and one shared root expression. Exact source mount/station offsets
+must match the anchors; no independently rounded station sums or per-foot
+correction may establish compatibility. A fixed, admitted conjugate hip/knee
+template uses the existing deterministic polynomial point/bound leaves and exact
+quaternion similarity with a proved positive norm. This is new arithmetic
+semantics, not equivalence with legacy FK bytes or an ideal sine identity.
+All internal source/body/part transforms remain exact until separately published
+display projection; their interval bounds come from the same recipe.
+Only current published presets supply fixed non-support joint states in this
+first owner. Unsupported layout, source, dependency, anchor or budget is
+unavailable. A constrained source projection does not itself prove terrain
+contact, swing clearance, collision freedom, stance transition or complete gait.
 Boundary admission requires the complete contact locus to be covered by both
 named patch closures and retains an original-triangle witness; an unproved
 subset remains unknown. An exact selected robot patch/target-partition relation
