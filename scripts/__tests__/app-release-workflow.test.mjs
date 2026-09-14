@@ -14,10 +14,10 @@ test('release controller is manual, upstream-main-only and waits for every verif
     workflow,
     /pull_request_target:|workflow_run:|repository_dispatch:|schedule:|secrets: inherit/
   )
-  assert.match(workflow, /needs: \[plan, ci, production-artifacts\]/)
+  assert.match(workflow, /needs: \[plan, production-artifacts\]/)
   assert.match(workflow, /environment: app-production/)
   assert.match(workflow, /cancel-in-progress: false/)
-  assert.match(workflow, /run_balanced_ai_correctness: true/)
+  assert.doesNotMatch(workflow, /main.yml|e2e.yml/)
   const publish = workflow.split('\n  publish:\n')[1]
   assert.match(
     publish,
@@ -53,20 +53,12 @@ test('production proof is included in PR CI and never starts Vite dev or preview
   const workflow = read('.github/workflows/production-artifacts.yml')
   assert.match(workflow, /pull_request:/)
   assert.match(workflow, /workflow_call:/)
-  assert.match(workflow, /run: yarn build:production-artifacts/)
-  const build = JSON.parse(read('package.json')).scripts[
-    'build:production-artifacts'
-  ]
   assert.match(
-    build,
-    /gen:turbo:check.*turbo run react:build build:asyra-framework-site --concurrency=2/
+    workflow,
+    /run: node scripts\/app-release-verification.mjs build/
   )
-  assert.match(workflow, /run: yarn test:production-artifacts/)
-  assert.ok(
-    workflow.indexOf('run: yarn build:production-artifacts') <
-      workflow.indexOf('run: yarn workspace @asyra/asyra-design typecheck'),
-    'Build workspace declarations before checking application consumers'
-  )
+  assert.match(workflow, /run: node scripts\/app-release-verification.mjs test/)
+  assert.ok(workflow.includes('RELEASE_APPS: ${{ inputs.apps }}'))
   assert.doesNotMatch(
     read('scripts/production-artifact-server.mjs'),
     /import .*vite/
@@ -148,7 +140,7 @@ function workflowCalls(file, ancestors = []) {
   ]
 }
 
-test('every manual release entry invokes E2E exactly once through CI', () => {
+test('every manual release verifies artifacts once without rerunning PR CI', () => {
   for (const entry of [
     'app-release.yml',
     'app-release-framework.yml',
@@ -157,35 +149,52 @@ test('every manual release entry invokes E2E exactly once through CI', () => {
   ]) {
     const calls = workflowCalls(`.github/workflows/${entry}`)
     assert.equal(
+      calls.filter(
+        (file) => file === '.github/workflows/production-artifacts.yml'
+      ).length,
+      1
+    )
+    assert.equal(
       calls.filter((file) => file === '.github/workflows/e2e.yml').length,
-      1,
+      0,
       `${entry} must not start competing E2E producers`
     )
     assert.equal(
       calls.filter((file) => file === '.github/workflows/main.yml').length,
-      1
+      0
     )
   }
 })
 
-test('release forwards the balanced correctness requirement to the CI-owned E2E producer', () => {
+test('release forwards only planned releases into artifact verification', () => {
   const pipeline = read('.github/workflows/app-release-pipeline.yml')
-  const ciCall = pipeline
-    .split('\n  ci:\n')[1]
-    .split(/\n {2}[a-z][a-z0-9-]*:\n/)[0]
-  assert.match(ciCall, /run_balanced_ai_correctness: true/)
-  const ci = read('.github/workflows/main.yml')
+  assert.ok(pipeline.includes('apps: ${{ steps.plan.outputs.apps }}'))
+  assert.ok(pipeline.includes('apps: ${{ needs.plan.outputs.apps }}'))
   assert.match(
-    ci,
-    /workflow_call:\n {4}inputs:\n {6}run_balanced_ai_correctness:\n {8}type: boolean\n {8}default: false/
+    read('scripts/app-release.mjs'),
+    /plan.apps.filter\(\(app\) => app.release\).map\(\(app\) => app.id\)/
   )
-  const producer = ci
-    .split('\n  design-e2e:\n')[1]
-    .split(/\n {2}[a-z][a-z0-9-]*:\n/)[0]
-  assert.ok(
-    producer.includes(
-      'run_balanced_ai_correctness: ${{ inputs.run_balanced_ai_correctness || false }}'
-    )
+  assert.match(pipeline, /if: needs.plan.outputs.has_changes == 'true'/)
+})
+
+test('manual dispatch is the only human approval while environment secrets and main restriction remain', () => {
+  const policy = JSON.parse(read('.github/app-production-environment.json'))
+  assert.deepEqual(policy, {
+    wait_timer: 0,
+    prevent_self_review: false,
+    reviewers: [],
+    deployment_branch_policy: {
+      protected_branches: false,
+      custom_branch_policies: true
+    }
+  })
+  const pipeline = read('.github/workflows/app-release-pipeline.yml')
+  assert.match(pipeline, /environment: app-production/)
+  assert.match(pipeline, /needs: \[plan, production-artifacts\]/)
+  assert.match(pipeline, /github.ref == 'refs\/heads\/main'/)
+  assert.match(pipeline, /VERCEL_TOKEN: \$\{\{ secrets.VERCEL_TOKEN \}\}/)
+  assert.doesNotMatch(
+    read('scripts/app-release.mjs'),
+    /before approving|waiting for approval/
   )
-  assert.match(pipeline, /needs: \[plan, ci, production-artifacts\]/)
 })
