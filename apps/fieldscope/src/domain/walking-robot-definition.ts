@@ -1,6 +1,6 @@
 import type { Point3 } from './greenhouse'
 
-export const WALKING_ROBOT_FORMAT = 'walking-robot-definition/1' as const
+export const WALKING_ROBOT_FORMAT = 'walking-robot-definition/2' as const
 export const WALKING_ROBOT_TOPOLOGY = 'four-arm-six-leg' as const
 
 export type WalkingEvidence =
@@ -99,6 +99,15 @@ export interface WalkingRobotDefinition {
   readonly geometryEvidence: WalkingEvidence
   readonly jointEvidence: WalkingEvidence
   readonly massEvidence: WalkingEvidence
+  readonly sourceModel: Readonly<{
+    kind: 'solid-articulation/1'
+    evidence: WalkingEvidence
+    pinRadiusRatio: number
+    sleeveInnerRadiusRatio: number
+    sleeveOuterRadiusRatio: number
+    axialGapRatio: number
+    linkSetbackRatio: number
+  }>
   readonly base: Readonly<{
     chassis: WalkingMassGeometry
     mast: WalkingMassGeometry
@@ -382,10 +391,18 @@ function jointState(value: unknown, definition: Record<string, unknown>) {
 
 export function classifyWalkingRobotDefinition(
   raw: unknown
-): 'walking-v1' | 'legacy-unversioned' | 'unsupported-version' {
+): 'walking-v2' | 'walking-v1' | 'legacy-unversioned' | 'unsupported-version' {
   if (record(raw) && raw.format === WALKING_ROBOT_FORMAT) {
     try {
       readWalkingRobotDefinition(raw)
+      return 'walking-v2'
+    } catch {
+      return 'unsupported-version'
+    }
+  }
+  if (record(raw) && raw.format === 'walking-robot-definition/1') {
+    try {
+      validateWalkingDefinition(raw, 'walking-robot-definition/1')
       return 'walking-v1'
     } catch {
       return 'unsupported-version'
@@ -487,11 +504,7 @@ export function classifyWalkingRobotDefinition(
   return 'legacy-unversioned'
 }
 
-export function readWalkingRobotDefinition(
-  raw: unknown
-): WalkingRobotDefinition {
-  if (record(raw) && admitted.has(raw))
-    return raw as unknown as WalkingRobotDefinition
+function validateWalkingDefinition(raw: unknown, format: string) {
   let value: unknown
   try {
     value = structuredClone(raw)
@@ -507,13 +520,14 @@ export function readWalkingRobotDefinition(
       'geometryEvidence',
       'jointEvidence',
       'massEvidence',
+      ...(format === WALKING_ROBOT_FORMAT ? ['sourceModel'] : []),
       'base',
       'carriage',
       'arms',
       'legs',
       'presets'
     ]) ||
-    value.format !== WALKING_ROBOT_FORMAT ||
+    value.format !== format ||
     value.topology !== WALKING_ROBOT_TOPOLOGY ||
     !identity(value.definitionId) ||
     !evidence(value.geometryEvidence) ||
@@ -548,7 +562,86 @@ export function readWalkingRobotDefinition(
     !Object.values(value.presets).every((preset) => jointState(preset, value))
   )
     return invalid()
-  const result = deepFreeze(value) as unknown as WalkingRobotDefinition
+  return value
+}
+
+function validSourceModel(value: WalkingRobotDefinition) {
+  const model: unknown = value.sourceModel
+  const keys = [
+    'pinRadiusRatio',
+    'sleeveInnerRadiusRatio',
+    'sleeveOuterRadiusRatio',
+    'axialGapRatio',
+    'linkSetbackRatio'
+  ] as const
+  if (
+    !record(model) ||
+    !exact(model, ['kind', 'evidence', ...keys]) ||
+    model.kind !== 'solid-articulation/1' ||
+    !evidence(model.evidence) ||
+    !keys.every((key) => positive(model[key]))
+  )
+    return false
+  const [pin, inner, outer, gap, setback] = keys.map((key) =>
+    Number(model[key])
+  )
+  if (!(
+    pin < inner &&
+    inner < outer &&
+    inner + gap <= outer &&
+    outer <= 0.5 &&
+    gap < 0.25 &&
+    setback >= outer
+  ))
+    return false
+  const links = [
+    ...value.arms.flatMap(({ upper, forearm, wrist }) => [
+      upper,
+      forearm,
+      wrist
+    ]),
+    ...value.legs.flatMap(({ coxa, upper, lower }) => [coxa, upper, lower])
+  ]
+  if (!links.every(({ length, section }) => length > 2 * setback * section))
+    return false
+  if (
+    !value.legs.every(
+      ({ coxa, upper }) =>
+        coxa.length >
+        coxa.section * setback +
+          Math.max(coxa.section * setback, upper.section * (0.5 + gap))
+    )
+  )
+    return false
+  const { mast, chassis } = value.base,
+    carriage = value.carriage
+  const railBottom = mast.centre[1] - mast.size[1] / 2
+  const railTop = mast.centre[1] + mast.size[1] / 2
+  if (
+    railBottom >
+      carriage.liftRange[0] + carriage.centre[1] - carriage.size[1] / 2 ||
+    railTop < carriage.liftRange[1] + carriage.centre[1] + carriage.size[1] / 2
+  )
+    return false
+  const railOuter = carriage.size[2] / 2 + mast.size[2] / 2
+  return (
+    mast.centre[2] === carriage.centre[2] &&
+    Math.abs(carriage.centre[2] - chassis.centre[2]) + railOuter <=
+      chassis.size[2] / 2 &&
+    Math.abs(mast.centre[0] - carriage.centre[0]) <
+      (mast.size[0] + carriage.size[0]) / 2
+  )
+}
+
+export function readWalkingRobotDefinition(
+  raw: unknown
+): WalkingRobotDefinition {
+  if (record(raw) && admitted.has(raw))
+    return raw as unknown as WalkingRobotDefinition
+  const value = validateWalkingDefinition(raw, WALKING_ROBOT_FORMAT)
+  const result = value as unknown as WalkingRobotDefinition
+  if (!validSourceModel(result)) return invalid()
+  deepFreeze(result)
   admitted.add(result)
   return result
 }
@@ -660,22 +753,35 @@ export function createSyntheticWalkingRobotDefinition({
       side,
       role,
       rootYaw: 0,
-      shoulderPitch: side === working ? -0.25 : -0.8,
-      elbowPitch: side === working ? 0.75 : 1.35,
-      wristPitch: side === working ? -0.35 : -0.55
+      shoulderPitch: side === working ? -0.25 : 0,
+      elbowPitch: side === working ? 0.75 : 0,
+      wristPitch: side === working ? -0.35 : 0
     }))
   const legState = () =>
     legs.map(({ side, station }) => ({
       side,
       station,
       abduction: 0,
-      hip: 0.25,
-      knee: 1
+      hip: 0,
+      knee: 0
     }))
   return readWalkingRobotDefinition({
     format: WALKING_ROBOT_FORMAT,
     topology: WALKING_ROBOT_TOPOLOGY,
     definitionId,
+    sourceModel: {
+      kind: 'solid-articulation/1',
+      evidence: {
+        kind: 'synthetic',
+        id: 'walking-solid-articulation-v1',
+        label: 'Solid articulation geometry - synthetic assumptions'
+      },
+      pinRadiusRatio: 1 / 8,
+      sleeveInnerRadiusRatio: 3 / 16,
+      sleeveOuterRadiusRatio: 1 / 2,
+      axialGapRatio: 1 / 16,
+      linkSetbackRatio: 1 / 2
+    },
     geometryEvidence: {
       kind: 'synthetic',
       id: 'adjustable-walking-geometry-v1',
@@ -693,7 +799,10 @@ export function createSyntheticWalkingRobotDefinition({
     },
     base: {
       chassis: massGeometryValue(p(0.58, 0.3, 0.78), p(0, 0.25, 0), 14),
-      mast: massGeometryValue(p(0.12, 0.7, 0.12), p(0, 0.62, 0), 4),
+      mast: {
+        ...massGeometryValue(p(0.12, 1.31, 0.12), p(0, 1.055, 0), 4),
+        localCoM: p(0, 0.62, 0)
+      },
       emptyPayloadTray: massGeometryValue(
         p(0.4, 0.08, 0.25),
         p(0, 0.5, 0.24),

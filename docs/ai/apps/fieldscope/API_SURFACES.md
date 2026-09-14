@@ -600,7 +600,7 @@ runtime disposal retires the product and unregisters the owner.
 ## Versioned walking source and pure kinematics
 
 `walking-robot-definition.ts` owns the explicit
-`walking-robot-definition/1` format and `four-arm-six-leg` topology. Its loader
+`walking-robot-definition/2` format and `four-arm-six-leg` topology. Its loader
 requires four independent left/right support/cutter arms, six independent
 left/right front/middle/rear legs, a bounded vertical carriage, complete stowed
 and left/right working joint states, and separate measured or visibly synthetic
@@ -608,15 +608,26 @@ geometry, joint and mass evidence. The schema fixes SI metres, kilograms and
 radians in a `+Y` up, `+X` robot-right and `+Z` route-rear frame. It derives body,
 chain, joint and axis identities rather than accepting them from persisted data.
 `createSyntheticWalkingRobotDefinition` is the only baseline factory;
-`classifyWalkingRobotDefinition` identifies unversioned legacy definitions
-without converting or mutating them, rejects malformed unversioned/current-format
+`classifyWalkingRobotDefinition` distinguishes `walking-v2`, `walking-v1`,
+`legacy-unversioned` and `unsupported-version` without converting or mutating
+saved bytes. Version 1 remains identifiable but is not admitted to version 2
+source construction. The classifier rejects malformed unversioned/current-format
 objects as unsupported, and `readWalkingRobotDefinition` admits only the current
 exact-key format.
+
+Version 2 requires the exact-key `sourceModel` with kind
+`solid-articulation/1`, explicit evidence and positive pin, sleeve-inner,
+sleeve-outer, axial-gap and link-setback ratios. The synthetic factory uses
+1/8, 3/16, 1/2, 1/16 and 1/2 respectively. Pin radius must be below the sleeve
+cavity, which must be below the outer radius. `base.mast` supplies the actual
+two-rail assembly bounds; its admitted Y interval must cover the complete
+carriage lift, and its Z centre must agree with the carriage. The factory
+retains lift [0.5, 1.65] m and uses rail Y [0.4, 1.71] m.
 
 `WalkingRobotSourceOwner.prepare` creates one immutable definition-bound source
 and rig revision and reuses it only for the same admitted definition object. The
 rig contains unique bodies and joints for all four arms and six legs, original
-closed box triangle regions, six distinct foot patches, two soft-textile support
+closed convex material regions, six distinct foot patches, two soft-textile support
 patches, two cutter-edge patches and separate cutter guards. Joint interfaces
 retain their exact generated joint frame, axis and range. Concept joints without
 an authored mating surface report `materialInterface: 'unmodeled'` with empty
@@ -626,6 +637,41 @@ plus its explicit evidence identity. Every contact patch reference carries its
 body-local frame, and source materials carry a separate visibly synthetic
 evidence identity; measured geometry evidence is never presented as material
 evidence.
+
+All revolute joints share canonical pin, yoke, annular sleeve and neck
+construction. Eight closed convex wedges partition each annular material solid;
+their radial seams do not fill the cavity or become contact patches. Root
+housing sockets and departure corridors are actual subtracted material.
+Each core endpoint uses the other body's bounded joint material and a finite
+pivot cross-section keepout, with a declared physical gap. The keepout is a
+construction profile, not extra material or a collision exemption. A single
+support solve is followed by actual-material gap, positive-core and connector
+checks; infeasible source is unavailable. Source construction interprets
+quaternion rotations through the full inverse, while FK retains its completed
+binary64 coefficients.
+
+Profile admission requires `sleeveInnerRadiusRatio + axialGapRatio <=
+sleeveOuterRadiusRatio`. Final emitted sleeve vertices must provide an exact
+closed-material connection witness in a certified neck cell; an unproved
+connection rejects source preparation. This is not a structural-strength claim.
+
+Only rail/carriage, lower-link/foot and tool/guard source loci describe the
+authored fixed or sliding interfaces. Cutter active faces remain disjoint from
+guard interfaces. These loci do not authorize later contact, collision or
+mechanics results. Component masses and local centres of mass remain separately
+labeled synthetic assumptions, including the mast assembly; they are not
+integrals of the new material meshes.
+
+Fixed parent/child interface evidence uses the original triangles and one
+authored `fixedFrame` in their common parent-local frame. Other body pairs use
+completed FK coefficients. This source proof does not assert exact boundary
+agreement between independently rounded world parent and child matrices.
+
+The synthetic stowed and inactive arms use zero angles; active working-side
+arms retain root/shoulder/elbow/wrist values 0/-0.25/0.75/-0.35 radians. All six
+legs use zero abduction/hip/knee angles. These are source/FK candidates. Their
+sole datum and complete source envelope do not establish terrain standing,
+continuous passage or safety.
 
 `evaluateWalkingRobotPose` accepts one finite base transform and one complete,
 in-range carriage, four-arm and six-leg joint state. It purely returns every body
