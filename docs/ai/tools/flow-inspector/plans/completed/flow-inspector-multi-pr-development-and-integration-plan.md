@@ -2,12 +2,14 @@
 
 ## Status and decision
 
-Date: 2026-09-10. Direction approved. The bounded target/work slice is
-implemented on 2026-09-12, followed by source-bound integration and explicit
-local acceptance on 2026-09-13. Full-runtime product evidence using three
-primary package owners and one exact integrated source was added on 2026-09-14;
-this does not complete the broader architecture or Phase 5/6 work. Its initial scope is one local owner,
-one repository and one evolving flow split into several tasks and PRs.
+Date: 2026-09-10. Direction approved. Completed: 2026-09-14. The bounded
+target/work slice was implemented on 2026-09-12, followed by source-bound
+integration and explicit local acceptance on 2026-09-13. Full-runtime product
+evidence using three primary package owners and one exact integrated source
+completed this plan's one-local-owner, one-repository scope on 2026-09-14.
+The broader architecture and Phase 5/6 work remain separately deferred.
+This plan covered one local owner, one repository and one evolving flow split
+into several tasks and PRs.
 Parallel agent scheduling, multiple repositories and team accounts are excluded.
 
 A flow is a persistent product behavior contract. A task is a bounded piece of
@@ -30,16 +32,23 @@ the reviewed source-assessment contract and producer commits retained. This goal
 branch and its final PR must not merge into main without a new explicit user
 instruction. Authorized sub-PR integration may continue into the goal branch.
 
+Full-runtime evidence PR 207 retained reviewed source commit
+`a204035550969ccd92724a07c30a78d1826c8258` and tree
+`de1a6146db6b392fad6203d30879722d91d2eee4`. Independent review accepted that
+source, and all eight current-HEAD GitHub Actions checks passed. Wrapper
+integration then created goal merge `e9e48c5e740df42d6185e54d918850aab3c157cf`
+with the same tree. This evidence belongs to the goal branch, not main.
+
 ## First bounded slice - target and work decomposition
 
-[The living target contract](../CORE_PROOF.md#flow-targets-and-work-decomposition)
+[The living target contract](../../CORE_PROOF.md#flow-targets-and-work-decomposition)
 and `manage-flow-target` implement local goals, complete assigned-or-pending
 coverage, immutable work commitments, explicit dependency handoffs, audited
 revisions, exact existing-task links and source-bound admission before execution.
 Board/API/CLI expose the same state and
 multiple task/attempt/PR observations, with restart and stale-write protection.
 Permanent owner, API/CLI and desktop/tablet/narrow browser cases cover this scope.
-The [bounded closeout](completed/flow-inspector-target-work-admission-closeout.md)
+The [bounded closeout](flow-inspector-target-work-admission-closeout.md)
 records first-slice completion without closing this plan.
 
 The strict candidate verifier remains unchanged. The initial slice keeps
@@ -50,7 +59,7 @@ changing that initial target/work contract.
 
 ## Implemented source-bound assessment and acceptance owners
 
-The [target source assessment contract](../CORE_PROOF.md#target-source-assessment)
+The [target source assessment contract](../../CORE_PROOF.md#target-source-assessment)
 and `assess-target-source` separate accepted preservation, bounded
 work/prerequisite results and target integration eligibility. The pure assessor,
 real captured-source producer chain, runtime/verification descriptors, combined
@@ -94,7 +103,7 @@ candidate contract and whole-target integration passing at one exact retained
 source. Only a separate authorized action atomically appends the accepted version;
 authorized replay is idempotent across restart, and generic target-pinned contract
 acceptance is refused. HTTP, local/attached CLI and Board expose the same exact
-request and retained decision. Full runtime product evidence remains open.
+request and retained decision. The bounded full-runtime product evidence is complete.
 Source capture now derives the selected Factory, collaboration and UI Context
 package closures from actual public workspace manifests, retains a separate
 versioned runtime authority and generates exact captured-entry aliases. Tasks
@@ -173,8 +182,8 @@ to ship a broken intermediate product or automatically activate unfinished UI.
 
 ## Existing architecture and implementation entry
 
-The living [Core Proof Inspector](../../../../../tools/flow-inspector/inspectors/flow-inspector-core-proof-flow-inspector.data.cjs)
-and [PR Review](../PR_REVIEW.md) describe current behavior. They are not changed
+The living [Core Proof Inspector](../../../../../../tools/flow-inspector/inspectors/flow-inspector-core-proof-flow-inspector.data.cjs)
+and [PR Review](../../PR_REVIEW.md) describe current behavior. They are not changed
 by this planning record. In particular, candidate source eligibility and one
 pinned delivery per task/attempt continue to apply until a tested, explicitly
 specified replacement is implemented.
@@ -276,6 +285,21 @@ verified browser results, not additional links between cards and PRs. Record
 unrun external cases and unavailable checks explicitly. Do not close this plan
 or claim the new architecture implemented when only planning is complete.
 
+## Exit evidence
+
+The completed offline fixture executes actual captured Factory, Collaboration
+and UI Context public package behavior through a Factory-to-Collaboration-to-UI
+Context handoff. Partial work, failed prerequisites, accepted regressions,
+integration regressions, exact reverted HEADs, stale history and complete
+same-HEAD success remain distinct through retention and restart. The original
+two Factory flows and six obligations remain covered.
+
+The retained assessment is consistent across service, API, CLI and Board at
+desktop, tablet and narrow widths. Offline GitHub lifecycle fixtures remain
+separate from source authority and acceptance; no external test PR was used.
+Focused owner gates, consolidated local gates, independent review and PR 207's
+eight successful current-HEAD checks establish the bounded completion evidence.
+
 ## Unchanged and deferred boundaries
 
 Independent protected verifier/issuer, required-check enforcement, protected
@@ -283,8 +307,9 @@ remote execution/evidence transport, independent provider reconciliation, hard
 provider cost limits, ticket/team/tenant/hosting work and checkout-independent
 dynamic execution remain deferred. Existing unresolved provider records keep
 blocking provider dispatch; no fresh store or user acknowledgement bypass is
-introduced. Publishing, tags, GitHub PR merge and deployment changes are not
-authorized here. Normal Changeset recording remains ordinary development work.
+introduced. Publishing, tags, goal-to-main merge and deployment changes are not
+authorized here. The implementation Changeset remains separate; this closeout
+creates no Changeset, version or release record.
 
 This record does not resume PR-status monitoring or Vercel retries. Runtime,
 CI configuration, schema, accepted history and existing completed records are
