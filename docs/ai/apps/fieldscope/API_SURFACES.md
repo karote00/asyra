@@ -581,8 +581,12 @@ Tomato and cucumber source anatomy can be complete when their actual shared-ring
 evidence is admitted. Missing roles or cut evidence affect only that target's anatomy,
 not passage status. These are synthetic source identities, not observations,
 calibrated contact/damage evidence or W5 action admission. `work.targetPatches`
-counts installed patch products; `sourceIndexVisits` includes one scan per unique
-semantic source range per preparation, shared across its installed consumers.
+counts installed patch products emitted for route targets. `PreparedScene`
+admission has already validated every patch structure in the completed scene, so
+W1 uses partition-derived target bounds for route inclusion and prepares installed
+patch bounds only for included targets. `sourceIndexVisits` includes one scan per
+unique semantic source range per preparation, shared across its installed
+consumers.
 
 `bootstrap` exposes `getSceneDemandConfiguration`,
 `setSceneDemandConfiguration`, `getSceneDemand`, `isCurrentSceneDemand` and

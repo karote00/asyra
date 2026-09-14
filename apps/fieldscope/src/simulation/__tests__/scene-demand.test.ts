@@ -205,7 +205,7 @@ describe('scene demand preparation', () => {
       ).toBe(true)
     }
     expect(patchCount).toBeGreaterThan(0)
-    expect(demand.work.targetPatches).toBeGreaterThanOrEqual(patchCount)
+    expect(demand.work.targetPatches).toBe(patchCount)
     expect(generate).toHaveBeenCalledTimes(1)
     for (const model of geometry.cropModels(farm))
       if (model.species === 'tomato-yu-nu')
@@ -277,18 +277,13 @@ describe('scene demand preparation', () => {
     expect(withoutCutBoundary.status).toBe(demand.status)
     expect(withoutCutBoundary.freePassage).toEqual(demand.freePassage)
     const uniqueRanges = new Set<{ indexCount: number }>()
-    for (const fruit of scene.fruits) {
-      if (
-        fruit.plant.bay !== demand.route.bay ||
-        fruit.plant.position[0] < demand.route.volume.min[0] ||
-        fruit.plant.position[0] > demand.route.volume.max[0]
-      )
-        continue
-      for (const part of fruit.model.parts)
-        for (const patch of part.patches)
-          if (patch.targetFruitId === fruit.source.id)
-            patch.source.ranges.forEach((range) => uniqueRanges.add(range))
-    }
+    for (const target of [
+      ...demand.targets.left,
+      ...demand.targets.right,
+      ...demand.targets.unassigned
+    ])
+      for (const item of target.anatomy.patches)
+        item.patch.source.ranges.forEach((range) => uniqueRanges.add(range))
     expect(
       demand.work.sourceIndexVisits - unknownAnatomy.work.sourceIndexVisits
     ).toBe([...uniqueRanges].reduce((sum, range) => sum + range.indexCount, 0))

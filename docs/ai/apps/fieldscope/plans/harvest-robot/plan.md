@@ -73,9 +73,11 @@ and explicit create/compatibility path.
    reviewed commit, tree and source bytes before same-runtime execution compares
    unrounded non-pedicel source, metadata and retained hairs. The former Darwin
    Node 24.13 snapshot payloads remain intact in that manifest as historical
-   diagnostics only; received Ubuntu values do not become a golden. The two
-   subsequent runtime timeouts remain separate CI failures pending the corrected
-   source-oracle run, with their existing budgets unchanged.
+   diagnostics only; received Ubuntu values do not become a golden. The follow-up
+   W1 work-owner correction retains partition-derived route admission and prepares
+   patch bounds only for included targets. Its exact work oracle binds
+   `targetPatches` to the emitted anatomy patches; existing time budgets remain
+   unchanged.
    The authorized inserted pedicel hair shifts one revision-local
    fruit-2/fruit-detail ordinal from /5 to /6 while its target, role, owner,
    admitted region, dense topology and unrounded attributes remain exact. Each

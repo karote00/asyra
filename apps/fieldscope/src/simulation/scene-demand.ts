@@ -512,7 +512,12 @@ export function prepareSceneDemand(
     )
       continue
     const partitions: SceneDemandTargetPartition[] = []
-    const patches: SceneDemandTargetPatch[] = []
+    const targetParts: {
+      part: CropGeometry['parts'][number]
+      mesh: Readonly<SiteMesh>
+      instance: number
+      placement: SpatialInstance
+    }[] = []
     let targetFrame: IntervalFrame | undefined
     for (const part of fruit.model.parts) {
       if (part.shape.kind !== 'triangles')
@@ -524,36 +529,7 @@ export function prepareSceneDemand(
       if (!mesh || instance === undefined || !mesh.descriptor.instances)
         throw new Error('Missing installed scene demand crop source')
       const placement = mesh.descriptor.instances[instance]
-      for (const patch of part.patches) {
-        if (patch.targetFruitId !== fruit.source.id) continue
-        const frames = [
-          installedFrame(placement),
-          descriptorFrame(mesh.descriptor)
-        ]
-        const patchBounds = joinedBounds(
-          patch.source.ranges.map((range) =>
-            transformedBounds(
-              localBounds(part.shape as TriangleShape, range),
-              frames,
-              mutableWork
-            )
-          )
-        )
-        mutableWork.targetPatches++
-        patches.push(
-          Object.freeze({
-            part,
-            patch,
-            mesh,
-            instance,
-            transform: Object.freeze({
-              descriptor: mesh.descriptor,
-              instance: placement
-            }),
-            bounds: patchBounds
-          })
-        )
-      }
+      targetParts.push({ part, mesh, instance, placement })
       for (const partition of part.partitions) {
         if (partition.fruitId !== fruit.source.id) continue
         const frame = installedFrame(placement)
@@ -588,6 +564,40 @@ export function prepareSceneDemand(
       targetBounds.min[2] > route.volume.max[2]
     )
       continue
+    // PreparedScene admits every patch structure. Installed patch bounds are
+    // needed only after partition bounds admit this fruit to the selected route.
+    const patches: SceneDemandTargetPatch[] = []
+    for (const { part, mesh, instance, placement } of targetParts)
+      for (const patch of part.patches) {
+        if (patch.targetFruitId !== fruit.source.id) continue
+        const frames = [
+          installedFrame(placement),
+          descriptorFrame(mesh.descriptor)
+        ]
+        const patchBounds = joinedBounds(
+          patch.source.ranges.map((range) =>
+            transformedBounds(
+              localBounds(part.shape as TriangleShape, range),
+              frames,
+              mutableWork
+            )
+          )
+        )
+        mutableWork.targetPatches++
+        patches.push(
+          Object.freeze({
+            part,
+            patch,
+            mesh,
+            instance,
+            transform: Object.freeze({
+              descriptor: mesh.descriptor,
+              instance: placement
+            }),
+            bounds: patchBounds
+          })
+        )
+      }
     let cutSite: SceneDemandTarget['cutSite']
     const sourceCut = fruit.source.cutSite
     const plantPatch = patches.find(
