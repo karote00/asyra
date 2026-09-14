@@ -62,7 +62,8 @@ Inputs: a versioned new-topology definition, four independent arm definitions,
 multi-leg definition, vertical shoulder-carriage definition, stowed/working poses
 and visibly labeled measured or synthetic dimensions, joint ranges, component
 mass and centre-of-mass assumptions. W1 does not feed or resize canonical robot
-source.
+source. The current solid-articulation profile is version 2; version 1 bytes
+remain identifiable and are not reinterpreted.
 Outputs: one immutable source/rig revision with a low-centre-of-mass six-leg
 synthetic baseline, at least the `left-support`, `left-cutter`, `right-support`
 and `right-cutter` semantic chains, independent leg chains, unique rigid-body and
@@ -77,12 +78,23 @@ All four arm chains and every leg must be present; unsupported dimensions or
 joints make the definition unavailable. A legacy wheeled definition bypasses W2
 and retains only its historical projection. Conversion requires an explicit user
 action and creates a new definition; load/replay never reinterpret old bytes.
+Actual closed material primitives, positive physical endpoint gaps and the full
+declared lift are source conditions. Finite endpoint keepout profiles do not
+become material or contact permission. The three synthetic source/FK candidates
+must exclude cross-body volume overlap; named boundary loci require complete
+patch-closure evidence. A sole grounding datum is a geometric translation only,
+not terrain or standing admission. Component mass/CoM evidence remains independent
+of the authored material volumes.
+Fixed parent/child interface evidence composes the authored fixed frame once in
+the common parent-local frame; independently rounded world child matrices are
+not the exact fixed-interface authority. Other material pairs use completed FK.
 Allowed contributors: the admitted versioned definition, app-owned mesh/source
 preparation and pure transforms.
 Forbidden contributors: W1-derived automatic resizing, old tire/tread or
 single-five-axis identities, stretched links, free XYZ tool poses, hidden
 geometry, manufacturer capability inferred from the synthetic source, and
-renderer-owned kinematics.
+renderer-owned kinematics; also joint-volume exceptions, hidden collision
+allowlists and conservative aggregate material substituted for an annular cavity.
 Implementation boundary: future app-domain versioned definition, source and
 kinematics modules plus their source/FK/compatibility tests; rendering consumes
 their completed products later. Exact files and schema are frozen before the W2
