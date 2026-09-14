@@ -12,6 +12,8 @@ import {
   waitForDeployment
 } from '../app-release-service.mjs'
 
+import { RELEASE_APPS, createReleasePlan } from '../app-release-plan.mjs'
+
 const sha = 'b'.repeat(40)
 const app = {
   id: 'asyra-sim',
@@ -234,3 +236,78 @@ test('automation bypass stays in headers on the exact staged origin and never fo
     })
   )
 })
+
+test('single-App baseline reads never query unrelated deployments', async () => {
+  const requests = []
+  const result = await readBaselines(
+    async (url) => {
+      requests.push(decodeURIComponent(url))
+      if (url.includes('/statuses')) return [{ state: 'success' }]
+      assert.ok(
+        decodeURIComponent(url).includes('app-production - asyra-framework')
+      )
+      return [{ id: 1, sha, payload: {} }]
+    },
+    'owner/project',
+    'asyra-framework'
+  )
+  assert.deepEqual(Object.keys(result), ['asyra-framework'])
+  assert.equal(requests.length, 2)
+  await assert.rejects(
+    readBaselines(
+      async () => {
+        assert.fail('Invalid target must not call the API')
+      },
+      'owner/project',
+      'unknown'
+    ),
+    /Unknown target App/
+  )
+})
+
+for (const target of RELEASE_APPS) {
+  test(`shared changes publish only selected ${target.id} through the release service`, async () => {
+    const { options, mutations } = harness()
+    options.plan = createReleasePlan({
+      sha,
+      targetApp: target.id,
+      baselines: { [target.id]: app.baseline },
+      snapshot: () =>
+        RELEASE_APPS.map((entry) => ({ name: entry.id, root: entry.root })),
+      diff: () => ['yarn.lock'],
+      ancestor: () => ''
+    })
+    const requests = []
+    let promoted = false
+    options.vercel = async (url, method = 'GET', body) => {
+      requests.push(url)
+      if (method === 'GET') {
+        assert.equal(url, `/v9/projects/${target.id}`)
+        return {
+          ...project,
+          name: target.id,
+          rootDirectory: target.root,
+          targets: promoted ? { production: { id: 'new' } } : project.targets
+        }
+      }
+      mutations.push({ url, method, body })
+      if (url.includes('/promote/')) {
+        assert.equal(url, `/v10/projects/${target.id}/promote/new`)
+        promoted = true
+      }
+      return { id: 'new' }
+    }
+    await publishPlan(options)
+    const creates = mutations.filter(
+      (entry) => entry.url === '/v13/deployments'
+    )
+    assert.equal(creates.length, 1)
+    assert.equal(creates[0].body.project, target.id)
+    assert.equal(creates[0].body.gitSource.sha, sha)
+    assert.equal(
+      requests.filter((url) => url.startsWith('/v9/projects/')).length,
+      4
+    )
+    assert.equal(mutations.at(-1).body.state, 'success')
+  })
+}

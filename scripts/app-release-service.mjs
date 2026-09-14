@@ -2,7 +2,7 @@
 
 import assert from 'node:assert/strict'
 import {
-  RELEASE_APPS,
+  selectReleaseApps,
   assertBudget,
   requireCommit
 } from './app-release-plan.mjs'
@@ -39,9 +39,9 @@ export function createApi(origin, token, query = {}, fetcher = fetch) {
   }
 }
 
-export async function readBaselines(github, repository) {
+export async function readBaselines(github, repository, targetApp = '') {
   const baselines = {}
-  for (const app of RELEASE_APPS) {
+  for (const app of selectReleaseApps(targetApp)) {
     const environments = [
       `app-production - ${app.id}`,
       `Production \u2013 ${app.id}`

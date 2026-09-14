@@ -30,10 +30,15 @@ assert.equal(
 )
 const repository = process.env.GITHUB_REPOSITORY
 const github = createApi('https://api.github.com', process.env.GH_TOKEN)
-const baselines = await readBaselines(github, repository)
+const baselines = await readBaselines(
+  github,
+  repository,
+  process.env.TARGET_APP
+)
 const plan = createReleasePlan({
   sha,
   baselines,
+  targetApp: process.env.TARGET_APP,
   forceApp: process.env.FORCE_APP,
   reason: process.env.RELEASE_REASON
 })
