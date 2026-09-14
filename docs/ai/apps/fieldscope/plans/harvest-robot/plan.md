@@ -1,17 +1,19 @@
 # Harvest robot and crate logistics
 
-Status: IN PROGRESS
+Status: IN PROGRESS - W1/W2/W3 DOMAIN OWNERS IMPLEMENTED; INTEGRATION GATES LIMITED
 Started: 2026-09-12 (Asia/Taipei)
 Base: origin/main at `4144a25d7`
-Worktree: `.worktrees/fieldscope-harvest-robot`
+Current contract worktree: `.worktrees/fieldscope-material-contact`
 
 ## Bounded objective
 
-Develop a realizable greenhouse harvesting concept and implement it incrementally
-in FieldScope. This is not a promise that simulated motion proves successful
-harvesting or machine safety. First deliver a tested feasibility domain; then
-compose mission editing and robot/crate projection through Core. Subsequent
-milestones require measurements and physical tests before actuation.
+Replace the historical four-wheel, single-arm concept with a compact multi-legged
+walking harvester that has separate support and cutter arms on each side, can
+inspect and harvest both sides, and includes upper-fruit reach, whole-robot swept
+motion and quasi-static load/stability screening. The first comparison baseline
+is a visibly synthetic low-centre-of-mass six-leg base with a bounded vertical
+shoulder carriage and four medium-short arms. Simulated clearance or positive
+quasi-static margin never proves hardware safety.
 
 Authorized scope: `apps/fieldscope` and its app documentation, tests and existing
 build/test tooling. No Framework changes, added dependencies, hardware purchases,
@@ -19,6 +21,106 @@ controller connection, automatic deployment, publication or changes to other app
 Discovery: existing layout/support/crop owners, current Core composition APIs,
 primary harvesting research and manufacturer specifications. Later review stays
 within this diff and its direct consumers. Do not port Sim's analysis engine.
+
+The existing M1/M2 runtime, historical four-wheel projection, single five-axis
+rig and in-progress botanical/query work remain preserved. Old tire, tread,
+single-wrist tool, `+Y` approach, four-ring and five-joint material/contact work
+does not become acceptance evidence for the new topology. Existing saved robot
+definitions retain their legacy identity and historical projection; they are not
+silently loaded as walking definitions. W2 now owns the exact versioned schema
+and explicit create/compatibility path.
+
+## Active implementation sequence
+
+1. **Complete - contract reset.** Align product, owner flow, plan and hardware
+   assumptions. State the walking runtime as pending. Preserve old implementation
+   history without leaving its robot topology active.
+2. **Complete - W1 scene-demand proof.** From one completed current scene,
+   enumerate actual left/right targets, high-target reach demand, supports,
+   drains, pipes, plants, leaves and obstacles. Derive free-space regions; never
+   equate strip width with usable foot span or `netTop` with fruit height. This is
+   the next bounded implementation slice and does not build the robot.
+3. **Complete - W2 versioned source and kinematics.** After the schema and
+   synthetic ranges are explicit, build one immutable four-arm/multi-leg rig with
+   independent body, joint, foot, support and cutter ownership. Prove legacy
+   definitions are not reinterpreted.
+4. **Implemented - W3 terrain, stance and motion.** Admit complete interval foot placements,
+   stance transitions and whole-body/arm/tool/carried-fruit motion on measured or
+   labeled synthetic uneven, slightly wet soil and debris. Drains and water
+   channels are never support surfaces; missing evidence is `unknown`.
+5. **W4 quasi-static mechanics.** Bind the same source, pose, stance, mass/load
+   and terrain identities. Compare centre-of-mass projection, support polygon,
+   arm-root bending and overturning moments for high reach and carried load.
+6. **W5 support/cut coordination.** Prove crop-specific same-side support and
+   plant-side pedicel cutting for cucumber and Yu-Nu tomato while retaining spine,
+   skin, calyx, pedicel and non-target plant boundaries.
+7. **W6 mission evidence and UI.** Run visible normal left and right inspection/
+   harvest cases through the actual W owners. One-side-at-a-time is the initial
+   schedule, not a permanent prohibition. Any simultaneous bilateral case uses
+   one combined four-arm collision and mechanics result.
+
+The scene-demand proof uses current farm configuration, declared plant-growth
+envelopes and actual source obstacles. In the current configuration, about 1.8 m
+before plant-growth needs and a rough calculated 1.2 m afterward are user-provided
+sanity references, not fixed constraints or usable-width inputs. W1 derives the
+offset-capable free-passage geometry. W3 separately derives locomotion swept
+demand from robot definition, path/time, stance/contact schedule and evidence,
+gait, load, terrain and explicit margin, then compares the completed geometries
+without scalar width subtraction. Farm/growth/source, route, margin or survey
+edits recompute W1 and the compatibility result while reusing unchanged W2.
+Robot/path/time/stance/contact/gait/load/terrain/margin edits recompute W3 and the
+compatibility result. It may prove straight travel and reverse exit or travel to
+a separately wider turn area. If no complete turn fits, the product reports
+`no-turn`/`blocked`; it does not assume an in-place turn or widen the farm.
+
+### Executable product cases for the active route
+
+- The exact current scene yields separate left/right targets and at least one
+  upper-fruit reach demand from actual fruit source, not canopy height.
+- Farm/strip/growth/source, route, margin or survey changes recompute W1
+  free-passage geometry while an unchanged W2 definition is reused. Robot
+  definition, path/time, stance/contact schedule or evidence, gait, load, terrain
+  or margin changes recompute W3 locomotion demand. Either can change a compatible
+  case to `blocked`; the result cannot remain pinned to 1.2 m.
+- An irregular/offset passage admits or rejects the complete stance, leg swing,
+  stowed arms and body sweep; a static body-width pass is insufficient.
+  Straight/reverse and wider-area turn outcomes are distinct.
+- A foot candidate on a drain/channel is blocked. Slightly wet uneven soil or
+  debris without required friction, bearing, sinkage or height evidence is
+  `unknown`, never flattened into a clear result.
+- Left and right inspection each use current scene evidence. Left and right
+  harvest each require their same-side support/cutter pair, complete approach,
+  retreat and placement path.
+- A high target compares body height, leg extension, shoulder-carriage travel and
+  arm reach together with the exact pose's bending and overturning screen.
+- A three-foot or other multi-foot stance without mass/contact/terrain evidence
+  remains `unknown`. A positive quasi-static margin is not dynamic safety.
+- A simultaneous bilateral candidate, if introduced, cannot combine independent
+  single-side receipts; all bodies and loads enter one W3/W4 evaluation.
+- Cucumber support preserves fine spines under the declared soft-textile
+  assumption. Tomato support preserves skin, calyx and retained pedicel; cutting
+  stays in the confirmed plant-side pedicel corridor. Unknown anatomy or damage
+  defers the action.
+- A saved legacy wheeled definition retains its historical projection and cannot
+  enter W2-W6. Explicit creation of a versioned walking definition preserves the
+  original saved bytes and history.
+
+### Bounded definition of done
+
+This contract-reset slice is done when the four current documents agree on the
+pending target, owners, cases, compatibility boundary and evidence limits, with
+formatting, naming, path/link and bounded diff checks passing. It does not claim
+walking, four-arm or mechanics runtime exists. Each later numbered slice must add
+formal source-space/semantic tests for its owner, fail closed on incomplete
+identity/evidence, pass app typecheck/lint/build and relevant UI evidence, and
+recheck this Inspector before advancing. Physical actuation, procurement and
+safety claims remain blocked until separately measured and authorized.
+
+The bounded W1 and W2 domain slices now provide current-scene demand plus an
+explicitly admitted four-arm, six-leg source and pure complete-pose FK. W3 adds
+terrain, stance and whole-robot interval motion, with formal validation in progress;
+W2 source geometry or a valid preset alone is not passage, collision, contact,
+stability or hardware-safety evidence.
 
 ## Product and architecture
 
@@ -61,7 +163,7 @@ changes build no robot/farm geometry; robot pose updates rebuild no crop meshes;
 route/robot edits invalidate only their own outputs; bilingual desktop/mobile
 visual review with the existing farm loaded. No success based only on overview.
 
-### M3 - Deterministic patrol, picking and crate simulation
+### Historical M3 - Deterministic patrol, picking and crate simulation (superseded)
 
 Implement D and C's pose projection. A configurable closed simulation clock drives
 finite route segments and scan checkpoints, not wall-clock UI frames. Missed
@@ -81,7 +183,7 @@ queries must include the tool, carried fruit and moving leaves; no teleporting
 through net strands. Physical damage must remain unknown without a calibrated
 contact model, regardless of visual overlap.
 
-### M4 - Bench sensing and crop-specific end effectors
+### Historical M4 - Bench sensing and crop-specific end effectors (superseded route)
 
 Build only after measured dimensions, budget, component selection and separate
 hardware authorization. Start with a fixed guarded bench, dummy loads and disabled
@@ -92,7 +194,7 @@ head and a separate small-fruit padded head for individual Yu-Nu tomatoes.
 Evaluate picked fruit immediately and after storage for hidden bruising. Do not
 infer acceptable force from another cultivar or soft gripper advertising.
 
-### M5 - Ballasted mobile platform, then supervised harvest
+### Historical M5 - Ballasted mobile platform, then supervised harvest (superseded)
 
 Before crops: loaded braking, slope, asymmetric sinkage, traction, recovery,
 headland turns, obstacle protection, stop distance, watchdog and emergency stop
@@ -103,7 +205,7 @@ at a time; keep precision/recall, damage, lost fruit, false-safe, recovery and
 cycle-time measurements with environmental context. Limits must be approved from
 measurements, not copied from simulation defaults.
 
-### M6 - Optional separate carrier and controlled fleet operation
+### Historical M6 - Optional separate carrier and controlled fleet operation (superseded)
 
 Only if M5 logistics data show onboard crate return dominates duty time. Test a
 braked docked carrier first at headlands; do not make an unbraked free-following
@@ -120,8 +222,24 @@ passed. M2 is implemented in its new worktree: Core-owned robot/mission editing,
 history, conservative reports and dimensioned projection, with canonical Blender
 review. Local acceptance: 246 app tests, 23 browser regressions, typecheck, lint,
 naming and 17 build tasks passed. The final mobile control copy and settled
-screenshot check receive a focused repeat. M3-M6 remain planned; no active patrol,
-harvested inventory, physical observation or motor connection is delivered by M2.
+screenshot check receive a focused repeat. At that checkpoint M3-M6 were planned;
+no active patrol, harvested inventory, physical observation or motor connection
+is delivered by M2.
+
+The 2026-09-14 product reset supersedes those historical M3-M6 robot-topology
+milestones. W1 now owns current-scene demand, and W2 now owns the explicitly
+admitted four-arm, six-leg source plus pure complete-pose kinematics. W3 domain
+implementation now covers interval source envelopes, source-bound foot evidence,
+crate and carried-fruit geometry, budgets and result currentness. Its focused
+tests pass (34 cases), together with 33 W1/W2 regressions, typecheck, scoped lint,
+naming and all 17 build tasks. The full-app run retained the existing 23 C/D
+failures (520 passed); whole-app lint retained 195 errors and 17 warnings outside
+this slice. These remain integration limits, not W3 clearance evidence.
+Unmodeled joint interfaces and unknown crate evidence deliberately
+keep the synthetic baseline unknown. Mechanics, walking mission and corresponding
+UI remain pending W4-W6. Existing botanical/source-query work stays preserved as
+a potential upstream capability and must be rebound through the new W owners
+before it can support active acceptance.
 
 ## Stop and review boundaries
 
@@ -201,7 +319,7 @@ composed frame from bootstrap; no extra model cache or changed output. Same C
 allowlist and exclusions. Gate: failing frame-count assertion, then runtime and
 configuration browser tests; no other owner expansion.
 
-## M3 software goal and readiness slice - 2026-09-13
+## Historical single-arm M3 execution record - superseded 2026-09-14
 
 PR #194 completed M2 and merged into main at e34b4f6bc after all eight CI checks
 passed. Work now continues from that main in `codex/fieldscope-simulation-goal`
@@ -1517,3 +1635,173 @@ now measure subnormal scalar batches at 137.1/136.9 ms, point batches at
 143.6/141.6 ms and interval batches at 79.4/77.3 ms. Exact-head isolated Ubuntu
 profiles remain the required portability and merge gate; no timing result supplies
 a motion or hardware claim.
+
+Material/contact sub-PR execution card: the user approved only robot-cylinder seam
+closure, capped `lift-screw`/`upper-arm`/`forearm`/`camera-bracket`, and near/distant
+main-skin pole closure. The source slice preserves all dimensions, generic tubes,
+crate pieces and botanical detail and follows the #199 portability contract. The C
+metadata slice owns exact region-local patches, complete body assemblies and five
+joint interfaces through projection/query currentness. The D slice owns one
+full-interval synthetic `admitted`/`blocked`/`unknown` result from internally
+admitted motion and exact current support/target identities. No cache, persisted
+identity, force model, tolerance, fixture geometry or new degree of freedom is in
+scope.
+
+Tests precede each production slice. Source closure and unchanged-detail oracles
+precede generator edits; patch/body/interface rejection and interval-invariance
+oracles precede C metadata; missing D entry and normal/matched-negative cases
+precede contact implementation. The actual tomato case derives only a legal width
+from original skin/pad geometry and uses a real five-joint/base path; failure stops
+at its first owner rather than changing source or declaring global impossibility.
+After all owner slices, run one consolidated FieldScope/default/profile/build/lint/
+naming gate and synchronized robot/crop close-ups, then one independent review.
+Exact-head CI and goal integration remain later gates; this work never merges main.
+
+D terminal-contact classifier replan: the actual-source regression reached exact
+two-pad SurfaceQueries intersections, but the first classifier then treated
+strict overlap on the tool closing-axis projection as proof of three-dimensional
+pad/fruit interior penetration. That projection is only a candidate bound under
+the Inspector contract and cannot publish blocked. Freeze this source-unchanged
+candidate as the failing regression; do not require both sampled projection
+extrema to be exactly equal or search further headings to evade the classifier.
+
+The corrected owner uses the original closed-solid regions and one common exact
+affine coordinate representation. Completed C frame coefficients and original
+source vertices are lifted to dyadic scalars before matrix-vector multiplication;
+terminal surface loci, material SAT and swept contact never round an intermediate
+world point back to binary64. Each queried source region must prove exact indexed
+closure, convexity and nonzero signed volume. The corresponding exact transformed
+region must also prove nonzero signed volume and convexity before strict overlap
+on the complete face-normal and edge-cross-edge SAT axes can publish penetration.
+Any exact or conservative-interval strict separating axis is sufficient to prove
+separation. Supporting-axis equality can prove no interior overlap only when the
+terminal contact locus is proven in the same exact representation. Missing
+closure, convexity, dimension, transform or relation remains unknown.
+
+The terminal owner evaluates the complete pad-solid against selected fruit skin
+and botanical-detail domain. A terminal locus is allowed only when it is a subset
+of the closed inward patch and tomato skin. A shared inward/bottom edge remains
+part of the inward patch closure; the neighbouring triangle ordinal alone does not
+make that locus forbidden. Any locus extending off that closure blocks. Calyx and
+pedicel contact always block, including at a shared skin point, and unresolved
+locus attribution remains unknown. Surface witnesses and material classification
+therefore consume the same exact affine triangles rather than combining rounded
+SurfaceQueries output with a different material model.
+
+Bounded fixture correction after the complete detail domain first ran: centering
+the much taller pad on the fruit equator left four degenerate calyx triangles as
+unresolved terminal candidates, before the closed-solid relation ran. Placing the
+pad top exactly on the first original ring above the equator excluded the calyx
+but put one skin witness on the pad's non-inward depth face. The final bounded
+fixture iteration freezes three width candidates before any contact query. The
+original skin extrema along the fixed source closing axis and the existing
+generated-pad aperture formula produce one nominal legal width; its immediately
+lower and higher binary64 neighbours complete the bracket. There is no heading,
+vertex or iterative width search. Projections only construct and order those
+candidates and never decide feasibility.
+
+For each frozen width, the source closing coordinate of every inward patch is
+kept from one of its exactly coplanar original vertices. The perpendicular
+horizontal component aligns the inward-patch centre to the original fruit centre.
+The pure `-Y` lift must place the equatorial contact on the inward patch's leading
+bottom closed boundary at terminal time. Putting that point in the inward-face
+relative interior would necessarily produce contact during an open interval before
+terminal time and is not an admissible fixture. The resulting base translation
+and lift enter through the real fixed-heading base/five-joint path and add no
+tolerance, source change, actuator or caller tool transform.
+
+Each of the three candidates runs through the same current-source
+MaterialContactQueries owner, including the complete pad against skin/detail
+surface domain, exact closed-solid relation and approach interval. Only that
+owner may admit a candidate. If none is admitted, the formal failure records all
+three exact widths and their full status/reason results, then stops without
+trying another heading, pose, projection equality or local numeric adjustment.
+
+The first three frozen candidates passed the rounded terminal triangle domain and
+then returned the same unresolved closed-solid relation. That result is retained
+as regression evidence, but rounded world triangles cannot be combined with an
+independent source-exact material proof. Existing canonical boxes are
+geometrically closed while their six faces retain duplicate source indices at
+equal corners, so source closure welds vertices only by exact source-coordinate
+identity before checking opposite edge pairing. Index identity alone is not a
+closure requirement. The corrected terminal, locus, material and sweep owners all
+use the one exact affine representation described above. If all three fixed
+candidates remain blocked or unknown after that owner correction, their exact
+production reasons are the final fixture evidence and no extra pose search begins.
+
+The source-detail blocker requires one bounded orientation correction rather than
+an angle solver. Three poses are frozen before D runs: A has yaw `pi/10` and wrist
+`+pi/3`; B has yaw `pi/10` and wrist `-pi/3`; C has yaw `3pi/10` and chooses one
+of those two wrist limits by a single source projection comparison that maximizes
+the retained triangle 862 distance from the pad upper half. Shoulder and elbow
+remain zero, base heading remains zero and only lift changes during approach.
+The yaw bisectors lie midway between the five retained sepal directions, while
+the wrist limits maximize tangential displacement of upper pad material. Each
+pose independently derives its nominal aperture from the actual skin support
+span along that pose's completed closing direction and freezes only the nominal
+binary64 value plus its immediate neighbours. Base closing/tangential translation
+and terminal lift align the two support-feature midpoint with the two pad leading
+boundaries. These nine fixed requests run through D once as one batch; projection
+constructs the fixtures and never classifies contact. A failed batch records the
+first D reason for each pose/width and proves only that this bounded set did not
+produce the normal case.
+
+The single triangle-862 projection comparison selected C wrist `+pi/3`. A and B
+derived nominal width `0.36707918559663716` with immediate neighbours
+`0.3670791855966371` and `0.3670791855966372`; C derived nominal width
+`0.36458853973046085` with neighbours `0.3645885397304608` and
+`0.3645885397304609`. The one D batch rejected all nine at the same first owner:
+pad `pad--1` triangle 6 had exact terminal contact with retained calyx triangle
+860. This is bounded evidence that these three poses do not supply the required
+normal case; it is not a claim that the legal five-axis domain is globally
+unreachable.
+
+D terminal-contact Step Execution Card: owner is Inspector D
+`MaterialContactQueries`. Inputs are the current `GeometrySource`, original C
+closed-solid and patch metadata, admitted joint segment/window, fixed-heading base
+path and explicit full-window source state. Outputs are immutable categorized
+terminal loci, material relations, full-interval approach witnesses and the
+existing `admitted`/`blocked`/`unknown` result. Conditions require two inward-pad
+skin loci at terminal time, no off-inward or botanical contact, no interior
+penetration, and no approach contact before terminal; incomplete proof is unknown
+and carry remains on its existing route. Allowed contributors are C metadata,
+JointSegments, RobotMotionBounds, QueryGeometry and the minimal exact
+triangle/frame arithmetic in collision/ray-query. Forbidden contributors are
+rounded-world positive proof, projection-as-penetration, tolerance, source or
+fixture reshaping, triangle-tag exemptions, new actuators and physical safety
+claims. The implementation boundary is material-contact.ts plus the already
+allowed collision/ray-query helpers, direct tests and synchronized spec/Inspector
+wording. Formal regressions cover the frozen three candidates, shared-edge locus
+attribution, off-edge and botanical controls, actual penetration, missing proof
+and work counters. Stop if the common exact representation cannot serve terminal,
+material and sweep owners or if any existing source/DOF/API must change.
+
+D joint-envelope replan: before any further normal-case run, the existing moved-
+envelope regression must first reach its authored wrist control through every
+earlier interface. Its current RED result instead fixes the first lift witness as
+`mast--1` triangle 2 against `lift-carriage` triangle 9, with neither triangle in
+the issued lift patches. At the A-nominal source dimensions, their exact start and
+end loci are nondegenerate line segments while the two closed boxes also have
+strictly positive overlap in all three axes throughout that lift segment. This is
+not a boundary-only contact that an inside-envelope test may exempt. The next
+implementation may add only source ranges that already geometrically constitute
+the authored rail/guide interface and must still prove every locus and complete
+material overlap inside the full-interval envelope. If the existing unsplit source
+triangles cannot express that local interface without relabelling non-interface
+solid volume, changing source topology or broadening the envelope, stop at this
+specific C metadata/source conflict; do not add a blanket joint exemption or run
+the nine frozen tomato candidates again.
+
+The bounded C review found that the lift source already has sufficient triangle
+granularity. Across its complete original `[-0.1, 0.1]` domain, the interacting
+mast faces are triangles 2 through 7 on each mast, the interacting lift-screw side
+is triangles 0 through 31, and the interacting carriage faces are triangles 0, 1
+and 8 through 11. These exact existing ranges, rather than a whole part or a name-
+based D exception, define the corrected lift patches. The former symmetric
+`max(width * 0.2, 0.12)` envelope is an implementation heuristic, not a product
+value: C must replace it with the finite outward AABB of the union of each original
+fixed-part material intersection with the translated carriage over the full lift
+domain. Formal C tests first prove those two patch sets, complete-domain overlap
+containment and strict separation outside that derived envelope. D then consumes
+the corrected metadata unchanged; no source triangle, joint domain, third-body
+rule or material/contact permission changes in this owner correction.

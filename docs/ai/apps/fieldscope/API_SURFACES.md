@@ -479,3 +479,164 @@ are unresolved, and budget remainders remain unvisited. `surface-separated` is
 reported only when every pair is excluded; every other result is `unknown`.
 Neither result is movement clearance, material occupancy, intended-contact,
 support, or retained-quality evidence.
+
+## Material source and intended-contact evidence
+
+`SourceTriangleRange` is a triangle-aligned `[indexStart, indexCount]` span.
+`SourcePatch` has one nonempty source-local id, one exact admitted `SourceRegion`
+reference and one or more ordered in-region ranges. `readSourcePatches` detaches
+mutable range input, rejects ranges outside the referenced region, duplicate ids
+and forged region references, and returns immutable patches. Patches select
+original triangles and do not change region occupancy.
+
+Each robot and dock part carries immutable patches issued with its regions.
+`RobotRig` adds immutable `bodies` and five `interfaces`. Every
+`RobotBodyAssembly` owns one body id and all exact rig-part records for that body.
+Every `RobotJointInterface` retains its joint id, parent/child assemblies, exact
+parent/child patches, existing domain and joint frame, and a finite local envelope.
+Crop models retain exact per-fruit main-skin patches separately from their existing
+partitions and detail regions. RobotProjection, SiteGeometry and QueryGeometry
+preserve these exact objects and reject missing, duplicated or retired metadata.
+
+`MaterialContactQueries.evaluate(source, request)` owns the call-local D
+classification. `request` contains the raw joint segment/window, a detached
+synthetic declaration with a fixed-heading linear base path, full-window
+rigid/source-pose/attached-fruit state, a positive finite subdivision budget, and
+optional exact current support and fruit selections. Exact source, mesh, region,
+patch and fruit references are
+validated separately and never replaced by cloned lookalikes. The method internally
+runs JointSegments/RobotMotionBounds once and never accepts caller proof output.
+
+The query lifts completed C affine coefficients and original source vertices into
+one dyadic frame chain before transforming points. Surface loci, closed-patch
+attribution, supporting halfspaces, material SAT and sweep start geometry share
+that exact representation. Outward interval products may reject only proven gaps;
+rounded world-point AABBs do not supply positive or negative material evidence.
+
+The immutable result retains the original source and admitted domain, the detached
+request, categorized joint/support/tool witnesses and actual source/FK/triangle/
+subdivision work. `admitted` means every requested synthetic geometric obligation
+is conclusive. A proven outside-interface or ineligible contact/penetration is
+`blocked`. Missing, stale, open-shell-interior, exhausted-work or unresolved exact
+evidence is `unknown`. No state authorizes movement, force, retention, cutting,
+quality, damage or hardware safety.
+
+## Scene-demand preparation
+
+FieldScope persists one `scene-demand-configuration` entity at version 1. Its
+route is either unknown or a stable farm soil-strip id, bay and longitudinal
+interval. Evidence is unknown, measured by a stable survey id, or visibly
+synthetic with a stable id and label. Growth is unknown or an authored set of
+world- or plant-anchored exclusion boxes with complete or discrete coverage.
+Clearance margin is unknown or an explicit nonnegative metre value. Production
+defaults keep all four inputs unknown; the current farm's rough 1.2 m reference
+is neither a default nor an admission gate. Invalid versions, ids, intervals,
+points, duplicate volumes and margins are rejected before a Core transaction.
+
+`prepareSceneDemand` consumes one validated farm and its completed current
+`PreparedScene`. It resolves a selected soil strip once, retains original fruit,
+partition, channel, mesh, region, installed-instance and transform identities,
+and reports actual left/right target bounds and low/high reach witnesses. Its
+constructive free-passage product is the route prism minus exact authored growth
+and channel exclusions plus margin-expanded conservative source envelopes.
+Installed source envelopes use outward interval transforms. Their overlap means
+`exact-source-query-required`; it never claims a physical collision or blocks the
+whole demand. A selected drain route or authored growth volume covering the route
+is blocked. Unknown evidence, growth, margin, missing anchor or incomplete growth
+coverage remains unknown.
+
+`bootstrap` exposes `getSceneDemandConfiguration`,
+`setSceneDemandConfiguration`, `getSceneDemand`, `isCurrentSceneDemand` and
+`subscribeSceneDemand`. One accepted scene-demand settings action creates one
+Core transaction and one W1 revision without rebuilding farm or crop source.
+Farm/source and relevant scene-demand changes retire the prior revision; undo and
+redo refresh from canonical owners once. Getters and subscribers reuse the same
+retained product. View, camera, locale, layer and robot changes bypass W1, and
+runtime disposal retires the product and unregisters the owner.
+
+## Versioned walking source and pure kinematics
+
+`walking-robot-definition.ts` owns the explicit
+`walking-robot-definition/1` format and `four-arm-six-leg` topology. Its loader
+requires four independent left/right support/cutter arms, six independent
+left/right front/middle/rear legs, a bounded vertical carriage, complete stowed
+and left/right working joint states, and separate measured or visibly synthetic
+geometry, joint and mass evidence. The schema fixes SI metres, kilograms and
+radians in a `+Y` up, `+X` robot-right and `+Z` route-rear frame. It derives body,
+chain, joint and axis identities rather than accepting them from persisted data.
+`createSyntheticWalkingRobotDefinition` is the only baseline factory;
+`classifyWalkingRobotDefinition` identifies unversioned legacy definitions
+without converting or mutating them, rejects malformed unversioned/current-format
+objects as unsupported, and `readWalkingRobotDefinition` admits only the current
+exact-key format.
+
+`WalkingRobotSourceOwner.prepare` creates one immutable definition-bound source
+and rig revision and reuses it only for the same admitted definition object. The
+rig contains unique bodies and joints for all four arms and six legs, original
+closed box triangle regions, six distinct foot patches, two soft-textile support
+patches, two cutter-edge patches and separate cutter guards. Joint interfaces
+retain their exact generated joint frame, axis and range. Concept joints without
+an authored mating surface report `materialInterface: 'unmodeled'` with empty
+patch references; they do not grant contact or collision exemptions. One
+definition-bound mass product retains every body mass and local centre of mass
+plus its explicit evidence identity. Every contact patch reference carries its
+body-local frame, and source materials carry a separate visibly synthetic
+evidence identity; measured geometry evidence is never presented as material
+evidence.
+
+`evaluateWalkingRobotPose` accepts one finite base transform and one complete,
+in-range carriage, four-arm and six-leg joint state. It purely returns every body
+transform once, original source references, arm/tool/foot/contact/inspection
+frames, fixed-length link segments and transformed per-body centres of mass.
+There is no free tool position, source regeneration, pose cache, sweep, gait,
+contact decision, clearance, moment or hardware-safety result. Farm, W1, crop,
+terrain, route, view and locale are outside these APIs and cannot resize or
+invalidate this owner.
+
+Walking runtime and rendering, mechanics, forces and UI presentation remain
+pending W4-W6. W3 consumes this source through the domain APIs below.
+
+## Walking terrain and whole-body interval admission
+
+`readWalkingMotionRequest` admits the exact `walking-motion-request/1` schema,
+detaches and freezes input, and binds the admitted request to its W2 source
+object. All 35 joint values and six stance leg identities are required. Paths
+interpolate scalars linearly between strictly increasing knots; base rotation is
+heading about Y, then local pitch about X, then local roll about Z. Stance phases
+partition the complete evaluation interval at path knots. Changed path or stance
+semantics require a new gait identity. No runtime persistence or UI route is added.
+
+`WalkingMotionOwner` consumes current W1 and W2 products through injected getters.
+Their revision numbers are independent. It prepares immutable interval envelopes
+for every original body part, swing leg, arm/tool, carriage and declared load,
+then compares those envelopes with completed W1 passage and terrain products.
+`read` shares the result without work; replacement of either upstream product
+retires its currentness. A changed admitted request recomputes W3 without
+rebuilding W1 or W2. Missing or incompatible evidence is `unknown`.
+
+The load contract separates an explicitly unknown or source-part-based attached
+crate from absent or attached carried fruit. W2's empty tray does not establish
+crate coverage. Crate walls retain their own triangles and open cavity. Unknown
+fruit geometry remains an identified load with an unknown result, not fabricated
+bounds. Explicit partial source coverage keeps crate or fruit admission unknown.
+Only original parts within the same W2 body, or source parts within the same
+explicit fixed crate assembly, bypass relative-motion checks. Crate and carried
+loads against their holders, different attachment assemblies, and different W2
+bodies or joints receive no blanket exemption.
+
+`prepareWalkingMotionIntervals` owns directed interval FK and complete segment
+coverage. Strictly separated envelopes establish clearance; overlapping source
+envelopes remain unresolved. Positive hard-exclusion witnesses use outward point
+enclosures wholly inside an exclusion or wholly outside the route. Boundary
+straddles remain unknown. W1 source margins are not applied twice. Interval or
+pair budget exhaustion retains unvisited counts and cannot establish clearance.
+Raw debris bounds are prepared once within each evaluation and reused across
+body and interval comparisons, with separate preparation and vertex-work counts.
+`evaluateWalkingTerrainContact` requires exact foot-patch, soil, path, time and
+load identities plus complete geometry, friction, bearing and sinkage evidence.
+Height, slope, rut and debris coverage are declared separately; an empty debris
+list is not evidence of a complete debris survey.
+Authored channels cannot support a foot, and an all-swing schedule is unknown.
+Synthetic provenance remains attached to all evidence. Results report
+`clear`, `blocked` or `unknown`; a blocked turn reports `no-turn`. Every result
+retains `quasiStatic: 'pending-W4'` and makes no stability or safety claim.
