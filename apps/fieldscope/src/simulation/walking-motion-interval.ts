@@ -780,6 +780,8 @@ export function prepareWalkingMotionIntervals(
   }
   return Object.freeze({
     source,
+    // Provenance only: low-level callers retain their existing admission semantics.
+    inputIdentity: input as Readonly<object>,
     path: input.path,
     segments: Object.freeze(segments.map((segment) => Object.freeze(segment))),
     unvisitedIntervals,

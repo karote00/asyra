@@ -248,6 +248,47 @@ acceptance remains a separate milestone; app plan completion is not certificatio
 
 ## Current execution
 
+W3 source-relation slice: request version 1 remains identifiable; version 2
+explicitly binds current W1/W2 products, complete external source region
+partitions, one-segment target contacts and finite region/predicate budgets.
+The evaluation-local relation owner prepares each immutable shape/region once,
+certifies closed convex source material, and uses complete exact SAT for static
+relations and fixed linear translation. Only proven constant-relative material
+can share a common base frame; unsupported rotation remains unknown unless its
+outward bounds strictly separate. Complete pair accounting includes same-body
+material unions, required work and all unvisited work. Target refinement never
+permits positive-volume overlap or suppresses unrelated pairs. Foot sliding
+keeps locomotion unknown. The frozen ten-file slice excludes W1/W2/W4 source and
+interval segmentation changes; direct gates and independent review precede one
+full-app run.
+
+Bounded provenance correction adds only the interval producer and its direct
+test to this slice. The producer publishes its exact input reference as opaque
+provenance, without admitting or freezing low-level callers. The relation owner
+requires its reader-admitted request to be that same reference before doing work.
+Same-path evaluation/load substitutions must fail formal regressions. Interval
+arithmetic, segmentation and work stay unchanged; incremental review precedes
+the already planned single full-app gate.
+
+Bounded W3 harness correction: keep DEFAULT_CONFIGURATION and derive the short
+W1 route from the actual robot X/Z extent, declared margin and displacement,
+including the complete swept envelope rather than source centres. The abandoned
+whole-farm-length focused attempt was stopped with exit 130 after about four
+minutes; it is not passing evidence. The bounded target-partition work oracle
+first failed with missing work accounting (expected 236 visits), before the
+evaluation-local target index implementation. No product budget or source
+geometry was relaxed. Variable base orientation remains unknown until a shared
+frame has a whole-interval nonsingularity certificate.
+
+W3 shared-frame prerequisite: the existing query-frame owner publishes immutable
+exact dyadic descriptor and instance frames from the same quaternion polynomial
+and completed binary64 yaw coefficients used by outward query frames. No
+normalization, midpoint, rendered-point authority or cross-revision cache is
+introduced. Instance placement precedes descriptor placement. Formal missing-API
+RED, frame/W1 regression, type, lint and naming gates precede an independent
+bounded review and local commit; full-app validation remains at the complete W3
+slice boundary. Singular or invalid exact frames are unavailable.
+
 M1 was closed and merged as PR #191 after all eight current-head CI checks
 passed. M2 is implemented in its new worktree: Core-owned robot/mission editing,
 history, conservative reports and dimensioned projection, with canonical Blender

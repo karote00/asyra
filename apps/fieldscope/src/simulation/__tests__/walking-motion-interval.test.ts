@@ -83,6 +83,18 @@ function fixture(intent: 'straight' | 'reverse' | 'turn' = 'straight') {
 }
 
 describe('walking motion interval FK', () => {
+  it('preserves opaque producer input provenance without admitting mutable input', () => {
+    const { source, input } = fixture()
+    const first = prepareWalkingMotionIntervals(source, input)
+    const other = { ...input }
+    const second = prepareWalkingMotionIntervals(source, other)
+    expect(first.inputIdentity).toBe(input)
+    expect(second.inputIdentity).toBe(other)
+    expect(first.inputIdentity).not.toBe(second.inputIdentity)
+    expect(Object.isFrozen(first)).toBe(true)
+    expect(Object.isFrozen(input)).toBe(false)
+    expect(second.work).toEqual(first.work)
+  })
   it('sweeps separate crate walls without filling its open cavity', () => {
     const { source, input } = fixture()
     const dimensions = [

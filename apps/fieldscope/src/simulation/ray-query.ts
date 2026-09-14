@@ -7,7 +7,8 @@ import {
   squareRoot,
   dyadic,
   fractionInterval,
-  type Interval
+  type Interval,
+  type Dyadic
 } from './query-arithmetic'
 import type { SourceRegion } from '../domain/source-occupancy'
 import {
@@ -181,11 +182,6 @@ const transpose = (m: Matrix): Matrix => [
   [m[0][1], m[1][1], m[2][1]],
   [m[0][2], m[1][2], m[2][2]]
 ]
-const identity: Matrix = [
-  numberVector([1, 0, 0]),
-  numberVector([0, 1, 0]),
-  numberVector([0, 0, 1])
-]
 function inverseMatrix(m: Matrix): Matrix {
   const cofactor: Matrix = [
     vectorCross(m[1], m[2]),
@@ -197,18 +193,145 @@ function inverseMatrix(m: Matrix): Matrix {
     row.map((value) => divide(value, determinant))
   ) as unknown as Matrix
 }
-function rotationMatrix(rotation: RigidTransform['rotation']): Matrix {
-  const [x, y, z, w] = rotation.map(interval)
-  const rotate = (v: Vector): Vector => {
-    const t = vectorCross([x, y, z], v).map((value) =>
-      multiply(interval(2), value)
-    ) as unknown as Vector
-    const c = vectorCross([x, y, z], t)
-    return v.map((value, axis) =>
-      add(add(value, multiply(w, t[axis])), c[axis])
-    ) as unknown as Vector
+type FrameVector<T> = readonly [T, T, T]
+type FrameMatrix<T> = readonly [FrameVector<T>, FrameVector<T>, FrameVector<T>]
+interface FrameArithmetic<T> {
+  from(value: number): T
+  add(a: T, b: T): T
+  subtract(a: T, b: T): T
+  multiply(a: T, b: T): T
+}
+const intervalFrameArithmetic: FrameArithmetic<Interval> = {
+  from: interval,
+  add,
+  subtract,
+  multiply
+}
+function exactFrameAdd(a: Dyadic, b: Dyadic): Dyadic {
+  const exponent = Math.min(a.exponent, b.exponent)
+  return {
+    significand:
+      (a.significand << BigInt(a.exponent - exponent)) +
+      (b.significand << BigInt(b.exponent - exponent)),
+    exponent
   }
-  return transpose(identity.map(rotate) as unknown as Matrix)
+}
+const exactFrameArithmetic: FrameArithmetic<Dyadic> = {
+  from: dyadic,
+  add: exactFrameAdd,
+  subtract: (a, b) =>
+    exactFrameAdd(a, { significand: -b.significand, exponent: b.exponent }),
+  multiply: (a, b) => ({
+    significand: a.significand * b.significand,
+    exponent: a.exponent + b.exponent
+  })
+}
+function frameCross<T>(
+  a: FrameVector<T>,
+  b: FrameVector<T>,
+  ops: FrameArithmetic<T>
+): FrameVector<T> {
+  return [
+    ops.subtract(ops.multiply(a[1], b[2]), ops.multiply(a[2], b[1])),
+    ops.subtract(ops.multiply(a[2], b[0]), ops.multiply(a[0], b[2])),
+    ops.subtract(ops.multiply(a[0], b[1]), ops.multiply(a[1], b[0]))
+  ]
+}
+/** One original quaternion polynomial and operation order for both algebras. */
+function sourceRotationMatrix<T>(
+  rotation: RigidTransform['rotation'],
+  ops: FrameArithmetic<T>
+): FrameMatrix<T> {
+  const [x, y, z, w] = rotation.map(ops.from)
+  const rotate = (v: FrameVector<T>): FrameVector<T> => {
+    const crossed = frameCross([x, y, z], v, ops)
+    const t: FrameVector<T> = [
+      ops.multiply(ops.from(2), crossed[0]),
+      ops.multiply(ops.from(2), crossed[1]),
+      ops.multiply(ops.from(2), crossed[2])
+    ]
+    const c = frameCross([x, y, z], t, ops)
+    const component = (axis: number) =>
+      ops.add(ops.add(v[axis], ops.multiply(w, t[axis])), c[axis])
+    return [component(0), component(1), component(2)]
+  }
+  const first = rotate([ops.from(1), ops.from(0), ops.from(0)]),
+    second = rotate([ops.from(0), ops.from(1), ops.from(0)]),
+    third = rotate([ops.from(0), ops.from(0), ops.from(1)])
+  return [
+    [first[0], second[0], third[0]],
+    [first[1], second[1], third[1]],
+    [first[2], second[2], third[2]]
+  ]
+}
+function rotationMatrix(rotation: RigidTransform['rotation']): Matrix {
+  return sourceRotationMatrix(rotation, intervalFrameArithmetic)
+}
+function sourceInstanceMatrix<T>(
+  yaw: number,
+  from: (value: number) => T
+): FrameMatrix<T> {
+  const cosine = Math.cos(yaw),
+    sine = Math.sin(yaw)
+  return [
+    [from(cosine), from(0), from(sine)],
+    [from(0), from(1), from(0)],
+    [from(-sine), from(0), from(cosine)]
+  ]
+}
+export interface QueryExactFrame {
+  readonly matrix: FrameMatrix<Dyadic>
+  readonly position: FrameVector<Dyadic>
+  readonly determinant: Dyadic
+}
+function exactSourceFrame(
+  matrix: FrameMatrix<Dyadic>,
+  position: Point3
+): QueryExactFrame {
+  if (!finitePoint(position))
+    throw new Error('Invalid exact source frame position')
+  const cofactor = frameCross(matrix[1], matrix[2], exactFrameArithmetic)
+  const determinant = matrix[0].reduce(
+    (sum, value, axis) =>
+      exactFrameAdd(sum, exactFrameArithmetic.multiply(value, cofactor[axis])),
+    dyadic(0)
+  )
+  if (determinant.significand === 0n)
+    throw new Error('Singular exact source frame')
+  return freeze({
+    matrix,
+    position: [dyadic(position[0]), dyadic(position[1]), dyadic(position[2])],
+    determinant
+  })
+}
+/** Exact polynomial coefficients; neither normalized quaternions nor rounded world points. */
+export function prepareQueryExactForwardFrame(
+  transform: RigidTransform
+): QueryExactFrame {
+  const rotation = transform.rotation
+  if (
+    !Array.isArray(rotation) ||
+    rotation.length !== 4 ||
+    !rotation.every(Number.isFinite) ||
+    !rotation.some((value) => value !== 0)
+  )
+    throw new Error('Invalid exact source frame rotation')
+  return exactSourceFrame(
+    sourceRotationMatrix(rotation, exactFrameArithmetic),
+    transform.position
+  )
+}
+/** Yaw trig outputs are completed binary64 coefficients; instance is applied first. */
+export function prepareQueryExactInstanceFrame(placement: {
+  readonly position: Point3
+  readonly yaw: number
+}): QueryExactFrame {
+  if (!Number.isFinite(placement.yaw))
+    throw new Error('Invalid exact source frame yaw')
+  return exactSourceFrame(
+    sourceInstanceMatrix(placement.yaw, dyadic),
+    placement.position
+  )
 }
 interface Inverse {
   matrix: Matrix
@@ -261,14 +384,7 @@ export function prepareQueryInstanceFrame(placement: {
   readonly position: Point3
   readonly yaw: number
 }) {
-  const c = interval(Math.cos(placement.yaw)),
-    s = interval(Math.sin(placement.yaw)),
-    n = interval(-Math.sin(placement.yaw))
-  const matrix: Matrix = [
-    [c, interval(0), s],
-    numberVector([0, 1, 0]),
-    [n, interval(0), c]
-  ]
+  const matrix = sourceInstanceMatrix(placement.yaw, interval)
   return freeze({ matrix, position: numberVector(placement.position) })
 }
 export function transformQueryPoint(

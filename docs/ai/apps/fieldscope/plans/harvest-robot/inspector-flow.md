@@ -130,15 +130,41 @@ changes invalidate locomotion demand and the compatibility result. An unchanged
 completed revision may be read without recomputation, including by UI consumers.
 Allowed contributors: W1/W2 completed artifacts and existing conservative
 geometry predicates after their equivalence for the new source is proven.
+The shared query-frame owner supplies exact dyadic scene frames from the existing
+descriptor quaternion polynomial and completed binary64 instance yaw coefficients,
+with instance placement before descriptor placement. It supplies no collision
+decision. W3 owns per-evaluation frame reuse; invalid or singular frames remain
+unavailable, and interval bounds or rounded rendered points cannot replace them.
+The walking-source-relation owner receives the exact admitted version-two request,
+complete external source partitions and the existing complete segment inventory.
+It prepares each shape/region once per evaluation, proves actual closed convex
+material before complete exact SAT, and conserves candidate, same-body, required,
+classified and unvisited pair counts. It may prove static or fixed-orientation
+linear translation; changing joints/orientation needs outward strict exclusion
+or remains unknown. A common affine proof requires the same chain and proven
+nonsingularity for the whole interval, and cannot carry positive metric margins.
+Fixed parent/child boundaries use authored parent-local frames; named contact
+needs a whole-locus subset proof and original triangle witness. Explicit current
+target patch/partition selections only request W5 refinement; volume and all
+other region relations retain their own outcomes. Sliding support feet remain
+unknown. Version-one requests retain explicit missing-source-relation status.
 Forbidden contributors: endpoint-only clearance, scalar width subtraction,
 flat-rendered-ground inference, teleport, wheel semantics, omitted swing bodies,
 blanket crop/contact exemptions, alternate routes and terrain fabricated from a
 passing pose.
-Implementation boundary: future simulation walking-motion and terrain-contact
-modules with source-space, interval and stale-identity tests; no UI decision.
+Implementation boundary: walking-motion contract, walking-source-relation,
+walking-motion and terrain-contact modules with source-space, interval,
+accounting and stale-identity tests; no UI decision or W1/W2/W4 recomputation.
 Spec: Active product reset - walking, wet uneven soil and obstacle cases.
 Failure owner: W3 owns path/contact invalidity and unresolved clearance.
-Cache dimensions: none until profiling establishes a candidate and equivalence.
+Reuse lifetime: one immutable evaluation owns shape/region preparation,
+descriptor/instance frames, transformed placement products and current target
+partition indexes. Unchanged admitted reads share the completed product. There
+is no cross-revision geometry cache.
+Interval products retain their producer input reference as opaque provenance.
+The source-relation boundary first admits its request, then requires that exact
+reference, binding evaluation, stance, load and budget without recomputation.
+The low-level producer does not admit or freeze mutable callers.
 
 ### W4 - Quasi-static configuration screening
 
