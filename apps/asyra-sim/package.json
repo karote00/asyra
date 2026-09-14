@@ -24,16 +24,16 @@
     "@asyra/render": "workspace:*",
     "@asyra/render-engine": "workspace:*",
     "@asyra/utils": "workspace:*",
-    "react": "^19.2.8",
-    "react-dom": "^19.2.8",
-    "three": "0.185.1"
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "three": "0.186.0"
   },
   "devDependencies": {
-    "@playwright/test": "^1.62.1",
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^24.13.3",
-    "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "@types/three": "0.185.4",
     "@vitejs/plugin-react": "^4.7.0",
     "fake-indexeddb": "^6.2.5",
