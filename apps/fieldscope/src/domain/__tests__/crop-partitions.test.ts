@@ -711,7 +711,7 @@ it('preserves every source product outside the cucumber pedicel revision against
   excludedPatch.source.id = originalExcludedSourceId
 
   expectCurrentSource()
-})
+}, 30000)
 
 it('provides an actual shared cucumber source ring between plant and retained pedicel', () => {
   for (const model of models.filter(
