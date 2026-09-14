@@ -14,7 +14,7 @@
     "react:build": "yarn build",
     "typecheck": "tsc --noEmit",
     "test:local": "vitest run",
-    "test:ci": "vitest run --maxWorkers=1",
+    "test:ci": "vitest run",
     "test:profiles": "vitest run --config vitest.profile.config.ts",
     "test:e2e": "playwright test",
     "lint": "node ../../node_modules/eslint/bin/eslint.js src e2e *.ts *.mjs"

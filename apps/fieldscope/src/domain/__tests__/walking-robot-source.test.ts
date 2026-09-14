@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import {
   createSyntheticWalkingRobotDefinition,
   readWalkingRobotDefinition
@@ -758,6 +758,11 @@ function certifyWholePose(
 }
 
 describe('walking robot original solid articulation regression', () => {
+  beforeEach(async () => {
+    // Let Vitest deliver its throttled task update before each synchronous proof.
+    await new Promise<void>((resolve) => setImmediate(resolve))
+  })
+
   it('resolves both core endpoints from bounded interface support and the declared physical gap', () => {
     const source = new WalkingRobotSourceOwner().prepare(
       createSyntheticWalkingRobotDefinition({
