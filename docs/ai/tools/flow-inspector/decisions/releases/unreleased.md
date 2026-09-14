@@ -187,7 +187,7 @@ model request or release action is authorized by green CI or by this closeout.
 ## 2026-09-10 - Separate flow contracts from multi-PR development work
 
 The user identified that requiring an entire flow to fit one PR would prevent
-useful decomposition. Record the [multi-PR development plan](../../plans/flow-inspector-multi-pr-development-and-integration-plan.md)
+useful decomposition. Record the [multi-PR development plan](../../plans/completed/flow-inspector-multi-pr-development-and-integration-plan.md)
 with a persistent target contract, bounded work promises, accepted-behavior
 preservation and a distinct full integration assessment. Developing flows enter
 verification immediately; incomplete target obligations are visible pending
@@ -209,7 +209,6 @@ the existing store lock. Exact task linking preserves task/attempt PR identity.
 Candidate verification remains strict; dependency evidence is unconfirmed and
 whole-target integration/acceptance remain unimplemented. This records this
 slice only, not completion of the multi-PR plan or full Phase 5/6.
-
 
 ## Source-bound work admission and bounded closeout - 2026-09-12
 
@@ -241,3 +240,26 @@ reassessing evidence. Format-1 history stays readable and cannot acquire this
 authority. HTTP, local/attached CLI and Board share the request and retained
 decision. This offline local slice performs no real project baseline acceptance,
 external delivery, provider request, publication or goal-to-main merge.
+
+## Complete bounded multi-PR development and integration - 2026-09-14
+
+Complete the one-local-owner, one-repository multi-PR plan with actual captured
+Factory, Collaboration and UI Context public runtime behavior on one immutable
+target revision. Retained partial, prerequisite, accepted-regression,
+integration-regression, exact-revert, stale-history and same-HEAD-success cases
+survive restart and remain consistent across service, API, CLI and the Board.
+The original two Factory flows and six obligations remain intact.
+
+PR 207 retained reviewed source `a204035550969ccd92724a07c30a78d1826c8258`
+and tree `de1a6146db6b392fad6203d30879722d91d2eee4`; all eight current-HEAD
+GitHub Actions checks passed. Wrapper integration created goal merge
+`e9e48c5e740df42d6185e54d918850aab3c157cf` with the same tree. Offline
+GitHub lifecycle fixtures remain separate from source authority and acceptance;
+no external test PR or goal-to-main merge is claimed.
+
+The [completed plan](../../plans/completed/flow-inspector-multi-pr-development-and-integration-plan.md)
+retains exact completion evidence. Independent protected verification and
+issuance, required-check enforcement, protected remote transport, provider
+reconciliation, multi-repository/team/tenant/hosting work and
+checkout-independent dynamic execution remain deferred. This closeout creates
+no Changeset, version, tag, release, publication or deployment.
