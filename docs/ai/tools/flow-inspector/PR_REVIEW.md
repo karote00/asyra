@@ -95,6 +95,15 @@ missing scoped persistence fields; distinct concurrent selectors; restart/histor
 reads with zero callbacks and fresh prepare/confirm callbacks once each. No real
 GitHub mutation, model request or baseline acceptance is authorized by these tests.
 
+Full-runtime product evidence keeps this delivery boundary separate. Its three
+owner contributions are real commits in a deterministic local Git repository,
+and their public package behavior is verified from one captured source before
+target acceptance. Existing offline adapter cases still exercise PR
+close/reopen observations, manual HEAD change, duplicate/restart
+reconciliation and supersession without feeding any of those observations into
+target assessment. No external test PR is created, and live GitHub acceptance
+remains explicitly unverified.
+
 ## Scoped review public integration
 
 The loopback server exposes `POST /api/tasks/<taskId>/review/scoped` with a JSON

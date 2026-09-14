@@ -758,6 +758,18 @@ source work or another revision. Conflicting requests, format-1 history, stale o
 incomplete evidence, unavailable source authority and failed persistence cause
 no baseline mutation.
 
+The full-runtime product fixture exercises this action with actual captured
+public package behavior from Factory, Collaboration and UI Context. It retains
+separate local Git commits for each owner, an allocation with the first two
+works plus pending UI obligations, accepted and integration regressions, a
+revert, a stale advanced source and one complete same-HEAD integration. The
+successful record is read identically through the service, loopback
+`/api/target-assessments/<id>` endpoint and attached CLI before the CLI submits
+the explicit acceptance request. External PR state or checks are rejected as
+assessment input; existing offline GitHub adapter lifecycle tests remain
+display and delivery observations only. This fixture creates no external PR
+and makes no live GitHub acceptance claim.
+
 ### Admit work before execution
 
 For independent work, after `verify` passes all six obligations, use its returned

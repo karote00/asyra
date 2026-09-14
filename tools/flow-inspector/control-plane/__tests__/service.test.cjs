@@ -8,6 +8,9 @@ const { randomUUID } = require('node:crypto')
 const evidenceOwner = require('../evidence.cjs')
 const sourceOwner = require('../snapshot.cjs')
 const { createService, LOCAL_ACTOR } = require('../service.cjs')
+const { createFullRuntimeFixture } = require('./full-runtime-fixture.cjs')
+const { startServer } = require('../server.cjs')
+const { main: runCli } = require('../cli.cjs')
 const root = path.resolve(__dirname, '../../../..')
 const parent = path.join(root, 'tmp/flow-inspector/service-tests')
 const directory = () => {
@@ -1397,6 +1400,304 @@ async function assessmentFixture(
       allocationRevision: 1,
       sourceAttemptId: source.id
     }
+  }
+}
+
+async function fullRuntimeServiceEvidence() {
+  const fixture = createFullRuntimeFixture(
+    root,
+    path.join(root, 'tmp/flow-inspector/full-runtime-service-tests')
+  )
+  const runs = path.join(fixture.repository, 'runs')
+  let service, server
+  try {
+    fixture.checkout(fixture.refs.base)
+    fixture.installContract('accepted')
+    service = createService(fixture.repository, { directory: runs })
+    const acceptedSource = await service.wait(
+      service.start({ mode: 'candidate' }, LOCAL_ACTOR)
+    )
+    assert.equal(acceptedSource.evidence.status, 'passed')
+    const acceptedReview = service.prepareEvolution(
+      { attemptId: acceptedSource.id },
+      LOCAL_ACTOR
+    )
+    service.decideEvolution(
+      {
+        id: acceptedReview.id,
+        decision: 'accept',
+        reason: 'Pin the real accepted full-runtime verifier'
+      },
+      LOCAL_ACTOR
+    )
+
+    fixture.checkout(fixture.refs.integrated)
+    fixture.installContract('target')
+    const targetSource = await service.wait(
+      service.start({ mode: 'candidate' }, LOCAL_ACTOR)
+    )
+    assert.equal(targetSource.evidence.status, 'passed')
+    const targetReview = service.prepareEvolution(
+      { attemptId: targetSource.id },
+      LOCAL_ACTOR
+    )
+    const targetContract = targetReview.candidate.contract
+    const byStep = new Map(
+      targetContract.cases.map((item) => [item.id, item.stepId])
+    )
+    const factoryWork = {
+      id: randomUUID(),
+      title: 'Factory runtime contribution',
+      stepId: byStep.get('runtime.factory'),
+      obligationIds: ['runtime.factory'],
+      scope: 'Prove the captured Factory public behavior.',
+      allowedFiles: ['packages/factory/src/index.ts'],
+      prerequisites: []
+    }
+    const collaborationWork = {
+      id: randomUUID(),
+      title: 'Collaboration runtime contribution',
+      stepId: byStep.get('runtime.collaboration'),
+      obligationIds: ['runtime.collaboration'],
+      scope: 'Prove the captured Collaboration public behavior.',
+      allowedFiles: ['packages/collaboration/src/process.ts'],
+      prerequisites: [
+        {
+          workId: factoryWork.id,
+          handoff: 'Consume the Factory contribution from the same source.'
+        }
+      ]
+    }
+    const uiWork = {
+      id: randomUUID(),
+      title: 'UI Context runtime integration',
+      stepId: byStep.get('runtime.ui-context'),
+      obligationIds: ['runtime.ui-context', 'runtime.integration'],
+      scope: 'Prove UI Context and the complete one-source integration.',
+      allowedFiles: ['packages/ui-context/src/property-registry.ts'],
+      prerequisites: [
+        {
+          workId: collaborationWork.id,
+          handoff:
+            'Consume the Collaboration contribution from the same source.'
+        }
+      ]
+    }
+    const created = service.decideTarget(
+      {
+        action: 'create',
+        requestId: randomUUID(),
+        expectedRevision: 0,
+        reason: 'Create the reviewed full-runtime delivery target',
+        flowId: targetContract.flows[0].id,
+        targetRevision: targetContract.digest,
+        targetReviewId: targetReview.id,
+        acceptedBaseline: {
+          revision: service.state().mapping.revision,
+          contractDigest: service.contract().digest
+        },
+        objective: 'Deliver all three public runtime contributions.',
+        works: [factoryWork, collaborationWork],
+        pending: ['runtime.ui-context', 'runtime.integration']
+      },
+      LOCAL_ACTOR
+    )
+    assert.throws(
+      () =>
+        service.startTargetAssessment(
+          {
+            requestId: randomUUID(),
+            targetId: created.id,
+            allocationRevision: 1,
+            sourceAttemptId: targetSource.id,
+            pullRequest: {
+              state: 'open',
+              head: targetSource.snapshot.head,
+              checks: 'passed'
+            }
+          },
+          LOCAL_ACTOR
+        ),
+      /Invalid/
+    )
+    assert.equal(service.targetAssessments().length, 0)
+
+    assert.deepEqual(service.getTarget(created.id).pending, [
+      'runtime.ui-context',
+      'runtime.integration'
+    ])
+
+    service.decideTarget(
+      {
+        action: 'revise',
+        targetId: created.id,
+        requestId: randomUUID(),
+        expectedRevision: 1,
+        reason: 'Add the final UI Context integration commitment',
+        objective: 'Deliver all three public runtime contributions.',
+        works: [factoryWork, collaborationWork, uiWork],
+        pending: []
+      },
+      LOCAL_ACTOR
+    )
+
+    const assess = async (ref) => {
+      fixture.checkout(ref)
+      fixture.installContract('target')
+      const source = await service.wait(
+        service.start({ mode: 'candidate' }, LOCAL_ACTOR)
+      )
+      const assessment = await service.waitTargetAssessment(
+        service.startTargetAssessment(
+          {
+            requestId: randomUUID(),
+            targetId: created.id,
+            allocationRevision: 2,
+            sourceAttemptId: source.id
+          },
+          LOCAL_ACTOR
+        )
+      )
+      return { source, assessment }
+    }
+    const integrationRegression = await assess(
+      fixture.refs.integrationRegression
+    )
+    assert.deepEqual(
+      integrationRegression.assessment.result.targetContract.cases.map(
+        (item) => [item.id, item.status]
+      ),
+      [
+        ['runtime.factory', 'passed'],
+        ['runtime.collaboration', 'passed'],
+        ['runtime.ui-context', 'passed'],
+        ['runtime.integration', 'failed']
+      ]
+    )
+    assert.equal(integrationRegression.assessment.projection.eligible, false)
+
+    const reverted = await assess(fixture.refs.reverted)
+    assert.equal(reverted.source.snapshot.head, fixture.refs.reverted)
+    assert.equal(reverted.assessment.result.source.head, fixture.refs.reverted)
+    assert.equal(reverted.assessment.result.targetContract.status, 'failed')
+    assert.equal(reverted.assessment.result.integration.status, 'failed')
+    assert.equal(reverted.assessment.projection.eligible, false)
+    const retainedReverted = structuredClone(reverted.assessment)
+
+    const integrated = {
+      source: targetSource,
+      assessment: await service.waitTargetAssessment(
+        service.startTargetAssessment(
+          {
+            requestId: randomUUID(),
+            targetId: created.id,
+            allocationRevision: 2,
+            sourceAttemptId: targetSource.id
+          },
+          LOCAL_ACTOR
+        )
+      )
+    }
+    assert.equal(integrated.assessment.result.accepted.status, 'passed')
+    assert.equal(integrated.assessment.result.targetContract.status, 'passed')
+    assert.ok(
+      integrated.assessment.result.works.every(
+        (work) =>
+          work.status === 'passed' && work.prerequisites.status === 'passed'
+      )
+    )
+    assert.equal(integrated.assessment.result.integration.status, 'passed')
+    assert.equal(integrated.assessment.projection.eligible, true)
+    assert.equal(
+      integrated.assessment.result.source.head,
+      integrated.source.snapshot.head
+    )
+    assert.equal(
+      integrated.assessment.result.source.runtimeSourceDigest,
+      integrated.source.snapshot.runtimeSource.digest
+    )
+
+    const retained = structuredClone(integrated.assessment)
+    await service.close()
+    service = undefined
+    server = await startServer(fixture.repository, {
+      url: 'http://127.0.0.1:0',
+      serviceOptions: {
+        directory: runs,
+        runner: async () => {
+          throw new Error('Restart must not rerun retained evidence')
+        }
+      }
+    })
+    service = server.service
+    assert.deepEqual(
+      service.getTargetAssessment(retained.id).result,
+      retained.result
+    )
+    const restartedReverted = service.getTargetAssessment(retainedReverted.id)
+    assert.deepEqual(restartedReverted.result, retainedReverted.result)
+    assert.equal(restartedReverted.result.source.head, fixture.refs.reverted)
+    assert.equal(restartedReverted.result.integration.status, 'failed')
+    assert.equal(restartedReverted.projection.eligible, false)
+    assert.deepEqual(
+      service
+        .targetAssessments()
+        .find((assessment) => assessment.id === retainedReverted.id)?.result,
+      retainedReverted.result
+    )
+    const api = await fetch(
+      server.origin + '/api/target-assessments/' + retained.id
+    ).then((response) => response.json())
+    const cliOutput = []
+    const shown = await runCli(
+      ['--url', server.origin, 'target-assessment-show', retained.id],
+      {
+        repositoryRoot: fixture.repository,
+        write: (value) => cliOutput.push(value)
+      }
+    )
+    assert.equal(shown, 0)
+    assert.deepEqual(JSON.parse(cliOutput.join('')), api)
+    assert.deepEqual(api, service.getTargetAssessment(retained.id))
+    const acceptanceRequest = {
+      requestId: randomUUID(),
+      targetId: created.id,
+      assessmentId: retained.id,
+      reason: 'Accept the complete same-source full-runtime evidence',
+      retirement: [
+        'accepted.factory',
+        'accepted.collaboration',
+        'accepted.ui-context'
+      ]
+    }
+    fs.writeFileSync(
+      path.join(fixture.repository, 'target-acceptance.json'),
+      JSON.stringify(acceptanceRequest)
+    )
+    cliOutput.length = 0
+    const acceptedCode = await runCli(
+      ['--url', server.origin, 'target-accept', 'target-acceptance.json'],
+      {
+        repositoryRoot: fixture.repository,
+        write: (value) => cliOutput.push(value)
+      }
+    )
+    assert.equal(acceptedCode, 0)
+    const acceptance = JSON.parse(cliOutput.join(''))
+    assert.equal(acceptance.targetId, created.id)
+    assert.equal(service.contract().digest, targetContract.digest)
+    assert.equal(
+      service.getTargetAssessment(retained.id).projection.current,
+      false
+    )
+    const historicalRevert = service.getTargetAssessment(retainedReverted.id)
+    assert.deepEqual(historicalRevert.result, retainedReverted.result)
+    assert.equal(historicalRevert.projection.current, false)
+    assert.equal(historicalRevert.projection.eligible, false)
+  } finally {
+    if (server) await server.close()
+    else await service?.close()
+    fixture.cleanup()
   }
 }
 
@@ -4371,4 +4672,10 @@ test(
       fs.rmSync(f.dir, { recursive: true, force: true })
     }
   }
+)
+
+test(
+  'full runtime service retains one-source multi-owner evidence through acceptance and restart',
+  { timeout: 120000 },
+  fullRuntimeServiceEvidence
 )

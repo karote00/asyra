@@ -13,6 +13,7 @@ const {
   assessTargetSource,
   projectTargetAssessmentCurrentness
 } = require('../target-evidence.cjs')
+const { createFullRuntimeFixture } = require('./full-runtime-fixture.cjs')
 const root = path.resolve(__dirname, '../../../..')
 let directory,
   repository,
@@ -257,6 +258,337 @@ function input({
   }
 }
 const clone = (value) => structuredClone(value)
+
+test(
+  'full runtime multi-PR evidence keeps partial work, prerequisites, regressions and same-HEAD eligibility separate',
+  { timeout: 240000 },
+  async () => {
+    const fixture = createFullRuntimeFixture(
+      root,
+      path.join(root, 'tmp/flow-inspector/full-runtime-evidence-tests')
+    )
+    try {
+      const proofPair = async (ref, label) => ({
+        accepted: await fixture.produce({
+          ref,
+          kind: 'accepted',
+          label: label + '-accepted'
+        }),
+        target: await fixture.produce({
+          ref,
+          kind: 'target',
+          label: label + '-target'
+        })
+      })
+      const factory = await proofPair(fixture.refs.factory, 'factory')
+      const collaboration = await proofPair(
+        fixture.refs.collaboration,
+        'collaboration'
+      )
+      const firstTwo = await proofPair(fixture.refs.firstTwo, 'first-two')
+      const acceptedRegression = await proofPair(
+        fixture.refs.acceptedRegression,
+        'accepted-regression'
+      )
+      const integrationRegression = await proofPair(
+        fixture.refs.integrationRegression,
+        'integration-regression'
+      )
+      const disconnectedCollaboration = await proofPair(
+        fixture.refs.disconnectedCollaboration,
+        'disconnected-collaboration'
+      )
+      const disconnectedUiContext = await proofPair(
+        fixture.refs.disconnectedUiContext,
+        'disconnected-ui-context'
+      )
+      const integrated = await proofPair(fixture.refs.integrated, 'integrated')
+      const reverted = await proofPair(fixture.refs.reverted, 'reverted')
+      const advanced = await fixture.produce({
+        ref: fixture.refs.advanced,
+        kind: 'target',
+        label: 'advanced-target'
+      })
+      const acceptedContract = integrated.accepted.contract
+      const targetContract = integrated.target.contract
+      assert.equal(
+        acceptedContract.runtimeScope.digest,
+        targetContract.runtimeScope.digest
+      )
+      assert.notEqual(acceptedContract.digest, targetContract.digest)
+      const baseline = { revision: 1, contractDigest: acceptedContract.digest }
+      const works = [
+        {
+          id: randomUUID(),
+          title: 'Factory runtime contribution',
+          stepId: 'produce-factory-runtime',
+          obligationIds: ['runtime.factory'],
+          scope: 'Produce the captured Factory contribution',
+          allowedFiles: ['packages/factory/src/index.ts'],
+          prerequisites: []
+        },
+        {
+          id: randomUUID(),
+          title: 'Collaboration runtime contribution',
+          stepId: 'produce-collaboration-runtime',
+          obligationIds: ['runtime.collaboration'],
+          scope: 'Consume Factory and produce Collaboration behavior',
+          allowedFiles: ['packages/collaboration/src/process.ts'],
+          prerequisites: []
+        }
+      ]
+      works[1].prerequisites.push({
+        workId: works[0].id,
+        handoff: 'Consume the exact Factory contribution'
+      })
+      const targetDirectory = path.join(
+        fixture.repository,
+        '.targets',
+        randomUUID()
+      )
+      fs.mkdirSync(targetDirectory, { recursive: true })
+      const owner = createTargetOwner({
+        repositoryRoot: fixture.repository,
+        directory: targetDirectory,
+        getContracts: () => [targetContract],
+        getBaseline: () => baseline,
+        getTask: () => null,
+        getReview: () => null
+      })
+      const targetId = randomUUID()
+      owner.decide(
+        {
+          action: 'create',
+          requestId: targetId,
+          expectedRevision: 0,
+          reason: 'Freeze the first two full-runtime contributions',
+          flowId: 'full-runtime-delivery',
+          targetRevision: targetContract.digest,
+          acceptedBaseline: baseline,
+          objective: 'Integrate three primary runtime owners',
+          works,
+          pending: ['runtime.ui-context', 'runtime.integration']
+        },
+        'test owner'
+      )
+      const uiWork = {
+        id: randomUUID(),
+        title: 'UI Context runtime integration',
+        stepId: 'complete-ui-context-runtime',
+        obligationIds: ['runtime.ui-context', 'runtime.integration'],
+        scope: 'Consume Collaboration and complete the one-source result',
+        allowedFiles: ['packages/ui-context/src/property-registry.ts'],
+        prerequisites: [
+          {
+            workId: works[1].id,
+            handoff: 'Consume the exact Collaboration contribution'
+          }
+        ]
+      }
+      owner.decide(
+        {
+          action: 'revise',
+          targetId,
+          requestId: randomUUID(),
+          expectedRevision: 1,
+          reason: 'Assign the final full-runtime obligations',
+          objective: 'Integrate three primary runtime owners',
+          works: [...works, uiWork],
+          pending: []
+        },
+        'test owner'
+      )
+      const target = owner.get(targetId)
+      assert.equal(target.targetRevision, targetContract.digest)
+      assert.equal(target.history.length, 2)
+
+      const assess = (pair, allocationRevision) => {
+        const sourceAdmission = pair.target.sourceAdmission
+        return assessTargetSource({
+          format: 2,
+          target,
+          allocationRevision,
+          acceptedContract: pair.accepted.contract,
+          targetContract: pair.target.contract,
+          acceptedVerificationSourceDigest:
+            pair.accepted.sourceAdmission.verificationSource.digest,
+          targetVerificationSourceDigest:
+            pair.target.sourceAdmission.verificationSource.digest,
+          sourceAdmission,
+          proofRequests: [pair.accepted.request, pair.target.request],
+          current: {
+            targetId,
+            allocationRevision,
+            acceptedBaseline: baseline,
+            source: {
+              repository: fixture.repository,
+              head: sourceAdmission.head,
+              runtimeSourceDigest: sourceAdmission.runtimeSource.digest
+            }
+          }
+        })
+      }
+
+      const factoryPartial = assess(factory, 1)
+      assert.equal(factoryPartial.works[0].own.status, 'passed')
+      assert.equal(factoryPartial.works[0].status, 'passed')
+      assert.equal(factoryPartial.integration.status, 'failed')
+      assert.equal(factoryPartial.eligible, false)
+
+      const missingPrerequisite = assess(collaboration, 1)
+      assert.equal(missingPrerequisite.works[1].own.status, 'passed')
+      assert.equal(missingPrerequisite.works[1].prerequisites.status, 'failed')
+      assert.equal(missingPrerequisite.works[1].status, 'failed')
+
+      const twoOwnerPartial = assess(firstTwo, 1)
+      assert.deepEqual(
+        twoOwnerPartial.works.map((work) => work.status),
+        ['passed', 'passed']
+      )
+      assert.equal(twoOwnerPartial.eligible, false)
+
+      const explicitlyPending = assess(integrated, 1)
+      assert.equal(explicitlyPending.integration.status, 'pending')
+      assert.deepEqual(explicitlyPending.integration.pending, [
+        'runtime.ui-context',
+        'runtime.integration'
+      ])
+
+      const preservationFailure = assess(acceptedRegression, 1)
+      assert.equal(preservationFailure.works[0].own.status, 'passed')
+      assert.equal(preservationFailure.accepted.status, 'failed')
+      assert.equal(preservationFailure.works[0].status, 'failed')
+
+      const integrationFailure = assess(integrationRegression, 2)
+      assert.equal(integrationFailure.targetContract.cases[0].status, 'passed')
+      assert.equal(integrationFailure.targetContract.cases[1].status, 'passed')
+      assert.equal(integrationFailure.targetContract.cases[2].status, 'passed')
+      assert.equal(integrationFailure.targetContract.cases[3].status, 'failed')
+      assert.equal(integrationFailure.integration.status, 'failed')
+      assert.equal(integrationFailure.eligible, false)
+      assert.deepEqual(
+        [disconnectedCollaboration, disconnectedUiContext].map(
+          (pair) => pair.target.record.evidence.status
+        ),
+        ['failed', 'failed']
+      )
+      const status = (pair, caseId) =>
+        pair.target.record.evidence.cases.find((item) => item.id === caseId)
+          ?.status
+      assert.equal(
+        status(disconnectedCollaboration, 'runtime.collaboration'),
+        'failed'
+      )
+      assert.equal(
+        status(disconnectedCollaboration, 'runtime.integration'),
+        'failed'
+      )
+      assert.equal(
+        status(disconnectedUiContext, 'runtime.ui-context'),
+        'failed'
+      )
+      assert.equal(
+        status(disconnectedUiContext, 'runtime.integration'),
+        'failed'
+      )
+
+      const complete = assess(integrated, 2)
+      assert.equal(complete.accepted.status, 'passed')
+      assert.equal(complete.targetContract.status, 'passed')
+      assert.deepEqual(
+        complete.works.map((work) => work.status),
+        ['passed', 'passed', 'passed']
+      )
+      assert.equal(complete.integration.status, 'passed')
+      assert.equal(complete.eligible, true)
+      assert.equal(
+        integrated.accepted.sourceAdmission.head,
+        integrated.target.sourceAdmission.head
+      )
+      assert.equal(
+        integrated.accepted.sourceAdmission.runtimeSource.digest,
+        integrated.target.sourceAdmission.runtimeSource.digest
+      )
+      const revertedResult = assess(reverted, 2)
+      assert.equal(revertedResult.integration.status, 'failed')
+      assert.equal(revertedResult.eligible, false)
+      assert.equal(complete.integration.status, 'passed')
+      assert.equal(complete.eligible, true)
+
+      const mixed = assessTargetSource({
+        format: 2,
+        target,
+        allocationRevision: 2,
+        acceptedContract,
+        targetContract,
+        acceptedVerificationSourceDigest:
+          integrated.accepted.sourceAdmission.verificationSource.digest,
+        targetVerificationSourceDigest:
+          integrated.target.sourceAdmission.verificationSource.digest,
+        sourceAdmission: integrated.target.sourceAdmission,
+        proofRequests: [
+          integrated.accepted.request,
+          integrationRegression.target.request
+        ],
+        current: {
+          targetId,
+          allocationRevision: 2,
+          acceptedBaseline: baseline,
+          source: complete.source
+        }
+      })
+      assert.notEqual(mixed.targetContract.status, 'passed')
+      assert.equal(mixed.eligible, false)
+
+      const stale = projectTargetAssessmentCurrentness(complete, {
+        targetId,
+        allocationRevision: 2,
+        acceptedBaseline: baseline,
+        source: {
+          repository: fixture.repository,
+          head: advanced.sourceAdmission.head,
+          runtimeSourceDigest: advanced.sourceAdmission.runtimeSource.digest
+        }
+      })
+      assert.equal(stale.current, false)
+      assert.equal(stale.eligible, false)
+      assert.deepEqual(stale.accepted, complete.accepted)
+      assert.deepEqual(stale.works, complete.works)
+      assert.deepEqual(stale.integration, complete.integration)
+
+      const wrongRevision = structuredClone(target)
+      wrongRevision.targetRevision = acceptedContract.digest
+      assert.throws(
+        () =>
+          assessTargetSource({
+            format: 2,
+            target: wrongRevision,
+            allocationRevision: 2,
+            acceptedContract,
+            targetContract,
+            acceptedVerificationSourceDigest:
+              integrated.accepted.sourceAdmission.verificationSource.digest,
+            targetVerificationSourceDigest:
+              integrated.target.sourceAdmission.verificationSource.digest,
+            sourceAdmission: integrated.target.sourceAdmission,
+            proofRequests: [
+              integrated.accepted.request,
+              integrated.target.request
+            ],
+            current: {
+              targetId,
+              allocationRevision: 2,
+              acceptedBaseline: baseline,
+              source: complete.source
+            }
+          }),
+        /invalid selected owner artifacts/
+      )
+    } finally {
+      fixture.cleanup()
+    }
+  }
+)
 
 test('real distinct-contract producers prove exact accepted preservation, bounded commitments and eligible integration without mutating owners', () => {
   const value = input()
