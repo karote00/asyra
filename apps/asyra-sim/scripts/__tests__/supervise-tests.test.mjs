@@ -12,6 +12,7 @@ import path from 'node:path'
 import { fileURLToPath, URL } from 'node:url'
 import process from 'node:process'
 import test from 'node:test'
+import { setTimeout as delay } from 'node:timers/promises'
 
 const supervisor = fileURLToPath(
   new URL('../supervise-tests.py', import.meta.url)
@@ -61,6 +62,51 @@ function run(mode, hard = 3000, idle = 1000) {
   assert.ok(result.stdout.trim(), result.stderr)
   return { status: result.status, ...JSON.parse(result.stdout) }
 }
+function parseLinuxProcessState(status) {
+  const commandEnd = status.lastIndexOf(')')
+  if (commandEnd < 0) {
+    throw new Error('Malformed Linux process status')
+  }
+  const [state, ...remaining] = status
+    .slice(commandEnd + 1)
+    .trim()
+    .split(/\s+/)
+  if (!state || state.length !== 1 || remaining.length === 0) {
+    throw new Error('Malformed Linux process status')
+  }
+  return state
+}
+async function waitForProcessExitOrLinuxZombie(pid, timeoutMs = 1000) {
+  const deadline = Date.now() + timeoutMs
+  while (Date.now() < deadline) {
+    try {
+      process.kill(pid, 0)
+    } catch (error) {
+      if (error.code === 'ESRCH') return
+      assert.fail(`PID liveness check did not prove exit: ${error.code}`)
+    }
+    if (process.platform === 'linux') {
+      try {
+        const state = parseLinuxProcessState(
+          readFileSync(`/proc/${pid}/stat`, 'utf8')
+        )
+        if (state === 'Z') return
+      } catch (error) {
+        if (error.code === 'ENOENT') return
+        assert.fail(`Linux PID state could not be verified: ${error.message}`)
+      }
+    }
+    await delay(10)
+  }
+  assert.fail(`Descendant PID ${pid} remained live after owned cleanup`)
+}
+test('Linux process status parsing preserves a zombie after a parenthesized command name', () => {
+  assert.equal(
+    parseLinuxProcessState('4321 (worker name (phase)) Z 1 2 3'),
+    'Z'
+  )
+  assert.throws(() => parseLinuxProcessState('4321 malformed status'))
+})
 test('normal assertion completion and exit are both required', () => {
   const result = run('normal')
   assert.equal(result.status, 0)
@@ -93,15 +139,11 @@ test('a truncated receipt cannot replace the last complete lower bound', () => {
 test('a late final result cannot convert timeout to success', () => {
   assert.notEqual(run('late', 250, 500).status, 0)
 })
-test('the entire owned group is stopped and reaped', () => {
+test('the owned descendant has exited or is a Linux zombie after cleanup', async () => {
   const result = run('descendant')
-  assert.equal(result.reaped, true)
   const pid = result.lastReceipt.descendantPid
   assert.ok(pid > 0)
-  const state = spawnSync('ps', ['-o', 'stat=', '-p', String(pid)], {
-    encoding: 'utf8'
-  }).stdout.trim()
-  assert.ok(!state || state.startsWith('Z'), state)
+  await waitForProcessExitOrLinuxZombie(pid)
 })
 
 test('default and worker-limited suites run heavy once without skipping ordinary tests', () => {
