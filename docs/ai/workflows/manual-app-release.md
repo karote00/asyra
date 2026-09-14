@@ -12,9 +12,9 @@
    For a website-only release, use **Manual App Release - Asyra Website** and
    leave `force_rebuild` unchecked. Shared-package and root-input changes never
    expand this entry to other Apps. Each entry calls the same reusable pipeline;
-   its global concurrency group serializes all four entries through approval
-   and publication. Individual entries retain the full existing verification
-   suite; selection limits publication, not CI coverage.
+   its global concurrency group serializes all four entries through verification
+   and publication. Verification builds and tests only Apps marked for release;
+   a website-only run does not build or test Design or Sim.
    The dispatch commit is frozen for every job; a later main push cannot change
    the candidate. Arbitrary branches, fork repositories and older SHA inputs
    are deliberately unsupported. Trigger a new run to choose a newer candidate.
@@ -22,18 +22,17 @@
 3. Read the plan job summary and its changed-input list. Each selected App compares its
    own last successful online SHA with the candidate, including accumulated
    commits and the union of old/new transitive workspace dependencies.
-4. The existing CI, packed clean-consumer readiness, ordinary/collaboration E2E
-   and production-artifact tests run against that exact dispatch commit. The
-   release enables the existing balanced AI correctness gate through the CI
-   workflow input. CI owns the single E2E invocation and its result checks; the
-   release pipeline must not call E2E a second time because both calls would
-   share its concurrency group and cancel one another. No production credential
-   is passed to these jobs.
-5. If any verifier fails, do not approve or deploy. If nothing is affected, the
-   workflow ends without requesting a deployment.
-6. Review and approve the **app-production** environment only after the plan
-   and all verifiers are successful. Its approved reviewer is the repository
-   owner; self-approval is allowed for this single-maintainer repository.
+4. The production-artifact workflow builds the planned Apps and their workspace
+   dependencies against the exact dispatch commit, then runs their production
+   browser cases. Design's separate type check runs only when Design is selected.
+   No production credential is passed to this job. Full unit, diagnostic E2E,
+   collaboration and packed clean-consumer checks remain in PR/general CI;
+   manual deployment does not rerun that pipeline.
+5. Any failed or canceled verifier prevents deployment. If nothing is affected,
+   the workflow ends without creating a deployment.
+6. When all verifiers succeed, publication starts automatically. Clicking
+   **Run workflow** is the release authorization; there is no second approval
+   or environment wait timer.
 7. The privileged job re-reads the online records, checks live Vercel project
    identity/configuration, enforces the budget, then releases Apps sequentially.
    It creates one staged Production deployment per affected App, verifies the
@@ -61,7 +60,8 @@ can run. Do not dispatch the publication workflow merely to test this PR.
   Production Domains**. The release refuses to proceed if this is enabled,
   if a Git connection remains, or if the project root is unexpected.
 - In GitHub Environment **app-production**, allow only the branch `main`,
-  require owner approval, set `VERCEL_TEAM_ID`, and store a team-scoped
+  disable **Required reviewers** and the wait timer, set `VERCEL_TEAM_ID`,
+  and store a team-scoped
   `VERCEL_TOKEN` secret. Do not store it as an unrestricted repository secret.
   Keep token expiry/rotation under the account owner's control. Never paste it
   into PRs, logs, source, workflow inputs or chat.
@@ -76,6 +76,24 @@ can run. Do not dispatch the publication workflow merely to test this PR.
   the exact staged origin, refuses redirects and never sends it to external
   assets or the stable production smoke. It never places secrets in URLs.
 
+The environment policy payload is tracked in
+`.github/app-production-environment.json`. GitHub stores the actual policy
+outside Git; merging the file alone does not apply it. A repository administrator
+can apply it from the repository root with the existing GitHub CLI:
+
+```bash
+gh api --method PUT repos/karote00/asyra/environments/app-production \
+  --input .github/app-production-environment.json \
+  --jq '{name, protection_rules, deployment_branch_policy}'
+```
+
+Keep the environment and its secrets. The payload removes required reviewers
+and sets zero wait time while retaining custom branch policies. The existing
+branch policy must still allow exactly the branch `main`; this update does not
+replace branch patterns or secrets. Before applying to an environment with a
+waiting deployment, resolve that run explicitly because removing the review
+rule may let it continue.
+
 ## App ownership and online versions
 
 `scripts/app-release-plan.mjs` owns the three public project identities and
@@ -87,7 +105,7 @@ so deleting a dependency cannot hide an affected deployment.
 those project identities before baseline reads and planning. Empty selection
 preserves the all-App flow. A single-App run reads and validates only that App's
 online baseline, so unrelated missing records do not block it. Selection is
-passed to both planning and the post-approval recomputation; a changed plan
+passed to both planning and the pre-publication recomputation; a changed plan
 still fails before publication. Deployment record names and schema stay the same.
 
 App/owned dependency source and assets trigger release. Public documentation
@@ -114,14 +132,23 @@ to unblock the next run. Package versions are not website version identities.
 
 ## Evidence and limits
 
-`yarn build:production-artifacts` executes the App builds and the website's
-explicit `build:asyra-framework-site` task in one Turbo graph. Root
-`react:build` alone does not include that website task.
-`yarn test:production-artifacts` then consumes those production builds. It never rebuilds or starts Vite middleware. It verifies Sim analysis
-and local persistence, Design local editing/history, and Next production
-routes/client search. It checks browser exceptions and rejects dev-source
-requests. Next runs as an explicitly owned child process and is cleaned up.
-The suite supplements, rather than replaces, the larger diagnostic E2E suites.
+`scripts/app-release-verification.mjs` owns selection of build tasks and browser
+cases. The reusable production-artifact workflow accepts a JSON array of planned
+App IDs. The plan passes only Apps with `release: true`; no-change plans skip
+verification and publication. PR CI supplies no selection and verifies all three
+Apps. Malformed, empty, duplicate or unknown explicit selections fail before any
+work starts.
+
+The runner uses one Turbo graph with qualified App task names and concurrency
+of two, so selected Apps share dependency builds without building unrelated Apps.
+It checks the generated graph before building and checks Design application types
+only after its dependencies are built. The browser phase selects the existing
+production-artifact cases and never rebuilds or starts Vite middleware: Sim
+analysis/persistence, Design local editing/history, and Next production routes
+and client search. It checks browser exceptions and rejects dev-source requests.
+Next runs as an explicitly owned child process and is cleaned up. The existing
+root `yarn build:production-artifacts` and `yarn test:production-artifacts` remain
+available for broad local validation.
 
 Vercel still builds the exact source separately. This is source-identity
 verification, not a claim that the CI and Vercel output bytes are identical.
@@ -140,6 +167,23 @@ provider rate-limit meter. Provider 429/error responses stop the workflow;
 never delete entries to reclaim budget or repeatedly retry a limited request.
 Build CPU/time, transfer, Functions and storage remain separate usage measures.
 
+## Why the remaining release steps exist
+
+- Protected PR checks own general code correctness, full functional E2E and
+  package release readiness. They remain unchanged and are not prerequisites
+  rerun inside the manual release workflow.
+- Selected-App production-artifact checks verify that the release candidate
+  builds and works without development middleware. Vercel HTTP smoke cannot
+  substitute for these browser interactions.
+- Planning determines whether each selected App needs a deployment. Publication
+  re-reads online state because verification takes time and external deployments
+  or configuration may change in between.
+- Budget checks prevent avoidable quota exhaustion before creating deployments.
+- Staged smoke validates the new deployment before promotion. Stable-domain
+  smoke verifies that production actually serves the promoted deployment.
+- The environment retains production secrets and its main-only branch policy;
+  it adds neither an approval nor a wait timer after manual dispatch.
+
 ## Failure and recovery
 
 - Before promotion: leave the current domain untouched. Inspect the recorded
@@ -151,10 +195,10 @@ Build CPU/time, transfer, Functions and storage remain separate usage measures.
   domain and reconcile the deployment record before the next release.
 - A partially completed multi-App batch retains each App's actual state;
   there is no cross-project atomic switch. Do not continue a dependent App
-  after a failure. Check compatible App/backend versions before approving.
+  after a failure. Check compatible App/backend versions before starting the release.
 - Storage migrations, worker/CSP changes, rendering performance, toolchain,
   production configuration and external services need their owner-specific
-  gates and a data-compatible recovery plan before approval. HTTP smoke alone
+  gates and a data-compatible recovery plan before starting the release. HTTP smoke alone
   is insufficient for those changes.
 
 ## Security boundary
@@ -169,8 +213,8 @@ use fixed origins, reject redirects, bound timeouts and redact provider error
 bodies. Production secrets are scoped to the single publication step.
 
 The workflow, controller scripts and their dependency-free imports are trusted
-release code and must be reviewed accordingly. Environment reviewers must
-inspect their diff before approval; secret storage alone is not a security
+release code and must be reviewed accordingly. PR reviewers must
+inspect their diff before merging into main; secret storage alone is not a security
 boundary against a malicious change merged into trusted release code.
 
 References:

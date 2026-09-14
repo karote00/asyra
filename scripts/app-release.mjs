@@ -46,7 +46,7 @@ const plan = createReleasePlan({
 if (process.argv[2] === 'plan') {
   appendFileSync(
     process.env.GITHUB_OUTPUT,
-    `plan=${JSON.stringify(plan)}\nhas_changes=${plan.apps.some((app) => app.release)}\n`
+    `plan=${JSON.stringify(plan)}\nhas_changes=${plan.apps.some((app) => app.release)}\napps=${JSON.stringify(plan.apps.filter((app) => app.release).map((app) => app.id))}\n`
   )
   const rows = plan.apps
     .map(
@@ -56,7 +56,7 @@ if (process.argv[2] === 'plan') {
     .join('\n')
   appendFileSync(
     process.env.GITHUB_STEP_SUMMARY,
-    `Release candidate: \`${sha}\`\n\n| App | Online SHA | Decision | Changed inputs |\n| --- | --- | --- | --- |\n${rows}\n\nInspect the plan job output before approving app-production. No Vercel deployment has been created.\n`
+    `Release candidate: \`${sha}\`\n\n| App | Online SHA | Decision | Changed inputs |\n| --- | --- | --- | --- |\n${rows}\n\nDeployment proceeds automatically after all verification jobs succeed. No Vercel deployment has been created.\n`
   )
   console.log(JSON.stringify(plan, null, 2))
 } else {
@@ -64,7 +64,7 @@ if (process.argv[2] === 'plan') {
   assert.deepEqual(
     plan,
     JSON.parse(process.env.RELEASE_PLAN),
-    'Plan changed while waiting for approval; start a new release'
+    'Plan changed during verification; start a new release'
   )
   assert.ok(process.env.VERCEL_TEAM_ID, 'Missing VERCEL_TEAM_ID')
   const vercel = createApi('https://api.vercel.com', process.env.VERCEL_TOKEN, {
