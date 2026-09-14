@@ -435,14 +435,15 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           }
         })
         vi.spyOn(meshIndex, 'buildMeshIndex').mockImplementation(
-          (geometry, checkpoint, hierarchy) => {
+          (geometry, checkpoint, hierarchy, checkExecution) => {
             const index = build(
               geometry,
               () => {
                 if (current) current.median++
                 checkpoint()
               },
-              hierarchy
+              hierarchy,
+              checkExecution
             )
             indices.set(geometry, index)
             register(index)

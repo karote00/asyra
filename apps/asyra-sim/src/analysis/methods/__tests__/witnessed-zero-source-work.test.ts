@@ -1,14 +1,21 @@
-import { afterEach, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, expect, it, vi } from 'vitest'
 import * as continuous from '../continuous-query'
 import { queryOriginalPartPair } from '../original-part-method'
 import { OriginalMeshQuery } from '../original-mesh-query'
 import { representativeSnapshot } from './representative-fixture'
+import { supervisedTestProgress } from './heavy-test-progress'
 
-afterEach(() => vi.restoreAllMocks())
+const progress = supervisedTestProgress()
+afterEach(() => {
+  progress?.endQuery()
+  vi.restoreAllMocks()
+})
+afterAll(() => progress?.finish(4))
 
 it.each(['segment71', 'window2', 'window4', 'commonPrefix'] as const)(
   'preserves source certificates with charged witnessed-zero derivation - %s',
   async (mode) => {
+    progress?.stage('fixture-' + mode)
     const snapshot = await representativeSnapshot(0)
     const pair = snapshot.pairs.find(
       (pair) =>
@@ -41,7 +48,9 @@ it.each(['segment71', 'window2', 'window4', 'commonPrefix'] as const)(
       maxIntervals: snapshot.budget.maxIntervals
     }
     const execute = () => {
-      const context = new OriginalMeshQuery()
+      const context: OriginalMeshQuery = new OriginalMeshQuery(
+        progress?.query(mode, () => context.work)
+      )
       const charges = {
         static: 0,
         interval: 0,
@@ -82,6 +91,7 @@ it.each(['segment71', 'window2', 'window4', 'commonPrefix'] as const)(
         () => undefined,
         context
       )
+      progress?.endQuery()
       expect(Object.values(charges).reduce((a, b) => a + b, 0)).toBe(
         context.work
       )
@@ -138,6 +148,7 @@ it.each(['segment71', 'window2', 'window4', 'commonPrefix'] as const)(
             : undefined
       })
     )
+    progress?.complete()
   },
-  20000
+  progress ? 0 : 20000
 )

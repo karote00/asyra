@@ -4,6 +4,8 @@ import type { Workcell } from '../../domain/workcell'
 import type { ExperimentDefinition, MethodDescriptor } from '../contracts'
 import { preflightExperiment } from '../preflight'
 import { createExperimentSnapshot } from '../snapshot'
+import { validateInstalledDescriptor } from '../../extensions/descriptor'
+import { ORIGINAL_PART_METHOD } from '../methods/original-part-method'
 
 const method: MethodDescriptor = {
   id: 'resource-test',
@@ -110,15 +112,16 @@ describe('published local experiment resource profile', () => {
     expect(report.pairs).toEqual([])
   })
 
-  it('rejects more than 500000 pair/segment combinations despite acknowledgement', () => {
+  it('admits more than 500000 pair/segment combinations with unchanged counting and acknowledgement', () => {
     const admitted = inspect(setup(32, 1009))
     expect(admitted.estimate.workUnits).toBe(499968)
     expect(admitted.blockers).toEqual([])
     const input = setup(32, 1010),
       report = inspect(input)
     expect(report.estimate.workUnits).toBe(500464)
-    expect(report.blockers.map((issue) => issue.code)).toContain(
-      'workload-limit'
+    expect(report.blockers).toEqual([])
+    expect(report.resourceWarnings.map((issue) => issue.code)).toContain(
+      'large-workload'
     )
     expect(() =>
       createExperimentSnapshot({
@@ -131,7 +134,41 @@ describe('published local experiment resource profile', () => {
           (issue) => issue.code
         )
       })
-    ).toThrow('preflight blocked')
+    ).not.toThrow()
+  })
+
+  it('retains serialized warning declarations and validates positive safe integer thresholds independently of execution limits', () => {
+    for (const warningWorkUnits of [
+      1,
+      10000,
+      500000,
+      500001,
+      Number.MAX_SAFE_INTEGER
+    ]) {
+      const descriptor = JSON.parse(
+        JSON.stringify({
+          ...ORIGINAL_PART_METHOD,
+          warningWorkUnits
+        })
+      )
+      expect(() => validateInstalledDescriptor(descriptor)).not.toThrow()
+      expect(descriptor.warningWorkUnits).toBe(warningWorkUnits)
+    }
+    for (const warningWorkUnits of [
+      0,
+      -1,
+      0.5,
+      Infinity,
+      NaN,
+      Number.MAX_SAFE_INTEGER + 1
+    ]) {
+      expect(() =>
+        validateInstalledDescriptor({
+          ...ORIGINAL_PART_METHOD,
+          warningWorkUnits
+        })
+      ).toThrow('Invalid installed method descriptor')
+    }
   })
 
   it('warns above 256 pairs or 10000 combinations without inventing a time estimate', () => {

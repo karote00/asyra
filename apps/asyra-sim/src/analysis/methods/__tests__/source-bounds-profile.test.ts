@@ -74,14 +74,15 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         let measuringCurrent = false
         const build = meshIndex.buildMeshIndex
         vi.spyOn(meshIndex, 'buildMeshIndex').mockImplementation(
-          (g, checkpoint, hierarchy) =>
+          (g, checkpoint, hierarchy, checkExecution) =>
             build(
               g,
               () => {
                 if (measuringCurrent) counts.currentPreparationWork++
                 checkpoint()
               },
-              hierarchy
+              hierarchy,
+              checkExecution
             )
         )
         function bounds(shape: ConvexShape): Bounds {

@@ -73,14 +73,15 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             throw new MeshWorkLimit('Candidate combined work exhausted')
         })
         vi.spyOn(meshIndex, 'buildMeshIndex').mockImplementation(
-          (mesh, checkpoint, hierarchy) =>
+          (mesh, checkpoint, hierarchy, checkExecution) =>
             build(
               mesh,
               () => {
                 counts.preparationWork++
                 checkpoint()
               },
-              hierarchy
+              hierarchy,
+              checkExecution
             )
         )
         vi.spyOn(meshIndex, 'worldBounds').mockImplementation(

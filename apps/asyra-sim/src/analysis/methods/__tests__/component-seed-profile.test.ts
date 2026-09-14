@@ -4,13 +4,13 @@ import {
   poseOperations
 } from '../../../domain/kinematic-algebra'
 import type { MeshGeometry } from '../../../domain/part-geometry'
-import { EXPERIMENT_RESOURCE_PROFILE } from '../../contracts'
 import type { ConvexShape } from '../convex-query'
 import * as meshIndex from '../mesh-index'
 import { MeshWorkLimit, OriginalMeshQuery } from '../original-mesh-query'
 import { queryOriginalPartPair } from '../original-part-method'
 import { representativeSnapshot } from './representative-fixture'
 
+const diagnosticWorkLimit = 500000
 const ops = poseOperations(intervalAlgebra)
 afterEach(() => vi.restoreAllMocks())
 
@@ -31,8 +31,8 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         const prepared = new WeakMap<MeshGeometry, meshIndex.MeshIndex>()
         const build = meshIndex.buildMeshIndex
         vi.spyOn(meshIndex, 'buildMeshIndex').mockImplementation(
-          (geometry, checkpoint, hierarchy) => {
-            const index = build(geometry, checkpoint, hierarchy)
+          (geometry, checkpoint, hierarchy, checkExecution) => {
+            const index = build(geometry, checkpoint, hierarchy, checkExecution)
             prepared.set(geometry, index)
             return index
           }
@@ -70,7 +70,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           charges[kind]++
           if (
             context.work + charges.transforms + charges.norms >
-            EXPERIMENT_RESOURCE_PROFILE.maxWorkUnits
+            diagnosticWorkLimit
           )
             throw new MeshWorkLimit(
               'Passive point preparation exceeded the unchanged guard'

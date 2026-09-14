@@ -72,14 +72,15 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             : node.triangles.map((triangle) => triangle.offset)
         const build = meshIndex.buildMeshIndex
         vi.spyOn(meshIndex, 'buildMeshIndex').mockImplementation(
-          (geometry, checkpoint, hierarchy) => {
+          (geometry, checkpoint, hierarchy, checkExecution) => {
             const index = build(
               geometry,
               () => {
                 preparation++
                 checkpoint()
               },
-              hierarchy
+              hierarchy,
+              checkExecution
             )
             const root = copy(index.root)
             expect(offsets(root).sort((a, b) => a - b)).toEqual(

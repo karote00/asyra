@@ -9,8 +9,8 @@ if (process.env.SIM_COMPONENT_HIERARCHY_EXPERIMENT === '1') {
     // Isolate the recorded eager candidate from the newer demand-time owner.
     vi.spyOn(meshIndex, 'refineMeshIndex').mockImplementation((index) => index)
     vi.spyOn(meshIndex, 'buildMeshIndex').mockImplementation(
-      (geometry, checkpoint, hierarchy) => {
-        const index = build(geometry, checkpoint, hierarchy)
+      (geometry, checkpoint, hierarchy, checkExecution) => {
+        const index = build(geometry, checkpoint, hierarchy, checkExecution)
         return hierarchy === false ? index : componentIndex(index, checkpoint)
       }
     )

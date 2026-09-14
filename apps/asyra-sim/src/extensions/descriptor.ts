@@ -137,10 +137,8 @@ export function validateInstalledDescriptor(
     (input.maxPairs as number) < 1 ||
     (input.maxPairs as number) > EXPERIMENT_RESOURCE_PROFILE.maxPairs ||
     (optionalWarning.length &&
-      (!Number.isInteger(input.warningWorkUnits) ||
-        (input.warningWorkUnits as number) < 1 ||
-        (input.warningWorkUnits as number) >
-          EXPERIMENT_RESOURCE_PROFILE.maxWorkUnits))
+      (!Number.isSafeInteger(input.warningWorkUnits) ||
+        (input.warningWorkUnits as number) < 1))
   )
     throw new Error('Invalid installed method descriptor')
   const manifest = input.manifest

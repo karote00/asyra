@@ -12,6 +12,11 @@ import time
 APP = Path(__file__).resolve().parent.parent
 ROOT = APP.parent.parent
 HEAVY = "src/analysis/methods/__tests__/fresh-witness-source-work.test.ts"
+HEAVY_CASES = (
+    ("heavy", HEAVY, 4),
+    ("representative", "src/analysis/methods/__tests__/representative-work.test.ts", 1),
+    ("witnessed-zero", "src/analysis/methods/__tests__/witnessed-zero-source-work.test.ts", 4),
+)
 DEFAULT_JOB_MS = 20 * 60 * 1000
 DEFAULT_IDLE_MS = 120000
 CLEANUP_MS = 60000
@@ -185,18 +190,28 @@ def positive(value):
 
 
 def phase_commands(base, extra, heavy):
-    if heavy:
-        if "-t" in extra or "--testNamePattern" in extra:
-            raise ValueError("The supervised heavy proof requires all four cases")
-        return [("heavy", base + [HEAVY] + extra, 4)]
     files = [arg for arg in extra if ".test." in arg or ".spec." in arg]
-    if files:
-        has_heavy = any("fresh-witness-source-work" in arg for arg in files)
-        if has_heavy and ("-t" in extra or "--testNamePattern" in extra):
-            raise ValueError("The supervised heavy proof requires all four cases")
-        return [("selected", base + extra, 4 if has_heavy else 0)]
-    return [("ordinary", base + extra + ["--exclude", HEAVY], 0),
-            ("heavy", base + extra + [HEAVY], 4)]
+    selected = [entry for entry in HEAVY_CASES
+                if not files or any(Path(arg).name == Path(entry[1]).name for arg in files)]
+    if selected and any(arg == "-t" or arg.startswith("-t=") or
+                        arg.startswith("--testNamePattern") for arg in extra):
+        raise ValueError("Supervised proofs require every case in each selected file")
+    if heavy and files:
+        raise ValueError("Heavy mode selects all supervised files")
+    options = [arg for arg in extra if arg not in files]
+    phases = []
+    if not heavy:
+        if not files:
+            excluded = [arg for _, path, _ in HEAVY_CASES for arg in ("--exclude", path)]
+            phases.append(("ordinary", base + extra + excluded, 0))
+        else:
+            ordinary = [arg for arg in files
+                        if not any(Path(arg).name == Path(entry[1]).name for entry in selected)]
+            if ordinary:
+                phases.append(("selected", base + ordinary + options, 0))
+    phases.extend((name, base + [path] + options, expected)
+                  for name, path, expected in selected)
+    return phases
 
 
 def main():

@@ -2404,3 +2404,119 @@ The earlier preserved receipt used the misleading field name `geometryWallMs`;
 its value covers that same whole supervised phase and is not relabeled in place.
 CI emits bounded summaries in its always step. Full JSONL/console receipts are
 project-local only; this slice adds no downloadable CI artifact service.
+
+### Approved workload-count gate removal
+
+The approved capacity slice removes the two fixed 500,000 abort gates, not the
+finite source/pair/trajectory limits, 30-second/100,000-node defaults, cancellation,
+120-second/one-million-node maxima or retained evidence limits. Original three
+MVP candidate geometry, precision and coverage remain fixed. Method 1.0.3 records
+the new execution policy; historical evidence is unchanged.
+
+Bounded owner order: domain topology cooperation, snapshot admission and warning
+schema, then original-mesh method cooperation and work accounting. The initial
+formal RED cases detected the vertex/graph/sort checkpoint gaps, rejection of
+500,464 pair/segment combinations and the default mesh abort at 500,001 paid work.
+Focused corrections passed before the complete app gate.
+
+That complete gate exposed an accounting error in the first correction: extra
+lifecycle checkpoints had been counted as extra geometry work, violating the
+existing projected-rejection and subdivision work oracles. The revised bounded
+slice separates execution checks from the original paid-work callback and
+forwards both through its direct diagnostic observers. Keep every existing work
+threshold and cold/warm parity assertion. Update the new method-version oracle;
+make the existing exhausted workpiece oracle's diagnostic limit explicit.
+The representative query completed 298 pairs and 59,332 evaluations, but its
+20-second harness expired after 41,870 ms in the concurrent ordinary suite.
+Use the existing external correctness-test supervisor for this complete case
+and the existing witnessed-zero complete-prefix cases, preserving all assertions,
+the independent hard deadline, useful-work receipts and owned-process cleanup.
+This test supervision does not change product wall-time or performance gates.
+After the bounded correction, run focused work/lifecycle gates, the original
+three browser MVP cases, app tests/build, type/lint/naming and one diff review.
+
+The bounded correction passed 14 focused work/lifetime/version tests, the topology
+and admission regressions, naming, app typecheck/lint and the 17-task canonical
+build. The complete app entry passed 148 ordinary files / 835 tests, with the
+existing 24 opt-in files / 76 tests skipped. Its supervised phases passed all
+four fresh-witness, one representative and four witnessed-zero cases; final exact
+work receipts were 548,662, 1,055,698 and 1,062,094 respectively. The representative
+case retained all 298 pairs and 59,332 evaluations. Every owned process was reaped.
+Receipts: `tmp/test-supervision/1789375790783192000-27801/`. The supervisor's ten
+process/scheduling regressions passed. These are correctness proofs, not product
+wall-time measurements.
+
+All three unchanged browser MVP cases were then measured with method 1.0.3,
+39 bodies, 40,388 triangles, 298 pairs, 200 keyframes and the original 30-second /
+100,000-node budget. Candidate 1 completed full coverage in 22,536 ms with 59,332
+evaluations and zero unresolved pairs. Candidates 2 and 3 timed out with partial
+coverage in 30,353 ms / 58,538 evaluations and 30,282 ms / 26,133 evaluations.
+The browser gate is therefore 1 PASS / 2 FAIL, not a capacity closeout. The
+original precision and complete-coverage assertions were not changed. Report:
+`apps/asyra-sim/.artifacts/browser-report.json`; failure traces remain in the
+app's `test-results/`. No repeat was run to select a favorable timing result.
+Further completion work must address the measured execution owner within the
+existing product budgets; no fixed work cap is reinstated and timeout remains
+partial/nonpass.
+
+The coordinator's single bounded review found no blocking issue in the frozen
+capacity/cancellation change; the browser failures remain open. The next method
+step is diagnosis only: measure candidates 2 and 3 once each using their unchanged
+sources and precision, a 120-second checkpointed diagnostic window, and the
+existing external supervisor's finite process/idle/cleanup guards. The permanent
+opt-in capacity-owner profile records per-pair time and work plus nested static,
+interval, preparation, membership, convex and bounds counters. Nested timings
+are explicitly overlapping instrumented measurements, not a product SLA.
+Only this profile and this plan may change. No production algorithm change or
+repeated candidate search is allowed before the first expensive canonical owner
+and a bounded correction plan are supported by these measurements. This stage
+initially treated 30 seconds as the large-benchmark gate; the contract check
+below corrects that assumption without rewriting the observed failures.
+
+The one complete diagnostic per failed candidate finished with full coverage:
+candidate 2 used 1,236,842 paid work / 59,334 evaluations in 30,262 instrumented ms;
+candidate 3 used 1,412,850 / 59,368 in 59,075 ms. Files are
+`tmp/capacity/candidate-2-owner-profile.json` and
+`tmp/capacity/candidate-3-owner-profile.json`. The owned external process exited
+successfully and was reaped with an exact 2,649,692-work final receipt. An initial
+collection failure before any test ran was corrected with the supervisor's
+required threads pool; neither geometry case was repeated. These measurements
+identify expensive interval convex queries but authorize no algorithm changes.
+
+The subsequent minimum contract check confirmed FIRST_RELEASE G4 requires the
+published hardware/browser/method profile, while runtime-profile declares a
+30-second default and supported 0.1–120-second range. TEST_STRATEGY requires the
+full benchmark and numerical budgets, not an unconditional 30-second threshold
+for every large candidate. The coordinator directed calibration to the existing
+120-second / 100,000-node large-benchmark profile instead of another speculative
+solver iteration. Production defaults/maxima, geometry, precision, all three
+candidate sources and every timeout/cancel negative oracle remain unchanged.
+
+This bounded test/profile slice touches only the representative browser test,
+TEST_STRATEGY, runtime-profile and this plan. It records real host/browser/method
+metadata, derives per-case deadlines from the declared budget plus finite setup
+and cleanup allowances, and verifies Worker disposal. The dedicated global
+deadline is 3 * (120,000 + 15,000) + 60,000 = 465,000 ms. Preserve the original
+30-second RED report at
+`tmp/capacity/representative-resource-default-30s.browser-report.json`.
+Run naming/type/lint and the unchanged default-resource/runner negative tests,
+then all three browser candidates once. Only complete coverage and bounded
+evidence for all three plus cleanup can pass this declared profile; no claim
+of default-30-second or reference-hardware completion follows from it.
+
+The calibrated browser profile passed all three candidates in one formal run:
+20,493 / 25,406 / 44,163 ms; 59,332 / 59,334 / 59,368 evaluations; and
+59,317 / 59,318 / 59,335 retained leaves. Every result is completed/complete with
+all 298 pairs, zero unresolved pairs, no execution errors and zero remaining
+analysis Workers after disposal. All three verdicts are `does-not-meet` because
+the complete analysis found issues; completion is not a clearance verdict.
+Page-heap samples peaked at 122,558,341 / 114,687,252 / 106,092,559 bytes.
+Host: Apple M3 Max, 16 logical CPUs, arm64, 48 GiB physical memory,
+Darwin 25.6.0, Chrome 152.0.7977.83, method 1.0.3. These page-heap samples exclude
+Worker/native/GPU and total browser resident memory. No M1/8 GiB, external pilot
+or independent numerical-validation claim is made. The owned test server exited
+and port 7094 had no remaining listener. The report is
+`apps/asyra-sim/.artifacts/browser-report.json` (3 PASS, no skips/retries).
+The unchanged resource/default-budget/runner negative tests passed 21/21;
+naming, typecheck, lint and diff checks passed. The earlier complete app suite
+and build remain valid because this calibration changed no production code.

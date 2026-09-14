@@ -113,10 +113,23 @@ print(json.dumps([owner.phase_commands(['vitest','run'], args, False)
   assert.equal(result.status, 0, result.stderr)
   const [normal, limited, selected] = JSON.parse(result.stdout)
   for (const phases of [normal, limited]) {
-    assert.equal(phases.length, 2)
+    assert.equal(phases.length, 4)
     assert.equal(phases[0][2], 0)
     assert.ok(phases[0][1].includes('--exclude'))
     assert.equal(phases[1][2], 4)
+    assert.equal(phases[2][2], 1)
+    assert.equal(phases[3][2], 4)
+    for (const [index, file] of [
+      [1, 'fresh-witness-source-work'],
+      [2, 'representative-work'],
+      [3, 'witnessed-zero-source-work']
+    ]) {
+      const path = phases[index][1].find((arg) => arg.includes(file))
+      assert.ok(path)
+      const excluded = phases[0][1].indexOf(path)
+      assert.ok(excluded > 0)
+      assert.equal(phases[0][1][excluded - 1], '--exclude')
+    }
     assert.equal(
       phases[1][1].filter((arg) => arg.includes('fresh-witness-source-work'))
         .length,
@@ -125,6 +138,46 @@ print(json.dumps([owner.phase_commands(['vitest','run'], args, False)
   }
   assert.equal(selected.length, 1)
   assert.ok(selected[0][1].includes('some.test.ts'))
+})
+
+test('selected heavy files retain separate complete-case receipts and reject filtered proofs', () => {
+  const code = `
+import sys, importlib.util, json
+sys.dont_write_bytecode = True
+spec = importlib.util.spec_from_file_location('supervisor', sys.argv[1])
+owner = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(owner)
+files = ['src/analysis/methods/__tests__/representative-work.test.ts',
+         'src/analysis/methods/__tests__/witnessed-zero-source-work.test.ts']
+phases = owner.phase_commands(['vitest','run'], files + ['some.test.ts', '--maxWorkers=1'], False)
+rejected = []
+for file in files:
+    try:
+        owner.phase_commands(['vitest','run'], [file, '-t', 'one case'], False)
+        rejected.append(False)
+    except ValueError:
+        rejected.append(True)
+print(json.dumps(dict(phases=phases, rejected=rejected)))
+`
+  const result = spawnSync('python3', ['-c', code, supervisor], {
+    encoding: 'utf8',
+    timeout: 5000
+  })
+  assert.equal(result.status, 0, result.stderr)
+  const { phases, rejected } = JSON.parse(result.stdout)
+  assert.deepEqual(rejected, [true, true])
+  assert.deepEqual(
+    phases.map((phase) => phase[2]),
+    [0, 1, 4]
+  )
+  for (const phase of phases) assert.ok(phase[1].includes('--maxWorkers=1'))
+  assert.ok(phases[0][1].includes('some.test.ts'))
+  assert.equal(
+    phases[0][1].filter((arg) => arg.includes('source-work')).length,
+    0
+  )
+  assert.equal(phases[1][1].filter((arg) => arg.endsWith('.test.ts')).length, 1)
+  assert.equal(phases[2][1].filter((arg) => arg.endsWith('.test.ts')).length, 1)
 })
 
 test('CI builds checkout-local dependencies before invoking the same supervised app entry', () => {

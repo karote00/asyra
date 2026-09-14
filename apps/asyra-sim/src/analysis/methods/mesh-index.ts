@@ -59,9 +59,10 @@ export function boundsOf(points: readonly Vec3[]): Bounds {
 export function buildMeshIndex(
   mesh: MeshGeometry,
   checkpoint: () => void,
-  hierarchy = true
+  hierarchy = true,
+  checkExecution: () => void = checkpoint
 ): MeshIndex {
-  const topology = inspectMeshTopology(mesh, checkpoint)
+  const topology = inspectMeshTopology(mesh, checkpoint, checkExecution)
   if (topology.issue) throw new Error(topology.issue)
   const triangles: MeshTriangle[] = [],
     representatives: Vec3[] = []
@@ -85,7 +86,8 @@ export function buildMeshIndex(
     const bounds: Bounds = [0, 1, 2].map((axis) => {
       let lo = Infinity,
         hi = -Infinity
-      for (const triangle of items) {
+      for (const [index, triangle] of items.entries()) {
+        if (index % 256 === 0) checkExecution()
         lo = Math.min(lo, triangle.bounds[axis][0])
         hi = Math.max(hi, triangle.bounds[axis][1])
       }
@@ -94,12 +96,15 @@ export function buildMeshIndex(
     if (!hierarchy || items.length <= 4) return { bounds, triangles: items }
     const widths = bounds.map((axis) => axis[1] - axis[0]),
       axis = widths.indexOf(Math.max(...widths))
-    items.sort(
-      (a, b) =>
+    let comparisons = 0
+    items.sort((a, b) => {
+      if (comparisons++ % 256 === 0) checkExecution()
+      return (
         a.bounds[axis][0] +
           a.bounds[axis][1] -
           (b.bounds[axis][0] + b.bounds[axis][1]) || a.offset - b.offset
-    )
+      )
+    })
     const middle = Math.floor(items.length / 2)
     return {
       bounds,

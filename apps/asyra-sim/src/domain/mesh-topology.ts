@@ -11,12 +11,14 @@ export interface MeshTopology {
 /** Exact coordinate adjacency only. No epsilon welding, triangle removal or hole repair. */
 export function inspectMeshTopology(
   mesh: MeshGeometry,
-  checkpoint: () => void = () => undefined
+  checkpoint: () => void = () => undefined,
+  checkExecution: () => void = checkpoint
 ): MeshTopology {
   const ops = poseOperations(intervalAlgebra)
   const vertices = new Map<string, number>(),
     canonical: number[] = []
   for (let i = 0; i < mesh.positions.length; i += 3) {
+    if (i % 768 === 0) checkExecution()
     const key = mesh.positions.slice(i, i + 3).join(',')
     let id = vertices.get(key)
     if (id === undefined) {
@@ -68,12 +70,18 @@ export function inspectMeshTopology(
     return invalid('Open original part surface: closed solids are required')
   const seen = new Set<number>(),
     components: number[][] = []
+  let graphSteps = 0
+  const checkGraph = () => {
+    if (graphSteps++ % 256 === 0) checkExecution()
+  }
   for (let t = 0; t < adjacency.length; t++) {
+    checkGraph()
     if (seen.has(t)) continue
     const component: number[] = [],
       pending = [t]
     seen.add(t)
     while (pending.length) {
+      checkGraph()
       const triangle = pending.pop()
       if (triangle === undefined) throw new Error('Missing topology face')
       component.push(triangle * 3)
@@ -91,6 +99,7 @@ export function inspectMeshTopology(
     const incident = new Map<number, Set<number>>()
     for (const t of component)
       for (let v = 0; v < 3; v++) {
+        checkGraph()
         const id = canonical[mesh.indices[t + v]]
         let faces = incident.get(id)
         if (!faces) {
@@ -100,11 +109,13 @@ export function inspectMeshTopology(
         faces.add(t / 3)
       }
     for (const faces of incident.values()) {
+      checkGraph()
       const first = faces.values().next().value
       if (first === undefined) throw new Error('Empty topology vertex fan')
       const pending = [first],
         reached = new Set(pending)
       while (pending.length) {
+        checkGraph()
         const face = pending.pop()
         if (face === undefined) throw new Error('Missing vertex fan face')
         for (const next of adjacency[face]) {
