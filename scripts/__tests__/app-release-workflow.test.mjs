@@ -14,7 +14,7 @@ test('release controller is manual, upstream-main-only and waits for every verif
     workflow,
     /pull_request_target:|workflow_run:|repository_dispatch:|schedule:|secrets: inherit/
   )
-  assert.match(workflow, /needs: \[plan, ci, e2e, production-artifacts\]/)
+  assert.match(workflow, /needs: \[plan, ci, production-artifacts\]/)
   assert.match(workflow, /environment: app-production/)
   assert.match(workflow, /cancel-in-progress: false/)
   assert.match(workflow, /run_balanced_ai_correctness: true/)
@@ -134,4 +134,58 @@ test('manual entries share one pipeline and pin independent App selection', () =
     controller,
     /assert.deepEqual\([\s\n]*plan,[\s\n]*JSON.parse\(process.env.RELEASE_PLAN\)/
   )
+})
+
+// Count calls, not unique filenames: two paths to one reusable workflow run twice.
+function workflowCalls(file, ancestors = []) {
+  assert.ok(!ancestors.includes(file), `Recursive workflow call: ${file}`)
+  return [
+    file,
+    ...Array.from(
+      read(file).matchAll(/^ +uses: \.\/(\.github\/workflows\/[^\s]+)$/gm),
+      ([, called]) => workflowCalls(called, [...ancestors, file])
+    ).flat()
+  ]
+}
+
+test('every manual release entry invokes E2E exactly once through CI', () => {
+  for (const entry of [
+    'app-release.yml',
+    'app-release-framework.yml',
+    'app-release-design.yml',
+    'app-release-sim.yml'
+  ]) {
+    const calls = workflowCalls(`.github/workflows/${entry}`)
+    assert.equal(
+      calls.filter((file) => file === '.github/workflows/e2e.yml').length,
+      1,
+      `${entry} must not start competing E2E producers`
+    )
+    assert.equal(
+      calls.filter((file) => file === '.github/workflows/main.yml').length,
+      1
+    )
+  }
+})
+
+test('release forwards the balanced correctness requirement to the CI-owned E2E producer', () => {
+  const pipeline = read('.github/workflows/app-release-pipeline.yml')
+  const ciCall = pipeline
+    .split('\n  ci:\n')[1]
+    .split(/\n {2}[a-z][a-z0-9-]*:\n/)[0]
+  assert.match(ciCall, /run_balanced_ai_correctness: true/)
+  const ci = read('.github/workflows/main.yml')
+  assert.match(
+    ci,
+    /workflow_call:\n {4}inputs:\n {6}run_balanced_ai_correctness:\n {8}type: boolean\n {8}default: false/
+  )
+  const producer = ci
+    .split('\n  design-e2e:\n')[1]
+    .split(/\n {2}[a-z][a-z0-9-]*:\n/)[0]
+  assert.ok(
+    producer.includes(
+      'run_balanced_ai_correctness: ${{ inputs.run_balanced_ai_correctness || false }}'
+    )
+  )
+  assert.match(pipeline, /needs: \[plan, ci, production-artifacts\]/)
 })
