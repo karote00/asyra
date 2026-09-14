@@ -792,6 +792,33 @@ retains `quasiStatic: 'pending-W4'` and makes no stability or safety claim.
 
 ## Constrained support projection
 
+The separate terrain-placement owner admits explicit measured/synthetic scenario
+triangles through `walking-terrain-placement-request/1`. Exact current source,
+SceneDemand, farm and route references bind complete original SourceRegions and
+three source-issued foot seeds with triangle ordinals and rational barycentrics.
+Query-exact frames derive anchors; caller world coordinates are forbidden.
+The producer obtains one constrained projection and proves full sole coverage
+by exact clipped-area equality only after soil interiors are proven disjoint.
+Certificates retain original foot and contributing soil triangle ordinals.
+Current W1 closed channel opening bounds, including Y=0, take priority over soil
+labels; complete debris triangles or evidenced keep-outs may also block.
+Disjoint boundary triangles do not exclude a closed-solid debris interior;
+without that proof this owner retains unknown, while actual surface or keep-out
+hits remain blocked. Every supplied assessment must name a current source foot
+patch, including assessments not selected by the three seeds.
+Incomplete partitions, observations, unsupported topology, out-of-route soil
+and exhausted finite input/pair/predicate/bit budgets remain unknown.
+
+`WalkingTerrainPlacementOwner` publishes immutable `walking-terrain-placement/1`
+geometry products. `sourceGeometry.status` is distinct from
+`physicalStatus: unknown` and `assessmentApplicability: unbound`. Supplied
+geometry/friction/bearing/sinkage records retain their evidence and original
+path/load/time fields; only a later current product can bind their applicability.
+Flags alone never admit source geometry or safety. Same-admitted-request prepare
+and exact reads do no repeated source work; a successor retires old products.
+This source placement does not admit swing, stability, collision-free gait or
+hardware safety.
+
 `WalkingConstrainedKinematicsOwner` prepares the explicit
 `walking-constrained-kinematic-projection/1` recipe. Its inputs bind the exact
 current source, three complementary tripod chain/part/sole-patch references,

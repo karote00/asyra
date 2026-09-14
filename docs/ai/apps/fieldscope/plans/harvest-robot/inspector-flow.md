@@ -158,12 +158,23 @@ and outward body/part frames use that recipe, while final rounded display frames
 are separate. Unproved dependencies, incompatible anchors or layouts are
 unavailable. Legacy FK and interval products retain their existing semantics;
 this projection alone admits no swing, terrain contact, collision or full gait.
+Terrain-placement request admission binds current W1 demand/farm/route and W2
+source to measured/synthetic scenario triangles, complete source regions and
+three original-triangle barycentric foot seeds. The terrain-placement producer
+uses query-exact source frames and the constrained owner to obtain full fixed
+sole patches. Only exact coplanar disjoint source-union coverage admits geometry;
+current W1 closed channel openings and complete debris exclusions may block.
+Surface disjointness never excludes a closed-solid debris interior; unsupported
+interior exclusion stays unknown. All assessment patch IDs bind current source.
+Incomplete observations, partitions, unsupported topology and exhausted finite
+work remain unknown. Physical assessment records retain unbound applicability
+until current path/load/time admission; flags cannot prove source geometry.
 Forbidden contributors: endpoint-only clearance, scalar width subtraction,
 flat-rendered-ground inference, teleport, wheel semantics, omitted swing bodies,
 blanket crop/contact exemptions, alternate routes and terrain fabricated from a
 passing pose.
 Implementation boundary: walking-motion contract, walking-source-relation,
-walking-constrained-kinematics, walking-motion and terrain-contact modules with source-space, interval,
+walking-constrained-kinematics, terrain-placement contract/producer, walking-motion and terrain-contact modules with source-space, interval,
 accounting and stale-identity tests; no UI decision or W1/W2/W4 recomputation.
 Spec: Active product reset - walking, wet uneven soil and obstacle cases.
 Failure owner: W3 owns path/contact invalidity and unresolved clearance.

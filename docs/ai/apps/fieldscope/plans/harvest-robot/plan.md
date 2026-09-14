@@ -248,6 +248,20 @@ acceptance remains a separate milestone; app plan completion is not certificatio
 
 ## Current execution
 
+Terrain placement Step Card: explicit measured/synthetic scenario triangles,
+complete source partitions and exact barycentric seeds bind the current W1
+demand/farm/route and W2 source. One constrained projection supplies three full
+fixed sole patches. Exact coplanar disjoint triangle-union area proves soil
+coverage; W1 channel hard exclusions and complete debris authority take priority.
+Physical assessments retain unbound applicability and unknown physical status
+until current path/load/time products exist. Invalid geometric bindings
+reject; missing coverage, unsupported dependencies and exhausted finite work
+remain unknown. Only the two new terrain-placement owners, their direct tests
+and four current contracts change; legacy terrain/contact/motion and constrained
+projection remain frozen. Missing API RED precedes owner implementation, then
+focused/direct-consumer/type/naming/lint/build and independent review. No new
+full-app checkpoint, PR or CI for this prerequisite; no swing or complete gait.
+
 Constrained support projection Step Card: a new explicitly versioned polynomial
 leaf / rational quaternion-similarity recipe owns one shared root expression for
 three full source sole patches. Exact rational anchors must match the actual

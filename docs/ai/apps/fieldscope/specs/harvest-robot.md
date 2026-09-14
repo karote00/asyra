@@ -138,6 +138,16 @@ are not that chain. Fixed parent/child source interfaces keep their separately
 declared authored parent-local authority.
 
 A separate versioned constrained-projection recipe may prove one support arc.
+Terrain placement separately admits explicit measured/synthetic scenario soil
+triangles, current W1 demand/farm/route and complete source partitions. Exact
+barycentric anchors feed that projection; full sole geometry requires coplanar
+disjoint source-union coverage. Authored W1 channel openings remain closed hard
+exclusions at Y=0 despite caller soil labels. Partial source, unsupported
+closed-solid interior exclusion,
+topology or exhausted bounded work is unknown. Physical assessment applicability
+remains unbound until a current path/load/time product is available; source
+geometry admission is not contact safety or complete walking admission.
+
 It must bind three complete actual sole patches through one exact rational base
 orientation and one shared root expression. Exact source mount/station offsets
 must match the anchors; no independently rounded station sums or per-foot
