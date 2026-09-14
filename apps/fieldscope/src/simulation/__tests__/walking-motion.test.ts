@@ -199,6 +199,7 @@ describe('walking whole-machine motion admission', () => {
     const { source, raw, owner } = fixture()
     const request = readWalkingMotionRequest(raw, source)
     const admission = owner.prepare(request)
+    expect(admission.reasons).toContain('source-relations-version-two-required')
     expect(admission.source).toBe(source)
     expect(admission.path).toBe(request.path)
     expect(admission.segments).toHaveLength(1)

@@ -1,5 +1,13 @@
 # API surfaces
 
+`prepareQueryExactForwardFrame` and `prepareQueryExactInstanceFrame` publish
+immutable dyadic forward matrices, positions and nonzero determinants from the
+query-frame owner's existing quaternion polynomial and binary64 yaw coefficients.
+The outward helpers use the same recipe. Apply instance before descriptor;
+these frames are not rounded rendered points or normalized rotations. Invalid
+or singular exact frames reject. Preparation has no cross-call cache; W3 owns
+per-evaluation admitted-identity reuse, and this API grants no material relation.
+
 - `FarmConfiguration`, `DEFAULT_CONFIGURATION`, `validateConfiguration`, and `configurationSite` own editable dimensional inputs and validation.
 - `createLayout` and `createStructure` own bay strips, passages, and greenhouse steel members.
 - `createDrainProfile` owns the cross-section used by both the 3D projection and the section diagram.
@@ -695,6 +703,57 @@ heading about Y, then local pitch about X, then local roll about Z. Stance phase
 partition the complete evaluation interval at path knots. Changed path or stance
 semantics require a new gait identity. No runtime persistence or UI route is added.
 
+Version 1 stays readable and explicitly reports
+`source-relations-version-two-required`; it is never silently migrated.
+`walking-motion-request/2` additionally binds the exact current `source` and
+`demand` objects. Its `externalSources` registry supplies complete immutable
+`readSourceRegions` partitions for each terrain, crate and known carried
+triangle source. Its four positive safe-integer budgets are `maxIntervals`,
+`maxEnvelopePairs`, `maxRegionPairs` and `maxExactPredicates`.
+`targetContacts` identifies one existing motion segment, one current robot
+part/region/patch, one current W1 target partition and ordered original triangle
+ranges, with purpose `support` or `cut`. Stale references, overlapping uses
+of a robot patch, invented segment boundaries and out-of-partition ranges reject.
+
+`WalkingSourceRelationEvaluator` prepares each immutable shape/region once in
+one evaluation. Original triangles must prove closed edge pairing, convex
+supporting halfspaces and full dimension before complete exact dyadic SAT can
+classify material. Both face-normal sets and all nonzero edge cross products
+are included. Sheets, open shells and unproved solids stay unknown when their
+outward bounds cannot exclude them. Positive volume is blocked; a boundary is
+admitted only when its entire supporting features are proved inside both named
+patch closures and an intersecting original triangle pair is retained. This
+subset proof is sufficient, not a general complete boundary-locus decider.
+
+`prepareWalkingSourceRelations` publishes immutable
+results only after the existing request reader admits the exact request and
+the interval producer's `inputIdentity` equals that request. The producer's
+opaque reference is provenance, not admission or a claim that low-level mutable
+input was frozen. No interval recomputation or parallel issuance registry is used.
+The result is
+`walking-source-relations/1` with exact request, W1/W2, terrain, path, stance,
+load and evaluation identities. Every segment accounts for all original robot,
+load and current W1 exclusion regions, admitted terrain regions, and complete
+source regions of explicitly selected targets. Same-body material union is
+counted separately; different bodies, joints, fixed children and loads are queried.
+`candidate = coRigidOwner + required`; required work is exactly the sum of
+strict-bounds exclusions, exact separation, declared boundary, blocked,
+target-refinement, unknown and unvisited pairs. Exhaustion cannot produce
+partial clearance. Current target partitions are indexed once per evaluation.
+
+The first motion proof covers static source and constant-joint,
+constant-orientation translation. A single exact displacement is shared by
+moving sources; original knot positions and rational subinterval times avoid
+rounded synthetic stance endpoints. Fixed parent/child contacts retain the
+authored common parent-local authority. Varying base orientation or joints
+requires outward strict separation or remains unknown; endpoint determinants
+do not prove a common frame nonsingular over an interval. Positive metric
+margins use conservative exact projection inequalities. Source envelopes from
+W1 already include its margin and are not expanded again.
+Selected target refinement remains unknown for W5 and cannot override volume,
+other target regions or unrelated uncertainty. A moving support foot reports
+`support-contact-motion-unproved`; a straight translation is not completed walking.
+
 `WalkingMotionOwner` consumes current W1 and W2 products through injected getters.
 Their revision numbers are independent. It prepares immutable interval envelopes
 for every original body part, swing leg, arm/tool, carriage and declared load,
@@ -714,8 +773,9 @@ loads against their holders, different attachment assemblies, and different W2
 bodies or joints receive no blanket exemption.
 
 `prepareWalkingMotionIntervals` owns directed interval FK and complete segment
-coverage. Strictly separated envelopes establish clearance; overlapping source
-envelopes remain unresolved. Positive hard-exclusion witnesses use outward point
+coverage. Strictly separated envelopes establish clearance; version-one source
+overlap remains unresolved, while version two delegates it to the relation owner.
+Positive hard-exclusion witnesses use outward point
 enclosures wholly inside an exclusion or wholly outside the route. Boundary
 straddles remain unknown. W1 source margins are not applied twice. Interval or
 pair budget exhaustion retains unvisited counts and cannot establish clearance.
