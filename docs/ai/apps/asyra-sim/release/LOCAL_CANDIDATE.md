@@ -9,6 +9,42 @@ We provide a trustworthy environment for executing experiments, not a guarantee
 that users' experimental assumptions hold. Incomplete or unresolved analysis
 never means clear. Official provenance is not independent validation.
 
+## Validated local candidate - 2026-09-14
+
+The current validated local candidate was built from source commit
+`1874e9832006a75ff400f9b35f0691ffd906a235`, tree
+`5f0253c5515755df9b6dbf67c25bc2cb6ae2e73f`. Documentation commits made after
+that build do not change its identity. Its producer record is
+`apps/asyra-sim/.artifacts/consumers/1874e9832006-0xX3z9/consumer-evidence.json`;
+the assembled directory and archive are beside that record. The archive
+SHA-256 is
+`e41715c5f821b30e0a3228c1b653aa0b95ee93778dc4cb6bb71c9e4276aa2e5e`,
+and the included distribution manifest passed both before and after packaged
+browser validation.
+
+The packaged static App passed 39 distinct browser cases across failure and
+resource handling, method/data flows, A/B/C comparison and supplied-file
+recovery, plus persistence/history/original-part/theme behavior. Screenshots and
+test attachments are retained under
+`tmp/m6-final/packaged-{failures,data,recovery,persistence}/`; the inspected
+records include desktop and narrow comparisons, retained missing-method history,
+explicit Worker and storage failures, method provenance, original-part results
+and dark-theme layout. The launcher was stopped after validation and port 3020
+was released.
+
+The producer record's `remainingGates` is its immutable producer-time snapshot;
+the packaged journey named there was completed afterward and is recorded above.
+The generated lock SHA-256
+`2a91e0b6fac05495a4e1993a2f9358b58798bf45b487dd911c65ddce45a2a032`
+matches the lock reviewed by the dated 2026-09-12 audit below. No fresh
+dependency audit was performed for this documentation closeout. The candidate
+contains 31 dependency notice records.
+
+This evidence validates a local developer candidate. The reference M1 / 8 GB
+run, independent numerical review, two real non-developer pilots and a
+maintenance owner remain unarranged, so M6 and external R0 acceptance remain
+open.
+
 ## Start without the monorepo
 
 The distributed folder contains a production `site/`, a loopback-only launcher,

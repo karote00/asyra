@@ -169,6 +169,59 @@ correction. Exact-source production and packaged browser evidence remain later
 gates; this tooling checkpoint is not a local candidate pass or external R0
 acceptance.
 
+## Completed local candidate delivery evidence - 2026-09-14
+
+The follow-on producer and packaged workflow completed against exact source
+`1874e9832006a75ff400f9b35f0691ffd906a235` (tree
+`5f0253c5515755df9b6dbf67c25bc2cb6ae2e73f`). A later documentation commit does
+not change that built source identity. The immutable producer record is
+`apps/asyra-sim/.artifacts/consumers/1874e9832006-0xX3z9/consumer-evidence.json`.
+The assembled local candidate is the sibling
+`asyra-sim-0.1.0-alpha.0-1874e9832006/` directory and archive. The archive
+SHA-256 is
+`e41715c5f821b30e0a3228c1b653aa0b95ee93778dc4cb6bb71c9e4276aa2e5e`;
+the distribution manifest passed before and after browser validation.
+
+The loopback-only packaged launcher served the candidate on
+`http://127.0.0.1:3020`. Four bounded one-worker/no-retry batches passed 39
+distinct cases: 11 failure/resource cases, 15 method/data cases, three
+comparison/recovery cases and 10 persistence/history/original-part/theme cases.
+`methods.spec.ts` ran once, in the method/data batch. Source, candidate example
+and candidate SDK copies of `missing-method-project.json` all have SHA-256
+`6df67609d9c34502aa7bcd028e4b03dd70bde21847f754cd0dc805c6ab909c40`.
+The packaged launcher was stopped and port 3020 was released.
+
+Browser artifacts are under
+`tmp/m6-final/packaged-{failures,data,recovery,persistence}/`. The inspected
+packaged screenshots are:
+
+- `tmp/m6-final/packaged-recovery/e2e-__tests__-candidate-co-19a74-aceable-body-correspondence/three-candidate-comparison.png`
+- `tmp/m6-final/packaged-recovery/e2e-__tests__-candidate-co-19a74-aceable-body-correspondence/three-candidate-comparison-narrow.png`
+- `tmp/m6-final/packaged-recovery/e2e-__tests__-pilot-recove-c8ad5--without-coordinator-repair/missing-method-retained-history.png`
+- `tmp/m6-final/packaged-failures/e2e-__tests__-workbench-fl-8e463--with-no-successful-verdict/worker-failure.png`
+- `tmp/m6-final/packaged-failures/e2e-__tests__-workbench-fl-ba360--the-original-storage-owner/saving-failure.png`
+- `tmp/m6-final/packaged-data/e2e-__tests__-methods-a-us-55fba-immutable-method-provenance/retained-method-provenance.png`
+- `tmp/m6-final/packaged-persistence/e2e-__tests__-original-par-d9486-d-rejects-surrogate-methods/original-part-result.png`
+- `tmp/m6-final/packaged-persistence/e2e-__tests__-theme-theme--b7f76-riment-or-losing-light-mode/dark-workbench.png`
+
+They show the normal packaged UI, explicit failed/unknown and save-failure
+states, retained missing method history, A/B/C comparison, method provenance
+`original-part-clearance-v1@1.0.3`, original-part results and dark-theme layout.
+The product runtime default remains 30 seconds.
+
+`consumer-evidence.json` is an immutable producer-time snapshot, so its
+`remainingGates` still names the packaged offline journey that the subsequent
+39-case run completed. It must not be edited retroactively. Its lock SHA-256
+`2a91e0b6fac05495a4e1993a2f9358b58798bf45b487dd911c65ddce45a2a032`
+matches the lock covered by the 2026-09-12 dependency audit already recorded in
+`release/LOCAL_CANDIDATE.md`; this is lock-identity reuse of that dated result,
+not a fresh audit. The candidate contains 31 dependency notice records.
+
+This closes local developer candidate production and packaged validation only.
+The reference M1 / 8 GB run, independent numerical review, two real
+non-developer pilots and a maintenance owner remain unarranged. M6 and external
+R0 acceptance therefore remain open.
+
 The user authorized research into suitable public validation data and, when
 unavailable, reproducible synthetic data grounded in real-world conditions.
 Record source permission, provenance, assumptions and validation scope. Public
