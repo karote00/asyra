@@ -248,6 +248,20 @@ acceptance remains a separate milestone; app plan completion is not certificatio
 
 ## Current execution
 
+Exact polynomial scalar Step Card: the existing shared S19/C20 owner adds
+canonical rational input/value, exact extrema and a fixed real-domain
+sign/zero-locus certificate. Existing number API bits, signed zero and work
+sequence remain unchanged. Fixed coefficient pairing and derivative identities
+prove signs over real (-1,1); exact-positive values may round to display zero.
+Admission rejects malformed/noncanonical or oversized fractions before costly
+arithmetic; normalization and all temporaries belong to the new API work budget.
+Only kinematic-trigonometry, its direct test and these four contracts change.
+Missing API RED, independent direct-sum, subnormal/sign/extrema/budget and legacy
+snapshots precede implementation; focused/direct/profile/type/naming/lint/build
+and bounded review precede local commit. No phase, scalar/FK/interval/request
+changes, full-app rerun or separate PR. Unproved algebra or old work drift stops
+this owner rather than changing legacy semantics.
+
 Terrain placement Step Card: explicit measured/synthetic scenario triangles,
 complete source partitions and exact barycentric seeds bind the current W1
 demand/farm/route and W2 source. One constrained projection supplies three full

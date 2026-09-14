@@ -950,6 +950,17 @@ with both endpoints strictly in (-1,1); converter accepts exact bounded rational
 and declared nearest-even/down/up mode. No source, rig or trajectory input.
 Outputs: immutable rounded S19/C20 value or certified extrema bounds and per-call
 work. Analytic error bounds are distinct from canonical polynomial rounding.
+The narrow rational API additionally accepts canonical BigInt fractions in
+(-1,1), checking widths before gcd/products. It returns exact values/signs and
+exact interval extrema separately from rounded display and outward binary64
+bounds. Fixed coefficient-pair and derivative evidence owns the real-domain
+sign/zero-locus certificate; rational point inputs do not discretize a trajectory.
+New admission, gcd, normalization and comparison work is explicit. Old number
+API work and bits remain unchanged; coefficients/certificate are program
+constants, with no input-result cache. This prerequisite changes only the trig
+owner, its direct tests and API/spec/Inspector/plan; scalar, FK, interval and
+phase consumers stay read-only. Its focused/direct/profile gates and bounded
+review precede local commit; the next complete consumer checkpoint owns full app.
 Conditions: fixed 20! coefficients/exact Horner, monotonic/extrema proof, exact
 normal/subnormal conversion, signed zero, all temporaries <=24000 bits. Invalid
 inputs fail before polynomial work; overflow conversion has explicit binary64

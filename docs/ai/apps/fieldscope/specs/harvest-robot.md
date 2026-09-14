@@ -138,6 +138,14 @@ are not that chain. Fixed parent/child source interfaces keep their separately
 declared authored parent-local authority.
 
 A separate versioned constrained-projection recipe may prove one support arc.
+Its shared fixed polynomial owner may expose canonical rational values and exact
+extrema, separately from outward numeric bounds and rounded display values.
+Exact positivity and zero-locus on real (-1,1) follow fixed S19/C20 coefficient
+and derivative identities; underflow of the displayed value does not erase that
+evidence. Input and all temporary widths remain bounded to 24000 bits, with new
+normalization work explicit. Legacy numeric APIs retain their exact behavior.
+This is a scalar prerequisite only, not a continuous gait admission.
+
 Terrain placement separately admits explicit measured/synthetic scenario soil
 triangles, current W1 demand/farm/route and complete source partitions. Exact
 barycentric anchors feed that projection; full sole geometry requires coplanar

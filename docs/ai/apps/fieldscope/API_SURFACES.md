@@ -369,6 +369,24 @@ movement guarantees. C may depend on this domain owner without importing D.
 
 ## Bounded polynomial scalar evidence
 
+The same owner also publishes `evaluateExactPolynomialTrig(kind, fraction)`
+and `boundExactPolynomialTrig(kind, { low, high })`. Inputs must be canonical
+BigInt rationals (positive denominator, gcd 1, unique 0/1) strictly inside (-1,1).
+Admission bounds input widths before gcd or products. Exact point `value` and
+`sign` are distinct from `rounded`; a positive rational may display as +0.
+Interval `bounds` and `extrema` are exact rationals, while `outward` is the
+separate binary64 enclosure. Outputs detach and freeze admitted fractions.
+
+`POLYNOMIAL_TRIG_SIGN_CERTIFICATE` proves real-domain S19 sign/zero-locus and
+C20 positivity from the fixed scaled coefficients: paired positive lower bounds
+in z=x², S19'=C18>0 and C20'=-S19 establish exact extrema. Its program-constant
+identity is reused; no result is cached by input. Rational endpoints/control
+values do not restrict a later continuous trajectory to sampled rational points.
+New calls charge admission checks, gcd steps, normalizations and rational
+comparisons alongside existing polynomial work; all temporaries retain the
+24000-bit guard. Legacy number API bits, signed zero and work sequence are
+unchanged. This scalar certificate grants no gait or collision result.
+
 - The shared domain scalar owner adds `roundFraction(numerator, denominator, mode)`
   with `nearest-even`, `down` and `up` rounding. It rejects invalid/oversized inputs;
   directed or nearest overflow follows binary64 rounding. The old query facade
