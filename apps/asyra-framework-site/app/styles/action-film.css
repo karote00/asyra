@@ -1,3 +1,4 @@
 /* Utilities only: preserve the existing site base styles without Preflight. */
 @import 'tailwindcss/utilities' source(none);
 @source "../page.tsx";
+@source "../../components/architecture-story.tsx";

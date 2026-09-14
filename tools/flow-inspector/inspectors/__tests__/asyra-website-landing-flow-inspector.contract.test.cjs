@@ -62,9 +62,10 @@ test('result-first Landing owns the exact product and technical evidence cases',
     'change-ownership-map',
     'audience-readiness-paths',
     'domain-owned-closing',
-    'factory-action-film'
+    'factory-action-film',
+    'scroll-driven-architecture-story'
   ])
-  assert.equal(new Set(data.caseIds).size, 22)
+  assert.equal(new Set(data.caseIds).size, 23)
 })
 
 test('contract freezes the product-first evidence architecture before rendering', () => {

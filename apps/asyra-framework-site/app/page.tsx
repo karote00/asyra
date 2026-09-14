@@ -1,4 +1,5 @@
 import './styles/action-film.css'
+import { ArchitectureStory } from '@/components/architecture-story'
 import { FrameworkValueStory } from '@/components/framework-value-story'
 import { SiteFooter } from '@/components/site-footer'
 import { SiteHeader } from '@/components/site-header'
@@ -476,8 +477,9 @@ export default function HomePage() {
               fastening, and checking before delivering the final result.
             </video>
           </figure>
+          <ArchitectureStory />
           <div className="feature-evidence__body">
-            <figure className="code-proof">
+            <figure className="code-proof" id="feature-code" tabIndex={-1}>
               <figcaption>
                 App-owned behavior from the maintained public guide
               </figcaption>
@@ -513,35 +515,6 @@ export const reviewActions = defineFeature(
               </a>
             </figure>
             <div className="runtime-proof">
-              <ol aria-label="Governed Feature runtime path">
-                <li>
-                  <span>01</span>
-                  <strong>Person or AI intent</strong>
-                  <small>Different callers, one product decision</small>
-                </li>
-                <li>
-                  <span>02</span>
-                  <strong>App Feature and public API</strong>
-                  <small>
-                    The App owns meaning, validation, and permission
-                  </small>
-                </li>
-                <li>
-                  <span>03</span>
-                  <strong>Transaction and canonical owner</strong>
-                  <small>
-                    Asyra supplies commit, rollback, and history boundaries
-                  </small>
-                </li>
-                <li>
-                  <span>04</span>
-                  <strong>Projections update</strong>
-                  <small>
-                    UI, persistence, collaboration, and AI read the accepted
-                    result
-                  </small>
-                </li>
-              </ol>
               <figure className="illustration-stage illustration-stage--light illustration-stage--proof illustration-stage--same-path">
                 <Illustration
                   alt="Human and AI inputs traveling through one shared feature gate to the same action"

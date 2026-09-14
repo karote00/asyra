@@ -20,7 +20,8 @@ const caseIds = Object.freeze([
   'change-ownership-map',
   'audience-readiness-paths',
   'domain-owned-closing',
-  'factory-action-film'
+  'factory-action-film',
+  'scroll-driven-architecture-story'
 ])
 
 const step = (definition) =>
@@ -80,6 +81,7 @@ module.exports = Object.freeze({
         'Readiness paths explicitly serve a domain expert, technical evaluator, and product builder without splitting the page into disconnected funnels.',
         'The domain-owned closing returns agency to the reader instead of ending on infrastructure terminology.',
         'The approved 16-second factory film is a software handoff metaphor, with A–D illustrative stations and no robotics capability claim.',
+        'The runtime path is one scroll-driven architecture story with complete static reading and unchanged native film playback.',
         'Website product evidence owns its crop, density, alt text, size budget, and reading context; it does not automatically reuse README media.'
       ],
       bypasses: [
@@ -114,6 +116,7 @@ module.exports = Object.freeze({
       specRefs: [
         '#visual-authority',
         '#approved-factory-action-film',
+        '#scroll-driven-architecture-story',
         '#product-cases',
         '#content-contract',
         '#quality-gates'
@@ -170,6 +173,8 @@ module.exports = Object.freeze({
         'The Hero leads with “Build product features, not infrastructure.” and keeps “Build the tool your world needs.” in a supporting role.',
         'A landing-owned derivative of the canonical 7,076-element Asyra Design frame provides authentic current product evidence with a reproducible hash-locked export.',
         'The maintained public review-actions Feature excerpt is paired with one person-or-AI to Feature, transaction, canonical-owner, and projection path.',
+        'A server-rendered architecture story owns four responsibility stages and a complete diagram; native named CSS view timelines highlight boundaries only on wide, tall, motion-enabled screens.',
+        'Native scrolling remains reversible and skippable; mobile, short, reduced-motion, unsupported-timeline, and no-JavaScript reading preserve every stage without a client animation runtime.',
         'Framework, Preset, App, and external-service responsibilities are presented as distinct ownership layers.',
         'The factory film shares the adjacent heading content edges, uses description-and-video columns from 1280px and stacked full-width media below, and preserves the complete 8:5 frame.',
         'The approved factory scene is rendered natively at 2560x1600 with unchanged 16-second timing, camera, mechanical geometry, and materials; the approved detail revision adds open entrance/exit portals without text signs, fixed station labels, removes switching captions and the brand strapline, and improves shadow sampling by a headless export script; no low-resolution preview enlargement contributes.',
@@ -197,6 +202,7 @@ module.exports = Object.freeze({
         'semantic HTML and CSS Framework value comparison',
         'eight border-free direct raster crops from the product-owner-approved person storyboard preview',
         'CSS responsive layout',
+        'native CSS scroll-driven architecture emphasis without client execution',
         'shared adaptive CSS grid and asset-specific alpha-derived directional drop shadows',
         'product-owner-approved factory film, poster, visible description, and native video controls'
       ],
@@ -229,6 +235,8 @@ module.exports = Object.freeze({
         'apps/asyra-framework-site/app/globals.css',
         'apps/asyra-framework-site/app/styles/tokens.css',
         'apps/asyra-framework-site/components/framework-value-story.tsx',
+        'apps/asyra-framework-site/components/architecture-story.tsx',
+        'apps/asyra-framework-site/app/styles/architecture-story.css',
         'apps/asyra-framework-site/app/layout.tsx',
         'apps/asyra-framework-site/app/error.tsx',
         'apps/asyra-framework-site/app/not-found.tsx',
@@ -274,6 +282,7 @@ module.exports = Object.freeze({
       specRefs: [
         '#visual-authority',
         '#approved-factory-action-film',
+        '#scroll-driven-architecture-story',
         '#content-contract',
         '#ownership-boundary'
       ],
@@ -304,6 +313,7 @@ module.exports = Object.freeze({
         'Computed geometry proves one 1720px maximum content width and the same constrained content edges for Header, Hero, domain copy, PoC, proofs, Closing, and Footer at 3840px, 2560px, 1920px, 1720px, 1719px, 1440px, 864px, 820px, 800px, 680px, 520px, 390px, and 320px, while every visible Domain Rail row remains full bleed below 1720px and aligns with the shared padded content edges at and above 1720px.',
         'All eight border-free storyboard crops are inspected inside one uniform 2px CSS frame contract without doubled authored edges.',
         'The factory film passes keyboard playback, reduced-motion and no-JavaScript reading, no video request before interaction, media hash and byte budgets, and 16-second high-definition playback with section screenshots at 3840px, 2560px, 1920px, 1440px, 1280px, 1279px, 1024px, 820px, 390px, and 320px.',
+        'Architecture story tests prove forward and reverse stage emphasis, stationary progress, native skip-to-code, responsive and reduced-motion reflow, unsupported timelines, no-JavaScript reading, idle video, and same-state screenshots.',
         'No-client and reduced-motion modes preserve the complete reading and actions.',
         'The retired change-impact sections remain absent at every breakpoint and without JavaScript.',
         'The public /llms.txt response exactly matches the generated public documentation inventory while supporting human-facing routes remain independently owned by the Website Platform.'
@@ -327,6 +337,8 @@ module.exports = Object.freeze({
         'apps/asyra-framework-site/package.json',
         'apps/asyra-framework-site/__tests__/editorial-landing.test.mjs',
         'apps/asyra-framework-site/__tests__/action-film.test.mjs',
+        'apps/asyra-framework-site/__tests__/architecture-story.test.mjs',
+        'apps/asyra-framework-site/__tests__/e2e/architecture-story.spec.ts',
         'apps/asyra-framework-site/__tests__/e2e/action-film.spec.ts',
         'apps/asyra-framework-site/__tests__/e2e/editorial-landing-visual.spec.ts',
         'apps/asyra-framework-site/scripts/route-smoke.mjs',
