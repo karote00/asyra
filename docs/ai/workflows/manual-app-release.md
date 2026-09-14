@@ -24,8 +24,11 @@
    commits and the union of old/new transitive workspace dependencies.
 4. The existing CI, packed clean-consumer readiness, ordinary/collaboration E2E
    and production-artifact tests run against that exact dispatch commit. The
-   release enables the existing balanced AI correctness gate. No production
-   credential is passed to these jobs.
+   release enables the existing balanced AI correctness gate through the CI
+   workflow input. CI owns the single E2E invocation and its result checks; the
+   release pipeline must not call E2E a second time because both calls would
+   share its concurrency group and cancel one another. No production credential
+   is passed to these jobs.
 5. If any verifier fails, do not approve or deploy. If nothing is affected, the
    workflow ends without requesting a deployment.
 6. Review and approve the **app-production** environment only after the plan
