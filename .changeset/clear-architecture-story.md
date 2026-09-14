@@ -2,4 +2,4 @@
 '@asyra/flow-inspector': patch
 ---
 
-Document the website's scroll-driven architecture story, including native scrolling and complete static reading across motion and viewport modes.
+Document the website's five brand-story chapters and scroll-driven architecture, including native navigation and complete reading across motion and viewport modes.

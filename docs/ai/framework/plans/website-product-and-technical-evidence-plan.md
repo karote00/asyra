@@ -446,3 +446,37 @@ public Feature example, supporting routes, and all Framework behavior.
   changes, no JavaScript, unsupported timelines, idle video, and screenshots.
   Unit/contract, naming, lint, type, build, route smoke, film regression, and
   the PR's required CI gates complete this bounded delivery.
+
+## Brand story chapters
+
+The product owner expanded the prototype on 2026-09-15 into a complete brand
+story and authorized removing repeated information before final review. This
+chapter contract supersedes the previous section order, while preserving the
+approved visual identity, product truth, public code, media, and route owners.
+
+1. **Imagine:** the product-first Hero and the open-ended domain possibilities.
+2. **Build:** validated ideas continue into products, followed by the actual
+   Asyra Design proof and its live destination.
+3. **Evolve:** one Feature owns a behavior change; modular growth and shared
+   information explain how the product can keep developing.
+4. **Inside:** the accepted film, exact architecture story, real Feature
+   example, and the Framework/Preset/App/Service composition responsibilities.
+5. **Begin:** current starting paths and the domain-owned closing invitation.
+
+A compact chapter navigation follows normal page scrolling and provides
+ordinary anchor links. Native CSS may emphasize the chapter being read, but
+never gates content, intercepts scrolling, or starts media. Reduced-motion and
+unsupported browsers keep the same chapter links and complete reading. All
+previous section IDs and supporting routes remain available.
+
+Copy should speak to the product builder first, avoid defensive lists and
+repeated infrastructure summaries, and use the live product as evidence. Keep
+current availability distinct from roadmap, with a clear roadmap destination.
+Do not promise universal backend or runtime support, shipped industry apps,
+or production readiness without engineering review.
+
+Verification extends the bounded gates above with complete chapter order,
+all five anchor destinations, keyboard skipping, sticky navigation bounds,
+mobile/reduced-motion/no-JavaScript reading, current support copy, and actual
+full-page plus chapter screenshots. New source identifiers remain site-owned
+and do not alter persisted data or Framework APIs.

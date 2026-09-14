@@ -49,7 +49,7 @@ test('the website preserves the accepted landing owner beside the supporting pla
   )
 })
 
-test('the result-first narrative matches the approved V04 landing page', async () => {
+test('the brand story retains the product-first thesis and concise approved copy', async () => {
   const [page, header] = await Promise.all([
     readAppFile('page.tsx'),
     readFile(path.join(siteRoot, 'components', 'site-header.tsx'), 'utf8')
@@ -57,11 +57,11 @@ test('the result-first narrative matches the approved V04 landing page', async (
   const pageText = page.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ')
   const requiredCopy = [
     'Build product features, not infrastructure.',
-    'Build the tool your world needs. You own its information, rules,',
+    'Build the tool your world needs. Keep its rules, workflows,',
     'One foundation. Any field.',
-    'Add what your workflow needs without rebuilding the rest.',
+    'Room for what comes next.',
     'One Feature. Every caller.',
-    'One source of truth across every feature and view.',
+    'One model. Many ways to work.',
     'Prove it once. Keep what works.',
     'Keep validated work moving.',
     'What proves the idea becomes the starting point for the product.',
@@ -81,10 +81,10 @@ test('the result-first narrative matches the approved V04 landing page', async (
   for (const line of [
     'Build product features,',
     'not infrastructure.',
-    'Add what your workflow',
-    'needs without rebuilding',
-    'One source of truth across',
-    'every feature and view.',
+    'Room for what',
+    'comes next.',
+    'One model.',
+    'Many ways to work.',
     'Bring your domain.',
     'Keep its logic.'
   ]) {
@@ -107,9 +107,9 @@ test('the landing page advances one product-first evidence sequence', async () =
     'Build product features, not infrastructure.',
     'Build the tool your world needs.',
     'Built with Asyra',
-    'A real product. One shared foundation.',
+    'A real product. Ready to explore.',
     'One Feature. Every caller.',
-    'You own the product. Asyra owns the repeatable boundaries.',
+    'Your product stays yours.',
     'Choose your starting point',
     'Bring your domain. Keep its logic.'
   ]) {
@@ -118,6 +118,7 @@ test('the landing page advances one product-first evidence sequence', async () =
 
   const hero = page.indexOf('className="hero"')
   const domains = page.indexOf('className="domains"')
+  const poc = page.indexOf('className="poc-story"')
   const comparison = page.indexOf('<FrameworkValueStory />')
   const product = page.indexOf('className="product-evidence"')
   const feature = page.indexOf('className="feature-evidence"')
@@ -126,9 +127,10 @@ test('the landing page advances one product-first evidence sequence', async () =
   const closing = page.indexOf('className="closing ')
 
   assert.ok(hero < domains)
-  assert.ok(domains < comparison)
-  assert.ok(comparison < product)
-  assert.ok(product < feature)
+  assert.ok(domains < poc)
+  assert.ok(poc < product)
+  assert.ok(product < comparison)
+  assert.ok(comparison < feature)
   assert.ok(feature < ownership)
   assert.ok(ownership < readiness)
   assert.ok(readiness < closing)
@@ -305,8 +307,8 @@ test('the Landing Framework value story isolates change cost from the proof sect
   const proofStart = page.indexOf('<div className="proof-stack">')
 
   assert.match(page, /import \{ FrameworkValueStory \}/)
-  assert.ok(valueStart >= 0 && valueStart < storyStart)
-  assert.ok(storyStart < proofStart)
+  assert.ok(storyStart >= 0 && storyStart < valueStart)
+  assert.ok(valueStart < proofStart)
   assert.match(component, /className="framework-value"/)
   assert.match(component, />Change cost</)
   assert.match(component, /One feature request\. One place to change\./)
@@ -1662,4 +1664,20 @@ test('the typography uses a modern system sans stack without legacy display seri
     )
   }
   assert.doesNotMatch(css, /letter-spacing:\s*-(?:0\.0[6-9]|0\.[1-9])em/)
+})
+
+test('brand chapters share one navigation owner without client-side scrolling', async () => {
+  const [page, navigation] = await Promise.all([
+    readAppFile('page.tsx'),
+    readFile(path.join(siteRoot, 'components/story-navigation.tsx'), 'utf8')
+  ])
+  assert.equal((page.match(/<StoryChapter index=/g) ?? []).length, 5)
+  assert.equal((navigation.match(/timeline: '--/g) ?? []).length, 5)
+  assert.doesNotMatch(
+    navigation,
+    /use client|useEffect|useState|requestAnimationFrame|addEventListener|Observer/
+  )
+  assert.match(page, /A composable framework for domain-driven software/)
+  assert.match(page, /official 2D Preset/)
+  assert.match(page, /href="\/roadmap"/)
 })
