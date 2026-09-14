@@ -356,6 +356,18 @@ or changed geometry is introduced by this partition handoff. The
 existing shape generator remains authoritative; partition metadata is a handoff,
 not a second crop model or another random-generation pass.
 
+The canonical cucumber source generator now uses an explicitly synthetic cut
+fraction (default 0.5) between its existing pedicel endpoints. It generates three
+actual rings with two open-shell segments: plant tip to shared cut ring, then
+shared cut ring to fruit top. This is a source geometry revision, not partition
+metadata inventing a boundary. The fraction is adjustable source-generation
+evidence, not biological calibration or a safe cutting distance. Original
+endpoints, diameter, material and open-shell construction remain; no end caps
+are added. Only cucumber pedicel source and its directly sampled hairs may
+change; other source buffers remain exact. The retained segment belongs to the
+fruit. Missing or unproved source boundaries still defer cut anatomy, and an
+available synthetic boundary grants no W5 contact or harvest permission.
+
 C retains admitted source metadata alongside the shapes/plant assignments already
 owned by SiteGeometry. Observation/collision consumers receive that completed
 product; they do not call crop or farm generators. Render layer visibility only

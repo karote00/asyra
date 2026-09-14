@@ -64,7 +64,7 @@ function captureRepresentativeSourceValues() {
   const robot = createRobotModel(DEFAULT_ROBOT)
   const crop = createCropModels({ netTop: 3, netBottom: 0.45 })[0]
   if (!crop) throw new Error('Missing representative crop model')
-  return [
+  const values = [
     ...robot.flatMap((part) => shapeSeries(`robot.${part.id}`, part.shape)),
     ...crop.parts.flatMap((part) => [
       ...shapeSeries(`crop.${part.id}.near`, part.shape),
@@ -73,6 +73,7 @@ function captureRepresentativeSourceValues() {
         : [])
     ])
   ]
+  return { crop, values }
 }
 
 it('keeps historical whole-buffer digests as evidence without using them as portable acceptance', () => {
@@ -109,15 +110,38 @@ it('detects exact topology and render-visible source mutations independently', (
 })
 
 it('reports rerunnable per-value source portability diagnostics without setting acceptance', () => {
-  const actual = captureRepresentativeSourceValues()
+  const { crop, values: actual } = captureRepresentativeSourceValues()
+  const expected = JSON.parse(
+    gunzipSync(readFileSync(reference)).toString('utf8')
+  ) as SourceSeries[]
+  // The source revision adds exactly one near eight-vertex and distant
+  // three-vertex ring per cucumber fruit, with positions and colors.
+  const addedRingValues = crop.fruits.length * (8 + 3) * 3 * 2
   if (process.env.FIELDSCOPE_WRITE_SOURCE_TRACE === '1') {
+    expect(process.platform).toBe('darwin')
+    expect(process.version).toBe('v24.13.0')
+    expect(actual).toHaveLength(expected.length)
+    for (const [index, after] of actual.entries()) {
+      const before = expected[index]
+      expect(after.path).toBe(before.path)
+      if (!after.path.startsWith('crop.stems.')) {
+        expect(after).toEqual(before)
+        continue
+      }
+      const sides = after.path.includes('.near.') ? 8 : 3
+      const added = crop.fruits.length * sides * 3
+      // A rerun against the already-updated fixture must be byte-identical.
+      if (after.values.length === before.values.length)
+        expect(after).toEqual(before)
+      else expect(after.values.length - before.values.length).toBe(added)
+    }
+    expect(actual.reduce((count, item) => count + item.values.length, 0)).toBe(
+      179390 + addedRingValues
+    )
     writeFileSync(reference, gzipSync(`${JSON.stringify(actual)}\n`))
     expect(actual.length).toBeGreaterThan(0)
     return
   }
-  const expected = JSON.parse(
-    gunzipSync(readFileSync(reference)).toString('utf8')
-  ) as SourceSeries[]
   expect(actual).toHaveLength(expected.length)
   const differences = []
   let compared = 0
@@ -162,5 +186,8 @@ it('reports rerunnable per-value source portability diagnostics without setting 
   }
   if (changed || process.env.FIELDSCOPE_REPORT_SOURCE_TRACE === '1')
     console.info('source Float64 portability', JSON.stringify(report))
-  expect(report).toMatchObject({ series: 135, compared: 179390 })
+  expect(report).toMatchObject({
+    series: 135,
+    compared: 179390 + addedRingValues
+  })
 })

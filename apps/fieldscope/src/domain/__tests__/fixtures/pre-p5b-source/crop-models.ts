@@ -27,34 +27,6 @@ export interface CropPartition {
   indexStart: number
   indexCount: number
 }
-/** Source-generation assumptions, never farm configuration or biological calibration. */
-export interface CropSourceAssumptions {
-  readonly format: 'crop-source-assumptions/1'
-  readonly cucumberCutSite: {
-    readonly kind: 'synthetic-fraction'
-    readonly fraction: number
-    readonly evidence: {
-      readonly kind: 'synthetic'
-      readonly id: string
-      readonly label: string
-    }
-  }
-}
-export const DEFAULT_CROP_SOURCE_ASSUMPTIONS: CropSourceAssumptions =
-  Object.freeze({
-    format: 'crop-source-assumptions/1',
-    cucumberCutSite: Object.freeze({
-      kind: 'synthetic-fraction',
-      fraction: 0.5,
-      evidence: Object.freeze({
-        kind: 'synthetic',
-        id: 'cucumber-source-cut-fraction/1',
-        label:
-          'Synthetic source cut fraction - not calibrated anatomy or safety distance'
-      })
-    })
-  })
-
 export interface CropFruit {
   id: string
   cutSite?:
@@ -71,7 +43,6 @@ export interface CropFruit {
           sourceVertexIndices: readonly number[]
         }
         evidence: { kind: 'synthetic'; label: string }
-        sourceAssumptions?: CropSourceAssumptions
       }
   growthStage?: (typeof CUCUMBER_GROWTH_STAGES)[number]
   center: Point3
@@ -243,47 +214,12 @@ function star(
 
 /** Original cultivar geometry; dimensions other than published fruit length are illustrative. */
 export function createCropModels(
-  config: Pick<FarmConfiguration, 'netTop' | 'netBottom'>,
-  assumptions: CropSourceAssumptions = DEFAULT_CROP_SOURCE_ASSUMPTIONS
+  config: Pick<FarmConfiguration, 'netTop' | 'netBottom'>
 ): CropModel[] {
-  const { format, cucumberCutSite } = assumptions
-  const { kind, fraction, evidence } = cucumberCutSite
-  const { kind: evidenceKind, id, label } = evidence
-  if (
-    format !== 'crop-source-assumptions/1' ||
-    kind !== 'synthetic-fraction' ||
-    !Number.isFinite(fraction) ||
-    fraction <= 0 ||
-    fraction >= 1 ||
-    evidenceKind !== 'synthetic' ||
-    !id.trim() ||
-    !label.trim()
-  )
-    throw new Error('Invalid crop source assumptions')
-  const sourceAssumptions: CropSourceAssumptions = Object.freeze({
-    format,
-    cucumberCutSite: Object.freeze({
-      kind,
-      fraction,
-      evidence: Object.freeze({ kind: evidenceKind, id, label })
-    })
-  })
   return (['cucumber-1914', 'tomato-yu-nu'] as const).flatMap((species) =>
     Array.from({ length: CROP_LAYOUT.variantCount }, (_, variant) => {
-      const model = createModel(
-        species,
-        variant,
-        config,
-        false,
-        sourceAssumptions
-      )
-      const distant = createModel(
-        species,
-        variant,
-        config,
-        true,
-        sourceAssumptions
-      )
+      const model = createModel(species, variant, config, false)
+      const distant = createModel(species, variant, config, true)
       return {
         ...model,
         parts: model.parts.map((part) => {
@@ -306,8 +242,7 @@ function createModel(
   species: CropSpecies,
   variant: number,
   config: Pick<FarmConfiguration, 'netTop' | 'netBottom'>,
-  distant: boolean,
-  sourceAssumptions: CropSourceAssumptions
+  distant: boolean
 ): CropModel {
   const { netTop, netBottom } = config
   const cucumber = species === 'cucumber-1914'
@@ -569,31 +504,17 @@ function createModel(
       const stemVertexStart = stems.positions.length / 3
       const tubeSides = distant ? 3 : 8
       const aboveTop = add(top, [0, 0.009 * scale, 0])
-      const cutPoint: Point3 = cucumber
-        ? (tip.map(
-            (value, axis) =>
-              value +
-              sourceAssumptions.cucumberCutSite.fraction * (top[axis] - value)
-          ) as unknown as Point3)
-        : aboveTop
-      if (
-        cucumber &&
-        [tip, top].some((endpoint) =>
-          endpoint.every((value, axis) => value === cutPoint[axis])
-        )
-      )
-        throw new Error('Degenerate cucumber source cut segment')
       stems.tube({
         points: cucumber
-          ? [tip, cutPoint, top]
+          ? [tip, top]
           : [node, attachment, [top[0], top[1] + 0.009 * scale, top[2]], top],
         diameter: 0.0018 * scale
       })
-      // Each retained segment shares a real source ring with its plant-side segment.
-      // The source assumption creates no cap or separated physical surface.
+      // The last tomato tube segment is retained pedicel; shared ring vertices
+      // keep their source indices. This is a synthetic boundary, not anatomy.
       const detailStart = stems.indices.length
       const retainedStart = cucumber
-        ? stemStart + tubeSides * 6
+        ? detailStart
         : stemStart + (distant ? 3 : 8) * 6 * 2
       recordPatch(
         stems,
@@ -602,41 +523,42 @@ function createModel(
         stemStart + (cucumber ? 0 : tubeSides * 6),
         tubeSides * 6
       )
-      recordPatch(
-        stems,
-        fruitId,
-        'retained-pedicel',
-        retainedStart,
-        tubeSides * 6
-      )
+      if (!cucumber)
+        recordPatch(
+          stems,
+          fruitId,
+          'retained-pedicel',
+          retainedStart,
+          tubeSides * 6
+        )
       const body = [green, turning, ripe][maturity]
       const bodyStart = body.indices.length
       const flowerStart = flowers.indices.length
       const fruit: CropFruit = {
         id: fruitId,
-        cutSite: {
-          kind: 'synthetic-source-boundary',
-          id: `${fruitId}/cut-site`,
-          position: cutPoint,
-          towardPlant: attachment.map(
-            (value, axis) => value - cutPoint[axis]
-          ) as unknown as Point3,
-          boundary: {
-            partId: 'stems',
-            plantPatchId: `${fruitId}/plant-pedicel/0`,
-            retainedPatchId: `${fruitId}/retained-pedicel/0`,
-            sourceVertexIndices: Array.from(
-              { length: tubeSides },
-              (_, index) =>
-                stemVertexStart + (cucumber ? 1 : 2) * tubeSides + index
-            )
-          },
-          evidence: {
-            kind: 'synthetic',
-            label: 'Synthetic source tube boundary - not measured anatomy'
-          },
-          ...(cucumber ? { sourceAssumptions } : {})
-        },
+        cutSite: cucumber
+          ? { kind: 'unknown', reason: 'no-source-cut-boundary' }
+          : {
+              kind: 'synthetic-source-boundary',
+              id: `${fruitId}/cut-site`,
+              position: aboveTop,
+              towardPlant: attachment.map(
+                (value, axis) => value - aboveTop[axis]
+              ) as unknown as Point3,
+              boundary: {
+                partId: 'stems',
+                plantPatchId: `${fruitId}/plant-pedicel/0`,
+                retainedPatchId: `${fruitId}/retained-pedicel/0`,
+                sourceVertexIndices: Array.from(
+                  { length: tubeSides },
+                  (_, index) => stemVertexStart + 2 * tubeSides + index
+                )
+              },
+              evidence: {
+                kind: 'synthetic',
+                label: 'Synthetic source tube boundary - not measured anatomy'
+              }
+            },
         center,
         length,
         radius,

@@ -1775,6 +1775,32 @@ it('profiles the fixed actual point-time source domain without a triangle Cartes
     site = new SiteGeometry()
   const f = setup(buildSiteMeshes(configuration, site), configuration, site),
     started = performance.now()
+  // P5b adds one near tube segment per installed cucumber fruit. Pair it
+  // with each robot triangle; robot/self and every other source stay unchanged.
+  const robotTriangles = f.source.meshes
+    .filter((mesh) => mesh.kind === 'robot')
+    .reduce((count, mesh) => {
+      if (mesh.shape.kind !== 'triangles')
+        throw new Error('Missing robot triangle source')
+      return count + mesh.shape.indices.length / 3
+    }, 0)
+  const cucumberFruits = f.source.fruits.filter(
+    (fruit) => fruit.model.species === 'cucumber-1914'
+  )
+  const addedCucumberTriangles = cucumberFruits.reduce((count, fruit) => {
+    const part = fruit.model.parts.find((part) => part.id === 'stems')
+    const patch = part?.patches.find(
+      (patch) =>
+        patch.targetFruitId === fruit.source.id &&
+        patch.role === 'retained-pedicel'
+    )
+    if (!patch) throw new Error('Missing added cucumber source segment')
+    expect(patch.owner).toBe('target-fruit')
+    expect(patch.source.ranges).toHaveLength(1)
+    expect(patch.source.ranges[0].indexCount).toBe(8 * 6)
+    return count + patch.source.ranges[0].indexCount / 3
+  }, 0)
+  const addedTrianglePairs = addedCucumberTriangles * robotTriangles
   const call = vi.spyOn(kinematics, 'evaluateRobotIntervalPose'),
     fixed = vi.spyOn(kinematics, 'evaluateRobotAffinePose'),
     build = vi.spyOn(f.owner, 'prepare')
@@ -1802,7 +1828,9 @@ it('profiles the fixed actual point-time source domain without a triangle Cartes
       expect(elapsed).toBeLessThanOrEqual(1000)
       expect(performance.now() - started).toBeLessThanOrEqual(10000)
       expect(result.inventory).toEqual(expectedInventory(f.source))
-      expect(result.inventory.trianglePairs).toBe(43429284640)
+      expect(result.inventory.trianglePairs).toBe(
+        43429284640 + addedTrianglePairs
+      )
       accounted(result)
       expect(result.work.meshPairs).toBeLessThanOrEqual(300000)
       expect(result.work.meshPairs).toBe(result.inventory.meshPairs)
@@ -1816,6 +1844,12 @@ it('profiles the fixed actual point-time source domain without a triangle Cartes
         JSON.stringify({
           narrow,
           elapsed,
+          cucumberSourceRevision: {
+            fruits: cucumberFruits.length,
+            addedCucumberTriangles,
+            robotTriangles,
+            addedTrianglePairs
+          },
           inventory: result.inventory,
           coverage: result.coverage,
           work: result.work,

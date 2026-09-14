@@ -32,6 +32,10 @@ sanity reference for this output, never an input or fixed gate.
 Conditions: enumerate actual target source; derive free space from exact current
 obstructions and the declared growth envelope. `netTop`, strip width and the rough
 1.2 m reference are insufficient alone. An offset/irregular corridor stays offset.
+The completed `PreparedScene` admits all botanical patch structures. W1 derives
+route inclusion from target partitions, then prepares installed patch bounds only
+for included targets; patches do not decide route inclusion and off-route patches
+do not add bound-transform work.
 Missing or discrete growth coverage and missing margin remain `unknown` or retain
 their visible assumption provenance. Farm, crop, growth-envelope, source, route
 interval, clearance-margin, survey or provenance changes retire the revision;

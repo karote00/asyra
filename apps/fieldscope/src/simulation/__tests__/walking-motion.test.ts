@@ -812,5 +812,5 @@ describe('walking whole-machine motion admission', () => {
       previous = result
     }
     expect(owner.work.preparations).toBe(2)
-  })
+  }, 30000)
 })

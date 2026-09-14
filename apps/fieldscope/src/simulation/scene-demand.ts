@@ -35,6 +35,7 @@ export interface SceneDemandWork {
   readonly installedTransforms: number
   readonly envelopeCorners: number
   readonly targetPartitions: number
+  readonly targetPatches: number
 }
 
 export interface SceneDemandRouteProduct {
@@ -65,15 +66,34 @@ export interface SceneDemandTargetPartition {
   readonly bounds: SceneDemandBounds
 }
 
+export interface SceneDemandTargetPatch {
+  readonly part: CropGeometry['parts'][number]
+  readonly patch: CropGeometry['parts'][number]['patches'][number]
+  readonly mesh: Readonly<SiteMesh>
+  readonly instance: number
+  readonly transform: SceneDemandTargetPartition['transform']
+  readonly bounds: SceneDemandBounds
+}
+
 export interface SceneDemandTarget {
   readonly id: string
   readonly fruit: SceneFruit
   readonly installedCenter: Point3
   readonly partitions: readonly SceneDemandTargetPartition[]
   readonly bounds: SceneDemandBounds
+  readonly anatomy: {
+    readonly support: 'complete' | 'unknown'
+    readonly cut: 'complete' | 'unknown'
+    readonly reasons: readonly string[]
+    readonly patches: readonly SceneDemandTargetPatch[]
+  }
   readonly cutSite?: {
-    readonly source: NonNullable<SceneFruit['source']['cutSite']>
+    readonly source: Extract<
+      SceneFruit['source']['cutSite'],
+      { kind: 'synthetic-source-boundary' }
+    >
     readonly bounds: SceneDemandBounds
+    readonly transform: SceneDemandTargetPartition['transform']
   }
 }
 
@@ -271,7 +291,8 @@ export function prepareSceneDemand(
     descriptorFrames: 0,
     installedTransforms: 0,
     envelopeCorners: 0,
-    targetPartitions: 0
+    targetPartitions: 0,
+    targetPatches: 0
   }
   const reasons: string[] = []
   const freeReasons: string[] = []
@@ -491,6 +512,12 @@ export function prepareSceneDemand(
     )
       continue
     const partitions: SceneDemandTargetPartition[] = []
+    const targetParts: {
+      part: CropGeometry['parts'][number]
+      mesh: Readonly<SiteMesh>
+      instance: number
+      placement: SpatialInstance
+    }[] = []
     let targetFrame: IntervalFrame | undefined
     for (const part of fruit.model.parts) {
       if (part.shape.kind !== 'triangles')
@@ -502,6 +529,7 @@ export function prepareSceneDemand(
       if (!mesh || instance === undefined || !mesh.descriptor.instances)
         throw new Error('Missing installed scene demand crop source')
       const placement = mesh.descriptor.instances[instance]
+      targetParts.push({ part, mesh, instance, placement })
       for (const partition of part.partitions) {
         if (partition.fruitId !== fruit.source.id) continue
         const frame = installedFrame(placement)
@@ -536,23 +564,101 @@ export function prepareSceneDemand(
       targetBounds.min[2] > route.volume.max[2]
     )
       continue
+    // PreparedScene admits every patch structure. Installed patch bounds are
+    // needed only after partition bounds admit this fruit to the selected route.
+    const patches: SceneDemandTargetPatch[] = []
+    for (const { part, mesh, instance, placement } of targetParts)
+      for (const patch of part.patches) {
+        if (patch.targetFruitId !== fruit.source.id) continue
+        const frames = [
+          installedFrame(placement),
+          descriptorFrame(mesh.descriptor)
+        ]
+        const patchBounds = joinedBounds(
+          patch.source.ranges.map((range) =>
+            transformedBounds(
+              localBounds(part.shape as TriangleShape, range),
+              frames,
+              mutableWork
+            )
+          )
+        )
+        mutableWork.targetPatches++
+        patches.push(
+          Object.freeze({
+            part,
+            patch,
+            mesh,
+            instance,
+            transform: Object.freeze({
+              descriptor: mesh.descriptor,
+              instance: placement
+            }),
+            bounds: patchBounds
+          })
+        )
+      }
     let cutSite: SceneDemandTarget['cutSite']
-    if (fruit.source.cutSite) {
+    const sourceCut = fruit.source.cutSite
+    const plantPatch = patches.find(
+      (item) =>
+        sourceCut?.kind === 'synthetic-source-boundary' &&
+        item.part.id === sourceCut.boundary.partId &&
+        item.patch.id === sourceCut.boundary.plantPatchId
+    )
+    const anatomyReasons: string[] = []
+    const roles = new Set(patches.map(({ patch }) => patch.role))
+    const supportComplete =
+      roles.has('fruit-skin') &&
+      (fruit.model.species === 'cucumber-1914'
+        ? fruit.source.spineCount > 0 &&
+          patches.filter(({ patch }) => patch.role === 'fine-spines').length ===
+            fruit.source.spineCount
+        : roles.has('calyx') && roles.has('retained-pedicel'))
+    if (!supportComplete) anatomyReasons.push('support-anatomy-unknown')
+    if (
+      sourceCut?.kind === 'synthetic-source-boundary' &&
+      sourceCut.evidence?.kind === 'synthetic' &&
+      plantPatch &&
+      patches.some(
+        (item) =>
+          item.part === plantPatch.part &&
+          item.patch.id === sourceCut.boundary.retainedPatchId
+      )
+    ) {
       const local = bounds(
-        fruit.source.cutSite.position.slice(),
-        fruit.source.cutSite.position.slice()
+        sourceCut.position.slice(),
+        sourceCut.position.slice()
       )
       cutSite = Object.freeze({
-        source: fruit.source.cutSite,
-        bounds: transformedBounds(local, [targetFrame], mutableWork)
+        source: sourceCut,
+        transform: plantPatch.transform,
+        bounds: transformedBounds(
+          local,
+          [
+            installedFrame(plantPatch.transform.instance),
+            descriptorFrame(plantPatch.transform.descriptor)
+          ],
+          mutableWork
+        )
       })
     }
+    if (!cutSite)
+      anatomyReasons.push(
+        sourceCut?.kind === 'unknown' ? sourceCut.reason : 'cut-anatomy-unknown'
+      )
     const target = Object.freeze({
       id: fruit.id,
       fruit,
       installedCenter: fruit.position,
       partitions: Object.freeze(partitions),
       bounds: targetBounds,
+      anatomy: Object.freeze({
+        support: supportComplete ? ('complete' as const) : ('unknown' as const),
+        cut: cutSite ? ('complete' as const) : ('unknown' as const),
+        reasons: Object.freeze(anatomyReasons),
+        patches: Object.freeze(patches)
+      }),
       ...(cutSite ? { cutSite } : {})
     })
     const installedCenter = interval(fruit.position[0])
