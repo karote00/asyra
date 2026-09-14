@@ -11,18 +11,32 @@ never means clear. Official provenance is not independent validation.
 
 ## Validated local candidate - 2026-09-14
 
-The current validated local candidate was built from source commit
-`1874e9832006a75ff400f9b35f0691ffd906a235`, tree
-`5f0253c5515755df9b6dbf67c25bc2cb6ae2e73f`. Documentation commits made after
+The current exact-source local candidate was built from source commit
+`54c625466247715390fdc3701d2d16c58531494c`, tree
+`c3d493573b15f10134e91c58ddebce83a69e8221`. Documentation commits made after
 that build do not change its identity. Its producer record is
-`apps/asyra-sim/.artifacts/consumers/1874e9832006-0xX3z9/consumer-evidence.json`;
+`apps/asyra-sim/.artifacts/consumers/54c625466247-WWWDIv/consumer-evidence.json`;
 the assembled directory and archive are beside that record. The archive
 SHA-256 is
-`e41715c5f821b30e0a3228c1b653aa0b95ee93778dc4cb6bb71c9e4276aa2e5e`,
-and the included distribution manifest passed both before and after packaged
-browser validation.
+`d9f963bd51a8ea3818004027cee78c1aa57ed38d7fc45ce60b2c5c036fc43c4e`,
+and the included distribution manifest passed after assembly.
 
-The packaged static App passed 39 distinct browser cases across failure and
+The current candidate's production `site/` is byte-identical to the archived
+candidate built from `1874e9832006a75ff400f9b35f0691ffd906a235` (tree
+`5f0253c5515755df9b6dbf67c25bc2cb6ae2e73f`). Recursive comparison found the
+same 17 files and 2,612,342 bytes with no mismatch; both sorted relative-path
+content manifests have SHA-256
+`3571a86ff3b847fae96085d76739ded16921bc9976080fb2aed8340c98ee90ca`.
+The examples, launcher and verification scripts, dependency records, notices,
+and recovery fixture are also unchanged. The current SDK copies the two later
+test timeout calibrations and passed the exact-source producer suite. The
+archived candidate and archive SHA-256
+`e41715c5f821b30e0a3228c1b653aa0b95ee93778dc4cb6bb71c9e4276aa2e5e`
+remain the source of the browser run described next; browser tests were not
+rerun for `54c625466247`.
+
+The byte-identical packaged static App from `1874e9832006` passed 39 distinct
+browser cases across failure and
 resource handling, method/data flows, A/B/C comparison and supplied-file
 recovery, plus persistence/history/original-part/theme behavior. Screenshots and
 test attachments are retained under
@@ -32,8 +46,11 @@ explicit Worker and storage failures, method provenance, original-part results
 and dark-theme layout. The launcher was stopped after validation and port 3020
 was released.
 
-The producer record's `remainingGates` is its immutable producer-time snapshot;
-the packaged journey named there was completed afterward and is recorded above.
+The current producer record's `remainingGates` is its immutable producer-time
+snapshot. The packaged journey named there is supported by the archived
+`1874e9832006` 39-case browser run and the later exact production-site byte
+equivalence verification recorded above; no browser run was repeated for the
+current candidate.
 The generated lock SHA-256
 `2a91e0b6fac05495a4e1993a2f9358b58798bf45b487dd911c65ddce45a2a032`
 matches the lock reviewed by the dated 2026-09-12 audit below. No fresh

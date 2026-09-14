@@ -222,6 +222,29 @@ The reference M1 / 8 GB run, independent numerical review, two real
 non-developer pilots and a maintenance owner remain unarranged. M6 and external
 R0 acceptance therefore remain open.
 
+### Current-source candidate refresh - 2026-09-14
+
+After the two reviewed test-only timeout calibrations reached the goal, a new
+exact-source producer completed on `54c625466247715390fdc3701d2d16c58531494c`
+(tree `c3d493573b15f10134e91c58ddebce83a69e8221`). Its immutable record is
+`apps/asyra-sim/.artifacts/consumers/54c625466247-WWWDIv/consumer-evidence.json`;
+the archive SHA-256 is
+`d9f963bd51a8ea3818004027cee78c1aa57ed38d7fc45ce60b2c5c036fc43c4e`,
+and the candidate distribution checksum verification passed. Both changed SDK
+test files exactly match this source; production behavior and product deadlines
+did not change.
+
+The refreshed candidate's `site/` is byte-identical to the `1874e9832006`
+candidate that actually passed the 39 packaged browser cases above: each has 17
+files and 2,612,342 bytes, recursive comparison found no mismatch, and both
+sorted relative-path content manifests have SHA-256
+`3571a86ff3b847fae96085d76739ded16921bc9976080fb2aed8340c98ee90ca`.
+Examples, runtime and verification scripts, dependency notices and the recovery
+fixture are also unchanged. No browser rerun occurred for `54c625466247`; its
+packaged UI evidence is the prior 39-case run plus this exact production-site
+equivalence. A later documentation-only commit is not part of either built
+candidate.
+
 The user authorized research into suitable public validation data and, when
 unavailable, reproducible synthetic data grounded in real-world conditions.
 Record source permission, provenance, assumptions and validation scope. Public
