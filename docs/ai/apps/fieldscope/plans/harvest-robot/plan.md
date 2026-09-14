@@ -68,6 +68,19 @@ and explicit create/compatibility path.
    buffers remain exact. Missing boundary or numeric evidence remains unknown.
    This synthetic source prerequisite does not complete W5, grant contact permission,
    or prove retention, physical damage, clearance or harvesting.
+   PR #211 replaces the non-portable whole-buffer digest acceptance exposed by
+   Ubuntu with an independently frozen pre-P5b source graph. Its manifest pins the
+   reviewed commit, tree and source bytes before same-runtime execution compares
+   unrounded non-pedicel source, metadata and retained hairs. The former Darwin
+   Node 24.13 snapshot payloads remain intact in that manifest as historical
+   diagnostics only; received Ubuntu values do not become a golden. The two
+   subsequent runtime timeouts remain separate CI failures pending the corrected
+   source-oracle run, with their existing budgets unchanged.
+   The authorized inserted pedicel hair shifts one revision-local
+   fruit-2/fruit-detail ordinal from /5 to /6 while its target, role, owner,
+   admitted region, dense topology and unrounded attributes remain exact. Each
+   revision still proves unique part-local IDs and exact patch/source references;
+   the ordinal itself is not treated as a cross-revision identity.
 7. **W6 mission evidence and UI.** Run visible normal left and right inspection/
    harvest cases through the actual W owners. One-side-at-a-time is the initial
    schedule, not a permanent prohibition. Any simultaneous bilateral case uses
