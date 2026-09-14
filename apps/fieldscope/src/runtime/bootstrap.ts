@@ -1,5 +1,6 @@
 import { RobotProjection } from '../render-app/robot-projection'
 import { createRobotWorkspace } from './robot-workspace'
+import { createSceneDemandWorkspace } from './scene-demand-workspace'
 import { SiteGeometry } from '../render-app/site-geometry'
 import { moveCamera, lookCamera } from '../render-app/camera-flight'
 import {
@@ -130,6 +131,10 @@ export async function bootstrap(
       submitScene()
     }
   )
+  const sceneDemandWorkspace = createSceneDemandWorkspace(
+    () => config,
+    () => geometry.getScene()
+  )
   robotMeshes = robotProjection.update(robot.get())
   const readZoom = (next: SpatialCamera) => {
     const reference = referenceCamera
@@ -161,7 +166,8 @@ export async function bootstrap(
   }
   const publishConfiguration = (
     next: FarmConfiguration,
-    prepared = buildSiteMeshes(next, geometry)
+    prepared = buildSiteMeshes(next, geometry),
+    refreshSceneDemand = true
   ) => {
     config = next
     meshes = prepared
@@ -171,6 +177,8 @@ export async function bootstrap(
     camera = referenceCamera
     publishCamera(camera)
     robot.refresh(true)
+    if (refreshSceneDemand)
+      sceneDemandWorkspace.refresh(config, geometry.getScene())
     configListeners.forEach((listener) => listener())
   }
   const configFeature = core.defineFeature(
@@ -225,8 +233,9 @@ export async function bootstrap(
             else await undoWithRenderPolicy({ mode: 'atomic' })
             const next = readConfiguration()
             if (JSON.stringify(next) !== JSON.stringify(config))
-              publishConfiguration(next)
+              publishConfiguration(next, undefined, false)
             robot.refresh()
+            sceneDemandWorkspace.refresh(config, geometry.getScene())
           },
           FeatureNames.HISTORY
         )
@@ -445,6 +454,7 @@ export async function bootstrap(
   const dispose = () => {
     if (disposePromise) return disposePromise
     closed = true
+    sceneDemandWorkspace.close()
     robot.close()
     robotProjection.clear()
     geometry.clear()
@@ -463,6 +473,7 @@ export async function bootstrap(
         await core.resetRuntime()
         core.unregisterComponent(configurationType)
         unregisterPropertyComponent(configurationType)
+        sceneDemandWorkspace.unregister()
         robot.unregister()
       }
     })
@@ -490,6 +501,7 @@ export async function bootstrap(
         { undoable: false }
       )
     })
+    sceneDemandWorkspace.initialize()
     robot.initialize()
     observer = new ResizeObserver((entries) => {
       const box = entries[0]?.contentRect
@@ -535,6 +547,11 @@ export async function bootstrap(
       isCurrentScene: (
         scene: import('../render-app/site-geometry').PreparedScene
       ) => !closed && geometry.isCurrentScene(scene),
+      getSceneDemandConfiguration: sceneDemandWorkspace.getConfiguration,
+      setSceneDemandConfiguration: sceneDemandWorkspace.setConfiguration,
+      getSceneDemand: sceneDemandWorkspace.get,
+      isCurrentSceneDemand: sceneDemandWorkspace.isCurrent,
+      subscribeSceneDemand: sceneDemandWorkspace.subscribe,
       getConfiguration: () => config,
       subscribeConfiguration: (listener: () => void) => {
         configListeners.add(listener)
