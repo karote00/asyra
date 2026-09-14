@@ -60,14 +60,15 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             : node.triangles.map((triangle) => triangle.offset)
         const build = meshIndex.buildMeshIndex
         vi.spyOn(meshIndex, 'buildMeshIndex').mockImplementation(
-          (mesh, checkpoint, hierarchy) => {
+          (mesh, checkpoint, hierarchy, checkExecution) => {
             const index = build(
               mesh,
               () => {
                 originalPreparation++
                 checkpoint()
               },
-              hierarchy
+              hierarchy,
+              checkExecution
             )
             if (!hierarchy) return index
             const result = partitionIndex(index, () => {
@@ -131,7 +132,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         builds = 0
       const build = meshIndex.buildMeshIndex
       vi.spyOn(meshIndex, 'buildMeshIndex').mockImplementation(
-        (mesh, checkpoint, hierarchy) => {
+        (mesh, checkpoint, hierarchy, checkExecution) => {
           builds++
           const index = build(
             mesh,
@@ -139,7 +140,8 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
               originalPreparation++
               checkpoint()
             },
-            hierarchy
+            hierarchy,
+            checkExecution
           )
           return hierarchy
             ? partitionIndex(index, () => {

@@ -1,11 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as kinematics from '../../../domain/kinematic-algebra'
 import * as meshIndex from '../mesh-index'
-import { EXPERIMENT_RESOURCE_PROFILE } from '../../contracts'
 import { OriginalMeshQuery } from '../original-mesh-query'
 import { queryOriginalPartPair } from '../original-part-method'
 import { representativeSnapshot } from './representative-fixture'
 
+const diagnosticWorkLimit = 500000
 afterEach(() => vi.restoreAllMocks())
 
 describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
@@ -20,7 +20,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
       if (!pair) throw new Error('Missing measured source pair')
       const context = new OriginalMeshQuery(
         () => undefined,
-        EXPERIMENT_RESOURCE_PROFILE.maxWorkUnits
+        diagnosticWorkLimit
       )
       const identities = new WeakMap<object, number>()
       let nextIdentity = 0
@@ -53,14 +53,15 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
       )
       const build = meshIndex.buildMeshIndex
       vi.spyOn(meshIndex, 'buildMeshIndex').mockImplementation(
-        (geometry, checkpoint, hierarchy) =>
+        (geometry, checkpoint, hierarchy, checkExecution) =>
           build(
             geometry,
             () => {
               medianPrep++
               checkpoint()
             },
-            hierarchy
+            hierarchy,
+            checkExecution
           )
       )
       const refine = meshIndex.refineMeshIndex
@@ -156,9 +157,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         context
       )
       expect(result.coverage).toBe('complete')
-      expect(context.work).toBeLessThanOrEqual(
-        EXPERIMENT_RESOURCE_PROFILE.maxWorkUnits
-      )
+      expect(context.work).toBeLessThanOrEqual(diagnosticWorkLimit)
       const summarize = (kind: string) => {
         const selected = rows.filter((row) => row.kind === kind)
         return {

@@ -2,7 +2,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { IDENTITY_POSE, type Vec3 } from '../../../domain/math'
 import { interval, type Interval } from '../../../domain/interval'
 import * as kinematics from '../../../domain/kinematic-algebra'
-import { EXPERIMENT_RESOURCE_PROFILE } from '../../contracts'
 import * as convex from '../convex-query'
 import type { DistanceEvidence } from '../convex-query'
 import { MeshWorkLimit, OriginalMeshQuery } from '../original-mesh-query'
@@ -11,6 +10,7 @@ import * as continuous from '../continuous-query'
 import { representativeSnapshot } from './representative-fixture'
 import { transport, type SourceWitness } from './witness-transport-control'
 
+const diagnosticWorkLimit = 500000
 const ops = kinematics.poseOperations(kinematics.intervalAlgebra)
 // Independent exact binary64-to-rational comparison, no production interval
 // arithmetic in the expected normalized-rotation coordinates or squared norm.
@@ -261,7 +261,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         }
         let work = 0
         const transported = transport(source, target, () => {
-          if (context.work + ++work > EXPERIMENT_RESOURCE_PROFILE.maxWorkUnits)
+          if (context.work + ++work > diagnosticWorkLimit)
             throw new MeshWorkLimit(
               'Passive witness transport exceeded the unchanged guard'
             )

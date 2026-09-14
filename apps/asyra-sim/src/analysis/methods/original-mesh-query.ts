@@ -5,7 +5,6 @@ import {
 } from '../../domain/kinematic-algebra'
 import type { Interval } from '../../domain/interval'
 import type { MeshGeometry } from '../../domain/part-geometry'
-import { EXPERIMENT_RESOURCE_PROFILE } from '../contracts'
 import {
   convexDistance,
   type ConvexShape,
@@ -82,7 +81,9 @@ export class OriginalMeshQuery {
   private readonly indices = new WeakMap<MeshGeometry, MeshIndex>()
   constructor(
     private readonly checkpoint: () => void = () => undefined,
-    private readonly maxWork: number = EXPERIMENT_RESOURCE_PROFILE.maxWorkUnits,
+    // A finite override is for explicitly bounded diagnostic queries only.
+    // Production execution is bounded by its owned checkpoint and resource budgets.
+    private readonly maxWork = Infinity,
     private readonly hierarchy = true,
     private readonly prepared = new WeakMap<MeshGeometry, PreparedMeshIndex>()
   ) {}
@@ -121,7 +122,12 @@ export class OriginalMeshQuery {
       return prepared.index
     }
     const before = this.work
-    const index = buildMeshIndex(geometry, this.tick, this.hierarchy)
+    const index = buildMeshIndex(
+      geometry,
+      this.tick,
+      this.hierarchy,
+      this.checkpoint
+    )
     if (immutable)
       this.prepared.set(geometry, {
         index,

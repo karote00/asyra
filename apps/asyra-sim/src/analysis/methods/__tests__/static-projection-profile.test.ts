@@ -129,14 +129,15 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         const build = mesh.buildMeshIndex,
           refine = mesh.refineMeshIndex
         vi.spyOn(mesh, 'buildMeshIndex').mockImplementation(
-          (geometry, checkpoint, hierarchy) =>
+          (geometry, checkpoint, hierarchy, checkExecution) =>
             build(
               geometry,
               () => {
                 nested.preparation++
                 checkpoint()
               },
-              hierarchy
+              hierarchy,
+              checkExecution
             )
         )
         vi.spyOn(mesh, 'refineMeshIndex').mockImplementation(

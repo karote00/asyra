@@ -47,6 +47,16 @@ not merely between body pairs.
 
 ## Numerical method
 
+Method version `1.0.3` removes the fixed logical-work abort gate. Logical work
+remains charged, including attempted queries and equivalent cold/warm preparation;
+it does not determine completion or override cancellation, wall time, temporal
+nodes or retained evidence limits. Topology vertex/component/fan scans and median
+index scans/sorts checkpoint bounded batches. Explicit finite diagnostic query
+limits remain available to formal exhaustion tests, but formal execution and live
+input executors never supply such a limit. Historical method declarations and
+results retain their original versions and resource meaning. No geometry,
+precision, pair coverage or numerical classification changes with this version.
+
 The new original-part method has a distinct immutable method identity. Native
 primitive queries retain their analytical support geometry. Mesh queries visit
 original triangles, with outward-enclosed bounds and explicit solid containment
@@ -140,7 +150,7 @@ evidence and marks unproved coverage unresolved. No old lower/contact/metadata i
 transported. The target executes its full original solve and all subsequent
 samples. One shared whole-enclosure transport owner serves both source routes;
 there is no segment map, global pose cache or source retention after invocation.
-Every attempted query consumes the unchanged work budget. Exhaustion retains only already established witnesses and marks
+Every attempted query remains charged. Execution-budget exhaustion retains only already established witnesses and marks
 unproved coverage unresolved; it does not invent unvisited endpoint findings.
 This strategy is explicit to the original-part kernel, leaving the historical
 primitive method's ordering unchanged. World-axis bounds use inverse-direction

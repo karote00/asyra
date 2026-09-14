@@ -1,15 +1,32 @@
+import { arch, cpus, platform, release, totalmem } from 'node:os'
 import { expect, test } from '@playwright/test'
+import { EXPERIMENT_RESOURCE_PROFILE } from '../../contracts'
 import type { AnalysisResult } from '../../result'
 import { representativeSnapshot } from './representative-fixture'
 
+const benchmarkDurationMs = 120000
+
 for (const candidate of [0, 1, 2]) {
   test(`full original-part representative workcell produces useful bounded evidence for candidate ${candidate + 1}`, async ({
-    page
+    page,
+    browser
   }, info) => {
-    test.setTimeout(45000)
-    const snapshot = await representativeSnapshot(candidate)
+    test.setTimeout(benchmarkDurationMs + 15000)
+    const original = await representativeSnapshot(candidate)
+    expect(original.budget).toEqual({
+      maxDurationMs: 30000,
+      maxIntervals: 100000
+    })
+    expect(benchmarkDurationMs).toBeLessThanOrEqual(
+      EXPERIMENT_RESOURCE_PROFILE.maxDurationMs
+    )
+    const snapshot = {
+      ...original,
+      budget: { ...original.budget, maxDurationMs: benchmarkDurationMs }
+    }
     await page.goto('/')
     await expect(page.getByRole('status')).toHaveText('Local runtime ready')
+    const initialWorkers = new Set(page.workers())
     const measurement = await page.evaluate(
       async ({ snapshot, moduleUrl }) => {
         const { AnalysisRunner } = await import(moduleUrl)
@@ -64,10 +81,29 @@ for (const candidate of [0, 1, 2]) {
       },
       { snapshot, moduleUrl: '/src/analysis/runner.ts' }
     )
+    await expect
+      .poll(
+        () =>
+          page.workers().filter((worker) => !initialWorkers.has(worker)).length
+      )
+      .toBe(0)
     await info.attach('representative-resource.json', {
       contentType: 'application/json',
       body: JSON.stringify({
         candidate: candidate + 1,
+        profile: 'large-workcell-120s',
+        hardware: {
+          cpu: cpus()[0]?.model ?? 'unavailable',
+          logicalCpus: cpus().length,
+          architecture: arch(),
+          physicalMemoryBytes: totalmem(),
+          platform: platform(),
+          osRelease: release(),
+          browserVersion: browser.version()
+        },
+        workersAfterDispose: page
+          .workers()
+          .filter((worker) => !initialWorkers.has(worker)).length,
         method: snapshot.method,
         budget: snapshot.budget,
         bodies: snapshot.workcell.bodies.length,

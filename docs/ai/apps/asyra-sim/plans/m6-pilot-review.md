@@ -92,7 +92,6 @@ user instructions identify the exact file, controls and success/failure outcome.
 Self-review: this implements existing pilot/distribution contracts within ui;
 it does not add product semantics, expand Inspector boundaries or replace G7.
 
-
 ## UI slice evidence before candidate generation
 
 The new supplied-file E2E fails with ENOENT before the fixture exists. The
@@ -723,7 +722,6 @@ repeated static/interval work in original segment 115; it does not authorize
 sample/pose reuse or another production change without measured counts and
 review of the exact ownership/identity contract.
 
-
 ### Exact segment repetition diagnosis
 
 Step card: method owner, current component baseline `979ca24ad`, original
@@ -741,7 +739,6 @@ gate changes are authorized. Run with `SIM_CAPACITY_DIAGNOSTICS=1` and the exact
 file, retaining its twenty-second guard. Review the measured ownership and
 identity contract before proposing any reuse.
 
-
 The passive case completes seven evaluations/four clear leaves in 172,486 work:
 3,176 original preparation, 10,366 refinement, and exactly 158,944 query work,
 reproducing the complete original segment's full-run cost. Thirteen static
@@ -756,7 +753,6 @@ Focused diagnostic, app typecheck, focused ESLint and naming 11/11 pass.
 Evidence: `tmp/capacity/segment-repetition.log`. The first attempted diagnostic
 assertion referenced a nonexistent snapshot budget field; the formal resource
 profile owner now supplies the unchanged 500,000 limit explicitly.
-
 
 ### Subdivision evidence ownership card
 
@@ -833,7 +829,6 @@ actually obtained. No browser rerun before that milestone. If the proposed
 lifetime conflicts with Inspector/product semantics or materially changes
 complete evidence, stop and revise the card; do not hide it by weakening tests.
 
-
 Readiness review corrected one eligibility boundary before implementation:
 original native/native queries use witness-axis separation, so only the actual
 mesh `lowerOver` route declares positive-witness-only dependency. Inspector and
@@ -865,7 +860,6 @@ naming 11/11 pass; the regenerated Inspector catalog passes 8/8. Evidence is in
 review and the subsequent full representative gate are the remaining boundaries;
 G4 is not yet complete.
 
-
 The independent production review passed and separately reran 26 tests. The
 unchanged full gate still fails complete coverage: 500,197 accounted work,
 20,234 evaluations, first partial joint-2/obstacle-11 at 135 evaluations. Its
@@ -891,7 +885,6 @@ Logs: `tmp/capacity/handoff-historical-replay.log`,
 handoff slice is frozen for scoped review/commit. The next discovery is limited
 to the new actual original-segment frontier and completed-query cost attribution;
 no new production strategy follows directly from the partial aggregate.
-
 
 ### Actual frontier cost attribution card
 
@@ -931,7 +924,6 @@ triangle-level rejection avoids one convex call after its triangle-pair tick
 has already been paid; node rejection can avoid descendant work. Unknown
 metadata is reported separately, never guessed from bounds values. This is
 passive accounting, not authorization to remove any rejection policy.
-
 
 The passive replay reproduces 20,234 / 135. Its actual exhausted call is the
 static endpoint at 3.0150753768844223 in original segment 74
@@ -977,7 +969,6 @@ same test-owned adapter, preserving their assertions and original guard. If
 any required correctness or cost gate fails, stop/replan; do not redefine units,
 tune axes, or claim success merely because fewer axes were charged. Production
 requires a separately reviewed formal red/correction card after this evidence.
-
 
 ### Final triangle projection policy - validated owner correction
 
@@ -2243,3 +2234,289 @@ Reproduction entry is `SIM_PLANAR_REGION_SCREEN=1` with
 `planar-region.test.ts -t 'screens all original source bindings once under the frozen preparation ceiling'`.
 No second source run is needed for closure. Current default authority remains
 method 1.0.2 and G4 remains RED; independent review is the next boundary.
+
+### Iteration-local convex support arithmetic reuse - frozen owner slice
+
+The canonical convex query currently repeats the inverse direction rotation and
+triangle interval dot products (or radial norm) when a nonconverged iteration
+consumes both its support lower bound and its next source witness. Reuse is owned
+by that single synchronous iteration and its two shapes/directions. A private
+completed directional record may serve the bound and, only after the existing
+convergence check, the point. Initial and zero-axis spanning vertices remain
+point-only. Records cannot survive an iteration, query, changed pose or source.
+No retained cache, public observer, method/default/version or Inspector change
+is authorized. The existing pure analytical method owner remains authoritative.
+
+Permanent tests first freeze full binary64 evidence and actual rotate/dot/norm
+counts for triangle, native, interval, early-return, tied and changed-pose cases.
+They must fail on duplicate work before implementation, then prove fresh query
+and iteration lifetimes. Instrumentation is a test-owned isolated module closure.
+Original triangle membership, interval predicates, simplex order and all mesh
+charge/checkpoint order remain unchanged. Private record allocation and field
+reads are additional CPU operations, not a logical fee discount; savings claims
+are limited to physically eliminated arithmetic. Existing owner/cancellation
+regressions, type, lint, naming and format gates precede independent review.
+
+Only after that review may the one opt-in scenario-zero population parity gate
+run against the reviewed census SHA-256
+`b79710033eadf5263f17b13744c754c58ef353abd65f85fedd318cf940014f99`.
+It preserves the original 39-body/30-fixture/200-frame/298-pair input, recorded
+pair evidence, 500197 charged mesh work and 20265 evaluations with partial
+coverage. The runtime's existing 30000 ms deadline remains distinct from test
+harness timeout. No evidence comparison may be widened after observation, and
+parity with incomplete evidence is not G4 passage or a 500k capacity improvement.
+
+The bounded implementation now shares two private support records per regular
+iteration; standalone lower bounds and point-only initial/spanning calls retain
+their original arithmetic route. Each record adds one fixed object allocation
+and constant field accesses; no lookup table, persistent lifetime or fee relabeling
+exists. Triangle dots and radial norms are the same already-produced interval
+values. Selected triangle witnesses still refer to original vertices, with the
+same earliest tie, and world point transforms remain after the convergence check.
+
+Before implementation, all nine binary64 evidence hashes matched, while the
+permanent operation-count assertion failed on the expected duplicates. Afterward
+those same hashes match: rotate calls 210 to 168, explicit dot calls 677 to 623,
+and norm calls 103 to 83 across the frozen cases. These count actual canonical
+operations, not mesh logical work, CPU milliseconds, or a full-population saving.
+The early-converged case stays at 6/8/4, and point-only spanning work is preserved.
+Four focused tests cover these cases, repeated and changed-input invocations,
+all eight rotation interruption sites of the one-iteration case, and reentrant
+execution. Interval and original mesh owner regressions pass (58 tests); eight
+existing pair-profile diagnostics remain opt-in and were not executed as a new
+benchmark. Naming, placement and Inspector checks pass (21 contracts), with type,
+ESLint and format checks. Population parity required independent review before
+execution. Its frozen comparator is exact persisted pair JSON, matching the
+reviewed census format; that artifact cannot distinguish signed zero. The small
+binary64 receipts separately preserve signed zero and every full output field.
+
+Independent geometry review accepted the exact implementation/test/fixture/plan
+hashes. The single authorized full-population parity gate then passed on
+2026-09-13: all 298 persisted pair records exactly match the reviewed census,
+with 500197 logical mesh work units, 20265 evaluations and partial coverage.
+The first partial pair remains index 101,
+`example:joint-2/main-body::obstacle-11/main-body`. All remaining unresolved
+coverage is retained. This validates unchanged recorded evidence and charges;
+G4 remains RED and this does not establish a 500k capacity improvement.
+
+The measured geometry invocation wall time was 10004.961167 ms within the
+unchanged 30000 ms runtime deadline. The Vitest case took 10493 ms and its
+complete harness 10.89 s, within the 45000 ms test allowance. No complete CPU
+time measurement or paired CPU comparison was captured; no speedup percentage
+is claimed. Deterministic eliminated arithmetic remains the bounded CPU-work
+evidence. The one approved run was not repeated for timing or reporting.
+
+Formal generated local evidence is `tmp/capacity/convex-support-reuse.json`
+(22048120 bytes), SHA-256
+`fa685329ffc68c295d4f369b43687202a2c57a87fb312122d20a1a67687475a6`.
+It preserves every pair record, full input/control hashes, measured wall time,
+work, evaluations, coverage and first partial pair. It may remain a local generated
+artifact rather than a 22 MB Git source file. The control census SHA-256 remains
+`b79710033eadf5263f17b13744c754c58ef353abd65f85fedd318cf940014f99`;
+input SHA-256 remains
+`4c7b21228a7b621bf2e94b8991c25bebea78fe6c3f1d63203c141d0dca788291`.
+The permanent opt-in reproduction entry, from the candidate worktree root, is:
+
+```sh
+cd apps/asyra-sim
+SIM_SUPPORT_REUSE_POPULATION=1 SIM_SUPPORT_REUSE_CONTROL_FILE=../../../asyra-sim-temporal-opportunity-census/tmp/capacity/temporal-opportunity-census.json node ../../../../node_modules/vitest/vitest.mjs run src/analysis/methods/__tests__/convex-support-reuse.test.ts -t 'preserves the complete recorded scenario-zero population and charged work' --maxWorkers=1
+```
+
+The reviewed census path must refer to the exact hash above; the test verifies it
+before geometry work. No method identity/version, production budget, geometry,
+continuous coverage, containment, witness or Inspector contract changed.
+
+### Heavy correctness test supervision - bounded execution repair
+
+Owner: project-owned Sim test execution, not the analytical method or Worker.
+CI run 34767093929 spent 8m37s in validate and 6m01s in Test; successful
+34772350442 spent 10m29s and 4m45s respectively. The fresh source prefix's
+20000 ms harness timeout covered two synchronous queries and assertions and
+reported after 30166 ms. Its work/evidence assertions are not wall-time SLAs.
+The other five reported failures remain separate findings; cb8089f71 is retained.
+
+Freeze eight files: scripts/supervise-tests.py and its scripts/**tests** oracle,
+methods/**tests**/heavy-test-progress.ts and its oracle, the existing
+fresh-witness-source-work.test.ts, app package.json, CI main.yml and this plan.
+No product, Inspector, global Vitest timeout, dependency or capacity change.
+The existing 500k work, 30s product deadline and 64 MiB envelope remain intact.
+
+Use the previously proved capacity watchdog's independent POSIX process-group,
+pipe, monotonic deadline and wait4 mechanisms, without its 2M scenario mode.
+Freeze a configurable provisional 20-minute CI job envelope, with 60 seconds
+reserved for termination/artifacts and a 120-second no-effective-progress
+window for the supervised heavy file. These engineering values need calibration;
+they are neither measured SLAs nor performance acceptance thresholds. CI supplies
+the original absolute job deadline through a project-local receipt so Turbo's
+environment filtering cannot renew it. Local execution uses the same explicit
+configuration. A heartbeat never renews either useful progress or the hard stop.
+
+Normal tests retain existing Vitest case timeouts. Both local and CI suite
+entry points run ordinary files and the isolated heavy file exactly once, even
+when an ordinary assertion fails. Only the supervised heavy file disables its
+20-second case timer, guarded by inherited receipt descriptors. Its four original
+cases and every evidence/work assertion remain unchanged. Paid work receipts are
+aggregated at checkpoints rather than emitted for every arithmetic operation;
+fixture/query/assertion stages and completed cases are finite and ordered.
+Independent wall/CPU performance assertions and product cancellation/deadline
+tests remain independent gates. No progress observation manufactures clear output.
+
+Formal RED precedes implementation: checkpoint-free busy child, ineffective
+heartbeat, advancing work beyond hard stop, missing/failing final result,
+truncated receipt, late completion, owned descendants and cancellation; observer
+tests prove work is observed without altering charges or source results. Only
+normal exit plus all required assertion-completion receipts passes. Forced
+termination preserves the last complete accounting as a lower bound and labels
+the tail unknown. Startup, child/process wall and CPU are reported separately.
+Then run small supervision/progress tests, runner regressions, type/lint/naming,
+one complete heavy file and the necessary app suite. Independent bounded review
+closes this slice; no algorithm candidate, population benchmark or G4 claim.
+
+Implementation verification: seven external-process regressions first failed
+without the supervisor, then passed. The final suite adds phase-selection and
+CI prerequisite oracles (nine total), plus two paid-progress observer tests.
+Independent review strengthened the CI oracle with missing/duplicate marker
+mutations and duplicate package invocation; each weakness was reproduced RED
+before its assertion was repaired. No evidence comparator was weakened.
+The original runner's 13 cancellation/deadline tests also passed unchanged.
+
+The single formal app test entry retained its ordinary failure and then ran all
+four heavy cases successfully (14.29s tests, prefix 13.027s). Its final receipt
+observed 548662 work across seven separate test queries; this is not one product
+run or a larger per-query cap. JSONL and summaries remain under
+`tmp/test-supervision/1789362643917160000-43858/`. The initial ordinary run had
+30 missing-built-package suites and the pre-existing G4 partial-coverage failure;
+117 files / 634 tests passed. Checkout-local immutable installation and the
+canonical `yarn react:build --filter=@asyra/asyra-sim` (17 tasks) supplied the
+normal CI prerequisite. Only those 30 setup-failed files were replayed: 199 tests
+passed, recorded in `tmp/test-supervision/1789362877532413000-45274/`.
+The heavy proof and the unchanged G4 failure were not rerun. TypeScript, scoped
+ESLint/format, naming and diff checks passed. G4 remains RED.
+
+CI repository variables are `TEST_JOB_MINUTES`, `TEST_IDLE_MS` and
+`TEST_CLEANUP_MS`; local execution accepts `TEST_JOB_MS`, `TEST_IDLE_MS` and
+`TEST_CLEANUP_MS`. A recorded CI deadline remains authoritative even when Turbo
+filters environment flags; elapsed setup never grants a fresh child budget.
+Both output streams are bounded at 64 MiB independently of product evidence.
+Reports use `supervisedWallMs` for READY through fixture/query/assertion/exit;
+it is not pure geometry time. Receipt observation times identify finite stages.
+The earlier preserved receipt used the misleading field name `geometryWallMs`;
+its value covers that same whole supervised phase and is not relabeled in place.
+CI emits bounded summaries in its always step. Full JSONL/console receipts are
+project-local only; this slice adds no downloadable CI artifact service.
+
+### Approved workload-count gate removal
+
+The approved capacity slice removes the two fixed 500,000 abort gates, not the
+finite source/pair/trajectory limits, 30-second/100,000-node defaults, cancellation,
+120-second/one-million-node maxima or retained evidence limits. Original three
+MVP candidate geometry, precision and coverage remain fixed. Method 1.0.3 records
+the new execution policy; historical evidence is unchanged.
+
+Bounded owner order: domain topology cooperation, snapshot admission and warning
+schema, then original-mesh method cooperation and work accounting. The initial
+formal RED cases detected the vertex/graph/sort checkpoint gaps, rejection of
+500,464 pair/segment combinations and the default mesh abort at 500,001 paid work.
+Focused corrections passed before the complete app gate.
+
+That complete gate exposed an accounting error in the first correction: extra
+lifecycle checkpoints had been counted as extra geometry work, violating the
+existing projected-rejection and subdivision work oracles. The revised bounded
+slice separates execution checks from the original paid-work callback and
+forwards both through its direct diagnostic observers. Keep every existing work
+threshold and cold/warm parity assertion. Update the new method-version oracle;
+make the existing exhausted workpiece oracle's diagnostic limit explicit.
+The representative query completed 298 pairs and 59,332 evaluations, but its
+20-second harness expired after 41,870 ms in the concurrent ordinary suite.
+Use the existing external correctness-test supervisor for this complete case
+and the existing witnessed-zero complete-prefix cases, preserving all assertions,
+the independent hard deadline, useful-work receipts and owned-process cleanup.
+This test supervision does not change product wall-time or performance gates.
+After the bounded correction, run focused work/lifecycle gates, the original
+three browser MVP cases, app tests/build, type/lint/naming and one diff review.
+
+The bounded correction passed 14 focused work/lifetime/version tests, the topology
+and admission regressions, naming, app typecheck/lint and the 17-task canonical
+build. The complete app entry passed 148 ordinary files / 835 tests, with the
+existing 24 opt-in files / 76 tests skipped. Its supervised phases passed all
+four fresh-witness, one representative and four witnessed-zero cases; final exact
+work receipts were 548,662, 1,055,698 and 1,062,094 respectively. The representative
+case retained all 298 pairs and 59,332 evaluations. Every owned process was reaped.
+Receipts: `tmp/test-supervision/1789375790783192000-27801/`. The supervisor's ten
+process/scheduling regressions passed. These are correctness proofs, not product
+wall-time measurements.
+
+All three unchanged browser MVP cases were then measured with method 1.0.3,
+39 bodies, 40,388 triangles, 298 pairs, 200 keyframes and the original 30-second /
+100,000-node budget. Candidate 1 completed full coverage in 22,536 ms with 59,332
+evaluations and zero unresolved pairs. Candidates 2 and 3 timed out with partial
+coverage in 30,353 ms / 58,538 evaluations and 30,282 ms / 26,133 evaluations.
+The browser gate is therefore 1 PASS / 2 FAIL, not a capacity closeout. The
+original precision and complete-coverage assertions were not changed. Report:
+`apps/asyra-sim/.artifacts/browser-report.json`; failure traces remain in the
+app's `test-results/`. No repeat was run to select a favorable timing result.
+Further completion work must address the measured execution owner within the
+existing product budgets; no fixed work cap is reinstated and timeout remains
+partial/nonpass.
+
+The coordinator's single bounded review found no blocking issue in the frozen
+capacity/cancellation change; the browser failures remain open. The next method
+step is diagnosis only: measure candidates 2 and 3 once each using their unchanged
+sources and precision, a 120-second checkpointed diagnostic window, and the
+existing external supervisor's finite process/idle/cleanup guards. The permanent
+opt-in capacity-owner profile records per-pair time and work plus nested static,
+interval, preparation, membership, convex and bounds counters. Nested timings
+are explicitly overlapping instrumented measurements, not a product SLA.
+Only this profile and this plan may change. No production algorithm change or
+repeated candidate search is allowed before the first expensive canonical owner
+and a bounded correction plan are supported by these measurements. This stage
+initially treated 30 seconds as the large-benchmark gate; the contract check
+below corrects that assumption without rewriting the observed failures.
+
+The one complete diagnostic per failed candidate finished with full coverage:
+candidate 2 used 1,236,842 paid work / 59,334 evaluations in 30,262 instrumented ms;
+candidate 3 used 1,412,850 / 59,368 in 59,075 ms. Files are
+`tmp/capacity/candidate-2-owner-profile.json` and
+`tmp/capacity/candidate-3-owner-profile.json`. The owned external process exited
+successfully and was reaped with an exact 2,649,692-work final receipt. An initial
+collection failure before any test ran was corrected with the supervisor's
+required threads pool; neither geometry case was repeated. These measurements
+identify expensive interval convex queries but authorize no algorithm changes.
+
+The subsequent minimum contract check confirmed FIRST_RELEASE G4 requires the
+published hardware/browser/method profile, while runtime-profile declares a
+30-second default and supported 0.1–120-second range. TEST_STRATEGY requires the
+full benchmark and numerical budgets, not an unconditional 30-second threshold
+for every large candidate. The coordinator directed calibration to the existing
+120-second / 100,000-node large-benchmark profile instead of another speculative
+solver iteration. Production defaults/maxima, geometry, precision, all three
+candidate sources and every timeout/cancel negative oracle remain unchanged.
+
+This bounded test/profile slice touches only the representative browser test,
+TEST_STRATEGY, runtime-profile and this plan. It records real host/browser/method
+metadata, derives per-case deadlines from the declared budget plus finite setup
+and cleanup allowances, and verifies Worker disposal. The dedicated global
+deadline is 3 * (120,000 + 15,000) + 60,000 = 465,000 ms. Preserve the original
+30-second RED report at
+`tmp/capacity/representative-resource-default-30s.browser-report.json`.
+Run naming/type/lint and the unchanged default-resource/runner negative tests,
+then all three browser candidates once. Only complete coverage and bounded
+evidence for all three plus cleanup can pass this declared profile; no claim
+of default-30-second or reference-hardware completion follows from it.
+
+The calibrated browser profile passed all three candidates in one formal run:
+20,493 / 25,406 / 44,163 ms; 59,332 / 59,334 / 59,368 evaluations; and
+59,317 / 59,318 / 59,335 retained leaves. Every result is completed/complete with
+all 298 pairs, zero unresolved pairs, no execution errors and zero remaining
+analysis Workers after disposal. All three verdicts are `does-not-meet` because
+the complete analysis found issues; completion is not a clearance verdict.
+Page-heap samples peaked at 122,558,341 / 114,687,252 / 106,092,559 bytes.
+Host: Apple M3 Max, 16 logical CPUs, arm64, 48 GiB physical memory,
+Darwin 25.6.0, Chrome 152.0.7977.83, method 1.0.3. These page-heap samples exclude
+Worker/native/GPU and total browser resident memory. No M1/8 GiB, external pilot
+or independent numerical-validation claim is made. The owned test server exited
+and port 7094 had no remaining listener. The report is
+`apps/asyra-sim/.artifacts/browser-report.json` (3 PASS, no skips/retries).
+The unchanged resource/default-budget/runner negative tests passed 21/21;
+naming, typecheck, lint and diff checks passed. The earlier complete app suite
+and build remain valid because this calibration changed no production code.
