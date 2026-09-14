@@ -4,6 +4,204 @@ Product authority: [harvest robot](/docs/ai/apps/fieldscope/specs/harvest-robot.
 Physical evidence: [hardware concept](/docs/ai/apps/fieldscope/specs/harvest-hardware.md).
 This architecture contract is not a test ledger or a physical safety certificate.
 
+## Active route W - Walking four-arm target (pending implementation)
+
+This route supersedes the robot-specific C/D/E route below. The current M2
+four-wheel projection and the later single five-axis source/contact work remain
+historical implementation evidence; they do not satisfy any W step. Steps A and
+B remain current only for their implemented assessment, document and history
+behavior. Their `vehicle`, single `tool` and contact-track values are legacy
+inputs until a versioned walking definition is implemented. Generic scene
+identity, botanical partitions, conservative interval/exact geometry and
+session-evidence rules may be reused only through the W owner that explicitly
+binds them. The W runtime, schemas and UI do not exist yet.
+
+### W1 - Scene demand
+
+Owner: FieldScope scene-demand domain preparation.
+Inputs: one validated farm configuration; the completed current farm, structure,
+support, drain, net, crop and fruit source products; the route interval; the
+declared plant-growth envelope and its measured, unknown or visibly synthetic
+provenance; explicit measured or synthetic clearance margin and survey identity.
+Outputs: one immutable scene-demand revision containing left/right target source
+identities and positions, actual high/low reach demands, authored obstacle and
+channel regions, and offset-capable free-passage geometry after growth and source
+intrusions. It does not output robot dimensions, locomotion demand or a pass/fail
+hardware choice. The current farm's roughly calculated 1.2 m passage is only a
+sanity reference for this output, never an input or fixed gate.
+Conditions: enumerate actual target source; derive free space from exact current
+obstructions and the declared growth envelope. `netTop`, strip width and the rough
+1.2 m reference are insufficient alone. An offset/irregular corridor stays offset.
+Missing or discrete growth coverage and missing margin remain `unknown` or retain
+their visible assumption provenance. Farm, crop, growth-envelope, source, route
+interval, clearance-margin, survey or provenance changes retire the revision;
+view and locale changes bypass.
+Allowed contributors: existing farm/layout/support/crop source owners and their
+completed installed transforms.
+Forbidden contributors: robot geometry, rendered visibility, body-width-only
+clearance, reuse of 1.2 m as usable width, scalar strip-minus-robot subtraction,
+symmetric side-reserve allocation, crop removal, automatic pruning and synthetic
+obstacle disappearance.
+Implementation boundary: a future app-domain scene-demand module and its formal
+source-space tests; existing farm and crop generators remain upstream and are not
+rewritten by this step. Exact filenames and public schema are frozen in W1's
+implementation card before production edits.
+Spec: Active product reset - scene demand and complete-passage cases.
+Failure owner: W1 reports invalid, blocked or unknown source demand and never
+selects another lane or robot configuration.
+Cache dimensions: none proposed; one preparation per relevant source revision.
+
+### W2 - Versioned walking source and kinematics
+
+Owner: FieldScope canonical walking-robot definition, source and pure kinematics.
+Inputs: a versioned new-topology definition, four independent arm definitions,
+multi-leg definition, vertical shoulder-carriage definition, stowed/working poses
+and visibly labeled measured or synthetic dimensions, joint ranges, component
+mass and centre-of-mass assumptions. W1 does not feed or resize canonical robot
+source.
+Outputs: one immutable source/rig revision with a low-centre-of-mass six-leg
+synthetic baseline, at least the `left-support`, `left-cutter`, `right-support`
+and `right-cutter` semantic chains, independent leg chains, unique rigid-body and
+joint ownership, foot and crop-contact patches, pure candidate FK, canonical
+definition-bound body geometry and specified-pose geometry, with one
+definition-bound mass/CoM identity. Complete stance, leg-swing, gait and interval
+swept demand belongs only to W3. Exact identifiers are decided with the versioned
+schema before this step starts; these labels state roles, not persisted wire names.
+Conditions: source, kinematics and identity are prepared once per definition;
+farm, crop, terrain, route, view and locale changes bypass and reuse that product.
+All four arm chains and every leg must be present; unsupported dimensions or
+joints make the definition unavailable. A legacy wheeled definition bypasses W2
+and retains only its historical projection. Conversion requires an explicit user
+action and creates a new definition; load/replay never reinterpret old bytes.
+Allowed contributors: the admitted versioned definition, app-owned mesh/source
+preparation and pure transforms.
+Forbidden contributors: W1-derived automatic resizing, old tire/tread or
+single-five-axis identities, stretched links, free XYZ tool poses, hidden
+geometry, manufacturer capability inferred from the synthetic source, and
+renderer-owned kinematics.
+Implementation boundary: future app-domain versioned definition, source and
+kinematics modules plus their source/FK/compatibility tests; rendering consumes
+their completed products later. Exact files and schema are frozen before the W2
+implementation slice.
+Spec: Active product reset - topology, compatibility and source identity.
+Failure owner: W2 rejects incomplete/invalid definitions or stale source handles;
+it does not relax W1 demand.
+Cache dimensions: none proposed; the immutable rig is the completed definition
+product, not an optional cache.
+
+### W3 - Terrain, stance and whole-body motion admission
+
+Owner: FieldScope walking-motion admission.
+Inputs: current W1 demand and current W2 source/rig whose scene, definition and
+source identities are compatible for this evaluation; base and all arm/leg joint
+paths; evaluation time/interval; stance/contact schedule; actual or explicitly
+synthetic terrain height, slope, rut, debris, foot-contact, friction, bearing and
+sinkage evidence; declared load and required clearance margin. W1 and W2 have
+independent revision lifetimes and their revision values need not match.
+Outputs: interval-bound clear, blocked or unknown results for foot placement,
+stance transition and complete body motion, including leg swing, shoulder lift,
+all arms/tools, crate and carried fruit. Each result binds source, terrain, path,
+time and evidence identities. W3 derives locomotion swept-demand geometry from
+W2 plus stance/gait/load/terrain, then compares that geometry with W1's completed
+free-passage geometry. It never repeats W1's farm/growth derivation.
+Conditions: a support foot must land on admitted soil and never on a drain/water
+channel. Every moving body uses the same complete interval. Missing terrain or
+contact evidence is `unknown`; number of stance feet is not a stability result.
+Farm/plant/growth/source/route/survey changes invalidate W1 and the compatibility
+result without rebuilding unchanged W2. Robot definition, path, evaluation time,
+stance/contact schedule, contact evidence, gait, load, terrain or clearance-margin
+changes invalidate locomotion demand and the compatibility result. An unchanged
+completed revision may be read without recomputation, including by UI consumers.
+Allowed contributors: W1/W2 completed artifacts and existing conservative
+geometry predicates after their equivalence for the new source is proven.
+Forbidden contributors: endpoint-only clearance, scalar width subtraction,
+flat-rendered-ground inference, teleport, wheel semantics, omitted swing bodies,
+blanket crop/contact exemptions, alternate routes and terrain fabricated from a
+passing pose.
+Implementation boundary: future simulation walking-motion and terrain-contact
+modules with source-space, interval and stale-identity tests; no UI decision.
+Spec: Active product reset - walking, wet uneven soil and obstacle cases.
+Failure owner: W3 owns path/contact invalidity and unresolved clearance.
+Cache dimensions: none until profiling establishes a candidate and equivalence.
+
+### W4 - Quasi-static configuration screening
+
+Owner: FieldScope whole-robot quasi-static assessment.
+Inputs: the exact W2 source/pose and W3 stance; same-identity component mass and
+centre-of-mass assumptions; fruit/crate load; slope and contact positions; any
+declared uncertainty reserve.
+Outputs: screened, blocked or unknown centre-of-mass projection, support-polygon
+margin, arm-root/shoulder bending moments and whole-robot overturning moment for
+the exact configuration. Single-side high reach, carried-load return and any
+bilateral working pose are separate complete configurations.
+Conditions: every body and load is counted once. Missing mass/CoM/load/contact or
+terrain evidence yields `unknown`. A positive quasi-static margin is a screening
+result only and cannot certify dynamic stability, soil support or machine safety.
+Allowed contributors: W2 source mass ownership, W3 stance and deterministic local
+mechanics using explicit units.
+Forbidden contributors: the legacy wheel-track formula, three-feet-means-stable,
+single-side result composition for simultaneous bilateral work, invented forces,
+actuator ratings or a boolean `safe` result.
+Implementation boundary: a future app-domain whole-robot mechanics module and
+formal dimensional, conservation, boundary and unknown-evidence tests.
+Spec: Active product reset - high reach, bending and overturning cases.
+Failure owner: W4 owns invalid mechanics input and screened/blocked/unknown result.
+Cache dimensions: none proposed.
+
+### W5 - Crop support and cutting coordination
+
+Owner: FieldScope crop-specific same-side manipulation admission.
+Inputs: current W1 target/anatomy and current W2 arm/tool sources whose scene,
+definition and source identities are compatible for this evaluation; W3
+complete-motion results, W4 configuration result, explicit support contact,
+plant-side pedicel cut corridor, retention and observation evidence. W1 and W2
+revision values are independent and need not match.
+Outputs: admitted, deferred or blocked coordinated support/cut action with distinct
+support, cut, separation, retention and physical-damage evidence. The initial
+scheduler activates one same-side pair at a time; later bilateral work supplies
+one combined W3/W4 result rather than joining single-side receipts.
+Conditions: both left and right target cases are supported. Cucumber soft textile
+may not scrape/wipe/roll across fine spines. Tomato skin, calyx and retained
+pedicel are protected; cutting is confined to the confirmed plant-side pedicel
+corridor. Unknown anatomy, corridor, contact, retention or retreat defers.
+Allowed contributors: completed botanical partitions, W1-W4 products and exact
+crop/tool material regions.
+Forbidden contributors: cutter contact with main stem, rachis, neighboring fruit,
+calyx interface or non-target foliage; pulling/bending fallback, hidden-fruit
+truth, visual disappearance as harvest proof and blanket intended-contact bypass.
+Implementation boundary: future simulation manipulation coordinator and its
+crop-specific normal, forbidden-contact, stale and unknown tests.
+Spec: Active product reset and existing crop handling clauses.
+Failure owner: W5 owns action admission and deferral; calibrated physical damage
+remains an external evidence owner.
+Cache dimensions: none proposed.
+
+### W6 - Mission evidence and product UI
+
+Owner: FieldScope deterministic simulation session and UI projection.
+Inputs: admitted mission/configuration, W1-W5 completed current artifacts, closed
+simulation clock, explicit observations and confirmations.
+Outputs: deterministic bilateral inspection and left/right harvest runs, state and
+fruit disposition evidence, unknown/deferred reasons, stowed/working walking
+projection and localized controls. Presentation consumes the same admitted poses
+and paths; it does not generate a substitute route or success.
+Conditions: run/source/terrain/mass/load identities remain current throughout.
+Single-side operation is the initial scheduling policy, not a permanent ban on
+bilateral operation. No connected hardware. Legacy definitions may be viewed but
+cannot start a W run. Missing upstream evidence blocks or defers the dependent
+transition.
+Allowed contributors: completed W artifacts, current Core session/history owners,
+SpatialLayer projection and explicit synthetic observation adapters.
+Forbidden contributors: wall-clock decisions, UI-owned canonical state, rendered
+visibility as observation truth, force/soil safety claims, hidden fallback output
+or geometry rebuilt per frame.
+Implementation boundary: future FieldScope session/runtime, projection and UI
+consumers plus scenario, replay, work-count and close-up bilingual browser tests.
+Spec: Active product reset executable cases and definition of done.
+Failure owner: W6 owns lifecycle/currentness/presentation; upstream owners retain
+their blocking and unknown reasons.
+Cache dimensions: none proposed until profiling justifies an exact owner.
+
 ## A - Feasibility domain (current M1)
 
 Owner: app harvest-domain assessment functions.
@@ -55,7 +253,7 @@ Derived reports live until the next relevant canonical edit; reads do no work.
 Failure owner: B owns validation/history/replacement; A owns assessment reasons.
 Cache dimensions: none proposed.
 
-## C - Robot, crate and fruit projection (M2 implemented; M3 planned)
+## Historical C - Four-wheel robot, crate and fruit projection
 
 Owner: app render projection, engine consumes admitted spatial products.
 Inputs: canonical admitted robot definition, mission settings and completed
@@ -190,7 +388,7 @@ Failure owner: C rejects incomplete provenance; D later resolves query ambiguity
 Lifetime: original source definition/scene, with existing installed-pose retirement.
 No new cache; metadata is produced once with canonical geometry and reused.
 
-## D - Deterministic simulation (M3, planned)
+## Historical D - Single-arm deterministic simulation route
 
 Owner: app simulation session, composed through the registered Core Feature/API
 boundary. Helpers below prepare or query inputs; none owns a competing session.
@@ -384,7 +582,7 @@ Lifetime: explicit generation and current canonical/source receipt; pause retain
 run identity. Reads reuse snapshots and immutable transition links with no full
 ledger scan/copy or A/geometry work. No caches proposed.
 
-## E - Physical adapter (M4-M6, blocked on physical evidence)
+## Historical E - Wheeled physical adapter route
 
 Owner: separately authorized hardware integration and safety engineering.
 Inputs: verified calibration, tested components, validated stopping/protection
@@ -1086,3 +1284,98 @@ or speedup follows from candidate reduction. Focused proof precedes full app/typ
 build/lint/naming and independent review. The implemented owner remains limited to
 this domain accounting entry; no narrow solver, material/contact decision or
 session/runtime consumer is part of it.
+
+### C approved closed-source correction
+
+Owner: domain/robot-model.ts for robot-only primitives and
+domain/crop-fruit.ts for main fruit skins. Inputs: existing admitted robot
+definition and cultivar generation parameters. Outputs: the same ordered source
+parts/fruit partitions with only approved cylinder, four-member and main-skin
+topology corrected for exact closure. Conditions: shared seams, opposite cap or
+pole-fan winding, nondegenerate triangles, positive signed volume and unchanged
+dimensions/material/detail. Allowed contributors: TriangleBuilder buffers and
+existing fruit surface/color formulas. Forbidden: generic tube changes, proxy or
+hidden collision geometry, fruit reshaping, omitted calyx/pedicel/spines/hairs,
+crate aggregation, new physical coefficients or renderer-only repair.
+
+Boundary: domain/mesh.ts only for unchanged box face-range metadata,
+domain/robot-model.ts, domain/crop-fruit.ts, domain/crop-models.ts and their direct
+source tests/snapshots. Failure owner: the source generator; no partially admitted
+replacement. Lifetime and cache dimensions are unchanged. Gates: formal failing
+closure/edge/volume/pole tests first, complete partition/detail preservation,
+#199 same-runtime structural and independent numerical obligations, exact Float32
+render handoff for untouched sources, and focused near/distant visual cases. Stop
+for any unapproved source change or missing closure proof.
+
+### C material assembly and patch handoff
+
+Owner: domain/source-occupancy.ts admits regions/ranges/patches;
+domain/robot-kinematics.ts owns bodies, joint frames and interfaces. Inputs: the
+corrected exact robot/dock/crop sources and existing definition/limits. Outputs:
+immutable source patches, one assembly owner per exact robot part, five exact joint
+interfaces, per-fruit skin/detail references, and projection/query products that
+retain those identities. Conditions: every range is aligned, ordered and inside
+its exact region; bodies are complete/disjoint; interface patches are local
+subsets; copied, missing, duplicated and stale metadata reject. Body union requires
+complete-interval relative-transform invariance from C and never drops external
+child-region queries.
+
+Allowed contributors: corrected source construction, existing C chain and exact
+projection/source lifetimes. Boundary: domain/source-occupancy.ts,
+domain/robot-model.ts, domain/crop-models.ts, domain/robot-kinematics.ts,
+render-app/robot-projection.ts, render-app/site-geometry.ts and
+simulation/geometry.ts plus direct tests. Forbidden: D name tests, caller proof
+objects, same-body exemptions, geometry regeneration, new persistent identities or
+cross-call cache. Failure owner: the admitting C/projection boundary; no usable
+partial metadata. Gates: exact patch-region identity/ranges, all-part body coverage,
+relative-transform invariance over full joint domains, all five interface bindings,
+fruit/detail correspondence, projection currentness and zero regeneration.
+
+### D full-interval material and intended-contact classification
+
+Owner: simulation/material-contact.ts, MaterialContactQueries. Inputs: one current
+GeometrySource, raw existing joint segment/window, detached fixed-heading linear
+base path and explicit full-window source state, plus optional exact current support
+and target selections. Outputs: immutable `admitted`/`blocked`/`unknown` evidence,
+the internal domain/bounds products, categorized original-source witnesses and
+actual work. Known state invokes JointSegments/RobotMotionBounds once. Bounds only
+exclude; source triangles, region occupancy and complete-interval relations own
+positive proof. Subdivision is exact-time and bounded; exhaustion is unknown.
+
+Joint admission requires every possible witness on both exact patches and inside
+the joint-frame envelope, complete material-overlap containment inside it, and
+strict separation outside it for the full interval. Tire support requires all
+occupied tire points on/above one exact current platform top patch and equality
+only on tread. Tool approach requires clear open time and terminal two-pad contact;
+carry requires constant fruit/tool relative transform. Tomato calyx/pedicel and all
+unrelated contacts block; cucumber spine permission requires `soft-textile` and
+zero relative tangential motion. Open-shell occupancy matters only to a queried
+containment obligation and remains unknown.
+
+Positive terminal, locus, material and sweep predicates share original source
+vertices transformed by the completed C affine coefficients in one exact dyadic
+frame chain. Bounds and interval arithmetic only exclude while conservatively
+enclosing that geometry. Patch membership is closed geometric-union membership:
+an adjacent-face witness wholly contained in an inward shared edge is the same
+allowed locus, while any proven off-closure locus blocks and unresolved subset
+proof is unknown. Botanical forbidden roles block before inward attribution.
+
+Allowed contributors: completed C metadata, JointSegments, RobotMotionBounds,
+QueryGeometry and minimal extracted exact triangle/frame helpers already owned by
+collision/ray-query. Boundary: simulation/material-contact.ts and only necessary
+helper extraction in collision.ts/ray-query.ts plus direct tests/API/spec/plan.
+Forbidden: endpoint/sample-only clearance, pair/name/layer exemptions, aggregate
+crate occupancy, epsilon/tolerance, source modification, inferred target/support,
+new force/friction/damage/safety threshold, session/UI output or retained cache.
+Failure owner: D validation, currentness, resource or proof result; malformed input
+rejects and incomplete valid evidence is unknown.
+
+Gates: a two-solid interface case admits only in-envelope patch contact; its moved
+outside-envelope match blocks; missing/stale/interval and open-shell controls are
+unknown. Support covers tread/top equality, translation, penetration, sidewall and
+wrong surface. Tool cases cover terminal two-pad tomato skin, cucumber soft-textile
+spines, calyx/pedicel/other-target blocking and fixed-relative carry. One actual
+source normal scenario uses a legal robot width and genuine five-joint/base path;
+one source preparation and FK/bounds product per request, full work guards,
+complete app/profile/build/lint/naming, synchronized close-ups and independent
+review. No result is a movement or hardware-safety decision.

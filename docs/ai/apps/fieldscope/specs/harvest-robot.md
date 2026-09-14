@@ -8,6 +8,140 @@ in the [plan](/docs/ai/apps/fieldscope/plans/harvest-robot/plan.md). The physica
 assumptions and validation obligations are in [hardware concept](/docs/ai/apps/fieldscope/specs/harvest-hardware.md).
 No software result may be labeled certified safe or a measured ground property.
 
+## Active product reset: walking four-arm harvester (pending implementation)
+
+The active product target is a compact multi-legged walking harvester for the
+existing FieldScope farm. It has at least four independently owned arm chains:
+left fruit support, left cutter, right fruit support and right cutter. It must
+inspect both sides of the passage and complete representative harvests on each
+side. Fruit support and cutting are separate coordinated actions; a combined
+single-wrist support-and-cut tool is not the active product architecture.
+
+The first comparison baseline is explicitly synthetic: a low-centre-of-mass
+six-legged base, a bounded vertical shoulder carriage and four medium-short arm
+chains. Six legs, link dimensions, masses, joint ranges, foot size and actuator
+capability are simulation assumptions until replaced by measured or selected
+hardware evidence. The initial scheduler may operate one same-side support/cut
+pair at a time. That sequencing choice is not a permanent prohibition on
+simultaneous bilateral work. Any future simultaneous operation must pass one
+combined whole-robot collision, contact, load and stability assessment; two
+independent single-side passes cannot be composed into that evidence.
+
+Compact size and low mass are required comparison objectives. No numeric maximum
+mass, body envelope, foot pressure or working-height limit has been measured yet,
+so the product exposes these values and their provenance instead of declaring a
+candidate acceptable by adjective. Current-scene geometry can block an oversized
+candidate; missing real-field size/load limits remain `unknown`.
+
+The robot walks on feet. Wheels, tire tread support, vehicle contact track and a
+trailing or carrying vehicle are excluded from the active target. The currently
+implemented four-wheel, single-arm M2 projection and its single five-axis M3
+source remain historical implementation evidence only. They are not acceptance
+evidence for this target. Existing saved definitions must remain identifiable as
+that legacy topology and must never be silently reinterpreted as a six-legged,
+four-arm definition. Before the first source implementation slice, the new
+configuration must define a versioned topology discriminator, exact schema and
+an explicit compatibility path. Loading a legacy definition keeps its historical
+projection available but does not admit it to the new walking simulation;
+creating a new topology is an explicit user action, not an automatic migration.
+
+The user's 2026-09-14 product clarification states that the represented farm
+follows the user's home-farm layout. In its current configuration a passage is
+about 1.8 m before plant-growth needs, and a rough calculation gives about 1.2 m
+as a sanity reference after those needs. Neither value is a fixed constraint,
+guaranteed clearance or default usable width. Farm dimensions are editable, and
+plant growth can be irregular or incompletely known.
+
+The scene-demand owner derives an offset-capable free-passage geometry from the
+current farm configuration, declared plant-growth envelope, actual source plants,
+leaves, supports, pipes, drains and obstacles. Discrete or missing growth evidence
+is `unknown` or a visibly labeled assumption. Separately, the locomotion owner
+derives complete stowed, stance-foot, leg-swing, arm-stow, body and turn swept
+geometry from the current robot definition, stance/gait, load and terrain. Motion
+admission compares those two completed geometries. It must not reuse 1.2 m as an
+input, assume symmetric side reserves or subtract a scalar robot width from a
+scalar strip width. Farm, plant, growth, source, route interval, margin or survey
+changes invalidate the affected scene-demand and compatibility products without
+rebuilding an unchanged robot definition. Robot definition, path, evaluation
+time, stance/contact schedule or evidence, gait, load, terrain or margin changes
+invalidate the affected locomotion-demand and compatibility products. UI
+consumers share those canonical outputs rather than calculating clearance again.
+
+Pruning and net training are field-maintenance context, never permission for the
+robot to cut a non-target branch or move a plant automatically. The farm layout
+must not be widened or crop rows removed to make a candidate pass. A route case
+must distinguish a traversable straight/reverse passage from a location where
+the complete robot can turn. A candidate may reverse out or continue to an
+explicitly wider surveyed turn area. It reports `blocked` or `no-turn` when no
+complete swept turn exists; it never assumes in-place rotation at every point.
+
+The scene-demand product enumerates actual source targets and obstacles before
+choosing robot dimensions. `netTop`, eave height and strip width are inputs to
+that derivation, not substitutes for the highest fruit, free corridor or foot
+placement. It outputs per-side target positions and reach demands, high-target
+cases, free-space intervals after authored obstructions, and soil regions that
+exclude drains. Missing source coverage or required field measurements produces
+`unknown`; it never produces optimistic clearance. Current generated fruit source
+defines the simulation case, not a measured maximum fruit height for the field.
+
+Every candidate carries one identity across its source geometry, kinematics,
+mass/load assumptions and terrain assumptions. A walking pose identifies every
+arm and leg joint plus the base and shoulder-carriage pose. A stance identifies
+each supporting foot patch and contact state. A quasi-static screen consumes the
+same pose and declared component masses/centres of mass, carried fruit, slope and
+contact locations to compare centre-of-mass projection, support polygon margin,
+arm-root bending moment and overturning moment. A positive margin is only a
+synthetic screen, not dynamic stability or hardware safety. Number of supporting
+feet alone, including a three-foot stance, cannot establish stability. Missing
+mass, load, terrain, contact-force, friction, bearing or sinkage evidence leaves
+the affected result `unknown`.
+
+Walking and manipulation require complete interval motion. Leg swing, stance
+transition, body motion, shoulder lift, all four arms, tools and any carried fruit
+are queried together against current structure, crop, net, drains and obstacles.
+No foot may use a drain or water channel as a bearing surface. Slightly wet,
+uneven soil and debris are required scenario classes, while rut depth, height
+field, obstacle dimensions, foot pressure, friction, bearing and sinkage remain
+measured inputs or visibly labeled adjustable synthetic ranges. The product must
+not turn a flat visual soil mesh or a complete gait schedule into a claim of
+real-world traversability.
+
+Support/cut coordination preserves the existing botanical contract. Cucumber
+support uses explicitly modeled soft textile and may not scrape, wipe or roll
+across fine spines. Tomato support preserves the fruit skin, calyx and retained
+pedicel. The cutter may enter only a confirmed clear corridor at the plant-side
+pedicel cut location; it never cuts the main stem, rachis, neighboring fruit,
+calyx interface or non-target foliage. Unknown anatomy, support contact, cut
+corridor, retention, damage or retreat clearance defers the action.
+
+Executable product cases for the future implementation are:
+
+- current and resized farm/growth/source, route, margin or survey inputs where
+  canonical free-passage geometry recomputes and can change a compatible result
+  to `blocked` while an unchanged robot definition is reused;
+- changed robot dimensions, path/time, stance/contact schedule or evidence, gait,
+  load, terrain or margin where locomotion swept demand recomputes instead of
+  retaining the rough 1.2 m sanity reference;
+- an offset or leaf-intruded corridor where configured strip width cannot
+  override the actual blocked source, and straight/reverse travel remains
+  distinct from a complete turn;
+- a left-side and a right-side high-fruit harvest, each using its same-side
+  support and cutter chains while the whole robot remains in the query;
+- a wet uneven-soil stance and a debris avoidance step that remain `unknown`
+  when contact or soil evidence is incomplete;
+- single-side working, carried-fruit return and a future bilateral-working case
+  whose combined support polygon, mass/load and swept bodies are evaluated;
+- cucumber fine-spine and tomato skin/calyx/pedicel cases that reject forbidden
+  contact or cutting and preserve physical damage as unknown without calibration.
+
+The contract reset is complete when the product spec, owner flow, active plan
+and hardware concept agree on this target, label it pending, preserve the legacy
+saved-definition boundary and name the above cases and unknown outcomes. Runtime
+completion is separate: formal source-demand, kinematics, stance/contact,
+quasi-static, manipulation, mission and close-up UI evidence must pass in their
+own bounded slices. The next implementation slice starts with scene demand and
+does not invent the complete robot in one step.
+
 ## A - Feasibility inputs and results
 
 All dimensions use metres, loads kg, accelerations m/s², angles radians. Numbers
@@ -168,7 +302,7 @@ The robot editor subscribes to its design report, independent of camera/locale.
 A farm edit recomputes its lane report; robot edits never build farm/crop geometry.
 Reports are produced once per relevant document update, not on reads/render frames.
 
-## C - M2 dimensioned concept projection
+## C - M2 dimensioned concept projection (implemented historical topology)
 
 A low battery chassis with four wheels, mast, folded jointed arm, stereo camera,
 guarded crop-specific end effector and mechanically retained open crate is shown
@@ -258,7 +392,7 @@ baseline and close-up source-fruit review precede D state projection. These are
 handoff gates; M3 additionally requires the usable synthetic UI and full D/C
 simulation acceptance, not merely partition or headless test success.
 
-## C - M3 synthetic working-arm source (planned)
+## C - M3 synthetic working-arm source (historical implementation; superseded)
 
 The approved concept has five bounded degrees of freedom: lift translation,
 shoulder yaw, shoulder pitch, elbow pitch and wrist pitch. These are synthetic
@@ -567,7 +701,7 @@ or replacement snapshot. Canonical C scene/rig/station handoffs retain the origi
 unrounded arrays, metadata and preparation counts. The paused D room-air and
 numerical ray regressions are closed only in the subsequent D predicate segment.
 
-## D - M3 deterministic simulation contract (planned)
+## D - M3 deterministic simulation contract (historical single-arm route)
 
 M3 is an explicitly synthetic, in-browser simulation of the authored mission.
 It does not introduce a trained detector, calibrated contact physics, hardware
@@ -1446,3 +1580,67 @@ of the entire domain supports surface-separated, otherwise the result is unknown
 Even surface-separated does not prove occupied volumes disjoint, allowed contact,
 support, retained quality or movement clearance. Open-shell, sheet, crate cavity,
 tire and joint semantics receive no exemption or material reinterpretation.
+
+### Historical material and intended-contact prerequisite (superseded)
+
+The material prerequisite changes only the canonical robot cylinders,
+`lift-screw`, `upper-arm`, `forearm`, `camera-bracket`, and the near/distant main
+fruit skins. Robot cylinders use shared indexed rings, modulo seams and opposite
+cap winding. The four named members use a robot-only capped straight-member
+primitive and are explicitly synthetic solid occupied members. Main fruit skins
+use one vertex per pole and triangle fans. Dimensions, placements, materials,
+intermediate fruit samples and all calyx, pedicel, spine and hair geometry remain
+unchanged. Generic crop/support/greenhouse tubes remain open shells. Separate crate
+pieces remain separate solids so their aggregate bounds never fill the cavity.
+
+C admits source-local triangle ranges and patches against exact material-region
+objects. A patch is the closed geometric union of its triangles and is a subset
+of one region; shared edge/vertex provenance does not move a contact locus outside
+that closure. Permission is classified from the exact locus, so a neighbouring
+triangle tag is neither a blanket exemption nor by itself a forbidden contact.
+The robot rig publishes exactly one body for every exact source part, immutable
+body assemblies, and five interfaces for lift, yaw, shoulder, elbow and wrist.
+Each interface binds exact parent/child patches, the existing joint frame and
+domain, and a finite authored joint-local envelope. Body grouping defines a
+material union only while every member retains one relative transform throughout
+the complete interval; it is not a same-body collision exemption.
+
+D returns `admitted`, `blocked` or `unknown` synthetic material/contact evidence.
+It consumes one current source, one internally admitted joint segment/window, an
+explicit fixed-heading linear base path, complete source-state declarations and
+exact current support/target selections. Joint contact is admitted only when all
+possible surface witnesses lie on both interface patches and every possible
+material overlap is confined to the transformed authored envelope for the whole
+closed interval. Proven penetration outside the envelope is blocked; incomplete
+identity, interval, subset, separation or numerical proof is unknown. Every
+non-interface and third-body relation remains ordinary material evidence.
+
+Support admission binds all four exact tire tread patches to one current dock
+platform top-face patch. The fixed-height horizontal path is labeled synthetic
+sliding support and adds no wheel rotation, traction or hardware claim. Tool
+admission binds both inward pad patches and one exact observed fruit. Tomato
+permits only its main skin; calyx and retained pedicel remain blocking. Cucumber
+skin and its original spines require the visible `soft-textile` assumption, with
+no compression, force or damage guarantee. Approach contact is terminal only;
+carried evidence requires a constant fruit-to-tool transform for the whole
+interval and no pad/fruit interior penetration. Contact does not prove retention,
+cut completion, quality or damage.
+
+D exact positive predicates use one coordinate owner: original source dyadic
+vertices are transformed in the fixed instance/body/base order by C's completed
+binary64 affine coefficients lifted to dyadic scalars before any point operation.
+Terminal loci, supporting halfspaces, material SAT and sweep start geometry reuse
+that representation. Outward interval arithmetic may only exclude when it encloses
+the same geometry. Independently rounded world points cannot be combined with
+source convexity to publish penetration or boundary contact.
+
+Acceptance uses the real C source, rig, projections and D owner for one small
+synthetic normal case: a legal robot configuration, an admitted five-joint/base
+path, all four supported tires, a lift-only terminal `-Y` two-pad tomato contact,
+and a fixed-relative carried interval. Width feasibility may inspect adjacent
+representable configurations derived from the unchanged source skin and pad
+formula; it may not snap coordinates or reshape fruit. A matched outside-interface
+penetration is blocked and missing/retired interval or patch evidence is unknown.
+Permanent source tests prove closure, signed volume, portable unchanged-source
+obligations and preservation of botanical detail and the crate cavity. Close-up
+render review supplements those source-space oracles and is not hardware evidence.
