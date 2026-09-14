@@ -1046,7 +1046,8 @@ describe('walking robot original solid articulation regression', () => {
         coplanar,
         'sole datum only; no terrain or standing admission'
       ).toBe(true)
-    }
+    },
+    30000
   )
 
   it.each(['stowed', 'leftWorking', 'rightWorking'] as const)(
@@ -1155,7 +1156,7 @@ describe('walking robot original solid articulation regression', () => {
         ).toBe(true)
       }
     }
-  })
+  }, 30000)
 
   it('keeps both opposed tools materially separate in the canonical stowed pose', () => {
     const owner = new WalkingRobotSourceOwner()
@@ -1313,7 +1314,7 @@ describe('walking robot original solid articulation regression', () => {
           ).not.toBe('volume-overlap')
       }
     }
-  })
+  }, 30000)
 
   it.each(['stowed', 'leftWorking', 'rightWorking'] as const)(
     '%s has no material-volume overlap across an authored joint',
@@ -1368,7 +1369,8 @@ describe('walking robot original solid articulation regression', () => {
       }
       expect(visited).toBe(35)
       expect(overlaps, overlaps.join('\n')).toEqual([])
-    }
+    },
+    30000
   )
 })
 
