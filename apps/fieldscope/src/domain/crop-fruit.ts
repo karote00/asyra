@@ -57,7 +57,12 @@ export function appendFruitSurface(
   bend: number,
   distant: boolean,
   ripeness: number,
-  phase: number
+  phase: number,
+  observe?: (
+    role: 'fruit-skin' | 'fine-spines',
+    indexStart: number,
+    indexCount: number
+  ) => void
 ) {
   const regionStart = builder.indices.length
   const rings = distant ? 3 : 14 + Number(cucumber) * 10,
@@ -100,6 +105,7 @@ export function appendFruitSurface(
     }
   // Original pole rings are not a verified closed material boundary.
   builder.region('open-shell', regionStart)
+  observe?.('fruit-skin', regionStart, builder.indices.length - regionStart)
   let spineCount = 0
   if (cucumber && !distant) {
     const scale = Math.min(1, length / 0.12)
@@ -152,6 +158,11 @@ export function appendFruitSurface(
             start + 4
           )
         builder.region('open-shell', spineStart)
+        observe?.(
+          'fine-spines',
+          spineStart,
+          builder.indices.length - spineStart
+        )
         spineCount++
       }
   }

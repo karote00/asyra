@@ -55,6 +55,19 @@ and explicit create/compatibility path.
 6. **W5 support/cut coordination.** Prove crop-specific same-side support and
    plant-side pedicel cutting for cucumber and Yu-Nu tomato while retaining spine,
    skin, calyx, pedicel and non-target plant boundaries.
+   **P5a source identity implemented:** canonical near botanical patches retain
+   exact regions, triangle ranges, target association and plant/fruit ownership.
+   SiteGeometry admits/freeze-checks these references and binds tomato cut position
+   and plant-side direction to its existing shared and adjacent source rings.
+   W1 carries the exact installed patches with independent support/cut completeness.
+   P5a preserved original near/distant geometry, materials, regions and partitions.
+   **P5b cucumber source revision:** the canonical generator adds an actual shared
+   ring at the explicit synthetic cut fraction (default 0.5), with plant and
+   retained open-shell segments. Source assumptions are validated and immutable.
+   Only cucumber pedicel source and directly sampled hairs change; other botanical
+   buffers remain exact. Missing boundary or numeric evidence remains unknown.
+   This synthetic source prerequisite does not complete W5, grant contact permission,
+   or prove retention, physical damage, clearance or harvesting.
 7. **W6 mission evidence and UI.** Run visible normal left and right inspection/
    harvest cases through the actual W owners. One-side-at-a-time is the initial
    schedule, not a permanent prohibition. Any simultaneous bilateral case uses
