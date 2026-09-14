@@ -61,9 +61,10 @@ test('result-first Landing owns the exact product and technical evidence cases',
     'feature-code-runtime-bridge',
     'change-ownership-map',
     'audience-readiness-paths',
-    'domain-owned-closing'
+    'domain-owned-closing',
+    'factory-action-film'
   ])
-  assert.equal(new Set(data.caseIds).size, 21)
+  assert.equal(new Set(data.caseIds).size, 22)
 })
 
 test('contract freezes the product-first evidence architecture before rendering', () => {
@@ -449,5 +450,20 @@ test('Landing invariants preserve broad domains and a navigation-only footer', (
   assert.match(
     source,
     /Production deployment occurs only after every Landing gate passes/i
+  )
+})
+
+test('approved factory film remains an on-demand software metaphor', () => {
+  assert.match(
+    JSON.stringify(step('freeze-result-first-contract')),
+    /16-second.*factory.*metaphor/i
+  )
+  const render = JSON.stringify(step('render-result-first-page'))
+  assert.match(render, /native video.*preload.*none/i)
+  assert.match(render, /no autoplay.*no loop/i)
+  assert.match(render, /public\/motion/)
+  assert.match(
+    JSON.stringify(step('verify-result-first-page')),
+    /film.*keyboard.*reduced-motion/i
   )
 })
