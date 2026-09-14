@@ -20,6 +20,10 @@ import {
   evaluateWalkingTerrainContact,
   type WalkingTerrainContact
 } from './walking-terrain-contact'
+import {
+  prepareWalkingSourceRelations,
+  type WalkingSourceRelations
+} from './walking-source-relation'
 
 type MotionEnvelope =
   WalkingPartIntervalEnvelope | WalkingCarriedIntervalEnvelope
@@ -62,6 +66,7 @@ export interface WalkingMotionAdmission {
     typeof prepareWalkingMotionIntervals
   >['segments']
   readonly contacts: readonly WalkingTerrainContact[]
+  readonly sourceRelations?: WalkingSourceRelations
   readonly maneuver?: 'clear' | 'no-turn' | 'unknown'
   readonly quasiStatic: 'pending-W4'
   readonly work: WalkingMotionAdmissionWork
@@ -274,7 +279,11 @@ function assessGeometry(
       witnesses = boundWitnessPoints(source, request, segment)
     work.witnessPointFk += witnesses.pointFk
     work.witnessVertices += witnesses.vertices
-    for (let left = 0; left < envelopes.length; left++)
+    for (
+      let left = 0;
+      request.format === 'walking-motion-request/1' && left < envelopes.length;
+      left++
+    )
       for (let right = left + 1; right < envelopes.length; right++) {
         const first = envelopes[left],
           second = envelopes[right]
@@ -323,28 +332,32 @@ function assessGeometry(
           }
         })
       for (const exclusion of demand.freePassage.exclusions)
-        compare(() => {
-          const envelopeBounds =
-            exclusion.kind === 'source'
-              ? envelope.bounds
-              : expanded(envelope.bounds, margin)
-          if (!overlaps(envelopeBounds, exclusion.bounds)) {
-            work.separatedEnvelopePairs++
-            return
-          }
-          if (exclusion.kind === 'source') {
-            work.unresolvedEnvelopePairs++
-            addReason(reasons, 'source-envelope-exact-query-required')
-            return
-          }
-          const witnessBounds = witnessExclusion(exclusion.bounds, margin)
-          if (points.some((value) => inside(value, witnessBounds)))
-            addReason(reasons, 'hard-exclusion-knot-witness')
-          else {
-            work.unresolvedEnvelopePairs++
-            addReason(reasons, 'hard-exclusion-exact-query-required')
-          }
-        })
+        if (
+          request.format === 'walking-motion-request/1' ||
+          exclusion.kind !== 'source'
+        )
+          compare(() => {
+            const envelopeBounds =
+              exclusion.kind === 'source'
+                ? envelope.bounds
+                : expanded(envelope.bounds, margin)
+            if (!overlaps(envelopeBounds, exclusion.bounds)) {
+              work.separatedEnvelopePairs++
+              return
+            }
+            if (exclusion.kind === 'source') {
+              work.unresolvedEnvelopePairs++
+              addReason(reasons, 'source-envelope-exact-query-required')
+              return
+            }
+            const witnessBounds = witnessExclusion(exclusion.bounds, margin)
+            if (points.some((value) => inside(value, witnessBounds)))
+              addReason(reasons, 'hard-exclusion-knot-witness')
+            else {
+              work.unresolvedEnvelopePairs++
+              addReason(reasons, 'hard-exclusion-exact-query-required')
+            }
+          })
       for (const { declared, obstacle } of debris) {
         compare(() => {
           const envelopeBounds = declared
@@ -384,7 +397,8 @@ const blockedReasons = new Set([
   'support-on-authored-channel',
   'hard-exclusion-knot-witness',
   'debris-keep-out-knot-witness',
-  'route-boundary-knot-witness'
+  'route-boundary-knot-witness',
+  'source-material-volume-overlap'
 ])
 
 export class WalkingMotionOwner {
@@ -419,7 +433,7 @@ export class WalkingMotionOwner {
       this.current
     )
       return this.current
-    const request = readWalkingMotionRequest(raw, source),
+    const request = readWalkingMotionRequest(raw, source, demand),
       gaitSignature = JSON.stringify({
         path: request.path,
         stance: request.stance
@@ -472,6 +486,23 @@ export class WalkingMotionOwner {
         'terrain-channel-authority-mismatch'
       ].includes(reason)
     )
+    const sourceRelations =
+      !incompatible && request.format === 'walking-motion-request/2'
+        ? prepareWalkingSourceRelations(source, demand, request, intervalResult)
+        : undefined
+    if (request.format === 'walking-motion-request/1')
+      addReason(reasons, 'source-relations-version-two-required')
+    if (sourceRelations) {
+      for (const reason of sourceRelations.reasons) addReason(reasons, reason)
+      comparisonWork.envelopePairs = sourceRelations.work.envelopePairs
+      for (const segment of sourceRelations.segments) {
+        comparisonWork.separatedEnvelopePairs +=
+          segment.coverage.strictBounds + segment.coverage.exactSeparated
+        comparisonWork.unresolvedEnvelopePairs +=
+          segment.coverage.unknown + segment.coverage.targetRefinement
+        comparisonWork.unvisitedEnvelopePairs += segment.coverage.unvisited
+      }
+    }
     if (!incompatible)
       assessGeometry(
         demand,
@@ -501,6 +532,7 @@ export class WalkingMotionOwner {
       evaluation: request.evaluation,
       segments: intervalResult.segments,
       contacts: contactResult.contacts,
+      ...(sourceRelations ? { sourceRelations } : {}),
       ...(request.path.intent === 'turn' ? { maneuver } : {}),
       quasiStatic: 'pending-W4' as const,
       work: Object.freeze({

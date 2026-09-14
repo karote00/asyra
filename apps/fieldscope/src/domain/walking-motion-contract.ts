@@ -5,8 +5,22 @@ import type {
   WalkingRigidTransform
 } from './walking-robot-definition'
 import type { WalkingRobotSource } from './walking-robot-source'
+import type { WalkingRobotPart } from './walking-robot-source'
+import {
+  readSourceRegions,
+  type SourceRegion,
+  type SourcePatch,
+  type SourceTriangleRange
+} from './source-occupancy'
+import type {
+  SceneDemand,
+  SceneDemandTarget,
+  SceneDemandTargetPartition
+} from '../simulation/scene-demand'
 
 export const WALKING_MOTION_REQUEST_FORMAT = 'walking-motion-request/1' as const
+export const WALKING_SOURCE_MOTION_REQUEST_FORMAT =
+  'walking-motion-request/2' as const
 export const WALKING_TERRAIN_FORMAT = 'walking-terrain/1' as const
 
 export interface WalkingMotionBaseState {
@@ -145,7 +159,7 @@ export interface WalkingLoadCase {
     | Readonly<{ kind: 'none' }>
     | Readonly<{ kind: 'attached'; items: readonly WalkingCarriedAttachment[] }>
 }
-export interface WalkingMotionRequest {
+export interface WalkingMotionRequestV1 {
   readonly format: typeof WALKING_MOTION_REQUEST_FORMAT
   readonly requestId: string
   readonly path: WalkingMotionPath
@@ -160,7 +174,47 @@ export interface WalkingMotionRequest {
   }>
 }
 
-const admittedRequests = new WeakMap<object, WalkingRobotSource>()
+export interface WalkingTargetContact {
+  readonly from: number
+  readonly until: number
+  readonly purpose: 'support' | 'cut'
+  readonly robot: Readonly<{
+    part: WalkingRobotPart
+    region: SourceRegion
+    patch: SourcePatch
+  }>
+  readonly target: Readonly<{
+    target: SceneDemandTarget
+    partition: SceneDemandTargetPartition
+    ranges: readonly SourceTriangleRange[]
+  }>
+}
+export interface WalkingExternalSourceRegions {
+  readonly sourceId: string
+  readonly regions: readonly SourceRegion[]
+}
+export interface WalkingSourceMotionRequest extends Omit<
+  WalkingMotionRequestV1,
+  'format' | 'budget'
+> {
+  readonly format: typeof WALKING_SOURCE_MOTION_REQUEST_FORMAT
+  readonly source: WalkingRobotSource
+  readonly demand: SceneDemand
+  readonly externalSources: readonly WalkingExternalSourceRegions[]
+  readonly targetContacts: readonly WalkingTargetContact[]
+  readonly budget: Readonly<{
+    maxIntervals: number
+    maxEnvelopePairs: number
+    maxRegionPairs: number
+    maxExactPredicates: number
+  }>
+}
+export type WalkingMotionRequest =
+  WalkingMotionRequestV1 | WalkingSourceMotionRequest
+const admittedRequests = new WeakMap<
+  object,
+  { source: WalkingRobotSource; demand?: SceneDemand }
+>()
 
 const invalid = (): never => {
   throw new Error('Invalid walking motion request')
@@ -312,12 +366,21 @@ function observation(value: unknown): value is WalkingTerrainObservation {
 
 export function readWalkingMotionRequest(
   raw: unknown,
-  source: WalkingRobotSource
+  source: WalkingRobotSource,
+  demand?: SceneDemand
 ): WalkingMotionRequest {
   if (record(raw) && admittedRequests.has(raw)) {
-    if (admittedRequests.get(raw) !== source) return invalid()
+    const binding = admittedRequests.get(raw)
+    if (
+      binding?.source !== source ||
+      (raw.format === WALKING_SOURCE_MOTION_REQUEST_FORMAT &&
+        binding.demand !== demand)
+    )
+      return invalid()
     return raw as unknown as WalkingMotionRequest
   }
+  if (record(raw) && raw.format === WALKING_SOURCE_MOTION_REQUEST_FORMAT)
+    return readSourceMotionRequest(raw, source, demand)
   let value: unknown
   try {
     value = structuredClone(raw)
@@ -691,6 +754,239 @@ export function readWalkingMotionRequest(
   )
     return invalid()
   const admitted = freeze(value) as unknown as WalkingMotionRequest
-  admittedRequests.set(admitted, source)
+  admittedRequests.set(admitted, { source })
   return admitted
+}
+
+/** Explicit current-product binding; never an automatic version-one migration. */
+function readSourceMotionRequest(
+  raw: Record<string, unknown>,
+  source: WalkingRobotSource,
+  demand: SceneDemand | undefined
+): WalkingSourceMotionRequest {
+  const snapshot = { ...raw }
+  if (
+    !demand ||
+    snapshot.source !== source ||
+    snapshot.demand !== demand ||
+    !exact(snapshot, [
+      'format',
+      'requestId',
+      'path',
+      'evaluation',
+      'stance',
+      'gait',
+      'terrain',
+      'load',
+      'budget',
+      'source',
+      'demand',
+      'externalSources',
+      'targetContacts'
+    ]) ||
+    !record(snapshot.budget) ||
+    !exact(snapshot.budget, [
+      'maxIntervals',
+      'maxEnvelopePairs',
+      'maxRegionPairs',
+      'maxExactPredicates'
+    ]) ||
+    !Object.values(snapshot.budget).every(
+      (value) => Number.isSafeInteger(value) && Number(value) > 0
+    ) ||
+    !Array.isArray(snapshot.externalSources) ||
+    !Array.isArray(snapshot.targetContacts)
+  )
+    return invalid()
+  const budget = {
+    maxIntervals: Number(snapshot.budget.maxIntervals),
+    maxEnvelopePairs: Number(snapshot.budget.maxEnvelopePairs),
+    maxRegionPairs: Number(snapshot.budget.maxRegionPairs),
+    maxExactPredicates: Number(snapshot.budget.maxExactPredicates)
+  }
+  const base = readWalkingMotionRequest(
+    {
+      format: WALKING_MOTION_REQUEST_FORMAT,
+      requestId: snapshot.requestId,
+      path: snapshot.path,
+      evaluation: snapshot.evaluation,
+      stance: snapshot.stance,
+      gait: snapshot.gait,
+      terrain: snapshot.terrain,
+      load: snapshot.load,
+      budget: {
+        maxIntervals: budget.maxIntervals,
+        maxEnvelopePairs: budget.maxEnvelopePairs
+      }
+    },
+    source
+  )
+  if (base.format !== WALKING_MOTION_REQUEST_FORMAT) return invalid()
+  const shapes = new Map<
+    string,
+    Extract<WalkingCarriedAttachment['shape'], { kind: 'triangles' }>
+  >()
+  const bind = (
+    sourceId: string,
+    shape: Extract<WalkingCarriedAttachment['shape'], { kind: 'triangles' }>
+  ) => {
+    if (shapes.has(sourceId)) return invalid()
+    shapes.set(sourceId, shape)
+  }
+  for (const region of base.terrain.regions) bind(region.sourceId, region.shape)
+  if (base.load.crate.kind === 'attached')
+    for (const part of base.load.crate.sourceParts)
+      bind(part.sourceId, part.shape)
+  if (base.load.carried.kind === 'attached')
+    for (const item of base.load.carried.items)
+      if (item.shape.kind === 'triangles') bind(item.sourceId, item.shape)
+  const sourceIds = new Set<string>(),
+    externalSources: WalkingExternalSourceRegions[] = []
+  for (const candidate of structuredClone(snapshot.externalSources)) {
+    if (
+      !record(candidate) ||
+      !exact(candidate, ['sourceId', 'regions']) ||
+      !identity(candidate.sourceId) ||
+      !Array.isArray(candidate.regions)
+    )
+      return invalid()
+    const sourceId = String(candidate.sourceId),
+      shape = shapes.get(sourceId)
+    if (!shape || sourceIds.has(sourceId)) return invalid()
+    sourceIds.add(sourceId)
+    externalSources.push(
+      Object.freeze({
+        sourceId,
+        regions: readSourceRegions(candidate.regions, shape.indices.length)
+      })
+    )
+  }
+  if (sourceIds.size !== shapes.size) return invalid()
+  const breaks = [
+    ...new Set([
+      base.evaluation.from,
+      base.evaluation.until,
+      ...base.path.knots.map((knot) => knot.time),
+      ...base.stance.phases.flatMap((phase) => [phase.from, phase.until])
+    ])
+  ]
+    .filter(
+      (time) => time >= base.evaluation.from && time <= base.evaluation.until
+    )
+    .sort((a, b) => a - b)
+  const contacts: WalkingTargetContact[] = [],
+    targets = [
+      ...demand.targets.left,
+      ...demand.targets.right,
+      ...demand.targets.unassigned
+    ]
+  for (const input of snapshot.targetContacts) {
+    if (!record(input)) return invalid()
+    const candidate = { ...input }
+    if (
+      !exact(candidate, ['from', 'until', 'purpose', 'robot', 'target']) ||
+      !Number.isFinite(candidate.from) ||
+      !Number.isFinite(candidate.until) ||
+      !['support', 'cut'].includes(String(candidate.purpose)) ||
+      !record(candidate.robot) ||
+      !exact(candidate.robot, ['part', 'region', 'patch']) ||
+      !record(candidate.target) ||
+      !exact(candidate.target, ['target', 'partition', 'ranges'])
+    )
+      return invalid()
+    const from = Number(candidate.from),
+      until = Number(candidate.until),
+      index = breaks.indexOf(from)
+    if (index < 0 || breaks[index + 1] !== until) return invalid()
+    const robot = { ...candidate.robot },
+      targetInput = { ...candidate.target }
+    const part = source.parts.find((part) => part === robot.part)
+    const region = part?.regions.find((region) => region === robot.region),
+      patch = part?.patches.find((patch) => patch === robot.patch)
+    const purpose = candidate.purpose === 'support' ? 'support' : 'cut',
+      allowed =
+        purpose === 'support'
+          ? source.rig.contacts.supportTools
+          : source.rig.contacts.cuttingEdges
+    if (
+      !part ||
+      !region ||
+      !patch ||
+      patch.region !== region ||
+      !allowed.some(
+        (reference) => reference.part === part && reference.patch === patch
+      )
+    )
+      return invalid()
+    if (
+      contacts.some(
+        (contact) =>
+          contact.robot.patch === patch &&
+          contact.from < until &&
+          from < contact.until
+      )
+    )
+      return invalid()
+    const target = targets.find((target) => target === targetInput.target),
+      partition = target?.partitions.find(
+        (partition) => partition === targetInput.partition
+      )
+    if (
+      !target ||
+      !partition ||
+      !Array.isArray(targetInput.ranges) ||
+      targetInput.ranges.length === 0
+    )
+      return invalid()
+    const ranges: SourceTriangleRange[] = []
+    let end = partition.partition.indexStart
+    for (const rawRange of targetInput.ranges) {
+      if (!record(rawRange)) return invalid()
+      const inputRange = { ...rawRange }
+      if (
+        !exact(inputRange, ['indexStart', 'indexCount']) ||
+        !Number.isSafeInteger(inputRange.indexStart) ||
+        !Number.isSafeInteger(inputRange.indexCount)
+      )
+        return invalid()
+      const indexStart = Number(inputRange.indexStart),
+        indexCount = Number(inputRange.indexCount)
+      if (
+        indexStart < end ||
+        indexStart % 3 !== 0 ||
+        indexCount <= 0 ||
+        indexCount % 3 !== 0 ||
+        !Number.isSafeInteger(indexStart + indexCount) ||
+        indexStart + indexCount >
+          partition.partition.indexStart + partition.partition.indexCount
+      )
+        return invalid()
+      end = indexStart + indexCount
+      ranges.push(Object.freeze({ indexStart, indexCount }))
+    }
+    contacts.push(
+      Object.freeze({
+        from,
+        until,
+        purpose,
+        robot: Object.freeze({ part, region, patch }),
+        target: Object.freeze({
+          target,
+          partition,
+          ranges: Object.freeze(ranges)
+        })
+      })
+    )
+  }
+  const result: WalkingSourceMotionRequest = Object.freeze({
+    ...base,
+    format: WALKING_SOURCE_MOTION_REQUEST_FORMAT,
+    source,
+    demand,
+    budget: Object.freeze(budget),
+    externalSources: Object.freeze(externalSources),
+    targetContacts: Object.freeze(contacts)
+  })
+  admittedRequests.set(result, { source, demand })
+  return result
 }

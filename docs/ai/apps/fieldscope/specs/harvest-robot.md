@@ -1,5 +1,11 @@
 # Harvest robot product contract
 
+Scene-source exact relations use the shared query-frame owner's original
+descriptor quaternion polynomial and completed binary64 yaw coefficients, with
+instance placement before descriptor placement. They do not use interval
+midpoints or rendered per-vertex rounding as exact source authority. Invalid or
+singular frames are unavailable; exact frame availability grants no clearance.
+
 ## Current milestone: M2
 
 M1 provides pure, deterministic engineering assessments, not actuation, physics,
@@ -109,6 +115,34 @@ rebuilding an unchanged robot definition. Robot definition, path, evaluation
 time, stance/contact schedule or evidence, gait, load, terrain or margin changes
 invalidate the affected locomotion-demand and compatibility products. UI
 consumers share those canonical outputs rather than calculating clearance again.
+
+The versioned source-relation request binds current scene demand, robot source,
+complete external material partitions, the complete existing motion segment and
+any explicit support/cut target patch selection. Version-one motion requests
+remain identifiable with unknown source relations; there is no implicit saved
+data conversion. The relation owner counts every original region pair, including
+unvisited work after a declared finite budget ends. A same-body material union
+does not authorize a different fixed child, joint, tool, holder or target contact.
+Closed-solid queries require actual triangle closure, convexity and nonzero
+volume before complete exact separating-axis predicates. Bounding overlap alone
+never proves collision; absence of a sampled collision never proves clearance.
+
+Static material and fixed-orientation linear translations can receive complete
+interval proofs. Translation predicates retain original knot coefficients and
+exact rational stance-subinterval times. A volume event must occur in the
+requested segment to block it. General rotation or changing joints remain
+unknown unless outward bounds strictly exclude the pair. A common affine
+topological proof requires one shared chain, a whole-interval nonsingularity
+proof and zero metric margin; independently rounded per-body world transforms
+are not that chain. Fixed parent/child source interfaces keep their separately
+declared authored parent-local authority.
+Boundary admission requires the complete contact locus to be covered by both
+named patch closures and retains an original-triangle witness; an unproved
+subset remains unknown. An exact selected robot patch/target-partition relation
+may request W5 refinement for the same segment, but never authorizes positive
+volume or omission of any other material. Support feet that slide with the base
+keep locomotion unknown. Source pose, sole grounding datum, terrain standing and
+continuous walking are separate evidence.
 
 Pruning and net training are field-maintenance context, never permission for the
 robot to cut a non-target branch or move a plant automatically. The farm layout

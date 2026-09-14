@@ -18,7 +18,14 @@ import {
 import { REST_JOINTS } from '../../domain/robot-kinematics'
 import * as kinematics from '../../domain/robot-kinematics'
 import { QueryGeometry, type GeometryReceipt } from '../geometry'
-import { interval, add, multiply, subtract } from '../query-arithmetic'
+import {
+  interval,
+  add,
+  multiply,
+  subtract,
+  dyadic,
+  type Dyadic
+} from '../query-arithmetic'
 import {
   RayQueries,
   prepareQueryFrame,
@@ -27,6 +34,8 @@ import {
   transformQueryDirection,
   prepareQueryForwardFrame,
   prepareQueryInstanceFrame,
+  prepareQueryExactForwardFrame,
+  prepareQueryExactInstanceFrame,
   transformQueryPoint,
   type RayBatch
 } from '../ray-query'
@@ -731,6 +740,148 @@ it('shares the original coefficient inverse as an immutable direction frame', ()
     expect(transformed[axis].low).toBeLessThanOrEqual(axis + 1)
     expect(transformed[axis].high).toBeGreaterThanOrEqual(axis + 1)
   }
+})
+
+const frameSum = (a: Dyadic, b: Dyadic): Dyadic => {
+  const exponent = Math.min(a.exponent, b.exponent)
+  return {
+    significand:
+      (a.significand << BigInt(a.exponent - exponent)) +
+      (b.significand << BigInt(b.exponent - exponent)),
+    exponent
+  }
+}
+const frameProduct = (a: Dyadic, b: Dyadic): Dyadic => ({
+  significand: a.significand * b.significand,
+  exponent: a.exponent + b.exponent
+})
+const frameDifference = (a: Dyadic, b: Dyadic) =>
+  frameSum(a, { significand: -b.significand, exponent: b.exponent })
+const expectFrameValue = (actual: Dyadic, expected: Dyadic) =>
+  expect(frameDifference(actual, expected).significand).toBe(0n)
+
+it('publishes exact original quaternion coefficients with compatible outward frames', () => {
+  for (const rotation of [
+    [0, 1, 0, 0],
+    [0.2, 0.3, 0.4, Math.sqrt(0.71)],
+    [1e-150, 0, 0, 1]
+  ] as const) {
+    const transform = { position: [1e200, 1e-200, -3] as const, rotation }
+    const exact = prepareQueryExactForwardFrame(transform),
+      outward = prepareQueryForwardFrame(transform)
+    const [x, y, z, w] = rotation.map(dyadic),
+      one = dyadic(1),
+      two = dyadic(2)
+    const twice = (value: Dyadic) => frameProduct(two, value)
+    const expected = [
+      [
+        frameDifference(
+          one,
+          twice(frameSum(frameProduct(y, y), frameProduct(z, z)))
+        ),
+        twice(frameDifference(frameProduct(x, y), frameProduct(z, w))),
+        twice(frameSum(frameProduct(x, z), frameProduct(y, w)))
+      ],
+      [
+        twice(frameSum(frameProduct(x, y), frameProduct(z, w))),
+        frameDifference(
+          one,
+          twice(frameSum(frameProduct(x, x), frameProduct(z, z)))
+        ),
+        twice(frameDifference(frameProduct(y, z), frameProduct(x, w)))
+      ],
+      [
+        twice(frameDifference(frameProduct(x, z), frameProduct(y, w))),
+        twice(frameSum(frameProduct(y, z), frameProduct(x, w))),
+        frameDifference(
+          one,
+          twice(frameSum(frameProduct(x, x), frameProduct(y, y)))
+        )
+      ]
+    ]
+    for (let row = 0; row < 3; row++)
+      for (let column = 0; column < 3; column++) {
+        const value = exact.matrix[row][column],
+          enclosure = outward.matrix[row][column]
+        expectFrameValue(value, expected[row][column])
+        expect(
+          frameDifference(value, dyadic(enclosure.low)).significand >= 0n
+        ).toBe(true)
+        expect(
+          frameDifference(dyadic(enclosure.high), value).significand >= 0n
+        ).toBe(true)
+        expect(Object.isFrozen(value)).toBe(true)
+      }
+    transform.position.forEach((value, axis) =>
+      expectFrameValue(exact.position[axis], dyadic(value))
+    )
+    expect(exact.determinant.significand).not.toBe(0n)
+    expect(Object.isFrozen(exact)).toBe(true)
+    expect(Object.isFrozen(exact.matrix[0])).toBe(true)
+  }
+})
+
+it('retains binary64 yaw coefficients and instance-before-descriptor exact placement', () => {
+  const placement = { position: [5, 6, 7] as const, yaw: Math.PI / 3 }
+  const instance = prepareQueryExactInstanceFrame(placement)
+  expectFrameValue(instance.matrix[0][0], dyadic(Math.cos(placement.yaw)))
+  expectFrameValue(instance.matrix[0][2], dyadic(Math.sin(placement.yaw)))
+  expectFrameValue(instance.matrix[2][0], dyadic(-Math.sin(placement.yaw)))
+  const descriptor = {
+    position: [10, 20, 30] as const,
+    rotation: [0, 1, 0, 0] as const
+  }
+  const outer = prepareQueryExactForwardFrame(descriptor)
+  const apply = (frame: typeof outer, point: readonly Dyadic[]) =>
+    frame.matrix.map((row, axis) =>
+      row.reduce(
+        (sum, value, index) => frameSum(sum, frameProduct(value, point[index])),
+        frame.position[axis]
+      )
+    )
+  const point = [1e100, 2, 1e-100].map(dyadic)
+  const installed = apply(instance, point),
+    world = apply(outer, installed)
+  expectFrameValue(world[0], frameDifference(dyadic(10), installed[0]))
+  expectFrameValue(world[1], frameSum(dyadic(20), installed[1]))
+  expectFrameValue(world[2], frameDifference(dyadic(30), installed[2]))
+  const bounds = transformQueryPoint(
+    prepareQueryForwardFrame(descriptor),
+    transformQueryPoint(
+      prepareQueryInstanceFrame(placement),
+      [1e100, 2, 1e-100].map(interval)
+    )
+  )
+  world.forEach((value, axis) => {
+    expect(
+      frameDifference(value, dyadic(bounds[axis].low)).significand >= 0n
+    ).toBe(true)
+    expect(
+      frameDifference(dyadic(bounds[axis].high), value).significand >= 0n
+    ).toBe(true)
+  })
+  expect(Object.isFrozen(instance.position[0])).toBe(true)
+  expect(prepareQueryExactInstanceFrame(placement)).not.toBe(instance)
+})
+
+it('refuses invalid or singular exact source frames without inventing an inverse', () => {
+  for (const rotation of [
+    [0, 0, 0, 0],
+    [0.5, 0.5, 0, 0],
+    [NaN, 0, 0, 1]
+  ] as const)
+    expect(() =>
+      prepareQueryExactForwardFrame({ position: [0, 0, 0], rotation })
+    ).toThrow()
+  expect(() =>
+    prepareQueryExactForwardFrame({
+      position: [Infinity, 0, 0],
+      rotation: [0, 0, 0, 1]
+    })
+  ).toThrow()
+  expect(() =>
+    prepareQueryExactInstanceFrame({ position: [0, 0, 0], yaw: Infinity })
+  ).toThrow()
 })
 
 it('shares original forward quaternion and instance frames with surface queries', () => {
