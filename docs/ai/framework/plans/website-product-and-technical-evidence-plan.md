@@ -417,3 +417,32 @@ and 320 CSS px. Assert matching content edges, column/row separation, the 8:5
 frame, and decoded high-definition dimensions.
 Run the existing landing gates and PR CI; completion requires owner review,
 and this task does not authorize merge or production deployment.
+
+## Scroll-driven architecture story
+
+The product owner approved a bounded scroll-driven prototype on 2026-09-15.
+Replace the static runtime list with one architecture story between the film
+and Feature code. Preserve the accepted film, native controls, illustrations,
+public Feature example, supporting routes, and all Framework behavior.
+
+- Explain person or AI intent, App Feature and public API, transaction and
+  canonical owner, then projections. These are responsibility boundaries, not
+  the factory film's illustrative A–D stations or four mandatory packages.
+- On wide, sufficiently tall screens, keep the complete architecture diagram
+  beside four short reading stages. Highlight the corresponding boundary as
+  its explanation crosses the reading area. Ordinary page scrolling remains
+  native, reversible, and skippable through a link to the code example.
+- Mobile, short viewports, reduced-motion preferences, and browsers without
+  named view-timeline support receive compact, complete content in DOM order.
+  No text depends on motion, JavaScript, hover, color, or video playback.
+- Use a server-rendered story with native CSS timelines. Its only changing
+  input is scroll geometry, owned by the browser. No client component, scroll
+  listener, observer, timer, frame loop, cache, or video seeking is introduced.
+  The existing Feature runtime remains descriptive evidence, not a simulation.
+- Keep the animated section to roughly three desktop viewport heights or less.
+  All four diagram nodes stay readable, and scroll position never hides copy.
+- Formal browser cases cover forward/reverse scrolling, skipping to code,
+  stationary scroll progress, responsive edges, live preference/viewport
+  changes, no JavaScript, unsupported timelines, idle video, and screenshots.
+  Unit/contract, naming, lint, type, build, route smoke, film regression, and
+  the PR's required CI gates complete this bounded delivery.
