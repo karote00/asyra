@@ -86,6 +86,10 @@ function fixture() {
     bearing: { status: 'admitted' as const, evidence: evidence('bearing') },
     sinkage: { status: 'admitted' as const, evidence: evidence('sinkage') }
   }))
+  // One interval, every source region, at most one carried source, one terrain
+  // region and one exclusion. Include same-body pairs for a finite upper bound.
+  const maximumEnvelopes =
+    source.parts.reduce((sum, part) => sum + part.regions.length, 0) + 1
   const raw: Mutable<WalkingMotionRequest> = {
     format: 'walking-motion-request/1' as const,
     requestId: 'whole-machine-request',
@@ -167,7 +171,11 @@ function fixture() {
       crate: { kind: 'unknown' as const },
       carried: { kind: 'none' as const }
     },
-    budget: { maxIntervals: 32, maxEnvelopePairs: 100000 }
+    budget: {
+      maxIntervals: 32,
+      maxEnvelopePairs:
+        (maximumEnvelopes * (maximumEnvelopes - 1)) / 2 + maximumEnvelopes * 2
+    }
   }
   let demand = makeDemand()
   const owner = new WalkingMotionOwner({
@@ -194,7 +202,9 @@ describe('walking whole-machine motion admission', () => {
     expect(admission.source).toBe(source)
     expect(admission.path).toBe(request.path)
     expect(admission.segments).toHaveLength(1)
-    expect(admission.segments[0].envelopes).toHaveLength(source.parts.length)
+    expect(admission.segments[0].envelopes).toHaveLength(
+      source.parts.reduce((sum, part) => sum + part.regions.length, 0)
+    )
     expect(
       new Set(admission.segments[0].envelopes.map(({ body }) => body.id)).size
     ).toBe(46)
@@ -307,7 +317,7 @@ describe('walking whole-machine motion admission', () => {
       before.work.unresolvedEnvelopePairs
     )
     expect(result.work.envelopePairs - before.work.envelopePairs).toBe(
-      next.source.parts.length + 1
+      next.source.parts.reduce((sum, part) => sum + part.regions.length, 0) + 1
     )
     expect(result.segments[0].carriedEnvelopes[0].assembly).toBe(
       result.load.crate

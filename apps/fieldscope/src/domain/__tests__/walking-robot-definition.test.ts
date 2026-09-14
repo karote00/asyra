@@ -16,13 +16,81 @@ type Mutable<T> = T extends readonly (infer Item)[]
 const clone = <T>(value: T): Mutable<T> => structuredClone(value) as Mutable<T>
 
 describe('walking robot definition admission', () => {
+  it('authors v2 articulation while recognizing immutable v1 bytes without admitting them', () => {
+    const definition = createSyntheticWalkingRobotDefinition({
+      definitionId: 'solid-source-version'
+    })
+    expect(definition.format).toBe('walking-robot-definition/2')
+    expect(classifyWalkingRobotDefinition(definition)).toBe('walking-v2')
+    expect(definition).toHaveProperty(
+      'sourceModel.kind',
+      'solid-articulation/1'
+    )
+    const legacy = structuredClone(definition) as unknown as Record<
+      string,
+      unknown
+    >
+    legacy.format = 'walking-robot-definition/1'
+    delete legacy.sourceModel
+    const bytes = JSON.stringify(legacy)
+    expect(classifyWalkingRobotDefinition(legacy)).toBe('walking-v1')
+    expect(() => readWalkingRobotDefinition(legacy)).toThrow()
+    expect(JSON.stringify(legacy)).toBe(bytes)
+  })
+
+  it('requires explicit articulation ratios and rail geometry covering the full admitted lift', () => {
+    const baseline = () =>
+      clone(
+        createSyntheticWalkingRobotDefinition({
+          definitionId: 'solid-source-profile'
+        })
+      )
+    const definition = baseline()
+    expect(definition.sourceModel).toMatchObject({
+      kind: 'solid-articulation/1',
+      pinRadiusRatio: 1 / 8,
+      sleeveInnerRadiusRatio: 3 / 16,
+      sleeveOuterRadiusRatio: 1 / 2,
+      axialGapRatio: 1 / 16,
+      linkSetbackRatio: 1 / 2
+    })
+    expect(definition.carriage.liftRange).toEqual([0.5, 1.65])
+    for (const [key, value] of [
+      ['pinRadiusRatio', 0],
+      ['pinRadiusRatio', 1],
+      ['sleeveInnerRadiusRatio', 0.1],
+      ['sleeveInnerRadiusRatio', 0.49],
+      ['sleeveOuterRadiusRatio', 0.1],
+      ['axialGapRatio', 0],
+      ['axialGapRatio', 0.5],
+      ['linkSetbackRatio', 2]
+    ] as const) {
+      const invalid = baseline()
+      invalid.sourceModel[key] = value
+      expect(() => readWalkingRobotDefinition(invalid)).toThrow()
+    }
+    const shortRails = baseline()
+    shortRails.base.mast.size[1] = 0.7
+    shortRails.base.mast.centre[1] = 0.62
+    expect(() => readWalkingRobotDefinition(shortRails)).toThrow()
+    const widerRails = baseline()
+    widerRails.base.mast.size[2] = 1
+    expect(() => readWalkingRobotDefinition(widerRails)).toThrow()
+    const displacedRails = baseline()
+    displacedRails.base.mast.centre[2] = 0.001
+    expect(() => readWalkingRobotDefinition(displacedRails)).toThrow()
+    const exhaustedCore = baseline()
+    exhaustedCore.legs[0].coxa.length = 0.052
+    expect(() => readWalkingRobotDefinition(exhaustedCore)).toThrow()
+  })
+
   it('creates an explicit immutable four-arm six-leg synthetic baseline', () => {
     const definition = createSyntheticWalkingRobotDefinition({
       definitionId: 'adjustable-walking-candidate'
     })
     expect(definition.format).toBe(WALKING_ROBOT_FORMAT)
     expect(definition.topology).toBe(WALKING_ROBOT_TOPOLOGY)
-    expect(classifyWalkingRobotDefinition(definition)).toBe('walking-v1')
+    expect(classifyWalkingRobotDefinition(definition)).toBe('walking-v2')
     expect(definition.base.chassis.size).toEqual([0.58, 0.3, 0.78])
     expect(definition.carriage.liftRange).toEqual([0.5, 1.65])
     expect(
@@ -43,7 +111,26 @@ describe('walking robot definition admission', () => {
     expect(definition.geometryEvidence).toMatchObject({ kind: 'synthetic' })
     expect(definition.jointEvidence).toMatchObject({ kind: 'synthetic' })
     expect(definition.massEvidence).toMatchObject({ kind: 'synthetic' })
-    expect(JSON.stringify(definition)).not.toContain('1.2')
+    for (const arm of definition.presets.stowed.arms)
+      expect(arm).toMatchObject({
+        rootYaw: 0,
+        shoulderPitch: 0,
+        elbowPitch: 0,
+        wristPitch: 0
+      })
+    for (const [side, preset] of [
+      ['left', definition.presets.leftWorking],
+      ['right', definition.presets.rightWorking]
+    ] as const)
+      for (const arm of preset.arms)
+        expect(arm).toMatchObject(
+          arm.side === side
+            ? { shoulderPitch: -0.25, elbowPitch: 0.75, wristPitch: -0.35 }
+            : { shoulderPitch: 0, elbowPitch: 0, wristPitch: 0 }
+        )
+    for (const preset of Object.values(definition.presets))
+      for (const leg of preset.legs)
+        expect(leg).toMatchObject({ abduction: 0, hip: 0, knee: 0 })
   })
 
   it('admits measured provenance, detaches caller bytes and preserves complete poses', () => {
@@ -73,7 +160,7 @@ describe('walking robot definition admission', () => {
       clone(createSyntheticWalkingRobotDefinition({ definitionId: 'invalid' }))
     const invalid: unknown[] = []
     const badFormat = baseline()
-    ;(badFormat as { format: string }).format = 'walking-robot-definition/2'
+    ;(badFormat as { format: string }).format = 'walking-robot-definition/9'
     invalid.push(badFormat)
     const extra = baseline() as typeof badFormat & { axes?: string[] }
     extra.axes = ['caller-owned']
