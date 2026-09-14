@@ -1,4 +1,10 @@
 import { describe, expect, it } from 'vitest'
+import {
+  divide as divideInterval,
+  subtract as subtractInterval,
+  multiply as multiplyInterval,
+  interval as literalInterval
+} from '../scalar-arithmetic'
 import { DEFAULT_ROBOT } from '../robot-configuration'
 import {
   WALKING_ROBOT_FORMAT,
@@ -16,6 +22,59 @@ type Mutable<T> = T extends readonly (infer Item)[]
 const clone = <T>(value: T): Mutable<T> => structuredClone(value) as Mutable<T>
 
 describe('walking robot definition admission', () => {
+  it('keeps default bytes while admitting a separately authored synthetic tripod range', () => {
+    const baseline = createSyntheticWalkingRobotDefinition({
+      definitionId: 'tripod-default'
+    })
+    const bytes = JSON.stringify(baseline)
+    const raw = clone(baseline)
+    const stations = raw.legs
+      .filter(({ side }) => side === 'left')
+      .map(({ mount }) => mount.position[2])
+      .sort((a, b) => a - b)
+    const spacing = Math.min(
+      ...stations.slice(1).map((value, index) => value - stations[index])
+    )
+    const alpha = Math.min(
+      ...raw.legs.map(
+        (leg) =>
+          divideInterval(
+            subtractInterval(
+              literalInterval(spacing),
+              literalInterval(leg.foot.size[2])
+            ),
+            multiplyInterval(
+              literalInterval(4),
+              literalInterval(leg.upper.length)
+            )
+          ).low
+      )
+    )
+    expect(alpha).toBeGreaterThan(0)
+    expect(alpha).toBeLessThan(Math.PI / 6)
+    raw.definitionId = 'tripod-authored-negative-knee'
+    raw.jointEvidence = {
+      kind: 'synthetic',
+      id: 'tripod-authored-range',
+      label: 'Tripod range - synthetic feasibility assumption'
+    }
+    for (const leg of raw.legs) leg.jointRanges.knee[0] = -alpha
+    const candidate = readWalkingRobotDefinition(raw)
+    expect(classifyWalkingRobotDefinition(candidate)).toBe('walking-v2')
+    expect(
+      readWalkingRobotDefinition(JSON.parse(JSON.stringify(candidate)))
+    ).toEqual(candidate)
+    expect(candidate).not.toBe(baseline)
+    for (const leg of candidate.legs) {
+      expect(leg.jointRanges.knee).toEqual([-alpha, (2 * Math.PI) / 3])
+      expect(Object.isFrozen(leg.jointRanges.knee)).toBe(true)
+    }
+    expect(candidate.presets).toEqual(baseline.presets)
+    expect(JSON.stringify(baseline)).toBe(bytes)
+    expect(baseline.legs.every((leg) => leg.jointRanges.knee[0] === 0)).toBe(
+      true
+    )
+  })
   it('authors v2 articulation while recognizing immutable v1 bytes without admitting them', () => {
     const definition = createSyntheticWalkingRobotDefinition({
       definitionId: 'solid-source-version'

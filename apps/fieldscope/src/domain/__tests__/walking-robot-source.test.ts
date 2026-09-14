@@ -1,5 +1,16 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import {
+  divide as divideInterval,
+  subtract as subtractInterval,
+  multiply as multiplyInterval,
+  interval as literalInterval
+} from '../scalar-arithmetic'
+type Mutable<T> = T extends readonly (infer Item)[]
+  ? Mutable<Item>[]
+  : T extends object
+    ? { -readonly [Key in keyof T]: Mutable<T[Key]> }
+    : T
+import {
   createSyntheticWalkingRobotDefinition,
   readWalkingRobotDefinition
 } from '../walking-robot-definition'
@@ -756,6 +767,323 @@ function certifyWholePose(
   ).toBe(0)
   return { visited, tested, boundaries }
 }
+
+function tripodProfile() {
+  const baseline = createSyntheticWalkingRobotDefinition({
+    definitionId: 'tripod-material-default'
+  })
+  const raw = {
+    ...baseline,
+    legs: baseline.legs.map((leg) => ({
+      ...leg,
+      jointRanges: { ...leg.jointRanges, knee: [...leg.jointRanges.knee] }
+    }))
+  }
+  const stations = raw.legs
+    .filter(({ side }) => side === 'left')
+    .map(({ mount }) => mount.position[2])
+    .sort((a, b) => a - b)
+  const spacing = Math.min(
+    ...stations.slice(1).map((value, index) => value - stations[index])
+  )
+  const alpha = Math.min(
+    ...raw.legs.map(
+      (leg) =>
+        divideInterval(
+          subtractInterval(
+            literalInterval(spacing),
+            literalInterval(leg.foot.size[2])
+          ),
+          multiplyInterval(
+            literalInterval(4),
+            literalInterval(leg.upper.length)
+          )
+        ).low
+    )
+  )
+  raw.definitionId = 'tripod-material-authored'
+  raw.jointEvidence = {
+    kind: 'synthetic',
+    id: 'tripod-authored-range',
+    label: 'Tripod range - synthetic feasibility assumption'
+  }
+  for (const leg of raw.legs) leg.jointRanges.knee[0] = -alpha
+  return {
+    baseline,
+    candidate: readWalkingRobotDefinition(raw),
+    alpha,
+    spacing
+  }
+}
+type ExactRange = readonly [Dyadic, Dyadic]
+function productRange(a: ExactRange, b: ExactRange): ExactRange {
+  const values = a.flatMap((x) => b.map((y) => exactMultiply(x, y)))
+  return [
+    values.reduce((x, y) => (exactSign(exactSubtract(x, y)) < 0 ? x : y)),
+    values.reduce((x, y) => (exactSign(exactSubtract(x, y)) > 0 ? x : y))
+  ]
+}
+function authoredRotatedRange(
+  points: readonly ExactPoint[],
+  axis: 1 | 2,
+  alpha: number
+): ExactRange {
+  // Authored rigid-axis authority only, not independently rounded runtime FK:
+  // -alpha <= theta <= 0; 1-alpha^2/2 <= cos(theta) <= 1;
+  // -alpha <= sin(theta) <= 0. No angular samples establish clearance.
+  const c: ExactRange = [
+    exactSubtract(
+      dyadic(1),
+      exactScale(exactMultiply(dyadic(alpha), dyadic(alpha)), 0.5)
+    ),
+    dyadic(1)
+  ]
+  const s: ExactRange = [dyadic(-alpha), exactZero]
+  const ranges = points.map((p) => {
+    const first = productRange([p[axis], p[axis]], c)
+    const other = axis === 1 ? exactNegate(p[2]) : p[1]
+    const second = productRange([other, other], s)
+    return [
+      exactAdd(first[0], second[0]),
+      exactAdd(first[1], second[1])
+    ] as ExactRange
+  })
+  return [
+    ranges
+      .map((r) => r[0])
+      .reduce((a, b) => (exactSign(exactSubtract(a, b)) < 0 ? a : b)),
+    ranges
+      .map((r) => r[1])
+      .reduce((a, b) => (exactSign(exactSubtract(a, b)) > 0 ? a : b))
+  ]
+}
+function radialGap(
+  inner: ReturnType<typeof certifyConvexTriangles>,
+  outer: ReturnType<typeof certifyConvexTriangles>
+) {
+  const radiusSquared = inner.points
+    .map((p) => exactAdd(exactMultiply(p[1], p[1]), exactMultiply(p[2], p[2])))
+    .reduce((a, b) => (exactSign(exactSubtract(a, b)) > 0 ? a : b))
+  return outer.normals.some((normal) => {
+    if (exactSign(normal[0]) !== 0) return false
+    const projection = exactProjection(outer.points, normal)
+    let support = exactZero
+    if (exactSign(projection.min) > 0) support = projection.min
+    else if (exactSign(projection.max) < 0)
+      support = exactNegate(projection.max)
+    return (
+      exactSign(support) > 0 &&
+      exactSign(
+        exactSubtract(
+          exactMultiply(support, support),
+          exactMultiply(radiusSquared, vectorDot(normal, normal))
+        )
+      ) > 0
+    )
+  })
+}
+function certifyAuthoredKneeDomain(
+  source: import('../walking-robot-source').WalkingRobotSource,
+  alpha: number
+) {
+  let pairs = 0,
+    axial = 0,
+    transverse = 0,
+    radial = 0
+  for (const chain of source.rig.legChains) {
+    const joint = required(
+      source.rig.joints.find((j) => j.id === chain.jointIds[2])
+    )
+    expect(joint.axis).toBe('x')
+    expect(joint.frame.rotation).toEqual([0, 0, 0, 1])
+    expect(joint.domain[0]).toBe(-alpha)
+    const parent = required(
+      source.rig.bodies.find((body) => body.id === joint.parentBodyId)
+    )
+    const child = required(
+      source.rig.bodies.find((body) => body.id === joint.childBodyId)
+    )
+    const parentFrame = {
+      position: joint.frame.position.map((value) => -value),
+      rotation: [0, 0, 0, 1]
+    }
+    const regions = (body: typeof parent, frame: typeof parentFrame) =>
+      body.parts.flatMap((part) =>
+        part.regions.map((region) => ({
+          label: part.id + '/' + region.id,
+          certificate: certifyConvexTriangles(
+            exactTriangles(part, frame, region),
+            part.id + '/' + region.id
+          )
+        }))
+      )
+    const first = regions(parent, parentFrame)
+    const second = regions(child, {
+      position: [0, 0, 0],
+      rotation: [0, 0, 0, 1]
+    })
+    for (const a of first)
+      for (const b of second) {
+        pairs++
+        const x: ExactPoint = [dyadic(1), exactZero, exactZero]
+        const pa = exactProjection(a.certificate.points, x),
+          pb = exactProjection(b.certificate.points, x)
+        if (
+          exactSign(exactSubtract(pa.max, pb.min)) < 0 ||
+          exactSign(exactSubtract(pb.max, pa.min)) < 0
+        ) {
+          axial++
+          continue
+        }
+        if (
+          ([1, 2] as const).some((axis) => {
+            const direction: ExactPoint =
+              axis === 1
+                ? [exactZero, dyadic(1), exactZero]
+                : [exactZero, exactZero, dyadic(1)]
+            const support = exactProjection(a.certificate.points, direction),
+              rotated = authoredRotatedRange(b.certificate.points, axis, alpha)
+            return (
+              exactSign(exactSubtract(support.max, rotated[0])) < 0 ||
+              exactSign(exactSubtract(rotated[1], support.min)) < 0
+            )
+          })
+        ) {
+          transverse++
+          continue
+        }
+        if (
+          radialGap(a.certificate, b.certificate) ||
+          radialGap(b.certificate, a.certificate)
+        ) {
+          radial++
+          continue
+        }
+        throw new Error(
+          'Unproved authored knee domain: ' +
+            joint.id +
+            ' ' +
+            a.label +
+            ' : ' +
+            b.label
+        )
+      }
+  }
+  expect(pairs).toBe(axial + transverse + radial)
+  expect(radial).toBeGreaterThan(0)
+  return { pairs, axial, transverse, radial }
+}
+
+describe('authored tripod feasibility - W2 source only', () => {
+  // Frozen card: three tests only; default/source geometry unchanged. Domain proof
+  // uses authored axis rotation; the three all-body poses use completed FK.
+  // Neither proves continuous gait, terrain support, or changing-joint W3 clearance.
+  it('proves the complete added negative knee interface domain from original material support', () => {
+    const { candidate, alpha, spacing } = tripodProfile()
+    const source = new WalkingRobotSourceOwner().prepare(candidate)
+    expect(source.definition).toBe(candidate)
+    expect(alpha).toBeGreaterThan(0)
+    expect(alpha).toBeLessThan(1)
+    for (const leg of candidate.legs) {
+      const allowance = exactSubtract(dyadic(spacing), dyadic(leg.foot.size[2]))
+      expect(
+        exactSign(
+          exactSubtract(
+            allowance,
+            exactScale(
+              exactMultiply(dyadic(alpha), dyadic(leg.upper.length)),
+              4
+            )
+          )
+        )
+      ).toBeGreaterThanOrEqual(0)
+      expect(-alpha).toBeGreaterThanOrEqual(leg.jointRanges.hip[0])
+      expect(alpha).toBeLessThanOrEqual(leg.jointRanges.hip[1])
+    }
+
+    for (const chain of source.rig.legChains) {
+      const leg = required(
+        candidate.legs.find(
+          (leg) => leg.side === chain.side && leg.station === chain.station
+        )
+      )
+      const footprintLimit = exactAdd(
+        exactMultiply(dyadic(alpha), dyadic(leg.upper.length)),
+        exactScale(dyadic(leg.foot.size[2]), 0.5)
+      )
+      for (const bodyId of chain.bodyIds) {
+        const body = required(
+          source.rig.bodies.find((body) => body.id === bodyId)
+        )
+        for (const part of body.parts)
+          for (const triangle of exactTriangles(part, originFrame))
+            for (const point of triangle) {
+              const absolute = (value: Dyadic) =>
+                exactSign(value) < 0 ? exactNegate(value) : value
+              const z = absolute(point[2])
+              const bound =
+                bodyId === chain.bodyIds[1]
+                  ? exactAdd(
+                      z,
+                      exactMultiply(dyadic(alpha), absolute(point[1]))
+                    )
+                  : exactAdd(
+                      z,
+                      exactMultiply(dyadic(alpha), dyadic(leg.upper.length))
+                    )
+              expect(
+                exactSign(exactSubtract(footprintLimit, bound)),
+                part.id + ' - complete source Z support'
+              ).toBeGreaterThanOrEqual(0)
+            }
+      }
+    }
+    const proof = certifyAuthoredKneeDomain(source, alpha)
+    expect(proof.pairs).toBeGreaterThan(0)
+  }, 30000)
+  it.each([-1, 0, 1])(
+    'proves every actual material pair at tripod handover %s',
+    (phase) => {
+      const { candidate, alpha } = tripodProfile()
+      const owner = new WalkingRobotSourceOwner()
+      const source = owner.prepare(candidate)
+      const joints = structuredClone(candidate.presets.stowed) as Mutable<
+        typeof candidate.presets.stowed
+      >
+      for (const leg of joints.legs) {
+        const groupA = (leg.side === 'left') !== (leg.station === 'middle')
+        leg.knee = phase * (groupA ? -alpha : alpha)
+        leg.hip = -leg.knee
+      }
+      const pose = owner.evaluate(source, { base: originFrame, joints })
+      certifyWholePose(source, pose)
+      const soles = source.rig.legChains
+        .map((chain) => {
+          const body = required(
+            source.rig.bodies.find((body) => body.id === chain.footBodyId)
+          )
+          const transform = required(
+            pose.bodyTransforms.find((body) => body.id === chain.footBodyId)
+          ).transform
+          const points = body.parts.flatMap((part) =>
+            part.patches
+              .filter((patch) => patch.id.includes('ground-contact'))
+              .flatMap((patch) =>
+                patch.ranges.flatMap((range) =>
+                  exactTriangles(part, transform, range).flat()
+                )
+              )
+          )
+          expect(points.length).toBeGreaterThan(0)
+          return points.map((point) => point[1])
+        })
+        .flat()
+      for (const y of soles)
+        expect(exactSign(exactSubtract(y, soles[0]))).toBe(0)
+    },
+    30000
+  )
+})
 
 describe('walking robot original solid articulation regression', () => {
   beforeEach(async () => {
