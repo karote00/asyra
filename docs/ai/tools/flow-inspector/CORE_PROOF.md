@@ -1954,6 +1954,39 @@ viewports, and demonstrate offline multi-PR success and integration regression.
 No new model request, external test PR, required-check enforcement or provider
 reconciliation is implied.
 
+### Full-runtime multi-PR product evidence
+
+The permanent full-runtime fixture uses a local Git repository containing the
+actual public source and manifests for `@asyra/factory`,
+`@asyra/collaboration`, `@asyra/ui-context` and the complete admitted
+workspace dependency union. Three distinct commits change the exact primary
+files declared by the architecture: `packages/factory/src/index.ts`,
+`packages/collaboration/src/process.ts` and
+`packages/ui-context/src/property-registry.ts`. Verification imports those
+public entries from captured source, publishes a `SharedPublication` through a
+Factory-owned `LocalSharedDataChannel`, observes Collaboration's settled
+publication, and binds its identifier into the UI Context property registry.
+Breaking either runtime handoff fails its owning case and whole integration.
+
+One target contract revision is assessed across two allocation revisions. The
+first keeps the UI Context and integration obligations explicitly pending while
+Factory and Collaboration can satisfy their immutable work promises. The
+second assigns the UI Context work and requires all three contributions,
+accepted preservation, prerequisite routes and whole-target integration on one
+exact source. An accepted regression, missing prerequisite, integration-only
+regression, mixed HEAD, reverted contribution or advanced source cannot be
+combined with older green results. The retained successful result survives
+restart without rerunning and becomes historical only after the separate
+authorized target-baseline action commits the reviewed version.
+
+The same retained assessment is projected by the service, loopback API and CLI.
+The existing Board product gate projects those owner results and preserves
+pending, failed, stale, eligible and accepted presentations at all required
+viewports. Offline GitHub delivery tests remain a separate observation
+boundary: PR state and provider checks are not accepted assessment fields and
+cannot create a target result or mutate accepted history. Live external PR
+acceptance remains unrun and unavailable in this deterministic evidence slice.
+
 ### Integrated target baseline acceptance
 
 A new target assessment uses format 2 and adds `targetContract`, the complete

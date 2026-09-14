@@ -35402,6 +35402,7 @@
             "cacheDimensions": [],
             "implementationBoundary": [
               "tools/flow-inspector/control-plane/target-evidence.cjs",
+              "tools/flow-inspector/control-plane/__tests__/full-runtime-fixture.cjs",
               "tools/flow-inspector/control-plane/__tests__/target-evidence.test.cjs"
             ],
             "specRefs": [
@@ -35455,6 +35456,7 @@
             "implementationBoundary": [
               "tools/flow-inspector/control-plane/flow-target.cjs",
               "tools/flow-inspector/control-plane/service.cjs",
+              "tools/flow-inspector/control-plane/__tests__/full-runtime-fixture.cjs",
               "tools/flow-inspector/control-plane/__tests__/flow-target.test.cjs",
               "tools/flow-inspector/control-plane/__tests__/service.test.cjs"
             ],
@@ -36132,6 +36134,7 @@
               "tools/flow-inspector/control-plane/cli.cjs",
               ".github/workflows/main.yml",
               "tools/flow-inspector/control-plane/__tests__/service.test.cjs",
+              "tools/flow-inspector/control-plane/__tests__/full-runtime-fixture.cjs",
               "tools/flow-inspector/control-plane/__tests__/operations.test.cjs",
               "tools/flow-inspector/control-plane/__tests__/mapping.test.cjs",
               "tools/flow-inspector/control-plane/__tests__/cli.test.cjs",

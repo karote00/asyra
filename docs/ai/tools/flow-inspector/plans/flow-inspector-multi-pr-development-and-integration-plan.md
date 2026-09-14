@@ -4,8 +4,9 @@
 
 Date: 2026-09-10. Direction approved. The bounded target/work slice is
 implemented on 2026-09-12, followed by source-bound integration and explicit
-local acceptance on 2026-09-13; this does not complete the broader architecture
-or Phase 5/6 work. Its initial scope is one local owner,
+local acceptance on 2026-09-13. Full-runtime product evidence using three
+primary package owners and one exact integrated source was added on 2026-09-14;
+this does not complete the broader architecture or Phase 5/6 work. Its initial scope is one local owner,
 one repository and one evolving flow split into several tasks and PRs.
 Parallel agent scheduling, multiple repositories and team accounts are excluded.
 
@@ -207,6 +208,35 @@ Each slice first defines formal cases, follows test-first correction where
 needed, and passes its owner gates before the next slice. This plan supplies
 product direction; the revised living contract and Inspector must supply exact
 inputs, outputs, bypasses, contributors, failure ownership and file boundaries.
+
+## Full-runtime product evidence implementation
+
+The permanent offline fixture copies the real public source and manifests for
+Factory, Collaboration, UI Context and their admitted workspace dependency
+closure into a temporary local Git repository. Distinct commits contribute
+Factory, Collaboration and UI Context behavior through their public package
+entries. The target keeps one immutable target revision while allocation
+revision 1 assigns Factory and Collaboration and leaves UI Context plus
+integration pending; allocation revision 2 adds the final UI Context
+commitment.
+
+Actual captured bytes drive both accepted and target verification. Permanent
+cases retain independent partial work, reject a missing prerequisite, reject an
+accepted-behavior regression even when the Factory target case passes, expose
+an integration-only regression after all three package cases pass, reject
+mixed HEAD evidence, retain a failed revert and stale advanced source as
+history, and allow eligibility only when every result comes from the same
+integrated HEAD. The service case repeats the full producer path through
+capture, frozen verifier composition, execution, retained assessment, restart,
+HTTP and CLI reads, and explicit baseline acceptance.
+
+The existing Board/API/CLI lifecycle gates remain the transport and presentation
+proof for pending, failed, stale, eligible and accepted states at desktop,
+tablet and narrow widths. Existing offline GitHub adapter cases cover
+close/reopen observation, changed HEAD, duplicate delivery, restart,
+supersession and read-only reconciliation. Those observations never enter the
+target assessment request or establish acceptance. No external test PR or live
+GitHub acceptance is part of this evidence.
 
 ## Required product cases
 

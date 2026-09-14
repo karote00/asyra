@@ -8,6 +8,8 @@ const { chromium, expect } = require('@playwright/test')
 const { startServer, parseLocalUrl } = require('../server.cjs')
 const { loadContract, MANIFEST_PATH } = require('../contracts.cjs')
 const { captureSource } = require('../snapshot.cjs')
+const { main: runCli } = require('../cli.cjs')
+const { createFullRuntimeFixture } = require('./full-runtime-fixture.cjs')
 
 test(
   'target assessment board preserves explicit source authority and separated real results across refresh and layouts',
@@ -3762,6 +3764,210 @@ test(
     } finally {
       await browser?.close()
       await server.close()
+      if (previous === undefined) delete process.env.TMPDIR
+      else process.env.TMPDIR = previous
+    }
+  }
+)
+
+test(
+  'full runtime retained assessment agrees across Board API CLI and three viewports',
+  { timeout: 180000 },
+  async () => {
+    const root = path.resolve(__dirname, '../../../..')
+    const parent = path.join(root, 'tmp/flow-inspector/visual-review')
+    fs.mkdirSync(parent, { recursive: true })
+    const artifacts = fs.mkdtempSync(path.join(parent, 'full-runtime-'))
+    const temporary = path.join(artifacts, 'browser-tmp')
+    fs.mkdirSync(temporary)
+    const previous = process.env.TMPDIR
+    process.env.TMPDIR = temporary
+    const fixture = createFullRuntimeFixture(root, artifacts)
+    const runs = path.join(fixture.repository, 'runs')
+    let prepared, server, browser
+    try {
+      prepared = await fixture.prepareService(runs)
+      assert.deepEqual(prepared.service.getTarget(prepared.target.id).pending, [
+        'runtime.ui-context',
+        'runtime.integration'
+      ])
+      await prepared.service.close()
+
+      server = await startServer(fixture.repository, {
+        serviceOptions: { directory: runs }
+      })
+      browser = await chromium.launch({
+        channel: process.env.FLOW_PROOF_BROWSER_CHANNEL || undefined,
+        downloadsPath: temporary
+      })
+      const page = await browser.newPage({
+        viewport: { width: 1600, height: 1100 }
+      })
+      const errors = []
+      page.on('pageerror', (error) => errors.push(error.message))
+      await page.route('**/workspace-bundle.data.js', (route) =>
+        route.fulfill({
+          status: 200,
+          contentType: 'text/javascript',
+          body:
+            'globalThis.FLOW_INSPECTOR_WORKSPACE_BUNDLE = ' +
+            JSON.stringify({
+              format: 1,
+              entries: [
+                {
+                  id: fixture.architecture.target.id,
+                  slug: fixture.architecture.target.id,
+                  kind: 'flow-v2',
+                  sourcePath:
+                    'tools/flow-inspector/control-plane/__tests__/fixtures/full-runtime/architecture.cjs',
+                  data: fixture.architecture
+                }
+              ]
+            })
+        })
+      )
+      const id = fixture.architecture.target.id
+      await page.goto(
+        server.origin +
+          '/tools/flow-inspector/workspace/target.html?inspector=' +
+          id +
+          '#inspector=' +
+          id
+      )
+      await expect(page.locator('html')).toHaveAttribute(
+        'data-target-state',
+        'rendered'
+      )
+      await page.locator('[data-step-id="complete-ui-context-runtime"]').click()
+      await page.locator('#proof-controls > summary').click()
+      await page.locator('#target-controls > summary').click()
+      await page.locator('#target-select').selectOption(prepared.target.id)
+      await expect(page.locator('#target-pending')).toContainText(
+        'runtime.ui-context'
+      )
+      await expect(page.locator('#target-pending')).toContainText(
+        'runtime.integration'
+      )
+
+      prepared.revise(server.service)
+      const regression = await prepared.assess(
+        server.service,
+        fixture.refs.integrationRegression
+      )
+      const integrated = await prepared.assess(
+        server.service,
+        prepared.targetSource
+      )
+      await page.locator('#refresh').click()
+      await page
+        .locator('#assessment-history')
+        .selectOption(regression.assessment.id)
+      await expect(page.locator('#assessment-summary')).toContainText(
+        'Not eligible'
+      )
+      await expect(page.locator('#assessment-integration')).toContainText(
+        'failed'
+      )
+      await page
+        .locator('#assessment-history')
+        .selectOption(integrated.assessment.id)
+      await expect(page.locator('#assessment-summary')).toContainText(
+        'Eligible for explicit acceptance'
+      )
+      await expect(page.locator('#assessment-accepted')).toContainText('passed')
+      await expect(page.locator('#assessment-target-contract')).toContainText(
+        'passed'
+      )
+      await expect(page.locator('#assessment-integration')).toContainText(
+        'passed'
+      )
+      for (const title of [
+        'Factory runtime contribution',
+        'Collaboration runtime contribution',
+        'UI Context runtime integration'
+      ])
+        await expect(page.locator('#assessment-works')).toContainText(title)
+
+      const api = await fetch(
+        server.origin + '/api/target-assessments/' + integrated.assessment.id
+      ).then((response) => response.json())
+      const output = []
+      assert.equal(
+        await runCli(
+          [
+            '--url',
+            server.origin,
+            'target-assessment-show',
+            integrated.assessment.id
+          ],
+          {
+            repositoryRoot: fixture.repository,
+            write: (value) => output.push(value)
+          }
+        ),
+        0
+      )
+      const cli = JSON.parse(output.join(''))
+      assert.deepEqual(cli, api)
+      assert.deepEqual(api, server.service.getTargetAssessment(api.id))
+
+      const screenshots = []
+      for (const [name, viewport] of [
+        ['desktop', { width: 1600, height: 1100 }],
+        ['tablet', { width: 900, height: 1000 }],
+        ['narrow', { width: 430, height: 920 }]
+      ]) {
+        await page.setViewportSize(viewport)
+        await page.locator('#assessment-summary').scrollIntoViewIfNeeded()
+        const file = path.join(artifacts, name + '.png')
+        await page.screenshot({ path: file })
+        screenshots.push({ path: file, viewport })
+        const detail = page.locator('#detail')
+        assert.equal(
+          await detail.evaluate(
+            (element) => element.scrollWidth <= element.clientWidth + 1
+          ),
+          true
+        )
+      }
+
+      await page.setViewportSize({ width: 1600, height: 1100 })
+      await page
+        .locator('#assessment-accept-reason')
+        .fill('Accept complete full-runtime evidence from one source')
+      await page
+        .locator('#assessment-retirement')
+        .fill('accepted.factory, accepted.collaboration, accepted.ui-context')
+      await expect(page.locator('#assessment-accept')).toBeEnabled()
+      await page.locator('#assessment-accept').click()
+      await expect(page.locator('#assessment-summary')).toContainText('stale')
+      await expect(page.locator('#assessment-acceptance')).toContainText(
+        integrated.assessment.id
+      )
+      assert.equal(
+        server.service.contract().digest,
+        prepared.targetContract.digest
+      )
+      assert.deepEqual(errors, [])
+      fs.writeFileSync(
+        path.join(artifacts, 'review.json'),
+        JSON.stringify(
+          {
+            fidelity:
+              'offline local Git fixture with captured public package runtime; no remote PR',
+            assessment: api,
+            cli,
+            screenshots
+          },
+          null,
+          2
+        )
+      )
+    } finally {
+      await browser?.close()
+      if (server) await server.close()
+      else await prepared?.service.close()
+      fixture.cleanup()
       if (previous === undefined) delete process.env.TMPDIR
       else process.env.TMPDIR = previous
     }
