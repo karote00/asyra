@@ -1,9 +1,10 @@
 # Harvest robot and crate logistics
 
-Status: IN PROGRESS - W1/W2/W3 DOMAIN OWNERS IMPLEMENTED; INTEGRATION GATES LIMITED
+Status: IN PROGRESS - W1/W2/W3/W4 DOMAIN OWNERS IMPLEMENTED; GOAL INTEGRATION PENDING
 Started: 2026-09-12 (Asia/Taipei)
 Base: origin/main at `4144a25d7`
 Current contract worktree: `.worktrees/fieldscope-material-contact`
+W4 delivery worktree: `.worktrees/fieldscope-w4-delivery`
 
 ## Bounded objective
 
@@ -48,7 +49,7 @@ and explicit create/compatibility path.
    stance transitions and whole-body/arm/tool/carried-fruit motion on measured or
    labeled synthetic uneven, slightly wet soil and debris. Drains and water
    channels are never support surfaces; missing evidence is `unknown`.
-5. **W4 quasi-static mechanics.** Bind the same source, pose, stance, mass/load
+5. **Implemented - W4 quasi-static mechanics.** Bind the same source, pose, stance, mass/load
    and terrain identities. Compare centre-of-mass projection, support polygon,
    arm-root bending and overturning moments for high reach and carried load.
 6. **W5 support/cut coordination.** Prove crop-specific same-side support and
@@ -232,14 +233,28 @@ admitted four-arm, six-leg source plus pure complete-pose kinematics. W3 domain
 implementation now covers interval source envelopes, source-bound foot evidence,
 crate and carried-fruit geometry, budgets and result currentness. Its focused
 tests pass (34 cases), together with 33 W1/W2 regressions, typecheck, scoped lint,
-naming and all 17 build tasks. The full-app run retained the existing 23 C/D
-failures (520 passed); whole-app lint retained 195 errors and 17 warnings outside
-this slice. These remain integration limits, not W3 clearance evidence.
+naming and all 17 build tasks. The initial mixed-worktree full-app run retained
+23 C/D failures (520 passed); its whole-app lint retained 195 errors and 17
+warnings outside this slice. These historical mixed-worktree results are not
+W3 clearance evidence.
 Unmodeled joint interfaces and unknown crate evidence deliberately
-keep the synthetic baseline unknown. Mechanics, walking mission and corresponding
-UI remain pending W4-W6. Existing botanical/source-query work stays preserved as
-a potential upstream capability and must be rebound through the new W owners
-before it can support active acceptance.
+keep the synthetic baseline unknown. W4 now implements gravity-only exact-pose
+CoM, support projection, reserve and edge tipping signs, and four-arm root and
+shoulder moments. Its 19 focused tests and independent review pass; combined
+W1-W4 regression passes all 86 tests. Typecheck, scoped lint, naming and all 17
+build tasks pass. The initial mixed-worktree W4 run had 540 passing tests and the
+same 23 C/D failures. Clean integration from PR208 commit `10123231f` preserves
+its canonical source-patch reader and passes all 553 FieldScope tests across 62
+files, all 86 W1-W4 tests, typecheck, naming and 17 build tasks. Whole-app lint
+passes with 17 existing warnings and no errors. No legacy failure or source
+fixture was modified for this slice. PR208 is now integrated in the goal at
+`1cf7e0de`; W4 preserves that goal baseline and adds only its reviewed app slice
+and an empty app-only Changeset. W4 sub-PR integration remains pending, and this
+validation does not claim a walking runtime.
+Walking mission, crop coordination and corresponding UI remain pending W5-W6.
+Existing botanical/source-query work stays preserved as a potential upstream
+capability and must be rebound through the new W owners before it can support
+active acceptance.
 
 ## Stop and review boundaries
 
@@ -1751,8 +1766,7 @@ derived nominal width `0.36707918559663716` with immediate neighbours
 `0.3670791855966371` and `0.3670791855966372`; C derived nominal width
 `0.36458853973046085` with neighbours `0.3645885397304608` and
 `0.3645885397304609`. The one D batch rejected all nine at the same first owner:
-pad `pad--1` triangle 6 had exact terminal contact with retained calyx triangle
-860. This is bounded evidence that these three poses do not supply the required
+pad `pad--1` triangle 6 had exact terminal contact with retained calyx triangle 860. This is bounded evidence that these three poses do not supply the required
 normal case; it is not a claim that the legal five-axis domain is globally
 unreachable.
 
