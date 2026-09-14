@@ -2,3 +2,4 @@
 @import 'tailwindcss/utilities' source(none);
 @source "../page.tsx";
 @source "../../components/architecture-story.tsx";
+@source "../../components/story-navigation.tsx";
