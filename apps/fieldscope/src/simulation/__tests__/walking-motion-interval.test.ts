@@ -138,7 +138,9 @@ describe('walking motion interval FK', () => {
         )
       ).toBe(true)
     }
-    expect(result.work.partBounds).toBe((source.parts.length + 5) * 2)
+    expect(result.work.partBounds).toBe(
+      (source.parts.reduce((sum, part) => sum + part.regions.length, 0) + 5) * 2
+    )
     const staticPath = {
       ...input.path,
       knots: input.path.knots.map((knot) => ({
@@ -172,7 +174,19 @@ describe('walking motion interval FK', () => {
     expect(new Set(result.envelopes.map(({ body }) => body.id)).size).toBe(
       source.rig.bodies.length
     )
-    expect(result.envelopes).toHaveLength(source.parts.length)
+    expect(result.envelopes).toHaveLength(
+      source.parts.reduce((sum, part) => sum + part.regions.length, 0)
+    )
+    for (const part of source.parts) {
+      expect(
+        result.envelopes
+          .filter((envelope) => envelope.part === part)
+          .map(({ region }) => region)
+      ).toEqual(part.regions)
+      expect(
+        part.regions.reduce((sum, region) => sum + region.indexCount, 0)
+      ).toBe(part.shape.indices.length)
+    }
     const knot = path.knots[1]
     const pointPose = evaluateWalkingRobotPose(source, {
       base: {
@@ -187,7 +201,7 @@ describe('walking motion interval FK', () => {
     })
     for (const envelope of result.envelopes) {
       expect(envelope.part).toBeDefined()
-      expect(envelope.region).toBe(envelope.part.regions[0])
+      expect(envelope.part.regions).toContain(envelope.region)
       const body = pointPose.bodyTransforms.find(
         ({ id }) => id === envelope.body.id
       )
@@ -201,11 +215,13 @@ describe('walking motion interval FK', () => {
       const partRotation = bodyRotation
         .clone()
         .multiply(new Quaternion(...envelope.part.localFrame.rotation))
-      for (
-        let offset = 0;
-        offset < envelope.part.shape.positions.length;
-        offset += 3
-      ) {
+      for (const index of new Set(
+        envelope.part.shape.indices.slice(
+          envelope.region.indexStart,
+          envelope.region.indexStart + envelope.region.indexCount
+        )
+      )) {
+        const offset = index * 3
         const point = new Vector3(
           envelope.part.shape.positions[offset],
           envelope.part.shape.positions[offset + 1],
@@ -224,7 +240,9 @@ describe('walking motion interval FK', () => {
       }
     }
     expect(result.work.pointFk).toBe(1)
-    expect(result.work.partBounds).toBe(source.parts.length)
+    expect(result.work.partBounds).toBe(
+      source.parts.reduce((sum, part) => sum + part.regions.length, 0)
+    )
   })
 
   it('covers every path and stance boundary without endpoint-only motion', () => {
@@ -236,18 +254,26 @@ describe('walking motion interval FK', () => {
     ])
     expect(result.segments.every(({ visited }) => visited)).toBe(true)
     expect(result.work.intervals).toBe(2)
-    expect(result.work.partBounds).toBe(source.parts.length * 2)
+    expect(result.work.partBounds).toBe(
+      source.parts.reduce((sum, part) => sum + part.regions.length, 0) * 2
+    )
     expect(result.unvisitedIntervals).toBe(0)
-    const firstChassis = result.segments[0].envelopes.find(
+    const firstChassis = result.segments[0].envelopes.filter(
       ({ part }) => part.id === 'chassis'
     )
-    expect(firstChassis?.bounds.min[0]).toBeLessThan(-1)
-    expect(firstChassis?.bounds.max[0]).toBeGreaterThan(0)
+    expect(firstChassis.length).toBeGreaterThan(0)
+    expect(
+      Math.min(...firstChassis.map(({ bounds }) => bounds.min[0]))
+    ).toBeLessThan(-1)
+    expect(
+      Math.max(...firstChassis.map(({ bounds }) => bounds.max[0]))
+    ).toBeGreaterThan(0)
   })
 
-  it('outwardly contains interior arm and leg motion and a full base turn', () => {
-    const { source, input } = fixture()
-    for (const fullTurn of [false, true]) {
+  it.each([false, true])(
+    'outwardly contains interior arm and leg motion with full base turn %s',
+    (fullTurn) => {
+      const { source, input } = fixture()
       const path = {
         ...input.path,
         knots: input.path.knots.map((knot) => ({
@@ -266,7 +292,7 @@ describe('walking motion interval FK', () => {
             source,
             walkingMotionPoseAt(path, time)
           )
-          for (const { body, part, bounds } of segment.envelopes) {
+          for (const { body, part, region, bounds } of segment.envelopes) {
             const bodyTransform = pose.bodyTransforms.find(
               ({ id }) => id === body.id
             )
@@ -279,28 +305,43 @@ describe('walking motion interval FK', () => {
               partRotation = rotation
                 .clone()
                 .multiply(new Quaternion(...part.localFrame.rotation))
-            for (const index of new Set(part.shape.indices)) {
+            const minima = [Infinity, Infinity, Infinity],
+              maxima = [-Infinity, -Infinity, -Infinity]
+            for (const index of new Set(
+              part.shape.indices.slice(
+                region.indexStart,
+                region.indexStart + region.indexCount
+              )
+            )) {
               const value = new Vector3(
                 ...part.shape.positions.slice(index * 3, index * 3 + 3)
               )
                 .applyQuaternion(partRotation)
                 .add(position)
               for (let axis = 0; axis < 3; axis++) {
-                expect(bounds.min[axis]).toBeLessThanOrEqual(
-                  value.getComponent(axis)
-                )
-                expect(bounds.max[axis]).toBeGreaterThanOrEqual(
-                  value.getComponent(axis)
-                )
+                minima[axis] = Math.min(minima[axis], value.getComponent(axis))
+                maxima[axis] = Math.max(maxima[axis], value.getComponent(axis))
               }
+            }
+            for (let axis = 0; axis < 3; axis++) {
+              expect(
+                bounds.min[axis],
+                `${body.id}/${part.id}/${region.id}/${time}`
+              ).toBeLessThanOrEqual(minima[axis])
+              expect(
+                bounds.max[axis],
+                `${body.id}/${part.id}/${region.id}/${time}`
+              ).toBeGreaterThanOrEqual(maxima[axis])
             }
           }
         }
       }
       expect(result.work.intervalFk).toBe(2)
-      expect(result.work.partBounds).toBe(source.parts.length * 2)
+      expect(result.work.partBounds).toBe(
+        source.parts.reduce((sum, part) => sum + part.regions.length, 0) * 2
+      )
     }
-  })
+  )
 
   it('keeps reverse and turn identity distinct and exposes bounded exhaustion', () => {
     const reverse = fixture('reverse')

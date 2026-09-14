@@ -45,6 +45,49 @@ an explicit compatibility path. Loading a legacy definition keeps its historical
 projection available but does not admit it to the new walking simulation;
 creating a new topology is an explicit user action, not an automatic migration.
 
+The canonical solid articulation source uses `walking-robot-definition/2`.
+Version 1 retains its closed-box schema identity and is never silently
+reinterpreted by the new source reader. Version 2 declares a
+`solid-articulation/1` source profile with separately labeled evidence:
+pin radius, sleeve cavity/outer radii, physical gap and nominal core setback.
+All revolute joints use the same pin/yoke/sleeve/neck construction. An annular
+sleeve consists of eight individually closed convex material wedges with an
+empty central cavity. Internal radial seams are material partitions, not
+contact permission. Root sockets and link departure corridors remove actual
+housing material; they do not exempt a colliding pair.
+
+Both core ends use one support rule in the joint frame. The other body's
+bounded bearing vertices and its pivot core cross-section define a finite
+endpoint interface profile. The cross-section is a construction keepout, not
+an actual endpoint face or an aggregate body envelope. The other core must
+depart away from or perpendicular to the current core's halfspace, so moving
+its endpoint cannot increase that profile support. Required setback is the
+larger of nominal setback and profile support plus the joint's declared gap.
+Source construction solves once, checks both final core ends against actual
+bearing/core material, verifies positive remaining core and connected
+same-body connectors, and rejects infeasible geometry. Directed binary64
+construction rounding must preserve the required gap; no tolerance, fallback
+solid or special joint exception can replace these checks.
+
+The lift retains its complete declared range. `base.mast` is the admitted
+two-rail assembly: its actual Y bounds cover the carriage throughout that range,
+its inner Z faces meet the carriage sides, and its outer faces remain within
+the base envelope. The synthetic factory uses lift [0.5, 1.65] m and rail Y
+[0.4, 1.71] m. Mast mass and local centre of mass remain explicit synthetic
+assumptions, independent of material-volume integration.
+
+Synthetic stowed and inactive arms use zero joint angles; each active working
+side keeps root/shoulder/elbow/wrist angles 0/-0.25/0.75/-0.35 radians. Six
+zero-angle legs form same-station vertical chains. All mount frames, link
+lengths, joint domains and active-side tool reach remain authored inputs.
+The three complete poses must have no cross-body material-volume overlap.
+Any boundary acceptance needs its complete contact locus within both named
+rail, foot or guard patch closures and an original-triangle witness. An
+unproved subset remains unknown. Cutter active faces and guard interfaces
+are distinct. Source/FK envelope and sole-datum evidence do not prove standing
+on terrain, continuous motion or safety; extreme poses may remain blocked or
+unknown in their later owners.
+
 The user's 2026-09-14 product clarification states that the represented farm
 follows the user's home-farm layout. In its current configuration a passage is
 about 1.8 m before plant-growth needs, and a rough calculation gives about 1.2 m

@@ -41,10 +41,12 @@ and explicit create/compatibility path.
    drains, pipes, plants, leaves and obstacles. Derive free-space regions; never
    equate strip width with usable foot span or `netTop` with fruit height. This is
    the next bounded implementation slice and does not build the robot.
-3. **Complete - W2 versioned source and kinematics.** After the schema and
-   synthetic ranges are explicit, build one immutable four-arm/multi-leg rig with
-   independent body, joint, foot, support and cutter ownership. Prove legacy
-   definitions are not reinterpreted.
+3. **Implemented - W2 versioned solid source and kinematics.** Version 2 owns
+   explicit pin/yoke/annular-sleeve/neck material, root housing cavities and
+   full-range lift rails. One support rule resolves both core ends with declared
+   gaps and final material checks. Version 1 remains identifiable without
+   reinterpretation. Four arms, six legs, active working angles, link lengths
+   and domains retain their owners.
 4. **Implemented - W3 terrain, stance and motion.** Admit complete interval foot placements,
    stance transitions and whole-body/arm/tool/carried-fruit motion on measured or
    labeled synthetic uneven, slightly wet soil and debris. Drains and water
@@ -283,6 +285,48 @@ Walking mission, crop coordination and corresponding UI remain pending W5-W6.
 Existing botanical/source-query work stays preserved as a potential upstream
 capability and must be rebound through the new W owners before it can support
 active acceptance.
+
+## W2 solid articulation source evidence
+
+Final bounded correction: W2 rejects disconnected admitted bearing profiles and
+certifies neck-to-sleeve connection from emitted material, preserving the default
+profile, geometry, presets and physical gap proof. The two direct W3 test consumers
+use the complete region inventory and each region's original triangle range;
+their finite functional pair budget derives from that inventory. Production W3
+budgets and exhaustion cases remain unchanged. Close this segment with focused
+source/definition and direct-consumer tests, independent correction review, then
+one full-app gate; any new material conflict returns to the W2 owner.
+
+The three canonical poses pass the independent actual-triangle convex-material
+oracle: 46 bodies and 265,925 different-body region pairs per pose, with zero
+positive-volume overlaps and zero unproved boundaries. Strict exact gaps handle
+broadphase rejection; complete face-normal/edge-cross axes handle the remaining
+pairs. Eighteen named interface boundaries retain original-triangle witnesses.
+Direct fixed parent/child pairs use original triangles and one authored fixed
+frame in common parent-local coordinates; all other pairs use completed FK
+coefficients. The fixed-source proof does not claim exact boundary agreement
+between independently rounded world parent and child matrices.
+The finite endpoint profiles are construction keepouts, not material or contact
+exceptions. The original closed-box overlap RED and later rail/adjacent-leg
+preset RED are retained as the reasons for this source correction.
+
+All extents below derive from actual source vertices and completed FK, displayed
+at binary64 precision. Axes are X/Y/Z and values are metres.
+
+| Pose         | Minimum                              | Maximum                           | Size                                           |
+| ------------ | ------------------------------------ | --------------------------------- | ---------------------------------------------- |
+| stowed       | (-0.40499999999999997, -0.51, -0.39) | (0.40499999999999997, 1.71, 0.39) | (0.8099999999999999, 2.2199999999999998, 0.78) |
+| leftWorking  | (-0.40499999999999997, -0.51, -0.39) | (0.40499999999999997, 2.1, 0.39)  | (0.8099999999999999, 2.61, 0.78)               |
+| rightWorking | (-0.40499999999999997, -0.51, -0.39) | (0.40499999999999997, 2.1, 0.39)  | (0.8099999999999999, 2.61, 0.78)               |
+
+Compared on this same version-2 source with the old folded inactive arms and
+bent-leg candidate, X does not increase and Z decreases from
+1.1379743665046806 m to 0.78 m. Y changes are explicit: the old stowed minimum
+was -0.30482329429901717 m and old working maximum was 2.077487129096181 m.
+Each of the six named soles has exact common Y, displayed as -0.51 m; the
+required geometric base translation is displayed as +0.51 m. This is a sole
+datum, not terrain support, stability, clearance, continuous-path or hardware
+safety evidence. W3/W4/W5 remain responsible for their separate admissions.
 
 ## Stop and review boundaries
 
