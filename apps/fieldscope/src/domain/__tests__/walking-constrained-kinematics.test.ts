@@ -11,7 +11,11 @@ import {
   readWalkingRobotDefinition
 } from '../walking-robot-definition'
 import { WalkingRobotSourceOwner } from '../walking-robot-source'
-import { WalkingConstrainedKinematicsOwner } from '../walking-constrained-kinematics'
+import {
+  WalkingConstrainedKinematicsOwner,
+  WalkingConstrainedCycleOwner
+} from '../walking-constrained-kinematics'
+import { evaluateExactPolynomialTrig } from '../kinematic-trigonometry'
 import { evaluateWalkingRobotPose } from '../walking-robot-kinematics'
 
 type Fraction = Readonly<{ numerator: bigint; denominator: bigint }>
@@ -132,6 +136,383 @@ const times = (a: Fraction, b: Fraction) =>
 const over = (a: Fraction, b: Fraction) =>
   fraction(a.numerator * b.denominator, a.denominator * b.numerator)
 const negate = (a: Fraction) => fraction(-a.numerator, a.denominator)
+function cycleFixture(options: { authored?: boolean } = {}) {
+  const { source, alpha } = fixture(options)
+  const half = over(exact(alpha), exact(2))
+  const s = evaluateExactPolynomialTrig('sin', half).value
+  const c = evaluateExactPolynomialTrig('cos', half).value
+  const norm = plus(times(s, s), times(c, c))
+  const sigma = over(times(exact(2), times(s, c)), norm)
+  const cosine = over(minus(times(c, c), times(s, s)), norm)
+  const groups = [true, false].map((side) =>
+    source.rig.legChains
+      .filter(
+        (chain) =>
+          ((chain.side === 'left') !== (chain.station === 'middle')) === side
+      )
+      .map((chain) => chain.id)
+  )
+  const anchors = source.rig.legChains.map((chain) => {
+    const contact = required(
+      source.rig.contacts.feet.find((p) => p.part.bodyId === chain.footBodyId)
+    )
+    const transforms = chain.jointIds.map(
+      (id) => required(source.rig.joints.find((j) => j.id === id)).frame
+    )
+    const foot = required(
+      required(source.rig.bodies.find((b) => b.id === chain.footBodyId))
+        .fixedFrame
+    )
+    const anchorOrigin = [0, 1, 2].map((axis) =>
+      [...transforms, foot, contact.localFrame].reduce(
+        (v, t) => plus(v, exact(t.position[axis])),
+        exact(0)
+      )
+    )
+    const upper = required(
+      source.definition.legs.find(
+        (l) => l.side === chain.side && l.station === chain.station
+      )
+    ).upper.length
+    anchorOrigin[1] = plus(
+      anchorOrigin[1],
+      times(exact(upper), minus(exact(1), cosine))
+    )
+    const z = times(exact(upper), sigma)
+    anchorOrigin[2] = plus(
+      anchorOrigin[2],
+      groups[0].includes(chain.id) ? negate(z) : z
+    )
+    return {
+      chainId: chain.id,
+      part: contact.part,
+      patch: contact.patch,
+      anchorOrigin
+    }
+  })
+  return {
+    source,
+    raw: {
+      format: 'walking-constrained-cycle/1',
+      source,
+      fixedJoints: source.rig.presets.stowed,
+      baseOrientation: [exact(0), exact(0), exact(0), exact(1)],
+      alpha: exact(alpha),
+      groups,
+      anchors,
+      budget: { maxOperations: 10000000, maxBits: 24000 }
+    }
+  }
+}
+describe('exact polynomial complementary tripod cycle', () => {
+  it.each([0, 1])(
+    'proves phase %i full soles from actual vertices and encloses all original part points',
+    async (phase) => {
+      const { source, raw } = cycleFixture()
+      const owner = new WalkingConstrainedCycleOwner(),
+        cycle = owner.prepare(source, raw)
+      const point = owner.evaluate(cycle, phase, fraction(1n, 2n))
+      const bounded = cycle.phases[phase]
+      expect(bounded.supports).toHaveLength(3)
+      expect(bounded.swing).toHaveLength(3)
+      expect(bounded.bodies.map((b) => b.body)).toEqual(source.rig.bodies)
+      expect(bounded.parts.map((p) => p.part)).toEqual(source.parts)
+      let sourceVertices = 0,
+        oracleVertices = 0
+      for (let p = 0; p < point.parts.length; p++) {
+        const { part, exact: frame } = point.parts[p],
+          bounds = bounded.parts[p].sourceBounds
+        const denominator = [...frame.origin, ...frame.matrix.flat()].reduce(
+          (d, v) => (d / gcd(d, v.denominator)) * v.denominator,
+          1n
+        )
+        const origins = frame.origin.map(
+          (v) => v.numerator * (denominator / v.denominator)
+        )
+        const coefficients = frame.matrix.map((row) =>
+          row.map((v) => v.numerator * (denominator / v.denominator))
+        )
+        const lows = bounds.min.map(exact),
+          highs = bounds.max.map(exact)
+        const coordinates = new Map<string, readonly Fraction[]>()
+        for (let i = 0; i < part.shape.positions.length; i += 3) {
+          const rawPoint = part.shape.positions.slice(i, i + 3),
+            key = rawPoint.join(',')
+          let actual = coordinates.get(key)
+          if (!actual) {
+            const point = rawPoint.map(exact)
+            const divisor = point.reduce(
+              (d, v) => (d / gcd(d, v.denominator)) * v.denominator,
+              1n
+            )
+            const scaled = point.map(
+              (v) => v.numerator * (divisor / v.denominator)
+            )
+            actual = origins.map((v, k) => ({
+              numerator:
+                v * divisor +
+                coefficients[k].reduce((n, c, j) => n + c * scaled[j], 0n),
+              denominator: denominator * divisor
+            }))
+            coordinates.set(key, actual)
+            oracleVertices++
+            if (i === 0) {
+              const independent = pointOracle(frame, point)
+              actual.forEach((v, k) =>
+                expect(v.numerator * independent[k].denominator).toBe(
+                  independent[k].numerator * v.denominator
+                )
+              )
+            }
+          }
+          actual.forEach((v, k) => {
+            expect(
+              v.numerator * lows[k].denominator -
+                lows[k].numerator * v.denominator
+            ).toBeGreaterThanOrEqual(0n)
+            expect(
+              highs[k].numerator * v.denominator -
+                v.numerator * highs[k].denominator
+            ).toBeGreaterThanOrEqual(0n)
+          })
+          sourceVertices++
+        }
+        expect(coordinates.size).toBe(
+          new Set(
+            Array.from({ length: part.shape.positions.length / 3 }, (_, i) =>
+              part.shape.positions.slice(i * 3, i * 3 + 3).join(',')
+            )
+          ).size
+        )
+        await new Promise((resolve) => setTimeout(resolve, 0))
+      }
+      expect(cycle.work.sourceVertices).toBe(2 * sourceVertices)
+      expect(oracleVertices).toBeLessThan(sourceVertices)
+      for (const support of bounded.supports) {
+        const frame = required(
+          point.parts.find((p) => p.part === support.part)
+        ).exact
+        const indices = new Set(
+          support.patch.ranges.flatMap((r) =>
+            support.part.shape.indices.slice(
+              r.indexStart,
+              r.indexStart + r.indexCount
+            )
+          )
+        )
+        expect(
+          support.fixedVertices.map((v) => v.index).sort((a, b) => a - b)
+        ).toEqual([...indices].sort((a, b) => a - b))
+        for (const vertex of support.fixedVertices)
+          expect(
+            pointOracle(
+              frame,
+              support.part.shape.positions
+                .slice(vertex.index * 3, vertex.index * 3 + 3)
+                .map(exact)
+            )
+          ).toEqual(vertex.position)
+      }
+      const initial = owner.evaluate(cycle, phase, exact(0))
+      for (const swing of bounded.swing) {
+        const chain = required(
+          source.rig.legChains.find((c) => c.id === swing.chainId)
+        )
+        const joints = chain.jointIds.map((id) =>
+          required(source.rig.joints.find((j) => j.id === id))
+        )
+        const foot = required(
+          required(source.rig.bodies.find((b) => b.id === chain.footBodyId))
+            .fixedFrame
+        )
+        const part = swing.part
+        // At u=1/2, theta=0. This independently binds the general lift
+        // certificate's rho/down interval coefficients to original source vertices.
+        const beta = raw.alpha
+        const s = evaluateExactPolynomialTrig('sin', over(beta, exact(2))).value
+        const c = evaluateExactPolynomialTrig('cos', over(beta, exact(2))).value
+        const n = plus(times(s, s), times(c, c)),
+          sn = over(times(exact(2), times(s, c)), n),
+          oneMinusCos = over(times(exact(2), times(s, s)), n)
+        const current = required(point.parts.find((p) => p.part === part)).exact
+        const initialFrame = required(
+          initial.parts.find((p) => p.part === part)
+        ).exact
+        expect(swing.certificate.scalar.sineSign).toBe('input-sign')
+        expect(swing.certificate.openPhasePositive).toBe(true)
+        for (const vertex of swing.vertices) {
+          const sourcePoint = part.shape.positions
+            .slice(vertex.index * 3, vertex.index * 3 + 3)
+            .map(exact)
+          const partLocal = vectorPlus(
+            part.localFrame.position.map(exact),
+            rotateOracle(part.localFrame.rotation.map(exact), sourcePoint)
+          )
+          const offset = vectorPlus(
+            vectorPlus(
+              joints[1].frame.position.map(exact),
+              joints[2].frame.position.map(exact)
+            ),
+            vectorPlus(foot.position.map(exact), partLocal)
+          )
+          const rho = chain.side === 'left' ? negate(offset[0]) : offset[0],
+            down = negate(offset[1])
+          inRange(rho, vertex.rho)
+          inRange(down, vertex.down)
+          expect(vertex.rho.low).toBeGreaterThan(0)
+          expect(vertex.down.low).toBeGreaterThanOrEqual(0)
+          const h = plus(times(rho, sn), times(down, oneMinusCos))
+          const before = pointOracle(initialFrame, sourcePoint),
+            now = pointOracle(current, sourcePoint)
+          expect(minus(now[1], before[1])).toEqual(h)
+          expect(h.numerator).toBeGreaterThan(0n)
+        }
+      }
+    },
+    30000
+  )
+  it('uses exact yaw reversal and current recipe identities without per-foot correction', () => {
+    const { source, raw } = cycleFixture(),
+      q = [exact(0), exact(1), exact(0), exact(0)]
+    const reversed = {
+      ...raw,
+      baseOrientation: q,
+      anchors: raw.anchors.map((v) => ({
+        ...v,
+        anchorOrigin: rotateOracle(q, v.anchorOrigin)
+      }))
+    }
+    const owner = new WalkingConstrainedCycleOwner(),
+      cycle = owner.prepare(source, reversed)
+    expect(cycle.netDisplacement[2].numerator).toBeGreaterThan(0n)
+    const work = owner.work
+    expect(owner.prepare(source, cycle.recipe)).toBe(cycle)
+    expect(owner.read(source, cycle.recipe)).toBe(cycle)
+    expect(owner.work).toEqual(work)
+    expect(Object.isFrozen(cycle.phases[0].supports[0].fixedVertices)).toBe(
+      true
+    )
+    expect(() =>
+      owner.prepare(source, { ...reversed, alpha: exact(0) })
+    ).toThrow()
+    expect(owner.read(source, cycle.recipe)).toBeUndefined()
+    expect(() => owner.evaluate(cycle, 0, exact(0))).toThrow()
+  })
+  it('rejects invalid source, group, patch, anchor, preset, domain and finite budget inputs', () => {
+    const { source, raw } = cycleFixture()
+    const cases = [
+      { ...raw, source: { ...source } },
+      { ...raw, groups: [raw.groups[0], raw.groups[0]] },
+      {
+        ...raw,
+        anchors: raw.anchors.map((v, i) =>
+          i ? v : { ...v, patch: raw.anchors[1].patch }
+        )
+      },
+      {
+        ...raw,
+        anchors: raw.anchors.map((v, i) =>
+          i
+            ? v
+            : {
+                ...v,
+                anchorOrigin: v.anchorOrigin.map((x, k) =>
+                  k ? x : plus(x, fraction(1n, 1n << 60n))
+                )
+              }
+        )
+      },
+      { ...raw, fixedJoints: { ...source.rig.presets.stowed } },
+      { ...raw, baseOrientation: [exact(1), exact(0), exact(0), exact(1)] },
+      { ...raw, baseOrientation: [exact(0), exact(0), exact(0), exact(0)] },
+      { ...raw, alpha: exact(0) },
+      { ...raw, alpha: exact(0.5) },
+      { ...raw, budget: { maxOperations: 1, maxBits: 24000 } },
+      { ...raw, budget: { maxOperations: 10000000, maxBits: 32 } }
+    ]
+    for (const bad of cases)
+      expect(() =>
+        new WalkingConstrainedCycleOwner().prepare(source, bad)
+      ).toThrow()
+    const defaults = cycleFixture({ authored: false })
+    expect(() =>
+      new WalkingConstrainedCycleOwner().prepare(defaults.source, defaults.raw)
+    ).toThrow(/domain/)
+  })
+  it('retains the real open-phase certificate when a rational point exceeds its resource guard', () => {
+    const { source, raw } = cycleFixture(),
+      owner = new WalkingConstrainedCycleOwner(),
+      cycle = owner.prepare(source, raw)
+    expect(
+      cycle.phases.every((p) =>
+        p.swing.every((s) => s.certificate.openPhasePositive)
+      )
+    ).toBe(true)
+    const before = owner.work
+    expect(() => owner.evaluate(cycle, 0, fraction(1n, 1n << 2000n))).toThrow(
+      /budget/
+    )
+    expect(owner.work.evaluations).toBe(before.evaluations + 1)
+    expect(owner.work.operations).toBeGreaterThan(before.operations)
+    expect(owner.read(source, cycle.recipe)).toBe(cycle)
+    expect(() =>
+      owner.bound(cycle, 0, { low: exact(0.75), high: exact(0.25) })
+    ).toThrow()
+    expect(() =>
+      owner.bound(cycle, 0, { low: exact(-1), high: exact(0) })
+    ).toThrow()
+  })
+
+  it('bounds an exact rational subinterval instead of reusing the whole phase box', () => {
+    const { source, raw } = cycleFixture()
+    const owner = new WalkingConstrainedCycleOwner()
+    const cycle = owner.prepare(source, raw)
+    const whole = owner.bound(cycle, 0, { low: exact(0), high: exact(1) })
+    const narrow = owner.bound(cycle, 0, {
+      low: fraction(7n, 16n),
+      high: fraction(9n, 16n)
+    })
+    const single = owner.bound(cycle, 0, { low: exact(0.5), high: exact(0.5) })
+    const point = owner.evaluate(cycle, 0, exact(0.5))
+    const width = (value: typeof whole) =>
+      value.parts.reduce(
+        (sum, p) => sum + p.sourceBounds.max[2] - p.sourceBounds.min[2],
+        0
+      )
+    expect(width(narrow)).toBeLessThan(width(whole))
+    expect(width(single)).toBeLessThan(width(narrow))
+    for (let i = 0; i < point.bodies.length; i++)
+      for (let k = 0; k < 3; k++)
+        inRange(
+          point.bodies[i].exact.origin[k],
+          single.bodies[i].bounds.origin[k]
+        )
+    expect(single.cycle).toBe(cycle)
+    expect(single.work.unvisited).toBe(0)
+  })
+  it('publishes two actual-source phases with exact handoff and periodic net motion', () => {
+    const { source, raw } = cycleFixture()
+    const owner = new WalkingConstrainedCycleOwner()
+    const cycle = owner.prepare(source, raw)
+    expect(cycle.source).toBe(source)
+    expect(cycle.phases).toHaveLength(2)
+    const start = owner.evaluate(cycle, 0, exact(0))
+    const handoff = owner.evaluate(cycle, 0, exact(1))
+    const next = owner.evaluate(cycle, 1, exact(0))
+    const end = owner.evaluate(cycle, 1, exact(1))
+    expect(handoff.bodies).toEqual(next.bodies)
+    expect(start.bodies).toHaveLength(46)
+    for (let i = 0; i < start.bodies.length; i++) {
+      expect(end.bodies[i].exact.matrix).toEqual(start.bodies[i].exact.matrix)
+      expect(end.bodies[i].exact.origin).toEqual(
+        start.bodies[i].exact.origin.map((v: Fraction, k: number) =>
+          plus(v, cycle.netDisplacement[k])
+        )
+      )
+    }
+    expect(cycle.netDisplacement[2].numerator).toBeLessThan(0n)
+  })
+})
 const sum = (values: readonly Fraction[]) => values.reduce(plus, exact(0))
 const vectorPlus = (a: readonly Fraction[], b: readonly Fraction[]) =>
   a.map((value, index) => plus(value, b[index]))

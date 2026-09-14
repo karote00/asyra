@@ -1,6 +1,9 @@
 import {
   evaluatePolynomialTrig,
-  boundPolynomialTrig
+  boundPolynomialTrig,
+  evaluateExactPolynomialTrig,
+  boundExactPolynomialTrig,
+  POLYNOMIAL_TRIG_SIGN_CERTIFICATE
 } from './kinematic-trigonometry'
 import {
   dyadic,
@@ -24,6 +27,903 @@ import type {
   WalkingPatchReference
 } from './walking-robot-source'
 import type { SourcePatch } from './source-occupancy'
+
+export interface WalkingConstrainedCycleRecipe {
+  readonly format: 'walking-constrained-cycle/1'
+  readonly source: WalkingRobotSource
+  readonly fixedJoints: WalkingRobotJointState
+  readonly baseOrientation: WalkingConstrainedRecipe['baseOrientation']
+  readonly alpha: ConstrainedFraction
+  readonly groups: readonly [readonly string[], readonly string[]]
+  readonly anchors: WalkingConstrainedRecipe['supports']
+  readonly budget: WalkingConstrainedRecipe['budget']
+}
+interface CyclePhaseTemplate {
+  readonly recipe: WalkingConstrainedRecipe
+  readonly template: PreparedTemplate
+}
+interface CyclePrepared {
+  readonly recipe: WalkingConstrainedCycleRecipe
+  readonly phases: readonly CyclePhaseTemplate[]
+  readonly netDisplacement: ConstrainedVector<ConstrainedFraction>
+}
+type CycleEngine = ReturnType<typeof arithmetic>
+function cycleCompare(
+  a: ConstrainedFraction,
+  b: ConstrainedFraction,
+  e: CycleEngine
+) {
+  const n = e.exact.subtract(a, b).numerator
+  return n < 0n ? -1 : Number(n > 0n)
+}
+function cycleLeaf(e: CycleEngine, value: ConstrainedFraction) {
+  const read = (kind: 'sin' | 'cos') => {
+    const result = evaluateExactPolynomialTrig(kind, value)
+    e.count('pointLeaves')
+    e.count('maxBits', result.work.maxBigIntBits)
+    e.count(
+      'operations',
+      result.work.terms +
+        result.work.gcdSteps +
+        result.work.normalizations +
+        result.work.admissionChecks +
+        result.work.rationalComparisons
+    )
+    return result.value
+  }
+  return { sin: read('sin'), cos: read('cos') }
+}
+function cycleBounds(
+  e: CycleEngine,
+  low: ConstrainedFraction,
+  high: ConstrainedFraction
+) {
+  const read = (kind: 'sin' | 'cos') => {
+    const result = boundExactPolynomialTrig(kind, { low, high })
+    e.count('boundLeaves')
+    e.count('maxBits', result.work.maxBigIntBits)
+    e.count(
+      'operations',
+      result.work.terms +
+        result.work.gcdSteps +
+        result.work.normalizations +
+        result.work.admissionChecks +
+        result.work.rationalComparisons
+    )
+    return result.outward
+  }
+  const result = { sin: read('sin'), cos: read('cos') }
+  // Cosine is positive over the admitted fixed-polynomial domain. Squaring
+  // its positive lower bound proves the similarity denominator is positive.
+  if (result.cos.low <= 0) fail('cycle norm unproved')
+  return result
+}
+function cycleRotation<T>(a: Algebra<T>, axis: 'x' | 'z', sin: T, cos: T) {
+  const z = a.literal(0)
+  return similarity(a, axis === 'x' ? [sin, z, z, cos] : [z, z, sin, cos])
+}
+function cycleFrames<T>(
+  prepared: CyclePrepared,
+  phase: number,
+  a: Algebra<T>,
+  theta: { sin: T; cos: T },
+  beta: { sin: T; cos: T }
+) {
+  const { recipe, template } = prepared.phases[phase],
+    source = recipe.source
+  const zero = a.literal(0)
+  const negSin = a.subtract(zero, theta.sin)
+  const supportHip = cycleRotation(a, 'x', negSin, theta.cos)
+  const swingHip = cycleRotation(a, 'x', theta.sin, theta.cos)
+  const base = convertFrame(a, template.base)
+  const d = plusVector(
+    a,
+    rotate(a, supportHip, vector(template.kneeTranslation.map(a.rational))),
+    vector(template.footTranslation.map(a.rational))
+  )
+  const root = {
+    matrix: base.matrix,
+    origin: minusVector(
+      a,
+      vector(recipe.supports[0].anchorOrigin.map(a.rational)),
+      rotate(
+        a,
+        base.matrix,
+        plusVector(a, vector(template.referenceOffset.map(a.rational)), d)
+      )
+    )
+  }
+  const result = new Map<string, ConstrainedFrame<T>>([['base', root]])
+  for (const chain of source.rig.legChains) {
+    const joints = chain.jointIds.map((id) =>
+      required(source.rig.joints.find((j) => j.id === id))
+    )
+    const support = template.supports.find((s) => s.chain.id === chain.id)
+    const outward =
+      chain.side === 'left' ? a.subtract(zero, beta.sin) : beta.sin
+    const abduction = support
+      ? identity(a).matrix
+      : cycleRotation(a, 'z', outward, beta.cos)
+    const coxa = compose(a, root, {
+      origin: vector(joints[0].frame.position.map(a.literal)),
+      matrix: abduction
+    })
+    const upper = compose(a, coxa, {
+      origin: vector(joints[1].frame.position.map(a.literal)),
+      matrix: support ? supportHip : swingHip
+    })
+    // The conjugate pair shares the exact polynomial leaves and norm. The
+    // lower orientation is the coxa orientation, without interval dependency loss.
+    const lower = support
+      ? convertFrame(a, support.fixedLower)
+      : {
+          matrix: coxa.matrix,
+          origin: plusVector(
+            a,
+            upper.origin,
+            rotate(
+              a,
+              upper.matrix,
+              vector(joints[2].frame.position.map(a.literal))
+            )
+          )
+        }
+    result.set(chain.bodyIds[0], coxa)
+    result.set(chain.bodyIds[1], upper)
+    result.set(chain.bodyIds[2], lower)
+  }
+  const pending = new Set(source.rig.bodies.filter((b) => !result.has(b.id)))
+  while (pending.size) {
+    let advanced = false
+    for (const body of pending) {
+      const parent = body.parentBodyId
+        ? result.get(body.parentBodyId)
+        : undefined
+      if (!parent) continue
+      const local =
+        body.attachment === 'fixed'
+          ? required(template.bodyFrames.get(body))
+          : required(
+              template.fixedFrames.get(
+                required(
+                  source.rig.joints.find((j) => j.childBodyId === body.id)
+                )
+              )
+            )
+      result.set(body.id, compose(a, parent, convertFrame(a, local)))
+      pending.delete(body)
+      advanced = true
+    }
+    if (!advanced) fail('cycle source dependency')
+  }
+  return result
+}
+function cyclePointFrames(
+  prepared: CyclePrepared,
+  phase: number,
+  u: ConstrainedFraction,
+  e: CycleEngine
+) {
+  const a = e.exact,
+    one = a.literal(1),
+    two = a.literal(2)
+  const theta = a.multiply(
+    prepared.recipe.alpha,
+    a.subtract(a.multiply(two, u), one)
+  )
+  const beta = a.multiply(
+    a.multiply(a.literal(4), prepared.recipe.alpha),
+    a.multiply(u, a.subtract(one, u))
+  )
+  return cycleFrames(
+    prepared,
+    phase,
+    a,
+    cycleLeaf(e, a.divide(theta, two)),
+    cycleLeaf(e, a.divide(beta, two))
+  )
+}
+function cycleAnchor(
+  part: WalkingRobotPart,
+  chainId: string,
+  source: WalkingRobotSource,
+  frames: Map<string, ExactFrame>,
+  a: Algebra<ConstrainedFraction>
+) {
+  const contact = required(
+    source.rig.contacts.feet.find((c) => c.part === part)
+  )
+  const chain = required(source.rig.legChains.find((c) => c.id === chainId))
+  const foot = required(frames.get(chain.footBodyId))
+  return plusVector(
+    a,
+    foot.origin,
+    rotate(a, foot.matrix, vector(contact.localFrame.position.map(a.literal)))
+  )
+}
+function patchVertices(part: WalkingRobotPart, patch: SourcePatch) {
+  const indices = new Set<number>()
+  for (const range of patch.ranges)
+    for (let i = range.indexStart; i < range.indexStart + range.indexCount; i++)
+      indices.add(part.shape.indices[i])
+  return [...indices]
+}
+function admitCycle(
+  source: WalkingRobotSource,
+  raw: unknown,
+  e: CycleEngine
+): WalkingConstrainedCycleRecipe {
+  if (
+    !record(raw, [
+      'format',
+      'source',
+      'fixedJoints',
+      'baseOrientation',
+      'alpha',
+      'groups',
+      'anchors',
+      'budget'
+    ]) ||
+    raw.format !== 'walking-constrained-cycle/1' ||
+    raw.source !== source ||
+    !Object.isFrozen(source) ||
+    raw.fixedJoints !== source.rig.presets.stowed
+  )
+    fail('cycle source or stowed identity')
+  const a = e.exact
+  const rational = (value: unknown) => {
+    if (
+      !record(value, ['numerator', 'denominator']) ||
+      typeof value.numerator !== 'bigint' ||
+      typeof value.denominator !== 'bigint' ||
+      value.denominator <= 0n
+    )
+      fail('cycle rational')
+    const result = e.fraction(value.numerator, value.denominator)
+    if (
+      result.numerator !== value.numerator ||
+      result.denominator !== value.denominator
+    )
+      fail('cycle noncanonical rational')
+    return result
+  }
+  const alpha = rational(raw.alpha)
+  if (alpha.numerator <= 0n || cycleCompare(alpha, a.literal(1), e) >= 0)
+    fail('cycle alpha domain')
+  if (!Array.isArray(raw.baseOrientation) || raw.baseOrientation.length !== 4)
+    fail('cycle orientation')
+  const baseOrientation = raw.baseOrientation.map(
+    rational
+  ) as unknown as WalkingConstrainedRecipe['baseOrientation']
+  if (
+    baseOrientation[0].numerator !== 0n ||
+    baseOrientation[2].numerator !== 0n ||
+    (baseOrientation[1].numerator === 0n && baseOrientation[3].numerator === 0n)
+  )
+    fail('cycle gravity-preserving yaw')
+  if (
+    source.rig.legChains.length !== 6 ||
+    !Array.isArray(raw.groups) ||
+    raw.groups.length !== 2 ||
+    raw.groups.some(
+      (g) =>
+        !Array.isArray(g) ||
+        g.length !== 3 ||
+        g.some((id) => typeof id !== 'string')
+    )
+  )
+    fail('cycle tripod groups')
+  const groups = raw.groups.map((g) => [...g]) as [string[], string[]]
+  if (
+    new Set(groups.flat()).size !== 6 ||
+    groups.flat().some((id) => !source.rig.legChains.some((c) => c.id === id))
+  )
+    fail('cycle tripod coverage')
+  for (const group of groups) {
+    const chains = group.map((id) =>
+      required(source.rig.legChains.find((c) => c.id === id))
+    )
+    const parity =
+      (chains[0].side === 'left') !== (chains[0].station === 'middle')
+    if (
+      new Set(chains.map((c) => c.station)).size !== 3 ||
+      chains.some(
+        (c) => ((c.side === 'left') !== (c.station === 'middle')) !== parity
+      )
+    )
+      fail('cycle complementary tripod')
+  }
+  if (!Array.isArray(raw.anchors) || raw.anchors.length !== 6)
+    fail('cycle anchors')
+  const anchors = raw.anchors.map((entry) => {
+    if (
+      !record(entry, ['chainId', 'part', 'patch', 'anchorOrigin']) ||
+      typeof entry.chainId !== 'string'
+    )
+      fail('cycle anchor')
+    const chain = required(
+      source.rig.legChains.find((c) => c.id === entry.chainId)
+    )
+    const contact = required(
+      source.rig.contacts.feet.find((c) => c.part.bodyId === chain.footBodyId)
+    )
+    if (
+      entry.part !== contact.part ||
+      entry.patch !== contact.patch ||
+      !Array.isArray(entry.anchorOrigin) ||
+      entry.anchorOrigin.length !== 3
+    )
+      fail('cycle sole binding')
+    return {
+      chainId: chain.id,
+      part: contact.part,
+      patch: contact.patch,
+      anchorOrigin: vector(entry.anchorOrigin.map(rational))
+    }
+  })
+  if (new Set(anchors.map((v) => v.chainId)).size !== 6)
+    fail('cycle duplicate anchors')
+  for (const leg of source.rig.presets.stowed.legs)
+    if (leg.abduction !== 0 || leg.hip !== 0 || leg.knee !== 0)
+      fail('cycle neutral stowed legs')
+  for (const arm of source.rig.presets.stowed.arms)
+    if (
+      arm.rootYaw !== 0 ||
+      arm.shoulderPitch !== 0 ||
+      arm.elbowPitch !== 0 ||
+      arm.wristPitch !== 0
+    )
+      fail('cycle fixed exact stowed arms')
+  const minusAlpha = a.subtract(a.literal(0), alpha)
+  for (const chain of source.rig.legChains) {
+    const joints = chain.jointIds.map((id) =>
+      required(source.rig.joints.find((j) => j.id === id))
+    )
+    for (const j of joints.slice(1))
+      if (
+        cycleCompare(minusAlpha, a.literal(j.domain[0]), e) < 0 ||
+        cycleCompare(alpha, a.literal(j.domain[1]), e) > 0
+      )
+        fail('cycle authored domain')
+    const abduct = chain.side === 'left' ? minusAlpha : alpha
+    if (
+      cycleCompare(abduct, a.literal(joints[0].domain[0]), e) < 0 ||
+      cycleCompare(abduct, a.literal(joints[0].domain[1]), e) > 0
+    )
+      fail('cycle abduction domain')
+  }
+  return freeze({
+    format: 'walking-constrained-cycle/1',
+    source,
+    fixedJoints: source.rig.presets.stowed,
+    baseOrientation,
+    alpha,
+    groups,
+    anchors,
+    budget: { ...(raw.budget as WalkingConstrainedRecipe['budget']) }
+  })
+}
+function cyclePrepare(
+  recipe: WalkingConstrainedCycleRecipe,
+  e: CycleEngine
+): CyclePrepared {
+  const a = e.exact,
+    zero = a.literal(0),
+    half = a.divide(recipe.alpha, a.literal(2))
+  const leaf = cycleLeaf(e, half)
+  const sigma = a.divide(
+    a.multiply(a.literal(2), a.multiply(leaf.sin, leaf.cos)),
+    a.add(a.multiply(leaf.sin, leaf.sin), a.multiply(leaf.cos, leaf.cos))
+  )
+  const extent = {
+    low: roundFraction(
+      -recipe.alpha.numerator,
+      recipe.alpha.denominator,
+      'down'
+    ),
+    high: roundFraction(recipe.alpha.numerator, recipe.alpha.denominator, 'up')
+  }
+  const phaseRecipe = (
+    group: readonly string[],
+    anchors: WalkingConstrainedRecipe['supports']
+  ): WalkingConstrainedRecipe => ({
+    format: 'walking-constrained-kinematic-projection/1',
+    source: recipe.source,
+    baseOrientation: recipe.baseOrientation,
+    fixedJoints: recipe.fixedJoints,
+    supports: group.map((id) =>
+      required(anchors.find((v) => v.chainId === id))
+    ),
+    interval: extent,
+    budget: recipe.budget
+  })
+  const firstRecipe = phaseRecipe(recipe.groups[0], recipe.anchors)
+  const first = {
+    recipe: firstRecipe,
+    template: prepareTemplate(firstRecipe, e)
+  }
+  const kt = first.template.kneeTranslation
+  if (kt[0].numerator !== 0n || kt[2].numerator !== 0n || kt[1].numerator >= 0n)
+    fail('cycle upper direction')
+  const upper = a.subtract(zero, kt[1])
+  const netDisplacement = rotate(
+    a,
+    first.template.base.matrix,
+    vector([
+      zero,
+      zero,
+      a.subtract(zero, a.multiply(a.literal(4), a.multiply(upper, sigma)))
+    ])
+  )
+  const nextAnchors = recipe.anchors.map((anchor) =>
+    recipe.groups[1].includes(anchor.chainId)
+      ? {
+          ...anchor,
+          anchorOrigin: plusVector(a, anchor.anchorOrigin, netDisplacement)
+        }
+      : anchor
+  )
+  const secondRecipe = phaseRecipe(recipe.groups[1], nextAnchors)
+  const second = {
+    recipe: secondRecipe,
+    template: prepareTemplate(secondRecipe, e)
+  }
+  if (
+    !equalVector(
+      first.template.kneeTranslation,
+      second.template.kneeTranslation
+    ) ||
+    !equalVector(
+      first.template.footTranslation,
+      second.template.footTranslation
+    )
+  )
+    fail('cycle shared six-leg dimensions')
+  // Exact station spacing, complete source Z extent and finite excursion bound.
+  const chains = recipe.source.rig.legChains
+  for (const side of ['left', 'right']) {
+    const sideChains = chains.filter((c) => c.side === side)
+    if (sideChains.length !== 3) fail('cycle side coverage')
+    const positions = sideChains
+      .map((c) =>
+        a.literal(
+          required(recipe.source.rig.joints.find((j) => j.id === c.jointIds[0]))
+            .frame.position[2]
+        )
+      )
+      .sort((x, y) => cycleCompare(x, y, e))
+    for (let i = 1; i < positions.length; i++) {
+      const spacing = a.subtract(positions[i], positions[i - 1])
+      for (const chain of sideChains) {
+        const leg = required(
+          recipe.source.definition.legs.find(
+            (l) => l.side === chain.side && l.station === chain.station
+          )
+        )
+        const remaining = a.subtract(spacing, a.literal(leg.foot.size[2]))
+        if (
+          cycleCompare(
+            a.multiply(a.literal(4), a.multiply(upper, recipe.alpha)),
+            remaining,
+            e
+          ) > 0
+        )
+          fail('cycle source-derived alpha bound')
+      }
+    }
+  }
+  return { recipe, phases: [first, second], netDisplacement }
+}
+function cycleParameter(value: unknown, e: CycleEngine) {
+  if (
+    !record(value, ['numerator', 'denominator']) ||
+    typeof value.numerator !== 'bigint' ||
+    typeof value.denominator !== 'bigint' ||
+    value.denominator <= 0n
+  )
+    fail('cycle parameter rational')
+  const result = e.fraction(value.numerator, value.denominator)
+  if (
+    result.numerator !== value.numerator ||
+    result.denominator !== value.denominator ||
+    result.numerator < 0n ||
+    cycleCompare(result, e.exact.literal(1), e) > 0
+  )
+    fail('cycle parameter domain')
+  return result
+}
+function cycleGeometry(
+  prepared: CyclePrepared,
+  phase: number,
+  e: CycleEngine,
+  parameter?: Readonly<{ low: ConstrainedFraction; high: ConstrainedFraction }>
+) {
+  const a = e.exact,
+    r = e.ranges,
+    recipe = prepared.recipe,
+    { template } = prepared.phases[phase]
+  const zero = a.literal(0),
+    one = a.literal(1),
+    two = a.literal(2)
+  const low = parameter?.low ?? zero,
+    high = parameter?.high ?? one
+  const thetaAt = (u: ConstrainedFraction) =>
+    a.divide(a.multiply(recipe.alpha, a.subtract(a.multiply(two, u), one)), two)
+  const bumpAt = (u: ConstrainedFraction) =>
+    a.multiply(a.multiply(two, recipe.alpha), a.multiply(u, a.subtract(one, u)))
+  const betaLow = bumpAt(low),
+    betaHigh = bumpAt(high),
+    half = a.divide(one, two)
+  const betaMinimum =
+    cycleCompare(betaLow, betaHigh, e) <= 0 ? betaLow : betaHigh
+  let betaMaximum = cycleCompare(betaLow, betaHigh, e) >= 0 ? betaLow : betaHigh
+  if (cycleCompare(low, half, e) <= 0 && cycleCompare(high, half, e) >= 0)
+    betaMaximum = a.divide(recipe.alpha, two)
+  const theta = cycleBounds(e, thetaAt(low), thetaAt(high))
+  const beta = cycleBounds(e, betaMinimum, betaMaximum)
+  const bounded = cycleFrames(prepared, phase, r, theta, beta)
+  const bodies = recipe.source.rig.bodies.map((body) => ({
+    body,
+    bounds: required(bounded.get(body.id))
+  }))
+  const parts = recipe.source.parts.map((part) => {
+    const bounds = compose(
+      r,
+      required(bounded.get(part.bodyId)),
+      convertFrame(r, required(template.partFrames.get(part)))
+    )
+    const min = [Infinity, Infinity, Infinity],
+      max = [-Infinity, -Infinity, -Infinity]
+    for (let i = 0; i < part.shape.positions.length; i += 3) {
+      e.count('sourceVertices')
+      const p = plusVector(
+        r,
+        bounds.origin,
+        rotate(
+          r,
+          bounds.matrix,
+          vector(part.shape.positions.slice(i, i + 3).map(r.literal))
+        )
+      )
+      p.forEach((v, k) => {
+        min[k] = Math.min(min[k], v.low)
+        max[k] = Math.max(max[k], v.high)
+      })
+    }
+    return { part, bounds, sourceBounds: { min, max } }
+  })
+  const supports = template.supports.map((s) => {
+    const foot = required(
+      recipe.source.rig.bodies.find((b) => b.id === s.chain.footBodyId)
+    )
+    const frame = compose(
+      a,
+      compose(a, s.fixedLower, required(template.bodyFrames.get(foot))),
+      required(template.partFrames.get(s.entry.part))
+    )
+    return {
+      ...s.entry,
+      fixedVertices: patchVertices(s.entry.part, s.entry.patch).map((index) => {
+        e.count('supportVertices')
+        const p = vector(
+          s.entry.part.shape.positions
+            .slice(index * 3, index * 3 + 3)
+            .map(a.literal)
+        )
+        return {
+          index,
+          position: plusVector(a, frame.origin, rotate(a, frame.matrix, p))
+        }
+      })
+    }
+  })
+  const swing = recipe.source.rig.legChains
+    .filter((c) => !recipe.groups[phase].includes(c.id))
+    .map((chain) => {
+      const entry = required(recipe.anchors.find((v) => v.chainId === chain.id))
+      const joints = chain.jointIds.map((id) =>
+        required(recipe.source.rig.joints.find((j) => j.id === id))
+      )
+      const foot = required(
+        recipe.source.rig.bodies.find((b) => b.id === chain.footBodyId)
+      )
+      const lowerToPart = compose(
+        a,
+        required(template.bodyFrames.get(foot)),
+        required(template.partFrames.get(entry.part))
+      )
+      const hip = cycleRotation(r, 'x', theta.sin, theta.cos)
+      const offset = plusVector(
+        r,
+        vector(joints[1].frame.position.map(r.literal)),
+        rotate(r, hip, vector(joints[2].frame.position.map(r.literal)))
+      )
+      const vertices = patchVertices(entry.part, entry.patch).map((index) => {
+        e.count('supportVertices')
+        const local = plusVector(
+          a,
+          lowerToPart.origin,
+          rotate(
+            a,
+            lowerToPart.matrix,
+            vector(
+              entry.part.shape.positions
+                .slice(index * 3, index * 3 + 3)
+                .map(a.literal)
+            )
+          )
+        )
+        const p = plusVector(r, offset, vector(local.map(r.rational)))
+        const rho =
+          chain.side === 'left' ? r.subtract(r.literal(0), p[0]) : p[0]
+        const down = r.subtract(r.literal(0), p[1])
+        if (rho.low <= 0 || down.low < 0)
+          fail('cycle swing sole radial/downward source constraint')
+        return { index, rho, down }
+      })
+      return {
+        ...entry,
+        vertices,
+        certificate: {
+          authority: 'exact-polynomial-similarity-lift/1' as const,
+          formula: 'rho*2SC/N+down*2S^2/N' as const,
+          openPhasePositive: true as const,
+          endpointZero: true as const,
+          scalar: POLYNOMIAL_TRIG_SIGN_CERTIFICATE
+        }
+      }
+    })
+  return { bodies, parts, supports, swing }
+}
+export class WalkingConstrainedCycleOwner {
+  private current: WalkingConstrainedCycle | undefined
+  private prepared: CyclePrepared | undefined
+  private totals = { ...zeroWork(), preparations: 0, evaluations: 0 }
+  private onWork = (key: keyof Work, amount: number) => {
+    if (key === 'maxBits')
+      this.totals.maxBits = Math.max(this.totals.maxBits, amount)
+    else this.totals[key] += amount
+  }
+  get work() {
+    return Object.freeze({ ...this.totals })
+  }
+  read(source: WalkingRobotSource, recipe: WalkingConstrainedCycleRecipe) {
+    return this.current?.source === source && this.current.recipe === recipe
+      ? this.current
+      : undefined
+  }
+  dispose() {
+    this.current = undefined
+    this.prepared = undefined
+  }
+  prepare(source: WalkingRobotSource, raw: unknown): WalkingConstrainedCycle {
+    if (
+      this.current &&
+      raw === this.current.recipe &&
+      source === this.current.source
+    )
+      return this.current
+    this.dispose()
+    this.totals.preparations++
+    if (
+      !raw ||
+      typeof raw !== 'object' ||
+      !('budget' in raw) ||
+      !record(raw.budget, ['maxOperations', 'maxBits']) ||
+      !Number.isSafeInteger(raw.budget.maxOperations) ||
+      Number(raw.budget.maxOperations) < 1 ||
+      Number(raw.budget.maxOperations) > 10000000 ||
+      !Number.isSafeInteger(raw.budget.maxBits) ||
+      Number(raw.budget.maxBits) < 1 ||
+      Number(raw.budget.maxBits) > 24000
+    )
+      fail('cycle finite budget')
+    const work = zeroWork(),
+      e = arithmetic(
+        {
+          maxOperations: Number(raw.budget.maxOperations),
+          maxBits: Number(raw.budget.maxBits)
+        },
+        work,
+        this.onWork
+      )
+    const recipe = admitCycle(source, raw, e),
+      prepared = cyclePrepare(recipe, e)
+    const phases = [
+      cycleGeometry(prepared, 0, e),
+      cycleGeometry(prepared, 1, e)
+    ]
+    const a = e.exact,
+      zero = a.literal(0),
+      one = a.literal(1)
+    const p0 = cyclePointFrames(prepared, 0, zero, e),
+      p1 = cyclePointFrames(prepared, 0, one, e),
+      q0 = cyclePointFrames(prepared, 1, zero, e),
+      q1 = cyclePointFrames(prepared, 1, one, e)
+    for (const anchor of recipe.anchors)
+      if (
+        !equalVector(
+          cycleAnchor(anchor.part, anchor.chainId, source, p0, a),
+          anchor.anchorOrigin
+        )
+      )
+        fail('cycle initial anchor incompatibility')
+    let soleY: ConstrainedFraction | undefined
+    for (const anchor of recipe.anchors) {
+      const frame = compose(
+        a,
+        required(p0.get(anchor.part.bodyId)),
+        required(prepared.phases[0].template.partFrames.get(anchor.part))
+      )
+      const vertices = patchVertices(anchor.part, anchor.patch)
+      if (vertices.length < 3) fail('cycle incomplete sole')
+      for (const index of vertices) {
+        const p = plusVector(
+          a,
+          frame.origin,
+          rotate(
+            a,
+            frame.matrix,
+            vector(
+              anchor.part.shape.positions
+                .slice(index * 3, index * 3 + 3)
+                .map(a.literal)
+            )
+          )
+        )
+        if (soleY && !equalFraction(soleY, p[1]))
+          fail('cycle soles not one level plane')
+        soleY = p[1]
+      }
+    }
+    for (const body of source.rig.bodies) {
+      const start = required(p0.get(body.id)),
+        end = required(q1.get(body.id)),
+        left = required(p1.get(body.id)),
+        right = required(q0.get(body.id))
+      if (
+        !equalVector(left.origin, right.origin) ||
+        left.matrix.some((row, i) => !equalVector(row, right.matrix[i]))
+      )
+        fail('cycle exact handoff')
+      if (
+        !equalVector(
+          end.origin,
+          plusVector(a, start.origin, prepared.netDisplacement)
+        ) ||
+        end.matrix.some((row, i) => !equalVector(row, start.matrix[i]))
+      )
+        fail('cycle periodic net motion')
+    }
+    const product = freeze({
+      source,
+      recipe,
+      phases,
+      netDisplacement: prepared.netDisplacement,
+      roots: {
+        initial: required(p0.get('base')),
+        handoff: required(p1.get('base')),
+        final: required(q1.get('base'))
+      },
+      authority: 'exact-polynomial-constrained-cycle/1' as const,
+      work: { ...work, unvisited: 0 }
+    })
+    this.prepared = prepared
+    this.current = product
+    return product
+  }
+  bound(cycle: WalkingConstrainedCycle, phase: number, raw: unknown) {
+    if (
+      this.current !== cycle ||
+      !this.prepared ||
+      !Number.isInteger(phase) ||
+      phase < 0 ||
+      phase > 1
+    )
+      fail('cycle stale bound or phase')
+    const work = zeroWork(),
+      e = arithmetic(cycle.recipe.budget, work, this.onWork)
+    if (!record(raw, ['low', 'high'])) fail('cycle parameter interval')
+    const parameter = freeze({
+      low: cycleParameter(raw.low, e),
+      high: cycleParameter(raw.high, e)
+    })
+    if (cycleCompare(parameter.low, parameter.high, e) > 0)
+      fail('cycle reversed parameter interval')
+    const result = cycleGeometry(this.prepared, phase, e, parameter)
+    return freeze({
+      cycle,
+      source: cycle.source,
+      recipe: cycle.recipe,
+      phase,
+      parameter,
+      ...result,
+      work: { ...work, unvisited: 0 }
+    })
+  }
+  evaluate(
+    cycle: WalkingConstrainedCycle,
+    phase: number,
+    u: ConstrainedFraction
+  ) {
+    if (
+      this.current !== cycle ||
+      !this.prepared ||
+      !Number.isInteger(phase) ||
+      phase < 0 ||
+      phase > 1
+    )
+      fail('cycle stale handle or phase')
+    this.totals.evaluations++
+    const work = zeroWork(),
+      e = arithmetic(cycle.recipe.budget, work, this.onWork),
+      a = e.exact
+    if (
+      !record(u, ['numerator', 'denominator']) ||
+      typeof u.numerator !== 'bigint' ||
+      typeof u.denominator !== 'bigint' ||
+      u.denominator <= 0n
+    )
+      fail('cycle point rational')
+    const value = e.fraction(u.numerator, u.denominator)
+    if (
+      !equalFraction(value, u) ||
+      value.numerator < 0n ||
+      cycleCompare(value, a.literal(1), e) > 0
+    )
+      fail('cycle point domain')
+    const computed = cyclePointFrames(this.prepared, phase, value, e)
+    const display = (frame: ExactFrame) => ({
+      origin: vector(
+        frame.origin.map((v) =>
+          roundFraction(v.numerator, v.denominator, 'nearest-even')
+        )
+      ),
+      matrix: matrix(
+        frame.matrix.map((row) =>
+          vector(
+            row.map((v) =>
+              roundFraction(v.numerator, v.denominator, 'nearest-even')
+            )
+          )
+        )
+      )
+    })
+    return freeze({
+      cycle,
+      source: cycle.source,
+      recipe: cycle.recipe,
+      phase,
+      u: value,
+      bodies: cycle.source.rig.bodies.map((body) => {
+        const exact = required(computed.get(body.id))
+        return { body, exact, display: display(exact) }
+      }),
+      parts: cycle.source.parts.map((part) => ({
+        part,
+        exact: compose(
+          a,
+          required(computed.get(part.bodyId)),
+          required(this.prepared?.phases[phase].template.partFrames.get(part))
+        )
+      })),
+      work: { ...work, unvisited: 0 }
+    })
+  }
+}
+export interface WalkingConstrainedCycle {
+  readonly source: WalkingRobotSource
+  readonly recipe: WalkingConstrainedCycleRecipe
+  readonly phases: readonly ReturnType<typeof cycleGeometry>[]
+  readonly netDisplacement: ConstrainedVector<ConstrainedFraction>
+  readonly roots: Readonly<{
+    initial: ExactFrame
+    handoff: ExactFrame
+    final: ExactFrame
+  }>
+  readonly authority: 'exact-polynomial-constrained-cycle/1'
+  readonly work: Readonly<Work & { unvisited: number }>
+}
 
 export interface ConstrainedFraction {
   readonly numerator: bigint

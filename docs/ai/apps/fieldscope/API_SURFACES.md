@@ -870,6 +870,42 @@ include leaf, rational, frame and source-vertex work. This owner proves constrai
 projection only. Swing, terrain contact, collision, stance transitions and full
 gait remain pending, and request versions 1/2 retain their existing semantics.
 
+`WalkingConstrainedCycleOwner` owns `walking-constrained-cycle/1`, separately
+from projection/1. It admits the exact current source/stowed preset, six
+source-issued sole patch anchors, complementary station-covering tripods,
+canonical rational alpha and a gravity-preserving rational yaw quaternion.
+Actual source layout, authored negative-knee/hip/abduction domains, station
+spacing and finite operation/24000-bit budgets must be proved before publication.
+It consumes `evaluateExactPolynomialTrig`, `boundExactPolynomialTrig` and the
+fixed polynomial sign certificate; projection/1 retains its original rounded
+polynomial leaves. Identities and arithmetic products cannot be interchanged.
+
+The real phase parameter is u in [0,1]. Support theta=alpha*(2u-1) uses one
+conjugate hip/knee pair and a shared root. The complementary tripod uses the
+opposite pair and outward side-signed beta=4*alpha*u*(1-u). Actual sole vertex
+coefficients rho>0 and down>=0, together with the admitted polynomial signs,
+prove lift rho*2SC/N+down*2S^2/N strictly positive in the open phase and zero at
+its endpoints. All six soles share the initial plane. Exact full-body
+handoff and periodic net forward displacement are checked before publication.
+Each phase advances the base by 2U*sigma(alpha); the complete cycle advances
+all anchors and the base by 4U*sigma(alpha), rotated by the one yaw authority,
+where sigma=2*S(alpha/2)*C(alpha/2)/(S^2+C^2).
+
+`evaluate` returns exact body/part frames and separate final-rounded display
+frames. `bound` accepts an arbitrary admitted rational phase subinterval and
+recomputes its matched theta/bump extrema and outward body/part/source-vertex
+bounds; it does not substitute the whole-phase box. Nested bounds approach
+the representable outward enclosure floor, not zero width for a rational value
+that binary64 cannot represent. Point containment is a regression, not a
+continuous clearance proof. Real open-phase positivity does not promise that
+every rational point can be materialized within finite resources; exhaustion
+is unavailable, never touch, clear or fallback geometry. Work distinguishes
+preparation, evaluation, leaves, rational operations and original source
+vertices; successful complete outputs have zero unvisited entries. Exact reads
+and repeated admitted preparation do no work; replacement or failed admission
+retires handles. This owner supplies no terrain, whole-source collision,
+request/3, load, stability, damage or complete mission admission.
+
 ## Walking quasi-static configuration assessment
 
 `readWalkingQuasiStaticRequest` admits `walking-quasi-static-request/1`, detaches

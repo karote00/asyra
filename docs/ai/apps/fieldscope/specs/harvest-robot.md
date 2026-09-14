@@ -146,6 +146,23 @@ evidence. Input and all temporary widths remain bounded to 24000 bits, with new
 normalization work explicit. Legacy numeric APIs retain their exact behavior.
 This is a scalar prerequisite only, not a continuous gait admission.
 
+A distinct exact-polynomial constrained cycle may alternate two complementary
+tripods on the authored negative-knee profile. For real u in [0,1], theta is
+alpha*(2u-1); support hip/knee are -theta/theta, and swing hip/knee are
+theta/-theta with outward side-signed abduction 4*alpha*u*(1-u).
+One common root fixes each full support sole. Actual source vertex offsets and
+the polynomial similarity norm/sign evidence must prove every swing sole vertex
+strictly above its landing plane inside the phase and on it at both endpoints.
+The second phase swaps tripods; exact roots and anchors agree at handoff and
+both phases produce the same source-derived forward displacement. Exact
+periodicity and net motion do not prove terrain, collision, load or mission
+safety. Arbitrary rational phase subintervals retain the same arithmetic
+identity and derive their own outward bounds. Singleton containment and
+narrowing toward representable bounds are regression evidence only, never
+sample-based continuous clearance. Finite point budget exhaustion remains
+unavailable while the separately proved real-domain sign certificate remains
+valid. Projection/1 retains its rounded-polynomial leaf semantics.
+
 Terrain placement separately admits explicit measured/synthetic scenario soil
 triangles, current W1 demand/farm/route and complete source partitions. Exact
 barycentric anchors feed that projection; full sole geometry requires coplanar

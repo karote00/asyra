@@ -248,6 +248,26 @@ acceptance remains a separate milestone; app plan completion is not certificatio
 
 ## Current execution
 
+Constrained cycle Step Card: the existing constrained owner adds a separate
+versioned two-phase exact-polynomial recipe. Exact current source/stowed preset,
+six sole anchors, complementary tripods, yaw-only rational orientation and
+source-derived alpha bind both phases. One support root, whole-sole strict lift,
+exact handoff/landing/periodicity/net displacement and all-body/part matched
+point/bounds are the outputs. Only the constrained module/direct test and four
+contracts change. Missing API RED precedes implementation; focused and terrain
+direct regressions, type/naming/lint/build, bounded review and local commit close
+this segment. No terrain, collision, request, source, load, UI or legacy changes,
+new cache, full-app rerun or standalone PR. A failed actual geometry/sign/shared
+root obligation stops at this owner for bounded replanning.
+
+The first cycle API case reached GREEN with the existing 17 projection cases.
+The added subinterval capability had its own absent-method RED. The first full
+vertex oracle exceeded its unchanged 30-second cases (about 70 seconds each)
+and blocked the worker RPC; this is retained as failed test evidence. The
+bounded correction uses one exact common-denominator affine oracle per frame,
+reuses only identical coordinates within that frame, checks every original
+vertex and yields between parts. No product budget or geometric proof changes.
+
 Exact polynomial scalar Step Card: the existing shared S19/C20 owner adds
 canonical rational input/value, exact extrema and a fixed real-domain
 sign/zero-locus certificate. Existing number API bits, signed zero and work

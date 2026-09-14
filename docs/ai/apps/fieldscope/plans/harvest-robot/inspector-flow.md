@@ -158,6 +158,19 @@ and outward body/part frames use that recipe, while final rounded display frames
 are separate. Unproved dependencies, incompatible anchors or layouts are
 unavailable. Legacy FK and interval products retain their existing semantics;
 this projection alone admits no swing, terrain contact, collision or full gait.
+A separate constrained-cycle recipe binds six source sole anchors, complementary
+tripods, the exact stowed preset, rational yaw orientation and source-bounded
+alpha. Two real phases use exact polynomial leaves, conjugate hip/knee pairs and
+one shared support root per phase. Whole-sole lift follows admitted fixed
+polynomial signs and actual source radial/downward offsets; exact landing,
+handoff and net displacement are required. Its exact point frames and outward
+source bounds never consume projection/1 display or legacy FK. Invalid layouts,
+domains, anchors or finite work remain unavailable. Rational subintervals derive
+their own matched outward bounds, converging only to binary64 enclosure limits;
+whole-phase boxes are not substituted for narrower inputs. Point resource
+exhaustion does not contradict the separate real open-phase sign certificate.
+This cycle proves neither
+terrain contact nor whole-source collision or complete walking admission.
 Terrain-placement request admission binds current W1 demand/farm/route and W2
 source to measured/synthetic scenario triangles, complete source regions and
 three original-triangle barycentric foot seeds. The terrain-placement producer
