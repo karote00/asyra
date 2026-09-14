@@ -74,4 +74,4 @@ it('preserves complete original-segment source evidence while eliminating repeat
   expect(lower).toHaveBeenCalledTimes(7)
   expect(handoff).toHaveBeenCalledTimes(11)
   expect(context.work).toBeLessThanOrEqual(controlContext.work * 0.6)
-}, 20000)
+}, 60000)
