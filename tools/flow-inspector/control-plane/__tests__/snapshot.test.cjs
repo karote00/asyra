@@ -1,13 +1,915 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 const assert = require('node:assert/strict')
 const fs = require('node:fs')
+const { createHash, randomUUID } = require('node:crypto')
 const path = require('node:path')
 const test = require('node:test')
-const { captureSource } = require('../snapshot.cjs')
+const {
+  captureSource,
+  validateRuntimeSource,
+  validateRuntimeAuthority,
+  createRuntimeSource,
+  createVerificationSource,
+  validateSourceSnapshot,
+  composeSource,
+  verifyRetainedSource,
+  resolveRuntimeAuthority
+} = require('../snapshot.cjs')
 const { loadContract } = require('../contracts.cjs')
 const root = path.resolve(__dirname, '../../../..')
 const parent = path.join(root, 'tmp/flow-inspector/snapshot-tests')
 fs.mkdirSync(parent, { recursive: true })
+
+const fingerprint = (value) => createHash('sha256').update(value).digest('hex')
+
+function scopeContract(steps) {
+  const scope = {
+    format: 1,
+    steps: steps.map((step) => ({
+      stepId: step.id ?? step.stepId,
+      ownerPackage: step.ownerPackage,
+      implementationBoundary: [...step.implementationBoundary]
+    }))
+  }
+  return {
+    runtimeScope: { ...scope, digest: fingerprint(JSON.stringify(scope)) }
+  }
+}
+
+function authorityReader(overrides = new Map(), reads = new Map()) {
+  return (relative) => {
+    reads.set(relative, (reads.get(relative) ?? 0) + 1)
+    const bytes = overrides.has(relative)
+      ? Buffer.from(overrides.get(relative))
+      : fs.readFileSync(path.join(root, relative))
+    return {
+      bytes,
+      path: relative,
+      digest: fingerprint(bytes),
+      size: bytes.length
+    }
+  }
+}
+
+function alteredManifest(relative, alter) {
+  const manifest = JSON.parse(fs.readFileSync(path.join(root, relative)))
+  alter(manifest)
+  return JSON.stringify(manifest)
+}
+
+function legacyExecutionOracle(sourceRoot, verificationSource) {
+  const configurationFile =
+    'tools/flow-inspector/control-plane/candidate-config.mjs'
+  const bootstrapFile =
+    'tools/flow-inspector/control-plane/candidate-bootstrap.cjs'
+  const original = verificationSource.roles.configuration
+  const configuration = `import original from ${JSON.stringify(require('node:url').pathToFileURL(path.join(sourceRoot, original)).href)};
+import { stripTypeScriptTypes } from 'node:module';
+export default {
+  ...original, esbuild: false,
+  optimizeDeps: { noDiscovery: true, include: [] },
+  plugins: [...(original.plugins ?? []), {
+    name: 'contained-native-typescript', enforce: 'pre',
+    transform(code, id) {
+      if (!id.split('?')[0].endsWith('.ts') || id.includes('/node_modules/')) return;
+      return { code: stripTypeScriptTypes(code, { mode: 'transform', sourceMap: false }), map: null };
+    }
+  }],
+  test: { ...original.test, pool: 'threads', maxWorkers: 1, minWorkers: 1,
+    deps: { optimizer: { ssr: { enabled: false }, web: { enabled: false } } }
+  }
+};`
+  const bootstrap = `const { pathToFileURL } = require('node:url');
+const [, , owner, runner, ...args] = process.argv;
+setInterval(() => {
+  if (process.ppid !== Number(owner)) process.kill(-process.pid, 'SIGKILL');
+}, 100).unref();
+process.argv = [process.execPath, runner, ...args];
+import(pathToFileURL(runner).href).catch(() => process.exit(2));`
+  const files = [
+    { path: bootstrapFile, content: bootstrap },
+    { path: configurationFile, content: configuration }
+  ]
+  const payload = {
+    format: 1,
+    policy: 'contained-native-typescript-v1',
+    verificationSourceDigest: verificationSource.digest,
+    roles: {
+      configuration: configurationFile,
+      bootstrap: bootstrapFile
+    },
+    files: files.map(({ path, content }) => ({
+      path,
+      size: Buffer.byteLength(content),
+      digest: fingerprint(content)
+    }))
+  }
+  return {
+    files,
+    executionSource: {
+      ...payload,
+      digest: fingerprint(JSON.stringify(payload))
+    }
+  }
+}
+
+test('runtime authority derives actual Factory collaboration and UI-context closures in canonical order', () => {
+  const collaboration = require('../../inspectors/network-collaboration-transport-flow-inspector.data.cjs')
+  const simulation = require('../../inspectors/asyra-sim-r0-flow-inspector.data.cjs')
+  const factorySteps = loadContract(root).runtimeScope.steps
+  const collaborationStep = collaboration.steps.find(
+    (step) => step.id === 'own-collaboration-instance'
+  )
+  const uiContextStep = simulation.steps.find(
+    (step) => step.id === 'reset-ui-context'
+  )
+  const reads = new Map()
+  const authority = resolveRuntimeAuthority(
+    scopeContract([...factorySteps, collaborationStep, uiContextStep]),
+    authorityReader(new Map(), reads)
+  )
+  const byStep = Object.fromEntries(
+    authority.stepClosures.map((step) => [step.stepId, step.packageNames])
+  )
+  for (const step of factorySteps)
+    assert.deepEqual(byStep[step.id ?? step.stepId], [
+      '@asyra/factory',
+      '@asyra/persistence',
+      '@asyra/reactive-events',
+      '@asyra/utils'
+    ])
+  assert.deepEqual(byStep['own-collaboration-instance'], [
+    '@asyra/collaboration',
+    '@asyra/factory',
+    '@asyra/persistence',
+    '@asyra/reactive-events',
+    '@asyra/utils'
+  ])
+  assert.deepEqual(byStep['reset-ui-context'], [
+    '@asyra/persistence',
+    '@asyra/props-manager',
+    '@asyra/reactive-events',
+    '@asyra/scene-tree',
+    '@asyra/selection',
+    '@asyra/ui-context',
+    '@asyra/utils'
+  ])
+  assert.deepEqual(authority.packageNames, [...authority.packageNames].sort())
+  assert.deepEqual(
+    authority.packages.map((entry) => entry.name),
+    authority.packageNames
+  )
+  assert.ok(
+    authority.packages.every((entry) =>
+      entry.directWorkspaceDependencies.every(
+        (name, index, values) => index === 0 || values[index - 1] < name
+      )
+    )
+  )
+  const { digest, ...payload } = authority
+  assert.equal(digest, fingerprint(JSON.stringify(payload)))
+  for (const count of reads.values()) assert.equal(count, 1)
+})
+
+test('runtime authority rejects unsupported workspace package identities and dependency graphs', () => {
+  const factoryStep = loadContract(root).runtimeScope.steps[0]
+  const contract = scopeContract([factoryStep])
+  const cases = [
+    [
+      'ambiguous workspace layout',
+      'package.json',
+      (value) => value.workspaces.push('packages/*')
+    ],
+    [
+      'private package',
+      'packages/factory/package.json',
+      (value) => {
+        value.private = true
+      }
+    ],
+    [
+      'missing public entry',
+      'packages/factory/package.json',
+      (value) => {
+        delete value.exports['.']
+      }
+    ],
+    [
+      'name spoof',
+      'packages/factory/package.json',
+      (value) => {
+        value.name = '@asyra/utils'
+      }
+    ],
+    [
+      'path spoof',
+      'packages/factory/package.json',
+      (value) => {
+        value.repository.directory = 'packages/utils'
+      }
+    ],
+    [
+      'nonworkspace internal dependency',
+      'packages/factory/package.json',
+      (value) => {
+        value.dependencies['@asyra/utils'] = '^1.0.0'
+      }
+    ],
+    [
+      'internal optional dependency',
+      'packages/factory/package.json',
+      (value) => {
+        value.optionalDependencies = { '@asyra/utils': 'workspace:*' }
+      }
+    ],
+    [
+      'internal peer dependency',
+      'packages/factory/package.json',
+      (value) => {
+        value.peerDependencies = { '@asyra/utils': 'workspace:*' }
+      }
+    ],
+    [
+      'unknown dependency',
+      'packages/factory/package.json',
+      (value) => {
+        value.dependencies['@asyra/missing'] = 'workspace:*'
+      }
+    ],
+    [
+      'cyclic dependency',
+      'packages/utils/package.json',
+      (value) => {
+        value.dependencies['@asyra/factory'] = 'workspace:*'
+      }
+    ]
+  ]
+  for (const [name, relative, alter] of cases) {
+    const overrides = new Map([[relative, alteredManifest(relative, alter)]])
+    assert.throws(
+      () => resolveRuntimeAuthority(contract, authorityReader(overrides)),
+      /runtime authority/i,
+      name
+    )
+  }
+})
+
+test('runtime authority capture rejects a blocked root export and accepts usable conditional exports', () => {
+  const factoryStep = loadContract(root).runtimeScope.steps[0]
+  const contract = scopeContract([factoryStep])
+  const blocked = new Map([
+    [
+      'packages/factory/package.json',
+      alteredManifest('packages/factory/package.json', (value) => {
+        value.exports['.'] = null
+      })
+    ]
+  ])
+  assert.throws(
+    () => resolveRuntimeAuthority(contract, authorityReader(blocked)),
+    /runtime authority/i
+  )
+  const conditional = new Map([
+    [
+      'packages/factory/package.json',
+      alteredManifest('packages/factory/package.json', (value) => {
+        value.exports['.'] = {
+          import: './dist/index.js',
+          default: './dist/index.js'
+        }
+      })
+    ]
+  ])
+  assert.doesNotThrow(() =>
+    resolveRuntimeAuthority(contract, authorityReader(conditional))
+  )
+})
+
+test('runtime authority re-admission rejects a self-consistent blocked public entry', (t) => {
+  const output = fs.mkdtempSync(path.join(parent, 'blocked-entry-'))
+  t.after(() => fs.rmSync(output, { recursive: true, force: true }))
+  const contract = loadContract(root)
+  const snapshot = captureSource(root, output, contract)
+  const forged = structuredClone(snapshot)
+  const packageEntry = forged.runtimeAuthority.packages.find(
+    (entry) => entry.name === '@asyra/factory'
+  )
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(snapshot.sourceRoot, packageEntry.manifestPath))
+  )
+  manifest.exports['.'] = null
+  const bytes = Buffer.from(JSON.stringify(manifest))
+  fs.chmodSync(path.join(snapshot.sourceRoot, packageEntry.manifestPath), 0o600)
+  fs.writeFileSync(
+    path.join(snapshot.sourceRoot, packageEntry.manifestPath),
+    bytes
+  )
+  const fullEntry = forged.files.find(
+    (entry) => entry.path === packageEntry.manifestPath
+  )
+  fullEntry.size = bytes.length
+  fullEntry.digest = fingerprint(bytes)
+  const runtimeEntry = forged.runtimeSource.files.find(
+    (entry) => entry.path === packageEntry.manifestPath
+  )
+  runtimeEntry.size = bytes.length
+  runtimeEntry.digest = fullEntry.digest
+  forged.runtimeSource.digest = fingerprint(
+    JSON.stringify(forged.runtimeSource.files)
+  )
+  packageEntry.manifestDigest = fullEntry.digest
+  const authorityPayload = { ...forged.runtimeAuthority }
+  delete authorityPayload.digest
+  forged.runtimeAuthority.digest = fingerprint(JSON.stringify(authorityPayload))
+  forged.digest = fingerprint(JSON.stringify(forged.files))
+  assert.throws(
+    () =>
+      require('../snapshot.cjs').admitRuntimeAuthoritySource(
+        snapshot.sourceRoot,
+        forged,
+        contract
+      ),
+    /runtime authority/i
+  )
+})
+
+test('runtime authority descriptor validation binds contract scope package manifests closure and inventory', (t) => {
+  const output = fs.mkdtempSync(path.join(parent, 'authority-admission-'))
+  t.after(() => fs.rmSync(output, { recursive: true, force: true }))
+  const contract = loadContract(root)
+  const snapshot = captureSource(root, output, contract)
+  const authority = validateRuntimeAuthority(
+    snapshot.runtimeAuthority,
+    contract,
+    snapshot.files
+  )
+  assert.deepEqual(authority, snapshot.runtimeAuthority)
+  assert.notEqual(authority, snapshot.runtimeAuthority)
+  assert.ok(Object.isFrozen(authority))
+  assert.ok(Object.isFrozen(authority.packages))
+  const rehash = (value) => {
+    const payload = { ...value }
+    delete payload.digest
+    value.digest = fingerprint(JSON.stringify(payload))
+  }
+  const cases = [
+    [
+      'unsupported format',
+      (value) => {
+        value.format = 2
+      }
+    ],
+    [
+      'wrong contract scope',
+      (value) => {
+        value.contractScopeDigest = '0'.repeat(64)
+        rehash(value)
+      }
+    ],
+    [
+      'reordered packages',
+      (value) => {
+        value.packages.reverse()
+        rehash(value)
+      }
+    ],
+    [
+      'extra package name',
+      (value) => {
+        value.packageNames.push('@asyra/unknown')
+        rehash(value)
+      }
+    ],
+    [
+      'manifest mismatch',
+      (value) => {
+        value.packages[0].manifestDigest = '0'.repeat(64)
+        rehash(value)
+      }
+    ],
+    [
+      'entry path spoof',
+      (value) => {
+        value.packages[0].entryPath = 'packages/factory/dist/index.js'
+        rehash(value)
+      }
+    ],
+    [
+      'dependency graph spoof',
+      (value) => {
+        value.packages[0].directWorkspaceDependencies = []
+        rehash(value)
+      }
+    ],
+    [
+      'step owner spoof',
+      (value) => {
+        value.stepClosures[0].ownerPackage = '@asyra/utils'
+        rehash(value)
+      }
+    ],
+    [
+      'authority digest mismatch',
+      (value) => {
+        value.digest = '0'.repeat(64)
+      }
+    ]
+  ]
+  for (const [name, mutate] of cases) {
+    const value = structuredClone(snapshot.runtimeAuthority)
+    mutate(value)
+    assert.throws(
+      () => validateRuntimeAuthority(value, contract, snapshot.files),
+      /runtime authority/i,
+      name
+    )
+  }
+  const missingEntry = snapshot.files.filter(
+    (entry) => entry.path !== snapshot.runtimeAuthority.packages[0].entryPath
+  )
+  assert.throws(
+    () =>
+      validateRuntimeAuthority(
+        snapshot.runtimeAuthority,
+        contract,
+        missingEntry
+      ),
+    /runtime authority/i
+  )
+})
+
+test('new capture binds selected-step runtime authority without changing bytes-only identity', (t) => {
+  const output = fs.mkdtempSync(path.join(parent, 'authority-'))
+  t.after(() => fs.rmSync(output, { recursive: true, force: true }))
+  const contract = loadContract(root)
+  const snapshot = captureSource(root, output, contract)
+  const authority = snapshot.runtimeAuthority
+  assert.equal(authority?.format, 1)
+  assert.equal(authority.contractScopeDigest, contract.runtimeScope.digest)
+  assert.deepEqual(authority.packageNames, [
+    '@asyra/factory',
+    '@asyra/persistence',
+    '@asyra/reactive-events',
+    '@asyra/utils'
+  ])
+  assert.deepEqual(
+    authority.stepClosures.map((step) => step.stepId),
+    contract.runtimeScope.steps.map((step) => step.stepId)
+  )
+  for (const entry of authority.packages) {
+    assert.equal(
+      entry.manifestDigest,
+      snapshot.files.find((file) => file.path === entry.manifestPath).digest
+    )
+    assert.ok(snapshot.files.some((file) => file.path === entry.entryPath))
+  }
+  assert.equal(snapshot.runtimeSource.format, 1)
+  assert.equal(
+    snapshot.runtimeSource.digest,
+    createHash('sha256')
+      .update(JSON.stringify(snapshot.runtimeSource.files))
+      .digest('hex')
+  )
+  const admitted = validateSourceSnapshot(snapshot, contract)
+  assert.deepEqual(admitted.runtimeAuthority, authority)
+  const historical = structuredClone(snapshot)
+  delete historical.runtimeAuthority
+  assert.equal(
+    validateSourceSnapshot(historical, contract).runtimeAuthority,
+    undefined
+  )
+})
+
+test('derived execution rejects a present falsy runtime authority instead of selecting legacy', () => {
+  const source = require('../snapshot.cjs')
+  const input = {
+    sourceRoot: path.join(parent, 'falsy-authority/source'),
+    verificationSource: {
+      format: 1,
+      digest: 'a'.repeat(64),
+      roles: { configuration: 'vitest.config.ts' }
+    }
+  }
+  for (const runtimeAuthority of [null, undefined, false])
+    assert.throws(
+      () => source.createDerivedExecution({ ...input, runtimeAuthority }),
+      /admitted runtime authority/i
+    )
+})
+
+test('legacy derived execution preserves historical format-1 bytes and snapshot admission', (t) => {
+  const source = require('../snapshot.cjs')
+  const output = fs.mkdtempSync(path.join(parent, 'legacy-derived-'))
+  t.after(() => fs.rmSync(output, { recursive: true, force: true }))
+  const contract = loadContract(root)
+  const snapshot = captureSource(root, output, contract)
+  const context = { sourceRoot: snapshot.sourceRoot }
+  const legacyOracle = legacyExecutionOracle(
+    snapshot.sourceRoot,
+    snapshot.verificationSource
+  )
+  assert.deepEqual(
+    source.createDerivedExecution({
+      ...context,
+      verificationSource: snapshot.verificationSource
+    }),
+    legacyOracle
+  )
+  const legacyFiles = [
+    ...snapshot.files,
+    ...legacyOracle.executionSource.files
+  ].sort((a, b) => a.path.localeCompare(b.path))
+  const historicalSnapshot = {
+    ...snapshot,
+    files: legacyFiles,
+    fileCount: legacyFiles.length,
+    digest: fingerprint(JSON.stringify(legacyFiles)),
+    configurationDigest: legacyOracle.executionSource.digest,
+    executionSource: legacyOracle.executionSource
+  }
+  delete historicalSnapshot.runtimeAuthority
+  assert.deepEqual(
+    source.validateSourceSnapshot(
+      historicalSnapshot,
+      contract,
+      legacyFiles,
+      context
+    ).executionSource,
+    legacyOracle.executionSource
+  )
+})
+
+test('derived execution binds fixed generated bytes and trusted attempt location to the original verifier', (t) => {
+  const source = require('../snapshot.cjs')
+  const output = fs.mkdtempSync(path.join(parent, 'derived-'))
+  t.after(() => fs.rmSync(output, { recursive: true, force: true }))
+  const contract = loadContract(root)
+  const snapshot = captureSource(
+    root,
+    path.join(output, randomUUID()),
+    contract
+  )
+  const context = { sourceRoot: snapshot.sourceRoot }
+  const input = {
+    ...context,
+    verificationSource: snapshot.verificationSource,
+    runtimeAuthority: snapshot.runtimeAuthority
+  }
+  const generated = source.createDerivedExecution(input)
+  const clonedAuthority = structuredClone(snapshot.runtimeAuthority)
+  assert.throws(
+    () =>
+      source.createDerivedExecution({
+        ...input,
+        runtimeAuthority: clonedAuthority
+      }),
+    /admitted runtime authority/i
+  )
+  const readmittedAuthority = source.admitRuntimeAuthoritySource(
+    snapshot.sourceRoot,
+    { ...snapshot, runtimeAuthority: clonedAuthority },
+    contract
+  ).runtimeAuthority
+  assert.doesNotThrow(() =>
+    source.createDerivedExecution({
+      ...input,
+      runtimeAuthority: readmittedAuthority
+    })
+  )
+  const fingerprint = (value) =>
+    createHash('sha256').update(value).digest('hex')
+  const files = [
+    ...snapshot.files,
+    ...generated.files.map(({ path, content }) => ({
+      path,
+      size: Buffer.byteLength(content),
+      digest: fingerprint(content)
+    }))
+  ].sort((a, b) => a.path.localeCompare(b.path))
+  const derived = {
+    ...snapshot,
+    files,
+    fileCount: files.length,
+    digest: fingerprint(JSON.stringify(files)),
+    configurationDigest: generated.executionSource.digest,
+    executionSource: generated.executionSource
+  }
+  const read = t.mock.method(fs, 'readFileSync', () => {
+    throw new Error('Derived admission must not read source')
+  })
+  const write = t.mock.method(fs, 'writeFileSync', () => {
+    throw new Error('Derived generation must not write source')
+  })
+  assert.deepEqual(source.createDerivedExecution(input), generated)
+  const admitted = source.validateSourceSnapshot(
+    derived,
+    contract,
+    files,
+    context
+  )
+  assert.equal(admitted.runtimeSource.digest, snapshot.runtimeSource.digest)
+  assert.equal(
+    admitted.verificationSource.digest,
+    snapshot.verificationSource.digest
+  )
+  assert.deepEqual(admitted.executionSource, generated.executionSource)
+  assert.notEqual(admitted.executionSource, generated.executionSource)
+  for (const value of [
+    generated,
+    generated.files,
+    ...generated.files,
+    generated.executionSource,
+    generated.executionSource.roles,
+    generated.executionSource.files,
+    ...generated.executionSource.files,
+    admitted
+  ])
+    assert.equal(Object.isFrozen(value), true)
+  assert.equal(read.mock.callCount(), 0)
+  assert.equal(write.mock.callCount(), 0)
+  const retained = { ...derived }
+  delete retained.files
+  delete retained.sourceRoot
+  assert.deepEqual(
+    source.validateSourceSnapshot(retained, contract, files, context),
+    admitted
+  )
+  const moved = source.createDerivedExecution({
+    ...input,
+    sourceRoot: path.join(output, randomUUID(), 'source')
+  })
+  assert.notEqual(
+    moved.executionSource.digest,
+    generated.executionSource.digest
+  )
+  assert.equal(
+    moved.executionSource.verificationSourceDigest,
+    generated.executionSource.verificationSourceDigest
+  )
+  const { digest, ...payload } = generated.executionSource
+  assert.equal(digest, fingerprint(JSON.stringify(payload)))
+  assert.deepEqual(Object.keys(payload), [
+    'format',
+    'policy',
+    'verificationSourceDigest',
+    'runtimeAuthorityDigest',
+    'roles',
+    'files'
+  ])
+  assert.equal(payload.format, 2)
+  assert.equal(payload.policy, 'contained-native-typescript-v2')
+  assert.equal(payload.runtimeAuthorityDigest, snapshot.runtimeAuthority.digest)
+  const configuration = generated.files.find(
+    (entry) => entry.path === payload.roles.configuration
+  )
+  assert.ok(
+    configuration.content.includes(
+      require('node:url').pathToFileURL(
+        path.join(snapshot.sourceRoot, contract.configFile)
+      ).href
+    )
+  )
+  for (const entry of snapshot.runtimeAuthority.packages) {
+    assert.ok(configuration.content.includes(JSON.stringify(entry.name)))
+    assert.ok(
+      configuration.content.includes(
+        JSON.stringify(path.join(snapshot.sourceRoot, entry.entryPath))
+      )
+    )
+  }
+  assert.equal(configuration.content.includes('/dist/'), false)
+  const legacy = source.createDerivedExecution({
+    sourceRoot: snapshot.sourceRoot,
+    verificationSource: snapshot.verificationSource
+  })
+  assert.equal(legacy.executionSource.format, 1)
+  assert.equal(legacy.executionSource.policy, 'contained-native-typescript-v1')
+  assert.equal(
+    Object.hasOwn(legacy.executionSource, 'runtimeAuthorityDigest'),
+    false
+  )
+  const rehash = (value) => {
+    value.fileCount = value.files.length
+    value.digest = fingerprint(JSON.stringify(value.files))
+  }
+  const rehashExecution = (value) => {
+    const { digest, ...payload } = value.executionSource
+    assert.ok(digest)
+    value.executionSource.digest = fingerprint(JSON.stringify(payload))
+    value.configurationDigest = value.executionSource.digest
+  }
+  const cases = [
+    [
+      'null descriptor',
+      (s) => {
+        s.executionSource = null
+      }
+    ],
+    [
+      'unsupported policy with self-consistent digest',
+      (s) => {
+        s.executionSource.policy = 'unknown'
+        rehashExecution(s)
+      }
+    ],
+    [
+      'wrong original verifier with self-consistent digest',
+      (s) => {
+        s.executionSource.verificationSourceDigest = 'a'.repeat(64)
+        rehashExecution(s)
+      }
+    ],
+    [
+      'wrong configuration identity',
+      (s) => {
+        s.configurationDigest = 'b'.repeat(64)
+      }
+    ],
+    [
+      'altered generated bytes and all self-consistent digests',
+      (s) => {
+        const file = s.files.find(
+          (item) => item.path === payload.roles.bootstrap
+        )
+        file.digest = fingerprint('process.exit(0)')
+        file.size = 15
+        const entry = s.executionSource.files.find(
+          (item) => item.path === file.path
+        )
+        Object.assign(entry, file)
+        rehashExecution(s)
+        rehash(s)
+      }
+    ],
+    [
+      'missing generated file',
+      (s) => {
+        s.files = s.files.filter(
+          (item) => item.path !== payload.roles.bootstrap
+        )
+        rehash(s)
+      }
+    ],
+    [
+      'undeclared extra execution input',
+      (s) => {
+        s.files.push({
+          path: 'tools/flow-inspector/control-plane/extra-bootstrap.cjs',
+          size: 0,
+          digest: fingerprint('')
+        })
+        s.files.sort((a, b) => a.path.localeCompare(b.path))
+        rehash(s)
+      }
+    ],
+    [
+      'missing original verification identity',
+      (s) => {
+        delete s.verificationSource
+      }
+    ],
+    [
+      'missing runtime identity',
+      (s) => {
+        delete s.runtimeSource
+      }
+    ],
+    [
+      'caller-overridden generated role',
+      (s) => {
+        s.executionSource.roles.bootstrap = contract.testFile
+        rehashExecution(s)
+      }
+    ],
+    [
+      'old full snapshot identity',
+      (s) => {
+        s.digest = snapshot.digest
+      }
+    ]
+  ]
+  for (const [name, mutate] of cases) {
+    const value = structuredClone(derived)
+    mutate(value)
+    assert.throws(
+      () =>
+        source.validateSourceSnapshot(value, contract, value.files, context),
+      undefined,
+      name
+    )
+  }
+  assert.throws(
+    () => source.validateSourceSnapshot(derived, contract),
+    /trusted.*(location|root)/i
+  )
+  assert.throws(
+    () => source.validateSourceSnapshot(retained, contract, undefined, context),
+    /manifest/i
+  )
+  assert.throws(
+    () =>
+      source.validateSourceSnapshot(derived, contract, files, {
+        sourceRoot: path.join(output, randomUUID(), 'source')
+      }),
+    /execution/i
+  )
+  assert.throws(
+    () => source.createDerivedExecution({ ...input, policy: 'caller-policy' }),
+    /execution/i
+  )
+  assert.throws(
+    () =>
+      source.createDerivedExecution({
+        ...input,
+        sourceRoot: snapshot.sourceRoot + '/../source'
+      }),
+    /execution/i
+  )
+  assert.throws(
+    () =>
+      source.createDerivedExecution({
+        ...input,
+        verificationSource: {
+          ...snapshot.verificationSource,
+          roles: {
+            ...snapshot.verificationSource.roles,
+            test: payload.roles.bootstrap
+          }
+        }
+      }),
+    /execution/i
+  )
+  const legacySnapshot = { ...derived }
+  delete legacySnapshot.executionSource
+  assert.equal(
+    source.validateSourceSnapshot(legacySnapshot, contract).executionSource,
+    undefined
+  )
+  read.mock.restore()
+  write.mock.restore()
+  const derivedInput = {
+    sourceRoot: snapshot.sourceRoot,
+    admission: {
+      attemptId: path.basename(path.dirname(snapshot.sourceRoot)),
+      repository: fs.realpathSync(root),
+      ...derived,
+      ...admitted
+    }
+  }
+  assert.throws(
+    () => source.verifyRetainedSource(root, derivedInput, contract),
+    /ordinary/
+  )
+  assert.throws(
+    () =>
+      source.composeSource(
+        root,
+        path.join(output, randomUUID()),
+        derivedInput,
+        derivedInput,
+        contract
+      ),
+    /ordinary/
+  )
+})
+
+test('derived source admission performs one shared admission and only three additional generation hashes', (t) => {
+  const source = require('../snapshot.cjs')
+  const output = fs.mkdtempSync(path.join(parent, 'derived-count-'))
+  t.after(() => fs.rmSync(output, { recursive: true, force: true }))
+  const contract = loadContract(root)
+  const snapshot = captureSource(root, output, contract)
+  const generated = source.createDerivedExecution({
+    sourceRoot: snapshot.sourceRoot,
+    verificationSource: snapshot.verificationSource,
+    runtimeAuthority: snapshot.runtimeAuthority
+  })
+  const files = [...snapshot.files, ...generated.executionSource.files].sort(
+    (a, b) => a.path.localeCompare(b.path)
+  )
+  const derived = {
+    ...snapshot,
+    files,
+    fileCount: files.length,
+    digest: createHash('sha256').update(JSON.stringify(files)).digest('hex'),
+    configurationDigest: generated.executionSource.digest,
+    executionSource: generated.executionSource
+  }
+  const crypto = require('node:crypto'),
+    originalHash = crypto.createHash
+  const hash = t.mock.method(crypto, 'createHash', (...args) =>
+    originalHash(...args)
+  )
+  const modulePath = require.resolve('../snapshot.cjs'),
+    saved = require.cache[modulePath]
+  Reflect.deleteProperty(require.cache, modulePath)
+  const countedSource = require('../snapshot.cjs')
+  require.cache[modulePath] = saved
+  countedSource.validateSourceSnapshot(derived, contract, files, {
+    sourceRoot: snapshot.sourceRoot
+  })
+  assert.equal(hash.mock.callCount(), 7)
+})
 
 test('captures exact source bytes once and preserves them independently of the checkout', (t) => {
   const output = fs.mkdtempSync(path.join(parent, 'run-'))
@@ -67,9 +969,8 @@ test('captures exact source bytes once and preserves them independently of the c
 })
 
 test('rejects symlinked source files before executing code', (t) => {
-  const fixture = fs.mkdtempSync(path.join(parent, 'fixture-'))
-  t.after(() => fs.rmSync(fixture, { recursive: true, force: true }))
-  fs.mkdirSync(path.join(fixture, 'packages/factory/src'), { recursive: true })
+  const { repository: fixture } = copiedSource(t)
+  fs.rmSync(path.join(fixture, 'packages/factory/src/index.ts'))
   fs.symlinkSync(
     path.join(root, 'packages/factory/src/index.ts'),
     path.join(fixture, 'packages/factory/src/index.ts')
@@ -79,4 +980,1491 @@ test('rejects symlinked source files before executing code', (t) => {
       captureSource(fixture, path.join(fixture, 'attempt'), loadContract(root)),
     /symlink/i
   )
+})
+
+const runtimePath = (file) =>
+  file === 'package.json' ||
+  file === 'yarn.lock' ||
+  /^packages\/(factory|reactive-events|utils|persistence)\/package\.json$/.test(
+    file
+  ) ||
+  (/^packages\/(factory|reactive-events|utils|persistence)\/src\//.test(file) &&
+    !file.split('/').includes('__tests__'))
+
+function copiedSource(t) {
+  const fixture = fs.mkdtempSync(path.join(parent, 'identity-'))
+  t.after(() => fs.rmSync(fixture, { recursive: true, force: true }))
+  const initial = captureSource(
+    root,
+    path.join(fixture, 'seed'),
+    loadContract(root)
+  )
+  const repository = path.join(fixture, 'repository')
+  fs.cpSync(initial.sourceRoot, repository, { recursive: true })
+  for (const entry of initial.files)
+    fs.chmodSync(path.join(repository, entry.path), 0o644)
+  const capture = (name, contract = loadContract(repository)) =>
+    captureSource(repository, path.join(repository, 'attempts', name), contract)
+  return { repository, capture }
+}
+
+test('runtime identity covers the complete declared runtime inventory and preserves full snapshot identity with one read per file', (t) => {
+  const output = fs.mkdtempSync(path.join(parent, 'runtime-'))
+  t.after(() => fs.rmSync(output, { recursive: true, force: true }))
+  const contract = loadContract(root)
+  const originalRead = fs.readFileSync
+  const reads = t.mock.method(fs, 'readFileSync', (...args) =>
+    originalRead(...args)
+  )
+  const snapshot = captureSource(root, output, contract)
+  assert.equal(reads.mock.callCount(), snapshot.fileCount)
+  reads.mock.restore()
+  assert.ok(
+    snapshot.runtimeSource,
+    'capture must issue runtime source identity'
+  )
+  assert.equal(snapshot.runtimeSource.format, 1)
+  const expected = snapshot.files
+    .filter((entry) => runtimePath(entry.path))
+    .map(({ path, size, digest }) => ({ path, size, digest }))
+  assert.deepEqual(snapshot.runtimeSource.files, expected)
+  assert.deepEqual(
+    expected.map((entry) => entry.path),
+    expected.map((entry) => entry.path).sort()
+  )
+  assert.ok(expected.length > 10)
+  assert.equal(
+    new Set(expected.map((entry) => entry.path)).size,
+    expected.length
+  )
+  for (const entry of snapshot.runtimeSource.files) {
+    assert.deepEqual(Object.keys(entry), ['path', 'size', 'digest'])
+    const bytes = fs.readFileSync(path.join(snapshot.sourceRoot, entry.path))
+    assert.equal(entry.size, bytes.length)
+    assert.equal(entry.digest, fingerprint(bytes))
+    assert.ok(Object.isFrozen(entry))
+  }
+  assert.equal(
+    snapshot.runtimeSource.digest,
+    fingerprint(JSON.stringify(expected))
+  )
+  assert.equal(snapshot.digest, fingerprint(JSON.stringify(snapshot.files)))
+  assert.ok(Object.isFrozen(snapshot.runtimeSource))
+  assert.ok(Object.isFrozen(snapshot.runtimeSource.files))
+  assert.equal(
+    snapshot.runtimeSource.files.some(
+      (entry) => entry.path === contract.configFile
+    ),
+    false
+  )
+})
+
+test('runtime identity changes for runtime code, every package manifest, root metadata, lockfile and inventory changes', (t) => {
+  const { repository, capture } = copiedSource(t)
+  let previous = capture('baseline')
+  assert.ok(
+    previous.runtimeSource,
+    'capture must issue runtime source identity'
+  )
+  const changedPaths = [
+    'packages/factory/src/index.ts',
+    'packages/reactive-events/src/index.ts',
+    'packages/utils/src/index.ts',
+    'packages/persistence/src/index.ts',
+    ...['factory', 'reactive-events', 'utils', 'persistence'].map(
+      (name) => 'packages/' + name + '/package.json'
+    ),
+    'package.json',
+    'yarn.lock'
+  ]
+  for (const [index, file] of changedPaths.entries()) {
+    fs.appendFileSync(path.join(repository, file), '\n')
+    const next = capture('change-' + index)
+    assert.notEqual(
+      next.runtimeSource.digest,
+      previous.runtimeSource.digest,
+      file
+    )
+    assert.notEqual(next.digest, previous.digest, file)
+    previous = next
+  }
+  const extra = path.join(repository, 'packages/factory/src/identity-proof.ts')
+  fs.writeFileSync(extra, 'export const proof = true\n')
+  const added = capture('added')
+  assert.notEqual(added.runtimeSource.digest, previous.runtimeSource.digest)
+  fs.unlinkSync(extra)
+  const removed = capture('removed')
+  assert.equal(removed.runtimeSource.digest, previous.runtimeSource.digest)
+})
+
+test('separately admitted verification bytes change full evidence identity without changing runtime identity', (t) => {
+  const { repository, capture } = copiedSource(t)
+  const contract = loadContract(repository)
+  const before = capture('before')
+  assert.ok(before.runtimeSource, 'capture must issue runtime source identity')
+  let previousDigest = before.digest
+  for (const [index, file] of [
+    contract.manifestPath,
+    contract.architecturePath,
+    contract.specPath,
+    contract.testFile,
+    contract.configFile
+  ].entries()) {
+    fs.appendFileSync(path.join(repository, file), '\n')
+    const after = capture('verification-' + index)
+    assert.equal(after.runtimeSource.digest, before.runtimeSource.digest, file)
+    assert.notEqual(after.digest, previousDigest, file)
+    previousDigest = after.digest
+  }
+})
+
+test('verification paths cannot disguise runtime code or dependency metadata as excluded proof inputs', (t) => {
+  const { capture } = copiedSource(t)
+  const contract = loadContract(root)
+  for (const [index, configFile] of [
+    'packages/factory/src/index.ts',
+    'packages/factory/package.json',
+    'package.json',
+    'yarn.lock'
+  ].entries()) {
+    assert.throws(
+      () => capture('overlap-' + index, { ...contract, configFile }),
+      /verification.*runtime|runtime.*verification/i
+    )
+  }
+})
+
+test('runtime source admission requires its exact full snapshot manifest without source IO or legacy promotion', (t) => {
+  const directory = fs.mkdtempSync(path.join(parent, 'admission-'))
+  t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
+  const snapshot = captureSource(root, directory, loadContract(root))
+  assert.equal(typeof validateRuntimeSource, 'function')
+  const originalRead = fs.readFileSync
+  const reads = t.mock.method(fs, 'readFileSync', (...args) =>
+    originalRead(...args)
+  )
+  assert.equal(
+    validateRuntimeSource(snapshot).digest,
+    snapshot.runtimeSource.digest
+  )
+  const retained = { ...snapshot }
+  delete retained.files
+  assert.throws(() => validateRuntimeSource(retained), /full.*manifest/i)
+  assert.equal(
+    validateRuntimeSource(retained, snapshot.files).digest,
+    snapshot.runtimeSource.digest
+  )
+  const historical = { ...retained }
+  delete historical.runtimeSource
+  assert.equal(validateRuntimeSource(historical), undefined)
+  assert.equal(Object.hasOwn(historical, 'runtimeSource'), false)
+  assert.equal(reads.mock.callCount(), 0)
+})
+
+test('runtime admission rejects malformed or self-consistent but unbound inventories', (t) => {
+  const directory = fs.mkdtempSync(path.join(parent, 'invalid-admission-'))
+  t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
+  const snapshot = captureSource(root, directory, loadContract(root))
+  assert.equal(typeof validateRuntimeSource, 'function')
+  const rehashRuntime = (input) => {
+    input.runtimeSource.digest = fingerprint(
+      JSON.stringify(input.runtimeSource.files)
+    )
+  }
+  const cases = [
+    [
+      'present null',
+      (input) => {
+        input.runtimeSource = null
+      }
+    ],
+    [
+      'present undefined',
+      (input) => {
+        input.runtimeSource = undefined
+      }
+    ],
+    [
+      'unsupported version',
+      (input) => {
+        input.runtimeSource.format = 2
+      }
+    ],
+    [
+      'unknown identity field',
+      (input) => {
+        input.runtimeSource.trusted = true
+      }
+    ],
+    [
+      'empty inventory',
+      (input) => {
+        input.runtimeSource.files = []
+        rehashRuntime(input)
+      }
+    ],
+    [
+      'duplicate entry',
+      (input) => {
+        input.runtimeSource.files.push(input.runtimeSource.files[0])
+        rehashRuntime(input)
+      }
+    ],
+    [
+      'missing runtime entry with fresh digest',
+      (input) => {
+        input.runtimeSource.files.splice(
+          input.runtimeSource.files.findIndex((entry) =>
+            entry.path.endsWith('/src/index.ts')
+          ),
+          1
+        )
+        rehashRuntime(input)
+      }
+    ],
+    [
+      'reordered entries',
+      (input) => {
+        input.runtimeSource.files.reverse()
+        rehashRuntime(input)
+      }
+    ],
+    [
+      'noncanonical entry key order',
+      (input) => {
+        const entry = input.runtimeSource.files[0]
+        input.runtimeSource.files[0] = {
+          digest: entry.digest,
+          path: entry.path,
+          size: entry.size
+        }
+        rehashRuntime(input)
+      }
+    ],
+    [
+      'unknown entry key',
+      (input) => {
+        input.runtimeSource.files[0].trusted = true
+        rehashRuntime(input)
+      }
+    ],
+    [
+      'invalid byte length',
+      (input) => {
+        input.runtimeSource.files[0].size = -1
+        rehashRuntime(input)
+      }
+    ],
+    [
+      'noncanonical path',
+      (input) => {
+        input.runtimeSource.files[0].path =
+          './' + input.runtimeSource.files[0].path
+        rehashRuntime(input)
+      }
+    ],
+    [
+      'wrong runtime digest',
+      (input) => {
+        input.runtimeSource.digest = '0'.repeat(64)
+      }
+    ],
+    [
+      'wrong full snapshot digest',
+      (input) => {
+        input.digest = '0'.repeat(64)
+      }
+    ],
+    [
+      'altered full manifest',
+      (input) => {
+        input.files[0].size++
+      }
+    ],
+    [
+      'wrong lockfile identity',
+      (input) => {
+        input.lockfileDigest = '0'.repeat(64)
+      }
+    ],
+    [
+      'missing required metadata in both inventories',
+      (input) => {
+        input.files = input.files.filter(
+          (entry) => entry.path !== 'packages/factory/package.json'
+        )
+        input.digest = fingerprint(JSON.stringify(input.files))
+        input.runtimeSource.files = input.runtimeSource.files.filter(
+          (entry) => entry.path !== 'packages/factory/package.json'
+        )
+        rehashRuntime(input)
+      }
+    ],
+    [
+      'unsupported source path in both inventories',
+      (input) => {
+        const entry = {
+          path: 'packages/other/src/index.ts',
+          digest: 'a'.repeat(64),
+          size: 1
+        }
+        input.files.push(entry)
+        input.digest = fingerprint(JSON.stringify(input.files))
+        input.runtimeSource.files.push({
+          path: entry.path,
+          size: entry.size,
+          digest: entry.digest
+        })
+        rehashRuntime(input)
+      }
+    ]
+  ]
+  for (const [name, corrupt] of cases) {
+    const input = structuredClone(snapshot)
+    corrupt(input)
+    assert.throws(
+      () => validateRuntimeSource(input),
+      /runtime|manifest|snapshot|lockfile/i,
+      name
+    )
+  }
+})
+
+test('source owner constructs candidate runtime identity from captured bytes without reading source or admitting a snapshot', (t) => {
+  const output = fs.mkdtempSync(path.join(parent, 'runtime-construction-'))
+  t.after(() => fs.rmSync(output, { recursive: true, force: true }))
+  const contract = loadContract(root)
+  const snapshot = captureSource(root, output, contract)
+  const read = t.mock.method(fs, 'readFileSync', () => {
+    throw new Error('Unexpected source reread')
+  })
+  assert.deepEqual(
+    createRuntimeSource([...snapshot.files].reverse()),
+    snapshot.runtimeSource
+  )
+  const changed = snapshot.files.map((entry) =>
+    entry.path === 'packages/factory/src/data-transact.ts'
+      ? { ...entry, size: entry.size + 1, digest: 'a'.repeat(64) }
+      : entry
+  )
+  const runtime = createRuntimeSource(changed)
+  assert.notEqual(runtime.digest, snapshot.runtimeSource.digest)
+  assert.ok(Object.isFrozen(runtime))
+  assert.ok(Object.isFrozen(runtime.files))
+  assert.ok(runtime.files.every(Object.isFrozen))
+  assert.deepEqual(
+    createRuntimeSource(
+      snapshot.files.map((entry) =>
+        entry.path === contract.configFile
+          ? { ...entry, digest: 'b'.repeat(64) }
+          : entry
+      )
+    ),
+    snapshot.runtimeSource
+  )
+  assert.throws(
+    () => validateRuntimeSource({ ...snapshot, runtimeSource: runtime }),
+    /runtime inventory/i
+  )
+  const candidate = {
+    ...snapshot,
+    files: changed,
+    runtimeSource: runtime,
+    digest: createHash('sha256').update(JSON.stringify(changed)).digest('hex')
+  }
+  assert.deepEqual(validateRuntimeSource(candidate), runtime)
+  assert.equal(read.mock.callCount(), 0)
+})
+
+test('capture retains an immutable verification descriptor from exactly its admitted role bytes without extra reads', (t) => {
+  const output = fs.mkdtempSync(path.join(parent, 'verification-source-'))
+  t.after(() => fs.rmSync(output, { recursive: true, force: true }))
+  const contract = loadContract(root)
+  const originalRead = fs.readFileSync
+  const read = t.mock.method(fs, 'readFileSync', (...args) =>
+    originalRead(...args)
+  )
+  const snapshot = captureSource(root, output, contract)
+  assert.equal(read.mock.callCount(), snapshot.fileCount)
+  read.mock.restore()
+  const roles = {
+    manifest: contract.manifestPath,
+    architecture: contract.architecturePath,
+    spec: contract.specPath,
+    test: contract.testFile,
+    configuration: contract.configFile
+  }
+  assert.deepEqual(snapshot.verificationSource.roles, roles)
+  assert.deepEqual(
+    snapshot.verificationSource.files.map((entry) => entry.path),
+    Object.values(roles).sort()
+  )
+  assert.deepEqual(
+    createVerificationSource([...snapshot.files].reverse(), contract),
+    snapshot.verificationSource
+  )
+  assert.ok(Object.isFrozen(snapshot.verificationSource))
+  assert.ok(Object.isFrozen(snapshot.verificationSource.roles))
+  assert.ok(snapshot.verificationSource.files.every(Object.isFrozen))
+  const forbidden = t.mock.method(fs, 'readFileSync', () => {
+    throw new Error('Source reread')
+  })
+  const admitted = validateSourceSnapshot(snapshot, contract)
+  assert.deepEqual(admitted.runtimeSource, snapshot.runtimeSource)
+  assert.deepEqual(admitted.verificationSource, snapshot.verificationSource)
+  assert.ok(Object.isFrozen(admitted))
+  assert.notEqual(admitted.verificationSource, snapshot.verificationSource)
+  assert.equal(forbidden.mock.callCount(), 0)
+})
+
+test('verification identity changes for captured verifier bytes independently of runtime and does not replace full snapshot admission', (t) => {
+  const output = fs.mkdtempSync(path.join(parent, 'verification-identity-'))
+  t.after(() => fs.rmSync(output, { recursive: true, force: true }))
+  const contract = loadContract(root)
+  const snapshot = captureSource(root, output, contract)
+  const files = snapshot.files.map((entry) =>
+    entry.path === contract.configFile
+      ? { ...entry, size: entry.size + 1, digest: 'a'.repeat(64) }
+      : entry
+  )
+  const verificationSource = createVerificationSource(files, contract)
+  assert.notEqual(verificationSource.digest, snapshot.verificationSource.digest)
+  assert.deepEqual(createRuntimeSource(files), snapshot.runtimeSource)
+  assert.throws(
+    () => validateSourceSnapshot({ ...snapshot, verificationSource }, contract),
+    /verification/i
+  )
+  const candidate = {
+    ...snapshot,
+    files,
+    verificationSource,
+    digest: createHash('sha256').update(JSON.stringify(files)).digest('hex'),
+    configurationDigest: 'a'.repeat(64)
+  }
+  assert.deepEqual(
+    validateSourceSnapshot(candidate, contract).verificationSource,
+    verificationSource
+  )
+  const runtimeChange = snapshot.files.map((entry) =>
+    entry.path === 'packages/factory/src/data-transact.ts'
+      ? { ...entry, digest: 'b'.repeat(64) }
+      : entry
+  )
+  assert.deepEqual(
+    createVerificationSource(runtimeChange, contract),
+    snapshot.verificationSource
+  )
+})
+
+test('verification admission refuses absent runtime, unbound manifests, substituted roles and descriptor-only forgery without upgrading historical absence', (t) => {
+  const output = fs.mkdtempSync(path.join(parent, 'verification-admission-'))
+  t.after(() => fs.rmSync(output, { recursive: true, force: true }))
+  const contract = loadContract(root)
+  const snapshot = captureSource(root, output, contract)
+  const historical = { ...snapshot }
+  delete historical.verificationSource
+  assert.equal(
+    validateSourceSnapshot(historical, contract).verificationSource,
+    undefined
+  )
+  const rehash = (value) => {
+    const payload = { ...value }
+    delete payload.digest
+    value.digest = createHash('sha256')
+      .update(JSON.stringify(payload))
+      .digest('hex')
+  }
+  const cases = [
+    (s) => {
+      delete s.runtimeSource
+    },
+    (s) => {
+      delete s.files
+    },
+    (s) => {
+      s.verificationSource = null
+    },
+    (s) => {
+      s.verificationSource.format = 2
+    },
+    (s) => {
+      s.verificationSource.contractDigest = 'a'.repeat(64)
+      rehash(s.verificationSource)
+    },
+    (s) => {
+      s.verificationSource.files.pop()
+      rehash(s.verificationSource)
+    },
+    (s) => {
+      s.verificationSource.files[0].digest = 'b'.repeat(64)
+      rehash(s.verificationSource)
+    },
+    (s) => {
+      const r = s.verificationSource.roles
+      ;[r.spec, r.test] = [r.test, r.spec]
+      rehash(s.verificationSource)
+    },
+    (s) => {
+      s.verificationSource.roles.test = './' + s.verificationSource.roles.test
+      rehash(s.verificationSource)
+    },
+    (s) => {
+      s.contractDigest = 'c'.repeat(64)
+    }
+  ]
+  for (const mutate of cases) {
+    const value = structuredClone(snapshot)
+    mutate(value)
+    assert.throws(
+      () => validateSourceSnapshot(value, contract),
+      /source|manifest|verification|runtime/i
+    )
+  }
+  for (const replacement of [
+    contract.specPath,
+    './' + contract.testFile,
+    'packages/factory/src/data-transact.ts'
+  ]) {
+    assert.throws(
+      () =>
+        createVerificationSource(snapshot.files, {
+          ...contract,
+          testFile: replacement
+        }),
+      /role|path|runtime|verification/i
+    )
+  }
+})
+
+test('combined source admission hashes the full manifest once and each descriptor once', (t) => {
+  const output = fs.mkdtempSync(path.join(parent, 'source-admission-count-'))
+  t.after(() => fs.rmSync(output, { recursive: true, force: true }))
+  const contract = loadContract(root)
+  const snapshot = captureSource(root, output, contract)
+  const crypto = require('node:crypto')
+  const originalHash = crypto.createHash
+  const hash = t.mock.method(crypto, 'createHash', (...args) =>
+    originalHash(...args)
+  )
+  const modulePath = require.resolve('../snapshot.cjs')
+  const saved = require.cache[modulePath]
+  Reflect.deleteProperty(require.cache, modulePath)
+  const source = require('../snapshot.cjs')
+  require.cache[modulePath] = saved
+  const admitted = source.validateSourceSnapshot(snapshot, contract)
+  assert.equal(
+    admitted.verificationSource.digest,
+    snapshot.verificationSource.digest
+  )
+  assert.equal(hash.mock.callCount(), 4)
+})
+
+function compositionInput(repository, snapshot, contract, executionContext) {
+  return {
+    sourceRoot: snapshot.sourceRoot,
+    admission: Object.freeze({
+      attemptId: path.basename(path.dirname(snapshot.sourceRoot)),
+      repository: fs.realpathSync(repository),
+      head: snapshot.head,
+      sourceDigest: snapshot.digest,
+      contractDigest: contract.digest,
+      mappingVersion: contract.mappingVersion,
+      architectureVersion: contract.architectureVersion,
+      configurationDigest: snapshot.configurationDigest,
+      ...validateSourceSnapshot(
+        snapshot,
+        contract,
+        snapshot.files,
+        executionContext
+      )
+    })
+  }
+}
+
+test('ordinary composition executes distinct retained verifier bytes on one selected runtime without checkout reads', async (t) => {
+  const { repository, capture } = copiedSource(t)
+  const contract = loadContract(repository)
+  const accepted = capture(randomUUID(), contract)
+  fs.appendFileSync(
+    path.join(repository, contract.testFile),
+    '\n// target verifier bytes\n'
+  )
+  fs.appendFileSync(
+    path.join(repository, contract.configFile),
+    '\n// target configuration bytes\n'
+  )
+  const target = capture(randomUUID(), contract)
+  fs.appendFileSync(
+    path.join(repository, 'packages/factory/src/data-transact.ts'),
+    '\n// integrated runtime source\n'
+  )
+  const integrated = capture(randomUUID(), contract)
+  const runtime = compositionInput(repository, integrated, contract)
+  const inputs = [
+    compositionInput(repository, accepted, contract),
+    compositionInput(repository, target, contract)
+  ]
+  assert.notEqual(
+    integrated.runtimeSource.digest,
+    accepted.runtimeSource.digest
+  )
+  assert.equal(accepted.runtimeSource.digest, target.runtimeSource.digest)
+  assert.notEqual(
+    accepted.verificationSource.digest,
+    target.verificationSource.digest
+  )
+  // Checkout changes after both captures cannot provide replacement proof bytes.
+  fs.writeFileSync(
+    path.join(repository, contract.testFile),
+    'throw new Error("mutable checkout must not execute")'
+  )
+  const { runVerification } = require('../runner.cjs')
+  const { assessEvidence } = require('../evidence.cjs')
+  for (const verification of inputs) {
+    const output = path.join(repository, 'attempts', randomUUID())
+    const read = t.mock.method(fs, 'readFileSync')
+    const snapshot = composeSource(
+      repository,
+      output,
+      runtime,
+      verification,
+      contract
+    )
+    assert.equal(read.mock.callCount(), snapshot.fileCount)
+    assert.equal(snapshot.readCount, snapshot.fileCount)
+    assert.ok(
+      read.mock.calls.every(
+        (call) =>
+          String(call.arguments[0]).startsWith(runtime.sourceRoot + path.sep) ||
+          String(call.arguments[0]).startsWith(
+            verification.sourceRoot + path.sep
+          )
+      )
+    )
+    read.mock.restore()
+    assert.equal(snapshot.runtimeSource.digest, integrated.runtimeSource.digest)
+    assert.deepEqual(
+      snapshot.runtimeAuthority,
+      runtime.admission.runtimeAuthority
+    )
+    assert.equal(
+      snapshot.verificationSource.digest,
+      verification.admission.verificationSource.digest
+    )
+    assert.equal(snapshot.head, integrated.head)
+    assert.notEqual(snapshot.digest, accepted.digest)
+    assert.notEqual(snapshot.digest, target.digest)
+    const flowIds = contract.flows.map((flow) => flow.id)
+    const result = await runVerification({
+      repositoryRoot: root,
+      runDirectory: output,
+      snapshot,
+      contract,
+      flowIds,
+      scenario: 'baseline',
+      timeoutMs: 30000
+    })
+    const evidence = assessEvidence(contract, snapshot, result, flowIds)
+    assert.equal(evidence.status, 'passed', JSON.stringify(evidence.issues))
+    assert.equal(evidence.runtimeSourceDigest, integrated.runtimeSource.digest)
+  }
+})
+
+test('ordinary composition rejects missing, changed, unsafe or nonordinary input without usable snapshot', (t) => {
+  assert.equal(typeof composeSource, 'function')
+  const { repository, capture } = copiedSource(t)
+  const contract = loadContract(repository)
+  const snapshot = capture(randomUUID(), contract)
+  const input = compositionInput(repository, snapshot, contract)
+  for (const mutate of [
+    (value) => {
+      value.admission.repository = root
+    },
+    (value) => {
+      value.admission.configurationDigest = '0'.repeat(64)
+    },
+    (value) => {
+      value.admission.contractDigest = '0'.repeat(64)
+    },
+    (value) => {
+      value.admission.attemptId = randomUUID()
+    }
+  ]) {
+    const invalid = structuredClone(input)
+    mutate(invalid)
+    const output = path.join(repository, 'attempts', randomUUID())
+    assert.throws(
+      () => composeSource(repository, output, input, invalid, contract),
+      /source|contract|configuration|attempt|repository/i
+    )
+    assert.equal(
+      fs.existsSync(path.join(output, 'source-manifest.json')),
+      false
+    )
+  }
+  assert.throws(
+    () =>
+      composeSource(
+        repository,
+        path.dirname(input.sourceRoot),
+        input,
+        input,
+        contract
+      ),
+    /exists|source|immutable/i
+  )
+  const linkedOutput = path.join(repository, 'attempts', randomUUID())
+  fs.symlinkSync(path.dirname(input.sourceRoot), linkedOutput)
+  assert.throws(
+    () => composeSource(repository, linkedOutput, input, input, contract),
+    /symlink|source/i
+  )
+  assert.equal(
+    fingerprint(
+      fs.readFileSync(
+        path.join(path.dirname(input.sourceRoot), 'source-manifest.json')
+      )
+    ),
+    snapshot.digest
+  )
+  const file = path.join(input.sourceRoot, contract.testFile)
+  const original = fs.readFileSync(file)
+  for (const corrupt of ['missing', 'bytes', 'symlink']) {
+    fs.rmSync(file)
+    if (corrupt === 'bytes')
+      fs.writeFileSync(file, Buffer.alloc(original.length, 32))
+    if (corrupt === 'symlink')
+      fs.symlinkSync(path.join(repository, contract.testFile), file)
+    const output = path.join(repository, 'attempts', randomUUID())
+    assert.throws(
+      () => composeSource(repository, output, input, input, contract),
+      /source|fingerprint|symlink|ENOENT/i
+    )
+    assert.equal(
+      fs.existsSync(path.join(output, 'source-manifest.json')),
+      false
+    )
+    fs.rmSync(file, { force: true })
+    fs.writeFileSync(file, original)
+  }
+})
+
+test('composition rejects mixed legacy and scoped inputs while preserving double-legacy Factory behavior', (t) => {
+  const { repository, capture } = copiedSource(t)
+  const contract = loadContract(repository)
+  const scoped = compositionInput(
+    repository,
+    capture(randomUUID(), contract),
+    contract
+  )
+  const legacy = structuredClone(scoped)
+  delete legacy.admission.runtimeAuthority
+  const mixedOutput = path.join(repository, 'attempts', randomUUID())
+  assert.throws(
+    () => composeSource(repository, mixedOutput, scoped, legacy, contract),
+    /legacy|scoped|authority/i
+  )
+  assert.equal(fs.existsSync(path.join(mixedOutput, 'source')), false)
+  const legacyOutput = path.join(repository, 'attempts', randomUUID())
+  const composed = composeSource(
+    repository,
+    legacyOutput,
+    legacy,
+    legacy,
+    contract
+  )
+  assert.equal(Object.hasOwn(composed, 'runtimeAuthority'), false)
+  assert.equal(composed.runtimeSource.format, 1)
+  assert.deepEqual(composed.runtimeSource, legacy.admission.runtimeSource)
+})
+
+test('composition validates every selected byte and captured manifest graph before writing', (t) => {
+  const { repository, capture } = copiedSource(t)
+  const contract = loadContract(repository)
+  const snapshot = capture(randomUUID(), contract)
+  const input = compositionInput(repository, snapshot, contract)
+  const lateFile = path.join(input.sourceRoot, contract.configFile)
+  fs.chmodSync(lateFile, 0o600)
+  fs.appendFileSync(lateFile, 'changed')
+  const write = t.mock.method(fs, 'writeFileSync')
+  const mkdir = t.mock.method(fs, 'mkdirSync')
+  const lateOutput = path.join(repository, 'attempts', randomUUID())
+  assert.throws(
+    () => composeSource(repository, lateOutput, input, input, contract),
+    /fingerprint/i
+  )
+  assert.equal(write.mock.callCount(), 0)
+  assert.equal(mkdir.mock.callCount(), 0)
+  write.mock.restore()
+  mkdir.mock.restore()
+
+  const graphSnapshot = capture(randomUUID(), contract)
+  const graphInput = structuredClone(
+    compositionInput(repository, graphSnapshot, contract)
+  )
+  const manifestPath = 'packages/factory/package.json'
+  const manifestFile = path.join(graphInput.sourceRoot, manifestPath)
+  const manifest = JSON.parse(fs.readFileSync(manifestFile))
+  delete manifest.dependencies['@asyra/utils']
+  const bytes = Buffer.from(JSON.stringify(manifest))
+  fs.chmodSync(manifestFile, 0o600)
+  fs.writeFileSync(manifestFile, bytes)
+  const digest = fingerprint(bytes)
+  const runtimeEntry = graphInput.admission.runtimeSource.files.find(
+    (entry) => entry.path === manifestPath
+  )
+  runtimeEntry.size = bytes.length
+  runtimeEntry.digest = digest
+  graphInput.admission.runtimeSource.digest = fingerprint(
+    JSON.stringify(graphInput.admission.runtimeSource.files)
+  )
+  const packageEntry = graphInput.admission.runtimeAuthority.packages.find(
+    (entry) => entry.manifestPath === manifestPath
+  )
+  packageEntry.manifestDigest = digest
+  const authorityPayload = { ...graphInput.admission.runtimeAuthority }
+  delete authorityPayload.digest
+  graphInput.admission.runtimeAuthority.digest = fingerprint(
+    JSON.stringify(authorityPayload)
+  )
+  const graphWrite = t.mock.method(fs, 'writeFileSync')
+  const graphMkdir = t.mock.method(fs, 'mkdirSync')
+  const graphOutput = path.join(repository, 'attempts', randomUUID())
+  assert.throws(
+    () =>
+      composeSource(repository, graphOutput, graphInput, graphInput, contract),
+    /manifest graph/i
+  )
+  assert.equal(graphWrite.mock.callCount(), 0)
+  assert.equal(graphMkdir.mock.callCount(), 0)
+})
+
+test('ordinary composition cannot write beneath a retained tree through a noncanonical input alias', (t) => {
+  const { repository, capture } = copiedSource(t)
+  const contract = loadContract(repository)
+  const snapshot = capture(randomUUID(), contract)
+  const input = compositionInput(repository, snapshot, contract)
+  const aliased = {
+    ...input,
+    sourceRoot:
+      path.dirname(path.dirname(input.sourceRoot)) +
+      '/unused/../' +
+      input.admission.attemptId +
+      '/source'
+  }
+  const write = t.mock.method(fs, 'writeFileSync')
+  const mkdir = t.mock.method(fs, 'mkdirSync')
+  assert.throws(
+    () =>
+      composeSource(
+        repository,
+        path.join(input.sourceRoot, 'nested-attempt'),
+        aliased,
+        aliased,
+        contract
+      ),
+    /source|canonical|overlap/i
+  )
+  assert.equal(write.mock.callCount(), 0)
+  assert.equal(mkdir.mock.callCount(), 0)
+})
+
+test('retained source verification reads each bound entry once without writes or a replacement authority', (t) => {
+  const { repository, capture } = copiedSource(t)
+  const contract = loadContract(repository)
+  const snapshot = capture(randomUUID(), contract)
+  const input = compositionInput(repository, snapshot, contract)
+  const original = JSON.stringify(input)
+  const read = t.mock.method(fs, 'readFileSync')
+  const write = t.mock.method(fs, 'writeFileSync')
+  const mkdir = t.mock.method(fs, 'mkdirSync')
+  assert.equal(verifyRetainedSource(repository, input, contract), undefined)
+  assert.equal(read.mock.callCount(), snapshot.fileCount)
+  assert.ok(
+    read.mock.calls.every((call) =>
+      String(call.arguments[0]).startsWith(input.sourceRoot + path.sep)
+    )
+  )
+  assert.equal(write.mock.callCount(), 0)
+  assert.equal(mkdir.mock.callCount(), 0)
+  assert.equal(JSON.stringify(input), original)
+})
+
+test('retained source verification rejects later byte corruption and unsafe authority without repairing source', (t) => {
+  assert.equal(typeof verifyRetainedSource, 'function')
+  const { repository, capture } = copiedSource(t)
+  const contract = loadContract(repository)
+  const snapshot = capture(randomUUID(), contract)
+  const input = compositionInput(repository, snapshot, contract)
+  verifyRetainedSource(repository, input, contract)
+  const file = path.join(input.sourceRoot, contract.testFile)
+  const original = fs.readFileSync(file)
+  for (const corruption of ['missing', 'bytes', 'symlink']) {
+    fs.rmSync(file)
+    if (corruption === 'bytes')
+      fs.writeFileSync(file, Buffer.alloc(original.length, 32))
+    if (corruption === 'symlink')
+      fs.symlinkSync(path.join(repository, contract.testFile), file)
+    const write = t.mock.method(fs, 'writeFileSync')
+    const mkdir = t.mock.method(fs, 'mkdirSync')
+    assert.throws(
+      () => verifyRetainedSource(repository, input, contract),
+      /fingerprint|symlink|ENOENT/i
+    )
+    const invalid = structuredClone(input)
+    invalid.admission.configurationDigest = '0'.repeat(64)
+    assert.throws(
+      () => verifyRetainedSource(repository, invalid, contract),
+      /configuration/i
+    )
+    assert.equal(write.mock.callCount(), 0)
+    assert.equal(mkdir.mock.callCount(), 0)
+    write.mock.restore()
+    mkdir.mock.restore()
+    fs.rmSync(file, { force: true })
+    fs.writeFileSync(file, original)
+  }
+})
+
+test('retained full snapshot byte verification reads and hashes every actual entry once without writes or descriptor admission', (t) => {
+  const source = require('../snapshot.cjs')
+  const output = fs.mkdtempSync(path.join(parent, 'retained-derived-bytes-'))
+  t.after(() => fs.rmSync(output, { recursive: true, force: true }))
+  const contract = loadContract(root)
+  const snapshot = captureSource(root, output, contract)
+  const generated = source.createDerivedExecution({
+    sourceRoot: snapshot.sourceRoot,
+    verificationSource: snapshot.verificationSource,
+    runtimeAuthority: snapshot.runtimeAuthority
+  })
+  for (const file of generated.files) {
+    const destination = path.join(snapshot.sourceRoot, file.path)
+    fs.mkdirSync(path.dirname(destination), { recursive: true })
+    fs.writeFileSync(destination, file.content, { flag: 'wx', mode: 0o444 })
+  }
+  const files = [...snapshot.files, ...generated.executionSource.files].sort(
+    (a, b) => a.path.localeCompare(b.path)
+  )
+  const preserved = structuredClone(files)
+  const crypto = require('node:crypto'),
+    originalHash = crypto.createHash,
+    hashed = []
+  t.mock.method(crypto, 'createHash', (...args) => {
+    const value = originalHash(...args),
+      update = value.update
+    value.update = function (bytes) {
+      hashed.push(bytes)
+      return update.call(this, bytes)
+    }
+    return value
+  })
+  const modulePath = require.resolve('../snapshot.cjs'),
+    saved = require.cache[modulePath]
+  Reflect.deleteProperty(require.cache, modulePath)
+  const counted = require('../snapshot.cjs')
+  require.cache[modulePath] = saved
+  const admission = t.mock.method(counted, 'validateSourceSnapshot')
+  const reads = t.mock.method(fs, 'readFileSync'),
+    writes = t.mock.method(fs, 'writeFileSync')
+  assert.equal(
+    counted.verifyRetainedSnapshotBytes(root, snapshot.sourceRoot, files),
+    undefined
+  )
+  assert.equal(reads.mock.callCount(), files.length)
+  assert.equal(hashed.length, files.length)
+  assert.ok(
+    hashed.every(
+      (bytes, index) =>
+        Buffer.isBuffer(bytes) && bytes === reads.mock.calls[index].result
+    )
+  )
+  assert.equal(writes.mock.callCount(), 0)
+  assert.equal(admission.mock.callCount(), 0)
+  assert.deepEqual(files, preserved)
+  for (const entry of files)
+    assert.equal(
+      fs.statSync(path.join(snapshot.sourceRoot, entry.path)).size,
+      entry.size
+    )
+})
+
+test('retained snapshot bytes reject unsafe roots and missing changed symlinked or nonregular entries', (t) => {
+  const source = require('../snapshot.cjs')
+  const output = fs.mkdtempSync(path.join(parent, 'retained-byte-rejection-'))
+  t.after(() => fs.rmSync(output, { recursive: true, force: true }))
+  const contract = loadContract(root),
+    snapshot = captureSource(root, output, contract)
+  assert.throws(
+    () =>
+      source.verifyRetainedSnapshotBytes(
+        root,
+        snapshot.sourceRoot + '/../source',
+        snapshot.files
+      ),
+    /canonical/
+  )
+  assert.throws(
+    () =>
+      source.verifyRetainedSnapshotBytes(
+        root,
+        path.dirname(snapshot.sourceRoot),
+        snapshot.files
+      ),
+    /source root/
+  )
+  assert.throws(
+    () =>
+      source.verifyRetainedSnapshotBytes(root, snapshot.sourceRoot, [
+        { ...snapshot.files[0], path: '../escape' }
+      ]),
+    /path|escape/i
+  )
+  const entry = snapshot.files[0],
+    file = path.join(snapshot.sourceRoot, entry.path),
+    bytes = fs.readFileSync(file)
+  fs.chmodSync(file, 0o600)
+  fs.writeFileSync(file, Buffer.concat([bytes, Buffer.from('changed')]))
+  assert.throws(
+    () =>
+      source.verifyRetainedSnapshotBytes(
+        root,
+        snapshot.sourceRoot,
+        snapshot.files
+      ),
+    /fingerprint/
+  )
+  fs.rmSync(file)
+  assert.throws(
+    () =>
+      source.verifyRetainedSnapshotBytes(
+        root,
+        snapshot.sourceRoot,
+        snapshot.files
+      ),
+    /ENOENT/
+  )
+  fs.symlinkSync(path.join(snapshot.sourceRoot, snapshot.files[1].path), file)
+  assert.throws(
+    () =>
+      source.verifyRetainedSnapshotBytes(
+        root,
+        snapshot.sourceRoot,
+        snapshot.files
+      ),
+    /symlink/i
+  )
+  fs.rmSync(file)
+  fs.mkdirSync(file)
+  assert.throws(
+    () =>
+      source.verifyRetainedSnapshotBytes(
+        root,
+        snapshot.sourceRoot,
+        snapshot.files
+      ),
+    /regular/
+  )
+})
+
+function derivedRuntimeInput(repository, snapshot, contract) {
+  const source = require('../snapshot.cjs')
+  const generated = source.createDerivedExecution({
+    sourceRoot: snapshot.sourceRoot,
+    verificationSource: snapshot.verificationSource,
+    runtimeAuthority: snapshot.runtimeAuthority
+  })
+  for (const file of generated.files) {
+    const destination = path.join(snapshot.sourceRoot, file.path)
+    fs.mkdirSync(path.dirname(destination), { recursive: true })
+    fs.writeFileSync(destination, file.content, { flag: 'wx', mode: 0o444 })
+  }
+  const files = [...snapshot.files, ...generated.executionSource.files].sort(
+    (a, b) => a.path.localeCompare(b.path)
+  )
+  const derived = {
+    ...snapshot,
+    files,
+    executionSource: generated.executionSource,
+    configurationDigest: generated.executionSource.digest,
+    digest: createHash('sha256').update(JSON.stringify(files)).digest('hex')
+  }
+  return compositionInput(repository, derived, contract, {
+    sourceRoot: snapshot.sourceRoot
+  })
+}
+
+test('ordinary composition cannot downgrade derived runtime or verification inputs', (t) => {
+  const { repository, capture } = copiedSource(t)
+  const contract = loadContract(repository)
+  const ordinary = compositionInput(
+    repository,
+    capture(randomUUID(), contract),
+    contract
+  )
+  const runtime = derivedRuntimeInput(
+    repository,
+    capture(randomUUID(), contract),
+    contract
+  )
+  const write = t.mock.method(fs, 'writeFileSync')
+  assert.throws(
+    () =>
+      composeSource(
+        repository,
+        path.join(repository, 'attempts', randomUUID()),
+        runtime,
+        ordinary,
+        contract
+      ),
+    /derived|execution/i
+  )
+  assert.throws(
+    () =>
+      composeSource(
+        repository,
+        path.join(repository, 'attempts', randomUUID()),
+        {
+          ...ordinary,
+          admission: { ...ordinary.admission, executionSource: null }
+        },
+        ordinary,
+        contract
+      ),
+    /derived|execution/i
+  )
+  assert.throws(
+    () =>
+      composeSource(
+        repository,
+        path.join(repository, 'attempts', randomUUID()),
+        ordinary,
+        {
+          ...ordinary,
+          admission: { ...ordinary.admission, executionSource: null }
+        },
+        contract
+      ),
+    /ordinary|execution/i
+  )
+  assert.equal(write.mock.callCount(), 0)
+})
+
+test(
+  'derived composition executes two retained ordinary verifier bundles on one admitted candidate runtime',
+  { skip: process.platform !== 'darwin', timeout: 30000 },
+  async (t) => {
+    const source = require('../snapshot.cjs')
+    const { repository, capture } = copiedSource(t)
+    const contract = loadContract(repository)
+    const accepted = compositionInput(
+      repository,
+      capture(randomUUID(), contract),
+      contract
+    )
+    fs.appendFileSync(
+      path.join(repository, contract.testFile),
+      '\n// distinct developing verifier\n'
+    )
+    fs.appendFileSync(
+      path.join(repository, contract.configFile),
+      '\n// distinct developing configuration\n'
+    )
+    const target = compositionInput(
+      repository,
+      capture(randomUUID(), contract),
+      contract
+    )
+    fs.appendFileSync(
+      path.join(repository, 'packages/factory/src/data-transact.ts'),
+      '\n// candidate runtime\n'
+    )
+    const runtime = derivedRuntimeInput(
+      repository,
+      capture(randomUUID(), contract),
+      contract
+    )
+    assert.notEqual(
+      accepted.admission.verificationSource.digest,
+      target.admission.verificationSource.digest
+    )
+    fs.writeFileSync(
+      path.join(repository, contract.testFile),
+      'throw new Error("checkout is not authority")'
+    )
+    const { runVerification } = require('../runner.cjs')
+    const { containedProcess } = require('../agent-verifier.cjs')
+    const { assessEvidence } = require('../evidence.cjs')
+    for (const verification of [accepted, target]) {
+      const output = path.join(repository, 'attempts', randomUUID())
+      const read = t.mock.method(fs, 'readFileSync')
+      const snapshot = source.composeDerivedSource(
+        repository,
+        output,
+        runtime,
+        verification,
+        contract
+      )
+      assert.equal(
+        read.mock.callCount(),
+        runtime.admission.runtimeSource.files.length +
+          verification.admission.verificationSource.files.length
+      )
+      assert.equal(snapshot.readCount, read.mock.callCount())
+      assert.equal(snapshot.fileCount, snapshot.readCount + 2)
+      assert.ok(
+        read.mock.calls.every(
+          (call) =>
+            String(call.arguments[0]).startsWith(
+              runtime.sourceRoot + path.sep
+            ) ||
+            String(call.arguments[0]).startsWith(
+              verification.sourceRoot + path.sep
+            )
+        )
+      )
+      read.mock.restore()
+      assert.equal(
+        snapshot.runtimeSource.digest,
+        runtime.admission.runtimeSource.digest
+      )
+      assert.equal(
+        snapshot.verificationSource.digest,
+        verification.admission.verificationSource.digest
+      )
+      assert.notEqual(
+        snapshot.executionSource.digest,
+        runtime.admission.executionSource.digest
+      )
+      assert.equal(
+        snapshot.configurationDigest,
+        snapshot.executionSource.digest
+      )
+      assert.equal(snapshot.head, runtime.admission.head)
+      const flows = contract.flows.map((flow) => flow.id)
+      const result = await runVerification({
+        repositoryRoot: root,
+        runDirectory: output,
+        snapshot,
+        contract: {
+          ...contract,
+          configFile: snapshot.executionSource.roles.configuration
+        },
+        flowIds: flows,
+        scenario: 'baseline',
+        timeoutMs: 15000,
+        processRunner: (options) =>
+          containedProcess(
+            {
+              ...options,
+              args: [
+                path.join(
+                  snapshot.sourceRoot,
+                  snapshot.executionSource.roles.bootstrap
+                ),
+                String(process.pid),
+                ...options.args.slice(3),
+                '--configLoader',
+                'native'
+              ],
+              cwd: snapshot.sourceRoot
+            },
+            {
+              repositoryRoot: root,
+              readRoots: [snapshot.sourceRoot],
+              writeRoot: output
+            }
+          )
+      })
+      const evidence = assessEvidence(
+        contract,
+        snapshot,
+        result,
+        flows,
+        'baseline',
+        undefined,
+        { sourceRoot: snapshot.sourceRoot }
+      )
+      assert.equal(
+        evidence.status,
+        'passed',
+        JSON.stringify({ runner: result, issues: evidence.issues })
+      )
+      assert.equal(evidence.passedCount, 6)
+    }
+  }
+)
+
+test('derived composition counts selected bytes once and reuses both generated fingerprints', (t) => {
+  const source = require('../snapshot.cjs')
+  const { repository, capture } = copiedSource(t)
+  const contract = loadContract(repository)
+  const verifier = compositionInput(
+    repository,
+    capture(randomUUID(), contract),
+    contract
+  )
+  const runtime = derivedRuntimeInput(
+    repository,
+    capture(randomUUID(), contract),
+    contract
+  )
+  const output = path.join(repository, 'attempts', randomUUID())
+  const generated = source.createDerivedExecution({
+    sourceRoot: path.join(output, 'source'),
+    verificationSource: verifier.admission.verificationSource,
+    runtimeAuthority: runtime.admission.runtimeAuthority
+  })
+  const crypto = require('node:crypto'),
+    originalHash = crypto.createHash,
+    hashed = []
+  t.mock.method(crypto, 'createHash', (...args) => {
+    const value = originalHash(...args),
+      update = value.update
+    value.update = function (bytes) {
+      hashed.push(bytes)
+      return update.call(this, bytes)
+    }
+    return value
+  })
+  const modulePath = require.resolve('../snapshot.cjs'),
+    saved = require.cache[modulePath]
+  Reflect.deleteProperty(require.cache, modulePath)
+  const counted = require('../snapshot.cjs')
+  require.cache[modulePath] = saved
+  const read = t.mock.method(fs, 'readFileSync'),
+    write = t.mock.method(fs, 'writeFileSync')
+  const snapshot = counted.composeDerivedSource(
+    repository,
+    output,
+    runtime,
+    verifier,
+    contract
+  )
+  const count =
+    runtime.admission.runtimeSource.files.length +
+    verifier.admission.verificationSource.files.length
+  assert.equal(read.mock.callCount(), count)
+  assert.equal(hashed.filter(Buffer.isBuffer).length, count)
+  assert.ok(read.mock.calls.every((call) => hashed.includes(call.result)))
+  assert.equal(
+    hashed.length,
+    count + 8,
+    'selected bytes plus two authority admissions, runtime/verifier/full identities and three fixed generation hashes'
+  )
+  for (const file of generated.files)
+    assert.equal(hashed.filter((bytes) => bytes === file.content).length, 1)
+  assert.equal(write.mock.callCount(), count + 3)
+  assert.ok(
+    write.mock.calls.every(
+      (call) =>
+        call.arguments[2].flag === 'wx' && call.arguments[2].mode === 0o444
+    )
+  )
+  assert.deepEqual(snapshot.executionSource, generated.executionSource)
+})
+
+test('derived composition rejects invalid authority and immutable destination aliases before usable output', (t) => {
+  const source = require('../snapshot.cjs')
+  const { repository, capture } = copiedSource(t)
+  const contract = loadContract(repository)
+  const verifier = compositionInput(
+    repository,
+    capture(randomUUID(), contract),
+    contract
+  )
+  const runtime = derivedRuntimeInput(
+    repository,
+    capture(randomUUID(), contract),
+    contract
+  )
+  const write = t.mock.method(fs, 'writeFileSync'),
+    mkdir = t.mock.method(fs, 'mkdirSync')
+  for (const mutate of [
+    (value) => {
+      value.admission.executionSource = null
+    },
+    (value) => {
+      value.admission.executionSource.policy = 'unknown'
+    },
+    (value) => {
+      value.admission.executionSource.verificationSourceDigest = '0'.repeat(64)
+    },
+    (value) => {
+      value.admission.configurationDigest = '0'.repeat(64)
+    },
+    (value) => {
+      value.admission.attemptId = randomUUID()
+    },
+    (value) => {
+      value.sourceRoot += '/../source'
+    }
+  ]) {
+    const invalid = structuredClone(runtime)
+    mutate(invalid)
+    assert.throws(
+      () =>
+        source.composeDerivedSource(
+          repository,
+          path.join(repository, 'attempts', randomUUID()),
+          invalid,
+          verifier,
+          contract
+        ),
+      /source|execution|attempt|canonical/i
+    )
+  }
+  assert.throws(
+    () =>
+      source.composeDerivedSource(
+        repository,
+        path.join(repository, 'attempts', randomUUID()),
+        runtime,
+        runtime,
+        contract
+      ),
+    /ordinary/
+  )
+  assert.throws(
+    () =>
+      source.composeDerivedSource(
+        repository,
+        path.join(runtime.sourceRoot, 'nested'),
+        runtime,
+        verifier,
+        contract
+      ),
+    /overlap/
+  )
+  assert.throws(
+    () =>
+      source.composeDerivedSource(
+        repository,
+        path.dirname(runtime.sourceRoot),
+        runtime,
+        verifier,
+        contract
+      ),
+    /already exists/
+  )
+  assert.equal(write.mock.callCount(), 0)
+  assert.equal(mkdir.mock.callCount(), 0)
+  write.mock.restore()
+  mkdir.mock.restore()
+  const entry = runtime.admission.runtimeSource.files[0]
+  const file = path.join(runtime.sourceRoot, entry.path)
+  fs.chmodSync(file, 0o600)
+  fs.appendFileSync(file, 'changed')
+  const output = path.join(repository, 'attempts', randomUUID())
+  assert.throws(
+    () =>
+      source.composeDerivedSource(
+        repository,
+        output,
+        runtime,
+        verifier,
+        contract
+      ),
+    /fingerprint/
+  )
+  assert.equal(fs.existsSync(path.join(output, 'source-manifest.json')), false)
 })

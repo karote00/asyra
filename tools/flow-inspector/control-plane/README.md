@@ -131,7 +131,7 @@ They are local artifacts and are not committed or published.
 ## Formal Tests
 
 ```bash
-node --test --test-concurrency=1 tools/flow-inspector/control-plane/__tests__/{contracts,snapshot,runner,evidence,store,service,server,mapping,cli,evolution,ci-context,ci-evidence,operations}.test.cjs
+node --test --test-concurrency=1 tools/flow-inspector/control-plane/__tests__/{contracts,snapshot,runner,evidence,store,service,server,mapping,cli,evolution,ci-context,ci-evidence,operations,target-evidence}.test.cjs
 FLOW_PROOF_URL=http://127.0.0.1:4318 node --test tools/flow-inspector/control-plane/__tests__/board.test.cjs
 ```
 
@@ -555,11 +555,12 @@ GitHub review configuration grants no provider dispatch authority.
    checkout and the remote base's captured inputs. Preparation creates no remote
    objects. A differing source closure or dirty checkout refuses delivery.
 3. Review the exact repository, base SHA, branch, all delivery files, title and body.
-   The trusted owner prepares an `@asyra/factory` patch Changeset separately
-   from candidate source evidence. Its package ownership, reason, exact content
-   and metadata validation appear in **Trusted owner Changeset**. Only existing
-   Factory runtime candidates are supported; requests cannot select arbitrary
-   packages, release types, summaries or paths. Metadata changes invalidate confirmation.
+   The trusted owner prepares a patch Changeset for the selected step's primary
+   captured public package separately from candidate source evidence. Its package
+   ownership, reason, exact content and metadata validation appear in
+   **Trusted owner Changeset**. Dependency packages do not become delivery
+   owners; requests cannot select arbitrary packages, release types, summaries
+   or paths. Metadata changes invalidate confirmation.
    Open the frozen source diff and local evidence links. Check the explicit
    confirmation only when this exact preview is approved, then select
    **Create confirmed PR**. Branch and PR creation stay in the trusted
@@ -597,6 +598,15 @@ protection, independent verifier/issuer, model reconciliation, ticket/team work,
 hosting and standalone dynamic installation remain deferred. The package records
 a patch Changeset outside the Framework bulk-release allowlist.
 
+New source capture retains the unchanged bytes-only `runtimeSource` format 1
+and a separate `runtimeAuthority` format 1. Authority is derived from the
+admitted step owners and actual public workspace manifests, includes each
+step's transitive `workspace:*` dependency closure, and drives exact generated
+source aliases. Candidate, retained task, service, target, review, API, CLI and
+Board consumers carry its version and digests without rebuilding it. Historical
+records without authority stay on the fixed Factory runtime and cannot acquire
+new package scope during reload.
+
 ## Flow targets and bounded work
 
 On **Transaction Atomicity**, select a card, expand **Flow verification**, then
@@ -617,14 +627,17 @@ Reload the Board after preparing a new contract revision to load its catalog.
 3. Review the draft and pending inventory, provide a decision reason and select
    **Save scope revision**. Missing coverage, overlap and cyclic or unknown
    prerequisites reject the complete decision. Nothing is silently discarded.
-4. First **Run all flows** and select that completed baseline proof.
-   **Prepare task from this promise** durably reserves its source and task UUID,
-   then fills the existing task-admission controls with the exact step, objective,
-   files and work binding. Review those controls and explicitly
-   launch the existing deterministic demonstration if desired. This button does
-   not dispatch a model. Dependent work remains blocked because this slice has no
-   source-bound prerequisite verifier. The strict all-flow candidate verifier is
-   unchanged and can refuse partial contributions.
+4. For independent work, first **Run all flows** and select that completed baseline
+   proof. **Prepare task from this promise** durably reserves its source and task
+   UUID. For dependent work, assess the saved allocation on the integration source,
+   select that retained assessment, then use **Prepare task from assessed
+   prerequisites**. The service requires passing accepted preservation, the exact
+   work and its prerequisites; the Board forwards only the assessment id. Both
+   actions fill the existing task-admission controls with the exact step, objective,
+   files and work binding. Review those controls and explicitly launch the existing
+   deterministic demonstration if desired. Neither button dispatches a model. The
+   strict all-flow candidate verifier is unchanged and can refuse partial
+   contributions.
 5. For historical independent tasks, under **Connect an admitted task**, select the saved work and an existing task,
    enter the decision reason and **Link exact task**. Objective, step, files,
    retained obligations and accepted baseline must match. Linking neither starts
@@ -637,11 +650,13 @@ Reload the Board after preparing a new contract revision to load its catalog.
    A stale editor is rejected even after refreshing observations. **Reload saved
    revision into editor** explicitly replaces the local draft with saved state.
 
-A work item with prerequisites shows `blocked`; prerequisites show `unconfirmed`.
-Other work and the whole goal show `pending`, including after candidate success
-or a merged PR. These are not full-flow integration results. A target does not
-retire accepted obligations, accept a baseline, reconcile provider requests, skip
-CI or combine passing checks from different source identities.
+A work item with prerequisites shows `blocked`; prerequisites show `unconfirmed`
+until an exact assessment-bound admission is retained. That admission changes the
+work to `pending` and its prerequisite projection to `passed`, while the work and
+whole goal remain pending until their separate evidence and integration owners
+complete. Candidate success or a merged PR alone changes none of these states. A
+target does not retire accepted obligations, accept a baseline, reconcile provider
+requests, skip CI or combine passing checks from different source identities.
 
 ### Target API and CLI
 
@@ -705,14 +720,60 @@ Permanent `flow-target.test.cjs`, CLI and Board cases cover this slice. The
 three-work-plus-pending case uses a structurally admitted four-obligation offline
 contract, not invented Factory evidence. The browser test uses actual local
 candidate verification on macOS and an explicitly offline GitHub adapter; its
-PR observations make no external requests. Full cross-PR integration assessment
-and explicit target-baseline acceptance remain unimplemented.
+PR observations make no external requests. Complete one-source integration and
+explicit target-baseline acceptance use the separate action below.
 
+### Assess and accept an integrated target
+
+`target-assess <request.json>` registers real accepted and candidate proof
+producers for one saved allocation. New records use format 2: `targetContract`
+covers every candidate obligation at the selected source in addition to accepted
+preservation, work/prerequisite and integration results. An eligible result is
+read-only and does not change accepted history.
+
+After reviewing the exact source tuple, target/base/review pins, complete
+candidate result, every work and prerequisite, empty pending inventory and
+passing integration, submit the separate action:
+
+```json
+{
+  "requestId": "<fresh UUID>",
+  "targetId": "<saved target UUID>",
+  "assessmentId": "<completed current format-2 assessment UUID>",
+  "reason": "Accept this exact integrated target source",
+  "retirement": []
+}
+```
+
+```bash
+node tools/flow-inspector/control-plane/cli.cjs --url http://127.0.0.1:4318 target-accept tmp/target-acceptance.json
+```
+
+The HTTP equivalent is capability-authenticated `POST /api/targets/accept` with
+the same body. The Board requires the same explicit assessment selection, reason
+and **Accept integrated target baseline** button. `contract-accept` refuses a
+review pinned by a target; eligibility, refresh and ordinary target actions do
+not accept it. Exact authorized replay returns the retained decision without
+source work or another revision. Conflicting requests, format-1 history, stale or
+incomplete evidence, unavailable source authority and failed persistence cause
+no baseline mutation.
+
+The full-runtime product fixture exercises this action with actual captured
+public package behavior from Factory, Collaboration and UI Context. It retains
+separate local Git commits for each owner, an allocation with the first two
+works plus pending UI obligations, accepted and integration regressions, a
+revert, a stale advanced source and one complete same-HEAD integration. The
+successful record is read identically through the service, loopback
+`/api/target-assessments/<id>` endpoint and attached CLI before the CLI submits
+the explicit acceptance request. External PR state or checks are rejected as
+assessment input; existing offline GitHub adapter lifecycle tests remain
+display and delivery observations only. This fixture creates no external PR
+and makes no live GitHub acceptance claim.
 
 ### Admit work before execution
 
-After `verify` passes all six obligations, use its returned attempt UUID as
-`sourceAttemptId`. Submit this decision with `target-decide` or
+For independent work, after `verify` passes all six obligations, use its returned
+attempt UUID as `sourceAttemptId`. Submit this decision with `target-decide` or
 `POST /api/targets/decide`:
 
 ```json
@@ -728,11 +789,35 @@ After `verify` passes all six obligations, use its returned attempt UUID as
 }
 ```
 
+For work with prerequisites, omit `sourceAttemptId` and provide the exact retained
+assessment instead:
+
+```json
+{
+  "action": "admit",
+  "targetId": "<target UUID>",
+  "requestId": "<new admission UUID>",
+  "expectedRevision": 1,
+  "reason": "Consume assessed prerequisites on this source",
+  "workId": "<dependent work UUID>",
+  "taskId": "<reserved task UUID>",
+  "assessmentId": "<target assessment UUID>"
+}
+```
+
 Use the target's actual current revision. Admission increments it and appends
-immutable audit without running a candidate. It requires a complete passing
-baseline proof from this store, matching accepted revision and contract. It pins
-both HEAD and source digest. Any unconfirmed prerequisite refuses admission.
-A PR merge or green check is not prerequisite evidence.
+immutable audit without running a candidate. Independent admission requires a
+complete passing baseline proof from this store, matching accepted revision and
+contract. Dependent admission resolves the selected completed assessment from the
+service and requires the same actor, target, allocation, accepted and verification
+pins, passing accepted/work/prerequisite results and currently registered source.
+It pins both HEAD and source digest plus the assessment/allocation identity. Startup
+cross-checks that persisted source against the authoritative assessment runtime.
+Every dependent task start also requires the exact registered source authority; the
+admission revision itself may make the assessment historical, while source-task
+revocation or source retirement blocks execution. A PR merge, green check, task
+result or client-supplied verdict is not prerequisite evidence. Whole-target
+integration and baseline acceptance remain separate.
 
 Then use the existing `task-start` request, setting `requestId` to the reserved
 `taskId`, exact step/objective/files from the work, and this additional field:
@@ -767,3 +852,26 @@ The original target/work decomposition and new admission browser cases use the
 same `FLOW_PROOF_URL` contract and cover desktop, tablet and narrow detail views.
 No new model request, candidate PR, prerequisite issuer or protected integration
 verification is required for these deterministic formal fixtures.
+
+### Prepare an assessed bounded work review
+
+After a task-source target assessment completes, select the same task in the
+Inspector and open **Candidate GitHub PR review**. Choose its exact retained
+assessment and use **Prepare bounded work preview**. This path permits a passing
+bounded work result with accepted preservation while the original candidate remains
+failed and the whole target remains pending. The preview states all three outcomes;
+it does not claim full-flow verification or accept a baseline.
+
+The matching attached or direct CLI command is:
+
+```bash
+node tools/flow-inspector/control-plane/cli.cjs --url http://127.0.0.1:4318 pr-prepare-scoped <task-id> <attempt-id> <assessment-id>
+```
+
+The HTTP action is `POST /api/tasks/<task-id>/review/scoped` with exactly
+`{ "attemptId": "<attempt-id>", "assessmentId": "<assessment-id>" }` and the
+existing loopback capability. Preparation creates no branch or PR. Inspect the
+complete preview, source difference, trusted Changeset, bounded work result and
+integration result before using the existing explicit confirmation. A stale target,
+new attempt, changed assessment, revoked task or unavailable source requires a fresh
+eligible assessment and preview; the service never selects a replacement.

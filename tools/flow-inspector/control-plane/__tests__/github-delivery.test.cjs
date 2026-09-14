@@ -11,7 +11,10 @@ const file = 'packages/factory/src/data-transact.ts',
   baseSha = 'a'.repeat(40),
   head = 'b'.repeat(40),
   tree = 'c'.repeat(40)
-function fixture() {
+function fixture({
+  file = 'packages/factory/src/data-transact.ts',
+  packageName = '@asyra/factory'
+} = {}) {
   const calls = [],
     writes = []
   let dirty = false,
@@ -50,8 +53,8 @@ function fixture() {
     ]
   }
   preview.packageOwnership = {
-    path: 'packages/factory/package.json',
-    packageName: '@asyra/factory',
+    path: 'packages/' + packageName.slice('@asyra/'.length) + '/package.json',
+    packageName,
     digest: sha256('manifest')
   }
   preview.adapter = 'demonstration'
@@ -188,6 +191,16 @@ test('preview reads remote base and exact source only; confirmed adapter creates
     f.calls.some((c) => /merge|protection|tags/.test(c.route)),
     false
   )
+})
+
+test('delivery validates source changes against the selected package ownership', async () => {
+  const f = fixture({
+    file: 'packages/collaboration/src/index.ts',
+    packageName: '@asyra/collaboration'
+  })
+  assert.equal((await f.adapter.inspect(f.preview)).baseSha, baseSha)
+  await f.adapter.deliver(f.preview, async () => undefined, {})
+  assert.ok(f.writes.length > 0)
 })
 test('dirty checkout and changed captured base inputs refuse before remote effects', async () => {
   const f = fixture()

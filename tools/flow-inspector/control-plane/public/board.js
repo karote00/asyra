@@ -35,6 +35,15 @@
       let targetItemsSignature = ''
       let targetDecisionId = window.crypto.randomUUID()
       let targetBusy = false
+      let assessmentRecords = []
+      let selectedAssessmentId = ''
+      let selectedScopedAssessmentId = ''
+      let assessmentSource = null
+      let assessmentTask = null
+      let assessmentTaskSignature = ''
+      const taskDetails = new Map()
+      let assessmentBusy = false
+      let assessmentSignature = ''
       let preparedWork = null
       let taskState
       let taskRecord
@@ -74,6 +83,7 @@
           observer?.disconnect()
           window.clearTimeout(timer)
           lifetime.abort()
+          taskDetails.clear()
         },
         { once: true }
       )
@@ -642,13 +652,16 @@
         const contractReview = operationState?.evolution.reviews.find(
           (r) => r.id === selectedContractReview
         )
+        const targetPinnedReview =
+          targetRecord?.targetVerification?.reviewId === selectedContractReview
         for (const id of ['contract-accept', 'contract-reject'])
           byId(id).disabled =
             !capability ||
             Boolean(activeId) ||
             acting ||
             contractReview?.status !== 'pending' ||
-            !byId('contract-reason').value.trim()
+            !byId('contract-reason').value.trim() ||
+            (id === 'contract-accept' && targetPinnedReview)
         byId('work-save').disabled =
           !capability ||
           Boolean(activeId) ||
@@ -678,14 +691,54 @@
         const review =
           reviewRecord?.taskId === matching?.id ? reviewRecord : null
         const preview = review?.preview
-        const currentAttempt =
-          !preview || preview.attemptId === matching?.attempts.at(-1)?.id
+        const attemptId = matching?.attempts.at(-1)?.id
+        const scopedAssessments = assessmentRecords.filter(
+          (item) =>
+            item.request.sourceTaskId === matching?.id &&
+            item.request.sourceAttemptId === attemptId
+        )
+        if (
+          selectedScopedAssessmentId &&
+          !scopedAssessments.some(
+            (item) => item.id === selectedScopedAssessmentId
+          )
+        )
+          selectedScopedAssessmentId = ''
+        retainOptions(byId('pr-assessment'), [
+          ['', 'Choose exact bounded work assessment'],
+          ...scopedAssessments.map((item) => [
+            item.id,
+            item.id.slice(0, 12) +
+              ' - ' +
+              item.phase +
+              ' - work ' +
+              ((item.result?.works ?? []).find(
+                (work) => work.id === matching?.task.workBinding?.workId
+              )?.status ?? 'unavailable') +
+              ' - integration ' +
+              (item.result?.integration?.status ?? 'unavailable')
+          ])
+        ])
+        byId('pr-assessment').value = selectedScopedAssessmentId
+        const scopedAssessment = scopedAssessments.find(
+          (item) => item.id === selectedScopedAssessmentId
+        )
+        const currentAttempt = !preview || preview.attemptId === attemptId
         byId('pr-prepare').disabled =
           !matching ||
           !reviewPolicy ||
           acting ||
           !capability ||
           matching.phase === 'running'
+        byId('pr-prepare-scoped').disabled =
+          !matching ||
+          !reviewPolicy ||
+          !scopedAssessment ||
+          acting ||
+          !capability ||
+          matching.phase === 'running'
+        byId('pr-assessment').disabled =
+          !matching || acting || matching.phase === 'running'
         byId('pr-confirm').disabled =
           !preview ||
           preview.draft !== false ||
@@ -698,11 +751,25 @@
         byId('pr-approve').disabled =
           !preview || acting || !['preview', 'blocked'].includes(review.state)
         const observation = review?.observation
+        const scopedWork = preview?.scopedWork
         byId('pr-result').textContent = [
+          'Review scope: ' + (scopedWork ? 'bounded work' : 'full candidate'),
           'Local verification: ' +
             (currentAttempt
               ? (matching?.verificationStatus ?? 'no candidate selected')
               : 'historical attempt - open retained evidence'),
+          ...(scopedWork
+            ? [
+                'Bounded work: ' +
+                  scopedWork.workId +
+                  ' - ' +
+                  scopedWork.work.status,
+                'Assessment: ' + scopedWork.assessmentId,
+                'Original candidate verification: ' +
+                  preview.candidateVerification,
+                'Target integration: ' + scopedWork.integration.status
+              ]
+            : []),
           'Metadata validation: ' +
             (preview?.metadata?.validation.status ?? 'not prepared'),
           'Delivery: ' + (review?.state ?? 'not prepared'),
@@ -741,6 +808,19 @@
               'Branch: ' + preview.branch,
               'Task: ' + preview.taskId,
               'Attempt: ' + preview.attemptId,
+              ...(scopedWork
+                ? [
+                    'Scope: bounded work',
+                    'Assessment: ' + scopedWork.assessmentId,
+                    'Work: ' +
+                      scopedWork.workId +
+                      ' - ' +
+                      scopedWork.work.status,
+                    'Original candidate verification: ' +
+                      preview.candidateVerification,
+                    'Target integration: ' + scopedWork.integration.status
+                  ]
+                : ['Scope: full candidate']),
               'Source baseline: ' + preview.sourceHead,
               'All delivery files: ' +
                 (
@@ -784,18 +864,28 @@
       async function reviewAction(action) {
         if (acting || !taskId || !capability) return
         const selected = taskId
+        const selectedAssessment = selectedScopedAssessmentId
         acting = true
         renderTask()
         try {
-          const value = await api('/api/tasks/' + selected + '/review', {
-            action,
-            ...(action === 'confirm'
+          const scoped = action === 'prepare-scoped'
+          const value = await api(
+            '/api/tasks/' + selected + '/review' + (scoped ? '/scoped' : ''),
+            scoped
               ? {
-                  confirm: byId('pr-approve').checked,
-                  previewDigest: reviewRecord?.previewDigest
+                  attemptId: taskRecord.attempts.at(-1).id,
+                  assessmentId: selectedAssessment
                 }
-              : {})
-          })
+              : {
+                  action,
+                  ...(action === 'confirm'
+                    ? {
+                        confirm: byId('pr-approve').checked,
+                        previewDigest: reviewRecord?.previewDigest
+                      }
+                    : {})
+                }
+          )
           if (taskId === selected) reviewRecord = value
           byId('pr-approve').checked = false
         } catch (error) {
@@ -969,12 +1059,36 @@
         byId('agent-audit').href = '/api/tasks/' + matching.id
         byId('agent-audit').hidden = false
       }
+      function taskSummary(id) {
+        return taskState?.records.find((item) => item.id === id)
+      }
+      function readTaskDetail(id, signature) {
+        const selected = new Set([
+          taskId,
+          byId('assessment-source-kind').value === 'task'
+            ? byId('assessment-task').value
+            : ''
+        ])
+        for (const key of taskDetails.keys())
+          if (!selected.has(key)) taskDetails.delete(key)
+        const retained = taskDetails.get(id)
+        if (retained?.signature === signature) return retained.promise
+        const entry = { signature }
+        entry.promise = api('/api/tasks/' + id).catch((error) => {
+          if (taskDetails.get(id) === entry) taskDetails.delete(id)
+          throw error
+        })
+        taskDetails.set(id, entry)
+        return entry.promise
+      }
       async function refreshTask() {
         const stepId = graph.querySelector('.is-selected')?.dataset.stepId
         const options = (taskState?.records ?? []).filter(
           (item) => item.stepId === stepId
         )
+        const previousTaskId = taskId
         if (!options.some((item) => item.id === taskId)) taskId = options[0]?.id
+        if (taskId !== previousTaskId) selectedScopedAssessmentId = ''
         const history = options.map((item) => item.id + item.phase).join(',')
         if (history !== taskHistorySignature) {
           taskHistorySignature = history
@@ -993,15 +1107,23 @@
         const selected = options.find((item) => item.id === taskId)
         const signature = selected ? JSON.stringify(selected) : ''
         if (signature !== taskSignature) {
-          taskSignature = signature
           const selectedTask = taskId
           const [nextTask, nextReview] = selectedTask
             ? await Promise.all([
-                api('/api/tasks/' + selectedTask),
+                readTaskDetail(selectedTask, signature),
                 api('/api/tasks/' + selectedTask + '/review')
               ])
             : [null, null]
-          if (selectedTask !== taskId) return
+          if (
+            disposed ||
+            selectedTask !== taskId ||
+            (selectedTask &&
+              JSON.stringify(taskSummary(selectedTask)) !== signature)
+          )
+            return
+          if (taskSignature === signature && taskRecord?.id === selectedTask)
+            return
+          taskSignature = signature
           taskRecord = nextTask
           reviewRecord = nextReview
           byId('pr-approve').checked = false
@@ -1075,6 +1197,449 @@
         return targetCatalog.find(
           (c) => c.revision === byId('target-revision').value
         )
+      }
+      function retainOptions(select, choices) {
+        if (
+          select.options.length === choices.length &&
+          choices.every(
+            ([value, label], index) =>
+              select.options[index].value === value &&
+              select.options[index].textContent === label
+          )
+        )
+          return
+        const selected = select.value
+        select.replaceChildren(
+          ...choices.map(([value, label]) => targetOption(value, label))
+        )
+        select.value = choices.some(([value]) => value === selected)
+          ? selected
+          : ''
+      }
+      function renderTargetReview() {
+        const select = byId('target-review')
+        const reviews = (operationState?.evolution.reviews ?? []).filter(
+          (item) =>
+            item.candidateContractDigest === byId('target-revision').value
+        )
+        retainOptions(select, [
+          ['', 'No reviewed source - standalone target only'],
+          ...reviews.map((item) => [
+            item.id,
+            item.id.slice(0, 12) + ' - ' + item.status
+          ])
+        ])
+        select.disabled = Boolean(targetRecord)
+        const review = reviews.find((item) => item.id === select.value)
+        byId('target-review-identity').textContent = review
+          ? 'Review: ' +
+            review.id +
+            '\nCandidate contract: ' +
+            review.candidateContractDigest +
+            '\nReviewed candidate: ' +
+            review.candidateDigest
+          : 'Select a reviewed verification source explicitly to enable assessment.'
+      }
+      function assessmentSelection() {
+        if (byId('assessment-source-kind').value === 'task')
+          return {
+            sourceTaskId: byId('assessment-task').value,
+            sourceAttemptId: byId('assessment-attempt').value
+          }
+        return { sourceAttemptId: byId('assessment-source').value }
+      }
+      function renderAssessmentSource() {
+        const selection = assessmentSelection()
+        const taskMode = byId('assessment-source-kind').value === 'task'
+        byId('assessment-run-field').hidden = taskMode
+        byId('assessment-task-field').hidden = !taskMode
+        byId('assessment-attempt-field').hidden = !taskMode
+        const attempt =
+          taskMode && assessmentTask?.id === selection.sourceTaskId
+            ? assessmentTask.attempts.find(
+                (item) => item.id === selection.sourceAttemptId
+              )
+            : null
+        const source =
+          !taskMode && assessmentSource?.id === selection.sourceAttemptId
+            ? assessmentSource
+            : null
+        const runtime = assessmentRecords.find(
+          (item) =>
+            item.request.sourceAttemptId === selection.sourceAttemptId &&
+            (taskMode
+              ? item.request.sourceTaskId === selection.sourceTaskId
+              : !Object.hasOwn(item.request, 'sourceTaskId'))
+        )?.runtime
+        const snapshot = taskMode
+          ? {
+              head: assessmentTask?.snapshot?.head,
+              digest: attempt?.verdict?.sourceDigest,
+              runtimeSource: attempt?.verdict?.runtimeSource,
+              runtimeAuthority: attempt?.verdict?.runtimeAuthority
+            }
+          : source?.snapshot
+        const emptySource = taskMode
+          ? 'Select a task and its exact attempt explicitly.'
+          : 'Select a captured source attempt explicitly.'
+        byId('assessment-source-identity').textContent =
+          attempt || source
+            ? (taskMode ? 'Task: ' + selection.sourceTaskId + '\n' : '') +
+              'Source attempt: ' +
+              selection.sourceAttemptId +
+              '\nRepository: ' +
+              (runtime?.repository ?? 'unavailable before assessment') +
+              '\nHEAD: ' +
+              (snapshot?.head ?? 'unavailable') +
+              '\nRuntime: ' +
+              (snapshot?.runtimeSource?.digest ?? 'unavailable') +
+              '\nRuntime authority: ' +
+              (runtime?.runtimeAuthorityDigest ??
+                snapshot?.runtimeAuthority?.digest ??
+                'legacy') +
+              '\nContract scope: ' +
+              (runtime?.contractScopeDigest ??
+                snapshot?.runtimeAuthority?.contractScopeDigest ??
+                'legacy') +
+              '\nFull source: ' +
+              (snapshot?.digest ?? 'unavailable') +
+              (taskMode
+                ? '\nAttempt phase: ' +
+                  attempt.phase +
+                  '\nVerification: ' +
+                  (attempt.verdict?.evidence?.status ?? 'unavailable') +
+                  '\nVerification identity: ' +
+                  (attempt.verdict?.verificationSource?.digest ??
+                    'unavailable') +
+                  '\nExecution: ' +
+                  (attempt.verdict?.executionSource?.digest ?? 'unavailable') +
+                  '\nSource availability is checked by the service on start.'
+                : '')
+            : emptySource
+        return Boolean(
+          taskMode ? attempt && taskSummary(selection.sourceTaskId) : source
+        )
+      }
+      async function readAssessmentTask() {
+        if (byId('assessment-source-kind').value !== 'task') return
+        const id = byId('assessment-task').value
+        const summary = taskSummary(id)
+        const signature = summary ? JSON.stringify(summary) : ''
+        if (!id || !summary) {
+          assessmentTask = null
+          assessmentTaskSignature = ''
+          if (id)
+            byId('assessment-notice').textContent =
+              'Selected task is unavailable in the current summary window.'
+          renderAssessment()
+          return
+        }
+        if (assessmentTask?.id === id && assessmentTaskSignature === signature)
+          return
+        try {
+          const value = await readTaskDetail(id, signature)
+          if (
+            disposed ||
+            byId('assessment-source-kind').value !== 'task' ||
+            byId('assessment-task').value !== id ||
+            JSON.stringify(taskSummary(id)) !== signature
+          )
+            return
+          if (
+            assessmentTask?.id === id &&
+            assessmentTaskSignature === signature
+          )
+            return
+          assessmentTask = value
+          assessmentTaskSignature = signature
+          retainOptions(byId('assessment-attempt'), [
+            ['', 'Choose exact task attempt'],
+            ...value.attempts.map((attempt) => [
+              attempt.id,
+              attempt.id.slice(0, 12) +
+                ' - ' +
+                attempt.phase +
+                ' - ' +
+                (attempt.verdict?.evidence?.status ?? 'unavailable')
+            ])
+          ])
+          renderAssessment()
+        } catch (error) {
+          if (
+            !disposed &&
+            byId('assessment-source-kind').value === 'task' &&
+            byId('assessment-task').value === id &&
+            JSON.stringify(taskSummary(id)) === signature
+          ) {
+            byId('assessment-notice').textContent = error.message
+            throw error
+          }
+        }
+      }
+      function renderAssessment() {
+        const records = assessmentRecords.filter(
+          (item) => item.request.targetId === targetRecord?.id
+        )
+        const select = byId('assessment-history')
+        retainOptions(select, [
+          ['', 'Choose retained assessment'],
+          ...records.map((item) => [
+            item.id,
+            item.id.slice(0, 12) +
+              ' - allocation ' +
+              item.request.allocationRevision +
+              ' - ' +
+              item.phase
+          ])
+        ])
+        // A coalesced refresh may still contain the inventory from before the
+        // action. Preserve its selected id until a fresh response can render it.
+        select.value = selectedAssessmentId
+        const selected = records.find(
+          (item) => item.id === selectedAssessmentId
+        )
+        const accepted = operationState?.evolution.decisions.find(
+          (item) => item.targetAcceptance?.assessmentId === selected?.id
+        )
+        const running = assessmentRecords.some(
+          (item) => item.phase === 'running'
+        )
+        const sourceReady = renderAssessmentSource()
+        byId('assessment-start').disabled =
+          !capability ||
+          assessmentBusy ||
+          running ||
+          Boolean(activeId) ||
+          !targetRecord?.targetVerification ||
+          !targetRecord?.acceptedVersion ||
+          !sourceReady
+        byId('assessment-cancel').disabled =
+          !capability || assessmentBusy || selected?.phase !== 'running'
+        byId('assessment-accept').disabled =
+          !capability ||
+          assessmentBusy ||
+          !selected ||
+          selected.phase !== 'completed' ||
+          selected.projection.format !== 2 ||
+          !selected.projection.current ||
+          !selected.projection.eligible ||
+          selected.projection.targetContract?.status !== 'passed' ||
+          !byId('assessment-accept-reason').value.trim() ||
+          Boolean(accepted)
+        byId('target-pins').textContent = targetRecord
+          ? 'Accepted mapping revision: ' +
+            targetRecord.acceptedBaseline.revision +
+            '\nAccepted history version: ' +
+            (targetRecord.acceptedVersion?.revision ?? 'unavailable') +
+            '\nTarget review: ' +
+            (targetRecord.targetVerification?.reviewId ?? 'unavailable') +
+            '\nReviewed candidate: ' +
+            (targetRecord.targetVerification?.candidateDigest ??
+              'unavailable') +
+            (!targetRecord.targetVerification || !targetRecord.acceptedVersion
+              ? '\nAssessment unavailable - this saved target lacks immutable pins.'
+              : '')
+          : 'Immutable source pins appear after target creation.'
+        // Settlement and currentness are service-owned; these small lifecycle
+        // fields identify presentation changes without traversing verdict data.
+        const signature = selected
+          ? [
+              selected.id,
+              selected.phase,
+              selected.finishedAt,
+              selected.projection.current,
+              selected.projection.eligible,
+              ...selected.projection.staleReasons,
+              ...selected.slots.flatMap((slot) => [
+                slot.id,
+                slot.phase,
+                slot.reason
+              ])
+            ].join('|')
+          : ''
+        renderTargetRecord()
+        if (
+          assessmentSignature === signature &&
+          byId('assessment-summary').textContent
+        )
+          return
+        assessmentSignature = signature
+        byId('assessment-summary').textContent = selected
+          ? 'Assessment ' +
+            selected.id +
+            '\nAllocation ' +
+            selected.request.allocationRevision +
+            ' - ' +
+            selected.phase +
+            '\n' +
+            (selected.projection.current ? 'current' : 'stale') +
+            ' - ' +
+            (selected.projection.eligible
+              ? 'Eligible for explicit acceptance'
+              : 'Not eligible') +
+            '\n' +
+            selected.projection.staleReasons.join('\n') +
+            '\nEligibility does not accept history.'
+          : 'Choose a retained assessment or assess this saved allocation.'
+        const describeProof = (value) =>
+          value
+            ? [
+                value.status,
+                ...(value.cases ?? []).map(
+                  (item) =>
+                    item.id +
+                    ' - ' +
+                    item.status +
+                    (item.blockers.length
+                      ? '\n' + item.blockers.join('\n')
+                      : '')
+                ),
+                ...(value.blockers ?? []),
+                ...(value.pending?.length
+                  ? ['Pending allocation: ' + value.pending.join(', ')]
+                  : [])
+              ].join('\n')
+            : 'No assessment evidence'
+        byId('assessment-accepted').textContent = describeProof(
+          selected?.projection.accepted
+        )
+        byId('assessment-target-contract').textContent = describeProof(
+          selected?.projection.targetContract
+        )
+        byId('assessment-integration').textContent = describeProof(
+          selected?.projection.integration
+        )
+        byId('assessment-works').textContent = selected
+          ? selected.projection.works
+              .map((work) =>
+                [
+                  (targetRecord.history
+                    .find(
+                      (entry) =>
+                        entry.revision === selected.request.allocationRevision
+                    )
+                    ?.state.works.find((item) => item.id === work.id)?.title ??
+                    work.id) +
+                    ' - ' +
+                    work.status,
+                  'Work: ' + work.id,
+                  'Own promise: ' + describeProof(work.own),
+                  'Prerequisites: ' + describeProof(work.prerequisites),
+                  ...work.prerequisites.routes.map(
+                    (route) =>
+                      route.routeId + ' - ' + describeProof(route.proof)
+                  )
+                ].join('\n')
+              )
+              .join('\n\n') || 'No assigned work - obligations remain pending.'
+          : 'No assessment evidence'
+        byId('assessment-progress').textContent = selected
+          ? JSON.stringify(
+              {
+                runtime: selected.runtime,
+                roles: selected.roles,
+                slots: selected.slots
+              },
+              null,
+              2
+            )
+          : 'No assessment evidence'
+        byId('assessment-acceptance').textContent = accepted
+          ? 'Accepted by ' +
+            accepted.actor +
+            ' at ' +
+            accepted.at +
+            '\nRequest: ' +
+            accepted.targetAcceptance.requestId +
+            '\nAssessment: ' +
+            accepted.targetAcceptance.assessmentId +
+            '\nContract: ' +
+            accepted.targetAcceptance.contractDigest +
+            '\nSource: ' +
+            JSON.stringify(accepted.targetAcceptance.source) +
+            '\nRetirement: ' +
+            (accepted.retirement.join(', ') || 'none') +
+            '\nResulting mapping revision: ' +
+            accepted.targetAcceptance.resultingMappingRevision +
+            '\nResulting version revision: ' +
+            accepted.targetAcceptance.resultingVersionRevision
+          : 'No baseline acceptance. Eligibility is read-only.'
+      }
+      async function readAssessmentSource() {
+        const id = byId('assessment-source').value
+        assessmentSource = null
+        renderAssessment()
+        if (!id) return
+        try {
+          const value = await api('/api/runs/' + id)
+          if (disposed || byId('assessment-source').value !== id) return
+          assessmentSource = value
+          renderAssessment()
+        } catch (error) {
+          if (!disposed) byId('assessment-notice').textContent = error.message
+        }
+      }
+      async function assessmentAction(cancel = false) {
+        if (assessmentBusy || !capability || !targetRecord) return
+        assessmentBusy = true
+        byId('assessment-notice').textContent = cancel
+          ? 'Cancelling assessment…'
+          : 'Registering exact source assessment…'
+        renderAssessment()
+        try {
+          const result = cancel
+            ? await api(
+                '/api/target-assessments/' + selectedAssessmentId + '/cancel',
+                {}
+              )
+            : await api('/api/target-assessments', {
+                requestId: window.crypto.randomUUID(),
+                targetId: targetRecord.id,
+                allocationRevision: targetRecord.revision,
+                ...assessmentSelection()
+              })
+          selectedAssessmentId = result.id
+          if (disposed) return
+          revision++
+          byId('assessment-notice').textContent = cancel
+            ? 'Cancellation settled; original observations remain in history.'
+            : 'Assessment registered. Results are separate from acceptance.'
+          await refresh()
+        } catch (error) {
+          if (!disposed) byId('assessment-notice').textContent = error.message
+        } finally {
+          assessmentBusy = false
+          if (!disposed) renderAssessment()
+        }
+      }
+      async function acceptTargetBaseline() {
+        if (assessmentBusy || !capability || !targetRecord) return
+        assessmentBusy = true
+        byId('assessment-notice').textContent =
+          'Committing explicit integrated target baseline acceptance…'
+        renderAssessment()
+        try {
+          await api('/api/targets/accept', {
+            requestId: window.crypto.randomUUID(),
+            targetId: targetRecord.id,
+            assessmentId: selectedAssessmentId,
+            reason: byId('assessment-accept-reason').value,
+            retirement: byId('assessment-retirement')
+              .value.split(',')
+              .map((value) => value.trim())
+              .filter(Boolean)
+          })
+          if (disposed) return
+          revision++
+          byId('assessment-notice').textContent =
+            'Integrated target baseline accepted. The source assessment remains as historical evidence.'
+          await refresh()
+        } catch (error) {
+          if (!disposed) byId('assessment-notice').textContent = error.message
+        } finally {
+          assessmentBusy = false
+          if (!disposed) renderAssessment()
+        }
       }
       function targetFlow() {
         return targetDefinition()?.flows.find(
@@ -1160,12 +1725,21 @@
         byId('target-pending').textContent =
           'Unassigned obligations - pending: ' +
           (targetRecord?.pending.join(', ') || 'none')
+        const selectedAdmissionRecord = assessmentRecords.find(
+          (record) => record.id === selectedAssessmentId
+        )
         const itemsSignature = targetRecord
           ? targetRecord.id +
             ':' +
             targetRecord.revision +
             ':' +
-            targetRecord.baselineCurrent
+            targetRecord.baselineCurrent +
+            ':' +
+            selectedAssessmentId +
+            ':' +
+            (selectedAdmissionRecord?.phase ?? '') +
+            ':' +
+            (selectedAdmissionRecord?.projection.current ?? false)
           : 'none'
         if (itemsSignature !== targetItemsSignature) {
           targetItemsSignature = itemsSignature
@@ -1197,15 +1771,33 @@
                 )
               const prepare = node('button', 'Prepare task from this promise')
               prepare.type = 'button'
+              const dependent = work.prerequisites.length > 0
+              const selectedAdmissionAssessment = assessmentRecords.find(
+                (record) =>
+                  record.id === selectedAssessmentId &&
+                  record.phase === 'completed' &&
+                  record.request.targetId === targetRecord.id &&
+                  record.request.allocationRevision === targetRecord.revision &&
+                  record.projection.current
+              )
+              if (dependent)
+                prepare.textContent = 'Prepare task from assessed prerequisites'
               prepare.disabled =
-                work.status === 'blocked' || !targetRecord.baselineCurrent
+                !targetRecord.baselineCurrent ||
+                (dependent
+                  ? !selectedAdmissionAssessment
+                  : work.status === 'blocked')
               prepare.onclick = async () => {
                 if (acting || !capability) return
                 acting = true
                 try {
-                  if (!selectedId)
+                  if (!dependent && !selectedId)
                     throw new Error(
                       'Select a completed all-flow baseline proof before preparing work.'
+                    )
+                  if (dependent && !selectedAdmissionAssessment)
+                    throw new Error(
+                      'Select a current retained assessment before preparing dependent work.'
                     )
                   const taskId = window.crypto.randomUUID()
                   const admissionId = window.crypto.randomUUID()
@@ -1215,11 +1807,14 @@
                     targetId,
                     expectedRevision: targetRecord.revision,
                     requestId: admissionId,
-                    reason:
-                      'Prepare this saved work promise against the selected baseline proof',
+                    reason: dependent
+                      ? 'Prepare this saved work promise from assessed prerequisites'
+                      : 'Prepare this saved work promise against the selected baseline proof',
                     workId: work.id,
                     taskId,
-                    sourceAttemptId: selectedId
+                    ...(dependent
+                      ? { assessmentId: selectedAdmissionAssessment.id }
+                      : { sourceAttemptId: selectedId })
                   })
                   preparedWork = {
                     taskId,
@@ -1339,6 +1934,7 @@
       }
       async function loadTarget(id) {
         targetRecord = id ? await api('/api/targets/' + id) : null
+        byId('target-review').value = ''
         if (targetRecord) {
           byId('target-revision').value = targetRecord.targetRevision
           chooseTargetRevision()
@@ -1363,6 +1959,8 @@
         chooseTargetFlow()
         renderTargetDraft()
         renderTargetRecord()
+        renderTargetReview()
+        renderAssessment()
       }
       function chooseTargetRevision() {
         byId('target-flow').replaceChildren(
@@ -1371,8 +1969,60 @@
           )
         )
         chooseTargetFlow()
+        renderTargetReview()
       }
       async function refreshTargets(state) {
+        renderTargetReview()
+        const sourceSelect = byId('assessment-source')
+        const sourceOptions = [
+          ['', 'Choose captured source attempt'],
+          ...state.runs.map((item) => [
+            item.id,
+            item.id.slice(0, 12) +
+              ' - ' +
+              item.phase +
+              ' - ' +
+              (item.digest?.slice(0, 12) ?? 'no snapshot')
+          ])
+        ]
+        if (
+          sourceSelect.value &&
+          !sourceOptions.some(([id]) => id === sourceSelect.value)
+        )
+          sourceOptions.push([
+            sourceSelect.value,
+            sourceSelect.selectedOptions[0].textContent
+          ])
+        retainOptions(sourceSelect, sourceOptions)
+        const taskSelect = byId('assessment-task')
+        const taskOptions = [
+          ['', 'Choose task source'],
+          ...(state.tasks?.records ?? []).map((item) => [
+            item.id,
+            item.id.slice(0, 12) +
+              ' - ' +
+              item.phase +
+              ' - ' +
+              item.verificationStatus
+          ])
+        ]
+        if (
+          taskSelect.value &&
+          !taskOptions.some(([id]) => id === taskSelect.value)
+        )
+          taskOptions.push([
+            taskSelect.value,
+            taskSelect.value.slice(0, 12) + ' - unavailable'
+          ])
+        retainOptions(taskSelect, taskOptions)
+        readAssessmentTask().catch(() => undefined)
+
+        try {
+          assessmentRecords = await api('/api/target-assessments')
+        } catch (error) {
+          byId('assessment-notice').textContent = error.message
+          throw error
+        }
         const savedSelection = byId('target-select').value
         byId('target-select').replaceChildren(
           targetOption('', 'New target'),
@@ -1395,6 +2045,7 @@
           renderTargetRecord()
         }
         targetReadSignature = signature
+        renderAssessment()
       }
       async function targetAction(action) {
         if (targetBusy || !capability) return
@@ -1409,6 +2060,9 @@
           }
           if (action === 'create')
             Object.assign(request, {
+              ...(byId('target-review').value
+                ? { targetReviewId: byId('target-review').value }
+                : {}),
               flowId: byId('target-flow').value,
               targetRevision: byId('target-revision').value,
               acceptedBaseline: {
@@ -1457,6 +2111,31 @@
         renderTargetDraft()
         renderTargetRecord()
         listen(byId('target-revision'), 'change', chooseTargetRevision)
+        listen(byId('target-review'), 'change', renderTargetReview)
+        listen(byId('assessment-source'), 'change', readAssessmentSource)
+        listen(byId('assessment-source-kind'), 'change', () => {
+          renderAssessment()
+          readAssessmentTask().catch(showError)
+        })
+        listen(byId('assessment-task'), 'change', () => {
+          assessmentTask = null
+          assessmentTaskSignature = ''
+          retainOptions(byId('assessment-attempt'), [
+            ['', 'Choose exact task attempt']
+          ])
+          renderAssessment()
+          readAssessmentTask().catch(showError)
+        })
+        listen(byId('assessment-attempt'), 'change', renderAssessment)
+
+        listen(byId('assessment-history'), 'change', (event) => {
+          selectedAssessmentId = event.target.value
+          renderAssessment()
+        })
+        listen(byId('assessment-start'), 'click', () => assessmentAction())
+        listen(byId('assessment-cancel'), 'click', () => assessmentAction(true))
+        listen(byId('assessment-accept'), 'click', acceptTargetBaseline)
+        listen(byId('assessment-accept-reason'), 'input', renderAssessment)
         listen(byId('target-flow'), 'change', chooseTargetFlow)
         listen(byId('target-work-step'), 'change', renderTargetObligations)
         listen(byId('target-reload'), 'click', () =>
@@ -1520,7 +2199,7 @@
           taskState = state.tasks
           reviewPolicy = state.reviewPolicy
           await refreshTargets(state)
-          await refreshTask()
+          refreshTask().catch(showError)
           if (!selectedId && state.runs.length) selectedId = state.runs[0].id
           const id = selectedId
           const value = id ? await api('/api/runs/' + id) : null
@@ -1535,7 +2214,10 @@
           refreshing = false
           if (
             !disposed &&
-            (activeId || taskState?.activeId || requestRevision !== revision)
+            (activeId ||
+              assessmentRecords.some((item) => item.phase === 'running') ||
+              taskState?.activeId ||
+              requestRevision !== revision)
           )
             timer = window.setTimeout(refresh, 500)
         }
@@ -1633,10 +2315,36 @@
             <p>Plan bounded commitments for one flow. Candidate verification and PR state do not complete this target.</p>
             <label>Saved target<select id="target-select"><option value="">New target</option></select></label>
             <label>Target contract revision<select id="target-revision"></select></label>
+            <label>Reviewed verification source<select id="target-review"><option value="">No reviewed source - standalone target only</option></select></label>
+            <pre id="target-review-identity"></pre>
             <label>Concrete flow<select id="target-flow"></select></label>
             <label>Development objective<input id="target-objective" maxlength="2000" /></label>
             <button id="target-create" type="button">Create flow target</button>
             <pre id="target-result" role="status"></pre><p id="target-pending"></p>
+            <pre id="target-pins"></pre>
+            <section id="target-assessment" aria-label="Target source assessment">
+              <h3>Assess one captured source</h3>
+              <label>Integration source kind<select id="assessment-source-kind"><option value="run">Captured run</option><option value="task">Task candidate</option></select></label>
+              <label id="assessment-run-field">Integration source attempt<select id="assessment-source"><option value="">Choose captured source attempt</option></select></label>
+              <label id="assessment-task-field" hidden>Task source<select id="assessment-task"><option value="">Choose task source</option></select></label>
+              <label id="assessment-attempt-field" hidden>Exact task attempt<select id="assessment-attempt"><option value="">Choose exact task attempt</option></select></label>
+              <pre id="assessment-source-identity"></pre>
+              <button id="assessment-start" type="button" disabled>Assess saved allocation</button>
+              <button id="assessment-cancel" type="button" disabled>Cancel assessment</button>
+              <p id="assessment-notice" role="status"></p>
+              <label>Assessment history<select id="assessment-history"><option value="">Choose retained assessment</option></select></label>
+              <pre id="assessment-summary" role="status"></pre>
+              <h4>Accepted behavior preservation</h4><pre id="assessment-accepted"></pre>
+              <h4>Complete candidate contract</h4><pre id="assessment-target-contract"></pre>
+              <h4>Bounded work and prerequisites</h4><pre id="assessment-works"></pre>
+              <h4>Whole-target integration</h4><pre id="assessment-integration"></pre>
+              <details><summary>Exact source, verification identities and producer progress</summary><pre id="assessment-progress"></pre></details>
+              <label>Explicit baseline acceptance reason<input id="assessment-accept-reason" maxlength="1000" /></label>
+              <label>Exact retired obligation ids (comma-separated)<input id="assessment-retirement" /></label>
+              <button id="assessment-accept" type="button" disabled>Accept integrated target baseline</button>
+              <pre id="assessment-acceptance" role="status">No baseline acceptance. Eligibility is read-only.</pre>
+              <p>Work controls below retain their task-linked evidence and existing admission requirements, separately from this selected source assessment.</p>
+            </section>
             <div id="target-items" aria-label="Saved work commitments"></div>
             <details><summary>Work editor and revision preview</summary>
               <label>Work title<input id="target-work-title" maxlength="200" /></label>
@@ -1681,7 +2389,8 @@
           </details>
           <details id="pr-controls"><summary>Candidate GitHub PR review</summary>
             <p>Prepare an exact preview from the selected task. Confirm only after reviewing source, evidence and the destination below.</p>
-            <div class="proof-actions"><button id="pr-prepare" type="button">Prepare PR preview</button><button id="pr-refresh" type="button">Refresh GitHub review</button></div>
+            <label>Bounded work assessment<select id="pr-assessment"><option value="">Choose exact bounded work assessment</option></select></label>
+            <div class="proof-actions"><button id="pr-prepare-scoped" type="button">Prepare bounded work preview</button><button id="pr-prepare" type="button">Prepare full candidate preview</button><button id="pr-refresh" type="button">Refresh GitHub review</button></div>
             <pre id="pr-result" role="status"></pre>
             <pre id="pr-preview"></pre>
             <details><summary>Review source difference</summary><p>Candidate runtime source - local verification evidence is separate from delivery metadata.</p><pre id="pr-source-diff"></pre></details>
@@ -1819,12 +2528,22 @@
           'revoke'
         ])
           listen(byId('agent-' + action), 'click', () => taskAction(action))
-        for (const action of ['prepare', 'confirm', 'refresh'])
+        for (const action of [
+          'prepare-scoped',
+          'prepare',
+          'confirm',
+          'refresh'
+        ])
           listen(byId('pr-' + action), 'click', () => reviewAction(action))
+        listen(byId('pr-assessment'), 'change', (event) => {
+          selectedScopedAssessmentId = event.target.value
+          renderTask()
+        })
         listen(byId('pr-approve'), 'change', renderTask)
         listen(byId('agent-adapter'), 'change', renderTask)
         listen(byId('agent-history'), 'change', async (event) => {
           taskId = event.target.value
+          selectedScopedAssessmentId = ''
           taskSignature = ''
           await refreshTask()
         })

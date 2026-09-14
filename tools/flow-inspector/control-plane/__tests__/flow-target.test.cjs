@@ -3,7 +3,7 @@ const test = require('node:test')
 const assert = require('node:assert/strict')
 const fs = require('node:fs')
 const path = require('node:path')
-const { randomUUID } = require('node:crypto')
+const { createHash, randomUUID } = require('node:crypto')
 const { loadContract, admitContract } = require('../contracts.cjs')
 const { createTargetOwner } = require('../flow-target.cjs')
 const root = path.resolve(__dirname, '../../../..')
@@ -232,6 +232,10 @@ test('exact task scope, multiple PR records and unknown handoffs never complete 
   assert.equal(value.works[1].status, 'blocked')
   assert.equal(value.works[1].prerequisites[0].status, 'unconfirmed')
   assert.equal(value.status, 'pending')
+  assert.equal(
+    value.limitation,
+    'Strict all-flow candidate verification remains required. Source-bound integration assessment is available through the assessment service. Explicit target baseline acceptance is not implemented.'
+  )
   assert.deepEqual(createTargetOwner(options).get(saved.id), value)
   const wrong = task({ ...request.works[2], scope: 'Different scope' })
   assert.throws(
@@ -414,6 +418,125 @@ function admissionFixture(t) {
   return { ...f, owner, source, admission, task, target }
 }
 
+function dependentAdmissionFixture(t) {
+  const f = setup(t)
+  const contract = f.options.getContracts()[0]
+  const source = {
+    id: randomUUID(),
+    format: 2,
+    phase: 'completed',
+    scenario: 'baseline',
+    mappingRevision: 1,
+    contractDigest: contract.digest,
+    snapshot: {
+      head: 'a'.repeat(40),
+      digest: 'b'.repeat(64),
+      contractDigest: contract.digest
+    },
+    evidence: {
+      status: 'passed',
+      cases: contract.cases.map((item) => ({ ...item, status: 'passed' })),
+      issues: []
+    }
+  }
+  const assessments = new Map(),
+    assessmentSources = new Map()
+  f.options.getSource = (id) => (id === source.id ? source : null)
+  f.options.getAssessment = (id) => assessments.get(id)
+  f.options.getAssessmentSource = (id) => assessmentSources.get(id)
+  const changed = structuredClone(f.request)
+  changed.works[0].prerequisites = [
+    { workId: changed.works[1].id, handoff: 'Use assessed upstream behavior' }
+  ]
+  const owner = createTargetOwner(f.options)
+  const created = owner.decide(changed, 'local-developer')
+  const target = owner.get(created.id)
+  const work = changed.works[0]
+  const assessmentId = randomUUID()
+  const assessment = {
+    id: assessmentId,
+    actor: 'local-developer',
+    phase: 'completed',
+    request: {
+      targetId: target.id,
+      allocationRevision: target.revision,
+      sourceAttemptId: source.id
+    },
+    pins: {},
+    runtime: {
+      attemptId: source.id,
+      repository: root,
+      head: source.snapshot.head,
+      sourceDigest: source.snapshot.digest,
+      runtimeSourceDigest: 'c'.repeat(64),
+      runtimeAuthorityFormat: 1,
+      runtimeAuthorityDigest: 'd'.repeat(64),
+      contractScopeDigest: 'e'.repeat(64)
+    },
+    result: {
+      targetId: target.id,
+      allocationRevision: target.revision,
+      acceptedBaseline: target.acceptedBaseline,
+      source: {
+        repository: root,
+        head: source.snapshot.head,
+        runtimeSourceDigest: 'c'.repeat(64)
+      },
+      accepted: { status: 'passed' },
+      works: changed.works.map((item) => ({
+        id: item.id,
+        targetId: target.id,
+        allocationRevision: target.revision,
+        status: 'passed',
+        prerequisites: { status: 'passed' }
+      })),
+      integration: { status: 'pending' }
+    },
+    projection: { current: true }
+  }
+  assessments.set(assessmentId, assessment)
+  assessmentSources.set(assessmentId, assessment.runtime)
+  const taskId = randomUUID()
+  const admission = {
+    action: 'admit',
+    targetId: target.id,
+    expectedRevision: target.revision,
+    requestId: randomUUID(),
+    reason: 'Consume exact assessed prerequisites before work',
+    workId: work.id,
+    taskId,
+    assessmentId
+  }
+  const task = {
+    requestId: taskId,
+    actor: 'local-developer',
+    stepId: work.stepId,
+    step: contract.flows[0].steps.find((item) => item.id === work.stepId),
+    objective: work.scope,
+    allowedFiles: work.allowedFiles,
+    revision: 1,
+    contractDigest: contract.digest,
+    obligations: contract.cases,
+    workBinding: {
+      targetId: target.id,
+      workId: work.id,
+      admissionId: admission.requestId
+    }
+  }
+  return {
+    ...f,
+    owner,
+    source,
+    assessments,
+    assessmentSources,
+    assessment,
+    admission,
+    task,
+    target,
+    work
+  }
+}
+
 test('admission reserves source and task before execution and survives restart without changing baseline', (t) => {
   const f = admissionFixture(t)
   const before = f.options.getBaseline()
@@ -438,6 +561,139 @@ test('admission reserves source and task before execution and survives restart w
     () => restored.decide(revise(changed, f.target.id, 2), 'local-developer'),
     /admitted commitment/i
   )
+})
+
+test('assessment-bound admission enables exact dependent work and survives restart without accepting the target', (t) => {
+  const f = dependentAdmissionFixture(t)
+  const before = f.options.getBaseline()
+  const result = f.owner.decide(f.admission, 'local-developer')
+  assert.equal(result.decision.admission.assessmentId, f.assessment.id)
+  assert.equal(result.decision.admission.allocationRevision, f.target.revision)
+  assert.deepEqual(result.decision.admission.source, {
+    digest: f.assessment.runtime.sourceDigest,
+    head: f.assessment.runtime.head
+  })
+  assert.deepEqual(
+    f.owner.checkTask(f.task, f.source.snapshot),
+    result.decision.admission
+  )
+  const current = f.owner.get(f.target.id)
+  assert.equal(current.status, 'pending')
+  assert.equal(current.works[0].status, 'pending')
+  assert.equal(current.works[0].prerequisites[0].status, 'passed')
+  assert.deepEqual(f.options.getBaseline(), before)
+  const restored = createTargetOwner(f.options)
+  assert.deepEqual(
+    restored.checkTask(f.task, f.source.snapshot),
+    result.decision.admission
+  )
+  assert.equal(restored.get(f.target.id).status, 'pending')
+})
+
+test('assessment-bound task start rejects retired source authority after its own admission revision', (t) => {
+  const f = dependentAdmissionFixture(t)
+  const result = f.owner.decide(f.admission, 'local-developer')
+  assert.equal(result.revision, f.target.revision + 1)
+  f.assessmentSources.delete(f.assessment.id)
+  assert.throws(
+    () => f.owner.checkTask(f.task, f.source.snapshot),
+    /assessment source authority.*unavailable/i
+  )
+})
+
+test('assessment source authority requires one complete versioned identity', (t) => {
+  const f = dependentAdmissionFixture(t)
+  delete f.assessment.runtime.contractScopeDigest
+  assert.throws(
+    () => f.owner.decide(f.admission, 'local-developer'),
+    /assessment source identity/i
+  )
+})
+
+test('retained assessment admission rejects a changed source even with a recomputed digest', (t) => {
+  const f = dependentAdmissionFixture(t)
+  f.owner.decide(f.admission, 'local-developer')
+  const file = path.join(f.options.directory, 'targets.json')
+  const saved = JSON.parse(fs.readFileSync(file, 'utf8'))
+  const admission = saved.records[0].history.at(-1).admission
+  admission.source = {
+    digest: 'd'.repeat(64),
+    head: 'e'.repeat(40)
+  }
+  saved.records[0].history.at(-1).admissionDigest = createHash('sha256')
+    .update(JSON.stringify(admission))
+    .digest('hex')
+  fs.writeFileSync(file, JSON.stringify(saved))
+  assert.throws(
+    () => createTargetOwner(f.options),
+    /assessment admission source mismatch/i
+  )
+})
+
+test('assessment-bound admission rejects non-current or unsatisfied owner evidence without reservation', (t) => {
+  const f = dependentAdmissionFixture(t)
+  const mutations = [
+    ['missing', null],
+    [
+      'stale',
+      (value) => {
+        value.projection.current = false
+      }
+    ],
+    [
+      'actor',
+      (value) => {
+        value.actor = 'another-human'
+      }
+    ],
+    [
+      'allocation',
+      (value) => {
+        value.request.allocationRevision--
+      }
+    ],
+    [
+      'accepted preservation',
+      (value) => {
+        value.result.accepted.status = 'failed'
+      }
+    ],
+    [
+      'prerequisite',
+      (value) => {
+        value.result.works[0].prerequisites.status = 'failed'
+        value.result.works[0].status = 'failed'
+      }
+    ],
+    [
+      'source',
+      (value) => {
+        value.runtime.repository = '/other/repository'
+      }
+    ]
+  ]
+  for (const [name, mutate] of mutations) {
+    const value = structuredClone(f.assessment)
+    if (mutate) mutate(value)
+    if (name === 'missing') f.assessments.delete(f.assessment.id)
+    else f.assessments.set(f.assessment.id, value)
+    assert.throws(
+      () => f.owner.decide(f.admission, 'local-developer'),
+      /assessment|prerequisite|preservation|source|actor|allocation/i,
+      name
+    )
+    assert.equal(f.owner.get(f.target.id).history.length, f.target.revision)
+  }
+  f.assessments.set(f.assessment.id, f.assessment)
+  assert.throws(
+    () =>
+      f.owner.decide(
+        { ...f.admission, sourceAttemptId: f.source.id },
+        'local-developer'
+      ),
+    /source|assessment/i
+  )
+  assert.equal(f.owner.get(f.target.id).history.length, f.target.revision)
 })
 
 test('admission denies unresolved prerequisites before reserving work', (t) => {
@@ -631,4 +887,479 @@ test('work binding identity is independent of JSON property order', (t) => {
     ),
     result.decision.admission
   )
+})
+
+async function pinnedSetup(t) {
+  const value = setup(t)
+  const sourceOwner = require('../snapshot.cjs')
+  const evidenceOwner = require('../evidence.cjs')
+  const { runVerification } = require('../runner.cjs')
+  const { createHistory, compareVersion } = require('../evolution.cjs')
+  const contract = loadContract(root)
+  const baseline = { revision: 1, contractDigest: contract.digest }
+  value.options.getContracts = () => [contract]
+  value.options.getBaseline = () => baseline
+  value.request.targetRevision = contract.digest
+  value.request.acceptedBaseline = baseline
+  value.request.pending = []
+  const id = randomUUID()
+  const runDirectory = path.join(value.options.directory, 'pin-proof')
+  const snapshot = sourceOwner.captureSource(root, runDirectory, contract)
+  const admitted = sourceOwner.validateSourceSnapshot(snapshot, contract)
+  const flowIds = contract.flows.map((flow) => flow.id)
+  const runner = await runVerification({
+    repositoryRoot: root,
+    runDirectory,
+    snapshot,
+    contract,
+    flowIds,
+    scenario: 'baseline',
+    timeoutMs: 15000
+  })
+  const admission = {
+    attemptId: id,
+    repository: root,
+    head: snapshot.head,
+    sourceDigest: snapshot.digest,
+    runtimeSource: admitted.runtimeSource,
+    runtimeAuthority: admitted.runtimeAuthority
+  }
+  const evidence = evidenceOwner.assessEvidence(
+    contract,
+    snapshot,
+    runner,
+    flowIds,
+    'baseline',
+    admission
+  )
+  assert.equal(evidence.status, 'passed', JSON.stringify(evidence.issues))
+  evidenceOwner.validateStoredEvidence(
+    contract,
+    {
+      id,
+      phase: 'completed',
+      snapshot,
+      runner,
+      flowIds,
+      scenario: 'baseline',
+      evidence
+    },
+    admission
+  )
+  const testDigest = admitted.verificationSource.files.find(
+    (file) => file.path === contract.testFile
+  ).digest
+  const version = {
+    contract,
+    selectors: runner.report.testResults
+      .flatMap((suite) => suite.assertionResults)
+      .map((item) => ({
+        caseId: contract.cases.find((c) => c.testName === item.fullName).id,
+        file: contract.testFile,
+        testName: item.fullName,
+        contentDigest: testDigest
+      })),
+    verificationSource: {
+      attemptId: id,
+      repository: root,
+      head: snapshot.head,
+      sourceDigest: snapshot.digest,
+      configurationDigest: snapshot.configurationDigest,
+      descriptor: admitted.verificationSource
+    }
+  }
+  const history = createHistory(version)
+  const candidate = history.versions[0]
+  const review = Object.freeze({
+    ...compareVersion(history, candidate),
+    candidate,
+    status: 'pending'
+  })
+  const versions = new Map([[review.id, review]])
+  let reads = 0
+  value.options.getVersionReview = (key) => {
+    reads++
+    return versions.get(key) ?? null
+  }
+  value.owner = createTargetOwner(value.options)
+  value.request.targetReviewId = review.id
+  return { ...value, review, versions, reads: () => reads }
+}
+
+test('a target pins the exact real reviewed verification version through replay and restart without lookup work on projections', async (t) => {
+  const value = await pinnedSetup(t)
+  const saved = value.owner.decide(value.request, 'local-developer')
+  const pin = {
+    reviewId: value.review.id,
+    candidateDigest: value.review.candidateDigest
+  }
+  assert.deepEqual(value.owner.get(saved.id).targetVerification, pin)
+  assert.equal(value.reads(), 1)
+  for (let i = 0; i < 20; i++) {
+    value.owner.get(saved.id)
+    value.owner.list()
+    value.owner.decide(value.request, 'local-developer')
+  }
+  assert.equal(value.reads(), 1)
+  assert.deepEqual(
+    createTargetOwner(value.options).get(saved.id).targetVerification,
+    pin
+  )
+  assert.equal(value.reads(), 2)
+  assert.deepEqual(
+    value.owner.get(saved.id).acceptedBaseline,
+    value.request.acceptedBaseline
+  )
+  assert.ok(Object.isFrozen(value.owner.get(saved.id).targetVerification))
+})
+
+test('a missing or conflicting selected version rejects before writing a target revision', async (t) => {
+  const value = await pinnedSetup(t)
+  const file = path.join(value.options.directory, 'targets.json')
+  for (const replacement of [
+    null,
+    { ...value.review, id: 'a'.repeat(64) },
+    { ...value.review, candidateDigest: 'invalid' },
+    {
+      ...value.review,
+      candidate: { ...value.review.candidate, verificationSource: undefined }
+    },
+    {
+      ...value.review,
+      candidate: {
+        ...value.review.candidate,
+        contract: { ...value.review.candidate.contract, digest: 'b'.repeat(64) }
+      }
+    }
+  ]) {
+    value.versions.set(value.review.id, replacement)
+    assert.throws(
+      () => value.owner.decide(value.request, 'local-developer'),
+      /version|review|verification/i
+    )
+    assert.equal(fs.existsSync(file), false)
+    assert.equal(value.owner.list().length, 0)
+  }
+  value.versions.set(value.review.id, value.review)
+  assert.equal(value.owner.decide(value.request, 'local-developer').revision, 1)
+})
+
+test('target pin survives later review rejection and cannot be changed by another target action or silently recovered on reload', async (t) => {
+  const value = await pinnedSetup(t)
+  const saved = value.owner.decide(value.request, 'local-developer')
+  const before = fs.readFileSync(
+    path.join(value.options.directory, 'targets.json'),
+    'utf8'
+  )
+  assert.throws(
+    () =>
+      value.owner.decide(
+        {
+          ...revise(value.request, saved.id, 1),
+          targetReviewId: value.review.id
+        },
+        'local-developer'
+      ),
+    /immutable|creation|review/i
+  )
+  assert.equal(
+    fs.readFileSync(path.join(value.options.directory, 'targets.json'), 'utf8'),
+    before
+  )
+  value.versions.set(value.review.id, { ...value.review, status: 'rejected' })
+  const reloaded = createTargetOwner(value.options)
+  const revised = reloaded.decide(
+    revise(value.request, saved.id, 1),
+    'local-developer'
+  )
+  assert.equal(revised.revision, 2)
+  assert.deepEqual(reloaded.get(saved.id).targetVerification, {
+    reviewId: value.review.id,
+    candidateDigest: value.review.candidateDigest
+  })
+  value.versions.set(value.review.id, {
+    ...value.review,
+    candidateDigest: 'c'.repeat(64)
+  })
+  assert.throws(
+    () => createTargetOwner(value.options),
+    /version|review|verification/i
+  )
+  value.versions.delete(value.review.id)
+  assert.throws(
+    () => createTargetOwner(value.options),
+    /version|review|verification/i
+  )
+})
+
+test('legacy target absence remains unchanged even when an otherwise matching reviewed version exists', async (t) => {
+  const value = await pinnedSetup(t)
+  delete value.request.targetReviewId
+  const saved = value.owner.decide(value.request, 'local-developer')
+  const before = fs.readFileSync(
+    path.join(value.options.directory, 'targets.json'),
+    'utf8'
+  )
+  assert.equal(
+    Object.hasOwn(value.owner.get(saved.id), 'targetVerification'),
+    false
+  )
+  assert.equal(
+    Object.hasOwn(
+      createTargetOwner(value.options).get(saved.id),
+      'targetVerification'
+    ),
+    false
+  )
+  assert.equal(value.reads(), 0)
+  assert.equal(
+    fs.readFileSync(path.join(value.options.directory, 'targets.json'), 'utf8'),
+    before
+  )
+})
+
+test('target callback distinguishes new creation from retained metadata and never rechecks availability on exact replay', async (t) => {
+  const value = await pinnedSetup(t)
+  let available = true
+  const phases = []
+  value.options.getVersionReview = (id, context) => {
+    phases.push(context)
+    return context?.requireAvailable && !available
+      ? null
+      : value.versions.get(id)
+  }
+  let owner = createTargetOwner(value.options)
+  const created = owner.decide(value.request, 'local-developer')
+  assert.deepEqual(phases, [{ requireAvailable: true }])
+  available = false
+  owner = createTargetOwner(value.options)
+  assert.deepEqual(phases, [
+    { requireAvailable: true },
+    { requireAvailable: false }
+  ])
+  const before = phases.length
+  assert.deepEqual(owner.decide(value.request, 'local-developer'), created)
+  owner.get(created.id)
+  owner.list()
+  assert.equal(phases.length, before)
+  assert.throws(
+    () =>
+      owner.decide(
+        { ...value.request, requestId: randomUUID() },
+        'local-developer'
+      ),
+    /unavailable/i
+  )
+  assert.deepEqual(phases.at(-1), { requireAvailable: true })
+  assert.equal(owner.list().length, 1)
+  assert.throws(
+    () =>
+      owner.decide(
+        { ...value.request, reason: 'Changed replay' },
+        'local-developer'
+      ),
+    /conflict/i
+  )
+})
+
+test('accepted version pins distinguish mapping revision and exact same-contract verifier histories without replay lookup', async (t) => {
+  const value = await pinnedSetup(t)
+  const {
+    createHistory,
+    compareVersion,
+    decideVersion
+  } = require('../evolution.cjs')
+  let history = createHistory(value.review.candidate)
+  let baseline = { revision: 5, contractDigest: value.request.targetRevision }
+  const lookups = []
+  value.options.getBaseline = () => baseline
+  value.options.getAcceptedVersion = (revision) => {
+    lookups.push(revision)
+    const selected = revision ?? history.revision
+    const version = history.versions[selected - 1]
+    return version
+      ? { revision: selected, contractDigest: version.contract.digest }
+      : null
+  }
+  value.request.acceptedBaseline = baseline
+  let owner = createTargetOwner(value.options)
+  const created = owner.decide(value.request, 'local-developer')
+  const pin = { revision: 1, contractDigest: baseline.contractDigest }
+  assert.deepEqual(owner.get(created.id).acceptedVersion, pin)
+  assert.deepEqual(owner.get(created.id).history[0].acceptedVersion, pin)
+  assert.equal(owner.get(created.id).acceptedBaseline.revision, 5)
+  assert.deepEqual(lookups, [undefined])
+  owner.decide(value.request, 'local-developer')
+  assert.equal(lookups.length, 1)
+
+  const source = require('../snapshot.cjs')
+  const repository = path.join(
+    value.options.directory,
+    'accepted-version-source'
+  )
+  fs.cpSync(
+    path.join(value.options.directory, 'pin-proof/source'),
+    repository,
+    { recursive: true }
+  )
+  const contract = loadContract(repository)
+  const config = path.join(repository, contract.configFile)
+  fs.chmodSync(config, 0o644)
+  fs.appendFileSync(config, '\n// distinct accepted verifier configuration\n')
+  const id = randomUUID()
+  const snapshot = source.captureSource(
+    repository,
+    path.join(repository, 'attempts', id),
+    contract
+  )
+  const admitted = source.validateSourceSnapshot(snapshot, contract)
+  const candidate = {
+    ...value.review.candidate,
+    verificationSource: {
+      attemptId: id,
+      repository,
+      head: snapshot.head,
+      sourceDigest: snapshot.digest,
+      configurationDigest: snapshot.configurationDigest,
+      descriptor: admitted.verificationSource
+    }
+  }
+  history = decideVersion(
+    history,
+    compareVersion(history, candidate),
+    candidate,
+    { decision: 'accept', reason: 'Explicit distinct verifier version' },
+    { id: 'local-developer', capabilities: ['decide-contract'] }
+  )
+  assert.equal(
+    history.versions[0].contract.digest,
+    history.versions[1].contract.digest
+  )
+  assert.notEqual(
+    history.versions[0].verificationSource.configurationDigest,
+    history.versions[1].verificationSource.configurationDigest
+  )
+  baseline = { ...baseline, revision: 6 }
+  owner = createTargetOwner(value.options)
+  assert.equal(lookups.at(-1), 1)
+  assert.deepEqual(owner.get(created.id).acceptedVersion, pin)
+  const next = owner.decide(
+    { ...value.request, requestId: randomUUID(), acceptedBaseline: baseline },
+    'local-developer'
+  )
+  assert.equal(owner.get(next.id).acceptedVersion.revision, 2)
+
+  const file = path.join(value.options.directory, 'targets.json')
+  const original = JSON.parse(fs.readFileSync(file))
+  for (const mutate of [
+    (record) => {
+      record.acceptedVersion.revision = 2
+    },
+    (record) => {
+      record.history[0].acceptedVersion.revision = 2
+    },
+    (record) => {
+      delete record.acceptedVersion
+    },
+    (record) => {
+      delete record.history[0].acceptedVersion
+    },
+    (record) => {
+      record.acceptedVersion.contractDigest = '0'.repeat(64)
+      record.history[0].acceptedVersion.contractDigest = '0'.repeat(64)
+    },
+    (record) => {
+      for (const pin of [
+        record.acceptedVersion,
+        record.history[0].acceptedVersion
+      ]) {
+        delete pin.contractDigest
+        pin.unrecognized = 1
+      }
+    },
+    (record) => {
+      for (const pin of [
+        record.acceptedVersion,
+        record.history[0].acceptedVersion
+      ]) {
+        delete pin.revision
+        pin.unrecognized = 1
+      }
+    }
+  ]) {
+    const changed = structuredClone(original)
+    mutate(changed.records[0])
+    fs.writeFileSync(file, JSON.stringify(changed))
+    assert.throws(
+      () => createTargetOwner(value.options),
+      /accepted.*version|version.*pin/i
+    )
+  }
+  fs.writeFileSync(file, JSON.stringify(original))
+  const exactResolver = value.options.getAcceptedVersion
+  value.options.getAcceptedVersion = () => ({
+    revision: 2,
+    contractDigest: baseline.contractDigest
+  })
+  assert.throws(() => createTargetOwner(value.options), /accepted.*version/i)
+  value.options.getAcceptedVersion = exactResolver
+})
+
+test('configured accepted-version metadata fails closed and client pins cannot become authority', (t) => {
+  const value = setup(t)
+  try {
+    for (const metadata of [
+      null,
+      { revision: 0, contractDigest: value.request.targetRevision },
+      { revision: 1, contractDigest: '0'.repeat(64) }
+    ]) {
+      const owner = createTargetOwner({
+        ...value.options,
+        getAcceptedVersion: () => metadata
+      })
+      assert.throws(
+        () => owner.decide(value.request, 'local-developer'),
+        /accepted.*version/i
+      )
+      assert.equal(owner.list().length, 0)
+    }
+    const owner = createTargetOwner(value.options)
+    assert.throws(
+      () =>
+        owner.decide(
+          {
+            ...value.request,
+            acceptedVersion: {
+              revision: 1,
+              contractDigest: value.request.targetRevision
+            }
+          },
+          'local-developer'
+        ),
+      /unknown|field/i
+    )
+  } finally {
+    fs.rmSync(value.options.directory, { recursive: true, force: true })
+  }
+})
+
+test('legacy unpinned targets remain readable but cannot acquire an accepted version in a later audit entry', (t) => {
+  const value = setup(t)
+  const created = value.owner.decide(value.request, 'local-developer')
+  value.owner.decide(revise(value.request, created.id, 1), 'local-developer')
+  assert.equal(
+    Object.hasOwn(
+      createTargetOwner(value.options).get(created.id),
+      'acceptedVersion'
+    ),
+    false
+  )
+  const file = path.join(value.options.directory, 'targets.json')
+  const saved = JSON.parse(fs.readFileSync(file))
+  saved.records[0].history[1].acceptedVersion = {
+    revision: 1,
+    contractDigest: value.request.targetRevision
+  }
+  fs.writeFileSync(file, JSON.stringify(saved))
+  assert.throws(() => createTargetOwner(value.options), /accepted.*version/i)
 })

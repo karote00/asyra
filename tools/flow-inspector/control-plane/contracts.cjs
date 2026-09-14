@@ -294,6 +294,19 @@ function admitContract(manifest, architecture) {
       'invalid ' + key
     )
   }
+  const selectedStepIds = new Set(
+    manifest.flows.flatMap((flow) => flow.stepIds)
+  )
+  const runtimeScope = {
+    format: 1,
+    steps: architecture.steps
+      .filter((step) => selectedStepIds.has(step.id))
+      .map((step) => ({
+        stepId: step.id,
+        ownerPackage: step.ownerPackage,
+        implementationBoundary: [...step.implementationBoundary]
+      }))
+  }
   return freeze({
     version: manifest.version,
     definition: structuredClone(manifest),
@@ -310,6 +323,7 @@ function admitContract(manifest, architecture) {
     testFile: manifest.testFile,
     configFile: manifest.configFile,
     digest: digest({ manifest, architecture }),
+    runtimeScope: { ...runtimeScope, digest: digest(runtimeScope) },
     flows,
     cases
   })

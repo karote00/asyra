@@ -1,12 +1,198 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 const path = require('node:path')
+const { isDeepStrictEqual } = require('node:util')
+const sourceOwner = require('./snapshot.cjs')
+const { validId } = require('./store.cjs')
 
-function assessEvidence(
+const RUNTIME_EXECUTION_ISSUE = 'Runtime execution provenance mismatch'
+const authorityIdentity = (authority) =>
+  authority
+    ? {
+        runtimeAuthorityFormat: authority.format,
+        runtimeAuthorityDigest: authority.digest,
+        contractScopeDigest: authority.contractScopeDigest
+      }
+    : {}
+const authorityMismatch = (authority, identity) => {
+  const keys = [
+    'runtimeAuthorityFormat',
+    'runtimeAuthorityDigest',
+    'contractScopeDigest'
+  ]
+  return authority
+    ? keys.some((key) => identity?.[key] !== authorityIdentity(authority)[key])
+    : keys.some((key) => Object.hasOwn(identity ?? {}, key))
+}
+function resolveSource(snapshot, admission, contract, executionContext) {
+  const derived =
+    Object.hasOwn(snapshot, 'executionSource') ||
+    Object.hasOwn(admission ?? {}, 'executionSource')
+  if (derived && !admission) {
+    if (!contract)
+      throw new Error(
+        'Derived execution requires direct trusted source admission'
+      )
+    if (
+      Object.hasOwn(snapshot, 'sourceRoot') &&
+      snapshot.sourceRoot !== executionContext?.sourceRoot
+    )
+      throw new Error('Derived source location conflicts with trusted context')
+    const admitted = sourceOwner.validateSourceSnapshot(
+      snapshot,
+      contract,
+      snapshot.files,
+      executionContext
+    )
+    return {
+      runtime: admitted.runtimeSource,
+      authority: admitted.runtimeAuthority,
+      source: Object.freeze({
+        sourceRoot: executionContext.sourceRoot,
+        head: snapshot.head,
+        sourceDigest: snapshot.digest,
+        lockfileDigest: snapshot.lockfileDigest,
+        contractDigest: snapshot.contractDigest,
+        mappingVersion: snapshot.mappingVersion,
+        architectureVersion: snapshot.architectureVersion,
+        configurationDigest: snapshot.configurationDigest,
+        runtimeSource: admitted.runtimeSource,
+        ...(admitted.runtimeAuthority
+          ? { runtimeAuthority: admitted.runtimeAuthority }
+          : {}),
+        verificationSource: admitted.verificationSource,
+        executionSource: admitted.executionSource
+      })
+    }
+  }
+  if (derived) {
+    const execution = admission.executionSource
+    const authority = admission.runtimeAuthority
+    const scoped = Object.hasOwn(admission, 'runtimeAuthority')
+    if (
+      !Object.hasOwn(snapshot, 'executionSource') ||
+      !Object.hasOwn(admission, 'executionSource') ||
+      !execution ||
+      execution.format !== (scoped ? 2 : 1) ||
+      !admission.verificationSource ||
+      ![
+        'runtimeSource',
+        ...(scoped ? ['runtimeAuthority'] : []),
+        'verificationSource',
+        'executionSource'
+      ].every(
+        (key) =>
+          snapshot[key] && isDeepStrictEqual(snapshot[key], admission[key])
+      ) ||
+      Object.hasOwn(snapshot, 'runtimeAuthority') !== scoped ||
+      !contract ||
+      snapshot.contractDigest !== contract.digest ||
+      ['mappingVersion', 'architectureVersion'].some(
+        (key) => snapshot[key] !== contract[key]
+      ) ||
+      [
+        'contractDigest',
+        'mappingVersion',
+        'architectureVersion',
+        'configurationDigest'
+      ].some((key) => admission[key] !== snapshot[key]) ||
+      execution.digest !== snapshot.configurationDigest ||
+      execution.verificationSourceDigest !==
+        admission.verificationSource.digest ||
+      (scoped && execution.runtimeAuthorityDigest !== authority.digest)
+    )
+      throw new Error('Derived execution admission does not bind this snapshot')
+  }
+  if (!Object.hasOwn(snapshot, 'runtimeSource')) {
+    if (admission)
+      throw new Error('Runtime source admission lacks source identity')
+    return { runtime: undefined, authority: undefined, source: null }
+  }
+  if (!admission)
+    return {
+      runtime: sourceOwner.validateRuntimeSource(
+        snapshot,
+        snapshot.files,
+        contract
+      ),
+      authority: snapshot.runtimeAuthority,
+      source: null
+    }
+  const runtime = snapshot.runtimeSource
+  const admitted = admission.runtimeSource
+  const authorityPresent = Object.hasOwn(snapshot, 'runtimeAuthority')
+  const admittedAuthorityPresent = Object.hasOwn(admission, 'runtimeAuthority')
+  const authority =
+    authorityPresent && admittedAuthorityPresent
+      ? admission.runtimeAuthority
+      : undefined
+  const same =
+    runtime &&
+    admitted &&
+    runtime.format === 1 &&
+    Object.keys(runtime).length === 3 &&
+    ['format', 'files', 'digest'].every((key) => Object.hasOwn(runtime, key)) &&
+    runtime.digest === admitted.digest &&
+    Array.isArray(runtime.files) &&
+    Array.isArray(admitted.files) &&
+    runtime.files.length === admitted.files.length &&
+    runtime.files.every(
+      (entry, index) =>
+        entry &&
+        Object.keys(entry).join(',') === 'path,size,digest' &&
+        ['path', 'size', 'digest'].every(
+          (key) => entry[key] === admitted.files[index][key]
+        )
+    )
+  if (
+    !same ||
+    authorityPresent !== admittedAuthorityPresent ||
+    (authorityPresent &&
+      !isDeepStrictEqual(snapshot.runtimeAuthority, authority)) ||
+    !validId(admission.attemptId) ||
+    typeof admission.repository !== 'string' ||
+    !path.isAbsolute(admission.repository) ||
+    admission.head !== snapshot.head ||
+    admission.sourceDigest !== snapshot.digest ||
+    admitted.files.find((entry) => entry.path === 'yarn.lock')?.digest !==
+      snapshot.lockfileDigest ||
+    (snapshot.sourceRoot &&
+      !snapshot.sourceRoot.startsWith(admission.repository + path.sep))
+  )
+    throw new Error('Runtime source admission does not bind this snapshot')
+  return { runtime: admitted, authority, source: null }
+}
+function runtimeExecutionMismatch(
+  snapshot,
+  identity,
+  runtime,
+  authority,
+  flowIds,
+  scenario
+) {
+  return (
+    !runtime ||
+    !identity ||
+    identity.runtimeSourceDigest !== runtime.digest ||
+    authorityMismatch(authority, identity) ||
+    identity.lockfileDigest !== snapshot.lockfileDigest ||
+    identity.sourceDigest !== snapshot.digest ||
+    identity.contractDigest !== snapshot.contractDigest ||
+    identity.mappingVersion !== snapshot.mappingVersion ||
+    identity.architectureVersion !== snapshot.architectureVersion ||
+    identity.configurationDigest !== snapshot.configurationDigest ||
+    identity.scenario !== scenario ||
+    JSON.stringify(identity.flowIds) !== JSON.stringify(flowIds)
+  )
+}
+
+function assessSourceEvidence(
   contract,
   snapshot,
   runner,
   flowIds,
-  scenario = 'baseline'
+  scenario = 'baseline',
+  sourceAdmission,
+  executionContext
 ) {
   const expected = contract.cases.filter((item) =>
     flowIds.includes(item.flowId)
@@ -25,6 +211,37 @@ function assessEvidence(
   if (snapshot.contractDigest !== contract.digest)
     issues.push('Contract provenance mismatch')
   const identity = runner.identity
+  const hasRuntime =
+    Object.hasOwn(snapshot, 'executionSource') ||
+    Object.hasOwn(snapshot, 'runtimeSource') ||
+    Object.hasOwn(identity ?? {}, 'runtimeSourceDigest') ||
+    Boolean(sourceAdmission)
+  let runtime
+  let authority
+  let source = null
+  if (hasRuntime) {
+    try {
+      ;({ runtime, authority, source } = resolveSource(
+        snapshot,
+        sourceAdmission,
+        contract,
+        executionContext
+      ))
+    } catch {
+      issues.push('Runtime source provenance mismatch')
+    }
+    if (
+      runtimeExecutionMismatch(
+        snapshot,
+        identity,
+        runtime,
+        authority,
+        flowIds,
+        scenario
+      )
+    )
+      issues.push(RUNTIME_EXECUTION_ISSUE)
+  }
   const fingerprint = (value) =>
     typeof value === 'string' && /^[a-f0-9]{64}$/.test(value)
   if (
@@ -168,8 +385,12 @@ function assessEvidence(
       return 'unknown'
     return 'passed'
   }
-  return {
+  const evidence = {
     status: statusFor(cases),
+    ...(hasRuntime ? { runtimeSourceDigest: runtime?.digest ?? null } : {}),
+    ...(Object.hasOwn(snapshot, 'runtimeAuthority')
+      ? authorityIdentity(authority)
+      : {}),
     issues,
     expectedCount: expected.length,
     passedCount: cases.filter((item) => item.status === 'passed').length,
@@ -179,16 +400,30 @@ function assessEvidence(
       status: statusFor(cases.filter((item) => item.flowId === id))
     }))
   }
+  return { evidence, source }
 }
 
-function validateStoredEvidence(contract, record) {
+function assessEvidence(...args) {
+  return assessSourceEvidence(...args).evidence
+}
+
+function validateStoredEvidence(contract, record, sourceAdmission) {
+  const derived =
+    Object.hasOwn(record.snapshot ?? {}, 'executionSource') ||
+    Object.hasOwn(sourceAdmission ?? {}, 'executionSource')
+  if (
+    record.phase === 'completed' &&
+    derived &&
+    (!sourceAdmission || record.snapshot?.contractDigest !== contract.digest)
+  )
+    throw new Error('Stored derived execution admission is unavailable')
   if (
     record.phase !== 'completed' ||
     record.snapshot?.contractDigest !== contract.digest
   )
     return
   if (
-    record.format === 2 &&
+    record.format >= 2 &&
     ['mappingVersion', 'architectureVersion'].some(
       (key) => record.snapshot[key] !== contract[key]
     )
@@ -196,6 +431,36 @@ function validateStoredEvidence(contract, record) {
     throw new Error(
       'Stored evidence provenance disagrees with the current contract'
     )
+  const hasRuntime =
+    Object.hasOwn(record.snapshot, 'runtimeSource') ||
+    Object.hasOwn(record.runner?.identity ?? {}, 'runtimeSourceDigest') ||
+    Object.hasOwn(record.evidence ?? {}, 'runtimeSourceDigest') ||
+    Boolean(sourceAdmission)
+  if (hasRuntime) {
+    const { runtime, authority } = resolveSource(
+      record.snapshot,
+      sourceAdmission,
+      contract
+    )
+    const mismatch = runtimeExecutionMismatch(
+      record.snapshot,
+      record.runner?.identity,
+      runtime,
+      authority,
+      record.flowIds,
+      record.scenario
+    )
+    if (
+      !runtime ||
+      (sourceAdmission && sourceAdmission.attemptId !== record.id) ||
+      record.evidence?.runtimeSourceDigest !== runtime.digest ||
+      authorityMismatch(authority, record.evidence) ||
+      !Array.isArray(record.evidence?.issues) ||
+      record.evidence.issues.includes(RUNTIME_EXECUTION_ISSUE) !== mismatch ||
+      (mismatch && record.evidence.status === 'passed')
+    )
+      throw new Error('Stored runtime evidence provenance mismatch')
+  }
   const expected = contract.cases.filter((item) =>
     record.flowIds.includes(item.flowId)
   )
@@ -246,4 +511,8 @@ function validateStoredEvidence(contract, record) {
     )
 }
 
-module.exports = { assessEvidence, validateStoredEvidence }
+module.exports = {
+  assessEvidence,
+  assessSourceEvidence,
+  validateStoredEvidence
+}

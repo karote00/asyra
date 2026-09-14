@@ -2,6 +2,7 @@
 const fs = require('node:fs')
 const path = require('node:path')
 const { createHash } = require('node:crypto')
+const { isDeepStrictEqual } = require('node:util')
 const { safePath, sha256 } = require('./snapshot.cjs')
 const { validId, writeAtomic } = require('./store.cjs')
 const { freeze, canonicalFile } = require('./agent-contract.cjs')
@@ -31,21 +32,340 @@ const METADATA_POLICY = freeze({
   sourcePrefix: 'packages/factory/src/',
   releaseType: 'patch'
 })
+function metadataPolicy(ownership) {
+  const match = /^@asyra\/([a-z0-9]+(?:-[a-z0-9]+)*)$/.exec(
+    ownership?.packageName ?? ''
+  )
+  const manifestPath = match && 'packages/' + match[1] + '/package.json'
+  need(
+    match &&
+      ownership.path === manifestPath &&
+      /^[a-f0-9]{64}$/.test(ownership.digest ?? ''),
+    'invalid metadata package ownership'
+  )
+  return {
+    version: METADATA_POLICY.version,
+    packageName: ownership.packageName,
+    manifestPath,
+    sourcePrefix: 'packages/' + match[1] + '/src/',
+    releaseType: METADATA_POLICY.releaseType
+  }
+}
+function scopedSelection(selection) {
+  need(
+    selection &&
+      typeof selection === 'object' &&
+      !Array.isArray(selection) &&
+      Object.keys(selection).length === 2 &&
+      ['attemptId', 'assessmentId'].every((key) =>
+        Object.hasOwn(selection, key)
+      ),
+    'invalid scoped review selection'
+  )
+  const captured = Object.freeze({
+    attemptId: selection.attemptId,
+    assessmentId: selection.assessmentId
+  })
+  need(
+    validId(captured.attemptId) && validId(captured.assessmentId),
+    'invalid scoped review selection'
+  )
+  return captured
+}
+function scopedPayload(scope) {
+  // Retained review identity shape, not source admission or case assessment.
+  const object = (value) =>
+    value !== null && typeof value === 'object' && !Array.isArray(value)
+  const keys = (value, fields) =>
+    object(value) && fields.every((key) => Object.hasOwn(value, key))
+  const shape = (value, fields) =>
+    keys(value, fields) && Object.keys(value).length === fields.length
+  const digest = (value) =>
+    typeof value === 'string' && /^[a-f0-9]{64}$/.test(value)
+  const version = (value) =>
+    shape(value, ['revision', 'contractDigest']) &&
+    Number.isInteger(value.revision) &&
+    value.revision > 0 &&
+    digest(value.contractDigest)
+  const runtimeFields = [
+    'taskId',
+    'attemptId',
+    'repository',
+    'head',
+    'sourceDigest',
+    'runtimeSourceDigest',
+    'configurationDigest',
+    'verificationSourceDigest',
+    'executionSourceDigest',
+    'contractDigest',
+    'mappingVersion',
+    'architectureVersion',
+    'lockfileDigest'
+  ]
+  const authorityFields = [
+    'runtimeAuthorityFormat',
+    'runtimeAuthorityDigest',
+    'contractScopeDigest'
+  ]
+  const runtimeScoped = authorityFields.some((key) =>
+    Object.hasOwn(scope?.runtime ?? {}, key)
+  )
+  const reference = (value) =>
+    shape(value, [
+      'attemptId',
+      'repository',
+      'head',
+      'sourceDigest',
+      'configurationDigest',
+      'descriptor'
+    ]) &&
+    validId(value.attemptId) &&
+    typeof value.repository === 'string' &&
+    value.repository.length > 0 &&
+    (value.head === null || typeof value.head === 'string') &&
+    digest(value.sourceDigest) &&
+    digest(value.configurationDigest) &&
+    shape(value.descriptor, [
+      'format',
+      'contractDigest',
+      'mappingVersion',
+      'architectureVersion',
+      'roles',
+      'files',
+      'digest'
+    ]) &&
+    value.descriptor.format === 1 &&
+    ['contractDigest', 'mappingVersion', 'architectureVersion', 'digest'].every(
+      (key) => digest(value.descriptor[key])
+    ) &&
+    shape(value.descriptor.roles, [
+      'manifest',
+      'architecture',
+      'spec',
+      'test',
+      'configuration'
+    ]) &&
+    Object.values(value.descriptor.roles).every(
+      (value) => typeof value === 'string' && value.length > 0
+    ) &&
+    Array.isArray(value.descriptor.files) &&
+    value.descriptor.files.length === 5 &&
+    new Set(Object.values(value.descriptor.roles)).size === 5 &&
+    Object.values(value.descriptor.roles).every(
+      (rolePath) =>
+        value.descriptor.files.filter((file) => file.path === rolePath)
+          .length === 1
+    ) &&
+    value.descriptor.files.find(
+      (file) => file.path === value.descriptor.roles.configuration
+    )?.digest === value.configurationDigest &&
+    value.descriptor.files.every(
+      (file) =>
+        shape(file, ['path', 'size', 'digest']) &&
+        typeof file.path === 'string' &&
+        Number.isSafeInteger(file.size) &&
+        file.size >= 0 &&
+        digest(file.digest)
+    )
+  const ids = ['assessmentId', 'taskId', 'attemptId', 'targetId', 'workId']
+  const objects = [
+    'workBinding',
+    'acceptedBaseline',
+    'acceptedVersion',
+    'targetVerification',
+    'roles',
+    'runtime',
+    'work',
+    'integration'
+  ]
+  need(
+    shape(scope, [...ids, ...objects, 'allocationRevision', 'producers']) &&
+      ids.every((key) => validId(scope[key])) &&
+      objects.every((key) => object(scope[key])) &&
+      Number.isInteger(scope.allocationRevision) &&
+      scope.allocationRevision > 0 &&
+      shape(scope.workBinding, ['targetId', 'workId', 'admissionId']) &&
+      validId(scope.workBinding.admissionId) &&
+      scope.workBinding.targetId === scope.targetId &&
+      scope.workBinding.workId === scope.workId &&
+      version(scope.acceptedBaseline) &&
+      version(scope.acceptedVersion) &&
+      scope.acceptedVersion.contractDigest ===
+        scope.acceptedBaseline.contractDigest &&
+      shape(scope.targetVerification, ['reviewId', 'candidateDigest']) &&
+      digest(scope.targetVerification.reviewId) &&
+      digest(scope.targetVerification.candidateDigest) &&
+      shape(scope.runtime, [
+        ...runtimeFields,
+        ...(runtimeScoped ? authorityFields : [])
+      ]) &&
+      scope.runtime.taskId === scope.taskId &&
+      scope.runtime.attemptId === scope.attemptId &&
+      typeof scope.runtime.repository === 'string' &&
+      scope.runtime.repository.length > 0 &&
+      (scope.runtime.head === null || typeof scope.runtime.head === 'string') &&
+      [
+        'sourceDigest',
+        'runtimeSourceDigest',
+        'configurationDigest',
+        'verificationSourceDigest',
+        'executionSourceDigest',
+        'contractDigest',
+        'mappingVersion',
+        'architectureVersion',
+        'lockfileDigest'
+      ].every((key) => digest(scope.runtime[key])) &&
+      scope.runtime.configurationDigest ===
+        scope.runtime.executionSourceDigest &&
+      (!runtimeScoped ||
+        (scope.runtime.runtimeAuthorityFormat === 1 &&
+          digest(scope.runtime.runtimeAuthorityDigest) &&
+          digest(scope.runtime.contractScopeDigest))) &&
+      scope.runtime.contractDigest === scope.acceptedBaseline.contractDigest &&
+      shape(scope.roles, ['accepted', 'target']) &&
+      ['accepted', 'target'].every((role) => {
+        const item = scope.roles[role]
+        return (
+          shape(item, [
+            'contractDigest',
+            'verificationSourceDigest',
+            'reference',
+            'slotId'
+          ]) &&
+          validId(item.slotId) &&
+          reference(item.reference) &&
+          item.contractDigest === item.reference.descriptor.contractDigest &&
+          item.verificationSourceDigest === item.reference.descriptor.digest
+        )
+      }) &&
+      keys(scope.work, [
+        'id',
+        'targetId',
+        'allocationRevision',
+        'acceptedBaseline',
+        'source',
+        'own',
+        'prerequisites',
+        'status'
+      ]) &&
+      scope.work.id === scope.workId &&
+      scope.work.targetId === scope.targetId &&
+      scope.work.allocationRevision === scope.allocationRevision &&
+      scope.work.status === 'passed' &&
+      object(scope.work.own) &&
+      object(scope.work.prerequisites) &&
+      shape(scope.work.source, ['repository', 'head', 'runtimeSourceDigest']) &&
+      scope.work.source.repository === scope.runtime.repository &&
+      scope.work.source.head === scope.runtime.head &&
+      scope.work.source.runtimeSourceDigest ===
+        scope.runtime.runtimeSourceDigest &&
+      isDeepStrictEqual(scope.work.acceptedBaseline, scope.acceptedBaseline) &&
+      keys(scope.integration, ['status', 'cases', 'pending']) &&
+      Array.isArray(scope.integration.cases) &&
+      Array.isArray(scope.integration.pending) &&
+      ['passed', 'failed', 'unknown', 'pending'].includes(
+        scope.integration.status
+      ) &&
+      Array.isArray(scope.producers) &&
+      scope.producers.length > 0 &&
+      new Set(scope.producers.map((item) => item.id)).size ===
+        scope.producers.length &&
+      scope.producers.every(
+        (item) =>
+          shape(item, [
+            'id',
+            'roles',
+            'contractDigest',
+            'verificationSourceDigest',
+            'reference',
+            'sourceDigest',
+            'configurationDigest',
+            'runtimeSourceDigest',
+            'executionSourceDigest',
+            ...(runtimeScoped ? authorityFields : [])
+          ]) &&
+          validId(item.id) &&
+          Array.isArray(item.roles) &&
+          item.roles.length > 0 &&
+          isDeepStrictEqual(
+            item.roles,
+            ['accepted', 'target'].filter(
+              (role) => scope.roles[role].slotId === item.id
+            )
+          ) &&
+          new Set(item.roles).size === item.roles.length &&
+          item.roles.every(
+            (role) =>
+              ['accepted', 'target'].includes(role) &&
+              scope.roles[role].slotId === item.id &&
+              scope.roles[role].contractDigest === item.contractDigest &&
+              scope.roles[role].verificationSourceDigest ===
+                item.verificationSourceDigest
+          ) &&
+          reference(item.reference) &&
+          isDeepStrictEqual(
+            item.reference,
+            scope.roles[item.roles[0]].reference
+          ) &&
+          item.reference.descriptor.digest === item.verificationSourceDigest &&
+          [
+            'sourceDigest',
+            'configurationDigest',
+            'runtimeSourceDigest',
+            'executionSourceDigest'
+          ].every((key) => digest(item[key])) &&
+          item.runtimeSourceDigest === scope.runtime.runtimeSourceDigest &&
+          (!runtimeScoped ||
+            (item.runtimeAuthorityFormat ===
+              scope.runtime.runtimeAuthorityFormat &&
+              item.runtimeAuthorityDigest ===
+                scope.runtime.runtimeAuthorityDigest &&
+              item.contractScopeDigest ===
+                scope.runtime.contractScopeDigest)) &&
+          item.configurationDigest === item.executionSourceDigest
+      ) &&
+      ['accepted', 'target'].every(
+        (role) =>
+          scope.producers.filter((item) => item.roles.includes(role)).length ===
+          1
+      ),
+    'invalid scoped review handoff identity'
+  )
+  return scope
+}
+function reviewFormat(record) {
+  need(
+    record.format === 1 || record.format === 2,
+    'invalid retained delivery format'
+  )
+  if (record.format === 2) {
+    const scope = scopedPayload(record.preview?.scopedWork)
+    need(
+      scope.taskId === record.taskId &&
+        scope.attemptId === record.preview.attemptId &&
+        ['passed', 'failed', 'unknown'].includes(
+          record.preview.candidateVerification
+        ),
+      'invalid scoped preview identity'
+    )
+  } else
+    need(
+      !Object.hasOwn(record.preview ?? {}, 'scopedWork'),
+      'scoped review requires format 2'
+    )
+}
 function prepareMetadata(input) {
   const ownership = input.packageOwnership
+  const policy = metadataPolicy(ownership)
   need(
-    ownership?.path === METADATA_POLICY.manifestPath &&
-      ownership.packageName === METADATA_POLICY.packageName &&
-      /^[a-f0-9]{64}$/.test(ownership.digest) &&
-      validId(input.taskId) &&
-      validId(input.attemptId),
+    validId(input.taskId) && validId(input.attemptId),
     'invalid metadata package ownership'
   )
   need(
     input.changes.every(
       (c) =>
         canonicalFile(c.path) &&
-        c.path.startsWith(METADATA_POLICY.sourcePrefix) &&
+        c.path.startsWith(policy.sourcePrefix) &&
         c.path.endsWith('.ts') &&
         !c.path.includes('/__tests__/')
     ),
@@ -53,27 +373,33 @@ function prepareMetadata(input) {
   )
   const summary =
     input.adapter === 'demonstration'
-      ? 'Deterministic demonstration - retain a Factory runtime candidate for human review.'
-      : 'Retain a locally verified Factory runtime candidate for human review.'
+      ? 'Deterministic demonstration - retain a ' +
+        policy.packageName +
+        ' runtime candidate for human review.'
+      : 'Retain a locally verified ' +
+        policy.packageName +
+        ' runtime candidate for human review.'
   const content =
     '---\n"' +
-    METADATA_POLICY.packageName +
+    policy.packageName +
     '": ' +
-    METADATA_POLICY.releaseType +
+    policy.releaseType +
     '\n---\n\n' +
     summary +
     '\n'
   return {
-    policyVersion: METADATA_POLICY.version,
-    packageName: METADATA_POLICY.packageName,
-    releaseType: METADATA_POLICY.releaseType,
+    policyVersion: policy.version,
+    packageName: policy.packageName,
+    releaseType: policy.releaseType,
     ownership,
     path:
       '.changeset/flow-review-' + input.taskId + '-' + input.attemptId + '.md',
     content,
     digest: sha256(content),
     reason:
-      'Changed runtime source belongs to the captured public Factory package; the fixed delivery policy records patch release intent.',
+      'Changed runtime source belongs to the captured public ' +
+      policy.packageName +
+      ' package; the fixed delivery policy records patch release intent.',
     validation: {
       status: 'passed',
       scope: 'delivery metadata only - not source verification'
@@ -133,7 +459,9 @@ function sourceDifference(changes) {
 function preparePreview(input, remote, adapter) {
   const id = input.taskId
   const metadata = prepareMetadata(input)
-  const title = 'Review candidate - ' + input.stepId
+  const title =
+    (input.scopedWork ? 'Review bounded work - ' : 'Review candidate - ') +
+    input.stepId
   return {
     ...input,
     metadata,
@@ -157,9 +485,21 @@ function preparePreview(input, remote, adapter) {
       '',
       'Source adapter: ' +
         input.adapter +
-        '. Local verification passed the retained obligations.',
+        (input.scopedWork
+          ? '. Bounded work verification passed.'
+          : '. Local verification passed the retained obligations.'),
+      ...(input.scopedWork
+        ? [
+            'Assessment: ' + input.scopedWork.assessmentId,
+            'Work: ' + input.scopedWork.workId,
+            'Candidate verification: ' + input.candidateVerification,
+            'Target integration: ' + input.scopedWork.integration.status
+          ]
+        : []),
       'This is not independently protected verification. PR creation and GitHub checks do not accept the local baseline.',
-      'Trusted delivery metadata: @asyra/factory patch Changeset; metadata validation is separate from local source verification.',
+      'Trusted delivery metadata: ' +
+        input.packageOwnership.packageName +
+        ' patch Changeset; metadata validation is separate from local source verification.',
       'Source provenance: ' +
         (input.adapter === 'demonstration'
           ? 'deterministic demonstration, not model output.'
@@ -170,7 +510,15 @@ function preparePreview(input, remote, adapter) {
 }
 function createReviewOwner(
   repositoryRoot,
-  { directory, getTask, getBaseline, changes, candidateDirectory, adapter }
+  {
+    directory,
+    getTask,
+    getBaseline,
+    changes,
+    candidateDirectory,
+    adapter,
+    getScopedWork
+  }
 ) {
   safePath(repositoryRoot, path.relative(repositoryRoot, directory))
   fs.mkdirSync(directory, { recursive: true })
@@ -197,8 +545,9 @@ function createReviewOwner(
   for (const file of fs.readdirSync(directory)) {
     if (!file.endsWith('.json')) continue
     const value = JSON.parse(fs.readFileSync(safePath(directory, file), 'utf8'))
+    reviewFormat(value)
     need(
-      value.format === 1 &&
+      (value.format === 1 || value.format === 2) &&
         file === value.taskId + '.json' &&
         REVIEW_POLICY.states.includes(value.state) &&
         Array.isArray(value.audit) &&
@@ -219,15 +568,34 @@ function createReviewOwner(
     need(adapter, 'integration is disabled')
     return task
   }
-  function inputs(id, actor) {
+  function inputs(id, actor, selection = null) {
     const task = authorize(id, actor),
       baseline = getBaseline(),
       attempt = task.attempts.at(-1)
+    const scopedWork = selection
+      ? scopedPayload(
+          getScopedWork?.(
+            id,
+            selection.attemptId,
+            selection.assessmentId,
+            actor
+          )
+        )
+      : null
+    if (scopedWork)
+      need(
+        scopedWork.taskId === id &&
+          scopedWork.attemptId === attempt?.id &&
+          scopedWork.attemptId === selection.attemptId &&
+          scopedWork.assessmentId === selection.assessmentId,
+        'scoped review identity mismatch'
+      )
     need(
       !task.revoked &&
         task.phase !== 'running' &&
-        task.verificationStatus === 'passed' &&
-        task.workStatus === 'needs-review' &&
+        (scopedWork ||
+          (task.verificationStatus === 'passed' &&
+            task.workStatus === 'needs-review')) &&
         attempt?.phase === 'completed',
       'candidate must be settled and verified'
     )
@@ -238,27 +606,49 @@ function createReviewOwner(
     )
     const verdict = attempt.verdict
     need(
-      verdict?.evidence?.status === 'passed' &&
+      verdict?.evidence &&
+        (scopedWork || verdict.evidence.status === 'passed') &&
         verdict.files &&
-        verdict.sourceDigest === sha256(JSON.stringify(verdict.files)),
+        verdict.sourceDigest ===
+          (scopedWork
+            ? scopedWork.runtime.sourceDigest
+            : sha256(JSON.stringify(verdict.files))),
       'missing candidate verdict'
     )
     const expected = task.task.obligations.map((c) => c.id).sort()
     need(
       JSON.stringify(verdict.evidence.cases.map((c) => c.id).sort()) ===
         JSON.stringify(expected) &&
-        verdict.evidence.cases.every((c) => c.status === 'passed'),
+        (scopedWork ||
+          verdict.evidence.cases.every((c) => c.status === 'passed')),
       'incomplete local evidence'
     )
+    const checkedBytes = new Map()
     const read = (root, file, digest) => {
-      const absolute = safePath(root, file),
-        stat = fs.lstatSync(absolute)
+      const absolute = safePath(root, file)
+      const cached = checkedBytes.get(absolute)
+      if (cached) {
+        need(cached.digest === digest, 'conflicting source fingerprint')
+        return cached.bytes
+      }
+      const stat = fs.lstatSync(absolute)
       need(stat.isFile() && stat.size <= 4 * 1024 * 1024, 'invalid source file')
       const bytes = fs.readFileSync(absolute)
       need(sha256(bytes) === digest, 'source fingerprint changed')
+      checkedBytes.set(absolute, { digest, bytes })
       return bytes
     }
-    const reportRoot = path.dirname(verdict.runner.reportPath)
+    const reportRoot = scopedWork
+      ? safePath(
+          path.dirname(candidateDirectory(id)),
+          'verification/' + attempt.id
+        )
+      : path.dirname(verdict.runner.reportPath)
+    if (scopedWork)
+      need(
+        verdict.runner.reportPath === safePath(reportRoot, 'vitest.json'),
+        'scoped report location mismatch'
+      )
     safePath(
       repositoryRoot,
       path.relative(repositoryRoot, verdict.runner.reportPath)
@@ -270,8 +660,47 @@ function createReviewOwner(
     )
     for (const item of verdict.files)
       read(path.join(reportRoot, 'source'), item.path, item.digest)
+    const authority = task.snapshot.runtimeAuthority
+    const ownerPackage = task.task.step?.ownerPackage
+    const scopedAuthority = authority
+      ? authority.packages?.filter((item) => item.name === ownerPackage)
+      : []
+    if (authority) {
+      need(
+        authority.format === 1 &&
+          /^[a-f0-9]{64}$/.test(authority.digest ?? '') &&
+          /^[a-f0-9]{64}$/.test(authority.contractScopeDigest ?? '') &&
+          scopedAuthority.length === 1 &&
+          (!scopedWork ||
+            (scopedWork.runtime.runtimeAuthorityFormat === authority.format &&
+              scopedWork.runtime.runtimeAuthorityDigest === authority.digest &&
+              scopedWork.runtime.contractScopeDigest ===
+                authority.contractScopeDigest)),
+        'invalid runtime package authority'
+      )
+    } else
+      need(
+        !scopedWork ||
+          !Object.hasOwn(scopedWork.runtime, 'runtimeAuthorityDigest'),
+        'runtime package authority is missing'
+      )
+    const selectedPackage = authority
+      ? scopedAuthority[0]
+      : {
+          name: METADATA_POLICY.packageName,
+          manifestPath: METADATA_POLICY.manifestPath,
+          repositoryDirectory: 'packages/factory',
+          manifestDigest: task.snapshot.files.find(
+            (item) => item.path === METADATA_POLICY.manifestPath
+          )?.digest
+        }
+    const selectedPolicy = metadataPolicy({
+      path: selectedPackage.manifestPath,
+      packageName: selectedPackage.name,
+      digest: selectedPackage.manifestDigest
+    })
     const manifests = task.snapshot.files.filter(
-      (item) => item.path === METADATA_POLICY.manifestPath
+      (item) => item.path === selectedPolicy.manifestPath
     )
     need(manifests.length === 1, 'missing or ambiguous package ownership')
     const manifest = manifests[0]
@@ -284,14 +713,15 @@ function createReviewOwner(
       throw new Error('PR review: invalid package ownership manifest')
     }
     need(
-      packageInfo.name === METADATA_POLICY.packageName &&
-        packageInfo.private !== true,
+      packageInfo.name === selectedPolicy.packageName &&
+        packageInfo.private !== true &&
+        manifest.digest === selectedPackage.manifestDigest,
       'unsupported package ownership'
     )
     need(
       !task.snapshot.files.some(
         (item) =>
-          item.path.startsWith(METADATA_POLICY.sourcePrefix) &&
+          item.path.startsWith(selectedPolicy.sourcePrefix) &&
           item.path.endsWith('/package.json')
       ),
       'ambiguous nested package ownership'
@@ -319,7 +749,8 @@ function createReviewOwner(
       need(
         canonicalFile(change.path) &&
           task.task.allowedFiles.includes(change.path) &&
-          /^packages\/factory\/src\/.+\.ts$/.test(change.path) &&
+          change.path.startsWith(selectedPolicy.sourcePrefix) &&
+          change.path.endsWith('.ts') &&
           !change.path.includes('/__tests__/'),
         'outside allowed source difference'
       )
@@ -366,6 +797,9 @@ function createReviewOwner(
     )
     for (const item of actual) read(candidateRoot, item, verified.get(item))
     return {
+      ...(scopedWork
+        ? { scopedWork, candidateVerification: task.verificationStatus }
+        : {}),
       taskId: id,
       attemptId: attempt.id,
       stepId: task.task.stepId,
@@ -393,20 +827,25 @@ function createReviewOwner(
     pending.set(id, { kind, promise })
     return promise
   }
-  return {
-    get,
-    active: () => pending.size > 0,
-    policy: () =>
-      adapter ? { repository: adapter.repository, base: adapter.base } : null,
-    async prepare(id, actor) {
-      authorize(id, actor)
-      return serial(id, 'prepare', async () => {
-        const input = inputs(id, actor),
+  const prepare = async (id, actor, selection = null) => {
+    authorize(id, actor)
+    return serial(
+      id,
+      selection
+        ? 'prepare-scoped:' + selection.attemptId + ':' + selection.assessmentId
+        : 'prepare',
+      async () => {
+        const input = inputs(id, actor, selection),
           previous = get(id)
         if (previous && previous.state !== 'preview') {
           need(
             previous.preview.attemptId === input.attemptId,
             'delivery belongs to another attempt'
+          )
+          need(
+            JSON.stringify(previous.preview.scopedWork ?? null) ===
+              JSON.stringify(input.scopedWork ?? null),
+            'delivery belongs to another scope'
           )
           return previous
         }
@@ -417,7 +856,7 @@ function createReviewOwner(
         if (previous?.previewDigest === previewDigest) return previous
         return save(
           {
-            format: 1,
+            format: selection ? 2 : 1,
             taskId: id,
             actor,
             state: 'preview',
@@ -428,7 +867,17 @@ function createReviewOwner(
           },
           'preview-prepared'
         )
-      })
+      }
+    )
+  }
+  return {
+    get,
+    active: () => pending.size > 0,
+    policy: () =>
+      adapter ? { repository: adapter.repository, base: adapter.base } : null,
+    prepare: (id, actor) => prepare(id, actor),
+    prepareScoped(id, selection, actor) {
+      return prepare(id, actor, scopedSelection(selection))
     },
     async confirm(id, request, actor) {
       authorize(id, actor)
@@ -449,8 +898,16 @@ function createReviewOwner(
           current.preview.draft === false,
           'PR type changed - prepare a fresh preview'
         )
+        reviewFormat(current)
         validateMetadata(current.preview)
-        const input = inputs(id, actor)
+        const selection =
+          current.format === 2
+            ? scopedSelection({
+                attemptId: current.preview.scopedWork.attemptId,
+                assessmentId: current.preview.scopedWork.assessmentId
+              })
+            : null
+        const input = inputs(id, actor, selection)
         need(
           input.attemptId === current.preview.attemptId,
           'candidate attempt changed'

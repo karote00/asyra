@@ -6,6 +6,7 @@ const path = require('node:path')
 const vm = require('node:vm')
 const { randomBytes, timingSafeEqual } = require('node:crypto')
 const { createService, LOCAL_ACTOR, ActionError } = require('./service.cjs')
+const { validId } = require('./store.cjs')
 
 function parseLocalUrl(value) {
   if (!value)
@@ -200,6 +201,13 @@ async function startServer(
                 ? service.taskChanges(taskRoute[1])
                 : service.getTask(taskRoute[1])
             )
+          if (route.pathname === '/api/target-assessments')
+            return send(200, service.targetAssessments())
+          const assessmentRoute = route.pathname.match(
+            /^\/api\/target-assessments\/([a-f0-9-]{36})$/
+          )
+          if (assessmentRoute && validId(assessmentRoute[1]))
+            return send(200, service.getTargetAssessment(assessmentRoute[1]))
           if (route.pathname === '/api/targets')
             return send(200, service.targets())
           const targetRoute = route.pathname.match(
@@ -287,6 +295,18 @@ async function startServer(
         if (route.pathname === '/api/ci/ingest') bodyLimit = 2097152
         if (route.pathname === '/api/targets/decide') bodyLimit = 131072
         const body = await readBody(request, bodyLimit)
+        const scopedReviewAction = route.pathname.match(
+          /^\/api\/tasks\/([a-f0-9-]{36})\/review\/scoped$/
+        )
+        if (scopedReviewAction)
+          return send(
+            200,
+            await service.prepareScopedReview(
+              scopedReviewAction[1],
+              body,
+              LOCAL_ACTOR
+            )
+          )
         const reviewAction = route.pathname.match(
           /^\/api\/tasks\/([a-f0-9-]{36})\/review$/
         )
@@ -295,8 +315,36 @@ async function startServer(
             200,
             await service.reviewTask(reviewAction[1], body, LOCAL_ACTOR)
           )
+        if (route.pathname === '/api/target-assessments')
+          return send(202, {
+            id: service.startTargetAssessment(body, LOCAL_ACTOR)
+          })
+        const assessmentCancel = route.pathname.match(
+          /^\/api\/target-assessments\/([a-f0-9-]{36})\/cancel$/
+        )
+        if (assessmentCancel && validId(assessmentCancel[1])) {
+          if (
+            !body ||
+            typeof body !== 'object' ||
+            Array.isArray(body) ||
+            Object.keys(body).length
+          )
+            throw new ActionError(
+              400,
+              'Invalid target assessment cancellation request'
+            )
+          return send(
+            200,
+            await service.cancelTargetAssessment(
+              assessmentCancel[1],
+              LOCAL_ACTOR
+            )
+          )
+        }
         if (route.pathname === '/api/targets/decide')
           return send(200, service.decideTarget(body, LOCAL_ACTOR))
+        if (route.pathname === '/api/targets/accept')
+          return send(200, service.acceptTargetBaseline(body, LOCAL_ACTOR))
         if (route.pathname === '/api/tasks')
           return send(202, { id: service.startTask(body, LOCAL_ACTOR) })
         const taskControl = route.pathname.match(

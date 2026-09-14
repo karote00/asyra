@@ -14,11 +14,33 @@ From a concrete Inspector step, select an existing candidate and inspect its
 baseline, task/attempt identity, exact before/after source and local verification.
 The service-owned delivery policy selects repository and base; request data
 cannot select commands, endpoints, credentials, files or policy. Preparation
-requires a non-revoked, settled, passing latest attempt with actual allowed source
+on the strict legacy/full-candidate path requires a non-revoked, settled, passing latest attempt with actual allowed source
 changes and unchanged accepted contract/revision. Recheck the captured baseline,
 frozen verification inputs, report and candidate bytes against their retained
 digests. Reject missing/failed evidence, changed source, extra candidate files,
 symlinks and modifications outside the originally admitted runtime scope.
+
+The next explicit scoped path consumes only the service-owned
+`artifact:scoped-work-review` defined in CORE_PROOF.md under Scoped work review
+handoff. It requires exact current task/attempt, admitted work binding, target
+allocation, assessment, source tuple, accepted pins and producer references;
+required accepted preservation and the assessed work (including prerequisites)
+must pass. It may retain a failed full candidate and incomplete target integration,
+which remain visibly separate outcomes. This exception replaces only the strict
+all-flow outcome requirement for that explicitly bounded handoff. Missing or
+failed required work evidence still rejects; it is never a legacy fallback.
+Source-only identity or an arbitrary assessment ID cannot authorize delivery.
+
+Preparation and confirmation both obtain the current private handoff and compare
+its exact identity. The preview and confirmation digest include the complete scoped
+reference; changing assessment, scope, source, task attempt or accepted pins needs
+fresh preparation and approval. Retired/unavailable source cannot authorize a new
+effect, while historical preview reads remain available without reconstruction.
+Keep actor authorization, one-task/attempt delivery, actual source/report integrity,
+allowed changes, trusted metadata, remote base and required CI unchanged. Preview,
+PR and UI text must say bounded work and show full-candidate and integration
+outcomes truthfully, never claim all-flow pass or implicit baseline acceptance.
+The scoped implementation follows the consumer boundary below.
 
 The trusted adapter requires a clean checkout and compares every captured source
 input with the selected remote base tree. A different Git HEAD is not itself
@@ -34,17 +56,98 @@ report digest and limitations. It creates no remote objects. Preview text is
 review data, never authority. Ordinary reads reuse retained records without
 source capture, GitHub polling or history reconstruction.
 
+## Scoped review consumer
+
+The internal `prepareScoped(taskId, {attemptId, assessmentId}, actor)` path accepts
+exactly those two UUID selector fields. The service wires `getScopedWork` to its
+existing private publisher, including the original integration result by reference;
+review code does not resolve scope or reassess evidence. Its internal preparation
+adapter supplies the service boundary used by public consumers. Existing
+confirmation of a retained preview remains reachable through the existing
+capability boundary and must enforce the scoped contract.
+
+Strict previews retain outer format 1. Newly prepared scoped previews use outer
+format 2 and require the complete `scopedWork` handoff in the preview, including
+two role references/pins even when they share a producer. Missing/null/partial
+scope or unknown format fails closed. Reading format 1 never upgrades it; format
+2 never selects legacy validation by field truthiness. Preparation serial identity
+includes both exact selector UUIDs, so different scope requests cannot share one
+pending promise. A delivered/non-preview record keeps its existing task/attempt
+and scope; a new scope cannot silently reuse it.
+
+Scoped preparation binds the failed or passed original candidate outcome and
+original integration result into the preview and confirmation digest. Confirmation
+uses the saved exact selector to obtain one fresh service handoff and compares its
+complete identity before effects. Historical reads do neither lookup nor source IO.
+Use the task-owned canonical `verification/<attemptId>/vitest.json` and `source`
+locations under the fixed task directory; a saved report path cannot choose another
+source. Require its report digest and every actual source byte to agree. The scoped
+full source fingerprint comes from the admitted handoff, without a second manifest
+identity hash; actual byte checks remain necessary. Within one input validation,
+reuse already checked bytes at the same canonical path and expected digest rather
+than rereading its package manifest. A later confirmation performs fresh checks.
+
+Permanent cases use real service-admitted work/candidate/assessment and an offline
+controlled delivery adapter: original failed candidate with passing bounded work
+and pending integration; unchanged strict rejection; exact scope in title/body and
+digest; changed assessment/pins/source or retirement rejected before effects;
+missing scoped persistence fields; distinct concurrent selectors; restart/history
+reads with zero callbacks and fresh prepare/confirm callbacks once each. No real
+GitHub mutation, model request or baseline acceptance is authorized by these tests.
+
+Full-runtime product evidence keeps this delivery boundary separate. Its three
+owner contributions are real commits in a deterministic local Git repository,
+and their public package behavior is verified from one captured source before
+target acceptance. Existing offline adapter cases still exercise PR
+close/reopen observations, manual HEAD change, duplicate/restart
+reconciliation and supersession without feeding any of those observations into
+target assessment. No external test PR is created, and live GitHub acceptance
+remains explicitly unverified.
+
+## Scoped review public integration
+
+The loopback server exposes `POST /api/tasks/<taskId>/review/scoped` with a JSON
+body containing exactly `attemptId` and `assessmentId`. The capability-authenticated
+route forwards the selector once to `prepareScopedReview`; HTTP does not read task
+source, select a latest assessment or interpret assessment status. Invalid, stale,
+retired, conflicting or incomplete selections return the service-owned refusal
+before any delivery effect. `GET /api/tasks/<taskId>/review` and the existing
+confirmation action remain the retained preview read and confirmation paths.
+
+The local and attached CLI expose the same action as
+`pr-prepare-scoped <taskId> <attemptId> <assessmentId>`. Both modes print the
+complete retained review record. The CLI cannot supply a handoff, work identity,
+target pin or producer result and does not convert a rejected preparation into a
+successful inspection.
+
+The Board lists retained assessments that explicitly name the selected task and
+attempt. The user chooses one assessment and requests **Prepare bounded work
+preview**. The client forwards only the exact selector and never decides whether
+the work is deliverable. The resulting preview visibly labels bounded work and
+shows the original candidate verification plus target integration result before
+confirmation. A task or attempt change clears an unavailable selection. Ordinary
+refresh and historical preview reads do not prepare, confirm, inspect source or
+perform GitHub work.
+
+Permanent HTTP/CLI cases use real service-admitted scoped work and prove identical
+format 2 identity, capability and selector refusal, and zero delivery effects.
+Board cases prove explicit selection, exact request bytes, distinct failed-candidate
+and pending-integration presentation, confirmation gating, refresh preservation and
+desktop/tablet/narrow usability. Strict `pr-prepare` behavior remains unchanged.
+
 ## Trusted delivery metadata
 
-Activated 2026-09-09: delivery supports only existing Factory runtime source
-owned by `packages/factory/package.json`, declaring public `@asyra/factory`,
-and release type `patch`. Ownership must match the captured, verified manifest
-and exact remote base; absent, conflicting or nested package ownership rejects.
-Repository prose, candidate output and PR text cannot select policy. No arbitrary
-package, release type, summary or metadata path is accepted from an action.
+Delivery selects exactly the task step's primary public `@asyra/<name>`
+package from its validated `runtimeAuthority`. The package name, repository
+directory, manifest path and manifest digest must match that captured authority;
+dependency packages remain execution inputs and never become preview owners.
+Legacy records without authority retain only the fixed Factory policy. Release
+type remains `patch`. Ownership must match the captured, verified manifest and
+exact remote base; absent, conflicting or nested package ownership rejects.
+Repository prose, candidate output and PR text cannot select policy.
 
 The review owner generates exactly one new `.changeset/flow-review-<task>-<attempt>.md`
-with the fixed package patch entry and a bounded, truthful summary identifying
+with that primary package's patch entry and a bounded, truthful summary identifying
 local candidate review. Demonstrations are labeled deterministic demonstrations,
 not model output. The path must be absent from the base; no metadata overwrite
 or symlink ancestor is allowed. Preparation writes only the existing delivery

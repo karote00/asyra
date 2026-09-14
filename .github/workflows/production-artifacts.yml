@@ -30,5 +30,7 @@ jobs:
         run: yarn build:production-artifacts
       - name: Check Design application types
         run: yarn workspace @asyra/asyra-design typecheck
+      - name: Verify bounded production artifact resource evidence
+        run: node --test scripts/__tests__/production-artifact-resource-evidence.test.mjs
       - name: Test production artifacts without dev servers
         run: yarn test:production-artifacts

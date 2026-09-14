@@ -29,9 +29,14 @@ const writeAtomic = (file, value) => {
   fs.renameSync(temporary, file)
 }
 function validateRecord(value, id) {
+  const authorityKeys = [
+    'runtimeAuthorityFormat',
+    'runtimeAuthorityDigest',
+    'contractScopeDigest'
+  ]
   if (
     !value ||
-    ![1, 2].includes(value.format) ||
+    ![1, 2, 3].includes(value.format) ||
     value.id !== id ||
     !validId(id) ||
     ![
@@ -56,7 +61,7 @@ function validateRecord(value, id) {
   )
     throw new Error('Invalid attempt record: ' + id)
   if (
-    value.format === 2 &&
+    value.format >= 2 &&
     (!Number.isInteger(value.mappingRevision) ||
       value.mappingRevision < 1 ||
       !/^[a-f0-9]{64}$/.test(value.contractDigest ?? '') ||
@@ -64,6 +69,34 @@ function validateRecord(value, id) {
         !Number.isFinite(Date.parse(value.finishedAt))))
   )
     throw new Error('Invalid versioned attempt identity: ' + id)
+  if (value.format === 3) {
+    const object = (item) =>
+      item !== null && typeof item === 'object' && !Array.isArray(item)
+    const authority = value.snapshot?.runtimeAuthority
+    if (
+      !object(value.sourceContract) ||
+      !['definition', 'architectureDefinition'].every((key) =>
+        object(value.sourceContract[key])
+      ) ||
+      !object(value.snapshot) ||
+      !['runtimeSource', 'verificationSource', 'executionSource'].every(
+        (key) =>
+          Object.hasOwn(value.snapshot, key) && object(value.snapshot[key])
+      )
+    )
+      throw new Error('Invalid derived source authority: ' + id)
+    if (
+      Object.hasOwn(value.snapshot, 'runtimeAuthority') &&
+      (!object(authority) ||
+        authority.format !== 1 ||
+        !/^[a-f0-9]{64}$/.test(authority.digest ?? '') ||
+        !/^[a-f0-9]{64}$/.test(authority.contractScopeDigest ?? '') ||
+        value.snapshot.executionSource?.format !== 2 ||
+        value.snapshot.executionSource?.runtimeAuthorityDigest !==
+          authority.digest)
+    )
+      throw new Error('Invalid scoped derived source authority: ' + id)
+  }
   if (value.phase === 'completed') {
     const evidence = value.evidence
     if (
@@ -96,9 +129,17 @@ function validateRecord(value, id) {
         evidence.passedCount !== evidence.cases.length)
     )
       throw new Error('Incomplete persisted pass: ' + id)
-    if (value.format === 2) {
+    if (value.format >= 2) {
       const snapshot = value.snapshot
       const runner = value.runner
+      const authority = snapshot.runtimeAuthority
+      const authorityPresent = Object.hasOwn(snapshot, 'runtimeAuthority')
+      const runnerAuthorityPresent = authorityKeys.some((key) =>
+        Object.hasOwn(runner?.identity ?? {}, key)
+      )
+      const evidenceAuthorityPresent = authorityKeys.some((key) =>
+        Object.hasOwn(evidence ?? {}, key)
+      )
       if (
         snapshot.contractDigest !== value.contractDigest ||
         [
@@ -112,6 +153,16 @@ function validateRecord(value, id) {
           (runner.code !== 0 || runner.reason)) ||
         !/^[a-f0-9]{64}$/.test(runner.reportDigest ?? '') ||
         !runner.identity ||
+        authorityPresent !== runnerAuthorityPresent ||
+        authorityPresent !== evidenceAuthorityPresent ||
+        (authorityPresent &&
+          (runner.identity.runtimeAuthorityFormat !== authority.format ||
+            runner.identity.runtimeAuthorityDigest !== authority.digest ||
+            runner.identity.contractScopeDigest !==
+              authority.contractScopeDigest ||
+            evidence.runtimeAuthorityFormat !== authority.format ||
+            evidence.runtimeAuthorityDigest !== authority.digest ||
+            evidence.contractScopeDigest !== authority.contractScopeDigest)) ||
         runner.identity.sourceDigest !== snapshot.digest ||
         runner.identity.contractDigest !== snapshot.contractDigest ||
         ['mappingVersion', 'architectureVersion', 'configurationDigest'].some(

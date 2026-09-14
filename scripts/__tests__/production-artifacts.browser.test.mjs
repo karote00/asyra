@@ -7,6 +7,10 @@ import { mkdir, readFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import path from 'node:path'
 import { serveArtifact } from '../production-artifact-server.mjs'
+import {
+  collectArtifactResourceSnapshot,
+  runWithArtifactResourceEvidence
+} from '../production-artifact-resource-evidence.mjs'
 
 const require = createRequire(
   new URL('../../apps/asyra-design/package.json', import.meta.url)
@@ -88,15 +92,25 @@ test(
     await page.getByLabel('Start time (s)').press('Enter')
     await page.getByLabel('End time (s)').fill('4.2')
     await page.getByLabel('End time (s)').press('Enter')
-    await page
-      .getByRole('button', { name: 'Run analysis', exact: true })
-      .click()
-    await page
-      .getByRole('button', { name: 'View results', exact: true })
-      .click({ timeout: 90_000 })
-    await expect(page.getByTestId('analysis-result')).toContainText(
-      'Issue found'
-    )
+    await runWithArtifactResourceEvidence({
+      capture: () => collectArtifactResourceSnapshot({ repositoryRoot: root }),
+      report: (value) => t.diagnostic(value),
+      operation: async ({ mark, observeTerminalInactive }) => {
+        mark('run-click-requested-ui')
+        await page
+          .getByRole('button', { name: 'Run analysis', exact: true })
+          .click()
+        mark('run-click-completed-ui')
+        await page
+          .getByRole('button', { name: 'View results', exact: true })
+          .click({ timeout: 90_000 })
+        observeTerminalInactive('result-button-observed-actionable-ui')
+        const result = page.getByTestId('analysis-result')
+        mark('result-assertion-started')
+        await expect(result).toContainText('Issue found')
+        mark('result-assertion-completed')
+      }
+    })
     await page.reload()
     await expect(page.getByTestId('persistence-status')).toHaveText(
       'Saved locally - Production artifact project'
