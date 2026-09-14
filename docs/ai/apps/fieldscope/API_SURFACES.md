@@ -593,8 +593,8 @@ contact decision, clearance, moment or hardware-safety result. Farm, W1, crop,
 terrain, route, view and locale are outside these APIs and cannot resize or
 invalidate this owner.
 
-Walking runtime and rendering, mechanics, forces and UI presentation remain
-pending W4-W6. W3 consumes this source through the domain APIs below.
+Walking runtime, rendering, crop forces and UI presentation remain pending
+W5-W6. W3 and W4 consume this source through the domain APIs below.
 
 ## Walking terrain and whole-body interval admission
 
@@ -640,3 +640,46 @@ Authored channels cannot support a foot, and an all-swing schedule is unknown.
 Synthetic provenance remains attached to all evidence. Results report
 `clear`, `blocked` or `unknown`; a blocked turn reports `no-turn`. Every result
 retains `quasiStatic: 'pending-W4'` and makes no stability or safety claim.
+
+## Walking quasi-static configuration assessment
+
+`readWalkingQuasiStaticRequest` admits `walking-quasi-static-request/1`, detaches
+and freezes it, and binds it to the current W3 opaque identity. Its motion
+descriptor matches revision, source, terrain, path, stance and load identities;
+W4 owns its own request ID. Support contacts and external mass identities bind
+bijectively to one selected stance phase. Time is within that phase and the W3
+evaluation; transition sides are separate assessments. Explicit unknown plane,
+contact position, reserve or external mass remains unknown.
+
+`WalkingQuasiStaticOwner` consumes only an injected current W3 product. It uses
+`walkingMotionPoseAt` and one `evaluateWalkingRobotPose` call. The completed W2
+binary64 pose is the configuration authority; subsequent CoM transforms, sums,
+projection and moments use directed intervals. This does not enclose ideal-real
+trigonometry or continuous motion, which remains W3's responsibility. Every W2
+body mass, crate mass and carried-item mass enters the assessment once. Root and
+shoulder moment contributors follow W2 joint ancestry; base crate mass does not
+enter arm moments. No source mass or CoM override is accepted.
+
+`mechanicsHull` uses exact dyadic orientation. Declared plane local X/Z axes
+define support coordinates; local +Y must have a provably upward world component
+for screening. Gravity-parallel or inverted planes yield unknown, not an
+absolute-value correction. The gravity line is projected onto that actual plane,
+and reserve-adjusted edge distances and true 3D edge moments decide the result.
+Only strictly positive lower bounds screen a configuration; complete nonpositive
+upper bounds or a degenerate polygon block it; interval straddles remain unknown.
+The sole applied acceleration is standard gravity, 9.80665 m/s². Unknown reserve
+does not become zero, and independently known projection or arm values survive.
+
+`WalkingQuasiStaticAssessment` retains current W3, completed pose, exact time and
+phase, configuration, support and load evidence, per-quantity known/unknown
+values, and work counts. Left/right high reach, carried return and bilateral
+work are distinct complete configurations. `screened` is a gravity-only
+quasi-static screen, not dynamic, soil, actuator, structural or hardware safety.
+Arm bending magnitudes are N·m comparison values without invented capacity
+limits. W4 never changes W3 collision status. The W3 `pending-W4` field still
+means that the W3 product itself contains no mechanics conclusion.
+
+Repeated `read` or `prepare` with the same admitted request and W3 object reuses
+the completed result; changing either invalidates it. Shallow-frozen raw input
+does not qualify for reuse. Malformed inputs throw before work; no global cache,
+new runtime route or UI integration is introduced.
