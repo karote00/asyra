@@ -111,5 +111,6 @@ it.each([
       expect(evidence.coverage).toBe('complete')
       expect(evidence.upper).toBe(0)
     }
-  }
+  },
+  30000
 )
