@@ -2325,3 +2325,82 @@ SIM_SUPPORT_REUSE_POPULATION=1 SIM_SUPPORT_REUSE_CONTROL_FILE=../../../asyra-sim
 The reviewed census path must refer to the exact hash above; the test verifies it
 before geometry work. No method identity/version, production budget, geometry,
 continuous coverage, containment, witness or Inspector contract changed.
+
+### Heavy correctness test supervision - bounded execution repair
+
+Owner: project-owned Sim test execution, not the analytical method or Worker.
+CI run 34767093929 spent 8m37s in validate and 6m01s in Test; successful
+34772350442 spent 10m29s and 4m45s respectively. The fresh source prefix's
+20000 ms harness timeout covered two synchronous queries and assertions and
+reported after 30166 ms. Its work/evidence assertions are not wall-time SLAs.
+The other five reported failures remain separate findings; cb8089f71 is retained.
+
+Freeze eight files: scripts/supervise-tests.py and its scripts/**tests** oracle,
+methods/**tests**/heavy-test-progress.ts and its oracle, the existing
+fresh-witness-source-work.test.ts, app package.json, CI main.yml and this plan.
+No product, Inspector, global Vitest timeout, dependency or capacity change.
+The existing 500k work, 30s product deadline and 64 MiB envelope remain intact.
+
+Use the previously proved capacity watchdog's independent POSIX process-group,
+pipe, monotonic deadline and wait4 mechanisms, without its 2M scenario mode.
+Freeze a configurable provisional 20-minute CI job envelope, with 60 seconds
+reserved for termination/artifacts and a 120-second no-effective-progress
+window for the supervised heavy file. These engineering values need calibration;
+they are neither measured SLAs nor performance acceptance thresholds. CI supplies
+the original absolute job deadline through a project-local receipt so Turbo's
+environment filtering cannot renew it. Local execution uses the same explicit
+configuration. A heartbeat never renews either useful progress or the hard stop.
+
+Normal tests retain existing Vitest case timeouts. Both local and CI suite
+entry points run ordinary files and the isolated heavy file exactly once, even
+when an ordinary assertion fails. Only the supervised heavy file disables its
+20-second case timer, guarded by inherited receipt descriptors. Its four original
+cases and every evidence/work assertion remain unchanged. Paid work receipts are
+aggregated at checkpoints rather than emitted for every arithmetic operation;
+fixture/query/assertion stages and completed cases are finite and ordered.
+Independent wall/CPU performance assertions and product cancellation/deadline
+tests remain independent gates. No progress observation manufactures clear output.
+
+Formal RED precedes implementation: checkpoint-free busy child, ineffective
+heartbeat, advancing work beyond hard stop, missing/failing final result,
+truncated receipt, late completion, owned descendants and cancellation; observer
+tests prove work is observed without altering charges or source results. Only
+normal exit plus all required assertion-completion receipts passes. Forced
+termination preserves the last complete accounting as a lower bound and labels
+the tail unknown. Startup, child/process wall and CPU are reported separately.
+Then run small supervision/progress tests, runner regressions, type/lint/naming,
+one complete heavy file and the necessary app suite. Independent bounded review
+closes this slice; no algorithm candidate, population benchmark or G4 claim.
+
+Implementation verification: seven external-process regressions first failed
+without the supervisor, then passed. The final suite adds phase-selection and
+CI prerequisite oracles (nine total), plus two paid-progress observer tests.
+Independent review strengthened the CI oracle with missing/duplicate marker
+mutations and duplicate package invocation; each weakness was reproduced RED
+before its assertion was repaired. No evidence comparator was weakened.
+The original runner's 13 cancellation/deadline tests also passed unchanged.
+
+The single formal app test entry retained its ordinary failure and then ran all
+four heavy cases successfully (14.29s tests, prefix 13.027s). Its final receipt
+observed 548662 work across seven separate test queries; this is not one product
+run or a larger per-query cap. JSONL and summaries remain under
+`tmp/test-supervision/1789362643917160000-43858/`. The initial ordinary run had
+30 missing-built-package suites and the pre-existing G4 partial-coverage failure;
+117 files / 634 tests passed. Checkout-local immutable installation and the
+canonical `yarn react:build --filter=@asyra/asyra-sim` (17 tasks) supplied the
+normal CI prerequisite. Only those 30 setup-failed files were replayed: 199 tests
+passed, recorded in `tmp/test-supervision/1789362877532413000-45274/`.
+The heavy proof and the unchanged G4 failure were not rerun. TypeScript, scoped
+ESLint/format, naming and diff checks passed. G4 remains RED.
+
+CI repository variables are `TEST_JOB_MINUTES`, `TEST_IDLE_MS` and
+`TEST_CLEANUP_MS`; local execution accepts `TEST_JOB_MS`, `TEST_IDLE_MS` and
+`TEST_CLEANUP_MS`. A recorded CI deadline remains authoritative even when Turbo
+filters environment flags; elapsed setup never grants a fresh child budget.
+Both output streams are bounded at 64 MiB independently of product evidence.
+Reports use `supervisedWallMs` for READY through fixture/query/assertion/exit;
+it is not pure geometry time. Receipt observation times identify finite stages.
+The earlier preserved receipt used the misleading field name `geometryWallMs`;
+its value covers that same whole supervised phase and is not relabeled in place.
+CI emits bounded summaries in its always step. Full JSONL/console receipts are
+project-local only; this slice adds no downloadable CI artifact service.

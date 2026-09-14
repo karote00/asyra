@@ -13,8 +13,9 @@
     "build": "tsc --noEmit && vite build",
     "react:build": "yarn build",
     "typecheck": "tsc --noEmit",
-    "test:local": "vitest run",
-    "test:ci": "vitest run",
+    "test:local": "node --test scripts/__tests__/supervise-tests.test.mjs && python3 scripts/supervise-tests.py --",
+    "test:ci": "node --test scripts/__tests__/supervise-tests.test.mjs && python3 scripts/supervise-tests.py --",
+    "test:heavy": "python3 scripts/supervise-tests.py --heavy",
     "test:e2e": "node scripts/run-e2e.mjs",
     "lint": "node ../../node_modules/eslint/bin/eslint.js src samples scripts e2e app-environment.mjs playwright.config.ts vite.config.ts vitest.config.ts"
   },

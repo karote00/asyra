@@ -15,12 +15,26 @@ jobs:
   validate:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
+    # Engineering envelope, not an app SLA. Calibrate from complete job receipts.
+    timeout-minutes: ${{ fromJSON(vars.TEST_JOB_MINUTES || '20') }}
 
     steps:
+      - name: Record original test job deadline
+        env:
+          TEST_JOB_MINUTES: ${{ vars.TEST_JOB_MINUTES || '20' }}
+          TEST_IDLE_MS: ${{ vars.TEST_IDLE_MS || '120000' }}
+          TEST_CLEANUP_MS: ${{ vars.TEST_CLEANUP_MS || '60000' }}
+        run: |
+          echo "TEST_JOB_DEADLINE_MS=$(( $(date +%s) * 1000 + TEST_JOB_MINUTES * 60000 ))" >> "$GITHUB_ENV"
+          echo "TEST_IDLE_MS=$TEST_IDLE_MS" >> "$GITHUB_ENV"
+          echo "TEST_CLEANUP_MS=$TEST_CLEANUP_MS" >> "$GITHUB_ENV"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
+
+      - name: Initialize test execution envelope
+        run: python3 apps/asyra-sim/scripts/supervise-tests.py --init-ci
 
       - name: Setup Yarn
         run: corepack enable && yarn set version 4.3.1
@@ -60,6 +74,18 @@ jobs:
         if: success()
         # Each workspace also owns test workers; avoid multiplying both pools.
         run: yarn test:ci --concurrency=2
+
+      - name: Report test supervision
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          for path in sorted(Path('tmp/test-supervision').glob('*/*.json')):
+              result = json.loads(path.read_text())
+              result.pop('consoleTail', None)
+              print(json.dumps({'receipt': str(path), **result}))
+          PY
 
       - name: Verify Flow Inspector core proof
         env:

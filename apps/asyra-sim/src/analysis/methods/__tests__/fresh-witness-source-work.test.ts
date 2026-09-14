@@ -1,4 +1,4 @@
-import { afterEach, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, expect, it, vi } from 'vitest'
 import * as continuous from '../continuous-query'
 import { queryOriginalPartPair } from '../original-part-method'
 import { OriginalMeshQuery } from '../original-mesh-query'
@@ -6,8 +6,16 @@ import { representativeSnapshot } from './representative-fixture'
 import * as samplers from '../fresh-static-sampler'
 import type { ConvexShape } from '../convex-query'
 import { transport, type SourceWitness } from './witness-transport-control'
+import { supervisedTestProgress } from './heavy-test-progress'
 
-afterEach(() => vi.restoreAllMocks())
+const progress = supervisedTestProgress()
+// Only an inherited external supervisor can replace this case's harness timer.
+const correctnessTimeout = progress ? 0 : 20000
+afterEach(() => {
+  progress?.endQuery()
+  vi.restoreAllMocks()
+})
+afterAll(() => progress?.finish(4))
 it.each([
   [114, 114],
   [74, 74],
@@ -15,6 +23,7 @@ it.each([
 ])(
   'retains complete original segment prefix %s–%s with less total paid source work',
   async (segment, lastSegment) => {
+    progress?.stage(`fixture-${segment}-${lastSegment}`)
     const snapshot = await representativeSnapshot(0)
     const pair = snapshot.pairs.find(
       (pair) =>
@@ -50,7 +59,9 @@ it.each([
                 kernel ? { ...kernel, sample: undefined } : kernel
               )
             )
-      const context = new OriginalMeshQuery()
+      const context: OriginalMeshQuery = new OriginalMeshQuery(
+        progress?.query(enabled ? 'candidate' : 'control', () => context.work)
+      )
       let distanceWork = 0,
         lowerWork = 0,
         sourceWork = 0,
@@ -110,6 +121,7 @@ it.each([
         () => undefined,
         context
       )
+      progress?.endQuery()
       route?.mockRestore()
       const categories = {
         distanceWork,
@@ -179,159 +191,172 @@ it.each([
     expect(control.result.coverage).toBe('complete')
     expect(candidate.categories.sourceWork).toBeGreaterThan(0)
     expect(candidate.work).toBeLessThan(control.work)
+    progress?.complete()
   },
-  20000
+  correctnessTimeout
 )
 
-it('traces the changed prefix upper to its actual issued source enclosure and target time', async () => {
-  const snapshot = await representativeSnapshot(0)
-  const segment = snapshot.trajectory.keyframes.findIndex(
-    (frame) => frame.time === 4.703517587939698
-  )
-  expect(segment).toBeGreaterThanOrEqual(0)
-  const pair = snapshot.pairs.find(
-    (pair) =>
-      pair.a.bodyId === 'example:joint-2' && pair.b.bodyId === 'obstacle-11'
-  )
-  if (!pair) throw new Error('Missing admitted source pair')
-  const node = [
-    snapshot.trajectory.keyframes[segment].time,
-    snapshot.trajectory.keyframes[segment + 1].time
-  ] as const
-  expect(node[1]).toBe(4.743718592964824)
-  const settings = {
-    ...snapshot.method.settings,
-    threshold: snapshot.rule.minimumClearance,
-    maxIntervals: snapshot.budget.maxIntervals
-  }
-  const make = samplers.createFreshStaticSampler
-  const records: {
-    sourceTime: number
-    targetTime: number
-    seed: samplers.SourceUpper
-    finalUpper: number
-  }[] = []
-  vi.spyOn(samplers, 'createFreshStaticSampler').mockImplementation(
-    (threshold, tick, solve, exhausted) => {
-      let previous: { handle: unknown; source: SourceWitness } | undefined
-      let target:
-        | {
-            origin: samplers.StaticSampleOrigin
-            previous: unknown
-            shapes: readonly [ConvexShape, ConvexShape]
-          }
-        | undefined
-      const sample = make(
-        threshold,
-        tick,
-        (a, b, seed) => {
-          if (seed) {
-            if (!previous || !target)
-              throw new Error('Missing actual source issuance')
-            expect(target.previous).toBe(previous.handle)
-            expect(target.shapes).toEqual([a, b])
-            expect(previous.source.time).toBeLessThan(target.origin.time)
-            expect(target.origin.time).toBeLessThanOrEqual(node[1])
-            expect(previous.source.evidence.penetration).toBe(false)
-            expect(previous.source.evidence.lower).toBeGreaterThan(0)
-            expect(previous.source.evidence.upper).toBeLessThan(threshold)
-            const packet = previous.handle as {
-              shapes: readonly ConvexShape[]
-              a: unknown
-              b: unknown
-            }
-            packet.shapes.forEach((shape, side) => {
-              expect(shape.geometry).toBe(
-                previous?.source.shapes[side].geometry
-              )
-              expect(shape.geometry).toBe(target?.shapes[side].geometry)
-            })
-            expect(packet.shapes.map((shape) => shape.pose)).toEqual(
-              previous.source.shapes.map((shape) => shape.pose)
-            )
-            expect(packet.a).toEqual(previous.source.evidence.witnessA)
-            expect(packet.b).toEqual(previous.source.evidence.witnessB)
-            expect(
-              packet.shapes.every(
-                (shape) =>
-                  Object.isFrozen(shape.pose) &&
-                  Object.isFrozen(shape.pose.position) &&
-                  Object.isFrozen(shape.pose.rotation)
-              )
-            ).toBe(true)
-            let oracleWork = 0
-            const expected = transport(
-              previous.source,
-              { node, time: target.origin.time, shapes: [a, b] },
-              () => oracleWork++
-            )
-            expect(oracleWork).toBe(6)
-            expect(seed).toEqual(expected)
-            const result = solve(a, b, seed)
-            records.push({
-              sourceTime: previous.source.time,
-              targetTime: target.origin.time,
-              seed,
-              finalUpper: result.upper
-            })
-            return result
-          }
-          return solve(a, b, seed)
-        },
-        exhausted
-      )
-      return (a, b, origin, source) => {
-        expect(origin.segment).toBe(segment)
-        expect([origin.start, origin.end]).toEqual(node)
-        target = { origin, previous: source, shapes: [a, b] }
-        const result = sample(a, b, origin, source)
-        previous =
-          result?.source === undefined
-            ? undefined
-            : {
-                handle: result.source,
-                source: {
-                  node,
-                  time: origin.time,
-                  shapes: [a, b],
-                  evidence: result.evidence
-                }
-              }
-        return result
-      }
+it(
+  'traces the changed prefix upper to its actual issued source enclosure and target time',
+  async () => {
+    progress?.stage('provenance-fixture')
+    const snapshot = await representativeSnapshot(0)
+    const segment = snapshot.trajectory.keyframes.findIndex(
+      (frame) => frame.time === 4.703517587939698
+    )
+    expect(segment).toBeGreaterThanOrEqual(0)
+    const pair = snapshot.pairs.find(
+      (pair) =>
+        pair.a.bodyId === 'example:joint-2' && pair.b.bodyId === 'obstacle-11'
+    )
+    if (!pair) throw new Error('Missing admitted source pair')
+    const node = [
+      snapshot.trajectory.keyframes[segment].time,
+      snapshot.trajectory.keyframes[segment + 1].time
+    ] as const
+    expect(node[1]).toBe(4.743718592964824)
+    const settings = {
+      ...snapshot.method.settings,
+      threshold: snapshot.rule.minimumClearance,
+      maxIntervals: snapshot.budget.maxIntervals
     }
-  )
-  const result = queryOriginalPartPair(
-    {
-      workcell: snapshot.workcell,
-      trajectory: snapshot.trajectory,
-      a: pair.a,
-      b: pair.b,
-      interval: node
-    },
-    settings
-  )
-  expect(result.coverage).toBe('complete')
-  const selected = records.find(
-    (record) => record.targetTime === result.leaves[0].witnessTime
-  )
-  if (!selected) throw new Error('Selected target must have an issued source')
-  expect(selected.seed.upper).toBe(selected.finalUpper)
-  expect(selected.finalUpper).toBe(result.leaves[0].upper)
-  expect(result.leaves[0]).toMatchObject({
-    upper: 0.012944618198707215,
-    lower: 0,
-    penetration: false,
-    state: 'finding',
-    witnessTime: node[1]
-  })
-  // eslint-disable-next-line no-console -- bounded actual provenance certificate, no product work-saving claim
-  console.info(
-    JSON.stringify({
-      profile: 'fresh-upper-provenance',
-      segment,
-      records,
-      selectedLeaf: result.leaves[0]
+    const make = samplers.createFreshStaticSampler
+    const records: {
+      sourceTime: number
+      targetTime: number
+      seed: samplers.SourceUpper
+      finalUpper: number
+    }[] = []
+    vi.spyOn(samplers, 'createFreshStaticSampler').mockImplementation(
+      (threshold, tick, solve, exhausted) => {
+        let previous: { handle: unknown; source: SourceWitness } | undefined
+        let target:
+          | {
+              origin: samplers.StaticSampleOrigin
+              previous: unknown
+              shapes: readonly [ConvexShape, ConvexShape]
+            }
+          | undefined
+        const sample = make(
+          threshold,
+          tick,
+          (a, b, seed) => {
+            if (seed) {
+              if (!previous || !target)
+                throw new Error('Missing actual source issuance')
+              expect(target.previous).toBe(previous.handle)
+              expect(target.shapes).toEqual([a, b])
+              expect(previous.source.time).toBeLessThan(target.origin.time)
+              expect(target.origin.time).toBeLessThanOrEqual(node[1])
+              expect(previous.source.evidence.penetration).toBe(false)
+              expect(previous.source.evidence.lower).toBeGreaterThan(0)
+              expect(previous.source.evidence.upper).toBeLessThan(threshold)
+              const packet = previous.handle as {
+                shapes: readonly ConvexShape[]
+                a: unknown
+                b: unknown
+              }
+              packet.shapes.forEach((shape, side) => {
+                expect(shape.geometry).toBe(
+                  previous?.source.shapes[side].geometry
+                )
+                expect(shape.geometry).toBe(target?.shapes[side].geometry)
+              })
+              expect(packet.shapes.map((shape) => shape.pose)).toEqual(
+                previous.source.shapes.map((shape) => shape.pose)
+              )
+              expect(packet.a).toEqual(previous.source.evidence.witnessA)
+              expect(packet.b).toEqual(previous.source.evidence.witnessB)
+              expect(
+                packet.shapes.every(
+                  (shape) =>
+                    Object.isFrozen(shape.pose) &&
+                    Object.isFrozen(shape.pose.position) &&
+                    Object.isFrozen(shape.pose.rotation)
+                )
+              ).toBe(true)
+              let oracleWork = 0
+              const expected = transport(
+                previous.source,
+                { node, time: target.origin.time, shapes: [a, b] },
+                () => oracleWork++
+              )
+              expect(oracleWork).toBe(6)
+              expect(seed).toEqual(expected)
+              const result = solve(a, b, seed)
+              records.push({
+                sourceTime: previous.source.time,
+                targetTime: target.origin.time,
+                seed,
+                finalUpper: result.upper
+              })
+              return result
+            }
+            return solve(a, b, seed)
+          },
+          exhausted
+        )
+        return (a, b, origin, source) => {
+          expect(origin.segment).toBe(segment)
+          expect([origin.start, origin.end]).toEqual(node)
+          target = { origin, previous: source, shapes: [a, b] }
+          const result = sample(a, b, origin, source)
+          previous =
+            result?.source === undefined
+              ? undefined
+              : {
+                  handle: result.source,
+                  source: {
+                    node,
+                    time: origin.time,
+                    shapes: [a, b],
+                    evidence: result.evidence
+                  }
+                }
+          return result
+        }
+      }
+    )
+    const context: OriginalMeshQuery = new OriginalMeshQuery(
+      progress?.query('provenance', () => context.work)
+    )
+    const result = queryOriginalPartPair(
+      {
+        workcell: snapshot.workcell,
+        trajectory: snapshot.trajectory,
+        a: pair.a,
+        b: pair.b,
+        interval: node
+      },
+      settings,
+      () => undefined,
+      context
+    )
+    progress?.endQuery()
+    expect(result.coverage).toBe('complete')
+    const selected = records.find(
+      (record) => record.targetTime === result.leaves[0].witnessTime
+    )
+    if (!selected) throw new Error('Selected target must have an issued source')
+    expect(selected.seed.upper).toBe(selected.finalUpper)
+    expect(selected.finalUpper).toBe(result.leaves[0].upper)
+    expect(result.leaves[0]).toMatchObject({
+      upper: 0.012944618198707215,
+      lower: 0,
+      penetration: false,
+      state: 'finding',
+      witnessTime: node[1]
     })
-  )
-}, 20000)
+    // eslint-disable-next-line no-console -- bounded actual provenance certificate, no product work-saving claim
+    console.info(
+      JSON.stringify({
+        profile: 'fresh-upper-provenance',
+        segment,
+        records,
+        selectedLeaf: result.leaves[0]
+      })
+    )
+    progress?.complete()
+  },
+  correctnessTimeout
+)
