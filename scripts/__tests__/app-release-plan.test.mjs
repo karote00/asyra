@@ -122,3 +122,58 @@ test('reserve includes all owner deployments and managed retries', () => {
   assert.throws(() => assertBudget({ total: 10, managed: 10, requested: 3 }))
   assert.throws(() => assertBudget({ total: NaN, managed: 0, requested: 1 }))
 })
+
+for (const app of RELEASE_APPS) {
+  test(`single-App selection isolates ${app.id} even for shared changes`, () => {
+    let reads = 0
+    let diffs = 0
+    const result = plan(['yarn.lock'], {
+      targetApp: app.id,
+      baselines: { [app.id]: baselines[app.id] },
+      snapshot: () => {
+        reads++
+        return snapshot
+      },
+      diff: () => {
+        diffs++
+        return ['yarn.lock']
+      }
+    })
+    assert.deepEqual(
+      result.apps.map((entry) => entry.id),
+      [app.id]
+    )
+    assert.equal(result.apps[0].release, true)
+    assert.equal(reads, 2)
+    assert.equal(diffs, 1)
+  })
+}
+test('single-App selection keeps deduplication and confines forced releases', () => {
+  const targetApp = 'asyra-framework'
+  assert.equal(
+    plan(['apps/asyra-design/src/index.ts'], { targetApp }).apps[0].release,
+    false
+  )
+  assert.equal(
+    plan([], {
+      targetApp,
+      forceApp: targetApp,
+      reason: 'Environment configuration changed'
+    }).apps[0].release,
+    true
+  )
+  assert.throws(() => plan([], { targetApp: 'unknown' }), /Unknown target App/)
+  assert.throws(
+    () =>
+      plan([], {
+        targetApp,
+        forceApp: 'asyra-design',
+        reason: 'Environment configuration changed'
+      }),
+    /outside the selected App/
+  )
+  assert.throws(
+    () => plan([], { targetApp, baselines: {} }),
+    /Missing online baseline/
+  )
+})
