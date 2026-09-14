@@ -33954,7 +33954,8 @@
           "feature-code-runtime-bridge",
           "change-ownership-map",
           "audience-readiness-paths",
-          "domain-owned-closing"
+          "domain-owned-closing",
+          "factory-action-film"
         ],
         "steps": [
           {
@@ -33998,6 +33999,7 @@
               "The change ownership map distinguishes App-owned product decisions from Framework-owned infrastructure without implying that every product needs every optional subsystem.",
               "Readiness paths explicitly serve a domain expert, technical evaluator, and product builder without splitting the page into disconnected funnels.",
               "The domain-owned closing returns agency to the reader instead of ending on infrastructure terminology.",
+              "The approved 16-second factory film is a software handoff metaphor, with A–D illustrative stations and no robotics capability claim.",
               "Website product evidence owns its crop, density, alt text, size budget, and reading context; it does not automatically reuse README media."
             ],
             "bypasses": [
@@ -34031,6 +34033,7 @@
             ],
             "specRefs": [
               "#visual-authority",
+              "#approved-factory-action-film",
               "#product-cases",
               "#content-contract",
               "#quality-gates"
@@ -34064,7 +34067,7 @@
               "The comparison remains readable without connector geometry or color, uses two comparable columns at 1440px and 820px, and reads the complete traditional story before the complete Asyra story at 390px and 320px.",
               "Header, Hero, domain copy, PoC, proofs, Closing, and Footer resolve through one shared horizontal page geometry contract, while the continuous Domain Rail and both split mobile rows touch the viewport edges below 1720px and align with the shared padded content edges at and above 1720px.",
               "Every section preserves the approved title, reference line breaks, exact proof image, and V04 vertical rhythm.",
-              "Each active complex visual uses a hash-locked product-owner-supplied Photoroom true-alpha master and three source-bounded lossless responsive WebP derivatives.",
+              "Except for the approved factory film and its poster, each active complex visual uses a hash-locked product-owner-supplied Photoroom true-alpha master and three source-bounded lossless responsive WebP derivatives.",
               "Every selected derivative contains both transparent and opaque pixels, never exceeds its native master width, and preserves the supplied subject pixels through premultiplied-alpha resizing.",
               "The 2400px Domain Rail master is never artificially enlarged and may use a minimum 1.1 source pixels per rendered CSS pixel at the widest review size; the other illustrations remain at least 2x at their supported review sizes.",
               "Every illustration container uses the same CSS stage contract: clamp-scaled minor and major grid lines, intersection nodes, a stage-aware fade mask, and alpha-derived drop-shadow depth.",
@@ -34092,6 +34095,9 @@
               "A landing-owned derivative of the canonical 7,076-element Asyra Design frame provides authentic current product evidence with a reproducible hash-locked export.",
               "The maintained public review-actions Feature excerpt is paired with one person-or-AI to Feature, transaction, canonical-owner, and projection path.",
               "Framework, Preset, App, and external-service responsibilities are presented as distinct ownership layers.",
+              "The factory film shares the adjacent heading content edges, uses description-and-video columns from 1280px and stacked full-width media below, and preserves the complete 8:5 frame.",
+              "The approved factory scene is rendered natively at 2560x1600 with unchanged 16-second timing, camera, mechanical geometry, and materials; the approved detail revision adds open entrance/exit portals without text signs, fixed station labels, removes switching captions and the brand strapline, and improves shadow sampling by a headless export script; no low-resolution preview enlargement contributes.",
+              "The approved factory film uses native video controls with preload=none, no autoplay, and no loop; one concise architecture description explains clear package responsibilities working together to carry one action from intent to result without JavaScript or media playback; no mechanical play-by-play or separate metaphor paragraph.",
               "Readiness actions distinguish product builders, Framework composers, and technical evaluators while current support remains separate from roadmap direction."
             ],
             "bypasses": [
@@ -34115,7 +34121,8 @@
               "semantic HTML and CSS Framework value comparison",
               "eight border-free direct raster crops from the product-owner-approved person storyboard preview",
               "CSS responsive layout",
-              "shared adaptive CSS grid and asset-specific alpha-derived directional drop shadows"
+              "shared adaptive CSS grid and asset-specific alpha-derived directional drop shadows",
+              "product-owner-approved factory film, poster, visible description, and native video controls"
             ],
             "forbiddenContributors": [
               "removed Website implementation",
@@ -34137,6 +34144,12 @@
             ],
             "implementationBoundary": [
               "apps/asyra-framework-site/app/page.tsx",
+              "apps/asyra-framework-site/app/styles/action-film.css",
+              "apps/asyra-framework-site/scripts/render-action-film.py",
+              "apps/asyra-framework-site/scripts/prepare-action-film.py",
+              "apps/asyra-framework-site/__tests__/action-film-scene.py",
+              "apps/asyra-framework-site/public/motion",
+              "apps/asyra-framework-site/artwork/action-film",
               "apps/asyra-framework-site/app/globals.css",
               "apps/asyra-framework-site/app/styles/tokens.css",
               "apps/asyra-framework-site/components/framework-value-story.tsx",
@@ -34184,6 +34197,7 @@
             ],
             "specRefs": [
               "#visual-authority",
+              "#approved-factory-action-film",
               "#content-contract",
               "#ownership-boundary"
             ],
@@ -34208,7 +34222,7 @@
               "Default, hover, and focus CTA states are captured and inspected.",
               "Default CI validates committed public derivatives without local artwork and never requires the Git-ignored artwork directory.",
               "When artwork is available on an authoring workstation, ASYRA_LOCAL_ARTWORK_TESTS=1 verifies immutable-master hashes and local build-source contracts before changed derivatives are accepted.",
-              "Every selected derivative must pass true-alpha, source-bounded width, checkerboard, and actual-section-background verification before deployment.",
+              "Every selected Photoroom derivative must pass true-alpha, source-bounded width, checkerboard, and actual-section-background verification before deployment.",
               "The adaptive CSS grid and alpha-derived drop shadow are asserted from computed styles and inspected at 2048px, 1440px, 864px, 820px, 390px, and 320px.",
               "Six distinct computed shadow vectors are asserted at 2048px, 1440px, 864px, 820px, 390px, and 320px; section crops confirm the contact, cast, and dark-stage ambient layers remain visible without clipping.",
               "The supplied Hero, Domain Rail, Grow, Same Path, One Source, and Closing derivatives are inspected at 1440px and 2048px with section crops before deployment.",
@@ -34217,6 +34231,7 @@
               "At 680px, 520px, 390px, and 320px, computed geometry proves each storyboard panel is scaled against the median rendered proof illustration width and remains within 0.9 to 1.1 times that width.",
               "Computed geometry proves one 1720px maximum content width and the same constrained content edges for Header, Hero, domain copy, PoC, proofs, Closing, and Footer at 3840px, 2560px, 1920px, 1720px, 1719px, 1440px, 864px, 820px, 800px, 680px, 520px, 390px, and 320px, while every visible Domain Rail row remains full bleed below 1720px and aligns with the shared padded content edges at and above 1720px.",
               "All eight border-free storyboard crops are inspected inside one uniform 2px CSS frame contract without doubled authored edges.",
+              "The factory film passes keyboard playback, reduced-motion and no-JavaScript reading, no video request before interaction, media hash and byte budgets, and 16-second high-definition playback with section screenshots at 3840px, 2560px, 1920px, 1440px, 1280px, 1279px, 1024px, 820px, 390px, and 320px.",
               "No-client and reduced-motion modes preserve the complete reading and actions.",
               "The retired change-impact sections remain absent at every breakpoint and without JavaScript.",
               "The public /llms.txt response exactly matches the generated public documentation inventory while supporting human-facing routes remain independently owned by the Website Platform."
@@ -34239,6 +34254,8 @@
               ".gitignore",
               "apps/asyra-framework-site/package.json",
               "apps/asyra-framework-site/__tests__/editorial-landing.test.mjs",
+              "apps/asyra-framework-site/__tests__/action-film.test.mjs",
+              "apps/asyra-framework-site/__tests__/e2e/action-film.spec.ts",
               "apps/asyra-framework-site/__tests__/e2e/editorial-landing-visual.spec.ts",
               "apps/asyra-framework-site/scripts/route-smoke.mjs",
               "apps/asyra-framework-site/scripts/production-smoke.mjs",
@@ -34251,7 +34268,8 @@
             ],
             "specRefs": [
               "#quality-gates",
-              "#definition-of-done"
+              "#definition-of-done",
+              "#approved-factory-action-film"
             ],
             "failureOwnerStepId": "verify-result-first-page"
           }
