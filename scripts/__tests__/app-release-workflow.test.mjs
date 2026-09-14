@@ -7,6 +7,59 @@ import test from 'node:test'
 const read = (file) =>
   readFileSync(new URL(`../../${file}`, import.meta.url), 'utf8')
 
+const artifactProfileMarkers = [
+  'const analysisProfile = Object.freeze({ defaultBudgetMs: 30_000, analysisBudgetMs: 120_000, publicationAllowanceMs: 5_000, expectedPairs: 46 })',
+  "await page .getByText('Advanced settings method, precision and budget', { exact: true }) .click()",
+  "const duration = page.getByLabel('Wall-time budget (ms)', { exact: true })",
+  'await expect(duration).toHaveValue(String(analysisProfile.defaultBudgetMs))',
+  "await expect(duration).toHaveAttribute('max', String(analysisProfile.analysisBudgetMs))",
+  'await duration.fill(String(analysisProfile.analysisBudgetMs))',
+  "await duration.press('Enter')",
+  'await expect(duration).toHaveValue(String(analysisProfile.analysisBudgetMs))',
+  ".getByRole('button', { name: 'Run analysis', exact: true })",
+  '.click({ timeout: analysisProfile.analysisBudgetMs + analysisProfile.publicationAllowanceMs })',
+  "await expect(field('Execution')).toHaveText('completed')",
+  "await expect(field('Coverage')).toHaveText('complete')",
+  "await expect(field('Pairs with evidence')).toHaveText(`${analysisProfile.expectedPairs}/${analysisProfile.expectedPairs}`)",
+  "await expect(field('Finding / unresolved pairs')).toHaveText(/^\\d+ \\/ 0$/)"
+]
+
+function assertArtifactProfile(source) {
+  const compact = source
+    .replace(/\s+/g, ' ')
+    .replace(/\( /g, '(')
+    .replace(/ \)/g, ')')
+  let previous = -1
+  for (const marker of artifactProfileMarkers) {
+    assert.equal(compact.split(marker).length - 1, 1, marker)
+    const position = compact.indexOf(marker)
+    assert.ok(position > previous, `Profile order: ${marker}`)
+    previous = position
+  }
+  assert.match(compact, /\{ timeout: 180_000 \}/)
+  assert.doesNotMatch(compact, /timeout: 90_000 \}\)/)
+}
+
+test('Sim artifact proof declares one public-UI functional budget and requires complete evidence', () => {
+  assertArtifactProfile(
+    read('scripts/__tests__/production-artifacts.browser.test.mjs')
+  )
+})
+
+test('artifact profile oracle rejects missing, duplicate and reordered admission or result checks', () => {
+  const valid = artifactProfileMarkers.join('\n') + '\n{ timeout: 180_000 }'
+  assertArtifactProfile(valid)
+  for (const marker of artifactProfileMarkers) {
+    assert.throws(() => assertArtifactProfile(valid.replace(marker, '')))
+    assert.throws(() =>
+      assertArtifactProfile(valid.replace(marker, `${marker}\n${marker}`))
+    )
+  }
+  const reversed =
+    [...artifactProfileMarkers].reverse().join('\n') + '\n{ timeout: 180_000 }'
+  assert.throws(() => assertArtifactProfile(reversed))
+})
+
 test('release controller is manual, upstream-main-only and waits for every verifier', () => {
   const workflow = read('.github/workflows/app-release.yml')
   assert.match(workflow, /on:\n {2}workflow_dispatch:/)
