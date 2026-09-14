@@ -19,6 +19,14 @@ export const RELEASE_SCHEMA = 1
 export const RELEASE_RESERVE = 6
 export const RELEASE_DAILY_LIMIT = 12
 
+export function selectReleaseApps(targetApp = '') {
+  assert.ok(
+    targetApp === '' || RELEASE_APPS.some((app) => app.id === targetApp),
+    'Unknown target App'
+  )
+  return RELEASE_APPS.filter((app) => !targetApp || app.id === targetApp)
+}
+
 export function requireCommit(sha) {
   assert.match(sha, /^[a-f0-9]{40}$/, 'Expected a full Git commit SHA')
   return sha
@@ -94,6 +102,7 @@ export function affectsApp(file, app, roots) {
 export function createReleasePlan({
   sha,
   baselines,
+  targetApp = '',
   forceApp = '',
   reason = '',
   cwd,
@@ -106,9 +115,14 @@ export function createReleasePlan({
     git(['merge-base', '--is-ancestor', base, head], cwd)
 }) {
   requireCommit(sha)
+  const selectedApps = selectReleaseApps(targetApp)
   assert.ok(
     !forceApp || RELEASE_APPS.some((app) => app.id === forceApp),
     'Unknown forced App'
+  )
+  assert.ok(
+    !targetApp || !forceApp || targetApp === forceApp,
+    'Cannot force a release outside the selected App'
   )
   assert.ok(
     !forceApp ||
@@ -124,7 +138,7 @@ export function createReleasePlan({
     if (!snapshots.has(ref)) snapshots.set(ref, snapshot(ref, cwd))
     return snapshots.get(ref)
   }
-  const apps = RELEASE_APPS.map((app) => {
+  const apps = selectedApps.map((app) => {
     const baseline = baselines[app.id]
     assert.ok(
       baseline,

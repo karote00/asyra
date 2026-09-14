@@ -3,11 +3,23 @@
 ## Operator flow
 
 1. Merge reviewed changes through the protected PR flow. Merging does not deploy.
-2. Open Actions, select **Manual App Release**, choose **main**, and run it.
+2. Open Actions, choose the required release entry, select **main**, and run it:
+   - **Manual App Release** checks all Apps and releases every affected App.
+   - **Manual App Release - Asyra Website** releases only `asyra-framework`.
+   - **Manual App Release - Asyra Design** releases only `asyra-design`.
+   - **Manual App Release - Asyra Sim** releases only `asyra-sim`.
+
+   For a website-only release, use **Manual App Release - Asyra Website** and
+   leave `force_rebuild` unchecked. Shared-package and root-input changes never
+   expand this entry to other Apps. Each entry calls the same reusable pipeline;
+   its global concurrency group serializes all four entries through approval
+   and publication. Individual entries retain the full existing verification
+   suite; selection limits publication, not CI coverage.
    The dispatch commit is frozen for every job; a later main push cannot change
    the candidate. Arbitrary branches, fork repositories and older SHA inputs
    are deliberately unsupported. Trigger a new run to choose a newer candidate.
-3. Read the plan job summary and its changed-input list. Each App compares its
+
+3. Read the plan job summary and its changed-input list. Each selected App compares its
    own last successful online SHA with the candidate, including accumulated
    commits and the union of old/new transitive workspace dependencies.
 4. The existing CI, packed clean-consumer readiness, ordinary/collaboration E2E
@@ -26,7 +38,10 @@
    production domain. No automatic mutation retry or automatic rollback occurs.
 
 For a deployment setting or environment-variable change outside Git, choose
-the specific `force_app` and provide a single-line reason of 8-200 characters.
+the specific `force_app` in the all-App entry, or enable `force_rebuild` in
+an individual entry, and provide a single-line reason of 8-200 characters.
+`force_app` alone does not filter the all-App entry. An individual entry can
+force only its fixed App.
 This intentionally bypasses deployment deduplication and consumes quota.
 Ordinary retries must inspect previous results before starting another run.
 
@@ -64,6 +79,13 @@ can run. Do not dispatch the publication workflow merely to test this PR.
 their roots. It reads committed manifests, traversing runtime, development,
 peer and optional workspace dependencies. Old dependency edges are included
 so deleting a dependency cannot hide an affected deployment.
+
+`selectReleaseApps` in the plan owner validates the optional `targetApp` against
+those project identities before baseline reads and planning. Empty selection
+preserves the all-App flow. A single-App run reads and validates only that App's
+online baseline, so unrelated missing records do not block it. Selection is
+passed to both planning and the post-approval recomputation; a changed plan
+still fails before publication. Deployment record names and schema stay the same.
 
 App/owned dependency source and assets trigger release. Public documentation
 also triggers the website. Tests, internal AI documents and unrelated

@@ -8,8 +8,8 @@ const read = (file) =>
   readFileSync(new URL(`../../${file}`, import.meta.url), 'utf8')
 
 test('release controller is manual, upstream-main-only and waits for every verifier', () => {
-  const workflow = read('.github/workflows/app-release.yml')
-  assert.match(workflow, /on:\n {2}workflow_dispatch:/)
+  const workflow = read('.github/workflows/app-release-pipeline.yml')
+  assert.match(workflow, /on:\n {2}workflow_call:/)
   assert.doesNotMatch(
     workflow,
     /pull_request_target:|workflow_run:|repository_dispatch:|schedule:|secrets: inherit/
@@ -70,5 +70,68 @@ test('production proof is included in PR CI and never starts Vite dev or preview
   assert.doesNotMatch(
     read('scripts/production-artifact-server.mjs'),
     /import .*vite/
+  )
+})
+
+test('manual entries share one pipeline and pin independent App selection', () => {
+  for (const [file, target] of [
+    ['app-release.yml', ''],
+    ['app-release-framework.yml', 'asyra-framework'],
+    ['app-release-design.yml', 'asyra-design'],
+    ['app-release-sim.yml', 'asyra-sim']
+  ]) {
+    const entry = read(`.github/workflows/${file}`)
+    assert.match(entry, /on:\n {2}workflow_dispatch:/)
+    assert.match(
+      entry,
+      /uses: \.\/\.github\/workflows\/app-release-pipeline.yml/
+    )
+    assert.match(entry, /deployments: write/)
+    assert.match(
+      entry,
+      /github.repository_id == '893098287' && github.ref == 'refs\/heads\/main'/
+    )
+    assert.doesNotMatch(
+      entry,
+      /concurrency:|secrets:|environment:|runs-on:|run:|pull_request:|push:/
+    )
+    if (target) {
+      assert.ok(entry.includes(`target_app: '${target}'`))
+      assert.ok(
+        entry.includes(
+          `force_app: \${{ inputs.force_rebuild && '${target}' || '' }}`
+        )
+      )
+      assert.match(entry, /type: boolean/)
+    } else {
+      assert.doesNotMatch(entry, /target_app:/)
+      assert.ok(entry.includes('force_app: ${{ inputs.force_app }}'))
+    }
+    assert.ok(entry.includes('reason: ${{ inputs.reason }}'))
+  }
+  const pipeline = read('.github/workflows/app-release-pipeline.yml')
+  assert.match(pipeline, /group: manual-app-production/)
+  assert.doesNotMatch(pipeline, /workflow_dispatch:/)
+  assert.equal(
+    pipeline.match(/TARGET_APP: \$\{\{ inputs.target_app \}\}/g)?.length,
+    2
+  )
+  assert.equal(
+    pipeline.match(/FORCE_APP: \$\{\{ inputs.force_app \}\}/g)?.length,
+    2
+  )
+  const controller = read('scripts/app-release.mjs')
+  assert.match(
+    controller,
+    /process.env.GITHUB_EVENT_NAME,[\s\n]*'workflow_dispatch'/
+  )
+  assert.match(controller, /targetApp: process.env.TARGET_APP/)
+  assert.match(
+    controller,
+    /readBaselines\(\s*github,\s*repository,\s*process.env.TARGET_APP\s*\)/
+  )
+  assert.match(
+    controller,
+    /assert.deepEqual\([\s\n]*plan,[\s\n]*JSON.parse\(process.env.RELEASE_PLAN\)/
   )
 })
