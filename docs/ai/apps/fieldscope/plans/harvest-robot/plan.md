@@ -55,6 +55,34 @@ and explicit create/compatibility path.
 6. **W5 support/cut coordination.** Prove crop-specific same-side support and
    plant-side pedicel cutting for cucumber and Yu-Nu tomato while retaining spine,
    skin, calyx, pedicel and non-target plant boundaries.
+   **P5a source identity implemented:** canonical near botanical patches retain
+   exact regions, triangle ranges, target association and plant/fruit ownership.
+   SiteGeometry admits/freeze-checks these references and binds tomato cut position
+   and plant-side direction to its existing shared and adjacent source rings.
+   W1 carries the exact installed patches with independent support/cut completeness.
+   P5a preserved original near/distant geometry, materials, regions and partitions.
+   **P5b cucumber source revision:** the canonical generator adds an actual shared
+   ring at the explicit synthetic cut fraction (default 0.5), with plant and
+   retained open-shell segments. Source assumptions are validated and immutable.
+   Only cucumber pedicel source and directly sampled hairs change; other botanical
+   buffers remain exact. Missing boundary or numeric evidence remains unknown.
+   This synthetic source prerequisite does not complete W5, grant contact permission,
+   or prove retention, physical damage, clearance or harvesting.
+   PR #211 replaces the non-portable whole-buffer digest acceptance exposed by
+   Ubuntu with an independently frozen pre-P5b source graph. Its manifest pins the
+   reviewed commit, tree and source bytes before same-runtime execution compares
+   unrounded non-pedicel source, metadata and retained hairs. The former Darwin
+   Node 24.13 snapshot payloads remain intact in that manifest as historical
+   diagnostics only; received Ubuntu values do not become a golden. The follow-up
+   W1 work-owner correction retains partition-derived route admission and prepares
+   patch bounds only for included targets. Its exact work oracle binds
+   `targetPatches` to the emitted anatomy patches; existing time budgets remain
+   unchanged.
+   The authorized inserted pedicel hair shifts one revision-local
+   fruit-2/fruit-detail ordinal from /5 to /6 while its target, role, owner,
+   admitted region, dense topology and unrounded attributes remain exact. Each
+   revision still proves unique part-local IDs and exact patch/source references;
+   the ordinal itself is not treated as a cross-revision identity.
 7. **W6 mission evidence and UI.** Run visible normal left and right inspection/
    harvest cases through the actual W owners. One-side-at-a-time is the initial
    schedule, not a permanent prohibition. Any simultaneous bilateral case uses
