@@ -149,6 +149,11 @@ yarn build
 node scripts/run-e2e.mjs e2e/__tests__
 ```
 
+The local test command runs the shipped portable supervisor oracle, then the
+ordinary suite and all three heavy proof files under finite process, idle and
+cleanup guards. It resolves Vitest only from this `sdk/app` installation and
+does not require a repository checkout or an ancestor `.github` workflow.
+
 Follow the [local SDK guide](../specs/extensions-sdk-v0.md). Its repository-root
 commands correspond to the local consumer commands above. Register reviewed
 modules in `src/extensions/installed-methods.ts` before rebuilding; do not edit

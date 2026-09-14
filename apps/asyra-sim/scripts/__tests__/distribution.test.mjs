@@ -211,14 +211,15 @@ test('the producer stages a complete versioned candidate without serving SDK dat
     'local-server.mjs',
     'verify-files.mjs',
     'distribution-files.mjs',
-    'run-e2e.mjs'
+    'run-e2e.mjs',
+    'supervise-tests.py',
+    '__tests__/supervise-tests.test.mjs'
   ])
-    write(`source/apps/asyra-sim/scripts/${file}`, '// source input')
+    write(`source/apps/asyra-sim/scripts/${file}`, `// source ${file}`)
   write('source/apps/asyra-sim/scripts/notices/sources.json', '{}')
   for (const folder of ['src', 'samples', 'e2e'])
     write(`app/${folder}/input.ts`, '// app input')
   for (const file of [
-    'package.json',
     'yarn.lock',
     '.yarnrc.yml',
     '.env',
@@ -233,6 +234,21 @@ test('the producer stages a complete versioned candidate without serving SDK dat
     'consumer.vite.config.mjs'
   ])
     write(`app/${file}`, 'input')
+  write(
+    'app/package.json',
+    JSON.stringify({
+      name: '@asyra/asyra-sim',
+      scripts: {
+        'test:local':
+          'node --test scripts/__tests__/supervise-tests.test.mjs && python3 scripts/supervise-tests.py --'
+      }
+    })
+  )
+  write('app/scripts/supervise-tests.py', '// consumer supervisor')
+  write(
+    'app/scripts/__tests__/supervise-tests.test.mjs',
+    '// consumer portable oracle'
+  )
   write('app/dist/index.html', '<html>App</html>')
   write('app/dist/assets/main.js', '// production')
   write(
@@ -285,6 +301,38 @@ test('the producer stages a complete versioned candidate without serving SDK dat
   assert.ok(
     distributionFiles(candidate).includes('sdk/app/app-environment.d.mts')
   )
+  assert.equal(
+    readFileSync(
+      path.join(candidate, 'sdk/app/scripts/supervise-tests.py'),
+      'utf8'
+    ),
+    readFileSync(path.join(consumer, 'scripts/supervise-tests.py'), 'utf8')
+  )
+  assert.equal(
+    readFileSync(
+      path.join(
+        candidate,
+        'sdk/app/scripts/__tests__/supervise-tests.test.mjs'
+      ),
+      'utf8'
+    ),
+    readFileSync(
+      path.join(consumer, 'scripts/__tests__/supervise-tests.test.mjs'),
+      'utf8'
+    )
+  )
+  const sdkManifest = JSON.parse(
+    readFileSync(path.join(candidate, 'sdk/app/package.json'), 'utf8')
+  )
+  assert.equal(
+    sdkManifest.scripts['test:local'],
+    'node --test scripts/__tests__/supervise-tests.test.mjs && python3 scripts/supervise-tests.py --'
+  )
+  for (const commandPath of [
+    'scripts/supervise-tests.py',
+    'scripts/__tests__/supervise-tests.test.mjs'
+  ])
+    assert.ok(distributionFiles(candidate).includes(`sdk/app/${commandPath}`))
   assert.match(
     readFileSync(path.join(candidate, 'THIRD_PARTY_NOTICES.txt'), 'utf8'),
     /Original permission/

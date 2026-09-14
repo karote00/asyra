@@ -10,7 +10,6 @@ import sys
 import time
 
 APP = Path(__file__).resolve().parent.parent
-ROOT = APP.parent.parent
 HEAVY = "src/analysis/methods/__tests__/fresh-witness-source-work.test.ts"
 HEAVY_CASES = (
     ("heavy", HEAVY, 4),
@@ -21,6 +20,52 @@ DEFAULT_JOB_MS = 20 * 60 * 1000
 DEFAULT_IDLE_MS = 120000
 CLEANUP_MS = 60000
 MAX_STREAM_BYTES = 64 * 1024 * 1024
+
+
+def read_manifest(directory):
+    try:
+        return json.loads((directory / "package.json").read_text())
+    except (OSError, ValueError) as error:
+        raise RuntimeError("Missing or invalid owned package manifest") from error
+
+
+def owned_file(root, filename):
+    try:
+        filename.resolve(strict=True).relative_to(root.resolve(strict=True))
+    except (OSError, ValueError) as error:
+        raise RuntimeError("Vitest installation is outside its owned root") from error
+    if not filename.is_file():
+        raise RuntimeError("Missing owned Vitest installation")
+    return filename
+
+
+def resolve_owner(app=APP):
+    """Resolve ownership from manifests and layout before dependencies exist."""
+    app = app.resolve(strict=True)
+    manifest = read_manifest(app)
+    if (manifest.get("name") != "@asyra/asyra-sim" or
+            manifest.get("private") is not True or
+            manifest.get("packageManager") != "yarn@4.3.1"):
+        raise RuntimeError("App manifest does not declare the owned installation")
+    repository = app.parent.parent
+    expected_app = repository / "apps/asyra-sim"
+    if expected_app.resolve() == app:
+        root_manifest = read_manifest(repository)
+        workspaces = root_manifest.get("workspaces", [])
+        if (root_manifest.get("private") is True and
+                root_manifest.get("packageManager") == "yarn@4.3.1" and
+                "apps/*" in workspaces):
+            return repository, repository / "tmp/test-supervision"
+    return app, app / "tmp/test-supervision"
+
+
+def resolve_runtime(app=APP):
+    """Resolve the executable only after the owned installation must exist."""
+    owner, artifacts = resolve_owner(app)
+    vitest = owner / "node_modules/vitest/vitest.mjs"
+    if not vitest.is_file():
+        raise RuntimeError("Missing owned Vitest installation")
+    return owner, owned_file(owner, vitest), artifacts
 
 
 def supervise(command, deadline, idle_ms, expected, journal=None, cwd=APP,
@@ -223,7 +268,7 @@ def main():
     parser.add_argument("--init-ci", action="store_true")
     parser.add_argument("arguments", nargs=argparse.REMAINDER)
     args = parser.parse_args()
-    artifacts = ROOT / "tmp/test-supervision"
+    owner_root, artifacts = resolve_owner()
     if args.init_ci:
         artifacts.mkdir(parents=True, exist_ok=True)
         # Workflow records its start before checkout, not at the Test step.
@@ -233,6 +278,7 @@ def main():
                       idleMs=positive(os.environ.get("TEST_IDLE_MS", DEFAULT_IDLE_MS)))
         (artifacts / "ci-budget.json").write_text(json.dumps(config) + "\n")
         return 0
+    owner_root, vitest, artifacts = resolve_runtime()
     if args.oracle_command:
         result = supervise(json.loads(args.oracle_command),
                            time.monotonic() + args.hard_stop_ms / 1000,
@@ -243,7 +289,7 @@ def main():
     idle_ms = positive(os.environ.get("TEST_IDLE_MS", DEFAULT_IDLE_MS))
     cleanup_ms = positive(os.environ.get("TEST_CLEANUP_MS", CLEANUP_MS))
     budget_file = artifacts / "ci-budget.json"
-    if budget_file.exists() or os.environ.get("CI"):
+    if budget_file.exists() or (os.environ.get("CI") and owner_root != APP):
         # The file is authoritative even when Turbo removes environment flags.
         config = json.loads(budget_file.read_text())
         hard_ms = config["deadlineMs"] - time.time() * 1000
@@ -252,9 +298,6 @@ def main():
     if deadline <= time.monotonic():
         raise RuntimeError("No CI execution time remains before cleanup")
     # Resolve only this checkout's declared installation. Never borrow another tree.
-    vitest = ROOT / "node_modules/vitest/vitest.mjs"
-    if not vitest.is_file():
-        raise RuntimeError("Missing checkout-local Vitest; run immutable install")
     node = subprocess.check_output(["node", "-p", "process.execPath"],
                                    cwd=APP, text=True).strip()
     extra = args.arguments

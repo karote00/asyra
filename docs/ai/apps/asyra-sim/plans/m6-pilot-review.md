@@ -142,6 +142,33 @@ method-owner execution contract must precede any correction; the original
 recovery slice above is not retroactively expanded. Preserve the M5 failing
 regression and original reports.
 
+## Step Execution Card - exact-source test supervision delivery
+
+Owner: R0 Inspector `ui` and `user-workbench-terminal`, limited to the
+versioned local distribution and clean exact-source consumer route. Inputs are
+the clean source/lock, validated packed Framework inputs, explicit App or exact
+monorepo manifests and the existing three heavy proof files. The output is a
+consumer and optional SDK whose local test entry retains ordinary coverage and
+runs all three heavy files once under the existing finite process/idle cleanup
+supervision. The repository alone owns the CI workflow ordering oracle.
+
+Formal RED on 2026-09-14 proved four delivery gaps: the consumer used naked
+Vitest, the SDK omitted the supervisor and portable oracle, the source entry did
+not execute its repository-only CI oracle, and runtime selection could not prove
+a standalone owned installation. The outer producer also retained a five-minute
+test timeout around a longer supervised job. The bounded correction copies the
+portable files into both consumer and SDK, accepts only an App-local installation
+or the exact `asyra/apps/asyra-sim` manifest/layout, and gives only
+`consumer-tests` a 21-minute outer deadline around the 20-minute envelope and
+its 60-second cleanup reserve. Build, install and archive guards remain five
+minutes; numerical method behavior and the product's default 30-second limit are
+unchanged.
+
+The focused portable/CI/consumer/distribution oracles pass 25/25 after the
+correction. Exact-source production and packaged browser evidence remain later
+gates; this tooling checkpoint is not a local candidate pass or external R0
+acceptance.
+
 The user authorized research into suitable public validation data and, when
 unavailable, reproducible synthetic data grounded in real-world conditions.
 Record source permission, provenance, assumptions and validation scope. Public
