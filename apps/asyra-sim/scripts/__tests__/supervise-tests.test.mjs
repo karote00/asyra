@@ -1,6 +1,14 @@
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { readFileSync } from 'node:fs'
+import {
+  copyFileSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync
+} from 'node:fs'
+import path from 'node:path'
 import { fileURLToPath, URL } from 'node:url'
 import process from 'node:process'
 import test from 'node:test'
@@ -180,54 +188,149 @@ print(json.dumps(dict(phases=phases, rejected=rejected)))
   assert.equal(phases[2][1].filter((arg) => arg.endsWith('.test.ts')).length, 1)
 })
 
-test('CI builds checkout-local dependencies before invoking the same supervised app entry', () => {
-  const workflow = readFileSync(
-    new URL('../../../../.github/workflows/main.yml', import.meta.url),
-    'utf8'
+test('runtime ownership accepts explicit monorepo and standalone installations but rejects arbitrary ancestors', (t) => {
+  const parent = fileURLToPath(
+    new URL('../../.artifacts/consumer-tests/', import.meta.url)
   )
-  const markers = [
-    'Record original test job deadline',
-    'Initialize test execution envelope',
-    'run: yarn react:build',
-    'run: yarn test:ci'
-  ]
-  function checkOrdering(source) {
-    for (const marker of markers) {
-      assert.equal(source.split(marker).length - 1, 1, marker)
-      assert.ok(source.indexOf(marker) >= 0, marker)
-    }
-    for (let index = 1; index < markers.length; index++)
-      assert.ok(
-        source.indexOf(markers[index - 1]) < source.indexOf(markers[index])
+  mkdirSync(parent, { recursive: true })
+  const directory = mkdtempSync(path.join(parent, 'supervisor-roots-'))
+  t.after(() => rmSync(directory, { recursive: true }))
+  const manifest = (name, extra = {}) =>
+    JSON.stringify({
+      name,
+      private: true,
+      packageManager: 'yarn@4.3.1',
+      ...extra
+    })
+  const standalone = path.join(directory, 'standalone')
+  mkdirSync(path.join(standalone, 'node_modules/vitest'), { recursive: true })
+  writeFileSync(
+    path.join(standalone, 'package.json'),
+    manifest('@asyra/asyra-sim')
+  )
+  writeFileSync(path.join(standalone, 'node_modules/vitest/vitest.mjs'), '')
+
+  const repository = path.join(directory, 'repository')
+  const repositoryApp = path.join(repository, 'apps/asyra-sim')
+  mkdirSync(path.join(repository, 'node_modules/vitest'), { recursive: true })
+  mkdirSync(path.join(repositoryApp, 'node_modules/vitest'), {
+    recursive: true
+  })
+  writeFileSync(
+    path.join(repository, 'package.json'),
+    manifest('workspace-root', { workspaces: ['apps/*'] })
+  )
+  writeFileSync(
+    path.join(repositoryApp, 'package.json'),
+    manifest('@asyra/asyra-sim')
+  )
+  writeFileSync(path.join(repository, 'node_modules/vitest/vitest.mjs'), '')
+  writeFileSync(path.join(repositoryApp, 'node_modules/vitest/vitest.mjs'), '')
+
+  const unknownRoot = path.join(directory, 'unknown')
+  const unknownApp = path.join(unknownRoot, 'nested/app')
+  mkdirSync(path.join(unknownRoot, 'node_modules/vitest'), { recursive: true })
+  mkdirSync(unknownApp, { recursive: true })
+  writeFileSync(path.join(unknownRoot, 'package.json'), manifest('unrelated'))
+  writeFileSync(
+    path.join(unknownApp, 'package.json'),
+    manifest('@asyra/asyra-sim')
+  )
+  writeFileSync(path.join(unknownRoot, 'node_modules/vitest/vitest.mjs'), '')
+
+  const code = `
+import sys, importlib.util, json
+from pathlib import Path
+sys.dont_write_bytecode = True
+spec = importlib.util.spec_from_file_location('supervisor', sys.argv[1])
+owner = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(owner)
+results = []
+for candidate in sys.argv[2:]:
+    try:
+        results.append([str(path) for path in owner.resolve_runtime(Path(candidate))])
+    except RuntimeError as error:
+        results.append({'error': str(error)})
+print(json.dumps(results))
+`
+  const result = spawnSync(
+    'python3',
+    ['-c', code, supervisor, standalone, repositoryApp, unknownApp],
+    { encoding: 'utf8', timeout: 5000 }
+  )
+  assert.equal(result.status, 0, result.stderr)
+  const [standaloneResult, repositoryResult, unknownResult] = JSON.parse(
+    result.stdout
+  )
+  assert.deepEqual(standaloneResult, [
+    standalone,
+    path.join(standalone, 'node_modules/vitest/vitest.mjs'),
+    path.join(standalone, 'tmp/test-supervision')
+  ])
+  assert.deepEqual(repositoryResult, [
+    repository,
+    path.join(repository, 'node_modules/vitest/vitest.mjs'),
+    path.join(repository, 'tmp/test-supervision')
+  ])
+  assert.match(unknownResult.error, /owned|installation|manifest/i)
+})
+
+test('fresh CI records the original job deadline before install while execution still requires owned Vitest', (t) => {
+  const parent = fileURLToPath(
+    new URL('../../.artifacts/consumer-tests/', import.meta.url)
+  )
+  mkdirSync(parent, { recursive: true })
+  const repository = mkdtempSync(path.join(parent, 'fresh-ci-'))
+  t.after(() => rmSync(repository, { recursive: true }))
+  const app = path.join(repository, 'apps/asyra-sim')
+  const script = path.join(app, 'scripts/supervise-tests.py')
+  mkdirSync(path.dirname(script), { recursive: true })
+  writeFileSync(
+    path.join(repository, 'package.json'),
+    JSON.stringify({
+      private: true,
+      packageManager: 'yarn@4.3.1',
+      workspaces: ['apps/*']
+    })
+  )
+  writeFileSync(
+    path.join(app, 'package.json'),
+    JSON.stringify({
+      name: '@asyra/asyra-sim',
+      private: true,
+      packageManager: 'yarn@4.3.1'
+    })
+  )
+  copyFileSync(supervisor, script)
+  const deadline = Date.now() + 600_000
+  const environment = {
+    ...process.env,
+    TEST_JOB_DEADLINE_MS: String(deadline),
+    TEST_CLEANUP_MS: '60000',
+    TEST_IDLE_MS: '120000'
+  }
+  const initialized = spawnSync('python3', [script, '--init-ci'], {
+    cwd: app,
+    encoding: 'utf8',
+    env: environment,
+    timeout: 5000
+  })
+  assert.equal(initialized.status, 0, initialized.stderr)
+  assert.deepEqual(
+    JSON.parse(
+      readFileSync(
+        path.join(repository, 'tmp/test-supervision/ci-budget.json'),
+        'utf8'
       )
-  }
-  const validateJob = workflow.match(
-    /\n {2}validate:\n([\s\S]*?)(?=\n {2}[a-zA-Z][\w-]*:\n|$)/
-  )?.[1]
-  assert.ok(validateJob)
-  checkOrdering(validateJob)
-  for (const marker of markers) {
-    assert.throws(
-      () => checkOrdering(validateJob.replace(marker, 'removed')),
-      marker
-    )
-    assert.throws(() => checkOrdering(validateJob + '\n' + marker), marker)
-  }
-  const manifest = JSON.parse(
-    readFileSync(new URL('../../package.json', import.meta.url), 'utf8')
+    ),
+    { deadlineMs: deadline, cleanupMs: 60000, idleMs: 120000 }
   )
-  assert.equal(manifest.scripts['test:local'], manifest.scripts['test:ci'])
-  function checkEntry(script) {
-    assert.equal(
-      script.split('python3 scripts/supervise-tests.py').length - 1,
-      1
-    )
-    assert.doesNotMatch(script, /install|ln -s/)
-  }
-  checkEntry(manifest.scripts['test:ci'])
-  assert.throws(() =>
-    checkEntry(
-      manifest.scripts['test:ci'] + ' && python3 scripts/supervise-tests.py --'
-    )
-  )
+  const execution = spawnSync('python3', [script], {
+    cwd: app,
+    encoding: 'utf8',
+    env: { ...environment, CI: '' },
+    timeout: 5000
+  })
+  assert.notEqual(execution.status, 0)
+  assert.match(execution.stderr, /Missing owned Vitest installation/)
 })

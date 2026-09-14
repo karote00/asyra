@@ -78,10 +78,19 @@ build hosts are unverified and fail explicitly. No sandbox binary is shipped
 in the user distribution.
 Consumer tests disable CommonJS default-export interop so packed ESM live
 bindings preserve the same successor-Core semantics as native modules. They
-execute the packed files, not an alias to Framework source.
+execute the packed files, not an alias to Framework source. The consumer and
+shipped SDK both include the App's portable process/idle supervisor oracle and
+run ordinary tests plus each of the three heavy proof files exactly once. The
+repository source entry additionally runs its repository-only CI ordering
+oracle; copied SDK tests never search for an absent ancestor workflow.
 
-Each owned command has a five-minute deadline and an 8 MiB log limit. Signals
-terminate the active owned process group. Passing evidence records the exact
+Each owned build, install and archive command has a five-minute deadline and an
+8 MiB log limit. The consumer test command has a 21-minute outer deadline around
+the supervisor's 20-minute job envelope, which reserves its full 60-second
+cleanup window; this does not change the App's product analysis limits. Signals
+terminate the active owned process group. The supervisor accepts only the exact
+monorepo manifest/layout or the App's own standalone manifest and installation;
+it never borrows an arbitrary ancestor package. Passing evidence records the exact
 commit, App/tool versions, source/tarball/lock checksums and module-boundary
 evidence. Failed runs preserve bounded logs and a failure record, never a passing
 marker. These developer artifacts are not a user distribution, a dependency
