@@ -7,6 +7,7 @@ it('the full-workcell starter checks every part, independently finding tool/tabl
   const snapshot = await collisionStarterSnapshot()
 
   expect(snapshot.pairs).toHaveLength(46)
+  expect(snapshot.interval).toEqual([0, 8])
   expect(
     new Set(snapshot.pairs.flatMap((pair) => [pair.a.bodyId, pair.b.bodyId]))
   ).toEqual(new Set(snapshot.workcell.bodies.map((body) => body.id)))
@@ -40,22 +41,27 @@ it('the full-workcell starter checks every part, independently finding tool/tabl
     ).toBe(true)
   }
   const evidence = runOriginalPartMethod(snapshot)
-  expect(evidence.coverage).toBe('partial')
-  expect(evidence.pairs).toHaveLength(snapshot.pairs.length)
-
-  const unresolved = evidence.pairs.filter(
-    (pair) => pair.evidence.coverage === 'partial'
+  expect(evidence.coverage).toBe('complete')
+  expect(evidence.pairs.map((pair) => pair.pairId)).toEqual(
+    snapshot.pairs.map((pair) => pair.id)
   )
-
-  expect(unresolved.length).toBeGreaterThan(0)
-  expect(
-    unresolved.every((pair) =>
-      pair.evidence.leaves.some(
-        (leaf) => leaf.state === 'unresolved' && leaf.reason.includes('budget')
+  for (const pairId of tablePairIds) {
+    const pair = evidence.pairs.find((pair) => pair.pairId === pairId)
+    expect(
+      pair?.evidence.leaves.some(
+        (leaf) =>
+          leaf.state === 'finding' &&
+          leaf.penetration &&
+          leaf.lower === 0 &&
+          leaf.upper === 0 &&
+          leaf.witnessTime !== null &&
+          leaf.witnessTime > 0 &&
+          leaf.witnessTime < 8
       )
-    )
-  ).toBe(true)
+    ).toBe(true)
+  }
 
+  // The result owner validates gap-free coverage and every witness's leaf bounds.
   const fullPathResult = completeAnalysisResult(snapshot, evidence, {
     runId: 'full-path-run',
     startedAt: 100,
@@ -63,9 +69,11 @@ it('the full-workcell starter checks every part, independently finding tool/tabl
   })
 
   expect(fullPathResult.execution).toBe('completed')
-  expect(fullPathResult.coverage).toBe('partial')
-  expect(fullPathResult.unresolvedPairCount).toBeGreaterThan(0)
-  expect(fullPathResult.verdict).not.toBe('meets')
+  expect(fullPathResult.coverage).toBe('complete')
+  expect(fullPathResult.summary).toBe('issue-found')
+  expect(fullPathResult.verdict).toBe('does-not-meet')
+  expect(fullPathResult.findingPairCount).toBeGreaterThanOrEqual(2)
+  expect(fullPathResult.unresolvedPairCount).toBe(0)
 
   // The complete source and budget remain unchanged. A pose query is not a path proof.
   const pose = runOriginalPartMethod({ ...snapshot, interval: [4, 4] })

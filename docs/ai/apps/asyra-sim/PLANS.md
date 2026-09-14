@@ -27,8 +27,9 @@
      Their detailed records are in Completed Work below; earlier dates remain.
    - M5 delivery stage is closed and merged as PR #192. Its resource/hardware
      gaps remain open. [M6 pilot and release review](plans/m6-pilot-review.md) is
-     active from merge `599cb5b91`: first deliver the missing self-contained
-     recovery fixture and update notes; independent acceptance remains pending.
+     active from merge `599cb5b91`: the self-contained recovery fixture and
+     update notes are delivered in PR #195; capacity correction and independent
+     acceptance remain pending.
      Historical packaging evidence remains in roadmap section 1.2 and
      [LOCAL_CANDIDATE.md](release/LOCAL_CANDIDATE.md).
    - Keep the engine App-owned. Extracting generic 3D defaults into Preset and

@@ -11,14 +11,17 @@ import path from 'node:path'
 import { fileURLToPath, pathToFileURL, URL } from 'node:url'
 import process from 'node:process'
 import test from 'node:test'
-import { buildConsumer } from '../build-consumer.mjs'
+import * as consumerBuilder from '../build-consumer.mjs'
 import {
   consumerManifest,
+  consumerPortableFiles,
   assertFrozenRegistryLock,
   assertInstalledPackages,
   assertOwnedPaths,
   consumerBuildConfig
 } from '../consumer-contract.mjs'
+
+const { buildConsumer, commandExecutionContract } = consumerBuilder
 
 const app = {
   name: '@asyra/asyra-sim',
@@ -57,6 +60,15 @@ test('the independent consumer uses only packed Framework inputs and preserves a
   assert.equal(manifest.devDependencies.typescript, '^5.7.2')
   assert.equal(app.dependencies['@asyra/core'], 'workspace:*')
   assert.doesNotMatch(JSON.stringify(manifest.scripts), /\.\.\/|workspace/)
+  assert.equal(
+    manifest.scripts['test:local'],
+    'node --test scripts/__tests__/supervise-tests.test.mjs && python3 scripts/supervise-tests.py --'
+  )
+  assert.doesNotMatch(manifest.scripts['test:local'], /^vitest\b|--exclude/)
+  assert.deepEqual(consumerPortableFiles, [
+    'scripts/supervise-tests.py',
+    'scripts/__tests__/supervise-tests.test.mjs'
+  ])
   assert.throws(() => consumerManifest(app, {}, []), /Missing packed/)
   assert.throws(
     () =>
@@ -164,6 +176,23 @@ test('type and installed-package evidence cannot use ancestor hoisting or symbol
 
 test('the generator is importable without creating a consumer or starting child commands', () => {
   assert.equal(typeof buildConsumer, 'function')
+})
+
+test('the consumer test subprocess preserves the supervisor cleanup window without widening other producer guards', () => {
+  assert.equal(typeof commandExecutionContract, 'function')
+  assert.deepEqual(commandExecutionContract('consumer-tests'), {
+    timeoutMs: 21 * 60 * 1000,
+    environment: {
+      TEST_JOB_MS: String(20 * 60 * 1000),
+      TEST_IDLE_MS: '120000',
+      TEST_CLEANUP_MS: '60000'
+    }
+  })
+  for (const label of ['consumer-install', 'consumer-build', 'archive'])
+    assert.deepEqual(commandExecutionContract(label), {
+      timeoutMs: 5 * 60 * 1000,
+      environment: {}
+    })
 })
 
 for (const [kind, base] of [

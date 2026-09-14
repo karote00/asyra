@@ -61,7 +61,6 @@ export interface ExperimentBudget {
 /** App-wide admission ceilings; a method may declare stricter limits. */
 export const EXPERIMENT_RESOURCE_PROFILE = Object.freeze({
   maxPairs: 4096,
-  maxWorkUnits: 500000,
   warningPairs: 256,
   warningWorkUnits: 10000,
   maxIntervals: 1000000,
