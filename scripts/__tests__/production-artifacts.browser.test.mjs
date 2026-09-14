@@ -19,6 +19,14 @@ process.env.TMPDIR = temporary
 process.env.TMP = temporary
 process.env.TEMP = temporary
 
+// Functional production-build proof, not a default-budget performance gate.
+const analysisProfile = Object.freeze({
+  defaultBudgetMs: 30_000,
+  analysisBudgetMs: 120_000,
+  publicationAllowanceMs: 5_000,
+  expectedPairs: 46
+})
+
 async function browserPage(t, url, closeServer) {
   let browser
   t.after(async () => {
@@ -89,11 +97,57 @@ test(
     await page.getByLabel('End time (s)').fill('4.2')
     await page.getByLabel('End time (s)').press('Enter')
     await page
+      .getByText('Advanced settings method, precision and budget', {
+        exact: true
+      })
+      .click()
+    const duration = page.getByLabel('Wall-time budget (ms)', { exact: true })
+    await expect(duration).toHaveValue(String(analysisProfile.defaultBudgetMs))
+    await expect(duration).toHaveAttribute(
+      'max',
+      String(analysisProfile.analysisBudgetMs)
+    )
+    await duration.fill(String(analysisProfile.analysisBudgetMs))
+    await duration.press('Enter')
+    await expect(duration).toHaveValue(String(analysisProfile.analysisBudgetMs))
+    const startedAt = Date.now()
+    await page
       .getByRole('button', { name: 'Run analysis', exact: true })
       .click()
     await page
       .getByRole('button', { name: 'View results', exact: true })
-      .click({ timeout: 90_000 })
+      .click({
+        timeout:
+          analysisProfile.analysisBudgetMs +
+          analysisProfile.publicationAllowanceMs
+      })
+    const result = page.getByTestId('analysis-result')
+    const field = (name) =>
+      result
+        .locator('dl > div')
+        .filter({
+          has: page.getByText(name, { exact: true })
+        })
+        .locator('dd')
+    t.diagnostic(
+      JSON.stringify({
+        profile: 'production-artifact-functional',
+        analysisBudgetMs: analysisProfile.analysisBudgetMs,
+        runToResultMs: Date.now() - startedAt,
+        execution: await field('Execution').innerText(),
+        coverage: await field('Coverage').innerText(),
+        pairs: await field('Pairs with evidence').innerText(),
+        findingAndUnresolved: await field(
+          'Finding / unresolved pairs'
+        ).innerText()
+      })
+    )
+    await expect(field('Execution')).toHaveText('completed')
+    await expect(field('Coverage')).toHaveText('complete')
+    await expect(field('Pairs with evidence')).toHaveText(
+      `${analysisProfile.expectedPairs}/${analysisProfile.expectedPairs}`
+    )
+    await expect(field('Finding / unresolved pairs')).toHaveText(/^\d+ \/ 0$/)
     await expect(page.getByTestId('analysis-result')).toContainText(
       'Issue found'
     )
