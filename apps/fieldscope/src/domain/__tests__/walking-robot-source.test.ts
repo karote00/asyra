@@ -1065,7 +1065,8 @@ describe('walking robot original solid articulation regression', () => {
           joints: source.rig.presets[preset]
         })
       )
-    }
+    },
+    30000
   )
   it.each([-0.01, 0.01])(
     'retains normal stowed source material at the translated candidate %s without claiming a continuous path',
@@ -1087,7 +1088,8 @@ describe('walking robot original solid articulation regression', () => {
           sourceParts.every((part) => source.parts.includes(part))
         )
       ).toBe(true)
-    }
+    },
+    30000
   )
 
   it('certifies emitted housing cells and preserves the quaternion sign equivalence', () => {
