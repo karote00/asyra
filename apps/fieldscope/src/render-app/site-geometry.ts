@@ -1,11 +1,23 @@
 import {
   readSourceRegions,
+  readSourcePatches,
   type SourceRegion
 } from '../domain/source-occupancy'
 import { createCropPositions, type CropPosition } from '../domain/crop-layout'
 import type { SiteMesh } from './site-projection'
-import { createCropModels, type CropModel } from '../domain/crop-models'
+import {
+  createCropModels,
+  type CropModel,
+  type CropSourcePatch
+} from '../domain/crop-models'
 import type { FarmConfiguration } from '../domain/farm-configuration'
+import {
+  add,
+  subtract,
+  multiply,
+  divide,
+  interval
+} from '../domain/scalar-arithmetic'
 import {
   readSpatialShape,
   readSpatialInstances,
@@ -21,6 +33,8 @@ export interface CropGeometry {
     id: string
     regions: readonly SourceRegion[]
     distantRegions: readonly SourceRegion[]
+    patches: readonly CropSourcePatch[]
+    distantPatches: readonly CropSourcePatch[]
     partitions: readonly Readonly<
       CropModel['parts'][number]['partitions'][number]
     >[]
@@ -49,6 +63,174 @@ export interface PreparedScene {
   readonly fruits: readonly SceneFruit[]
 }
 let sceneRevision = 0
+
+function admitCropPatches(
+  input: readonly CropSourcePatch[],
+  regions: readonly SourceRegion[],
+  indexCount: number,
+  partitions: readonly CropModel['parts'][number]['partitions'][number][],
+  fruits: readonly CropModel['fruits'][number][]
+): readonly CropSourcePatch[] {
+  const sources = readSourcePatches(
+    input.map((patch) => patch.source),
+    regions,
+    indexCount
+  )
+  const occupied = new Set<number>()
+  return Object.freeze(
+    input.map((patch, index) => {
+      if (
+        patch.id !== patch.source.id ||
+        !fruits.some((fruit) => fruit.id === patch.targetFruitId) ||
+        ![
+          'fruit-skin',
+          'fine-spines',
+          'calyx',
+          'retained-pedicel',
+          'plant-pedicel',
+          'fruit-detail'
+        ].includes(patch.role) ||
+        patch.owner !==
+          (patch.role === 'plant-pedicel' ? 'plant' : 'target-fruit')
+      )
+        throw new Error('Invalid botanical patch identity')
+      const source = sources[index]
+      for (const range of source.ranges) {
+        const partition = partitions.find(
+          (span) =>
+            range.indexStart >= span.indexStart &&
+            range.indexStart + range.indexCount <=
+              span.indexStart + span.indexCount
+        )
+        if (
+          !partition ||
+          partition.fruitId !==
+            (patch.owner === 'plant' ? null : patch.targetFruitId)
+        )
+          throw new Error('Invalid botanical patch ownership')
+        for (
+          let triangle = range.indexStart;
+          triangle < range.indexStart + range.indexCount;
+          triangle += 3
+        ) {
+          if (occupied.has(triangle))
+            throw new Error('Overlapping botanical source patches')
+          occupied.add(triangle)
+        }
+      }
+      return Object.freeze({
+        id: patch.id,
+        targetFruitId: patch.targetFruitId,
+        owner: patch.owner,
+        role: patch.role,
+        source
+      })
+    })
+  )
+}
+
+function admitCutBoundaries(model: CropGeometry): CropGeometry['fruits'] {
+  return Object.freeze(
+    model.fruits.map((fruit) => {
+      const cut = fruit.cutSite
+      if (!cut || cut.kind === 'unknown') return fruit
+      const part = model.parts.find(
+        (candidate) => candidate.id === cut.boundary.partId
+      )
+      const plant = part?.patches.find(
+        (patch) => patch.id === cut.boundary.plantPatchId
+      )
+      const retained = part?.patches.find(
+        (patch) => patch.id === cut.boundary.retainedPatchId
+      )
+      if (
+        !part ||
+        part.shape.kind !== 'triangles' ||
+        !plant ||
+        !retained ||
+        plant.role !== 'plant-pedicel' ||
+        retained.role !== 'retained-pedicel' ||
+        plant.targetFruitId !== fruit.id ||
+        retained.targetFruitId !== fruit.id ||
+        plant.source.region !== retained.source.region ||
+        ![...cut.position, ...cut.towardPlant].every(Number.isFinite) ||
+        Math.hypot(...cut.towardPlant) === 0
+      )
+        throw new Error('Invalid botanical source cut boundary')
+      const shape = part.shape
+      const vertices = (patch: CropSourcePatch) =>
+        new Set(
+          patch.source.ranges.flatMap((range) =>
+            shape.indices.slice(
+              range.indexStart,
+              range.indexStart + range.indexCount
+            )
+          )
+        )
+      const plantVertices = vertices(plant)
+      const shared = [...vertices(retained)].filter((vertex) =>
+        plantVertices.has(vertex)
+      )
+      const declared = cut.boundary.sourceVertexIndices
+      if (
+        shared.length < 3 ||
+        declared.length !== shared.length ||
+        new Set(declared).size !== declared.length ||
+        declared.some(
+          (vertex) => !Number.isSafeInteger(vertex) || !shared.includes(vertex)
+        )
+      )
+        throw new Error('Invalid botanical shared source ring')
+      const proximal = [...plantVertices].filter(
+        (vertex) => !shared.includes(vertex)
+      )
+      if (proximal.length !== shared.length)
+        throw new Error('Invalid botanical adjacent source ring')
+      const centroid = (ring: readonly number[]) =>
+        [0, 1, 2].map((axis) =>
+          divide(
+            ring.reduce(
+              (sum, vertex) =>
+                add(sum, interval(shape.positions[vertex * 3 + axis])),
+              interval(0)
+            ),
+            interval(ring.length)
+          )
+        )
+      const boundaryPosition = centroid(shared)
+      const attachmentPosition = centroid(proximal)
+      const direction = attachmentPosition.map((value, axis) =>
+        subtract(value, boundaryPosition[axis])
+      )
+      const contains = (value: { low: number; high: number }, scalar: number) =>
+        Number.isFinite(value.low) &&
+        Number.isFinite(value.high) &&
+        scalar >= value.low &&
+        scalar <= value.high
+      const aligned = direction.reduce(
+        (sum, value, axis) =>
+          add(sum, multiply(value, interval(cut.towardPlant[axis]))),
+        interval(0)
+      )
+      if (
+        !boundaryPosition.every((value, axis) =>
+          contains(value, cut.position[axis])
+        ) ||
+        !direction.every((value, axis) =>
+          contains(value, cut.towardPlant[axis])
+        ) ||
+        !direction.some((value) => value.low > 0 || value.high < 0) ||
+        aligned.low <= 0
+      ) {
+        // Retain the crop and source identities; only unproved numeric cut evidence retires.
+        const unavailable = { ...fruit }
+        delete unavailable.cutSite
+        return Object.freeze(unavailable)
+      }
+      return fruit
+    })
+  )
+}
 
 /** Runtime-owned admitted geometry. Placement never contributes to this key. */
 export class SiteGeometry {
@@ -161,19 +343,52 @@ export class SiteGeometry {
         model.fruits.map((fruit) => {
           Object.freeze(fruit.center)
           if (fruit.cutSite) {
-            Object.freeze(fruit.cutSite.position)
+            if (fruit.cutSite.kind === 'synthetic-source-boundary') {
+              Object.freeze(fruit.cutSite.position)
+              Object.freeze(fruit.cutSite.towardPlant)
+              Object.freeze(fruit.cutSite.boundary.sourceVertexIndices)
+              Object.freeze(fruit.cutSite.boundary)
+              Object.freeze(fruit.cutSite.evidence)
+            }
             Object.freeze(fruit.cutSite)
           }
           return Object.freeze(fruit)
         })
       ),
       parts: model.parts.map((part) => {
-        if (!part.distantPartitions || !part.distantRegions)
+        if (
+          !part.distantPartitions ||
+          !part.distantRegions ||
+          !part.distantPatches
+        )
           throw new Error('Missing distant crop ownership')
+        const shape = readSpatialShape(part.shape)
+        const distantShape = readSpatialShape(part.distantShape)
+        if (shape.kind !== 'triangles' || distantShape.kind !== 'triangles')
+          throw new Error('Expected botanical source triangles')
+        const regions = readSourceRegions(part.regions, shape.indices.length)
+        const distantRegions = readSourceRegions(
+          part.distantRegions,
+          distantShape.indices.length
+        )
         return {
           id: part.id,
-          regions: part.regions,
-          distantRegions: part.distantRegions,
+          regions,
+          distantRegions,
+          patches: admitCropPatches(
+            part.patches,
+            regions,
+            shape.indices.length,
+            part.partitions,
+            model.fruits
+          ),
+          distantPatches: admitCropPatches(
+            part.distantPatches,
+            distantRegions,
+            distantShape.indices.length,
+            part.distantPartitions,
+            model.fruits
+          ),
           partitions: Object.freeze(
             part.partitions.map((span) => Object.freeze(span))
           ),
@@ -183,12 +398,13 @@ export class SiteGeometry {
           color: part.color,
           roughness: part.roughness,
           surface: part.surface,
-          shape: readSpatialShape(part.shape),
-          distantShape: readSpatialShape(part.distantShape)
+          shape,
+          distantShape
         }
       })
     }))
     models.forEach((model) => {
+      model.fruits = admitCutBoundaries(model)
       model.parts.forEach(Object.freeze)
       Object.freeze(model.parts)
       Object.freeze(model)

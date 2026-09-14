@@ -33,6 +33,34 @@ Cross-package imports use public `@asyra/*` facades. Do not import another app's
 - `CropModel` retains source triangle ownership for fruit body/detail, synthetic
   tomato distal pedicel and later surface hairs; near/distant representations
   preserve the same fruit ID and original geometry/materials.
+- Each near/distant part also supplies botanical `CropSourcePatch` metadata:
+  a part-local ID, associated `targetFruitId`, `target-fruit` or `plant` owner,
+  and `fruit-skin`, `fine-spines`, `calyx`, `retained-pedicel`,
+  `plant-pedicel` or `fruit-detail` role. Its `SourcePatch` references one
+  original region and exact triangle-aligned ranges. Plant-side association
+  never changes plant-owned partitions. Unclassified triangles stay forbidden;
+  metadata alone grants no support, cutting or intended-contact permission.
+- Tomato `cutSite` identifies the existing synthetic shared ring between the
+  immediate proximal plant-side pedicel and retained distal segment, 9 mm times
+  botanical scale above the fruit top. It carries the original source vertex
+  indices and source-local `towardPlant` vector, never a world-Y shortcut.
+  SiteGeometry validates patch ownership and ring identity, and proves numeric
+  position/direction against directed centroid intervals of the two adjacent
+  source rings. Unproved numeric cut evidence is omitted for that fruit; malformed
+  structural references reject admission. No geometry, cap or anatomical claim is
+  introduced by admission. The cucumber source generator now creates an actual
+  shared ring at the explicit synthetic fraction in `CropSourceAssumptions`.
+  `DEFAULT_CROP_SOURCE_ASSUMPTIONS` names fraction 0.5, without biological or safety
+  calibration. `createCropModels(config, assumptions)` validates and deep-freezes
+  one caller-isolated assumption product; each cucumber cut retains that exact
+  structured identity and evidence. Invalid or binary64-collapsed segments reject.
+  This canonical source revision changes cucumber pedicel triangles and directly
+  sampled hairs; other source buffers remain exact. Missing boundaries still use
+  `unknown` with `no-source-cut-boundary`.
+- SiteGeometry admits exact patch references with `readSourcePatches`, freezes
+  nested source/range/cut metadata and retains it with the existing net-dimension
+  cultivar lifetime. Distant patches are presentation metadata, never W5 contact
+  authority.
 - `SiteGeometry.prepareScene` composes immutable source metadata, installed plant
   and fruit identities, transforms and the complete pre-visibility scene. Existing
   cultivar and planting outputs are reused; empty populations create no cultivars.
@@ -544,6 +572,21 @@ Installed source envelopes use outward interval transforms. Their overlap means
 whole demand. A selected drain route or authored growth volume covering the route
 is blocked. Unknown evidence, growth, margin, missing anchor or incomplete growth
 coverage remains unknown.
+
+Each W1 target additionally carries independent `anatomy.support` and
+`anatomy.cut` completeness, reasons and exact near-part/patch/mesh/instance
+references. Patch bounds traverse original indexed ranges and use the installed
+instance followed by descriptor transform; the cut uses that same stems transform.
+Tomato and cucumber source anatomy can be complete when their actual shared-ring
+evidence is admitted. Missing roles or cut evidence affect only that target's anatomy,
+not passage status. These are synthetic source identities, not observations,
+calibrated contact/damage evidence or W5 action admission. `work.targetPatches`
+counts installed patch products emitted for route targets. `PreparedScene`
+admission has already validated every patch structure in the completed scene, so
+W1 uses partition-derived target bounds for route inclusion and prepares installed
+patch bounds only for included targets. `sourceIndexVisits` includes one scan per
+unique semantic source range per preparation, shared across its installed
+consumers.
 
 `bootstrap` exposes `getSceneDemandConfiguration`,
 `setSceneDemandConfiguration`, `getSceneDemand`, `isCurrentSceneDemand` and
