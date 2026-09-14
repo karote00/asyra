@@ -1985,10 +1985,6 @@ button:focus-visible {
     margin-top: 36px;
   }
 
-  .code-proof {
-    margin-inline: calc(var(--page-padding-x) * -0.35);
-  }
-
   .code-proof pre {
     font-size: clamp(0.62rem, 2.8vw, 0.72rem);
     overflow-wrap: anywhere;

@@ -370,3 +370,50 @@ capability by itself.
   synchronized visual-review gates pass.
 - No Framework behavior, Asyra Design behavior, supporting-route contract,
   external dependency, or production deployment is included.
+
+## Approved factory action film
+
+The product owner approved the 16-second Blender factory animation on
+2026-09-14. Add it within the existing Code to runtime section, before the
+Feature code and exact runtime path. It explains staged handoffs through a
+shared architecture; the existing code and runtime path explain the real
+software owners. A–D are illustrative stations, not package names, mandatory
+execution stages, or a robotics capability claim.
+
+Use a native high-definition render of the approved scene, a lightweight WebP poster,
+and one concise architecture description: "Each package has a clear responsibility.
+Together, they carry one action from intent to result." Keep the approved heading; omit the mechanical
+play-by-play and separate metaphor explanation. The film is an explicit exception to the
+six retained true-alpha illustration assets; their identity remains unchanged.
+Keep authoring sources local under ignored artwork; public media and provenance
+must be sufficient for default CI without Blender.
+
+Render native video controls with preload="none", no autoplay, no loop, and
+inline playback. The poster and description remain available without JavaScript
+and with reduced motion. User-initiated playback may animate in either mode.
+Do not load a 3D runtime, create a timer, or re-render the animation in the
+browser. Keep the video below 6 MiB and poster below 160 KiB.
+
+The product owner requested responsive wide-screen composition and improved
+clarity. Preserve the approved 16-second timing, camera path, mechanical geometry,
+and materials while rendering at 2560×1600 instead of enlarging the preview pixels.
+The figure shares the adjacent section heading’s content edges. At widths of
+1280 CSS px and above, place the description beside the video with at least
+24px separation; below that breakpoint, use full-width stacked media. Keep the
+complete frame at its original 8:5 aspect ratio and never crop the process.
+A headless export script owns render resolution, sampling, encoding, and
+provenance; it reads the local approved scene without overwriting it.
+
+The approved detail revision adds open entrance/exit portals without text signs, keeps station labels
+fixed beside their worktables throughout the camera move, removes the switching
+camera captions and the small strapline above Asyra, and increases shadow-ray
+sampling to reduce grain. Keep carrier clearance and existing mechanical poses.
+Save a separate editable Blender revision; close all rendering processes when done.
+
+DoD: verify media hashes and budgets, 16-second browser playback, keyboard
+play/pause, paused initial state, no video request before interaction, no-JS and
+reduced-motion reading, and film screenshots at 3840, 2560, 1920, 1440, 1280, 1279, 1024, 820, 390,
+and 320 CSS px. Assert matching content edges, column/row separation, the 8:5
+frame, and decoded high-definition dimensions.
+Run the existing landing gates and PR CI; completion requires owner review,
+and this task does not authorize merge or production deployment.

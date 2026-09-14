@@ -1,3 +1,4 @@
+import './styles/action-film.css'
 import { FrameworkValueStory } from '@/components/framework-value-story'
 import { SiteFooter } from '@/components/site-footer'
 import { SiteHeader } from '@/components/site-header'
@@ -439,6 +440,42 @@ export default function HomePage() {
               decisions.
             </p>
           </header>
+          <figure
+            aria-labelledby="action-film-title"
+            className="mx-auto my-[48px] grid w-full max-w-[var(--page-max-width)] gap-[clamp(24px,3vw,48px)] min-[1280px]:grid-cols-[minmax(240px,0.32fr)_minmax(0,1fr)]"
+          >
+            <figcaption className="grid content-center gap-[16px]">
+              <h3
+                id="action-film-title"
+                className="m-[0px] text-[clamp(24px,2vw,32px)] leading-[1.15] font-[500]"
+              >
+                One action. A connected process. One result.
+              </h3>
+              <p
+                id="action-film-description"
+                className="max-w-[760px] text-[16px] leading-[1.65]"
+              >
+                Each package has a clear responsibility. Together, they carry
+                one action from intent to result.
+              </p>
+            </figcaption>
+            <video
+              aria-describedby="action-film-description"
+              aria-label="Play the 16-second action flow animation"
+              className="block h-auto w-full self-center rounded-[12px] focus-visible:outline-[3px] focus-visible:outline-offset-[6px] focus-visible:outline-[var(--color-blue-highlight)]"
+              controls
+              height={1600}
+              muted
+              playsInline
+              poster="/motion/action-flow-poster.webp"
+              preload="none"
+              width={2560}
+            >
+              <source src="/motion/action-flow.mp4" type="video/mp4" />
+              The animation follows one input through shaping, assembly,
+              fastening, and checking before delivering the final result.
+            </video>
+          </figure>
           <div className="feature-evidence__body">
             <figure className="code-proof">
               <figcaption>
