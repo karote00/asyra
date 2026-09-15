@@ -1,5 +1,13 @@
 import type { Point3 } from './greenhouse'
 import { TriangleBuilder } from './mesh'
+import { boundPolynomialTrig } from './kinematic-trigonometry'
+import {
+  interval as sourceInterval,
+  multiply as multiplyInterval,
+  divide as divideInterval,
+  subtract as subtractInterval,
+  add as addInterval
+} from './scalar-arithmetic'
 import {
   readSourcePatches,
   type SourcePatch,
@@ -207,6 +215,16 @@ function sourceScalarCompare(a: SourceScalar, b: SourceScalar) {
   if (delta < 0n) return -1
   return delta > 0n ? 1 : 0
 }
+function sourceScalarMultiply(a: SourceScalar, b: SourceScalar): SourceScalar {
+  return {
+    significand: a.significand * b.significand,
+    exponent: a.exponent + b.exponent
+  }
+}
+const sourceScalarNegative = (value: SourceScalar): SourceScalar => ({
+  significand: -value.significand,
+  exponent: value.exponent
+})
 function sourceExactDot(a: Point3, b: Point3) {
   return a.reduce((sum, value, axis) => {
     const first = sourceScalar(value),
@@ -934,12 +952,14 @@ function buildWalkingRobotSource(
     housing(
       definition.base.chassis.size,
       definition.base.chassis.centre,
-      definition.legs.map((leg) => ({
-        mount: leg.mount,
-        direction: point(leg.side === 'left' ? -1 : 1, 0, 0),
-        section: leg.coxa.section,
-        length: leg.coxa.length
-      }))
+      (model.kind === 'solid-articulation/2' ? [] : definition.legs).map(
+        (leg) => ({
+          mount: leg.mount,
+          direction: point(leg.side === 'left' ? -1 : 1, 0, 0),
+          section: leg.coxa.section,
+          length: leg.coxa.length
+        })
+      )
     )
   )
   const railParts: WalkingRobotPart[] = []
@@ -983,7 +1003,10 @@ function buildWalkingRobotSource(
     'empty-payload-tray',
     definition.base.emptyPayloadTray.size,
     frame(definition.base.emptyPayloadTray.centre),
-    'synthetic-structural-shell'
+    'synthetic-structural-shell',
+    definition.sourceModel.kind === 'solid-articulation/2'
+      ? { id: 'payload-tray-mounting-contact', indexStart: 24, indexCount: 6 }
+      : undefined
   )
   addPart(
     base,
@@ -1428,10 +1451,20 @@ function buildWalkingRobotSource(
       let yokeInner = halfBand + gap
       if (!parentLink) yokeInner = outer + gap
       else if (parentAxial) yokeInner = Math.max(parentLink.end, s / 2) + gap
-      const yokeOuter =
+      if (model.kind === 'solid-articulation/2' && parent === base)
+        yokeInner = sourceDirected(
+          sourceScalarAdd(sourceScalar(outer), sourceScalar(gap)),
+          1
+        )
+      let yokeOuter =
         !parentLink || parentAxial
           ? yokeInner + gap
           : Math.max(parentLink.section / 2, yokeInner + gap)
+      if (model.kind === 'solid-articulation/2' && parent === base)
+        yokeOuter = sourceDirected(
+          sourceScalarAdd(sourceScalar(yokeInner), sourceScalar(gap)),
+          1
+        )
       addBearing(
         'pin',
         parent,
@@ -1469,6 +1502,57 @@ function buildWalkingRobotSource(
             yokeMin[axis] = Math.min(0, departure * (parentLink.end + gap))
             yokeMax[axis] = Math.max(0, departure * (parentLink.end + gap))
           }
+        }
+      }
+      if (model.kind === 'solid-articulation/2' && parent === base) {
+        if (
+          entry.axis !== 'z' ||
+          childLink.axis !== 0 ||
+          entry.frame.rotation.some((v, index) =>
+            index < 3 ? v !== 0 : Math.abs(v) !== 1
+          )
+        )
+          throw new Error('Unsupported external root frame')
+        const side = childLink.direction[0]
+        const chassis = definition.base.chassis
+        const face = chassis.centre[0] + (side * chassis.size[0]) / 2
+        const localFace = face - entry.frame.position[0]
+        if (
+          sourceScalarCompare(
+            sourceScalarAdd(
+              sourceScalar(localFace),
+              sourceScalar(entry.frame.position[0])
+            ),
+            sourceScalar(face)
+          ) !== 0 ||
+          side * localFace >= -outer
+        )
+          throw new Error('Unproved external root chassis face')
+        // This single closed convex plate connects the chassis face and pin
+        // within the already axially separated parent slab.
+        yokeMin[0] = Math.min(localFace, -outer)
+        yokeMax[0] = Math.max(localFace, outer)
+        for (const axis of [1, 2]) {
+          const low = sourceScalarAdd(
+            sourceScalar(entry.frame.position[axis]),
+            sourceScalar(yokeMin[axis])
+          )
+          const high = sourceScalarAdd(
+            sourceScalar(entry.frame.position[axis]),
+            sourceScalar(yokeMax[axis])
+          )
+          if (
+            sourceScalarCompare(
+              low,
+              sourceScalar(chassis.centre[axis] - chassis.size[axis] / 2)
+            ) < 0 ||
+            sourceScalarCompare(
+              high,
+              sourceScalar(chassis.centre[axis] + chassis.size[axis] / 2)
+            ) > 0 ||
+            sourceScalarCompare(low, high) >= 0
+          )
+            throw new Error('Disconnected external root chassis face')
         }
       }
       addBearing(
@@ -1695,6 +1779,199 @@ function buildWalkingRobotSource(
         undefined,
         part.geometry
       )
+  if (model.kind === 'solid-articulation/2') {
+    const zero = sourceScalar(0)
+    const absolute = (value: SourceScalar) =>
+      value.significand < 0n ? sourceScalarNegative(value) : value
+    const square = (value: SourceScalar) => sourceScalarMultiply(value, value)
+    const sum = (values: SourceScalar[]) => values.reduce(sourceScalarAdd, zero)
+    const exactPartVertices = (part: WalkingRobotPart) => {
+      if (
+        part.localFrame.rotation.some((v, index) =>
+          index < 3 ? v !== 0 : Math.abs(v) !== 1
+        )
+      )
+        throw new Error('Unsupported external root material frame')
+      return Array.from(
+        { length: part.shape.positions.length / 3 },
+        (_, index) =>
+          [0, 1, 2].map((axis) =>
+            sourceScalarAdd(
+              sourceScalar(part.shape.positions[index * 3 + axis]),
+              sourceScalar(part.localFrame.position[axis])
+            )
+          )
+      )
+    }
+    for (const entry of joints.filter(
+      (entry) => entry.parentBodyId === base.id && entry.motion === 'revolute'
+    )) {
+      const child = requiredSource(
+        bodies.find((body) => body.id === entry.childBodyId)
+      )
+      const link = requiredSource(linkGeometry.get(child.id))
+      const side = sourceScalar(link.direction[0])
+      const gap = sourceScalar(link.section * model.axialGapRatio)
+      const domain = { low: entry.domain[0] / 2, high: entry.domain[1] / 2 }
+      if (
+        domain.low * 2 !== entry.domain[0] ||
+        domain.high * 2 !== entry.domain[1]
+      )
+        throw new Error('Unsupported external root abduction domain')
+      // Existing polynomial owner bounds the entire real authored domain.
+      // The normalized similarity has C²+S²=1 exactly.
+      const sine = boundPolynomialTrig('sin', domain).bounds
+      const cosine = boundPolynomialTrig('cos', domain).bounds
+      const sm = sourceInterval(
+        Math.max(Math.abs(sine.low), Math.abs(sine.high))
+      )
+      const cm = sourceInterval(cosine.low)
+      const cm2 = multiplyInterval(cm, cm)
+      const sm2 = multiplyInterval(sm, sm)
+      const cmin = sourceScalar(
+        divideInterval(
+          subtractInterval(cm2, sm2),
+          addInterval(sourceInterval(1), sm2)
+        ).low
+      )
+      const smax = sourceScalar(
+        divideInterval(multiplyInterval(sourceInterval(2), sm), cm2).high
+      )
+      if (cosine.low <= 0 || sourceScalarCompare(cmin, zero) <= 0)
+        throw new Error('Unproved external root abduction domain')
+      const material = child.parts.map((part) => ({
+        part,
+        vertices: exactPartVertices(part)
+      }))
+      const vertices = material.flatMap(({ vertices }) => vertices)
+      const chassis = definition.base.chassis
+      const chassisFace = sourceScalarAdd(
+        sourceScalarMultiply(side, sourceScalar(chassis.centre[0])),
+        sourceScalar(chassis.size[0] / 2)
+      )
+      const inward = sourceScalarAdd(
+        sourceScalarAdd(
+          sourceScalarMultiply(side, sourceScalar(entry.frame.position[0])),
+          sourceScalarNegative(chassisFace)
+        ),
+        sourceScalarNegative(gap)
+      )
+      if (sourceScalarCompare(inward, zero) <= 0)
+        throw new Error('Insufficient external root mount clearance')
+      const inward2 = square(inward)
+      const articulation = requiredSource(
+        finalArticulations.find((a) => a.entry === entry)
+      )
+      const pinGeometry = requiredSource(
+        articulation.parts.find((p) => p.role === 'pin')
+      ).geometry
+      const pin2 = builderVertices(pinGeometry)
+        .map((p) =>
+          sourceScalarAdd(
+            square(sourceScalar(p[0])),
+            square(sourceScalar(p[1]))
+          )
+        )
+        .reduce((a, b) => (sourceScalarCompare(a, b) > 0 ? a : b))
+      // Actual emitted ring vertices can exceed their nominal radius because
+      // their trigonometric coordinates are binary64. Compare exact squared
+      // support with the actual mount allowance, never the nominal radius.
+      for (const p of vertices) {
+        const radial2 = sourceScalarAdd(square(p[0]), square(p[1]))
+        const outward = sourceScalarAdd(
+          sourceScalarMultiply(sourceScalarMultiply(side, p[0]), cmin),
+          sourceScalarNegative(sourceScalarMultiply(absolute(p[1]), smax))
+        )
+        if (
+          sourceScalarCompare(radial2, inward2) > 0 &&
+          sourceScalarCompare(outward, zero) <= 0
+        )
+          throw new Error('Unproved external root child support')
+      }
+      // Each actual closed convex child region needs a radial supporting
+      // halfspace outside the pin disk. Rotation preserves that disk exactly.
+      for (const { part, vertices } of material)
+        for (const region of part.regions) {
+          const points = part.shape.indices
+            .slice(region.indexStart, region.indexStart + region.indexCount)
+            .map((index) => vertices[index])
+          const normal = [
+            sum(points.map((p) => p[0])),
+            sum(points.map((p) => p[1]))
+          ]
+          const norm2 = sourceScalarAdd(square(normal[0]), square(normal[1]))
+          const minimum = points
+            .map((p) =>
+              sourceScalarAdd(
+                sourceScalarMultiply(p[0], normal[0]),
+                sourceScalarMultiply(p[1], normal[1])
+              )
+            )
+            .reduce((a, b) => (sourceScalarCompare(a, b) < 0 ? a : b))
+          if (
+            sourceScalarCompare(minimum, zero) <= 0 ||
+            sourceScalarCompare(
+              square(minimum),
+              sourceScalarMultiply(pin2, norm2)
+            ) <= 0
+          )
+            throw new Error('Unproved external root pin cavity')
+        }
+      const childLow = vertices
+        .map((p) => p[2])
+        .reduce((a, b) => (sourceScalarCompare(a, b) < 0 ? a : b))
+      const childHigh = vertices
+        .map((p) => p[2])
+        .reduce((a, b) => (sourceScalarCompare(a, b) > 0 ? a : b))
+      const threshold = sourceScalarNegative(sourceScalarAdd(inward, gap))
+      // Exhaustive original parent material: chassis-side separation,
+      // axial separation, or a certified pin disk. No part-name exemption.
+      for (const part of base.parts) {
+        const parent = exactPartVertices(part).map((p) =>
+          p.map((v, axis) =>
+            sourceScalarAdd(
+              v,
+              sourceScalarNegative(sourceScalar(entry.frame.position[axis]))
+            )
+          )
+        )
+        for (const region of part.regions) {
+          const points = part.shape.indices
+            .slice(region.indexStart, region.indexStart + region.indexCount)
+            .map((index) => parent[index])
+          const chassisSide = points.every(
+            (p) =>
+              sourceScalarCompare(
+                sourceScalarMultiply(side, p[0]),
+                threshold
+              ) <= 0
+          )
+          const below = points.every(
+            (p) =>
+              sourceScalarCompare(sourceScalarAdd(p[2], gap), childLow) <= 0
+          )
+          const above = points.every(
+            (p) =>
+              sourceScalarCompare(sourceScalarAdd(childHigh, gap), p[2]) <= 0
+          )
+          const pin = points.every(
+            (p) =>
+              sourceScalarCompare(
+                sourceScalarAdd(square(p[0]), square(p[1])),
+                pin2
+              ) <= 0
+          )
+          if (!chassisSide && !below && !above && !pin)
+            throw new Error(
+              'Unproved external root parent material: ' +
+                part.id +
+                ' - ' +
+                region.id
+            )
+        }
+      }
+    }
+  }
   for (const reference of toolReferences) {
     const part = parts.find((candidate) => candidate.id === reference.bodyId)
     if (!part) throw new Error('Missing canonical tool core')
