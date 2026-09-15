@@ -186,7 +186,7 @@ test('the shared mobile menu stays borderless and modal on every page', async ({
 
       const trigger = page.getByRole('button', { name: 'Open navigation' })
       await expect(trigger).toBeVisible()
-      if (route === '/' && width === 390) {
+      if (route === '/docs' && width === 390) {
         await page
           .locator('header')
           .first()
@@ -1197,15 +1197,12 @@ test('every public mobile hero keeps a compact reading hierarchy', async ({
           Number.parseFloat(getComputedStyle(element).fontSize)
         )
 
-      expect(metrics.titleFontSize).toBeLessThanOrEqual(
-        name === 'landing' ? 34 : 32
-      )
+      expect(metrics.titleFontSize).toBeLessThanOrEqual(32)
       expect(
         metrics.titleLineHeight / metrics.titleFontSize
       ).toBeGreaterThanOrEqual(0.98)
       expect(metrics.titleFontSize / bodyFontSize).toBeLessThanOrEqual(2.15)
       let maximumHeroHeight = 430
-      if (name === 'landing') maximumHeroHeight = 760
       if (name === 'asyra-design') maximumHeroHeight = 1100
       if (name === 'atlas') maximumHeroHeight = 480
       expect(metrics.height).toBeLessThanOrEqual(maximumHeroHeight)

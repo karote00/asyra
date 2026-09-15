@@ -48,16 +48,76 @@
     scroll-behavior: auto;
   }
 }
-/* Fallback frames reserve the full projection height. Focused architecture
-   snapshots use the available width instead of desktop's wide scene bounds. */
-[data-static-scene] [data-scene-viewport] {
-  --scene-scale: 0.5;
+/* The frame and its copy reflow together. Keep the animated canvas bounded on
+   wide screens; static snapshots reserve space proportional to their width. */
+[data-story-track] {
+  max-width: 1800px;
+  margin-inline: auto;
 }
-@media (max-width: 1023px) {
-  [data-static-scene] [data-scene-viewport] {
-    --scene-scale: 0.34;
+[data-story-chapter] > div:first-child {
+  min-width: 0;
+}
+[data-story-chapter] h1,
+[data-story-chapter] h2 {
+  font-size: clamp(40px, 4.25vw, 74px);
+}
+[data-story-chapter] > div:first-child > p:not(:first-child) {
+  max-width: 390px;
+}
+[data-static-scene] {
+  container-type: inline-size;
+  height: auto;
+  margin-top: 12px;
+}
+[data-static-scene] [data-scene-viewport] {
+  height: clamp(270px, 90cqw, 410px);
+  min-height: 0;
+  --scene-scale: min(0.5, calc(100cqw / 1000px));
+}
+[data-static-scene] [data-focused-snapshot] {
+  height: clamp(340px, 110cqw, 440px);
+  --scene-scale: min(0.5, calc(100cqw / 750px)) !important;
+}
+@media (min-width: 768px) {
+  .spatial-story-shell[data-motion='off'] [data-story-chapter] {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+    align-items: center;
+    gap: 24px;
+    padding: 64px 32px;
   }
-  [data-focused-snapshot] {
-    --scene-scale: 0.5 !important;
+  .spatial-story-shell[data-motion='off'] [data-static-scene] {
+    margin-top: 0;
+  }
+  .spatial-story-shell[data-motion='off'] [data-story-chapter] h1,
+  .spatial-story-shell[data-motion='off'] [data-story-chapter] h2 {
+    font-size: clamp(40px, 4.5vw, 52px);
+  }
+}
+@media (min-width: 1024px) {
+  .spatial-story-shell[data-motion='on'] [data-story-track] {
+    padding-inline: clamp(32px, 4vw, 72px) 24px;
+    grid-template-columns: minmax(0, 0.38fr) minmax(0, 0.62fr);
+  }
+  .spatial-story-shell[data-motion='on'] [data-story-track] > div:last-child {
+    container-type: inline-size;
+  }
+  .spatial-story-shell[data-motion='on'] [data-shared-scene] {
+    height: min(100%, clamp(520px, 80cqw, 900px));
+    margin-top: clamp(0px, calc((100svh - 80px - 80cqw) * 0.15), 60px);
+  }
+  .spatial-story-shell[data-motion='on']
+    [data-story-chapter]
+    > div:first-child {
+    top: clamp(112px, 17svh, 180px);
+    padding-right: 24px;
+  }
+}
+@media (max-width: 767px) {
+  [data-story-chapter] {
+    padding-block: 40px;
+  }
+  [data-story-chapter] > div:first-child > ol {
+    margin-top: 24px;
   }
 }

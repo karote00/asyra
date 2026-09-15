@@ -156,3 +156,12 @@ clock and static snapshots are unchanged by the server-rendered resource section
 Retired homepage-specific tests are replaced by current homepage composition,
 responsive, native-navigation, route-removal and no-film-request cases. Supporting
 page tests retain their original owners and visual contracts.
+
+### Responsive composition
+
+The story bounds its desktop composition to 1800px and scales headings with
+available width. Static tablet chapters place copy beside the illustration;
+phone chapters stack them with artwork-height reservations derived from the
+container width. Focused architecture snapshots retain enough height to keep
+the state plane clear of their captions. Resizing changes the layout as well as
+the illustration scale, without changing the story clock or authored poses.

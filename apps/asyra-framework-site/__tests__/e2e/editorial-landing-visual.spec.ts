@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-for (const width of [320, 390, 820, 1440, 2560]) {
+for (const width of [320, 390, 820, 1024, 1280, 1440, 2560]) {
   test(`integrated homepage remains readable at ${width}px`, async ({
     page
   }, testInfo) => {
@@ -57,4 +57,57 @@ test('the preview route is removed and home keeps canonical metadata', async ({
   expect(html).not.toContain(
     'canonical" href="https://asyra-framework.vercel.app/story'
   )
+})
+
+test('story layout reflows with its artwork instead of retaining empty space', async ({
+  page
+}) => {
+  await page.goto('/')
+  const chapter = page.locator('[data-story-chapter="0"]')
+  const copy = chapter.locator(':scope > div').first()
+  const artwork = chapter.locator('[data-static-scene]')
+  await page.setViewportSize({ width: 390, height: 1000 })
+  const mobileArt = await artwork.boundingBox()
+  if (!mobileArt) throw new Error('Mobile artwork is missing')
+  expect(mobileArt.height).toBeLessThan(360)
+  await page.setViewportSize({ width: 820, height: 1000 })
+  const tabletCopy = await copy.boundingBox()
+  const tabletArt = await artwork.boundingBox()
+  if (!tabletArt || !tabletCopy)
+    throw new Error('Tablet composition is missing')
+  expect(tabletArt.x).toBeGreaterThanOrEqual(tabletCopy.x + tabletCopy.width)
+  expect(Math.abs(tabletArt.y - tabletCopy.y)).toBeLessThan(100)
+  await page.setViewportSize({ width: 1024, height: 1000 })
+  const shared = await page.locator('[data-shared-scene]').boundingBox()
+  if (!shared) throw new Error('Shared scene is missing')
+  expect(shared.height).toBeLessThan(700)
+  await page.setViewportSize({ width: 2560, height: 1000 })
+  await expect(page.locator('.spatial-story-shell')).toHaveAttribute(
+    'data-motion',
+    'on'
+  )
+  const track = await page.locator('[data-story-track]').boundingBox()
+  if (!track) throw new Error('Story track is missing')
+  expect(track.width).toBeLessThanOrEqual(1800)
+  expect(track.x).toBeGreaterThan(300)
+})
+
+test('compact architecture snapshots keep the state plane above the caption', async ({
+  page
+}) => {
+  await page.setViewportSize({ width: 390, height: 1000 })
+  await page.goto('/')
+  for (const index of [1, 2, 3]) {
+    const scene = page.locator(
+      `[data-story-chapter="${index}"] [data-static-scene]`
+    )
+    const state = await scene
+      .locator('[data-story-layer="state"] > div')
+      .boundingBox()
+    const caption = await scene
+      .locator('[data-scene-viewport] > div:last-child')
+      .boundingBox()
+    if (!state || !caption) throw new Error('Architecture snapshot is missing')
+    expect(state.y + state.height).toBeLessThanOrEqual(caption.y - 8)
+  }
 })
