@@ -22,6 +22,8 @@ const artifacts = fileURLToPath(
 )
 const heavy =
   'src/domain/__tests__/walking-constrained-kinematics.profile.test.ts'
+const source = 'src/runtime/__tests__/nested/new-owner.source.profile.test.ts'
+const remaining = 'src/runtime/__tests__/nested/new-owner.profile.test.ts'
 
 function writeProfile(root, relative) {
   const target = path.join(root, relative)
@@ -40,7 +42,8 @@ function fixture() {
     })
   )
   writeProfile(root, heavy)
-  writeProfile(root, 'src/runtime/__tests__/nested/new-owner.profile.test.ts')
+  writeProfile(root, source)
+  writeProfile(root, remaining)
   writeProfile(root, 'src/runtime/__tests__/ignored.profile.test.tsx')
   writeProfile(root, 'src/runtime/outside.profile.test.ts')
   return root
@@ -111,8 +114,11 @@ result = {
 }
 if mode == 'incomplete':
     result['completion'] = 'incomplete'
-if mode == 'remaining-incomplete' and files != [
-        'src/domain/__tests__/walking-constrained-kinematics.profile.test.ts']:
+if mode == 'source-incomplete' and files == [
+        'src/runtime/__tests__/nested/new-owner.source.profile.test.ts']:
+    result['completion'] = 'incomplete'
+if mode == 'remaining-incomplete' and files == [
+        'src/runtime/__tests__/nested/new-owner.profile.test.ts']:
     result['completion'] = 'incomplete'
 if mode == 'wrong-selection':
     result['selection'] = {**selection, 'files': files + ['unexpected.profile.test.ts']}
@@ -163,13 +169,14 @@ print(json.dumps(result))
 test.before(() => mkdirSync(artifacts, { recursive: true }))
 test.after(() => rmSync(artifacts, { recursive: true, force: true }))
 
-test('discovers the exact profile config class and automatically assigns nested new files to remaining', (t) => {
+test('discovers the exact profile config class and automatically assigns nested source and remaining files', (t) => {
   const root = fixture()
   t.after(() => rmSync(root, { recursive: true, force: true }))
   assert.deepEqual(discover(root), {
     heavy: [heavy],
-    remaining: ['src/runtime/__tests__/nested/new-owner.profile.test.ts'],
-    all: [heavy, 'src/runtime/__tests__/nested/new-owner.profile.test.ts']
+    source: [source],
+    remaining: [remaining],
+    all: [heavy, remaining, source]
   })
   rmSync(path.join(root, heavy))
   const missing = spawnSync(
@@ -186,28 +193,22 @@ test('discovers the exact profile config class and automatically assigns nested 
   assert.match(missing.stderr, /heavy profile/i)
 })
 
-test('runs heavy then the complete remaining partition and reports full profile completion only after both exact receipts', (t) => {
+test('runs heavy then source then remaining and reports full completion only after three exact receipts', (t) => {
   const root = fixture()
   t.after(() => rmSync(root, { recursive: true, force: true }))
   const result = run(root, writeFakeSupervisor(root))
-  assert.deepEqual(result.calls, [
-    [heavy],
-    ['src/runtime/__tests__/nested/new-owner.profile.test.ts']
-  ])
+  assert.deepEqual(result.calls, [[heavy], [source], [remaining]])
   assert.equal(result.result.outcome, 'passed')
   assert.equal(result.result.completion, 'profile-suite-complete')
   assert.equal(result.result.selection.coverage, 'profiles')
-  assert.deepEqual(result.result.selection.files, [
-    heavy,
-    'src/runtime/__tests__/nested/new-owner.profile.test.ts'
-  ])
+  assert.deepEqual(result.result.selection.files, [heavy, remaining, source])
   assert.deepEqual(
     result.result.groups.map((group) => group.name),
-    ['heavy', 'remaining']
+    ['heavy', 'source', 'remaining']
   )
 })
 
-test('rejects an error, incomplete or mismatched receipt and never starts the remaining group', (t) => {
+test('rejects an error, incomplete or mismatched receipt and never starts the source group', (t) => {
   for (const mode of ['error', 'incomplete', 'wrong-selection']) {
     const root = fixture()
     t.after(() => rmSync(root, { recursive: true, force: true }))
@@ -218,20 +219,34 @@ test('rejects an error, incomplete or mismatched receipt and never starts the re
   }
 })
 
-test('fails full completion when the remaining group returns an incomplete receipt', (t) => {
-  const root = fixture()
-  t.after(() => rmSync(root, { recursive: true, force: true }))
-  const result = run(root, writeFakeSupervisor(root), 'remaining-incomplete')
-  assert.equal(result.result.outcome, 'failed')
-  assert.equal(result.result.completion, 'incomplete')
-  assert.deepEqual(result.calls, [
-    [heavy],
-    ['src/runtime/__tests__/nested/new-owner.profile.test.ts']
-  ])
-  assert.deepEqual(
-    result.result.groups.map((group) => group.completion),
-    ['filtered-profile-selection-complete', 'incomplete']
-  )
+test('fails full completion when the source or remaining group is incomplete', (t) => {
+  for (const [mode, calls, completion] of [
+    [
+      'source-incomplete',
+      [[heavy], [source]],
+      ['filtered-profile-selection-complete', 'incomplete']
+    ],
+    [
+      'remaining-incomplete',
+      [[heavy], [source], [remaining]],
+      [
+        'filtered-profile-selection-complete',
+        'filtered-profile-selection-complete',
+        'incomplete'
+      ]
+    ]
+  ]) {
+    const root = fixture()
+    t.after(() => rmSync(root, { recursive: true, force: true }))
+    const result = run(root, writeFakeSupervisor(root), mode)
+    assert.equal(result.result.outcome, 'failed')
+    assert.equal(result.result.completion, 'incomplete')
+    assert.deepEqual(result.calls, calls)
+    assert.deepEqual(
+      result.result.groups.map((group) => group.completion),
+      completion
+    )
+  }
 })
 
 test('forwards interruption to the active supervisor and waits for its cleanup', async (t) => {

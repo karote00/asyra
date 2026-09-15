@@ -14,6 +14,7 @@ HEAVY_PROFILE = (
     "src/domain/__tests__/walking-constrained-kinematics.profile.test.ts"
 )
 PROFILE_SUFFIX = ".profile.test.ts"
+SOURCE_PROFILE_SUFFIX = ".source.profile.test.ts"
 MAX_RECEIPT_ERROR_BYTES = 8000
 
 
@@ -38,12 +39,29 @@ def discover_profile_groups(app=APP):
     if HEAVY_PROFILE not in all_profiles:
         raise RuntimeError("Missing required heavy profile")
     heavy = [HEAVY_PROFILE]
-    remaining = [path for path in all_profiles if path not in heavy]
+    source = [
+        path for path in all_profiles
+        if path not in heavy and path.endswith(SOURCE_PROFILE_SUFFIX)
+    ]
+    remaining = [
+        path for path in all_profiles
+        if path not in heavy and path not in source
+    ]
+    if not source:
+        raise RuntimeError("Source construction profile group is empty")
     if not remaining:
         raise RuntimeError("Remaining profile group is empty")
-    if set(heavy) & set(remaining) or sorted(heavy + remaining) != all_profiles:
+    if (set(heavy) & set(source) or
+            set(heavy) & set(remaining) or
+            set(source) & set(remaining) or
+            sorted(heavy + source + remaining) != all_profiles):
         raise RuntimeError("Profile groups do not exactly partition discovered profiles")
-    return dict(heavy=heavy, remaining=remaining, all=all_profiles)
+    return dict(
+        heavy=heavy,
+        source=source,
+        remaining=remaining,
+        all=all_profiles,
+    )
 
 
 def parse_receipt(stdout):
@@ -156,7 +174,7 @@ def group_summary(name, files, receipt):
 def run_profile_groups(app=APP, supervisor=SUPERVISOR, environment=None):
     groups = discover_profile_groups(app)
     completed = []
-    for name in ("heavy", "remaining"):
+    for name in ("heavy", "source", "remaining"):
         files = groups[name]
         receipt = run_supervisor(app, supervisor, files, environment)
         completed.append(group_summary(name, files, receipt))

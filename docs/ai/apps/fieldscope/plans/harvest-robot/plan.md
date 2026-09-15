@@ -2654,15 +2654,19 @@ millisecond deadline; that output is labelled filtered selection evidence and is
 never reported as a complete suite. Unknown paths and raw Vitest bypass arguments
 fail before execution. The required one-worker `test:profiles` gate discovers
 the exact profile class, isolates walking-constrained-kinematics, assigns every
-other and newly added profile to the remaining group, proves the groups are
-complete and disjoint, then invokes the same supervisor sequentially for both.
+nested `*.source.profile.test.ts` file to the source group and every other
+profile to the remaining group, proves the three groups are complete and
+disjoint, then invokes the same supervisor sequentially for all three.
 Each group retains the original 20-minute deadline, worker acknowledgements,
-bounded artifacts and owned cleanup. Only two exact complete receipts publish
+bounded artifacts and owned cleanup. Only three exact complete receipts publish
 full profile completion; filtered/group artifacts are profile evidence, never
 ordinary coverage.
-The required profile cohort retains the existing nine actual-source cases and
-adds seven version-two request/nonlinear admission cases plus all ten current
-whole-source relation cases. The relation cases keep one shared source preparation
+The source group contains 56 cases: all 15 crop-model cases, all nine
+crop-partition cases, 23 site-geometry cases and nine scene-demand cases. Their
+ordinary counterparts retain two bounded site-geometry controls and six
+synthetic or hand-authored scene-demand controls. The remaining group retains the
+existing nine actual-source cases, seven version-two request/nonlinear admission
+cases and all ten current whole-source relation cases. The relation cases keep one shared source preparation
 for two stale-provenance, three preset all-pair, one request/accounting, two
 translation, one remaining-inventory and one target-partition case. Every
 assertion, fixture, geometry, product budget and per-case ceiling remains unchanged.

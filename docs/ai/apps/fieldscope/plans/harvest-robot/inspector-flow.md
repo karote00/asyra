@@ -777,17 +777,22 @@ the small two-solid boundary and subdivision-exhaustion cases, first-visited
 canonical rows, legacy admissions and direct source/compiler correctness. The existing external test supervisor owns
 both classes, finite wall deadlines, output limits, process-group cleanup and CPU
 accounting. The required profile gate discovers the exact profile class and
-partitions it into the walking-constrained-kinematics owner and every remaining
-profile. The disjoint groups run sequentially through the profile config and the
-same worker acknowledgement setup, each with the unchanged 20-minute supervisor
-deadline. A new profile automatically joins the remaining group; missing,
+partitions it into the walking-constrained-kinematics owner, every nested
+`*.source.profile.test.ts` file and every remaining profile. The three disjoint
+groups run sequentially through the profile config and the same worker
+acknowledgement setup, each with the unchanged 20-minute supervisor deadline. A
+new source profile automatically joins the source group, while any other new
+profile joins the remaining group; missing,
 duplicated or incomplete group coverage fails before full profile completion.
 Selected/group profile evidence cannot claim full ordinary coverage. The
 30-second full-site observation/inventory, 20-second relation,
 45-second observation-bootstrap and 60-second local-action-bootstrap per-case
 ceilings are engineering initial values, not product performance promises. No
 source, motion, observation or decision budget is increased. Existing numerical
-profile guards remain unchanged.
+profile guards remain unchanged. The source group contains 56 cases: all 15
+crop-model cases, all nine crop-partition cases, 23 site-geometry cases and nine
+scene-demand cases. Their ordinary counterparts retain two bounded site-geometry
+controls and six synthetic or hand-authored scene-demand controls.
 
 ## A - Feasibility domain (current M1)
 

@@ -24,21 +24,25 @@ Cross-package imports use public `@asyra/*` facades. Do not import another app's
 `test:local` and `test:ci` run ordinary tests through
 `scripts/supervise-tests.py`. `test:profiles` discovers the exact
 `src/**/__tests__/**/*.profile.test.ts` class and partitions it into the
-walking-constrained-kinematics owner and every remaining profile, then runs those
-groups sequentially through the same supervisor and serial one-worker
+walking-constrained-kinematics owner, every nested
+`*.source.profile.test.ts`, and every remaining profile, then runs those groups
+sequentially through the same supervisor and serial one-worker
 `vitest.profile.config.ts`. The partition must be complete and disjoint; a new
-profile automatically joins the remaining group. Both modes run their permanent
+source profile automatically joins the source group, while any other new profile
+joins the remaining group. Both modes run their permanent
 process tests first and acknowledge worker task updates through `vitest.setup.ts`.
 Profiles remain a required CI gate after ordinary tests. `--file`, optional
 `--title` for one file, and finite `--hard-stop-ms` remain the supervisor's
 only selection/deadline controls. Each mode rejects the other test class.
 Each group retains the default 20-minute process wall deadline, owned
-process-group cleanup and bounded output. Only two exact complete group receipts
+process-group cleanup and bounded output. Only three exact complete group receipts
 produce full profile completion; selected/group artifacts are never ordinary
 full-suite evidence. CPU is accounted, not capped; this guard does not enforce
 peak RSS.
 
-The required profile cohort contains the existing nine actual-source
+The automatically discovered source-construction group contains 56 cases: all
+15 crop-model cases, all nine crop-partition cases, 23 site-geometry cases and
+nine scene-demand cases. The remaining profile group contains the existing nine actual-source
 observation/relation cases, seven version-two request and nonlinear admission
 cases, and ten current whole-source relation cases. The version-two contract,
 motion and relation cases retain their shared actual-source fixtures; the whole
@@ -50,7 +54,9 @@ seconds for observation bootstrap, 30 seconds for full-site observation/inventor
 and 20 seconds for the selected relation. These classify bounded test workloads,
 not faster production or physical limits. Ordinary controls retain admitted
 two-instance sheet sources, subdivision exhaustion, first-visited canonical rows,
-legacy admission cases and direct source/compiler correctness.
+legacy admission cases and direct source/compiler correctness. The ordinary
+site-geometry and scene-demand counterparts contain eight controls: two bounded
+site-geometry cases and six synthetic or hand-authored scene-demand cases.
 
 ## Implemented active-definition and stowed-envelope prerequisites
 
