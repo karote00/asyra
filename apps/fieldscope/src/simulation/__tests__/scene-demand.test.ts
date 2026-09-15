@@ -23,7 +23,12 @@ import {
   buildSiteMeshes,
   type SiteMesh
 } from '../../render-app/site-projection'
-import { prepareSceneDemand } from '../scene-demand'
+import {
+  prepareSceneDemand,
+  joinSceneDemandBounds,
+  SceneDemandSourceBoundsOwner,
+  prepareSceneObservationSpace
+} from '../scene-demand'
 import * as rayQuery from '../ray-query'
 import * as cropSource from '../../domain/crop-models'
 
@@ -76,6 +81,171 @@ const emptyScene = (): PreparedScene =>
   })
 
 describe('scene demand preparation', () => {
+  it('observation inventory source owner does no work for unknown routes and reuses issued sources', () => {
+    const owner = new SceneDemandSourceBoundsOwner()
+    const farm = validateConfiguration(DEFAULT_CONFIGURATION)
+    const scene = emptyScene()
+    const demand = prepareSceneDemand(
+      farm,
+      scene,
+      synthetic({ route: { kind: 'unknown' } }),
+      owner
+    )
+    expect(demand.status).toBe('unknown')
+    expect(Object.values(owner.work).every((v) => v === 0)).toBe(true)
+    const observation = prepareSceneObservationSpace(demand, owner)
+    expect(observation.status).toBe('unknown')
+    expect(Object.values(owner.work).every((v) => v === 0)).toBe(true)
+    owner.close()
+  })
+  it('observation inventory hull streams more bounds than the JavaScript argument limit', () => {
+    const bound = { min: [-1, -2, -3] as const, max: [1, 2, 3] as const }
+    const values = Array.from({ length: 200000 }, () => bound)
+    const result = joinSceneDemandBounds([
+      ...values,
+      { min: [-4, -5, -6], max: [7, 8, 9] }
+    ])
+    expect(result).toEqual({ min: [-4, -5, -6], max: [7, 8, 9] })
+    expect(Object.isFrozen(result)).toBe(true)
+  })
+  it('observation inventory admits off-route original sources without clipping its finite world domain', () => {
+    const farm = validateConfiguration({
+      ...DEFAULT_CONFIGURATION,
+      length: 2.2
+    })
+    const shape = readSpatialShape({
+      kind: 'triangles',
+      positions: [0, 0, 0, 0.1, 0, 0, 0, 0.1, 0],
+      indices: [0, 1, 2]
+    })
+    const regions = readSourceRegions(
+      [{ id: 'sensor-source', kind: 'sheet', indexStart: 0, indexCount: 3 }],
+      3
+    )
+    const make = (
+      id: string,
+      position: readonly [number, number, number]
+    ): SiteMesh => ({
+      id,
+      layer: 'supports',
+      visible: true,
+      regions,
+      descriptor: readSpatialDescriptor({
+        kind: 'mesh',
+        position,
+        rotation: [0, 0, 0, 1],
+        shape,
+        color: 0,
+        opacity: 1,
+        wireframe: false,
+        selectable: false
+      }) as SiteMesh['descriptor']
+    })
+    const near = make('near', [2, 0.5, 0.5]),
+      far = make('far', [40, 12, 10])
+    const scene = Object.freeze({
+      ...emptyScene(),
+      meshes: Object.freeze([near, far])
+    })
+    const owner = new SceneDemandSourceBoundsOwner()
+    const demand = prepareSceneDemand(farm, scene, synthetic(), owner)
+    const routeSource = demand.freePassage.exclusions.find(
+      (v) => v.kind === 'source'
+    )
+    const before = owner.work
+    const observation = prepareSceneObservationSpace(demand, owner)
+    expect(observation.demand).toBe(demand)
+    expect(observation.sources[0]).toBe(routeSource)
+    expect(observation.work.localBounds).toBe(0)
+    expect(observation.work.descriptorFrames).toBe(0)
+    expect(observation.work.instanceFrames).toBe(0)
+    expect(observation.work.wholeWorldBounds).toBe(0)
+    expect(observation.work.regionWorldBounds).toBe(1)
+    expect(observation.work.canonicalSources).toBe(1)
+    expect(owner.work.inventoryBuilds - before.inventoryBuilds).toBe(1)
+    const repeated = prepareSceneObservationSpace(demand, owner)
+    expect(repeated.inventory).toBe(observation.inventory)
+    expect(repeated.work).toEqual({
+      ...observation.work,
+      sourceKeysEnumerated: 0,
+      regionWorldBounds: 0,
+      canonicalSources: 0,
+      envelopeCorners: 0,
+      membershipVisits: 0,
+      inventoryBuilds: 0,
+      inventoryReuses: 1
+    })
+    const changed = prepareSceneDemand(
+      farm,
+      scene,
+      synthetic({
+        clearanceMargin: { kind: 'bounded', metres: 0.01 }
+      }),
+      owner
+    )
+    const changedObservation = prepareSceneObservationSpace(changed, owner)
+    expect(changedObservation.demand).toBe(changed)
+    expect(changedObservation.inventory).toBe(observation.inventory)
+    expect(changedObservation.sources).toBe(observation.sources)
+    const freshOwner = new SceneDemandSourceBoundsOwner()
+    const fresh = prepareSceneObservationSpace(demand, freshOwner)
+    expect(fresh.domain).toEqual(observation.domain)
+    expect(fresh.sources).toEqual(observation.sources)
+    expect(observation.status).toBe('complete')
+    expect(observation.provenance).toBe('w1-canonical-obstacles/1')
+    expect(observation.sources.map((v) => v.mesh)).toEqual([near, far])
+    expect(
+      observation.sources.every(
+        (v) =>
+          v.region === regions[0] &&
+          v.transform.descriptor === v.mesh.descriptor
+      )
+    ).toBe(true)
+    expect(
+      demand.freePassage.exclusions.filter((v) => v.kind === 'source')
+    ).toEqual([observation.sources[0]])
+    expect(observation.domain?.min[1]).toBe(-farm.height)
+    expect(observation.domain?.max[0]).toBeGreaterThanOrEqual(40.1)
+    expect(observation.domain?.max[1]).toBeGreaterThanOrEqual(12.1)
+    expect(Object.isFrozen(observation.sources)).toBe(true)
+    expect(demand.work.sourcePreparation.canonicalSources).toBe(1)
+    const unknownRoute = prepareSceneDemand(
+      farm,
+      scene,
+      synthetic({ route: { kind: 'unknown' } })
+    )
+    const unknownObservation = prepareSceneObservationSpace(unknownRoute, owner)
+    expect(unknownObservation.status).toBe('unknown')
+    expect(unknownObservation.sources.length).toBe(0)
+    const unsupported = prepareSceneDemand(
+      farm,
+      {
+        ...scene,
+        meshes: [
+          near,
+          { ...far, layer: 'future-physical-layer' as SiteMesh['layer'] }
+        ]
+      },
+      synthetic()
+    )
+    const unsupportedObservation = prepareSceneObservationSpace(
+      unsupported,
+      owner
+    )
+    expect(unsupportedObservation.status).toBe('unknown')
+    expect(unsupportedObservation.domain).toBeNull()
+    const missing = prepareSceneDemand(
+      farm,
+      { ...scene, meshes: [near, { ...far, regions: [] }] },
+      synthetic()
+    )
+    const missingObservation = prepareSceneObservationSpace(missing, owner)
+    expect(missingObservation.status).toBe('unknown')
+    expect(missingObservation.domain).toBeNull()
+    owner.close()
+    freshOwner.close()
+  })
+
   it('derives two-sided target and real height evidence from the completed current scene', () => {
     const generate = vi.spyOn(cropSource, 'createCropModels')
     const farm = validateConfiguration(DEFAULT_CONFIGURATION)

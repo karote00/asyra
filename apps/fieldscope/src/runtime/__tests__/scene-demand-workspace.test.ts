@@ -1,14 +1,70 @@
 // @vitest-environment jsdom
 import { expect, it, vi } from 'vitest'
+import core from '@asyra/core'
 import { ThreeEngine, type GraphicsDriver } from '../../engine/three-engine'
 import * as projection from '../../render-app/site-projection'
 import * as sceneDemand from '../../simulation/scene-demand'
 import type { SceneDemandConfiguration } from '../../domain/scene-demand-configuration'
 import { bootstrap } from '../bootstrap'
+import { createSceneDemandWorkspace } from '../scene-demand-workspace'
+import * as sceneDemandWorkspaceModule from '../scene-demand-workspace'
+import {
+  DEFAULT_CONFIGURATION,
+  validateConfiguration
+} from '../../domain/farm-configuration'
+
+it('keeps lazy observation source work zero for the unknown route lifetime', () => {
+  const farm = validateConfiguration(DEFAULT_CONFIGURATION)
+  const scene = Object.freeze({
+    revision: 1,
+    meshes: Object.freeze([]),
+    plants: Object.freeze([]),
+    fruits: Object.freeze([])
+  })
+  const workspace = createSceneDemandWorkspace(
+    () => farm,
+    () => scene
+  )
+  try {
+    const demand = workspace.get()
+    for (let index = 0; index < 100; index++)
+      expect(workspace.get()).toBe(demand)
+    const observation = workspace.prepareObservationSpace()
+    expect(observation.status).toBe('unknown')
+    expect(workspace.prepareObservationSpace()).toBe(observation)
+    expect(
+      Object.values(workspace.getSourceWork()).every((value) => value === 0)
+    ).toBe(true)
+    expect(workspace.isCurrentObservationSpace(observation)).toBe(true)
+    workspace.close()
+    expect(workspace.isCurrentObservationSpace(observation)).toBe(false)
+    expect(() => workspace.prepareObservationSpace()).toThrow()
+  } finally {
+    workspace.close()
+    workspace.unregister()
+    core.unregisterFeature('scene-demand.configuration.change')
+  }
+})
 
 it('owns versioned scene demand history, invalidation, stable reads and disposal', async () => {
   const builds = vi.spyOn(projection, 'buildSiteMeshes')
   const preparations = vi.spyOn(sceneDemand, 'prepareSceneDemand')
+  const workspaces = vi.spyOn(
+    sceneDemandWorkspaceModule,
+    'createSceneDemandWorkspace'
+  )
+  const sources = vi.spyOn(
+    sceneDemand.SceneDemandSourceBoundsOwner.prototype,
+    'source'
+  )
+  const wholeBounds = vi.spyOn(
+    sceneDemand.SceneDemandSourceBoundsOwner.prototype,
+    'wholeWorldBounds'
+  )
+  const inventories = vi.spyOn(
+    sceneDemand.SceneDemandSourceBoundsOwner.prototype,
+    'prepareInventory'
+  )
   vi.stubGlobal(
     'ResizeObserver',
     class {
@@ -51,6 +107,15 @@ it('owns versioned scene demand history, invalidation, stable reads and disposal
     for (let index = 0; index < 100; index++)
       expect(runtime.getSceneDemand()).toBe(initial)
     expect(preparations).toHaveBeenCalledTimes(1)
+    expect(sources).not.toHaveBeenCalled()
+    expect(wholeBounds).not.toHaveBeenCalled()
+    expect(inventories).not.toHaveBeenCalled()
+    const sourceOwner = preparations.mock.calls[0][3]
+    expect(sourceOwner).toBeInstanceOf(sceneDemand.SceneDemandSourceBoundsOwner)
+    if (!sourceOwner) throw new Error('Missing shared source preparation owner')
+    expect(Object.values(sourceOwner.work).every((value) => value === 0)).toBe(
+      true
+    )
 
     let draft: SceneDemandConfiguration = {
       ...initialConfiguration,
@@ -91,6 +156,8 @@ it('owns versioned scene demand history, invalidation, stable reads and disposal
       const beforeScene = builds.mock.calls.length
       await runtime.setSceneDemandConfiguration(draft)
       expect(preparations).toHaveBeenCalledTimes(beforeDemand + 1)
+      expect(preparations.mock.calls.at(-1)?.[3]).toBe(sourceOwner)
+      expect(inventories).not.toHaveBeenCalled()
       expect(builds).toHaveBeenCalledTimes(beforeScene)
     }
     expect(first).toHaveBeenCalledTimes(4)
@@ -159,6 +226,42 @@ it('owns versioned scene demand history, invalidation, stable reads and disposal
       dockX: runtime.getRobot().settings.dockX + 0.1
     })
     expect(preparations).toHaveBeenCalledTimes(before)
+    const workspace = workspaces.mock.results[0].value
+    if (!workspace) throw new Error('Missing production scene demand workspace')
+    await runtime.setConfiguration({
+      ...runtime.getConfiguration(),
+      length: 2.2
+    })
+    expect(inventories).not.toHaveBeenCalled()
+    const observation = workspace.prepareObservationSpace()
+    expect(observation.status).toBe('complete')
+    expect(observation.work.inventoryBuilds).toBe(1)
+    expect(observation.demand).toBe(runtime.getSceneDemand())
+    const preparedWork = workspace.getSourceWork()
+    expect(workspace.prepareObservationSpace()).toBe(observation)
+    expect(workspace.getSourceWork()).toEqual(preparedWork)
+    await runtime.setSceneDemandConfiguration({
+      ...runtime.getSceneDemandConfiguration(),
+      clearanceMargin: { kind: 'bounded', metres: 0.04 }
+    })
+    expect(workspace.isCurrentObservationSpace(observation)).toBe(false)
+    const routeRevision = workspace.prepareObservationSpace()
+    expect(routeRevision.inventory).toBe(observation.inventory)
+    expect(routeRevision.sources).toBe(observation.sources)
+    expect(routeRevision.work.inventoryBuilds).toBe(0)
+    expect(routeRevision.work.regionWorldBounds).toBe(0)
+    expect(routeRevision.work.inventoryReuses).toBe(1)
+    const inventoryBuilds = workspace.getSourceWork().inventoryBuilds
+    await runtime.setConfiguration({
+      ...runtime.getConfiguration(),
+      length: 2.3
+    })
+    expect(workspace.isCurrentObservationSpace(routeRevision)).toBe(false)
+    expect(workspace.getSourceWork().inventoryBuilds).toBe(inventoryBuilds)
+    const successor = workspace.prepareObservationSpace()
+    expect(successor.inventory).not.toBe(observation.inventory)
+    expect(successor.work.inventoryBuilds).toBe(1)
+    expect(workspace.isCurrentObservationSpace(successor)).toBe(true)
     stopFirst()
     stopSecond()
   } finally {
