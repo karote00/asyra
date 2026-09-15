@@ -169,6 +169,7 @@ test('CI bounds workspace test concurrency without dropping test owners', () => 
   const scripts = readJSON('package.json').scripts
   const fieldscopeScripts = readJSON('apps/fieldscope/package.json').scripts
   const fieldscopeVitest = readText('apps/fieldscope/vitest.config.ts')
+  const fieldscopeVitestSetup = readText('apps/fieldscope/vitest.setup.ts')
   const profileVitest = readText('apps/fieldscope/vitest.profile.config.ts')
 
   assert.match(workflow, /^\s+run: yarn test:ci --concurrency=2$/m)
@@ -190,6 +191,14 @@ test('CI bounds workspace test concurrency without dropping test owners', () => 
     fieldscopeVitest,
     /exclude: \['src\/\*\*\/__tests__\/\*\*\/\*\.profile\.test\.ts'\]/
   )
+  assert.match(
+    fieldscopeVitest,
+    /setupFiles: \[fileURLToPath\(new URL\('\.\/vitest\.setup\.ts', import\.meta\.url\)\)\]/
+  )
+  assert.match(fieldscopeVitest, /maxWorkers: 2/)
+  assert.doesNotMatch(fieldscopeVitest, /dangerouslyIgnoreUnhandledErrors/)
+  assert.match(fieldscopeVitestSetup, /beforeEach\(async \(context\) =>/)
+  assert.match(fieldscopeVitestSetup, /await context\.annotate\(/)
   assert.match(
     profileVitest,
     /include: \['src\/\*\*\/__tests__\/\*\*\/\*\.profile\.test\.ts'\]/
