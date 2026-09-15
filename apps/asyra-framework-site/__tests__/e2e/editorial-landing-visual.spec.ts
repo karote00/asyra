@@ -194,3 +194,30 @@ for (const width of [320, 394, 576]) {
     })
   })
 }
+
+for (const width of [394, 820, 1440, 2560]) {
+  test(`homepage resource content follows the story gutter at ${width}px`, async ({
+    page
+  }, testInfo) => {
+    await page.setViewportSize({ width, height: 1000 })
+    await page.goto('/')
+    const story = await page
+      .locator('[data-story-chapter="0"] > div')
+      .first()
+      .boundingBox()
+    if (!story) throw new Error('Story copy is missing')
+    for (const id of ['built-with-asyra', 'start-building']) {
+      const section = page.locator(`#${id}`)
+      const content = await section.locator('h2').boundingBox()
+      if (!content) throw new Error('Resource content is missing')
+      expect.soft(Math.abs(content.x - story.x)).toBeLessThanOrEqual(1)
+      await section.scrollIntoViewIfNeeded()
+      for (const img of await section.locator('img').all()) {
+        await img.evaluate((element: HTMLImageElement) => element.decode())
+      }
+      await section.screenshot({
+        path: testInfo.outputPath(`${id}-${width}.png`)
+      })
+    }
+  })
+}
