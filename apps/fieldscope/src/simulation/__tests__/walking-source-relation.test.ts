@@ -21,8 +21,444 @@ import { readSpatialDescriptor } from '../../engine/spatial-contract'
 import { prepareQueryExactForwardFrame } from '../ray-query'
 import {
   WalkingSourceRelationEvaluator,
+  WalkingSelectedChainRelationOwner,
   prepareWalkingSourceRelations
 } from '../walking-source-relation'
+import { WalkingConstrainedCycleOwner } from '../../domain/walking-constrained-kinematics'
+import {
+  cycleFixture,
+  exact,
+  fraction,
+  over
+} from '../../domain/__tests__/walking-constrained-kinematics-test-fixtures'
+
+describe('selected-chain source relations', () => {
+  it('requires both original named patches for a complete boundary locus', () => {
+    const evaluator = new WalkingSourceRelationEvaluator({
+      maxRegionPairs: 100,
+      maxExactPredicates: 100000,
+      maxBits: 24000
+    })
+    const input = material()
+    const prepared = evaluator.prepare(input.shape, input.region)
+    const first = { region: prepared, frames: Object.freeze([frame(0)]) }
+    const second = { region: prepared, frames: Object.freeze([frame(1)]) }
+    const relation = evaluator.relate(first, second, 0)
+    expect(relation.kind).toBe('boundary')
+    const patch = Object.freeze({
+      id: 'complete-boundary-source',
+      region: input.region,
+      ranges: Object.freeze([
+        Object.freeze({
+          indexStart: input.region.indexStart,
+          indexCount: input.region.indexCount
+        })
+      ])
+    })
+    const firstPart = Object.freeze({
+      shape: input.shape,
+      patches: Object.freeze([patch])
+    })
+    const secondPart = Object.freeze({
+      shape: input.shape,
+      patches: Object.freeze([patch])
+    })
+    const firstReferences = [{ part: firstPart, patch }]
+    const secondReferences = [{ part: secondPart, patch }]
+    const prove = (left = firstReferences, right = secondReferences) =>
+      WalkingSelectedChainRelationOwner.proveNamedBoundaryLocus(
+        evaluator,
+        first,
+        second,
+        relation,
+        firstPart,
+        secondPart,
+        left,
+        right
+      )
+    expect(prove()).toBeDefined()
+    expect(prove([], secondReferences)).toBeUndefined()
+    expect(prove(firstReferences, [])).toBeUndefined()
+    expect(
+      prove([{ part: firstPart, patch: Object.freeze({ ...patch }) }])
+    ).toBeUndefined()
+    expect(
+      prove(firstReferences, [
+        { part: secondPart, patch: Object.freeze({ ...patch }) }
+      ])
+    ).toBeUndefined()
+    expect(
+      prove([{ part: Object.freeze({ ...firstPart }), patch }])
+    ).toBeUndefined()
+  })
+  it('retains unknown coverage after real subdivision exhaustion', () => {
+    const { source, raw } = cycleFixture({
+      sourceProfile: 'solid-articulation/2'
+    })
+    const owner = new WalkingConstrainedCycleOwner()
+    const cycle = owner.prepare(source, raw)
+    const chain = source.rig.legChains.find(
+      (entry) => entry.id === 'right-front'
+    )
+    if (!chain) throw new Error('Missing selected chain')
+    const rootJoint = source.rig.joints.find(
+      (entry) => entry.id === chain.jointIds[0]
+    )
+    if (!rootJoint) throw new Error('Missing selected root')
+    const motion = owner.prepareSelectedChainMotion(cycle, {
+      format: 'walking-selected-chain-root-motion/1',
+      cycle,
+      phase: 0,
+      at: fraction(1n, 2n),
+      chainId: chain.id,
+      targetAbduction: exact(rootJoint.domain[1])
+    })
+    const result = new WalkingSelectedChainRelationOwner().prepare(
+      { owner, cycle },
+      {
+        format: 'walking-selected-chain-source-relation-request/1',
+        motion,
+        budget: {
+          maxSubdivisions: 1,
+          maxRegionPairs: 2000000,
+          maxExactPredicates: 5000000,
+          maxBits: 24000
+        }
+      }
+    )
+    console.info(
+      'selected-chain subdivision',
+      JSON.stringify({
+        status: result.status,
+        coverage: result.coverage,
+        subdivisions: result.work.subdivisions,
+        nodes: result.work.selectedBoundPreparations,
+        predicates: result.work.evaluator.exactPredicates,
+        reasons: result.reasons
+      })
+    )
+    expect(result.work.subdivisions).toBe(1)
+    expect(result.work.selectedBoundPreparations).toBeGreaterThan(1)
+    expect(result.work.evaluator.exactPredicates).toBeLessThan(5000000)
+    expect(
+      result.reasons.some((reason) =>
+        reason.endsWith('interval-subdivision-exhausted')
+      )
+    ).toBe(true)
+    expect(result.status).toBe('unknown')
+    expect(result.coverage.unknown + result.coverage.unvisited).toBeGreaterThan(
+      0
+    )
+    expect(
+      result.coverage.strictBounds +
+        result.coverage.exactSeparated +
+        result.coverage.declaredBoundary +
+        result.coverage.blocked +
+        result.coverage.unknown +
+        result.coverage.unvisited
+    ).toBe(result.coverage.required)
+  })
+  it('extends admitted fixed frames with exact full-compiler equivalence', () => {
+    const scalar = (numerator: bigint, denominator = 1n) => ({
+      numerator,
+      denominator
+    })
+    const fixed = {
+      origin: [scalar(1n, 3n), scalar(0n), scalar(0n)] as const,
+      matrix: [
+        [scalar(1n), scalar(0n), scalar(0n)],
+        [scalar(0n), scalar(1n), scalar(0n)],
+        [scalar(0n), scalar(0n), scalar(1n)]
+      ] as const
+    }
+    const limits = {
+      maxRegionPairs: 100,
+      maxExactPredicates: 100000,
+      maxBits: 24000
+    }
+    const evaluator = new WalkingSourceRelationEvaluator(limits)
+    const template = evaluator.prepareRationalFrameTemplate(
+      [fixed],
+      limits.maxBits
+    )
+    const input = material(),
+      prepared = evaluator.prepare(input.shape, input.region)
+    for (const numerator of [4n, 8n]) {
+      const moving = {
+        ...fixed,
+        origin: [scalar(numerator, 5n), scalar(0n), scalar(0n)] as const
+      }
+      const before = evaluator.work.nodeScalarVisits
+      const extended = evaluator.extendRationalFrameTemplate(
+        template,
+        [moving],
+        [0]
+      )
+      expect(evaluator.work.nodeScalarVisits - before).toBe(12)
+      const reference = evaluator.prepareRationalNode(
+        [fixed, moving],
+        limits.maxBits
+      )
+      expect(extended.scale).toEqual(reference.scale)
+      expect(extended.frames).toEqual(reference.frames)
+      const relation = (
+        node: ReturnType<WalkingSourceRelationEvaluator['prepareRationalNode']>
+      ) =>
+        evaluator.relateRational(
+          evaluator.rationalPlacement(prepared, node, 0),
+          evaluator.rationalPlacement(prepared, node, 1),
+          node,
+          0
+        )
+      expect(relation(extended)).toEqual(relation(reference))
+    }
+    expect(evaluator.work.fixedFrameRescales).toBe(2)
+    expect(() =>
+      new WalkingSourceRelationEvaluator(limits).extendRationalFrameTemplate(
+        template,
+        [fixed],
+        [0]
+      )
+    ).toThrow()
+    evaluator.retireSourceQueryWork()
+    expect(() =>
+      evaluator.extendRationalFrameTemplate(template, [fixed], [0])
+    ).toThrow()
+  })
+  it('reissues certified material into the current budget and rejects foreign or incomplete evidence', () => {
+    const input = material()
+    const limits = {
+      maxRegionPairs: 100,
+      maxExactPredicates: 100000,
+      maxBits: 24000
+    }
+    const first = new WalkingSourceRelationEvaluator(limits)
+    const product = first.prepare(input.shape, input.region)
+    expect(product.certified).toBe(true)
+    const second = new WalkingSourceRelationEvaluator(limits)
+    const rebound = second.reuseCertifiedSource(
+      first,
+      product,
+      input.shape,
+      input.region
+    )
+    expect(second.work.regionPreparations).toBe(0)
+    expect(second.work.sourceCertificationReuses).toBe(1)
+    expect(second.work.sourceScalarRebindings).toBe(product.points.length * 3)
+    expect(
+      second.reuseCertifiedSource(first, product, input.shape, input.region)
+    ).toBe(rebound)
+    expect(second.work.sourceCertificationReuses).toBe(1)
+    expect(() =>
+      second.reuseCertifiedSource(
+        new WalkingSourceRelationEvaluator(limits),
+        product,
+        input.shape,
+        input.region
+      )
+    ).toThrow()
+    const shell = material('open-shell'),
+      incomplete = first.prepare(shell.shape, shell.region)
+    expect(() =>
+      second.reuseCertifiedSource(first, incomplete, shell.shape, shell.region)
+    ).toThrow()
+    const exhausted = new WalkingSourceRelationEvaluator({
+      ...limits,
+      maxExactPredicates: 1
+    })
+    expect(() =>
+      exhausted.reuseCertifiedSource(first, product, input.shape, input.region)
+    ).toThrow()
+    expect(exhausted.work.sourceCertificationReuses).toBe(0)
+  })
+  it('maps actual convex volume overlap to blocked and never admits an unproved boundary', () => {
+    const evaluator = new WalkingSourceRelationEvaluator({
+      maxRegionPairs: 100,
+      maxExactPredicates: 100000,
+      maxBits: 24000
+    })
+    const input = material(),
+      region = evaluator.prepare(input.shape, input.region)
+    const scalar = (numerator: bigint) => ({ numerator, denominator: 1n })
+    const identity = {
+      origin: [scalar(0n), scalar(0n), scalar(0n)] as const,
+      matrix: [
+        [scalar(1n), scalar(0n), scalar(0n)],
+        [scalar(0n), scalar(1n), scalar(0n)],
+        [scalar(0n), scalar(0n), scalar(1n)]
+      ] as const
+    }
+    const node = evaluator.prepareRationalNode(
+      [identity, { ...identity, origin: [scalar(1n), scalar(0n), scalar(0n)] }],
+      24000
+    )
+    const first = evaluator.rationalPlacement(region, node, 0)
+    const overlap = WalkingSelectedChainRelationOwner.classifyLeaf(
+      evaluator,
+      first,
+      first,
+      node
+    )
+    expect(overlap.relation.kind).toBe('volume-overlap')
+    expect(overlap.kind).toBe('blocked')
+    const boundary = WalkingSelectedChainRelationOwner.classifyLeaf(
+      evaluator,
+      first,
+      evaluator.rationalPlacement(region, node, 1),
+      node
+    )
+    expect(boundary.relation.kind).toBe('boundary')
+    expect(boundary.kind).toBe('pending')
+  })
+  it('proves the actual root half-abduction with exhaustive local work', () => {
+    const { source, raw } = cycleFixture({
+      sourceProfile: 'solid-articulation/2'
+    })
+    const owner = new WalkingConstrainedCycleOwner(),
+      cycle = owner.prepare(source, raw)
+    const motion = owner.prepareSelectedChainMotion(cycle, {
+      format: 'walking-selected-chain-root-motion/1',
+      cycle,
+      phase: 0,
+      at: fraction(1n, 2n),
+      chainId: 'right-front',
+      targetAbduction: over(cycle.recipe.alpha, exact(2))
+    })
+    const relations = new WalkingSelectedChainRelationOwner()
+    const current = { owner, cycle }
+    const result = relations.prepare(current, {
+      format: 'walking-selected-chain-source-relation-request/1',
+      motion,
+      budget: {
+        maxSubdivisions: 30,
+        maxRegionPairs: 2000000,
+        maxExactPredicates: 5000000,
+        maxBits: 24000
+      }
+    })
+    const required =
+      motion.parts.reduce((n, p) => n + p.part.regions.length, 0) *
+      motion.fixed.parts.reduce((n, p) => n + p.part.regions.length, 0)
+    expect(result.coverage.required).toBe(required)
+    expect(
+      result.coverage.strictBounds +
+        result.coverage.exactSeparated +
+        result.coverage.declaredBoundary +
+        result.coverage.blocked +
+        result.coverage.unknown +
+        result.coverage.unvisited
+    ).toBe(required)
+    expect(result.work.rootPartOverlaps).toBeGreaterThan(0)
+    expect(result.work.fixedFixedPairs).toBe(0)
+    expect(result.work.movingMovingPairs).toBe(0)
+    expect(result.work.externalPairs).toBe(0)
+    expect(result.work.terrainPairs).toBe(0)
+    expect(result.work.exactLeafPairs).toBeLessThan(required)
+    expect(
+      result.status,
+      JSON.stringify({ reasons: result.reasons, work: result.work })
+    ).toBe('clear')
+    expect(
+      result.coverage.blocked +
+        result.coverage.unknown +
+        result.coverage.unvisited
+    ).toBe(0)
+    console.info(
+      'selected-chain work',
+      JSON.stringify({
+        required,
+        strictBounds: result.coverage.strictBounds,
+        exactSeparated: result.coverage.exactSeparated,
+        declaredBoundary: result.coverage.declaredBoundary,
+        exactLeafPairs: result.work.exactLeafPairs,
+        rootPartOverlaps: result.work.rootPartOverlaps,
+        nodes: result.work.selectedBoundPreparations,
+        selectedBodyVisits: result.work.selectedBodyVisits,
+        fixedFramePreparations: result.work.fixedFramePreparations,
+        fixedFrameRescales: result.work.evaluator.fixedFrameRescales,
+        sourceCertifications: result.work.evaluator.regionPreparations,
+        predicates: result.work.evaluator.exactPredicates
+      })
+    )
+    const work = relations.work
+    expect(relations.read(current, motion)).toBe(result)
+    expect(relations.work).toEqual(work)
+    expect(relations.prepare(current, result.request)).toBe(result)
+    expect(relations.work).toEqual(work)
+    const nextMotion = owner.prepareSelectedChainMotion(cycle, {
+      ...motion.recipe,
+      targetAbduction: {
+        numerator: cycle.recipe.alpha.numerator * 3n,
+        denominator: cycle.recipe.alpha.denominator * 4n
+      }
+    })
+    const reused = relations.prepare(current, {
+      ...result.request,
+      motion: nextMotion
+    })
+    const fresh = new WalkingSelectedChainRelationOwner().prepare(current, {
+      ...result.request,
+      motion: nextMotion
+    })
+    expect(reused.status).toBe('clear')
+    expect(reused.coverage).toEqual(fresh.coverage)
+    expect(reused.work.evaluator.regionPreparations).toBe(0)
+    expect(reused.work.evaluator.sourceCertificationReuses).toBeGreaterThan(0)
+    expect(reused.work.evaluator.sourceScalarRebindings).toBeGreaterThan(0)
+    expect(reused.work.sourceLocalBoundsVertices).toBe(0)
+    expect(reused.work.sourceRegionIndexReads).toBe(0)
+    expect(
+      result.covers.reduce((n, cover) => n + cover.cardinality, 0) +
+        result.pairs.length
+    ).toBe(required)
+    expect(
+      result.pairs.every((pair) =>
+        pair.proofs.every((proof) =>
+          ['exactSeparated', 'declaredBoundary'].includes(proof.kind)
+        )
+      )
+    ).toBe(true)
+    const exhausted = relations.prepare(current, {
+      ...result.request,
+      budget: { ...result.request.budget, maxExactPredicates: 1 }
+    })
+    expect(exhausted.status).toBe('unknown')
+    expect(exhausted.coverage.unvisited).toBe(required)
+    expect(
+      exhausted.coverage.strictBounds +
+        exhausted.coverage.exactSeparated +
+        exhausted.coverage.declaredBoundary
+    ).toBe(0)
+    expect(
+      relations.read(
+        { owner: new WalkingConstrainedCycleOwner(), cycle },
+        motion
+      )
+    ).toBeUndefined()
+    const replacement = cycleFixture({ sourceProfile: 'solid-articulation/2' })
+    const replacementCycle = owner.prepare(replacement.source, replacement.raw)
+    expect(relations.read(current, motion)).toBeUndefined()
+    const replacementMotion = owner.prepareSelectedChainMotion(
+      replacementCycle,
+      {
+        ...motion.recipe,
+        cycle: replacementCycle,
+        targetAbduction: over(replacementCycle.recipe.alpha, exact(2))
+      }
+    )
+    const replaced = relations.prepare(
+      { owner, cycle: replacementCycle },
+      { ...result.request, motion: replacementMotion }
+    )
+    expect(replaced.status).toBe('clear')
+    expect(replaced.work.evaluator.sourceCertificationReuses).toBe(0)
+    expect(replaced.work.evaluator.regionPreparations).toBe(
+      result.work.evaluator.regionPreparations
+    )
+    owner.dispose()
+    expect(relations.read(current, motion)).toBeUndefined()
+  })
+})
 
 function material(kind: 'closed-solid' | 'open-shell' = 'closed-solid') {
   const builder = new TriangleBuilder()

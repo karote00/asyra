@@ -348,6 +348,93 @@ it('prepares one immutable canonical scene handoff with distinct installed fruit
   }
 })
 
+it('maps admitted crop source anatomy to exact scene mesh regions and deeply freezes it', () => {
+  const owner = new SiteGeometry()
+  const config = { ...DEFAULT_CONFIGURATION, length: 2.2 }
+  const models = owner.cropModels(config)
+  const meshes = buildSiteMeshes(config, owner)
+  const scene = owner.prepareScene(config, meshes)
+  for (const mesh of scene.meshes.filter(
+    ({ sourceAnatomy }) => sourceAnatomy
+  )) {
+    const part = models
+      .flatMap((model) => model.parts)
+      .find((candidate) => candidate.shape === mesh.descriptor.shape)
+    if (!part) throw new Error('Missing projected crop source')
+    expect(mesh.sourceAnatomy).toBe(part.sourceAnatomy)
+    if (!mesh.sourceAnatomy) throw new Error('Missing mapped source anatomy')
+    expect(Object.isFrozen(mesh.sourceAnatomy)).toBe(true)
+    expect(Object.isFrozen(mesh.sourceAnatomy.patches)).toBe(true)
+    for (const patch of mesh.sourceAnatomy.patches) {
+      expect(mesh.regions).toContain(patch.source.region)
+      expect(Object.isFrozen(patch)).toBe(true)
+      expect(Object.isFrozen(patch.source)).toBe(true)
+      expect(Object.isFrozen(patch.source.ranges)).toBe(true)
+      expect(patch.source.ranges.every(Object.isFrozen)).toBe(true)
+    }
+  }
+})
+
+it.each(['foreign-region', 'duplicate-id', 'forged-range'] as const)(
+  'rejects %s crop source anatomy instead of admitting partial metadata',
+  (failure) => {
+    const generated = crops.createCropModels({ netTop: 3, netBottom: 0.45 })
+    const model = generated[0]
+    const part = model.parts.find(({ sourceAnatomy }) => sourceAnatomy)
+    if (!part?.sourceAnatomy) throw new Error('Missing anatomy fixture')
+    const patches = part.sourceAnatomy.patches.map((patch) => ({
+      ...patch,
+      source: {
+        ...patch.source,
+        ranges: patch.source.ranges.map((range) => ({ ...range }))
+      }
+    }))
+    if (failure === 'foreign-region')
+      patches[0].source.region = { ...patches[0].source.region }
+    if (failure === 'duplicate-id') patches[1].id = patches[0].id
+    if (failure === 'forged-range') patches[0].source.ranges[0].indexCount += 3
+    const replacement = generated.map((candidate, index) =>
+      index
+        ? candidate
+        : {
+            ...candidate,
+            parts: candidate.parts.map((candidatePart) =>
+              candidatePart === part
+                ? {
+                    ...candidatePart,
+                    sourceAnatomy: {
+                      format: 'crop-source-anatomy/1' as const,
+                      patches
+                    }
+                  }
+                : candidatePart
+            )
+          }
+    )
+    vi.spyOn(crops, 'createCropModels').mockReturnValue(replacement)
+    try {
+      expect(() =>
+        new SiteGeometry().cropModels({ netTop: 3, netBottom: 0.45 })
+      ).toThrow('Invalid crop source anatomy')
+    } finally {
+      vi.restoreAllMocks()
+    }
+  }
+)
+
+it('keeps a legacy scene mesh without source anatomy viewable and unclassified', () => {
+  const owner = new SiteGeometry()
+  const config = { ...DEFAULT_CONFIGURATION, length: 2.2 }
+  const meshes = buildSiteMeshes(config, owner).map(
+    ({ sourceAnatomy, distantSourceAnatomy, ...mesh }) =>
+      sourceAnatomy || distantSourceAnatomy ? mesh : mesh
+  )
+  const scene = owner.prepareScene(config, meshes)
+  expect(scene.meshes.every((mesh) => mesh.sourceAnatomy === undefined)).toBe(
+    true
+  )
+})
+
 it('prepares an empty planted population without manufacturing cultivar geometry', () => {
   const generation = vi.spyOn(crops, 'createCropModels')
   try {

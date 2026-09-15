@@ -1,11 +1,62 @@
 # Harvest robot and crate logistics
 
 Status: IN PROGRESS - W3A WALKING RUNTIME COMPOSITION IMPLEMENTED
+
+Walking observation production composition is implemented in the bounded
+15-file adapter slice. Bootstrap now constructs the walking workspace, accepts
+explicit synthetic base camera/optics/static plant state/dynamic scenarios,
+observes bounded action volumes and retires stale or disposed evidence.
+Farm-only canonical geometry and world-frame rays share the existing owners;
+the action optical kernel and W3a spatial index remain single owners.
+Production tests cover complete-empty, actual authored leaf/anatomy hits with
+the leaf bounds outside the action box, persistent moving-to-stationary tracks,
+scenario/demand/farm/source invalidation and zero repeated static builds.
+Focused validation and independent bounded review are the closure gates.
+Observation monitors, controller, UI and action/motion authority remain pending.
+
+Selected-chain local motion slice: the canonical interval owner now admits one
+current swing-chain root abduction from its exact cycle angle to a target
+inside the authored domain. The source/2 phase-zero midpoint right-front
+alpha-to-alpha/2 regression passes with one fixed point preparation, four
+selected body visits per bound and no other body visits. Exact point identity,
+outward endpoint enclosure, stale reads and invalid recipes are formal gates.
+The local selected-chain versus fixed-material relation normal case is clear:
+32,340 required original-region pairs comprise 32,276 strict group exclusions
+and 64 interval-separated pairs. One root part group overlaps; four pairs
+reach the exact kernel, using eight source certifications and 229,183
+predicates. One node visits four selected bodies, prepares one fixed frame
+template and rescales one used fixed frame. Formal negative/currentness/reuse,
+type, build and naming gates pass; independent bounded review remains pending.
+Repeated source-region index reads fell from 480 to zero on a changed target.
+Required negative cases now include a complete two-sided convex boundary locus
+with missing-side, foreign-patch and foreign-part rejection. A separate actual
+source/2 authored-root-domain endpoint case exhausts one subdivision after
+three nodes and 429,002 predicates: 15 pairs remain unknown, none are blocked,
+and all 32,340 required pairs remain accounted for. This is subdivision
+exhaustion, not predicate exhaustion; the normal alpha-to-alpha/2 case is
+unchanged.
+Neither this
+interval product nor the local relation establishes walking or action
+admission. Observation monitors and controller integration remain pending.
 Started: 2026-09-12 (Asia/Taipei)
 Base: origin/main at `4144a25d7`
 Current contract worktree: `.worktrees/fieldscope-constrained-kinematics`
 
-Current bounded slice: W3a adds versioned Core runtime selection, a
+Current bounded observation slice: thirteen owner/test/contract files extend the
+existing W1 transit tree, add a finite synthetic dynamic source, restrict the
+existing canonical ray owner and extend TargetObservations. The action-local
+result separates actual visible source identities from complete-empty/partial/
+unknown coverage over the entire camera-to-action volume. No result is motion
+permission or physical calibration. Runtime/W6 actuation remains outside this
+slice. Required evidence includes real authored leaf identities, foreground
+occlusion outside action bounds, hidden/stopped person identities, dyadic
+complete-empty, optics/domain/currentness/budget negatives, one W1 tree and
+bounded local ray work. QueryGeometry admits exact mesh membership once per
+source and exposes placement/check work without per-action inventory scans.
+Completion requires focused owner/direct compatibility
+tests, type/lint/naming/build/format checks and independent review.
+
+Prior W3a slice adds versioned Core runtime selection, a
 `walking-operating-report/1`, private W1 route-local transit index, selected-only
 walking projection and bootstrap lifecycle/history composition. Normal travel
 uses translated complete stowed bounds without replaying W2 vertices/FK. Bounds
@@ -207,6 +258,19 @@ They do not reopen or reinterpret legacy saved definitions.
    buffers remain exact. Missing boundary or numeric evidence remains unknown.
    This synthetic source prerequisite does not complete W5, grant contact permission,
    or prove retention, physical damage, clearance or harvesting.
+   **Implemented - S1 canonical plant anatomy producer:** crop source parts expose
+   optional transient `crop-source-anatomy/1` metadata for exact authored
+   `leaf-blade`, `leaf-vein-ribbon` and `leaf-hair` triangle spans only. Near and
+   distant blades/ribbons follow their existing emissions; cucumber hairs exist
+   only on the authored near source. Site projection explicitly carries the record,
+   and SiteGeometry re-admits each patch against the exact admitted mesh region,
+   deeply freezes it and rejects foreign, duplicate or range-forged input. Legacy
+   absent records remain viewable and unclassified. Existing protected crop-source
+   patch roles take priority, and no part/id/layer/material/color inference or
+   contact, movement, terrain, damage or runtime-action claim is introduced.
+   Existing source geometry, builder order, serialized source graph and digest
+   oracles remain exact; W1 retains the same mesh/region/instance identities on an
+   actual exclusion without adding anatomy work or changing passage status.
    PR #211 replaces the non-portable whole-buffer digest acceptance exposed by
    Ubuntu with an independently frozen pre-P5b source graph. Its manifest pins the
    reviewed commit, tree and source bytes before same-runtime execution compares

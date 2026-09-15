@@ -71,7 +71,7 @@ prepare their owners; W1 farm, route, growth or survey changes rebuild only the
 route-local screen. Camera, view and reads perform no W1/W2 work.
 
 `WalkingTransitScreen` owns a private immutable interval tree keyed by W1
-identity, route, margin and stable exclusion ordinals. It derives a conservative
+identity, route, inventory and stable exclusion ordinals. It derives a conservative
 swept cuboid by translating the already-prepared complete stowed envelope,
 queries the X interval tree, then checks complete XYZ bounds. Strict separation
 inside the margin-covered route volume is `ready-fast`; an AABB overlap is only
@@ -158,6 +158,16 @@ frozen in each implementation Step Execution Card.
   original region and exact triangle-aligned ranges. Plant-side association
   never changes plant-owned partitions. Unclassified triangles stay forbidden;
   metadata alone grants no support, cutting or intended-contact permission.
+- Leaf-producing parts may additionally expose the optional transient
+  `crop-source-anatomy/1` record. Its exact triangle-aligned source patches use
+  only `leaf-blade`, `leaf-vein-ribbon` and `leaf-hair`; absence leaves source
+  triangles unclassified. Blade and raised vein-ribbon spans are authored around
+  their existing emissions at both near and distant detail where present, while
+  cucumber leaf hairs are authored only for the existing near hair emission.
+  Stems, including parts that also contain fruit detail or pedicels, are never
+  classified from a whole-part name. Existing exact `CropSourcePatch` roles take
+  precedence over this plant anatomy metadata. No id, part name, layer, material
+  or color is an anatomy classifier.
 - Tomato `cutSite` identifies the existing synthetic shared ring between the
   immediate proximal plant-side pedicel and retained distal segment, 9 mm times
   botanical scale above the fruit top. It carries the original source vertex
@@ -368,6 +378,102 @@ frozen in each implementation Step Execution Card.
   existing world-aligned, empty-held/all-attached foundation. Missing leaf or fruit
   state remains unknown. Camera inverse prepares once, eligible rays share one
   batch/FK and completed bounds, and no source or session state is regenerated.
+
+## Action-local synthetic observations
+
+- The same `WalkingTransitScreen.queryVolume(demand, bounds, padding)` instance
+  supplies immutable `walking-scene-candidates/1` receipts in original exclusion
+  order. Its W1 tree is reused across camera, action and padding changes.
+  `isCurrentVolume` requires the issued receipt and current W1 identity.
+  Coverage is `covered`, `outside-route` or `unknown`; overlap is geometric
+  candidate evidence only. Provenance `w1-canonical-obstacles/1` covers W1's
+  crop/net/tie/support/clip/film/steel/barrier sources and explicit growth/channel
+  exclusions. Soil, drains and other excluded rendering layers are not observed.
+- `SyntheticDynamicSceneOwner.prepare` admits and detaches an explicitly
+  synthetic finite domain/time interval and actor cuboid timelines.
+  `readAt(time, volume, maxActors)` owns source candidate selection; gaps,
+  uncovered domain/time and unvisited actors remain unknown. Unique track IDs
+  and immutable kind survive updates, including a person becoming stationary.
+  These snapshots are simulator source truth, never detections. `isCurrent`
+  rejects copied or retired snapshots. Dynamic changes do not rebuild W1.
+- `RayQueries.resolveSource` and `queryScoped` share a once-per-GeometrySource
+  canonical membership map. Restrictions retain exact mesh/region/instance
+  references, reject foreign identities, and reuse the existing numerical ray
+  predicates. Scoped results explicitly mean `declared-canonical-candidates`;
+  they do not assert a globally nearest hit from an incomplete restriction.
+  The existing full `query` remains unchanged. Membership preparation/visits,
+  candidate visits and actual ray work remain inspectable. Shared
+  `transformQueryDirectionBounds` preserves source-coordinate subtraction
+  intervals through the existing camera frame.
+  `QueryGeometry` registers mesh membership during canonical admission;
+  `GeometrySource.work.membershipVisits` counts those visits.
+  `placementWork` counts constant-time membership checks and actual placements,
+  including the deltas published by action observations. Source replacement
+  and clear retire the private membership set with the source.
+- `TargetObservations` accepts optional composition-owned `screen` and
+  `dynamics` dependencies. `observeActionVolume(context, demand, request)`
+  binds the actual run, exact current source, action ID, bounds and current time.
+  Requests use `synthetic-action-volume/1`, the existing camera and validity
+  fields, normalized nullable illumination/film/weather/shadow/glare assumptions,
+  synthetic signal/glare thresholds and finite actor/candidate/ray budgets.
+  Extra detection, coverage, clear or safe fields reject.
+- The complete camera-to-action AABB is queried once. The eight action corners
+  establish only frustum/range containment, using outward arithmetic. Computed
+  signal is illumination * filmTransmission * weatherTransmission *
+  (1 - shadowFraction); glare is independent. Strict threshold passage is only
+  reliability in this declared synthetic model, not lux or hardware calibration.
+- `action-volume-observation/1` separates specific visible detections from
+  `complete-empty`, `partial` and `unknown` coverage. Complete-empty requires
+  reliable optics, complete view and both source domains, no candidates and no
+  unvisited work. Any candidate prevents complete-empty, even when a sampled
+  source is visible. Static detections preserve canonical ray/mesh/region/instance
+  and authored leaf anatomy. Publication requires the whole hit-position
+  interval inside the queried sight bounds and the canonical ray within the
+  reliable camera frustum/range. Dynamic detections require visible declared cuboid
+  geometry; hidden actor IDs are not exposed. `isCurrentAction` checks the
+  issued result, actual context and both source owners. No observation grants
+  motion, collision, support, harvest or physical safety permission.
+- One request performs one sight query and at most one bounded canonical ray
+  batch. Source actor visits are separate from local samples; far actors do not
+  add local ray work. Existing target viewpoint, injected reading and quality
+  semantics remain separate and unchanged.
+
+Walking production observation uses a separate composition adapter:
+
+- `QueryGeometry.prepareWalking` consumes an exact current
+  `WalkingObservationGeometryReceipt` binding PreparedScene, SceneDemand and
+  WalkingRobotSource. Its farm-only source retains original meshes, regions,
+  instances and anatomy through the shared preparation owner. Legacy preparation
+  still includes its robot and dock. `RayQueries.queryWalkingWorld` accepts only
+  current farm-world candidates, performs no legacy FK, and shares the existing
+  scoped membership and numerical predicates.
+- `WalkingActionObservations` binds the exact walking operating report, demand,
+  source, farm geometry, scenario identity/generation, run ID and domain time.
+  Its `walking-action-volume-observation/1` uses the same private action-volume
+  kernel as TargetObservations. It consumes no legacy mission, session pose,
+  robot or dock receipt. Nonempty load or incomplete source plant state cannot
+  produce complete-empty.
+- Bootstrap constructs `walking-observation-workspace` with the operating
+  workspace’s existing WalkingTransitScreen. Public methods are
+  `configureWalkingObservationScenario(config, dynamics)`,
+  `observeWalkingAction({actionId, actionBounds, now, validUntil})`,
+  `getWalkingActionObservation()` and `isCurrentWalkingActionObservation(value)`.
+  The scenario explicitly supplies a synthetic base-body local camera pose,
+  frustum/range, nullable optics, bounded model, source-pose leaves and
+  all-attached fruit. The current stowed base frame composes the world camera.
+  This is an authored synthetic assumption, not physical camera calibration.
+- Missing scenario, legacy selection, stale source or uncovered scenario time
+  returns unavailable. Available observations can still be partial or unknown.
+  Exact report/demand/source/scene, scenario generation, dynamic identity and
+  domain time determine currentness; disposal retires all products. Dynamic
+  updates preserve track identity through moving-to-stationary changes.
+- The farm receipt is reused by exact scene/demand/source identity. Scenario,
+  time and dynamic-only updates do not rebuild it or W3a’s index. Work reports
+  actual farm membership builds, base-frame visits, camera mounts, camera frames,
+  sight queries, index builds, canonical candidate visits, ray work and actor
+  visits. The complete camera-to-action sight volume includes opaque sources
+  outside the action box. W1 candidates themselves are never detections.
+  No observation grants movement; monitors and controller remain separate work.
 
 ## Static source surface pairs
 
@@ -653,6 +759,17 @@ mutable range input, rejects ranges outside the referenced region, duplicate ids
 and forged region references, and returns immutable patches. Patches select
 original triangles and do not change region occupancy.
 
+`CropSourceAnatomy` is an optional source-only `crop-source-anatomy/1` handoff
+from a crop model part to its projected `SiteMesh`. The producer retains it as a
+non-enumerable readonly property so the established serialized source graph and
+geometry digests remain exact; the projection copies it explicitly. SiteGeometry
+re-admits each patch against the exact near or distant mesh regions, rebinds its
+region to the admitted object identity and deeply freezes the result. Foreign
+region objects, duplicate ids or triangle claims, invalid roles and forged ranges
+reject the complete record. A legacy mesh without the property remains viewable
+with unclassified anatomy. This metadata does not grant contact, movement,
+terrain, damage or runtime-action authority.
+
 Each robot and dock part carries immutable patches issued with its regions.
 `RobotRig` adds immutable `bodies` and five `interfaces`. Every
 `RobotBodyAssembly` owns one body id and all exact rig-part records for that body.
@@ -708,6 +825,11 @@ Installed source envelopes use outward interval transforms. Their overlap means
 whole demand. A selected drain route or authored growth volume covering the route
 is blocked. Unknown evidence, growth, margin, missing anchor or incomplete growth
 coverage remains unknown.
+
+W1 retains the exact installed `SiteMesh`, `SourceRegion` and instance identities
+on every conservative source exclusion. If that mesh carries admitted plant
+source anatomy, its patch region is therefore the same admitted region object;
+W1 does not infer, rebuild or use the metadata to alter passage status.
 
 Each W1 target additionally carries independent `anatomy.support` and
 `anatomy.cut` completeness, reasons and exact near-part/patch/mesh/instance
@@ -1081,6 +1203,53 @@ retires handles. This owner supplies no terrain, whole-source collision,
 request/3, load, stability, damage or complete mission admission.
 
 ## Nonlinear walking source admission
+
+`WalkingConstrainedCycleOwner.prepareSelectedChainMotion(cycle, raw)` admits
+`walking-selected-chain-root-motion/1` with exact keys `cycle`, `phase`,
+`at`, `chainId` and `targetAbduction`. The selected chain must be a swing
+chain in that phase. Its start angle comes from the compiler's exact cycle
+bump at `at`; the caller cannot provide a different start or joint. The root
+abduction follows a rational affine parameter on [0, 1], with the source side
+sign and authored joint domain. Hip, knee and every other body remain at the
+same exact cycle point.
+
+The owner prepares the fixed point once and issues
+`walking-selected-chain-root-motion-product/1`, including immutable root-local
+selected body/part frames and the fixed exact frames. `evaluateSelectedChainMotion`
+and `boundSelectedChainMotion` use the existing exact polynomial leaves and
+rational similarity authority. Each query composes only the four selected
+bodies and their parts. `readSelectedChainMotion(cycle, motion)` performs no
+geometric work and rejects foreign or retired cycle identities. The existing
+cycle budget applies unchanged. This is a local self-material delta input;
+it establishes no material clearance, terrain support, observation validity
+or action permission.
+
+`WalkingSelectedChainRelationOwner.prepare({ owner, cycle }, raw)` consumes
+the current selected-chain motion and the finite
+`walking-selected-chain-source-relation-request/1` budget. Its
+`walking-selected-chain-source-relations/1` result covers only selected
+original regions against fixed robot original regions. Disjoint strict part
+covers and per-pair interval proofs conserve the complete Cartesian cardinality.
+Fixed-fixed, moving-moving, terrain and external pairs are never constructed.
+A midpoint can supply a volume witness or a candidate separating axis; only
+whole-interval bounds or axis projections prove separation. A boundary needs
+both original named interface patches, complete supporting-feature coverage,
+and an exact root-axis invariance proof for the entire motion. Missing proof
+and finite exhaustion retain unknown or unvisited work.
+Each patch must retain its original part and candidate-region identity and be
+present in that part's patch list. A same-byte foreign patch or part cannot
+substitute for either side. The named-locus check alone is not an interval
+admission; the owning route must also prove root-axis invariance.
+
+Fixed rational-frame admission and its denominator template run once per
+request. Nodes compile selected frames and rescale only the fixed frames used
+by candidate leaves into the common exact denominator. Per-source immutable
+local bounds and successful convex certifications may be reused. Source scalar
+rebindings use the new evaluator's budget and are counted separately; old
+placement, direction and frame-node caches are not transferred. Reads of the
+same admitted result perform no new work. Source replacement, cycle retirement
+and disposal invalidate the applicable reads. These local self-material
+results do not authorize terrain contact, observation freshness or an action.
 
 `readWalkingNonlinearMotionRequest` admits `walking-motion-request/3` for the
 exact current cycle, source, W1 demand/route, ordered phase windows, load,

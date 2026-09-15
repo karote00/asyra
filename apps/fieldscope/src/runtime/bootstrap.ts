@@ -3,6 +3,7 @@ import { WalkingRobotProjection } from '../render-app/walking-robot-projection'
 import { createRobotWorkspace } from './robot-workspace'
 import { createSceneDemandWorkspace } from './scene-demand-workspace'
 import { createWalkingOperatingWorkspace } from './walking-operating-workspace'
+import { createWalkingObservationWorkspace } from './walking-observation-workspace'
 import { SiteGeometry } from '../render-app/site-geometry'
 import { moveCamera, lookCamera } from '../render-app/camera-flight'
 import {
@@ -177,6 +178,15 @@ export async function bootstrap(
     sceneDemandWorkspace.isCurrent,
     updateSelectedRobot
   )
+  const walkingObservation = createWalkingObservationWorkspace({
+    getOperating: walkingOperating.get,
+    isCurrentOperating: walkingOperating.isCurrent,
+    getDemand: sceneDemandWorkspace.get,
+    isCurrentDemand: sceneDemandWorkspace.isCurrent,
+    getScene: () => geometry.getScene(),
+    isCurrentScene: (scene) => geometry.isCurrentScene(scene),
+    screen: walkingOperating.getObservationScreen()
+  })
   robotMeshes = robotProjection.update(robot.get())
   const readZoom = (next: SpatialCamera) => {
     const reference = referenceCamera
@@ -479,6 +489,33 @@ export async function bootstrap(
       },
       focusRobot: () => {
         assertLive()
+        const walking = walkingOperating.get()
+        if (walking.status !== 'legacy-view') {
+          if (!walking.envelope) return
+          const bounds = walking.envelope.bounds
+          const target = bounds.min.map(
+            (value, index) => (value + bounds.max[index]) / 2
+          ) as [number, number, number]
+          const distance = Math.hypot(...bounds.size)
+          publishCamera(
+            fitScene(
+              {
+                ...camera,
+                position: [
+                  target[0] + distance,
+                  target[1] + distance * 0.65,
+                  target[2] - distance
+                ],
+                target,
+                fov: 42
+              },
+              bounds,
+              width,
+              height
+            )
+          )
+          return
+        }
         const s = robot.get().settings
         const distance = Math.max(s.width, s.length, s.height) * 2.5
         publishCamera({
@@ -512,6 +549,7 @@ export async function bootstrap(
     closed = true
     sceneDemandWorkspace.close()
     walkingOperating.close()
+    walkingObservation.close()
     robot.close()
     robotProjection.clear()
     walkingRobotProjection.clear()
@@ -624,6 +662,10 @@ export async function bootstrap(
       getWalkingRuntimeSelection: walkingOperating.getSelection,
       setWalkingRuntimeSelection: walkingOperating.setSelection,
       getWalkingOperatingReport: walkingOperating.get,
+      configureWalkingObservationScenario: walkingObservation.configure,
+      observeWalkingAction: walkingObservation.observe,
+      getWalkingActionObservation: walkingObservation.get,
+      isCurrentWalkingActionObservation: walkingObservation.isCurrent,
       isCurrentWalkingOperatingReport: walkingOperating.isCurrent,
       subscribeWalkingOperatingReport: walkingOperating.subscribe,
       getConfiguration: () => config,

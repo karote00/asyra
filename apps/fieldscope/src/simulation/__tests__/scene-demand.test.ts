@@ -132,6 +132,31 @@ describe('scene demand preparation', () => {
         (exclusion) => exclusion.relation === 'conservative-source-envelope'
       )
     ).toBe(true)
+    const authoredFoliage = demand.freePassage.exclusions.find(
+      (exclusion) =>
+        exclusion.relation === 'conservative-source-envelope' &&
+        exclusion.mesh.sourceAnatomy?.patches.some(
+          (patch) => patch.source.region === exclusion.region
+        )
+    )
+    if (
+      !authoredFoliage ||
+      authoredFoliage.relation !== 'conservative-source-envelope' ||
+      !authoredFoliage.mesh.sourceAnatomy
+    )
+      throw new Error('Missing installed authored foliage exclusion')
+    const authoredPatch = authoredFoliage.mesh.sourceAnatomy.patches.find(
+      (patch) => patch.source.region === authoredFoliage.region
+    )
+    expect(authoredPatch).toBeDefined()
+    expect(authoredFoliage.mesh.regions).toContain(authoredFoliage.region)
+    expect(authoredPatch?.source.region).toBe(authoredFoliage.region)
+    expect(authoredFoliage.transform.descriptor).toBe(
+      authoredFoliage.mesh.descriptor
+    )
+    expect(authoredFoliage.transform.instance).toBe(
+      authoredFoliage.mesh.descriptor.instances?.[authoredFoliage.instance]
+    )
     expect(demand.freePassage.status).toBe('unknown')
     expect(demand.freePassage.reasons).toContain('exact-source-query-required')
     expect(demand.status).toBe('ready')

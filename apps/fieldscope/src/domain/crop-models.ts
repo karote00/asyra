@@ -97,6 +97,39 @@ export interface CropSourcePatch {
   readonly source: SourcePatch
 }
 
+export type CropSourceAnatomyRole =
+  'leaf-blade' | 'leaf-vein-ribbon' | 'leaf-hair'
+
+export interface CropSourceAnatomyPatch {
+  readonly id: string
+  readonly role: CropSourceAnatomyRole
+  readonly source: SourcePatch
+}
+
+/** Authored source-triangle anatomy only; absence remains unclassified. */
+export interface CropSourceAnatomy {
+  readonly format: 'crop-source-anatomy/1'
+  readonly patches: readonly CropSourceAnatomyPatch[]
+}
+
+function attachSourceAnatomy<T extends object>(
+  value: T,
+  sourceAnatomy: CropSourceAnatomy | undefined,
+  distantSourceAnatomy?: CropSourceAnatomy
+): T {
+  if (sourceAnatomy)
+    Object.defineProperty(value, 'sourceAnatomy', {
+      value: sourceAnatomy,
+      enumerable: false
+    })
+  if (distantSourceAnatomy)
+    Object.defineProperty(value, 'distantSourceAnatomy', {
+      value: distantSourceAnatomy,
+      enumerable: false
+    })
+  return value
+}
+
 export interface CropModel {
   species: CropSpecies
   variant: number
@@ -113,6 +146,8 @@ export interface CropModel {
     distantRegions?: readonly SourceRegion[]
     patches: readonly CropSourcePatch[]
     distantPatches?: readonly CropSourcePatch[]
+    sourceAnatomy?: CropSourceAnatomy
+    distantSourceAnatomy?: CropSourceAnatomy
     partitions: CropPartition[]
     distantPartitions?: CropPartition[]
     surface?: typeof CUCUMBER_LEAF_SURFACE
@@ -289,13 +324,17 @@ export function createCropModels(
         parts: model.parts.map((part) => {
           const counterpart = distant.parts.find((item) => item.id === part.id)
           if (!counterpart) throw new Error('Missing distant crop source')
-          return {
-            ...part,
-            distantShape: counterpart.shape,
-            distantRegions: counterpart.regions,
-            distantPatches: counterpart.patches,
-            distantPartitions: counterpart.partitions
-          }
+          return attachSourceAnatomy(
+            {
+              ...part,
+              distantShape: counterpart.shape,
+              distantRegions: counterpart.regions,
+              distantPatches: counterpart.patches,
+              distantPartitions: counterpart.partitions
+            },
+            part.sourceAnatomy,
+            counterpart.sourceAnatomy
+          )
         })
       }
     })
@@ -335,6 +374,37 @@ function createModel(
     diameter: (cucumber ? 0.006 : 0.008) * scale
   })
   const leafCount = 8 + (variant % 5)
+  const sourceAnatomySpans = new Map<
+    TriangleBuilder,
+    {
+      role: CropSourceAnatomyRole
+      indexStart: number
+      indexCount: number
+    }[]
+  >()
+  const recordSourceAnatomy = (
+    builder: TriangleBuilder,
+    role: CropSourceAnatomyRole,
+    indexStart: number,
+    indexCount = builder.indices.length - indexStart
+  ) => {
+    if (!indexCount) return
+    const spans = sourceAnatomySpans.get(builder) ?? []
+    spans.push({ role, indexStart, indexCount })
+    sourceAnatomySpans.set(builder, spans)
+  }
+  const appendLeaf = (
+    base: Point3,
+    angle: number,
+    length: number,
+    width: number
+  ) => {
+    const bladeStart = foliage.indices.length
+    const veinStart = veins.indices.length
+    leaf(foliage, veins, base, angle, length, width, cucumber, distant)
+    recordSourceAnatomy(foliage, 'leaf-blade', bladeStart)
+    recordSourceAnatomy(veins, 'leaf-vein-ribbon', veinStart)
+  }
   let leafletCount = 0,
     tendrilCount = 0
   for (let i = 0; i < leafCount; i++) {
@@ -350,15 +420,11 @@ function createModel(
     ])
     stems.tube({ points: [base, petiole], diameter: 0.003 * leafScale })
     if (cucumber) {
-      leaf(
-        foliage,
-        veins,
+      appendLeaf(
         petiole,
         angle,
         (0.18 + random() * 0.1) * leafScale,
-        (0.2 + random() * 0.09) * leafScale,
-        true,
-        distant
+        (0.2 + random() * 0.09) * leafScale
       )
       leafletCount++
       const curl: Point3[] = [base]
@@ -393,28 +459,15 @@ function createModel(
           const anchor = petiole.map(
             (v, axis) => v + (tip[axis] - v) * t
           ) as unknown as Point3
-          leaf(
-            foliage,
-            veins,
+          appendLeaf(
             anchor,
             angle + side * 1.0,
             (0.08 + (2 - pair) * 0.016) * leafScale,
-            0.068 * leafScale,
-            false,
-            distant
+            0.068 * leafScale
           )
           leafletCount++
         }
-      leaf(
-        foliage,
-        veins,
-        tip,
-        angle,
-        0.115 * leafScale,
-        0.074 * leafScale,
-        false,
-        distant
-      )
+      appendLeaf(tip, angle, 0.115 * leafScale, 0.074 * leafScale)
       leafletCount++
     }
   }
@@ -551,16 +604,7 @@ function createModel(
           points: [stemPoint(center[1] + 0.1 * scale), coverBase],
           diameter: 0.0025 * scale
         })
-        leaf(
-          foliage,
-          veins,
-          coverBase,
-          0,
-          0.22 * scale,
-          (cucumber ? 0.2 : 0.1) * scale,
-          cucumber,
-          distant
-        )
+        appendLeaf(coverBase, 0, 0.22 * scale, (cucumber ? 0.2 : 0.1) * scale)
         occlusion = 'leaf'
       }
       const top = add(center, [0, length / 2, 0])
@@ -719,16 +763,18 @@ function createModel(
           }
         )
       : 0
-  const leafHairCount =
-    cucumber && !distant
-      ? appendSurfaceHairs(
-          foliage,
-          3000,
-          0.0012 * scale,
-          true,
-          [0.045, 0.13, 0.035]
-        )
-      : 0
+  let leafHairCount = 0
+  if (cucumber && !distant) {
+    const leafHairStart = foliage.indices.length
+    leafHairCount = appendSurfaceHairs(
+      foliage,
+      3000,
+      0.0012 * scale,
+      true,
+      [0.045, 0.13, 0.035]
+    )
+    recordSourceAnatomy(foliage, 'leaf-hair', leafHairStart)
+  }
   if (cucumber && distant)
     for (let i = 0; i < stems.positions.length; i += 3)
       stems.colors.push(0.125, 0.231, 0.053)
@@ -825,6 +871,42 @@ function createModel(
       })
     )
   }
+  const sourceAnatomy = (
+    builder: TriangleBuilder,
+    regions: readonly SourceRegion[]
+  ): CropSourceAnatomy | undefined => {
+    const counts = new Map<CropSourceAnatomyRole, number>()
+    const patches = (sourceAnatomySpans.get(builder) ?? []).flatMap((span) =>
+      regions.flatMap((region) => {
+        const indexStart = Math.max(span.indexStart, region.indexStart)
+        const indexCount =
+          Math.min(
+            span.indexStart + span.indexCount,
+            region.indexStart + region.indexCount
+          ) - indexStart
+        if (indexCount <= 0) return []
+        const ordinal = counts.get(span.role) ?? 0
+        counts.set(span.role, ordinal + 1)
+        const id = `${span.role}/${ordinal}`
+        return [
+          Object.freeze({
+            id,
+            role: span.role,
+            source: Object.freeze({
+              id,
+              region,
+              ranges: Object.freeze([Object.freeze({ indexStart, indexCount })])
+            })
+          })
+        ]
+      })
+    )
+    if (!patches.length) return
+    return Object.freeze({
+      format: 'crop-source-anatomy/1',
+      patches: Object.freeze(patches)
+    })
+  }
   return {
     species,
     variant,
@@ -837,24 +919,28 @@ function createModel(
     fruits,
     parts: builders.flatMap((builder, i) => {
       const regions = builder.regions()
+      const authoredAnatomy = sourceAnatomy(builder, regions)
       return builder.indices.length
         ? [
-            {
-              id: partNames[i],
-              partitions: partitions(builder),
-              color: builder.colors.length ? 0xffffff : colors[i],
-              roughness: i >= 3 && i <= 5 ? 0.3 : 0.72,
-              ...(i === 1
-                ? {
-                    surface: cucumber
-                      ? CUCUMBER_LEAF_SURFACE
-                      : TOMATO_LEAF_SURFACE
-                  }
-                : {}),
-              shape: builder.shape(),
-              regions,
-              patches: patches(builder, regions)
-            }
+            attachSourceAnatomy(
+              {
+                id: partNames[i],
+                partitions: partitions(builder),
+                color: builder.colors.length ? 0xffffff : colors[i],
+                roughness: i >= 3 && i <= 5 ? 0.3 : 0.72,
+                ...(i === 1
+                  ? {
+                      surface: cucumber
+                        ? CUCUMBER_LEAF_SURFACE
+                        : TOMATO_LEAF_SURFACE
+                    }
+                  : {}),
+                shape: builder.shape(),
+                regions,
+                patches: patches(builder, regions)
+              },
+              authoredAnatomy
+            )
           ]
         : []
     })

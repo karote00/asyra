@@ -14,6 +14,8 @@ import type { SourceRegion } from '../domain/source-occupancy'
 import {
   QueryGeometry,
   type GeometrySource,
+  type QueryGeometrySource,
+  type WalkingObservationGeometrySource,
   type GeometryMesh
 } from './geometry'
 import {
@@ -39,6 +41,7 @@ export interface RayBatch {
   fruits: 'all-attached' | 'unknown'
   rays: RayInput[]
 }
+export type WalkingWorldRayBatch = Omit<RayBatch, 'robot'>
 export interface RayWitness {
   readonly mesh: GeometryMesh
   readonly instance: number
@@ -74,9 +77,12 @@ export interface RayWork {
   fk: number
   bodyMatrices: number
 }
-export interface RayBatchResult {
-  readonly geometry: GeometrySource
-  readonly input: Readonly<RayBatch>
+export interface RayBatchResult<
+  S extends QueryGeometrySource = GeometrySource,
+  B extends WalkingWorldRayBatch = RayBatch
+> {
+  readonly geometry: S
+  readonly input: Readonly<B>
   readonly results: readonly RayResult[]
   readonly work: Readonly<RayWork>
 }
@@ -106,7 +112,7 @@ function freeze<T>(value: T): T {
   }
   return value
 }
-function readBatch(raw: RayBatch): Readonly<RayBatch> {
+function readBatch<B extends WalkingWorldRayBatch>(raw: B): Readonly<B> {
   const input = structuredClone(raw)
   if (
     !input ||
@@ -133,8 +139,8 @@ function readBatch(raw: RayBatch): Readonly<RayBatch> {
       throw new Error('Invalid ray')
     unit(ray.direction)
   }
-  if (input.robot) {
-    const { base } = input.robot
+  if ('robot' in input && input.robot) {
+    const { base } = input.robot as NonNullable<RayBatch['robot']>
     if (
       !base ||
       !finitePoint(base.position) ||
@@ -356,6 +362,12 @@ export function prepareQueryFrame(transform: RigidTransform) {
 export function transformQueryDirection(frame: Inverse, direction: Point3) {
   return inverse(frame, numberVector(direction), true)
 }
+export function transformQueryDirectionBounds(
+  frame: Inverse,
+  direction: Vector
+) {
+  return inverse(frame, direction, true)
+}
 /** Same original coefficients as inverse queries; no rounded world-point handoff. */
 export function prepareQueryForwardFrame(transform: RigidTransform) {
   return freeze({
@@ -402,7 +414,7 @@ export function transformQueryPoint(
     add(rotated[2], frame.position[2])
   ]
 }
-function directionBounds(direction: Point3): Vector {
+export function directionBounds(direction: Point3): Vector {
   const scale = interval(Math.max(...direction.map(Math.abs)))
   const scaled = direction.map((value) =>
     divide(interval(value), scale)
@@ -641,15 +653,148 @@ function closedOrigin(
   }
   return crossings % 2 ? 'inside' : 'outside'
 }
+export interface CanonicalRayCandidate {
+  readonly mesh: GeometryMesh
+  readonly region: SourceRegion
+  readonly instance: number
+}
+type ScopedRegions = Map<GeometryMesh, Map<number, readonly SourceRegion[]>>
 interface Placement {
+  regions?: readonly SourceRegion[]
   mesh: GeometryMesh
   instance: number
   parents: readonly Inverse[]
 }
 /** Two-sided source geometry only: no sensing, quality or swept-motion verdict. */
 export class RayQueries {
+  readonly scopeWork = {
+    membershipBuilds: 0,
+    membershipVisits: 0,
+    candidateVisits: 0
+  }
+  private membershipSource?: QueryGeometrySource
+  private members = new Map<GeometryMesh, Set<SourceRegion>>()
+  private origins = new Map<GeometryMesh['origin'], GeometryMesh>()
+  private ordinals = new Map<GeometryMesh, number>()
+
   constructor(private readonly geometry: QueryGeometry) {}
+
+  private admitMembership(source: QueryGeometrySource) {
+    this.geometry.read(source)
+    if (this.membershipSource === source) return
+    const members = new Map<GeometryMesh, Set<SourceRegion>>()
+    const origins = new Map<GeometryMesh['origin'], GeometryMesh>()
+    const ordinals = new Map<GeometryMesh, number>()
+    for (const mesh of source.meshes) {
+      this.scopeWork.membershipVisits++
+      const regions = new Set<SourceRegion>()
+      for (const region of mesh.origin.regions) {
+        this.scopeWork.membershipVisits++
+        regions.add(region)
+      }
+      members.set(mesh, regions)
+      ordinals.set(mesh, ordinals.size)
+      if (origins.has(mesh.origin))
+        throw new Error('Ambiguous canonical source origin')
+      origins.set(mesh.origin, mesh)
+    }
+    this.geometry.read(source)
+    this.members = members
+    this.origins = origins
+    this.ordinals = ordinals
+    this.membershipSource = source
+    this.scopeWork.membershipBuilds++
+  }
+
+  resolveSource(
+    source: QueryGeometrySource,
+    origin: GeometryMesh['origin']
+  ): GeometryMesh | undefined {
+    this.admitMembership(source)
+    return this.origins.get(origin)
+  }
+
+  queryScoped(
+    source: GeometrySource,
+    raw: RayBatch,
+    candidates: readonly CanonicalRayCandidate[]
+  ) {
+    return this.scoped(source, raw, candidates)
+  }
+
+  queryWalkingWorld(
+    source: WalkingObservationGeometrySource,
+    raw: WalkingWorldRayBatch,
+    candidates: readonly CanonicalRayCandidate[]
+  ) {
+    if (
+      !('source' in source.receipt) ||
+      'robot' in raw ||
+      Object.keys(raw).some(
+        (key) =>
+          ![
+            'source',
+            'time',
+            'validFrom',
+            'validUntil',
+            'leaves',
+            'fruits',
+            'rays'
+          ].includes(key)
+      )
+    )
+      throw new Error('Invalid walking world ray request')
+    for (const candidate of candidates)
+      if (candidate.mesh.kind !== 'farm' || candidate.mesh.frame !== 'world')
+        throw new Error('Walking rays require farm world sources')
+    return this.scoped(source, raw, candidates)
+  }
+
+  private scoped<S extends QueryGeometrySource, B extends WalkingWorldRayBatch>(
+    source: S,
+    raw: B,
+    candidates: readonly CanonicalRayCandidate[]
+  ) {
+    this.admitMembership(source)
+    const scope: ScopedRegions = new Map()
+    for (const candidate of candidates) {
+      this.scopeWork.candidateVisits++
+      const { mesh, region, instance } = candidate
+      if (
+        !this.members.get(mesh)?.has(region) ||
+        !Number.isSafeInteger(instance) ||
+        instance < 0 ||
+        instance >= (mesh.descriptor?.instances?.length ?? 1)
+      )
+        throw new Error('Invalid canonical ray candidate')
+      let instances = scope.get(mesh)
+      if (!instances) {
+        instances = new Map()
+        scope.set(mesh, instances)
+      }
+      const regions = instances.get(instance) ?? []
+      if (regions.includes(region))
+        throw new Error('Duplicate canonical ray candidate')
+      instances.set(
+        instance,
+        [...regions, region].sort((a, b) => a.indexStart - b.indexStart)
+      )
+    }
+    const result = this.execute(source, raw, scope)
+    return Object.freeze({
+      ...result,
+      scope: 'declared-canonical-candidates' as const
+    })
+  }
+
   query(source: GeometrySource, raw: RayBatch): RayBatchResult {
+    return this.execute(source, raw)
+  }
+
+  private execute<
+    S extends QueryGeometrySource,
+    B extends WalkingWorldRayBatch
+  >(source: S, raw: B, scope?: ScopedRegions): RayBatchResult<S, B> {
     this.geometry.read(source)
     const input = readBatch(raw)
     const work: RayWork = {
@@ -665,7 +810,7 @@ export class RayQueries {
       fk: 0,
       bodyMatrices: 0
     }
-    const publish = (results: RayResult[]): RayBatchResult => {
+    const publish = (results: RayResult[]): RayBatchResult<S, B> => {
       this.geometry.read(source)
       return Object.freeze({
         geometry: source,
@@ -677,7 +822,7 @@ export class RayQueries {
     if (
       input.time < input.validFrom ||
       input.time >= input.validUntil ||
-      !input.robot ||
+      ('robot' in source.receipt && !('robot' in input && input.robot)) ||
       input.leaves !== 'source-pose' ||
       input.fruits !== 'all-attached'
     )
@@ -687,40 +832,55 @@ export class RayQueries {
           reason: 'missing-or-expired-scene-state'
         }))
       )
-    const rig = source.receipt.robot.rig
-    if (!rig) throw new Error('Missing robot rig')
-    const pose = evaluateRobotAffinePose(rig, input.robot.joints)
-    work.fk += pose.work.fk
-    work.bodyMatrices += pose.work.matrices
-    const bodyInverses = new Map<BodyAffine, Inverse>()
-    const transforms = new Map(
-      pose.parts.map((part) => {
+    const transforms = new Map<GeometryMesh['origin'], Inverse>()
+    let base: Inverse | undefined
+    if ('robot' in source.receipt) {
+      const robot = (
+        'robot' in input ? input.robot : undefined
+      ) as RayBatch['robot']
+      const rig = source.receipt.robot.rig
+      if (!rig || !robot) throw new Error('Missing robot rig or pose')
+      const pose = evaluateRobotAffinePose(rig, robot.joints)
+      work.fk += pose.work.fk
+      work.bodyMatrices += pose.work.matrices
+      const bodyInverses = new Map<BodyAffine, Inverse>()
+      for (const part of pose.parts) {
         let completed = bodyInverses.get(part.affine)
         if (!completed) {
           completed = prepareQueryAffineInverse(part.affine)
           bodyInverses.set(part.affine, completed)
         }
-        return [part.source, completed] as const
-      })
-    )
-    const base = prepareInverse(input.robot.base)
+        transforms.set(part.source, completed)
+      }
+      base = prepareInverse(robot.base)
+    }
     const placements: Placement[] = []
-    for (const mesh of source.meshes) {
+    for (const mesh of scope
+      ? [...scope.keys()].sort((a, b) => {
+          const first = this.ordinals.get(a),
+            second = this.ordinals.get(b)
+          if (first === undefined || second === undefined)
+            throw new Error('Missing canonical source ordinal')
+          return first - second
+        })
+      : source.meshes) {
       if (mesh.shape.kind !== 'triangles')
         throw new Error('Unsupported query source')
       const parents: Inverse[] = []
       if (mesh.frame === 'robot') {
-        const body = transforms.get(
-          mesh.origin as (typeof pose.parts)[number]['source']
-        )
-        if (!body) throw new Error('Missing body transform')
+        const body = transforms.get(mesh.origin)
+        if (!body || !base) throw new Error('Missing body transform')
         parents.push(base, body)
       } else {
         if (!mesh.descriptor) throw new Error('Missing installed transform')
         parents.push(prepareInverse(mesh.descriptor))
       }
       const instances = mesh.descriptor?.instances
-      for (let instance = 0; instance < (instances?.length ?? 1); instance++) {
+      const selectedInstances = scope?.get(mesh)
+      const instanceIndices = selectedInstances
+        ? [...selectedInstances.keys()].sort((a, b) => a - b)
+        : Array.from({ length: instances?.length ?? 1 }, (_, i) => i)
+      for (const instance of instanceIndices) {
         const placement = instances?.[instance]
         let chain = parents
         if (placement) {
@@ -733,7 +893,14 @@ export class RayQueries {
             }
           ]
         }
-        placements.push({ mesh, instance, parents: chain })
+        placements.push({
+          mesh,
+          instance,
+          parents: chain,
+          ...(selectedInstances
+            ? { regions: selectedInstances.get(instance) }
+            : {})
+        })
       }
     }
     const results = input.rays.map((ray): RayResult => {
@@ -754,7 +921,7 @@ export class RayQueries {
           witnesses = evidence
         }
       }
-      for (const { mesh, instance, parents } of placements) {
+      for (const { mesh, instance, parents, regions } of placements) {
         work.instances++
         const shape = mesh.shape as TriangleShape,
           product = mesh.prepared
@@ -779,6 +946,7 @@ export class RayQueries {
         )
           continue
         for (const region of product.regions) {
+          if (regions && !regions.includes(region.source)) continue
           if (!originCandidate(region.bounds, origin)) continue
           if (
             region.source.kind === 'open-shell' ||
@@ -786,120 +954,131 @@ export class RayQueries {
           )
             originUnknown = true
         }
-        for (let index = 0; index < shape.indices.length; index += 3) {
-          work.triangles++
-          const candidate = triangleHit(
-            vertex(shape, index),
-            vertex(shape, index + 1),
-            vertex(shape, index + 2),
-            origin,
-            localDirection,
-            ray.maxDistance,
-            work
-          )
-          if (!candidate) continue
-          if ('unknownAt' in candidate) {
-            ambiguous(candidate.unknownAt, [
-              {
+        const spans = regions ?? [
+          { indexStart: 0, indexCount: shape.indices.length }
+        ]
+        for (const span of spans)
+          for (
+            let index = span.indexStart;
+            index < span.indexStart + span.indexCount;
+            index += 3
+          ) {
+            work.triangles++
+            const candidate = triangleHit(
+              vertex(shape, index),
+              vertex(shape, index + 1),
+              vertex(shape, index + 2),
+              origin,
+              localDirection,
+              ray.maxDistance,
+              work
+            )
+            if (!candidate) continue
+            if ('unknownAt' in candidate) {
+              ambiguous(candidate.unknownAt, [
+                {
+                  mesh,
+                  instance,
+                  triangle: index / 3,
+                  distance: { low: candidate.unknownAt, high: ray.maxDistance }
+                }
+              ])
+              continue
+            }
+            let completed = candidate
+            let distance = completed.distance
+            let refined = completed.proof === 'exact'
+            let exact: TriangleHit | null | undefined = refined
+              ? completed
+              : undefined
+            const refine = () => {
+              if (!refined) {
+                exact = exactTriangle(
+                  vertex(shape, index),
+                  vertex(shape, index + 1),
+                  vertex(shape, index + 2),
+                  origin,
+                  localDirection,
+                  ray.maxDistance,
+                  work
+                )
+                refined = true
+              }
+              return exact
+            }
+            if (selected) {
+              const previous = selected.distance
+              if (distance.low > previous.high) continue
+              if (
+                distance.low === distance.high &&
+                previous.low === previous.high &&
+                distance.low === previous.low
+              )
+                continue
+              if (distance.high >= previous.low) {
+                const first = selected.refine(),
+                  second = refine()
+                if (second === null) continue
+                if (first === null) {
+                  // A contradictory proof cannot preserve an old hit or erase earlier candidates.
+                  ambiguous(0, [
+                    {
+                      mesh: selected.result.mesh,
+                      instance: selected.result.instance,
+                      triangle: selected.result.triangle,
+                      distance: previous
+                    }
+                  ])
+                  selected = undefined
+                } else if (first?.exactDistance && second?.exactDistance) {
+                  const a = first.exactDistance,
+                    b = second.exactDistance
+                  selected.distance = first.distance
+                  selected.result = {
+                    ...selected.result,
+                    distance: midpoint(first.distance),
+                    distanceBounds: first.distance,
+                    barycentric: first.barycentric.map(
+                      midpoint
+                    ) as unknown as Point3
+                  }
+                  if (
+                    b.numerator * a.denominator >=
+                    a.numerator * b.denominator
+                  )
+                    continue
+                  completed = second
+                  distance = second.distance
+                } else {
+                  ambiguous(Math.min(distance.low, previous.low), [
+                    {
+                      mesh: selected.result.mesh,
+                      instance: selected.result.instance,
+                      triangle: selected.result.triangle,
+                      distance: previous
+                    },
+                    { mesh, instance, triangle: index / 3, distance }
+                  ])
+                  continue
+                }
+              }
+            }
+            selected = {
+              distance,
+              refine,
+              result: {
+                status: 'hit',
                 mesh,
                 instance,
                 triangle: index / 3,
-                distance: { low: candidate.unknownAt, high: ray.maxDistance }
-              }
-            ])
-            continue
-          }
-          let completed = candidate
-          let distance = completed.distance
-          let refined = completed.proof === 'exact'
-          let exact: TriangleHit | null | undefined = refined
-            ? completed
-            : undefined
-          const refine = () => {
-            if (!refined) {
-              exact = exactTriangle(
-                vertex(shape, index),
-                vertex(shape, index + 1),
-                vertex(shape, index + 2),
-                origin,
-                localDirection,
-                ray.maxDistance,
-                work
-              )
-              refined = true
-            }
-            return exact
-          }
-          if (selected) {
-            const previous = selected.distance
-            if (distance.low > previous.high) continue
-            if (
-              distance.low === distance.high &&
-              previous.low === previous.high &&
-              distance.low === previous.low
-            )
-              continue
-            if (distance.high >= previous.low) {
-              const first = selected.refine(),
-                second = refine()
-              if (second === null) continue
-              if (first === null) {
-                // A contradictory proof cannot preserve an old hit or erase earlier candidates.
-                ambiguous(0, [
-                  {
-                    mesh: selected.result.mesh,
-                    instance: selected.result.instance,
-                    triangle: selected.result.triangle,
-                    distance: previous
-                  }
-                ])
-                selected = undefined
-              } else if (first?.exactDistance && second?.exactDistance) {
-                const a = first.exactDistance,
-                  b = second.exactDistance
-                selected.distance = first.distance
-                selected.result = {
-                  ...selected.result,
-                  distance: midpoint(first.distance),
-                  distanceBounds: first.distance,
-                  barycentric: first.barycentric.map(
-                    midpoint
-                  ) as unknown as Point3
-                }
-                if (b.numerator * a.denominator >= a.numerator * b.denominator)
-                  continue
-                completed = second
-                distance = second.distance
-              } else {
-                ambiguous(Math.min(distance.low, previous.low), [
-                  {
-                    mesh: selected.result.mesh,
-                    instance: selected.result.instance,
-                    triangle: selected.result.triangle,
-                    distance: previous
-                  },
-                  { mesh, instance, triangle: index / 3, distance }
-                ])
-                continue
+                distance: midpoint(distance),
+                distanceBounds: distance,
+                barycentric: completed.barycentric.map(
+                  midpoint
+                ) as unknown as Point3
               }
             }
           }
-          selected = {
-            distance,
-            refine,
-            result: {
-              status: 'hit',
-              mesh,
-              instance,
-              triangle: index / 3,
-              distance: midpoint(distance),
-              distanceBounds: distance,
-              barycentric: completed.barycentric.map(
-                midpoint
-              ) as unknown as Point3
-            }
-          }
-        }
       }
       if (originUnknown)
         return { status: 'unknown', reason: 'unknown-origin-occupancy' }

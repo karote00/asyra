@@ -8,6 +8,8 @@ import * as robot from '../../domain/robot-configuration'
 import * as navigation from '../../render-app/camera-navigation'
 import { assessHarvestLane } from '../../domain/harvest-assessment'
 import { createConfigurationStrip } from '../../domain/farm-configuration'
+import { createSyntheticWalkingRobotDefinition } from '../../domain/walking-robot-definition'
+import { createWalkingRuntimeSelection } from '../../domain/walking-runtime-selection'
 
 it('owns robot patches, history and derived work without rebuilding the farm', async () => {
   const submissions = vi.spyOn(SpatialLayer.prototype, 'submit')
@@ -51,6 +53,25 @@ it('owns robot patches, history and derived work without rebuilding the farm', a
     expect(pan.mock.calls.at(-1)?.[0].position[2]).toBeLessThan(
       runtime.getRobot().settings.dockZ
     )
+    await runtime.setWalkingRuntimeSelection(
+      createWalkingRuntimeSelection(
+        createSyntheticWalkingRobotDefinition({
+          definitionId: 'walking-focus-owner-bounds',
+          sourceProfile: 'solid-articulation/2'
+        })
+      )
+    )
+    const walking = runtime.getWalkingOperatingReport()
+    expect(walking.status).not.toBe('legacy-view')
+    if (walking.status === 'legacy-view' || !walking.envelope)
+      throw new Error('Expected complete walking bounds')
+    const bounds = walking.envelope.bounds
+    runtime.focusRobot()
+    runtime.pan(0, 0)
+    expect(pan.mock.calls.at(-1)?.[0].target).toEqual(
+      bounds.min.map((value, index) => (value + bounds.max[index]) / 2)
+    )
+    await runtime.undo()
     const initial = runtime.getRobot()
     const depth = runtime.getUndoDepth()
     await expect(runtime.patchRobot({ width: 0 })).rejects.toThrow()

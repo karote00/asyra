@@ -7,7 +7,10 @@ import type {
 } from '../domain/walking-motion-contract'
 import type {
   ConstrainedFraction,
-  ConstrainedFrame
+  ConstrainedFrame,
+  WalkingConstrainedCycleOwner,
+  WalkingConstrainedCycle,
+  WalkingSelectedChainMotion
 } from '../domain/walking-constrained-kinematics'
 import type {
   SourceRegion,
@@ -1421,7 +1424,730 @@ function regionCoverCursor(
     }
   })
 }
+export interface WalkingSelectedChainRelationRequest {
+  readonly format: 'walking-selected-chain-source-relation-request/1'
+  readonly motion: WalkingSelectedChainMotion
+  readonly budget: Readonly<{
+    maxSubdivisions: number
+    maxRegionPairs: number
+    maxExactPredicates: number
+    maxBits: number
+  }>
+}
+interface SelectedCurrent {
+  owner: WalkingConstrainedCycleOwner
+  cycle: WalkingConstrainedCycle
+}
+type SelectedParameter = Readonly<{
+  low: ConstrainedFraction
+  high: ConstrainedFraction
+}>
+type SelectedKind =
+  | 'strictBounds'
+  | 'exactSeparated'
+  | 'declaredBoundary'
+  | 'blocked'
+  | 'unknown'
+  | 'unvisited'
+interface SelectedPair {
+  first: WalkingRobotPart
+  second: WalkingRobotPart
+  firstRegion: SourceRegion
+  secondRegion: SourceRegion
+  proofs: { parameter: SelectedParameter; kind: SelectedKind }[]
+}
+export interface WalkingSelectedChainSourceRelations {
+  readonly format: 'walking-selected-chain-source-relations/1'
+  readonly source: WalkingRobotSource
+  readonly cycle: WalkingConstrainedCycle
+  readonly motion: WalkingSelectedChainMotion
+  readonly request: WalkingSelectedChainRelationRequest
+  readonly status: 'clear' | 'blocked' | 'unknown'
+  readonly coverage: Readonly<Record<SelectedKind | 'required', number>>
+  readonly covers: readonly {
+    first: WalkingRobotPart
+    second: WalkingRobotPart
+    cardinality: number
+    kind: 'strictBounds'
+    parameter: SelectedParameter
+  }[]
+  readonly pairs: readonly SelectedPair[]
+  readonly reasons: readonly string[]
+  readonly work: Readonly<
+    ReturnType<typeof selectedRelationWork> & {
+      evaluator: WalkingSourceRelationEvaluator['work']
+    }
+  >
+}
+function selectedRelationWork() {
+  return {
+    rootPartOverlaps: 0,
+    groupPairs: 0,
+    exactLeafPairs: 0,
+    fixedFixedPairs: 0,
+    movingMovingPairs: 0,
+    externalPairs: 0,
+    terrainPairs: 0,
+    fixedPointPreparations: 0,
+    fixedFramePreparations: 0,
+    fixedBoundsPreparations: 0,
+    selectedBoundPreparations: 0,
+    selectedBodyVisits: 0,
+    selectedPartVisits: 0,
+    pointPreparations: 0,
+    sourceLocalBoundsVertices: 0,
+    sourceRegionIndexReads: 0,
+    intervalVertices: 0,
+    subdivisions: 0
+  }
+}
+function selectedBox(
+  frame: ConstrainedFrame<Interval>,
+  points: readonly (readonly number[])[],
+  visit: () => void
+): VertexBounds {
+  return points.map((p) => {
+    visit()
+    return frame.origin.map((v, row) =>
+      frame.matrix[row].reduce(
+        (sum, q, k) => addInterval(sum, multiplyInterval(q, interval(p[k]))),
+        v
+      )
+    ) as unknown as readonly [Interval, Interval, Interval]
+  })
+}
+function selectedExactFrame(
+  frame: ConstrainedFrame<ConstrainedFraction>,
+  visit: (bits: number) => void
+): ConstrainedFrame<Interval> {
+  const outward = (v: ConstrainedFraction) => ({
+    low: roundFraction(v.numerator, v.denominator, 'down', visit),
+    high: roundFraction(v.numerator, v.denominator, 'up', visit)
+  })
+  return {
+    origin: frame.origin.map(
+      outward
+    ) as unknown as ConstrainedFrame<Interval>['origin'],
+    matrix: frame.matrix.map((row) =>
+      row.map(outward)
+    ) as unknown as ConstrainedFrame<Interval>['matrix']
+  }
+}
+function selectedGap(first: VertexBounds, second: VertexBounds) {
+  return [0, 1, 2].some(
+    (axis) =>
+      Math.max(...first.map((p) => p[axis].high)) <
+        Math.min(...second.map((p) => p[axis].low)) ||
+      Math.max(...second.map((p) => p[axis].high)) <
+        Math.min(...first.map((p) => p[axis].low))
+  )
+}
+function selectedMidpoint(parameter: SelectedParameter): ConstrainedFraction {
+  const n =
+    parameter.low.numerator * parameter.high.denominator +
+    parameter.high.numerator * parameter.low.denominator
+  const d = 2n * parameter.low.denominator * parameter.high.denominator
+  let a = n,
+    b = d
+  while (b) {
+    const next = a % b
+    a = b
+    b = next
+  }
+  return Object.freeze({ numerator: n / a, denominator: d / a })
+}
+export class WalkingSelectedChainRelationOwner {
+  static proveNamedBoundaryLocus(
+    evaluator: WalkingSourceRelationEvaluator,
+    first: WalkingRegionPlacement,
+    second: WalkingRegionPlacement,
+    relation: WalkingRegionRelation,
+    firstPart: Pick<WalkingRobotPart, 'shape' | 'patches'>,
+    secondPart: Pick<WalkingRobotPart, 'shape' | 'patches'>,
+    firstReferences: readonly {
+      readonly part: object
+      readonly patch: SourcePatch
+    }[],
+    secondReferences: readonly {
+      readonly part: object
+      readonly patch: SourcePatch
+    }[]
+  ) {
+    if (
+      firstPart.shape !== first.region.shape ||
+      secondPart.shape !== second.region.shape
+    )
+      return
+    const admittedRanges = (
+      part: Pick<WalkingRobotPart, 'shape' | 'patches'>,
+      placement: WalkingRegionPlacement,
+      references: readonly {
+        readonly part: object
+        readonly patch: SourcePatch
+      }[]
+    ) =>
+      references
+        .filter(
+          (reference) =>
+            reference.part === part &&
+            part.patches.includes(reference.patch) &&
+            reference.patch.region === placement.region.region
+        )
+        .flatMap((reference) => reference.patch.ranges)
+    const firstRanges = admittedRanges(firstPart, first, firstReferences)
+    const secondRanges = admittedRanges(secondPart, second, secondReferences)
+    if (!firstRanges.length || !secondRanges.length) return
+    return evaluator.proveBoundary(
+      first,
+      second,
+      relation,
+      firstRanges,
+      secondRanges
+    )
+  }
+  static classifyLeaf(
+    evaluator: WalkingSourceRelationEvaluator,
+    first: WalkingRegionPlacement,
+    second: WalkingRegionPlacement,
+    node: WalkingRationalSourceNode
+  ) {
+    const relation = evaluator.relateRational(first, second, node, 0)
+    return {
+      relation,
+      kind:
+        relation.kind === 'volume-overlap'
+          ? ('blocked' as const)
+          : ('pending' as const)
+    }
+  }
+  private source?: WalkingRobotSource
+  private current?: WalkingSelectedChainSourceRelations
+  private readonly sourceBounds = new Map<
+    WalkingRobotPart,
+    readonly (readonly number[])[]
+  >()
+  private readonly regionPoints = new Map<
+    WalkingRobotPart,
+    Map<SourceRegion, readonly (readonly number[])[]>
+  >()
+  private readonly certifications = new Map<
+    Shape,
+    Map<
+      SourceRegion,
+      {
+        evaluator: WalkingSourceRelationEvaluator
+        product: WalkingPreparedSourceRegion
+      }
+    >
+  >()
+  private totals = {
+    preparations: 0,
+    sourceCertifications: 0,
+    sourceScalarRebindings: 0,
+    sourceCertificationReuses: 0
+  }
+  get work() {
+    return Object.freeze({ ...this.totals })
+  }
+  dispose() {
+    this.current = undefined
+    this.source = undefined
+    this.sourceBounds.clear()
+    this.certifications.clear()
+    this.regionPoints.clear()
+  }
+  read(current: SelectedCurrent, motion: WalkingSelectedChainMotion) {
+    return this.current?.motion === motion &&
+      current.cycle === motion.cycle &&
+      current.owner.readSelectedChainMotion(current.cycle, motion) === motion
+      ? this.current
+      : undefined
+  }
+  prepare(
+    current: SelectedCurrent,
+    raw: unknown
+  ): WalkingSelectedChainSourceRelations {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw))
+      throw new Error('Invalid selected relation request')
+    const input = raw as Record<string, unknown>
+    if (
+      Object.keys(input).length !== 3 ||
+      input.format !== 'walking-selected-chain-source-relation-request/1' ||
+      !input.motion ||
+      typeof input.motion !== 'object' ||
+      current.owner.readSelectedChainMotion(
+        current.cycle,
+        input.motion as WalkingSelectedChainMotion
+      ) !== input.motion
+    )
+      throw new Error('Stale selected relation motion')
+    const motion = input.motion as WalkingSelectedChainMotion
+    const previous = this.read(current, motion)
+    if (previous?.request === raw) return previous
+    const budget = input.budget as WalkingSelectedChainRelationRequest['budget']
+    if (
+      !budget ||
+      Object.keys(budget).length !== 4 ||
+      ![
+        'maxSubdivisions',
+        'maxRegionPairs',
+        'maxExactPredicates',
+        'maxBits'
+      ].every((key) => Object.hasOwn(budget, key)) ||
+      !Object.values(budget).every((v) => Number.isSafeInteger(v) && v > 0) ||
+      budget.maxSubdivisions > 100000 ||
+      budget.maxRegionPairs > 2000000 ||
+      budget.maxExactPredicates > 5000000 ||
+      budget.maxBits > 24000
+    )
+      throw new Error('Invalid selected relation finite budget')
+    if (this.source !== motion.source) {
+      this.dispose()
+      this.source = motion.source
+    }
+    this.current = undefined
+    this.totals.preparations++
+    const request: WalkingSelectedChainRelationRequest = freeze({
+      format: 'walking-selected-chain-source-relation-request/1',
+      motion,
+      budget: { ...budget }
+    })
+    const evaluator = new WalkingSourceRelationEvaluator(budget)
+    const work = selectedRelationWork(),
+      reasons: string[] = []
+    const coverage: Record<SelectedKind | 'required', number> = {
+      required: 0,
+      strictBounds: 0,
+      exactSeparated: 0,
+      declaredBoundary: 0,
+      blocked: 0,
+      unknown: 0,
+      unvisited: 0
+    }
+    const whole: SelectedParameter = freeze({
+      low: { numerator: 0n, denominator: 1n },
+      high: { numerator: 1n, denominator: 1n }
+    })
+    const pairs: SelectedPair[] = [],
+      covers: WalkingSelectedChainSourceRelations['covers'][number][] = []
+    const localBox = (part: WalkingRobotPart) => {
+      let existing = this.sourceBounds.get(part)
+      if (existing) return existing
+      const min = [Infinity, Infinity, Infinity],
+        max = [-Infinity, -Infinity, -Infinity]
+      for (let i = 0; i < part.shape.positions.length; i += 3) {
+        work.sourceLocalBoundsVertices++
+        for (let k = 0; k < 3; k++) {
+          min[k] = Math.min(min[k], part.shape.positions[i + k])
+          max[k] = Math.max(max[k], part.shape.positions[i + k])
+        }
+      }
+      existing = freeze(
+        Array.from({ length: 8 }, (_, mask) =>
+          [0, 1, 2].map((k) => (mask & (1 << k) ? max[k] : min[k]))
+        )
+      )
+      this.sourceBounds.set(part, existing)
+      return existing
+    }
+    const fixedFrames = new Map<WalkingRobotPart, ConstrainedFrame<Interval>>()
+    const fixedBoxes = new Map<WalkingRobotPart, VertexBounds>()
+    coverage.required =
+      motion.parts.reduce((n, p) => n + p.part.regions.length, 0) *
+      motion.fixed.parts.reduce((n, p) => n + p.part.regions.length, 0)
+    const prepareRegion = (part: WalkingRobotPart, region: SourceRegion) => {
+      let certificates = this.certifications.get(part.shape)
+      if (!certificates) {
+        certificates = new Map()
+        this.certifications.set(part.shape, certificates)
+      }
+      const prior = certificates.get(region)
+      const prepared = prior
+        ? evaluator.reuseCertifiedSource(
+            prior.evaluator,
+            prior.product,
+            part.shape,
+            region
+          )
+        : evaluator.prepare(part.shape, region)
+      if (prepared.certified)
+        certificates.set(region, { evaluator, product: prepared })
+      return prepared
+    }
+    let template: WalkingRationalSourceNode | undefined
+    let evaluationFailed = false
+    try {
+      template = evaluator.prepareRationalFrameTemplate(
+        [...motion.fixed.parts.map((p) => p.exact), motion.root],
+        budget.maxBits
+      )
+      work.fixedFramePreparations++
+      for (const entry of motion.fixed.parts) {
+        const frame = selectedExactFrame(entry.exact, (bits) => {
+          evaluator.accountIntervalPredicate()
+          if (bits > budget.maxBits)
+            throw new Error('Fixed interval frame bit budget exhausted')
+        })
+        fixedFrames.set(entry.part, frame)
+        work.fixedBoundsPreparations++
+        fixedBoxes.set(
+          entry.part,
+          selectedBox(
+            frame,
+            localBox(entry.part),
+            () => work.intervalVertices++
+          )
+        )
+      }
+      const initial = current.owner.boundSelectedChainMotion(motion, whole)
+      work.selectedBoundPreparations++
+      work.selectedBodyVisits += initial.work.selectedBodyVisits
+      work.selectedPartVisits += initial.work.selectedPartVisits
+      for (const first of initial.parts) {
+        const box = selectedBox(
+          first.frame,
+          localBox(first.part),
+          () => work.intervalVertices++
+        )
+        for (const second of motion.fixed.parts) {
+          work.groupPairs++
+          const cardinality =
+            first.part.regions.length * second.part.regions.length
+          if (
+            selectedGap(box, sourceRelationValue(fixedBoxes.get(second.part)))
+          ) {
+            coverage.strictBounds += cardinality
+            covers.push({
+              first: first.part,
+              second: second.part,
+              cardinality,
+              kind: 'strictBounds',
+              parameter: whole
+            })
+          } else {
+            if (first.part.bodyId === motion.chain.bodyIds[0])
+              work.rootPartOverlaps++
+            for (const firstRegion of first.part.regions)
+              for (const secondRegion of second.part.regions)
+                pairs.push({
+                  first: first.part,
+                  second: second.part,
+                  firstRegion,
+                  secondRegion,
+                  proofs: []
+                })
+          }
+        }
+      }
+      const queue: {
+        parameter: SelectedParameter
+        indices: number[]
+        bounded?: ReturnType<
+          WalkingConstrainedCycleOwner['boundSelectedChainMotion']
+        >
+      }[] = [
+        { parameter: whole, indices: pairs.map((_, i) => i), bounded: initial }
+      ]
+      while (queue.length) {
+        const task = sourceRelationValue(queue.shift()),
+          pending: number[] = []
+        const bounded =
+          task.bounded ??
+          current.owner.boundSelectedChainMotion(motion, task.parameter)
+        if (!task.bounded) {
+          work.selectedBoundPreparations++
+          work.selectedBodyVisits += bounded.work.selectedBodyVisits
+          work.selectedPartVisits += bounded.work.selectedPartVisits
+        }
+        const bounds = new Map(bounded.parts.map((p) => [p.part, p.frame]))
+        const vertices = new Map<
+          WalkingRobotPart,
+          Map<SourceRegion, VertexBounds>
+        >()
+        const regionVertices = (
+          part: WalkingRobotPart,
+          region: SourceRegion,
+          moving: boolean
+        ) => {
+          let byRegion = vertices.get(part)
+          if (!byRegion) {
+            byRegion = new Map()
+            vertices.set(part, byRegion)
+          }
+          let existing = byRegion.get(region)
+          if (existing) return existing
+          let sourcePoints = this.regionPoints.get(part)
+          if (!sourcePoints) {
+            sourcePoints = new Map()
+            this.regionPoints.set(part, sourcePoints)
+          }
+          let points = sourcePoints.get(region)
+          if (!points) {
+            const ids = new Set<number>()
+            for (
+              let offset = region.indexStart;
+              offset < region.indexStart + region.indexCount;
+              offset++
+            ) {
+              work.sourceRegionIndexReads++
+              ids.add(part.shape.indices[offset])
+            }
+            points = freeze(
+              [...ids].map((i) => part.shape.positions.slice(i * 3, i * 3 + 3))
+            )
+            sourcePoints.set(region, points)
+          }
+          const frame = moving
+            ? sourceRelationValue(bounds.get(part))
+            : sourceRelationValue(fixedFrames.get(part))
+          existing = selectedBox(frame, points, () => {
+            evaluator.accountIntervalPredicate()
+            work.intervalVertices++
+          })
+          byRegion.set(region, existing)
+          return existing
+        }
+        let node: WalkingRationalSourceNode | undefined
+        const usedFixed = [
+          ...new Set(
+            task.indices.map((i) =>
+              motion.fixed.parts.findIndex((p) => p.part === pairs[i].second)
+            )
+          )
+        ]
+        const placement = (
+          part: WalkingRobotPart,
+          region: SourceRegion,
+          moving: boolean
+        ) => {
+          if (!node) {
+            const point = current.owner.evaluateSelectedChainMotion(
+              motion,
+              selectedMidpoint(task.parameter)
+            )
+            work.pointPreparations++
+            node = evaluator.extendRationalFrameTemplate(
+              sourceRelationValue(template),
+              point.parts.map((p) => p.exact),
+              usedFixed
+            )
+          }
+          const index = moving
+            ? usedFixed.length + motion.parts.findIndex((p) => p.part === part)
+            : usedFixed.indexOf(
+                motion.fixed.parts.findIndex((p) => p.part === part)
+              )
+          return evaluator.rationalPlacement(
+            prepareRegion(part, region),
+            node,
+            index
+          )
+        }
+        for (const index of task.indices) {
+          const pair = pairs[index]
+          if (
+            pair.proofs.some(
+              (p) =>
+                p.kind === 'blocked' ||
+                p.kind === 'unknown' ||
+                p.kind === 'unvisited'
+            )
+          )
+            continue
+          if (
+            evaluator.exactBudgetExhausted ||
+            work.exactLeafPairs >= budget.maxRegionPairs
+          ) {
+            pair.proofs.push({ parameter: task.parameter, kind: 'unvisited' })
+            continue
+          }
+          try {
+            const av = regionVertices(pair.first, pair.firstRegion, true),
+              bv = regionVertices(pair.second, pair.secondRegion, false)
+            if (selectedGap(av, bv)) {
+              pair.proofs.push({
+                parameter: task.parameter,
+                kind: 'exactSeparated'
+              })
+              continue
+            }
+            work.exactLeafPairs++
+            const ap = placement(pair.first, pair.firstRegion, true),
+              bp = placement(pair.second, pair.secondRegion, false)
+            const leaf = WalkingSelectedChainRelationOwner.classifyLeaf(
+              evaluator,
+              ap,
+              bp,
+              sourceRelationValue(node)
+            )
+            const relation = leaf.relation
+            if (leaf.kind === 'blocked') {
+              pair.proofs.push({ parameter: task.parameter, kind: 'blocked' })
+              reasons.push(
+                pair.first.id +
+                  ' - ' +
+                  pair.second.id +
+                  ' - source-material-volume-overlap'
+              )
+              continue
+            }
+            if (
+              relation.axis &&
+              relation.kind === 'separated' &&
+              sourceIntervalAxisGap(
+                av,
+                bv,
+                relation.axis,
+                0,
+                budget.maxBits,
+                () => evaluator.accountIntervalPredicate()
+              )
+            ) {
+              pair.proofs.push({
+                parameter: task.parameter,
+                kind: 'exactSeparated'
+              })
+              continue
+            }
+            if (
+              relation.kind === 'boundary' &&
+              relation.axis &&
+              evaluator.preservesTemplateRootAxis(
+                template,
+                motion.fixed.parts.length,
+                relation.axis
+              )
+            ) {
+              const admitted = motion.source.rig.jointInterfaces.some(
+                (joint) => {
+                  const first = [
+                    ...joint.parentPatches,
+                    ...joint.childPatches
+                  ].filter((p) => p.part === pair.first)
+                  const second = [
+                    ...joint.parentPatches,
+                    ...joint.childPatches
+                  ].filter((p) => p.part === pair.second)
+                  return WalkingSelectedChainRelationOwner.proveNamedBoundaryLocus(
+                    evaluator,
+                    ap,
+                    bp,
+                    relation,
+                    pair.first,
+                    pair.second,
+                    first,
+                    second
+                  )
+                }
+              )
+              if (admitted) {
+                pair.proofs.push({
+                  parameter: task.parameter,
+                  kind: 'declaredBoundary'
+                })
+                continue
+              }
+            }
+            pending.push(index)
+          } catch (error) {
+            pair.proofs.push({ parameter: task.parameter, kind: 'unknown' })
+            reasons.push(
+              pair.first.id +
+                ' - ' +
+                pair.second.id +
+                ' - ' +
+                (error instanceof Error
+                  ? error.message
+                  : 'exact-work-unavailable')
+            )
+          }
+        }
+        if (pending.length) {
+          if (work.subdivisions >= budget.maxSubdivisions) {
+            for (const index of pending)
+              pairs[index].proofs.push({
+                parameter: task.parameter,
+                kind: 'unknown'
+              })
+            reasons.push(
+              pairs[pending[0]].first.id +
+                ' - ' +
+                pairs[pending[0]].second.id +
+                ' - interval-subdivision-exhausted'
+            )
+          } else {
+            work.subdivisions++
+            const mid = selectedMidpoint(task.parameter)
+            queue.push(
+              {
+                parameter: { low: task.parameter.low, high: mid },
+                indices: pending
+              },
+              {
+                parameter: { low: mid, high: task.parameter.high },
+                indices: pending
+              }
+            )
+          }
+        }
+      }
+    } catch (error) {
+      evaluationFailed = true
+      reasons.push(
+        error instanceof Error
+          ? error.message
+          : 'selected-relation-preparation-unavailable'
+      )
+    }
+    for (const pair of pairs) {
+      let kind: SelectedKind = 'exactSeparated'
+      if (pair.proofs.some((p) => p.kind === 'declaredBoundary'))
+        kind = 'declaredBoundary'
+      if (
+        !pair.proofs.length ||
+        pair.proofs.some((p) => p.kind === 'unvisited')
+      )
+        kind = 'unvisited'
+      if (evaluationFailed || pair.proofs.some((p) => p.kind === 'unknown'))
+        kind = 'unknown'
+      if (pair.proofs.some((p) => p.kind === 'blocked')) kind = 'blocked'
+      coverage[kind]++
+    }
+    const classified =
+      coverage.strictBounds +
+      coverage.exactSeparated +
+      coverage.declaredBoundary +
+      coverage.blocked +
+      coverage.unknown +
+      coverage.unvisited
+    coverage.unvisited += coverage.required - classified
+    let status: WalkingSelectedChainSourceRelations['status'] = 'clear'
+    if (coverage.unknown || coverage.unvisited) status = 'unknown'
+    if (coverage.blocked) status = 'blocked'
+    const product: WalkingSelectedChainSourceRelations = freeze({
+      format: 'walking-selected-chain-source-relations/1',
+      source: motion.source,
+      cycle: motion.cycle,
+      motion,
+      request,
+      status,
+      coverage,
+      covers,
+      pairs,
+      reasons: reasons.slice(0, 8),
+      work: { ...work, evaluator: evaluator.work }
+    })
+    this.totals.sourceCertifications += evaluator.work.regionPreparations
+    this.totals.sourceScalarRebindings += evaluator.work.sourceScalarRebindings
+    this.totals.sourceCertificationReuses +=
+      evaluator.work.sourceCertificationReuses
+    evaluator.retireSourceQueryWork()
+    this.current = product
+    return product
+  }
+}
 export class WalkingSourceRelationEvaluator {
+  private frameTemplates = new WeakSet<WalkingRationalSourceNode>()
   private rationalAccount?: RationalArithmeticBudget
   private readonly rationalChains = new WeakMap<
     object,
@@ -1448,7 +2174,7 @@ export class WalkingSourceRelationEvaluator {
     PlacedRegion,
     WalkingRegionPlacement
   >()
-  private readonly localDirections = new WeakMap<
+  private localDirections = new WeakMap<
     WalkingPreparedSourceRegion,
     PlacedDirections | typeof exhausted
   >()
@@ -1521,6 +2247,9 @@ export class WalkingSourceRelationEvaluator {
     }
   }
   private readonly counters = {
+    sourceScalarRebindings: 0,
+    sourceCertificationReuses: 0,
+    fixedFrameRescales: 0,
     sheetTrianglePairs: 0,
     sheetTriangleSeparated: 0,
     sheetTriangleIntersections: 0,
@@ -1670,6 +2399,149 @@ export class WalkingSourceRelationEvaluator {
         }
       })
     return this.rationalAccount
+  }
+  prepareRationalFrameTemplate(
+    inputs: readonly ConstrainedFrame<ConstrainedFraction>[],
+    maxBits: number
+  ) {
+    const template = this.prepareRationalNode(inputs, maxBits)
+    this.frameTemplates.add(template)
+    return template
+  }
+  preservesTemplateRootAxis(
+    template: WalkingRationalSourceNode,
+    index: number,
+    axis: ExactPoint
+  ) {
+    if (!this.frameTemplates.has(template) || !template.frames[index])
+      throw new Error('Foreign root template')
+    return this.observeStage('boundaryLocus', () =>
+      [0, 1].every(
+        (column) =>
+          dot(
+            axis,
+            template.frames[index].matrix.map(
+              (row) => row[column]
+            ) as unknown as ExactPoint
+          ).significand === 0n
+      )
+    )
+  }
+  extendRationalFrameTemplate(
+    template: WalkingRationalSourceNode,
+    inputs: readonly ConstrainedFrame<ConstrainedFraction>[],
+    fixedIndices: readonly number[]
+  ) {
+    if (
+      !this.frameTemplates.has(template) ||
+      new Set(fixedIndices).size !== fixedIndices.length ||
+      fixedIndices.some(
+        (i) => !Number.isSafeInteger(i) || i < 0 || i >= template.frames.length
+      )
+    )
+      throw new Error('Foreign rational frame template')
+    const dynamic = this.prepareRationalNode(inputs, template.maxBits)
+    return this.observeStage('rationalNodeCompilation', () => {
+      const budget = this.arithmeticBudget(template.maxBits)
+      let a = template.scale.significand,
+        b = dynamic.scale.significand
+      while (b !== 0n) {
+        scalarWork(budget, Math.max(integerBits(a), integerBits(b)))
+        const next = a % b
+        a = b
+        b = next
+      }
+      const factor = template.scale.significand / a
+      scalarWork(
+        budget,
+        integerBits(factor) + integerBits(dynamic.scale.significand)
+      )
+      const denominator = factor * dynamic.scale.significand
+      const rescale = (
+        frame: QueryExactFrame,
+        from: Dyadic,
+        fixed: boolean
+      ) => {
+        const scale = boundedScalar(
+          { significand: denominator / from.significand, exponent: 0 },
+          budget
+        )
+        const matrix = frame.matrix.map((row) =>
+          row.map((v) => product(v, scale))
+        ) as unknown as QueryExactFrame['matrix']
+        const position = frame.position.map((v) =>
+          product(v, scale)
+        ) as unknown as QueryExactFrame['position']
+        const determinant = dot(matrix[0], cross(matrix[1], matrix[2]))
+        if (fixed) this.counters.fixedFrameRescales++
+        return freeze({ matrix, position, determinant })
+      }
+      const frames = [
+        ...fixedIndices.map((i) =>
+          rescale(template.frames[i], template.scale, true)
+        ),
+        ...dynamic.frames.map((frame) => rescale(frame, dynamic.scale, false))
+      ]
+      const node = freeze({
+        scale: boundedScalar({ significand: denominator, exponent: 0 }, budget),
+        frames,
+        chains: frames.map((frame) => Object.freeze([frame])),
+        maxBits: template.maxBits
+      })
+      this.rationalNodes.add(node)
+      return node
+    })
+  }
+  reuseCertifiedSource(
+    previous: WalkingSourceRelationEvaluator,
+    prepared: WalkingPreparedSourceRegion,
+    shape: Shape,
+    region: SourceRegion
+  ) {
+    if (
+      !previous.issued.has(prepared) ||
+      !prepared.certified ||
+      prepared.shape !== shape ||
+      prepared.region !== region
+    )
+      throw new Error('Foreign or incomplete source certification')
+    const existing = this.regions.get(shape)?.get(region)
+    if (existing) return existing
+    const budget = sourceRelationValue(this.rationalAccount)
+    return this.observeStage('sourceCertification', () => {
+      const points = prepared.points.map(
+        (p) =>
+          p.map((value) => {
+            scalarWork(budget, integerBits(value.significand))
+            this.counters.sourceScalarRebindings++
+            return boundedScalar(
+              { significand: value.significand, exponent: value.exponent },
+              budget
+            )
+          }) as unknown as ExactPoint
+      )
+      const result = freeze({
+        shape,
+        region,
+        points,
+        triangles: prepared.triangles,
+        certified: true
+      })
+      let products = this.regions.get(shape)
+      if (!products) {
+        products = new Map()
+        this.regions.set(shape, products)
+      }
+      products.set(region, result)
+      this.issued.add(result)
+      this.counters.sourceCertificationReuses++
+      return result
+    })
+  }
+  retireSourceQueryWork() {
+    this.frameTemplates = new WeakSet()
+    this.placed.clear()
+    this.localDirections = new WeakMap()
   }
   prepareRationalNode(
     inputs: readonly ConstrainedFrame<ConstrainedFraction>[],

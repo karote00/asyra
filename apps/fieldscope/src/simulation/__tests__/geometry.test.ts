@@ -11,6 +11,10 @@ import {
 import * as crops from '../../domain/crop-models'
 import * as models from '../../domain/robot-model'
 import { QueryGeometry, type GeometryReceipt } from '../geometry'
+import { WalkingRobotSourceOwner } from '../../domain/walking-robot-source'
+import { createSyntheticWalkingRobotDefinition } from '../../domain/walking-robot-definition'
+import { prepareSceneDemand } from '../scene-demand'
+import { DEFAULT_SCENE_DEMAND_CONFIGURATION } from '../../domain/scene-demand-configuration'
 
 const site = new SiteGeometry()
 const robot = new RobotProjection()
@@ -38,6 +42,57 @@ const owners = {
   isCurrentRobot: robot.isCurrentSource.bind(robot),
   isCurrentDock: robot.isCurrentDockSource.bind(robot)
 }
+
+it('walking observation prepares farm-only canonical membership once and retires exact source tuples', () => {
+  const sourceOwner = new WalkingRobotSourceOwner()
+  const source = sourceOwner.prepare(
+    createSyntheticWalkingRobotDefinition({
+      definitionId: 'walking-observation-geometry'
+    })
+  )
+  const demand = prepareSceneDemand(
+    farm,
+    receipt.scene,
+    DEFAULT_SCENE_DEMAND_CONFIGURATION
+  )
+  const tuple = Object.freeze({
+    format: 'walking-observation-geometry/1' as const,
+    scene: receipt.scene,
+    demand,
+    source
+  })
+  let live = true
+  const owner = new QueryGeometry({
+    isCurrentWalkingReceipt: (value) => live && value === tuple,
+    isCurrentScene: site.isCurrentScene.bind(site),
+    isCurrentDemand: (value) => value === demand,
+    isCurrentWalkingSource: (value) => sourceOwner.isCurrent(value)
+  })
+  const prepared = owner.prepareWalking(tuple)
+  expect(owner.prepareWalking(tuple)).toBe(prepared)
+  expect(prepared.receipt).toBe(tuple)
+  expect(prepared.meshes.length).toBe(
+    receipt.scene.meshes.filter((mesh) => mesh.layer !== 'dimensions').length
+  )
+  expect(
+    prepared.meshes.every(
+      (mesh) => mesh.kind === 'farm' && mesh.frame === 'world'
+    )
+  ).toBe(true)
+  expect(owner.work.membershipBuilds).toBe(1)
+  for (const mesh of prepared.meshes) {
+    expect(receipt.scene.meshes).toContain(mesh.origin)
+    expect(
+      mesh.prepared.regions.every((region) =>
+        mesh.origin.regions.includes(region.source)
+      )
+    ).toBe(true)
+  }
+  expect(() => owner.prepareWalking({ ...tuple })).toThrow()
+  live = false
+  expect(() => owner.read(prepared)).toThrow()
+  sourceOwner.clear()
+})
 
 it('retains all current near physical sources with unique shape and rigid-piece ownership', () => {
   const owner = new QueryGeometry(owners)
@@ -83,6 +138,57 @@ it('retains all current near physical sources with unique shape and rigid-piece 
   }
   expect(Object.isFrozen(source.meshes)).toBe(true)
   expect(source.meshes.every(Object.isFrozen)).toBe(true)
+})
+
+it('places current local sources without rescanning a growing far mesh inventory', () => {
+  for (const count of [0, 128]) {
+    const localSite = new SiteGeometry()
+    const originals = buildSiteMeshes(farm, localSite)
+    const template = originals.find((mesh) => mesh.layer === 'base')
+    if (!template) throw new Error('Missing canonical base')
+    const far = Array.from({ length: count }, (_, index) => ({
+      ...template,
+      descriptor: {
+        ...template.descriptor,
+        position: [1000 + index * 10, 0, 0] as const
+      }
+    }))
+    const scene = localSite.prepareScene(farm, [...far, ...originals])
+    const handle = Object.freeze({ ...receipt, scene })
+    const owner = new QueryGeometry({
+      ...owners,
+      isCurrentReceipt: (value) => value === handle,
+      isCurrentScene: localSite.isCurrentScene.bind(localSite)
+    })
+    const source = owner.prepare(handle)
+    const mesh = source.meshes.find((item) => item.kind === 'dock')
+    if (!mesh) throw new Error('Missing canonical dock')
+    expect(source.meshes.indexOf(mesh)).toBeGreaterThanOrEqual(count)
+    const includes = Array.prototype.includes
+    let scans = 0
+    const scan = vi.spyOn(Array.prototype, 'includes')
+    scan.mockImplementation(function (this: readonly unknown[], value, from) {
+      if (this === source.meshes) scans++
+      return includes.call(this, value, from)
+    })
+    try {
+      for (let index = 0; index < 8; index++)
+        owner.placePoint(source, mesh, [0, 0, 0])
+      expect(scans).toBe(0)
+      expect(source.work.membershipVisits).toBe(source.meshes.length)
+      expect(owner.placementWork).toEqual({
+        membershipChecks: 8,
+        placements: 8
+      })
+      expect(owner.prepare(handle)).toBe(source)
+      expect(() => owner.placePoint(source, { ...mesh }, [0, 0, 0])).toThrow()
+      expect(() => owner.placePoint({ ...source }, mesh, [0, 0, 0])).toThrow()
+      owner.clear()
+      expect(() => owner.placePoint(source, mesh, [0, 0, 0])).toThrow()
+    } finally {
+      scan.mockRestore()
+    }
+  }
 })
 
 it('binds original fruit partitions to exact canonical plant instances without distant geometry', () => {
