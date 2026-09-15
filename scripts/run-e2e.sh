@@ -1,6 +1,12 @@
 #!/bin/bash
 set -euo pipefail
 
+E2E_SUITE="${E2E_SUITE:-all}"
+case "$E2E_SUITE" in
+  all|functional|performance) ;;
+  *) echo "Unknown E2E_SUITE: $E2E_SUITE" >&2; exit 2 ;;
+esac
+
 read -r E2E_HOST E2E_PORT E2E_APP_URL \
   E2E_COLLABORATION_HEALTH_URL E2E_COLLABORATION_WEBSOCKET_URL <<< "$(
   node --input-type=module -e "
@@ -103,20 +109,25 @@ echo "Step 9: Waiting for App server to be ready..."
 # Using wait-on to ensure port is listening
 npx wait-on "$E2E_APP_URL" --timeout 60000
 
-# 10. Keep the formal timing budget free from another browser worker's CPU load,
-# then run the remaining functional suite with its deterministic CI policy.
-if [ "${CI:-}" = "true" ]; then
-  echo "Step 10: Running isolated render performance gate..."
+# Independent CI jobs use the same PID-owned services and cleanup guards.
+if [ "$E2E_SUITE" = "performance" ] || { [ "$E2E_SUITE" = "all" ] && [ "${CI:-}" = "true" ]; }; then
+  echo "Running isolated render performance gate..."
   E2E_RENDER_PERFORMANCE_BROWSER=chromium \
     yarn workspace @asyra/asyra-design playwright test --config playwright.config.ts e2e/render-delta-performance.spec.ts --workers=1
-  echo "Step 11: Running functional Playwright tests..."
+fi
+if [ "$E2E_SUITE" = "performance" ]; then
+  exit 0
+fi
+
+if [ "$E2E_SUITE" = "functional" ] || [ "${CI:-}" = "true" ]; then
+  echo "Running functional Playwright tests..."
   if [ -n "${FLOW_CI_REPORT:-}" ]; then
     E2E_SKIP_PERFORMANCE=true PLAYWRIGHT_JSON_OUTPUT_NAME="$FLOW_CI_REPORT" yarn test:e2e --reporter=line,json
   else
     E2E_SKIP_PERFORMANCE=true yarn test:e2e
   fi
 else
-  echo "Step 10: Running Playwright tests..."
+  echo "Running Playwright tests..."
   yarn test:e2e
 fi
 

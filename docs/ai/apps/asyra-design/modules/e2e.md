@@ -99,10 +99,13 @@ test:e2e:balanced-ai-correctness` runs that heavy case explicitly with one
 - pull-request and manual CI use one deterministic worker, line reporting, no
   retry, and stop after the first product failure; scheduled CI retains one
   retry and completes the suite without the first-failure cap
-- CI runs the dense-vector Render timing budget first with one isolated worker,
-  then excludes that file while running the remaining functional suite with
-  one worker; the formal timing thresholds are not relaxed to absorb runner
-  contention, and the ordinary suite must return a deterministic teardown
+- CI runs Board acceptance, Render timing, and functional Design tests as
+  independent jobs in the reusable E2E workflow. A failed Board or timing job
+  does not prevent functional evidence collection, but still fails the reusable
+  workflow and its required `flow-ci` aggregate. No gate is optional.
+- `E2E_SUITE=performance` and `E2E_SUITE=functional` select the bounded slice in
+  `scripts/run-e2e.sh`; the default `all` keeps local full-suite behavior. All
+  slices preserve PID-owned service startup, readiness, fail-fast and cleanup.
 - the isolated timing gate sets `E2E_RENDER_PERFORMANCE_BROWSER=chromium` so
   the ordinary config uses Playwright's installed Chromium binary; the
   remaining functional suite continues to use the configured Google Chrome
@@ -117,10 +120,23 @@ test:e2e:balanced-ai-correctness` runs that heavy case explicitly with one
   runs exclude it, while workflow dispatch exposes an explicit opt-in
 - a missing pull-request base or head revision fails scope resolution instead
   of silently skipping the balanced AI heavy gate
+- the dense-vector timing scenario performs exactly 12 unmeasured warm-up
+  operations on the same composed runtime before the 12 measured operations.
+  Warm-up completion is checked, the measured counters are reset at one explicit
+  boundary, and both sets of strategy timings are retained. The first measured
+  sample is reported as `strategyGeometryFirstSampleMs`, not as a cold start.
+  All existing total/p95/max budgets remain unchanged; measured outliers are
+  neither removed nor retried. Pure summary regression tests retain injected
+  isolated and sustained slow samples.
+- every timing run writes `render-profile-samples.json` before assertions,
+  including raw samples, phase timestamps, browser version and CDP performance
+  metrics. `RENDER_DELTA_SAMPLES` retains the bounded warm-up/measured samples in
+  CI logs. `E2E_RENDER_PERFORMANCE_TRACE=true` explicitly enables a Chrome V8/GC
+  trace for diagnosis; trace overhead is not part of the default gate.
 - the bounded 12-frame profile uses the lower sample quantile for p50/p95 and
   retains a separate max assertion, preventing p95 from degenerating into the
   same single-sample oracle while preserving every formal threshold
-- superseded runs for the same pull request or ref are cancelled, and both E2E
+- superseded runs for the same pull request or ref are cancelled, and all browser
   jobs install only Chromium; the timing gate consumes that exact managed
   binary while the functional suites keep their configured Chrome channel
 - the 7,076-element two-actor Agent recording remains the explicit
