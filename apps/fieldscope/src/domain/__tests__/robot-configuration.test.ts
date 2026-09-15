@@ -3,10 +3,18 @@ import { DEFAULT_CONFIGURATION } from '../farm-configuration'
 import {
   DEFAULT_ROBOT,
   validateRobot,
+  readActiveRobotConfiguration,
   assessRobotDesign
 } from '../robot-configuration'
 
 describe('robot design admission', () => {
+  it('keeps legacy width readable without granting active walking admission', () => {
+    const raw = { ...DEFAULT_ROBOT, width: 1 }
+    const bytes = JSON.stringify(raw)
+    expect(validateRobot(raw).width).toBe(1)
+    expect(() => readActiveRobotConfiguration(raw)).toThrow(/legacy-topology/)
+    expect(JSON.stringify(raw)).toBe(bytes)
+  })
   it('keeps survey and physical energy evidence unknown', () => {
     const report = assessRobotDesign(
       validateRobot(DEFAULT_ROBOT),

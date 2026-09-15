@@ -19,6 +19,116 @@ per-evaluation admitted-identity reuse, and this API grants no material relation
 
 Cross-package imports use public `@asyra/*` facades. Do not import another app's runtime or renderer.
 
+## Implemented active-definition and stowed-envelope prerequisites
+
+`readActiveRobotConfiguration` delegates to
+`readActiveWalkingRobotDefinition`. Historical `validateRobot` and saved
+definition readers remain unchanged. The active reader rejects legacy topology
+and checks the exact declared fixed assembly width against
+`MAX_WALKING_BODY_WIDTH` (0.80 m), without a new height cap. This is schema
+admission; the complete source-material body check belongs to the envelope owner.
+
+`WalkingRobotEnvelopeOwner.prepare(source, rawRequest)` admits
+`walking-stowed-envelope-request/1` and returns a complete
+`WalkingStowedEnvelope` or typed unavailable result. It binds the current source
+owner, canonical stowed preset, base placement, current mounted-crate owner
+product and cloned complete declared load geometry. `read(source, request)`
+returns only the current product, performs no geometry work and does not retire
+a valid product merely because a foreign handle was queried. Failed preparation,
+source replacement or mounted-product replacement retires the prior result.
+
+The explicit authority `completed-stowed-fk-then-base/1` computes completed
+canonical stowed FK once, then applies one outer base transform with outward
+interval arithmetic. It does not claim byte equivalence to independently rounded
+world FK. Every original robot vertex, all eleven mounted-crate parts using their
+exact common placement, and every declared load part contribute immutable bounds.
+`contributors` retains kind, stable part/body ID, exact admitted part reference,
+vertex count and individual bounds; their union is `bounds`.
+`bodyBounds` covers actual root and permanently fixed descendant material in
+the canonical body frame and separately enforces 0.80 m. Articulated contributors
+and removable attachments remain in the total cuboid, which may exceed 0.80 m.
+
+Load input declares all required part IDs, complete original source-region
+partitions and one local frame per part; missing, foreign or nonfinite geometry
+is unavailable. Mounted identity is never reconstructed from equal bytes.
+Product work records preparations, FK calls, original source/attachment vertices
+and contributors. Same admitted input reuse has zero additional work. No farm,
+view or locale input rebuilds this owner. These are geometric prerequisites,
+not runtime composition, collision, route fit, latch strength or W4 admission.
+
+## Implemented walking runtime selection and transit screen
+
+`walking-runtime-selection/1` is a Core-persisted explicit choice between the
+default `legacy-view` and `walking-active` with an admitted walking definition.
+It preserves legacy reads and historical projection, performs no automatic
+conversion or dimensional rewrite, and participates in normal undo/redo.
+
+`WalkingOperatingOwner` publishes `walking-operating-report/1` as
+`legacy-view`, `ready-fast`, `local-required` or `unknown`. Active reports bind
+the exact selection, definition, W2 source/profile, canonical stowed pose,
+complete envelope/load and current W1 demand. Definition/profile/load changes
+prepare their owners; W1 farm, route, growth or survey changes rebuild only the
+route-local screen. Camera, view and reads perform no W1/W2 work.
+
+`WalkingTransitScreen` owns a private immutable interval tree keyed by W1
+identity, route, margin and stable exclusion ordinals. It derives a conservative
+swept cuboid by translating the already-prepared complete stowed envelope,
+queries the X interval tree, then checks complete XYZ bounds. Strict separation
+inside the margin-covered route volume is `ready-fast`; an AABB overlap is only
+`local-required`. All subtraction, translation and margin expansion uses the
+existing directed interval arithmetic, and closed-bound contact remains a
+candidate. `exact-source-query-required` alone can be discharged by this
+complete bounds screen; every other W1 free-passage coverage/evidence reason is
+retained as `unknown`. A stale demand, missing route, invalid finite bounds, or
+margin-expanded sweep outside the surveyed route volume is also `unknown`, with
+no partial-clear or full-scan fallback. Its build, query, candidate, detailed and
+contributor counters expose the actual bounded work. Finite exclusion-bounds
+admission is cached by immutable W1 identity/route/inventory, reports
+`validationVisits`, and is not repeated for action or margin changes; a new W1
+product revalidates before index use. Operating-report currentness checks the live
+W1 demand and W2 source/envelope identities directly, including during upstream
+subscriber notification.
+
+This index contains simulator-owned source geometry for bounded query
+acceleration; it is not a robot-observed obstacle inventory. `ready-fast` is a
+geometric screen only and grants neither observation validity nor permission to
+move. Before every future action, the W6 action gate must bind the latest locally
+sufficient observation and its validity together with independent dynamic-hazard
+and support/fall monitors. Missing, stale or insufficient observation holds the
+action. This does not require a new full image at every control tick or establish
+an invented freshness threshold. One patrol round may reuse its current static
+route survey, while dynamic observations update independently, retain a moving
+object's identity when it becomes stationary, and do not rebuild all static W1
+or W2 geometry.
+
+`WalkingRobotProjection` displays only the selected active robot and consumes
+the actual W2 source and owner-produced stowed pose result. Bootstrap retains the
+historical projection only while `legacy-view` is selected and retires both
+projection and operating currentness on disposal.
+
+## Proposed later walking operating APIs - not implemented
+
+The following app-owned surfaces remain proposed by the active contract:
+
+- a plant-contact-risk result that retains exact foliage identity and separately
+  classifies foot placement, hook/entanglement, pinch, drag/tug and configured
+  stem displacement;
+- observation evidence for film/weather/time, illumination, shadow, glare,
+  occlusion, depth, calibration, confidence, viewpoint and age;
+- a same-side manipulation result that binds foliage opening, fruit holding and
+  cutting to one group/source/pose/interval and records pre-action admission
+  separately from post-action quality;
+- a patrol-round session with an unfinished checkpoint, one-round route-evidence
+  lifetime, continuously current hazard/support observations, in-place attention
+  folding and base-latch crate-exchange state;
+- affected-work/currentness/overrun reports and measured capture-to-inhibit,
+  observation-to-decision and canonical-state-to-UI latency.
+
+These proposals reuse owner-issued source, route, terrain, load, pose and
+observation identities. They add no hardware connection, safety certification,
+hidden sensor truth or automatic migration. Exact names and wire formats are
+frozen in each implementation Step Execution Card.
+
 ## Robot design APIs
 
 - `RobotConfiguration`, `DEFAULT_ROBOT`, `validateRobot` own the M2 design schema.
@@ -369,6 +479,24 @@ movement guarantees. C may depend on this domain owner without importing D.
 
 ## Bounded polynomial scalar evidence
 
+The same owner also publishes `evaluateExactPolynomialTrig(kind, fraction)`
+and `boundExactPolynomialTrig(kind, { low, high })`. Inputs must be canonical
+BigInt rationals (positive denominator, gcd 1, unique 0/1) strictly inside (-1,1).
+Admission bounds input widths before gcd or products. Exact point `value` and
+`sign` are distinct from `rounded`; a positive rational may display as +0.
+Interval `bounds` and `extrema` are exact rationals, while `outward` is the
+separate binary64 enclosure. Outputs detach and freeze admitted fractions.
+
+`POLYNOMIAL_TRIG_SIGN_CERTIFICATE` proves real-domain S19 sign/zero-locus and
+C20 positivity from the fixed scaled coefficients: paired positive lower bounds
+in z=x², S19'=C18>0 and C20'=-S19 establish exact extrema. Its program-constant
+identity is reused; no result is cached by input. Rational endpoints/control
+values do not restrict a later continuous trajectory to sampled rational points.
+New calls charge admission checks, gcd steps, normalizations and rational
+comparisons alongside existing polynomial work; all temporaries retain the
+24000-bit guard. Legacy number API bits, signed zero and work sequence are
+unchanged. This scalar certificate grants no gait or collision result.
+
 - The shared domain scalar owner adds `roundFraction(numerator, denominator, mode)`
   with `nearest-even`, `down` and `up` rounding. It rejects invalid/oversized inputs;
   directed or nearest overflow follows binary64 rounding. The old query facade
@@ -624,13 +752,25 @@ objects as unsupported, and `readWalkingRobotDefinition` admits only the current
 exact-key format.
 
 Version 2 requires the exact-key `sourceModel` with kind
-`solid-articulation/1`, explicit evidence and positive pin, sleeve-inner,
+`solid-articulation/1` or explicitly selected `solid-articulation/2`,
+explicit evidence and positive pin, sleeve-inner,
 sleeve-outer, axial-gap and link-setback ratios. The synthetic factory uses
 1/8, 3/16, 1/2, 1/16 and 1/2 respectively. Pin radius must be below the sleeve
 cavity, which must be below the outer radius. `base.mast` supplies the actual
 two-rail assembly bounds; its admitted Y interval must cover the complete
 carriage lift, and its Z centre must agree with the carriage. The factory
-retains lift [0.5, 1.65] m and uses rail Y [0.4, 1.71] m.
+retains lift [0.5, 1.65] m and uses rail Y [0.4, 1.71] m. The factory's optional
+`sourceProfile` selects profile 2; omission preserves profile 1 bytes.
+Profile 2 supplies external leg-root mounts and one connected parent clevis
+plate per root while retaining the complete chassis. Source preparation proves
+every generated child region over the complete declared abduction domain,
+checks every original parent region, and rejects unproved frames, domains,
+radial pin clearance, physical gaps or positive-area chassis connections.
+Actual emitted radial coordinates determine support; a nominal trigonometric
+radius is not a containment certificate. Directed endpoint construction and
+exact squared admission preserve gaps without tolerance or geometry exemptions.
+Its geometry and mass/CoM evidence have separate synthetic identities; the
+material revision does not certify actual component masses.
 
 `WalkingRobotSourceOwner.prepare` creates one immutable definition-bound source
 and rig revision and reuses it only for the same admitted definition object. The
@@ -646,10 +786,62 @@ body-local frame, and source materials carry a separate visibly synthetic
 evidence identity; measured geometry evidence is never presented as material
 evidence.
 
+The W2 mounted-crate prerequisite publishes an original tray-top contact patch
+only for solid-articulation/2. A separate walking-mounted-crate/1 owner retains
+all eleven original crate parts from the existing dimensioned model builder.
+Its geometry depends only on width, length and height, not tool, W2 source,
+pose or mounting clearance. Its exact common placement and partial contact
+certificate bind the current W2 base/tray patch, crate underside and independent
+synthetic clearance/retention evidence. The mass identity is a later W4 binding,
+not admitted mass or latch strength. Legacy per-part load.localFrames keep their
+existing meaning. The request/3 mounted crate variant consumes the exact current
+artifact through WalkingCurrentMountedCrate; request/1 and request/2 retain
+their prior load schema. Read, reuse and final preparation validate both source
+and mounted issuance, including mass identity through the unchanged artifact.
+WalkingConstrainedCycleOwner.readBaseMotion supplies an owner-issued base-only
+whole-phase shared-root receipt from its actual compiler expression, constant
+rational yaw matrix and strictly positive determinant. Constant local parts
+retain actual source identity. W3 uses the existing rational relation kernel
+with exact common dyadic mounting placement and directed bounds for all eleven
+original parts. Zero-margin base relations may use the shared invertible root,
+but remain required pairs. Only the full original tray-top/bottom locus permits
+boundary; other intersections block and unproved predicates stay unknown.
+prepareWalkingMountedCrateRelations is a bounded mathematical consumer, not a
+motion admission. Non-base, external and positive-margin relations retain the
+ordinary complete-interval path; no holder or attachment blanket exemption.
+
+WalkingConstrainedCycleOwner.readConstantMotion separately publishes
+walking cycle constant-root membership from the compiler's constant parent
+branches, excluding dynamic leg bodies and every dependent descendant. Both
+phase locals must match exactly; readBaseMotion retains its base-only meaning.
+prepareWalkingConstantRootRelations uses this current receipt only for
+zero-margin topology, complete original-region SAT and original joint-interface
+or mounted tray/bottom patch loci. Constant joints do not authorize contact by
+ancestry, and external or positive-margin pairs retain interval proofs.
+Within one rational node, every scalar still passes type, sign and bit-width
+checks; canonical-value proof and integer lift are shared only for identical
+normalized fractions. First-seen distinct denominators produce the same common
+LCM. A frame operator may retain complete oriented primitive-vector transports
+within its evaluator lifetime; mutable replacement and incomplete results cannot
+borrow them. Work counters distinguish visits, unique proofs and reuse.
+
+readPhaseRootMotion(cycle, phase) separately issues cycle-phase-root/1 from the
+actual support identity-abduction branch and constant parent descendants. It
+does not change readBaseMotion or readConstantMotion. Dynamic upper/lower,
+swing coxa and world-fixed feet are not root-family members. Passing a phase to
+prepareWalkingConstantRootRelations selects only that current phase receipt.
+Both retained evaluator products and pair proofs are keyed by phase/family
+identity; no support proof is reusable as a swing proof. The original-region
+SAT and named closed-locus permission rules remain unchanged.
+Existing two-phase constant and authored fixed-parent proofs retain their
+global family lifetime; only the additional support-coxa family is phase-local.
+Global and phase-local fixed-proof reuse have separate work counters.
+
 All revolute joints share canonical pin, yoke, annular sleeve and neck
 construction. Eight closed convex wedges partition each annular material solid;
 their radial seams do not fill the cavity or become contact patches. Root
-housing sockets and departure corridors are actual subtracted material.
+housing sockets and departure corridors are actual subtracted material in
+profile 1; profile 2 retains that arm construction but uses external leg roots.
 Each core endpoint uses the other body's bounded joint material and a finite
 pivot cross-section keepout, with a declared physical gap. The keepout is a
 construction profile, not extra material or a collision exemption. A single
@@ -789,6 +981,208 @@ Authored channels cannot support a foot, and an all-swing schedule is unknown.
 Synthetic provenance remains attached to all evidence. Results report
 `clear`, `blocked` or `unknown`; a blocked turn reports `no-turn`. Every result
 retains `quasiStatic: 'pending-W4'` and makes no stability or safety claim.
+
+## Constrained support projection
+
+The separate terrain-placement owner admits explicit measured/synthetic scenario
+triangles through `walking-terrain-placement-request/1`. Exact current source,
+SceneDemand, farm and route references bind complete original SourceRegions and
+three source-issued foot seeds with triangle ordinals and rational barycentrics.
+Query-exact frames derive anchors; caller world coordinates are forbidden.
+The producer obtains one constrained projection and proves full sole coverage
+by exact clipped-area equality only after soil interiors are proven disjoint.
+Certificates retain original foot and contributing soil triangle ordinals.
+Current W1 closed channel opening bounds, including Y=0, take priority over soil
+labels; complete debris triangles or evidenced keep-outs may also block.
+Disjoint boundary triangles do not exclude a closed-solid debris interior;
+without that proof this owner retains unknown, while actual surface or keep-out
+hits remain blocked. Every supplied assessment must name a current source foot
+patch, including assessments not selected by the three seeds.
+Incomplete partitions, observations, unsupported topology, out-of-route soil
+and exhausted finite input/pair/predicate/bit budgets remain unknown.
+
+`WalkingTerrainPlacementOwner` publishes immutable `walking-terrain-placement/1`
+geometry products. `sourceGeometry.status` is distinct from
+`physicalStatus: unknown` and `assessmentApplicability: unbound`. Supplied
+geometry/friction/bearing/sinkage records retain their evidence and original
+path/load/time fields; only a later current product can bind their applicability.
+Flags alone never admit source geometry or safety. Same-admitted-request prepare
+and exact reads do no repeated source work; a successor retires old products.
+This source placement does not admit swing, stability, collision-free gait or
+hardware safety.
+
+`WalkingConstrainedKinematicsOwner` prepares the explicit
+`walking-constrained-kinematic-projection/1` recipe. Its inputs bind the exact
+current source, three complementary tripod chain/part/sole-patch references,
+canonical rational anchor origins, one rational base quaternion, one exact
+current source preset for fixed joints, the support parameter interval and
+finite operation/bit budgets. Mutable fractions are detached and canonicalized;
+source references remain exact. Invalid or incompatible inputs are unavailable.
+
+This arithmetic is explicitly polynomial/quaternion-similarity semantics.
+Dynamic point leaves come once each from `evaluatePolynomialTrig` at the shared
+half parameter; bound leaves come from `boundPolynomialTrig` on the directed
+half-parameter interval. Hip uses that same quaternion's conjugate. Internal
+similarity and composition are exact rational operations with positive norm
+proved, without assuming unit norm. No legacy FK or real-sine Taylor enclosure
+is substituted for this recipe.
+
+The fixed support template admits matching actual leg geometry and proves
+`L_i = M_i + D`. Exact anchor differences must equal the shared base rotation
+of `M_i - M_reference`; rounded station sums are rejected. One root expression
+cancels the one shared displacement before interval boxing. Every original
+sole-patch vertex is fixed by that certificate. Other body/part frames and every
+source part's vertices receive outward bounds; unresolved dependencies remain
+wide. The product owns all entries under its exact source/recipe/interval
+identity. `evaluate` returns exact point frames and separately final-rounded
+per-body display frames, never display angles for re-evaluation through legacy FK.
+
+One owner retains one admitted preparation and its latest point result. Exact
+admitted recipe reads and repeated point reads do no geometric work. Replacement,
+failed admission or disposal retires prior handles; work counters and budgets
+include leaf, rational, frame and source-vertex work. This owner proves constrained
+projection only. Swing, terrain contact, collision, stance transitions and full
+gait remain pending, and request versions 1/2 retain their existing semantics.
+
+`WalkingConstrainedCycleOwner` owns `walking-constrained-cycle/1`, separately
+from projection/1. It admits the exact current source/stowed preset, six
+source-issued sole patch anchors, complementary station-covering tripods,
+canonical rational alpha and a gravity-preserving rational yaw quaternion.
+Actual source layout, authored negative-knee/hip/abduction domains, station
+spacing and finite operation/24000-bit budgets must be proved before publication.
+It consumes `evaluateExactPolynomialTrig`, `boundExactPolynomialTrig` and the
+fixed polynomial sign certificate; projection/1 retains its original rounded
+polynomial leaves. Identities and arithmetic products cannot be interchanged.
+
+The real phase parameter is u in [0,1]. Support theta=alpha*(2u-1) uses one
+conjugate hip/knee pair and a shared root. The complementary tripod uses the
+opposite pair and outward side-signed beta=4*alpha*u*(1-u). Actual sole vertex
+coefficients rho>0 and down>=0, together with the admitted polynomial signs,
+prove lift rho*2SC/N+down*2S^2/N strictly positive in the open phase and zero at
+its endpoints. All six soles share the initial plane. Exact full-body
+handoff and periodic net forward displacement are checked before publication.
+Each phase advances the base by 2U*sigma(alpha); the complete cycle advances
+all anchors and the base by 4U*sigma(alpha), rotated by the one yaw authority,
+where sigma=2*S(alpha/2)*C(alpha/2)/(S^2+C^2).
+
+`evaluate` returns exact body/part frames and separate final-rounded display
+frames. `bound` accepts an arbitrary admitted rational phase subinterval and
+recomputes its matched theta/bump extrema and outward body/part/source-vertex
+bounds; it does not substitute the whole-phase box. Nested bounds approach
+the representable outward enclosure floor, not zero width for a rational value
+that binary64 cannot represent. Point containment is a regression, not a
+continuous clearance proof. Real open-phase positivity does not promise that
+every rational point can be materialized within finite resources; exhaustion
+is unavailable, never touch, clear or fallback geometry. Work distinguishes
+preparation, evaluation, leaves, rational operations and original source
+vertices; successful complete outputs have zero unvisited entries. Exact reads
+and repeated admitted preparation do no work; replacement or failed admission
+retires handles. This owner supplies no terrain, whole-source collision,
+request/3, load, stability, damage or complete mission admission.
+
+## Nonlinear walking source admission
+
+`readWalkingNonlinearMotionRequest` admits `walking-motion-request/3` for the
+exact current cycle, source, W1 demand/route, ordered phase windows, load,
+external region partitions and four terrain events. Request/1 and request/2
+retain their existing contracts. `WalkingMotionOwner` prepares four owned
+terrain receipts from one immutable input snapshot; the admitted terrain copies
+remain distinct from that snapshot. Exact original sole triangle/vertex equality
+transfers only geometric coverage to cycle endpoints. Physical applicability
+separately requires current path/load/time evidence.
+
+`WalkingSourceRelationEvaluator.prepareRegionCover` uses evaluator-issued
+frame nodes and actual immutable source regions. The canonical nonlinear entry
+uses the same cursor with its current owner-issued whole-phase cycle bound.
+Caller boxes do not establish source coverage. World groups retain the complete
+source partition, descriptor/instance transform chain and semantic owner;
+independent attachments do not become their holder's material union.
+
+The draft `walking-nonlinear-source-relations/1` result carries complete
+inventory, two phase-bound products, disjoint aggregate covers and visited leaf
+records. A cover identifies two contiguous inventory spans, a row-major ordinal
+range, exact cardinality and the whole-phase bound used for a strict gap.
+Overlapping groups descend; they never imply collision. Leaves use the existing
+rational SAT and full-interval axis proof or bounded subdivision. Covers plus
+leaf classifications conserve every required original pair; the leaf list
+alone is not exhaustive. Unvisited ranges and incomplete phase coverage remain
+unknown. Group, leaf, source-input, transformed-vertex and predicate work is
+finite and evaluation-owned. Reads perform no new work; replacement or stale
+cycle/terrain receipts invalidate the product.
+
+Exact SAT axes are issued lazily in the existing face-normal then row-major
+edge-cross order, preserving primitive orientation and first-seen deduplication.
+Only a proved whole-interval strict gap with the original world-unit margin
+permits an early return. Volume, boundary and remaining time-constraint results
+require the complete axis set. Stage counters distinguish candidates, generated
+crosses, unique/duplicate/zero axes, projections and early separated pairs;
+exception-safe preparation/projection/constraint deltas observe the existing
+charged arithmetic and predicate work. Exhaustion before sufficient proof
+remains unknown; these counters do not enlarge or replace the exact-work cap.
+
+For an already computed strictly positive exact gap, zero world-unit margin
+requires only its sign; no squared gap or zero-scaled norm is necessary.
+Nonpositive gaps still fail this sufficient test. Positive margins retain the
+original squared-distance arithmetic and order, including their bit guard.
+This applies to the existing XYZ and complete-axis whole-interval checks;
+touching is not separation, and no axis, frame or witness authority changes.
+
+The evaluator also publishes exclusive innermost work stages for source
+certification, rational-node compilation, local chains, placement validation,
+vertices and directions, relation setup/XYZ, axes, boundary/foot/terrain proofs,
+cover bounds and interval predicates. Their scalar and predicate sums equal the
+existing totals, including partial exceptions; the older axis deltas are
+overlapping detail and must not be added again. Immutable work snapshots and
+warm source/placement reuse retain the existing arithmetic sequence.
+Certification outcome counts distinguish completed certificates, unsupported
+open material, topology-unproved and resource-incomplete preparation as
+observations only; they do not change the prepared region's admission.
+
+Validated placement points retain the existing issued-region and frozen-frame
+lifetime. Complete placement normals/edges are prepared only when XYZ
+whole-interval separation is unproved and full SAT needs them; semantic point,
+terrain-plane and named-boundary consumers read the points directly. A private
+direction product belongs to that same point product, preserving original
+triangle order and primitive normalization. Only a completed set is published.
+The monotonic-budget exhausted sentinel may be retained after a partial attempt;
+other exceptions are not cached. Mutable frame chains remain uncached, while a
+changed region or chain identity forms a new point/direction lifetime.
+
+For tagged rational placements, ordered local source normals/edges are prepared
+once per issued immutable region at first direction demand. The same linear
+frame chain transports edges by M and oriented normals by the signed cofactor
+of M; positive common factors may be removed only from the whole matrix or
+whole vector. Invertibility preserves first representative order. Each placed
+point product owns its completed transported directions, and each evaluation
+owns completed frame operators. Mutable chains use the point product's exact
+snapshot and rebuild. Untagged legacy placements preserve their point-derived
+raw direction scale. No point, original triangle, witness, denominator, margin
+or node-compilation arithmetic is replaced. Required-bit observations report
+each exclusive stage's maximum and first excess without adding predicates or
+changing the 24000-bit ceiling; a required width is not a completed operation.
+
+Explicit sheet regions retain two-sided surface semantics. The same evaluator
+tests each original triangle against a certified convex solid using complete
+solid normals, triangle normal and edge-cross axes. A complete no-gap result is
+a closed surface intersection, including touching, with its original triangle
+offset; there is no sheet volume or contact permission. Every original triangle
+needs a whole-interval world-unit margin separator before its one region pair
+is separated. Candidate-only gaps enter the canonical bounded subdivision;
+degenerate triangles, open shells and exhausted work remain unknown.
+
+`relateRationalSheetRegion` is a mathematical helper, not walking admission. It
+retains its exact node, placements, original-index bound arrays and parameter
+input reference; it validates complete source-index mappings and finite ordered
+vertex bounds. The canonical entry alone supplies current cycle-issued bounds.
+Triangle required/visited/unvisited work is separate from original region
+coverage. No partial triangle prefix can certify its region. Ground and authored
+semantic exclusions retain their existing precedence.
+
+Exact support anchors and a proved common terrain plane are available through
+typed phase/stance outputs for later W4. Source geometry, physical applicability
+and route coverage remain separate. This entry does not supply W4 stability,
+damage, mission or hardware-safety admission. The committed legacy
+`walking-source-relations/1` output is unchanged.
 
 ## Walking quasi-static configuration assessment
 

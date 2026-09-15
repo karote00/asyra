@@ -1,10 +1,28 @@
 # Harvest robot and crate logistics
 
-Status: IN PROGRESS - W1/W2/W3/W4 DOMAIN OWNERS IMPLEMENTED; GOAL INTEGRATION PENDING
+Status: IN PROGRESS - W3A WALKING RUNTIME COMPOSITION IMPLEMENTED
 Started: 2026-09-12 (Asia/Taipei)
 Base: origin/main at `4144a25d7`
-Current contract worktree: `.worktrees/fieldscope-material-contact`
-W4 delivery worktree: `.worktrees/fieldscope-w4-delivery`
+Current contract worktree: `.worktrees/fieldscope-constrained-kinematics`
+
+Current bounded slice: W3a adds versioned Core runtime selection, a
+`walking-operating-report/1`, private W1 route-local transit index, selected-only
+walking projection and bootstrap lifecycle/history composition. Normal travel
+uses translated complete stowed bounds without replaying W2 vertices/FK. Bounds
+overlap or closed contact requests later local work. Directed arithmetic encloses
+reference, translation and margin bounds; W1 coverage/evidence unknowns other
+than cuboid-resolvable exact source detail remain `unknown`. Uncovered or stale
+travel never falls back to a whole-farm scan. Immutable W1 bounds validation is
+counted once per revision inventory and reused across action and margin changes.
+Plant-contact classification and local motion remain the next W3 slice.
+
+The three missing-API/source formal REDs are preserved. The complete envelope
+includes per-contributor bounds for downstream screening, all original vertices,
+the eleven-part mounted crate and declared load; total width and active body
+width are separate. A further lifetime RED prevents an old-handle read from
+discarding the valid replacement product. Same admitted input reuse performs
+zero FK/vertex work. This slice retains completed-stowed-FK then outer-base
+authority explicitly and does not replay rounded display poses as a proof.
 
 ## Bounded objective
 
@@ -31,7 +49,120 @@ definitions retain their legacy identity and historical projection; they are not
 silently loaded as walking definitions. W2 now owns the exact versioned schema
 and explicit create/compatibility path.
 
-## Active implementation sequence
+Implemented W1-W4 domain owners, botanical identities, constrained-cycle and
+source-relation evidence remain reusable. Their exhaustive geometry runs are
+offline formal evidence. They do not prove that the production
+`robot-workspace` composition constructs, schedules or presents a walking
+robot, and they are not the per-update collision path.
+
+The three canonical whole-source geometry cases run only in the existing
+single-worker offline profile suite: the real home-farm plant collision, the
+original sheet subdivision queue and a deliberately finite synthetic mounted
+one-node phase-cover exhaustion case. The first two retain their exact
+original-region geometry proofs. The synthetic case preserves complete pair
+accounting, terrain receipts and foot extrusions while requiring the named
+incomplete phase-cover result, unresolved coverage and a non-clear result. Its
+earlier zero-unknown, zero-unvisited
+all-pairs clear assertion is superseded by W3a's route-local screen and later
+candidate-local work; the archived RED artifacts remain historical evidence and
+are not reinterpreted as a passing runtime admission.
+
+## Active operating-runtime sequence
+
+1. **Contract reset - this slice.** Align the product, hardware, Inspector, API
+   and active plan around the user-approved operating flow. Mark every proposed
+   runtime owner as pending and preserve prior source/math evidence.
+2. **Body admission and complete stowed envelope.** Keep legacy saved robot
+   definitions readable and visibly historical. Add separate active-design
+   admission that enforces body width at or below 0.80 m without imposing a
+   height cap or rewriting old values. Derive the total stowed cuboid from the
+   actual walking source, legs, tools, mounted crate and declared load. Body
+   width and total envelope are different products.
+3. **Partially implemented - walking runtime composition and affected-motion admission.** Replace the
+   historical production robot composition with an explicit walking selection.
+   Use the current stowed cuboid for strict hard-exclusion travel screening.
+   Send only overlapping candidates and affected moving parts to bounded local
+   stepping, avoidance or hold/help. Preserve exact source identity, support
+   contacts, terrain/currentness, original blocked evidence and fail-closed
+   overrun behavior.
+   W3a completes explicit selection, stowed fast screening and selected
+   projection. Candidate-local stepping/contact classification remains pending.
+4. **Observation and same-side harvest.** Add greenhouse film/weather/time,
+   illumination, shadow, glare, occlusion, depth, calibration and confidence to
+   observation evidence. The preferred four-arm robot has two independent
+   left/right groups; each combined foliage-opening/fruit-holding arm must prove
+   both contact functions beside its cutter. The groups work concurrently when
+   current space, stance, load and support permit and serialize only actual
+   shared conflicts. Unreliable or insufficient required observation evidence
+   causes another admitted view or deferral. Crop-specific
+   support/cut/separation/retention and post-action quality records remain
+   separate.
+5. **Patrol, continuous hazard handling and crate exchange.** Create one
+   deterministic patrol-round owner with an exact unfinished checkpoint.
+   Same-round return/exchange/resume reuses its static route-inspection record;
+   moving-object/person and fall/support monitoring remains active. User stop
+   inhibits progress and permits only a separately admitted in-place fold with
+   zero base translation. Exchange requires release, removal, new empty-crate
+   identity/tare, re-lock and explicit resume.
+6. **Runtime/UI and measured latency closure.** Wire the canonical owners into
+   the real session and SpatialLayer projection. Measure actual affected work,
+   stale-input and compute-overrun behavior plus capture-to-inhibit,
+   observation-to-decision and state-to-UI latency. No unmeasured latency number
+   or hardware-safety claim is published.
+
+The first implementation slice after this reviewed contract is step 2. Steps 3
+through 6 require its owner-issued body admission and stowed-envelope identities.
+They do not reopen or reinterpret legacy saved definitions.
+
+### Active executable product cases
+
+- A legacy definition wider than 0.80 m remains readable and renderable with its
+  original value, but cannot enter the active walking action route. A newly
+  admitted walking definition enforces the body-width limit; no height ceiling
+  is inferred. Its derived total stowed envelope may be wider than the body and
+  includes legs, arms, tools, latch-mounted crate and load.
+- A strictly separated complete stowed cuboid takes the normal travel fast path.
+  One foliage overlap becomes a local contact-risk candidate; one structure,
+  drain/channel, person or protected-net overlap cannot be called ordinary
+  foliage. Unaffected sources do not trigger a whole-scene exact-pair run.
+- Ordinary foliage contact can be admitted only with authored foliage identity
+  and evidence excluding foot placement, hooking/entanglement, pinch,
+  drag/tug and excessive displacement. Missing compliance or release evidence
+  is `unknown`. The configurable 0.03 m synthetic displacement demand remains
+  visibly labeled and adjustable.
+- Both left and right groups inspect and harvest representative cucumber and
+  tomato targets. Each same-side case binds one combined foliage-opening/holding
+  arm and one cutter to the same source, pose and interval. Cucumber contact
+  does not scrape/wipe/roll its fine spines; tomato retains skin, calyx and
+  pedicel; the plant-side cut corridor excludes protected net.
+- A single-image candidate whose required evidence is unreliable or insufficient
+  because of glare, shadow, occlusion, depth or calibration causes another
+  admitted viewpoint or deferral. Ordinary shadow presence alone is not a
+  failure. One image never supplies hidden-fruit truth or blade-sweep clearance.
+- A tracked person who stops retains the same identity. User stop immediately
+  inhibits new motion; a safe case folds locally with the base fixed, while an
+  obstructed or unknown fold holds the current pose and load without blind
+  motion. Fall or support-loss monitoring remains active in both cases.
+- A full crate returns on the same patrol-round route record, exchanges through
+  release/removal/new-empty-tare/re-lock confirmation, and resumes at the exact
+  unfinished checkpoint. Static-source invalidation holds the round; it does
+  not silently re-survey or auto-start another round.
+- A crop-quality failure records source, action, observation and outcome and may
+  continue to another target when current motion/load/hazard evidence allows.
+  Dropped fruit retains its actual disposition, updates inventory and becomes a
+  current obstacle when applicable; it is never reported as placed. Net cutting,
+  uncontrolled pull, person contact, lost support, unstable/unlatched crate or
+  released-object person/support/path hazard remains an operational stop.
+- The runtime profile reports affected work and measures no-candidate travel,
+  one foliage candidate, one hard-obstacle maneuver, stale input, compute
+  overrun, person stop/fold, fall indication, observation decision and crate
+  exchange/resume. No partial or late computation grants clearance. Before a
+  real-time claim, the benchmark stage records the host, scenario, workload,
+  control period, explicit deadlines and cold/warm state, then proves supported
+  normal cases complete useful action decisions within those deadlines. A quick
+  `unknown` or timeout is not a passing normal case.
+
+## Preserved domain-evidence sequence - implemented or historical
 
 1. **Complete - contract reset.** Align product, owner flow, plan and hardware
    assumptions. State the walking runtime as pending. Preserve old implementation
@@ -47,6 +178,12 @@ and explicit create/compatibility path.
    gaps and final material checks. Version 1 remains identifiable without
    reinterpretation. Four arms, six legs, active working angles, link lengths
    and domains retain their owners.
+   **Implemented - bounded source correction:** explicitly selected
+   solid-articulation/2 external leg-root clevis under definition/2, preserving
+   profile 1 bytes and geometry. Full declared-domain root support and connected
+   closed material are W2 gates; all original-region pairs in three source poses
+   and both actual-cycle midpoints are regression evidence, not W3 interval
+   clearance. No link/range/budget changes or automatic migration are authorized.
 4. **Implemented - W3 terrain, stance and motion.** Admit complete interval foot placements,
    stance transitions and whole-body/arm/tool/carried-fruit motion on measured or
    labeled synthetic uneven, slightly wet soil and debris. Drains and water
@@ -104,7 +241,7 @@ compatibility result. It may prove straight travel and reverse exit or travel to
 a separately wider turn area. If no complete turn fits, the product reports
 `no-turn`/`blocked`; it does not assume an in-place turn or widen the farm.
 
-### Executable product cases for the active route
+### Supporting domain product cases
 
 - The exact current scene yields separate left/right targets and at least one
   upper-fruit reach demand from actual fruit source, not canopy height.
@@ -130,15 +267,16 @@ a separately wider turn area. If no complete turn fits, the product reports
   single-side receipts; all bodies and loads enter one W3/W4 evaluation.
 - Cucumber support preserves fine spines under the declared soft-textile
   assumption. Tomato support preserves skin, calyx and retained pedicel; cutting
-  stays in the confirmed plant-side pedicel corridor. Unknown anatomy or damage
-  defers the action.
+  stays in the confirmed plant-side pedicel corridor. Unknown anatomy or
+  pre-action physical risk defers the action. A confirmed post-action quality
+  failure is recorded and does not by itself cancel the patrol.
 - A saved legacy wheeled definition retains its historical projection and cannot
   enter W2-W6. Explicit creation of a versioned walking definition preserves the
   original saved bytes and history.
 
 ### Bounded definition of done
 
-This contract-reset slice is done when the four current documents agree on the
+This contract-reset slice is done when the five current documents agree on the
 pending target, owners, cases, compatibility boundary and evidence limits, with
 formatting, naming, path/link and bounded diff checks passing. It does not claim
 walking, four-arm or mechanics runtime exists. Each later numbered slice must add
@@ -147,11 +285,12 @@ identity/evidence, pass app typecheck/lint/build and relevant UI evidence, and
 recheck this Inspector before advancing. Physical actuation, procurement and
 safety claims remain blocked until separately measured and authorized.
 
-The bounded W1 and W2 domain slices now provide current-scene demand plus an
-explicitly admitted four-arm, six-leg source and pure complete-pose FK. W3 adds
-terrain, stance and whole-robot interval motion, with formal validation in progress;
-W2 source geometry or a valid preset alone is not passage, collision, contact,
-stability or hardware-safety evidence.
+The bounded W1-W4 domain slices provide current-scene demand, an explicitly
+admitted four-arm/six-leg source, selected terrain/motion relations and
+quasi-static screens. These are reusable evidence, not an active walking
+session. Completion additionally requires the production composition, proposed
+owners and active executable cases above; source geometry or a valid preset
+alone is not passage, contact, stability or hardware-safety evidence.
 
 ## Product and architecture
 
@@ -247,6 +386,502 @@ reservation, stopping envelope and loss-of-contact behavior. Hardware/operation
 acceptance remains a separate milestone; app plan completion is not certification.
 
 ## Current execution
+
+Zero-margin Step Card: within the source relation's existing gapEnough owner,
+an already-computed strictly positive exact gap suffices when margin is zero.
+Test first separate XYZ and complete-axis constraint overflow cases using full
+admitted convex sources and bounded independent sign/projection oracles. Keep
+touching/nonpositive gaps false, and preserve every positive-margin operation,
+world scale, canonical axis order, original witnesses and finite caps. Only
+relation/direct tests, API, Inspector and this plan change. Focused/direct,
+type/lint/naming and independent incremental review close this owner; no actual
+scene run, source/node/denominator optimization, supervisor adoption or commit.
+If a formal fixture fails earlier than its intended owner, stop on that stage.
+Supervised-3 identified axisConstraint excess, not its exact scalar operation;
+this targeted sufficient-proof correction does not invent that attribution.
+
+Mounted-crate consumer focused evidence: missing cycle receipt and mounted
+request admission each produced formal RED. Five new cases now pass, including
+exact nonrepresentable placement enclosure, all base/original-crate pairs with
+only the tray/bottom boundary, true other-base overlap, complete bounded
+canonical inventory and stale reads. The canonical bounded case deliberately
+retains exhaustion as unknown; it is not a positive walking case. Seven legacy
+request tests and 65 relation tests pass, with type/naming/lint/build green.
+Independent reviewer source_correctness_reviewer returned bounded CLEAN.
+Concurrent test:local preflight
+suites exposed their shared supervisor-test cleanup race before the selected
+motion test launched; subsequent test:local gates were serial, preserving that
+failure rather than changing the harness within this owner.
+
+Synthetic mounted passage Step Card: only the permanent motion test and this
+plan change. Keep the true home-farm blocked candidate and original witness.
+Use the separately declared single-soil-strip synthetic configuration through
+validateConfiguration, complete buildSiteMeshes/SiteGeometry and prepareSceneDemand;
+no hidden-layer filtering, crop removal or caller-fake scene/source. The actual
+profile-2 source, same cycle, eleven-part mounted source, explicit synthetic
+terrain/retention/physical records and current mass identity feed WalkingMotionOwner.
+Require all original pairs accounted, zero blocked/unknown/unvisited, six foot
+extrusions, four geometry-admitted receipts/twelve supports, physical admitted
+and final clear. Bound pair work by 32R where R=M(M-1)/2+MW, hierarchy work by
+2G² with G=3(M+W) bounding owner/shape/region nodes. Keep 30 million exact,
+20 million cycle operations, 24000 bits, 32 nodes/30 subdivisions; all profile
+values must be safe integers. One selected test uses public annotate before
+synchronous work, 180-second test limit and the own 210-second supervisor.
+Emit bounded preflight/result evidence before assertions. On any failure keep
+the first visited pair/reason and complete accounting, freeze and report;
+no rerun, source/route tuning, budget escalation or production correction.
+
+Mounted-crate W3 consumer Step Card: twelve paths cover the motion contract,
+source relation, canonical motion owner, their direct tests, the constrained
+cycle/direct test and four contracts. The cycle compiler publishes a current
+whole-phase base-only receipt from its actual constant rational yaw matrix,
+positive determinant and constant original part frames; endpoint equality is
+not its authority. W3 admits only the current mounted owner/product reference,
+retains eleven original regions and exact common dyadic translation, and keeps
+legacy per-part frames unchanged. Base/crate zero-margin relations use the same
+shared invertible root; all pairs remain required, and only full original
+tray/bottom patch locus permits contact. Positive margins and non-shared pairs
+use existing interval proofs. Test missing API, exact contact/provenance,
+all-region accounting, stale/foreign inputs and ordinary blocked/unknown cases;
+then focused/type/naming/lint/build and bounded review. No full farm gate,
+source geometry change, W4 or positive-clear-passage fixture in this slice.
+
+Mounted-crate bounded review correction: positive dimensions alone do not
+preserve an open cavity. Add narrow width, length and height formal negatives,
+then derive a positive cavity and upward open column from every actual original
+part's source bounds. Require the column to avoid all non-floor material and a
+positive depth below the rim. Reject infeasible dimensions without rebuilding
+different geometry. Width/length produced two formal RED failures; height was
+already rejected. After correction all seven producer tests pass, with type,
+naming, lint and build green. The original four source cases and profile-1 byte
+regression remain valid. Independent reviewer source_correctness_reviewer
+closed the sole P2 with CLEAN on the three-file increment.
+
+Mounted-crate focused evidence: missing tray patch and missing producer API
+were formal RED. The four producer cases and tray plus three actual-source
+material cases pass (eight new cases); the unchanged profile-1 source-byte
+regression also passes. Type, naming, scoped lint and build pass. Static material
+checks retain every original crate region and the cavity; they prove only the
+three canonical poses, not whole-cycle clearance or retention strength.
+Independent review is CLEAN after the cavity correction above; no full-app or
+W3 admission claim.
+
+Mounted-crate W2 Step Card: only walking-robot-source/direct test, new
+walking-mounted-crate/direct test and the four W2 contract documents change.
+Publish profile-2 tray original face 24..29; retain profile-1 bytes. Build all
+eleven original crate parts once per width/length/height; tool affects only jaws
+and pads. Derive exact common Ty from actual contact planes and Tz from actual
+positive rail outer Z, independent synthetic minimum clearance and crate min Z.
+Keep the open cavity, partial contact and explicit mechanical-retention
+assumption. Exact placement is separate from legacy per-part load frames;
+massIdentity is not W4 admission. Formal missing-patch/API RED, provenance,
+contact, geometry reuse and invalidation tests precede implementation. Existing
+source-test exact triangle predicates check all source pairs at the three
+canonical poses; production does not import W3 collision. Focused/type/naming/
+lint/build and independent review close this slice. Stop on actual collision,
+inexact contact or unavailable source; no source resizing, gap borrowing,
+full-app run, W3 consumer or remote delivery.
+
+First canonical sheet witness Step Card: the existing W3 midpoint source route
+consumes the unchanged normal W1 scene, source/2 and exact cycle at phase 0 u=1/2.
+Only walking-motion.test.ts, this paragraph and the opt-in exclusive artifact
+.artifacts/first-blocked-sheet-witness.json change. Bind the recorded inventory
+600/31903 and exact instance/region provenance without substituting a candidate.
+Independently inverse-transform each original sheet triangle into the certified
+source solid and clip against its original convex supporting halfspaces; compare
+coordinates and intersection to the production point kernel. Preserve all source,
+route and runtime budgets. The bounded oracle has finite work/24,000-bit guards.
+Focused proof, type/lint/naming and bounded review are required; Sol may capture
+the single selected witness through the own supervisor. No full traversal or
+walking-clear claim; ambiguous provenance or arithmetic failure stops this slice.
+The isolated proof identifies cucumber-1914-11-2 (the current crop builder's
+veins part), instance 44: both original offsets 24 and 27 have a clipped centroid
+strictly inside the right-front-lower solid. Every retained locus point is
+independently checked against the original triangle and source halfspaces;
+direct rational world coordinates equal the compiled placement coordinates.
+The focused case passed in 7.426 seconds (8.527 seconds supervised process),
+with 57,785 bounded arithmetic checks, maximum observed width 7,999 bits and
+115,592 production predicates. Oracle checks are not a claim to count every
+BigInt/GCD operation. Typecheck, scoped lint and naming pass. This confirms the
+recorded candidate's material intersection; it does not prove a kernel bug or
+authorize moving plants, changing lanes, resizing the robot or raising budgets.
+The canonical normal home-farm case is therefore blocked by at least this one
+original-current right-front-lower/cucumber sheet pair at the phase-0 midpoint.
+Its unchanged bounded traversal still retains explicit unknown and unvisited
+work, so this negative case does not claim complete coverage or a clear route;
+the two intersecting original sheet triangles are not two independently proved
+pairs. The positive synthetic W3 DoD remains open pending a legitimate crate
+mount.
+
+Zero-margin formal RED: two full-source cases failed only at their intended
+stage (XYZ required 27,254 bits; first complete-axis constraint 26,106) while
+40 focused cases passed. The independent ordered exact projection oracle
+proved positive gaps without squaring; all upstream work remained within the
+24,000-bit cap. The single zero-margin branch makes both proofs succeed,
+while an actual positive margin still retains the same overflow/unknown.
+The unchanged workload snapshot exposes exactly 12 removed scalar/predicate
+operations (4116/4290 to 4104/4278); no other algorithm or resource cap changes.
+This evidence does not identify the exact failing product in supervised-3.
+Final direct gate passes 55 cases (476ms); typecheck, naming (11), formatting
+and lint pass with zero errors and 22 existing console warnings. The five-file
+snapshot now awaits only bounded incremental review; no actual run is included.
+
+Projective-direction Step Card (bounded W3 numerical owner): preserve placement
+points, original triangles/witnesses, node compilation, homogeneous denominator,
+world-unit margin and all finite caps. Only relation/direct tests, API,
+Inspector and this plan change; motion test may only observe work. At first SAT
+need, prepare ordered local normals/edges once per issued immutable region,
+then transport edges by each actual linear matrix and oriented normals by its
+signed cofactor. Remove only positive whole-matrix/vector common factors.
+Tagged products must equal the old ordered primitive vectors exactly; genuinely
+untagged legacy placements retain the original point-derived representation.
+Completed products and monotonic exhausted sentinels stay evaluation-local;
+mutable placement chains rebuild. Existing exclusive accounting gains observed
+per-stage maximum/first excessive required bits, without changing counted work.
+Formal RED proves unnecessary local reconstruction, then exact ordered output,
+shear/reflection/composition, bounded common-factor, legacy, margin/features,
+point-only, reuse/invalidation and partial-failure tests precede type/lint/naming
+and narrow independent review. No fullactual before the next root checkpoint.
+Stop on unequal direction/proof/witness or invalid lifetime; do not alter source,
+bit limits, denominators, node compiler or geometry. Prior sheet queue/review
+CLEAN remains bounded evidence, not complete W3 admission.
+
+Projective-direction focused checkpoint: the formal baseline retained two RED
+work-product assertions with 35 passing cases. Ordered point-derived equivalence
+then passed; the old total-work snapshot alone required its explicit ownership
+update (4378 to 4116 scalar operations, 4552 to 4290 predicates). Final direct
+gate passes 52 cases, including shared frame operators across two source regions,
+new/mutable frame invalidation, positive whole-matrix factor reduction, reflected
+cofactor transport, legacy raw scales and required-bit stage observations.
+Typecheck, naming (11), scoped formatting and lint pass (22 existing console
+warnings, zero errors). Points, node compiler, caps and immutable prior artifacts
+are unchanged. Independent incremental review is the next boundary; no actual
+scene rerun or whole-W3 completion is implied by this small workload reduction.
+
+The five-file projective-direction incremental review is CLEAN at rev1191.
+One subsequent supervised canonical queue checkpoint uses the identical actual
+709-region source/minimal W1 fixture and the existing annotate handshake,
+30m exact / 20m cycle operations, six nodes, two subdivisions, 180s test and
+210s external deadline. Only the bounded result adds existing per-stage
+required-bit observations. Fresh supervised-3 artifacts preserve the earlier
+two runs unchanged. This raw-relations case proves selected sheet subdivision;
+its ground postprocessing and unresolved/unvisited pairs do not imply complete
+walking admission. No source, node compiler, cap or full-garden change is allowed.
+
+Supervised-3 passes once with exit 0/reaped in 75.202s versus supervised-2's
+165.432s for this same fixture only. Exact work is 27,136,462/30m; cycle work
+3,030,304; six nodes/two subdivisions visit 14,968 pair intervals and 7,954
+groups. Required 489,376 = 486,089 strict bounds + 12 exact separated +
+20 declared boundaries + 3,255 unknown, with zero blocked/unvisited. Selected
+chassis/sheet 0/710 still has the exact two-half strict-bounds cover; sheet work
+is 2 required/2 visited/0 unvisited. This is not complete walking admission.
+Exclusive scalar work sums to 26,017,962: direction stages 10,884,699
+(including final key 10,171,230), rational node compilation 8,615,917.
+The only observed excessive-width stage is axisConstraint: first required
+26,626 bits, maximum 27,188, versus the unchanged 24,000 ceiling. Node
+compilation's maximum is 22,405; this does not attribute every unknown to bits.
+First visited reasons remain 1/60 nonlinear-source-interval-unproved and
+463/711 ground-contact-coverage-required; raw relations do not perform the
+walking owner's ground postprocessing. Immutable evidence is
+apps/fieldscope/.artifacts/test-supervision/sheet-queue-supervised-3/console.log
+and summary.json. No further run or owner change precedes the next bounded plan.
+
+Canonical nonlinear W3 Step Card: request/3 enters WalkingMotionOwner using the
+current exact cycle, ordered phase windows and complete scene/terrain/load
+source regions. W3 creates four terrain event requests from one immutable input
+snapshot, retains their actual preparation provenance and checks complete sole
+locus equality. The existing source-relation evaluator handles bounded rational
+placements and full-interval separation; midpoint SAT never clears an interval.
+One phase node owns shared frame/bound/region work; pair subdivision and a
+bounded complete phase cover have separate accounting. Output preserves exact
+support anchors/terrain planes and current identities for W4, without stability
+work. Only motion contract, source-relation, motion owner/direct tests and four
+docs change. Missing canonical route RED, actual forward/reverse/receipt,
+collision, stale/partial/budget and work proofs precede focused/direct/type/
+naming/lint/build and bounded review. No legacy/source/cycle/terrain/W4 changes,
+full-app or PR until the complete checkpoint. An unresolved actual pair or
+resource constraint stops at its concrete owner; no geometry/budget tuning.
+
+Bounded traversal revision: the first original-region run completed in 19.117s
+but visited its finite 2,000,000 pair-interval budget out of 60,209,330 required
+phase pairs; six reported material overlaps remain RED. The two named
+chassis/coxa midpoint witnesses have a separate two-pair exact-coordinate
+artifact. Source geometry, alpha, normal-case assertions and all product budgets
+remain frozen while a separate source owner handles that collision.
+Within this same W3 slice, build a stable body/independent-attachment/external-
+source hierarchy, then part/shape and original-region spans. One strict outward
+margin gap certifies the entire disjoint Cartesian span with its exact original
+pair cardinality; overlapping bounds only descend. A lazy row-major leaf
+iterator retains original IDs and delegates to the unchanged rational SAT and
+interval bisection. Terminal covers, including ordinal unvisited remainders,
+are the exhaustive authority; visited leaf records are only a subset.
+Each phase must conserve all required pair cardinalities, with same-body
+material union counted separately and independent holders never exempted.
+Permanent small proofs cover 100-by-100 groups, separated parts under overlapping
+bodies, brute-force expansion, finite-budget remainder, margins and semantic
+exclusions before any future actual heavy run. Per-node bounds/preparations,
+group/leaf/predicate work and currentness remain explicit. Runtime exhaustion
+issues unknown and an honest incomplete cover; exact support/physical
+applicability and route coverage remain separately typed. No new scope or
+persistent cache, and no heavy rerun before the reviewed source correction.
+
+Traversal checkpoint: nine focused proofs pass, including the canonical W3
+entry with a one-group budget, exact required-pair remainders and current cycle
+invalidation. Five static hierarchy cases use the same production cursor and
+preserve brute-force original-pair equivalence, world-unit margin, independent
+roots and source-frame admission. The canonical case completes within its
+30-second formal guard. This is bounded contract evidence only; the original
+normal-case material collision and witness artifacts remain RED, and the
+reviewed source/2 correction has not yet been adopted.
+
+Source adoption Step Card: import only the five reviewed source/definition and
+direct test files from commit 243c170175e5d56cb8c38cd0e0fda0f6f4c09516, after
+verifying each target against base 5b623c2. Merge the four source-contract doc
+deltas while preserving the W3 text. Normal W3 fixtures explicitly select
+solid-articulation/2; profile 1 retains its two named exact material-collision
+regression and immutable original failure artifact. The same actual route,
+source-derived alpha, cycle arithmetic and product budgets remain unchanged.
+After profile-selection, exact-handoff and focused W3 gates, run one complete
+original-region interval traversal. Any remaining collision, resource limit or
+unknown relation is a first-owner result, not permission to adjust geometry or
+budgets. No full-app run or PR belongs to this adoption step.
+
+Exact-work revised Step Card: the first adopted-profile interval run took
+14.942 seconds. It proved 15,960,669 strict-bound pairs, six exact-separated
+pairs and three boundaries, found no volume witness, and left 45,641,662 pairs
+unvisited when the unchanged five-million predicate budget ended. Rational
+arithmetic accounted for 4,584,362 kernel operations; the aggregate alone does
+not identify the expensive stage.
+First add exception-safe preparation/projection/constraint counters and use a
+small formal workload for attribution. Then replace eager complete-axis
+materialization with a private ordered iterator: first-body normals, second-body
+normals, then row-major edge cross products, retaining the exact existing
+direction key, normalization and first-key ownership. Preserve the initial XYZ
+test. A yielded axis may return early only after the existing whole-interval,
+world-unit margin inequality proves separation. Every other result requires
+exhausting the complete unique axis set; partial work remains unproved.
+Tests compare a test-private eager reference for static, linear, boundary,
+margin and first-face/first-cross separation, including original features,
+duplicate/zero accounting and budget failure in each stage. Only relation
+implementation/direct tests, the motion work oracle, API/Inspector/plan change.
+Source, cycle, request, motion implementation, common denominator and budgets
+remain frozen. Focused/type/naming/lint precede one complete profile-2 interval
+rerun; preserve both the original material RED and this resource RED.
+
+Exact-work checkpoint: 27 focused cases, typecheck, naming (11 cases) and lint
+passed. The one unchanged-budget profile-2 traversal took 15.467 seconds and
+remains RED: 61,602,340 required pairs comprise 21,035,572 strict bounds,
+six exact separations, five boundaries, zero blocked, two unknown and
+40,566,755 unvisited. Kernel predicates reached 4,782,474 after the bridge's
+217,526 predicates, exactly the five-million cap. Lazy axes issued 471
+projections and 918 crosses, with 13 early separations. Axis preparation,
+projection and constraint arithmetic used 29,334, 65,709 and 7,571 operations;
+their 102,614 total is 2.26 percent of 4,544,517 rational operations. This
+closes the bounded lazy-axis correction, not W3 admission: most remaining
+work is outside those stages. The first reported unvisited pairs remain
+phase-0 negative rail versus carriage regions. Two newly reached unknowns
+report uncertified/open source and ground-contact coverage; their exact pair
+identities were not retained by the four-entry failure summary. No further
+algorithm, denominator, source or budget change follows from this run.
+
+Attribution-only successor Step Card: retain the reviewed lazy kernel and
+all source/cycle/request/motion algorithms. Add private innermost evaluator
+stages for certification, rational node/chain preparation, placement
+validation/vertices/directions, relation XYZ, existing axes, boundary/foot/soil
+proofs and cover/interval work. Exclusive predicate and scalar sums must match
+the unchanged totals, including throws and zero-work cache hits. Certification
+outcome counts are observational; they do not alter certified admission.
+The permanent motion failure summary selects the first visited unknown/blocked
+for each reason separately from unvisited prefixes, retaining exact phase,
+parameter, source/region provenance and current receipt statuses. A swallowed
+postprocessing plane failure is unavailable evidence, not a geometry finding;
+report the existing shared exact-work remainder without redoing the proof.
+After focused/type/lint/naming, one instrumented unchanged-budget traversal
+writes its own project-owned attribution artifact. No optimization, denominator
+or cache change is part of this step; preserve both earlier resource failures.
+
+Attribution checkpoint: 29 relation cases and two admission/report cases passed,
+with type/lint/naming green. The single instrumented traversal took 15.310
+seconds and retained every prior coverage count. Exclusive scalar/predicate
+sums were exactly 4,544,517/4,782,474 with zero unclassified work. Placement
+directions used 2,777,845 scalar operations, rational-node compilation 794,338,
+source certification 483,024 and relation setup/XYZ 292,378; placement vertex
+transforms used only 58,068. Certification outcomes were 449 certified,
+two non-closed solids, zero topology-unproved and zero resource-incomplete.
+The two visited unknowns both cover phase 0 [0,1]: left-front-upper region-0
+versus W1 sheet inventory 26311 region-1 (original indices 288 + 288), and
+left-front-foot region-0 versus nonlinear-soil-sheet (0 + 6). The former
+retains exact inventory/owner/shape ordinals and frame provenance; no missing
+external part label is invented. Four terrain receipts and all twelve support
+geometries were admitted with matching provenance. Shared exact work was
+5,000,000 with zero remainder; the swallowed horizontal-plane failure cause
+remains unavailable rather than a confirmed geometry defect. The permanent
+artifact is tmp/fieldscope-nonlinear-attribution.json, SHA-256
+9bbd05b3bde25274d247d72027496ac367dc4b7c5a9a1460b9e389505ccaa9f1.
+This checkpoint authorizes no further arithmetic or budget change.
+
+Demand-driven placement Step Card: the independent lazy-axis and attribution
+reviews are CLEAN. Measured placement directions account for 61.13 percent of
+scalar work, yet only completeAxes consumes those products. Split the private
+placement product into validated ordered points and demand-driven complete
+directions. XYZ wholeGap and terrain/semantic/boundary point consumers do not
+prepare directions. The same issued region and frozen frame-chain lifetime
+owns one direction product; preserve exact triangle order, primitive
+normalization and all SAT proof/features. Publish only complete products and
+retain only the monotonic-budget exhausted sentinel after partial failure.
+Mutable chains keep their uncached path. Formal RED precedes implementation;
+zero direction work, full eager equivalence, shared warm products, changed
+identities and partial failures are required. Scope remains relation/direct
+test, motion work oracle and API/Inspector/plan, with no actual traversal until
+the sheet-unknown owner plan is coordinated. No denominator or budget change.
+
+Explicit-sheet Step Card: placement focused and independent review are CLEAN.
+Repair the existing two-sided sheet contract in the same relation evaluator:
+a certified convex solid meets each actual original sheet triangle as a
+lower-dimensional convex surface, never a fake solid or aggregate convex hull.
+Exact strict axes provide candidates; complete axes without a gap prove closed
+surface intersection with an original triangle offset. Every triangle must have
+a same-cycle whole-interval, original-world-margin projection proof before one
+original region pair is separated. Unproved candidates enter existing bounded
+subdivision; open shells, degeneracy and exhaustion remain unknown.
+Reuse the complete original-index to interval-vertex mapping, and count internal
+triangle work separately from required region cardinality. Keep ground and
+semantic priorities, source identities, geometry, budgets and W4 unchanged.
+Formal missing-API/surface REDs, eager triangle equivalence, complete triangle
+coverage and interval/exhaustion cases precede focused/type/lint/naming and a
+narrow review. No complete actual traversal runs at this checkpoint.
+The lower-level region dispatcher retains mathematical input/node/parameter
+references and validates every original-index bound; it is not a second motion
+entry. A minimal admitted W1 scene and actual cycle additionally exercise the
+production pending-to-child queue and original-pair cover. Initial point API RED
+had five missing-method failures; the later region-dispatch API RED had one
+missing-method failure with 30 existing/new point cases passing. These failures
+remain distinct from the prior material and whole-scene resource evidence.
+Independent source_correctness_reviewer review of source 4d6b82da… and direct
+ce7ade44… is CLEAN; canonical queue evidence remains separate. The first small
+scene was rejected for missing installed crop meshes, then the complete minimal
+W1 scene reached traversal but left the selected pair unvisited in 16.046s.
+Its cap cause was not captured and is not inferred. The dedicated queue gate
+now accepts legitimate strictBounds or exactSeparated child proofs, requires the
+two exact halves and zero target unknown/unvisited, and attaches bounded work,
+caps, coverage and target reasons before assertions. Its finite profile is six
+nodes/two subdivisions, six times the original-pair upper bound, and two times
+all hierarchy group pairs with groups bounded by owners+shapes+regions. Thirty
+million exact operations and a 120s watchdog provision six times the earlier
+5m/16.046s workload envelope with time headroom; this is a test profile, not a
+product guarantee. maxBits=24000, the ordinary fullactual fixture and exhaustion
+negatives remain unchanged. Run this corrected dedicated gate once; failure
+requires a captured bounded replan, not an automatic budget increase.
+The dedicated attempt later returned at 170.328s with the 120s test timeout and
+an onTaskUpdate RPC timeout; it emitted no result summary. Owned PIDs had already
+exited when cleanup was checked. This does not establish a geometry failure or
+identify an exhausted work cap.
+
+Harness-only successor: production/direct tests remain at their reviewed bytes.
+The permanent canonical test emits small preflight M/W/R/G/caps JSON immediately
+before traversal and its bounded result JSON before assertions. All operation,
+node, subdivision, pair/group and bit budgets above remain unchanged. A single
+local invocation imports the reviewed Asyra Sim process supervisor read-only with
+Python bytecode writes disabled, uses absolute Field Node/Vitest paths and Field
+cwd, and requests zero progress receipts (no inactivity/progress claim).
+The dedicated Vitest deadline is 180s; the independent process-group hard stop is
+210s with kill/reap. Console and summary evidence are created exclusively under
+Field's .artifacts/test-supervision/sheet-queue-supervised-1. This cross-worktree
+reuse is local validation only, not portable Field/CI integration. Small test
+type/lint checks precede one supervised exact-case attempt. A failure/hard stop
+preserves any preflight/result evidence and requires a new bounded decision;
+there is no retry, runtime upgrade, dependency, production change or fullgarden
+run in this successor.
+Supervised-1 completed and reaped at 168.772s: the canonical two-half strictBounds
+assertions passed, but the run failed with onTaskUpdate RPC timeout. Its preserved
+preflight is M=709/W=4/R=253822/G=2139. Result work reached 30m exact operations;
+the complete overall motion remained unknown/unvisited and is not admitted.
+
+Public-runner-handshake correction: installed Vitest 3.2.7 exposes
+TestContext.annotate as a Promise. Its implementation first calls
+finishSendTasksUpdate (send pending task updates and await all their RPC
+acknowledgments), then awaits onTestAnnotate. The canonical async test awaits one
+info annotation before fixture preparation or synchronous work. This flushes the
+unawaited test-prepare update through a public runner API; it adds only a report
+annotation, not sleep, timeout suppression, numerical work or product behavior.
+The compact result additionally reports existing exclusive kernel stages and
+maximum required rational bits. Type/lint/naming precede one fresh supervised-2
+attempt with the same 180s test/210s external deadlines, all existing operation
+caps, expected receipts zero and exclusive evidence files. Preserve supervised-1;
+no dependency/internal runner patch, normal fullactual or automatic retry.
+Supervised-2 passed in 165.432s with one test, zero unhandled errors, exit zero
+and the owned process group reaped. The public handshake closed the prior RPC
+failure. The selected chassis region-0/sheet pair has exactly [0,1/2] and [1/2,1]
+strictBounds proofs, with internal sheet work 1 required/1 visited/0 unvisited.
+This is the bounded canonical queue/coverage proof, not complete walking:
+overall required 489376 still includes 1607 unknown and 244688 unvisited, with
+zero blocked and the 30m exact cap reached. Exclusive scalar work totals 29246149;
+placementDirections contributes 18821573 (64.36%) and rationalNodeCompilation
+6050589 (20.69%). Required rational width peaked at 27188 against the unchanged
+24000-bit admission guard; observed required width is not successful computation
+beyond that guard. All prior failure artifacts remain preserved.
+
+Constrained cycle Step Card: the existing constrained owner adds a separate
+versioned two-phase exact-polynomial recipe. Exact current source/stowed preset,
+six sole anchors, complementary tripods, yaw-only rational orientation and
+source-derived alpha bind both phases. One support root, whole-sole strict lift,
+exact handoff/landing/periodicity/net displacement and all-body/part matched
+point/bounds are the outputs. Only the constrained module/direct test and four
+contracts change. Missing API RED precedes implementation; focused and terrain
+direct regressions, type/naming/lint/build, bounded review and local commit close
+this segment. No terrain, collision, request, source, load, UI or legacy changes,
+new cache, full-app rerun or standalone PR. A failed actual geometry/sign/shared
+root obligation stops at this owner for bounded replanning.
+
+The first cycle API case reached GREEN with the existing 17 projection cases.
+The added subinterval capability had its own absent-method RED. The first full
+vertex oracle exceeded its unchanged 30-second cases (about 70 seconds each)
+and blocked the worker RPC; this is retained as failed test evidence. The
+bounded correction uses one exact common-denominator affine oracle per frame,
+reuses only identical coordinates within that frame, checks every original
+vertex and yields between parts. No product budget or geometric proof changes.
+
+Exact polynomial scalar Step Card: the existing shared S19/C20 owner adds
+canonical rational input/value, exact extrema and a fixed real-domain
+sign/zero-locus certificate. Existing number API bits, signed zero and work
+sequence remain unchanged. Fixed coefficient pairing and derivative identities
+prove signs over real (-1,1); exact-positive values may round to display zero.
+Admission rejects malformed/noncanonical or oversized fractions before costly
+arithmetic; normalization and all temporaries belong to the new API work budget.
+Only kinematic-trigonometry, its direct test and these four contracts change.
+Missing API RED, independent direct-sum, subnormal/sign/extrema/budget and legacy
+snapshots precede implementation; focused/direct/profile/type/naming/lint/build
+and bounded review precede local commit. No phase, scalar/FK/interval/request
+changes, full-app rerun or separate PR. Unproved algebra or old work drift stops
+this owner rather than changing legacy semantics.
+
+Terrain placement Step Card: explicit measured/synthetic scenario triangles,
+complete source partitions and exact barycentric seeds bind the current W1
+demand/farm/route and W2 source. One constrained projection supplies three full
+fixed sole patches. Exact coplanar disjoint triangle-union area proves soil
+coverage; W1 channel hard exclusions and complete debris authority take priority.
+Physical assessments retain unbound applicability and unknown physical status
+until current path/load/time products exist. Invalid geometric bindings
+reject; missing coverage, unsupported dependencies and exhausted finite work
+remain unknown. Only the two new terrain-placement owners, their direct tests
+and four current contracts change; legacy terrain/contact/motion and constrained
+projection remain frozen. Missing API RED precedes owner implementation, then
+focused/direct-consumer/type/naming/lint/build and independent review. No new
+full-app checkpoint, PR or CI for this prerequisite; no swing or complete gait.
+
+Constrained support projection Step Card: a new explicitly versioned polynomial
+leaf / rational quaternion-similarity recipe owns one shared root expression for
+three full source sole patches. Exact rational anchors must match the actual
+source station offsets. Shared conjugate hip/knee dependencies are certified
+before interval boxes; display frames round only at final publication. The first
+owner accepts a current source preset as its fixed non-support joint state.
+Only the new constrained domain module, its formal test and these four contracts
+may change. Legacy FK, interval arithmetic, request formats, default definitions
+and source geometry are excluded. Missing API and naive rounded-anchor regressions
+precede implementation; focused/type/naming/lint/build and independent review
+precede one full-app gate. Failure to prove all three anchors from one root stops
+this owner; no per-foot correction, tolerances or general symbolic solver.
+Swing, terrain contact, collision and continuous gait remain pending W3 work.
 
 W3 source-relation slice: request version 1 remains identifiable; version 2
 explicitly binds current W1/W2 products, complete external source region
@@ -1932,3 +2567,60 @@ domain. Formal C tests first prove those two patch sets, complete-domain overlap
 containment and strict separation outside that derived envelope. D then consumes
 the corrected metadata unchanged; no source triangle, joint domain, third-body
 rule or material/contact permission changes in this owner correction.
+
+Test-process supervision prerequisite: FieldScope owns an external Python process
+guard for ordinary Vitest. `test:local` and `test:ci` run the complete ordinary
+suite through that guard with a 20-minute engineering wall deadline, independent
+process-group cleanup and bounded local artifacts. A caller may instead name
+existing ordinary test files and one explicit test title with a positive finite
+millisecond deadline; that output is labelled filtered selection evidence and is
+never reported as a complete suite. Unknown paths and raw Vitest bypass arguments
+fail before execution. The separate one-worker `test:profiles` gate and all
+product runtime limits remain unchanged.
+
+# Bounded constant-root and exact-work correction
+
+Phase-root successor: the once-only 108.759-second positive run remains RED
+(zero blocked, 877 unknown, 251800 unvisited). Its first phase-zero support
+abduction pin/sleeve pair is root-relative constant in the actual compiler, but
+the two-phase receipt deliberately excludes it. This nine-path step adds
+phase-specific support-coxa membership and only constant dependent frames.
+Dynamic upper/lower, swing coxa and world-fixed feet remain excluded. Actual
+source SAT, named loci and required-pair counts remain authoritative; phase
+receipts and caches cannot cross phases. Geometry, gait, reservation and all
+limits are unchanged. Formal first-pair/membership RED, focused/static/build,
+independent review, then one original-profile validation are the bounded gates.
+
+Phase-root focused evidence: the actual pin7/sleeve417 pair is separated over
+the full support phase; the swing phase cannot borrow that receipt. Three
+producer cases, two consumer cases and 67 relation cases pass. A separate
+formal reuse RED caught unnecessary phase-keying of global fixed proofs;
+global families now retain their original lifetime, with a permanent reuse
+assertion. The final bounded two-node case accounts for all 503600 required
+pairs (487368 strict, 1498 exact, 34 boundary, 0 blocked, 1339 unknown,
+13361 unvisited). Its 12.781-second result is not full walking admission.
+The original 108.759-second positive-profile RED remains unchanged evidence.
+
+The synthetic mounted passage retained a 90.655-second RED: 503600 required
+pairs, zero blocked, 450 unknown and 252955 unvisited at the unchanged 30m
+exact budget. Four terrain receipts and physical applicability were admitted.
+This nine-path successor derives constant-root membership from the actual cycle
+compiler, retaining original-region SAT and named boundary loci. It also shares
+completed exact scalar proofs only within one node and completed oriented
+direction transports only within the same evaluator/frame operator. Dynamic
+polynomial work, original source, point frames, common denominator, margins and
+caps remain unchanged. Permanent work/currentness/invalid-input regressions
+precede implementation; focused/type/lint/naming and bounded independent review
+precede one authorized unchanged positive-profile rerun. Failure stops tuning.
+
+Focused evidence: the missing receipt and two missing reuse assertions were
+formal RED. The producer receipt and two mathematical/canonical consumer cases
+now pass; the original rail/carriage pair has one declared-boundary proof over
+[0,1], retaining the 503600-required-pair accounting in the bounded integration
+case. Its two-node limit still leaves unrelated interval unknowns. Relation
+coverage is 66 passing cases plus the final isolated work-baseline case; that
+case records 1496/1604 preparation operations/predicates and 4122/4296 cold total,
+including 72 vector lookup operations and 54 node savings. The prior assumption
+that every cold fixture must get cheaper was rejected; repeated-region reuse is
+proved separately. Type, naming and scoped lint pass. No full positive admission
+or independent review is implied by these focused results.

@@ -1,6 +1,15 @@
 import { Quaternion, Vector3 } from 'three'
 import { describe, expect, it } from 'vitest'
-import { createSyntheticWalkingRobotDefinition } from '../walking-robot-definition'
+import {
+  divide as divideInterval,
+  subtract as subtractInterval,
+  multiply as multiplyInterval,
+  interval as literalInterval
+} from '../scalar-arithmetic'
+import {
+  createSyntheticWalkingRobotDefinition,
+  readWalkingRobotDefinition
+} from '../walking-robot-definition'
 import {
   evaluateWalkingRobotPose,
   type WalkingRobotPose
@@ -80,6 +89,85 @@ const expectTransformClose = (
 }
 
 describe('walking robot pure forward kinematics', () => {
+  it('admits flat-foot tripod handovers only under the separately authored range', () => {
+    const baseline = createSyntheticWalkingRobotDefinition({
+      definitionId: 'tripod-fk-default'
+    })
+    const raw = mutable(baseline)
+    const stations = raw.legs
+      .filter(({ side }) => side === 'left')
+      .map(({ mount }) => mount.position[2])
+      .sort((a, b) => a - b)
+    const spacing = Math.min(
+      ...stations.slice(1).map((value, index) => value - stations[index])
+    )
+    const alpha = Math.min(
+      ...raw.legs.map(
+        (leg) =>
+          divideInterval(
+            subtractInterval(
+              literalInterval(spacing),
+              literalInterval(leg.foot.size[2])
+            ),
+            multiplyInterval(
+              literalInterval(4),
+              literalInterval(leg.upper.length)
+            )
+          ).low
+      )
+    )
+    raw.definitionId = 'tripod-fk-authored'
+    raw.jointEvidence = {
+      kind: 'synthetic',
+      id: 'tripod-authored-range',
+      label: 'Tripod range - synthetic feasibility assumption'
+    }
+    for (const leg of raw.legs) leg.jointRanges.knee[0] = -alpha
+    const candidate = readWalkingRobotDefinition(raw)
+    const defaultSource = new WalkingRobotSourceOwner().prepare(baseline)
+    const source = new WalkingRobotSourceOwner().prepare(candidate)
+    expect(source.definition).toBe(candidate)
+    for (const phase of [-1, 0, 1]) {
+      const joints = mutable(candidate.presets.stowed)
+      for (const leg of joints.legs) {
+        const groupA = (leg.side === 'left') !== (leg.station === 'middle')
+        leg.knee = phase * (groupA ? -alpha : alpha)
+        leg.hip = -leg.knee
+      }
+      if (phase !== 0)
+        expect(() =>
+          evaluateWalkingRobotPose(defaultSource, {
+            base: identityBase,
+            joints
+          })
+        ).toThrow()
+      const pose = evaluateWalkingRobotPose(source, {
+        base: identityBase,
+        joints
+      })
+      const feet = source.rig.legChains.map(
+        (chain) =>
+          required(
+            pose.bodyTransforms.find((body) => body.id === chain.footBodyId)
+          ).transform
+      )
+      for (const foot of feet) {
+        // Exact cancellation in the completed quaternion: no tolerance grants level feet.
+        expect(foot.rotation.slice(0, 3).every((value) => value === 0)).toBe(
+          true
+        )
+        expect(foot.position[1]).toBe(feet[0].position[1])
+      }
+      expect(pose.source).toBe(source)
+    }
+    source.rig.legChains.forEach((chain, index) => {
+      expect(
+        required(
+          source.rig.joints.find((joint) => joint.id === chain.jointIds[2])
+        ).domain
+      ).toEqual(candidate.legs[index].jointRanges.knee)
+    })
+  })
   it('evaluates every preset and limit endpoint without rebuilding source', () => {
     const definition = createSyntheticWalkingRobotDefinition({
       definitionId: 'fk-presets'
