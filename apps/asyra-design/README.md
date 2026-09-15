@@ -190,17 +190,60 @@ Preset `2D`, and engine-neutral `CUSTOM` extension contracts. Production `3D`,
 `HYBRID`, auto-layout, unit-aware aggregation, public Headless Core, and a
 multi-runtime Core Kernel are future work.
 
-Optional AI is user-initiated. To opt in to AI, submit an explicit App intent
-and configure the model-backed App server with all three server-only values:
+### Use your local AI subscription
+
+AI runs only after you submit a request. To opt in to AI with your own ChatGPT subscription,
+install a compatible Codex CLI and sign in with `codex login`. The App never
+installs Codex, logs in, copies credentials, or changes accounts for you.
+
+Add these server-only settings to the App's local `.env`, then run `yarn start`:
 
 ```dotenv
+AI_PROVIDER_BACKEND=local-codex
+AI_PROVIDER_MODEL=your-available-codex-model
+# Optional: absolute path to your installed native Codex executable
+# AI_PROVIDER_EXECUTABLE=/path/to/codex
+```
+
+Use a Codex version supporting App Server v2, ephemeral threads, empty
+`environments`, and the `instructionSources` / `runtimeWorkspaceRoots` response
+fields. Unsupported versions fail closed. The adapter protocol is checked against
+`0.154.0-alpha.6.2`; the old `0.40.0` CLI is not supported. On Windows, select the
+native executable rather than a shell `.cmd` wrapper. No shell is invoked.
+
+Each request starts one isolated, tool-free Codex thread and closes its process
+before returning. There is no model work at startup, automatic API fallback, or
+cross-request session reuse. Cancellation and a five-minute deadline stop the
+owned process. Use a loopback App URL, such as `http://localhost:3000`; remote
+peers and cross-origin browser requests are rejected in this mode.
+
+Each person who forks or generates this App uses their own locally logged-in
+account and its available allowance. Inference still runs in the cloud. Account
+identity and credentials do not enter the frontend, Git, or generated template.
+Keep `.env` private. A deployed website cannot automatically use its visitors'
+local subscriptions.
+
+Text-to-action and image-understanding requests use the registered App action
+schemas. The local provider has no filesystem, shell, web, MCP, plugin, or
+image-preparation tools. Requests requiring an unavailable tool fail; this
+provider does not fabricate raster-vectorization results.
+
+### Use an HTTP model adapter
+
+The existing HTTP backend remains the default. Configure all three values:
+
+```dotenv
+AI_PROVIDER_BACKEND=http
 AI_PROVIDER_ENDPOINT=https://your-adapter.example/actions
 AI_PROVIDER_MODEL=your-model
 AI_PROVIDER_API_KEY=your-secret
 ```
 
-The browser receives none of them. Startup creates no model request or provider
-connection.
+The endpoint must implement the App action-batch protocol, not a raw model API.
+The browser receives none of these settings. Both backends use the same
+server-prepared action batch, permission checks, and canonical transaction flow.
+A missing model, executable, or subscription login fails without falling back
+to HTTP. Check your local Codex login and version when setup fails.
 
 ## Support and contribution policy
 

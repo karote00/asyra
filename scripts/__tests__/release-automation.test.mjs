@@ -819,7 +819,10 @@ test('canonical Asyra Design source uses workspace Framework dependencies during
   for (const [packageName, version] of frameworkDependencies) {
     assert.equal(version, 'workspace:*', packageName)
   }
-  assert.equal(manifest.scripts?.typecheck, 'tsc -p tsconfig.typecheck.json')
+  assert.equal(
+    manifest.scripts?.typecheck,
+    'tsc -p tsconfig.typecheck.json && tsc -p tsconfig.ai-server.json'
+  )
 
   const typecheckConfig = JSON.parse(
     readFileSync(
