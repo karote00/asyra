@@ -90,3 +90,60 @@ for (const source of ['text', 'image'] as const) {
     await page.screenshot({ path: testInfo.outputPath('local-ai-drawing.png') })
   })
 }
+
+test('local subscription continues a text-only drawing after a detail choice', async ({
+  page
+}) => {
+  test.skip(
+    process.env.E2E_LOCAL_AI !== 'true',
+    'Requires an explicitly enabled local subscription'
+  )
+  test.setTimeout(180_000)
+  await page.route(
+    '**/api/ai/action-batch',
+    (route) =>
+      route.fulfill({
+        json: {
+          batchId: 'detail-question',
+          actions: [
+            {
+              id: 'question',
+              name: 'request_drawing_detail_choice',
+              arguments: {},
+              summary: 'Choose detail'
+            }
+          ]
+        }
+      }),
+    { times: 1 }
+  )
+  await page.goto(createTestDocumentIdentity().url)
+  await waitForAppReady(page)
+  await page.getByRole('button', { name: 'Open Agent' }).click()
+  await page
+    .getByLabel('Message Agent')
+    .fill('Draw one blue circle, 100 pixels wide and 100 pixels tall.')
+  await page.getByRole('button', { name: 'Send', exact: true }).click()
+  await page.getByRole('button', { name: 'Choose Balanced detail' }).click()
+  await expect(page.getByTestId('ai-agent-message').last()).toHaveAttribute(
+    'data-outcome',
+    'success',
+    { timeout: 150_000 }
+  )
+  const circles = await page.evaluate(async () => {
+    const core = (await import('../src/testing/runtime-access')).core
+    if (!core) throw new Error('App unavailable')
+    return [...core.deps.sceneTree.getAllElements().values()]
+      .filter((element) => element.get('type') === 'oval')
+      .map((element) => element.getAllComputedData())
+  })
+  expect(circles).toEqual([
+    expect.objectContaining({
+      width: 100,
+      height: 100,
+      fills: expect.arrayContaining([
+        expect.objectContaining({ color: '#0000FF' })
+      ])
+    })
+  ])
+})

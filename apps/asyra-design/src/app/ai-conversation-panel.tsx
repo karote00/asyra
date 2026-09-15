@@ -125,15 +125,11 @@ const DrawingDetailChoiceCard = ({
         <p className="m-0 text-[11px] font-semibold text-[#f0edff]">
           {choice.label}
         </p>
-        <span className="shrink-0 rounded bg-[#383443] px-1.5 py-0.5 text-[8px] uppercase tracking-wide text-[#c7bfff]">
-          {choice.id}
-        </span>
-      </div>
-      <div className="mt-1 flex flex-wrap gap-x-2 text-[9px] leading-4 text-[#b9b6c4]">
-        <span>
-          {choice.elementCount.toLocaleString('en-US')} editable elements
-        </span>
-        <span>{choice.pointCountLabel}</span>
+        {onChoose ? (
+          <span aria-hidden="true" className="text-[10px] text-[#c7bfff]">
+            Choose →
+          </span>
+        ) : null}
       </div>
       <p className="mb-0 mt-1 text-[9px] leading-4 text-[#aaa6b3]">
         {choice.description}
@@ -307,15 +303,15 @@ export const AiConversationPanel = ({
       if (
         snapshot.disposed ||
         snapshot.activeTurn ||
-        latestSettled?.turnId !== turnId ||
-        attachments.length === 0
+        latestSettled?.turnId !== turnId
       ) {
         return
       }
       try {
         const settlement = conversation.submit({
           attachments,
-          intent: DRAWING_DETAIL_SELECTION_INTENTS[optionId]
+          intent: DRAWING_DETAIL_SELECTION_INTENTS[optionId],
+          replyToTurnId: turnId
         })
         void settlement.catch(() => undefined)
       } catch {
@@ -366,8 +362,8 @@ export const AiConversationPanel = ({
       >
         {conversationSnapshot.settledTurns.length === 0 && !active ? (
           <div className="rounded-lg border border-[#393a40] bg-[#27282d] p-3 text-[11px] leading-5 text-[#c9cad0]">
-            Add or drop a reference image, then ask the Agent to draw it. You
-            can refine the same objects in later turns.
+            Describe what you would like to draw, or add a reference image. You
+            can refine the result in later turns.
           </div>
         ) : null}
 
@@ -377,7 +373,6 @@ export const AiConversationPanel = ({
           const canChooseDrawingDetail =
             drawingDetailChoice !== null &&
             turnIndex === conversationSnapshot.settledTurns.length - 1 &&
-            turn.attachments.length > 0 &&
             !active &&
             !conversationSnapshot.disposed
           return (
@@ -403,50 +398,60 @@ export const AiConversationPanel = ({
                 aria-label="Agent response"
                 className="mr-5 rounded-lg rounded-tl-sm border border-[#454153] bg-[#29272f] px-3 py-2.5"
               >
-                {turn.progress.length > 0 ? (
-                  <ol
-                    aria-label="Operational progress"
-                    className="mb-2 flex list-none flex-col gap-1 p-0"
-                  >
-                    {turn.progress.map((update, index) => (
-                      <li
-                        className="flex items-center gap-2 text-[9px] text-[#a9a7b1]"
-                        key={`${turn.turnId}:${update.phase}:${index}`}
-                      >
-                        <span
-                          aria-hidden="true"
-                          className="h-1 w-1 rounded-full bg-[#8272ce]"
-                        />
-                        {update.summary}
-                      </li>
-                    ))}
-                  </ol>
+                {turn.progress.length > 0 && !drawingDetailChoice ? (
+                  <details className="mb-2 text-[10px] text-[#a9a7b1]">
+                    <summary className="cursor-pointer">Activity</summary>
+                    <ol
+                      aria-label="Operational progress"
+                      className="mb-2 flex list-none flex-col gap-1 p-0"
+                    >
+                      {turn.progress.map((update, index) => (
+                        <li
+                          className="flex items-center gap-2 text-[9px] text-[#a9a7b1]"
+                          key={`${turn.turnId}:${update.phase}:${index}`}
+                        >
+                          <span
+                            aria-hidden="true"
+                            className="h-1 w-1 rounded-full bg-[#8272ce]"
+                          />
+                          {update.summary}
+                        </li>
+                      ))}
+                    </ol>
+                  </details>
                 ) : null}
                 <p className="m-0 text-[11px] leading-5 text-[#e1dff0]">
                   {summary.message}
                 </p>
                 {drawingDetailChoice ? (
-                  <ul
-                    aria-label="Drawing detail options"
-                    className="mb-0 mt-2 flex list-none flex-col gap-2 p-0"
-                  >
-                    {drawingDetailChoice.choices.map((choice) => (
-                      <DrawingDetailChoiceCard
-                        choice={choice}
-                        key={choice.id}
-                        onChoose={
-                          canChooseDrawingDetail
-                            ? () =>
-                                submitDrawingDetailChoice(
-                                  turn.turnId,
-                                  turn.attachments,
-                                  choice.id
-                                )
-                            : undefined
-                        }
-                      />
-                    ))}
-                  </ul>
+                  <>
+                    <p className="mb-0 mt-2 text-[10px] text-[#aaa6b3]">
+                      {canChooseDrawingDetail
+                        ? 'Waiting for your choice'
+                        : 'This question is no longer active.'}
+                    </p>
+                    <ul
+                      aria-label="Drawing detail options"
+                      className="mb-0 mt-2 flex list-none flex-col gap-2 p-0"
+                    >
+                      {drawingDetailChoice.choices.map((choice) => (
+                        <DrawingDetailChoiceCard
+                          choice={choice}
+                          key={choice.id}
+                          onChoose={
+                            canChooseDrawingDetail
+                              ? () =>
+                                  submitDrawingDetailChoice(
+                                    turn.turnId,
+                                    turn.attachments,
+                                    choice.id
+                                  )
+                              : undefined
+                          }
+                        />
+                      ))}
+                    </ul>
+                  </>
                 ) : null}
                 <p
                   aria-label="Elapsed time"
@@ -543,11 +548,9 @@ export const AiConversationPanel = ({
         ) : null}
       </section>
 
-      <AiConnectionStatus />
-
       <form
         aria-label="Agent message form"
-        className={`border-t p-3 transition-colors ${
+        className={`shrink-0 border-t p-3 transition-colors ${
           draggingImages ? 'border-[#8d7bff] bg-[#282536]' : 'border-[#38393e]'
         }`}
         data-testid="agent-image-drop-target"
@@ -568,6 +571,7 @@ export const AiConversationPanel = ({
         onDrop={dropImages}
         onSubmit={submit}
       >
+        <AiConnectionStatus />
         <input
           accept="image/png,image/jpeg,image/webp"
           aria-label="Choose images"
@@ -606,63 +610,64 @@ export const AiConversationPanel = ({
             {attachmentError}
           </p>
         ) : null}
-        <label className="sr-only" htmlFor="ai-agent-input">
-          Message Agent
-        </label>
-        <textarea
-          aria-label="Message Agent"
-          className="min-h-[72px] w-full resize-none rounded-lg border border-[#46474e] bg-[#18191c] px-3 py-2 text-[11px] leading-5 text-white outline-none placeholder:text-[#777982] focus:border-[#806cff]"
-          data-ai-agent-prompt="true"
-          disabled={active}
-          id="ai-agent-input"
-          onChange={(event) => setDraft(event.target.value)}
-          placeholder="Describe a drawing or refinement…"
-          ref={promptRef}
-          value={draft}
-        />
-        <div className="mt-2 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <button
-              aria-label="Add image"
-              className="rounded-md border border-[#46474e] bg-[#27282d] px-2 py-1.5 text-[10px] text-[#c7c8ce] enabled:hover:border-[#696b74] enabled:hover:bg-[#303136] disabled:cursor-not-allowed disabled:text-[#6f7077]"
-              disabled={active}
-              onClick={() => imageInputRef.current?.click()}
-              type="button"
-            >
-              + Image
-            </button>
-            <span className="text-[9px] text-[#81838b]">Vector drawing</span>
-          </div>
-          <div className="flex items-center gap-2">
-            {active ? (
+        <div className="rounded-lg border border-[#46474e] bg-[#18191c] focus-within:border-[#806cff]">
+          <label className="sr-only" htmlFor="ai-agent-input">
+            Message Agent
+          </label>
+          <textarea
+            aria-label="Message Agent"
+            className="block min-h-[72px] w-full resize-none rounded-t-lg border-0 bg-transparent px-3 py-2 text-[11px] leading-5 text-white outline-none placeholder:text-[#777982]"
+            data-ai-agent-prompt="true"
+            disabled={active}
+            id="ai-agent-input"
+            onChange={(event) => setDraft(event.target.value)}
+            placeholder="Describe a drawing or refinement…"
+            ref={promptRef}
+            value={draft}
+          />
+          <div className="flex items-center justify-between gap-2 px-2 pb-2">
+            <div className="flex items-center gap-2">
               <button
-                {...AiDocumentInteractionTargetProps.AGENT_CANCEL}
-                aria-label="Cancel request"
-                className="rounded-md border border-[#6c4d4d] bg-[#382727] px-3 py-1.5 text-[10px] text-[#ffb8b8] hover:bg-[#472e2e]"
-                onClick={(event) => {
-                  stopAgentCancelActivationPropagation(event)
-                  conversation.cancel('user-cancelled')
-                }}
-                onKeyDown={stopAgentCancelActivationPropagation}
-                onKeyUp={stopAgentCancelActivationPropagation}
-                onMouseDown={stopAgentCancelActivationPropagation}
-                onMouseUp={stopAgentCancelActivationPropagation}
-                onPointerDown={stopAgentCancelActivationPropagation}
-                onPointerUp={stopAgentCancelActivationPropagation}
-                onTouchEnd={stopAgentCancelActivationPropagation}
-                onTouchStart={stopAgentCancelActivationPropagation}
+                aria-label="Add image"
+                className="h-7 rounded-md border border-transparent bg-transparent px-2 text-[10px] text-[#c7c8ce] enabled:hover:border-[#696b74] enabled:hover:bg-[#303136] disabled:cursor-not-allowed disabled:text-[#6f7077]"
+                disabled={active}
+                onClick={() => imageInputRef.current?.click()}
                 type="button"
               >
-                Cancel
+                + Image
               </button>
-            ) : null}
-            <button
-              className="rounded-md border border-[#8d7bff] bg-[#745cff] px-3 py-1.5 text-[10px] font-medium text-white enabled:hover:bg-[#856fff] disabled:cursor-not-allowed disabled:border-[#44454b] disabled:bg-[#303136] disabled:text-[#777982]"
-              disabled={!canSend}
-              type="submit"
-            >
-              Send
-            </button>
+            </div>
+            <div className="flex items-center gap-2">
+              {active ? (
+                <button
+                  {...AiDocumentInteractionTargetProps.AGENT_CANCEL}
+                  aria-label="Cancel request"
+                  className="rounded-md border border-[#6c4d4d] bg-[#382727] px-3 py-1.5 text-[10px] text-[#ffb8b8] hover:bg-[#472e2e]"
+                  onClick={(event) => {
+                    stopAgentCancelActivationPropagation(event)
+                    conversation.cancel('user-cancelled')
+                  }}
+                  onKeyDown={stopAgentCancelActivationPropagation}
+                  onKeyUp={stopAgentCancelActivationPropagation}
+                  onMouseDown={stopAgentCancelActivationPropagation}
+                  onMouseUp={stopAgentCancelActivationPropagation}
+                  onPointerDown={stopAgentCancelActivationPropagation}
+                  onPointerUp={stopAgentCancelActivationPropagation}
+                  onTouchEnd={stopAgentCancelActivationPropagation}
+                  onTouchStart={stopAgentCancelActivationPropagation}
+                  type="button"
+                >
+                  Cancel
+                </button>
+              ) : null}
+              <button
+                className="h-7 rounded-md border border-[#8d7bff] bg-[#745cff] px-3 text-[10px] font-medium text-white enabled:hover:bg-[#856fff] disabled:cursor-not-allowed disabled:border-[#44454b] disabled:bg-[#303136] disabled:text-[#777982]"
+                disabled={!canSend}
+                type="submit"
+              >
+                Send
+              </button>
+            </div>
           </div>
         </div>
       </form>

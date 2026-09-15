@@ -22,6 +22,7 @@ export interface AiImageAttachment {
 }
 
 export interface AiConversationSubmission {
+  readonly replyToTurnId?: string
   readonly attachments?: readonly AiImageAttachment[]
   readonly intent: string
 }
@@ -84,6 +85,7 @@ export type AiConversationErrorCode =
   | 'AI_CONVERSATION_DISPOSED'
   | 'AI_CONVERSATION_INVALID_ATTACHMENT'
   | 'AI_CONVERSATION_INVALID_INTENT'
+  | 'AI_CONVERSATION_INVALID_REPLY'
   | 'AI_CONVERSATION_TURN_ACTIVE'
 
 export class AiConversationError extends Error {
@@ -95,6 +97,8 @@ export class AiConversationError extends Error {
       message = 'AI conversation controller is disposed.'
     } else if (code === 'AI_CONVERSATION_INVALID_ATTACHMENT') {
       message = 'AI conversation image attachment is invalid.'
+    } else if (code === 'AI_CONVERSATION_INVALID_REPLY') {
+      message = 'The referenced question is no longer active.'
     } else if (code === 'AI_CONVERSATION_INVALID_INTENT') {
       message = 'AI conversation intent must be non-empty.'
     }
@@ -413,6 +417,19 @@ export const createAiConversationController = (
         throw new AiConversationError('AI_CONVERSATION_TURN_ACTIVE')
       }
 
+      const replyToTurnId =
+        typeof source === 'string' ? undefined : source.replyToTurnId
+      const replyTo =
+        replyToTurnId === undefined
+          ? undefined
+          : settledTurns[settledTurns.length - 1]
+      if (
+        replyToTurnId !== undefined &&
+        (!replyTo || replyTo.turnId !== replyToTurnId)
+      ) {
+        throw new AiConversationError('AI_CONVERSATION_INVALID_REPLY')
+      }
+
       const startedAtMs = now()
       turnIndex += 1
       const currentTurn: MutableActiveTurn = {
@@ -441,6 +458,9 @@ export const createAiConversationController = (
       let result: unknown
       try {
         const metadata: AiJsonValue = {
+          ...(replyTo
+            ? { replyTo: { turnId: replyTo.turnId, intent: replyTo.intent } }
+            : {}),
           aiTargets: {
             compositionId: aiTargets.compositionId,
             roleToElementIds: Object.fromEntries(

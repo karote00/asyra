@@ -125,10 +125,12 @@ Completed plan:
   formal server contract and available machine resources
 - `request_drawing_detail_choice` accepts no provider-selected labels, counts,
   warning copy, attachment data, or canonical ids. It resolves with registered
-  App option ids and no canonical mutation; the App projects Balanced
-  (7,111 elements, at least 115,000 points) and Maximum (27,471 elements,
-  295,794 points) guidance and retains the original in-memory attachment for
-  the selected follow-up turn
+  App option ids and no canonical mutation. Balanced and Maximum express detail
+  preferences without claiming fixture-specific element or point counts. The
+  newest question provides clickable options for text and image requests, shows
+  a waiting state, and submits the selection once with the retained attachments
+  and `metadata.replyTo` containing the original intent and turn id. Stale reply
+  targets are rejected before provider work; past questions are inactive.
 - follow-up updates consume only canonical ids projected from the preceding
   action result; each target is revalidated immediately before its common-API
   mutation

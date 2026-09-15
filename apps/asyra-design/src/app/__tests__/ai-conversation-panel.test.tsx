@@ -56,7 +56,7 @@ describe('AI Agent conversation panel intent boundary', () => {
 
     expect(screen.getByTestId('ai-agent-panel')).toBeTruthy()
     expect(screen.queryByTestId('ai-agent-message')).toBeNull()
-    expect(screen.getByText('Vector drawing')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Add image' })).toBeTruthy()
     expect(screen.getByRole('complementary').getAttribute('aria-modal')).toBe(
       'false'
     )
@@ -475,11 +475,11 @@ describe('AI Agent conversation panel intent boundary', () => {
       await screen.findByText('Choose a drawing detail level.')
     ).toBeTruthy()
     expect(screen.getByText('Balanced detail')).toBeTruthy()
-    expect(screen.getByText('7,111 editable elements')).toBeTruthy()
-    expect(screen.getByText('At least 115,000 points')).toBeTruthy()
+    expect(screen.queryByText('7,111 editable elements')).toBeNull()
+    expect(screen.queryByText('At least 115,000 points')).toBeNull()
     expect(screen.getByText('Maximum detail')).toBeTruthy()
-    expect(screen.getByText('27,471 editable elements')).toBeTruthy()
-    expect(screen.getByText('295,794 points')).toBeTruthy()
+    expect(screen.queryByText('27,471 editable elements')).toBeNull()
+    expect(screen.queryByText('295,794 points')).toBeNull()
     expect(
       screen.getByText(
         'May temporarily use much more memory and reduce app responsiveness.'
@@ -489,12 +489,20 @@ describe('AI Agent conversation panel intent boundary', () => {
     expect(screen.queryByText('You')).toBeNull()
   })
 
-  it.each([
-    ['Balanced detail', 'draw this image with balanced detail'],
-    ['Maximum detail', 'draw this image with maximum detail']
-  ] as const)(
-    'submits the %s choice once with the retained reference attachment',
-    async (label, expectedIntent) => {
+  it.each(
+    [
+      ['Balanced detail', 'draw this image with balanced detail'],
+      ['Maximum detail', 'draw this image with maximum detail']
+    ].flatMap(
+      ([label, expectedIntent]) =>
+        [
+          [label, expectedIntent, true],
+          [label, expectedIntent, false]
+        ] as const
+    )
+  )(
+    'submits the %s choice with original context (attachment: %s)',
+    async (label, expectedIntent, withAttachment) => {
       const referenceAttachment = Object.freeze({
         dataUrl: 'data:image/png;base64,cmV0YWluZWQtcmVmZXJlbmNl',
         mediaType: 'image/png' as const,
@@ -544,7 +552,7 @@ describe('AI Agent conversation panel intent boundary', () => {
 
       await act(async () => {
         await conversation.submit({
-          attachments: [referenceAttachment],
+          attachments: withAttachment ? [referenceAttachment] : [],
           intent: '請依照這張圖繪製'
         })
       })
@@ -560,14 +568,8 @@ describe('AI Agent conversation panel intent boundary', () => {
       expect(feature.execute.mock.calls[1][0]).toMatchObject({
         intent: expectedIntent,
         metadata: {
-          imageAttachments: [
-            {
-              dataUrl: referenceAttachment.dataUrl,
-              mediaType: referenceAttachment.mediaType,
-              name: referenceAttachment.name,
-              size: referenceAttachment.size
-            }
-          ]
+          replyTo: { intent: '請依照這張圖繪製', turnId: expect.any(String) },
+          ...(withAttachment ? { imageAttachments: [referenceAttachment] } : {})
         }
       })
       expect(

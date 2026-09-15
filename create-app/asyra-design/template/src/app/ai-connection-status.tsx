@@ -25,18 +25,30 @@ export const AiConnectionStatus = () => {
       controller.abort()
     }
   }, [revision])
+  const connected = state === 'ready' || state === 'configured'
+  const canRetry = !connected && state !== 'checking'
+  let indicatorColor = 'bg-[#81838b]'
+  if (connected) indicatorColor = 'bg-[#74c69d]'
+  else if (canRetry) indicatorColor = 'bg-[#dda56b]'
   return (
-    <div className="flex items-start gap-2 px-3 py-2 text-[10px] text-[#b9b6c4]">
-      <span role="status">{AI_CONNECTION_MESSAGES[state]}</span>
-      <button
-        aria-label="Check AI connection"
-        className="shrink-0 rounded border border-[#46474e] px-2 py-1 disabled:opacity-50"
-        disabled={state === 'checking'}
-        onClick={() => setRevision((current) => current + 1)}
-        type="button"
-      >
-        Retry
-      </button>
+    <div className="mb-2 flex items-start gap-2 text-[10px] leading-4 text-[#9b9da7]">
+      <span
+        aria-hidden="true"
+        className={`mt-[5px] h-1.5 w-1.5 shrink-0 rounded-full ${indicatorColor}`}
+      />
+      <span className="min-w-0 flex-1" role="status">
+        {AI_CONNECTION_MESSAGES[state]}
+      </span>
+      {canRetry ? (
+        <button
+          aria-label="Check AI connection"
+          className="shrink-0 rounded px-1 text-[10px] leading-4 text-[#c7bfff] hover:text-white focus-visible:outline focus-visible:outline-1 focus-visible:outline-[#9b87ff]"
+          onClick={() => setRevision((current) => current + 1)}
+          type="button"
+        >
+          Retry
+        </button>
+      ) : null}
     </div>
   )
 }

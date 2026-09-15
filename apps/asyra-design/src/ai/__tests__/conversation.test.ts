@@ -545,3 +545,19 @@ describe('Asyra Design AI conversation controller', () => {
     })
   })
 })
+
+it('rejects stale or unknown reply targets before provider work', async () => {
+  const feature = createFeature(async () => executed({ status: 'no-change' }))
+  const conversation = createAiConversationController({
+    feature,
+    getElementType: vi.fn()
+  })
+  const first = await conversation.submit('Draw a 240x240 logo')
+  await conversation.submit('Another request')
+  for (const replyToTurnId of [first.turnId, 'unknown']) {
+    await expect(
+      conversation.submit({ intent: 'Balanced', replyToTurnId })
+    ).rejects.toMatchObject({ code: 'AI_CONVERSATION_INVALID_REPLY' })
+  }
+  expect(feature.execute).toHaveBeenCalledTimes(2)
+})

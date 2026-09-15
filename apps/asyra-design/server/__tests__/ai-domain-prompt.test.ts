@@ -19,6 +19,11 @@ describe('Asyra Design backend-owned AI domain prompt', () => {
     )
   })
 
+  it('treats a choice as a continuation of the original request', () => {
+    expect(AI_APP_PROMPT).toContain('metadata.replyTo')
+    expect(AI_APP_PROMPT).toMatch(/preserve.*original.*constraints/is)
+  })
+
   it('advertises only registered backend image capabilities', () => {
     expect(AI_IMAGE_TOOL_CATALOG).toEqual([
       {

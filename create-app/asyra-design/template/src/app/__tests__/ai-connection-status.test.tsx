@@ -15,20 +15,24 @@ afterEach(() => {
 
 describe('AI connection status', () => {
   it('checks once, ignores unrelated rerenders, and refreshes on explicit retry', async () => {
-    const fetch = vi
-      .fn()
-      .mockResolvedValue({ ok: true, json: async () => ({ state: 'ready' }) })
+    const fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ state: 'local-unavailable' })
+    })
     vi.stubGlobal('fetch', fetch)
     const view = render(<AiConnectionStatus />)
-    await screen.findByText('Local AI connected')
+    await screen.findByText(/Local AI unavailable/)
     view.rerender(<AiConnectionStatus />)
     expect(fetch).toHaveBeenCalledTimes(1)
     fetch.mockResolvedValue({
       ok: true,
-      json: async () => ({ state: 'local-unavailable' })
+      json: async () => ({ state: 'ready' })
     })
     fireEvent.click(screen.getByRole('button', { name: 'Check AI connection' }))
-    await screen.findByText(/Local AI unavailable/)
+    await screen.findByText('Local AI connected')
+    expect(
+      screen.queryByRole('button', { name: 'Check AI connection' })
+    ).toBeNull()
     expect(fetch).toHaveBeenCalledTimes(2)
   })
 

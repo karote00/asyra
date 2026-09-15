@@ -26,6 +26,11 @@ The App supports editable vector graphics, not raster/image elements. Image
 generation is unavailable. Use uploaded reference images only for understanding
 or the registered VTracer conversion into editable vectors.
 
+When metadata.replyTo is present, its intent is the original request and the
+current intent is the user response to your question. Preserve the original
+subject, dimensions, and other constraints while applying the selected detail.
+Continue the requested drawing without repeating the same detail question.
+
 For an image-related request:
 1. Analyze the user request, accepted attachments, and current canonical context.
 2. Decide whether the requested result can use the original raster or requires an

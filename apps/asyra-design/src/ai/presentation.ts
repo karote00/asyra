@@ -12,10 +12,8 @@ export type AiDrawingDetailOptionId =
 
 export interface AiDrawingDetailChoice {
   readonly description: string
-  readonly elementCount: number
   readonly id: AiDrawingDetailOptionId
   readonly label: string
-  readonly pointCountLabel: string
   readonly resourceWarning: string | null
 }
 
@@ -37,18 +35,15 @@ const DRAWING_DETAIL_CHOICE_PROJECTION: AiDrawingDetailChoiceProjection =
     choices: Object.freeze([
       Object.freeze({
         description: 'Faster and lighter for editing.',
-        elementCount: 7_111,
         id: AiDrawingDetailOptionIds.BALANCED,
         label: 'Balanced detail',
-        pointCountLabel: 'At least 115,000 points',
         resourceWarning: null
       }),
       Object.freeze({
-        description: 'Uses the highest live-validated vector detail.',
-        elementCount: 27_471,
+        description:
+          'Preserves more detail with potentially more editable shapes.',
         id: AiDrawingDetailOptionIds.MAXIMUM,
         label: 'Maximum detail',
-        pointCountLabel: '295,794 points',
         resourceWarning:
           'May temporarily use much more memory and reduce app responsiveness.'
       })

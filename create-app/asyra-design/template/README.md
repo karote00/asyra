@@ -214,7 +214,7 @@ native executable rather than a shell `.cmd` wrapper. No shell is invoked.
 Each request starts one ephemeral Codex thread and closes its process
 before returning. The Agent panel checks connection readiness without running a model turn.
 It distinguishes an unavailable server, incomplete configuration, and an unavailable
-local Codex. Use Retry after changing the local setup. HTTP mode reports configuration
+local Codex. Retry appears when the connection is unavailable. HTTP mode reports configuration
 only; its upstream connection is checked on submission.
 
 There is no model work at startup, automatic API fallback, or
@@ -239,6 +239,11 @@ Codex may apply your personal global `AGENTS.md` or `AGENTS.override.md` from it
 effective home directory. Project instructions remain excluded. Personal
 guidance can affect model output; App action and permission boundaries still
 control execution. The App does not copy or return your personal instructions.
+
+The composer groups attachments, text, and Send in one input area. Detail
+questions have clickable choices for text and image requests; choosing continues
+the original request without retyping. Activity is expandable, and questions
+show a waiting state instead of claiming the drawing is complete.
 
 App UI labels and hints use English. AI responses follow the request and personal
 language preferences; the App does not impose a response language.
