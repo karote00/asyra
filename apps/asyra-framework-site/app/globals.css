@@ -132,7 +132,7 @@ p {
 .wordmark,
 .site-frame-wordmark {
   align-items: center;
-  color: var(--color-green-deep);
+  color: var(--ink);
   display: inline-flex;
   flex-shrink: 0;
   font-family: var(--font-family-sans);

@@ -34,6 +34,9 @@
   outline: 2px solid currentColor;
   outline-offset: 5px;
 }
+.spatial-story-shell .wordmark {
+  color: var(--color-green-deep);
+}
 .spatial-story-shell section {
   scroll-margin-top: 80px;
 }

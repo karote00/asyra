@@ -22,10 +22,15 @@ for (const width of [320, 394, 1440]) {
           .locator('a')
           .filter({ hasText: /^ASYRA$/ })
         await expect(logo).toHaveCount(1)
+        await expect
+          .soft(logo)
+          .toHaveCSS(
+            'color',
+            route === '/' ? 'rgb(24, 63, 53)' : 'rgb(21, 22, 20)'
+          )
         const style = await logo.evaluate((el) => {
           const css = getComputedStyle(el)
           return {
-            color: css.color,
             fontFamily: css.fontFamily,
             fontSize: css.fontSize,
             fontWeight: css.fontWeight,
