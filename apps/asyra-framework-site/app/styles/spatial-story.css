@@ -130,3 +130,20 @@
   top: 100%;
   bottom: auto;
 }
+
+/* A still illustration uses its intrinsic aspect ratio, not a projected stage.
+   Its caption follows the image in normal flow with the same content edges. */
+[data-static-scene]:has([data-static-illustration]) {
+  padding-bottom: 0;
+}
+[data-static-scene] [data-static-illustration] {
+  height: auto;
+}
+[data-static-illustration] > img {
+  height: auto;
+}
+[data-static-illustration] > [data-scene-caption] {
+  position: static;
+  margin-top: 16px;
+  gap: 24px;
+}

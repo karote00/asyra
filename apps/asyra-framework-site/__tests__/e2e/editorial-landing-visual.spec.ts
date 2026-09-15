@@ -166,3 +166,31 @@ test('394px story artwork stays between chapter copy and its caption', async ({
     }
   }
 })
+
+for (const width of [320, 394, 576]) {
+  test(`opening illustration and caption share edges and a stable gap at ${width}px`, async ({
+    page
+  }, testInfo) => {
+    await page.setViewportSize({ width, height: 1000 })
+    await page.goto('/')
+    const scene = page.locator('[data-story-chapter="0"] [data-static-scene]')
+    const picture = scene.locator('img').first()
+    await picture.evaluate((img: HTMLImageElement) => img.decode())
+    const imageBox = await picture.boundingBox()
+    const caption = await scene.locator('[data-scene-caption]').boundingBox()
+    if (!imageBox || !caption) throw new Error('Opening composition is missing')
+    expect.soft(Math.abs(imageBox.x - caption.x)).toBeLessThanOrEqual(1)
+    expect
+      .soft(Math.abs(imageBox.x + imageBox.width - caption.x - caption.width))
+      .toBeLessThanOrEqual(1)
+    expect
+      .soft(caption.y - imageBox.y - imageBox.height)
+      .toBeGreaterThanOrEqual(12)
+    expect
+      .soft(caption.y - imageBox.y - imageBox.height)
+      .toBeLessThanOrEqual(24)
+    await scene.screenshot({
+      path: testInfo.outputPath(`opening-caption-${width}.png`)
+    })
+  })
+}
