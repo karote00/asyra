@@ -607,7 +607,7 @@ export function SpatialStory({
           className="inline-flex min-h-11 items-center font-serif text-[34px] tracking-[-.05em]"
           aria-label="Asyra home"
         >
-          asyra.
+          ASYRA
         </a>
         <nav
           aria-label="Story chapters"
