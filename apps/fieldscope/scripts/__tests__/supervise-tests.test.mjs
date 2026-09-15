@@ -43,13 +43,22 @@ owner = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(owner)
 result = owner.run_command(
     json.loads(sys.argv[2]), int(sys.argv[3]),
-    {'kind': 'diagnostic-title', 'coverage': 'filtered',
-     'files': ['synthetic-child'], 'title': sys.argv[6]},
+    json.loads(sys.argv[7]),
     Path(sys.argv[4]), max_stream_bytes=int(sys.argv[5]))
 print(json.dumps(result))
 `
 
-function run(mode, hardStopMs = 1000, streamBytes = 64 * 1024 * 1024) {
+function run(
+  mode,
+  hardStopMs = 1000,
+  streamBytes = 64 * 1024 * 1024,
+  selection = {
+    kind: 'diagnostic-title',
+    coverage: 'filtered',
+    files: ['synthetic-child'],
+    title: mode
+  }
+) {
   const result = spawnSync(
     'python3',
     [
@@ -60,7 +69,8 @@ function run(mode, hardStopMs = 1000, streamBytes = 64 * 1024 * 1024) {
       String(hardStopMs),
       artifacts,
       String(streamBytes),
-      mode
+      mode,
+      JSON.stringify(selection)
     ],
     { cwd: app, encoding: 'utf8', timeout: 10000 }
   )
@@ -133,6 +143,23 @@ test('records bounded artifacts and exact process accounting for normal and fail
   assert.equal(failed.exitCode, 7)
   assert.equal(failed.completion, 'incomplete')
   assert.equal(failed.workInterpretation, 'lower-bound')
+})
+
+test('profile completion never reports ordinary full-suite coverage', () => {
+  for (const [coverage, completion] of [
+    ['profiles', 'profile-suite-complete'],
+    ['filtered-profiles', 'filtered-profile-selection-complete']
+  ]) {
+    const selected = { kind: 'profile-suite', coverage, files: [], title: null }
+    const result = run('normal', 1000, 4096, selected)
+    assert.equal(result.completion, completion)
+    assert.equal(result.selection.coverage, coverage)
+    const stopped = run('busy', 250, 4096, selected)
+    assert.equal(stopped.outcome, 'hard-stop')
+    assert.equal(stopped.completion, 'incomplete')
+    assert.equal(stopped.reaped, true)
+    assert.equal(stopped.unknownTail, true)
+  }
 })
 
 test('stops a synchronous child outside its blocked event loop', () => {
@@ -216,6 +243,75 @@ print(json.dumps({'full': full, 'selected': selected, 'title': title,
     })
     assert.notEqual(rejected.status, 0, flag)
   }
+})
+
+test('selects required profiles with their own config, bounded selectors and worker acknowledgements', () => {
+  const code = String.raw`
+import importlib.util, json, sys
+from pathlib import Path
+sys.dont_write_bytecode = True
+spec = importlib.util.spec_from_file_location('fieldscope_supervisor', sys.argv[1])
+owner = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(owner)
+app = Path(sys.argv[2])
+file = 'src/domain/__tests__/kinematic-trigonometry.profile.test.ts'
+full = owner.select_tests(app, [], None, profile=True)
+selected = owner.select_tests(app, [file], None, profile=True)
+title = owner.select_tests(app, [file], 'exact polynomial', profile=True)
+errors = []
+for files, name in [(['src/domain/__tests__/walking-constrained-kinematics.test.ts'], None),
+                    (['../outside.profile.test.ts'], None),
+                    (['src/domain/__tests__/missing.profile.test.ts'], None),
+                    ([str(app / file)], None),
+                    ([], 'filtered'), ([file, file], None),
+                    ([file], ''), ([file], 'bad\nname'), ([file], 'x' * 4097)]:
+    try:
+        owner.select_tests(app, files, name, profile=True)
+        errors.append(None)
+    except (ValueError, RuntimeError) as error:
+        errors.append(str(error))
+command = owner.test_command(app, 'node', Path('vitest.mjs'), title, profile=True)
+ordinary = owner.test_command(app, 'node', Path('vitest.mjs'),
+                              owner.select_tests(app, [], None))
+print(json.dumps({'full': full, 'selected': selected, 'title': title,
+                  'errors': errors, 'command': command, 'ordinary': ordinary}))
+`
+  const result = spawnSync('python3', ['-c', code, supervisor, app], {
+    encoding: 'utf8',
+    timeout: 5000
+  })
+  assert.equal(result.status, 0, result.stderr)
+  const selection = JSON.parse(result.stdout)
+  assert.equal(selection.full.kind, 'profile-suite')
+  assert.equal(selection.full.coverage, 'profiles')
+  assert.equal(selection.selected.kind, 'selected-profile-files')
+  assert.equal(selection.selected.coverage, 'filtered-profiles')
+  assert.equal(selection.title.kind, 'selected-profile-title')
+  assert.equal(selection.title.coverage, 'filtered-profiles')
+  assert.ok(selection.errors.every(Boolean))
+  assert.deepEqual(selection.command, [
+    'node',
+    'vitest.mjs',
+    'run',
+    '--config',
+    path.join(app, 'vitest.profile.config.ts'),
+    'src/domain/__tests__/kinematic-trigonometry.profile.test.ts',
+    '-t',
+    'exact polynomial'
+  ])
+  assert.equal(selection.ordinary[4], path.join(app, 'vitest.config.ts'))
+  const profileConfig = readFileSync(
+    path.join(app, 'vitest.profile.config.ts'),
+    'utf8'
+  )
+  assert.match(profileConfig, /setupFiles:[\s\S]*vitest\.setup\.ts/)
+  const scripts = JSON.parse(
+    readFileSync(path.join(app, 'package.json'), 'utf8')
+  ).scripts
+  assert.equal(
+    scripts['test:profiles'],
+    'node --test scripts/__tests__/supervise-tests.test.mjs && python3 scripts/supervise-tests.py --profile'
+  )
 })
 
 test('resolves only the FieldScope checkout installation and rejects an arbitrary ancestor', (t) => {
