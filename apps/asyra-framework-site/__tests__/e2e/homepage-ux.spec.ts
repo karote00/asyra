@@ -7,6 +7,15 @@ for (const width of [320, 394, 820, 1024, 1280, 1440, 2560]) {
     await page.setViewportSize({ width, height: 900 })
     await page.goto('/')
     const header = page.locator('header').first()
+    await expect(header.getByRole('link', { name: 'Asyra home' })).toHaveText(
+      'ASYRA'
+    )
+    const logo = await header
+      .getByRole('link', { name: 'Asyra home' })
+      .boundingBox()
+    const actions = await header.locator(':scope > div').boundingBox()
+    if (!logo || !actions) throw new Error('Header layout is missing')
+    expect(actions.x - logo.x - logo.width).toBeGreaterThanOrEqual(8)
     if (width >= 1024) {
       await expect(header.locator('summary')).toBeHidden()
       await expect(

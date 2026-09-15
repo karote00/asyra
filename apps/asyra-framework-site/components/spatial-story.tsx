@@ -604,7 +604,7 @@ export function SpatialStory({
       <header className="fixed inset-x-0 top-0 z-50 flex h-20 items-center justify-between border-b border-[#183f35]/15 bg-[#f4f1e7]/95 px-6 backdrop-blur-sm lg:px-[4vw]">
         <a
           href="/"
-          className="inline-flex min-h-11 items-center font-serif text-[34px] tracking-[-.05em]"
+          className="inline-flex min-h-11 shrink-0 items-center font-serif text-[24px] tracking-[-.05em] sm:text-[34px]"
           aria-label="Asyra home"
         >
           ASYRA
