@@ -1,16 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  dyadic,
-  divide,
-  interval,
-  multiply,
-  subtract
-} from '../scalar-arithmetic'
-import {
-  createSyntheticWalkingRobotDefinition,
-  readWalkingRobotDefinition
-} from '../walking-robot-definition'
-import { WalkingRobotSourceOwner } from '../walking-robot-source'
+import { roundFraction } from '../scalar-arithmetic'
 import {
   WalkingConstrainedKinematicsOwner,
   WalkingConstrainedCycleOwner
@@ -18,193 +7,221 @@ import {
 import { evaluateExactPolynomialTrig } from '../kinematic-trigonometry'
 import { evaluateWalkingRobotPose } from '../walking-robot-kinematics'
 
-type Fraction = Readonly<{ numerator: bigint; denominator: bigint }>
-function required<T>(value: T | undefined): T {
-  if (value === undefined) throw new Error('Missing formal fixture dependency')
-  return value
-}
-function gcd(a: bigint, b: bigint): bigint {
-  if (b !== 0n) return gcd(b, a % b)
-  return a < 0n ? -a : a
-}
-function fraction(n: bigint, d = 1n): Fraction {
-  if (d < 0n) {
-    n = -n
-    d = -d
-  }
-  const divisor = gcd(n, d)
-  return { numerator: n / divisor, denominator: d / divisor }
-}
-function exact(value: number): Fraction {
-  const v = dyadic(value)
-  return v.exponent >= 0
-    ? fraction(v.significand << BigInt(v.exponent))
-    : fraction(v.significand, 1n << BigInt(-v.exponent))
-}
-const plus = (a: Fraction, b: Fraction) =>
-  fraction(
-    a.numerator * b.denominator + b.numerator * a.denominator,
-    a.denominator * b.denominator
-  )
-const minus = (a: Fraction, b: Fraction) =>
-  plus(a, fraction(-b.numerator, b.denominator))
-function fixture(
-  options: { authored?: boolean; upperLengthDelta?: number } = {}
-) {
-  const baseline = createSyntheticWalkingRobotDefinition({
-    definitionId: 'constrained-default'
-  })
-  const stations = baseline.legs
-    .filter((leg) => leg.side === 'left')
-    .map((leg) => leg.mount.position[2])
-    .sort((a, b) => a - b)
-  const spacing = Math.min(
-    ...stations.slice(1).map((z, index) => z - stations[index])
-  )
-  const alpha = Math.min(
-    ...baseline.legs.map(
-      (leg) =>
-        divide(
-          subtract(interval(spacing), interval(leg.foot.size[2])),
-          multiply(interval(4), interval(leg.upper.length))
-        ).low
-    )
-  )
-  const definition = readWalkingRobotDefinition({
-    ...baseline,
-    definitionId: 'constrained-authored',
-    jointEvidence: {
-      kind: 'synthetic',
-      id: 'constrained-authored-joints',
-      label: 'Support arc - synthetic authored assumption'
-    },
-    legs: baseline.legs.map((leg, index) => ({
-      ...leg,
-      upper: {
-        ...leg.upper,
-        length:
-          leg.upper.length + (index === 0 ? (options.upperLengthDelta ?? 0) : 0)
-      },
-      jointRanges: {
-        ...leg.jointRanges,
-        knee: [options.authored === false ? 0 : -alpha, leg.jointRanges.knee[1]]
-      }
-    }))
-  })
-  const source = new WalkingRobotSourceOwner().prepare(definition)
-  const supports = source.rig.legChains
-    .filter((chain) => (chain.side === 'left') !== (chain.station === 'middle'))
-    .map((chain) => {
-      const contact = required(
-        source.rig.contacts.feet.find(
-          (contact) => contact.part.bodyId === chain.footBodyId
-        )
-      )
-      const frames = chain.jointIds.map(
-        (id) =>
-          required(source.rig.joints.find((joint) => joint.id === id)).frame
-      )
-      const foot = required(
-        required(source.rig.bodies.find((body) => body.id === chain.footBodyId))
-          .fixedFrame
-      )
-      return {
-        chainId: chain.id,
-        part: contact.part,
-        patch: contact.patch,
-        anchorOrigin: [0, 1, 2].map((axis) =>
-          [...frames, foot, contact.localFrame].reduce(
-            (sum, frame) => plus(sum, exact(frame.position[axis])),
-            exact(0)
-          )
-        )
-      }
-    })
-  const recipe = {
-    format: 'walking-constrained-kinematic-projection/1',
-    source,
-    baseOrientation: [exact(0), exact(0), exact(0), exact(1)],
-    supports,
-    fixedJoints: source.rig.presets.stowed,
-    interval: { low: -alpha, high: alpha },
-    budget: { maxOperations: 1000000, maxBits: 24000 }
-  }
-  return { baseline, source, recipe, alpha }
-}
-const times = (a: Fraction, b: Fraction) =>
-  fraction(a.numerator * b.numerator, a.denominator * b.denominator)
-const over = (a: Fraction, b: Fraction) =>
-  fraction(a.numerator * b.denominator, a.denominator * b.numerator)
-const negate = (a: Fraction) => fraction(-a.numerator, a.denominator)
-function cycleFixture(options: { authored?: boolean } = {}) {
-  const { source, alpha } = fixture(options)
-  const half = over(exact(alpha), exact(2))
-  const s = evaluateExactPolynomialTrig('sin', half).value
-  const c = evaluateExactPolynomialTrig('cos', half).value
-  const norm = plus(times(s, s), times(c, c))
-  const sigma = over(times(exact(2), times(s, c)), norm)
-  const cosine = over(minus(times(c, c), times(s, s)), norm)
-  const groups = [true, false].map((side) =>
-    source.rig.legChains
-      .filter(
-        (chain) =>
-          ((chain.side === 'left') !== (chain.station === 'middle')) === side
-      )
-      .map((chain) => chain.id)
-  )
-  const anchors = source.rig.legChains.map((chain) => {
-    const contact = required(
-      source.rig.contacts.feet.find((p) => p.part.bodyId === chain.footBodyId)
-    )
-    const transforms = chain.jointIds.map(
-      (id) => required(source.rig.joints.find((j) => j.id === id)).frame
-    )
-    const foot = required(
-      required(source.rig.bodies.find((b) => b.id === chain.footBodyId))
-        .fixedFrame
-    )
-    const anchorOrigin = [0, 1, 2].map((axis) =>
-      [...transforms, foot, contact.localFrame].reduce(
-        (v, t) => plus(v, exact(t.position[axis])),
-        exact(0)
-      )
-    )
-    const upper = required(
-      source.definition.legs.find(
-        (l) => l.side === chain.side && l.station === chain.station
-      )
-    ).upper.length
-    anchorOrigin[1] = plus(
-      anchorOrigin[1],
-      times(exact(upper), minus(exact(1), cosine))
-    )
-    const z = times(exact(upper), sigma)
-    anchorOrigin[2] = plus(
-      anchorOrigin[2],
-      groups[0].includes(chain.id) ? negate(z) : z
-    )
-    return {
-      chainId: chain.id,
-      part: contact.part,
-      patch: contact.patch,
-      anchorOrigin
-    }
-  })
-  return {
-    source,
-    raw: {
-      format: 'walking-constrained-cycle/1',
-      source,
-      fixedJoints: source.rig.presets.stowed,
-      baseOrientation: [exact(0), exact(0), exact(0), exact(1)],
-      alpha: exact(alpha),
-      groups,
-      anchors,
-      budget: { maxOperations: 10000000, maxBits: 24000 }
-    }
-  }
-}
+import {
+  cycleFixture,
+  exact,
+  fixture,
+  fraction,
+  gcd,
+  minus,
+  negate,
+  over,
+  plus,
+  required,
+  times
+} from './walking-constrained-kinematics-test-fixtures'
+import type { Fraction } from './walking-constrained-kinematics-test-fixtures'
+
 describe('exact polynomial complementary tripod cycle', () => {
+  it('issues phase-root membership from the actual support branch only', () => {
+    const { source, raw } = cycleFixture({
+      sourceProfile: 'solid-articulation/2'
+    })
+    const owner = new WalkingConstrainedCycleOwner()
+    const cycle = owner.prepare(source, raw)
+    for (const phase of [0, 1] as const) {
+      const receipt = owner.readPhaseRootMotion(cycle, phase)
+      if (!receipt) throw new Error('Missing phase-root receipt')
+      expect(receipt.phase).toBe(phase)
+      expect(receipt.cycle).toBe(cycle)
+      expect(receipt.source).toBe(source)
+      const support = new Set(cycle.recipe.groups[phase])
+      for (const chain of source.rig.legChains) {
+        expect(receipt.bodies.some((e) => e.body.id === chain.bodyIds[0])).toBe(
+          support.has(chain.id)
+        )
+        for (const id of chain.bodyIds.slice(1))
+          expect(receipt.bodies.some((e) => e.body.id === id)).toBe(false)
+      }
+      for (const contact of source.rig.contacts.feet)
+        expect(receipt.parts.some((e) => e.part === contact.part)).toBe(false)
+      const point = owner.evaluate(cycle, phase, fraction(1n, 3n))
+      const root = required(
+        point.bodies.find((p) => p.body.id === 'base')
+      ).exact
+      for (const entry of receipt.parts) {
+        const actual = required(
+          point.parts.find((p) => p.part === entry.part)
+        ).exact
+        for (let i = 0; i < 3; i++) {
+          expect(actual.origin[i]).toEqual(
+            plus(
+              root.origin[i],
+              root.matrix[i].reduce(
+                (s, v, j) => plus(s, times(v, entry.local.origin[j])),
+                exact(0)
+              )
+            )
+          )
+          for (let j = 0; j < 3; j++)
+            expect(actual.matrix[i][j]).toEqual(
+              root.matrix[i].reduce(
+                (s, v, k) => plus(s, times(v, entry.local.matrix[k][j])),
+                exact(0)
+              )
+            )
+        }
+      }
+      const work = owner.work.operations
+      expect(owner.readPhaseRootMotion(cycle, phase)).toBe(receipt)
+      expect(owner.work.operations).toBe(work)
+    }
+    expect(owner.readPhaseRootMotion(cycle, 0)).not.toBe(
+      owner.readPhaseRootMotion(cycle, 1)
+    )
+    expect(owner.readPhaseRootMotion({ ...cycle }, 0)).toBeUndefined()
+    expect(owner.readPhaseRootMotion(cycle, 2)).toBeUndefined()
+    expect(
+      owner
+        .readConstantMotion(cycle)
+        ?.bodies.some((e) => e.body.id.includes('coxa'))
+    ).toBe(false)
+    owner.dispose()
+    expect(owner.readPhaseRootMotion(cycle, 0)).toBeUndefined()
+  })
+  it('issues constant-root membership only from compiler constant descendants', () => {
+    const { source, raw } = cycleFixture({
+      sourceProfile: 'solid-articulation/2'
+    })
+    const owner = new WalkingConstrainedCycleOwner()
+    const cycle = owner.prepare(source, raw)
+    const receipt = owner.readConstantMotion(cycle)
+    expect(receipt?.source).toBe(source)
+    expect(receipt?.recipe).toBe(cycle.recipe)
+    if (!receipt) throw new Error('Missing constant-root receipt')
+    expect(receipt.bodies.some((p) => p.body.id === 'carriage')).toBe(true)
+    const legs = new Set(source.rig.legChains.flatMap((c) => c.bodyIds))
+    for (const entry of receipt.bodies)
+      expect(legs.has(entry.body.id)).toBe(false)
+    expect(receipt.parts.some((p) => p.part.id === 'lift-rail-negative')).toBe(
+      true
+    )
+    expect(receipt.parts.some((p) => p.part.id.includes('foot'))).toBe(false)
+    expect(
+      owner.readBaseMotion(cycle)?.parts.every((p) => p.part.bodyId === 'base')
+    ).toBe(true)
+    for (const phase of [0, 1]) {
+      const point = owner.evaluate(cycle, phase, fraction(1n, 3n))
+      const root = required(
+        point.bodies.find((p) => p.body.id === 'base')
+      ).exact
+      for (const entry of receipt.parts) {
+        const actual = required(
+          point.parts.find((p) => p.part === entry.part)
+        ).exact
+        for (let i = 0; i < 3; i++) {
+          expect(actual.origin[i]).toEqual(
+            plus(
+              root.origin[i],
+              root.matrix[i].reduce(
+                (s, v, j) => plus(s, times(v, entry.local.origin[j])),
+                exact(0)
+              )
+            )
+          )
+          for (let j = 0; j < 3; j++)
+            expect(actual.matrix[i][j]).toEqual(
+              root.matrix[i].reduce(
+                (s, v, k) => plus(s, times(v, entry.local.matrix[k][j])),
+                exact(0)
+              )
+            )
+        }
+      }
+    }
+    const work = owner.work.operations
+    expect(owner.readConstantMotion(cycle)).toBe(receipt)
+    expect(owner.work.operations).toBe(work)
+    expect(owner.readConstantMotion({ ...cycle })).toBeUndefined()
+    owner.dispose()
+    expect(owner.readConstantMotion(cycle)).toBeUndefined()
+  })
+  it('issues a whole-phase base receipt from the shared compiler expression', () => {
+    const { source, raw } = cycleFixture({
+      sourceProfile: 'solid-articulation/2'
+    })
+    const owner = new WalkingConstrainedCycleOwner()
+    const cycle = owner.prepare(source, raw)
+    const receipt = owner.readBaseMotion(cycle)
+    expect(receipt?.cycle).toBe(cycle)
+    expect(receipt?.source).toBe(source)
+    expect(receipt?.recipe).toBe(cycle.recipe)
+    expect(receipt?.parts.map((p) => p.part)).toEqual(
+      source.parts.filter((p) => p.bodyId === 'base')
+    )
+    expect(receipt?.determinant.numerator).toBeGreaterThan(0n)
+    if (!receipt) throw new Error('Missing base receipt')
+    for (const phase of [0, 1]) {
+      const point = owner.evaluate(cycle, phase, fraction(1n, 2n))
+      const root = required(
+        point.bodies.find((p) => p.body === receipt.body)
+      ).exact
+      expect(root.matrix).toEqual(receipt.rootMatrix)
+      for (const entry of receipt.parts) {
+        const actual = required(
+          point.parts.find((p) => p.part === entry.part)
+        ).exact
+        for (let i = 0; i < 3; i++) {
+          expect(actual.origin[i]).toEqual(
+            plus(
+              root.origin[i],
+              root.matrix[i].reduce(
+                (sum, v, j) => plus(sum, times(v, entry.local.origin[j])),
+                exact(0)
+              )
+            )
+          )
+          for (let j = 0; j < 3; j++)
+            expect(actual.matrix[i][j]).toEqual(
+              root.matrix[i].reduce(
+                (sum, v, k) => plus(sum, times(v, entry.local.matrix[k][j])),
+                exact(0)
+              )
+            )
+        }
+      }
+    }
+    const work = owner.work.operations
+    expect(owner.readBaseMotion(cycle)).toBe(receipt)
+    expect(owner.work.operations).toBe(work)
+    expect(owner.readBaseMotion({ ...cycle })).toBeUndefined()
+    owner.dispose()
+    expect(owner.readBaseMotion(cycle)).toBeUndefined()
+    expect(() =>
+      owner.prepare(source, {
+        ...raw,
+        baseOrientation: [exact(0), exact(0), exact(0), exact(0)]
+      })
+    ).toThrow()
+    expect(owner.readBaseMotion(cycle)).toBeUndefined()
+    const reverse = owner.prepare(source, {
+      ...raw,
+      baseOrientation: [exact(0), exact(1), exact(0), exact(0)],
+      anchors: raw.anchors.map((anchor) => ({
+        ...anchor,
+        anchorOrigin: [
+          negate(anchor.anchorOrigin[0]),
+          anchor.anchorOrigin[1],
+          negate(anchor.anchorOrigin[2])
+        ]
+      }))
+    })
+    expect(owner.readBaseMotion(reverse)?.rootMatrix).toEqual([
+      [exact(-1), exact(0), exact(0)],
+      [exact(0), exact(1), exact(0)],
+      [exact(0), exact(0), exact(-1)]
+    ])
+  })
   it.each([0, 1])(
     'proves phase %i full soles from actual vertices and encloses all original part points',
     async (phase) => {
@@ -219,6 +236,7 @@ describe('exact polynomial complementary tripod cycle', () => {
       expect(bounded.parts.map((p) => p.part)).toEqual(source.parts)
       let sourceVertices = 0,
         oracleVertices = 0
+      let minimumX: Fraction | undefined, maximumX: Fraction | undefined
       for (let p = 0; p < point.parts.length; p++) {
         const { part, exact: frame } = point.parts[p],
           bounds = bounded.parts[p].sourceBounds
@@ -275,6 +293,19 @@ describe('exact polynomial complementary tripod cycle', () => {
                 v.numerator * highs[k].denominator
             ).toBeGreaterThanOrEqual(0n)
           })
+          const x = actual[0]
+          if (
+            !minimumX ||
+            x.numerator * minimumX.denominator <
+              minimumX.numerator * x.denominator
+          )
+            minimumX = x
+          if (
+            !maximumX ||
+            x.numerator * maximumX.denominator >
+              maximumX.numerator * x.denominator
+          )
+            maximumX = x
           sourceVertices++
         }
         expect(coordinates.size).toBe(
@@ -287,6 +318,21 @@ describe('exact polynomial complementary tripod cycle', () => {
         await new Promise((resolve) => setTimeout(resolve, 0))
       }
       expect(cycle.work.sourceVertices).toBe(2 * sourceVertices)
+      const width = minus(required(maximumX), required(minimumX))
+      const outwardWidth = roundFraction(
+        width.numerator,
+        width.denominator,
+        'up'
+      )
+      expect(Number.isFinite(outwardWidth)).toBe(true)
+      console.info(
+        'External root actual midpoint envelope',
+        JSON.stringify({
+          sourceProfile: source.definition.sourceModel.kind,
+          phase,
+          outwardWidth
+        })
+      )
       expect(oracleVertices).toBeLessThan(sourceVertices)
       for (const support of bounded.supports) {
         const frame = required(

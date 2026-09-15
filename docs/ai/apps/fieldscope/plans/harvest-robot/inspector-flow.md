@@ -4,7 +4,7 @@ Product authority: [harvest robot](/docs/ai/apps/fieldscope/specs/harvest-robot.
 Physical evidence: [hardware concept](/docs/ai/apps/fieldscope/specs/harvest-hardware.md).
 This architecture contract is not a test ledger or a physical safety certificate.
 
-## Active route W - Walking four-arm target (pending implementation)
+## Active route W - Walking four-arm target (runtime composition in progress)
 
 This route supersedes the robot-specific C/D/E route below. The current M2
 four-wheel projection and the later single five-axis source/contact work remain
@@ -14,7 +14,42 @@ behavior. Their `vehicle`, single `tool` and contact-track values are legacy
 inputs until a versioned walking definition is implemented. Generic scene
 identity, botanical partitions, conservative interval/exact geometry and
 session-evidence rules may be reused only through the W owner that explicitly
-binds them. The W runtime, schemas and UI do not exist yet.
+binds them. Runtime selection, W2 stowed composition, route-local transit screen
+and selected walking projection are implemented; later W3 local motion and W5-W6
+operating/session UI remain pending.
+
+The production composition enters through a Core-owned
+`walking-runtime-selection/1`. Its default legacy route uses
+`runtime/robot-workspace.ts` and `render-app/robot-projection.ts`; explicit
+walking selection uses the actual W2 source/envelope owners and
+`WalkingRobotProjection`. The same selection participates in undo/redo and does
+not convert a legacy definition.
+
+Runtime W3 has two ordered levels. Normal travel, same-round return and crate
+exchange first use a conservative cuboid derived from the complete current
+stowed source, including legs, tools, mounted crate and declared load. Strict
+separation from current hard exclusions admits that fast path. Bound overlap is
+only a candidate and sends the affected source and moving parts to bounded local
+stepping, avoidance or hold/help. Local detail never treats AABB overlap as
+collision, grants a whole-part foliage exemption or evaluates all original
+region pairs on every unaffected update.
+
+Plant contact is classified separately from geometry. Ordinary foliage contact
+may proceed only when the contacted source is authored foliage and the local
+contact-risk owner excludes stepping, hooking/entanglement, pinching,
+dragging/tugging and excessive stem displacement under explicit measured or
+visibly synthetic assumptions. The initial synthetic displacement demand is
+0.03 m and adjustable; it is not a force, damage or hardware-safety threshold.
+Missing plant partitions, compliance, contact history or release evidence is
+`unknown`. Drains, channels, structure, people and protected net remain hard
+exclusions.
+
+W4 remains a quasi-static mechanics screen for selected configurations. A
+lightweight runtime support/fall monitor may consume current W3 contacts and W4
+quantities, but it does not turn W4 into a dynamic safety certificate or run the
+exhaustive offline mechanics suite on every update. Stale input or compute
+overrun inhibits new motion and retains the current support, load and pose; no
+partial result becomes clear.
 
 ### W1 - Scene demand
 
@@ -78,16 +113,58 @@ All four arm chains and every leg must be present; unsupported dimensions or
 joints make the definition unavailable. A legacy wheeled definition bypasses W2
 and retains only its historical projection. Conversion requires an explicit user
 action and creates a new definition; load/replay never reinterpret old bytes.
+Active walking admission limits the canonical-body-frame lateral extent of the
+non-articulated central chassis and permanently fixed housings to 0.80 m. It
+imposes no height cap. Legacy wider definitions remain readable and viewable at
+their original values but cannot start walking action, and no reader silently
+resizes them. Articulated legs/arms, tools and removable crate/load are excluded
+from this body field and included in W3's source-derived complete stowed/working
+envelopes.
 Actual closed material primitives, positive physical endpoint gaps and the full
 declared lift are source conditions. Finite endpoint keepout profiles do not
 become material or contact permission. The three synthetic source/FK candidates
 must exclude cross-body volume overlap; named boundary loci require complete
 patch-closure evidence. A sole grounding datum is a geometric translation only,
-not terrain or standing admission. Component mass/CoM evidence remains independent
+not terrain or standing admission. Explicit solid-articulation/2 source selection
+adds external leg-root clevis geometry under definition/2; solid-articulation/1
+keeps its exact interpretation. The source owner proves full authored abduction
+support from actual child material, positive physical chassis clearance, closed
+convex parent cells and a positive-area chassis connection before publication.
+Unproved mount frames, domains or connections are unavailable; no chassis
+carving or pair exemption supplies that proof. Existing polynomial trigonometry
+may supply bounded coefficients and remains the sole such owner.
+Component mass/CoM evidence remains independent
 of the authored material volumes.
 Fixed parent/child interface evidence composes the authored fixed frame once in
 the common parent-local frame; independently rounded world child matrices are
 not the exact fixed-interface authority. Other material pairs use completed FK.
+Mounted-crate substep consumes the current source owner, profile-2 tray-top
+original patch, existing dimensioned crate builder, independent synthetic minimum
+clearance/retention evidence and mass identity. It publishes all eleven original
+crate material parts, one exact common placement and a partial contact-locus
+certificate against the original bottom patch. Missing, stale, foreign or
+unproved source/contact geometry is unavailable. Geometry work depends only on
+crate width/length/height; source, gap or pose changes do not rebuild those
+buffers. Completed mount/read identities are owner-local; no cross-owner cache.
+Legacy per-part load frames are unchanged. Static material checks are formal
+test evidence; W3 continuous collision and W4 strength/mass admission are forbidden
+contributors. This substep is implemented in walking-mounted-crate and the
+profile-2 original tray patch in walking-robot-source.
+Stowed-envelope prerequisite: `WalkingRobotEnvelopeOwner` consumes the current
+source, exact canonical stowed preset, base placement, current mounted-crate
+artifact and complete declared load partitions. It performs completed canonical
+stowed FK once and then one outer base placement, publishes outward bounds for
+each original part contributor and their complete union, and separately checks
+canonical root/fixed material width against 0.80 m. Missing contributors,
+nonfinite points, foreign handles or stale source/mount identities are unavailable.
+The separate active configuration/definition reader preserves historical saved
+readers and imposes no new height cap. Read is geometry-free; same admitted
+source/pose/mount/load input reuses the completed product. Replacement preparation
+retires old products, while a foreign read cannot erase a valid current product.
+Work counts FK, contributors and every original robot/attachment vertex.
+Implementation boundary for this prerequisite is robot-configuration,
+walking-robot-definition and walking-robot-envelopes with their direct tests.
+No runtime/bootstrap, W1 query, collision, mass or latch-strength work contributes.
 Allowed contributors: the admitted versioned definition, app-owned mesh/source
 preparation and pure transforms.
 Forbidden contributors: W1-derived automatic resizing, old tire/tread or
@@ -104,6 +181,55 @@ Failure owner: W2 rejects incomplete/invalid definitions or stale source handles
 it does not relax W1 demand.
 Cache dimensions: none proposed; the immutable rig is the completed definition
 product, not an optional cache.
+
+### W3a - Runtime selection and stowed transit screening
+
+Owner: FieldScope walking operating workspace and route-local transit screen.
+Inputs: Core-persisted `walking-runtime-selection/1`; current W1 demand, route,
+survey identity and clearance margin; current W2 definition/source/profile,
+canonical stowed pose, complete envelope, mounted state and declared load; one
+base translation action. The prepared stowed cuboid is the shape authority;
+actions translate it cheaply without replaying source vertices or FK.
+Outputs: current immutable `walking-operating-report/1` and transit result with
+`legacy-view`, `ready-fast`, `local-required` or `unknown`, affected exclusions,
+reasons and bounded work counters; selected-only legacy or walking projection.
+The index and result contain simulator source geometry for query acceleration,
+not robot-observed obstacle inventory or action authority.
+Conditions: strict complete-XYZ separation may be fast only when the
+margin-expanded swept cuboid stays inside the indexed W1 route volume. A bound
+overlap or closed-bound contact requests later local W3 work and is never a
+collision verdict. Reference subtraction, base translation, margin expansion
+and index pruning use directed enclosing arithmetic. Only
+`exact-source-query-required` is resolvable by the complete cuboid screen; all
+other W1 coverage/evidence reasons remain `unknown`. Missing or stale W1, absent
+route, invalid bounds, uncovered travel or owner-unavailable W2 is `unknown`;
+there is no partial clear or whole-farm scan fallback.
+Allowed contributors: the persisted selection and current owner-issued W1/W2
+products. Forbidden contributors: legacy FK for walking display, total-envelope
+width as body-width admission, automatic definition conversion, global all-pair
+analysis, invented plant-contact permission or local step motion.
+Implementation boundary: walking-runtime-selection, walking-transit-screen,
+walking-operating-workspace, walking-robot-projection and bootstrap with their
+direct tests. W1 changes rebuild the private immutable route/margin index only;
+finite exclusion admission and reason classification run once per immutable W1
+identity/route/inventory and report validation visits; action or margin changes
+do not repeat that inventory traversal. A replacement W1 product invalidates it.
+Definition/profile/load changes prepare their W2 owners. Pose/view/camera/read
+does not rebuild the index or source geometry. Source replacement and disposal
+retire currentness. Currentness compares the live W1 demand and W2 source/envelope
+identities rather than relying on subscriber callback order.
+Future action boundary: immediately before every action, W6 binds the latest
+locally sufficient observation and validity plus independent dynamic-hazard and
+support/fall monitor products. Missing, stale or insufficient observation holds
+the action; `ready-fast` alone never permits motion. This boundary requires
+neither a new full image per control tick nor an invented numeric freshness
+threshold. The same-round static route survey may remain current and reusable.
+Dynamic observations update independently, preserve moving-object identity when
+the object stops, and do not rebuild all static W1 or unchanged W2 geometry.
+Spec: Active operating contract for W1-W6.
+Failure owner: W3a reports geometric `unknown` or `local-required`; later W3 owns
+detailed motion and plant-contact classification. Future W6 owns observation
+validity and action hold/permission. Perception and actuation remain pending.
 
 ### W3 - Terrain, stance and whole-body motion admission
 
@@ -171,6 +297,115 @@ whole-phase boxes are not substituted for narrower inputs. Point resource
 exhaustion does not contradict the separate real open-phase sign certificate.
 This cycle proves neither
 terrain contact nor whole-source collision or complete walking admission.
+The constrained-cycle compiler additionally issues a current base-only
+whole-phase receipt from its actual shared root expression, constant rational
+yaw matrix with positive determinant, and constant original base-part frames.
+The mounted request/3 consumer keeps the source-issued eleven crate regions,
+mass identity and exact common dyadic placement. Only the current mounted
+owner/product can bind that input; replacement invalidates admitted reads.
+Zero-margin base/crate topology may use this common invertible root, retaining
+every required pair and permitting only a complete tray-top/bottom patch locus.
+No positive metric margin, articulated body or external source inherits this
+proof. Legacy load localFrames remain one frame per part.
+
+The separate constant-root receipt derives membership from cycleFrames'
+constant parent branches, not sampled equality. Both phase locals must agree;
+all dynamic leg bodies and descendants depending on them remain outside it.
+W3 consumes actual constant-local source regions through the same complete SAT,
+retaining each required pair. Only referenced joint-interface patches or the
+existing mounted tray/bottom locus admit boundaries; ancestry is no permission.
+The compiler/read lifetime owns this receipt and invalidates it with the cycle.
+
+The phase-root receipt additionally includes that phase's actual support coxa
+identity-abduction branch, followed by only constant parent dependencies.
+Its current cycle/source/phase and family identity bind both local frames and
+retained pair proofs. Swing coxa, dynamic upper/lower and world-fixed feet are
+excluded, even when one sampled pose happens to coincide. Existing base-only
+and two-phase constant receipts keep their separate meaning. W3 still evaluates
+all required original-region pairs with complete SAT and original named loci;
+phase-local reuse cannot escape its phase or carry a positive metric margin.
+Existing two-phase constant and authored fixed-parent proofs retain global
+reuse. Only additional support-coxa membership requires a phase-local family;
+separate reuse counters make these two lifetimes observable.
+
+The request/3 route in the canonical walking-motion owner consumes the current
+cycle owner/product, W1 demand/route, ordered phase windows, load and complete
+external source inventory. W3 owns one immutable terrain/partition input
+snapshot and prepares four event receipts through four existing terrain owners.
+Its private preparation bindings connect each exact input snapshot and event to
+the returned admitted copy; equal bytes or caller provenance never establish
+identity. Full sole triangle/index/vertex equality transfers only geometry from
+the old projection receipt to the new cycle endpoint. Physical applicability
+requires current path/load/time and remains a separate status.
+The existing source-relation evaluator owns bounded rational placements and
+whole-interval original-region accounting. Strict outward gap or a complete
+interval separating-axis proof may exclude material; midpoint SAT supplies only
+a collision witness or candidate axis. Bounded bisection cannot promote samples
+or exhaustion to clear. Same-node cycle frames, bounds and transformed regions
+are prepared once. The output supplies a complete bounded phase cover with
+same-cycle bound products, separate pair-proof covers and explicit unvisited
+work. Active support anchors and admitted terrain planes retain exact source,
+cycle, phase, stance, terrain and load identities for later W4; W3 does not
+compute stability or reconstruct terrain. Request/1 and request/2 remain intact.
+Within each whole phase, hierarchy bounds may discharge a body/independent
+attachment/external-source or part/shape Cartesian region span only by a strict
+outward gap including the applicable world-unit margin. Overlap descends and
+never establishes collision. Stable original-region leaf ordinals retain exact
+source IDs. Disjoint terminal covers and their cardinalities, including
+unvisited remainders, establish exhaustive coverage; the visited leaf list does
+not. Same-body union alone is co-rigid, and a holder and its independent
+attachment remain required pairs. Owner-issued phase bounds and lazy transformed
+products have an evaluation-local lifetime and finite group/leaf/predicate work.
+The exact relation kernel visits complete SAT axes in canonical first-body
+normal, second-body normal and row-major edge-cross order. Exact first-key
+deduplication preserves original orientation. Only a proved whole-interval
+metric gap may end this traversal early; volume, boundary and other separation
+require the complete set. Preparation, projection and constraint counters
+observe the existing finite arithmetic budget, including partial exceptions.
+An already computed strict positive gap suffices when the world-unit margin is
+zero; nonpositive gaps do not. Positive-margin squared-distance work and its
+guard retain their original order. This sufficient proof does not grant contact
+permission or alter canonical axes, frames or original-triangle witnesses.
+Exclusive innermost work stages additionally attribute source certification,
+node/chain compilation, placement, relation and contact proofs without changing
+their arithmetic or lifetime. Their sums preserve the existing cap; nested
+axis deltas are detail, not additional work. Resource-incomplete preparation
+must not be described as a proved topology defect in failure evidence.
+Placement points keep their issued-region/frozen-frame lifetime. Full direction
+sets are demand-driven only after XYZ wholeGap fails; point-only consumers do
+not prepare them. The measured direction product is retained once per same point
+product, including only the monotonic-budget exhausted sentinel on failure.
+Triangle ordering, complete SAT semantics and mutable-chain recomputation stay
+unchanged; no partial direction set may authorize a relation.
+
+For tagged rational placements, ordered local source normals/edges are prepared
+once per issued immutable region at first direction demand. The same linear
+frame chain transports edges by M and oriented normals by the signed cofactor
+of M; positive common factors may be removed only from the whole matrix or
+whole vector. Invertibility preserves first representative order. Each placed
+point product owns its completed transported directions, and each evaluation
+owns completed frame operators. Mutable chains use the point product's exact
+snapshot and rebuild. Untagged legacy placements preserve their point-derived
+raw direction scale. No point, original triangle, witness, denominator, margin
+is replaced. Rational node compilation validates every scalar occurrence before
+sharing canonical normalized-value proofs and integer lifts within that node;
+first-occurrence denominator LCM and resulting frames remain identical. Frame
+operators retain completed transports keyed by kind and oriented primitive
+integer triple, with counted lookups and only monotonic exhausted sentinels.
+No arbitrary exception or partial result is reusable. Required-bit observations report
+each exclusive stage's maximum and first excess without adding predicates or
+changing the 24000-bit ceiling; a required width is not a completed operation.
+
+For an explicit sheet versus a certified convex solid, the same evaluator visits
+every original sheet triangle as a lower-dimensional surface. Complete SAT
+intersection retains its original offset and blocks, including boundary contact;
+strict candidate axes must separate all original vertices for the whole interval
+and metric margin. Otherwise the region pair enters the same bounded phase queue.
+Original region cardinality remains one; internal triangle work is separately
+complete or explicitly unvisited. Degenerate/incomplete sheets, open shells and
+exhaustion remain unknown. Mathematical bound helpers are not admission owners:
+only this current cycle/phase/source route issues their vertex-bound authority.
+Ground and semantic-exclusion precedence are unchanged.
 Terrain-placement request admission binds current W1 demand/farm/route and W2
 source to measured/synthetic scenario triangles, complete source regions and
 three original-triangle barycentric foot seeds. The terrain-placement producer
@@ -226,25 +461,41 @@ Cache dimensions: none proposed.
 
 ### W5 - Crop support and cutting coordination
 
-Owner: FieldScope crop-specific same-side manipulation admission.
+Owner: FieldScope observation-evidence and crop-specific same-side manipulation
+admission.
 Inputs: current W1 target/anatomy and current W2 arm/tool sources whose scene,
 definition and source identities are compatible for this evaluation; W3
 complete-motion results, W4 configuration result, explicit support contact,
-plant-side pedicel cut corridor, retention and observation evidence. W1 and W2
-revision values are independent and need not match.
+plant-side pedicel cut corridor, retention and observation evidence. Observation
+evidence includes greenhouse film/weather/time, illumination, shadow, glare,
+occlusion, depth, calibration, confidence, viewpoint and age. W1 and W2 revision
+values are independent and need not match.
 Outputs: admitted, deferred or blocked coordinated support/cut action with distinct
-support, cut, separation, retention and physical-damage evidence. The initial
-scheduler activates one same-side pair at a time; later bilateral work supplies
-one combined W3/W4 result rather than joining single-side receipts.
+observation, support, cut, separation, retention and physical-quality evidence.
+The scheduler exercises both independent left/right groups concurrently when
+current space, stance, load and support permit, and serializes only actual shared
+conflicts. Concurrent work binds one whole-robot state and affected cross-group
+relations rather than joining independent single-side receipts.
 Conditions: both left and right target cases are supported. Cucumber soft textile
 may not scrape/wipe/roll across fine spines. Tomato skin, calyx and retained
 pedicel are protected; cutting is confined to the confirmed plant-side pedicel
-corridor. Unknown anatomy, corridor, contact, retention or retreat defers.
+corridor and protects nearby net. The preferred four-arm topology requires each
+side's combined foliage-opening/fruit-holding arm to prove both contact functions
+in the same source, pose and interval; an existing support patch alone is
+insufficient. Low confidence or incomplete depth/occlusion coverage causes
+another admitted viewpoint or deferral. A single image may propose a candidate,
+but pixels never prove hidden-fruit truth or a complete blade sweep. Unknown
+anatomy, corridor, pre-action contact risk, retention or retreat defers. After an
+attempted action, quality failure is recorded and the mission may continue when
+current motion, support, load and hazard evidence allows. Net cutting or
+uncontrolled plant pull is an operational fault.
 Allowed contributors: completed botanical partitions, W1-W4 products and exact
-crop/tool material regions.
+crop/tool material regions, plus explicit measured or synthetic observation
+conditions.
 Forbidden contributors: cutter contact with main stem, rachis, neighboring fruit,
 calyx interface or non-target foliage; pulling/bending fallback, hidden-fruit
-truth, visual disappearance as harvest proof and blanket intended-contact bypass.
+truth, visual disappearance as harvest proof, RGB or segmentation absence as
+blade clearance, and blanket intended-contact bypass.
 Implementation boundary: future simulation manipulation coordinator and its
 crop-specific normal, forbidden-contact, stale and unknown tests.
 Spec: Active product reset and existing crop handling clauses.
@@ -256,27 +507,57 @@ Cache dimensions: none proposed.
 
 Owner: FieldScope deterministic simulation session and UI projection.
 Inputs: admitted mission/configuration, W1-W5 completed current artifacts, closed
-simulation clock, explicit observations and confirmations.
+simulation clock, explicit observations and confirmations, current tracked-hazard
+identities, support/fall observations and crate/latch evidence.
 Outputs: deterministic bilateral inspection and left/right harvest runs, state and
 fruit disposition evidence, unknown/deferred reasons, stowed/working walking
-projection and localized controls. Presentation consumes the same admitted poses
-and paths; it does not generate a substitute route or success.
+projection, patrol-round checkpoint, crate-exchange state, quality/fault records
+and localized controls. Presentation consumes the same admitted poses and paths;
+it does not generate a substitute route or success.
 Conditions: run/source/terrain/mass/load identities remain current throughout.
-Single-side operation is the initial scheduling policy, not a permanent ban on
-bilateral operation. No connected hardware. Legacy definitions may be viewed but
-cannot start a W run. Missing upstream evidence blocks or defers the dependent
-transition.
+Both independent groups operate concurrently when current space, stance, load
+and support evidence permits, and only actual shared conflicts serialize them.
+No connected hardware. Legacy definitions may be viewed but cannot start a W
+run. Missing upstream evidence blocks or defers the dependent transition. One
+route-inspection record is valid for one complete garden patrol
+round and is reused for same-round return, exchange and resume; the next round
+creates a new inspection. Dynamic moving-object/person and fall/support-loss
+monitoring remains active during motion, manipulation, waiting and stationary
+states and retains entity identity after motion stops. Static source/configuration
+change holds the current round rather than silently restarting it.
+
+A user stop first inhibits new base, arm and cutter progress. The base remains at
+its current position. An in-place fold toward the initial compact attention pose
+may start only when the complete local joint sweep remains separated from the
+tracked person and near sources while maintaining stance, held fruit, load and
+crate latch. Otherwise the robot holds its current pose and requests help.
+Quality loss is recorded and does not alone cancel the mission. Dropped fruit
+retains its actual disposition, updates gripper/inventory state and becomes a
+current obstacle when applicable; it is never reported as placed. Person
+contact, net cutting, uncontrolled pull, lost support, unstable/unlatched crate
+or released-object person/support/path hazard remains an operational fault.
+
+At a designated exchange station, the admitted sequence is complete stow and
+stationary support, confirmed latch release, confirmed removal, identified new
+empty crate with tare evidence, confirmed re-lock, then resume at the exact
+unfinished patrol checkpoint. Arms do not permanently carry the crate, and
+travel with a missing or unlatched crate is blocked.
 Allowed contributors: completed W artifacts, current Core session/history owners,
 SpatialLayer projection and explicit synthetic observation adapters.
 Forbidden contributors: wall-clock decisions, UI-owned canonical state, rendered
 visibility as observation truth, force/soil safety claims, hidden fallback output
-or geometry rebuilt per frame.
+or geometry rebuilt per frame; also automatic route reinspection during
+same-round return/resume, stopped-person reclassification and base translation
+during attention folding.
 Implementation boundary: future FieldScope session/runtime, projection and UI
 consumers plus scenario, replay, work-count and close-up bilingual browser tests.
 Spec: Active product reset executable cases and definition of done.
 Failure owner: W6 owns lifecycle/currentness/presentation; upstream owners retain
 their blocking and unknown reasons.
-Cache dimensions: none proposed until profiling justifies an exact owner.
+Work boundary: each runtime owner reports affected work, input currentness and
+overrun. Product benchmarks measure capture-to-inhibit, observation-to-decision
+and canonical-state-to-UI latency for actual cases without publishing an
+unmeasured numeric promise. No cache dimension is required without profiling.
 
 ## A - Feasibility domain (current M1)
 

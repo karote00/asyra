@@ -6,7 +6,7 @@ instance placement before descriptor placement. They do not use interval
 midpoints or rendered per-vertex rounding as exact source authority. Invalid or
 singular frames are unavailable; exact frame availability grants no clearance.
 
-## Current milestone: M2
+## Current runtime baseline and active reset
 
 M1 provides pure, deterministic engineering assessments, not actuation, physics,
 a trained detector, a scheduling service or a rendered robot. The remaining milestones are defined
@@ -14,30 +14,68 @@ in the [plan](/docs/ai/apps/fieldscope/plans/harvest-robot/plan.md). The physica
 assumptions and validation obligations are in [hardware concept](/docs/ai/apps/fieldscope/specs/harvest-hardware.md).
 No software result may be labeled certified safe or a measured ground property.
 
+The production workspace now persists an explicit versioned runtime selection.
+`legacy-view` remains the default and retains the historical M2 projection;
+`walking-active` binds an admitted definition to the actual W2 source, complete
+stowed envelope, current W1 route-local transit screen and selected-only walking
+projection. Later local motion, plant-contact, perception, manipulation and
+mission owners remain pending and must retain these owner-issued identities.
+
 ## Active product reset: walking four-arm harvester (pending implementation)
 
 The active product target is a compact multi-legged walking harvester for the
-existing FieldScope farm. It has at least four independently owned arm chains:
-left fruit support, left cutter, right fruit support and right cutter. It must
-inspect both sides of the passage and complete representative harvests on each
-side. Fruit support and cutting are separate coordinated actions; a combined
-single-wrist support-and-cut tool is not the active product architecture.
+existing FieldScope farm. Its body is at most 0.80 m wide. That limit applies to
+the body schema, not the complete stowed or moving envelope formed by legs,
+tools, crate and load, and it is never a substitute for current route admission.
+There is no user-imposed fixed height cap; actual high-target reach, moment,
+centre-of-mass and swept-clearance evidence still governs each configuration.
+For this contract, body width is the lateral extent of the non-articulated
+central chassis and its permanently fixed housings in the canonical body frame.
+Articulated legs/arms, tools and removable crate/load are excluded from that
+schema field but included in the derived total envelopes. Legacy definitions
+retain and display their original width; active walking admission rejects an
+over-limit value without resizing or rewriting it.
+
+The implemented prerequisite keeps historical readers unchanged and exposes a
+separate active-definition reader. Its declared-assembly check is completed by
+the stowed-envelope owner's actual root/fixed material bounds, including fixed
+source housings. The complete cuboid includes every original robot, mounted
+crate and declared load vertex. It publishes immutable per-contributor bounds
+and their union; the current source's roughly 0.94625 m stowed total width is
+valid envelope evidence, not a violation of the distinct body limit.
+The versioned authority completes canonical stowed FK once, then applies one
+outer base transform conservatively. Unknown attachment geometry or stale
+source/mount identity makes the product unavailable. Same admitted input reuses
+the product without geometry work; changed pose/load/source requires preparation.
+Neither a cuboid overlap nor completeness establishes collision, route clearance,
+runtime connectivity, combined-arm capability or latch strength.
+
+The preferred light baseline has two independent harvest groups, one on each
+side. Each group has one combined foliage-opening and fruit-holding arm plus one
+cutter arm, for four arms total. Opening foliage and holding fruit remain
+separate contact functions on that combined arm and must be proved compatible in
+one source, pose and interval. The currently implemented soft support patch does
+not by itself prove both functions. A six-arm, three-per-side candidate is
+considered only if the four-arm geometry cannot perform the combined action; it
+is not silently added or treated as implemented.
 
 The first comparison baseline is explicitly synthetic: a low-centre-of-mass
 six-legged base, a bounded vertical shoulder carriage and four medium-short arm
 chains. Six legs, link dimensions, masses, joint ranges, foot size and actuator
 capability are simulation assumptions until replaced by measured or selected
-hardware evidence. The initial scheduler may operate one same-side support/cut
-pair at a time. That sequencing choice is not a permanent prohibition on
-simultaneous bilateral work. Any future simultaneous operation must pass one
-combined whole-robot collision, contact, load and stability assessment; two
-independent single-side passes cannot be composed into that evidence.
+hardware evidence. The scheduler uses both independent left/right groups
+concurrently when current space, stance, load and support evidence permits. It
+serializes only an actual shared-source, shared-space, support or load conflict.
+Concurrent work binds one current whole-robot state and evaluates affected
+cross-group interactions; independent single-side receipts cannot excuse a
+shared conflict.
 
-Compact size and low mass are required comparison objectives. No numeric maximum
-mass, body envelope, foot pressure or working-height limit has been measured yet,
-so the product exposes these values and their provenance instead of declaring a
-candidate acceptable by adjective. Current-scene geometry can block an oversized
-candidate; missing real-field size/load limits remain `unknown`.
+Compact size and low mass are required comparison objectives. Apart from the
+0.80 m body-width limit, no numeric maximum mass, total envelope, foot pressure
+or working-height limit has been measured yet, so the product exposes these
+values and their provenance instead of declaring a candidate acceptable by
+adjective. Current-scene geometry can block an oversized candidate; missing
+real-field size/load limits remain `unknown`.
 
 The robot walks on feet. Wheels, tire tread support, vehicle contact track and a
 trailing or carrying vehicle are excluded from the active target. The currently
@@ -50,6 +88,107 @@ configuration must define a versioned topology discriminator, exact schema and
 an explicit compatibility path. Loading a legacy definition keeps its historical
 projection available but does not admit it to the new walking simulation;
 creating a new topology is an explicit user action, not an automatic migration.
+
+### Active operating contract for W1-W6
+
+Normal travel, same-round return and crate exchange use one conservative cuboid
+derived from the actual complete stowed configuration, including legs, tools,
+mounted crate and declared load. A strict sweep of that cuboid against current
+hard structure and route exclusions is sufficient for the ordinary fast path.
+An overlapping bound is only a candidate: W3 evaluates a bounded local step,
+avoidance or hold/help action with the affected source and moving bodies. It does
+not rerun all original-region pairs on every update, declare an AABB overlap a
+collision or choose another farm lane. The farm-side route remains derived from
+current configuration and growth; 0.80 m is a robot design limit, not a walkway
+constant.
+
+The implemented first-level runtime screen builds one private immutable index
+for the selected W1 route, margin and survey identity. Each action translates
+the prepared stowed cuboid from its reference base and performs interval-tree
+broad phase followed by complete XYZ overlap. Directed interval arithmetic
+encloses reference subtraction, action translation and margin expansion;
+closed-bound contact is a candidate rather than strict separation. A
+margin-expanded sweep outside the W1 route volume is uncovered and therefore
+`unknown`; absence of indexed candidates cannot clear unsurveyed travel. Of W1's
+unknown reasons, only `exact-source-query-required` can be resolved by this
+complete cuboid screen. Growth, survey, evidence and clearance-margin unknowns
+remain attached to the result. W1 changes retire report currentness immediately
+without rebuilding unchanged W2 source/envelope products. One immutable W1
+revision validates its exclusion bounds once; action and margin changes reuse
+that admission, while a changed W1 product revalidates before use. Pose, load and
+walking definition changes remain inputs to their respective W2 owners, while
+camera, view and read operations cause no geometry work.
+
+The W3a index is simulator spatial geometry used to accelerate conservative
+queries, not a perceived obstacle list. Its `ready-fast` result is only geometric
+screening and cannot authorize an action. The future W6 action gate must check
+the latest locally sufficient observation and validity immediately before each
+action and concurrently require the independent dynamic-hazard and support/fall
+monitors. Missing, stale or insufficient observation holds. The gate need not
+demand a new full image per control tick and this contract defines no numeric
+freshness threshold. A current static route survey remains reusable within its
+patrol round. Dynamic observations update independently, preserve a moving
+object's identity after it stops, and do not force whole-farm W1 or unchanged W2
+geometry to rebuild.
+
+Ordinary foliage contact is permitted when complete source evidence confines the
+contact to authored foliage and a current contact-risk result excludes stepping,
+pinching, hooking, entanglement and dragging/tugging. The initial configurable
+stem-displacement demand is a visibly synthetic few-centimetre assumption, not a
+plant-damage or force threshold. Missing plant partitions, compliance, contact
+history or release evidence remains `unknown`. Feet may not step on plants, and
+drains, water channels, greenhouse structure and protected net remain hard
+exclusions. Geometric intersection is retained as immutable evidence; it is not
+automatically plant damage or automatically permission to proceed.
+
+Perception retains greenhouse-film, weather, time-of-day, illumination, shadow,
+glare, calibration, depth, confidence and occlusion evidence. A single image may
+produce a candidate target quickly, but low confidence or insufficient depth or
+coverage causes re-observation, a changed view or deferral. Free RGB, a missing
+pixel or a clear segmentation mask never proves hidden-fruit truth or a complete
+blade sweep, especially near net.
+
+An independent local hazard monitor remains active during motion, manipulation,
+waiting and stationary states. It retains moving-object and person identity when
+an entity stops and separately monitors loss of support or a fall indication.
+The static route inspection is valid for one complete patrol round and is reused
+for same-round return, crate exchange and resume; dynamic monitoring does not
+silently rerun that survey. Static source/configuration invalidation still holds
+the round rather than starting a replacement round to evade currentness.
+
+An admitted person-stop first inhibits base, arm and cutter progress. The base
+position remains fixed. Only a separately admitted local abort/retraction may
+fold articulated bodies toward the initial compact attention pose while
+maintaining stance support, held fruit, mounted-crate latch and separation from
+the tracked person. If that in-place joint sweep is blocked or unknown, the robot
+holds its current pose and requests help; it never translates to find a folding
+location, blindly retracts, contacts a person or releases a load into a hazard.
+
+Crate exchange occurs only at a designated station with the robot stowed and
+supported. The base-owned sequence confirms latch release, old-crate removal,
+new empty-crate identity and tare, and latch re-lock before resume at the exact
+unfinished patrol checkpoint. Arms do not permanently hold the crate, and
+travel with a missing or unlatched crate is blocked.
+
+Harvest-quality failure is an immutable outcome record, not an automatic mission
+cancellation. Spine, skin, calyx, pedicel, fruit retention, placement and other
+quality results remain distinct from pre-action admission. The mission may
+continue to another target only when current motion, load and hazard results
+permit it. A dropped or damaged fruit records its actual disposition, updates
+gripper/inventory state and becomes a current obstacle when applicable; it is
+not reported as placed and does not alone cancel the mission. Net cutting,
+uncontrolled plant pulling, person contact, lost support, an unstable or
+unlatched crate, or a released object that creates a person/support/path hazard
+is an operational fault.
+
+Runtime work follows affected ownership. The ordinary stowed-envelope path,
+candidate-local motion, perception, manipulation and hazard owners report their
+own work and currentness. End-to-end observation-to-inhibit, observation-to-action
+decision and state-to-UI latency are measured on the actual runtime profile; no
+unmeasured number is advertised as ultra-low latency. Stale input or compute
+overrun cannot reuse partial clearance: new motion is held while the current load
+and support state are retained. Large exhaustive geometry suites remain formal
+offline evidence, not the per-update runtime path.
 
 The canonical solid articulation source uses `walking-robot-definition/2`.
 Version 1 retains its closed-box schema identity and is never silently
@@ -74,6 +213,19 @@ bearing/core material, verifies positive remaining core and connected
 same-body connectors, and rejects infeasible geometry. Directed binary64
 construction rounding must preserve the required gap; no tolerance, fallback
 solid or special joint exception can replace these checks.
+
+An explicit `solid-articulation/2` profile under the same definition version
+authors external leg roots and connected parent clevis material. Profile 1
+retains its exact source semantics; loading never changes profiles. Profile 2
+retains the complete chassis and derives each mount clearance from actual child
+material support over its whole declared abduction domain plus the authored
+physical gap. Its closed convex clevis cells must connect to a positive-area
+chassis face while remaining axially separated from child material. Unsupported
+mounts, domains or unproved source connections are rejected without geometry
+carving, contact exceptions or reduced joint ranges. Dimensions, component mass
+and centre-of-mass values are separately labeled synthetic assumptions; changing
+material does not establish unchanged physical mass properties. Source-pose and
+cycle-midpoint evidence does not establish whole-interval W3 passage admission.
 
 The lift retains its complete declared range. `base.mast` is the admitted
 two-rail assembly: its actual Y bounds cover the carriage throughout that range,
@@ -186,6 +338,68 @@ Only current published presets supply fixed non-support joint states in this
 first owner. Unsupported layout, source, dependency, anchor or budget is
 unavailable. A constrained source projection does not itself prove terrain
 contact, swing clearance, collision freedom, stance transition or complete gait.
+Boundary admission requires the complete contact locus to be covered by both
+named patch closures and retains an original-triangle witness; an unproved
+subset remains unknown.
+
+The W2 mounted crate preserves the existing eleven material parts and open
+cavity. Profile 2 publishes the original tray-top face; profile 1 bytes remain
+unchanged. One exact common placement aligns the original crate underside with
+that face and derives rearward clearance from actual rail and crate bounds plus
+an independently authored synthetic minimum clearance. Partial contact is
+permitted only with explicit synthetic mechanical-retention evidence; contact
+area does not prove fastening strength or W4 load admission. Source/gap changes
+may update the mount certificate without rebuilding dimension-only crate
+geometry. This source artifact is neither a W3 collision verdict nor a reinterpretation
+of the existing per-part attachment frames.
+Its explicit request/3 consumer binds the current mounted owner/product and all
+original part/region identities. Exact dyadic placement precedes the same cycle
+base transform for both exact points and outward interval bounds. The cycle
+compiler issues a base-only whole-phase constant-local receipt from its actual
+shared root expression and positive-determinant rational yaw matrix. At zero
+margin that common invertible transform preserves base/crate topology; only
+the complete original tray24..29 and bottom30..35 patch locus is an admitted
+boundary. All other pairs, including non-base robot parts and external sources,
+remain required. No snapshot, endpoint, foreign receipt, rounded translation or
+positive-clearance inference can replace this authority. This geometrical
+consumer does not bind W4 mass properties or prove mechanical retention.
+
+A separate compiler-issued constant-root receipt includes only bodies derived
+from the shared root through the actual fixed preset's constant local frames.
+The two phases must have identical exact locals. Dynamic leg branches and their
+descendants are excluded. It permits a zero-margin original-source SAT proof
+to hold for the whole phase, never a skipped pair or contact-by-ancestry rule.
+Joint contacts require their source-issued parent/child patch references and a
+complete closed-locus proof. Mounted contact remains the original tray/bottom
+locus. Every other surface or volume relation retains its actual classification.
+Exact node and direction reuse must retain the same denominator, orientation,
+triangle identity, finite limits and failed-input currentness.
+
+Within a particular phase, the actual support coxa uses identity abduction and
+is a constant local descendant of the common root. A separate phase-root receipt
+may include that compiler branch and its constant dependents. The complementary
+swing phase cannot borrow this membership. Dynamic upper/lower and world-fixed
+feet belong to different expressions and are excluded. This receipt only
+supports zero-margin original-source topology with full SAT and referenced
+contact loci; it grants no ancestry exemption or environmental clearance.
+
+The canonical request/3 route consumes the current exact cycle rather than
+linear knots or rounded angle replay. Four W3-owned terrain preparations cover
+the initial tripods, the second support tripod and the final landing tripod.
+W3 records their actual immutable input-to-returned-copy associations and checks
+every original sole vertex against the corresponding cycle endpoint. Only
+identical loci transfer terrain geometry; physical path/load/time applicability
+is independently admitted or remains unknown. Caller receipts and equal-value
+foreign objects do not establish currentness.
+Whole-source nonlinear clearance covers every original robot/self/environment
+region pair and complete attachments over each phase. An interval must have a
+strict outward separation proof; a midpoint is only a collision witness or a
+candidate separating axis. Finite subdivision and arithmetic exhaustion retain
+unknown/unvisited coverage. Sliding, channel/debris or raised-soil material are
+not waived by a support or swing label. Same-cycle phase bounds and exact
+support/terrain identities are handed onward; load stability and full mission
+admission remain later owners.
+
 Boundary admission requires the complete contact locus to be covered by both
 named patch closures and retains an original-triangle witness; an unproved
 subset remains unknown. An exact selected robot patch/target-partition relation

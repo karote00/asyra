@@ -1,3 +1,12 @@
+import type {
+  WalkingConstrainedCycle,
+  WalkingConstrainedCycleOwner
+} from './walking-constrained-kinematics'
+import type {
+  WalkingTerrainPlacementRequest,
+  WalkingTerrainPlacementSeed
+} from './walking-terrain-placement-contract'
+import { readWalkingTerrainPlacementRequest } from './walking-terrain-placement-contract'
 import type { Point3 } from './greenhouse'
 import type {
   WalkingEvidence,
@@ -5,6 +14,10 @@ import type {
   WalkingRigidTransform
 } from './walking-robot-definition'
 import type { WalkingRobotSource } from './walking-robot-source'
+import type {
+  WalkingMountedCrate,
+  WalkingMountedCrateOwner
+} from './walking-mounted-crate'
 import type { WalkingRobotPart } from './walking-robot-source'
 import {
   readSourceRegions,
@@ -501,92 +514,7 @@ export function readWalkingMotionRequest(
     !record(value.load.carried)
   )
     return invalid()
-  const bodyIds = new Set(source.rig.bodies.map(({ id }) => id)),
-    attachmentIds = new Set<string>()
-  const crate = value.load.crate,
-    carried = value.load.carried
-  if (crate.kind === 'unknown') {
-    if (!exact(crate, ['kind'])) return invalid()
-  } else {
-    if (
-      crate.kind !== 'attached' ||
-      !exact(crate, [
-        'kind',
-        'provenance',
-        'sourceCoverage',
-        'sourceParts',
-        'holderBodyId',
-        'localFrames',
-        'massIdentity'
-      ]) ||
-      !evidence(crate.provenance) ||
-      !['complete', 'partial'].includes(String(crate.sourceCoverage)) ||
-      crate.holderBodyId !== 'base' ||
-      !bodyIds.has('base') ||
-      !identity(crate.massIdentity) ||
-      !Array.isArray(crate.sourceParts) ||
-      !crate.sourceParts.length ||
-      !Array.isArray(crate.localFrames) ||
-      crate.localFrames.length !== crate.sourceParts.length ||
-      !crate.localFrames.every(frame)
-    )
-      return invalid()
-    const sourceIds = new Set<string>()
-    for (const part of crate.sourceParts) {
-      if (
-        !record(part) ||
-        !exact(part, ['id', 'sourceId', 'shape']) ||
-        !identity(part.id) ||
-        attachmentIds.has(part.id as string) ||
-        !identity(part.sourceId) ||
-        sourceIds.has(part.sourceId as string) ||
-        !triangleShape(part.shape)
-      )
-        return invalid()
-      attachmentIds.add(part.id as string)
-      sourceIds.add(part.sourceId as string)
-    }
-  }
-  if (carried.kind === 'none') {
-    if (!exact(carried, ['kind'])) return invalid()
-  } else if (
-    carried.kind !== 'attached' ||
-    !exact(carried, ['kind', 'items']) ||
-    !Array.isArray(carried.items) ||
-    !carried.items.length
-  )
-    return invalid()
-  for (const attachment of carried.kind === 'attached'
-    ? (carried.items as unknown[])
-    : []) {
-    if (
-      !record(attachment) ||
-      !exact(attachment, [
-        'id',
-        'sourceId',
-        'sourceCoverage',
-        'shape',
-        'holderBodyId',
-        'localFrame',
-        'massPropertiesId'
-      ]) ||
-      !identity(attachment.id) ||
-      attachmentIds.has(attachment.id as string) ||
-      !identity(attachment.sourceId) ||
-      !['complete', 'partial'].includes(String(attachment.sourceCoverage)) ||
-      !(
-        triangleShape(attachment.shape) ||
-        (record(attachment.shape) &&
-          exact(attachment.shape, ['kind']) &&
-          attachment.shape.kind === 'unknown')
-      ) ||
-      !bodyIds.has(attachment.holderBodyId as string) ||
-      !frame(attachment.localFrame) ||
-      !identity(attachment.massPropertiesId)
-    )
-      return invalid()
-    attachmentIds.add(attachment.id as string)
-  }
+  validateWalkingLoad(value.load, source)
   if (
     !record(value.terrain) ||
     !exact(value.terrain, [
@@ -988,5 +916,410 @@ function readSourceMotionRequest(
     targetContacts: Object.freeze(contacts)
   })
   admittedRequests.set(result, { source, demand })
+  return result
+}
+
+/** The input snapshot belongs to W3; terrain products subsequently admit detached copies. */
+export const WALKING_NONLINEAR_MOTION_REQUEST_FORMAT =
+  'walking-motion-request/3' as const
+export interface WalkingNonlinearMotionRequest {
+  readonly format: typeof WALKING_NONLINEAR_MOTION_REQUEST_FORMAT
+  readonly requestId: string
+  readonly source: WalkingRobotSource
+  readonly demand: SceneDemand
+  readonly cycle: WalkingConstrainedCycle
+  readonly path: Readonly<{
+    id: string
+    phases: readonly Readonly<{ phase: 0 | 1; from: number; until: number }>[]
+  }>
+  readonly gait: WalkingMotionRequestV1['gait']
+  readonly terrain: WalkingTerrainEvidence
+  readonly load: WalkingNonlinearLoadCase
+  readonly externalSources: readonly WalkingExternalSourceRegions[]
+  readonly terrainEvents: readonly Readonly<{
+    event: 'initial-a' | 'initial-b' | 'handoff-b' | 'final-a'
+    seeds: readonly WalkingTerrainPlacementSeed[]
+    placementRequest: WalkingTerrainPlacementRequest
+  }>[]
+  readonly targetContacts: readonly []
+  readonly placementBudget: WalkingTerrainPlacementRequest['budget']
+  readonly budget: Readonly<{
+    maxPhaseNodes: number
+    maxSubdivisions: number
+    maxRegionPairs: number
+    maxExactPredicates: number
+    maxBits: number
+    maxCycleOperations: number
+    maxInputValues: number
+    maxEnvelopePairs: number
+  }>
+  readonly inputValues: number
+}
+export interface WalkingCurrentCycle {
+  readonly owner: WalkingConstrainedCycleOwner
+  readonly cycle: WalkingConstrainedCycle
+}
+export interface WalkingCurrentMountedCrate {
+  readonly owner: WalkingMountedCrateOwner
+  readonly crate: WalkingMountedCrate
+}
+export type WalkingNonlinearLoadCase = Omit<WalkingLoadCase, 'crate'> & {
+  readonly crate:
+    | WalkingLoadCase['crate']
+    | Readonly<{
+        kind: 'mounted'
+        artifact: WalkingMountedCrate
+      }>
+}
+export function isWalkingMountedCrateCurrent(
+  load: WalkingNonlinearLoadCase,
+  source: WalkingRobotSource,
+  current?: WalkingCurrentMountedCrate
+) {
+  return (
+    load.crate.kind !== 'mounted' ||
+    Boolean(
+      current &&
+      current.crate === load.crate.artifact &&
+      current.owner.read(source, current.crate) === current.crate
+    )
+  )
+}
+const admittedNonlinearRequests = new WeakSet<object>()
+function validateWalkingLoad(
+  load: Record<string, unknown>,
+  source: WalkingRobotSource,
+  mounted?: WalkingMountedCrate
+) {
+  if (
+    !exact(load, ['id', 'provenance', 'crate', 'carried']) ||
+    !identity(load.id) ||
+    !evidence(load.provenance) ||
+    !record(load.crate) ||
+    !record(load.carried)
+  )
+    return invalid()
+  const bodyIds = new Set(source.rig.bodies.map(({ id }) => id)),
+    attachmentIds = new Set<string>()
+  const crate = load.crate,
+    carried = load.carried
+  if (crate.kind === 'mounted' && mounted) {
+    if (!exact(crate, ['kind', 'artifact']) || crate.artifact !== mounted)
+      return invalid()
+  } else if (crate.kind === 'unknown') {
+    if (!exact(crate, ['kind'])) return invalid()
+  } else {
+    if (
+      crate.kind !== 'attached' ||
+      !exact(crate, [
+        'kind',
+        'provenance',
+        'sourceCoverage',
+        'sourceParts',
+        'holderBodyId',
+        'localFrames',
+        'massIdentity'
+      ]) ||
+      !evidence(crate.provenance) ||
+      !['complete', 'partial'].includes(String(crate.sourceCoverage)) ||
+      crate.holderBodyId !== 'base' ||
+      !bodyIds.has('base') ||
+      !identity(crate.massIdentity) ||
+      !Array.isArray(crate.sourceParts) ||
+      !crate.sourceParts.length ||
+      !Array.isArray(crate.localFrames) ||
+      crate.localFrames.length !== crate.sourceParts.length ||
+      !crate.localFrames.every(frame)
+    )
+      return invalid()
+    const sourceIds = new Set<string>()
+    for (const part of crate.sourceParts) {
+      if (
+        !record(part) ||
+        !exact(part, ['id', 'sourceId', 'shape']) ||
+        !identity(part.id) ||
+        attachmentIds.has(part.id as string) ||
+        !identity(part.sourceId) ||
+        sourceIds.has(part.sourceId as string) ||
+        !triangleShape(part.shape)
+      )
+        return invalid()
+      attachmentIds.add(part.id as string)
+      sourceIds.add(part.sourceId as string)
+    }
+  }
+  if (carried.kind === 'none') {
+    if (!exact(carried, ['kind'])) return invalid()
+  } else if (
+    carried.kind !== 'attached' ||
+    !exact(carried, ['kind', 'items']) ||
+    !Array.isArray(carried.items) ||
+    !carried.items.length
+  )
+    return invalid()
+  for (const attachment of carried.kind === 'attached'
+    ? (carried.items as unknown[])
+    : []) {
+    if (
+      !record(attachment) ||
+      !exact(attachment, [
+        'id',
+        'sourceId',
+        'sourceCoverage',
+        'shape',
+        'holderBodyId',
+        'localFrame',
+        'massPropertiesId'
+      ]) ||
+      !identity(attachment.id) ||
+      attachmentIds.has(attachment.id as string) ||
+      !identity(attachment.sourceId) ||
+      !['complete', 'partial'].includes(String(attachment.sourceCoverage)) ||
+      !(
+        triangleShape(attachment.shape) ||
+        (record(attachment.shape) &&
+          exact(attachment.shape, ['kind']) &&
+          attachment.shape.kind === 'unknown')
+      ) ||
+      !bodyIds.has(attachment.holderBodyId as string) ||
+      !frame(attachment.localFrame) ||
+      !identity(attachment.massPropertiesId)
+    )
+      return invalid()
+    attachmentIds.add(attachment.id as string)
+  }
+}
+/** No linear-knot surrogate: cycle issuance and terrain input provenance are explicit. */
+export function readWalkingNonlinearMotionRequest(
+  raw: unknown,
+  source: WalkingRobotSource,
+  demand: SceneDemand,
+  current: WalkingCurrentCycle,
+  mounted?: WalkingCurrentMountedCrate
+): WalkingNonlinearMotionRequest {
+  if (
+    !record(raw) ||
+    raw.source !== source ||
+    raw.demand !== demand ||
+    raw.cycle !== current.cycle ||
+    current.cycle.source !== source ||
+    current.owner.read(source, current.cycle.recipe) !== current.cycle
+  )
+    return invalid()
+  const rawLoad = raw.load
+  if (
+    record(rawLoad) &&
+    record(rawLoad.crate) &&
+    rawLoad.crate.kind === 'mounted' &&
+    (!mounted ||
+      rawLoad.crate.artifact !== mounted.crate ||
+      mounted.owner.read(source, mounted.crate) !== mounted.crate)
+  )
+    return invalid()
+  if (admittedNonlinearRequests.has(raw))
+    return raw as unknown as WalkingNonlinearMotionRequest
+  if (
+    !exact(raw, [
+      'format',
+      'requestId',
+      'source',
+      'demand',
+      'cycle',
+      'path',
+      'gait',
+      'terrain',
+      'load',
+      'externalSources',
+      'terrainEvents',
+      'targetContacts',
+      'placementBudget',
+      'budget'
+    ]) ||
+    raw.format !== WALKING_NONLINEAR_MOTION_REQUEST_FORMAT ||
+    !identity(raw.requestId) ||
+    !record(raw.budget)
+  )
+    return invalid()
+  const budgetKeys = [
+    'maxPhaseNodes',
+    'maxSubdivisions',
+    'maxRegionPairs',
+    'maxExactPredicates',
+    'maxBits',
+    'maxCycleOperations',
+    'maxInputValues',
+    'maxEnvelopePairs'
+  ]
+  if (
+    !exact(raw.budget, budgetKeys) ||
+    !Object.values(raw.budget).every(
+      (v) => Number.isSafeInteger(v) && Number(v) > 0
+    ) ||
+    Number(raw.budget.maxBits) > 24000
+  )
+    return invalid()
+  let inputValues = 0
+  const refs = new Set<object>([
+    source,
+    demand,
+    current.cycle,
+    ...source.parts,
+    ...source.rig.contacts.feet.map((c) => c.patch)
+  ])
+  if (mounted) refs.add(mounted.crate)
+  const copy = (v: unknown): unknown => {
+    if (
+      ++inputValues >
+      Number((raw.budget as Record<string, unknown>).maxInputValues)
+    )
+      return invalid()
+    if (
+      typeof v === 'bigint' &&
+      v.toString(2).length >
+        Number((raw.budget as Record<string, unknown>).maxBits)
+    )
+      return invalid()
+    if (typeof v === 'number' && !Number.isFinite(v)) return invalid()
+    if (v && typeof v === 'object' && refs.has(v)) return v
+    if (Array.isArray(v)) return Array.from(v, copy)
+    if (record(v))
+      return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, copy(x)]))
+    return v
+  }
+  const value = copy(raw) as Record<string, unknown>
+  if (
+    !record(value.path) ||
+    !exact(value.path, ['id', 'phases']) ||
+    !identity(value.path.id) ||
+    !Array.isArray(value.path.phases) ||
+    value.path.phases.length !== 2
+  )
+    return invalid()
+  let previous: number | undefined
+  for (const [i, p] of value.path.phases.entries()) {
+    if (
+      !record(p) ||
+      !exact(p, ['phase', 'from', 'until']) ||
+      p.phase !== i ||
+      !Number.isFinite(p.from) ||
+      !Number.isFinite(p.until) ||
+      Number(p.from) >= Number(p.until) ||
+      (previous !== undefined && p.from !== previous)
+    )
+      return invalid()
+    previous = Number(p.until)
+  }
+  if (
+    !record(value.gait) ||
+    !exact(value.gait, ['id', 'provenance']) ||
+    !identity(value.gait.id) ||
+    !evidence(value.gait.provenance) ||
+    !record(value.load)
+  )
+    return invalid()
+  validateWalkingLoad(value.load, source, mounted?.crate)
+  if (
+    !Array.isArray(value.targetContacts) ||
+    value.targetContacts.length ||
+    !Array.isArray(value.terrainEvents) ||
+    value.terrainEvents.length !== 4 ||
+    !Array.isArray(value.externalSources)
+  )
+    return invalid()
+  const events = ['initial-a', 'initial-b', 'handoff-b', 'final-a']
+  const terrain = value.terrain
+  if (!record(terrain) || !Array.isArray(terrain.regions)) return invalid()
+  const terrainRegions = terrain.regions
+  const shapes = new Map<string, number>()
+  for (const r of terrainRegions) {
+    if (
+      !record(r) ||
+      !identity(r.sourceId) ||
+      !triangleShape(r.shape) ||
+      shapes.has(String(r.sourceId))
+    )
+      return invalid()
+    shapes.set(
+      String(r.sourceId),
+      (r.shape as { indices: number[] }).indices.length
+    )
+  }
+  const load = value.load as unknown as WalkingNonlinearLoadCase
+  if (load.crate.kind === 'attached')
+    for (const p of load.crate.sourceParts) {
+      if (shapes.has(p.sourceId)) return invalid()
+      shapes.set(p.sourceId, p.shape.indices.length)
+    }
+  if (load.carried.kind === 'attached')
+    for (const p of load.carried.items) {
+      if (shapes.has(p.sourceId)) return invalid()
+      if (p.shape.kind === 'triangles')
+        shapes.set(p.sourceId, p.shape.indices.length)
+    }
+  const seen = new Set<string>()
+  const partitions = value.externalSources.map((p) => {
+    if (
+      !record(p) ||
+      !exact(p, ['sourceId', 'regions']) ||
+      !identity(p.sourceId) ||
+      !Array.isArray(p.regions) ||
+      seen.has(String(p.sourceId)) ||
+      !shapes.has(String(p.sourceId))
+    )
+      return invalid()
+    seen.add(String(p.sourceId))
+    return Object.freeze({
+      sourceId: String(p.sourceId),
+      regions: readSourceRegions(
+        p.regions,
+        shapes.get(String(p.sourceId)) ?? invalid()
+      )
+    })
+  })
+  if (seen.size !== shapes.size) return invalid()
+  // W3 issues each admitted event request once from its snapshot. The owned
+  // placement producer consumes that exact admitted request without readmission.
+  const admittedEvents = []
+  for (const [i, event] of value.terrainEvents.entries()) {
+    if (
+      !record(event) ||
+      !exact(event, ['event', 'seeds']) ||
+      event.event !== events[i]
+    )
+      return invalid()
+    const placementRequest = readWalkingTerrainPlacementRequest(
+      {
+        format: 'walking-terrain-placement-request/1',
+        source,
+        demand,
+        farm: demand.farm,
+        route: demand.route,
+        terrain,
+        partitions: partitions.filter((p) =>
+          terrainRegions.some((r) => record(r) && r.sourceId === p.sourceId)
+        ),
+        seeds: event.seeds,
+        baseOrientation: current.cycle.recipe.baseOrientation,
+        fixedJoints: current.cycle.recipe.fixedJoints,
+        interval: { low: 0, high: 0 },
+        budget: value.placementBudget
+      },
+      { source, demand }
+    )
+    inputValues += placementRequest.inputValues
+    if (
+      inputValues >
+      Number((value.budget as Record<string, unknown>).maxInputValues)
+    )
+      return invalid()
+    admittedEvents.push({ ...event, placementRequest })
+  }
+  const result = freeze({
+    ...value,
+    externalSources: partitions,
+    terrainEvents: admittedEvents,
+    inputValues
+  }) as unknown as WalkingNonlinearMotionRequest
+  admittedNonlinearRequests.add(result)
   return result
 }

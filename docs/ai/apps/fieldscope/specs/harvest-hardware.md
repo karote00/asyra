@@ -2,8 +2,14 @@
 
 ## Active concept, not a manufacturing release
 
-The active product target is a compact multi-legged walking robot with at least
-four arm chains: one soft fruit-support arm and one cutter arm on each side. It
+The active product target is a compact multi-legged walking robot with a body no
+wider than 0.80 m and no user-imposed height cap. Body width excludes legs,
+tools, crate, load and their stowed/working sweeps; every total envelope is
+derived and checked separately. It includes the non-articulated central chassis
+and permanently fixed housings in the canonical body frame. Historical wider
+definitions remain viewable at their original size but are not admitted for new
+walking action. The preferred target has four arm chains: one
+combined foliage-opening and fruit-holding arm plus one cutter arm on each side. It
 must inspect both sides and harvest representative targets on either side,
 including upper fruit. It is not a wheeled or vehicle-carried platform. The
 implemented four-wheel, single-arm model is a historical software concept and is
@@ -20,15 +26,18 @@ bending-moment, centre-of-mass, overturning and swept-clearance screens. Do not
 accept upper reach by drawing a tall body or long arm without those combined
 results.
 
-Compact size and low mass are design objectives, but their numerical limits are
-not yet measured. Record total/stowed/working envelopes, mass, centres of mass and
+Compact size and low mass are design objectives. Apart from the 0.80 m body-width
+limit, their numerical limits are not yet measured. Record body, total stowed and
+working envelopes, mass, centres of mass and
 per-foot loads for every candidate. Do not label a candidate compact, light or
 field-ready merely because it fits the rendered scene or uses synthetic values.
 
-The initial scheduler may use one same-side support/cutter pair at a time. That is
-an initial sequencing strategy, not a permanent machine restriction. Any future
-simultaneous bilateral action must validate the complete four-arm pose and load
-together; independent left and right results are not composable proof.
+The scheduler uses both independent left/right groups concurrently when current
+space, stance, load and support evidence permits. It serializes only actual
+shared-source, shared-space, support or load conflicts. Concurrent action retains
+one current whole-robot pose/load state and validates affected cross-group
+interactions; independent left and right results are not composable proof for a
+shared conflict.
 
 Fruit support and cutting remain separate tool functions. The support tool uses
 crop-specific soft contact; the cutter enters only a confirmed plant-side pedicel
@@ -73,9 +82,10 @@ Configured strip width is not usable foot span. Derive scene free space from the
 current installed plant, leaf, support, pipe, drain and obstacle sources; compare
 the separately derived robot swept demand only at motion admission.
 Likewise, derive highest target height from actual fruit source enumeration;
-`netTop` is not a fruit-height result. An actual leaf or plant intrusion still
-blocks or defers the candidate path even when the rough reference appears wide
-enough. Pruning and net training remain human maintenance guidance and never
+`netTop` is not a fruit-height result. An actual leaf or plant intrusion
+creates a local geometry/contact-risk candidate even when the rough reference
+appears wide enough; authored ordinary foliage contact is not automatically
+damage or clearance. Pruning and net training remain human maintenance guidance and never
 authorize the robot to cut non-target foliage or move plants. Never remove crop
 rows, widen beds or change the user's farm layout to fit a candidate. End plant
 setbacks of 0.25 m are not a turning headland; require measured external transfer
@@ -104,9 +114,11 @@ on imbalance, absent/lost latch, sensor disagreement, contamination, damage,
 wrong crop, low return-energy reserve or box expiry. Volume/fill sensing is
 required because a light box can be spatially full. Stop picking during return.
 
-Exchange at a designated level headland dock: stow tool, immobilize base, inhibit
-blade/arm, confirm station/clear floor, manually unlatch and swap crate, identify
-new crate, verify tare and latch, then explicitly resume. Do not release a crate
+Exchange at a designated level headland dock: stow tools, immobilize and support
+the base, inhibit blades/arms, confirm station/clear floor, command and confirm
+the base-retained latch release, confirm old-crate removal, identify a new empty
+crate, verify its tare, command and confirm re-lock, then explicitly resume. The
+arms do not remain occupied holding the crate. Do not release a crate
 while moving, reset load on a button without exchange evidence, or walk with a
 missing crate. A separate logistics carrier is outside the active robot target
 and cannot be used to satisfy its walking or payload evidence.
@@ -185,9 +197,19 @@ verified recovery trajectory. Crate latches and retaining walls work without
 software. On sinkage, roll excursion, slip, blocked path, person entry, stale
 sensors, lost communications or emergency stop: inhibit cutting, stop robot
 motion using the independently validated stop function, retain payload and latch,
-and request intervention. Hold or retract the arm only when its validated stop
-mode and clearance permit it; never blindly pull an entangled tool through vines.
+and request intervention. A person stop keeps the base at its current position.
+Fold articulated parts toward the initial compact attention pose only through a
+separately admitted in-place joint sweep that maintains stance, load, latch and
+separation from the tracked person. If that local sweep is blocked or unknown,
+hold the current pose and request help. Never blindly pull an entangled tool
+through vines.
 Electrical emergency stop design must avoid dropping gravity-loaded axes.
+
+A dropped or damaged fruit retains its actual location/disposition and updates
+gripper and inventory state. Continue only when it creates no current
+person/support/path hazard; otherwise hold the affected action and treat the
+fruit as a new obstacle. Never record it as successfully placed. An unstable or
+unlatched crate remains an operational stop.
 
 A force spike near a leaf/net is not permission to increase force. Stop contact,
 record pose and target, and retreat only along a verified free path. If retreat
@@ -195,21 +217,25 @@ is not known, hold and request help. No automatic repeated attempts after a faul
 
 ## Observation and crop handling
 
-Scan from several base/wrist viewpoints with calibrated lighting before touching
-foliage. No visible fruit means unknown coverage if canopy occludes the row.
+Scan from several base/wrist viewpoints with explicit greenhouse-film, weather,
+time-of-day, illumination, shadow and glare assumptions before touching foliage.
+No visible fruit means unknown coverage if canopy occludes the row.
 Retain observation age, pose/calibration, fruit identity, crop, ripeness, depth,
 uncertainty, stem/calyx evidence and approach corridor; avoid double-picking from
 multiple views. Detect ripe fruit and the correct peduncle independently. Net
 crossings and a fruit behind a strand need a verified alternate approach; never
 pull the fruit through the net or mistake the main stem for a cutting target.
 
-Leaf interaction is disabled by default. Qualify a separate compliant guarded
-leaf paddle with force/torque feedback, displacement/travel and duration limits,
-plant-specific damage trials, net/tendril entanglement detection and retreat
-clearance. Do not use the cutting jaw to search blindly. Undetected fruit,
-uncertain stem, excessive force, blocked view or unqualified crop -> defer and
-mark the row for a later viewpoint or human inspection. Never infer harvest
-success solely from a gripper command or simulated fruit disappearance.
+Ordinary authored foliage contact may use the combined foliage-opening and
+fruit-holding arm when geometry and current evidence exclude foot placement,
+pinch, hook/entanglement, drag/tug and excessive stem displacement. The initial
+0.03 m displacement demand is a visible adjustable synthetic assumption, not a
+force or damage threshold. Missing compliance/contact-history/release evidence
+remains unknown. Do not use the cutting jaw to search blindly. Low confidence,
+uncertain depth/stem, glare, occlusion or blocked view requires another admitted
+viewpoint or deferral. Never infer harvest success solely from a gripper command,
+one clear image or simulated fruit disappearance, and never treat net cutting as
+an ordinary quality defect.
 
 Cucumber: support its body, isolate the peduncle, cut with an enclosed mechanism,
 confirm separation/retention, then place with low drop height. Tomato: support

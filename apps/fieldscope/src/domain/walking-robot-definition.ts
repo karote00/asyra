@@ -1,7 +1,18 @@
 import type { Point3 } from './greenhouse'
+import { dyadic, roundFraction } from './scalar-arithmetic'
 
 export const WALKING_ROBOT_FORMAT = 'walking-robot-definition/2' as const
 export const WALKING_ROBOT_TOPOLOGY = 'four-arm-six-leg' as const
+export const MAX_WALKING_BODY_WIDTH = 0.8
+
+export class WalkingActionDefinitionError extends Error {
+  constructor(
+    readonly reason:
+      'legacy-topology' | 'unsupported-definition' | 'body-width-exceeded'
+  ) {
+    super(reason)
+  }
+}
 
 export type WalkingEvidence =
   | { readonly kind: 'measured'; readonly id: string }
@@ -100,7 +111,7 @@ export interface WalkingRobotDefinition {
   readonly jointEvidence: WalkingEvidence
   readonly massEvidence: WalkingEvidence
   readonly sourceModel: Readonly<{
-    kind: 'solid-articulation/1'
+    kind: 'solid-articulation/1' | 'solid-articulation/2'
     evidence: WalkingEvidence
     pinRadiusRatio: number
     sleeveInnerRadiusRatio: number
@@ -577,7 +588,8 @@ function validSourceModel(value: WalkingRobotDefinition) {
   if (
     !record(model) ||
     !exact(model, ['kind', 'evidence', ...keys]) ||
-    model.kind !== 'solid-articulation/1' ||
+    (model.kind !== 'solid-articulation/1' &&
+      model.kind !== 'solid-articulation/2') ||
     !evidence(model.evidence) ||
     !keys.every((key) => positive(model[key]))
   )
@@ -652,6 +664,53 @@ export function isAdmittedWalkingRobotDefinition(
   return record(value) && admitted.has(value)
 }
 
+/** Schema check only; current source material completes body-width admission. */
+export function readActiveWalkingRobotDefinition(
+  raw: unknown
+): WalkingRobotDefinition {
+  if (!record(raw) || raw.format !== WALKING_ROBOT_FORMAT) {
+    const kind = classifyWalkingRobotDefinition(raw)
+    throw new WalkingActionDefinitionError(
+      kind === 'walking-v1' || kind === 'legacy-unversioned'
+        ? 'legacy-topology'
+        : 'unsupported-definition'
+    )
+  }
+  const definition = readWalkingRobotDefinition(raw)
+  const { chassis, mast, emptyPayloadTray, inspectionHeads } = definition.base
+  const fixed = [
+    chassis,
+    mast,
+    emptyPayloadTray,
+    inspectionHeads.left,
+    inspectionHeads.right
+  ]
+  const scalar = (value: number) => {
+    const d = dyadic(value)
+    return { n: d.significand, e: d.exponent }
+  }
+  const planes = fixed.flatMap((part) => {
+    const centre = scalar(part.centre[0]),
+      half = scalar(part.size[0])
+    half.e--
+    const e = Math.min(centre.e, half.e)
+    const c = centre.n << BigInt(centre.e - e),
+      h = half.n << BigInt(half.e - e)
+    return [
+      { n: c - h, e },
+      { n: c + h, e }
+    ]
+  })
+  const limit = scalar(MAX_WALKING_BODY_WIDTH)
+  const exponent = Math.min(limit.e, ...planes.map((p) => p.e))
+  const values = planes.map((p) => p.n << BigInt(p.e - exponent))
+  const low = values.reduce((a, b) => (a < b ? a : b)),
+    high = values.reduce((a, b) => (a > b ? a : b))
+  if (high - low > limit.n << BigInt(limit.e - exponent))
+    throw new WalkingActionDefinitionError('body-width-exceeded')
+  return definition
+}
+
 const p = (x: number, y: number, z: number): [number, number, number] => [
   x,
   y,
@@ -679,9 +738,11 @@ const linkValue = (
 })
 
 export function createSyntheticWalkingRobotDefinition({
-  definitionId
+  definitionId,
+  sourceProfile = 'solid-articulation/1'
 }: {
   definitionId: string
+  sourceProfile?: WalkingRobotDefinition['sourceModel']['kind']
 }): WalkingRobotDefinition {
   const armRange = {
     rootYaw: [-Math.PI / 3, Math.PI / 3],
@@ -765,12 +826,12 @@ export function createSyntheticWalkingRobotDefinition({
       hip: 0,
       knee: 0
     }))
-  return readWalkingRobotDefinition({
+  const definition = {
     format: WALKING_ROBOT_FORMAT,
     topology: WALKING_ROBOT_TOPOLOGY,
     definitionId,
     sourceModel: {
-      kind: 'solid-articulation/1',
+      kind: sourceProfile,
       evidence: {
         kind: 'synthetic',
         id: 'walking-solid-articulation-v1',
@@ -824,5 +885,36 @@ export function createSyntheticWalkingRobotDefinition({
       leftWorking: { carriage: 1, arms: armState('left'), legs: legState() },
       rightWorking: { carriage: 1, arms: armState('right'), legs: legState() }
     }
-  })
+  }
+  if (sourceProfile === 'solid-articulation/2') {
+    // The authored bearing support is checked against all completed child
+    // material by the source owner. One exact sum chooses the least outward
+    // binary64 mount; chained rounded additions would not preserve that rule.
+    for (const leg of legs) {
+      const side = leg.side === 'left' ? -1 : 1
+      const terms = [
+        side * definition.base.chassis.centre[0],
+        definition.base.chassis.size[0] / 2,
+        leg.coxa.section * definition.sourceModel.sleeveOuterRadiusRatio,
+        leg.coxa.section * definition.sourceModel.axialGapRatio
+      ].map(dyadic)
+      const exponent = Math.min(...terms.map((term) => term.exponent))
+      const sum = terms.reduce(
+        (value, term) =>
+          value + (term.significand << BigInt(term.exponent - exponent)),
+        0n
+      )
+      const numerator = exponent >= 0 ? sum << BigInt(exponent) : sum
+      const denominator = exponent < 0 ? 1n << BigInt(-exponent) : 1n
+      leg.mount.position[0] = side * roundFraction(numerator, denominator, 'up')
+    }
+    definition.sourceModel.evidence.id = 'walking-solid-articulation-v2'
+    definition.sourceModel.evidence.label =
+      'External root clevis geometry - synthetic assumptions'
+    definition.geometryEvidence.id = 'adjustable-walking-geometry-v2'
+    definition.massEvidence.id = 'external-root-walking-mass-v2'
+    definition.massEvidence.label =
+      'External root component mass and CoM - synthetic assumptions'
+  }
+  return readWalkingRobotDefinition(definition)
 }

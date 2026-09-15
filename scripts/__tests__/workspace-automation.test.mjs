@@ -177,6 +177,15 @@ test('CI bounds workspace test concurrency without dropping test owners', () => 
     fieldscopeScripts['test:profiles'],
     'vitest run --config vitest.profile.config.ts'
   )
+  assert.equal(
+    fieldscopeScripts['test:local'],
+    'node --test scripts/__tests__/supervise-tests.test.mjs && python3 scripts/supervise-tests.py'
+  )
+  assert.equal(fieldscopeScripts['test:ci'], fieldscopeScripts['test:local'])
+  assert.doesNotMatch(
+    fieldscopeScripts['test:ci'],
+    /(?:^|&&)\s*(?:[A-Z_]+=|vitest\b)/
+  )
   assert.match(
     fieldscopeVitest,
     /exclude: \['src\/\*\*\/__tests__\/\*\*\/\*\.profile\.test\.ts'\]/

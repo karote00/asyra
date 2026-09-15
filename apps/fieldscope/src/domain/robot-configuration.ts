@@ -8,6 +8,12 @@ import {
   type LaneSurvey
 } from './harvest-assessment'
 import { assessHarvestEnergy } from './harvest-energy'
+import { readActiveWalkingRobotDefinition } from './walking-robot-definition'
+
+/** Active walking input is separate from the historical saved design reader. */
+export function readActiveRobotConfiguration(raw: unknown) {
+  return readActiveWalkingRobotDefinition(raw)
+}
 
 export type RobotLane =
   | { kind: 'strip'; bay: number; stripId: string }

@@ -13,8 +13,8 @@
     "build": "tsc --noEmit && vite build",
     "react:build": "yarn build",
     "typecheck": "tsc --noEmit",
-    "test:local": "vitest run",
-    "test:ci": "vitest run",
+    "test:local": "node --test scripts/__tests__/supervise-tests.test.mjs && python3 scripts/supervise-tests.py",
+    "test:ci": "node --test scripts/__tests__/supervise-tests.test.mjs && python3 scripts/supervise-tests.py",
     "test:profiles": "vitest run --config vitest.profile.config.ts",
     "test:e2e": "playwright test",
     "lint": "node ../../node_modules/eslint/bin/eslint.js src e2e *.ts *.mjs"

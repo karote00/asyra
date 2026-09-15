@@ -11,7 +11,8 @@ import {
   WALKING_ROBOT_TOPOLOGY,
   classifyWalkingRobotDefinition,
   createSyntheticWalkingRobotDefinition,
-  readWalkingRobotDefinition
+  readWalkingRobotDefinition,
+  readActiveWalkingRobotDefinition
 } from '../walking-robot-definition'
 
 type Mutable<T> = T extends readonly (infer Item)[]
@@ -22,6 +23,63 @@ type Mutable<T> = T extends readonly (infer Item)[]
 const clone = <T>(value: T): Mutable<T> => structuredClone(value) as Mutable<T>
 
 describe('walking robot definition admission', () => {
+  it('separates active fixed-body width and height from historical definition reading', () => {
+    const raw = clone(
+      createSyntheticWalkingRobotDefinition({ definitionId: 'active-body' })
+    )
+    raw.base.chassis.size[0] = 0.8
+    raw.base.chassis.size[1] = 5
+    expect(readActiveWalkingRobotDefinition(raw).base.chassis.size[1]).toBe(5)
+    raw.base.chassis.size[0] = 0.8000000000000002
+    expect(readWalkingRobotDefinition(raw).base.chassis.size[0]).toBe(
+      raw.base.chassis.size[0]
+    )
+    expect(() => readActiveWalkingRobotDefinition(raw)).toThrow(/body-width/)
+    raw.base.chassis.size[0] = 0.55
+    raw.base.inspectionHeads.right.centre[0] = 0.8
+    expect(() => readActiveWalkingRobotDefinition(raw)).toThrow(/body-width/)
+  })
+  it.each([
+    { kind: ['solid-articulation/2'] },
+    { kind: Object('solid-articulation/2') }
+  ])('rejects a non-primitive source profile discriminator %j', ({ kind }) => {
+    const definition = createSyntheticWalkingRobotDefinition({
+      definitionId: 'invalid-source-profile',
+      sourceProfile: 'solid-articulation/2'
+    })
+    expect(() =>
+      readWalkingRobotDefinition({
+        ...definition,
+        sourceModel: { ...definition.sourceModel, kind }
+      })
+    ).toThrow()
+  })
+  it('explicitly creates an external-root profile without reinterpreting profile 1', () => {
+    const baseline = createSyntheticWalkingRobotDefinition({
+      definitionId: 'external-root-source'
+    })
+    const bytes = JSON.stringify(baseline)
+    const candidate = createSyntheticWalkingRobotDefinition({
+      definitionId: baseline.definitionId,
+      sourceProfile: 'solid-articulation/2'
+    })
+    expect(candidate.sourceModel.kind).toBe('solid-articulation/2')
+    expect(candidate.format).toBe(baseline.format)
+    expect(
+      candidate.legs.map((leg) => Math.abs(leg.mount.position[0]))
+    ).toEqual(Array(6).fill(0.318125))
+    for (const [index, leg] of candidate.legs.entries()) {
+      expect(leg.coxa).toEqual(baseline.legs[index].coxa)
+      expect(leg.upper).toEqual(baseline.legs[index].upper)
+      expect(leg.lower).toEqual(baseline.legs[index].lower)
+      expect(leg.jointRanges).toEqual(baseline.legs[index].jointRanges)
+    }
+    expect(readWalkingRobotDefinition(JSON.parse(bytes))).toEqual(baseline)
+    expect(JSON.stringify(baseline)).toBe(bytes)
+    expect(baseline.sourceModel.kind).toBe('solid-articulation/1')
+    expect(candidate.geometryEvidence).not.toEqual(baseline.geometryEvidence)
+    expect(candidate.massEvidence.kind).toBe('synthetic')
+  })
   it('keeps default bytes while admitting a separately authored synthetic tripod range', () => {
     const baseline = createSyntheticWalkingRobotDefinition({
       definitionId: 'tripod-default'

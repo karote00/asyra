@@ -676,6 +676,9 @@ function cycleGeometry(
   return { bodies, parts, supports, swing }
 }
 export class WalkingConstrainedCycleOwner {
+  private baseMotion: WalkingCycleBaseMotion | undefined
+  private constantMotion: WalkingCycleConstantMotion | undefined
+  private phaseRootMotions: readonly WalkingCyclePhaseRootMotion[] = []
   private current: WalkingConstrainedCycle | undefined
   private prepared: CyclePrepared | undefined
   private totals = { ...zeroWork(), preparations: 0, evaluations: 0 }
@@ -692,7 +695,24 @@ export class WalkingConstrainedCycleOwner {
       ? this.current
       : undefined
   }
+  readBaseMotion(cycle: WalkingConstrainedCycle) {
+    return this.current === cycle ? this.baseMotion : undefined
+  }
+  readConstantMotion(cycle: WalkingConstrainedCycle) {
+    return this.current === cycle ? this.constantMotion : undefined
+  }
+  readPhaseRootMotion(cycle: WalkingConstrainedCycle, phase: number) {
+    return this.current === cycle &&
+      Number.isInteger(phase) &&
+      phase >= 0 &&
+      phase < 2
+      ? this.phaseRootMotions[phase]
+      : undefined
+  }
   dispose() {
+    this.baseMotion = undefined
+    this.constantMotion = undefined
+    this.phaseRootMotions = []
     this.current = undefined
     this.prepared = undefined
   }
@@ -795,6 +815,139 @@ export class WalkingConstrainedCycleOwner {
       )
         fail('cycle periodic net motion')
     }
+    // cycleFrames uses this same template matrix for the root at every real
+    // parameter; only its shared support-expression origin changes. These
+    // locals are the exact same partFrames consumed by evaluate and bound.
+    const baseBody = required(
+      source.rig.bodies.find((body) => body.id === 'base')
+    )
+    const rootMatrix = prepared.phases[0].template.base.matrix
+    const otherMatrix = prepared.phases[1].template.base.matrix
+    if (rootMatrix.some((row, i) => !equalVector(row, otherMatrix[i])))
+      fail('cycle base matrix mismatch')
+    const minor = (i: number, j: number, k: number, l: number) =>
+      a.subtract(
+        a.multiply(rootMatrix[i][k], rootMatrix[j][l]),
+        a.multiply(rootMatrix[i][l], rootMatrix[j][k])
+      )
+    const determinant = a.add(
+      a.subtract(
+        a.multiply(rootMatrix[0][0], minor(1, 2, 1, 2)),
+        a.multiply(rootMatrix[0][1], minor(1, 2, 0, 2))
+      ),
+      a.multiply(rootMatrix[0][2], minor(1, 2, 0, 1))
+    )
+    if (determinant.numerator <= 0n) fail('cycle singular base matrix')
+    const baseParts = source.parts
+      .filter((part) => part.bodyId === baseBody.id)
+      .map((part) => {
+        const local = required(prepared.phases[0].template.partFrames.get(part))
+        const other = required(prepared.phases[1].template.partFrames.get(part))
+        if (
+          !equalVector(local.origin, other.origin) ||
+          local.matrix.some((row, i) => !equalVector(row, other.matrix[i]))
+        )
+          fail('cycle base local mismatch')
+        return { part, local }
+      })
+    // This is the constant branch of cycleFrames, with the root factored out.
+    // Dynamic leg bodies are assigned before that branch, so neither they nor
+    // descendants depending on them can enter this root-local expression.
+    const constantLocals = (
+      template: PreparedTemplate,
+      includeSupportCoxa = false
+    ) => {
+      const dynamic = new Set(source.rig.legChains.flatMap((c) => c.bodyIds))
+      const locals = new Map<string, ExactFrame>([['base', identity(a)]])
+      if (includeSupportCoxa) {
+        // cycleFrames assigns exactly this root-local identity-abduction frame
+        // to each actual support chain before its constant-parent traversal.
+        for (const support of template.supports) {
+          const joint = required(
+            source.rig.joints.find((j) => j.id === support.chain.jointIds[0])
+          )
+          locals.set(support.chain.bodyIds[0], {
+            matrix: identity(a).matrix,
+            origin: vector(joint.frame.position.map(a.literal))
+          })
+        }
+      }
+      let advanced = true
+      while (advanced) {
+        advanced = false
+        for (const body of source.rig.bodies) {
+          if (locals.has(body.id) || dynamic.has(body.id)) continue
+          const parent = body.parentBodyId && locals.get(body.parentBodyId)
+          if (!parent) continue
+          const local =
+            body.attachment === 'fixed'
+              ? required(template.bodyFrames.get(body))
+              : required(
+                  template.fixedFrames.get(
+                    required(
+                      source.rig.joints.find((j) => j.childBodyId === body.id)
+                    )
+                  )
+                )
+          locals.set(body.id, compose(a, parent, local))
+          advanced = true
+        }
+      }
+      return locals
+    }
+    const constants = prepared.phases.map((p) => constantLocals(p.template))
+    const constantBodies = source.rig.bodies
+      .filter((body) => constants[0].has(body.id))
+      .map((body) => {
+        const local = required(constants[0].get(body.id)),
+          other = required(constants[1].get(body.id))
+        if (
+          !equalVector(local.origin, other.origin) ||
+          local.matrix.some((row, i) => !equalVector(row, other.matrix[i]))
+        )
+          fail('cycle constant local mismatch')
+        return { body, local }
+      })
+    if (constants[0].size !== constants[1].size)
+      fail('cycle constant membership mismatch')
+    const constantParts = source.parts
+      .filter((part) => constants[0].has(part.bodyId))
+      .map((part) => {
+        const local = compose(
+          a,
+          required(constants[0].get(part.bodyId)),
+          required(prepared.phases[0].template.partFrames.get(part))
+        )
+        const other = compose(
+          a,
+          required(constants[1].get(part.bodyId)),
+          required(prepared.phases[1].template.partFrames.get(part))
+        )
+        if (
+          !equalVector(local.origin, other.origin) ||
+          local.matrix.some((row, i) => !equalVector(row, other.matrix[i]))
+        )
+          fail('cycle constant part mismatch')
+        return { part, local }
+      })
+    const phaseLocals = prepared.phases.map(({ template }) => {
+      const locals = constantLocals(template, true)
+      return {
+        bodies: source.rig.bodies
+          .filter((body) => locals.has(body.id))
+          .map((body) => ({ body, local: required(locals.get(body.id)) })),
+        parts: source.parts
+          .filter((part) => locals.has(part.bodyId))
+          .map((part) => ({
+            part,
+            local: compose(
+              a,
+              required(locals.get(part.bodyId)),
+              required(template.partFrames.get(part))
+            )
+          }))
+      }
+    })
     const product = freeze({
       source,
       recipe,
@@ -810,6 +963,43 @@ export class WalkingConstrainedCycleOwner {
     })
     this.prepared = prepared
     this.current = product
+    this.baseMotion = freeze({
+      authority: 'cycle-base-common-rigid/1' as const,
+      cycle: product,
+      source,
+      recipe,
+      body: baseBody,
+      rootExpression: 'cycle-support-root/1' as const,
+      phases: [0, 1] as const,
+      rootMatrix,
+      determinant,
+      parts: baseParts
+    })
+    this.constantMotion = freeze({
+      authority: 'cycle-constant-root/1' as const,
+      cycle: product,
+      source,
+      recipe,
+      rootExpression: 'cycle-support-root/1' as const,
+      phases: [0, 1] as const,
+      rootMatrix,
+      determinant,
+      bodies: constantBodies,
+      parts: constantParts
+    })
+    this.phaseRootMotions = freeze(
+      phaseLocals.map((locals, phase) => ({
+        authority: 'cycle-phase-root/1' as const,
+        cycle: product,
+        source,
+        recipe,
+        phase,
+        rootExpression: 'cycle-support-root/1' as const,
+        rootMatrix,
+        determinant,
+        ...locals
+      }))
+    )
     return product
   }
   bound(cycle: WalkingConstrainedCycle, phase: number, raw: unknown) {
@@ -910,6 +1100,46 @@ export class WalkingConstrainedCycleOwner {
       work: { ...work, unvisited: 0 }
     })
   }
+}
+export interface WalkingCyclePhaseRootMotion extends Omit<
+  WalkingCycleConstantMotion,
+  'authority' | 'phases'
+> {
+  readonly authority: 'cycle-phase-root/1'
+  readonly phase: number
+}
+export interface WalkingCycleConstantMotion {
+  readonly authority: 'cycle-constant-root/1'
+  readonly cycle: WalkingConstrainedCycle
+  readonly source: WalkingRobotSource
+  readonly recipe: WalkingConstrainedCycleRecipe
+  readonly rootExpression: 'cycle-support-root/1'
+  readonly phases: readonly [0, 1]
+  readonly rootMatrix: ExactFrame['matrix']
+  readonly determinant: ConstrainedFraction
+  readonly bodies: readonly Readonly<{
+    body: WalkingRobotBody
+    local: ExactFrame
+  }>[]
+  readonly parts: readonly Readonly<{
+    part: WalkingRobotPart
+    local: ExactFrame
+  }>[]
+}
+export interface WalkingCycleBaseMotion {
+  readonly authority: 'cycle-base-common-rigid/1'
+  readonly cycle: WalkingConstrainedCycle
+  readonly source: WalkingRobotSource
+  readonly recipe: WalkingConstrainedCycleRecipe
+  readonly body: WalkingRobotBody
+  readonly rootExpression: 'cycle-support-root/1'
+  readonly phases: readonly [0, 1]
+  readonly rootMatrix: ExactFrame['matrix']
+  readonly determinant: ConstrainedFraction
+  readonly parts: readonly Readonly<{
+    part: WalkingRobotPart
+    local: ExactFrame
+  }>[]
 }
 export interface WalkingConstrainedCycle {
   readonly source: WalkingRobotSource
