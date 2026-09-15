@@ -1,8 +1,20 @@
 import { expect, it } from 'vitest'
+import { WalkingConstrainedCycleOwner } from '../../domain/walking-constrained-kinematics'
+import {
+  cycleFixture,
+  exact,
+  over,
+  plus
+} from '../../domain/__tests__/walking-constrained-kinematics-test-fixtures'
+import { roundFraction } from '../../domain/scalar-arithmetic'
 import { SiteGeometry } from '../../render-app/site-geometry'
 import { buildSiteMeshes } from '../../render-app/site-projection'
 import { DEFAULT_CONFIGURATION } from '../../domain/farm-configuration'
-import { prepareSceneDemand } from '../../simulation/scene-demand'
+import {
+  prepareSceneDemand,
+  prepareSceneObservationSpace,
+  SceneDemandSourceBoundsOwner
+} from '../../simulation/scene-demand'
 import { createSyntheticWalkingRobotDefinition } from '../../domain/walking-robot-definition'
 import { createWalkingRuntimeSelection } from '../../domain/walking-runtime-selection'
 import { WalkingOperatingOwner } from '../walking-operating-workspace'
@@ -11,40 +23,55 @@ import {
   type WalkingObservationScenario
 } from '../walking-observation-workspace'
 
-function setup() {
+function setup(
+  definition = createSyntheticWalkingRobotDefinition({
+    definitionId: 'walking-optical-workspace'
+  })
+) {
   const site = new SiteGeometry()
   const farm = { ...DEFAULT_CONFIGURATION, length: 2.2 }
   const scene = site.prepareScene(farm, buildSiteMeshes(farm, site))
-  const demand = prepareSceneDemand(farm, scene, {
-    version: 1,
-    route: {
-      kind: 'soil-strip',
-      bay: 0,
-      stripId: 'strip-3',
-      from: 0.25,
-      until: 1.9
+  const sourceOwner = new SceneDemandSourceBoundsOwner()
+  const demand = prepareSceneDemand(
+    farm,
+    scene,
+    {
+      version: 1,
+      route: {
+        kind: 'soil-strip',
+        bay: 0,
+        stripId: 'strip-3',
+        from: 0.25,
+        until: 1.9
+      },
+      evidence: {
+        kind: 'synthetic',
+        id: 'workspace-optical-survey',
+        label: 'Synthetic optical survey'
+      },
+      growth: { kind: 'bounded', coverage: 'complete', volumes: [] },
+      clearanceMargin: { kind: 'bounded', metres: 0 }
     },
-    evidence: {
-      kind: 'synthetic',
-      id: 'workspace-optical-survey',
-      label: 'Synthetic optical survey'
-    },
-    growth: { kind: 'bounded', coverage: 'complete', volumes: [] },
-    clearanceMargin: { kind: 'bounded', metres: 0 }
-  })
+    sourceOwner
+  )
+  let observationSpace:
+    ReturnType<typeof prepareSceneObservationSpace> | undefined
   if (!demand.route) throw new Error('Missing route')
   const operating = new WalkingOperatingOwner(
     () => demand,
     (value) => value === demand
   )
-  const report = operating.apply(
-    createWalkingRuntimeSelection(
-      createSyntheticWalkingRobotDefinition({
-        definitionId: 'walking-optical-workspace'
-      })
-    )
-  )
+  const report = operating.apply(createWalkingRuntimeSelection(definition))
   const workspace = createWalkingObservationWorkspace({
+    prepareObservationSpace: (value) => {
+      if (value !== demand) throw new Error('Foreign demand')
+      return (observationSpace ??= prepareSceneObservationSpace(
+        demand,
+        sourceOwner
+      ))
+    },
+    isCurrentObservationSpace: (value) => value === observationSpace,
+    getSourceWork: () => sourceOwner.work,
     getOperating: () => operating.read(),
     isCurrentOperating: (value) => operating.isCurrent(value),
     getDemand: () => demand,
@@ -121,19 +148,169 @@ function setup() {
       }
     ]
   }
-  return { workspace, operating, report, config, world, request, actor }
+  return {
+    workspace,
+    operating,
+    report,
+    config,
+    world,
+    request,
+    actor,
+    sourceOwner
+  }
 }
+
+it('walking observation selected action binds the issued non-stowed root and retires stale motion', () => {
+  const fixture = cycleFixture({ sourceProfile: 'solid-articulation/2' })
+  const f = setup(fixture.source.definition)
+  if (f.report.status === 'legacy-view')
+    throw new Error('Missing walking report')
+  const source = f.report.source
+  const translation = [
+    (f.request.actionBounds.min[0] + f.request.actionBounds.max[0]) / 2,
+    (f.request.actionBounds.min[1] + f.request.actionBounds.max[1]) / 2,
+    f.request.actionBounds.min[2] - 0.125
+  ]
+  const owner = new WalkingConstrainedCycleOwner()
+  const cycle = owner.prepare(source, {
+    ...fixture.raw,
+    source,
+    fixedJoints: source.rig.presets.stowed,
+    anchors: fixture.raw.anchors.map((a) => {
+      const chain = source.rig.legChains.find((c) => c.id === a.chainId)
+      if (!chain) throw new Error('Missing authored chain')
+      const contact = source.rig.contacts.feet.find(
+        (c) => c.part.bodyId === chain.footBodyId
+      )
+      if (!contact) throw new Error('Missing authored contact')
+      return {
+        ...a,
+        part: contact.part,
+        patch: contact.patch,
+        anchorOrigin: a.anchorOrigin.map((v, i) =>
+          plus(v, exact(translation[i]))
+        )
+      }
+    })
+  })
+  const motion = owner.prepareSelectedChainMotion(cycle, {
+    format: 'walking-selected-chain-root-motion/1',
+    cycle,
+    phase: 0,
+    at: over(exact(1), exact(2)),
+    chainId: 'right-front',
+    targetAbduction: over(cycle.recipe.alpha, exact(2))
+  })
+  f.workspace.configure(
+    {
+      ...f.config,
+      camera: {
+        ...f.config.camera,
+        localPose: { position: [0, 0, 0], rotation: [0, 0, 0, 1] }
+      }
+    },
+    f.world
+  )
+  const request = { ...f.request, binding: { owner, cycle, motion } }
+  const result = f.workspace.observeSelectedAction(request)
+  if (result.status !== 'available') throw new Error(result.reason)
+  expect(result.observation.context.motion).toBe(motion)
+  expect(result.observation.input.camera.pose.position).toEqual(
+    motion.root.origin.map((v) =>
+      roundFraction(v.numerator, v.denominator, 'nearest-even')
+    )
+  )
+  expect(result.observation.input.camera.pose.position[0]).not.toBe(0)
+  expect(f.workspace.isCurrent(result.observation)).toBe(true)
+  expect(
+    f.workspace.observeSelectedAction({
+      ...request,
+      binding: { owner, cycle, motion: { ...motion } }
+    }).status
+  ).toBe('unavailable')
+  expect(
+    f.workspace.observeSelectedAction({
+      ...request,
+      binding: { owner, cycle: { ...cycle }, motion }
+    }).status
+  ).toBe('unavailable')
+  expect(
+    f.workspace.observeSelectedAction({
+      ...request,
+      binding: { owner: new WalkingConstrainedCycleOwner(), cycle, motion }
+    }).status
+  ).toBe('unavailable')
+  const rotatedOwner = new WalkingConstrainedCycleOwner()
+  const rotatedCycle = rotatedOwner.prepare(source, {
+    ...cycle.recipe,
+    baseOrientation: [exact(0), exact(1), exact(0), exact(0)],
+    anchors: cycle.recipe.anchors.map((a, index) => ({
+      ...a,
+      anchorOrigin: fixture.raw.anchors[index].anchorOrigin.map((v, i) =>
+        plus(
+          i === 1 ? v : { numerator: -v.numerator, denominator: v.denominator },
+          exact(translation[i])
+        )
+      )
+    }))
+  })
+  const rotatedMotion = rotatedOwner.prepareSelectedChainMotion(rotatedCycle, {
+    ...motion.recipe,
+    cycle: rotatedCycle
+  })
+  expect(
+    f.workspace.observeSelectedAction({
+      ...request,
+      binding: {
+        owner: rotatedOwner,
+        cycle: rotatedCycle,
+        motion: rotatedMotion
+      }
+    })
+  ).toEqual({
+    status: 'unavailable',
+    reason: 'unsupported-selected-observation-orientation'
+  })
+  rotatedOwner.dispose()
+  expect(f.workspace.isCurrent(result.observation)).toBe(true)
+  f.operating.apply(
+    createWalkingRuntimeSelection(
+      createSyntheticWalkingRobotDefinition({
+        definitionId: 'replacement-selected-camera-source',
+        sourceProfile: 'solid-articulation/2'
+      })
+    )
+  )
+  expect(f.workspace.isCurrent(result.observation)).toBe(false)
+  expect(f.workspace.observeSelectedAction(request).status).toBe('unavailable')
+  owner.dispose()
+  expect(f.workspace.isCurrent(result.observation)).toBe(false)
+  expect(f.workspace.observeSelectedAction(request).status).toBe('unavailable')
+  f.workspace.close()
+})
 
 it('walking observation workspace rejects missing and malformed scenarios before changing current admitted inputs', () => {
   const f = setup()
+  const before = f.sourceOwner.work
   expect(f.workspace.observe(f.request)).toEqual({
     status: 'unavailable',
     reason: 'missing-walking-observation-scenario'
   })
+  expect(f.sourceOwner.work).toEqual(before)
   f.workspace.configure(f.config, f.world)
   const normal = f.workspace.observe(f.request)
   if (normal.status !== 'available') throw new Error(normal.reason)
   expect(normal.observation.coverage).toBe('complete-empty')
+  expect(normal.work.sourcePreparation.inventoryBuilds).toBe(1)
+  expect(normal.work.sourcePreparation.regionWorldBounds).toBeGreaterThan(0)
+  const repeat = f.workspace.observe(f.request)
+  if (repeat.status !== 'available') throw new Error(repeat.reason)
+  expect(
+    Object.values(repeat.work.sourcePreparation).every((value) => value === 0)
+  ).toBe(true)
+  expect(repeat.work.farmMembershipBuilds).toBe(0)
+  expect(repeat.observation.work.indexBuilds).toBe(0)
+  expect(repeat.observation.work.cameraFrames).toBe(1)
   expect(() =>
     f.workspace.configure(
       { ...f.config, model: { ...f.config.model, maxRays: 65 } },
@@ -173,6 +350,21 @@ it('walking observation workspace rejects missing and malformed scenarios before
   const invalidDynamic = { ...f.world, validUntil: -1 }
   expect(() => f.workspace.configure(f.config, invalidDynamic)).toThrow()
   expect(f.workspace.isCurrent(normal.observation)).toBe(true)
+  f.workspace.configure(f.config, {
+    ...f.world,
+    assumption: 'Explicit successor dynamic scenario'
+  })
+  const dynamicSuccessor = f.workspace.observe(f.request)
+  if (dynamicSuccessor.status !== 'available')
+    throw new Error(dynamicSuccessor.reason)
+  expect(f.workspace.isCurrent(normal.observation)).toBe(false)
+  expect(
+    Object.values(dynamicSuccessor.work.sourcePreparation).every(
+      (value) => value === 0
+    )
+  ).toBe(true)
+  expect(dynamicSuccessor.work.farmMembershipBuilds).toBe(0)
+  expect(dynamicSuccessor.observation.work.indexBuilds).toBe(0)
   expect(
     f.workspace.observe({ ...f.request, now: 11, validUntil: 12 }).status
   ).toBe('unavailable')

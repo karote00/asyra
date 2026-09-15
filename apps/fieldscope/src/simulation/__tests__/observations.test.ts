@@ -7,7 +7,11 @@ import {
   type SiteMesh
 } from '../../render-app/site-projection'
 import { RobotProjection } from '../../render-app/robot-projection'
-import { DEFAULT_CONFIGURATION } from '../../domain/farm-configuration'
+import {
+  DEFAULT_CONFIGURATION,
+  configurationSite
+} from '../../domain/farm-configuration'
+import { createLayout } from '../../domain/greenhouse'
 import {
   DEFAULT_ROBOT,
   assessRobotDesign,
@@ -22,7 +26,11 @@ import { QueryGeometry } from '../geometry'
 import { RayQueries } from '../ray-query'
 import { WalkingTransitScreen } from '../walking-transit-screen'
 import { SyntheticDynamicSceneOwner } from '../synthetic-dynamic-scene'
-import { prepareSceneDemand } from '../scene-demand'
+import {
+  prepareSceneDemand,
+  prepareSceneObservationSpace,
+  SceneDemandSourceBoundsOwner
+} from '../scene-demand'
 import { WalkingOperatingOwner } from '../../runtime/walking-operating-workspace'
 import { createWalkingRuntimeSelection } from '../../domain/walking-runtime-selection'
 import { createSyntheticWalkingRobotDefinition } from '../../domain/walking-robot-definition'
@@ -38,6 +46,11 @@ import {
 const geometry = new SiteGeometry(),
   projection = new RobotProjection()
 const farm = { ...DEFAULT_CONFIGURATION, length: 2.2 }
+const actionRouteCentre = () => {
+  const index = farm.strips.findIndex((strip) => strip.id === 'strip-3')
+  const strip = createLayout(configurationSite(farm), farm.strips).strips[index]
+  return (strip.x + (strip.x + strip.width)) / 2
+}
 const report = assessRobotDesign(
   validateRobot({ ...DEFAULT_ROBOT, end: 1.7, patrolMinutes: 1 }),
   farm
@@ -410,23 +423,29 @@ function actionObservation(extra?: SiteMesh) {
       })
     : receipt
   const f = setup(false, mission, site)
-  const demand = prepareSceneDemand(farm, mission.scene, {
-    version: 1,
-    route: {
-      kind: 'soil-strip',
-      bay: 0,
-      stripId: 'strip-3',
-      from: 0.25,
-      until: 1.9
+  const sourceOwner = new SceneDemandSourceBoundsOwner()
+  const demand = prepareSceneDemand(
+    farm,
+    mission.scene,
+    {
+      version: 1,
+      route: {
+        kind: 'soil-strip',
+        bay: 0,
+        stripId: 'strip-3',
+        from: 0.25,
+        until: 1.9
+      },
+      evidence: {
+        kind: 'synthetic',
+        id: 'action-survey',
+        label: 'Synthetic route'
+      },
+      growth: { kind: 'bounded', coverage: 'complete', volumes: [] },
+      clearanceMargin: { kind: 'bounded', metres: 0 }
     },
-    evidence: {
-      kind: 'synthetic',
-      id: 'action-survey',
-      label: 'Synthetic route'
-    },
-    growth: { kind: 'bounded', coverage: 'complete', volumes: [] },
-    clearanceMargin: { kind: 'bounded', metres: 0 }
-  })
+    sourceOwner
+  )
   if (!demand.route) throw new Error('Missing source route')
   const screen = new WalkingTransitScreen((value) => value === demand)
   const dynamics = new SyntheticDynamicSceneOwner()
@@ -478,17 +497,30 @@ function actionObservation(extra?: SiteMesh) {
       maxActors: 64
     }
   }
-  return { ...f, observations, demand, screen, dynamics, world, request }
+  return {
+    ...f,
+    observations,
+    demand,
+    sourceOwner,
+    screen,
+    dynamics,
+    world,
+    request
+  }
 }
 
 it('computes complete-empty only for the entire declared synthetic sight volume', () => {
   const f = actionObservation()
+  const sensorQuery = vi.spyOn(f.screen, 'queryVolume')
+  const observationQuery = vi.spyOn(f.screen, 'queryObservationVolume')
   const result = f.observations.observeActionVolume(
     f.context(),
     f.demand,
     f.request
   )
   expect(result.coverage).toBe('complete-empty')
+  expect(sensorQuery).toHaveBeenCalledTimes(1)
+  expect(observationQuery).not.toHaveBeenCalled()
   expect(result.reliability.signal.low).toBeGreaterThan(0.5)
   expect(result.detections).toEqual([])
   expect(result.work).toMatchObject({
@@ -511,8 +543,55 @@ it('computes complete-empty only for the entire declared synthetic sight volume'
   ).toThrow()
 })
 
-it('walking observation shares the action kernel with exact walking currentness and no legacy context', () => {
+it('declared synthetic sight volume below route height is obstacle-inventory evidence only', () => {
   const f = actionObservation()
+  const walking = walkingActionFixture(f)
+  const domain = {
+    min: [0, -f.demand.farm.height, 0] as const,
+    max: [100, 20, 10] as const
+  }
+  f.dynamics.prepare({ ...f.world, domain })
+  const request = {
+    ...walking.input,
+    actionBounds: {
+      min: [2.44, -0.21, 1.5] as const,
+      max: [2.46, -0.19, 1.55] as const
+    },
+    camera: {
+      ...f.request.camera,
+      pose: {
+        position: [2.45, -0.2, 1] as const,
+        rotation: [0, 0, 0, 1] as const
+      }
+    }
+  }
+  const result = walking.observations.observeActionVolume(
+    walking.context,
+    request
+  )
+  expect(result.coverage).toBe('complete-empty')
+  expect(result.detections).toEqual([])
+  expect(result.work.sightQueries).toBe(1)
+  const space = walking.getSpace()
+  if (!space) throw new Error('Missing lazy obstacle inventory')
+  expect(space.provenance).toBe('w1-canonical-obstacles/1')
+  expect(
+    space.sources.some(
+      (v) => v.mesh.layer === 'soil' || v.mesh.layer === 'drains'
+    )
+  ).toBe(false)
+  const outside = walking.observations.observeActionVolume(walking.context, {
+    ...request,
+    actionBounds: {
+      min: [2.44, domain.min[1] - 2, 1.5],
+      max: [2.46, domain.min[1] - 1, 1.55]
+    }
+  })
+  expect(outside.coverage).not.toBe('complete-empty')
+  expect(outside.reasons).toContain('outside-observation-domain')
+})
+
+function walkingActionFixture(f: ReturnType<typeof actionObservation>) {
   const operating = new WalkingOperatingOwner(
     () => f.demand,
     (value) => value === f.demand
@@ -548,7 +627,13 @@ it('walking observation shares the action kernel with exact walking currentness 
     now: f.request.observedAt,
     sensorIdentity: Object.freeze({})
   })
+  let space: ReturnType<typeof prepareSceneObservationSpace> | undefined
+  const prepareSpace = vi.fn(
+    () => (space ??= prepareSceneObservationSpace(f.demand, f.sourceOwner))
+  )
   const observations = new WalkingActionObservations(query, {
+    prepareObservationSpace: prepareSpace,
+    isCurrentObservationSpace: (value) => value === space,
     isCurrentContext: (value) =>
       value === context && operating.isCurrent(report),
     screen: operating.transitScreen,
@@ -566,7 +651,22 @@ it('walking observation shares the action kernel with exact walking currentness 
     generation: context.generation,
     runId: context.runId
   }
+  return {
+    observations,
+    context,
+    input,
+    operating,
+    prepareSpace,
+    getSpace: () => space
+  }
+}
+
+it('walking observation shares the action kernel with exact walking currentness and no legacy context', () => {
+  const f = actionObservation()
+  const { observations, context, input, operating, prepareSpace } =
+    walkingActionFixture(f)
   const result = observations.observeActionVolume(context, input)
+  expect(prepareSpace).toHaveBeenCalledTimes(1)
   expect(result.format).toBe('walking-action-volume-observation/1')
   expect(result.context).toBe(context)
   expect(result.coverage).toBe('complete-empty')
@@ -784,8 +884,8 @@ it('retains actual authored leaf ray identity for a foreground source outside th
 })
 
 it('queries an opaque foreground source outside the action box and never leaks its hidden person', () => {
-  const empty = actionObservation(),
-    x = empty.request.camera.pose.position[0]
+  const x = actionRouteCentre()
+  const prepare = vi.spyOn(SiteGeometry.prototype, 'prepareScene')
   const occluder: SiteMesh = {
     id: 'authored-foreground',
     layer: 'barriers',
@@ -814,6 +914,9 @@ it('queries an opaque foreground source outside the action box and never leaks i
     }) as SiteMesh['descriptor']
   }
   const f = actionObservation(occluder)
+  expect(prepare).toHaveBeenCalledTimes(1)
+  prepare.mockRestore()
+  expect(f.request.camera.pose.position[0]).toBe(x)
   const bounds = f.request.actionBounds
   const direct = f.screen.queryVolume(f.demand, {
     ...bounds,
@@ -931,8 +1034,8 @@ it('counts far actor source work without local sampling and rejects stale action
 })
 
 it('does not publish a sampled source hit outside the queried sight volume', () => {
-  const empty = actionObservation(),
-    x = empty.request.camera.pose.position[0]
+  const x = actionRouteCentre()
+  const prepare = vi.spyOn(SiteGeometry.prototype, 'prepareScene')
   const source: SiteMesh = {
     id: 'source-extending-outside-sight',
     layer: 'barriers',
@@ -961,6 +1064,9 @@ it('does not publish a sampled source hit outside the queried sight volume', () 
     }) as SiteMesh['descriptor']
   }
   const f = actionObservation(source)
+  expect(prepare).toHaveBeenCalledTimes(1)
+  prepare.mockRestore()
+  expect(f.request.camera.pose.position[0]).toBe(x)
   const result = f.observations.observeActionVolume(f.context(), f.demand, {
     ...f.request,
     camera: { ...f.request.camera, halfWidthSlope: 2 }

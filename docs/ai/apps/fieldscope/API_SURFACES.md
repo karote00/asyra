@@ -440,6 +440,28 @@ frozen in each implementation Step Execution Card.
 
 Walking production observation uses a separate composition adapter:
 
+- `SceneDemandSourceBoundsOwner` retains source bounds, canonical region sources
+  and frame preparation for one immutable farm/PreparedScene pair. The runtime
+  scene-demand workspace is its sole lifetime owner; route and observation reuse
+  exact source objects. Unknown routes prepare no sources. Route-only edits
+  reuse inventory; farm/scene replacement retires it without eager preparation.
+  `prepareSceneObservationSpace(demand, owner)` publishes a current-demand wrapper
+  around the lazy complete or unknown `w1-canonical-obstacles/1` inventory.
+  Workspace `prepareObservationSpace/isCurrentObservationSpace` issue/read the
+  current wrapper; repeated reads perform no work. Its domain encloses the configured
+  full-site volume and all original source outward bounds. `joinSceneDemandBounds`
+  streams finite bounds without argument expansion. Route exclusions retain the
+  same source products, with explicit clearance views when padded.
+- `WalkingTransitScreen.queryObservationVolume` and `queryVolume` share one
+  active membership-aware tree. A route-only tree may be replaced once by the full
+  route/observation tree; build and upgrade work are counted separately. The former
+  requires an issued current observation-space receipt and covers only its domain;
+  the latter preserves route semantics. Receipts bind exact inventory identity,
+  report actual node/candidate work and retire on W1 replacement.
+  Source work separately counts enumerated keys, membership visits, local bounds,
+  descriptor/instance frames, whole/region world bounds, canonical sources and
+  inventory builds/reuses; query work never repeats source transforms.
+
 - `QueryGeometry.prepareWalking` consumes an exact current
   `WalkingObservationGeometryReceipt` binding PreparedScene, SceneDemand and
   WalkingRobotSource. Its farm-only source retains original meshes, regions,
@@ -453,6 +475,11 @@ Walking production observation uses a separate composition adapter:
   kernel as TargetObservations. It consumes no legacy mission, session pose,
   robot or dock receipt. Nonempty load or incomplete source plant state cannot
   produce complete-empty.
+  Only the walking adapter requires the lazy observation-space issuer/currentness
+  callbacks. Legacy TargetObservations retains its route-query contract. The shared
+  optical kernel consumes each adapter's issued query and never owns an inventory.
+  W1 and the independently predeclared synthetic dynamic domain must both cover
+  the same sight hull; their identities or bounds need not be equal.
 - Bootstrap constructs `walking-observation-workspace` with the operating
   workspace’s existing WalkingTransitScreen. Public methods are
   `configureWalkingObservationScenario(config, dynamics)`,
@@ -462,6 +489,12 @@ Walking production observation uses a separate composition adapter:
   frustum/range, nullable optics, bounded model, source-pose leaves and
   all-attached fruit. The current stowed base frame composes the world camera.
   This is an authored synthetic assumption, not physical camera calibration.
+- Internal `observeSelectedAction` additionally consumes a current owner-issued
+  cycle/motion binding. The camera parent uses motion.root origin rounded
+  nearest-even, and only a stowed quaternion whose exact dyadic similarity matrix
+  equals the motion root matrix. Foreign/stale bindings and differing orientation
+  are unavailable. Contexts retain exact motion identity; the public stowed
+  preview API remains separate.
 - Missing scenario, legacy selection, stale source or uncovered scenario time
   returns unavailable. Available observations can still be partial or unknown.
   Exact report/demand/source/scene, scenario generation, dynamic identity and
@@ -471,9 +504,30 @@ Walking production observation uses a separate composition adapter:
   time and dynamic-only updates do not rebuild it or W3a’s index. Work reports
   actual farm membership builds, base-frame visits, camera mounts, camera frames,
   sight queries, index builds, canonical candidate visits, ray work and actor
-  visits. The complete camera-to-action sight volume includes opaque sources
-  outside the action box. W1 candidates themselves are never detections.
+  visits. The complete camera-to-action sight volume includes every opaque
+  source in the declared W1 obstacle inventory outside the action box.
+  Soil/drain optics and terrain clearance are excluded. W1 candidates themselves
+  are never detections.
   No observation grants movement; monitors and controller remain separate work.
+
+`WalkingRuntimeMonitorOwner` configures explicit synthetic tilt/rate/force limits
+and uncertainty, evaluates two ordered orientation samples plus three exact
+phase-support sole force intervals, and issues current source/load/mass/cycle
+bound `walking-runtime-monitor/1`. Unknown or insufficient readings hold; this
+does not change terrain assessment or certify physical fall safety.
+
+Bootstrap constructs the local-action workspace after observation and disposes
+it first. `configureWalkingRuntimeMonitor`, `startWalkingLocalAction`,
+`continueWalkingLocalAction`, `completeWalkingLocalAction`,
+`getWalkingLocalActionDecision` and `isCurrentWalkingLocalActionDecision` expose
+simulation decisions. Start admits raw current-source cycle/selected recipes,
+one entire-interval selected sweep and a complete local self-material relation.
+Each decision obtains fresh production observation and monitor results;
+unchanged cycle/motion reuses relation evidence with zero exact predicate work.
+Person policy bounds, hard source detections, incomplete observation and stale
+or insufficient monitors hold. Foliage reports plant-contact-risk-unavailable
+pending its contact owner. Complete means only a current simulation decision at
+progress one, never execution, landing, terrain permission or hardware safety.
 
 ## Static source surface pairs
 

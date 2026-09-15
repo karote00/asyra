@@ -2,6 +2,18 @@
 
 Status: IN PROGRESS - W3A WALKING RUNTIME COMPOSITION IMPLEMENTED
 
+The current bounded 20-file slice adds request-owned complete declared-obstacle
+sensor inventory with shared farm/scene source preparation and one active
+route/observation index, owner-bound selected-action camera frames,
+synthetic orientation/contact monitoring and production local-action decisions.
+The original desired-world camera and tight-domain inspection view remain held
+without progress. The separately predeclared finite-site synthetic tracked area
+and inspection-head view pass start/continue/complete, fresh perception/monitoring,
+static work reuse and person/insufficient/stale holds. Final focused gates and
+one independent bounded review remain the closure boundary. No complete walking or
+hardware action claim is made. Terrain optics/support, foliage no-hook/no-tug,
+actuator feedback, patrol and UI remain separate pending owners.
+
 Walking observation production composition is implemented in the bounded
 15-file adapter slice. Bootstrap now constructs the walking workspace, accepts
 explicit synthetic base camera/optics/static plant state/dynamic scenarios,
@@ -12,7 +24,8 @@ Production tests cover complete-empty, actual authored leaf/anatomy hits with
 the leaf bounds outside the action box, persistent moving-to-stationary tracks,
 scenario/demand/farm/source invalidation and zero repeated static builds.
 Focused validation and independent bounded review are the closure gates.
-Observation monitors, controller, UI and action/motion authority remain pending.
+The bounded synthetic monitor/local-action adapter is implemented in the current
+slice; physical actuation, full walking control and UI remain pending.
 
 Selected-chain local motion slice: the canonical interval owner now admits one
 current swing-chain root abduction from its exact cycle angle to a target

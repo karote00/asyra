@@ -1,5 +1,9 @@
 import type { PreparedScene } from '../render-app/site-geometry'
-import type { SceneDemand } from '../simulation/scene-demand'
+import type {
+  SceneDemand,
+  SceneObservationSpace,
+  SceneDemandSourceWork
+} from '../simulation/scene-demand'
 import {
   QueryGeometry,
   type WalkingObservationGeometryReceipt
@@ -19,6 +23,64 @@ import type { WalkingTransitScreen } from '../simulation/walking-transit-screen'
 import type { WalkingOperatingReport } from './walking-operating-workspace'
 import type { WalkingRigidTransform } from '../domain/walking-robot-definition'
 import { transformRobotPoint } from '../domain/robot-kinematics'
+import type {
+  WalkingConstrainedCycleOwner,
+  WalkingConstrainedCycle,
+  WalkingSelectedChainMotion
+} from '../domain/walking-constrained-kinematics'
+import { dyadic, roundFraction } from '../domain/scalar-arithmetic'
+
+export interface WalkingSelectedObservationBinding {
+  readonly owner: WalkingConstrainedCycleOwner
+  readonly cycle: WalkingConstrainedCycle
+  readonly motion: WalkingSelectedChainMotion
+}
+export interface WalkingSelectedObservationAction extends WalkingObservationAction {
+  readonly binding: WalkingSelectedObservationBinding
+}
+type WorkspaceObservation = WalkingActionVolumeObservation & {
+  readonly context: WalkingActionObservationContext & {
+    readonly motion?: WalkingSelectedChainMotion
+  }
+}
+function currentMotion(binding: WalkingSelectedObservationBinding) {
+  try {
+    keys(binding, ['owner', 'cycle', 'motion'])
+    return (
+      binding.motion.cycle === binding.cycle &&
+      binding.owner.read(binding.motion.source, binding.cycle.recipe) ===
+        binding.cycle &&
+      binding.owner.readSelectedChainMotion(binding.cycle, binding.motion) ===
+        binding.motion
+    )
+  } catch {
+    return false
+  }
+}
+function sameOrientation(
+  motion: WalkingSelectedChainMotion,
+  rotation: WalkingRigidTransform['rotation']
+) {
+  const scalars = rotation.map(dyadic)
+  const exponent = Math.min(...scalars.map((v) => v.exponent))
+  const [x, y, z, w] = scalars.map(
+    (v) => v.significand << BigInt(v.exponent - exponent)
+  )
+  const xx = x * x,
+    yy = y * y,
+    zz = z * z,
+    ww = w * w,
+    norm = xx + yy + zz + ww
+  if (norm <= 0n) return false
+  const matrix = [
+    [ww + xx - yy - zz, 2n * (x * y - z * w), 2n * (x * z + y * w)],
+    [2n * (x * y + z * w), ww + yy - xx - zz, 2n * (y * z - x * w)],
+    [2n * (x * z - y * w), 2n * (y * z + x * w), ww + zz - xx - yy]
+  ]
+  return motion.root.matrix.every((row, i) =>
+    row.every((v, j) => v.numerator * norm === matrix[i][j] * v.denominator)
+  )
+}
 
 export interface WalkingObservationScenario {
   readonly format: 'walking-observation-scenario/1'
@@ -48,11 +110,12 @@ export type WalkingObservationResult =
   | Readonly<{ status: 'unavailable'; reason: string }>
   | Readonly<{
       status: 'available'
-      observation: WalkingActionVolumeObservation
+      observation: WorkspaceObservation
       work: Readonly<{
         farmMembershipBuilds: number
         bodyFrameVisits: number
         cameraMounts: number
+        sourcePreparation: SceneDemandSourceWork
       }>
     }>
 
@@ -185,6 +248,9 @@ export function createWalkingObservationWorkspace(owners: {
   isCurrentOperating(value: WalkingOperatingReport): boolean
   getDemand(): SceneDemand
   isCurrentDemand(value: SceneDemand): boolean
+  prepareObservationSpace(demand: SceneDemand): SceneObservationSpace
+  isCurrentObservationSpace(space: SceneObservationSpace): boolean
+  getSourceWork(): SceneDemandSourceWork
   getScene(): PreparedScene
   isCurrentScene(value: PreparedScene): boolean
   screen: WalkingTransitScreen
@@ -230,29 +296,193 @@ export function createWalkingObservationWorkspace(owners: {
     }
   })
   const contexts = new WeakSet<WalkingActionObservationContext>()
-  const currentContext = (context: WalkingActionObservationContext) =>
-    !closed &&
-    contexts.has(context) &&
-    context.report === owners.getOperating() &&
-    owners.isCurrentOperating(context.report) &&
-    context.demand === owners.getDemand() &&
-    owners.isCurrentDemand(context.demand) &&
-    context.source === context.report.source &&
-    currentReceipt(context.geometry.receipt) &&
-    context.generation === generation &&
-    context.sensorIdentity === scenario &&
-    context.now === now &&
-    !!scenario &&
-    now >= scenario.validFrom &&
-    now < scenario.validUntil
+  const selectedContexts = new WeakMap<
+    WalkingActionObservationContext,
+    WalkingSelectedObservationBinding
+  >()
+  const currentContext = (context: WalkingActionObservationContext) => {
+    const binding = selectedContexts.get(context)
+    return (
+      !closed &&
+      contexts.has(context) &&
+      (!binding || currentMotion(binding)) &&
+      context.report === owners.getOperating() &&
+      owners.isCurrentOperating(context.report) &&
+      context.demand === owners.getDemand() &&
+      owners.isCurrentDemand(context.demand) &&
+      context.source === context.report.source &&
+      currentReceipt(context.geometry.receipt) &&
+      context.generation === generation &&
+      context.sensorIdentity === scenario &&
+      context.now === now &&
+      !!scenario &&
+      now >= scenario.validFrom &&
+      now < scenario.validUntil
+    )
+  }
   let observations: WalkingActionObservations | undefined =
     new WalkingActionObservations(geometry, {
+      prepareObservationSpace: owners.prepareObservationSpace,
+      isCurrentObservationSpace: owners.isCurrentObservationSpace,
       isCurrentContext: currentContext,
       screen: owners.screen,
       dynamics
     })
   const isCurrent = (value: WalkingActionVolumeObservation) =>
     !closed && !!observations?.isCurrent(value) && now < value.input.validUntil
+  const observe = (
+    raw: WalkingObservationAction,
+    binding?: WalkingSelectedObservationBinding
+  ): WalkingObservationResult => {
+    live()
+    const action = structuredClone(raw)
+    keys(action, ['actionId', 'actionBounds', 'now', 'validUntil'])
+    keys(action.actionBounds, ['min', 'max'])
+    if (
+      typeof action.actionId !== 'string' ||
+      !action.actionId.trim() ||
+      !finite(action.now) ||
+      action.now < 0 ||
+      !finite(action.validUntil) ||
+      action.validUntil <= action.now ||
+      !point(action.actionBounds.min, 3) ||
+      !point(action.actionBounds.max, 3) ||
+      action.actionBounds.min.some((v, i) => v > action.actionBounds.max[i])
+    )
+      invalid()
+    now = action.now
+    latest = undefined
+    const unavailable = (reason: string): WalkingObservationResult =>
+      Object.freeze({ status: 'unavailable', reason })
+    if (!scenario || !observations)
+      return unavailable('missing-walking-observation-scenario')
+    if (
+      now < scenario.validFrom ||
+      now >= scenario.validUntil ||
+      action.validUntil > scenario.validUntil
+    )
+      return unavailable('outside-walking-observation-scenario-time')
+    const report = owners.getOperating(),
+      demand = owners.getDemand(),
+      scene = owners.getScene()
+    if (report.status === 'legacy-view')
+      return unavailable('walking-selection-required')
+    if (
+      !owners.isCurrentOperating(report) ||
+      report.demand !== demand ||
+      demand.scene !== scene ||
+      !owners.isCurrentDemand(demand) ||
+      !owners.isCurrentScene(scene)
+    )
+      return unavailable('stale-walking-observation-source')
+    if (!demand.route) return unavailable('missing-walking-observation-route')
+    let bodyFrameVisits = 0
+    const base = report.stowedPoseResult.bodyTransforms.find((body) => {
+      bodyFrameVisits++
+      return body.id === 'base'
+    })
+    if (!base || report.stowedPoseResult.source !== report.source)
+      return unavailable('missing-walking-base-frame')
+    let cameraParent = base.transform
+    if (binding) {
+      if (!currentMotion(binding) || binding.motion.source !== report.source)
+        return unavailable('stale-or-foreign-selected-observation-motion')
+      if (!sameOrientation(binding.motion, base.transform.rotation))
+        return unavailable('unsupported-selected-observation-orientation')
+      const origin = binding.motion.root.origin
+      cameraParent = {
+        rotation: base.transform.rotation,
+        position: [
+          roundFraction(
+            origin[0].numerator,
+            origin[0].denominator,
+            'nearest-even'
+          ),
+          roundFraction(
+            origin[1].numerator,
+            origin[1].denominator,
+            'nearest-even'
+          ),
+          roundFraction(
+            origin[2].numerator,
+            origin[2].denominator,
+            'nearest-even'
+          )
+        ]
+      }
+    }
+    const before = geometry.work.membershipBuilds
+    const sourceBefore = owners.getSourceWork()
+    if (
+      !receipt ||
+      receipt.scene !== scene ||
+      receipt.demand !== demand ||
+      receipt.source !== report.source
+    )
+      receipt = Object.freeze({
+        format: 'walking-observation-geometry/1',
+        scene,
+        demand,
+        source: report.source
+      })
+    const source = geometry.prepareWalking(receipt)
+    const context: WalkingActionObservationContext = Object.freeze({
+      report,
+      demand,
+      source: report.source,
+      geometry: source,
+      generation,
+      runId: scenario.id + ':' + generation,
+      now,
+      sensorIdentity: scenario,
+      ...(binding ? { motion: binding.motion } : {})
+    })
+    contexts.add(context)
+    if (binding) selectedContexts.set(context, Object.freeze({ ...binding }))
+    const observation = observations.observeActionVolume(context, {
+      id: action.actionId,
+      source: 'synthetic-action-volume/1',
+      assumption: scenario.assumption,
+      actionId: action.actionId,
+      actionBounds: action.actionBounds,
+      runId: context.runId,
+      generation,
+      observedAt: now,
+      validFrom: scenario.validFrom,
+      validUntil: action.validUntil,
+      leaves: scenario.leaves,
+      fruits: scenario.fruits,
+      camera: {
+        pose: mountCamera(cameraParent, scenario.camera.localPose),
+        halfWidthSlope: scenario.camera.halfWidthSlope,
+        halfHeightSlope: scenario.camera.halfHeightSlope,
+        maxDistance: scenario.camera.maxDistance
+      },
+      optics: scenario.optics,
+      model: scenario.model
+    })
+    latest = observation
+    const sourceAfter = owners.getSourceWork()
+    const sourcePreparation = Object.freeze(
+      Object.fromEntries(
+        Object.keys(sourceBefore).map((key) => [
+          key,
+          sourceAfter[key as keyof SceneDemandSourceWork] -
+            sourceBefore[key as keyof SceneDemandSourceWork]
+        ])
+      )
+    ) as unknown as SceneDemandSourceWork
+    return Object.freeze({
+      status: 'available',
+      observation,
+      work: Object.freeze({
+        farmMembershipBuilds: geometry.work.membershipBuilds - before,
+        bodyFrameVisits,
+        cameraMounts: 1,
+        sourcePreparation
+      })
+    })
+  }
   return {
     configure: (
       raw: WalkingObservationScenario,
@@ -266,112 +496,19 @@ export function createWalkingObservationWorkspace(owners: {
       generation++
       latest = undefined
     },
-    observe: (raw: WalkingObservationAction): WalkingObservationResult => {
+    observe: (raw: WalkingObservationAction) => observe(raw),
+    observeSelectedAction: (raw: WalkingSelectedObservationAction) => {
       live()
-      const action = structuredClone(raw)
-      keys(action, ['actionId', 'actionBounds', 'now', 'validUntil'])
-      keys(action.actionBounds, ['min', 'max'])
-      if (
-        typeof action.actionId !== 'string' ||
-        !action.actionId.trim() ||
-        !finite(action.now) ||
-        action.now < 0 ||
-        !finite(action.validUntil) ||
-        action.validUntil <= action.now ||
-        !point(action.actionBounds.min, 3) ||
-        !point(action.actionBounds.max, 3) ||
-        action.actionBounds.min.some((v, i) => v > action.actionBounds.max[i])
-      )
-        invalid()
-      now = action.now
-      latest = undefined
-      const unavailable = (reason: string): WalkingObservationResult =>
-        Object.freeze({ status: 'unavailable', reason })
-      if (!scenario || !observations)
-        return unavailable('missing-walking-observation-scenario')
-      if (
-        now < scenario.validFrom ||
-        now >= scenario.validUntil ||
-        action.validUntil > scenario.validUntil
-      )
-        return unavailable('outside-walking-observation-scenario-time')
-      const report = owners.getOperating(),
-        demand = owners.getDemand(),
-        scene = owners.getScene()
-      if (report.status === 'legacy-view')
-        return unavailable('walking-selection-required')
-      if (
-        !owners.isCurrentOperating(report) ||
-        report.demand !== demand ||
-        demand.scene !== scene ||
-        !owners.isCurrentDemand(demand) ||
-        !owners.isCurrentScene(scene)
-      )
-        return unavailable('stale-walking-observation-source')
-      let bodyFrameVisits = 0
-      const base = report.stowedPoseResult.bodyTransforms.find((body) => {
-        bodyFrameVisits++
-        return body.id === 'base'
-      })
-      if (!base || report.stowedPoseResult.source !== report.source)
-        return unavailable('missing-walking-base-frame')
-      const before = geometry.work.membershipBuilds
-      if (
-        !receipt ||
-        receipt.scene !== scene ||
-        receipt.demand !== demand ||
-        receipt.source !== report.source
-      )
-        receipt = Object.freeze({
-          format: 'walking-observation-geometry/1',
-          scene,
-          demand,
-          source: report.source
+      keys(raw, ['actionId', 'actionBounds', 'now', 'validUntil', 'binding'])
+      const { binding, ...action } = raw
+      if (!currentMotion(binding)) {
+        latest = undefined
+        return Object.freeze({
+          status: 'unavailable' as const,
+          reason: 'stale-or-foreign-selected-observation-motion'
         })
-      const source = geometry.prepareWalking(receipt)
-      const context: WalkingActionObservationContext = Object.freeze({
-        report,
-        demand,
-        source: report.source,
-        geometry: source,
-        generation,
-        runId: scenario.id + ':' + generation,
-        now,
-        sensorIdentity: scenario
-      })
-      contexts.add(context)
-      const observation = observations.observeActionVolume(context, {
-        id: action.actionId,
-        source: 'synthetic-action-volume/1',
-        assumption: scenario.assumption,
-        actionId: action.actionId,
-        actionBounds: action.actionBounds,
-        runId: context.runId,
-        generation,
-        observedAt: now,
-        validFrom: scenario.validFrom,
-        validUntil: action.validUntil,
-        leaves: scenario.leaves,
-        fruits: scenario.fruits,
-        camera: {
-          pose: mountCamera(base.transform, scenario.camera.localPose),
-          halfWidthSlope: scenario.camera.halfWidthSlope,
-          halfHeightSlope: scenario.camera.halfHeightSlope,
-          maxDistance: scenario.camera.maxDistance
-        },
-        optics: scenario.optics,
-        model: scenario.model
-      })
-      latest = observation
-      return Object.freeze({
-        status: 'available',
-        observation,
-        work: Object.freeze({
-          farmMembershipBuilds: geometry.work.membershipBuilds - before,
-          bodyFrameVisits,
-          cameraMounts: 1
-        })
-      })
+      }
+      return observe(action, binding)
     },
     get: () => (latest && isCurrent(latest) ? latest : undefined),
     isCurrent,
