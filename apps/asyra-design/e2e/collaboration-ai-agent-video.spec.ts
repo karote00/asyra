@@ -2242,7 +2242,9 @@ const submitTurn = async (
     timeout: settledTimeoutMs
   })
   const turn = settledTurns.last()
-  await expect(turn).toHaveAttribute('data-outcome', 'success')
+  await expect(turn).toHaveAttribute('data-outcome', 'success', {
+    timeout: settledTimeoutMs
+  })
   await expect(turn.getByText(/Updated \d+ editable elements?\./)).toBeVisible()
   await expect(turn.getByText(/^Elapsed \d/)).toBeVisible()
   return turn

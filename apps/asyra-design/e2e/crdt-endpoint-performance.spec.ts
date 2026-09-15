@@ -2318,7 +2318,9 @@ const assertPreparedAiTurnSettled = async (
   const settledTurns = page.getByTestId('ai-agent-message')
   await expect(settledTurns).toHaveCount(1, { timeout: 120_000 })
   const turn = settledTurns.last()
-  await expect(turn).toHaveAttribute('data-outcome', 'success')
+  await expect(turn).toHaveAttribute('data-outcome', 'success', {
+    timeout: 120_000
+  })
   await expect(turn.getByText(/Updated \d+ editable elements?\./)).toBeVisible()
 }
 

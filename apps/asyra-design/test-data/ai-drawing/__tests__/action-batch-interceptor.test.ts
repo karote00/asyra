@@ -19,6 +19,7 @@ describe('Asyra Design action-batch interceptor harness', () => {
       16
     )
     const compressed = gzipSync(Buffer.from(JSON.stringify(record)))
+    const routePatterns: string[] = []
     let routePattern = ''
     let routeHandler:
       | ((route: {
@@ -42,6 +43,7 @@ describe('Asyra Design action-batch interceptor harness', () => {
         pattern: string,
         handler: NonNullable<typeof routeHandler>
       ) => {
+        routePatterns.push(pattern)
         routePattern = pattern
         routeHandler = handler
       }
@@ -53,6 +55,10 @@ describe('Asyra Design action-batch interceptor harness', () => {
       publicPath: '/prepared/action-batch.json.gz'
     })
 
+    expect(routePatterns).toEqual([
+      '**/api/ai/status',
+      '**/api/ai/action-batch'
+    ])
     expect(routePattern).toBe('**/api/ai/action-batch')
     expect(routeHandler).toBeTypeOf('function')
     const fulfill = vi.fn(async () => undefined)
