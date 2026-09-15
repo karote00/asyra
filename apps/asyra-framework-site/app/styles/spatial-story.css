@@ -150,23 +150,30 @@
 
 /* Homepage resources continue the story's content gutters at every breakpoint. */
 #built-with-asyra,
-#start-building {
+#start-building,
+.spatial-story-shell section[aria-label='Start your next product'] {
   padding-inline: 0;
 }
 #built-with-asyra > div,
-#start-building > div {
+#start-building > div,
+.spatial-story-shell section[aria-label='Start your next product'] > div,
+.spatial-story-shell .site-footer {
   max-width: 1800px;
   padding-inline: 24px;
 }
 @media (min-width: 768px) and (max-width: 1023px) {
   #built-with-asyra > div,
-  #start-building > div {
+  #start-building > div,
+  .spatial-story-shell section[aria-label='Start your next product'] > div,
+  .spatial-story-shell .site-footer {
     padding-inline: 32px;
   }
 }
 @media (min-width: 1024px) {
   #built-with-asyra > div,
-  #start-building > div {
+  #start-building > div,
+  .spatial-story-shell section[aria-label='Start your next product'] > div,
+  .spatial-story-shell .site-footer {
     padding-inline: clamp(32px, 4vw, 72px) 24px;
   }
 }
