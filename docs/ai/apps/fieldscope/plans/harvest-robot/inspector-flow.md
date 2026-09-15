@@ -765,20 +765,22 @@ Only the existing directed complete-frustum/range test
 admits this view; failed admission stops without viewpoint searching or tuning.
 This is a synthetic scenario, never calibrated hardware capability.
 
-Observation/relation verification scheduling: the seven actual-source cases
-remain mandatory in the serial profile gate: one bootstrap observation case,
+Observation/relation verification scheduling: the nine actual-source cases
+remain mandatory in the serial profile gate: one scene-demand inventory/history
+case, one bootstrap observation case, one local-action bootstrap decision case,
 three observation-workspace cases, two walking optical-kernel cases and one
 selected-chain half-abduction relation case. Their authored geometry, source
 identities, exact budgets and all existing visibility/coverage/work oracles are
 unchanged. Ordinary controls additionally use canonical bounded sheet sources;
-legacy behavior and the local-action bootstrap decision case remain ordinary.
-The existing external test supervisor owns both classes, finite wall deadlines,
-output limits, process-group cleanup and CPU accounting. Profile selection uses
-the profile config and the same worker acknowledgement setup; selected-profile
-evidence cannot claim full ordinary coverage. The 30-second full-site, 20-second
-relation and 45-second bootstrap per-case ceilings are engineering initial values,
-not product performance promises. No source, motion, observation or decision
-budget is increased. Existing numerical profile guards remain unchanged.
+legacy behavior remains ordinary. The existing external test supervisor owns
+both classes, finite wall deadlines, output limits, process-group cleanup and CPU
+accounting. Profile selection uses the profile config and the same worker
+acknowledgement setup; selected-profile evidence cannot claim full ordinary
+coverage. The 30-second full-site observation/inventory, 20-second relation,
+45-second observation-bootstrap and 60-second local-action-bootstrap per-case
+ceilings are engineering initial values, not product performance promises. No
+source, motion, observation or decision budget is increased. Existing numerical
+profile guards remain unchanged.
 
 ## A - Feasibility domain (current M1)
 

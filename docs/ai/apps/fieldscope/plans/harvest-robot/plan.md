@@ -2655,14 +2655,16 @@ never reported as a complete suite. Unknown paths and raw Vitest bypass argument
 fail before execution. The required one-worker `test:profiles` gate now invokes
 the same supervisor with `--profile` and worker acknowledgements. Its full and
 filtered artifacts are explicitly profile evidence, never ordinary coverage.
-The seven CI timeout cases remain required actual-source profiles: bootstrap
-observation, three observation-workspace cases, two walking optical-kernel cases
-and selected-chain half-abduction. Their assertions and product budgets remain;
-bounded canonical source controls keep ordinary currentness and negative checks.
-Initial per-case engineering ceilings are 45/30/20 seconds for bootstrap/full-site/
-relation respectively; classification is not a production performance improvement.
-Existing numerical elapsed guards and the 20-minute process deadline remain.
-The original seven CI timeouts are retained as RED evidence. Focused class gates,
+Nine actual-source cases remain required profiles: scene-demand inventory/history,
+bootstrap observation, local-action bootstrap decision, three observation-workspace
+cases, two walking optical-kernel cases and selected-chain half-abduction. Their
+assertions, geometry and product budgets remain; bounded canonical source controls
+keep ordinary currentness and negative checks. Existing per-case engineering
+ceilings remain 60/45/30/20 seconds for local-action bootstrap/observation bootstrap/
+full-site observation or inventory/relation respectively; classification is not a
+production performance improvement. Existing numerical elapsed guards and the
+20-minute process deadline remain. The original timeout evidence remains authoritative.
+Focused class gates,
 supervisor selectors/cleanup/acknowledgements and static/build checks precede the
 combined integration gate and independent review.
 

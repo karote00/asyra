@@ -33,15 +33,16 @@ ordinary full-suite evidence. The default process wall deadline is 20 minutes,
 with owned process-group cleanup and bounded output. CPU is accounted, not capped;
 this guard does not enforce peak RSS.
 
-Seven actual-source observation/relation cases remain in the four bootstrap,
-walking-observation-workspace, observations and walking-source-relation profile
-files. Their source geometry, numerical budgets, visibility/currentness and work
-oracles remain required. Initial engineering per-case ceilings are 45 seconds for
-bootstrap, 30 seconds for full-site observation and 20 seconds for the selected
-relation. These classify bounded test workloads, not faster production or physical
-limits. Ordinary controls use admitted two-instance sheet sources for optical
-witnesses, invalid inputs and currentness; legacy cases and the local-action
-bootstrap case remain ordinary.
+Nine actual-source observation/relation cases remain in the five scene-demand-
+workspace, bootstrap, walking-observation-workspace, observations and walking-
+source-relation profile files. Their source geometry, numerical budgets,
+visibility/currentness and work oracles remain required. Existing engineering
+per-case ceilings remain unchanged: 60 seconds for local-action bootstrap, 45
+seconds for observation bootstrap, 30 seconds for full-site observation/inventory
+and 20 seconds for the selected relation. These classify bounded test workloads,
+not faster production or physical limits. Ordinary controls use admitted two-
+instance sheet sources for optical witnesses, invalid inputs and currentness;
+legacy cases remain ordinary.
 
 ## Implemented active-definition and stowed-envelope prerequisites
 
