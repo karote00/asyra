@@ -167,9 +167,63 @@ test('Draft filtering preserves non-PR CI triggers and label validation', () => 
 test('CI bounds workspace test concurrency without dropping test owners', () => {
   const workflow = readText('.github/workflows/main.yml')
   const scripts = readJSON('package.json').scripts
+  const fieldscopeScripts = readJSON('apps/fieldscope/package.json').scripts
+  const fieldscopeVitest = readText('apps/fieldscope/vitest.config.ts')
+  const fieldscopeVitestSetup = readText('apps/fieldscope/vitest.setup.ts')
+  const profileVitest = readText('apps/fieldscope/vitest.profile.config.ts')
+  const walkingMotionProfile = readText(
+    'apps/fieldscope/src/simulation/__tests__/walking-motion.profile.test.ts'
+  )
+  const constrainedProfile = readText(
+    'apps/fieldscope/src/domain/__tests__/walking-constrained-kinematics.profile.test.ts'
+  )
 
   assert.match(workflow, /^\s+run: yarn test:ci --concurrency=2$/m)
   assert.equal(scripts['test:ci'], 'yarn test:scripts && turbo run test:ci')
+  assert.equal(
+    fieldscopeScripts['test:profiles'],
+    'vitest run --config vitest.profile.config.ts'
+  )
+  assert.equal(
+    fieldscopeScripts['test:local'],
+    'node --test scripts/__tests__/supervise-tests.test.mjs && python3 scripts/supervise-tests.py'
+  )
+  assert.equal(fieldscopeScripts['test:ci'], fieldscopeScripts['test:local'])
+  assert.doesNotMatch(
+    fieldscopeScripts['test:ci'],
+    /(?:^|&&)\s*(?:[A-Z_]+=|vitest\b)/
+  )
+  assert.match(
+    fieldscopeVitest,
+    /exclude: \['src\/\*\*\/__tests__\/\*\*\/\*\.profile\.test\.ts'\]/
+  )
+  assert.match(
+    fieldscopeVitest,
+    /setupFiles: \[fileURLToPath\(new URL\('\.\/vitest\.setup\.ts', import\.meta\.url\)\)\]/
+  )
+  assert.match(fieldscopeVitest, /maxWorkers: 2/)
+  assert.doesNotMatch(fieldscopeVitest, /dangerouslyIgnoreUnhandledErrors/)
+  assert.match(fieldscopeVitestSetup, /beforeEach\(async \(context\) =>/)
+  assert.match(fieldscopeVitestSetup, /await context\.annotate\(/)
+  assert.match(
+    profileVitest,
+    /include: \['src\/\*\*\/__tests__\/\*\*\/\*\.profile\.test\.ts'\]/
+  )
+  assert.match(profileVitest, /fileParallelism: false/)
+  assert.match(profileVitest, /maxWorkers: 1/)
+  assert.match(
+    walkingMotionProfile,
+    /it\('reports the current home-farm plant collision while preserving owned terrain bridges', async \(context\) => \{\n {4}await context\.annotate\([\s\S]*?\n {2}\}, 180000\)\n\}\)/
+  )
+  assert.match(
+    constrainedProfile,
+    /for \(const \[sourceProfile, phase\] of externalRootCases\)[\s\S]*?\n {2}\}, 450000\)\n\ndescribe\('exact polynomial complementary tripod offline profiles'/
+  )
+  const ordinaryTests = workflow.indexOf('run: yarn test:ci --concurrency=2')
+  const fieldscopeProfiles = workflow.indexOf(
+    'run: yarn workspace @asyra/fieldscope test:profiles'
+  )
+  assert.ok(ordinaryTests >= 0 && fieldscopeProfiles > ordinaryTests)
 })
 
 test('Dependabot separates routine, major, and security update lanes', () => {

@@ -1,5 +1,13 @@
 # API surfaces
 
+`prepareQueryExactForwardFrame` and `prepareQueryExactInstanceFrame` publish
+immutable dyadic forward matrices, positions and nonzero determinants from the
+query-frame owner's existing quaternion polynomial and binary64 yaw coefficients.
+The outward helpers use the same recipe. Apply instance before descriptor;
+these frames are not rounded rendered points or normalized rotations. Invalid
+or singular exact frames reject. Preparation has no cross-call cache; W3 owns
+per-evaluation admitted-identity reuse, and this API grants no material relation.
+
 - `FarmConfiguration`, `DEFAULT_CONFIGURATION`, `validateConfiguration`, and `configurationSite` own editable dimensional inputs and validation.
 - `createLayout` and `createStructure` own bay strips, passages, and greenhouse steel members.
 - `createDrainProfile` owns the cross-section used by both the 3D projection and the section diagram.
@@ -11,11 +19,124 @@
 
 Cross-package imports use public `@asyra/*` facades. Do not import another app's runtime or renderer.
 
+## Implemented active-definition and stowed-envelope prerequisites
+
+`readActiveRobotConfiguration` delegates to
+`readActiveWalkingRobotDefinition`. Historical `validateRobot` and saved
+definition readers remain unchanged. The active reader rejects legacy topology
+and checks the exact declared fixed assembly width against
+`MAX_WALKING_BODY_WIDTH` (0.80 m), without a new height cap. This is schema
+admission; the complete source-material body check belongs to the envelope owner.
+
+`WalkingRobotEnvelopeOwner.prepare(source, rawRequest)` admits
+`walking-stowed-envelope-request/1` and returns a complete
+`WalkingStowedEnvelope` or typed unavailable result. It binds the current source
+owner, canonical stowed preset, base placement, current mounted-crate owner
+product and cloned complete declared load geometry. `read(source, request)`
+returns only the current product, performs no geometry work and does not retire
+a valid product merely because a foreign handle was queried. Failed preparation,
+source replacement or mounted-product replacement retires the prior result.
+
+The explicit authority `completed-stowed-fk-then-base/1` computes completed
+canonical stowed FK once, then applies one outer base transform with outward
+interval arithmetic. It does not claim byte equivalence to independently rounded
+world FK. Every original robot vertex, all eleven mounted-crate parts using their
+exact common placement, and every declared load part contribute immutable bounds.
+`contributors` retains kind, stable part/body ID, exact admitted part reference,
+vertex count and individual bounds; their union is `bounds`.
+`bodyBounds` covers actual root and permanently fixed descendant material in
+the canonical body frame and separately enforces 0.80 m. Articulated contributors
+and removable attachments remain in the total cuboid, which may exceed 0.80 m.
+
+Load input declares all required part IDs, complete original source-region
+partitions and one local frame per part; missing, foreign or nonfinite geometry
+is unavailable. Mounted identity is never reconstructed from equal bytes.
+Product work records preparations, FK calls, original source/attachment vertices
+and contributors. Same admitted input reuse has zero additional work. No farm,
+view or locale input rebuilds this owner. These are geometric prerequisites,
+not runtime composition, collision, route fit, latch strength or W4 admission.
+
+## Implemented walking runtime selection and transit screen
+
+`walking-runtime-selection/1` is a Core-persisted explicit choice between the
+default `legacy-view` and `walking-active` with an admitted walking definition.
+It preserves legacy reads and historical projection, performs no automatic
+conversion or dimensional rewrite, and participates in normal undo/redo.
+
+`WalkingOperatingOwner` publishes `walking-operating-report/1` as
+`legacy-view`, `ready-fast`, `local-required` or `unknown`. Active reports bind
+the exact selection, definition, W2 source/profile, canonical stowed pose,
+complete envelope/load and current W1 demand. Definition/profile/load changes
+prepare their owners; W1 farm, route, growth or survey changes rebuild only the
+route-local screen. Camera, view and reads perform no W1/W2 work.
+
+`WalkingTransitScreen` owns a private immutable interval tree keyed by W1
+identity, route, inventory and stable exclusion ordinals. It derives a conservative
+swept cuboid by translating the already-prepared complete stowed envelope,
+queries the X interval tree, then checks complete XYZ bounds. Strict separation
+inside the margin-covered route volume is `ready-fast`; an AABB overlap is only
+`local-required`. All subtraction, translation and margin expansion uses the
+existing directed interval arithmetic, and closed-bound contact remains a
+candidate. `exact-source-query-required` alone can be discharged by this
+complete bounds screen; every other W1 free-passage coverage/evidence reason is
+retained as `unknown`. A stale demand, missing route, invalid finite bounds, or
+margin-expanded sweep outside the surveyed route volume is also `unknown`, with
+no partial-clear or full-scan fallback. Its build, query, candidate, detailed and
+contributor counters expose the actual bounded work. Finite exclusion-bounds
+admission is cached by immutable W1 identity/route/inventory, reports
+`validationVisits`, and is not repeated for action or margin changes; a new W1
+product revalidates before index use. Operating-report currentness checks the live
+W1 demand and W2 source/envelope identities directly, including during upstream
+subscriber notification.
+
+This index contains simulator-owned source geometry for bounded query
+acceleration; it is not a robot-observed obstacle inventory. `ready-fast` is a
+geometric screen only and grants neither observation validity nor permission to
+move. Before every future action, the W6 action gate must bind the latest locally
+sufficient observation and its validity together with independent dynamic-hazard
+and support/fall monitors. Missing, stale or insufficient observation holds the
+action. This does not require a new full image at every control tick or establish
+an invented freshness threshold. One patrol round may reuse its current static
+route survey, while dynamic observations update independently, retain a moving
+object's identity when it becomes stationary, and do not rebuild all static W1
+or W2 geometry.
+
+`WalkingRobotProjection` displays only the selected active robot and consumes
+the actual W2 source and owner-produced stowed pose result. Bootstrap retains the
+historical projection only while `legacy-view` is selected and retires both
+projection and operating currentness on disposal.
+
+## Proposed later walking operating APIs - not implemented
+
+The following app-owned surfaces remain proposed by the active contract:
+
+- a plant-contact-risk result that retains exact foliage identity and separately
+  classifies foot placement, hook/entanglement, pinch, drag/tug and configured
+  stem displacement;
+- observation evidence for film/weather/time, illumination, shadow, glare,
+  occlusion, depth, calibration, confidence, viewpoint and age;
+- a same-side manipulation result that binds foliage opening, fruit holding and
+  cutting to one group/source/pose/interval and records pre-action admission
+  separately from post-action quality;
+- a patrol-round session with an unfinished checkpoint, one-round route-evidence
+  lifetime, continuously current hazard/support observations, in-place attention
+  folding and base-latch crate-exchange state;
+- affected-work/currentness/overrun reports and measured capture-to-inhibit,
+  observation-to-decision and canonical-state-to-UI latency.
+
+These proposals reuse owner-issued source, route, terrain, load, pose and
+observation identities. They add no hardware connection, safety certification,
+hidden sensor truth or automatic migration. Exact names and wire formats are
+frozen in each implementation Step Execution Card.
+
 ## Robot design APIs
 
 - `RobotConfiguration`, `DEFAULT_ROBOT`, `validateRobot` own the M2 design schema.
 - `assessRobotDesign` combines A's necessary lane and energy screens. A missing
-  lane is explicit `null`; no alternative lane is chosen.
+  lane is explicit `null`; no alternative lane is chosen. Its immutable `route`
+  exposes B's completed positional A input for fresh synthetic survey admission.
+  Missing identity or invalid interval makes both route and lane null; D does not
+  resolve strip IDs again. The route is not motion clearance.
 - `FarmRuntime.getRobot` / `subscribeRobot` expose the current stable read report.
 - `patchRobot` dispatches the registered one-shot Feature and merges against the
   latest canonical settings inside the session queue. Failed admission does not
@@ -24,3 +145,1253 @@ Cross-package imports use public `@asyra/*` facades. Do not import another app's
 - `createRobotModel` and `RobotProjection` produce admitted concept geometry with
   a definition-scoped lifetime. `export-robot-review.mjs` exports the same model
   for optional Blender inspection; exported artifacts are not loaded by the app.
+
+## Canonical scene source
+
+- `CropModel` retains source triangle ownership for fruit body/detail, synthetic
+  tomato distal pedicel and later surface hairs; near/distant representations
+  preserve the same fruit ID and original geometry/materials.
+- Each near/distant part also supplies botanical `CropSourcePatch` metadata:
+  a part-local ID, associated `targetFruitId`, `target-fruit` or `plant` owner,
+  and `fruit-skin`, `fine-spines`, `calyx`, `retained-pedicel`,
+  `plant-pedicel` or `fruit-detail` role. Its `SourcePatch` references one
+  original region and exact triangle-aligned ranges. Plant-side association
+  never changes plant-owned partitions. Unclassified triangles stay forbidden;
+  metadata alone grants no support, cutting or intended-contact permission.
+- Leaf-producing parts may additionally expose the optional transient
+  `crop-source-anatomy/1` record. Its exact triangle-aligned source patches use
+  only `leaf-blade`, `leaf-vein-ribbon` and `leaf-hair`; absence leaves source
+  triangles unclassified. Blade and raised vein-ribbon spans are authored around
+  their existing emissions at both near and distant detail where present, while
+  cucumber leaf hairs are authored only for the existing near hair emission.
+  Stems, including parts that also contain fruit detail or pedicels, are never
+  classified from a whole-part name. Existing exact `CropSourcePatch` roles take
+  precedence over this plant anatomy metadata. No id, part name, layer, material
+  or color is an anatomy classifier.
+- Tomato `cutSite` identifies the existing synthetic shared ring between the
+  immediate proximal plant-side pedicel and retained distal segment, 9 mm times
+  botanical scale above the fruit top. It carries the original source vertex
+  indices and source-local `towardPlant` vector, never a world-Y shortcut.
+  SiteGeometry validates patch ownership and ring identity, and proves numeric
+  position/direction against directed centroid intervals of the two adjacent
+  source rings. Unproved numeric cut evidence is omitted for that fruit; malformed
+  structural references reject admission. No geometry, cap or anatomical claim is
+  introduced by admission. The cucumber source generator now creates an actual
+  shared ring at the explicit synthetic fraction in `CropSourceAssumptions`.
+  `DEFAULT_CROP_SOURCE_ASSUMPTIONS` names fraction 0.5, without biological or safety
+  calibration. `createCropModels(config, assumptions)` validates and deep-freezes
+  one caller-isolated assumption product; each cucumber cut retains that exact
+  structured identity and evidence. Invalid or binary64-collapsed segments reject.
+  This canonical source revision changes cucumber pedicel triangles and directly
+  sampled hairs; other source buffers remain exact. Missing boundaries still use
+  `unknown` with `no-source-cut-boundary`.
+- SiteGeometry admits exact patch references with `readSourcePatches`, freezes
+  nested source/range/cut metadata and retains it with the existing net-dimension
+  cultivar lifetime. Distant patches are presentation metadata, never W5 contact
+  authority.
+- `SiteGeometry.prepareScene` composes immutable source metadata, installed plant
+  and fruit identities, transforms and the complete pre-visibility scene. Existing
+  cultivar and planting outputs are reused; empty populations create no cultivars.
+- C source products carry immutable `SourceRegion` partitions of the original
+  index buffer. `readSourceRegions` admits complete, ordered, unique ranges and
+  detaches mutable callers. `sheet` has no enclosed material; `closed-solid`
+  requires source closure evidence; `open-shell` preserves unresolved closure.
+  Boxes declare closed regions, while original uncapped tubes, botanical poles,
+  hairs/spines and unwelded cylinder seams remain open-shell. Original film,
+  foliage and calyx faces are sheets. No triangles, caps or thickness are added.
+  `SiteGeometry.primitive` retains shape and regions as one completed product;
+  scene, cultivar near/distant, robot rig and installed dock retain that metadata.
+  These declarations do not decide ray visibility, origin occupancy or contact.
+- `FarmRuntime.getScene` reads that completed source without work;
+  `isCurrentScene` rejects a retired source. Canonical farm changes replace the
+  revision and disposal closes access. Camera, visibility and robot design changes
+  do not rebuild the farm source. Robot definition evidence remains a separate
+  owner input for later working-pose integration.
+- These APIs are app-local transient geometry handoffs, not a sensor, clearance,
+  persisted format or implemented harvesting session. D's adapters own observation
+  and swept-motion admission against this source.
+
+## Synthetic working-rig source
+
+- `prepareRobotRig` binds the unchanged robot source to the approved five-joint
+  synthetic chain, with rest pivots, tool axes, bounds and rate metadata. It
+  rejects an unsupported full lift stroke without altering parked geometry.
+- `evaluateRobotPose` returns immutable candidate rigid transforms and tool/chain
+  frames. Joint limits are validated atomically; it does not plan reach, advance
+  time or admit collision clearance. Source buffers are reused across poses.
+- `FarmRuntime.getRobotSource` reads the completed definition product;
+  `isCurrentRobotSource` tests its lifetime. `evaluateRobotPose(source, joints)`
+  rejects retired handles or unavailable rigs. Definition changes and disposal
+  retire source handles; dock, mission, camera and farm edits preserve them.
+- D must consume this same source for later IK, approved rate checks, swept
+  collision queries and retention. These read APIs start no harvesting motion.
+
+## Installed dock source
+
+- `FarmRuntime.getDockSource` returns the immutable `DockSource` revision and
+  installed station meshes also used for rendering. `isCurrentDockSource` checks
+  owner-issued handle identity. Dock relocation and disposal retire the handle;
+  unchanged placement preserves it across robot definition and mission changes.
+- Distinct platform, charger, contacts and exchange stand reuse their original
+  admitted shapes. Reads and relocation do not regenerate geometry. Bounds and
+  route annotations are not physical station meshes. These APIs admit no support,
+  electrical contact or movement clearance.
+
+## Dispatch admission source contracts
+
+- Composition issues a `CanonicalMission` receipt for one completed B/farm/C
+  update. `prepareMission` checks receipt/source currentness, detaches canonical
+  data and issues an immutable prepared product. Copied prepared products are
+  rejected even when they retain an authentic receipt.
+- `admitDispatch` validates explicit synthetic evidence at simulation seconds,
+  obtains fresh A screens using B's completed route, and requests the required
+  dispatch/return movement coverage through an injected query owner. Source
+  handles retain C's original identity; no geometry is generated here.
+- Evidence validity is [from, until). Query intervals have positive duration,
+  end before evidence expiry and preserve dispatch-before-return order. Inputs
+  do not renew themselves. Missing/unknown/blocked results hold admission and
+  retain reasons; changed currentness during a query rejects the result.
+- The returned decision creates no run and is not a physical safety certificate.
+  This contract has formal tests using real C products and explicit query doubles;
+  the actual swept provider, session clock and normal UI wiring are subsequent
+  owners. No default clear provider is installed.
+
+## Session clock foundation
+
+- `HarvestSession` receives a composition canonical receipt and privately prepares
+  the mission. `start` accepts only generation-bound dispatch evidence and runs
+  admission internally; accepted-result objects cannot start a run.
+- Explicit `advance`, `pause`, `resume`, `cancel` and fault acknowledgement own
+  transient domain state. Time is in seconds; paused time cannot accumulate as
+  active progress. Crossed deadlines coalesce to one pending patrol. Clock changes
+  never create physical motion or renew a movement query.
+- Resume requires a distinct async provider bound to the current paused snapshot,
+  run, pose, held offsets, remaining intent and run-bound evidence. Accepted results
+  preserve these values; held/fault/stale results cannot unlock motion. Source
+  retirement closes the same generation even after a clock change or provider
+  rejection. Cancellation and replacement protect their successor generation.
+- `replaceMission` and `dispose` are synchronous internal composition lifecycle
+  notifications. Replacement validates before retiring a valid run; the same
+  current receipt is a no-op. External queued intents require their generation.
+- Reads return the same immutable snapshot, and transitions use immutable links
+  rather than copying accumulated history per tick. This foundation has no Core
+  transaction, timer, real movement provider or UI session controls. Action-driven
+  poses, actual picking/charging and real provider composition remain next.
+
+## Shared query geometry source
+
+- `QueryGeometry.prepare` consumes a composition-issued `GeometryReceipt` binding
+  current C scene, robot and dock handles from one update. Required owner predicates
+  validate receipt identity and all handles before preparation and publication.
+- Its immutable `GeometrySource` shares original near shape buffers, descriptors,
+  fruit partitions/plant bindings and robot body ownership. Only farm dimensions
+  are removed; robot source contains no route annotation. No source generators run.
+- `read` and `placePoint` reject copied/retired products; `clear` retires the product.
+  Unchanged current receipts reuse preparation. `placePoint` composes source
+  instances before installed descriptor transforms for farm/dock geometry; robot
+  parts remain chassis-local and require later session base/joint pose inputs.
+- This source API makes no observation, contact-policy, quality or clearance claim.
+- `GeometryMesh.prepared` is the immutable completed local shape/non-sheet-region
+  bounds product. Shape bounds share original shape identity; region products
+  additionally share original region-array identity. `GeometrySource.work` records
+  cold source position/index visits. Same current receipt reuses the product;
+  replacement, retired reads and clear end its owner-held lifetime. Dynamic ray
+  and pose inputs consume it without source-bound preparation.
+
+## Near-source ray evidence
+
+- `RayQueries.query` consumes the issued current `GeometrySource` and a detached
+  `RayBatch`: synthetic simulation time/validity, current base/joints, explicit
+  leaf source-pose/all-fruit-attached state and bounded finite rays. It advances
+  no clock and runs C FK once per batch without source generation.
+- Results preserve nearest original mesh/instance/triangle and metre distance,
+  within-range miss, or unknown. Region-local source semantics distinguish sheets,
+  closed material and unresolved open shells; opacity does not grant passage.
+- Hits additionally expose the selected/refined conservative `distanceBounds`;
+  the existing `distance` remains its display midpoint. Shared `prepareQueryFrame`
+  and `transformQueryDirection` consume admitted rigid inputs and reuse the same
+  conservative coefficient inverse without a second camera transform algorithm.
+- Geometric unknowns may include one ambiguous triangle or two overlapping
+  nearest candidates as immutable representative witnesses, with original source
+  identity and conservative distance intervals (or explicit unbounded distance).
+  They explain uncertainty without implying exhaustive coverage or clearance.
+- Arithmetic bounds cover normalization, inverse placement and predicates;
+  finite point inputs alone may use bounded exact dyadic proofs, including exact
+  rational nearest ordering. Non-point uncertainty is never replaced by a rounded
+  centre. Work counts include source/region preparation and exact predicates;
+  source-local bounds come from QueryGeometry's completed product. Ray results
+  and world-vertex copies are not cached.
+- This geometry evidence is not fruit detection, quality, optical calibration,
+  a swept-motion result or an implemented harvesting action/UI workflow.
+
+## Injected target observation admission
+
+- `TargetObservations.admit` consumes a composition-issued `ObservationContext`
+  tied to the real HarvestSession snapshot and its actual canonical mission plus
+  current GeometrySource. Required context/mission predicates have no permissive
+  defaults; composition must prove the run-to-mission relationship.
+- `TargetReading` is explicitly `synthetic-injected`, with an assumption label,
+  target/run/generation/source revisions and finite explicit validity. Admission
+  clones once, validates that snapshot, preserves nulls and returns immutable
+  target assumptions only after currentness is rechecked. Valid earlier readings
+  can be admitted at the current snapshot without extending their expiry.
+- Coverage is a declared visible/total sample count; zero total has no coverage.
+  Pose, maturity, target-scoped pedicel/cutsite, corridor and independent
+  spine/calyx/distal-pedicel/contact-damage fields remain assumptions. Source membership checks
+  validate identity without filling them from hidden scene truth.
+- This helper changes no session, clock, inventory or action state. It rejects
+  support/cut/retention/placement confirmations and additional undeclared claims;
+  later viewpoint and expected-action owners must provide their own evidence.
+
+## Synthetic quality-evidence assessment
+
+- `TargetObservations.assessQuality` admits one current target reading, then returns
+  the admitted observation, per-dimension requirement interpretations and overall
+  synthetic requirements status. Physical integrity remains unverified.
+- `quality.pedicel` is required (`intact`, `lost` or null), independently of calyx,
+  stem recognition and cutsite. This transient input extension requires callers to
+  supply explicit null for unknown; missing fields reject, with no disk migration.
+- Cucumber uses spines; tomato uses calyx and distal pedicel. Contact damage is
+  separate. Unrelated dimensions are not applicable to requirements but remain in
+  the reading. Unknown cultivar leaves overall unknown without consulting C truth.
+  Known-crop failure is reported alongside any other unknown dimensions.
+- No market grading, placement permission, action confirmation, post-pick retention
+  proof, session mutation, query, source generation or additional ledger occurs.
+
+## Synthetic viewpoint samples
+
+- `TargetObservations.view` uses the same actual-run context and a
+  `synthetic-viewpoint` request at the current snapshot time. Explicit candidate
+  IDs, sample count and camera pose/slopes/range are assumptions, not detections
+  or hardware calibration. The adapter selects evenly spaced original near
+  triangle centroids with a 64-ray computation cap, preserving plant/instance and
+  partition identities.
+- Each output keeps the requested source sample and actual ray result separate.
+  Visible means this computed camera ray hit some surface of the target, not that
+  the intended triangle/pedicel is visible. Non-target occlusion requires hit
+  upper distance strictly before sample lower distance; rear/overlapping hits and
+  misses remain unknown. Requested-point distance encloses endpoint subtraction
+  before the norm; frustum eligibility follows the actual computed floating ray.
+  Owned result containers are frozen without freezing the composition context.
+- Coverage counts only declared samples; no maturity, quality, anatomy or action
+  readiness is inferred. Current session base/joints supply the robot pose in the
+  existing world-aligned, empty-held/all-attached foundation. Missing leaf or fruit
+  state remains unknown. Camera inverse prepares once, eligible rays share one
+  batch/FK and completed bounds, and no source or session state is regenerated.
+
+## Action-local synthetic observations
+
+- The same `WalkingTransitScreen.queryVolume(demand, bounds, padding)` instance
+  supplies immutable `walking-scene-candidates/1` receipts in original exclusion
+  order. Its W1 tree is reused across camera, action and padding changes.
+  `isCurrentVolume` requires the issued receipt and current W1 identity.
+  Coverage is `covered`, `outside-route` or `unknown`; overlap is geometric
+  candidate evidence only. Provenance `w1-canonical-obstacles/1` covers W1's
+  crop/net/tie/support/clip/film/steel/barrier sources and explicit growth/channel
+  exclusions. Soil, drains and other excluded rendering layers are not observed.
+- `SyntheticDynamicSceneOwner.prepare` admits and detaches an explicitly
+  synthetic finite domain/time interval and actor cuboid timelines.
+  `readAt(time, volume, maxActors)` owns source candidate selection; gaps,
+  uncovered domain/time and unvisited actors remain unknown. Unique track IDs
+  and immutable kind survive updates, including a person becoming stationary.
+  These snapshots are simulator source truth, never detections. `isCurrent`
+  rejects copied or retired snapshots. Dynamic changes do not rebuild W1.
+- `RayQueries.resolveSource` and `queryScoped` share a once-per-GeometrySource
+  canonical membership map. Restrictions retain exact mesh/region/instance
+  references, reject foreign identities, and reuse the existing numerical ray
+  predicates. Scoped results explicitly mean `declared-canonical-candidates`;
+  they do not assert a globally nearest hit from an incomplete restriction.
+  The existing full `query` remains unchanged. Membership preparation/visits,
+  candidate visits and actual ray work remain inspectable. Shared
+  `transformQueryDirectionBounds` preserves source-coordinate subtraction
+  intervals through the existing camera frame.
+  `QueryGeometry` registers mesh membership during canonical admission;
+  `GeometrySource.work.membershipVisits` counts those visits.
+  `placementWork` counts constant-time membership checks and actual placements,
+  including the deltas published by action observations. Source replacement
+  and clear retire the private membership set with the source.
+- `TargetObservations` accepts optional composition-owned `screen` and
+  `dynamics` dependencies. `observeActionVolume(context, demand, request)`
+  binds the actual run, exact current source, action ID, bounds and current time.
+  Requests use `synthetic-action-volume/1`, the existing camera and validity
+  fields, normalized nullable illumination/film/weather/shadow/glare assumptions,
+  synthetic signal/glare thresholds and finite actor/candidate/ray budgets.
+  Extra detection, coverage, clear or safe fields reject.
+- The complete camera-to-action AABB is queried once. The eight action corners
+  establish only frustum/range containment, using outward arithmetic. Computed
+  signal is illumination * filmTransmission * weatherTransmission *
+  (1 - shadowFraction); glare is independent. Strict threshold passage is only
+  reliability in this declared synthetic model, not lux or hardware calibration.
+- `action-volume-observation/1` separates specific visible detections from
+  `complete-empty`, `partial` and `unknown` coverage. Complete-empty requires
+  reliable optics, complete view and both source domains, no candidates and no
+  unvisited work. Any candidate prevents complete-empty, even when a sampled
+  source is visible. Static detections preserve canonical ray/mesh/region/instance
+  and authored leaf anatomy. Publication requires the whole hit-position
+  interval inside the queried sight bounds and the canonical ray within the
+  reliable camera frustum/range. Dynamic detections require visible declared cuboid
+  geometry; hidden actor IDs are not exposed. `isCurrentAction` checks the
+  issued result, actual context and both source owners. No observation grants
+  motion, collision, support, harvest or physical safety permission.
+- One request performs one sight query and at most one bounded canonical ray
+  batch. Source actor visits are separate from local samples; far actors do not
+  add local ray work. Existing target viewpoint, injected reading and quality
+  semantics remain separate and unchanged.
+
+Walking production observation uses a separate composition adapter:
+
+- `QueryGeometry.prepareWalking` consumes an exact current
+  `WalkingObservationGeometryReceipt` binding PreparedScene, SceneDemand and
+  WalkingRobotSource. Its farm-only source retains original meshes, regions,
+  instances and anatomy through the shared preparation owner. Legacy preparation
+  still includes its robot and dock. `RayQueries.queryWalkingWorld` accepts only
+  current farm-world candidates, performs no legacy FK, and shares the existing
+  scoped membership and numerical predicates.
+- `WalkingActionObservations` binds the exact walking operating report, demand,
+  source, farm geometry, scenario identity/generation, run ID and domain time.
+  Its `walking-action-volume-observation/1` uses the same private action-volume
+  kernel as TargetObservations. It consumes no legacy mission, session pose,
+  robot or dock receipt. Nonempty load or incomplete source plant state cannot
+  produce complete-empty.
+- Bootstrap constructs `walking-observation-workspace` with the operating
+  workspace’s existing WalkingTransitScreen. Public methods are
+  `configureWalkingObservationScenario(config, dynamics)`,
+  `observeWalkingAction({actionId, actionBounds, now, validUntil})`,
+  `getWalkingActionObservation()` and `isCurrentWalkingActionObservation(value)`.
+  The scenario explicitly supplies a synthetic base-body local camera pose,
+  frustum/range, nullable optics, bounded model, source-pose leaves and
+  all-attached fruit. The current stowed base frame composes the world camera.
+  This is an authored synthetic assumption, not physical camera calibration.
+- Missing scenario, legacy selection, stale source or uncovered scenario time
+  returns unavailable. Available observations can still be partial or unknown.
+  Exact report/demand/source/scene, scenario generation, dynamic identity and
+  domain time determine currentness; disposal retires all products. Dynamic
+  updates preserve track identity through moving-to-stationary changes.
+- The farm receipt is reused by exact scene/demand/source identity. Scenario,
+  time and dynamic-only updates do not rebuild it or W3a’s index. Work reports
+  actual farm membership builds, base-frame visits, camera mounts, camera frames,
+  sight queries, index builds, canonical candidate visits, ray work and actor
+  visits. The complete camera-to-action sight volume includes opaque sources
+  outside the action box. W1 candidates themselves are never detections.
+  No observation grants movement; monitors and controller remain separate work.
+
+## Static source surface pairs
+
+- `SurfaceQueries.query` consumes an issued `GeometrySource` and clone-once
+  `SurfaceBatch`: source-bound mesh/instance/triangle ordinals, synthetic time and
+  validity, explicit robot base/joints and leaf/fruit state. Original immutable
+  mesh/region/triangle witnesses remain in each result. Sources must be current
+  before work and before publication; invalid reference/schema rejects atomically.
+- Results are `surface-separated`, `surface-intersection` or `unknown`, never
+  body-free, occupied-volume-free, allowed-contact or movement-clear. Nested
+  solids can have separated surfaces. No joint, tire, same-body or tool-target
+  exemption exists; source geometry and harvest quality remain separate.
+- `prepareQueryForwardFrame`, `prepareQueryInstanceFrame` and
+  `transformQueryPoint` share the existing query owner's conservative original
+  coefficient arithmetic. The selected vertices retain interval uncertainty;
+  singleton exact dyadic predicates do not promote rounded world points to exact
+  geometry. Original inverse/ray predicates are unchanged.
+- Frames and one required FK are prepared per batch. `SurfaceWork` accounts for
+  selected vertex visits, frames, axes and exact predicates; no shape/region
+  bounds or C geometry is rebuilt, and no result/pose cache survives the batch.
+
+## Continuous translation surface pairs
+
+- `SurfaceQueries.sweep` consumes a clone-once `SurfaceSweepBatch`: original
+  source-bound pairs, start pose, each surface's world displacement, and a shared
+  closed `[from,until]` interval. Displacements are not velocities or changing FK
+  poses. `validFrom <= from < until < validUntil` covers both movement endpoints.
+- `source-pose-throughout` means the selected original local leaf shape remains
+  fixed except for its declared rigid translation; it does not claim the leaf
+  remains world-stationary. Additional unknown movement/deformation stays unknown.
+  This synthetic pair assumption does not certify real or unselected leaf motion.
+- `swept-separated` requires continuous common-time exclusion, not separated
+  endpoints. `swept-intersection` requires a common guaranteed or exact contact;
+  other cases stay `unknown`. Original witnesses and static shared preparation
+  remain intact. No volume, rotation, full-body or contact allowance is implied.
+- Readonly contact fraction/time bounds enclose one supported occurrence, not
+  necessarily the earliest contact. Their midpoint is not a confirmed pose.
+  Existing scalar arithmetic and complete static axes provide interval/exact
+  time constraints; one required FK, zero bounds/source regeneration and no
+  persistent cache remain the batch work contract.
+
+## Whole-source translation surface coverage
+
+- `SurfaceQueries.cover` consumes a clone-once `SurfaceCoverageBatch`, with fixed
+  joints/base heading, one robot world displacement, explicit empty-held and
+  throughout scene assumptions, and a nonnegative safe-integer predicate budget.
+  Every robot part pairs with every physical environment instance; every distinct
+  robot-part pair is included, even within one rigid body.
+- Safe integer inventory precedes traversal. Original prepared local bounds feed
+  conservative query-local swept placement bounds, computed once per placement.
+  Strict bounds exclusion covers the corresponding complete triangle product.
+  Surviving mesh pairs refine exclusion through complete original region spans;
+  exact source-region identity selects existing prepared bounds, while unprepared
+  regions retain the mesh bound. Query-local swept region bounds are reused per
+  placement, never rebuilt as local source products. Remaining region pairs consume
+  the unchanged continuous predicate within budget, in source region/triangle order.
+- `coverage` accounts for excluded, queried and unvisited triangle pairs, with
+  intersection/uncertain query counts. `complete` means no unvisited pairs,
+  including exact-budget completion or zero-budget strict exclusion. At most one
+  intersection and one unknown witness retain original source identities.
+  An incomplete report may establish an intersection but never separation.
+- These are surface relations, not movement permission, volume occupancy or
+  intended-contact admission. Open-shell interiors, retained fruit, support and
+  joint/tool contact obligations remain explicit; no spine/calyx quality follows.
+  One FK, shared frame preparation, zero local bounds/source regeneration and
+  bounded predicate work are reported without persistent caches. `regionPairs`
+  counts broad-phase region comparisons; `regionPlacements` counts transformed
+  prepared-region products, with their corners included in `boundsCorners`.
+
+## Joint-segment candidate evidence
+
+- `JointSegments.assess` consumes current issued query geometry and a labeled
+  transient `JointSegmentInput` with start/end joint values and from/until times.
+  Clone-once validation rejects malformed or nonpositive intervals.
+- Scalar q(t) is linear over [0,1], without angle wrapping. Original rig limits
+  and speeds determine per-axis checks; exact dyadic comparison preserves equality
+  and rejects proven exceedance without rounded quotient admission. Per-joint
+  `checks` separately report limits/speed as within/outside; `work` counts evaluated
+  joints and exact comparisons. Future planners must submit generated intervals to
+  this owner rather than treating a rounded duration estimate as admission.
+- The immutable source-bound result is admissible/invalid candidate
+  evidence only. QueryGeometry rejects unsupported rigs before source issuance;
+  this helper accepts only its current issued source. No FK, source/query generation,
+  session update, TCP reach, collision/contact clearance or motion permission is
+  implied; no new acceleration limit or persisted schema is introduced.
+
+## Canonical FK algebra
+
+- `evaluateRobotDomains` consumes original rig metadata, clone-once numeric
+  `JointDomains` and a pure `KinematicAlgebra`. Domains are exact-key finite ordered
+  lower/upper pairs within rig limits, validated before callbacks.
+- The original `evaluateRobotPose` and the generic entry share one C chain. Point
+  bits, signed zero, original validation and source/reference ownership remain
+  unchanged; no new source graph or geometry is constructed.
+- Algebra range/literal/arithmetic/sin/cos operations own scalar interpretation.
+  Generic C evaluation does not certify a numerical adapter, time correlation or
+  articulated clearance. Result containers are immutable; foreign scalar objects
+  and rig references are not recursively frozen. Existing consumers own currentness.
+
+## Shared scalar arithmetic
+
+`domain/scalar-arithmetic.ts` owns the existing scalar implementation; the supported
+`simulation/query-arithmetic.ts` import path directly re-exports the same functions
+and `Interval`/`Dyadic` types. Public functions remain `interval`, `add`, `subtract`,
+`multiply`, `divide`, `squareRoot`, `dyadic` and `fractionInterval`. Both paths share
+function identity and one private module state. This extraction changes neither
+rounding/uncertainty nor exact conversion behavior, and supplies no new trig or
+movement guarantees. C may depend on this domain owner without importing D.
+
+## Bounded polynomial scalar evidence
+
+The same owner also publishes `evaluateExactPolynomialTrig(kind, fraction)`
+and `boundExactPolynomialTrig(kind, { low, high })`. Inputs must be canonical
+BigInt rationals (positive denominator, gcd 1, unique 0/1) strictly inside (-1,1).
+Admission bounds input widths before gcd or products. Exact point `value` and
+`sign` are distinct from `rounded`; a positive rational may display as +0.
+Interval `bounds` and `extrema` are exact rationals, while `outward` is the
+separate binary64 enclosure. Outputs detach and freeze admitted fractions.
+
+`POLYNOMIAL_TRIG_SIGN_CERTIFICATE` proves real-domain S19 sign/zero-locus and
+C20 positivity from the fixed scaled coefficients: paired positive lower bounds
+in z=x², S19'=C18>0 and C20'=-S19 establish exact extrema. Its program-constant
+identity is reused; no result is cached by input. Rational endpoints/control
+values do not restrict a later continuous trajectory to sampled rational points.
+New calls charge admission checks, gcd steps, normalizations and rational
+comparisons alongside existing polynomial work; all temporaries retain the
+24000-bit guard. Legacy number API bits, signed zero and work sequence are
+unchanged. This scalar certificate grants no gait or collision result.
+
+- The shared domain scalar owner adds `roundFraction(numerator, denominator, mode)`
+  with `nearest-even`, `down` and `up` rounding. It rejects invalid/oversized inputs;
+  directed or nearest overflow follows binary64 rounding. The old query facade
+  exports no new function and retains all original arithmetic behavior.
+- `domain/kinematic-trigonometry.ts` adds `evaluatePolynomialTrig(kind, input)` and
+  `boundPolynomialTrig(kind, interval)` for `sin`/`cos`, using fixed S19/C20 on
+  finite |x| < 1. Results expose `value` or `bounds` plus immutable per-call work;
+  interval input is cloned and validated once. Work records evaluations, terms and
+  maximum temporary BigInt width, without a persistent ledger or result cache.
+- Values are rounded exact polynomial approximants, with analytic error bounds
+  separately proved. They are not current C point trig, hardware parameters or
+  movement evidence. The 24000-bit and four fixed profile batch limits in the
+  specification apply before integration with any C/D consumer.
+
+`roundFraction` also accepts an optional synchronous read-only `onWidth(bits)`
+observer for actual guarded BigInt widths. It retains its numeric result; the
+polynomial owner accumulates only its own per-call work. Reject a non-function
+observer before work; observer exceptions publish no result. Conversion state is
+call-local, including during observer reentry, with no global counter or mutation
+of caller-owned objects. The observer changes no rounding decision.
+
+## Completed robot affine pose
+
+`evaluateRobotAffinePose(rig, joints)` calls the original point evaluator once and
+returns its `pose`, `parts` carrying the same source/body/transform references plus
+an immutable `affine` frame, and `work` with `fk` and `matrices`. Each affine has a
+row-major 3x3 `matrix` and the original transform `position` reference. Matrices
+are computed once per actual unique transform reference and reused by matching
+parts; no retained pose cache is introduced.
+
+Coefficients follow installed Three Matrix4.compose's final raw quaternion/unit-
+scale operations. They are affine coefficients, not a promise of exact rigid
+orthonormality. The old point API and tool outputs remain unchanged; new matrix
+coefficients need not reproduce old point multiplication bits. Runtime/render/D
+adoption is not part of this preparation entry.
+
+## Robot-body query affine adoption
+
+Ray and surface queries obtain one `evaluateRobotAffinePose` result and consume
+its completed body matrix coefficients and translation. `prepareQueryAffineFrame`
+prepares forward singleton-coefficient frames; `prepareQueryAffineInverse` prepares
+true cofactor inverse frames from the same coefficients;
+matching C affine identities share preparation within a batch. `RayWork` and
+`SurfaceWork` add `bodyMatrices`, forwarding C's actual conversion count, while
+`fk` forwards its actual point-evaluation count. No persistent identity changes.
+
+Base/camera/farm/instance frames and all existing numerical predicates remain
+unchanged. This is robot-body CPU coefficient adoption only; it does not certify
+GPU arithmetic, the entire world transform pipeline or articulated interval FK.
+
+## Canonical point polynomial model
+
+The implementation keeps point/affine signatures and return shapes. The C
+number adapter consumes shared S19/C20 nearest-even results on actual rounded
+half-angles, preserving other operation order and completed source identities.
+No model-selection API or new work field is needed. Direct tests observe actual
+shared trig calls/results: eight per point evaluation; an affine entry includes
+one point evaluation and the existing actual unique-matrix work. Historical
+Math-trig snapshots describe the preceding model, not current compatibility.
+RobotProjection/bootstrap and D affine queries are real consumers of this change;
+no renderer, base/camera schema or query predicate migration is included.
+
+## Joint-domain interval pose
+
+`evaluateRobotIntervalPose(rig, domains)` returns the original `rig`, an immutable
+interval `pose` (including detached admitted domains, frames/tool/part transforms),
+`parts` with original source/body references and shared completed affine intervals,
+and call-local `work`. It encloses canonical point results for all admitted
+binary64 tuples in the closed domain box; it does not encode a time trajectory.
+
+`work.fk` counts the completed chain evaluation, `matrices` counts actual unique-
+transform conversions, `scalarOperations` counts add/subtract/multiply/divide
+invocations across chain and affine preparation, and `trigCalls` counts directed
+polynomial queries. `polynomialEvaluations`, `terms` and `maxBigIntBits` forward
+actual shared polynomial work. No numeric point re-evaluation or cross-call cache.
+Invalid domains and scalar exceptions abort publication; unbounded intervals are
+unresolved evidence, never finite clearance. Rig/source currentness belongs to
+the eventual composition/query consumer. The existing point/affine APIs retain
+their numeric bits and signatures through the shared generic affine formula.
+
+## Joint segment point-time domains
+
+`JointSegments.enclose(source, rawSegment, window)` internally calls the existing
+segment assessment once and accepts only its admitted detached input. Window
+fields are `queryFrom`, `queryUntil`, `validFrom`, `validUntil`; they are finite,
+nonnegative, independently cloned once and validated against the closed segment
+and half-open validity. The result preserves `source`/`segment` identity, frozen
+`window`, endpoint `start`/`end` joints, closed `domains` and `work` containing
+actual `pointEvaluations`, `conversions` and `maxBigIntBits`. A singleton window
+reuses one endpoint tuple; declared segment endpoints need no rational conversion.
+
+Interior point joints use exact dyadic barycentric interpolation followed by one
+shared nearest-even conversion. Domain extrema enclose the rounded point model;
+existing ideal-linear speed checks remain separate. No C/FK or surface work occurs.
+The result is evidence, not an authorization token; invalid/stale inputs or
+resource failure abort publication, and no cache or source clone is introduced.
+
+## Robot source point-time bounds
+
+`RobotMotionBounds` in `simulation/motion-bounds.ts` takes the existing QueryGeometry
+owner. `enclose(source, rawSegment, window, assumptions)` internally admits the
+segment/window through JointSegments.enclose once and evaluates one C interval
+pose. MotionAssumptions requires source='synthetic', a nonempty assumption, an
+explicit fixed-pose base RigidTransform, rigid-source-shapes-throughout and
+empty-held-throughout. Inputs are detached before validation; fixed base admission
+retains the existing collision finite-slot/norm policy without normalization.
+
+The immutable result retains source/domain/pose and detached assumptions, plus
+all robot mesh/part and original region references. Each envelope is bounded with
+finite min/max or unresolved. Region provenance is region-bounds when its original
+prepared region exists, otherwise mesh-envelope with the shared original mesh
+bound result. No source geometry is scanned or copied. Original C interval affine
+then existing base/query application order is preserved. Work includes the actual
+nested motion/C work, parts, regions, envelopes, corners and baseFrames. Products
+are shared only for the same affine/local-bounds identities within this request;
+source is checked again before publication. The result does not cover environment
+surfaces or authorize material, collision, contact or movement outcomes.
+
+## Point-time surface domain exclusion
+
+`SurfaceQueries.coverMotion(source, rawSegment, window, robot, environment)`
+classifies the complete original robot/environment and distinct-part robot
+triangle-pair domain for one closed joint-motion window. `environment` is a
+clone-once `MotionEnvironment` with an explicit synthetic assumption, full-window
+source-shape, source-pose, leaf and attached-fruit declarations, and nonnegative
+safe-integer mesh/region comparison budgets. Any recognized unknown environment
+state returns the whole domain as unvisited with `motion: null`; it does not admit
+or validate the unused motion inputs.
+
+Known environment state invokes `RobotMotionBounds.enclose` exactly once with the
+original current source and raw motion inputs. Robot mesh/region envelopes are
+reused from that completed result. Stationary environment placements use the
+existing descriptor/instance frame order and prepared local bounds, with
+unprepared regions retaining their whole-mesh envelope. The shared coverage
+inventory and mesh-pair traversal are the same producer used by
+`SurfaceQueries.cover`; no full pair array, triangle predicate, source-buffer scan,
+or persistent cache is introduced.
+
+The immutable result reports complete `inventory`, `motion` evidence or `null`,
+and an exact partition of triangle pairs into `excluded`, `candidate`,
+`unresolved` and `unvisited`. Only strict separation of finite whole-window bounds
+excludes a domain. Finite survivors are candidates, nonfinite compared products
+are unresolved, and budget remainders remain unvisited. `surface-separated` is
+reported only when every pair is excluded; every other result is `unknown`.
+Neither result is movement clearance, material occupancy, intended-contact,
+support, or retained-quality evidence.
+
+## Material source and intended-contact evidence
+
+`SourceTriangleRange` is a triangle-aligned `[indexStart, indexCount]` span.
+`SourcePatch` has one nonempty source-local id, one exact admitted `SourceRegion`
+reference and one or more ordered in-region ranges. `readSourcePatches` detaches
+mutable range input, rejects ranges outside the referenced region, duplicate ids
+and forged region references, and returns immutable patches. Patches select
+original triangles and do not change region occupancy.
+
+`CropSourceAnatomy` is an optional source-only `crop-source-anatomy/1` handoff
+from a crop model part to its projected `SiteMesh`. The producer retains it as a
+non-enumerable readonly property so the established serialized source graph and
+geometry digests remain exact; the projection copies it explicitly. SiteGeometry
+re-admits each patch against the exact near or distant mesh regions, rebinds its
+region to the admitted object identity and deeply freezes the result. Foreign
+region objects, duplicate ids or triangle claims, invalid roles and forged ranges
+reject the complete record. A legacy mesh without the property remains viewable
+with unclassified anatomy. This metadata does not grant contact, movement,
+terrain, damage or runtime-action authority.
+
+Each robot and dock part carries immutable patches issued with its regions.
+`RobotRig` adds immutable `bodies` and five `interfaces`. Every
+`RobotBodyAssembly` owns one body id and all exact rig-part records for that body.
+Every `RobotJointInterface` retains its joint id, parent/child assemblies, exact
+parent/child patches, existing domain and joint frame, and a finite local envelope.
+Crop models retain exact per-fruit main-skin patches separately from their existing
+partitions and detail regions. RobotProjection, SiteGeometry and QueryGeometry
+preserve these exact objects and reject missing, duplicated or retired metadata.
+
+`MaterialContactQueries.evaluate(source, request)` owns the call-local D
+classification. `request` contains the raw joint segment/window, a detached
+synthetic declaration with a fixed-heading linear base path, full-window
+rigid/source-pose/attached-fruit state, a positive finite subdivision budget, and
+optional exact current support and fruit selections. Exact source, mesh, region,
+patch and fruit references are
+validated separately and never replaced by cloned lookalikes. The method internally
+runs JointSegments/RobotMotionBounds once and never accepts caller proof output.
+
+The query lifts completed C affine coefficients and original source vertices into
+one dyadic frame chain before transforming points. Surface loci, closed-patch
+attribution, supporting halfspaces, material SAT and sweep start geometry share
+that exact representation. Outward interval products may reject only proven gaps;
+rounded world-point AABBs do not supply positive or negative material evidence.
+
+The immutable result retains the original source and admitted domain, the detached
+request, categorized joint/support/tool witnesses and actual source/FK/triangle/
+subdivision work. `admitted` means every requested synthetic geometric obligation
+is conclusive. A proven outside-interface or ineligible contact/penetration is
+`blocked`. Missing, stale, open-shell-interior, exhausted-work or unresolved exact
+evidence is `unknown`. No state authorizes movement, force, retention, cutting,
+quality, damage or hardware safety.
+
+## Scene-demand preparation
+
+FieldScope persists one `scene-demand-configuration` entity at version 1. Its
+route is either unknown or a stable farm soil-strip id, bay and longitudinal
+interval. Evidence is unknown, measured by a stable survey id, or visibly
+synthetic with a stable id and label. Growth is unknown or an authored set of
+world- or plant-anchored exclusion boxes with complete or discrete coverage.
+Clearance margin is unknown or an explicit nonnegative metre value. Production
+defaults keep all four inputs unknown; the current farm's rough 1.2 m reference
+is neither a default nor an admission gate. Invalid versions, ids, intervals,
+points, duplicate volumes and margins are rejected before a Core transaction.
+
+`prepareSceneDemand` consumes one validated farm and its completed current
+`PreparedScene`. It resolves a selected soil strip once, retains original fruit,
+partition, channel, mesh, region, installed-instance and transform identities,
+and reports actual left/right target bounds and low/high reach witnesses. Its
+constructive free-passage product is the route prism minus exact authored growth
+and channel exclusions plus margin-expanded conservative source envelopes.
+Installed source envelopes use outward interval transforms. Their overlap means
+`exact-source-query-required`; it never claims a physical collision or blocks the
+whole demand. A selected drain route or authored growth volume covering the route
+is blocked. Unknown evidence, growth, margin, missing anchor or incomplete growth
+coverage remains unknown.
+
+W1 retains the exact installed `SiteMesh`, `SourceRegion` and instance identities
+on every conservative source exclusion. If that mesh carries admitted plant
+source anatomy, its patch region is therefore the same admitted region object;
+W1 does not infer, rebuild or use the metadata to alter passage status.
+
+Each W1 target additionally carries independent `anatomy.support` and
+`anatomy.cut` completeness, reasons and exact near-part/patch/mesh/instance
+references. Patch bounds traverse original indexed ranges and use the installed
+instance followed by descriptor transform; the cut uses that same stems transform.
+Tomato and cucumber source anatomy can be complete when their actual shared-ring
+evidence is admitted. Missing roles or cut evidence affect only that target's anatomy,
+not passage status. These are synthetic source identities, not observations,
+calibrated contact/damage evidence or W5 action admission. `work.targetPatches`
+counts installed patch products emitted for route targets. `PreparedScene`
+admission has already validated every patch structure in the completed scene, so
+W1 uses partition-derived target bounds for route inclusion and prepares installed
+patch bounds only for included targets. `sourceIndexVisits` includes one scan per
+unique semantic source range per preparation, shared across its installed
+consumers.
+
+`bootstrap` exposes `getSceneDemandConfiguration`,
+`setSceneDemandConfiguration`, `getSceneDemand`, `isCurrentSceneDemand` and
+`subscribeSceneDemand`. One accepted scene-demand settings action creates one
+Core transaction and one W1 revision without rebuilding farm or crop source.
+Farm/source and relevant scene-demand changes retire the prior revision; undo and
+redo refresh from canonical owners once. Getters and subscribers reuse the same
+retained product. View, camera, locale, layer and robot changes bypass W1, and
+runtime disposal retires the product and unregisters the owner.
+
+## Versioned walking source and pure kinematics
+
+`walking-robot-definition.ts` owns the explicit
+`walking-robot-definition/2` format and `four-arm-six-leg` topology. Its loader
+requires four independent left/right support/cutter arms, six independent
+left/right front/middle/rear legs, a bounded vertical carriage, complete stowed
+and left/right working joint states, and separate measured or visibly synthetic
+geometry, joint and mass evidence. The schema fixes SI metres, kilograms and
+radians in a `+Y` up, `+X` robot-right and `+Z` route-rear frame. It derives body,
+chain, joint and axis identities rather than accepting them from persisted data.
+`createSyntheticWalkingRobotDefinition` is the only baseline factory;
+`classifyWalkingRobotDefinition` distinguishes `walking-v2`, `walking-v1`,
+`legacy-unversioned` and `unsupported-version` without converting or mutating
+saved bytes. Version 1 remains identifiable but is not admitted to version 2
+source construction. The classifier rejects malformed unversioned/current-format
+objects as unsupported, and `readWalkingRobotDefinition` admits only the current
+exact-key format.
+
+Version 2 requires the exact-key `sourceModel` with kind
+`solid-articulation/1` or explicitly selected `solid-articulation/2`,
+explicit evidence and positive pin, sleeve-inner,
+sleeve-outer, axial-gap and link-setback ratios. The synthetic factory uses
+1/8, 3/16, 1/2, 1/16 and 1/2 respectively. Pin radius must be below the sleeve
+cavity, which must be below the outer radius. `base.mast` supplies the actual
+two-rail assembly bounds; its admitted Y interval must cover the complete
+carriage lift, and its Z centre must agree with the carriage. The factory
+retains lift [0.5, 1.65] m and uses rail Y [0.4, 1.71] m. The factory's optional
+`sourceProfile` selects profile 2; omission preserves profile 1 bytes.
+Profile 2 supplies external leg-root mounts and one connected parent clevis
+plate per root while retaining the complete chassis. Source preparation proves
+every generated child region over the complete declared abduction domain,
+checks every original parent region, and rejects unproved frames, domains,
+radial pin clearance, physical gaps or positive-area chassis connections.
+Actual emitted radial coordinates determine support; a nominal trigonometric
+radius is not a containment certificate. Directed endpoint construction and
+exact squared admission preserve gaps without tolerance or geometry exemptions.
+Its geometry and mass/CoM evidence have separate synthetic identities; the
+material revision does not certify actual component masses.
+
+`WalkingRobotSourceOwner.prepare` creates one immutable definition-bound source
+and rig revision and reuses it only for the same admitted definition object. The
+rig contains unique bodies and joints for all four arms and six legs, original
+closed convex material regions, six distinct foot patches, two soft-textile support
+patches, two cutter-edge patches and separate cutter guards. Joint interfaces
+retain their exact generated joint frame, axis and range. Concept joints without
+an authored mating surface report `materialInterface: 'unmodeled'` with empty
+patch references; they do not grant contact or collision exemptions. One
+definition-bound mass product retains every body mass and local centre of mass
+plus its explicit evidence identity. Every contact patch reference carries its
+body-local frame, and source materials carry a separate visibly synthetic
+evidence identity; measured geometry evidence is never presented as material
+evidence.
+
+The W2 mounted-crate prerequisite publishes an original tray-top contact patch
+only for solid-articulation/2. A separate walking-mounted-crate/1 owner retains
+all eleven original crate parts from the existing dimensioned model builder.
+Its geometry depends only on width, length and height, not tool, W2 source,
+pose or mounting clearance. Its exact common placement and partial contact
+certificate bind the current W2 base/tray patch, crate underside and independent
+synthetic clearance/retention evidence. The mass identity is a later W4 binding,
+not admitted mass or latch strength. Legacy per-part load.localFrames keep their
+existing meaning. The request/3 mounted crate variant consumes the exact current
+artifact through WalkingCurrentMountedCrate; request/1 and request/2 retain
+their prior load schema. Read, reuse and final preparation validate both source
+and mounted issuance, including mass identity through the unchanged artifact.
+WalkingConstrainedCycleOwner.readBaseMotion supplies an owner-issued base-only
+whole-phase shared-root receipt from its actual compiler expression, constant
+rational yaw matrix and strictly positive determinant. Constant local parts
+retain actual source identity. W3 uses the existing rational relation kernel
+with exact common dyadic mounting placement and directed bounds for all eleven
+original parts. Zero-margin base relations may use the shared invertible root,
+but remain required pairs. Only the full original tray-top/bottom locus permits
+boundary; other intersections block and unproved predicates stay unknown.
+prepareWalkingMountedCrateRelations is a bounded mathematical consumer, not a
+motion admission. Non-base, external and positive-margin relations retain the
+ordinary complete-interval path; no holder or attachment blanket exemption.
+
+WalkingConstrainedCycleOwner.readConstantMotion separately publishes
+walking cycle constant-root membership from the compiler's constant parent
+branches, excluding dynamic leg bodies and every dependent descendant. Both
+phase locals must match exactly; readBaseMotion retains its base-only meaning.
+prepareWalkingConstantRootRelations uses this current receipt only for
+zero-margin topology, complete original-region SAT and original joint-interface
+or mounted tray/bottom patch loci. Constant joints do not authorize contact by
+ancestry, and external or positive-margin pairs retain interval proofs.
+Within one rational node, every scalar still passes type, sign and bit-width
+checks; canonical-value proof and integer lift are shared only for identical
+normalized fractions. First-seen distinct denominators produce the same common
+LCM. A frame operator may retain complete oriented primitive-vector transports
+within its evaluator lifetime; mutable replacement and incomplete results cannot
+borrow them. Work counters distinguish visits, unique proofs and reuse.
+
+readPhaseRootMotion(cycle, phase) separately issues cycle-phase-root/1 from the
+actual support identity-abduction branch and constant parent descendants. It
+does not change readBaseMotion or readConstantMotion. Dynamic upper/lower,
+swing coxa and world-fixed feet are not root-family members. Passing a phase to
+prepareWalkingConstantRootRelations selects only that current phase receipt.
+Both retained evaluator products and pair proofs are keyed by phase/family
+identity; no support proof is reusable as a swing proof. The original-region
+SAT and named closed-locus permission rules remain unchanged.
+Existing two-phase constant and authored fixed-parent proofs retain their
+global family lifetime; only the additional support-coxa family is phase-local.
+Global and phase-local fixed-proof reuse have separate work counters.
+
+All revolute joints share canonical pin, yoke, annular sleeve and neck
+construction. Eight closed convex wedges partition each annular material solid;
+their radial seams do not fill the cavity or become contact patches. Root
+housing sockets and departure corridors are actual subtracted material in
+profile 1; profile 2 retains that arm construction but uses external leg roots.
+Each core endpoint uses the other body's bounded joint material and a finite
+pivot cross-section keepout, with a declared physical gap. The keepout is a
+construction profile, not extra material or a collision exemption. A single
+support solve is followed by actual-material gap, positive-core and connector
+checks; infeasible source is unavailable. Source construction interprets
+quaternion rotations through the full inverse, while FK retains its completed
+binary64 coefficients.
+
+Profile admission requires `sleeveInnerRadiusRatio + axialGapRatio <=
+sleeveOuterRadiusRatio`. Final emitted sleeve vertices must provide an exact
+closed-material connection witness in a certified neck cell; an unproved
+connection rejects source preparation. This is not a structural-strength claim.
+
+Only rail/carriage, lower-link/foot and tool/guard source loci describe the
+authored fixed or sliding interfaces. Cutter active faces remain disjoint from
+guard interfaces. These loci do not authorize later contact, collision or
+mechanics results. Component masses and local centres of mass remain separately
+labeled synthetic assumptions, including the mast assembly; they are not
+integrals of the new material meshes.
+
+Fixed parent/child interface evidence uses the original triangles and one
+authored `fixedFrame` in their common parent-local frame. Other body pairs use
+completed FK coefficients. This source proof does not assert exact boundary
+agreement between independently rounded world parent and child matrices.
+
+The synthetic stowed and inactive arms use zero angles; active working-side
+arms retain root/shoulder/elbow/wrist values 0/-0.25/0.75/-0.35 radians. All six
+legs use zero abduction/hip/knee angles. These are source/FK candidates. Their
+sole datum and complete source envelope do not establish terrain standing,
+continuous passage or safety.
+
+`evaluateWalkingRobotPose` accepts one finite base transform and one complete,
+in-range carriage, four-arm and six-leg joint state. It purely returns every body
+transform once, original source references, arm/tool/foot/contact/inspection
+frames, fixed-length link segments and transformed per-body centres of mass.
+There is no free tool position, source regeneration, pose cache, sweep, gait,
+contact decision, clearance, moment or hardware-safety result. Farm, W1, crop,
+terrain, route, view and locale are outside these APIs and cannot resize or
+invalidate this owner.
+
+Walking runtime, rendering, crop forces and UI presentation remain pending
+W5-W6. W3 and W4 consume this source through the domain APIs below.
+
+## Walking terrain and whole-body interval admission
+
+`readWalkingMotionRequest` admits the exact `walking-motion-request/1` schema,
+detaches and freezes input, and binds the admitted request to its W2 source
+object. All 35 joint values and six stance leg identities are required. Paths
+interpolate scalars linearly between strictly increasing knots; base rotation is
+heading about Y, then local pitch about X, then local roll about Z. Stance phases
+partition the complete evaluation interval at path knots. Changed path or stance
+semantics require a new gait identity. No runtime persistence or UI route is added.
+
+Version 1 stays readable and explicitly reports
+`source-relations-version-two-required`; it is never silently migrated.
+`walking-motion-request/2` additionally binds the exact current `source` and
+`demand` objects. Its `externalSources` registry supplies complete immutable
+`readSourceRegions` partitions for each terrain, crate and known carried
+triangle source. Its four positive safe-integer budgets are `maxIntervals`,
+`maxEnvelopePairs`, `maxRegionPairs` and `maxExactPredicates`.
+`targetContacts` identifies one existing motion segment, one current robot
+part/region/patch, one current W1 target partition and ordered original triangle
+ranges, with purpose `support` or `cut`. Stale references, overlapping uses
+of a robot patch, invented segment boundaries and out-of-partition ranges reject.
+
+`WalkingSourceRelationEvaluator` prepares each immutable shape/region once in
+one evaluation. Original triangles must prove closed edge pairing, convex
+supporting halfspaces and full dimension before complete exact dyadic SAT can
+classify material. Both face-normal sets and all nonzero edge cross products
+are included. Sheets, open shells and unproved solids stay unknown when their
+outward bounds cannot exclude them. Positive volume is blocked; a boundary is
+admitted only when its entire supporting features are proved inside both named
+patch closures and an intersecting original triangle pair is retained. This
+subset proof is sufficient, not a general complete boundary-locus decider.
+
+`prepareWalkingSourceRelations` publishes immutable
+results only after the existing request reader admits the exact request and
+the interval producer's `inputIdentity` equals that request. The producer's
+opaque reference is provenance, not admission or a claim that low-level mutable
+input was frozen. No interval recomputation or parallel issuance registry is used.
+The result is
+`walking-source-relations/1` with exact request, W1/W2, terrain, path, stance,
+load and evaluation identities. Every segment accounts for all original robot,
+load and current W1 exclusion regions, admitted terrain regions, and complete
+source regions of explicitly selected targets. Same-body material union is
+counted separately; different bodies, joints, fixed children and loads are queried.
+`candidate = coRigidOwner + required`; required work is exactly the sum of
+strict-bounds exclusions, exact separation, declared boundary, blocked,
+target-refinement, unknown and unvisited pairs. Exhaustion cannot produce
+partial clearance. Current target partitions are indexed once per evaluation.
+
+The first motion proof covers static source and constant-joint,
+constant-orientation translation. A single exact displacement is shared by
+moving sources; original knot positions and rational subinterval times avoid
+rounded synthetic stance endpoints. Fixed parent/child contacts retain the
+authored common parent-local authority. Varying base orientation or joints
+requires outward strict separation or remains unknown; endpoint determinants
+do not prove a common frame nonsingular over an interval. Positive metric
+margins use conservative exact projection inequalities. Source envelopes from
+W1 already include its margin and are not expanded again.
+Selected target refinement remains unknown for W5 and cannot override volume,
+other target regions or unrelated uncertainty. A moving support foot reports
+`support-contact-motion-unproved`; a straight translation is not completed walking.
+
+`WalkingMotionOwner` consumes current W1 and W2 products through injected getters.
+Their revision numbers are independent. It prepares immutable interval envelopes
+for every original body part, swing leg, arm/tool, carriage and declared load,
+then compares those envelopes with completed W1 passage and terrain products.
+`read` shares the result without work; replacement of either upstream product
+retires its currentness. A changed admitted request recomputes W3 without
+rebuilding W1 or W2. Missing or incompatible evidence is `unknown`.
+
+The load contract separates an explicitly unknown or source-part-based attached
+crate from absent or attached carried fruit. W2's empty tray does not establish
+crate coverage. Crate walls retain their own triangles and open cavity. Unknown
+fruit geometry remains an identified load with an unknown result, not fabricated
+bounds. Explicit partial source coverage keeps crate or fruit admission unknown.
+Only original parts within the same W2 body, or source parts within the same
+explicit fixed crate assembly, bypass relative-motion checks. Crate and carried
+loads against their holders, different attachment assemblies, and different W2
+bodies or joints receive no blanket exemption.
+
+`prepareWalkingMotionIntervals` owns directed interval FK and complete segment
+coverage. Strictly separated envelopes establish clearance; version-one source
+overlap remains unresolved, while version two delegates it to the relation owner.
+Positive hard-exclusion witnesses use outward point
+enclosures wholly inside an exclusion or wholly outside the route. Boundary
+straddles remain unknown. W1 source margins are not applied twice. Interval or
+pair budget exhaustion retains unvisited counts and cannot establish clearance.
+Raw debris bounds are prepared once within each evaluation and reused across
+body and interval comparisons, with separate preparation and vertex-work counts.
+`evaluateWalkingTerrainContact` requires exact foot-patch, soil, path, time and
+load identities plus complete geometry, friction, bearing and sinkage evidence.
+Height, slope, rut and debris coverage are declared separately; an empty debris
+list is not evidence of a complete debris survey.
+Authored channels cannot support a foot, and an all-swing schedule is unknown.
+Synthetic provenance remains attached to all evidence. Results report
+`clear`, `blocked` or `unknown`; a blocked turn reports `no-turn`. Every result
+retains `quasiStatic: 'pending-W4'` and makes no stability or safety claim.
+
+## Constrained support projection
+
+The separate terrain-placement owner admits explicit measured/synthetic scenario
+triangles through `walking-terrain-placement-request/1`. Exact current source,
+SceneDemand, farm and route references bind complete original SourceRegions and
+three source-issued foot seeds with triangle ordinals and rational barycentrics.
+Query-exact frames derive anchors; caller world coordinates are forbidden.
+The producer obtains one constrained projection and proves full sole coverage
+by exact clipped-area equality only after soil interiors are proven disjoint.
+Certificates retain original foot and contributing soil triangle ordinals.
+Current W1 closed channel opening bounds, including Y=0, take priority over soil
+labels; complete debris triangles or evidenced keep-outs may also block.
+Disjoint boundary triangles do not exclude a closed-solid debris interior;
+without that proof this owner retains unknown, while actual surface or keep-out
+hits remain blocked. Every supplied assessment must name a current source foot
+patch, including assessments not selected by the three seeds.
+Incomplete partitions, observations, unsupported topology, out-of-route soil
+and exhausted finite input/pair/predicate/bit budgets remain unknown.
+
+`WalkingTerrainPlacementOwner` publishes immutable `walking-terrain-placement/1`
+geometry products. `sourceGeometry.status` is distinct from
+`physicalStatus: unknown` and `assessmentApplicability: unbound`. Supplied
+geometry/friction/bearing/sinkage records retain their evidence and original
+path/load/time fields; only a later current product can bind their applicability.
+Flags alone never admit source geometry or safety. Same-admitted-request prepare
+and exact reads do no repeated source work; a successor retires old products.
+This source placement does not admit swing, stability, collision-free gait or
+hardware safety.
+
+`WalkingConstrainedKinematicsOwner` prepares the explicit
+`walking-constrained-kinematic-projection/1` recipe. Its inputs bind the exact
+current source, three complementary tripod chain/part/sole-patch references,
+canonical rational anchor origins, one rational base quaternion, one exact
+current source preset for fixed joints, the support parameter interval and
+finite operation/bit budgets. Mutable fractions are detached and canonicalized;
+source references remain exact. Invalid or incompatible inputs are unavailable.
+
+This arithmetic is explicitly polynomial/quaternion-similarity semantics.
+Dynamic point leaves come once each from `evaluatePolynomialTrig` at the shared
+half parameter; bound leaves come from `boundPolynomialTrig` on the directed
+half-parameter interval. Hip uses that same quaternion's conjugate. Internal
+similarity and composition are exact rational operations with positive norm
+proved, without assuming unit norm. No legacy FK or real-sine Taylor enclosure
+is substituted for this recipe.
+
+The fixed support template admits matching actual leg geometry and proves
+`L_i = M_i + D`. Exact anchor differences must equal the shared base rotation
+of `M_i - M_reference`; rounded station sums are rejected. One root expression
+cancels the one shared displacement before interval boxing. Every original
+sole-patch vertex is fixed by that certificate. Other body/part frames and every
+source part's vertices receive outward bounds; unresolved dependencies remain
+wide. The product owns all entries under its exact source/recipe/interval
+identity. `evaluate` returns exact point frames and separately final-rounded
+per-body display frames, never display angles for re-evaluation through legacy FK.
+
+One owner retains one admitted preparation and its latest point result. Exact
+admitted recipe reads and repeated point reads do no geometric work. Replacement,
+failed admission or disposal retires prior handles; work counters and budgets
+include leaf, rational, frame and source-vertex work. This owner proves constrained
+projection only. Swing, terrain contact, collision, stance transitions and full
+gait remain pending, and request versions 1/2 retain their existing semantics.
+
+`WalkingConstrainedCycleOwner` owns `walking-constrained-cycle/1`, separately
+from projection/1. It admits the exact current source/stowed preset, six
+source-issued sole patch anchors, complementary station-covering tripods,
+canonical rational alpha and a gravity-preserving rational yaw quaternion.
+Actual source layout, authored negative-knee/hip/abduction domains, station
+spacing and finite operation/24000-bit budgets must be proved before publication.
+It consumes `evaluateExactPolynomialTrig`, `boundExactPolynomialTrig` and the
+fixed polynomial sign certificate; projection/1 retains its original rounded
+polynomial leaves. Identities and arithmetic products cannot be interchanged.
+
+The real phase parameter is u in [0,1]. Support theta=alpha*(2u-1) uses one
+conjugate hip/knee pair and a shared root. The complementary tripod uses the
+opposite pair and outward side-signed beta=4*alpha*u*(1-u). Actual sole vertex
+coefficients rho>0 and down>=0, together with the admitted polynomial signs,
+prove lift rho*2SC/N+down*2S^2/N strictly positive in the open phase and zero at
+its endpoints. All six soles share the initial plane. Exact full-body
+handoff and periodic net forward displacement are checked before publication.
+Each phase advances the base by 2U*sigma(alpha); the complete cycle advances
+all anchors and the base by 4U*sigma(alpha), rotated by the one yaw authority,
+where sigma=2*S(alpha/2)*C(alpha/2)/(S^2+C^2).
+
+`evaluate` returns exact body/part frames and separate final-rounded display
+frames. `bound` accepts an arbitrary admitted rational phase subinterval and
+recomputes its matched theta/bump extrema and outward body/part/source-vertex
+bounds; it does not substitute the whole-phase box. Nested bounds approach
+the representable outward enclosure floor, not zero width for a rational value
+that binary64 cannot represent. Point containment is a regression, not a
+continuous clearance proof. Real open-phase positivity does not promise that
+every rational point can be materialized within finite resources; exhaustion
+is unavailable, never touch, clear or fallback geometry. Work distinguishes
+preparation, evaluation, leaves, rational operations and original source
+vertices; successful complete outputs have zero unvisited entries. Exact reads
+and repeated admitted preparation do no work; replacement or failed admission
+retires handles. This owner supplies no terrain, whole-source collision,
+request/3, load, stability, damage or complete mission admission.
+
+## Nonlinear walking source admission
+
+`WalkingConstrainedCycleOwner.prepareSelectedChainMotion(cycle, raw)` admits
+`walking-selected-chain-root-motion/1` with exact keys `cycle`, `phase`,
+`at`, `chainId` and `targetAbduction`. The selected chain must be a swing
+chain in that phase. Its start angle comes from the compiler's exact cycle
+bump at `at`; the caller cannot provide a different start or joint. The root
+abduction follows a rational affine parameter on [0, 1], with the source side
+sign and authored joint domain. Hip, knee and every other body remain at the
+same exact cycle point.
+
+The owner prepares the fixed point once and issues
+`walking-selected-chain-root-motion-product/1`, including immutable root-local
+selected body/part frames and the fixed exact frames. `evaluateSelectedChainMotion`
+and `boundSelectedChainMotion` use the existing exact polynomial leaves and
+rational similarity authority. Each query composes only the four selected
+bodies and their parts. `readSelectedChainMotion(cycle, motion)` performs no
+geometric work and rejects foreign or retired cycle identities. The existing
+cycle budget applies unchanged. This is a local self-material delta input;
+it establishes no material clearance, terrain support, observation validity
+or action permission.
+
+`WalkingSelectedChainRelationOwner.prepare({ owner, cycle }, raw)` consumes
+the current selected-chain motion and the finite
+`walking-selected-chain-source-relation-request/1` budget. Its
+`walking-selected-chain-source-relations/1` result covers only selected
+original regions against fixed robot original regions. Disjoint strict part
+covers and per-pair interval proofs conserve the complete Cartesian cardinality.
+Fixed-fixed, moving-moving, terrain and external pairs are never constructed.
+A midpoint can supply a volume witness or a candidate separating axis; only
+whole-interval bounds or axis projections prove separation. A boundary needs
+both original named interface patches, complete supporting-feature coverage,
+and an exact root-axis invariance proof for the entire motion. Missing proof
+and finite exhaustion retain unknown or unvisited work.
+Each patch must retain its original part and candidate-region identity and be
+present in that part's patch list. A same-byte foreign patch or part cannot
+substitute for either side. The named-locus check alone is not an interval
+admission; the owning route must also prove root-axis invariance.
+
+Fixed rational-frame admission and its denominator template run once per
+request. Nodes compile selected frames and rescale only the fixed frames used
+by candidate leaves into the common exact denominator. Per-source immutable
+local bounds and successful convex certifications may be reused. Source scalar
+rebindings use the new evaluator's budget and are counted separately; old
+placement, direction and frame-node caches are not transferred. Reads of the
+same admitted result perform no new work. Source replacement, cycle retirement
+and disposal invalidate the applicable reads. These local self-material
+results do not authorize terrain contact, observation freshness or an action.
+
+`readWalkingNonlinearMotionRequest` admits `walking-motion-request/3` for the
+exact current cycle, source, W1 demand/route, ordered phase windows, load,
+external region partitions and four terrain events. Request/1 and request/2
+retain their existing contracts. `WalkingMotionOwner` prepares four owned
+terrain receipts from one immutable input snapshot; the admitted terrain copies
+remain distinct from that snapshot. Exact original sole triangle/vertex equality
+transfers only geometric coverage to cycle endpoints. Physical applicability
+separately requires current path/load/time evidence.
+
+`WalkingSourceRelationEvaluator.prepareRegionCover` uses evaluator-issued
+frame nodes and actual immutable source regions. The canonical nonlinear entry
+uses the same cursor with its current owner-issued whole-phase cycle bound.
+Caller boxes do not establish source coverage. World groups retain the complete
+source partition, descriptor/instance transform chain and semantic owner;
+independent attachments do not become their holder's material union.
+
+The draft `walking-nonlinear-source-relations/1` result carries complete
+inventory, two phase-bound products, disjoint aggregate covers and visited leaf
+records. A cover identifies two contiguous inventory spans, a row-major ordinal
+range, exact cardinality and the whole-phase bound used for a strict gap.
+Overlapping groups descend; they never imply collision. Leaves use the existing
+rational SAT and full-interval axis proof or bounded subdivision. Covers plus
+leaf classifications conserve every required original pair; the leaf list
+alone is not exhaustive. Unvisited ranges and incomplete phase coverage remain
+unknown. Group, leaf, source-input, transformed-vertex and predicate work is
+finite and evaluation-owned. Reads perform no new work; replacement or stale
+cycle/terrain receipts invalidate the product.
+
+Exact SAT axes are issued lazily in the existing face-normal then row-major
+edge-cross order, preserving primitive orientation and first-seen deduplication.
+Only a proved whole-interval strict gap with the original world-unit margin
+permits an early return. Volume, boundary and remaining time-constraint results
+require the complete axis set. Stage counters distinguish candidates, generated
+crosses, unique/duplicate/zero axes, projections and early separated pairs;
+exception-safe preparation/projection/constraint deltas observe the existing
+charged arithmetic and predicate work. Exhaustion before sufficient proof
+remains unknown; these counters do not enlarge or replace the exact-work cap.
+
+For an already computed strictly positive exact gap, zero world-unit margin
+requires only its sign; no squared gap or zero-scaled norm is necessary.
+Nonpositive gaps still fail this sufficient test. Positive margins retain the
+original squared-distance arithmetic and order, including their bit guard.
+This applies to the existing XYZ and complete-axis whole-interval checks;
+touching is not separation, and no axis, frame or witness authority changes.
+
+The evaluator also publishes exclusive innermost work stages for source
+certification, rational-node compilation, local chains, placement validation,
+vertices and directions, relation setup/XYZ, axes, boundary/foot/terrain proofs,
+cover bounds and interval predicates. Their scalar and predicate sums equal the
+existing totals, including partial exceptions; the older axis deltas are
+overlapping detail and must not be added again. Immutable work snapshots and
+warm source/placement reuse retain the existing arithmetic sequence.
+Certification outcome counts distinguish completed certificates, unsupported
+open material, topology-unproved and resource-incomplete preparation as
+observations only; they do not change the prepared region's admission.
+
+Validated placement points retain the existing issued-region and frozen-frame
+lifetime. Complete placement normals/edges are prepared only when XYZ
+whole-interval separation is unproved and full SAT needs them; semantic point,
+terrain-plane and named-boundary consumers read the points directly. A private
+direction product belongs to that same point product, preserving original
+triangle order and primitive normalization. Only a completed set is published.
+The monotonic-budget exhausted sentinel may be retained after a partial attempt;
+other exceptions are not cached. Mutable frame chains remain uncached, while a
+changed region or chain identity forms a new point/direction lifetime.
+
+For tagged rational placements, ordered local source normals/edges are prepared
+once per issued immutable region at first direction demand. The same linear
+frame chain transports edges by M and oriented normals by the signed cofactor
+of M; positive common factors may be removed only from the whole matrix or
+whole vector. Invertibility preserves first representative order. Each placed
+point product owns its completed transported directions, and each evaluation
+owns completed frame operators. Mutable chains use the point product's exact
+snapshot and rebuild. Untagged legacy placements preserve their point-derived
+raw direction scale. No point, original triangle, witness, denominator, margin
+or node-compilation arithmetic is replaced. Required-bit observations report
+each exclusive stage's maximum and first excess without adding predicates or
+changing the 24000-bit ceiling; a required width is not a completed operation.
+
+Explicit sheet regions retain two-sided surface semantics. The same evaluator
+tests each original triangle against a certified convex solid using complete
+solid normals, triangle normal and edge-cross axes. A complete no-gap result is
+a closed surface intersection, including touching, with its original triangle
+offset; there is no sheet volume or contact permission. Every original triangle
+needs a whole-interval world-unit margin separator before its one region pair
+is separated. Candidate-only gaps enter the canonical bounded subdivision;
+degenerate triangles, open shells and exhausted work remain unknown.
+
+`relateRationalSheetRegion` is a mathematical helper, not walking admission. It
+retains its exact node, placements, original-index bound arrays and parameter
+input reference; it validates complete source-index mappings and finite ordered
+vertex bounds. The canonical entry alone supplies current cycle-issued bounds.
+Triangle required/visited/unvisited work is separate from original region
+coverage. No partial triangle prefix can certify its region. Ground and authored
+semantic exclusions retain their existing precedence.
+
+Exact support anchors and a proved common terrain plane are available through
+typed phase/stance outputs for later W4. Source geometry, physical applicability
+and route coverage remain separate. This entry does not supply W4 stability,
+damage, mission or hardware-safety admission. The committed legacy
+`walking-source-relations/1` output is unchanged.
+
+## Walking quasi-static configuration assessment
+
+`readWalkingQuasiStaticRequest` admits `walking-quasi-static-request/1`, detaches
+and freezes it, and binds it to the current W3 opaque identity. Its motion
+descriptor matches revision, source, terrain, path, stance and load identities;
+W4 owns its own request ID. Support contacts and external mass identities bind
+bijectively to one selected stance phase. Time is within that phase and the W3
+evaluation; transition sides are separate assessments. Explicit unknown plane,
+contact position, reserve or external mass remains unknown.
+
+`WalkingQuasiStaticOwner` consumes only an injected current W3 product. It uses
+`walkingMotionPoseAt` and one `evaluateWalkingRobotPose` call. The completed W2
+binary64 pose is the configuration authority; subsequent CoM transforms, sums,
+projection and moments use directed intervals. This does not enclose ideal-real
+trigonometry or continuous motion, which remains W3's responsibility. Every W2
+body mass, crate mass and carried-item mass enters the assessment once. Root and
+shoulder moment contributors follow W2 joint ancestry; base crate mass does not
+enter arm moments. No source mass or CoM override is accepted.
+
+`mechanicsHull` uses exact dyadic orientation. Declared plane local X/Z axes
+define support coordinates; local +Y must have a provably upward world component
+for screening. Gravity-parallel or inverted planes yield unknown, not an
+absolute-value correction. The gravity line is projected onto that actual plane,
+and reserve-adjusted edge distances and true 3D edge moments decide the result.
+Only strictly positive lower bounds screen a configuration; complete nonpositive
+upper bounds or a degenerate polygon block it; interval straddles remain unknown.
+The sole applied acceleration is standard gravity, 9.80665 m/s². Unknown reserve
+does not become zero, and independently known projection or arm values survive.
+
+`WalkingQuasiStaticAssessment` retains current W3, completed pose, exact time and
+phase, configuration, support and load evidence, per-quantity known/unknown
+values, and work counts. Left/right high reach, carried return and bilateral
+work are distinct complete configurations. `screened` is a gravity-only
+quasi-static screen, not dynamic, soil, actuator, structural or hardware safety.
+Arm bending magnitudes are N·m comparison values without invented capacity
+limits. W4 never changes W3 collision status. The W3 `pending-W4` field still
+means that the W3 product itself contains no mechanics conclusion.
+
+Repeated `read` or `prepare` with the same admitted request and W3 object reuses
+the completed result; changing either invalidates it. Shallow-frozen raw input
+does not qualify for reuse. Malformed inputs throw before work; no global cache,
+new runtime route or UI integration is introduced.

@@ -8,6 +8,7 @@ import {
 import type { FarmConfiguration } from './farm-configuration'
 import type { Point3 } from './greenhouse'
 import { TriangleBuilder } from './mesh'
+import type { SourcePatch, SourceRegion } from './source-occupancy'
 import { CROP_LAYOUT, cropRandom, type CropSpecies } from './crop-layout'
 
 const CUCUMBER_GROWTH_STAGES = [
@@ -21,7 +22,57 @@ const CUCUMBER_GROWTH_STAGES = [
   'oversized'
 ] as const
 
+export interface CropPartition {
+  fruitId: string | null
+  indexStart: number
+  indexCount: number
+}
+/** Source-generation assumptions, never farm configuration or biological calibration. */
+export interface CropSourceAssumptions {
+  readonly format: 'crop-source-assumptions/1'
+  readonly cucumberCutSite: {
+    readonly kind: 'synthetic-fraction'
+    readonly fraction: number
+    readonly evidence: {
+      readonly kind: 'synthetic'
+      readonly id: string
+      readonly label: string
+    }
+  }
+}
+export const DEFAULT_CROP_SOURCE_ASSUMPTIONS: CropSourceAssumptions =
+  Object.freeze({
+    format: 'crop-source-assumptions/1',
+    cucumberCutSite: Object.freeze({
+      kind: 'synthetic-fraction',
+      fraction: 0.5,
+      evidence: Object.freeze({
+        kind: 'synthetic',
+        id: 'cucumber-source-cut-fraction/1',
+        label:
+          'Synthetic source cut fraction - not calibrated anatomy or safety distance'
+      })
+    })
+  })
+
 export interface CropFruit {
+  id: string
+  cutSite?:
+    | { kind: 'unknown'; reason: 'no-source-cut-boundary' }
+    | {
+        kind: 'synthetic-source-boundary'
+        id: string
+        position: Point3
+        towardPlant: Point3
+        boundary: {
+          partId: string
+          plantPatchId: string
+          retainedPatchId: string
+          sourceVertexIndices: readonly number[]
+        }
+        evidence: { kind: 'synthetic'; label: string }
+        sourceAssumptions?: CropSourceAssumptions
+      }
   growthStage?: (typeof CUCUMBER_GROWTH_STAGES)[number]
   center: Point3
   length: number
@@ -31,6 +82,54 @@ export interface CropFruit {
   ripeness: number
   spineCount: number
 }
+/** Botanical identity only; no source patch grants contact permission. */
+export interface CropSourcePatch {
+  readonly id: string
+  readonly targetFruitId: string
+  readonly owner: 'target-fruit' | 'plant'
+  readonly role:
+    | 'fruit-skin'
+    | 'fine-spines'
+    | 'calyx'
+    | 'retained-pedicel'
+    | 'plant-pedicel'
+    | 'fruit-detail'
+  readonly source: SourcePatch
+}
+
+export type CropSourceAnatomyRole =
+  'leaf-blade' | 'leaf-vein-ribbon' | 'leaf-hair'
+
+export interface CropSourceAnatomyPatch {
+  readonly id: string
+  readonly role: CropSourceAnatomyRole
+  readonly source: SourcePatch
+}
+
+/** Authored source-triangle anatomy only; absence remains unclassified. */
+export interface CropSourceAnatomy {
+  readonly format: 'crop-source-anatomy/1'
+  readonly patches: readonly CropSourceAnatomyPatch[]
+}
+
+function attachSourceAnatomy<T extends object>(
+  value: T,
+  sourceAnatomy: CropSourceAnatomy | undefined,
+  distantSourceAnatomy?: CropSourceAnatomy
+): T {
+  if (sourceAnatomy)
+    Object.defineProperty(value, 'sourceAnatomy', {
+      value: sourceAnatomy,
+      enumerable: false
+    })
+  if (distantSourceAnatomy)
+    Object.defineProperty(value, 'distantSourceAnatomy', {
+      value: distantSourceAnatomy,
+      enumerable: false
+    })
+  return value
+}
+
 export interface CropModel {
   species: CropSpecies
   variant: number
@@ -42,6 +141,15 @@ export interface CropModel {
   leafHairCount: number
   fruits: CropFruit[]
   parts: {
+    id: string
+    regions: readonly SourceRegion[]
+    distantRegions?: readonly SourceRegion[]
+    patches: readonly CropSourcePatch[]
+    distantPatches?: readonly CropSourcePatch[]
+    sourceAnatomy?: CropSourceAnatomy
+    distantSourceAnatomy?: CropSourceAnatomy
+    partitions: CropPartition[]
+    distantPartitions?: CropPartition[]
     surface?: typeof CUCUMBER_LEAF_SURFACE
     color: number
     roughness: number
@@ -61,9 +169,11 @@ const triangle = (
   b: Point3,
   c: Point3
 ) => {
+  const start = builder.indices.length
   const offset = builder.positions.length / 3
   builder.positions.push(...a, ...b, ...c)
   builder.indices.push(offset, offset + 1, offset + 2)
+  builder.region('sheet', start)
 }
 
 /** Curved blade with shared vertices: smooth normals and a natural rolled edge. */
@@ -77,6 +187,7 @@ function leaf(
   cucumber: boolean,
   distant: boolean
 ) {
+  const start = builder.indices.length
   const point = (t: number, across: number, lift = 0): Point3 =>
     add(base, [
       Math.cos(angle) * length * t - Math.sin(angle) * across,
@@ -127,6 +238,7 @@ function leaf(
       builder.indices.push(a, b, b + 1, a, b + 1, a + 1)
     }
   }
+  builder.region('sheet', start)
   // Raised ribbons follow the blade; their width is sub-millimetre, not thick wire.
   const vein = (a: Point3, b: Point3) => {
     const d: Point3 = [
@@ -166,18 +278,64 @@ function star(
 
 /** Original cultivar geometry; dimensions other than published fruit length are illustrative. */
 export function createCropModels(
-  config: Pick<FarmConfiguration, 'netTop' | 'netBottom'>
+  config: Pick<FarmConfiguration, 'netTop' | 'netBottom'>,
+  assumptions: CropSourceAssumptions = DEFAULT_CROP_SOURCE_ASSUMPTIONS
 ): CropModel[] {
+  const { format, cucumberCutSite } = assumptions
+  const { kind, fraction, evidence } = cucumberCutSite
+  const { kind: evidenceKind, id, label } = evidence
+  if (
+    format !== 'crop-source-assumptions/1' ||
+    kind !== 'synthetic-fraction' ||
+    !Number.isFinite(fraction) ||
+    fraction <= 0 ||
+    fraction >= 1 ||
+    evidenceKind !== 'synthetic' ||
+    !id.trim() ||
+    !label.trim()
+  )
+    throw new Error('Invalid crop source assumptions')
+  const sourceAssumptions: CropSourceAssumptions = Object.freeze({
+    format,
+    cucumberCutSite: Object.freeze({
+      kind,
+      fraction,
+      evidence: Object.freeze({ kind: evidenceKind, id, label })
+    })
+  })
   return (['cucumber-1914', 'tomato-yu-nu'] as const).flatMap((species) =>
     Array.from({ length: CROP_LAYOUT.variantCount }, (_, variant) => {
-      const model = createModel(species, variant, config, false)
-      const distant = createModel(species, variant, config, true)
+      const model = createModel(
+        species,
+        variant,
+        config,
+        false,
+        sourceAssumptions
+      )
+      const distant = createModel(
+        species,
+        variant,
+        config,
+        true,
+        sourceAssumptions
+      )
       return {
         ...model,
-        parts: model.parts.map((part, i) => ({
-          ...part,
-          distantShape: distant.parts[i].shape
-        }))
+        parts: model.parts.map((part) => {
+          const counterpart = distant.parts.find((item) => item.id === part.id)
+          if (!counterpart) throw new Error('Missing distant crop source')
+          return attachSourceAnatomy(
+            {
+              ...part,
+              distantShape: counterpart.shape,
+              distantRegions: counterpart.regions,
+              distantPatches: counterpart.patches,
+              distantPartitions: counterpart.partitions
+            },
+            part.sourceAnatomy,
+            counterpart.sourceAnatomy
+          )
+        })
       }
     })
   )
@@ -187,7 +345,8 @@ function createModel(
   species: CropSpecies,
   variant: number,
   config: Pick<FarmConfiguration, 'netTop' | 'netBottom'>,
-  distant: boolean
+  distant: boolean,
+  sourceAssumptions: CropSourceAssumptions
 ): CropModel {
   const { netTop, netBottom } = config
   const cucumber = species === 'cucumber-1914'
@@ -215,6 +374,37 @@ function createModel(
     diameter: (cucumber ? 0.006 : 0.008) * scale
   })
   const leafCount = 8 + (variant % 5)
+  const sourceAnatomySpans = new Map<
+    TriangleBuilder,
+    {
+      role: CropSourceAnatomyRole
+      indexStart: number
+      indexCount: number
+    }[]
+  >()
+  const recordSourceAnatomy = (
+    builder: TriangleBuilder,
+    role: CropSourceAnatomyRole,
+    indexStart: number,
+    indexCount = builder.indices.length - indexStart
+  ) => {
+    if (!indexCount) return
+    const spans = sourceAnatomySpans.get(builder) ?? []
+    spans.push({ role, indexStart, indexCount })
+    sourceAnatomySpans.set(builder, spans)
+  }
+  const appendLeaf = (
+    base: Point3,
+    angle: number,
+    length: number,
+    width: number
+  ) => {
+    const bladeStart = foliage.indices.length
+    const veinStart = veins.indices.length
+    leaf(foliage, veins, base, angle, length, width, cucumber, distant)
+    recordSourceAnatomy(foliage, 'leaf-blade', bladeStart)
+    recordSourceAnatomy(veins, 'leaf-vein-ribbon', veinStart)
+  }
   let leafletCount = 0,
     tendrilCount = 0
   for (let i = 0; i < leafCount; i++) {
@@ -230,15 +420,11 @@ function createModel(
     ])
     stems.tube({ points: [base, petiole], diameter: 0.003 * leafScale })
     if (cucumber) {
-      leaf(
-        foliage,
-        veins,
+      appendLeaf(
         petiole,
         angle,
         (0.18 + random() * 0.1) * leafScale,
-        (0.2 + random() * 0.09) * leafScale,
-        true,
-        distant
+        (0.2 + random() * 0.09) * leafScale
       )
       leafletCount++
       const curl: Point3[] = [base]
@@ -273,32 +459,52 @@ function createModel(
           const anchor = petiole.map(
             (v, axis) => v + (tip[axis] - v) * t
           ) as unknown as Point3
-          leaf(
-            foliage,
-            veins,
+          appendLeaf(
             anchor,
             angle + side * 1.0,
             (0.08 + (2 - pair) * 0.016) * leafScale,
-            0.068 * leafScale,
-            false,
-            distant
+            0.068 * leafScale
           )
           leafletCount++
         }
-      leaf(
-        foliage,
-        veins,
-        tip,
-        angle,
-        0.115 * leafScale,
-        0.074 * leafScale,
-        false,
-        distant
-      )
+      appendLeaf(tip, angle, 0.115 * leafScale, 0.074 * leafScale)
       leafletCount++
     }
   }
   const fruits: CropFruit[] = []
+  const owned = new Map<TriangleBuilder, CropPartition[]>()
+  const anatomy = new Map<
+    TriangleBuilder,
+    {
+      targetFruitId: string
+      role: CropSourcePatch['role']
+      indexStart: number
+      indexCount: number
+    }[]
+  >()
+  const recordPatch = (
+    builder: TriangleBuilder,
+    targetFruitId: string,
+    role: CropSourcePatch['role'],
+    indexStart: number,
+    indexCount = builder.indices.length - indexStart
+  ) => {
+    if (!indexCount) return
+    const spans = anatomy.get(builder) ?? []
+    spans.push({ targetFruitId, role, indexStart, indexCount })
+    anatomy.set(builder, spans)
+  }
+  const record = (
+    builder: TriangleBuilder,
+    fruitId: string,
+    indexStart: number
+  ) => {
+    const indexCount = builder.indices.length - indexStart
+    if (!indexCount) return
+    const spans = owned.get(builder) ?? []
+    spans.push({ fruitId, indexStart, indexCount })
+    owned.set(builder, spans)
+  }
   const extraGrowth =
     cucumber && CROP_LAYOUT.overgrownVariants.includes(variant)
   const trusses = cucumber ? 5 + Number(extraGrowth) : 3
@@ -398,26 +604,83 @@ function createModel(
           points: [stemPoint(center[1] + 0.1 * scale), coverBase],
           diameter: 0.0025 * scale
         })
-        leaf(
-          foliage,
-          veins,
-          coverBase,
-          0,
-          0.22 * scale,
-          (cucumber ? 0.2 : 0.1) * scale,
-          cucumber,
-          distant
-        )
+        appendLeaf(coverBase, 0, 0.22 * scale, (cucumber ? 0.2 : 0.1) * scale)
         occlusion = 'leaf'
       }
       const top = add(center, [0, length / 2, 0])
+      const fruitId = `fruit-${fruits.length}`
+      const stemStart = stems.indices.length
+      const stemVertexStart = stems.positions.length / 3
+      const tubeSides = distant ? 3 : 8
+      const aboveTop = add(top, [0, 0.009 * scale, 0])
+      const cutPoint: Point3 = cucumber
+        ? (tip.map(
+            (value, axis) =>
+              value +
+              sourceAssumptions.cucumberCutSite.fraction * (top[axis] - value)
+          ) as unknown as Point3)
+        : aboveTop
+      if (
+        cucumber &&
+        [tip, top].some((endpoint) =>
+          endpoint.every((value, axis) => value === cutPoint[axis])
+        )
+      )
+        throw new Error('Degenerate cucumber source cut segment')
       stems.tube({
         points: cucumber
-          ? [tip, top]
+          ? [tip, cutPoint, top]
           : [node, attachment, [top[0], top[1] + 0.009 * scale, top[2]], top],
         diameter: 0.0018 * scale
       })
+      // Each retained segment shares a real source ring with its plant-side segment.
+      // The source assumption creates no cap or separated physical surface.
+      const detailStart = stems.indices.length
+      const retainedStart = cucumber
+        ? stemStart + tubeSides * 6
+        : stemStart + (distant ? 3 : 8) * 6 * 2
+      recordPatch(
+        stems,
+        fruitId,
+        'plant-pedicel',
+        stemStart + (cucumber ? 0 : tubeSides * 6),
+        tubeSides * 6
+      )
+      recordPatch(
+        stems,
+        fruitId,
+        'retained-pedicel',
+        retainedStart,
+        tubeSides * 6
+      )
+      const body = [green, turning, ripe][maturity]
+      const bodyStart = body.indices.length
+      const flowerStart = flowers.indices.length
       const fruit: CropFruit = {
+        id: fruitId,
+        cutSite: {
+          kind: 'synthetic-source-boundary',
+          id: `${fruitId}/cut-site`,
+          position: cutPoint,
+          towardPlant: attachment.map(
+            (value, axis) => value - cutPoint[axis]
+          ) as unknown as Point3,
+          boundary: {
+            partId: 'stems',
+            plantPatchId: `${fruitId}/plant-pedicel/0`,
+            retainedPatchId: `${fruitId}/retained-pedicel/0`,
+            sourceVertexIndices: Array.from(
+              { length: tubeSides },
+              (_, index) =>
+                stemVertexStart + (cucumber ? 1 : 2) * tubeSides + index
+            )
+          },
+          evidence: {
+            kind: 'synthetic',
+            label: 'Synthetic source tube boundary - not measured anatomy'
+          },
+          ...(cucumber ? { sourceAssumptions } : {})
+        },
         center,
         length,
         radius,
@@ -440,10 +703,18 @@ function createModel(
         cucumber && growth < 5 ? random() * 0.009 * scale : 0,
         distant,
         ripeness,
-        phase + truss + j * 0.7
+        phase + truss + j * 0.7,
+        (role, indexStart, indexCount) =>
+          recordPatch(body, fruitId, role, indexStart, indexCount)
       )
       if (cucumber) star(stems, top, 0.009 * scale, -0.005 * scale)
       else appendFruitCalyx(stems, top, 0.019 * scale, distant)
+      recordPatch(
+        stems,
+        fruitId,
+        cucumber ? 'fruit-detail' : 'calyx',
+        detailStart
+      )
       if (cucumber)
         appendCucumberFlower(
           flowers,
@@ -452,6 +723,10 @@ function createModel(
           scale,
           distant
         )
+      record(body, fruitId, bodyStart)
+      record(stems, fruitId, retainedStart)
+      record(flowers, fruitId, flowerStart)
+      recordPatch(flowers, fruitId, 'fruit-detail', flowerStart)
     }
     star(
       flowers,
@@ -460,6 +735,7 @@ function createModel(
       -0.006 * scale
     )
   }
+  const stemSources = owned.get(stems)?.slice() ?? []
   const stemHairCount =
     cucumber && !distant
       ? appendSurfaceHairs(
@@ -467,19 +743,38 @@ function createModel(
           12000,
           0.0016 * scale,
           false,
-          [0.125, 0.231, 0.053]
+          [0.125, 0.231, 0.053],
+          (range) => {
+            const source = stemSources.find(
+              (span) =>
+                range.sourceTriangle >= span.indexStart &&
+                range.sourceTriangle < span.indexStart + span.indexCount
+            )
+            if (source?.fruitId) {
+              record(stems, source.fruitId, range.indexStart)
+              recordPatch(
+                stems,
+                source.fruitId,
+                'fruit-detail',
+                range.indexStart,
+                range.indexCount
+              )
+            }
+          }
         )
       : 0
-  const leafHairCount =
-    cucumber && !distant
-      ? appendSurfaceHairs(
-          foliage,
-          3000,
-          0.0012 * scale,
-          true,
-          [0.045, 0.13, 0.035]
-        )
-      : 0
+  let leafHairCount = 0
+  if (cucumber && !distant) {
+    const leafHairStart = foliage.indices.length
+    leafHairCount = appendSurfaceHairs(
+      foliage,
+      3000,
+      0.0012 * scale,
+      true,
+      [0.045, 0.13, 0.035]
+    )
+    recordSourceAnatomy(foliage, 'leaf-hair', leafHairStart)
+  }
   if (cucumber && distant)
     for (let i = 0; i < stems.positions.length; i += 3)
       stems.colors.push(0.125, 0.231, 0.053)
@@ -487,6 +782,43 @@ function createModel(
     while (flowers.colors.length < flowers.positions.length)
       flowers.colors.push(0.89, 0.58, 0.035)
   const builders = [stems, foliage, veins, green, turning, ripe, flowers]
+  const partNames = [
+    'stems',
+    'foliage',
+    'veins',
+    'green',
+    'turning',
+    'ripe',
+    'flowers'
+  ]
+  const partitions = (builder: TriangleBuilder): CropPartition[] => {
+    const spans: CropPartition[] = []
+    let cursor = 0
+    const append = (
+      fruitId: string | null,
+      indexStart: number,
+      indexCount: number
+    ) => {
+      if (!indexCount) return
+      const previous = spans.at(-1)
+      if (
+        previous &&
+        previous.fruitId === fruitId &&
+        previous.indexStart + previous.indexCount === indexStart
+      )
+        previous.indexCount += indexCount
+      else spans.push({ fruitId, indexStart, indexCount })
+    }
+    for (const span of owned.get(builder) ?? []) {
+      if (span.indexStart < cursor)
+        throw new Error('Overlapping crop source ownership')
+      append(null, cursor, span.indexStart - cursor)
+      append(span.fruitId, span.indexStart, span.indexCount)
+      cursor = span.indexStart + span.indexCount
+    }
+    append(null, cursor, builder.indices.length - cursor)
+    return spans
+  }
   const colors = cucumber
     ? [
         0x638441,
@@ -506,6 +838,75 @@ function createModel(
         0xcf3525,
         0xf1c632
       ]
+  const patches = (
+    builder: TriangleBuilder,
+    regions: readonly SourceRegion[]
+  ): CropSourcePatch[] => {
+    const counts = new Map<string, number>()
+    return (anatomy.get(builder) ?? []).flatMap((span) =>
+      regions.flatMap((region) => {
+        const indexStart = Math.max(span.indexStart, region.indexStart)
+        const indexCount =
+          Math.min(
+            span.indexStart + span.indexCount,
+            region.indexStart + region.indexCount
+          ) - indexStart
+        if (indexCount <= 0) return []
+        const key = `${span.targetFruitId}/${span.role}`
+        const ordinal = counts.get(key) ?? 0
+        counts.set(key, ordinal + 1)
+        const id = `${key}/${ordinal}`
+        return [
+          {
+            id,
+            targetFruitId: span.targetFruitId,
+            owner:
+              span.role === 'plant-pedicel'
+                ? ('plant' as const)
+                : ('target-fruit' as const),
+            role: span.role,
+            source: { id, region, ranges: [{ indexStart, indexCount }] }
+          }
+        ]
+      })
+    )
+  }
+  const sourceAnatomy = (
+    builder: TriangleBuilder,
+    regions: readonly SourceRegion[]
+  ): CropSourceAnatomy | undefined => {
+    const counts = new Map<CropSourceAnatomyRole, number>()
+    const patches = (sourceAnatomySpans.get(builder) ?? []).flatMap((span) =>
+      regions.flatMap((region) => {
+        const indexStart = Math.max(span.indexStart, region.indexStart)
+        const indexCount =
+          Math.min(
+            span.indexStart + span.indexCount,
+            region.indexStart + region.indexCount
+          ) - indexStart
+        if (indexCount <= 0) return []
+        const ordinal = counts.get(span.role) ?? 0
+        counts.set(span.role, ordinal + 1)
+        const id = `${span.role}/${ordinal}`
+        return [
+          Object.freeze({
+            id,
+            role: span.role,
+            source: Object.freeze({
+              id,
+              region,
+              ranges: Object.freeze([Object.freeze({ indexStart, indexCount })])
+            })
+          })
+        ]
+      })
+    )
+    if (!patches.length) return
+    return Object.freeze({
+      format: 'crop-source-anatomy/1',
+      patches: Object.freeze(patches)
+    })
+  }
   return {
     species,
     variant,
@@ -516,23 +917,32 @@ function createModel(
     stemHairCount,
     leafHairCount,
     fruits,
-    parts: builders.flatMap((builder, i) =>
-      builder.indices.length
+    parts: builders.flatMap((builder, i) => {
+      const regions = builder.regions()
+      const authoredAnatomy = sourceAnatomy(builder, regions)
+      return builder.indices.length
         ? [
-            {
-              color: builder.colors.length ? 0xffffff : colors[i],
-              roughness: i >= 3 && i <= 5 ? 0.3 : 0.72,
-              ...(i === 1
-                ? {
-                    surface: cucumber
-                      ? CUCUMBER_LEAF_SURFACE
-                      : TOMATO_LEAF_SURFACE
-                  }
-                : {}),
-              shape: builder.shape()
-            }
+            attachSourceAnatomy(
+              {
+                id: partNames[i],
+                partitions: partitions(builder),
+                color: builder.colors.length ? 0xffffff : colors[i],
+                roughness: i >= 3 && i <= 5 ? 0.3 : 0.72,
+                ...(i === 1
+                  ? {
+                      surface: cucumber
+                        ? CUCUMBER_LEAF_SURFACE
+                        : TOMATO_LEAF_SURFACE
+                    }
+                  : {}),
+                shape: builder.shape(),
+                regions,
+                patches: patches(builder, regions)
+              },
+              authoredAnatomy
+            )
           ]
         : []
-    )
+    })
   }
 }

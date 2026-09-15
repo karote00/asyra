@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { createCropModels } from '../crop-models'
+import { createCropModels, type CropSourceAnatomyRole } from '../crop-models'
 
 it('builds 20 distinct botanical models for each cultivar with finite reusable geometry', () => {
   const models = createCropModels({ netTop: 3, netBottom: 0.45 })
@@ -39,6 +39,77 @@ it('builds 20 distinct botanical models for each cultivar with finite reusable g
     }
   }
   expect(createCropModels({ netTop: 3, netBottom: 0.45 })).toEqual(models)
+})
+
+it('authors exact source anatomy only for emitted leaf blades, vein ribbons and cucumber hairs', () => {
+  const expectedRoles = new Set<CropSourceAnatomyRole>([
+    'leaf-blade',
+    'leaf-vein-ribbon',
+    'leaf-hair'
+  ])
+  for (const model of createCropModels({ netTop: 3, netBottom: 0.45 })) {
+    for (const part of model.parts) {
+      const anatomy = part.sourceAnatomy
+      if (!anatomy) {
+        expect(['stems', 'green', 'turning', 'ripe', 'flowers']).toContain(
+          part.id
+        )
+        continue
+      }
+      expect(anatomy.format).toBe('crop-source-anatomy/1')
+      expect(Object.isFrozen(anatomy)).toBe(true)
+      expect(Object.isFrozen(anatomy.patches)).toBe(true)
+      expect(new Set(anatomy.patches.map(({ id }) => id)).size).toBe(
+        anatomy.patches.length
+      )
+      for (const patch of anatomy.patches) {
+        expect(expectedRoles.has(patch.role)).toBe(true)
+        expect(patch.id).toBe(patch.source.id)
+        expect(part.regions).toContain(patch.source.region)
+        expect(Object.isFrozen(patch)).toBe(true)
+        expect(Object.isFrozen(patch.source)).toBe(true)
+        expect(Object.isFrozen(patch.source.ranges)).toBe(true)
+        for (const range of patch.source.ranges) {
+          expect(Object.isFrozen(range)).toBe(true)
+          expect(range.indexStart % 3).toBe(0)
+          expect(range.indexCount % 3).toBe(0)
+          expect(range.indexStart).toBeGreaterThanOrEqual(
+            patch.source.region.indexStart
+          )
+          expect(range.indexStart + range.indexCount).toBeLessThanOrEqual(
+            patch.source.region.indexStart + patch.source.region.indexCount
+          )
+        }
+      }
+      const roles = new Set(anatomy.patches.map(({ role }) => role))
+      expect(part.id === 'foliage' ? roles.has('leaf-blade') : false).toBe(
+        part.id === 'foliage'
+      )
+      expect(part.id === 'veins' ? roles.has('leaf-vein-ribbon') : false).toBe(
+        part.id === 'veins'
+      )
+      expect(roles.has('leaf-hair')).toBe(
+        model.species === 'cucumber-1914' && part.id === 'foliage'
+      )
+    }
+    const stems = model.parts.find(({ id }) => id === 'stems')
+    expect(stems?.sourceAnatomy).toBeUndefined()
+    expect(stems?.patches.some(({ role }) => role === 'plant-pedicel')).toBe(
+      true
+    )
+    for (const part of model.parts) {
+      const distant = part.distantSourceAnatomy
+      if (!distant) continue
+      expect(distant.patches.every(({ role }) => role !== 'leaf-hair')).toBe(
+        true
+      )
+      expect(
+        distant.patches.every(({ source }) =>
+          part.distantRegions?.includes(source.region)
+        )
+      ).toBe(true)
+    }
+  }
 })
 it('regenerates the model envelope for a changed net height', () => {
   const short = createCropModels({ netTop: 0.5, netBottom: 0.1 })

@@ -150,6 +150,21 @@ Next runs as an explicitly owned child process and is cleaned up. The existing
 root `yarn build:production-artifacts` and `yarn test:production-artifacts` remain
 available for broad local validation.
 
+The Sim artifact case is a functional production-build proof. It first checks
+the public UI's unchanged 30,000 ms default, then explicitly commits a
+120,000 ms analysis budget through that UI within its declared maximum. Its
+result wait is derived from that budget plus a 5,000 ms publication allowance;
+the outer test hard stop remains 180,000 ms. It requires completed execution,
+complete coverage of all 46 pairs, zero unresolved pairs, the expected finding
+and local persistence. The bounded test diagnostic records the selected budget,
+elapsed run-to-result time and coverage whenever a result is published,
+including partial results.
+This profile does not prove completion within the default 30-second budget.
+Product defaults, logical-work and evidence-size caps, cancellation and deadline
+semantics remain unchanged and retain their separate formal tests. A partial
+result still fails this artifact gate; do not retry with a larger profile or
+weaken coverage assertions.
+
 Vercel still builds the exact source separately. This is source-identity
 verification, not a claim that the CI and Vercel output bytes are identical.
 Production HTTP smoke checks HTML and delivered scripts, not every browser

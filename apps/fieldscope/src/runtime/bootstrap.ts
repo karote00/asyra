@@ -1,5 +1,9 @@
 import { RobotProjection } from '../render-app/robot-projection'
+import { WalkingRobotProjection } from '../render-app/walking-robot-projection'
 import { createRobotWorkspace } from './robot-workspace'
+import { createSceneDemandWorkspace } from './scene-demand-workspace'
+import { createWalkingOperatingWorkspace } from './walking-operating-workspace'
+import { createWalkingObservationWorkspace } from './walking-observation-workspace'
 import { SiteGeometry } from '../render-app/site-geometry'
 import { moveCamera, lookCamera } from '../render-app/camera-flight'
 import {
@@ -90,6 +94,7 @@ export async function bootstrap(
   })
   const geometry = new SiteGeometry()
   let meshes = buildSiteMeshes(config, geometry)
+  geometry.prepareScene(config, meshes)
   let localBounds = new WeakMap<object, SceneBounds>()
   let sceneBounds = measureScene(meshes, localBounds)
   const configurationType = 'farm-configuration'
@@ -115,20 +120,73 @@ export async function bootstrap(
   )
   core.registerRenderLayer(layer.registration)
   const robotProjection = new RobotProjection()
+  const walkingRobotProjection = new WalkingRobotProjection()
   let robotMeshes: import('../render-app/spatial-layer').SpatialFrame['meshes'] =
     []
+  let sceneCompositionDepth = 0
+  let selectedRobotUpdatePending = false
   const submitScene = () =>
     layer.submit({
       meshes: [...projectView(meshes, view), ...robotMeshes],
       camera: fitCamera(camera, aspect)
     })
+  const projectSelectedRobot = () => {
+    const report = walkingOperating.get()
+    robotMeshes =
+      report.status === 'legacy-view'
+        ? robotProjection.update(robot.get())
+        : walkingRobotProjection.update(report)
+    submitScene()
+  }
+  const updateSelectedRobot = () => {
+    if (sceneCompositionDepth > 0) {
+      selectedRobotUpdatePending = true
+      return
+    }
+    projectSelectedRobot()
+  }
+  const runSceneComposition = <T>(operation: () => T): T => {
+    const outermost = sceneCompositionDepth === 0
+    sceneCompositionDepth++
+    let completed = false
+    try {
+      const result = operation()
+      completed = true
+      return result
+    } finally {
+      sceneCompositionDepth--
+      if (outermost) {
+        const shouldUpdate = completed && selectedRobotUpdatePending
+        selectedRobotUpdatePending = false
+        if (shouldUpdate) projectSelectedRobot()
+      }
+    }
+  }
   const robot = createRobotWorkspace(
     () => config,
     () => {
-      robotMeshes = robotProjection.update(robot.get())
-      submitScene()
+      if (walkingOperating.getSelection().mode === 'legacy-view')
+        updateSelectedRobot()
     }
   )
+  const sceneDemandWorkspace = createSceneDemandWorkspace(
+    () => config,
+    () => geometry.getScene()
+  )
+  const walkingOperating = createWalkingOperatingWorkspace(
+    sceneDemandWorkspace.get,
+    sceneDemandWorkspace.isCurrent,
+    updateSelectedRobot
+  )
+  const walkingObservation = createWalkingObservationWorkspace({
+    getOperating: walkingOperating.get,
+    isCurrentOperating: walkingOperating.isCurrent,
+    getDemand: sceneDemandWorkspace.get,
+    isCurrentDemand: sceneDemandWorkspace.isCurrent,
+    getScene: () => geometry.getScene(),
+    isCurrentScene: (scene) => geometry.isCurrentScene(scene),
+    screen: walkingOperating.getObservationScreen()
+  })
   robotMeshes = robotProjection.update(robot.get())
   const readZoom = (next: SpatialCamera) => {
     const reference = referenceCamera
@@ -160,17 +218,25 @@ export async function bootstrap(
   }
   const publishConfiguration = (
     next: FarmConfiguration,
-    prepared = buildSiteMeshes(next, geometry)
-  ) => {
-    config = next
-    meshes = prepared
-    sceneBounds = measureScene(meshes, localBounds)
-    referenceCamera = cameraPreset(view.camera, config)
-    camera = referenceCamera
-    publishCamera(camera)
-    robot.refresh(true)
-    configListeners.forEach((listener) => listener())
-  }
+    prepared = buildSiteMeshes(next, geometry),
+    refreshSceneDemand = true
+  ) =>
+    runSceneComposition(() => {
+      config = next
+      meshes = prepared
+      geometry.prepareScene(config, meshes)
+      sceneBounds = measureScene(meshes, localBounds)
+      referenceCamera = cameraPreset(view.camera, config)
+      camera = referenceCamera
+      publishCamera(camera)
+      robot.refresh(true)
+      if (refreshSceneDemand) {
+        sceneDemandWorkspace.refresh(config, geometry.getScene())
+        walkingOperating.refreshDemand()
+      }
+      updateSelectedRobot()
+      configListeners.forEach((listener) => listener())
+    })
   const configFeature = core.defineFeature(
     FeatureNames.CONFIGURATION,
     undefined,
@@ -221,10 +287,21 @@ export async function bootstrap(
             assertLive()
             if (redo) await redoWithRenderPolicy({ mode: 'atomic' })
             else await undoWithRenderPolicy({ mode: 'atomic' })
-            const next = readConfiguration()
-            if (JSON.stringify(next) !== JSON.stringify(config))
-              publishConfiguration(next)
-            robot.refresh()
+            runSceneComposition(() => {
+              const next = readConfiguration()
+              if (JSON.stringify(next) !== JSON.stringify(config))
+                publishConfiguration(next, undefined, false)
+              robot.refresh()
+              const previousDemand = sceneDemandWorkspace.get()
+              sceneDemandWorkspace.refresh(config, geometry.getScene())
+              const selectionChanged = walkingOperating.refreshSelection()
+              if (
+                !selectionChanged &&
+                sceneDemandWorkspace.get() !== previousDemand
+              )
+                walkingOperating.refreshDemand()
+              updateSelectedRobot()
+            })
           },
           FeatureNames.HISTORY
         )
@@ -412,6 +489,33 @@ export async function bootstrap(
       },
       focusRobot: () => {
         assertLive()
+        const walking = walkingOperating.get()
+        if (walking.status !== 'legacy-view') {
+          if (!walking.envelope) return
+          const bounds = walking.envelope.bounds
+          const target = bounds.min.map(
+            (value, index) => (value + bounds.max[index]) / 2
+          ) as [number, number, number]
+          const distance = Math.hypot(...bounds.size)
+          publishCamera(
+            fitScene(
+              {
+                ...camera,
+                position: [
+                  target[0] + distance,
+                  target[1] + distance * 0.65,
+                  target[2] - distance
+                ],
+                target,
+                fov: 42
+              },
+              bounds,
+              width,
+              height
+            )
+          )
+          return
+        }
         const s = robot.get().settings
         const distance = Math.max(s.width, s.length, s.height) * 2.5
         publishCamera({
@@ -443,8 +547,12 @@ export async function bootstrap(
   const dispose = () => {
     if (disposePromise) return disposePromise
     closed = true
+    sceneDemandWorkspace.close()
+    walkingOperating.close()
+    walkingObservation.close()
     robot.close()
     robotProjection.clear()
+    walkingRobotProjection.clear()
     geometry.clear()
     localBounds = new WeakMap()
     observer?.disconnect()
@@ -461,6 +569,8 @@ export async function bootstrap(
         await core.resetRuntime()
         core.unregisterComponent(configurationType)
         unregisterPropertyComponent(configurationType)
+        sceneDemandWorkspace.unregister()
+        walkingOperating.unregister()
         robot.unregister()
       }
     })
@@ -488,7 +598,9 @@ export async function bootstrap(
         { undoable: false }
       )
     })
+    sceneDemandWorkspace.initialize()
     robot.initialize()
+    walkingOperating.initialize()
     observer = new ResizeObserver((entries) => {
       const box = entries[0]?.contentRect
       if (!closed && box && box.width > 0 && box.height > 0) {
@@ -503,8 +615,59 @@ export async function bootstrap(
     return {
       focusRobot: cameraFeature.api.focusRobot,
       getRobot: robot.get,
+      getDockSource: () => {
+        assertLive()
+        return robotProjection.getDockSource()
+      },
+      isCurrentDockSource: (
+        source: import('../render-app/robot-projection').DockSource
+      ) => !closed && robotProjection.isCurrentDockSource(source),
+      getRobotSource: () => {
+        assertLive()
+        return robotProjection.getSource()
+      },
+      isCurrentRobotSource: (
+        source: import('../render-app/robot-projection').RobotSource
+      ) => !closed && robotProjection.isCurrentSource(source),
+      evaluateRobotPose: (
+        source: import('../render-app/robot-projection').RobotSource,
+        joints: import('../domain/robot-kinematics').RobotJoints
+      ) => {
+        assertLive()
+        return robotProjection.evaluatePose(source, joints)
+      },
       subscribeRobot: robot.subscribe,
       patchRobot: robot.patch,
+      getScene: () => {
+        assertLive()
+        return geometry.getScene()
+      },
+      isCurrentScene: (
+        scene: import('../render-app/site-geometry').PreparedScene
+      ) => !closed && geometry.isCurrentScene(scene),
+      getSceneDemandConfiguration: sceneDemandWorkspace.getConfiguration,
+      setSceneDemandConfiguration: (
+        next: Parameters<typeof sceneDemandWorkspace.setConfiguration>[0]
+      ) => {
+        const previous = sceneDemandWorkspace.get()
+        const operation = sceneDemandWorkspace.setConfiguration(next)
+        return operation.then(() => {
+          if (sceneDemandWorkspace.get() !== previous)
+            walkingOperating.refreshDemand()
+        })
+      },
+      getSceneDemand: sceneDemandWorkspace.get,
+      isCurrentSceneDemand: sceneDemandWorkspace.isCurrent,
+      subscribeSceneDemand: sceneDemandWorkspace.subscribe,
+      getWalkingRuntimeSelection: walkingOperating.getSelection,
+      setWalkingRuntimeSelection: walkingOperating.setSelection,
+      getWalkingOperatingReport: walkingOperating.get,
+      configureWalkingObservationScenario: walkingObservation.configure,
+      observeWalkingAction: walkingObservation.observe,
+      getWalkingActionObservation: walkingObservation.get,
+      isCurrentWalkingActionObservation: walkingObservation.isCurrent,
+      isCurrentWalkingOperatingReport: walkingOperating.isCurrent,
+      subscribeWalkingOperatingReport: walkingOperating.subscribe,
       getConfiguration: () => config,
       subscribeConfiguration: (listener: () => void) => {
         configListeners.add(listener)
