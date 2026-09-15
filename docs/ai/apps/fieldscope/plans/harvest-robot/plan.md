@@ -2652,9 +2652,14 @@ process-group cleanup and bounded local artifacts. A caller may instead name
 existing ordinary test files and one explicit test title with a positive finite
 millisecond deadline; that output is labelled filtered selection evidence and is
 never reported as a complete suite. Unknown paths and raw Vitest bypass arguments
-fail before execution. The required one-worker `test:profiles` gate now invokes
-the same supervisor with `--profile` and worker acknowledgements. Its full and
-filtered artifacts are explicitly profile evidence, never ordinary coverage.
+fail before execution. The required one-worker `test:profiles` gate discovers
+the exact profile class, isolates walking-constrained-kinematics, assigns every
+other and newly added profile to the remaining group, proves the groups are
+complete and disjoint, then invokes the same supervisor sequentially for both.
+Each group retains the original 20-minute deadline, worker acknowledgements,
+bounded artifacts and owned cleanup. Only two exact complete receipts publish
+full profile completion; filtered/group artifacts are profile evidence, never
+ordinary coverage.
 Nine actual-source cases remain required profiles: scene-demand inventory/history,
 bootstrap observation, local-action bootstrap decision, three observation-workspace
 cases, two walking optical-kernel cases and selected-chain half-abduction. Their
@@ -2663,7 +2668,8 @@ keep ordinary currentness and negative checks. Existing per-case engineering
 ceilings remain 60/45/30/20 seconds for local-action bootstrap/observation bootstrap/
 full-site observation or inventory/relation respectively; classification is not a
 production performance improvement. Existing numerical elapsed guards and the
-20-minute process deadline remain. The original timeout evidence remains authoritative.
+20-minute per-group process deadlines remain. The original timeout evidence remains
+authoritative.
 Focused class gates,
 supervisor selectors/cleanup/acknowledgements and static/build checks precede the
 combined integration gate and independent review.

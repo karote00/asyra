@@ -310,7 +310,7 @@ print(json.dumps({'full': full, 'selected': selected, 'title': title,
   ).scripts
   assert.equal(
     scripts['test:profiles'],
-    'node --test scripts/__tests__/supervise-tests.test.mjs && python3 scripts/supervise-tests.py --profile'
+    'node --test scripts/__tests__/supervise-tests.test.mjs scripts/__tests__/run-profile-groups.test.mjs && python3 scripts/run-profile-groups.py'
   )
 })
 

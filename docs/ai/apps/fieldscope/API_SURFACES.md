@@ -22,16 +22,21 @@ Cross-package imports use public `@asyra/*` facades. Do not import another app's
 ## Test process and profile selection
 
 `test:local` and `test:ci` run ordinary tests through
-`scripts/supervise-tests.py`; `test:profiles` runs the same supervisor with
-`--profile` and the serial one-worker `vitest.profile.config.ts`. Both run
-the permanent supervisor self-tests first and acknowledge worker task updates
-through `vitest.setup.ts`. Profiles remain a required CI gate after ordinary
-tests. `--file`, optional `--title` for one file, and finite `--hard-stop-ms`
-are the only selection/deadline controls. Each mode rejects the other test class.
-Profile artifacts distinguish full profiles from selected profiles; neither is
-ordinary full-suite evidence. The default process wall deadline is 20 minutes,
-with owned process-group cleanup and bounded output. CPU is accounted, not capped;
-this guard does not enforce peak RSS.
+`scripts/supervise-tests.py`. `test:profiles` discovers the exact
+`src/**/__tests__/**/*.profile.test.ts` class and partitions it into the
+walking-constrained-kinematics owner and every remaining profile, then runs those
+groups sequentially through the same supervisor and serial one-worker
+`vitest.profile.config.ts`. The partition must be complete and disjoint; a new
+profile automatically joins the remaining group. Both modes run their permanent
+process tests first and acknowledge worker task updates through `vitest.setup.ts`.
+Profiles remain a required CI gate after ordinary tests. `--file`, optional
+`--title` for one file, and finite `--hard-stop-ms` remain the supervisor's
+only selection/deadline controls. Each mode rejects the other test class.
+Each group retains the default 20-minute process wall deadline, owned
+process-group cleanup and bounded output. Only two exact complete group receipts
+produce full profile completion; selected/group artifacts are never ordinary
+full-suite evidence. CPU is accounted, not capped; this guard does not enforce
+peak RSS.
 
 Nine actual-source observation/relation cases remain in the five scene-demand-
 workspace, bootstrap, walking-observation-workspace, observations and walking-
