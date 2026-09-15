@@ -18,6 +18,10 @@ import {
 import { REST_JOINTS } from '../../domain/robot-kinematics'
 import * as kinematics from '../../domain/robot-kinematics'
 import { QueryGeometry, type GeometryReceipt } from '../geometry'
+import { WalkingRobotSourceOwner } from '../../domain/walking-robot-source'
+import { createSyntheticWalkingRobotDefinition } from '../../domain/walking-robot-definition'
+import { prepareSceneDemand } from '../scene-demand'
+import { DEFAULT_SCENE_DEMAND_CONFIGURATION } from '../../domain/scene-demand-configuration'
 import {
   interval,
   add,
@@ -32,6 +36,7 @@ import {
   prepareQueryAffineFrame,
   prepareQueryAffineInverse,
   transformQueryDirection,
+  transformQueryDirectionBounds,
   prepareQueryForwardFrame,
   prepareQueryInstanceFrame,
   prepareQueryExactForwardFrame,
@@ -44,6 +49,74 @@ const emptyFarm = {
   ...DEFAULT_CONFIGURATION,
   strips: [{ id: 'soil', kind: 'soil' as const, width: 6.3 }]
 }
+
+it('walking observation world rays retain canonical witnesses without legacy FK', () => {
+  const site = new SiteGeometry()
+  const mesh = triangle('walking-world-ray', 2)
+  const scene = site.prepareScene(emptyFarm, [mesh])
+  const sourceOwner = new WalkingRobotSourceOwner()
+  const source = sourceOwner.prepare(
+    createSyntheticWalkingRobotDefinition({
+      definitionId: 'walking-observation-rays'
+    })
+  )
+  const demand = prepareSceneDemand(
+    emptyFarm,
+    scene,
+    DEFAULT_SCENE_DEMAND_CONFIGURATION
+  )
+  const receipt = Object.freeze({
+    format: 'walking-observation-geometry/1' as const,
+    scene,
+    demand,
+    source
+  })
+  let live = true
+  const geometry = new QueryGeometry({
+    isCurrentWalkingReceipt: (value) => live && value === receipt,
+    isCurrentScene: site.isCurrentScene.bind(site),
+    isCurrentDemand: (value) => value === demand,
+    isCurrentWalkingSource: (value) => sourceOwner.isCurrent(value)
+  })
+  const prepared = geometry.prepareWalking(receipt)
+  const rays = new RayQueries(geometry)
+  const member = prepared.meshes[0]
+  const candidate = { mesh: member, region: mesh.regions[0], instance: 0 }
+  const input = {
+    source: 'synthetic' as const,
+    time: 1,
+    validFrom: 0,
+    validUntil: 2,
+    leaves: 'source-pose' as const,
+    fruits: 'all-attached' as const,
+    rays: [
+      {
+        origin: [0, 0, 0] as [number, number, number],
+        direction: [0, 0, 1] as [number, number, number],
+        maxDistance: 4
+      }
+    ]
+  }
+  const result = rays.queryWalkingWorld(prepared, input, [candidate])
+  expect(result.results[0]).toMatchObject({
+    status: 'hit',
+    mesh: member,
+    instance: 0
+  })
+  expect(result.work.fk).toBe(0)
+  expect(result.work.bodyMatrices).toBe(0)
+  expect(rays.scopeWork.membershipBuilds).toBe(1)
+  rays.queryWalkingWorld(prepared, input, [candidate])
+  expect(rays.scopeWork.membershipBuilds).toBe(1)
+  expect(rays.scopeWork.candidateVisits).toBe(2)
+  expect(() =>
+    rays.queryWalkingWorld(prepared, input, [
+      { ...candidate, region: { ...candidate.region } }
+    ])
+  ).toThrow()
+  live = false
+  expect(() => rays.queryWalkingWorld(prepared, input, [candidate])).toThrow()
+})
 const projection = new RobotProjection()
 projection.update(
   assessRobotDesign(
@@ -116,6 +189,59 @@ const batch = (): RayBatch => ({
   rays: [{ origin: [0, 0, 0], direction: [0, 0, 2], maxDistance: 10 }]
 })
 
+it('retains source-point subtraction enclosure through the shared camera direction frame', () => {
+  const frame = prepareQueryFrame({
+    position: [0, 0, 0],
+    rotation: [0, 0, 0, 1]
+  })
+  const x = subtract(interval(1e16), interval(1))
+  const transformed = transformQueryDirectionBounds(frame, [
+    x,
+    interval(0),
+    interval(1)
+  ])
+  expect(transformed[0].low).toBeLessThan(1e16)
+  expect(transformed[0].low).toBeLessThanOrEqual(x.low)
+  expect(transformed[0].high).toBeGreaterThanOrEqual(x.high)
+})
+
+it('keeps scoped canonical rays local while retaining full-scope equivalence and identity admission', () => {
+  const { queries, source } = fixture([triangle('near', 5), triangle('far', 8)])
+  const mesh = source.meshes.find((item) => item.origin.id === 'near')
+  if (!mesh) throw new Error('Missing near source')
+  const scope = [{ mesh, region: mesh.origin.regions[0], instance: 0 }]
+  const local = queries.queryScoped(source, batch(), scope)
+  expect(local.scope).toBe('declared-canonical-candidates')
+  expect(local.results[0]).toMatchObject({ status: 'hit', mesh, instance: 0 })
+  expect(local.work.instances).toBe(1)
+  const visits = queries.scopeWork.membershipVisits
+  queries.queryScoped(source, batch(), scope)
+  expect(queries.scopeWork.membershipVisits).toBe(visits)
+  expect(queries.scopeWork.membershipBuilds).toBe(1)
+  const complete = source.meshes.flatMap((mesh) =>
+    Array.from(
+      { length: mesh.descriptor?.instances?.length ?? 1 },
+      (_, instance) =>
+        mesh.origin.regions.map((region) => ({ mesh, region, instance }))
+    ).flat()
+  )
+  expect(queries.queryScoped(source, batch(), complete).results).toEqual(
+    queries.query(source, batch()).results
+  )
+  expect(() =>
+    queries.queryScoped(source, batch(), [{ ...scope[0], mesh: { ...mesh } }])
+  ).toThrow()
+  expect(() =>
+    queries.queryScoped(source, batch(), [
+      { ...scope[0], region: { ...scope[0].region } }
+    ])
+  ).toThrow()
+  expect(() =>
+    queries.queryScoped(source, batch(), [{ ...scope[0], instance: 99 }])
+  ).toThrow()
+  expect(() => queries.queryScoped({ ...source }, batch(), scope)).toThrow()
+})
+
 it('returns nearest original two-sided hidden source triangle with metre distance and barycentrics', () => {
   const { queries, source } = fixture([triangle('far', 8), triangle('near', 5)])
   const request = batch()
@@ -134,6 +260,20 @@ it('returns nearest original two-sided hidden source triangle with metre distanc
   request.rays[0].origin[0] = 99
   expect(result.input.rays[0].origin[0]).toBe(0)
   expect(Object.isFrozen(result.input.rays[0].origin)).toBe(true)
+})
+
+it('preserves canonical source ordering for tied scoped witnesses regardless of candidate order', () => {
+  const { queries, source } = fixture([
+    triangle('first', 5),
+    triangle('second', 5)
+  ])
+  const scope = source.meshes
+    .filter((m) => m.kind === 'farm')
+    .reverse()
+    .map((mesh) => ({ mesh, region: mesh.origin.regions[0], instance: 0 }))
+  expect(queries.queryScoped(source, batch(), scope).results).toEqual(
+    queries.query(source, batch()).results
+  )
 })
 
 it('includes the exact range endpoint, preserves source-order ties and handles extreme finite direction scales', () => {

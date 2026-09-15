@@ -1,3 +1,5 @@
+import type { WalkingRobotSource } from '../domain/walking-robot-source'
+import type { SceneDemand } from './scene-demand'
 import type { PreparedScene, SceneFruit } from '../render-app/site-geometry'
 import type { SiteMesh } from '../render-app/site-projection'
 import type { DockSource, RobotSource } from '../render-app/robot-projection'
@@ -21,6 +23,7 @@ export interface PreparedGeometry {
   }[]
 }
 export interface GeometryWork {
+  readonly membershipVisits: number
   readonly shapeBounds: number
   readonly vertexVisits: number
   readonly regionBounds: number
@@ -54,22 +57,67 @@ export interface GeometryMesh {
   readonly partitions?: CropPart['partitions']
   readonly plants?: readonly SceneFruit['plant'][]
 }
-export interface GeometrySource {
-  readonly receipt: GeometryReceipt
+export interface WalkingObservationGeometryReceipt {
+  readonly format: 'walking-observation-geometry/1'
+  readonly scene: PreparedScene
+  readonly demand: SceneDemand
+  readonly source: WalkingRobotSource
+}
+export interface WalkingObservationGeometryOwners {
+  isCurrentWalkingReceipt(receipt: WalkingObservationGeometryReceipt): boolean
+  isCurrentScene(scene: PreparedScene): boolean
+  isCurrentDemand(demand: SceneDemand): boolean
+  isCurrentWalkingSource(source: WalkingRobotSource): boolean
+}
+type QueryReceipt = GeometryReceipt | WalkingObservationGeometryReceipt
+interface QueryGeometryProduct<R extends QueryReceipt> {
+  readonly receipt: R
   readonly shapes: readonly SpatialShape[]
   readonly meshes: readonly GeometryMesh[]
   readonly fruits: PreparedScene['fruits']
   readonly work: GeometryWork
 }
+export type GeometrySource = QueryGeometryProduct<GeometryReceipt>
+export type WalkingObservationGeometrySource =
+  QueryGeometryProduct<WalkingObservationGeometryReceipt>
+export type QueryGeometrySource =
+  GeometrySource | WalkingObservationGeometrySource
 const placementKey = (position: readonly number[], yaw: number) =>
   `${position[0]}:${position[1]}:${position[2]}:${yaw}`
 
 /** Shared source preparation, not a detector or collision decision provider. */
 export class QueryGeometry {
-  private source?: GeometrySource
-  constructor(private readonly owners: GeometryOwners) {}
+  private source?: QueryGeometrySource
+  readonly work = { membershipBuilds: 0 }
+  private members = new Set<GeometryMesh>()
+  private membershipChecks = 0
+  private placements = 0
+  constructor(
+    private readonly owners: GeometryOwners | WalkingObservationGeometryOwners
+  ) {}
 
-  private assertCurrent(receipt: GeometryReceipt) {
+  get placementWork() {
+    return Object.freeze({
+      membershipChecks: this.membershipChecks,
+      placements: this.placements
+    })
+  }
+
+  private assertCurrent(receipt: QueryReceipt) {
+    if ('source' in receipt) {
+      if (
+        !('isCurrentWalkingReceipt' in this.owners) ||
+        !this.owners.isCurrentWalkingReceipt(receipt) ||
+        !this.owners.isCurrentScene(receipt.scene) ||
+        !this.owners.isCurrentDemand(receipt.demand) ||
+        receipt.demand.scene !== receipt.scene ||
+        !this.owners.isCurrentWalkingSource(receipt.source)
+      )
+        throw new Error('Retired or invalid walking geometry receipt')
+      return
+    }
+    if (!('isCurrentReceipt' in this.owners))
+      throw new Error('Legacy geometry owner required')
     if (
       !this.owners.isCurrentReceipt(receipt) ||
       !Number.isSafeInteger(receipt.revision) ||
@@ -82,12 +130,28 @@ export class QueryGeometry {
   }
 
   prepare(receipt: GeometryReceipt): GeometrySource {
+    return this.prepareSource(receipt)
+  }
+
+  prepareWalking(
+    receipt: WalkingObservationGeometryReceipt
+  ): WalkingObservationGeometrySource {
+    return this.prepareSource(receipt)
+  }
+
+  private prepareSource<R extends QueryReceipt>(
+    receipt: R
+  ): QueryGeometryProduct<R> {
     this.assertCurrent(receipt)
-    if (this.source?.receipt === receipt) return this.source
-    if (!receipt.robot.rig) throw new Error('Robot rigid ownership unavailable')
+    if (this.source?.receipt === receipt)
+      return this.source as QueryGeometryProduct<R>
+    if ('robot' in receipt && !receipt.robot.rig)
+      throw new Error('Robot rigid ownership unavailable')
     const shapes = new Set<SpatialShape>()
     const meshes: GeometryMesh[] = []
+    const members = new Set<GeometryMesh>()
     const work = {
+      membershipVisits: 0,
       shapeBounds: 0,
       vertexVisits: 0,
       regionBounds: 0,
@@ -182,7 +246,10 @@ export class QueryGeometry {
         mappings.set(mesh.origin.regions, prepared)
       }
       shapes.add(mesh.shape)
-      meshes.push(Object.freeze({ ...mesh, prepared }))
+      const member = Object.freeze({ ...mesh, prepared })
+      meshes.push(member)
+      members.add(member)
+      work.membershipVisits++
     }
     for (const mesh of receipt.scene.meshes) {
       if (mesh.layer === 'dimensions') continue
@@ -213,27 +280,31 @@ export class QueryGeometry {
         ...(crop ? { partitions: crop.part.partitions, plants: bindings } : {})
       })
     }
-    for (const part of receipt.robot.rig.parts) {
-      if (!receipt.robot.parts.includes(part.source))
-        throw new Error('Mismatched robot source')
-      register({
-        kind: 'robot',
-        frame: 'robot',
-        origin: part.source,
-        shape: part.source.shape,
-        body: part.body
-      })
-    }
-    if (receipt.robot.rig.parts.length !== receipt.robot.parts.length)
-      throw new Error('Incomplete robot source')
-    for (const mesh of receipt.dock.meshes) {
-      register({
-        kind: 'dock',
-        frame: 'world',
-        origin: mesh,
-        descriptor: mesh.descriptor,
-        shape: mesh.descriptor.shape
-      })
+    if ('robot' in receipt) {
+      const rig = receipt.robot.rig
+      if (!rig) throw new Error('Robot rigid ownership unavailable')
+      for (const part of rig.parts) {
+        if (!receipt.robot.parts.includes(part.source))
+          throw new Error('Mismatched robot source')
+        register({
+          kind: 'robot',
+          frame: 'robot',
+          origin: part.source,
+          shape: part.source.shape,
+          body: part.body
+        })
+      }
+      if (rig.parts.length !== receipt.robot.parts.length)
+        throw new Error('Incomplete robot source')
+      for (const mesh of receipt.dock.meshes) {
+        register({
+          kind: 'dock',
+          frame: 'world',
+          origin: mesh,
+          descriptor: mesh.descriptor,
+          shape: mesh.descriptor.shape
+        })
+      }
     }
     this.assertCurrent(receipt)
     const source = Object.freeze({
@@ -243,17 +314,20 @@ export class QueryGeometry {
       fruits: receipt.scene.fruits,
       work: Object.freeze(work)
     })
-    this.source = source
+    this.source = source as QueryGeometrySource
+    this.work.membershipBuilds++
+    this.members = members
     return source
   }
 
-  read(source: GeometrySource): GeometrySource {
+  read<T extends QueryGeometrySource>(source: T): T {
     if (source !== this.source)
       throw new Error('Unissued or retired query geometry')
     try {
       this.assertCurrent(source.receipt)
     } catch (error) {
       this.source = undefined
+      this.members.clear()
       throw error
     }
     return source
@@ -261,13 +335,14 @@ export class QueryGeometry {
 
   /** Farm/dock world placement only; a working robot needs D's current pose. */
   placePoint(
-    source: GeometrySource,
+    source: QueryGeometrySource,
     mesh: GeometryMesh,
     point: Point3,
     instance = 0
   ): Point3 {
     this.read(source)
-    if (!source.meshes.includes(mesh)) throw new Error('Unissued geometry mesh')
+    this.membershipChecks++
+    if (!this.members.has(mesh)) throw new Error('Unissued geometry mesh')
     if (mesh.frame !== 'world' || !mesh.descriptor)
       throw new Error('Current robot pose required')
     if (
@@ -290,10 +365,13 @@ export class QueryGeometry {
         placement.position[2] - sine * point[0] + cosine * point[2]
       ]
     } else if (instance !== 0) throw new Error('Unexpected source instance')
-    return transformRobotPoint(descriptor, local)
+    const position = transformRobotPoint(descriptor, local)
+    this.placements++
+    return position
   }
 
   clear() {
     this.source = undefined
+    this.members.clear()
   }
 }
