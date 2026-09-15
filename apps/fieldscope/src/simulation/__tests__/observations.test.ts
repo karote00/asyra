@@ -1,3 +1,4 @@
+import { walkingActionFixture } from './walking-observation-test-fixtures'
 import { beforeAll, expect, it, vi } from 'vitest'
 import { Quaternion, Vector3 } from 'three'
 import { SiteGeometry } from '../../render-app/site-geometry'
@@ -28,15 +29,10 @@ import { WalkingTransitScreen } from '../walking-transit-screen'
 import { SyntheticDynamicSceneOwner } from '../synthetic-dynamic-scene'
 import {
   prepareSceneDemand,
-  prepareSceneObservationSpace,
   SceneDemandSourceBoundsOwner
 } from '../scene-demand'
-import { WalkingOperatingOwner } from '../../runtime/walking-operating-workspace'
-import { createWalkingRuntimeSelection } from '../../domain/walking-runtime-selection'
-import { createSyntheticWalkingRobotDefinition } from '../../domain/walking-robot-definition'
 import {
   TargetObservations,
-  WalkingActionObservations,
   type ObservationContext,
   type TargetReading,
   type ViewRequest,
@@ -543,9 +539,9 @@ it('computes complete-empty only for the entire declared synthetic sight volume'
   ).toThrow()
 })
 
-it('declared synthetic sight volume below route height is obstacle-inventory evidence only', () => {
-  const f = actionObservation()
-  const walking = walkingActionFixture(f)
+it('declared synthetic sight volume below route height is obstacle-inventory evidence only with bounded canonical sources', () => {
+  const f = walkingActionFixture('bounded-source')
+  const walking = f
   const domain = {
     min: [0, -f.demand.farm.height, 0] as const,
     max: [100, 20, 10] as const
@@ -558,7 +554,7 @@ it('declared synthetic sight volume below route height is obstacle-inventory evi
       max: [2.46, -0.19, 1.55] as const
     },
     camera: {
-      ...f.request.camera,
+      ...f.input.camera,
       pose: {
         position: [2.45, -0.2, 1] as const,
         rotation: [0, 0, 0, 1] as const
@@ -590,81 +586,9 @@ it('declared synthetic sight volume below route height is obstacle-inventory evi
   expect(outside.coverage).not.toBe('complete-empty')
   expect(outside.reasons).toContain('outside-observation-domain')
 })
-
-function walkingActionFixture(f: ReturnType<typeof actionObservation>) {
-  const operating = new WalkingOperatingOwner(
-    () => f.demand,
-    (value) => value === f.demand
-  )
-  const report = operating.apply(
-    createWalkingRuntimeSelection(
-      createSyntheticWalkingRobotDefinition({
-        definitionId: 'walking-observation-kernel'
-      })
-    )
-  )
-  if (report.status === 'legacy-view') throw new Error('Missing walking source')
-  const receipt = Object.freeze({
-    format: 'walking-observation-geometry/1' as const,
-    scene: f.demand.scene,
-    demand: f.demand,
-    source: report.source
-  })
-  const query = new QueryGeometry({
-    isCurrentWalkingReceipt: (value) => value === receipt,
-    isCurrentScene: (value) => value === receipt.scene,
-    isCurrentDemand: (value) => value === f.demand,
-    isCurrentWalkingSource: (value) => operating.sourceOwner.isCurrent(value)
-  })
-  const source = query.prepareWalking(receipt)
-  const context = Object.freeze({
-    report,
-    demand: f.demand,
-    source: report.source,
-    geometry: source,
-    generation: 1,
-    runId: 'walking-observation-kernel',
-    now: f.request.observedAt,
-    sensorIdentity: Object.freeze({})
-  })
-  let space: ReturnType<typeof prepareSceneObservationSpace> | undefined
-  const prepareSpace = vi.fn(
-    () => (space ??= prepareSceneObservationSpace(f.demand, f.sourceOwner))
-  )
-  const observations = new WalkingActionObservations(query, {
-    prepareObservationSpace: prepareSpace,
-    isCurrentObservationSpace: (value) => value === space,
-    isCurrentContext: (value) =>
-      value === context && operating.isCurrent(report),
-    screen: operating.transitScreen,
-    dynamics: f.dynamics
-  })
-  const {
-    missionRevision: _mission,
-    sceneRevision: _scene,
-    robotRevision: _robot,
-    dockRevision: _dock,
-    ...request
-  } = f.request
-  const input = {
-    ...request,
-    generation: context.generation,
-    runId: context.runId
-  }
-  return {
-    observations,
-    context,
-    input,
-    operating,
-    prepareSpace,
-    getSpace: () => space
-  }
-}
-
-it('walking observation shares the action kernel with exact walking currentness and no legacy context', () => {
-  const f = actionObservation()
+it('walking observation shares the action kernel with exact walking currentness and no legacy context with bounded canonical sources', () => {
   const { observations, context, input, operating, prepareSpace } =
-    walkingActionFixture(f)
+    walkingActionFixture('bounded-source')
   const result = observations.observeActionVolume(context, input)
   expect(prepareSpace).toHaveBeenCalledTimes(1)
   expect(result.format).toBe('walking-action-volume-observation/1')
@@ -1628,4 +1552,43 @@ it('assesses one detached current reading with no query, source or session work'
       validUntil: 100
     })
   ).toThrow()
+})
+
+it('bounded walking sources require actual rays and retain canonical mesh region and instance identity', () => {
+  const f = walkingActionFixture('bounded-source')
+  const request = {
+    ...f.input,
+    camera: {
+      ...f.input.camera,
+      pose: { position: [1, 0.2, 1] as const, rotation: [0, 0, 0, 1] as const }
+    },
+    actionBounds: {
+      min: [0.9, 0.1, 1.5] as const,
+      max: [1.1, 0.3, 1.55] as const
+    }
+  }
+  f.dynamics.prepare({
+    ...f.world,
+    domain: { min: [0, -1, 0], max: [10, 3, 3] }
+  })
+  const result = f.observations.observeActionVolume(f.context, request)
+  expect(result.coverage).toBe('partial')
+  expect(result.work.candidateVisits).toBeGreaterThan(0)
+  expect(result.work.rayTriangles).toBeGreaterThan(0)
+  const hit = result.detections.find((value) => value.kind === 'static')
+  if (!hit || hit.kind !== 'static')
+    throw new Error('Missing canonical sheet ray witness')
+  expect(hit.mesh.origin).toBe(f.scene.meshes[0])
+  expect(hit.region).toBe(f.scene.meshes[0].regions[0])
+  expect(hit.instance).toBe(0)
+  expect(f.scene.meshes[0].descriptor.instances).toHaveLength(2)
+  const exhausted = f.observations.observeActionVolume(f.context, {
+    ...request,
+    model: { ...request.model, maxRays: 0 }
+  })
+  expect(exhausted.coverage).not.toBe('complete-empty')
+  expect(exhausted.unvisited).toBeGreaterThan(0)
+  expect(exhausted.detections).toEqual([])
+  f.operating.clear()
+  expect(f.observations.isCurrent(result)).toBe(false)
 })

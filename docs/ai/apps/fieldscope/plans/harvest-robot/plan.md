@@ -2646,14 +2646,25 @@ the corrected metadata unchanged; no source triangle, joint domain, third-body
 rule or material/contact permission changes in this owner correction.
 
 Test-process supervision prerequisite: FieldScope owns an external Python process
-guard for ordinary Vitest. `test:local` and `test:ci` run the complete ordinary
+guard for ordinary and profile Vitest. `test:local` and `test:ci` run the complete ordinary
 suite through that guard with a 20-minute engineering wall deadline, independent
 process-group cleanup and bounded local artifacts. A caller may instead name
 existing ordinary test files and one explicit test title with a positive finite
 millisecond deadline; that output is labelled filtered selection evidence and is
 never reported as a complete suite. Unknown paths and raw Vitest bypass arguments
-fail before execution. The separate one-worker `test:profiles` gate and all
-product runtime limits remain unchanged.
+fail before execution. The required one-worker `test:profiles` gate now invokes
+the same supervisor with `--profile` and worker acknowledgements. Its full and
+filtered artifacts are explicitly profile evidence, never ordinary coverage.
+The seven CI timeout cases remain required actual-source profiles: bootstrap
+observation, three observation-workspace cases, two walking optical-kernel cases
+and selected-chain half-abduction. Their assertions and product budgets remain;
+bounded canonical source controls keep ordinary currentness and negative checks.
+Initial per-case engineering ceilings are 45/30/20 seconds for bootstrap/full-site/
+relation respectively; classification is not a production performance improvement.
+Existing numerical elapsed guards and the 20-minute process deadline remain.
+The original seven CI timeouts are retained as RED evidence. Focused class gates,
+supervisor selectors/cleanup/acknowledgements and static/build checks precede the
+combined integration gate and independent review.
 
 # Bounded constant-root and exact-work correction
 

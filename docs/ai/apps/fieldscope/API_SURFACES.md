@@ -19,6 +19,30 @@ per-evaluation admitted-identity reuse, and this API grants no material relation
 
 Cross-package imports use public `@asyra/*` facades. Do not import another app's runtime or renderer.
 
+## Test process and profile selection
+
+`test:local` and `test:ci` run ordinary tests through
+`scripts/supervise-tests.py`; `test:profiles` runs the same supervisor with
+`--profile` and the serial one-worker `vitest.profile.config.ts`. Both run
+the permanent supervisor self-tests first and acknowledge worker task updates
+through `vitest.setup.ts`. Profiles remain a required CI gate after ordinary
+tests. `--file`, optional `--title` for one file, and finite `--hard-stop-ms`
+are the only selection/deadline controls. Each mode rejects the other test class.
+Profile artifacts distinguish full profiles from selected profiles; neither is
+ordinary full-suite evidence. The default process wall deadline is 20 minutes,
+with owned process-group cleanup and bounded output. CPU is accounted, not capped;
+this guard does not enforce peak RSS.
+
+Seven actual-source observation/relation cases remain in the four bootstrap,
+walking-observation-workspace, observations and walking-source-relation profile
+files. Their source geometry, numerical budgets, visibility/currentness and work
+oracles remain required. Initial engineering per-case ceilings are 45 seconds for
+bootstrap, 30 seconds for full-site observation and 20 seconds for the selected
+relation. These classify bounded test workloads, not faster production or physical
+limits. Ordinary controls use admitted two-instance sheet sources for optical
+witnesses, invalid inputs and currentness; legacy cases and the local-action
+bootstrap case remain ordinary.
+
 ## Implemented active-definition and stowed-envelope prerequisites
 
 `readActiveRobotConfiguration` delegates to
