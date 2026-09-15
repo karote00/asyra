@@ -1,3 +1,4 @@
+import type { AiToolProgress } from '../src/ai/action-batch-protocol'
 import { createLocalImageTools } from './local-image-tools'
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process'
 import { homedir } from 'node:os'
@@ -63,6 +64,7 @@ const runLocalAiProvider = async (
   options: {
     readonly model: string
     readonly executable: string
+    readonly onProgress?: (event: AiToolProgress) => void
     readonly signal?: AbortSignal
     readonly checkOnly?: boolean
   }
@@ -138,7 +140,7 @@ const runLocalAiProvider = async (
   }
   const abort = () => fail(failure('AI_MODEL_BACKEND_ABORTED'))
   const timeout = setTimeout(
-    () => fail(failure('AI_MODEL_BACKEND_TRANSPORT_FAILED')),
+    () => fail(failure('AI_MODEL_BACKEND_TIMEOUT')),
     options.checkOnly ? 10_000 : requestTimeoutMs
   )
   const decoder = new StringDecoder('utf8')
@@ -162,11 +164,16 @@ const runLocalAiProvider = async (
         toolTasks.size > 0
       )
         return protocolFailure()
+      options.onProgress?.({ tool: AiImageToolIds.VTRACER, status: 'running' })
       toolCalls.add(params.callId)
       const task = imageTools
         .call(params.tool, params.arguments, toolController.signal)
         .then((svg) => {
           if (terminalError || stopped) return
+          options.onProgress?.({
+            tool: AiImageToolIds.VTRACER,
+            status: 'completed'
+          })
           child.stdin.write(
             JSON.stringify({
               id: value.id,
@@ -177,7 +184,7 @@ const runLocalAiProvider = async (
             }) + '\n'
           )
         })
-        .catch(() => protocolFailure())
+        .catch(() => fail(failure('AI_MODEL_BACKEND_IMAGE_CONVERSION_FAILED')))
         .finally(() => toolTasks.delete(task))
       toolTasks.add(task)
       return
@@ -372,6 +379,7 @@ const runLocalAiProvider = async (
 interface LocalAiProviderOptions {
   readonly model: string
   readonly executable: string
+  readonly onProgress?: (event: AiToolProgress) => void
   readonly signal?: AbortSignal
 }
 

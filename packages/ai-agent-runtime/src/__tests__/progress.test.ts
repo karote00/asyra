@@ -372,3 +372,37 @@ describe('AI runtime operational progress', () => {
     expect(updates).toHaveLength(countAfterDispose)
   })
 })
+
+it('forwards bounded provider tool progress only during the owning request', async () => {
+  const updates: AiRuntimeProgressUpdate[] = []
+  let report:
+    | ((event: { tool: string; status: 'running' | 'completed' }) => void)
+    | undefined
+  const runtime = createAiAgentRuntime(
+    runtimeInput({
+      provider: {
+        requestActionBatch: async (_input, options) => {
+          report = options.onProgress
+          report?.({ tool: 'vectorizer', status: 'running' })
+          return candidateActionBatch()
+        }
+      }
+    })
+  )
+  await runtime.run({
+    intent: 'draw',
+    signal: new AbortController().signal,
+    progressObserver: (update) => updates.push(update)
+  })
+  expect(updates).toContainEqual(
+    expect.objectContaining({
+      phase: 'provider',
+      tool: 'vectorizer',
+      toolStatus: 'running'
+    })
+  )
+  const count = updates.length
+  report?.({ tool: 'vectorizer', status: 'completed' })
+  expect(updates).toHaveLength(count)
+  await runtime.dispose()
+})

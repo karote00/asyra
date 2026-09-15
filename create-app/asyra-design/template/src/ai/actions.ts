@@ -753,7 +753,63 @@ const createCompositionActions = (
     })
   })
 
-  return Object.freeze([insert, update, remove])
+  const replace: AiActionDefinition<{
+    readonly compositionId: string
+    readonly drawing: PreparedDrawingArtifact
+  }> = Object.freeze({
+    name: AiActionNames.REPLACE_VECTOR_COMPOSITION,
+    description:
+      'Replace the referenced existing AI composition with a fully prepared drawing in one transaction. Use this instead of separate remove and insert actions. If insertion is incomplete, the old drawing is preserved.',
+    inputSchema: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['compositionId', 'drawing'],
+      properties: {
+        compositionId: { type: 'string', minLength: 1 },
+        drawing: PREPARED_DRAWING_INPUT_SCHEMA
+      }
+    },
+    execute: async (
+      args: {
+        readonly compositionId: string
+        readonly drawing: PreparedDrawingArtifact
+      },
+      context: AiExecutionContext
+    ) => {
+      assertNotAborted(context)
+      if (
+        apis.getElementType(args.compositionId) !== 'group' ||
+        args.compositionId === args.drawing.groupDescriptor.id
+      )
+        throw new AiCompositionError(
+          'The previous drawing is no longer available for replacement.'
+        )
+      const result = (await insert.execute(args.drawing, context)) as {
+        status: string
+        compositionId: string
+      }
+      if (result.status !== 'complete')
+        throw new AiCompositionError(
+          'The replacement is incomplete; the previous drawing is preserved.'
+        )
+      assertNotAborted(context)
+      if (apis.getElementType(args.compositionId) !== 'group')
+        throw new AiCompositionError('The replacement target changed.')
+      const removal = (await remove.execute(
+        { compositionId: args.compositionId },
+        context
+      )) as { status: string }
+      if (removal.status !== 'complete')
+        throw new AiCompositionError(
+          'The previous drawing could not be replaced.'
+        )
+      return Object.freeze({
+        ...result,
+        action: AiActionNames.REPLACE_VECTOR_COMPOSITION
+      })
+    }
+  })
+  return Object.freeze([insert, update, remove, replace])
 }
 
 export const createAiActions = (
@@ -858,7 +914,39 @@ export const createAiActions = (
     }
   })
 
+  const clarification: AiActionDefinition<{ readonly question: string }> =
+    Object.freeze({
+      name: AiActionNames.REQUEST_CLARIFICATION,
+      description:
+        'Ask one concise question when the drawing target or required capability is ambiguous. Return this action alone without mutations.',
+      inputSchema: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['question'],
+        properties: {
+          question: { type: 'string', minLength: 1, maxLength: 1000 }
+        }
+      },
+      execute: async (
+        args: { readonly question: string },
+        context: AiExecutionContext
+      ) => {
+        assertNotAborted(context)
+        if (
+          typeof args.question !== 'string' ||
+          !args.question.trim() ||
+          args.question.length > 1000
+        )
+          throw new AiActionError()
+        return Object.freeze({
+          action: AiActionNames.REQUEST_CLARIFICATION,
+          status: 'no-change',
+          clarification: { kind: 'question', question: args.question.trim() }
+        })
+      }
+    })
   return Object.freeze([
+    clarification,
     drawingDetailChoice,
     ...createCompositionActions(apis, mutationOptions, hostYield, paintYield),
     visibility,

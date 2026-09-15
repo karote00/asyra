@@ -6,7 +6,11 @@ import {
 } from '../ai/connection-status'
 
 /** Owns one readiness request per open/retry, independently of the message draft. */
-export const AiConnectionStatus = () => {
+export const AiConnectionStatus = ({
+  onAvailabilityChange
+}: {
+  readonly onAvailabilityChange?: (available: boolean) => void
+}) => {
   const [state, setState] = useState<AiConnectionState>('checking')
   const [revision, setRevision] = useState(0)
   useEffect(() => {
@@ -25,6 +29,11 @@ export const AiConnectionStatus = () => {
       controller.abort()
     }
   }, [revision])
+  useEffect(() => {
+    onAvailabilityChange?.(
+      state === 'checking' || state === 'ready' || state === 'configured'
+    )
+  }, [state, onAvailabilityChange])
   const connected = state === 'ready' || state === 'configured'
   const canRetry = !connected && state !== 'checking'
   let indicatorColor = 'bg-[#81838b]'

@@ -5624,3 +5624,13 @@ Stop the current owner step and replan from the first incorrect owner when:
 
 If the final heavy gate fails, report only the first over-budget or incorrect
 owner with evidence. Do not resume a local patch-and-tune loop.
+
+## Conversation lifecycle
+
+The conversation experience extension owns document-scoped messages, correlated
+questions, actual activity and safe recovery. Its current product contract is
+[AI conversation experience](../../specs/ai-conversation-experience.md).
+It precedes the existing request owner without changing prepared geometry ownership.
+Reference replacement prepares and inserts the new composition before removing only
+the validated old target inside the existing outer transaction. Any incomplete
+replacement throws so the canonical transaction rolls back the entire change.

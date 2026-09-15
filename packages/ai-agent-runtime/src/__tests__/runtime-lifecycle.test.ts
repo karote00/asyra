@@ -145,7 +145,8 @@ describe('AI runtime invocation lifecycle', () => {
         attempt: 1
       },
       {
-        signal: expect.any(AbortSignal)
+        signal: expect.any(AbortSignal),
+        onProgress: expect.any(Function)
       }
     )
     expect(result).toEqual({

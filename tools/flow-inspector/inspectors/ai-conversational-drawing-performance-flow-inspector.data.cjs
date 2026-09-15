@@ -1440,7 +1440,88 @@
     }
   ]
 
+  const compositionStep = steps.find(
+    (step) => step.id === 'stage-local-interactive-composition'
+  )
+  compositionStep.conditions.push(
+    'Reference replacement inserts the prepared drawing then removes only the validated old composition inside the same outer transaction. Incomplete insertion, target change or failed removal throws and rolls back the whole replacement.'
+  )
+  compositionStep.specRefs.push('#conversation-lifecycle')
+  steps.push({
+    id: 'conversation-lifecycle',
+    order: 0,
+    laneId: 'app-canonical',
+    title: 'Present and continue the drawing conversation',
+    ownerPackage: 'App conversation controller',
+    purpose:
+      'Own stable user messages, request lifecycle, question answers and safe recovery independently of provider attempt completion.',
+    inputs: [
+      'user intent and attachments',
+      'answer or retry correlated to a prior request',
+      'bounded runtime progress, approval decision and authoritative result'
+    ],
+    outputs: [
+      'artifact:conversation-projection',
+      'artifact:conversation-submission'
+    ],
+    conditions: [
+      'Append the user message before execution and preserve its identity through settlement.',
+      'Questions wait for user input; provider completion alone does not complete the drawing goal.',
+      'Panel closure hides presentation; document disposal cancels and retires late events.',
+      'Only existing feature and requestActionBatch owners may execute; status never writes canonical state.'
+    ],
+    bypasses: [
+      'Reject duplicate active submissions and stale answers.',
+      'Failed, cancelled or partial work never produces an unconditional success message.',
+      'Retry requires a confirmed pre-write failure or cancellation; unknown application is not replayed.'
+    ],
+    allowedContributors: [
+      'App conversation, confirmation and presentation adapters',
+      'App panel and history presentation',
+      'bounded runtime outcomes and current target references'
+    ],
+    forbiddenContributors: [
+      'geometry traversal or model output normalization in the panel',
+      'raw provider logs or personal account data',
+      'fabricated reasoning or progress',
+      'UI-owned canonical writes or rollback',
+      'additional provider transport'
+    ],
+    cacheDimensions: [],
+    implementationBoundary: [
+      'apps/asyra-design/src/ai/conversation.ts',
+      'apps/asyra-design/src/ai/presentation.ts',
+      'apps/asyra-design/src/ai/confirmation.ts',
+      'apps/asyra-design/src/ai/__tests__',
+      'apps/asyra-design/src/app',
+      'apps/asyra-design/e2e',
+      'docs/ai/apps/asyra-design/specs/ai-conversation-experience.md'
+    ],
+    specRefs: ['#conversation-lifecycle'],
+    failureOwnerStepId: 'conversation-lifecycle'
+  })
+
+  steps
+    .find((step) => step.id === 'request-backend-action-batch')
+    .inputs.push('artifact:conversation-submission')
   const routes = [
+    {
+      id: 'route-conversation-projection',
+      from: 'conversation-lifecycle',
+      kind: 'terminal',
+      predicate:
+        'The panel projects document-scoped conversation state without canonical writes.',
+      producedArtifacts: ['artifact:conversation-projection']
+    },
+    {
+      id: 'route-conversation-to-action-batch',
+      from: 'conversation-lifecycle',
+      to: 'request-backend-action-batch',
+      kind: 'handoff',
+      predicate:
+        'An admitted submission preserves original intent, attachments and revalidated target context; questions and unsafe retries do not submit.',
+      producedArtifacts: ['artifact:conversation-submission']
+    },
     {
       id: 'route-server-prepared-action-batch-to-runtime',
       from: 'request-backend-action-batch',
@@ -2021,6 +2102,22 @@
   ]
 
   const artifacts = [
+    {
+      id: 'artifact:conversation-projection',
+      ownerStepId: 'conversation-lifecycle',
+      channel:
+        'Document-scoped role-specific messages, actual activity, decisions and safe recovery controls',
+      consumerStepIds: [],
+      terminal: true
+    },
+    {
+      id: 'artifact:conversation-submission',
+      ownerStepId: 'conversation-lifecycle',
+      channel:
+        'One admitted feature request retaining original intent, attachments and current targets',
+      consumerStepIds: ['request-backend-action-batch'],
+      terminal: false
+    },
     {
       id: 'artifact:server-prepared-action-batch',
       ownerStepId: 'request-backend-action-batch',

@@ -42,11 +42,11 @@ describe('Asyra Design AI presentation summaries', () => {
     )
 
     expect(summaries.map((summary) => summary.message)).toEqual([
-      'Drawing updated successfully.',
+      'Updated 1 editable element.',
       'Partially updated the drawing: 1 applied, 1 skipped.',
       'No canvas changes were needed.',
       'The request was cancelled.',
-      'The request failed without applying changes.'
+      'The request failed. Review the canvas before trying again.'
     ])
     expect(summaries.map((summary) => summary.durationLabel)).toEqual(
       Array.from({ length: 5 }, () => 'Elapsed 1.3s')

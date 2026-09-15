@@ -263,6 +263,35 @@ describe('Asyra Design AI conversation controller', () => {
     ])
   })
 
+  it('excludes approval waiting from execution duration', async () => {
+    let time = 1000
+    const feature = createFeature(async ({ progressObserver }) => {
+      time = 1500
+      progressObserver({
+        attempt: 1,
+        phase: 'confirmation',
+        summary: 'Waiting for confirmation'
+      })
+      time = 11500
+      progressObserver({
+        attempt: 1,
+        phase: 'execution',
+        summary: 'Applying changes'
+      })
+      time = 12000
+      return executed({ status: 'complete' })
+    })
+    const controller = createAiConversationController({
+      feature,
+      getElementType: vi.fn(),
+      now: () => time
+    })
+    await expect(controller.submit('draw')).resolves.toMatchObject({
+      durationMs: 1000,
+      waitingDurationMs: 10000
+    })
+  })
+
   it('contains presentation observer failures without changing turn execution', async () => {
     const feature = createFeature(async () =>
       executed({
@@ -560,4 +589,28 @@ it('rejects stale or unknown reply targets before provider work', async () => {
     ).rejects.toMatchObject({ code: 'AI_CONVERSATION_INVALID_REPLY' })
   }
   expect(feature.execute).toHaveBeenCalledTimes(2)
+})
+
+describe('conversation recovery admission', () => {
+  it('rejects replay of a partially applied result', async () => {
+    const controller = createAiConversationController({
+      feature: {
+        cancel: () => false,
+        execute: async () => ({
+          status: 'executed',
+          actionResults: [
+            {
+              actionName: 'insert_vector_composition',
+              result: { status: 'partial' }
+            }
+          ]
+        })
+      },
+      getElementType: () => undefined
+    })
+    const turn = await controller.submit('draw')
+    await expect(controller.retry(turn.turnId)).rejects.toMatchObject({
+      code: 'AI_CONVERSATION_UNSAFE_RETRY'
+    })
+  })
 })

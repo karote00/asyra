@@ -78,10 +78,12 @@ describe('Asyra Design AI actions', () => {
     const actions = createAiActions(actionApis())
 
     expect(actions.map(({ name }) => name)).toEqual([
+      AiActionNames.REQUEST_CLARIFICATION,
       AiActionNames.REQUEST_DRAWING_DETAIL_CHOICE,
       AiActionNames.INSERT_VECTOR_COMPOSITION,
       AiActionNames.UPDATE_COMPOSITION_ELEMENTS,
       AiActionNames.REMOVE_AI_COMPOSITION,
+      AiActionNames.REPLACE_VECTOR_COMPOSITION,
       AiActionNames.SET_ELEMENT_VISIBILITY,
       AiActionNames.SELECT_ELEMENTS
     ])

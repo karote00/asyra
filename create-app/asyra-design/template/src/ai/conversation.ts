@@ -1,3 +1,5 @@
+import { canRetryAiTurn, projectAiQuestion } from './presentation'
+import { AiActionNames, AiDrawingDetailSelectionIntents } from '../constants'
 import type {
   AiJsonValue,
   AiRuntimeProgressObserver,
@@ -23,6 +25,8 @@ export interface AiImageAttachment {
 
 export interface AiConversationSubmission {
   readonly replyToTurnId?: string
+  readonly retryOfTurnId?: string
+  readonly detailOption?: 'balanced' | 'maximum'
   readonly attachments?: readonly AiImageAttachment[]
   readonly intent: string
 }
@@ -39,6 +43,12 @@ export interface AiConversationFeature {
 }
 
 export interface AiActiveTurn {
+  readonly waitingSinceMs?: number
+  readonly waitingDurationMs?: number
+  readonly startedAtMs?: number
+  readonly stopping?: boolean
+  readonly replyToTurnId?: string
+  readonly retryOfTurnId?: string
   readonly attachments: readonly AiImageAttachment[]
   readonly conversationId: string
   readonly intent: string
@@ -47,6 +57,11 @@ export interface AiActiveTurn {
 }
 
 export interface AiSettledTurn {
+  readonly waitingDurationMs?: number
+  readonly replyToTurnId?: string
+  readonly retryOfTurnId?: string
+  readonly originalIntent?: string
+  readonly requestIntent?: string
   readonly attachments: readonly AiImageAttachment[]
   readonly conversationId: string
   readonly durationMs: number
@@ -87,6 +102,7 @@ export type AiConversationErrorCode =
   | 'AI_CONVERSATION_INVALID_INTENT'
   | 'AI_CONVERSATION_INVALID_REPLY'
   | 'AI_CONVERSATION_TURN_ACTIVE'
+  | 'AI_CONVERSATION_UNSAFE_RETRY'
 
 export class AiConversationError extends Error {
   readonly code: AiConversationErrorCode
@@ -99,6 +115,8 @@ export class AiConversationError extends Error {
       message = 'AI conversation image attachment is invalid.'
     } else if (code === 'AI_CONVERSATION_INVALID_REPLY') {
       message = 'The referenced question is no longer active.'
+    } else if (code === 'AI_CONVERSATION_UNSAFE_RETRY') {
+      message = 'Review the canvas before submitting another request.'
     } else if (code === 'AI_CONVERSATION_INVALID_INTENT') {
       message = 'AI conversation intent must be non-empty.'
     }
@@ -109,6 +127,10 @@ export class AiConversationError extends Error {
 }
 
 interface MutableActiveTurn {
+  waitingSinceMs?: number
+  waitingDurationMs: number
+  readonly replyToTurnId?: string
+  readonly retryOfTurnId?: string
   readonly attachments: readonly AiImageAttachment[]
   cancelled: boolean
   readonly conversationId: string
@@ -341,6 +363,12 @@ export const createAiConversationController = (
         activeTurn === null
           ? null
           : Object.freeze({
+              startedAtMs: activeTurn.startedAtMs,
+              waitingSinceMs: activeTurn.waitingSinceMs,
+              waitingDurationMs: activeTurn.waitingDurationMs,
+              stopping: activeTurn.cancelled,
+              replyToTurnId: activeTurn.replyToTurnId,
+              retryOfTurnId: activeTurn.retryOfTurnId,
               attachments: activeTurn.attachments,
               conversationId: activeTurn.conversationId,
               intent: activeTurn.intent,
@@ -382,7 +410,8 @@ export const createAiConversationController = (
         continue
       }
       if (
-        action.actionName !== 'insert_vector_composition' ||
+        (action.actionName !== AiActionNames.INSERT_VECTOR_COMPOSITION &&
+          action.actionName !== AiActionNames.REPLACE_VECTOR_COMPOSITION) ||
         (status !== 'complete' && status !== 'partial') ||
         !isPlainObject(actionResult)
       ) {
@@ -409,7 +438,7 @@ export const createAiConversationController = (
       if (disposed) {
         throw new AiConversationError('AI_CONVERSATION_DISPOSED')
       }
-      const { attachments, intent } = normalizeSubmission(source)
+      let { attachments, intent } = normalizeSubmission(source)
       if (!intent) {
         throw new AiConversationError('AI_CONVERSATION_INVALID_INTENT')
       }
@@ -417,23 +446,50 @@ export const createAiConversationController = (
         throw new AiConversationError('AI_CONVERSATION_TURN_ACTIVE')
       }
 
-      const replyToTurnId =
-        typeof source === 'string' ? undefined : source.replyToTurnId
-      const replyTo =
-        replyToTurnId === undefined
-          ? undefined
-          : settledTurns[settledTurns.length - 1]
+      const latest = settledTurns[settledTurns.length - 1]
+      const submission = typeof source === 'string' ? undefined : source
+      const retryOf = submission?.retryOfTurnId
+        ? settledTurns.find((turn) => turn.turnId === submission.retryOfTurnId)
+        : undefined
       if (
-        replyToTurnId !== undefined &&
-        (!replyTo || replyTo.turnId !== replyToTurnId)
+        submission?.retryOfTurnId &&
+        (!retryOf || retryOf !== latest || !canRetryAiTurn(retryOf))
       ) {
+        throw new AiConversationError('AI_CONVERSATION_UNSAFE_RETRY')
+      }
+      const pendingQuestion =
+        latest && projectAiQuestion(latest) ? latest : undefined
+      const replyToTurnId = submission?.replyToTurnId ?? pendingQuestion?.turnId
+      const replyTo = replyToTurnId ? pendingQuestion : undefined
+      if (replyToTurnId && (!replyTo || replyTo.turnId !== replyToTurnId)) {
         throw new AiConversationError('AI_CONVERSATION_INVALID_REPLY')
       }
+      if (submission?.detailOption && !replyTo) {
+        throw new AiConversationError('AI_CONVERSATION_INVALID_REPLY')
+      }
+      if (attachments.length === 0 && replyTo) attachments = replyTo.attachments
+      let requestIntent = intent
+      if (submission?.detailOption) {
+        const maximum = submission.detailOption === 'maximum'
+        intent = maximum ? 'Maximum detail' : 'Balanced detail'
+        requestIntent = maximum
+          ? AiDrawingDetailSelectionIntents.MAXIMUM_EN
+          : AiDrawingDetailSelectionIntents.BALANCED_EN
+      }
+      if (retryOf) requestIntent = retryOf.requestIntent ?? retryOf.intent
+      const originalIntent =
+        replyTo?.originalIntent ??
+        replyTo?.intent ??
+        retryOf?.originalIntent ??
+        intent
 
       const startedAtMs = now()
       turnIndex += 1
       const currentTurn: MutableActiveTurn = {
+        waitingDurationMs: 0,
         attachments,
+        replyToTurnId,
+        retryOfTurnId: retryOf?.turnId,
         cancelled: false,
         conversationId,
         intent,
@@ -451,6 +507,15 @@ export const createAiConversationController = (
         if (disposed || activeTurn !== currentTurn || currentTurn.cancelled) {
           return
         }
+        if (update.phase === 'confirmation') {
+          currentTurn.waitingSinceMs ??= now()
+        } else if (currentTurn.waitingSinceMs !== undefined) {
+          currentTurn.waitingDurationMs += Math.max(
+            0,
+            now() - currentTurn.waitingSinceMs
+          )
+          currentTurn.waitingSinceMs = undefined
+        }
         currentTurn.progress.push(update)
         notify()
       }
@@ -459,7 +524,15 @@ export const createAiConversationController = (
       try {
         const metadata: AiJsonValue = {
           ...(replyTo
-            ? { replyTo: { turnId: replyTo.turnId, intent: replyTo.intent } }
+            ? { replyTo: { turnId: replyTo.turnId, intent: originalIntent } }
+            : {}),
+          ...(!replyTo && originalIntent !== requestIntent
+            ? {
+                replyTo: {
+                  turnId: retryOf?.turnId ?? currentTurn.turnId,
+                  intent: originalIntent
+                }
+              }
             : {}),
           aiTargets: {
             compositionId: aiTargets.compositionId,
@@ -483,7 +556,7 @@ export const createAiConversationController = (
           turnId: currentTurn.turnId
         }
         const featureSettlement = options.feature.execute({
-          intent,
+          intent: requestIntent,
           metadata,
           progressObserver
         })
@@ -500,10 +573,22 @@ export const createAiConversationController = (
         })
       }
 
-      const elapsedMs = now() - currentTurn.startedAtMs
+      const finishedAtMs = now()
+      const waitingDurationMs =
+        currentTurn.waitingDurationMs +
+        (currentTurn.waitingSinceMs === undefined
+          ? 0
+          : Math.max(0, finishedAtMs - currentTurn.waitingSinceMs))
+      const elapsedMs =
+        finishedAtMs - currentTurn.startedAtMs - waitingDurationMs
       const settled = Object.freeze({
         attachments,
+        replyToTurnId,
+        retryOfTurnId: retryOf?.turnId,
+        originalIntent,
+        requestIntent,
         conversationId,
+        waitingDurationMs,
         durationMs: Number.isFinite(elapsedMs)
           ? Math.max(0, Math.round(elapsedMs))
           : 0,
@@ -528,8 +613,18 @@ export const createAiConversationController = (
       }
       return settled
     },
+    retry: async (turnId: string): Promise<AiSettledTurn> => {
+      const turn = settledTurns.find((entry) => entry.turnId === turnId)
+      if (!turn || !canRetryAiTurn(turn))
+        throw new AiConversationError('AI_CONVERSATION_UNSAFE_RETRY')
+      return controller.submit({
+        intent: turn.intent,
+        attachments: turn.attachments,
+        retryOfTurnId: turnId
+      })
+    },
     cancel: (reason?: unknown): boolean => {
-      if (!activeTurn || disposed) {
+      if (!activeTurn || disposed || activeTurn.cancelled) {
         return false
       }
       activeTurn.cancelled = true

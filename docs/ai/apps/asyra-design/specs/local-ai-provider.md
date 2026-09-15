@@ -9,7 +9,9 @@ Local Codex requires an installed compatible Codex app-server, a configured
 `AI_PROVIDER_EXECUTABLE` selects the installed executable; otherwise use `codex`.
 No dependency installation, login, account switching, or API fallback occurs.
 
-The existing same-origin action-batch endpoint remains the execution route.
+The existing same-origin action-batch endpoint remains the execution route. It may
+stream registered VTracer activity followed by one final batch or sanitized error;
+JSON responses remain supported. Model commentary and reasoning are not streamed.
 The panel uses a separate `/api/ai/status` POST for connection readiness.
 For local Codex it admits only loopback peers, loopback Host, JSON requests, and
 same-origin browser requests. A hosted service cannot borrow a visitor's login.

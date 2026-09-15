@@ -141,7 +141,8 @@
               "one accepted image attachment",
               "App context and registered backend-facing action descriptions",
               "request abort signal",
-              "server-only backend selection and model; HTTP endpoint/API key or local Codex subscription login for ordinary model-backed requests"
+              "server-only backend selection and model; HTTP endpoint/API key or local Codex subscription login for ordinary model-backed requests",
+              "artifact:conversation-submission"
             ],
             "outputs": [
               "artifact:server-prepared-action-batch",
@@ -698,7 +699,8 @@
               "Every successful canonical slice completes its ordinary Factory, Preset, Render, and UI projection, commits actual element progress, awaits one browser paint opportunity, and then continues through the single serialized action loop with a fixed point budget of 2,048 and at most 32 elements after rechecking the Feature-owned AbortSignal.",
               "The exact-bounds overlay is App-owned transient DOM projection above the ordinary canvas; its CSS activity animates only transform and opacity on the compositor while every completed element continues through the ordinary editable Vector route.",
               "One outer App transaction contains the Group and every child batch and expresses one intended history action.",
-              "The App clears drawing progress and releases the document interaction lock after success, failure, cancellation, or teardown; failure and cancellation preserve complete canonical rollback and visible compensation."
+              "The App clears drawing progress and releases the document interaction lock after success, failure, cancellation, or teardown; failure and cancellation preserve complete canonical rollback and visible compensation.",
+              "Reference replacement inserts the prepared drawing then removes only the validated old composition inside the same outer transaction. Incomplete insertion, target change or failed removal throws and rolls back the whole replacement."
             ],
             "bypasses": [
               "Clarification and no-change turns create no loading state, Group, batch, or history action.",
@@ -759,7 +761,8 @@
               "#exact-bounds-loading-frame",
               "#cooperative-progressive-composition",
               "#transaction-boundary",
-              "#current-local-gates"
+              "#current-local-gates",
+              "#conversation-lifecycle"
             ],
             "failureOwnerStepId": "stage-local-interactive-composition"
           },
@@ -1533,9 +1536,82 @@
               "#definition-of-done"
             ],
             "failureOwnerStepId": "evaluate-performance-and-equivalence"
+          },
+          {
+            "id": "conversation-lifecycle",
+            "order": 0,
+            "laneId": "app-canonical",
+            "title": "Present and continue the drawing conversation",
+            "ownerPackage": "App conversation controller",
+            "purpose": "Own stable user messages, request lifecycle, question answers and safe recovery independently of provider attempt completion.",
+            "inputs": [
+              "user intent and attachments",
+              "answer or retry correlated to a prior request",
+              "bounded runtime progress, approval decision and authoritative result"
+            ],
+            "outputs": [
+              "artifact:conversation-projection",
+              "artifact:conversation-submission"
+            ],
+            "conditions": [
+              "Append the user message before execution and preserve its identity through settlement.",
+              "Questions wait for user input; provider completion alone does not complete the drawing goal.",
+              "Panel closure hides presentation; document disposal cancels and retires late events.",
+              "Only existing feature and requestActionBatch owners may execute; status never writes canonical state."
+            ],
+            "bypasses": [
+              "Reject duplicate active submissions and stale answers.",
+              "Failed, cancelled or partial work never produces an unconditional success message.",
+              "Retry requires a confirmed pre-write failure or cancellation; unknown application is not replayed."
+            ],
+            "allowedContributors": [
+              "App conversation, confirmation and presentation adapters",
+              "App panel and history presentation",
+              "bounded runtime outcomes and current target references"
+            ],
+            "forbiddenContributors": [
+              "geometry traversal or model output normalization in the panel",
+              "raw provider logs or personal account data",
+              "fabricated reasoning or progress",
+              "UI-owned canonical writes or rollback",
+              "additional provider transport"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "apps/asyra-design/src/ai/conversation.ts",
+              "apps/asyra-design/src/ai/presentation.ts",
+              "apps/asyra-design/src/ai/confirmation.ts",
+              "apps/asyra-design/src/ai/__tests__",
+              "apps/asyra-design/src/app",
+              "apps/asyra-design/e2e",
+              "docs/ai/apps/asyra-design/specs/ai-conversation-experience.md"
+            ],
+            "specRefs": [
+              "#conversation-lifecycle"
+            ],
+            "failureOwnerStepId": "conversation-lifecycle"
           }
         ],
         "routes": [
+          {
+            "id": "route-conversation-projection",
+            "from": "conversation-lifecycle",
+            "kind": "terminal",
+            "predicate": "The panel projects document-scoped conversation state without canonical writes.",
+            "producedArtifacts": [
+              "artifact:conversation-projection"
+            ]
+          },
+          {
+            "id": "route-conversation-to-action-batch",
+            "from": "conversation-lifecycle",
+            "to": "request-backend-action-batch",
+            "kind": "handoff",
+            "predicate": "An admitted submission preserves original intent, attachments and revalidated target context; questions and unsafe retries do not submit.",
+            "producedArtifacts": [
+              "artifact:conversation-submission"
+            ]
+          },
           {
             "id": "route-server-prepared-action-batch-to-runtime",
             "from": "request-backend-action-batch",
@@ -2180,6 +2256,22 @@
           }
         ],
         "artifacts": [
+          {
+            "id": "artifact:conversation-projection",
+            "ownerStepId": "conversation-lifecycle",
+            "channel": "Document-scoped role-specific messages, actual activity, decisions and safe recovery controls",
+            "consumerStepIds": [],
+            "terminal": true
+          },
+          {
+            "id": "artifact:conversation-submission",
+            "ownerStepId": "conversation-lifecycle",
+            "channel": "One admitted feature request retaining original intent, attachments and current targets",
+            "consumerStepIds": [
+              "request-backend-action-batch"
+            ],
+            "terminal": false
+          },
           {
             "id": "artifact:server-prepared-action-batch",
             "ownerStepId": "request-backend-action-batch",

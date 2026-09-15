@@ -24,7 +24,13 @@ export interface AiProviderInput<TContext = unknown> {
 export interface AiProvider {
   requestActionBatch(
     input: AiProviderInput,
-    options: { signal: AbortSignal }
+    options: {
+      signal: AbortSignal
+      onProgress?: (event: {
+        readonly tool: string
+        readonly status: 'running' | 'completed'
+      }) => void
+    }
   ): Promise<AiActionBatch>
   dispose?(): void | Promise<void>
 }

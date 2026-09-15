@@ -1,3 +1,4 @@
+import type { AiToolProgress } from '../src/ai/action-batch-protocol'
 import { admitsLocalProviderRequest } from './local-request-admission'
 import { createHash, randomUUID } from 'node:crypto'
 import { Buffer } from 'node:buffer'
@@ -40,6 +41,9 @@ export class ActionBatchServerError extends Error {
     | 'ACTION_BATCH_INVALID_INPUT'
     | 'ACTION_BATCH_MODEL_CONFIGURATION_REQUIRED'
     | 'ACTION_BATCH_MODEL_FAILED'
+    | 'ACTION_BATCH_MODEL_TIMEOUT'
+    | 'ACTION_BATCH_IMAGE_CONVERSION_FAILED'
+    | 'ACTION_BATCH_MODEL_INVALID_RESPONSE'
     | 'ACTION_BATCH_UNSUPPORTED_SAMPLE'
 
   constructor(code: ActionBatchServerError['code'], message: string) {
@@ -112,7 +116,10 @@ const readSampleActionBatch = (): Promise<AiActionBatch> => {
 
 export type RequestModelActionBatch = (
   input: AiProviderInput,
-  options: { readonly signal?: AbortSignal }
+  options: {
+    readonly signal?: AbortSignal
+    readonly onProgress?: (event: AiToolProgress) => void
+  }
 ) => Promise<AiActionBatch>
 
 const requestDefaultModelActionBatch: RequestModelActionBatch = async (
@@ -130,6 +137,7 @@ export const resolveActionBatchRequest = async (
   input: AiProviderInput,
   options: {
     readonly requestModelActionBatch?: RequestModelActionBatch
+    readonly onProgress?: (event: AiToolProgress) => void
     readonly requestId?: string
     readonly signal?: AbortSignal
   } = {}
@@ -169,9 +177,27 @@ export const resolveActionBatchRequest = async (
     options.requestModelActionBatch ?? requestDefaultModelActionBatch
   let batch: AiActionBatch
   try {
-    batch = await requestModelActionBatch(input, { signal: options.signal })
+    batch = await requestModelActionBatch(input, {
+      signal: options.signal,
+      onProgress: options.onProgress
+    })
   } catch (error) {
     const code = readErrorCode(error)
+    if (code === 'AI_MODEL_BACKEND_TIMEOUT')
+      throw new ActionBatchServerError(
+        'ACTION_BATCH_MODEL_TIMEOUT',
+        'The AI request timed out.'
+      )
+    if (code === 'AI_MODEL_BACKEND_IMAGE_CONVERSION_FAILED')
+      throw new ActionBatchServerError(
+        'ACTION_BATCH_IMAGE_CONVERSION_FAILED',
+        'The image conversion failed.'
+      )
+    if (code === 'AI_MODEL_BACKEND_INVALID_RESPONSE')
+      throw new ActionBatchServerError(
+        'ACTION_BATCH_MODEL_INVALID_RESPONSE',
+        'The AI response was invalid.'
+      )
     if (code === 'AI_MODEL_BACKEND_ABORTED') {
       throw new ActionBatchServerError(
         'ACTION_BATCH_ABORTED',
@@ -186,7 +212,6 @@ export const resolveActionBatchRequest = async (
     }
     if (
       code === 'AI_MODEL_BACKEND_HTTP_STATUS' ||
-      code === 'AI_MODEL_BACKEND_INVALID_RESPONSE' ||
       code === 'AI_MODEL_BACKEND_TRANSPORT_FAILED'
     ) {
       throw new ActionBatchServerError(
@@ -211,6 +236,21 @@ const sendJson = (
   value: unknown
 ): void => {
   if (response.writableEnded || response.destroyed) return
+  if (response.headersSent) {
+    response.end(
+      JSON.stringify(
+        statusCode === 200
+          ? { type: 'result', batch: value }
+          : {
+              type: 'error',
+              code: isRecord(value) ? value.code : 'ACTION_BATCH_INTERNAL_ERROR'
+            }
+      ) + '\n'
+    )
+    return
+  }
+  if (isRecord(value) && typeof value.code === 'string')
+    response.setHeader('x-ai-error-code', value.code)
   response.statusCode = statusCode
   response.setHeader('content-type', 'application/json; charset=utf-8')
   response.end(JSON.stringify(value))
@@ -296,6 +336,24 @@ export const createActionBatchMiddleware =
       const batch = await resolveActionBatchRequest(
         input as unknown as AiProviderInput,
         {
+          onProgress: (event) => {
+            if (
+              !request.headers.accept?.includes('application/x-ndjson') ||
+              controller.signal.aborted ||
+              response.writableEnded ||
+              response.destroyed
+            )
+              return
+            if (!response.headersSent)
+              response.setHeader('content-type', 'application/x-ndjson')
+            response.write(
+              JSON.stringify({
+                type: 'activity',
+                tool: event.tool,
+                status: event.status
+              }) + '\n'
+            )
+          },
           requestId: randomUUID(),
           requestModelActionBatch: options.requestModelActionBatch,
           signal: controller.signal
@@ -320,7 +378,12 @@ export const createActionBatchMiddleware =
         sendJson(response, 503, { code: error.code })
       } else if (
         error instanceof ActionBatchServerError &&
-        error.code === 'ACTION_BATCH_MODEL_FAILED'
+        [
+          'ACTION_BATCH_MODEL_FAILED',
+          'ACTION_BATCH_MODEL_TIMEOUT',
+          'ACTION_BATCH_IMAGE_CONVERSION_FAILED',
+          'ACTION_BATCH_MODEL_INVALID_RESPONSE'
+        ].includes(error.code)
       ) {
         sendJson(response, 502, { code: error.code })
       } else if (

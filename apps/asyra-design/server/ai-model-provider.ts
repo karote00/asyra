@@ -1,3 +1,4 @@
+import type { AiToolProgress } from '../src/ai/action-batch-protocol'
 import type {
   AiActionBatch,
   AiProviderInput
@@ -5,6 +6,8 @@ import type {
 import { AI_APP_PROMPT, AI_IMAGE_TOOL_CATALOG } from './ai-domain-prompt'
 
 export type AiModelBackendErrorCode =
+  | 'AI_MODEL_BACKEND_TIMEOUT'
+  | 'AI_MODEL_BACKEND_IMAGE_CONVERSION_FAILED'
   | 'AI_MODEL_BACKEND_ABORTED'
   | 'AI_MODEL_BACKEND_HTTP_STATUS'
   | 'AI_MODEL_BACKEND_INVALID_CONFIGURATION'
@@ -36,6 +39,7 @@ interface AiModelBackendConfiguration {
 interface AiModelBackendOptions {
   readonly environment?: Readonly<Record<string, string | undefined>>
   readonly fetch?: typeof fetch
+  readonly onProgress?: (event: AiToolProgress) => void
   readonly signal?: AbortSignal
 }
 
@@ -135,7 +139,8 @@ export const requestConfiguredAiActionBatch = async (
     const value = await requestLocalAiActionBatch(input, {
       model,
       executable,
-      signal: options.signal
+      signal: options.signal,
+      onProgress: options.onProgress
     })
     if (options.signal?.aborted) {
       throw new AiModelBackendError(

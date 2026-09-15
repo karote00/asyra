@@ -1,3 +1,4 @@
+import * as presentation from '../../ai/presentation'
 import {
   act,
   cleanup,
@@ -6,7 +7,7 @@ import {
   screen,
   waitFor
 } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AiConversationPanel } from '../ai-conversation-panel'
 import { createAiConversationController } from '../../ai/conversation'
 import { createAiConfirmationBroker } from '../../ai/confirmation'
@@ -39,8 +40,42 @@ const createPanelHarness = () => {
 }
 
 describe('AI Agent conversation panel intent boundary', () => {
+  beforeEach(() => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response(JSON.stringify({ state: 'ready' })))
+    )
+  })
   afterEach(() => {
     cleanup()
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+  })
+
+  it('does not reproject conversation history while editing the next draft', async () => {
+    const harness = createPanelHarness()
+    render(
+      <AiConversationPanel
+        confirmation={harness.confirmation}
+        conversation={harness.conversation}
+        onClose={vi.fn()}
+      />
+    )
+    await screen.findByText('Local AI connected')
+    act(() => {
+      void harness.conversation.submit('Draw')
+    })
+    const project = vi.spyOn(presentation, 'currentAiActivity')
+    for (const value of ['N', 'Ne', 'Next']) {
+      fireEvent.change(screen.getByLabelText('Message Agent'), {
+        target: { value }
+      })
+    }
+    expect(project).not.toHaveBeenCalled()
+    await act(async () => {
+      harness.pending.resolve({ status: 'executed', actionResults: [] })
+    })
+    expect(project).toHaveBeenCalled()
   })
 
   it('accepts one trimmed draft, stays non-modal, and exposes active cancellation', () => {
@@ -88,8 +123,63 @@ describe('AI Agent conversation panel intent boundary', () => {
     ).toBe(AiDocumentInteractionTargets.AGENT_CANCEL)
 
     fireEvent.click(screen.getByRole('button', { name: 'Close Agent panel' }))
-    expect(harness.feature.cancel).toHaveBeenCalledWith('panel-closed')
+    expect(harness.feature.cancel).not.toHaveBeenCalled()
     expect(onClose).toHaveBeenCalledOnce()
+  })
+
+  it('keeps the same user message node on the right from submission through settlement', async () => {
+    const harness = createPanelHarness()
+    render(
+      <AiConversationPanel
+        confirmation={harness.confirmation}
+        conversation={harness.conversation}
+        onClose={vi.fn()}
+      />
+    )
+    fireEvent.change(screen.getByLabelText('Message Agent'), {
+      target: { value: 'Draw a 240px logo' }
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }))
+    const userMessage = screen.getByLabelText('Your message')
+    expect(userMessage.textContent).toBe('Draw a 240px logo')
+    expect(userMessage.className).toContain('self-end')
+    expect(screen.getByLabelText('Agent response').textContent).not.toContain(
+      'Draw a 240px logo'
+    )
+    await act(async () => {
+      harness.pending.resolve({ status: 'executed', actionResults: [] })
+      await harness.pending.promise
+    })
+    expect(screen.getByLabelText('Your message')).toBe(userMessage)
+  })
+
+  it('offers a safe retry and editable retained request after a provider deadline', async () => {
+    const harness = createPanelHarness()
+    render(
+      <AiConversationPanel
+        confirmation={harness.confirmation}
+        conversation={harness.conversation}
+        onClose={vi.fn()}
+      />
+    )
+    fireEvent.change(screen.getByLabelText('Message Agent'), {
+      target: { value: 'Replace the previous drawing using this image' }
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }))
+    await act(async () => {
+      harness.pending.resolve({
+        status: 'failed',
+        stage: 'provider',
+        code: 'AI_PROVIDER_TIMEOUT'
+      })
+      await harness.pending.promise
+    })
+    expect(screen.getByText(/timed out/)).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Edit request' }))
+    expect(
+      (screen.getByLabelText('Message Agent') as HTMLTextAreaElement).value
+    ).toBe('Replace the previous drawing using this image')
   })
 
   it('does not submit whitespace or queue a second active turn', () => {
@@ -314,8 +404,8 @@ describe('AI Agent conversation panel intent boundary', () => {
   })
 
   it.each([
-    ['Allow', true],
-    ['Deny', false]
+    ['Approve', true],
+    ['Decline', false]
   ] as const)(
     'renders a concise confirmation and routes %s to the broker',
     async (decision, expected) => {
@@ -418,9 +508,7 @@ describe('AI Agent conversation panel intent boundary', () => {
     })
     fireEvent.click(screen.getByRole('button', { name: 'Send' }))
 
-    expect(
-      await screen.findByText('Drawing updated successfully.')
-    ).toBeTruthy()
+    expect(await screen.findByText('Updated 1 editable element.')).toBeTruthy()
     const settledMessage = screen.getByTestId('ai-agent-message')
     expect(settledMessage.tagName).toBe('ARTICLE')
     expect(settledMessage.getAttribute('data-outcome')).toBe('success')

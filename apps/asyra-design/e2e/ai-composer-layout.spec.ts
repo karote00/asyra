@@ -86,7 +86,7 @@ for (const width of [360, 1280]) {
     const intent = 'Draw a 240x240 blue circle'
     await page.getByLabel('Message Agent').fill(intent)
     await page.getByRole('button', { name: 'Send', exact: true }).click()
-    await expect(page.getByText('Waiting for your choice')).toBeVisible()
+    await expect(page.getByText('Waiting for your answer')).toBeVisible()
     await expect(page.getByText('Completed', { exact: true })).toHaveCount(0)
     await expect(page.getByText(/7,111|27,471|295,794/)).toHaveCount(0)
     const choice = page.getByRole('button', { name: 'Choose Balanced detail' })
@@ -98,9 +98,7 @@ for (const width of [360, 1280]) {
     await expect.poll(() => requests.length).toBe(2)
     expect(requests[1].metadata.replyTo?.intent).toBe(intent)
     expect(requests[1].intent).toContain('balanced detail')
-    await expect(
-      page.getByText('This question is no longer active.')
-    ).toBeVisible()
+    await expect(page.getByText('Selected: Balanced detail')).toBeVisible()
     await expect(choice).toHaveCount(0)
   })
 }

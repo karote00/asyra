@@ -397,7 +397,7 @@ describe('local subscription AI backend', () => {
     const server = fakeServer({ hold: true })
     const promise = requestConfiguredAiActionBatch(input, { environment })
     const checked = expect(promise).rejects.toMatchObject({
-      code: 'AI_MODEL_BACKEND_TRANSPORT_FAILED'
+      code: 'AI_MODEL_BACKEND_TIMEOUT'
     })
     await vi.advanceTimersByTimeAsync(300_001)
     await checked
