@@ -182,7 +182,7 @@ test('CI bounds workspace test concurrency without dropping test owners', () => 
   assert.equal(scripts['test:ci'], 'yarn test:scripts && turbo run test:ci')
   assert.equal(
     fieldscopeScripts['test:profiles'],
-    'vitest run --config vitest.profile.config.ts'
+    'node --test scripts/__tests__/supervise-tests.test.mjs && python3 scripts/supervise-tests.py --profile'
   )
   assert.equal(
     fieldscopeScripts['test:local'],
