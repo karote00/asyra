@@ -43,10 +43,11 @@ describe('quadruped definition schema - no source or motion admission', () => {
       expect(
         definition.referenceBaseHeight + stage.mount.position[1]
       ).toBeCloseTo(0.55)
-      expect(stage.liftRange).toEqual([0, 1.4])
+      expect(stage.liftRange).toEqual([0, 1.32])
       expect(
         definition.referenceBaseHeight +
           stage.mount.position[1] +
+          definition.arms[0].mount.position[1] +
           stage.liftRange[1]
       ).toBeCloseTo(1.95)
     }
@@ -67,7 +68,7 @@ describe('quadruped definition schema - no source or motion admission', () => {
     expect(Object.isFrozen(definition.stages.left.mount.position)).toBe(true)
     expect(Object.isFrozen(raw)).toBe(false)
     raw.stages.left.liftRange[1] = 2
-    expect(definition.stages.left.liftRange[1]).toBe(1.4)
+    expect(definition.stages.left.liftRange[1]).toBe(1.32)
     expect(
       readQuadrupedRobotDefinition(JSON.parse(JSON.stringify(definition)))
     ).toEqual(definition)
@@ -92,7 +93,7 @@ describe('quadruped definition schema - no source or motion admission', () => {
     expect(() =>
       readQuadrupedRobotPose(definition, { ...raw, definitionId: 'foreign' })
     ).toThrow()
-    raw.lifts.left = 1.4000000000000001
+    raw.lifts.left = 1.32 + Number.EPSILON
     expect(() => readQuadrupedRobotPose(definition, raw)).toThrow()
   })
 

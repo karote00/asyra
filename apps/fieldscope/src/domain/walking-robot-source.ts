@@ -669,6 +669,8 @@ function ringBuilder(
   return builder
 }
 
+export { ringBuilder as createAnnularSourceMaterial }
+
 function buildWalkingRobotSource(
   definition: WalkingRobotDefinition,
   revision: number

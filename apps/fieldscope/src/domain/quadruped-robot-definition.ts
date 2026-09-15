@@ -31,7 +31,12 @@ const ARM_AXES = {
   wristYaw: 'y',
   wristRoll: 'z'
 } as const
-const LEG_AXES = { hipAbduction: 'z', hipPitch: 'x', kneePitch: 'x' } as const
+const LEG_AXES = {
+  hipAbduction: 'z',
+  hipPitch: 'x',
+  kneePitch: 'x',
+  anklePitch: 'x'
+} as const
 type ArmJoint = keyof typeof ARM_AXES
 type LegJoint = keyof typeof LEG_AXES
 interface ArmDefinition {
@@ -63,6 +68,12 @@ interface ShoulderStage {
   readonly mount: WalkingRigidTransform
   readonly liftRange: Range
   readonly fixedHousing: WalkingMassGeometry
+  readonly telescope: {
+    readonly segmentCount: number
+    readonly overlap: number
+    readonly wall: number
+    readonly clearance: number
+  }
   readonly movingMassKg: number
   readonly movingLocalCoM: Point3
 }
@@ -279,14 +290,22 @@ function validStage(stage: unknown) {
       'liftRange',
       'fixedHousing',
       'movingMassKg',
-      'movingLocalCoM'
+      'movingLocalCoM',
+      'telescope'
     ]) &&
     transform(stage.mount) &&
     range(stage.liftRange) &&
     stage.liftRange[0] >= 0 &&
     massPart(stage.fixedHousing) &&
     positive(stage.movingMassKg) &&
-    point(stage.movingLocalCoM)
+    point(stage.movingLocalCoM) &&
+    exact(stage.telescope, ['segmentCount', 'overlap', 'wall', 'clearance']) &&
+    Number.isInteger(stage.telescope.segmentCount) &&
+    Number(stage.telescope.segmentCount) >= 2 &&
+    Number(stage.telescope.segmentCount) <= 16 &&
+    positive(stage.telescope.overlap) &&
+    positive(stage.telescope.wall) &&
+    positive(stage.telescope.clearance)
   )
 }
 
@@ -482,19 +501,25 @@ export function createSyntheticQuadrupedRobotDefinition({
   })
   const linkPart = (length: number, massKg: number): WalkingLinkDefinition => ({
     length,
-    section: 0.05,
+    section: 0.035,
     massKg,
     localCoM: [0, 0, length / 2]
   })
   const stages = Object.fromEntries(
     (['left', 'right'] as const).map((side) => {
-      const x = side === 'left' ? -0.3 : 0.3
+      const x = side === 'left' ? -0.363 : 0.363
       return [
         side,
         {
           mount: mount([x, 0.29, 0]),
-          liftRange: [0, 1.4],
-          fixedHousing: part([0.1, 0.4, 0.18], [x, 0.25, 0], 2),
+          liftRange: [0, 1.32],
+          fixedHousing: part([0.07, 0.24, 0.18], [x, 0.12, 0], 2),
+          telescope: {
+            segmentCount: 8,
+            overlap: 0.04,
+            wall: 0.002,
+            clearance: 0.001
+          },
           movingMassKg: 3,
           movingLocalCoM: [0, 0, 0]
         }
@@ -508,7 +533,11 @@ export function createSyntheticQuadrupedRobotDefinition({
       arms.push({
         side,
         role,
-        mount: mount([0, 0, role === 'holder' ? -0.14 : 0.14]),
+        mount: mount([
+          side === 'left' ? -0.08 : 0.08,
+          0.08,
+          role === 'holder' ? -0.36 : 0.36
+        ]),
         upper: linkPart(0.4, 1.1),
         forearm: linkPart(0.4, 0.8),
         wrist: linkPart(0.08, 0.3),
@@ -520,7 +549,7 @@ export function createSyntheticQuadrupedRobotDefinition({
               ? ['foliage-opening', 'fruit-retention']
               : ['cutting']
         },
-        guard: part([0.1, 0.08, 0.14], [0, 0, 0.06], 0.15),
+        guard: part([0.11, 0.08, 0.14], [0, 0, 0.06], 0.15),
         jointRanges: {
           rootYaw: [-Math.PI, Math.PI],
           rootPitch: [-Math.PI / 2, Math.PI / 2],
@@ -536,7 +565,7 @@ export function createSyntheticQuadrupedRobotDefinition({
         side,
         station,
         mount: mount([
-          side === 'left' ? -0.23 : 0.23,
+          side === 'left' ? -0.335 : 0.335,
           0,
           station === 'front' ? 0.3 : -0.3
         ]),
@@ -546,11 +575,13 @@ export function createSyntheticQuadrupedRobotDefinition({
         jointRanges: {
           hipAbduction: [-0.8, 0.8],
           hipPitch: [-1.5, 1.5],
-          kneePitch: [0, 2.7]
+          kneePitch: [0, 2.7],
+          anklePitch: [-1.5, 1.5]
         }
       })
     }
   }
+  const stanceAngle = Math.acos((0.26 - 0.035 - 0.025) / (0.24 + 0.27))
   const pose = (
     left: number,
     right: number,
@@ -563,9 +594,9 @@ export function createSyntheticQuadrupedRobotDefinition({
       side,
       role,
       toolClosure: role === 'cutter' ? cutterClosure : 1,
-      rootYaw: side === 'left' ? -Math.PI / 2 : Math.PI / 2,
+      rootYaw: rootPitch === 0 ? 0 : (Math.PI / 2) * (side === 'left' ? -1 : 1),
       rootPitch,
-      elbowPitch: 1.8,
+      elbowPitch: 2.6,
       wristPitch: -0.8,
       wristYaw: 0,
       wristRoll: 0
@@ -574,10 +605,27 @@ export function createSyntheticQuadrupedRobotDefinition({
       side,
       station,
       hipAbduction: 0,
-      hipPitch: -0.5,
-      kneePitch: 1.1
+      hipPitch: -stanceAngle,
+      kneePitch: 2 * stanceAngle,
+      anklePitch: -stanceAngle
     }))
   })
+  const basePlatform = createSyntheticBasketPlatform()
+  const platform = {
+    ...basePlatform,
+    fixedParts: basePlatform.fixedParts.map((part, index) =>
+      index === 0
+        ? part
+        : {
+            ...part,
+            centre: [
+              index % 2 ? -0.18 : 0.18,
+              part.centre[1],
+              index % 2 ? -0.4 : 0.4
+            ] as Point3
+          }
+    )
+  }
   return readQuadrupedRobotDefinition({
     format: QUADRUPED_ROBOT_FORMAT,
     topology: QUADRUPED_ROBOT_TOPOLOGY,
@@ -590,14 +638,14 @@ export function createSyntheticQuadrupedRobotDefinition({
     },
     referenceBaseHeight: 0.26,
     chassis: part([0.54, 0.18, 0.82], [0, 0.09, 0], 12),
-    platform: createSyntheticBasketPlatform(),
+    platform,
     stages,
     armAxes: ARM_AXES,
     legAxes: LEG_AXES,
     arms,
     legs,
     presets: {
-      travel: pose(0, 0, -0.8),
+      travel: pose(0, 0, 0),
       bilateralHarvest: pose(0.8, 1.1, 0.2, 0),
       basketPlacement: pose(0.4, 0.2, -0.3)
     }

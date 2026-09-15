@@ -260,6 +260,52 @@ function readPose(source: WalkingRobotSource, raw: unknown): WalkingRobotPose {
   return freeze(value) as unknown as WalkingRobotPose
 }
 
+export function evaluateArticulatedTransforms(
+  bodies: WalkingRobotSource['rig']['bodies'],
+  joints: readonly WalkingRobotJoint[],
+  values: ReadonlyMap<string, number>,
+  base: WalkingRigidTransform
+): ReadonlyMap<string, WalkingRigidTransform> {
+  const transforms = new Map<string, WalkingRigidTransform>([['base', base]])
+  const pending = new Set(
+    bodies.filter(({ id }) => id !== 'base').map(({ id }) => id)
+  )
+  while (pending.size) {
+    let advanced = false
+    for (const bodyId of [...pending]) {
+      const body = required(bodies.find(({ id }) => id === bodyId)),
+        parent = body.parentBodyId
+          ? transforms.get(body.parentBodyId)
+          : undefined
+      if (!parent) continue
+      if (body.attachment === 'fixed')
+        transforms.set(body.id, compose(parent, required(body.fixedFrame)))
+      else {
+        const joint = required(
+            joints.find(({ childBodyId }) => childBodyId === body.id)
+          ),
+          value = values.get(joint.id)
+        if (value === undefined) return invalid()
+        transforms.set(
+          body.id,
+          compose(
+            compose(parent, joint.frame),
+            joint.motion === 'prismatic'
+              ? translated(joint.axis, value)
+              : axisRotation(joint.axis, value)
+          )
+        )
+      }
+      pending.delete(bodyId)
+      advanced = true
+    }
+    if (!advanced) return invalid()
+  }
+  return transforms
+}
+
+export { compose as composeRigidTransform, axisRotation as rotateRigidAxis }
+
 export function evaluateWalkingRobotPose(
   source: WalkingRobotSource,
   rawPose: WalkingRobotPose
@@ -281,43 +327,12 @@ export function evaluateWalkingRobotPose(
     values.set(`${id}-hip`, leg.hip)
     values.set(`${id}-knee`, leg.knee)
   }
-  const transforms = new Map<string, WalkingRigidTransform>([
-    ['base', pose.base]
-  ])
-  const pending = new Set(
-    source.rig.bodies.filter(({ id }) => id !== 'base').map(({ id }) => id)
+  const transforms = evaluateArticulatedTransforms(
+    source.rig.bodies,
+    source.rig.joints,
+    values,
+    pose.base
   )
-  while (pending.size) {
-    let advanced = false
-    for (const bodyId of [...pending]) {
-      const body = required(source.rig.bodies.find(({ id }) => id === bodyId)),
-        parent = body.parentBodyId
-          ? transforms.get(body.parentBodyId)
-          : undefined
-      if (!parent) continue
-      if (body.attachment === 'fixed')
-        transforms.set(body.id, compose(parent, required(body.fixedFrame)))
-      else {
-        const joint = required(
-            source.rig.joints.find(({ childBodyId }) => childBodyId === body.id)
-          ),
-          value = values.get(joint.id)
-        if (value === undefined) return invalid()
-        transforms.set(
-          body.id,
-          compose(
-            compose(parent, joint.frame),
-            joint.motion === 'prismatic'
-              ? translated(joint.axis, value)
-              : axisRotation(joint.axis, value)
-          )
-        )
-      }
-      pending.delete(bodyId)
-      advanced = true
-    }
-    if (!advanced) return invalid()
-  }
   const worldPoint = (bodyId: string, local: Point3) =>
     compose(required(transforms.get(bodyId)), {
       position: local,
