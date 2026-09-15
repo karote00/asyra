@@ -308,6 +308,19 @@ function StoryScene({
       <span>Powered by Asyra</span>
     </div>
   )
+  if (!shared && chapter === 0) {
+    return (
+      <div
+        data-scene-viewport
+        data-static-illustration
+        role="img"
+        aria-label="A person sketches an idea before choosing its software foundation."
+      >
+        <Illustration name="thinker" />
+        {caption}
+      </div>
+    )
+  }
   return (
     <div className="relative h-full">
       <div
