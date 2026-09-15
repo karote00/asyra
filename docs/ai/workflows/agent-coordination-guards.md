@@ -33,6 +33,32 @@ requires an explicit dependency and completion of the predecessor. To change
 an immutable task scope, retire the old task and register its replacement after
 coordinator review; do not silently widen a worker's task.
 
+## Bounded registry history
+
+The version-one live registry remains readable until an explicit compaction.
+Only an active coordinator rooted at the main repository may invoke
+`compact` with the observed registry revision. Compaction writes a version-two
+registry, so older guard binaries fail closed instead of dropping archive
+metadata during a later update.
+
+Compaction keeps every nonterminal task and the transitive task records it
+currently references. Other complete or retired records move unchanged into
+immutable, content-addressed files under
+`tmp/agent-coordination/archive/`. Each archive file retains the complete
+normalized task authority, review, evidence and relationship fields and remains
+subject to the existing file-size bound. Archive files are durably linked before
+the live registry is atomically replaced. A failed or stale live replacement may
+leave an unreferenced archive file, but cannot publish a registry that points to
+missing history.
+
+Version-two loading verifies repository containment, regular-file ownership,
+content hashes, unique IDs and historical relationships. Archived complete
+records may satisfy a later task dependency; retired records cannot. Archived
+IDs cannot be registered again, and a sub-PR integration always requires its
+source and goal to remain in the live registry. Use the read-only `history`
+operation to retrieve a verified archived snapshot. Installing the reviewed
+guard version and compacting live state are separate coordinator operations.
+
 Expected file digests preserve observed user and agent work. An unknown digest
 is not permission to overwrite. An in-scope `Add File` requires a registered
 `absent` preimage and a path that still does not exist; it cannot overwrite an
