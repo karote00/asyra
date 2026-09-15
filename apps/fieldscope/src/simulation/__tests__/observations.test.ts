@@ -1,6 +1,11 @@
 import { beforeAll, expect, it, vi } from 'vitest'
+import { Quaternion, Vector3 } from 'three'
 import { SiteGeometry } from '../../render-app/site-geometry'
-import { buildSiteMeshes } from '../../render-app/site-projection'
+import { readSpatialDescriptor } from '../../engine/spatial-contract'
+import {
+  buildSiteMeshes,
+  type SiteMesh
+} from '../../render-app/site-projection'
 import { RobotProjection } from '../../render-app/robot-projection'
 import { DEFAULT_CONFIGURATION } from '../../domain/farm-configuration'
 import {
@@ -15,11 +20,19 @@ import type { CanonicalMission, DispatchEvidence } from '../contracts'
 import { HarvestSession } from '../session'
 import { QueryGeometry } from '../geometry'
 import { RayQueries } from '../ray-query'
+import { WalkingTransitScreen } from '../walking-transit-screen'
+import { SyntheticDynamicSceneOwner } from '../synthetic-dynamic-scene'
+import { prepareSceneDemand } from '../scene-demand'
+import { WalkingOperatingOwner } from '../../runtime/walking-operating-workspace'
+import { createWalkingRuntimeSelection } from '../../domain/walking-runtime-selection'
+import { createSyntheticWalkingRobotDefinition } from '../../domain/walking-robot-definition'
 import {
   TargetObservations,
+  WalkingActionObservations,
   type ObservationContext,
   type TargetReading,
-  type ViewRequest
+  type ViewRequest,
+  type ActionVolumeRequest
 } from '../observations'
 
 const geometry = new SiteGeometry(),
@@ -41,12 +54,12 @@ beforeAll(() => {
     robot: projection.getSource()
   })
 })
-const dispatchEvidence = (): DispatchEvidence => ({
+const dispatchEvidence = (mission = receipt): DispatchEvidence => ({
   id: 'dispatch',
   source: 'synthetic',
   missionRevision: 1,
-  sceneRevision: receipt.scene.revision,
-  robotRevision: receipt.robot.revision,
+  sceneRevision: mission.scene.revision,
+  robotRevision: mission.robot.revision,
   observedAt: 0,
   validFrom: 0,
   validUntil: 1000,
@@ -89,7 +102,13 @@ const dispatchEvidence = (): DispatchEvidence => ({
   }
 })
 
-function setup(mutableContext = false) {
+function setup(
+  mutableContext = false,
+  sourceMission = receipt,
+  sourceGeometry = geometry
+) {
+  const receipt = sourceMission,
+    geometry = sourceGeometry
   const session = new HarvestSession(
     receipt,
     {
@@ -116,7 +135,7 @@ function setup(mutableContext = false) {
     }
   )
   expect(
-    session.start(session.getSnapshot().generation, dispatchEvidence())
+    session.start(session.getSnapshot().generation, dispatchEvidence(receipt))
   ).toBe(true)
   const tuple = Object.freeze({
     revision: receipt.revision,
@@ -381,6 +400,575 @@ it.each(['position', 'rotation', 'cutSite'])(
     expect(f.session.getSnapshot() === snapshot).toBe(true)
   }
 )
+
+function actionObservation(extra?: SiteMesh) {
+  const site = extra ? new SiteGeometry() : geometry
+  const mission = extra
+    ? Object.freeze({
+        ...receipt,
+        scene: site.prepareScene(farm, [...buildSiteMeshes(farm, site), extra])
+      })
+    : receipt
+  const f = setup(false, mission, site)
+  const demand = prepareSceneDemand(farm, mission.scene, {
+    version: 1,
+    route: {
+      kind: 'soil-strip',
+      bay: 0,
+      stripId: 'strip-3',
+      from: 0.25,
+      until: 1.9
+    },
+    evidence: {
+      kind: 'synthetic',
+      id: 'action-survey',
+      label: 'Synthetic route'
+    },
+    growth: { kind: 'bounded', coverage: 'complete', volumes: [] },
+    clearanceMargin: { kind: 'bounded', metres: 0 }
+  })
+  if (!demand.route) throw new Error('Missing source route')
+  const screen = new WalkingTransitScreen((value) => value === demand)
+  const dynamics = new SyntheticDynamicSceneOwner()
+  const world = {
+    format: 'synthetic-dynamic-scene/1' as const,
+    assumption: 'Explicit finite actors',
+    domain: demand.route.volume,
+    validFrom: 0,
+    validUntil: 10,
+    actors: []
+  }
+  dynamics.prepare(world)
+  const observations = new TargetObservations(
+    f.session,
+    f.query,
+    {
+      isCurrentContext: (value) => value === f.context(),
+      isCurrentMission: (value) => value === mission
+    },
+    { screen, dynamics }
+  )
+  const base = viewpoint(f)
+  const { targetIds: _targets, samplesPerTarget: _samples, ...binding } = base
+  const x = (demand.route.volume.min[0] + demand.route.volume.max[0]) / 2
+  const request: ActionVolumeRequest = {
+    ...binding,
+    source: 'synthetic-action-volume/1',
+    actionId: 'local-action',
+    actionBounds: { min: [x - 0.01, 0.12, 1.5], max: [x + 0.01, 0.14, 1.55] },
+    camera: {
+      pose: { position: [x, 0.13, 1], rotation: [0, 0, 0, 1] },
+      halfWidthSlope: 1,
+      halfHeightSlope: 1,
+      maxDistance: 2
+    },
+    optics: {
+      illumination: 0.875,
+      filmTransmission: 0.875,
+      weatherTransmission: 0.875,
+      shadowFraction: 0.125,
+      glare: 0.0625
+    },
+    model: {
+      format: 'synthetic-action-volume/1',
+      minSignal: 0.5,
+      maxGlare: 0.125,
+      maxCandidates: 64,
+      maxRays: 16,
+      maxActors: 64
+    }
+  }
+  return { ...f, observations, demand, screen, dynamics, world, request }
+}
+
+it('computes complete-empty only for the entire declared synthetic sight volume', () => {
+  const f = actionObservation()
+  const result = f.observations.observeActionVolume(
+    f.context(),
+    f.demand,
+    f.request
+  )
+  expect(result.coverage).toBe('complete-empty')
+  expect(result.reliability.signal.low).toBeGreaterThan(0.5)
+  expect(result.detections).toEqual([])
+  expect(result.work).toMatchObject({
+    sightQueries: 1,
+    rayBatches: 0,
+    sourceActorVisits: 0
+  })
+  expect(f.observations.isCurrentAction(result)).toBe(true)
+  expect(f.observations.isCurrentAction({ ...result })).toBe(false)
+  f.observations.observeActionVolume(f.context(), f.demand, f.request)
+  expect(f.screen.work.builds).toBe(1)
+  expect(() =>
+    f.observations.observeActionVolume(f.context(), f.demand, {
+      ...f.request,
+      safe: true
+    } as never)
+  ).toThrow()
+  expect(() =>
+    f.observations.observeActionVolume(f.context(), { ...f.demand }, f.request)
+  ).toThrow()
+})
+
+it('walking observation shares the action kernel with exact walking currentness and no legacy context', () => {
+  const f = actionObservation()
+  const operating = new WalkingOperatingOwner(
+    () => f.demand,
+    (value) => value === f.demand
+  )
+  const report = operating.apply(
+    createWalkingRuntimeSelection(
+      createSyntheticWalkingRobotDefinition({
+        definitionId: 'walking-observation-kernel'
+      })
+    )
+  )
+  if (report.status === 'legacy-view') throw new Error('Missing walking source')
+  const receipt = Object.freeze({
+    format: 'walking-observation-geometry/1' as const,
+    scene: f.demand.scene,
+    demand: f.demand,
+    source: report.source
+  })
+  const query = new QueryGeometry({
+    isCurrentWalkingReceipt: (value) => value === receipt,
+    isCurrentScene: (value) => value === receipt.scene,
+    isCurrentDemand: (value) => value === f.demand,
+    isCurrentWalkingSource: (value) => operating.sourceOwner.isCurrent(value)
+  })
+  const source = query.prepareWalking(receipt)
+  const context = Object.freeze({
+    report,
+    demand: f.demand,
+    source: report.source,
+    geometry: source,
+    generation: 1,
+    runId: 'walking-observation-kernel',
+    now: f.request.observedAt,
+    sensorIdentity: Object.freeze({})
+  })
+  const observations = new WalkingActionObservations(query, {
+    isCurrentContext: (value) =>
+      value === context && operating.isCurrent(report),
+    screen: operating.transitScreen,
+    dynamics: f.dynamics
+  })
+  const {
+    missionRevision: _mission,
+    sceneRevision: _scene,
+    robotRevision: _robot,
+    dockRevision: _dock,
+    ...request
+  } = f.request
+  const input = {
+    ...request,
+    generation: context.generation,
+    runId: context.runId
+  }
+  const result = observations.observeActionVolume(context, input)
+  expect(result.format).toBe('walking-action-volume-observation/1')
+  expect(result.context).toBe(context)
+  expect(result.coverage).toBe('complete-empty')
+  expect(observations.isCurrent(result)).toBe(true)
+  const again = observations.observeActionVolume(context, input)
+  expect(again.work.membershipBuilds).toBe(0)
+  expect(again.work.cameraFrames).toBe(1)
+  expect(again.work.sightQueries).toBe(1)
+  expect(operating.transitScreen.work.builds).toBe(1)
+  expect(
+    observations.observeActionVolume(context, {
+      ...input,
+      optics: { ...input.optics, illumination: null }
+    }).coverage
+  ).not.toBe('complete-empty')
+  operating.clear()
+  expect(observations.isCurrent(result)).toBe(false)
+})
+
+it('keeps lighting, frustum, source domain and budget failures non-complete', () => {
+  const f = actionObservation()
+  for (const optics of [
+    { ...f.request.optics, illumination: 0.125 },
+    { ...f.request.optics, shadowFraction: 1 },
+    { ...f.request.optics, glare: 0.5 },
+    { ...f.request.optics, weatherTransmission: null }
+  ])
+    expect(
+      f.observations.observeActionVolume(f.context(), f.demand, {
+        ...f.request,
+        optics
+      }).coverage
+    ).not.toBe('complete-empty')
+  expect(
+    f.observations.observeActionVolume(f.context(), f.demand, {
+      ...f.request,
+      camera: { ...f.request.camera, halfWidthSlope: 0.001 }
+    }).coverage
+  ).not.toBe('complete-empty')
+  f.dynamics.prepare({ ...f.world, domain: f.request.actionBounds })
+  expect(
+    f.observations.observeActionVolume(f.context(), f.demand, f.request)
+      .coverage
+  ).not.toBe('complete-empty')
+})
+
+it('observes a foreground person outside the action box without turning a stopped person into empty space', () => {
+  const f = actionObservation(),
+    x = f.request.camera.pose.position[0]
+  const bounds = {
+    min: [x - 0.02, 0.1, 1.2] as const,
+    max: [x + 0.02, 0.16, 1.3] as const
+  }
+  const actor = {
+    trackId: 'person-1',
+    kind: 'person' as const,
+    states: [{ from: 0, until: 10, motion: 'moving' as const, bounds }]
+  }
+  f.dynamics.prepare({ ...f.world, actors: [actor] })
+  const result = f.observations.observeActionVolume(
+    f.context(),
+    f.demand,
+    f.request
+  )
+  expect(result.coverage).toBe('partial')
+  expect(result.detections).toContainEqual(
+    expect.objectContaining({
+      kind: 'dynamic',
+      trackId: 'person-1',
+      actorKind: 'person',
+      motion: 'moving'
+    })
+  )
+  expect(
+    f.observations.observeActionVolume(f.context(), f.demand, {
+      ...f.request,
+      model: { ...f.request.model, maxActors: 0 }
+    }).coverage
+  ).not.toBe('complete-empty')
+  f.dynamics.prepare({
+    ...f.world,
+    actors: [
+      { ...actor, states: [{ ...actor.states[0], motion: 'stationary' }] }
+    ]
+  })
+  expect(f.observations.isCurrentAction(result)).toBe(false)
+  const stopped = f.observations.observeActionVolume(
+    f.context(),
+    f.demand,
+    f.request
+  )
+  expect(stopped.detections).toContainEqual(
+    expect.objectContaining({
+      trackId: 'person-1',
+      actorKind: 'person',
+      motion: 'stationary'
+    })
+  )
+  expect(f.screen.work.builds).toBe(1)
+})
+
+it('retains actual authored leaf ray identity for a foreground source outside the action box', () => {
+  const f = actionObservation()
+  if (!f.demand.route) throw new Error('Missing source route')
+  const route = f.demand.route.volume
+  const selected = f.demand.freePassage.exclusions.flatMap((item) => {
+    if (item.kind !== 'source') return []
+    const patch = item.mesh.sourceAnatomy?.patches.find(
+      (p) => p.role === 'leaf-blade' && p.source.region === item.region
+    )
+    const mesh = f.source.meshes.find((m) => m.origin === item.mesh)
+    if (!patch || !mesh || mesh.shape.kind !== 'triangles') return []
+    const shape = mesh.shape,
+      start = patch.source.ranges[0].indexStart
+    const points = [0, 1, 2].map((i) =>
+      f.query.placePoint(
+        f.source,
+        mesh,
+        [0, 1, 2].map(
+          (axis) => shape.positions[shape.indices[start + i] * 3 + axis]
+        ) as [number, number, number],
+        item.instance
+      )
+    )
+    const centre = points[0].map(
+      (_, axis) =>
+        points[0][axis] / 3 + points[1][axis] / 3 + points[2][axis] / 3
+    ) as [number, number, number]
+    if (
+      !centre.every(
+        (v, axis) => v > route.min[axis] + 0.05 && v < route.max[axis] - 0.05
+      )
+    )
+      return []
+    const normal = new Vector3(...points[1])
+      .sub(new Vector3(...points[0]))
+      .cross(new Vector3(...points[2]).sub(new Vector3(...points[0])))
+      .normalize()
+    return normal.length() ? [{ item, patch, mesh, centre, normal }] : []
+  })[0]
+  if (!selected) throw new Error('Missing actual interior leaf source')
+  const { centre, normal } = selected
+  const origin = new Vector3(...centre).addScaledVector(normal, 0.02)
+  const target = new Vector3(...centre).addScaledVector(normal, -0.01)
+  const request: ActionVolumeRequest = {
+    ...f.request,
+    actionBounds: {
+      min: target.toArray().map((v) => v - 0.0001) as [number, number, number],
+      max: target.toArray().map((v) => v + 0.0001) as [number, number, number]
+    },
+    camera: {
+      ...f.request.camera,
+      pose: {
+        position: origin.toArray(),
+        rotation: new Quaternion()
+          .setFromUnitVectors(new Vector3(0, 0, 1), normal.clone().negate())
+          .toArray()
+      },
+      halfWidthSlope: 10,
+      halfHeightSlope: 10
+    },
+    model: { ...f.request.model, maxCandidates: 4096, maxRays: 64 }
+  }
+  const result = f.observations.observeActionVolume(
+    f.context(),
+    f.demand,
+    request
+  )
+  expect(result.coverage).toBe('partial')
+  const visible = result.detections.find(
+    (d) => d.kind === 'static' && d.anatomy.some((p) => p.role === 'leaf-blade')
+  )
+  expect(visible).toBeDefined()
+  if (!visible || visible.kind !== 'static')
+    throw new Error('Missing canonical leaf witness')
+  expect(visible.mesh.origin).toBe(selected.item.mesh)
+  expect(visible.region).toBe(selected.item.region)
+  expect(visible.instance).toBe(selected.item.instance)
+  expect(visible.anatomy).toContain(selected.patch)
+  expect(result.work.rayBatches).toBe(1)
+  const again = f.observations.observeActionVolume(
+    f.context(),
+    f.demand,
+    request
+  )
+  expect(again.work.membershipBuilds).toBe(0)
+  expect(again.work.membershipVisits).toBe(0)
+  expect(again.work.placements).toBeGreaterThan(0)
+  expect(again.work.placementMembershipChecks).toBe(again.work.placements)
+  expect(again.work.placements).toBe(result.work.placements)
+  const source = f.context().geometry
+  const includes = Array.prototype.includes
+  let scans = 0
+  const scan = vi.spyOn(Array.prototype, 'includes')
+  scan.mockImplementation(function (this: readonly unknown[], value, from) {
+    if (this === source.meshes) scans++
+    return includes.call(this, value, from)
+  })
+  try {
+    for (let index = 0; index < 3; index++) {
+      const repeated = f.observations.observeActionVolume(
+        f.context(),
+        f.demand,
+        request
+      )
+      expect(repeated.work.placementMembershipChecks).toBe(
+        again.work.placements
+      )
+      expect(repeated.work.placements).toBe(again.work.placements)
+    }
+    expect(scans).toBe(0)
+  } finally {
+    scan.mockRestore()
+  }
+})
+
+it('queries an opaque foreground source outside the action box and never leaks its hidden person', () => {
+  const empty = actionObservation(),
+    x = empty.request.camera.pose.position[0]
+  const occluder: SiteMesh = {
+    id: 'authored-foreground',
+    layer: 'barriers',
+    visible: true,
+    regions: Object.freeze([
+      Object.freeze({
+        id: 'surface',
+        kind: 'sheet',
+        indexStart: 0,
+        indexCount: 3
+      })
+    ]),
+    descriptor: readSpatialDescriptor({
+      kind: 'mesh',
+      position: [0, 0, 0],
+      rotation: [0, 0, 0, 1],
+      shape: {
+        kind: 'triangles',
+        positions: [x - 0.04, 0.08, 1.25, x + 0.04, 0.08, 1.25, x, 0.2, 1.25],
+        indices: [0, 1, 2]
+      },
+      color: 0xffffff,
+      opacity: 1,
+      wireframe: false,
+      selectable: false
+    }) as SiteMesh['descriptor']
+  }
+  const f = actionObservation(occluder)
+  const bounds = f.request.actionBounds
+  const direct = f.screen.queryVolume(f.demand, {
+    ...bounds,
+    size: bounds.min.map((v, i) => bounds.max[i] - v) as [
+      number,
+      number,
+      number
+    ]
+  })
+  expect(
+    direct.affected.some(
+      (e) => e.kind === 'source' && e.mesh.id === occluder.id
+    )
+  ).toBe(false)
+  f.dynamics.prepare({
+    ...f.world,
+    actors: [
+      {
+        trackId: 'hidden-person',
+        kind: 'person',
+        states: [
+          {
+            from: 0,
+            until: 10,
+            motion: 'stationary',
+            bounds: { min: [x - 0.01, 0.12, 1.4], max: [x + 0.01, 0.14, 1.45] }
+          }
+        ]
+      }
+    ]
+  })
+  const result = f.observations.observeActionVolume(
+    f.context(),
+    f.demand,
+    f.request
+  )
+  expect(result.coverage).toBe('partial')
+  expect(
+    result.detections.some(
+      (d) => d.kind === 'static' && d.mesh.origin.id === occluder.id
+    )
+  ).toBe(true)
+  expect(result.detections.some((d) => d.kind === 'dynamic')).toBe(false)
+  expect(JSON.stringify(result.detections)).not.toContain('hidden-person')
+  expect(result.work.rayBatches).toBe(1)
+  expect(
+    f.observations.observeActionVolume(f.context(), f.demand, {
+      ...f.request,
+      model: { ...f.request.model, maxRays: 0 }
+    })
+  ).toMatchObject({ coverage: 'partial', detections: [] })
+  expect(
+    f.observations.observeActionVolume(f.context(), f.demand, {
+      ...f.request,
+      model: { ...f.request.model, maxCandidates: 0 }
+    }).coverage
+  ).not.toBe('complete-empty')
+})
+
+it('counts far actor source work without local sampling and rejects stale action time', () => {
+  const f = actionObservation(),
+    x = f.request.camera.pose.position[0]
+  f.dynamics.prepare({
+    ...f.world,
+    actors: [
+      {
+        trackId: 'far-person',
+        kind: 'person',
+        states: [
+          {
+            from: 0,
+            until: 10,
+            motion: 'moving',
+            bounds: { min: [x - 0.01, 0.12, 0.4], max: [x + 0.01, 0.14, 0.5] }
+          }
+        ]
+      }
+    ]
+  })
+  const result = f.observations.observeActionVolume(
+    f.context(),
+    f.demand,
+    f.request
+  )
+  expect(result).toMatchObject({
+    coverage: 'complete-empty',
+    detections: [],
+    work: {
+      sourceActorVisits: 1,
+      samples: 0,
+      rayBatches: 0,
+      membershipBuilds: 0
+    }
+  })
+  expect(() =>
+    f.observations.observeActionVolume(f.context(), f.demand, {
+      ...f.request,
+      observedAt: 1
+    })
+  ).toThrow()
+  expect(
+    f.observations.observeActionVolume(f.context(), f.demand, {
+      ...f.request,
+      camera: { ...f.request.camera, maxDistance: 0.1 }
+    }).coverage
+  ).not.toBe('complete-empty')
+  expect(
+    f.observations.observeActionVolume(f.context(), f.demand, {
+      ...f.request,
+      leaves: 'unknown'
+    }).coverage
+  ).not.toBe('complete-empty')
+  f.screen.clear()
+  expect(f.observations.isCurrentAction(result)).toBe(false)
+})
+
+it('does not publish a sampled source hit outside the queried sight volume', () => {
+  const empty = actionObservation(),
+    x = empty.request.camera.pose.position[0]
+  const source: SiteMesh = {
+    id: 'source-extending-outside-sight',
+    layer: 'barriers',
+    visible: true,
+    regions: Object.freeze([
+      Object.freeze({
+        id: 'surface',
+        kind: 'sheet',
+        indexStart: 0,
+        indexCount: 3
+      })
+    ]),
+    descriptor: readSpatialDescriptor({
+      kind: 'mesh',
+      position: [0, 0, 0],
+      rotation: [0, 0, 0, 1],
+      shape: {
+        kind: 'triangles',
+        positions: [x - 0.01, 0.1, 1.25, x + 0.9, 0.1, 1.25, x, 0.2, 1.25],
+        indices: [0, 1, 2]
+      },
+      color: 0xffffff,
+      opacity: 1,
+      wireframe: false,
+      selectable: false
+    }) as SiteMesh['descriptor']
+  }
+  const f = actionObservation(source)
+  const result = f.observations.observeActionVolume(f.context(), f.demand, {
+    ...f.request,
+    camera: { ...f.request.camera, halfWidthSlope: 2 }
+  })
+  expect(result.coverage).toBe('partial')
+  expect(result.detections).toEqual([])
+  expect(result.reasons).toContain('ray-witness-outside-sight')
+})
 
 function viewpoint(f: ReturnType<typeof setup>): ViewRequest {
   const reading = f.reading()

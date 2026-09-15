@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { roundFraction } from '../scalar-arithmetic'
 import {
   WalkingConstrainedKinematicsOwner,
   WalkingConstrainedCycleOwner
@@ -13,6 +14,7 @@ import {
   inRange,
   minus,
   negate,
+  over,
   plus,
   required,
   rotateOracle,
@@ -21,6 +23,115 @@ import {
   vectorPlus
 } from './walking-constrained-kinematics-test-fixtures'
 import type { Fraction } from './walking-constrained-kinematics-test-fixtures'
+
+describe('selected-chain root motion', () => {
+  it('preserves the exact midpoint while bounding only the selected chain', () => {
+    const { source, raw } = cycleFixture({
+      sourceProfile: 'solid-articulation/2'
+    })
+    const owner = new WalkingConstrainedCycleOwner()
+    const cycle = owner.prepare(source, raw)
+    const at = fraction(1n, 2n)
+    const point = owner.evaluate(cycle, 0, at)
+    const before = owner.work.evaluations
+    const motion = owner.prepareSelectedChainMotion(cycle, {
+      format: 'walking-selected-chain-root-motion/1',
+      cycle,
+      phase: 0,
+      at,
+      chainId: 'right-front',
+      targetAbduction: over(cycle.recipe.alpha, exact(2))
+    })
+    expect(motion.startAbduction).toEqual(cycle.recipe.alpha)
+    expect(owner.work.evaluations - before).toBe(1)
+    const start = owner.evaluateSelectedChainMotion(motion, exact(0))
+    const end = owner.evaluateSelectedChainMotion(motion, exact(1))
+    const whole = owner.boundSelectedChainMotion(motion, {
+      low: exact(0),
+      high: exact(1)
+    })
+    const middle = owner.evaluateSelectedChainMotion(motion, fraction(1n, 2n))
+    const narrowed = owner.boundSelectedChainMotion(motion, {
+      low: fraction(1n, 4n),
+      high: fraction(3n, 4n)
+    })
+    expect(owner.work.evaluations - before).toBe(1)
+    expect(start.bodies).toHaveLength(4)
+    for (const entry of start.bodies)
+      expect(entry.exact).toEqual(
+        required(point.bodies.find((p) => p.body === entry.body)).exact
+      )
+    for (const entry of end.parts) {
+      const bounds = required(
+        whole.parts.find((p) => p.part === entry.part)
+      ).frame
+      for (let row = 0; row < 3; row++) {
+        const value = roundFraction(
+          entry.exact.origin[row].numerator,
+          entry.exact.origin[row].denominator,
+          'nearest-even'
+        )
+        expect(value).toBeGreaterThanOrEqual(bounds.origin[row].low)
+        expect(value).toBeLessThanOrEqual(bounds.origin[row].high)
+      }
+    }
+    expect(whole.work.selectedBodyVisits).toBe(4)
+    expect(whole.work.selectedPartVisits).toBe(motion.parts.length)
+    expect(whole.work.sourceVertices).toBe(0)
+    expect(narrowed.work.selectedBodyVisits).toBe(4)
+    for (const entry of middle.parts) {
+      const bounds = required(
+        narrowed.parts.find((p) => p.part === entry.part)
+      ).frame
+      for (let row = 0; row < 3; row++)
+        for (let column = 0; column < 3; column++) {
+          const v = entry.exact.matrix[row][column]
+          const value = roundFraction(
+            v.numerator,
+            v.denominator,
+            'nearest-even'
+          )
+          expect(value).toBeGreaterThanOrEqual(bounds.matrix[row][column].low)
+          expect(value).toBeLessThanOrEqual(bounds.matrix[row][column].high)
+        }
+    }
+    expect(whole.work.otherBodyVisits).toBe(0)
+    expect(start.fixed).toBe(motion.fixed)
+    expect(end.fixed).toBe(motion.fixed)
+    const work = owner.work
+    expect(owner.readSelectedChainMotion(cycle, motion)).toBe(motion)
+    expect(owner.work).toEqual(work)
+    expect(Object.isFrozen(motion.fixed.parts)).toBe(true)
+    for (const u of [exact(-1), exact(2), { numerator: 2n, denominator: 4n }])
+      expect(() => owner.evaluateSelectedChainMotion(motion, u)).toThrow()
+    expect(() =>
+      owner.boundSelectedChainMotion(motion, { low: exact(1), high: exact(0) })
+    ).toThrow()
+    for (const changes of [
+      { chainId: cycle.recipe.groups[0][0] },
+      { targetAbduction: exact(2) },
+      { at: { numerator: 2n, denominator: 4n } },
+      { joint: 'hip' }
+    ])
+      expect(() =>
+        owner.prepareSelectedChainMotion(cycle, {
+          ...motion.recipe,
+          ...changes
+        })
+      ).toThrow()
+    expect(() =>
+      new WalkingConstrainedCycleOwner().prepareSelectedChainMotion(
+        cycle,
+        motion.recipe
+      )
+    ).toThrow()
+    owner.dispose()
+    expect(owner.readSelectedChainMotion(cycle, motion)).toBeUndefined()
+    expect(() =>
+      owner.boundSelectedChainMotion(motion, { low: exact(0), high: exact(1) })
+    ).toThrow()
+  })
+})
 
 describe('exact polynomial complementary tripod cycle', () => {
   it('issues phase-root membership from the actual support branch only', () => {

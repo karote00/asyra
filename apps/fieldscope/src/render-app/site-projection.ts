@@ -1,4 +1,5 @@
 import type { SourceRegion } from '../domain/source-occupancy'
+import type { CropSourceAnatomy } from '../domain/crop-models'
 import {
   CUCUMBER_LEAF_SURFACE,
   TOMATO_LEAF_SURFACE
@@ -68,6 +69,8 @@ export type SiteMesh = SpatialFrame['meshes'][number] & {
   layer: LayerId
   regions: readonly SourceRegion[]
   distantRegions?: readonly SourceRegion[]
+  sourceAnatomy?: CropSourceAnatomy
+  distantSourceAnatomy?: CropSourceAnatomy
 }
 
 const mesh = (
@@ -341,6 +344,10 @@ function buildCropMeshes(
           id: `${model.species}-${model.variant}-${index}`,
           regions: part.regions,
           distantRegions: part.distantRegions,
+          ...(part.sourceAnatomy ? { sourceAnatomy: part.sourceAnatomy } : {}),
+          ...(part.distantSourceAnatomy
+            ? { distantSourceAnatomy: part.distantSourceAnatomy }
+            : {}),
           layer: model.species === 'cucumber-1914' ? 'cucumbers' : 'tomatoes',
           visible: true,
           descriptor: readSpatialDescriptor({

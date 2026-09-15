@@ -8,6 +8,7 @@ import type { SiteMesh } from './site-projection'
 import {
   createCropModels,
   type CropModel,
+  type CropSourceAnatomy,
   type CropSourcePatch
 } from '../domain/crop-models'
 import type { FarmConfiguration } from '../domain/farm-configuration'
@@ -35,6 +36,8 @@ export interface CropGeometry {
     distantRegions: readonly SourceRegion[]
     patches: readonly CropSourcePatch[]
     distantPatches: readonly CropSourcePatch[]
+    sourceAnatomy?: CropSourceAnatomy
+    distantSourceAnatomy?: CropSourceAnatomy
     partitions: readonly Readonly<
       CropModel['parts'][number]['partitions'][number]
     >[]
@@ -63,6 +66,58 @@ export interface PreparedScene {
   readonly fruits: readonly SceneFruit[]
 }
 let sceneRevision = 0
+
+function admitCropSourceAnatomy(
+  input: CropSourceAnatomy | undefined,
+  regions: readonly SourceRegion[],
+  indexCount: number
+): CropSourceAnatomy | undefined {
+  if (input === undefined) return
+  try {
+    if (
+      input.format !== 'crop-source-anatomy/1' ||
+      !Array.isArray(input.patches)
+    )
+      throw new Error('Invalid format')
+    const sources = readSourcePatches(
+      input.patches.map((patch) => patch.source),
+      regions,
+      indexCount
+    )
+    const occupied = new Set<number>()
+    const patches = input.patches.map((patch, index) => {
+      if (
+        patch.id !== patch.source.id ||
+        !['leaf-blade', 'leaf-vein-ribbon', 'leaf-hair'].includes(patch.role)
+      )
+        throw new Error('Invalid patch')
+      const source = sources[index]
+      for (const range of source.ranges)
+        for (
+          let triangle = range.indexStart;
+          triangle < range.indexStart + range.indexCount;
+          triangle += 3
+        ) {
+          if (occupied.has(triangle)) throw new Error('Duplicate triangle')
+          occupied.add(triangle)
+        }
+      if (Object.isFrozen(patch) && patch.source === source) return patch
+      return Object.freeze({ id: patch.id, role: patch.role, source })
+    })
+    if (
+      Object.isFrozen(input) &&
+      Object.isFrozen(input.patches) &&
+      patches.every((patch, index) => patch === input.patches[index])
+    )
+      return input
+    return Object.freeze({
+      format: 'crop-source-anatomy/1',
+      patches: Object.freeze(patches)
+    })
+  } catch {
+    throw new Error('Invalid crop source anatomy')
+  }
+}
 
 function admitCropPatches(
   input: readonly CropSourcePatch[],
@@ -389,6 +444,24 @@ export class SiteGeometry {
             part.distantPartitions,
             model.fruits
           ),
+          ...(part.sourceAnatomy
+            ? {
+                sourceAnatomy: admitCropSourceAnatomy(
+                  part.sourceAnatomy,
+                  regions,
+                  shape.indices.length
+                )
+              }
+            : {}),
+          ...(part.distantSourceAnatomy
+            ? {
+                distantSourceAnatomy: admitCropSourceAnatomy(
+                  part.distantSourceAnatomy,
+                  distantRegions,
+                  distantShape.indices.length
+                )
+              }
+            : {}),
           partitions: Object.freeze(
             part.partitions.map((span) => Object.freeze(span))
           ),
@@ -468,10 +541,26 @@ export class SiteGeometry {
             : undefined
         if (distant && !distantRegions)
           throw new Error('Missing distant source regions')
+        const sourceAnatomy = admitCropSourceAnatomy(
+          mesh.sourceAnatomy,
+          regions,
+          shape.indices.length
+        )
+        const distantSourceAnatomy = distant
+          ? admitCropSourceAnatomy(
+              mesh.distantSourceAnatomy,
+              distantRegions ?? [],
+              distant.kind === 'triangles' ? distant.indices.length : -1
+            )
+          : undefined
+        if (!distant && mesh.distantSourceAnatomy)
+          throw new Error('Invalid crop source anatomy')
         return Object.freeze({
           ...mesh,
           regions,
-          ...(distantRegions ? { distantRegions } : {})
+          ...(distantRegions ? { distantRegions } : {}),
+          ...(sourceAnatomy ? { sourceAnatomy } : {}),
+          ...(distantSourceAnatomy ? { distantSourceAnatomy } : {})
         })
       })
     )

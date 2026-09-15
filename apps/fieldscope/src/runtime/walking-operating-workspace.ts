@@ -285,6 +285,10 @@ export function createWalkingOperatingWorkspace(
   })
   return {
     owner,
+    getObservationScreen: () => {
+      live()
+      return owner.transitScreen
+    },
     initialize: () => {
       live()
       runTransaction(() => {
