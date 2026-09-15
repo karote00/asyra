@@ -38,16 +38,19 @@ produce full profile completion; selected/group artifacts are never ordinary
 full-suite evidence. CPU is accounted, not capped; this guard does not enforce
 peak RSS.
 
-Nine actual-source observation/relation cases remain in the five scene-demand-
-workspace, bootstrap, walking-observation-workspace, observations and walking-
-source-relation profile files. Their source geometry, numerical budgets,
-visibility/currentness and work oracles remain required. Existing engineering
-per-case ceilings remain unchanged: 60 seconds for local-action bootstrap, 45
+The required profile cohort contains the existing nine actual-source
+observation/relation cases, seven version-two request and nonlinear admission
+cases, and ten current whole-source relation cases. The version-two contract,
+motion and relation cases retain their shared actual-source fixtures; the whole
+relation describe retains its single shared source preparation. Their source
+geometry, numerical and per-case budgets, visibility/currentness, complete
+inventory and work oracles remain unchanged. Existing engineering per-case
+ceilings remain unchanged, including 60 seconds for local-action bootstrap, 45
 seconds for observation bootstrap, 30 seconds for full-site observation/inventory
 and 20 seconds for the selected relation. These classify bounded test workloads,
-not faster production or physical limits. Ordinary controls use admitted two-
-instance sheet sources for optical witnesses, invalid inputs and currentness;
-legacy cases remain ordinary.
+not faster production or physical limits. Ordinary controls retain admitted
+two-instance sheet sources, subdivision exhaustion, first-visited canonical rows,
+legacy admission cases and direct source/compiler correctness.
 
 ## Implemented active-definition and stowed-envelope prerequisites
 
