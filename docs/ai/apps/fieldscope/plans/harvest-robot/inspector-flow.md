@@ -765,14 +765,16 @@ Only the existing directed complete-frustum/range test
 admits this view; failed admission stops without viewpoint searching or tuning.
 This is a synthetic scenario, never calibrated hardware capability.
 
-Observation/relation verification scheduling: the nine actual-source cases
-remain mandatory in the serial profile gate: one scene-demand inventory/history
-case, one bootstrap observation case, one local-action bootstrap decision case,
-three observation-workspace cases, two walking optical-kernel cases and one
-selected-chain half-abduction relation case. Their authored geometry, source
-identities, exact budgets and all existing visibility/coverage/work oracles are
-unchanged. Ordinary controls additionally use canonical bounded sheet sources;
-legacy behavior remains ordinary. The existing external test supervisor owns
+Observation/relation verification scheduling: the serial profile gate retains
+the existing nine actual-source cases and adds the complete related cohorts:
+seven version-two request/nonlinear admission cases and ten current whole-source
+relation cases. The relation cohort keeps one shared source preparation across
+its two stale-provenance, three preset all-pair, one request/accounting, two
+translation, one remaining-inventory and one target-partition cases. Their
+authored geometry, source identities, exact budgets, per-case ceilings and all
+existing visibility/coverage/work oracles are unchanged. Ordinary controls retain
+the small two-solid boundary and subdivision-exhaustion cases, first-visited
+canonical rows, legacy admissions and direct source/compiler correctness. The existing external test supervisor owns
 both classes, finite wall deadlines, output limits, process-group cleanup and CPU
 accounting. The required profile gate discovers the exact profile class and
 partitions it into the walking-constrained-kinematics owner and every remaining

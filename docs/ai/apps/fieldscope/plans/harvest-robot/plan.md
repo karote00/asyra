@@ -2660,16 +2660,17 @@ Each group retains the original 20-minute deadline, worker acknowledgements,
 bounded artifacts and owned cleanup. Only two exact complete receipts publish
 full profile completion; filtered/group artifacts are profile evidence, never
 ordinary coverage.
-Nine actual-source cases remain required profiles: scene-demand inventory/history,
-bootstrap observation, local-action bootstrap decision, three observation-workspace
-cases, two walking optical-kernel cases and selected-chain half-abduction. Their
-assertions, geometry and product budgets remain; bounded canonical source controls
-keep ordinary currentness and negative checks. Existing per-case engineering
-ceilings remain 60/45/30/20 seconds for local-action bootstrap/observation bootstrap/
-full-site observation or inventory/relation respectively; classification is not a
-production performance improvement. Existing numerical elapsed guards and the
-20-minute per-group process deadlines remain. The original timeout evidence remains
-authoritative.
+The required profile cohort retains the existing nine actual-source cases and
+adds seven version-two request/nonlinear admission cases plus all ten current
+whole-source relation cases. The relation cases keep one shared source preparation
+for two stale-provenance, three preset all-pair, one request/accounting, two
+translation, one remaining-inventory and one target-partition case. Every
+assertion, fixture, geometry, product budget and per-case ceiling remains unchanged.
+The small two-solid boundary, subdivision-exhaustion, first-visited canonical rows,
+legacy admissions and direct source/compiler correctness remain ordinary.
+Classification is not a production performance improvement. Existing numerical
+elapsed guards and the 20-minute per-group process deadlines remain. The original
+timeout evidence remains authoritative.
 Focused class gates,
 supervisor selectors/cleanup/acknowledgements and static/build checks precede the
 combined integration gate and independent review.
