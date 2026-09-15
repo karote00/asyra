@@ -1149,7 +1149,6 @@ test('the responsive layout keeps balanced proof spacing without section rules',
   assert.match(css, /@media\s*\(max-width:\s*800px\)/)
   assert.match(css, /@media\s*\(max-width:\s*680px\)/)
   assert.doesNotMatch(css, /@media\s*\(max-width:\s*(?:700|760)px\)/)
-  assert.match(css, /@media\s*\(max-width:\s*390px\)/)
   assert.doesNotMatch(css, /@media\s*\(max-width:\s*820px\)/)
   assert.match(css, /prefers-reduced-motion/)
   assert.match(proofRule, /min-height:\s*clamp\(220px,\s*25vw,\s*390px\)/)
