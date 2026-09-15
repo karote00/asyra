@@ -7,21 +7,26 @@ wider than 0.80 m and no user-imposed height cap. Body width excludes legs,
 tools, crate, load and their stowed/working sweeps; every total envelope is
 derived and checked separately. It includes the non-articulated central chassis
 and permanently fixed housings in the canonical body frame. Historical wider
-definitions remain viewable at their original size but are not admitted for new
-walking action. The preferred target has four arm chains: one
+definitions retain their original values in load-boundary diagnostics and
+historical evidence, not successor product output. The target has four arm chains: one
 combined foliage-opening and fruit-holding arm plus one cutter arm on each side. It
 must inspect both sides and harvest representative targets on either side,
 including upper fruit. It is not a wheeled or vehicle-carried platform. The
 implemented four-wheel, single-arm model is a historical software concept and is
 not hardware acceptance evidence for this target.
 
-The first simulation baseline may use six legs, a low battery and payload mass,
-a bounded vertical shoulder carriage and four medium-short arms. Every dimension,
+The user-approved replacement uses four articulated legs, a low battery and
+chassis, a top-mounted basket retained by adjustable stops and latches, and two
+arms on each side. Each side has an independent shoulder-height stage and each
+arm has pitch at its actual root. There is no central mast through the basket.
+Joint housings, segmented arm covers, padded holding surfaces and guarded
+cutters follow the approved industrial concept; abstract poles or the former
+central-rail model do not satisfy its appearance contract. Every dimension,
 component mass, centre of mass, joint range, foot area, load and actuator property
 that has not been measured or selected is a visibly labeled adjustable synthetic
-assumption. Six legs provide candidate contact choices; leg count or a three-foot
-stance does not by itself prove stability. Compare body height, leg extension,
-shoulder-carriage travel and arm length through the same whole-robot reach,
+assumption. Four feet at rest and three during a single-leg swing are candidate
+support arrangements, not stability evidence. Compare body height, leg extension,
+independent shoulder-stage travel and arm length through the same whole-robot reach,
 bending-moment, centre-of-mass, overturning and swept-clearance screens. Do not
 accept upper reach by drawing a tall body or long arm without those combined
 results.
@@ -99,6 +104,22 @@ synthetic ranges. Unknown values stay unknown. Greenhouse framing and 20 mm
 planting tubes are not walking supports.
 
 ## Load, walking mobility and exchange
+
+The adjustable basket interface is not limited to two fixed basket sizes.
+Longitudinal/lateral stops and latches adapt within explicit supported ranges to
+external dimensions and bottom shape. The cucumber 100 x 60 x 20 cm and tomato
+30 x 20 x 10 cm baskets remain regression examples. The former runs lengthwise
+along the chassis. Internal usable volume is a separate input; a nominal size
+does not establish wall thickness, capacity or a valid bottom contact.
+
+Fixed platform, stops and latch housings count toward the 0.80 m body limit;
+the removable basket and load enter the complete envelopes and mass model.
+Declared pads/rails, contact span, allowable overhang and retention evidence
+must establish support; neither a full-size solid deck nor an overhanging basket
+is assumed necessary or sufficient. Changes invalidate affected geometry and
+load products. Parameter ranges and unmeasured loads may be visibly synthetic.
+Out-of-range adjustment, unsupported bottoms or missing retention evidence
+cannot become a valid mount.
 
 Select crates by washable food-contact material, internal dimensions, supported
 base, latch engagement and ergonomic handling. Until crop and robot loads are

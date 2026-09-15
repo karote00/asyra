@@ -14,56 +14,59 @@ in the [plan](/docs/ai/apps/fieldscope/plans/harvest-robot/plan.md). The physica
 assumptions and validation obligations are in [hardware concept](/docs/ai/apps/fieldscope/specs/harvest-hardware.md).
 No software result may be labeled certified safe or a measured ground property.
 
-The production workspace now persists an explicit versioned runtime selection.
-`legacy-view` remains the default and retains the historical M2 projection;
-`walking-active` binds an admitted definition to the actual W2 source, complete
-stowed envelope, current W1 route-local transit screen and selected-only walking
-projection. Later local motion, plant-contact, perception, manipulation and
-mission owners remain pending and must retain these owner-issued identities.
+The production workspace still contains the previously implemented runtime
+selection and six-leg walking preview. This documentation reset does not make
+the approved replacement source live. The successor product route must remove
+the unreleased legacy and six-leg render choices from product output. Their
+identifiers may remain only at the load boundary for unsupported diagnostics
+and in immutable historical evidence; they are not selectable fallbacks. Later
+local motion, plant contact, perception, manipulation and mission owners remain
+pending and must bind the replacement owner's issued identities.
 
-## Active product reset: walking four-arm harvester (pending implementation)
+## Active product reset: quadruped four-arm harvester (pending implementation)
 
-The active product target is a compact multi-legged walking harvester for the
-existing FieldScope farm. Its body is at most 0.80 m wide. That limit applies to
-the body schema, not the complete stowed or moving envelope formed by legs,
-tools, crate and load, and it is never a substitute for current route admission.
-There is no user-imposed fixed height cap; actual high-target reach, moment,
-centre-of-mass and swept-clearance evidence still governs each configuration.
-For this contract, body width is the lateral extent of the non-articulated
-central chassis and its permanently fixed housings in the canonical body frame.
-Articulated legs/arms, tools and removable crate/load are excluded from that
-schema field but included in the derived total envelopes. Legacy definitions
-retain and display their original width; active walking admission rejects an
-over-limit value without resizing or rewriting it.
+The active product target is a compact quadruped walking harvester for the
+existing FieldScope farm. Its body is at most 0.80 m wide. The body schema
+includes the non-articulated central chassis, permanently fixed housings,
+basket-support platform and latches in the canonical body frame. Articulated
+legs and arms, tools and the removable basket/load are excluded from that schema
+field but included in complete stowed, working and loaded envelopes. The body
+limit is never a substitute for current route admission. There is no
+user-imposed fixed height cap; actual reach, moment, centre-of-mass and swept
+clearance evidence governs each configuration. An over-limit new configuration
+is rejected without resizing it.
 
-The implemented prerequisite keeps historical readers unchanged and exposes a
-separate active-definition reader. Its declared-assembly check is completed by
-the stowed-envelope owner's actual root/fixed material bounds, including fixed
-source housings. The complete cuboid includes every original robot, mounted
-crate and declared load vertex. It publishes immutable per-contributor bounds
-and their union; the current source's roughly 0.94625 m stowed total width is
-valid envelope evidence, not a violation of the distinct body limit.
-The versioned authority completes canonical stowed FK once, then applies one
-outer base transform conservatively. Unknown attachment geometry or stale
-source/mount identity makes the product unavailable. Same admitted input reuses
-the product without geometry work; changed pose/load/source requires preparation.
-Neither a cuboid overlap nor completeness establishes collision, route clearance,
-runtime connectivity, combined-arm capability or latch strength.
+The implemented definition/2, solid-articulation/1 and /2 sources and
+stowed-envelope owner remain exact historical evidence for the former six-leg
+rig. Their roughly 0.94625 m total stowed width is not evidence for the new
+quadruped and is not a violation of the distinct body-width field. The
+replacement needs its own versioned topology, source/profile identity and
+load-boundary handling. Old identifiers may produce an unsupported diagnostic
+or historical report, but cannot produce an active render, simulation or
+walking action. Until the replacement source and its canonical poses are
+implemented and admitted, this section is a product contract rather than a
+runtime capability.
 
 The preferred light baseline has two independent harvest groups, one on each
 side. Each group has one combined foliage-opening and fruit-holding arm plus one
 cutter arm, for four arms total. Opening foliage and holding fruit remain
 separate contact functions on that combined arm and must be proved compatible in
 one source, pose and interval. The currently implemented soft support patch does
-not by itself prove both functions. A six-arm, three-per-side candidate is
-considered only if the four-arm geometry cannot perform the combined action; it
-is not silently added or treated as implemented.
+not by itself prove both functions. If the approved four-arm geometry cannot
+perform that combined action, the case remains unavailable and requires a
+revised design decision; extra arms are outside this approved candidate.
 
-The first comparison baseline is explicitly synthetic: a low-centre-of-mass
-six-legged base, a bounded vertical shoulder carriage and four medium-short arm
-chains. Six legs, link dimensions, masses, joint ranges, foot size and actuator
-capability are simulation assumptions until replaced by measured or selected
-hardware evidence. The scheduler uses both independent left/right groups
+The approved replacement has four articulated legs, a low chassis, a top
+basket-support platform with adjustable stops and latches, and four side-mounted
+arms. Each side has its own shoulder-height adjustment; no central mast or
+shared shoulder carriage crosses the basket opening. Shoulder pitch is at the
+arm root, followed by an elbow and orientable tool wrist. Smooth joint housings,
+segmented link covers, soft support tools and guarded cutters are functional
+parts of the approved appearance, not renderer-only replacement geometry.
+Dimensions, masses, joint ranges, foot size and actuator capability remain
+explicit synthetic inputs until measured. Four legs are the selected candidate,
+not a claim of superior stability; swing-leg and loaded support must be assessed.
+The scheduler uses both independent left/right groups
 concurrently when current space, stance, load and support evidence permits. It
 serializes only an actual shared-source, shared-space, support or load conflict.
 Concurrent work binds one current whole-robot state and evaluates affected
@@ -82,12 +85,44 @@ trailing or carrying vehicle are excluded from the active target. The currently
 implemented four-wheel, single-arm M2 projection and its single five-axis M3
 source remain historical implementation evidence only. They are not acceptance
 evidence for this target. Existing saved definitions must remain identifiable as
-that legacy topology and must never be silently reinterpreted as a six-legged,
+that legacy topology and must never be silently reinterpreted as a quadruped,
 four-arm definition. Before the first source implementation slice, the new
 configuration must define a versioned topology discriminator, exact schema and
-an explicit compatibility path. Loading a legacy definition keeps its historical
-projection available but does not admit it to the new walking simulation;
+an explicit compatibility path. Loading a legacy definition produces an
+unsupported diagnostic with its original identity, not a product projection;
 creating a new topology is an explicit user action, not an automatic migration.
+
+### Approved basket interface and three candidate poses
+
+The same platform accepts baskets through adjustable longitudinal and lateral
+stops, supported bottom contacts and positively retained latches. Adjustment,
+support and load ranges are finite, explicit and configurable; arbitrary basket
+size is not automatically admissible. The user's cucumber basket
+1.00 x 0.60 x 0.20 m and tomato basket 0.30 x 0.20 x 0.10 m are permanent
+regression cases, not an enumeration of the only supported sizes. Length runs
+fore-aft. Inputs distinguish external collision dimensions, internal usable
+volume, bottom shape, contact locations, tare, load and centre of mass.
+Rails or pads may support the basket; a full-area one-metre deck is not required,
+and unsupported overhang is not silently assumed load-bearing.
+
+The replacement must demonstrate three poses using one canonical source:
+
+- Travel: both shoulder stages retract, all four arms fold alongside the body,
+  shears close within their guards, and the mounted basket remains latched.
+- Bilateral harvesting: the base is stationary with all four feet supported;
+  each side independently positions its holder and cutter. Arm links avoid the
+  basket and one another; permitted plant contact follows the operating contract.
+- Placement and exchange: after cutting and confirming retention, the holder
+  returns from the side and lowers the fruit through the basket opening. The
+  cutter parks outside the basket. Exchange retains the existing stationary
+  station/person workflow with confirmed removal, replacement and re-latching.
+
+Changing basket dimensions invalidates affected mount, envelope, reach and
+load products. The platform does not infer compatibility from a basket name.
+Synthetic parameter sets may demonstrate geometry and load comparisons without
+claiming measured hardware performance. High/low and left/right target reach
+must use current W1 crop source and required tool orientation; link-length sums
+and this concept image are not reach certificates.
 
 ### Active operating contract for W1-W6
 
@@ -190,7 +225,13 @@ overrun cannot reuse partial clearance: new motion is held while the current loa
 and support state are retained. Large exhaustive geometry suites remain formal
 offline evidence, not the per-update runtime path.
 
-The canonical solid articulation source uses `walking-robot-definition/2`.
+#### Historical six-leg material evidence
+
+The following definition/2 construction, shared lift and zero-angle presets
+describe the implemented six-leg source only. They are not the construction or
+pose contract for the approved quadruped.
+
+The historical canonical solid articulation source uses `walking-robot-definition/2`.
 Version 1 retains its closed-box schema identity and is never silently
 reinterpreted by the new source reader. Version 2 declares a
 `solid-articulation/1` source profile with separately labeled evidence:
@@ -245,6 +286,8 @@ unproved subset remains unknown. Cutter active faces and guard interfaces
 are distinct. Source/FK envelope and sole-datum evidence do not prove standing
 on terrain, continuous motion or safety; extreme poses may remain blocked or
 unknown in their later owners.
+
+#### Current farm and motion-demand contract
 
 The user's 2026-09-14 product clarification states that the represented farm
 follows the user's home-farm layout. In its current configuration a passage is

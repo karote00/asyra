@@ -1,6 +1,42 @@
 # Harvest robot and crate logistics
 
-Status: IN PROGRESS - W3A WALKING RUNTIME COMPOSITION IMPLEMENTED
+Status: IN PROGRESS - QUADRUPED CONCEPT APPROVED; REPLACEMENT SOURCE PENDING
+
+The user approved the four-legged, four-arm industrial concept with a low
+chassis, side-mounted paired holder/cutter arms, independent side shoulder
+stages, no central mast and an adjustable top basket platform. The latest
+harvest-robot and harvest-hardware contracts govern this replacement.
+Basket dimensions are inputs within explicit support/adjustment/load ranges;
+the two user sizes are regression cases, not the only supported sizes.
+
+The replacement sequence is:
+
+1. W2 definition: freeze versioned topology, body/leg/arm axes, independent
+   side-stage state, adjustable basket inputs and load-boundary rejection of
+   prior topology. Add schema/compatibility regression tests first.
+2. W2 source and poses: produce the approved enclosed-joint, segmented-arm
+   appearance from canonical material, with stowed, bilateral-working and
+   basket-placement poses. Verify fixed body width and complete envelopes.
+3. W2/W3 manipulation readiness: use actual current W1 low/high targets on
+   both sides, tool orientations and basket opening for reachable holder/cutter
+   poses and affected shared-space checks. Do not equate link length with reach.
+4. W4 loaded comparison: exercise explicitly synthetic basket/load/CoM,
+   support and latch scenarios for the quadruped. Keep measured capability
+   distinct; retain unknown or failed scenarios without weakening their gates.
+5. Reconnect W3-W6 walking, observation, crop handling and patrol/exchange
+   composition to the admitted replacement products.
+
+Each segment has its own existing Inspector owner card, focused tests and
+bounded review. The completed feature is validated as one integration before
+sub-PR merge; existing heavy profiles run at that checkpoint, not after every
+small edit. Current mathematical evidence remains reusable only where the
+replacement preserves its exact contract. No stage is complete from concept art.
+
+## Previously implemented runtime and source evidence
+
+The following records the earlier six-leg development. Its source-specific
+numbers and presets do not certify the approved replacement; current runtime
+has not yet been switched to the new design.
 
 Walking observation production composition is implemented in the bounded
 15-file adapter slice. Bootstrap now constructs the walking workspace, accepts
@@ -81,8 +117,9 @@ Replace the historical four-wheel, single-arm concept with a compact multi-legge
 walking harvester that has separate support and cutter arms on each side, can
 inspect and harvest both sides, and includes upper-fruit reach, whole-robot swept
 motion and quasi-static load/stability screening. The first comparison baseline
-is a visibly synthetic low-centre-of-mass six-leg base with a bounded vertical
-shoulder carriage and four medium-short arms. Simulated clearance or positive
+is the approved visibly synthetic quadruped with independent side shoulder
+stages, four side-mounted arms and an adjustable latched basket platform.
+Simulated clearance or positive
 quasi-static margin never proves hardware safety.
 
 Authorized scope: `apps/fieldscope` and its app documentation, tests and existing
@@ -119,6 +156,10 @@ candidate-local work; the archived RED artifacts remain historical evidence and
 are not reinterpreted as a passing runtime admission.
 
 ## Active operating-runtime sequence
+
+The replacement sequence at the top of this plan precedes resuming the runtime
+steps below. Earlier six-leg prerequisites remain historical implementation
+state, not completed prerequisites for the new quadruped.
 
 1. **Contract reset - this slice.** Align the product, hardware, Inspector, API
    and active plan around the user-approved operating flow. Mark every proposed
@@ -161,14 +202,16 @@ are not reinterpreted as a passing runtime admission.
    observation-to-decision and state-to-UI latency. No unmeasured latency number
    or hardware-safety claim is published.
 
-The first implementation slice after this reviewed contract is step 2. Steps 3
-through 6 require its owner-issued body admission and stowed-envelope identities.
-They do not reopen or reinterpret legacy saved definitions.
+The next implementation slice is the replacement W2 definition at the top of
+this plan. Resumed runtime steps require that replacement's owner-issued body
+admission and stowed-envelope identities; old saved definitions are not
+reinterpreted or retained as selectable product fallbacks.
 
 ### Active executable product cases
 
-- A legacy definition wider than 0.80 m remains readable and renderable with its
-  original value, but cannot enter the active walking action route. A newly
+- A legacy definition wider than 0.80 m retains its original value and identity
+  in an unsupported load diagnostic, with no successor product rendering or
+  active walking action. A newly
   admitted walking definition enforces the body-width limit; no height ceiling
   is inferred. Its derived total stowed envelope may be wider than the body and
   includes legs, arms, tools, latch-mounted crate and load.

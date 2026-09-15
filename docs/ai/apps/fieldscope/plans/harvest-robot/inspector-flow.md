@@ -95,6 +95,57 @@ Cache dimensions: none proposed; one preparation per relevant source revision.
 
 ### W2 - Versioned walking source and kinematics
 
+#### Approved quadruped replacement - pending implementation
+
+Owner: FieldScope canonical robot definition, source and pure kinematics.
+Inputs: an explicitly versioned quadruped definition with four legs, four
+side-mounted arms, two independent shoulder-height stages, root shoulder pitch,
+declared joint domains, three candidate poses and measured or visibly synthetic
+dimensions and mass/CoM. The adjustable basket interface declares finite stop
+and latch ranges, supported bottom contacts and the current basket geometry.
+W1 does not resize the robot or supply canonical source geometry.
+Outputs: one immutable definition-bound rig/source and canonical pose products
+for stowed travel, bilateral harvesting and overhead fruit placement; named
+holder/cutter chains on each side, complete part ownership and designed contact
+loci; a basket mount and complete contributor envelopes for the requested pose.
+Conditions: exactly four legs and four arms; no central mast; fixed
+chassis/platform/latch width at most 0.80 m. Arm links must avoid basket material
+while holder tools can enter through its opening. No non-designed positive
+material overlap is accepted; intended bearing/support contacts require complete
+named source evidence. Basket adjustment is geometric and does not prove latch
+strength. Missing or unsupported inputs remain unavailable.
+Bypass: unchanged admitted definition reuses its prepared source. Basket changes
+invalidate its mount and affected envelopes, not unrelated robot mesh buffers.
+Old six-leg identifiers are recognized only at the load boundary or in
+historical evidence; they cannot supply the successor product route.
+Allowed contributors: admitted definition, canonical source/mesh builders,
+dimensioned basket geometry, pure FK and existing envelope owners.
+Forbidden contributors: renderer-authored replacement bodies, old topology
+fallback, automatic W1 resizing, free tool poses, omitted basket/arm parts,
+joint collision exemptions and hardware capability inferred from concept art.
+Implementation boundary: app-domain definition/source/kinematics, basket mount
+and envelope owners with their direct schema, source, pose and compatibility
+tests. Exact files and new persisted identities are frozen in the first W2
+implementation card before edits; no new API is established by this document.
+Spec: approved quadruped reset, adjustable basket interface and three poses in
+harvest-robot; active hardware concept and load/exchange in harvest-hardware.
+Failure owner: W2 rejects invalid definitions, unsupported mounts, incomplete
+source and stale handles. W3 retains movement admission; W4 retains load and
+support assessment. Static pose evidence cannot bypass either owner.
+Product cases: both user basket examples plus another admitted size;
+out-of-range stops, unsupported bottom, over-width fixed body, missing arm,
+coupled side stages and old-topology admission negatives; three source-bound
+poses without basket penetration. Synthetic evidence remains labeled.
+DoD: focused permanent definition/source/FK/mount tests and work-count/currentness
+checks, actual rendered-source visual review against the approved concept,
+bounded independent review. No full gait or field-hardware claim.
+Cache dimensions: none proposed.
+
+#### Previous six-leg implementation evidence
+
+The following describes existing source versions only. It cannot override the
+approved replacement route above or authorize a successor product fallback.
+
 Owner: FieldScope canonical walking-robot definition, source and pure kinematics.
 Inputs: a versioned new-topology definition, four independent arm definitions,
 multi-leg definition, vertical shoulder-carriage definition, stowed/working poses
@@ -187,6 +238,11 @@ product, not an optional cache.
 
 ### W3a - Runtime selection and stowed transit screening
 
+Successor composition remains pending until the approved W2 replacement is
+admitted. The former selectable `legacy-view` projection is historical
+implementation state only; the successor must reject old topology at its load
+boundary instead of retaining that product option.
+
 Owner: FieldScope walking operating workspace and route-local transit screen.
 Inputs: Core-persisted `walking-runtime-selection/1`; current W1 demand, route,
 survey identity and clearance margin; current W2 definition/source/profile,
@@ -194,8 +250,8 @@ canonical stowed pose, complete envelope, mounted state and declared load; one
 base translation action. The prepared stowed cuboid is the shape authority;
 actions translate it cheaply without replaying source vertices or FK.
 Outputs: current immutable `walking-operating-report/1` and transit result with
-`legacy-view`, `ready-fast`, `local-required` or `unknown`, affected exclusions,
-reasons and bounded work counters; selected-only legacy or walking projection.
+`ready-fast`, `local-required` or `unknown`, affected exclusions,
+reasons and bounded work counters; only the admitted replacement projection.
 The index and result contain simulator source geometry for query acceleration,
 not robot-observed obstacle inventory or action authority.
 Conditions: strict complete-XYZ separation may be fast only when the
