@@ -48,3 +48,14 @@ is not durable backend persistence. The socket service accepts and orders live
 publications; the document backend owns materialized durability. Production
 authentication, authorization, backup, and retention are intentionally left to
 the product owner.
+
+## AI conversation lifecycle
+
+User messages remain on the right from submission through settlement. The document
+conversation controller owns continuation, target context and safe retry. Closing
+the panel hides it without cancelling the request or pending approval; Stop cancels
+explicitly. Tool activity is streamed on the same action-batch request, separately
+from the final prepared batch. Failures keep intent and attachments for recovery.
+Reference replacement uses one registered action and one ordinary transaction: insert
+complete replacement, remove only the old target, and roll back together on failure.
+App UI text is English; user and model-authored content preserve their language.

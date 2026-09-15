@@ -192,3 +192,13 @@ Product contract:
 
 Dedicated Inspector:
 `../plans/ai-agent-runtime-flow-inspector.html`.
+
+### Provider tool activity
+
+Providers may use the optional request-options `onProgress` callback with a bounded
+registered tool name and `running` or `completed` status. Runtime forwards it as
+provider-phase progress with `tool` and `toolStatus`; invalid names/statuses, aborted
+work and callbacks after request settlement are ignored. Activity is observational:
+consumer exceptions cannot alter execution. It must not contain raw tool arguments,
+model reasoning, credentials or account data. The final batch remains the only
+input to action resolution and permission.

@@ -123,6 +123,8 @@
             "toString",
             "toUpperCase",
             "toWellFormed",
+            "tool",
+            "toolStatus",
             "transaction",
             "transactionRunner",
             "trim",

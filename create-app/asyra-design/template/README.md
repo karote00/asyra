@@ -190,17 +190,89 @@ Preset `2D`, and engine-neutral `CUSTOM` extension contracts. Production `3D`,
 `HYBRID`, auto-layout, unit-aware aggregation, public Headless Core, and a
 multi-runtime Core Kernel are future work.
 
-Optional AI is user-initiated. To opt in to AI, submit an explicit App intent
-and configure the model-backed App server with all three server-only values:
+### Use your local AI subscription
+
+AI runs only after you submit a request. To opt in to AI with your own ChatGPT subscription,
+install a compatible Codex CLI and sign in with `codex login`. The App never
+installs Codex, logs in, copies credentials, or changes accounts for you.
+
+Add these server-only settings to the App's local `.env`, then run `yarn start`:
 
 ```dotenv
+AI_PROVIDER_BACKEND=local-codex
+AI_PROVIDER_MODEL=your-available-codex-model
+# Optional: absolute path to your installed native Codex executable
+# AI_PROVIDER_EXECUTABLE=/path/to/codex
+```
+
+Use a Codex version supporting App Server v2, ephemeral threads, empty
+`environments`, and the `instructionSources` / `runtimeWorkspaceRoots` response
+fields. Unsupported versions fail closed. The adapter protocol is checked against
+`0.154.0-alpha.6.2`; the old `0.40.0` CLI is not supported. On Windows, select the
+native executable rather than a shell `.cmd` wrapper. No shell is invoked.
+
+Each request starts one ephemeral Codex thread and closes its process
+before returning. The Agent panel checks connection readiness without running a model turn.
+It distinguishes an unavailable server, incomplete configuration, and an unavailable
+local Codex. Retry appears when the connection is unavailable. HTTP mode reports configuration
+only; its upstream connection is checked on submission.
+
+There is no model work at startup, automatic API fallback, or
+cross-request session reuse. Cancellation and a five-minute deadline stop the
+owned process. Use a loopback App URL, such as `http://localhost:3000`; remote
+peers and cross-origin browser requests are rejected in this mode.
+
+Each person who forks or generates this App uses their own locally logged-in
+account and its available allowance. Inference still runs in the cloud. Account
+identity and credentials do not enter the frontend, Git, or generated template.
+Keep `.env` private. A deployed website cannot automatically use its visitors'
+local subscriptions.
+
+Text-to-action and image-understanding requests use the registered App action
+schemas, including complete prepared drawing descriptors. The local provider
+can call the App-owned VTracer worker for uploaded PNG/JPEG images. It cannot
+read arbitrary paths or URLs, generate images, or insert raster elements. WebP
+can be understood but must be supplied as PNG/JPEG for vectorization.
+Filesystem, shell, web, MCP and plugin tools remain disabled.
+
+Codex may apply your personal global `AGENTS.md` or `AGENTS.override.md` from its
+effective home directory. Project instructions remain excluded. Personal
+guidance can affect model output; App action and permission boundaries still
+control execution. The App does not copy or return your personal instructions.
+
+The composer groups attachments, text, and Send in one input area. Detail
+questions have clickable choices for text and image requests; choosing continues
+the original request without retyping. Activity is expandable, and questions
+show a waiting state instead of claiming the drawing is complete.
+
+App UI labels and hints use English. AI responses follow the request and personal
+language preferences; the App does not impose a response language.
+
+For an explicit live subscription check, run from this App directory:
+
+```bash
+E2E_LOCAL_AI=true yarn test:e2e e2e/local-ai-provider.spec.ts --workers=1
+```
+
+This consumes your subscription allowance and verifies real text drawing and
+uploaded-image vectorization.
+
+### Use an HTTP model adapter
+
+The existing HTTP backend remains the default. Configure all three values:
+
+```dotenv
+AI_PROVIDER_BACKEND=http
 AI_PROVIDER_ENDPOINT=https://your-adapter.example/actions
 AI_PROVIDER_MODEL=your-model
 AI_PROVIDER_API_KEY=your-secret
 ```
 
-The browser receives none of them. Startup creates no model request or provider
-connection.
+The endpoint must implement the App action-batch protocol, not a raw model API.
+The browser receives none of these settings. Both backends use the same
+server-prepared action batch, permission checks, and canonical transaction flow.
+A missing model, executable, or subscription login fails without falling back
+to HTTP. Check your local Codex login and version when setup fails.
 
 ## Support and contribution policy
 

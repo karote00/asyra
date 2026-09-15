@@ -129,6 +129,8 @@ export type AiRuntimeProgressPhase =
 export type AiRuntimeProgressOutcome = 'cancelled' | 'executed' | 'failed'
 
 export interface AiRuntimeProgressUpdate {
+  readonly tool?: string
+  readonly toolStatus?: 'running' | 'completed'
   readonly actionCount?: number
   readonly attempt: number
   readonly outcome?: AiRuntimeProgressOutcome
@@ -1047,24 +1049,51 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
           summary: 'Requesting an action batch'
         })
         try {
-          const actionBatch = await runAbortable(signal, () =>
-            this.provider.requestActionBatch(
-              Object.freeze({
-                actions,
-                attempt,
-                context,
-                intent,
-                ...(request.metadata === undefined
-                  ? {}
-                  : {
-                      metadata: request.metadata
+          const actionBatch = await runAbortable(signal, async () => {
+            let acceptingProgress = true
+            try {
+              return await this.provider.requestActionBatch(
+                Object.freeze({
+                  actions,
+                  attempt,
+                  context,
+                  intent,
+                  ...(request.metadata === undefined
+                    ? {}
+                    : {
+                        metadata: request.metadata
+                      })
+                }),
+                {
+                  signal,
+                  onProgress: (event) => {
+                    if (
+                      !acceptingProgress ||
+                      signal.aborted ||
+                      !event ||
+                      typeof event.tool !== 'string' ||
+                      !/^[a-zA-Z0-9_-]{1,64}$/.test(event.tool) ||
+                      (event.status !== 'running' &&
+                        event.status !== 'completed')
+                    )
+                      return
+                    emitProgress({
+                      attempt,
+                      phase: 'provider',
+                      tool: event.tool,
+                      toolStatus: event.status,
+                      summary:
+                        event.status === 'running'
+                          ? 'Running a tool'
+                          : 'Tool completed'
                     })
-              }),
-              {
-                signal
-              }
-            )
-          )
+                  }
+                }
+              )
+            } finally {
+              acceptingProgress = false
+            }
+          })
           currentStage = 'resolution'
           emitProgress({
             attempt,

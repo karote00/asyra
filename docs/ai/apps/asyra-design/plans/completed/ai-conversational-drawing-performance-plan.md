@@ -1481,6 +1481,16 @@ required fileId selects only the persisted document and Collaboration session
   Actor B applies accepted remote canonical state with zero persistence, Undo,
   or echo publication.
 
+### Local Subscription Backend
+
+The current App server can explicitly select a local Codex subscription backend
+behind the existing same-origin action-batch request. Its configuration,
+credential isolation, process lifecycle, local request admission, supported
+capabilities, and formal cases are defined in the
+[Local AI provider contract](../../specs/local-ai-provider.md). This extends
+backend model selection without changing the browser provider, action-batch
+format, canonical execution, or the exact sample bypass described above.
+
 ### Server-prepared AiActionBatch Contract
 
 The backend owns model preparation; `@asyra/ai-agent-runtime` owns only
@@ -5614,3 +5624,13 @@ Stop the current owner step and replan from the first incorrect owner when:
 
 If the final heavy gate fails, report only the first over-budget or incorrect
 owner with evidence. Do not resume a local patch-and-tune loop.
+
+## Conversation lifecycle
+
+The conversation experience extension owns document-scoped messages, correlated
+questions, actual activity and safe recovery. Its current product contract is
+[AI conversation experience](../../specs/ai-conversation-experience.md).
+It precedes the existing request owner without changing prepared geometry ownership.
+Reference replacement prepares and inserts the new composition before removing only
+the validated old target inside the existing outer transaction. Any incomplete
+replacement throws so the canonical transaction rolls back the entire change.

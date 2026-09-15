@@ -31,3 +31,8 @@ export interface AiProviderInput<TContext = unknown> {
   readonly attempt: number
   readonly metadata?: AiJsonValue
 }
+
+export interface AiToolProgress {
+  readonly tool: string
+  readonly status: 'running' | 'completed'
+}

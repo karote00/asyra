@@ -12,10 +12,8 @@ export type AiDrawingDetailOptionId =
 
 export interface AiDrawingDetailChoice {
   readonly description: string
-  readonly elementCount: number
   readonly id: AiDrawingDetailOptionId
   readonly label: string
-  readonly pointCountLabel: string
   readonly resourceWarning: string | null
 }
 
@@ -37,18 +35,15 @@ const DRAWING_DETAIL_CHOICE_PROJECTION: AiDrawingDetailChoiceProjection =
     choices: Object.freeze([
       Object.freeze({
         description: 'Faster and lighter for editing.',
-        elementCount: 7_111,
         id: AiDrawingDetailOptionIds.BALANCED,
         label: 'Balanced detail',
-        pointCountLabel: 'At least 115,000 points',
         resourceWarning: null
       }),
       Object.freeze({
-        description: 'Uses the highest live-validated vector detail.',
-        elementCount: 27_471,
+        description:
+          'Preserves more detail with potentially more editable shapes.',
         id: AiDrawingDetailOptionIds.MAXIMUM,
         label: 'Maximum detail',
-        pointCountLabel: '295,794 points',
         resourceWarning:
           'May temporarily use much more memory and reduce app responsiveness.'
       })
@@ -129,7 +124,7 @@ const partialCounts = (
   )
 }
 
-const formatElapsedTime = (durationMs: number): string => {
+export const formatElapsedTime = (durationMs: number): string => {
   const seconds = Math.max(0, durationMs) / 1_000
   if (seconds < 10) {
     return `Elapsed ${Math.max(0.1, seconds).toFixed(1)}s`
@@ -151,11 +146,42 @@ const formatElapsedTime = (durationMs: number): string => {
 }
 
 export const summarizeAiTurn = (turn: AiSettledTurn): AiTurnSummary => {
-  let message = 'The request failed without applying changes.'
-  if (projectAiDrawingDetailChoice(turn)) {
-    message = 'Choose a drawing detail level.'
+  let message = 'The request failed. Review the canvas before trying again.'
+  if (isPlainObject(turn.result) && turn.result.stage === 'provider') {
+    message = 'Could not complete the AI request. Your drawing is unchanged.'
+    if (turn.result.code === 'AI_PROVIDER_INVALID_CONFIGURATION')
+      message =
+        'The AI provider is unavailable or not configured. Your drawing is unchanged.'
+    if (
+      turn.result.message ===
+      'Image conversion failed. Your drawing is unchanged.'
+    )
+      message = turn.result.message
+    if (turn.result.code === 'AI_PROVIDER_TIMEOUT')
+      message = 'The request timed out before any changes were applied.'
+    if (turn.result.code === 'AI_PROVIDER_TRANSPORT_FAILED')
+      message = 'The AI connection was interrupted. Your drawing is unchanged.'
+    if (turn.result.code === 'AI_PROVIDER_MALFORMED_RESPONSE')
+      message =
+        'The AI returned an invalid drawing response. Your drawing is unchanged.'
+  }
+  const question = projectAiQuestion(turn)
+  if (question) {
+    message = question.message
   } else if (turn.outcome === 'success') {
-    message = 'Drawing updated successfully.'
+    const counts = partialCounts(turn.result)
+    message =
+      counts.applied > 0
+        ? `Updated ${counts.applied} editable element${counts.applied === 1 ? '' : 's'}.`
+        : 'The requested changes are complete.'
+    if (
+      isPlainObject(turn.result) &&
+      isPlainObject(turn.result.preview) &&
+      typeof turn.result.preview.explanation === 'string' &&
+      turn.result.preview.explanation.length <= 1000
+    ) {
+      message = `${turn.result.preview.explanation}\n\n${message}`
+    }
   } else if (turn.outcome === 'partial') {
     const counts = partialCounts(turn.result)
     message = `Partially updated the drawing: ${counts.applied} applied, ${counts.skipped} skipped.`
@@ -169,4 +195,66 @@ export const summarizeAiTurn = (turn: AiSettledTurn): AiTurnSummary => {
     message,
     outcome: turn.outcome
   })
+}
+
+/** Only pre-execution failures are admitted for replay. Unknown transaction state is never guessed. */
+export const canRetryAiTurn = (turn: AiSettledTurn): boolean => {
+  if (turn.outcome !== 'failed' && turn.outcome !== 'cancelled') return false
+  if (!isPlainObject(turn.result)) return false
+  return [
+    'context',
+    'provider',
+    'resolution',
+    'permission',
+    'confirmation'
+  ].includes(String(turn.result.stage))
+}
+
+export const currentAiActivity = (
+  phase?: string,
+  toolStatus?: string
+): string => {
+  if (toolStatus === 'running') return 'Converting image to vectors…'
+  if (toolStatus === 'completed') return 'Preparing the vector drawing…'
+  if (phase === 'execution') return 'Updating canvas…'
+  if (phase === 'confirmation') return 'Awaiting approval'
+  return 'Working…'
+}
+
+export const projectAiQuestion = (
+  turn: AiSettledTurn
+): {
+  readonly message: string
+  readonly choices: readonly AiDrawingDetailChoice[]
+} | null => {
+  const detail = projectAiDrawingDetailChoice(turn)
+  if (detail)
+    return {
+      message: 'Choose a drawing detail level.',
+      choices: detail.choices
+    }
+  if (
+    turn.outcome !== 'no-change' ||
+    !isPlainObject(turn.result) ||
+    !Array.isArray(turn.result.actionResults) ||
+    turn.result.actionResults.length !== 1
+  )
+    return null
+  const action = turn.result.actionResults[0]
+  if (
+    !isPlainObject(action) ||
+    action.actionName !== AiActionNames.REQUEST_CLARIFICATION ||
+    !isPlainObject(action.result) ||
+    !isPlainObject(action.result.clarification)
+  )
+    return null
+  const { question, kind } = action.result.clarification
+  if (
+    kind !== 'question' ||
+    typeof question !== 'string' ||
+    !question.trim() ||
+    question.length > 1000
+  )
+    return null
+  return { message: question, choices: [] }
 }

@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2022"],
+    "types": ["node"],
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true
+  },
+  "include": [
+    "server/action-batch.ts",
+    "server/ai-model-provider.ts",
+    "server/local-ai-provider.ts",
+    "server/__tests__/ai-model-provider.test.ts",
+    "server/__tests__/local-ai-provider.test.ts",
+    "server/__tests__/local-ai-admission.test.ts",
+    "server/ai-status.ts",
+    "server/__tests__/ai-status.test.ts",
+    "server/__tests__/local-image-tools.test.ts",
+    "server/__tests__/local-ai-live.test.ts"
+  ]
+}

@@ -42,11 +42,11 @@ describe('Asyra Design AI presentation summaries', () => {
     )
 
     expect(summaries.map((summary) => summary.message)).toEqual([
-      'Drawing updated successfully.',
+      'Updated 1 editable element.',
       'Partially updated the drawing: 1 applied, 1 skipped.',
       'No canvas changes were needed.',
       'The request was cancelled.',
-      'The request failed without applying changes.'
+      'The request failed. Review the canvas before trying again.'
     ])
     expect(summaries.map((summary) => summary.durationLabel)).toEqual(
       Array.from({ length: 5 }, () => 'Elapsed 1.3s')
@@ -104,18 +104,15 @@ describe('Asyra Design AI presentation summaries', () => {
       choices: [
         {
           description: 'Faster and lighter for editing.',
-          elementCount: 7111,
           id: AiDrawingDetailOptionIds.BALANCED,
           label: 'Balanced detail',
-          pointCountLabel: 'At least 115,000 points',
           resourceWarning: null
         },
         {
-          description: 'Uses the highest live-validated vector detail.',
-          elementCount: 27_471,
+          description:
+            'Preserves more detail with potentially more editable shapes.',
           id: AiDrawingDetailOptionIds.MAXIMUM,
           label: 'Maximum detail',
-          pointCountLabel: '295,794 points',
           resourceWarning:
             'May temporarily use much more memory and reduce app responsiveness.'
         }

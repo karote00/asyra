@@ -1,3 +1,4 @@
+import type { AiToolProgress } from '../src/ai/action-batch-protocol'
 import type {
   AiActionBatch,
   AiProviderInput
@@ -5,6 +6,8 @@ import type {
 import { AI_APP_PROMPT, AI_IMAGE_TOOL_CATALOG } from './ai-domain-prompt'
 
 export type AiModelBackendErrorCode =
+  | 'AI_MODEL_BACKEND_TIMEOUT'
+  | 'AI_MODEL_BACKEND_IMAGE_CONVERSION_FAILED'
   | 'AI_MODEL_BACKEND_ABORTED'
   | 'AI_MODEL_BACKEND_HTTP_STATUS'
   | 'AI_MODEL_BACKEND_INVALID_CONFIGURATION'
@@ -36,6 +39,7 @@ interface AiModelBackendConfiguration {
 interface AiModelBackendOptions {
   readonly environment?: Readonly<Record<string, string | undefined>>
   readonly fetch?: typeof fetch
+  readonly onProgress?: (event: AiToolProgress) => void
   readonly signal?: AbortSignal
 }
 
@@ -126,6 +130,36 @@ export const requestConfiguredAiActionBatch = async (
   input: AiProviderInput,
   options: AiModelBackendOptions = {}
 ): Promise<AiActionBatch> => {
+  const environment = options.environment ?? process.env
+  const backend = environment.AI_PROVIDER_BACKEND?.trim() || 'http'
+  if (backend === 'local-codex') {
+    const model = requireSetting(environment, 'AI_PROVIDER_MODEL')
+    const executable = environment.AI_PROVIDER_EXECUTABLE?.trim() || 'codex'
+    const { requestLocalAiActionBatch } = await import('./local-ai-provider')
+    const value = await requestLocalAiActionBatch(input, {
+      model,
+      executable,
+      signal: options.signal,
+      onProgress: options.onProgress
+    })
+    if (options.signal?.aborted) {
+      throw new AiModelBackendError(
+        'AI_MODEL_BACKEND_ABORTED',
+        'The local AI provider request was aborted.'
+      )
+    }
+    if (!isActionBatchEnvelope(value)) {
+      throw new AiModelBackendError(
+        'AI_MODEL_BACKEND_INVALID_RESPONSE',
+        'The local AI provider returned an invalid action batch.'
+      )
+    }
+    return value
+  }
+  if (backend !== 'http')
+    return invalidConfiguration(
+      'AI_PROVIDER_BACKEND must be http or local-codex.'
+    )
   const configuration = resolveAiModelBackendConfiguration(
     options.environment ?? process.env
   )
