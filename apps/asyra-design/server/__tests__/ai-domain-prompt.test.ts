@@ -24,7 +24,7 @@ describe('Asyra Design backend-owned AI domain prompt', () => {
       {
         capabilities: ['whole-image-raster-vectorization'],
         id: 'vtracer',
-        inputMediaTypes: ['image/jpeg', 'image/png', 'image/webp']
+        inputMediaTypes: ['image/jpeg', 'image/png']
       }
     ])
     expect(JSON.stringify(AI_IMAGE_TOOL_CATALOG)).not.toMatch(

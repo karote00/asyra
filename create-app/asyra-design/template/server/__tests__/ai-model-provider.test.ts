@@ -92,7 +92,7 @@ describe('Asyra Design configured AI model backend', () => {
       {
         capabilities: ['whole-image-raster-vectorization'],
         id: 'vtracer',
-        inputMediaTypes: ['image/jpeg', 'image/png', 'image/webp']
+        inputMediaTypes: ['image/jpeg', 'image/png']
       }
     ])
     expect(JSON.stringify(body)).not.toContain('backend-only-secret')

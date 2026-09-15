@@ -41,6 +41,39 @@ const executionContext = () => ({
 })
 
 describe('Asyra Design AI actions', () => {
+  it('describes executable descriptor and slice fields to the model', () => {
+    const action = actionByName(
+      AiActionNames.INSERT_VECTOR_COMPOSITION,
+      actionApis()
+    )
+    expect(action.inputSchema).toMatchObject({
+      properties: {
+        groupDescriptor: {
+          required: expect.arrayContaining(['id', 'name', 'props', 'type'])
+        },
+        slices: {
+          items: {
+            required: expect.arrayContaining([
+              'descriptors',
+              'pointCount',
+              'roles'
+            ]),
+            properties: {
+              descriptors: {
+                items: {
+                  properties: {
+                    type: { enum: expect.arrayContaining(['oval', 'vector']) },
+                    fills: { type: 'array' }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    })
+  })
+
   it('publishes one deterministic backend-facing action catalog', () => {
     const actions = createAiActions(actionApis())
 

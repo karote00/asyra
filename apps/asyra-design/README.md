@@ -211,8 +211,13 @@ fields. Unsupported versions fail closed. The adapter protocol is checked agains
 `0.154.0-alpha.6.2`; the old `0.40.0` CLI is not supported. On Windows, select the
 native executable rather than a shell `.cmd` wrapper. No shell is invoked.
 
-Each request starts one isolated, tool-free Codex thread and closes its process
-before returning. There is no model work at startup, automatic API fallback, or
+Each request starts one ephemeral Codex thread and closes its process
+before returning. The Agent panel checks connection readiness without running a model turn.
+It distinguishes an unavailable server, incomplete configuration, and an unavailable
+local Codex. Use Retry after changing the local setup. HTTP mode reports configuration
+only; its upstream connection is checked on submission.
+
+There is no model work at startup, automatic API fallback, or
 cross-request session reuse. Cancellation and a five-minute deadline stop the
 owned process. Use a loopback App URL, such as `http://localhost:3000`; remote
 peers and cross-origin browser requests are rejected in this mode.
@@ -224,9 +229,28 @@ Keep `.env` private. A deployed website cannot automatically use its visitors'
 local subscriptions.
 
 Text-to-action and image-understanding requests use the registered App action
-schemas. The local provider has no filesystem, shell, web, MCP, plugin, or
-image-preparation tools. Requests requiring an unavailable tool fail; this
-provider does not fabricate raster-vectorization results.
+schemas, including complete prepared drawing descriptors. The local provider
+can call the App-owned VTracer worker for uploaded PNG/JPEG images. It cannot
+read arbitrary paths or URLs, generate images, or insert raster elements. WebP
+can be understood but must be supplied as PNG/JPEG for vectorization.
+Filesystem, shell, web, MCP and plugin tools remain disabled.
+
+Codex may apply your personal global `AGENTS.md` or `AGENTS.override.md` from its
+effective home directory. Project instructions remain excluded. Personal
+guidance can affect model output; App action and permission boundaries still
+control execution. The App does not copy or return your personal instructions.
+
+App UI labels and hints use English. AI responses follow the request and personal
+language preferences; the App does not impose a response language.
+
+For an explicit live subscription check, run from this App directory:
+
+```bash
+E2E_LOCAL_AI=true yarn test:e2e e2e/local-ai-provider.spec.ts --workers=1
+```
+
+This consumes your subscription allowance and verifies real text drawing and
+uploaded-image vectorization.
 
 ### Use an HTTP model adapter
 

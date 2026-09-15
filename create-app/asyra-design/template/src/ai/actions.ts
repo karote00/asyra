@@ -1,3 +1,4 @@
+import { PREPARED_DRAWING_INPUT_SCHEMA } from './prepared-drawing-schema'
 import type {
   AiActionDefinition,
   AiExecutionContext
@@ -387,40 +388,7 @@ const createCompositionActions = (
       }
     },
     name: AiActionNames.INSERT_VECTOR_COMPOSITION,
-    inputSchema: Object.freeze({
-      additionalProperties: false,
-      properties: Object.freeze({
-        artifactVersion: Object.freeze({ const: 1, type: 'number' }),
-        compositionRole: Object.freeze({ type: 'string' }),
-        elementCount: Object.freeze({ minimum: 1, type: 'number' }),
-        groupBounds: Object.freeze({ type: 'object' }),
-        groupDescriptor: Object.freeze({ type: 'object' }),
-        parent: Object.freeze({
-          const: 'workspace',
-          type: 'string'
-        }),
-        pointCount: Object.freeze({ minimum: 0, type: 'number' }),
-        roleToElementIds: Object.freeze({ type: 'object' }),
-        skipped: Object.freeze({ type: 'array' }),
-        slices: Object.freeze({
-          minItems: 1,
-          type: 'array'
-        })
-      }),
-      required: Object.freeze([
-        'artifactVersion',
-        'compositionRole',
-        'elementCount',
-        'groupBounds',
-        'groupDescriptor',
-        'parent',
-        'pointCount',
-        'roleToElementIds',
-        'skipped',
-        'slices'
-      ]),
-      type: 'object'
-    })
+    inputSchema: PREPARED_DRAWING_INPUT_SCHEMA
   })
 
   const update: AiActionDefinition<UpdateCompositionElementsArgs> =

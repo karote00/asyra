@@ -1,10 +1,16 @@
+import { homedir } from 'node:os'
+import { join } from 'node:path'
 import { EventEmitter } from 'node:events'
 import { PassThrough, Writable } from 'node:stream'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { checkLocalAiProvider } from '../local-ai-provider'
 import { requestConfiguredAiActionBatch } from '../ai-model-provider'
 
 const { spawn } = vi.hoisted(() => ({ spawn: vi.fn() }))
 vi.mock('node:child_process', () => ({ spawn }))
+vi.mock('../../vtracer-tool-server.mjs', () => ({
+  convertVTracerBuffer: vi.fn(async () => '<svg width="1" height="1"></svg>')
+}))
 
 const input = {
   actions: [
@@ -41,12 +47,14 @@ interface Packet {
 }
 const fakeServer = (
   options: {
+    instructionSources?: unknown
     account?: unknown
     output?: string
     status?: string
     hold?: boolean
     onRequest?: (packet: Packet) => void
     delayedClose?: boolean
+    toolCall?: boolean
   } = {}
 ) => {
   const child = new EventEmitter() as EventEmitter & {
@@ -94,6 +102,19 @@ const fakeServer = (
       const packet = JSON.parse(String(chunk)) as Packet
       packets.push(packet)
       queueMicrotask(() => {
+        if ('result' in packet) {
+          notify('item/completed', {
+            item: {
+              type: 'dynamicToolCall',
+              id: 'call-1',
+              tool: 'vtracer',
+              status: 'completed',
+              success: true
+            }
+          })
+          finish()
+          return
+        }
         if (packet.id === undefined) return
         options.onRequest?.(packet)
         let result: unknown = {}
@@ -108,12 +129,26 @@ const fakeServer = (
           result = {
             thread: { id: 'thread-1' },
             model: 'selected-model',
-            instructionSources: [],
+            instructionSources: options.instructionSources ?? [],
             runtimeWorkspaceRoots: []
           }
         if (packet.method === 'turn/start') result = { turn: { id: 'turn-1' } }
         send({ id: packet.id, result })
-        if (packet.method === 'turn/start' && !options.hold) finish()
+        if (packet.method === 'turn/start' && !options.hold) {
+          if (options.toolCall)
+            send({
+              id: 99,
+              method: 'item/tool/call',
+              params: {
+                threadId: 'thread-1',
+                turnId: 'turn-1',
+                callId: 'call-1',
+                tool: 'vtracer',
+                arguments: { attachmentIndex: 0 }
+              }
+            })
+          else finish()
+        }
       })
       done()
     }
@@ -133,6 +168,61 @@ afterEach(() => {
 })
 
 describe('local subscription AI backend', () => {
+  it('executes the registered VTracer tool and resumes the same model turn', async () => {
+    const server = fakeServer({ toolCall: true })
+    const result = await requestConfiguredAiActionBatch(
+      {
+        ...input,
+        metadata: {
+          imageAttachments: [
+            {
+              dataUrl: 'data:image/png;base64,YQ==',
+              mediaType: 'image/png',
+              size: 1
+            }
+          ]
+        }
+      },
+      { environment }
+    )
+    expect(result).toEqual(batch)
+    expect(
+      server.packets.some((packet) => packet.id === 99 && 'result' in packet)
+    ).toBe(true)
+  })
+
+  it('checks login and protocol without starting a model turn', async () => {
+    const server = fakeServer()
+    await expect(
+      checkLocalAiProvider({ model: 'selected-model', executable: 'codex' })
+    ).resolves.toBeUndefined()
+    expect(server.packets.some(({ method }) => method === 'turn/start')).toBe(
+      false
+    )
+    expect(server.child.kill).toHaveBeenCalledOnce()
+  })
+
+  it.each(['AGENTS.md', 'AGENTS.override.md'])(
+    'accepts personal %s without returning its path or identity',
+    async (file) => {
+      const source = join(
+        process.env.CODEX_HOME || join(homedir(), '.codex'),
+        file
+      )
+      fakeServer({ instructionSources: [source] })
+      await expect(
+        requestConfiguredAiActionBatch(input, { environment })
+      ).resolves.toEqual(batch)
+    }
+  )
+
+  it('rejects project instructions even when their filename is AGENTS.md', async () => {
+    fakeServer({ instructionSources: [join(process.cwd(), 'AGENTS.md')] })
+    await expect(
+      requestConfiguredAiActionBatch(input, { environment })
+    ).rejects.toMatchObject({ code: 'AI_MODEL_BACKEND_INVALID_CONFIGURATION' })
+  })
+
   it('uses one tool-free ephemeral process, exact model, and no HTTP/API key or account output', async () => {
     const server = fakeServer()
     const fetch = vi.fn()

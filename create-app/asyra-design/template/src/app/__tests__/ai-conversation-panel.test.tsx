@@ -56,7 +56,7 @@ describe('AI Agent conversation panel intent boundary', () => {
 
     expect(screen.getByTestId('ai-agent-panel')).toBeTruthy()
     expect(screen.queryByTestId('ai-agent-message')).toBeNull()
-    expect(screen.getByText('Agent ready')).toBeTruthy()
+    expect(screen.getByText('Vector drawing')).toBeTruthy()
     expect(screen.getByRole('complementary').getAttribute('aria-modal')).toBe(
       'false'
     )
@@ -490,8 +490,8 @@ describe('AI Agent conversation panel intent boundary', () => {
   })
 
   it.each([
-    ['Balanced detail', '以平衡細節繪製這張圖'],
-    ['Maximum detail', '以最高細節繪製這張圖']
+    ['Balanced detail', 'draw this image with balanced detail'],
+    ['Maximum detail', 'draw this image with maximum detail']
   ] as const)(
     'submits the %s choice once with the retained reference attachment',
     async (label, expectedIntent) => {

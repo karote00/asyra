@@ -1,3 +1,4 @@
+import { AiConnectionStatus } from './ai-connection-status'
 import {
   useCallback,
   useEffect,
@@ -40,8 +41,8 @@ const DRAWING_DETAIL_SELECTION_INTENTS: Readonly<
   Record<AiDrawingDetailOptionId, string>
 > = Object.freeze({
   [AiDrawingDetailOptionIds.BALANCED]:
-    AiDrawingDetailSelectionIntents.BALANCED_ZH,
-  [AiDrawingDetailOptionIds.MAXIMUM]: AiDrawingDetailSelectionIntents.MAXIMUM_ZH
+    AiDrawingDetailSelectionIntents.BALANCED_EN,
+  [AiDrawingDetailOptionIds.MAXIMUM]: AiDrawingDetailSelectionIntents.MAXIMUM_EN
 })
 
 const stopAgentCancelActivationPropagation = (event: SyntheticEvent): void => {
@@ -542,6 +543,8 @@ export const AiConversationPanel = ({
         ) : null}
       </section>
 
+      <AiConnectionStatus />
+
       <form
         aria-label="Agent message form"
         className={`border-t p-3 transition-colors ${
@@ -628,7 +631,7 @@ export const AiConversationPanel = ({
             >
               + Image
             </button>
-            <span className="text-[9px] text-[#81838b]">Agent ready</span>
+            <span className="text-[9px] text-[#81838b]">Vector drawing</span>
           </div>
           <div className="flex items-center gap-2">
             {active ? (

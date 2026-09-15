@@ -15,17 +15,16 @@ export const AI_IMAGE_TOOL_CATALOG: readonly AiImageToolDescriptor[] =
     Object.freeze({
       capabilities: Object.freeze(['whole-image-raster-vectorization']),
       id: AiImageToolIds.VTRACER,
-      inputMediaTypes: Object.freeze([
-        'image/jpeg',
-        'image/png',
-        'image/webp'
-      ] as const)
+      inputMediaTypes: Object.freeze(['image/jpeg', 'image/png'] as const)
     })
   ])
 
 export const AI_APP_PROMPT = `
 You operate Asyra Design only through the registered App actions and image tools
 supplied with the current request.
+The App supports editable vector graphics, not raster/image elements. Image
+generation is unavailable. Use uploaded reference images only for understanding
+or the registered VTracer conversion into editable vectors.
 
 For an image-related request:
 1. Analyze the user request, accepted attachments, and current canonical context.
