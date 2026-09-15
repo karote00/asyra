@@ -88,8 +88,12 @@ test('homepage navigation works with keyboard and no JavaScript at desktop and m
     try {
       const page = await context.newPage()
       await page.goto('/')
-      await page.locator('summary').focus()
-      await page.keyboard.press('Enter')
+      if (width < 1024) {
+        await page.locator('summary').focus()
+        await page.keyboard.press('Enter')
+      } else {
+        await expect(page.locator('summary')).toBeHidden()
+      }
       const nav = page.getByRole('navigation', { name: 'Primary navigation' })
       await expect(
         nav.getByRole('link', { name: 'Docs', exact: true })

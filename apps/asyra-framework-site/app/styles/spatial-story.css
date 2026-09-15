@@ -62,7 +62,7 @@
   font-size: clamp(40px, 4.25vw, 74px);
 }
 [data-story-chapter] > div:first-child > p:not(:first-child) {
-  max-width: 390px;
+  max-width: 420px;
 }
 [data-static-scene] {
   container-type: inline-size;
@@ -176,4 +176,11 @@
   .spatial-story-shell .site-footer {
     padding-inline: clamp(32px, 4vw, 72px) 24px;
   }
+}
+
+.spatial-story-shell .site-footer nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: 14px;
 }

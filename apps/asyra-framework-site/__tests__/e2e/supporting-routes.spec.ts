@@ -759,7 +759,7 @@ test('Asyra Design ownership rows do not add a disconnected timeline stroke', as
   })
 })
 
-test('landing and supporting routes share the landing footer at every responsive mode', async ({
+test('landing and supporting routes share footer content with their own responsive gutters', async ({
   page
 }, testInfo) => {
   const readFooter = async () =>
@@ -810,7 +810,10 @@ test('landing and supporting routes share the landing footer at every responsive
     await page.goto('/roadmap')
     const supportingFooter = await readFooter()
 
-    expect(supportingFooter).toEqual(landingFooter)
+    expect(supportingFooter.links).toEqual(landingFooter.links)
+    expect(supportingFooter.text).toEqual(landingFooter.text)
+    expect(supportingFooter.className).toEqual(landingFooter.className)
+    expect(landingFooter.hasHorizontalOverflow).toBe(false)
     expect(supportingFooter.hasHorizontalOverflow).toBe(false)
     expect(supportingFooter.identity).toBeNull()
     expect(supportingFooter.text).not.toMatch(/2026|MIT License/)
