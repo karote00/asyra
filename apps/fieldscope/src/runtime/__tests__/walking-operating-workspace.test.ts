@@ -27,6 +27,36 @@ const demand = (identity: object = {}) => {
   } as unknown as SceneDemand
 }
 
+it('walking observation reuses the operating screen for arbitrary covered sight queries', () => {
+  const current = demand()
+  const owner = new WalkingOperatingOwner(
+    () => current,
+    (value) => value === current
+  )
+  const report = owner.apply(
+    createWalkingRuntimeSelection(
+      createSyntheticWalkingRobotDefinition({
+        definitionId: 'walking-observation-screen'
+      })
+    )
+  )
+  const screen = owner.transitScreen
+  expect(screen.work.builds).toBe(1)
+  const sight = screen.queryVolume(current, {
+    min: [-1, -1, -1],
+    max: [1, 1, 1],
+    size: [2, 2, 2]
+  })
+  expect(sight.coverage).toBe('covered')
+  expect(screen.work.builds).toBe(1)
+  owner.refreshDemand()
+  expect(owner.transitScreen).toBe(screen)
+  expect(screen.work.builds).toBe(1)
+  expect(owner.isCurrent(report)).toBe(false)
+  owner.clear()
+  expect(screen.isCurrentVolume(sight)).toBe(false)
+})
+
 it('keeps the legacy view inert and prepares one current walking owner product', () => {
   let currentDemand = demand()
   const owner = new WalkingOperatingOwner(

@@ -676,6 +676,7 @@ function cycleGeometry(
   return { bodies, parts, supports, swing }
 }
 export class WalkingConstrainedCycleOwner {
+  private selectedMotions = new Set<WalkingSelectedChainMotion>()
   private baseMotion: WalkingCycleBaseMotion | undefined
   private constantMotion: WalkingCycleConstantMotion | undefined
   private phaseRootMotions: readonly WalkingCyclePhaseRootMotion[] = []
@@ -710,6 +711,7 @@ export class WalkingConstrainedCycleOwner {
       : undefined
   }
   dispose() {
+    this.selectedMotions.clear()
     this.baseMotion = undefined
     this.constantMotion = undefined
     this.phaseRootMotions = []
@@ -1002,6 +1004,232 @@ export class WalkingConstrainedCycleOwner {
     )
     return product
   }
+  readSelectedChainMotion(
+    cycle: WalkingConstrainedCycle,
+    motion: WalkingSelectedChainMotion
+  ) {
+    return this.current === cycle &&
+      motion.cycle === cycle &&
+      this.selectedMotions.has(motion)
+      ? motion
+      : undefined
+  }
+  prepareSelectedChainMotion(
+    cycle: WalkingConstrainedCycle,
+    raw: unknown
+  ): WalkingSelectedChainMotion {
+    if (this.current !== cycle || !this.prepared)
+      fail('selected motion stale cycle')
+    if (
+      !record(raw, [
+        'format',
+        'cycle',
+        'phase',
+        'at',
+        'chainId',
+        'targetAbduction'
+      ]) ||
+      raw.format !== 'walking-selected-chain-root-motion/1' ||
+      raw.cycle !== cycle ||
+      !Number.isInteger(raw.phase) ||
+      Number(raw.phase) < 0 ||
+      Number(raw.phase) > 1
+    )
+      fail('selected motion recipe')
+    const work = zeroWork(),
+      e = arithmetic(cycle.recipe.budget, work, this.onWork),
+      a = e.exact
+    const phase = Number(raw.phase),
+      at = cycleParameter(raw.at, e)
+    const targetAbduction = cycleParameter(raw.targetAbduction, e)
+    const chain = required(
+      cycle.source.rig.legChains.find((c) => c.id === raw.chainId)
+    )
+    if (cycle.recipe.groups[phase].includes(chain.id))
+      fail('selected motion requires swing chain')
+    const template = this.prepared.phases[phase].template
+    const joints = chain.jointIds.map((id) =>
+      required(cycle.source.rig.joints.find((j) => j.id === id))
+    )
+    if (joints[0].axis !== 'z' || joints[0].motion !== 'revolute')
+      fail('selected root joint')
+    const signedTarget =
+      chain.side === 'left'
+        ? a.subtract(a.literal(0), targetAbduction)
+        : targetAbduction
+    if (
+      cycleCompare(signedTarget, a.literal(joints[0].domain[0]), e) < 0 ||
+      cycleCompare(signedTarget, a.literal(joints[0].domain[1]), e) > 0
+    )
+      fail('selected root domain')
+    const one = a.literal(1),
+      two = a.literal(2)
+    const startAbduction = a.multiply(
+      a.multiply(a.literal(4), cycle.recipe.alpha),
+      a.multiply(at, a.subtract(one, at))
+    )
+    const theta = a.divide(
+      a.multiply(cycle.recipe.alpha, a.subtract(a.multiply(two, at), one)),
+      two
+    )
+    const leaf = cycleLeaf(e, theta)
+    const hip = cycleRotation(a, 'x', leaf.sin, leaf.cos)
+    const coxa = identity(a)
+    const upper = {
+      origin: vector(joints[1].frame.position.map(a.literal)),
+      matrix: hip
+    }
+    const lower = {
+      origin: plusVector(
+        a,
+        upper.origin,
+        rotate(a, hip, vector(joints[2].frame.position.map(a.literal)))
+      ),
+      matrix: coxa.matrix
+    }
+    const footBody = required(
+      cycle.source.rig.bodies.find((b) => b.id === chain.footBodyId)
+    )
+    const foot = compose(a, lower, required(template.bodyFrames.get(footBody)))
+    const locals = [coxa, upper, lower, foot]
+    const bodies = chain.bodyIds.map((id, index) => ({
+      body: required(cycle.source.rig.bodies.find((b) => b.id === id)),
+      local: locals[index]
+    }))
+    if (bodies.length !== 4) fail('selected source chain')
+    const selected = new Set(chain.bodyIds)
+    const parts = bodies.flatMap((entry) =>
+      entry.body.parts.map((part) => ({
+        part,
+        local: compose(a, entry.local, required(template.partFrames.get(part)))
+      }))
+    )
+    const point = this.evaluate(cycle, phase, at)
+    const root = required(
+      point.bodies.find((b) => b.body.id === joints[0].parentBodyId)
+    ).exact
+    const recipe: WalkingSelectedChainMotionRecipe = freeze({
+      format: 'walking-selected-chain-root-motion/1',
+      cycle,
+      phase,
+      at,
+      chainId: chain.id,
+      targetAbduction
+    })
+    const motion: WalkingSelectedChainMotion = freeze({
+      format: 'walking-selected-chain-root-motion-product/1',
+      source: cycle.source,
+      cycle,
+      recipe,
+      chain,
+      startAbduction,
+      targetAbduction,
+      parameter: [a.literal(0), one],
+      root,
+      jointOrigin: vector(joints[0].frame.position.map(a.literal)),
+      bodies,
+      parts,
+      fixed: {
+        bodies: point.bodies.filter((b) => !selected.has(b.body.id)),
+        parts: point.parts.filter((p) => !selected.has(p.part.bodyId))
+      },
+      authority: 'exact-polynomial-selected-chain-root/1',
+      work: {
+        ...work,
+        fixedPointEvaluations: 1,
+        selectedBodyVisits: bodies.length,
+        selectedPartVisits: parts.length
+      }
+    })
+    this.selectedMotions.add(motion)
+    return motion
+  }
+  evaluateSelectedChainMotion(
+    motion: WalkingSelectedChainMotion,
+    raw: unknown
+  ) {
+    if (!this.readSelectedChainMotion(motion.cycle, motion))
+      fail('selected motion stale point')
+    const work = zeroWork(),
+      e = arithmetic(motion.cycle.recipe.budget, work, this.onWork)
+    const u = cycleParameter(raw, e),
+      a = e.exact
+    const angle = selectedAngle(motion, u, e)
+    const leaf = cycleLeaf(e, a.divide(angle, a.literal(2)))
+    const root = selectedRoot(motion, a, leaf)
+    let selectedBodyVisits = 0,
+      selectedPartVisits = 0
+    const bodies = motion.bodies.map((entry) => {
+      selectedBodyVisits++
+      return { body: entry.body, exact: compose(a, root, entry.local) }
+    })
+    const parts = motion.parts.map((entry) => {
+      selectedPartVisits++
+      return { part: entry.part, exact: compose(a, root, entry.local) }
+    })
+    return freeze({
+      motion,
+      u,
+      bodies,
+      parts,
+      fixed: motion.fixed,
+      work: {
+        ...work,
+        selectedBodyVisits,
+        selectedPartVisits,
+        otherBodyVisits: 0
+      }
+    })
+  }
+  boundSelectedChainMotion(motion: WalkingSelectedChainMotion, raw: unknown) {
+    if (!this.readSelectedChainMotion(motion.cycle, motion))
+      fail('selected motion stale bound')
+    const work = zeroWork(),
+      e = arithmetic(motion.cycle.recipe.budget, work, this.onWork)
+    if (!record(raw, ['low', 'high'])) fail('selected interval')
+    const low = cycleParameter(raw.low, e),
+      high = cycleParameter(raw.high, e)
+    if (cycleCompare(low, high, e) > 0) fail('selected reversed interval')
+    const first = selectedAngle(motion, low, e),
+      last = selectedAngle(motion, high, e)
+    const ascending = cycleCompare(first, last, e) <= 0
+    const leaf = cycleBounds(
+      e,
+      e.exact.divide(ascending ? first : last, e.exact.literal(2)),
+      e.exact.divide(ascending ? last : first, e.exact.literal(2))
+    )
+    const a = e.ranges,
+      root = selectedRoot(motion, a, leaf)
+    let selectedBodyVisits = 0,
+      selectedPartVisits = 0
+    const bodies = motion.bodies.map((entry) => {
+      selectedBodyVisits++
+      return {
+        body: entry.body,
+        frame: compose(a, root, convertFrame(a, entry.local))
+      }
+    })
+    const parts = motion.parts.map((entry) => {
+      selectedPartVisits++
+      return {
+        part: entry.part,
+        frame: compose(a, root, convertFrame(a, entry.local))
+      }
+    })
+    return freeze({
+      motion,
+      parameter: { low, high },
+      bodies,
+      parts,
+      fixed: motion.fixed,
+      work: {
+        ...work,
+        selectedBodyVisits,
+        selectedPartVisits,
+        otherBodyVisits: 0
+      }
+    })
+  }
   bound(cycle: WalkingConstrainedCycle, phase: number, raw: unknown) {
     if (
       this.current !== cycle ||
@@ -1100,6 +1328,75 @@ export class WalkingConstrainedCycleOwner {
       work: { ...work, unvisited: 0 }
     })
   }
+}
+export interface WalkingSelectedChainMotionRecipe {
+  readonly format: 'walking-selected-chain-root-motion/1'
+  readonly cycle: WalkingConstrainedCycle
+  readonly phase: number
+  readonly at: ConstrainedFraction
+  readonly chainId: string
+  readonly targetAbduction: ConstrainedFraction
+}
+export interface WalkingSelectedChainMotion {
+  readonly format: 'walking-selected-chain-root-motion-product/1'
+  readonly source: WalkingRobotSource
+  readonly cycle: WalkingConstrainedCycle
+  readonly recipe: WalkingSelectedChainMotionRecipe
+  readonly chain: WalkingRobotSource['rig']['legChains'][number]
+  readonly startAbduction: ConstrainedFraction
+  readonly targetAbduction: ConstrainedFraction
+  readonly parameter: readonly [ConstrainedFraction, ConstrainedFraction]
+  readonly root: ExactFrame
+  readonly jointOrigin: ConstrainedVector<ConstrainedFraction>
+  readonly bodies: readonly {
+    readonly body: WalkingRobotBody
+    readonly local: ExactFrame
+  }[]
+  readonly parts: readonly {
+    readonly part: WalkingRobotPart
+    readonly local: ExactFrame
+  }[]
+  readonly fixed: Readonly<{
+    bodies: readonly {
+      readonly body: WalkingRobotBody
+      readonly exact: ExactFrame
+    }[]
+    parts: readonly {
+      readonly part: WalkingRobotPart
+      readonly exact: ExactFrame
+    }[]
+  }>
+  readonly authority: 'exact-polynomial-selected-chain-root/1'
+  readonly work: Readonly<
+    Work & {
+      fixedPointEvaluations: number
+      selectedBodyVisits: number
+      selectedPartVisits: number
+    }
+  >
+}
+function selectedAngle(
+  motion: WalkingSelectedChainMotion,
+  u: ConstrainedFraction,
+  e: CycleEngine
+) {
+  const a = e.exact
+  return a.add(
+    motion.startAbduction,
+    a.multiply(a.subtract(motion.targetAbduction, motion.startAbduction), u)
+  )
+}
+function selectedRoot<T>(
+  motion: WalkingSelectedChainMotion,
+  a: Algebra<T>,
+  leaf: { sin: T; cos: T }
+) {
+  const sin =
+    motion.chain.side === 'left' ? a.subtract(a.literal(0), leaf.sin) : leaf.sin
+  return compose(a, convertFrame(a, motion.root), {
+    origin: vector(motion.jointOrigin.map(a.rational)),
+    matrix: cycleRotation(a, 'z', sin, leaf.cos)
+  })
 }
 export interface WalkingCyclePhaseRootMotion extends Omit<
   WalkingCycleConstantMotion,

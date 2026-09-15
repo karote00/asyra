@@ -1,24 +1,46 @@
+import type { WalkingOperatingReport } from '../runtime/walking-operating-workspace'
+import type { WalkingRobotSource } from '../domain/walking-robot-source'
 import type { CropSpecies } from '../domain/crop-layout'
-import type { CropFruit } from '../domain/crop-models'
+import type { CropSourceAnatomyPatch, CropFruit } from '../domain/crop-models'
+import type { SceneDemand } from './scene-demand'
+import {
+  WalkingTransitScreen,
+  type WalkingSceneCandidates
+} from './walking-transit-screen'
+import {
+  SyntheticDynamicSceneOwner,
+  type SyntheticDynamicSnapshot,
+  type SyntheticActorSource,
+  type SyntheticSourceBounds
+} from './synthetic-dynamic-scene'
+import type { SourceRegion } from '../domain/source-occupancy'
 import type { Point3 } from '../domain/greenhouse'
 import type { RigidTransform } from '../domain/robot-kinematics'
 import type { CanonicalMission } from './contracts'
 import {
   QueryGeometry,
   type GeometrySource,
+  type QueryGeometrySource,
+  type WalkingObservationGeometrySource,
   type GeometryMesh
 } from './geometry'
 import {
   RayQueries,
   prepareQueryFrame,
   transformQueryDirection,
-  type RayResult
+  transformQueryDirectionBounds,
+  directionBounds,
+  type RayResult,
+  type RayBatchResult,
+  type WalkingWorldRayBatch,
+  type CanonicalRayCandidate
 } from './ray-query'
 import {
   interval,
   add,
   subtract,
   multiply,
+  divide,
   squareRoot,
   type Interval
 } from './query-arithmetic'
@@ -94,6 +116,84 @@ export interface ViewRequest extends ObservationBinding {
     maxDistance: number
   }
 }
+export interface ActionVolumeRequest extends Omit<
+  ViewRequest,
+  'source' | 'targetIds' | 'samplesPerTarget'
+> {
+  source: 'synthetic-action-volume/1'
+  actionId: string
+  actionBounds: SyntheticSourceBounds
+  optics: {
+    illumination: number | null
+    filmTransmission: number | null
+    weatherTransmission: number | null
+    shadowFraction: number | null
+    glare: number | null
+  }
+  model: {
+    format: 'synthetic-action-volume/1'
+    minSignal: number
+    maxGlare: number
+    maxCandidates: number
+    maxRays: number
+    maxActors: number
+  }
+}
+export type ActionDetection =
+  | {
+      readonly kind: 'static'
+      readonly mesh: GeometryMesh
+      readonly region: SourceRegion
+      readonly instance: number
+      readonly ray: Extract<RayResult, { status: 'hit' }>
+      readonly anatomy: readonly CropSourceAnatomyPatch[]
+    }
+  | {
+      readonly kind: 'dynamic'
+      readonly trackId: string
+      readonly actorKind: SyntheticActorSource['kind']
+      readonly motion: SyntheticActorSource['motion']
+      readonly bounds: SyntheticSourceBounds
+      readonly sourceIdentity: Readonly<object>
+      readonly distance: Readonly<Interval>
+    }
+export interface ActionVolumeObservation {
+  readonly format: 'action-volume-observation/1'
+  readonly identity: Readonly<object>
+  readonly provenance: 'w1-canonical-obstacles/1'
+  readonly context: ObservationContext
+  readonly demandIdentity: Readonly<object>
+  readonly dynamicIdentity: Readonly<object>
+  readonly dynamicRevision: number
+  readonly input: Immutable<ActionVolumeRequest>
+  readonly sightBounds: SyntheticSourceBounds
+  readonly reliability: Readonly<{
+    status: 'reliable' | 'insufficient' | 'unknown'
+    signal: Readonly<Interval>
+    glare: Readonly<Interval>
+  }>
+  readonly coverage: 'complete-empty' | 'partial' | 'unknown'
+  readonly detections: readonly ActionDetection[]
+  readonly unvisited: number
+  readonly reasons: readonly string[]
+  readonly work: Readonly<{
+    cameraFrames: number
+    sightQueries: number
+    rayBatches: number
+    samples: number
+    sourceActorVisits: number
+    candidateVisits: number
+    indexBuilds: number
+    membershipBuilds: number
+    membershipVisits: number
+    placementMembershipChecks: number
+    placements: number
+    rayInstances: number
+    rayTriangles: number
+    dynamicRayTests: number
+  }>
+}
+
 interface ViewSample {
   readonly targetId: string
   readonly mesh: GeometryMesh
@@ -321,22 +421,19 @@ function readView(raw: ViewRequest): Immutable<ViewRequest> {
     !['all-attached', 'unknown'].includes(input.fruits)
   )
     reject()
-  keys(input.camera, [
-    'pose',
-    'halfWidthSlope',
-    'halfHeightSlope',
-    'maxDistance'
-  ])
+  validateActionCamera(input.camera)
+  return freeze(input)
+}
+function validateActionCamera(camera: Immutable<ViewRequest['camera']>) {
+  keys(camera, ['pose', 'halfWidthSlope', 'halfHeightSlope', 'maxDistance'])
   if (
-    ![
-      input.camera.halfWidthSlope,
-      input.camera.halfHeightSlope,
-      input.camera.maxDistance
-    ].every((value) => Number.isFinite(value) && value > 0)
+    ![camera.halfWidthSlope, camera.halfHeightSlope, camera.maxDistance].every(
+      (value) => Number.isFinite(value) && value > 0
+    )
   )
     reject()
-  keys(input.camera.pose, ['position', 'rotation'])
-  const { position, rotation } = input.camera.pose
+  keys(camera.pose, ['position', 'rotation'])
+  const { position, rotation } = camera.pose
   const norm =
     Array.isArray(rotation) && rotation.length === 4
       ? Math.hypot(...rotation)
@@ -349,7 +446,6 @@ function readView(raw: ViewRequest): Immutable<ViewRequest> {
     Math.abs(norm - 1) > 64 * Number.EPSILON
   )
     reject()
-  return freeze(input)
 }
 function inView(
   direction: readonly Interval[],
@@ -385,13 +481,147 @@ function inView(
   return 'unknown'
 }
 
-/** Validates injected assumptions only; no detection, action or inventory owner. */
+function readAction(raw: ActionVolumeRequest): Immutable<ActionVolumeRequest> {
+  const value = structuredClone(raw)
+  const { actionId, actionBounds, optics, model, ...view } = value
+  keys(value, [
+    'id',
+    'source',
+    'assumption',
+    'runId',
+    'generation',
+    'missionRevision',
+    'sceneRevision',
+    'robotRevision',
+    'dockRevision',
+    'observedAt',
+    'validFrom',
+    'validUntil',
+    'leaves',
+    'fruits',
+    'camera',
+    'actionId',
+    'actionBounds',
+    'optics',
+    'model'
+  ])
+  if (value.source !== 'synthetic-action-volume/1' || !text(actionId)) reject()
+  readView({
+    ...view,
+    source: 'synthetic-viewpoint',
+    targetIds: [],
+    samplesPerTarget: 1
+  })
+  validateActionFields(value)
+  return freeze(value)
+}
+function validateActionFields(
+  value: Pick<ActionVolumeRequest, 'actionBounds' | 'optics' | 'model'>
+) {
+  const { actionBounds, optics, model } = value
+  keys(actionBounds, ['min', 'max'])
+  if (
+    !point(actionBounds.min) ||
+    !point(actionBounds.max) ||
+    actionBounds.min.some((v, axis) => v > actionBounds.max[axis])
+  )
+    reject()
+  keys(optics, [
+    'illumination',
+    'filmTransmission',
+    'weatherTransmission',
+    'shadowFraction',
+    'glare'
+  ])
+  const unit = (v: number) => Number.isFinite(v) && v >= 0 && v <= 1
+  if (Object.values(optics).some((v) => v !== null && !unit(v))) reject()
+  keys(model, [
+    'format',
+    'minSignal',
+    'maxGlare',
+    'maxCandidates',
+    'maxRays',
+    'maxActors'
+  ])
+  if (
+    model.format !== 'synthetic-action-volume/1' ||
+    !unit(model.minSignal) ||
+    !unit(model.maxGlare) ||
+    ![model.maxCandidates, model.maxRays, model.maxActors].every(
+      (v) => Number.isSafeInteger(v) && v >= 0 && v <= 4096
+    ) ||
+    model.maxRays > MAX_VIEW_SAMPLES
+  )
+    reject()
+}
+function directionDistance(direction: Point3): Interval {
+  const squared = direction.map((v) => multiply(interval(v), interval(v)))
+  return squareRoot(add(add(squared[0], squared[1]), squared[2]))
+}
+/** Closed cuboid source intersection, restricted to the explicit synthetic model. */
+function actorDistance(
+  origin: Point3,
+  direction: Point3,
+  actor: SyntheticActorSource
+): Interval | null | 'unknown' {
+  if (
+    actor.bounds.min.every(
+      (v, i) => origin[i] >= v && origin[i] <= actor.bounds.max[i]
+    )
+  )
+    return 'unknown'
+  let entry = interval(0),
+    exit: Interval = { low: Infinity, high: Infinity }
+  for (let axis = 0; axis < 3; axis++) {
+    if (direction[axis] === 0) {
+      if (
+        origin[axis] < actor.bounds.min[axis] ||
+        origin[axis] > actor.bounds.max[axis]
+      )
+        return null
+      continue
+    }
+    const a = divide(
+      subtract(interval(actor.bounds.min[axis]), interval(origin[axis])),
+      interval(direction[axis])
+    )
+    const b = divide(
+      subtract(interval(actor.bounds.max[axis]), interval(origin[axis])),
+      interval(direction[axis])
+    )
+    const near = direction[axis] > 0 ? a : b,
+      far = direction[axis] > 0 ? b : a
+    entry = {
+      low: Math.max(entry.low, near.low),
+      high: Math.max(entry.high, near.high)
+    }
+    exit = {
+      low: Math.min(exit.low, far.low),
+      high: Math.min(exit.high, far.high)
+    }
+  }
+  if (entry.low > exit.high || exit.high < 0) return null
+  if (entry.high > exit.low || !Number.isFinite(entry.high)) return 'unknown'
+  return multiply(entry, directionDistance(direction))
+}
+
+/** Synthetic observation evidence only; never action or safety permission. */
 export class TargetObservations {
+  private readonly localRays: RayQueries
+  private actions = new WeakMap<
+    ActionVolumeObservation,
+    { query: WalkingSceneCandidates; dynamic: SyntheticDynamicSnapshot }
+  >()
   constructor(
     private readonly session: HarvestSession,
     private readonly geometry: QueryGeometry,
-    private readonly owners: ObservationOwners
+    private readonly owners: ObservationOwners,
+    private readonly actionOwners?: {
+      screen: WalkingTransitScreen
+      dynamics: SyntheticDynamicSceneOwner
+    }
   ) {
+    this.localRays = new RayQueries(geometry)
     if (
       typeof owners?.isCurrentContext !== 'function' ||
       typeof owners?.isCurrentMission !== 'function'
@@ -440,6 +670,75 @@ export class TargetObservations {
     )
       reject()
   }
+  isCurrentAction(result: ActionVolumeObservation): boolean {
+    const issued = this.actions.get(result)
+    if (!issued || !this.actionOwners) return false
+    try {
+      this.current(result.context)
+      return (
+        this.actionOwners.screen.isCurrentVolume(issued.query) &&
+        this.actionOwners.dynamics.isCurrent(issued.dynamic)
+      )
+    } catch {
+      return false
+    }
+  }
+
+  observeActionVolume(
+    context: ObservationContext,
+    demand: SceneDemand,
+    raw: ActionVolumeRequest
+  ): ActionVolumeObservation {
+    const snapshot = this.current(context),
+      input = readAction(raw)
+    this.match(context, input, snapshot)
+    if (
+      input.observedAt !== snapshot.now ||
+      !this.actionOwners ||
+      demand.scene !== context.geometry.receipt.scene
+    )
+      reject()
+    const { screen, dynamics } = this.actionOwners
+    const completed = observeActionKernel(
+      this.geometry,
+      this.localRays,
+      context.geometry,
+      demand,
+      input,
+      screen,
+      dynamics,
+      snapshot.run?.held.length === 0,
+      () => {
+        this.current(context)
+      },
+      (batch, candidates) => {
+        if (!snapshot.run) return reject()
+        return this.localRays.queryScoped(
+          context.geometry,
+          {
+            ...batch,
+            robot: {
+              base: {
+                position: snapshot.run.pose.base,
+                rotation: [0, 0, 0, 1]
+              },
+              joints: snapshot.run.pose.joints
+            }
+          },
+          candidates
+        )
+      }
+    )
+    const result: ActionVolumeObservation = Object.freeze({
+      ...completed.result,
+      input,
+      format: 'action-volume-observation/1',
+      context
+    })
+    this.actions.set(result, completed)
+    return result
+  }
+
   view(context: ObservationContext, raw: ViewRequest): ViewResult {
     const snapshot = this.current(context)
     const input = readView(raw)
@@ -705,4 +1004,528 @@ export class TargetObservations {
     this.current(context)
     return Object.freeze({ context, reading: input })
   }
+}
+
+export type WalkingActionVolumeRequest = Omit<
+  ActionVolumeRequest,
+  'missionRevision' | 'sceneRevision' | 'robotRevision' | 'dockRevision'
+>
+export interface WalkingActionObservationContext {
+  readonly report: Exclude<WalkingOperatingReport, { status: 'legacy-view' }>
+  readonly demand: SceneDemand
+  readonly source: WalkingRobotSource
+  readonly geometry: WalkingObservationGeometrySource
+  readonly generation: number
+  readonly runId: string
+  readonly now: number
+  readonly sensorIdentity: Readonly<object>
+}
+export interface WalkingActionVolumeObservation extends Omit<
+  ActionVolumeObservation,
+  'format' | 'context' | 'input'
+> {
+  readonly format: 'walking-action-volume-observation/1'
+  readonly context: WalkingActionObservationContext
+  readonly input: Immutable<WalkingActionVolumeRequest>
+}
+function readWalkingAction(
+  raw: WalkingActionVolumeRequest
+): Immutable<WalkingActionVolumeRequest> {
+  const input = structuredClone(raw)
+  keys(input, [
+    'id',
+    'source',
+    'assumption',
+    'runId',
+    'generation',
+    'observedAt',
+    'validFrom',
+    'validUntil',
+    'leaves',
+    'fruits',
+    'camera',
+    'actionId',
+    'actionBounds',
+    'optics',
+    'model'
+  ])
+  if (
+    input.source !== 'synthetic-action-volume/1' ||
+    !text(input.id) ||
+    !text(input.actionId) ||
+    !text(input.assumption) ||
+    !text(input.runId) ||
+    !Number.isSafeInteger(input.generation) ||
+    input.generation < 0 ||
+    ![input.observedAt, input.validFrom, input.validUntil].every(time) ||
+    input.validUntil <= input.validFrom ||
+    input.observedAt < input.validFrom ||
+    input.observedAt >= input.validUntil ||
+    !['source-pose', 'unknown'].includes(input.leaves) ||
+    !['all-attached', 'unknown'].includes(input.fruits)
+  )
+    reject()
+  validateActionCamera(input.camera)
+  validateActionFields(input)
+  return freeze(input)
+}
+
+/** Walking receipt adapter around the same bounded optical kernel. */
+export class WalkingActionObservations {
+  private readonly localRays: RayQueries
+  private issued = new WeakMap<
+    WalkingActionVolumeObservation,
+    { query: WalkingSceneCandidates; dynamic: SyntheticDynamicSnapshot }
+  >()
+  private closed = false
+  constructor(
+    private readonly geometry: QueryGeometry,
+    private readonly owners: {
+      isCurrentContext(context: WalkingActionObservationContext): boolean
+      screen: WalkingTransitScreen
+      dynamics: SyntheticDynamicSceneOwner
+    }
+  ) {
+    this.localRays = new RayQueries(geometry)
+  }
+  private current(context: WalkingActionObservationContext) {
+    if (this.closed || !this.owners.isCurrentContext(context)) reject()
+    const source = this.geometry.read(context.geometry)
+    if (
+      source.receipt.source !== context.source ||
+      source.receipt.demand !== context.demand ||
+      context.report.source !== context.source ||
+      context.report.demand !== context.demand ||
+      !Number.isSafeInteger(context.generation) ||
+      context.generation < 0 ||
+      !text(context.runId) ||
+      !time(context.now)
+    )
+      reject()
+  }
+  observeActionVolume(
+    context: WalkingActionObservationContext,
+    raw: WalkingActionVolumeRequest
+  ): WalkingActionVolumeObservation {
+    this.current(context)
+    const input = readWalkingAction(raw)
+    if (
+      input.runId !== context.runId ||
+      input.generation !== context.generation ||
+      input.observedAt !== context.now ||
+      context.now < input.validFrom ||
+      context.now >= input.validUntil
+    )
+      reject()
+    const completed = observeActionKernel(
+      this.geometry,
+      this.localRays,
+      context.geometry,
+      context.demand,
+      input,
+      this.owners.screen,
+      this.owners.dynamics,
+      context.report.load.kind === 'empty',
+      () => {
+        this.current(context)
+      },
+      (batch, candidates) =>
+        this.localRays.queryWalkingWorld(context.geometry, batch, candidates)
+    )
+    const result: WalkingActionVolumeObservation = Object.freeze({
+      ...completed.result,
+      input,
+      format: 'walking-action-volume-observation/1',
+      context
+    })
+    this.issued.set(result, completed)
+    return result
+  }
+  isCurrent(result: WalkingActionVolumeObservation): boolean {
+    const issued = this.issued.get(result)
+    if (!issued) return false
+    try {
+      this.current(result.context)
+      return (
+        this.owners.screen.isCurrentVolume(issued.query) &&
+        this.owners.dynamics.isCurrent(issued.dynamic)
+      )
+    } catch {
+      return false
+    }
+  }
+  close() {
+    this.closed = true
+    this.issued = new WeakMap()
+  }
+}
+
+function observeActionKernel(
+  geometry: QueryGeometry,
+  localRays: RayQueries,
+  source: QueryGeometrySource,
+  demand: SceneDemand,
+  input: Immutable<WalkingActionVolumeRequest>,
+  screen: WalkingTransitScreen,
+  dynamics: SyntheticDynamicSceneOwner,
+  emptyLoad: boolean,
+  current: () => void,
+  queryRays: (
+    batch: WalkingWorldRayBatch,
+    candidates: readonly CanonicalRayCandidate[]
+  ) => Pick<RayBatchResult, 'results' | 'work'>
+) {
+  const work = {
+    cameraFrames: 1,
+    sightQueries: 1,
+    rayBatches: 0,
+    samples: 0,
+    sourceActorVisits: 0,
+    membershipBuilds: 0,
+    candidateVisits: 0,
+    indexBuilds: 0,
+    membershipVisits: 0,
+    placementMembershipChecks: 0,
+    placements: 0,
+    rayInstances: 0,
+    rayTriangles: 0,
+    dynamicRayTests: 0
+  }
+  const before = { ...localRays.scopeWork }
+  const indexBefore = screen.work.builds
+  const placementBefore = geometry.placementWork
+  const reasons: string[] = []
+  const corners = Array.from(
+    { length: 8 },
+    (_, i) =>
+      [0, 1, 2].map((axis) =>
+        i & (1 << axis)
+          ? input.actionBounds.max[axis]
+          : input.actionBounds.min[axis]
+      ) as unknown as Point3
+  )
+  const camera = input.camera,
+    origin = camera.pose.position
+  const min = input.actionBounds.min.map((v, i) =>
+    Math.min(v, origin[i])
+  ) as unknown as Point3
+  const max = input.actionBounds.max.map((v, i) =>
+    Math.max(v, origin[i])
+  ) as unknown as Point3
+  const sightBounds = freeze({ min, max })
+  const frame = prepareQueryFrame(camera.pose)
+  let contained = true
+  for (const corner of corners) {
+    const direction = corner.map((v, i) =>
+      subtract(interval(v), interval(origin[i]))
+    ) as [Interval, Interval, Interval]
+    const squared = direction.map((v) => multiply(v, v))
+    const distance = squareRoot(add(add(squared[0], squared[1]), squared[2]))
+    if (
+      inView(transformQueryDirectionBounds(frame, direction), camera) !==
+        'inside' ||
+      !Number.isFinite(distance.high) ||
+      distance.high > camera.maxDistance
+    )
+      contained = false
+  }
+  if (!contained) reasons.push('incomplete-frustum-or-range')
+  const o = input.optics
+  let signal: Interval = { low: 0, high: 1 }
+  let reliabilityStatus: ActionVolumeObservation['reliability']['status'] =
+    'unknown'
+  const glare = o.glare === null ? { low: 0, high: 1 } : interval(o.glare)
+  if (
+    o.illumination !== null &&
+    o.filmTransmission !== null &&
+    o.weatherTransmission !== null &&
+    o.shadowFraction !== null &&
+    o.glare !== null
+  ) {
+    signal = multiply(
+      multiply(
+        multiply(interval(o.illumination), interval(o.filmTransmission)),
+        interval(o.weatherTransmission)
+      ),
+      subtract(interval(1), interval(o.shadowFraction))
+    )
+    reliabilityStatus =
+      signal.low > input.model.minSignal && glare.high < input.model.maxGlare
+        ? 'reliable'
+        : 'insufficient'
+  }
+  const reliability = freeze({
+    signal,
+    glare,
+    status: reliabilityStatus
+  })
+  if (reliability.status !== 'reliable')
+    reasons.push('insufficient-synthetic-optics')
+  const query = screen.queryVolume(demand, {
+    ...sightBounds,
+    size: max.map(
+      (v, i) => subtract(interval(v), interval(min[i])).high
+    ) as unknown as Point3
+  })
+  if (query.reasons.includes('stale-scene-demand')) reject()
+  if (query.coverage !== 'covered') reasons.push(...query.reasons)
+  const dynamic = dynamics.readAt(
+    input.observedAt,
+    sightBounds,
+    input.model.maxActors
+  )
+  work.sourceActorVisits = dynamic.work.sourceActorVisits
+  if (dynamic.coverage !== 'covered') reasons.push(...dynamic.reasons)
+  const count = query.affected.length + dynamic.candidates.length
+  let unvisited = dynamic.unvisited
+  const candidates: CanonicalRayCandidate[] = []
+  const positions: Point3[] = []
+  if (count > input.model.maxCandidates) {
+    unvisited += count
+    reasons.push('candidate-budget')
+  }
+  const eligible =
+    !reasons.length &&
+    input.leaves === 'source-pose' &&
+    input.fruits === 'all-attached' &&
+    emptyLoad
+  if (!eligible && !reasons.length) reasons.push('missing-current-scene-state')
+  if (eligible) {
+    for (const item of query.affected) {
+      if (item.kind !== 'source') {
+        reasons.push('unsupported-optical-source')
+        unvisited++
+        continue
+      }
+      const mesh = localRays.resolveSource(source, item.mesh)
+      if (
+        !mesh ||
+        mesh.shape.kind !== 'triangles' ||
+        !mesh.origin.regions.includes(item.region)
+      ) {
+        reasons.push('missing-canonical-source')
+        unvisited++
+        continue
+      }
+      candidates.push({ mesh, region: item.region, instance: item.instance })
+      const shape = mesh.shape,
+        start = item.region.indexStart
+      const local = [0, 1, 2].map(
+        (axis) =>
+          shape.positions[shape.indices[start] * 3 + axis] / 3 +
+          shape.positions[shape.indices[start + 1] * 3 + axis] / 3 +
+          shape.positions[shape.indices[start + 2] * 3 + axis] / 3
+      ) as unknown as Point3
+      positions.push(geometry.placePoint(source, mesh, local, item.instance))
+    }
+    for (const actor of dynamic.candidates)
+      positions.push(
+        actor.bounds.min.map(
+          (v, i) => v / 2 + actor.bounds.max[i] / 2
+        ) as unknown as Point3
+      )
+  }
+  const directions: Point3[] = []
+  if (!reasons.length)
+    for (const position of positions) {
+      if (directions.length >= input.model.maxRays) {
+        unvisited++
+        continue
+      }
+      const direction = position.map(
+        (v, i) => v - origin[i]
+      ) as unknown as Point3
+      if (
+        direction.some((v) => !Number.isFinite(v)) ||
+        !direction.some((v) => v !== 0) ||
+        inView(transformQueryDirection(frame, direction), camera) !== 'inside'
+      ) {
+        unvisited++
+        continue
+      }
+      directions.push(direction)
+    }
+  work.samples = directions.length
+  let rays: Pick<RayBatchResult, 'results' | 'work'> | undefined
+  if (directions.length && candidates.length) {
+    work.rayBatches++
+    rays = queryRays(
+      {
+        source: 'synthetic',
+        time: input.observedAt,
+        validFrom: input.validFrom,
+        validUntil: input.validUntil,
+        leaves: input.leaves,
+        fruits: input.fruits,
+        rays: directions.map((direction) => ({
+          origin: [...origin],
+          direction: [...direction],
+          maxDistance: camera.maxDistance
+        }))
+      },
+      candidates
+    )
+    work.rayInstances = rays.work.instances
+    work.rayTriangles = rays.work.triangles
+  }
+  const detections: ActionDetection[] = []
+  const staticSeen = new Set<string>(),
+    actorSeen = new Set<string>()
+  const visibleDistance = (direction: Point3, distance: Interval): boolean => {
+    const normalized = directionBounds(direction)
+    if (
+      distance.low <= 0 ||
+      !Number.isFinite(distance.high) ||
+      distance.high > camera.maxDistance ||
+      inView(transformQueryDirectionBounds(frame, normalized), camera) !==
+        'inside'
+    ) {
+      reasons.push('unresolved-ray-view')
+      return false
+    }
+    const position = normalized.map((v, axis) =>
+      add(interval(origin[axis]), multiply(v, distance))
+    )
+    if (
+      !position.every(
+        (v, axis) =>
+          v.low >= sightBounds.min[axis] && v.high <= sightBounds.max[axis]
+      )
+    ) {
+      reasons.push('ray-witness-outside-sight')
+      return false
+    }
+    return true
+  }
+  directions.forEach((direction, i) => {
+    const hit = rays?.results[i]
+    const actorHits: { actor: SyntheticActorSource; distance: Interval }[] = []
+    let uncertain = hit?.status === 'unknown'
+    for (const actor of dynamic.candidates) {
+      work.dynamicRayTests++
+      const distance = actorDistance(origin, direction, actor)
+      if (distance === 'unknown') uncertain = true
+      else if (distance && distance.low <= camera.maxDistance) {
+        if (distance.high > camera.maxDistance) uncertain = true
+        else actorHits.push({ actor, distance })
+      }
+    }
+    if (uncertain) {
+      reasons.push('unresolved-ray')
+      return
+    }
+    const first = actorHits.find((a) =>
+      actorHits.every((b) => a === b || a.distance.high < b.distance.low)
+    )
+    if (
+      first &&
+      (!hit ||
+        hit.status === 'miss' ||
+        (hit.status === 'hit' && first.distance.high < hit.distanceBounds.low))
+    ) {
+      if (!visibleDistance(direction, first.distance)) return
+      if (!actorSeen.has(first.actor.trackId)) {
+        actorSeen.add(first.actor.trackId)
+        detections.push(
+          Object.freeze({
+            kind: 'dynamic',
+            trackId: first.actor.trackId,
+            actorKind: first.actor.kind,
+            motion: first.actor.motion,
+            bounds: first.actor.bounds,
+            sourceIdentity: first.actor.identity,
+            distance: Object.freeze(first.distance)
+          })
+        )
+      }
+    } else if (
+      hit?.status === 'hit' &&
+      actorHits.every((a) => hit.distanceBounds.high < a.distance.low)
+    ) {
+      if (!visibleDistance(direction, hit.distanceBounds)) return
+      const candidate = candidates.find(
+        (c) =>
+          c.mesh === hit.mesh &&
+          c.instance === hit.instance &&
+          hit.triangle * 3 >= c.region.indexStart &&
+          hit.triangle * 3 < c.region.indexStart + c.region.indexCount
+      )
+      if (!candidate) {
+        reasons.push('unmapped-ray-witness')
+        return
+      }
+      const key = candidates.indexOf(candidate) + ':' + hit.triangle
+      if (staticSeen.has(key)) return
+      staticSeen.add(key)
+      const anatomy =
+        'sourceAnatomy' in hit.mesh.origin
+          ? hit.mesh.origin.sourceAnatomy
+          : undefined
+      detections.push(
+        Object.freeze({
+          kind: 'static',
+          mesh: hit.mesh,
+          region: candidate.region,
+          instance: hit.instance,
+          ray: hit,
+          anatomy: Object.freeze(
+            (anatomy?.patches ?? []).filter(
+              (p) =>
+                p.source.region === candidate.region &&
+                p.source.ranges.some(
+                  (r) =>
+                    hit.triangle * 3 >= r.indexStart &&
+                    hit.triangle * 3 < r.indexStart + r.indexCount
+                )
+            )
+          )
+        })
+      )
+    }
+  })
+  if (unvisited) reasons.push('unvisited-observation-work')
+  if (count) reasons.push('candidate-volume-is-not-complete-visibility')
+  current()
+  if (
+    !dynamics.isCurrent(dynamic) ||
+    (query.coverage === 'covered' && !screen.isCurrentVolume(query))
+  )
+    reject()
+  work.indexBuilds = screen.work.builds - indexBefore
+  work.candidateVisits =
+    localRays.scopeWork.candidateVisits - before.candidateVisits
+  work.membershipBuilds =
+    localRays.scopeWork.membershipBuilds - before.membershipBuilds
+  work.membershipVisits =
+    localRays.scopeWork.membershipVisits - before.membershipVisits
+  work.placementMembershipChecks =
+    geometry.placementWork.membershipChecks - placementBefore.membershipChecks
+  work.placements =
+    geometry.placementWork.placements - placementBefore.placements
+  let coverage: ActionVolumeObservation['coverage'] = 'unknown'
+  if (!reasons.length && !count && !unvisited) coverage = 'complete-empty'
+  else if (
+    detections.length ||
+    (query.coverage === 'covered' &&
+      dynamic.coverage === 'covered' &&
+      reliability.status === 'reliable' &&
+      contained)
+  )
+    coverage = 'partial'
+  const result = Object.freeze({
+    identity: Object.freeze({}),
+    provenance: 'w1-canonical-obstacles/1',
+    demandIdentity: demand.identity,
+    dynamicIdentity: dynamic.definitionIdentity,
+    dynamicRevision: dynamic.revision,
+    input,
+    sightBounds,
+    reliability,
+    coverage,
+    detections: Object.freeze(detections),
+    unvisited,
+    reasons: Object.freeze([...new Set(reasons)]),
+    work: Object.freeze(work)
+  })
+  return { result, query, dynamic }
 }

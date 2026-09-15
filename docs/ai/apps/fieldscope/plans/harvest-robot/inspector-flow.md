@@ -70,7 +70,10 @@ obstructions and the declared growth envelope. `netTop`, strip width and the rou
 The completed `PreparedScene` admits all botanical patch structures. W1 derives
 route inclusion from target partitions, then prepares installed patch bounds only
 for included targets; patches do not decide route inclusion and off-route patches
-do not add bound-transform work.
+do not add bound-transform work. Conservative source exclusions retain their
+exact admitted mesh, region and instance identities. Optional
+`crop-source-anatomy/1` stays attached to that mesh with the same admitted region
+identity and does not classify passage or change W1 work.
 Missing or discrete growth coverage and missing margin remain `unknown` or retain
 their visible assumption provenance. Farm, crop, growth-envelope, source, route
 interval, clearance-margin, survey or provenance changes retire the revision;
@@ -205,15 +208,26 @@ other W1 coverage/evidence reasons remain `unknown`. Missing or stale W1, absent
 route, invalid bounds, uncovered travel or owner-unavailable W2 is `unknown`;
 there is no partial clear or whole-farm scan fallback.
 Allowed contributors: the persisted selection and current owner-issued W1/W2
-products. Forbidden contributors: legacy FK for walking display, total-envelope
+products. The app UI may submit an explicit admitted synthetic comparison
+definition through the existing walking-runtime selection Feature and may read
+the selected report for presentation; it owns no walking geometry or parallel
+selection state. Forbidden contributors: legacy FK for walking display, total-envelope
 width as body-width admission, automatic definition conversion, global all-pair
 analysis, invented plant-contact permission or local step motion.
 Implementation boundary: walking-runtime-selection, walking-transit-screen,
-walking-operating-workspace, walking-robot-projection and bootstrap with their
-direct tests. W1 changes rebuild the private immutable route/margin index only;
+walking-operating-workspace, walking-robot-projection, bootstrap,
+ui/walking-runtime-selector, ui/robot-editor, localized UI messages and their
+direct unit/browser tests. W1 changes rebuild the private immutable route index only;
 finite exclusion admission and reason classification run once per immutable W1
 identity/route/inventory and report validation visits; action or margin changes
 do not repeat that inventory traversal. A replacement W1 product invalidates it.
+The same WalkingTransitScreen instance owns queryVolume and evaluate. Its
+immutable walking-scene-candidates/1 receipt binds the exact W1 identity, route
+and inventory in original ordinal order. Arbitrary source volumes and padding
+reuse this tree; directed padding remains query work. Coverage is covered only
+inside the complete route. Provenance w1-canonical-obstacles/1 names only W1
+canonical obstacles, not soil, drains or every rendered scene layer. This is
+geometric acceleration, never observation or motion permission.
 Definition/profile/load changes prepare their W2 owners. Pose/view/camera/read
 does not rebuild the index or source geometry. Source replacement and disposal
 retire currentness. Currentness compares the live W1 demand and W2 source/envelope
@@ -327,6 +341,62 @@ phase-local reuse cannot escape its phase or carry a positive metric margin.
 Existing two-phase constant and authored fixed-parent proofs retain global
 reuse. Only additional support-coxa membership requires a phase-local family;
 separate reuse counters make these two lifetimes observable.
+
+The selected-chain root-motion route is owned by
+walking-constrained-kinematics. Inputs are its current cycle, phase, exact
+cycle parameter, one swing chain and a target root-abduction magnitude inside
+the authored domain. The compiler derives the start angle and source side sign;
+other joint and fixed-body frames come from one exact point preparation.
+Outputs are the immutable selected-chain recipe/product, root-local frames,
+fixed exact frames and selected-only point or interval frames. Each subinterval
+uses the existing exact polynomial leaf and rational-similarity authority and
+the unchanged cycle budget. Same-motion reads do no work; cycle replacement
+and disposal invalidate them. Allowed contributors are current cycle/source
+artifacts and those arithmetic owners. Forbidden contributors are caller start
+angles, non-root joint changes, display frames, repeated all-body cycle bounds,
+terrain, external inventories and motion permission. The implementation
+boundary is walking-constrained-kinematics and its direct formal test; API and
+plan synchronization remain in this bounded slice. Source construction and
+the whole-source relation owner are unchanged. Failure belongs to the selected
+motion owner and remains unavailable. Cache dimensions are empty: fixed frames
+are prepared artifacts within the admitted motion lifetime. Product reference:
+W3's existing complete-interval and current-source requirements above.
+
+The selected-chain source-relation route is owned by walking-source-relation.
+Inputs are the current cycle owner/product, its selected-chain motion, original
+source regions and the unchanged finite W3-sized predicate/region/bit budgets.
+Outputs are complete local Cartesian coverage, disjoint interval proofs,
+clear/blocked/unknown status and actual staged work. The candidate domain is
+selected-chain material against fixed robot material from construction onward;
+fixed-fixed, moving-moving, external and terrain candidates are forbidden.
+Strict part bounds discharge a Cartesian cover; overlapping groups descend to
+original regions. Point SAT supplies only volume witnesses or candidate axes.
+Whole-interval separation uses enclosing original-vertex projections. Named
+boundary admission requires complete original supporting features on both
+patches and exact invariance of their separating root-axis projection for the
+entire interval. Missing or foreign patches never grant contact permission.
+Both patch references must belong to the exact original parts, their admitted
+patch lists and the candidate regions. A locus-only helper cannot bypass the
+route's complete-interval root-axis proof.
+Finite exhaustion retains complete unknown/unvisited accounting.
+
+Allowed contributors are the selected motion owner, the existing rational
+source evaluator and original joint-interface references. The implementation
+boundary is walking-source-relation and its direct formal test, plus the API
+and this plan's documentation. Failure belongs to this relation owner; no
+whole-source/nonlinear, terrain, runtime or controller fallback is allowed.
+Source-local bounds and complete convex certificates are retained only for one
+exact source identity. A new evaluator reissues candidate-local source scalars
+under its own arithmetic budget; no old budget, placement or direction cache
+crosses the request boundary. Fixed fraction admission and the fixed
+denominator template run once per request. Each node extends that template
+with changing selected frames and rescales only used fixed frames; rescaling,
+rebinding and certification work remain separately observable. Same-result
+reads perform zero incremental work. Source/cycle replacement and disposal
+retire currentness. Product reference: the W3 complete-interval, current-source
+and material-contact rules above. Stop on an actual positive overlap in the
+normal case, unproved complete coverage inside its unchanged budget, or a
+required edit beyond the seven-file local slice.
 
 The request/3 route in the canonical walking-motion owner consumes the current
 cycle owner/product, W1 demand/route, ordered phase windows, load and complete
@@ -558,6 +628,45 @@ Work boundary: each runtime owner reports affected work, input currentness and
 overrun. Product benchmarks measure capture-to-inhibit, observation-to-decision
 and canonical-state-to-UI latency for actual cases without publishing an
 unmeasured numeric promise. No cache dimension is required without profiling.
+
+### W6 prerequisite - Walking observation production composition
+
+Owner: walking-observation-workspace, constructed and closed by bootstrap.
+Inputs: exact current walking operating report/source/stowed base frame, current
+W1 demand and PreparedScene, an explicit synthetic base-mounted camera scenario,
+optics and source-pose/all-attached plant state, finite dynamic definition,
+scenario generation and domain time, one bounded action volume and validity.
+Outputs: unavailable reason or owner-issued walking-action-volume-observation/1
+with reliable/insufficient/unknown optics, complete-empty/partial/unknown
+coverage, original visible static/anatomy or tracked dynamic witnesses, reasons
+and actual work. This is observation preparation, never action permission.
+Conditions: farm geometry preserves exact scene/demand/walking-source identity;
+the shared optical kernel requires reliable optics, contained camera-to-action
+sight volume, covered W1/dynamic domains and zero unresolved/unvisited work for
+complete-empty. Any candidate prevents complete-empty. The base camera is an
+explicit synthetic mount on the actual base body, not a hardware calibration.
+Nonempty load, missing plant state, expired/stale evidence or budget exhaustion
+cannot grant movement. No bypass or caller-supplied safe/coverage flags.
+Allowed contributors: QueryGeometry farm-only preparation, RayQueries scoped
+world-frame numerical predicates, existing action-volume kernel and the SAME
+WalkingTransitScreen instance already owned by W3a. The entire sight volume
+includes opaque sources between camera and action even outside action bounds.
+Forbidden contributors: legacy mission/session/robot/dock receipts or pose for
+walking; a second spatial index, per-action whole-farm preparation, W1 inventory
+as detections, controller/UI/monitor decisions or selected-chain motion changes.
+Boundary: simulation geometry/ray-query/observations; runtime walking-operating-
+workspace, walking-observation-workspace and bootstrap; their direct tests.
+Currentness: exact live report/demand/source/scene, scenario generation, dynamic
+identity and domain time. Farm preparation lifetime is scene/demand/source;
+scenario and dynamic changes retire observations without rebuilding static
+membership or W3a. Moving objects retain track/source identity when stationary.
+Disposal retires contexts and releases observation/geometry/dynamic owners.
+Spec: W1-W6 operating contract observation validity and independent hazards.
+Failure owner: observation composition reports unavailable/unknown/partial;
+later monitors and controller own action holds. Formal production cases cover
+complete-empty, authored crop hit, source-bounds-separated foreground occlusion,
+moving-to-stationary identity, stale and insufficient inputs, actual work reuse
+and legacy preservation. No whole-farm heavy gate is claimed by this slice.
 
 ## A - Feasibility domain (current M1)
 
@@ -881,6 +990,90 @@ source bounds reused. No retained sample/result cache or world geometry copies.
 Gates: source sample identity/order, actual C visibility/occlusion and front/back,
 frustum boundaries, malformed/empty/stale input, current dynamic pose and unknown,
 zero generation/bound scans and unchanged numeric ray tests; app gates and review.
+
+### D synthetic dynamic scene source
+
+Owner: SyntheticDynamicSceneOwner in simulation/synthetic-dynamic-scene.ts.
+Inputs: explicit synthetic finite domain and time interval, and complete actor
+source timelines of closed cuboids. Outputs: detached immutable definition,
+current owner-issued snapshot and local source candidates. Track identifiers
+are unique; kind remains immutable across revisions and moving-to-stationary
+updates preserve person identity. Timeline gaps and uncovered domains remain
+unknown. Empty worlds mean empty only in their declared synthetic domain.
+Allowed contributors: admitted synthetic actor source geometry and source time.
+Forbidden contributors: caller detections, coverage/safe flags, W1/W2 rebuilding,
+robot decision output or hidden-world identity presented as a detection.
+Boundary: synthetic-dynamic-scene.ts and its direct test. No cache dimensions.
+Failure owner: source admission rejects malformed/foreign/stale definitions;
+coverage gaps remain unknown. Source actor visits are counted independently
+from observation sample and ray work.
+Spec: active operating contract and synthetic viewpoint assumptions.
+Gates: finite/schema/identity/gap boundaries, detached inputs, explicit empty
+domain, moving-to-stationary identity and zero static rebuilds.
+
+### D scoped canonical ray witnesses
+
+Owner: existing RayQueries in simulation/ray-query.ts.
+Inputs: current exact GeometrySource, existing ray batch and explicitly scoped
+canonical mesh/region/instance candidates. Outputs: canonical numerical ray
+witnesses relative only to that declared scope and actual work.
+Conditions: reject foreign/forged/stale source identities and invalid candidate
+bindings. Source membership lookup is prepared once per source identity; local
+queries never rebuild full-world placements. Reuse existing predicates,
+transforms, nearest-witness and uncertainty rules. Full query remains unchanged.
+Allowed contributors: completed QueryGeometry and exact original source parts.
+Forbidden contributors: copied GeometrySource handles, duplicated predicates,
+global visibility inferred from an incomplete restriction or a second spatial
+index. Boundary: ray-query.ts and its direct test; QueryGeometry and its direct
+test own exact mesh membership admission and world placement. Membership is
+registered during existing geometry preparation, once per issued source;
+placePoint checks the retained set after currentness validation. Admission visits,
+placement membership checks and actual placements are counted. No placement
+algebra is duplicated, and no local placement scans the full source inventory.
+Failure owner: ray owner rejects invalid bindings and retains numerical unknown.
+Spec: canonical near-source rays and synthetic viewpoint sampling.
+Gates: complete-scope equivalence, invalid scope rejection, source retirement,
+one membership preparation and no far-instance work on repeated local queries.
+
+### D action-local synthetic observation
+
+Owner: existing TargetObservations in simulation/observations.ts.
+Inputs: current ObservationContext, W1 demand, action bounds, current-time
+camera/frustum/range, normalized synthetic optical assumptions and bounded model
+thresholds. Composition injects the existing transit screen and dynamic owner;
+requests cannot supply detections, complete coverage or safety flags.
+Outputs: immutable action-volume-observation/1 with source/context identities,
+times, action/sight bounds, computed optical intervals, visible source witnesses,
+separate complete-empty/partial/unknown coverage and work. No motion permission.
+Conditions: use the entire conservative camera-to-action-volume hull for both
+source queries. Eight action corners prove only frustum/range containment.
+Signal is illumination * film * weather * (1 - shadow), using outward arithmetic;
+glare is separate. All assumptions and thresholds are synthetic and uncalibrated.
+Complete-empty requires reliable optics, complete frustum/range, current source
+coverage, zero candidates and zero unvisited work within both declared inventories.
+Any candidate, unsupported mapping, occlusion ambiguity or budget exhaustion
+prevents complete-empty. Specific detections require canonical ray witnesses;
+sampled visibility never proves volume completeness. Publication requires
+the complete hit-position enclosure inside sight bounds and reliable current
+camera frustum/range. This uses the canonical normalized-direction and distance
+intervals; a candidate centroid outside that volume grants no visibility.
+Hidden actor identities cannot escape as detections. Stopped people retain
+their original kind/track.
+Allowed contributors: current session/time, shared camera arithmetic, the same
+W1 query instance, dynamic source owner and one scoped canonical ray batch.
+Forbidden contributors: renderer truth, caller coverage/safe flags, full-farm
+per-action scans, new spatial indices, collision/support/harvest decisions.
+Boundary: observations.ts and its direct test, plus the three owners above;
+API_SURFACES.md and plan.md describe this bounded feature. Existing target view
+and quality APIs remain unchanged. No retained result cache.
+Failure owner: observations reject malformed/stale bindings and report unknown
+or partial for insufficient evidence. No fast unknown satisfies a positive gate.
+Spec: active operating contract and synthetic viewpoint observation assumptions.
+Gates: dyadic complete-empty positive; foreground source outside action bounds;
+actual authored leaf identity; moving/stationary person; optics/frustum/domain,
+staleness/forgery/budget negatives; one sight query and at most one ray batch;
+dynamic updates perform zero W1/source preparation. Direct ray and existing
+target-view/quality compatibility, type/lint/naming/build and independent review.
 
 ### D dispatch admission
 
@@ -1680,11 +1873,17 @@ for any unapproved source change or missing closure proof.
 Owner: domain/source-occupancy.ts admits regions/ranges/patches;
 domain/robot-kinematics.ts owns bodies, joint frames and interfaces. Inputs: the
 corrected exact robot/dock/crop sources and existing definition/limits. Outputs:
-immutable source patches, one assembly owner per exact robot part, five exact joint
+immutable source patches, optional immutable `crop-source-anatomy/1` records for
+authored leaf-blade, leaf-vein-ribbon and leaf-hair source spans, one assembly
+owner per exact robot part, five exact joint
 interfaces, per-fruit skin/detail references, and projection/query products that
 retain those identities. Conditions: every range is aligned, ordered and inside
 its exact region; bodies are complete/disjoint; interface patches are local
-subsets; copied, missing, duplicated and stale metadata reject. Body union requires
+subsets; copied, missing, duplicated and stale metadata reject. Crop anatomy is
+authored only around existing near/distant emissions, absent triangles remain
+unclassified, and existing exact protected crop-source patch roles take priority.
+SiteGeometry re-admits anatomy against exact mesh regions and accepts legacy meshes
+without the optional record. Body union requires
 complete-interval relative-transform invariance from C and never drops external
 child-region queries.
 
@@ -1694,10 +1893,14 @@ domain/robot-model.ts, domain/crop-models.ts, domain/robot-kinematics.ts,
 render-app/robot-projection.ts, render-app/site-geometry.ts and
 simulation/geometry.ts plus direct tests. Forbidden: D name tests, caller proof
 objects, same-body exemptions, geometry regeneration, new persistent identities or
-cross-call cache. Failure owner: the admitting C/projection boundary; no usable
+cross-call cache. Part names, mesh ids, layers, materials and colors cannot
+contribute anatomy classification; neither anatomy nor a source patch grants
+contact, movement, terrain or damage authority. Failure owner: the admitting
+C/projection boundary; no usable
 partial metadata. Gates: exact patch-region identity/ranges, all-part body coverage,
 relative-transform invariance over full joint domains, all five interface bindings,
-fruit/detail correspondence, projection currentness and zero regeneration.
+fruit/detail correspondence, plant anatomy near/distant authorship, legacy absence,
+projection currentness and zero regeneration with unchanged geometry bytes/digests.
 
 ### D full-interval material and intended-contact classification
 

@@ -33,6 +33,20 @@ export interface WalkingTransitResult {
   readonly work: WalkingTransitWork
 }
 
+export interface WalkingSceneCandidates {
+  readonly format: 'walking-scene-candidates/1'
+  readonly provenance: 'w1-canonical-obstacles/1'
+  readonly demand: SceneDemand
+  readonly inventory: SceneDemand['freePassage']['exclusions']
+  readonly route: SceneDemand['route']
+  readonly bounds: WalkingEnvelopeBounds
+  readonly padding: number
+  readonly coverage: 'covered' | 'outside-route' | 'unknown'
+  readonly affected: readonly SceneDemandExclusion[]
+  readonly reasons: readonly string[]
+  readonly work: WalkingTransitWork
+}
+
 interface Entry {
   readonly exclusion: SceneDemandExclusion
   readonly min: number
@@ -93,7 +107,6 @@ export class WalkingTransitScreen {
     demandIdentity: SceneDemand['identity']
     route: SceneDemand['route']
     exclusions: SceneDemand['freePassage']['exclusions']
-    margin: number
   }>
   private validation?: Readonly<{
     demandIdentity: SceneDemand['identity']
@@ -106,6 +119,7 @@ export class WalkingTransitScreen {
     unresolved: readonly string[]
   }>
   private root?: Node
+  private issued = new WeakSet<WalkingSceneCandidates>()
 
   constructor(
     private readonly isCurrentDemand: (demand: SceneDemand) => boolean = () =>
@@ -126,7 +140,11 @@ export class WalkingTransitScreen {
     let valid = passage.route !== null && validBounds(passage.route)
     for (const exclusion of passage.exclusions) {
       this.work.validationVisits++
-      if (!validBounds(exclusion.bounds)) valid = false
+      if (
+        !validBounds(exclusion.bounds) ||
+        !['source', 'growth', 'channel'].includes(exclusion.kind)
+      )
+        valid = false
     }
     this.validation = Object.freeze({
       demandIdentity: demand.identity,
@@ -145,19 +163,18 @@ export class WalkingTransitScreen {
     return this.validation
   }
 
-  private prepare(demand: SceneDemand, margin: number) {
+  private prepare(demand: SceneDemand) {
     if (
       this.key?.demandIdentity === demand.identity &&
       this.key.route === demand.route &&
-      this.key.exclusions === demand.freePassage.exclusions &&
-      this.key.margin === margin
+      this.key.exclusions === demand.freePassage.exclusions
     )
       return
     const entries = demand.freePassage.exclusions
       .map((item, ordinal) => ({
         exclusion: item,
-        min: lowerDifference(item.bounds.min[0], margin),
-        max: upperSum(item.bounds.max[0], margin),
+        min: item.bounds.min[0],
+        max: item.bounds.max[0],
         ordinal
       }))
       .sort((a, b) => a.min - b.min || a.ordinal - b.ordinal)
@@ -182,8 +199,7 @@ export class WalkingTransitScreen {
     this.key = Object.freeze({
       demandIdentity: demand.identity,
       route: demand.route,
-      exclusions: demand.freePassage.exclusions,
-      margin
+      exclusions: demand.freePassage.exclusions
     })
     this.work.builds++
     this.work.indexEntries += entries.length
@@ -246,6 +262,80 @@ export class WalkingTransitScreen {
       ) as unknown as Point3
     }
     if (!validBounds(swept)) return unknown(['invalid-transit-bounds'])
+    const candidates = this.queryVolume(demand, swept, margin)
+    if (candidates.coverage !== 'covered') return unknown(candidates.reasons)
+    const affected = candidates.affected
+    return Object.freeze({
+      format: 'walking-transit-screen/1',
+      status: affected.length ? 'local-required' : 'ready-fast',
+      demand,
+      envelope,
+      action,
+      affected: Object.freeze(affected),
+      reasons: Object.freeze([]),
+      work: resultWork(before, this.work)
+    })
+  }
+
+  isCurrentVolume(result: WalkingSceneCandidates): boolean {
+    return (
+      this.issued.has(result) &&
+      this.isCurrentDemand(result.demand) &&
+      this.key?.demandIdentity === result.demand.identity &&
+      this.key.route === result.route &&
+      this.key.exclusions === result.inventory
+    )
+  }
+
+  queryVolume(
+    demand: SceneDemand,
+    bounds: WalkingEnvelopeBounds,
+    margin = 0
+  ): WalkingSceneCandidates {
+    if (!Number.isFinite(margin) || margin < 0)
+      throw new Error('Invalid source query padding')
+    const before = { ...this.work }
+    const swept = Object.freeze({
+      min: Object.freeze([...bounds.min]) as Point3,
+      max: Object.freeze([...bounds.max]) as Point3,
+      size: Object.freeze([...bounds.size]) as Point3
+    })
+    const publish = (
+      coverage: WalkingSceneCandidates['coverage'],
+      affected: readonly SceneDemandExclusion[],
+      reasons: readonly string[]
+    ) => {
+      const result: WalkingSceneCandidates = Object.freeze({
+        format: 'walking-scene-candidates/1',
+        provenance: 'w1-canonical-obstacles/1',
+        demand,
+        inventory: demand.freePassage?.exclusions ?? Object.freeze([]),
+        route: demand.route,
+        bounds: swept,
+        padding: margin,
+        coverage,
+        affected: Object.freeze([...affected]),
+        reasons: Object.freeze([...reasons]),
+        work: resultWork(before, this.work)
+      })
+      this.issued.add(result)
+      return result
+    }
+    if (!this.isCurrentDemand(demand))
+      return publish('unknown', [], ['stale-scene-demand'])
+    if (!Array.isArray(demand.freePassage?.exclusions))
+      return publish('unknown', [], ['missing-source-inventory'])
+    if (!demand.route || !demand.freePassage.route)
+      return publish('unknown', [], ['missing-route'])
+    if (!validBounds(swept))
+      return publish('unknown', [], ['invalid-transit-bounds'])
+    const admission = this.admitDemand(demand)
+    if (!admission.valid)
+      return publish('unknown', [], ['invalid-transit-bounds'])
+    if (admission.unresolved.length)
+      return publish('unknown', [], admission.unresolved)
+    if (admission.status === 'blocked')
+      return publish('unknown', [], ['free-passage-blocked'])
     const coverage = demand.freePassage.route
     if (
       swept.min.some(
@@ -255,18 +345,22 @@ export class WalkingTransitScreen {
         (maximum, axis) => upperSum(maximum, margin) > coverage.max[axis]
       )
     )
-      return unknown(['outside-route-coverage'])
-    this.prepare(demand, margin)
+      return publish('outside-route', [], ['outside-route-coverage'])
+    this.prepare(demand)
     this.work.queries++
     const candidates: Entry[] = []
     const query = (node?: Node) => {
-      if (!node || node.subtreeMax < swept.min[0]) return
+      if (!node || node.subtreeMax < lowerDifference(swept.min[0], margin))
+        return
       query(node.left)
-      if (node.min <= swept.max[0] && node.max >= swept.min[0]) {
+      if (
+        node.min <= upperSum(swept.max[0], margin) &&
+        node.max >= lowerDifference(swept.min[0], margin)
+      ) {
         candidates.push(node)
         this.work.axisCandidates++
       }
-      if (node.min <= swept.max[0]) query(node.right)
+      if (node.min <= upperSum(swept.max[0], margin)) query(node.right)
     }
     query(this.root)
     const affected = candidates
@@ -291,19 +385,13 @@ export class WalkingTransitScreen {
       .sort((a, b) => a.ordinal - b.ordinal)
       .map((candidate) => candidate.exclusion)
     this.work.contributors += affected.length
-    return Object.freeze({
-      format: 'walking-transit-screen/1',
-      status: affected.length ? 'local-required' : 'ready-fast',
-      demand,
-      envelope,
-      action,
-      affected: Object.freeze(affected),
-      reasons: Object.freeze([]),
-      work: resultWork(before, this.work)
-    })
+    if (!this.isCurrentDemand(demand))
+      return publish('unknown', [], ['stale-scene-demand'])
+    return publish('covered', affected, [])
   }
 
   clear() {
+    this.issued = new WeakSet()
     this.key = undefined
     this.validation = undefined
     this.root = undefined
