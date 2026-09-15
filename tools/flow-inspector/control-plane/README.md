@@ -132,7 +132,7 @@ They are local artifacts and are not committed or published.
 
 ```bash
 node --test --test-concurrency=1 tools/flow-inspector/control-plane/__tests__/{contracts,snapshot,runner,evidence,store,service,server,mapping,cli,evolution,ci-context,ci-evidence,operations}.test.cjs
-FLOW_PROOF_URL=http://127.0.0.1:4318 node --test tools/flow-inspector/control-plane/__tests__/board.test.cjs
+FLOW_PROOF_URL=http://127.0.0.1:4318 node --test --test-concurrency=1 tools/flow-inspector/control-plane/__tests__/board*.test.cjs
 ```
 
 The browser test uses the repository's existing Playwright harness and installed
@@ -488,7 +488,7 @@ Run the permanent portable and OS cases, then the original board suite:
 
 ```bash
 node --test --test-concurrency=1 tools/flow-inspector/control-plane/__tests__/{agent-contract,agent-task,agent-verifier}.test.cjs
-FLOW_PROOF_URL=http://127.0.0.1:4319 FLOW_PROOF_BROWSER_CHANNEL=chrome node --test tools/flow-inspector/control-plane/__tests__/board.test.cjs
+FLOW_PROOF_URL=http://127.0.0.1:4319 FLOW_PROOF_BROWSER_CHANNEL=chrome node --test --test-concurrency=1 tools/flow-inspector/control-plane/__tests__/board*.test.cjs
 ```
 
 Browser artifacts include exact task state, regression/recovery details and narrow
@@ -635,7 +635,11 @@ Reload the Board after preparing a new contract revision to load its catalog.
    Save a new revision; old task links, commitments and failures remain under
    **Revision decisions and historical commitments** and the complete audit link.
    A stale editor is rejected even after refreshing observations. **Reload saved
-   revision into editor** explicitly replaces the local draft with saved state.
+   revision into editor** explicitly replaces the local draft with saved state. The
+   Board regression in `__tests__/board-target.test.cjs` waits for the refreshed
+   record and its audit before asserting the displayed revision, then verifies
+   that an unchanged draft still submits its original revision and is rejected.
+   CI runs `board*.test.cjs` in its own job, independently of Design E2E.
 
 A work item with prerequisites shows `blocked`; prerequisites show `unconfirmed`.
 Other work and the whole goal show `pending`, including after candidate success
@@ -707,7 +711,6 @@ contract, not invented Factory evidence. The browser test uses actual local
 candidate verification on macOS and an explicitly offline GitHub adapter; its
 PR observations make no external requests. Full cross-PR integration assessment
 and explicit target-baseline acceptance remain unimplemented.
-
 
 ### Admit work before execution
 
