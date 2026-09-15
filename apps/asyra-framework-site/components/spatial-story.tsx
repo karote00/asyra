@@ -299,72 +299,81 @@ function StoryScene({
   let snapshot = 1
   if (shared || chapter === 0) snapshot = 0
   const frame = getStoryFrame(chapter, snapshot)
-  return (
+  const caption = (
     <div
-      data-scene-viewport
-      data-shared-scene={shared || undefined}
-      data-focused-snapshot={
-        (!shared && chapter > 0 && chapter < 4) || undefined
-      }
-      className="relative h-full min-h-[370px] w-full overflow-hidden"
-      role="img"
-      aria-label="A flat plan rises into a two-storey house. Replacing drawHouse with drawTower grows the same footprint into an eight-storey building. The site, transaction and surrounding composition remain in place."
+      data-scene-caption
+      className="absolute inset-x-6 bottom-7 flex justify-between border-t border-[#183f35]/20 pt-3 text-[9px] uppercase tracking-[.13em] opacity-60 lg:inset-x-10"
     >
+      <span>One illustrative composition</span>
+      <span>Powered by Asyra</span>
+    </div>
+  )
+  return (
+    <div className="relative h-full">
       <div
-        className="absolute inset-[8%] rounded-[50%] bg-[#dce7cf] blur-[45px]"
-        data-scene-effect="backdrop"
-        style={{ opacity: frame.effects.backdrop * 0.65 }}
-      />
-      <div
-        className="story-depth absolute left-1/2 top-[48%]"
-        style={{ transform: 'scale(var(--scene-scale, .75))' }}
+        data-scene-viewport
+        data-shared-scene={shared || undefined}
+        data-focused-snapshot={
+          (!shared && chapter > 0 && chapter < 4) || undefined
+        }
+        className="relative h-full min-h-[370px] w-full overflow-hidden"
+        role="img"
+        aria-label="A flat plan rises into a two-storey house. Replacing drawHouse with drawTower grows the same footprint into an eight-storey building. The site, transaction and surrounding composition remain in place."
       >
         <div
-          data-scene-camera
-          className="story-depth"
-          style={{ transform: cameraTransform(frame.camera) }}
+          className="absolute inset-[8%] rounded-[50%] bg-[#dce7cf] blur-[45px]"
+          data-scene-effect="backdrop"
+          style={{ opacity: frame.effects.backdrop * 0.65 }}
+        />
+        <div
+          className="story-depth absolute left-1/2 top-[48%]"
+          style={{ transform: 'scale(var(--scene-scale, .75))' }}
         >
-          {storyLayerIds.map((id) => (
-            <div
-              key={id}
-              data-story-layer={id}
-              className="story-depth absolute left-0 top-0"
-              style={{
-                transformOrigin: '0 0',
-                transform: layerTransform(frame.layers[id]),
-                opacity: frame.layers[id][7],
-                pointerEvents: frame.layers[id][7] > 0.01 ? 'auto' : 'none'
-              }}
-            >
-              {(id === 'thinker' || id === 'gallery') && (
-                <div
-                  style={{
-                    width: storyArtwork[id].width,
-                    height: storyArtwork[id].height
-                  }}
-                >
-                  <Illustration name={id} />
-                </div>
-              )}
-              {id === 'notebook' && <Notebook frame={frame} />}
-              {['feature', 'replacement', 'transaction', 'state'].includes(
-                id
-              ) && <StructurePlane name={id} frame={frame} />}
-              {id === 'signal' && (
-                <div className="h-[22px] w-[22px] rounded-full border-4 border-[#fff5ce] bg-[#b88b42] shadow-[0_0_25px_#b88b4280]" />
-              )}
-              {id === 'history' && <ExtraView history frame={frame} />}
-              {id === 'collection' && (
-                <ExtraView history={false} frame={frame} />
-              )}
-            </div>
-          ))}
+          <div
+            data-scene-camera
+            className="story-depth"
+            style={{ transform: cameraTransform(frame.camera) }}
+          >
+            {storyLayerIds.map((id) => (
+              <div
+                key={id}
+                data-story-layer={id}
+                className="story-depth absolute left-0 top-0"
+                style={{
+                  transformOrigin: '0 0',
+                  transform: layerTransform(frame.layers[id]),
+                  opacity: frame.layers[id][7],
+                  pointerEvents: frame.layers[id][7] > 0.01 ? 'auto' : 'none'
+                }}
+              >
+                {(id === 'thinker' || id === 'gallery') && (
+                  <div
+                    style={{
+                      width: storyArtwork[id].width,
+                      height: storyArtwork[id].height
+                    }}
+                  >
+                    <Illustration name={id} />
+                  </div>
+                )}
+                {id === 'notebook' && <Notebook frame={frame} />}
+                {['feature', 'replacement', 'transaction', 'state'].includes(
+                  id
+                ) && <StructurePlane name={id} frame={frame} />}
+                {id === 'signal' && (
+                  <div className="h-[22px] w-[22px] rounded-full border-4 border-[#fff5ce] bg-[#b88b42] shadow-[0_0_25px_#b88b4280]" />
+                )}
+                {id === 'history' && <ExtraView history frame={frame} />}
+                {id === 'collection' && (
+                  <ExtraView history={false} frame={frame} />
+                )}
+              </div>
+            ))}
+          </div>
         </div>
+        {shared && caption}
       </div>
-      <div className="absolute inset-x-6 bottom-7 flex justify-between border-t border-[#183f35]/20 pt-3 text-[9px] uppercase tracking-[.13em] opacity-60 lg:inset-x-10">
-        <span>One illustrative composition</span>
-        <span>Powered by Asyra</span>
-      </div>
+      {!shared && caption}
     </div>
   )
 }

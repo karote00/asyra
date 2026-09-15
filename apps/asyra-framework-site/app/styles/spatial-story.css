@@ -121,3 +121,12 @@
     margin-top: 24px;
   }
 }
+
+/* Static captions occupy their own row below the projected artwork canvas. */
+[data-static-scene] {
+  padding-bottom: 40px;
+}
+[data-static-scene] [data-scene-caption] {
+  top: 100%;
+  bottom: auto;
+}

@@ -104,10 +104,65 @@ test('compact architecture snapshots keep the state plane above the caption', as
     const state = await scene
       .locator('[data-story-layer="state"] > div')
       .boundingBox()
-    const caption = await scene
-      .locator('[data-scene-viewport] > div:last-child')
-      .boundingBox()
+    const caption = await scene.locator('[data-scene-caption]').boundingBox()
     if (!state || !caption) throw new Error('Architecture snapshot is missing')
     expect(state.y + state.height).toBeLessThanOrEqual(caption.y - 8)
+  }
+})
+
+test('394px story artwork stays between chapter copy and its caption', async ({
+  page
+}, testInfo) => {
+  await page.setViewportSize({ width: 394, height: 852 })
+  await page.goto('/')
+  for (let index = 0; index < 6; index++) {
+    const chapter = page.locator(`[data-story-chapter="${index}"]`)
+    await chapter.scrollIntoViewIfNeeded()
+    await chapter.screenshot({
+      path: testInfo.outputPath(`chapter-${index}-394.png`)
+    })
+    const copy = await chapter.locator(':scope > div').first().boundingBox()
+    const scene = chapter.locator('[data-static-scene]')
+    const caption = await scene.locator('[data-scene-caption]').boundingBox()
+    if (!copy || !caption) throw new Error('Chapter layout is missing')
+    const sectionBox = await chapter.boundingBox()
+    if (!sectionBox) throw new Error('Chapter bounds are missing')
+    expect
+      .soft(caption.y + caption.height)
+      .toBeLessThanOrEqual(sectionBox.y + sectionBox.height - 16)
+    for (const layer of await scene.locator('[data-story-layer]').all()) {
+      if (
+        Number(await layer.evaluate((el) => getComputedStyle(el).opacity)) < 0.1
+      )
+        continue
+      const box = await layer.locator(':scope > *').first().boundingBox()
+      if (!box) continue
+      expect
+        .soft(box.y, `chapter ${index} artwork above copy`)
+        .toBeGreaterThanOrEqual(copy.y + copy.height)
+      expect
+        .soft(box.y + box.height, `chapter ${index} artwork overlaps caption`)
+        .toBeLessThanOrEqual(caption.y - 8)
+    }
+    for (const label of await scene
+      .locator('[data-scene-caption] span')
+      .all()) {
+      await label.scrollIntoViewIfNeeded()
+      const visibility = await label.evaluate((el) => {
+        const r = el.getBoundingClientRect()
+        const hit = document.elementFromPoint(
+          r.x + r.width / 2,
+          r.y + r.height / 2
+        )
+        return {
+          visible: hit === el || el.contains(hit),
+          hit: hit?.outerHTML.slice(0, 180),
+          chapter: el
+            .closest('[data-story-chapter]')
+            ?.getAttribute('data-story-chapter')
+        }
+      })
+      expect.soft(visibility.visible, JSON.stringify(visibility)).toBe(true)
+    }
   }
 })
