@@ -14,6 +14,27 @@ in the [plan](/docs/ai/apps/fieldscope/plans/harvest-robot/plan.md). The physica
 assumptions and validation obligations are in [hardware concept](/docs/ai/apps/fieldscope/specs/harvest-hardware.md).
 No software result may be labeled certified safe or a measured ground property.
 
+Synthetic complete-empty observations cover only the declared W1 canonical
+obstacle taxonomy (crops, net, ties, supports, clips, film, steel and barriers)
+and the current declared synthetic dynamic domain. Their complete sight volume
+includes every opaque source in those inventories. Soil/drain optical occlusion
+remains a separate terrain/channel owner. The sensor backend domain is the hull
+of the finite configured full-site volume from -site.height to site.eave and all
+outward canonical obstacle bounds, without clipping source extents. Negative-Y
+coverage is not through-soil visibility, terrain clearance or support evidence.
+Unknown inventory admission or any unvisited candidate prevents complete-empty.
+Source preparation is request-owned and shared by route and observation views
+for one immutable farm/scene. Unknown routes and bootstrap reads prepare no
+obstacle inventory. The first admitted walking observation completes missing
+source keys; later observations reuse the inventory and one active query tree.
+The independent synthetic dynamic tracked area is declared before observation;
+both domains must contain the canonical returned sight volume. Neither a
+duplicate camera predictor nor post-result domain expansion supplies coverage.
+An action needs a current admitted view; an inadequate view may hold and require
+an explicitly declared new observation view. No single fixed camera is assumed
+to observe every local action. Synthetic inspection-head views remain declared
+simulation inputs, not measured camera calibration or hardware capability.
+
 The production workspace now persists an explicit versioned runtime selection.
 `legacy-view` remains the default and retains the historical M2 projection;
 `walking-active` binds an admitted definition to the actual W2 source, complete

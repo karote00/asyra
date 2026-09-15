@@ -27,10 +27,13 @@ export function createSceneDemandWorkspace(
   let closed = false
   let elementId = ''
   let configuration = DEFAULT_SCENE_DEMAND_CONFIGURATION
+  const sourceOwner = new sceneDemand.SceneDemandSourceBoundsOwner()
+  let observation: sceneDemand.SceneObservationSpace | undefined
   let snapshot = sceneDemand.prepareSceneDemand(
     getFarm(),
     getScene(),
-    configuration
+    configuration,
+    sourceOwner
   )
   const listeners = new Set<() => void>()
   const assertLive = () => {
@@ -71,7 +74,13 @@ export function createSceneDemandWorkspace(
     scene: PreparedScene
   ) => {
     configuration = nextConfiguration
-    snapshot = sceneDemand.prepareSceneDemand(farm, scene, configuration)
+    snapshot = sceneDemand.prepareSceneDemand(
+      farm,
+      scene,
+      configuration,
+      sourceOwner
+    )
+    observation = undefined
     listeners.forEach((listener) => listener())
   }
   const refresh = (farm: FarmConfiguration, scene: PreparedScene) => {
@@ -102,7 +111,8 @@ export function createSceneDemandWorkspace(
             const prepared = sceneDemand.prepareSceneDemand(
               farm,
               getScene(),
-              next
+              next,
+              sourceOwner
             )
             runTransaction(() =>
               core.updateElementProperties([
@@ -111,6 +121,7 @@ export function createSceneDemandWorkspace(
             )
             configuration = next
             snapshot = prepared
+            observation = undefined
             listeners.forEach((listener) => listener())
           },
           SceneDemandIds.CHANGE
@@ -145,7 +156,27 @@ export function createSceneDemandWorkspace(
       return snapshot
     },
     isCurrent: (product: sceneDemand.SceneDemand) =>
-      !closed && product === snapshot,
+      !closed &&
+      product === snapshot &&
+      getFarm() === snapshot.farm &&
+      getScene() === snapshot.scene,
+    prepareObservationSpace: () => {
+      assertLive()
+      if (getFarm() !== snapshot.farm || getScene() !== snapshot.scene)
+        throw new Error('Stale scene demand observation request')
+      observation ??= sceneDemand.prepareSceneObservationSpace(
+        snapshot,
+        sourceOwner
+      )
+      return observation
+    },
+    isCurrentObservationSpace: (product: sceneDemand.SceneObservationSpace) =>
+      !closed &&
+      product === observation &&
+      getFarm() === snapshot.farm &&
+      getScene() === snapshot.scene &&
+      sceneDemand.isSceneObservationSpace(snapshot, product),
+    getSourceWork: () => sourceOwner.work,
     subscribe: (listener: () => void) => {
       assertLive()
       listeners.add(listener)
@@ -157,6 +188,8 @@ export function createSceneDemandWorkspace(
     refresh,
     close: () => {
       closed = true
+      observation = undefined
+      sourceOwner.close()
       listeners.clear()
     },
     unregister: () => {

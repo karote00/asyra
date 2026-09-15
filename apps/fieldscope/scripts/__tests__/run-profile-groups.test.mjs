@@ -1,0 +1,374 @@
+import assert from 'node:assert/strict'
+import { spawn, spawnSync } from 'node:child_process'
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync
+} from 'node:fs'
+import path from 'node:path'
+import process from 'node:process'
+import test from 'node:test'
+import { setTimeout as delay } from 'node:timers/promises'
+import { fileURLToPath, URL } from 'node:url'
+
+const app = fileURLToPath(new URL('../..', import.meta.url))
+const runner = fileURLToPath(
+  new URL('../run-profile-groups.py', import.meta.url)
+)
+const artifacts = fileURLToPath(
+  new URL('../../.artifacts/profile-group-runner-tests/', import.meta.url)
+)
+const heavy =
+  'src/domain/__tests__/walking-constrained-kinematics.profile.test.ts'
+
+function writeProfile(root, relative) {
+  const target = path.join(root, relative)
+  mkdirSync(path.dirname(target), { recursive: true })
+  writeFileSync(target, '')
+}
+
+function fixture() {
+  const root = mkdtempSync(path.join(artifacts, 'fixture-'))
+  writeFileSync(
+    path.join(root, 'package.json'),
+    JSON.stringify({
+      name: '@asyra/fieldscope',
+      private: true,
+      packageManager: 'yarn@4.3.1'
+    })
+  )
+  writeProfile(root, heavy)
+  writeProfile(root, 'src/runtime/__tests__/nested/new-owner.profile.test.ts')
+  writeProfile(root, 'src/runtime/__tests__/ignored.profile.test.tsx')
+  writeProfile(root, 'src/runtime/outside.profile.test.ts')
+  return root
+}
+
+const loadRunner = String.raw`
+import importlib.util, json, sys
+from pathlib import Path
+spec = importlib.util.spec_from_file_location('profile_groups', sys.argv[1])
+owner = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(owner)
+`
+
+function discover(root) {
+  const code =
+    loadRunner +
+    String.raw`
+print(json.dumps(owner.discover_profile_groups(Path(sys.argv[2]))))
+`
+  const result = spawnSync('python3', ['-c', code, runner, root], {
+    cwd: app,
+    encoding: 'utf8',
+    timeout: 5000
+  })
+  assert.equal(result.status, 0, result.stderr)
+  return JSON.parse(result.stdout)
+}
+
+function writeFakeSupervisor(root) {
+  const fake = path.join(root, 'fake-supervisor.py')
+  writeFileSync(
+    fake,
+    String.raw`
+import json, os, signal, sys, time
+from pathlib import Path
+args = sys.argv[1:]
+files = [args[index + 1] for index, value in enumerate(args) if value == '--file']
+record = Path(os.environ['PROFILE_GROUP_RECORD'])
+with record.open('a') as target:
+    target.write(json.dumps(files) + '\n')
+mode = os.environ.get('PROFILE_GROUP_MODE', 'pass')
+if mode == 'wait':
+    def stop(signum, _frame):
+        Path(os.environ['PROFILE_GROUP_CLEANED']).write_text(str(signum))
+        sys.exit(128 + signum)
+    signal.signal(signal.SIGTERM, stop)
+    signal.signal(signal.SIGINT, stop)
+    Path(os.environ['PROFILE_GROUP_STARTED']).write_text('started')
+    while True:
+        time.sleep(0.05)
+selection = {
+    'kind': 'selected-profile-files',
+    'coverage': 'filtered-profiles',
+    'files': files,
+    'title': None,
+}
+result = {
+    'outcome': 'passed',
+    'completion': 'filtered-profile-selection-complete',
+    'exitCode': 0,
+    'error': None,
+    'reaped': True,
+    'workInterpretation': 'exact',
+    'unknownTail': False,
+    'selection': selection,
+    'summaryPath': 'summary.json',
+    'logPath': 'console.log',
+}
+if mode == 'incomplete':
+    result['completion'] = 'incomplete'
+if mode == 'remaining-incomplete' and files != [
+        'src/domain/__tests__/walking-constrained-kinematics.profile.test.ts']:
+    result['completion'] = 'incomplete'
+if mode == 'wrong-selection':
+    result['selection'] = {**selection, 'files': files + ['unexpected.profile.test.ts']}
+if mode == 'error':
+    result['outcome'] = 'failed'
+    result['exitCode'] = 7
+print(json.dumps(result))
+if mode == 'error':
+    raise SystemExit(7)
+`
+  )
+  return fake
+}
+
+function run(root, supervisor, mode = 'pass') {
+  const record = path.join(root, 'record.jsonl')
+  const code =
+    loadRunner +
+    String.raw`
+result = owner.run_profile_groups(
+    Path(sys.argv[2]),
+    Path(sys.argv[3]),
+    environment=json.loads(sys.argv[4]),
+)
+print(json.dumps(result))
+`
+  const environment = {
+    ...process.env,
+    PROFILE_GROUP_MODE: mode,
+    PROFILE_GROUP_RECORD: record
+  }
+  const result = spawnSync(
+    'python3',
+    ['-c', code, runner, root, supervisor, JSON.stringify(environment)],
+    { cwd: app, encoding: 'utf8', timeout: 5000 }
+  )
+  assert.equal(result.status, 0, result.stderr)
+  return {
+    result: JSON.parse(result.stdout),
+    calls: readFileSync(record, 'utf8')
+      .trim()
+      .split('\n')
+      .filter(Boolean)
+      .map((line) => JSON.parse(line))
+  }
+}
+
+test.before(() => mkdirSync(artifacts, { recursive: true }))
+test.after(() => rmSync(artifacts, { recursive: true, force: true }))
+
+test('discovers the exact profile config class and automatically assigns nested new files to remaining', (t) => {
+  const root = fixture()
+  t.after(() => rmSync(root, { recursive: true, force: true }))
+  assert.deepEqual(discover(root), {
+    heavy: [heavy],
+    remaining: ['src/runtime/__tests__/nested/new-owner.profile.test.ts'],
+    all: [heavy, 'src/runtime/__tests__/nested/new-owner.profile.test.ts']
+  })
+  rmSync(path.join(root, heavy))
+  const missing = spawnSync(
+    'python3',
+    [
+      '-c',
+      loadRunner + String.raw`owner.discover_profile_groups(Path(sys.argv[2]))`,
+      runner,
+      root
+    ],
+    { cwd: app, encoding: 'utf8', timeout: 5000 }
+  )
+  assert.notEqual(missing.status, 0)
+  assert.match(missing.stderr, /heavy profile/i)
+})
+
+test('runs heavy then the complete remaining partition and reports full profile completion only after both exact receipts', (t) => {
+  const root = fixture()
+  t.after(() => rmSync(root, { recursive: true, force: true }))
+  const result = run(root, writeFakeSupervisor(root))
+  assert.deepEqual(result.calls, [
+    [heavy],
+    ['src/runtime/__tests__/nested/new-owner.profile.test.ts']
+  ])
+  assert.equal(result.result.outcome, 'passed')
+  assert.equal(result.result.completion, 'profile-suite-complete')
+  assert.equal(result.result.selection.coverage, 'profiles')
+  assert.deepEqual(result.result.selection.files, [
+    heavy,
+    'src/runtime/__tests__/nested/new-owner.profile.test.ts'
+  ])
+  assert.deepEqual(
+    result.result.groups.map((group) => group.name),
+    ['heavy', 'remaining']
+  )
+})
+
+test('rejects an error, incomplete or mismatched receipt and never starts the remaining group', (t) => {
+  for (const mode of ['error', 'incomplete', 'wrong-selection']) {
+    const root = fixture()
+    t.after(() => rmSync(root, { recursive: true, force: true }))
+    const result = run(root, writeFakeSupervisor(root), mode)
+    assert.equal(result.result.outcome, 'failed')
+    assert.equal(result.result.completion, 'incomplete')
+    assert.deepEqual(result.calls, [[heavy]])
+  }
+})
+
+test('fails full completion when the remaining group returns an incomplete receipt', (t) => {
+  const root = fixture()
+  t.after(() => rmSync(root, { recursive: true, force: true }))
+  const result = run(root, writeFakeSupervisor(root), 'remaining-incomplete')
+  assert.equal(result.result.outcome, 'failed')
+  assert.equal(result.result.completion, 'incomplete')
+  assert.deepEqual(result.calls, [
+    [heavy],
+    ['src/runtime/__tests__/nested/new-owner.profile.test.ts']
+  ])
+  assert.deepEqual(
+    result.result.groups.map((group) => group.completion),
+    ['filtered-profile-selection-complete', 'incomplete']
+  )
+})
+
+test('forwards interruption to the active supervisor and waits for its cleanup', async (t) => {
+  const root = fixture()
+  t.after(() => rmSync(root, { recursive: true, force: true }))
+  const supervisor = writeFakeSupervisor(root)
+  const record = path.join(root, 'record.jsonl')
+  const started = path.join(root, 'started')
+  const cleaned = path.join(root, 'cleaned')
+  const code =
+    loadRunner +
+    String.raw`
+try:
+    owner.run_profile_groups(
+        Path(sys.argv[2]),
+        Path(sys.argv[3]),
+        environment=json.loads(sys.argv[4]),
+    )
+except KeyboardInterrupt:
+    raise SystemExit(130)
+`
+  const child = spawn(
+    'python3',
+    [
+      '-c',
+      code,
+      runner,
+      root,
+      supervisor,
+      JSON.stringify({
+        ...process.env,
+        PROFILE_GROUP_MODE: 'wait',
+        PROFILE_GROUP_RECORD: record,
+        PROFILE_GROUP_STARTED: started,
+        PROFILE_GROUP_CLEANED: cleaned
+      })
+    ],
+    { cwd: app, stdio: 'pipe' }
+  )
+  t.after(() => {
+    if (child.exitCode === null) child.kill('SIGKILL')
+  })
+  const deadline = Date.now() + 3000
+  while (Date.now() < deadline) {
+    try {
+      if (readFileSync(started, 'utf8') === 'started') break
+    } catch (error) {
+      if (error.code !== 'ENOENT') throw error
+    }
+    await delay(10)
+  }
+  assert.equal(readFileSync(started, 'utf8'), 'started')
+  child.kill('SIGTERM')
+  const exit = await new Promise((resolve) => child.once('exit', resolve))
+  assert.notEqual(exit, 0)
+  assert.equal(readFileSync(cleaned, 'utf8'), String(15))
+  assert.deepEqual(
+    readFileSync(record, 'utf8')
+      .trim()
+      .split('\n')
+      .map((line) => JSON.parse(line)),
+    [[heavy]]
+  )
+})
+
+test('covers interruption after child spawn but before Popen returns', (t) => {
+  const root = fixture()
+  t.after(() => rmSync(root, { recursive: true, force: true }))
+  const supervisor = writeFakeSupervisor(root)
+  const record = path.join(root, 'record.jsonl')
+  const started = path.join(root, 'started')
+  const cleaned = path.join(root, 'cleaned')
+  const childPid = path.join(root, 'child-pid')
+  const code =
+    loadRunner +
+    String.raw`
+import os, signal, time
+environment = json.loads(sys.argv[4])
+original_popen = owner.subprocess.Popen
+def interrupt_after_spawn(*args, **kwargs):
+    child = original_popen(*args, **kwargs)
+    Path(environment['PROFILE_GROUP_CHILD_PID']).write_text(str(child.pid))
+    deadline = time.monotonic() + 3
+    while not Path(environment['PROFILE_GROUP_STARTED']).exists():
+        if time.monotonic() >= deadline:
+            child.kill()
+            child.wait()
+            raise RuntimeError('fake supervisor did not start')
+        time.sleep(0.01)
+    os.kill(os.getpid(), signal.SIGTERM)
+    return child
+owner.subprocess.Popen = interrupt_after_spawn
+try:
+    owner.run_profile_groups(
+        Path(sys.argv[2]),
+        Path(sys.argv[3]),
+        environment=environment,
+    )
+except owner.ProfileGroupInterrupted as error:
+    print(json.dumps({'signum': error.signum}))
+`
+  const result = spawnSync(
+    'python3',
+    [
+      '-c',
+      code,
+      runner,
+      root,
+      supervisor,
+      JSON.stringify({
+        ...process.env,
+        PROFILE_GROUP_MODE: 'wait',
+        PROFILE_GROUP_RECORD: record,
+        PROFILE_GROUP_STARTED: started,
+        PROFILE_GROUP_CLEANED: cleaned,
+        PROFILE_GROUP_CHILD_PID: childPid
+      })
+    ],
+    { cwd: app, encoding: 'utf8', timeout: 5000 }
+  )
+  const spawnedPid = Number(readFileSync(childPid, 'utf8'))
+  t.after(() => {
+    try {
+      process.kill(spawnedPid, 'SIGKILL')
+    } catch (error) {
+      if (error.code !== 'ESRCH') throw error
+    }
+  })
+  assert.equal(result.status, 0, result.stderr)
+  assert.deepEqual(JSON.parse(result.stdout), { signum: 15 })
+  assert.equal(readFileSync(cleaned, 'utf8'), String(15))
+  assert.throws(() => process.kill(spawnedPid, 0), { code: 'ESRCH' })
+  assert.deepEqual(
+    readFileSync(record, 'utf8')
+      .trim()
+      .split('\n')
+      .map((line) => JSON.parse(line)),
+    [[heavy]]
+  )
+})

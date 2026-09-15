@@ -15,7 +15,7 @@
     "typecheck": "tsc --noEmit",
     "test:local": "node --test scripts/__tests__/supervise-tests.test.mjs && python3 scripts/supervise-tests.py",
     "test:ci": "node --test scripts/__tests__/supervise-tests.test.mjs && python3 scripts/supervise-tests.py",
-    "test:profiles": "vitest run --config vitest.profile.config.ts",
+    "test:profiles": "node --test scripts/__tests__/supervise-tests.test.mjs scripts/__tests__/run-profile-groups.test.mjs && python3 scripts/run-profile-groups.py",
     "test:e2e": "playwright test",
     "lint": "node ../../node_modules/eslint/bin/eslint.js src e2e *.ts *.mjs"
   },

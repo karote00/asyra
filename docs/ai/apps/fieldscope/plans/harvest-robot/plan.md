@@ -2,6 +2,18 @@
 
 Status: IN PROGRESS - W3A WALKING RUNTIME COMPOSITION IMPLEMENTED
 
+The current bounded 20-file slice adds request-owned complete declared-obstacle
+sensor inventory with shared farm/scene source preparation and one active
+route/observation index, owner-bound selected-action camera frames,
+synthetic orientation/contact monitoring and production local-action decisions.
+The original desired-world camera and tight-domain inspection view remain held
+without progress. The separately predeclared finite-site synthetic tracked area
+and inspection-head view pass start/continue/complete, fresh perception/monitoring,
+static work reuse and person/insufficient/stale holds. Final focused gates and
+one independent bounded review remain the closure boundary. No complete walking or
+hardware action claim is made. Terrain optics/support, foliage no-hook/no-tug,
+actuator feedback, patrol and UI remain separate pending owners.
+
 Walking observation production composition is implemented in the bounded
 15-file adapter slice. Bootstrap now constructs the walking workspace, accepts
 explicit synthetic base camera/optics/static plant state/dynamic scenarios,
@@ -12,7 +24,8 @@ Production tests cover complete-empty, actual authored leaf/anatomy hits with
 the leaf bounds outside the action box, persistent moving-to-stationary tracks,
 scenario/demand/farm/source invalidation and zero repeated static builds.
 Focused validation and independent bounded review are the closure gates.
-Observation monitors, controller, UI and action/motion authority remain pending.
+The bounded synthetic monitor/local-action adapter is implemented in the current
+slice; physical actuation, full walking control and UI remain pending.
 
 Selected-chain local motion slice: the canonical interval owner now admits one
 current swing-chain root abduction from its exact cycle angle to a target
@@ -2633,14 +2646,34 @@ the corrected metadata unchanged; no source triangle, joint domain, third-body
 rule or material/contact permission changes in this owner correction.
 
 Test-process supervision prerequisite: FieldScope owns an external Python process
-guard for ordinary Vitest. `test:local` and `test:ci` run the complete ordinary
+guard for ordinary and profile Vitest. `test:local` and `test:ci` run the complete ordinary
 suite through that guard with a 20-minute engineering wall deadline, independent
 process-group cleanup and bounded local artifacts. A caller may instead name
 existing ordinary test files and one explicit test title with a positive finite
 millisecond deadline; that output is labelled filtered selection evidence and is
 never reported as a complete suite. Unknown paths and raw Vitest bypass arguments
-fail before execution. The separate one-worker `test:profiles` gate and all
-product runtime limits remain unchanged.
+fail before execution. The required one-worker `test:profiles` gate discovers
+the exact profile class, isolates walking-constrained-kinematics, assigns every
+other and newly added profile to the remaining group, proves the groups are
+complete and disjoint, then invokes the same supervisor sequentially for both.
+Each group retains the original 20-minute deadline, worker acknowledgements,
+bounded artifacts and owned cleanup. Only two exact complete receipts publish
+full profile completion; filtered/group artifacts are profile evidence, never
+ordinary coverage.
+The required profile cohort retains the existing nine actual-source cases and
+adds seven version-two request/nonlinear admission cases plus all ten current
+whole-source relation cases. The relation cases keep one shared source preparation
+for two stale-provenance, three preset all-pair, one request/accounting, two
+translation, one remaining-inventory and one target-partition case. Every
+assertion, fixture, geometry, product budget and per-case ceiling remains unchanged.
+The small two-solid boundary, subdivision-exhaustion, first-visited canonical rows,
+legacy admissions and direct source/compiler correctness remain ordinary.
+Classification is not a production performance improvement. Existing numerical
+elapsed guards and the 20-minute per-group process deadlines remain. The original
+timeout evidence remains authoritative.
+Focused class gates,
+supervisor selectors/cleanup/acknowledgements and static/build checks precede the
+combined integration gate and independent review.
 
 # Bounded constant-root and exact-work correction
 
