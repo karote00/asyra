@@ -2319,7 +2319,7 @@ const assertPreparedAiTurnSettled = async (
   await expect(settledTurns).toHaveCount(1, { timeout: 120_000 })
   const turn = settledTurns.last()
   await expect(turn).toHaveAttribute('data-outcome', 'success')
-  await expect(turn.getByText('Drawing updated successfully.')).toBeVisible()
+  await expect(turn.getByText(/Updated \d+ editable elements?\./)).toBeVisible()
 }
 
 const closeContexts = async (
