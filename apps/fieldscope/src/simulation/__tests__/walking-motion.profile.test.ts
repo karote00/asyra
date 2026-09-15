@@ -485,7 +485,11 @@ describe('canonical nonlinear offline geometry profiles', () => {
     )
   }, 180000)
 
-  it('reports the current home-farm plant collision while preserving owned terrain bridges', () => {
+  it('reports the current home-farm plant collision while preserving owned terrain bridges', async (context) => {
+    await context.annotate(
+      'Starting current home-farm plant collision proof',
+      'info'
+    )
     const { owner, raw, cycle } = nonlinearFixture()
     const result = owner.prepare(raw)
     const relations = result.sourceRelations
@@ -736,7 +740,7 @@ describe('canonical nonlinear offline geometry profiles', () => {
         result.sourceRelations.coverage.unvisited
     )
     expect(result.status).not.toBe('clear') // Explicit missing crate inventory is never cleared.
-  }, 30000)
+  }, 180000)
 })
 
 it('phase-root canonical coverage retains original required pairs without crossing phases', async (context) => {

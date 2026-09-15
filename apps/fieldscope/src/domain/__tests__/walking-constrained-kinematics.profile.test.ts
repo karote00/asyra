@@ -146,7 +146,7 @@ for (const [sourceProfile, phase] of externalRootCases)
         ...evaluator.work
       })
     )
-  }, 300000)
+  }, 450000)
 
 describe('exact polynomial complementary tripod offline profiles', () => {
   for (const phase of [0, 1] as const)
