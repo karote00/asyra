@@ -221,3 +221,34 @@ for (const width of [394, 820, 1440, 2560]) {
     }
   })
 }
+
+for (const width of [394, 820, 1440, 2560]) {
+  test(`homepage closing and footer follow the story gutter at ${width}px`, async ({
+    page
+  }, testInfo) => {
+    await page.setViewportSize({ width, height: 1000 })
+    await page.goto('/')
+    const story = await page
+      .locator('[data-story-chapter="0"] > div')
+      .first()
+      .boundingBox()
+    if (!story) throw new Error('Story copy is missing')
+    const closing = page.getByRole('region', {
+      name: 'Start your next product'
+    })
+    for (const content of [
+      closing.locator('p'),
+      page.locator('footer .wordmark')
+    ]) {
+      const box = await content.boundingBox()
+      if (!box) throw new Error('Closing content is missing')
+      expect.soft(Math.abs(box.x - story.x)).toBeLessThanOrEqual(1)
+    }
+    await closing.screenshot({
+      path: testInfo.outputPath(`closing-${width}.png`)
+    })
+    await page
+      .locator('footer')
+      .screenshot({ path: testInfo.outputPath(`footer-${width}.png`) })
+  })
+}

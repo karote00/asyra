@@ -680,17 +680,19 @@ export function SpatialStory({
           aria-label="Start your next product"
           className="relative z-20 bg-[#183f35] px-6 py-20 text-[#f4f1e7] lg:px-[8vw]"
         >
-          <p className="max-w-[900px] font-serif text-[40px] leading-tight lg:text-[64px]">
-            The foundation is shared.
-            <br />
-            What comes next is yours.
-          </p>
-          <a
-            href="/docs/start/custom-composition"
-            className="mt-8 inline-flex items-center gap-12 border-b border-current pb-3 text-sm"
-          >
-            Explore the framework <span>↗</span>
-          </a>
+          <div className="mx-auto">
+            <p className="max-w-[900px] font-serif text-[40px] leading-tight lg:text-[64px]">
+              The foundation is shared.
+              <br />
+              What comes next is yours.
+            </p>
+            <a
+              href="/docs/start/custom-composition"
+              className="mt-8 inline-flex items-center gap-12 border-b border-current pb-3 text-sm"
+            >
+              Explore the framework <span>↗</span>
+            </a>
+          </div>
         </section>
       </main>
       {footer}
