@@ -131,10 +131,16 @@ p {
 
 .wordmark,
 .site-frame-wordmark {
+  align-items: center;
+  color: #183f35;
+  display: inline-flex;
+  flex-shrink: 0;
+  font-family: var(--font-family-sans);
   font-size: clamp(1.3rem, 2.2vw, 1.9rem);
-  font-weight: 750;
-  letter-spacing: 0.12em;
+  font-weight: 650;
+  letter-spacing: 0.035em;
   line-height: 1;
+  min-height: 44px;
   width: max-content;
 }
 
@@ -2103,12 +2109,6 @@ button:focus-visible {
     justify-self: center;
     min-height: 50px;
     width: clamp(180px, 52vw, 210px);
-  }
-}
-
-@media (max-width: 390px) {
-  .wordmark {
-    font-size: 1.1rem;
   }
 }
 
