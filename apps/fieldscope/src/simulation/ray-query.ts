@@ -290,12 +290,25 @@ export interface QueryExactFrame {
   readonly position: FrameVector<Dyadic>
   readonly determinant: Dyadic
 }
+/** Canonical exact value; zero exponents must not grow a later affine chain. */
+function reducedFrameScalar(value: Dyadic): Dyadic {
+  let { significand, exponent } = value
+  if (significand === 0n) return { significand: 0n, exponent: 0 }
+  while ((significand & 1n) === 0n) {
+    significand >>= 1n
+    exponent++
+  }
+  return { significand, exponent }
+}
 function exactSourceFrame(
   matrix: FrameMatrix<Dyadic>,
   position: Point3
 ): QueryExactFrame {
   if (!finitePoint(position))
     throw new Error('Invalid exact source frame position')
+  matrix = matrix.map((row) =>
+    row.map(reducedFrameScalar)
+  ) as unknown as FrameMatrix<Dyadic>
   const cofactor = frameCross(matrix[1], matrix[2], exactFrameArithmetic)
   const determinant = matrix[0].reduce(
     (sum, value, axis) =>
@@ -306,8 +319,10 @@ function exactSourceFrame(
     throw new Error('Singular exact source frame')
   return freeze({
     matrix,
-    position: [dyadic(position[0]), dyadic(position[1]), dyadic(position[2])],
-    determinant
+    position: position.map((value) =>
+      reducedFrameScalar(dyadic(value))
+    ) as unknown as FrameVector<Dyadic>,
+    determinant: reducedFrameScalar(determinant)
   })
 }
 /** Exact polynomial coefficients; neither normalized quaternions nor rounded world points. */

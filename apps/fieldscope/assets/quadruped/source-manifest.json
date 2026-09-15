@@ -1,0 +1,9 @@
+{
+  "format": "quadruped-source-manifest/2",
+  "templateId": "side-stage-articulation-2",
+  "templateSha256": "969b9f96cf4b3548aaad55b5e29c7a4c0e66a31bae3b019a7f199b0018ec6b0d",
+  "blendSha256": "7220bfe0a989705e80ee6ef82fcc05e4faa2ee5c53950d031f78201852e6c14b",
+  "generator": "scripts/fieldscope/blender/build-quadruped-source.py",
+  "exporter": "scripts/fieldscope/blender/export-quadruped-source.py",
+  "blenderVersion": "5.2.1 LTS"
+}

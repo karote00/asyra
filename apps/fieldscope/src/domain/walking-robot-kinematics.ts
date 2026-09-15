@@ -264,9 +264,20 @@ export function evaluateArticulatedTransforms(
   bodies: WalkingRobotSource['rig']['bodies'],
   joints: readonly WalkingRobotJoint[],
   values: ReadonlyMap<string, number>,
-  base: WalkingRigidTransform
+  base: WalkingRigidTransform,
+  collectFrameChain?: (
+    bodyId: string,
+    frames: readonly WalkingRigidTransform[]
+  ) => void
 ): ReadonlyMap<string, WalkingRigidTransform> {
   const transforms = new Map<string, WalkingRigidTransform>([['base', base]])
+  const chains = collectFrameChain
+    ? new Map<string, readonly WalkingRigidTransform[]>([
+        ['base', Object.freeze([base])]
+      ])
+    : undefined
+  if (chains && collectFrameChain)
+    collectFrameChain('base', required(chains.get('base')))
   const pending = new Set(
     bodies.filter(({ id }) => id !== 'base').map(({ id }) => id)
   )
@@ -278,23 +289,35 @@ export function evaluateArticulatedTransforms(
           ? transforms.get(body.parentBodyId)
           : undefined
       if (!parent) continue
-      if (body.attachment === 'fixed')
-        transforms.set(body.id, compose(parent, required(body.fixedFrame)))
-      else {
+      let relativeFrames: readonly WalkingRigidTransform[] | undefined
+      if (body.attachment === 'fixed') {
+        const fixedFrame = required(body.fixedFrame)
+        transforms.set(body.id, compose(parent, fixedFrame))
+        if (chains) relativeFrames = [fixedFrame]
+      } else {
         const joint = required(
             joints.find(({ childBodyId }) => childBodyId === body.id)
           ),
           value = values.get(joint.id)
         if (value === undefined) return invalid()
+        const jointFrame = joint.frame
+        const motionFrame =
+          joint.motion === 'prismatic'
+            ? translated(joint.axis, value)
+            : axisRotation(joint.axis, value)
         transforms.set(
           body.id,
-          compose(
-            compose(parent, joint.frame),
-            joint.motion === 'prismatic'
-              ? translated(joint.axis, value)
-              : axisRotation(joint.axis, value)
-          )
+          compose(compose(parent, jointFrame), motionFrame)
         )
+        if (chains) relativeFrames = [motionFrame, jointFrame]
+      }
+      if (chains && collectFrameChain) {
+        const chain = Object.freeze([
+          ...required(relativeFrames),
+          ...required(chains.get(required(body.parentBodyId ?? undefined)))
+        ])
+        chains.set(body.id, chain)
+        collectFrameChain(body.id, chain)
       }
       pending.delete(bodyId)
       advanced = true

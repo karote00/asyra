@@ -21,7 +21,7 @@ describe('quadruped definition schema - no source or motion admission', () => {
     const definition = candidate()
     expect(definition.format).toBe('walking-robot-definition/3')
     expect(definition.topology).toBe('four-arm-four-leg')
-    expect(definition.sourceProfile).toBe('side-stage-articulation/1')
+    expect(definition.sourceProfile).toBe('side-stage-articulation/2')
     expect(
       definition.legs.map(({ side, station }) => side + '-' + station).sort()
     ).toEqual(['left-front', 'left-rear', 'right-front', 'right-rear'])
@@ -42,19 +42,19 @@ describe('quadruped definition schema - no source or motion admission', () => {
       const stage = definition.stages[side]
       expect(
         definition.referenceBaseHeight + stage.mount.position[1]
-      ).toBeCloseTo(0.55)
+      ).toBeCloseTo(0.61)
       expect(stage.liftRange).toEqual([0, 1.32])
       expect(
         definition.referenceBaseHeight +
           stage.mount.position[1] +
           definition.arms[0].mount.position[1] +
           stage.liftRange[1]
-      ).toBeCloseTo(1.95)
+      ).toBeCloseTo(2.01)
     }
     for (const arm of definition.arms) {
       expect(arm.upper.length).toBe(0.4)
       expect(arm.forearm.length).toBe(0.4)
-      expect(arm.wrist.length).toBe(0.08)
+      expect(arm.wrist.length).toBe(0.15)
       expect(arm.tool.activePoint).toEqual([0, 0, 0.1])
       expect(arm.jointRanges.rootPitch[0]).toBeLessThan(0)
     }

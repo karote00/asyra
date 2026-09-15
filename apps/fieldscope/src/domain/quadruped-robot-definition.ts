@@ -10,6 +10,7 @@ import {
   MAX_WALKING_BODY_WIDTH
 } from './walking-robot-definition'
 import { dyadic } from './scalar-arithmetic'
+import sourceTemplate from './assets/quadruped-source-template-2.json'
 import {
   createSyntheticBasketPlatform,
   readBasketPlatform,
@@ -18,7 +19,7 @@ import {
 
 export const QUADRUPED_ROBOT_FORMAT = 'walking-robot-definition/3' as const
 export const QUADRUPED_ROBOT_TOPOLOGY = 'four-arm-four-leg' as const
-export const QUADRUPED_SOURCE_PROFILE = 'side-stage-articulation/1' as const
+export const QUADRUPED_SOURCE_PROFILE = 'side-stage-articulation/2' as const
 type Side = 'left' | 'right'
 type Role = 'holder' | 'cutter'
 type Station = 'front' | 'rear'
@@ -490,6 +491,14 @@ export function readQuadrupedRobotPose(
 export function createSyntheticQuadrupedRobotDefinition({
   definitionId = 'synthetic-quadruped-candidate'
 }: { definitionId?: string } = {}): QuadrupedRobotDefinition {
+  const port = (moduleId: string, portId: string, axis: number) => {
+    const value = sourceTemplate.modules
+      .find((module) => module.id === moduleId)
+      ?.ports.find((port) => port.id === portId)?.position[axis]
+    if (value === undefined)
+      throw new Error('Missing synthetic source dimension port')
+    return value
+  }
   const part = (
     size: Point3,
     centre: Point3,
@@ -501,13 +510,18 @@ export function createSyntheticQuadrupedRobotDefinition({
   })
   const linkPart = (length: number, massKg: number): WalkingLinkDefinition => ({
     length,
-    section: 0.035,
+    section: 0.14,
     massKg,
     localCoM: [0, 0, length / 2]
   })
   const stages = Object.fromEntries(
     (['left', 'right'] as const).map((side) => {
-      const x = side === 'left' ? -0.363 : 0.363
+      const extent =
+        port('platform-deck', 'x-high', 0) +
+        port('stage-base-bridge', 'x-high', 0) -
+        port('stage-base-bridge', 'x-low', 0) +
+        port('stage-housing', 'x-high', 0)
+      const x = side === 'left' ? -extent : extent
       return [
         side,
         {
@@ -534,13 +548,13 @@ export function createSyntheticQuadrupedRobotDefinition({
         side,
         role,
         mount: mount([
-          side === 'left' ? -0.08 : 0.08,
+          side === 'left' ? -0.14 : 0.14,
           0.08,
           role === 'holder' ? -0.36 : 0.36
         ]),
         upper: linkPart(0.4, 1.1),
         forearm: linkPart(0.4, 0.8),
-        wrist: linkPart(0.08, 0.3),
+        wrist: linkPart(0.15, 0.3),
         tool: {
           ...part([0.08, 0.06, 0.12], [0, 0, 0.06], 0.35),
           activePoint: [0, 0, 0.1],
@@ -564,14 +578,19 @@ export function createSyntheticQuadrupedRobotDefinition({
       legs.push({
         side,
         station,
-        mount: mount([
-          side === 'left' ? -0.335 : 0.335,
-          0,
-          station === 'front' ? 0.3 : -0.3
-        ]),
+        mount: {
+          position: [
+            (side === 'left' ? -1 : 1) *
+              (port('chassis-shell', 'x-high', 0) +
+                port('hip-base-mount-1', 'x-high', 0)),
+            0,
+            station === 'front' ? 0.3 : -0.3
+          ],
+          rotation: station === 'front' ? [0, 0, 0, 1] : [0, 1, 0, 0]
+        },
         upper: linkPart(0.24, 1.1),
         lower: linkPart(0.27, 0.8),
-        foot: part([0.12, 0.035, 0.16], [0, 0, 0], 0.3),
+        foot: part([0.2, 0.05, 0.24], [0, 0, 0], 0.3),
         jointRanges: {
           hipAbduction: [-0.8, 0.8],
           hipPitch: [-1.5, 1.5],
@@ -581,11 +600,14 @@ export function createSyntheticQuadrupedRobotDefinition({
       })
     }
   }
-  const stanceAngle = Math.acos((0.26 - 0.035 - 0.025) / (0.24 + 0.27))
+  const soleDepth = port('foot-pad', 'y-high', 1) - port('foot-pad', 'y-low', 1)
+  const ankleDepth = port('ankle-carrier', 'z-high', 2)
+  const stanceAngle = Math.acos((0.32 - soleDepth - ankleDepth) / (0.24 + 0.27))
+  const travelYaw = { holder: Math.PI, cutter: 0 }
   const pose = (
     left: number,
     right: number,
-    rootPitch: number,
+    mode: 'travel' | 'work',
     cutterClosure = 1
   ): QuadrupedRobotJointState => ({
     definitionId,
@@ -594,10 +616,13 @@ export function createSyntheticQuadrupedRobotDefinition({
       side,
       role,
       toolClosure: role === 'cutter' ? cutterClosure : 1,
-      rootYaw: rootPitch === 0 ? 0 : (Math.PI / 2) * (side === 'left' ? -1 : 1),
-      rootPitch,
-      elbowPitch: 2.6,
-      wristPitch: -0.8,
+      rootYaw:
+        mode === 'travel'
+          ? travelYaw[role]
+          : (Math.PI / 2) * (side === 'left' ? -1 : 1),
+      rootPitch: 0,
+      elbowPitch: mode === 'travel' ? -2.6 : -1.2,
+      wristPitch: mode === 'travel' ? 1.4 : 1.2,
       wristYaw: 0,
       wristRoll: 0
     })),
@@ -611,17 +636,27 @@ export function createSyntheticQuadrupedRobotDefinition({
     }))
   })
   const basePlatform = createSyntheticBasketPlatform()
+  const chassisY = -port('chassis-shell', 'y-low', 1)
+  const deckY =
+    chassisY +
+    port('chassis-shell', 'y-high', 1) -
+    port('platform-deck', 'y-low', 1)
+  const deckTop = deckY + port('platform-deck', 'y-high', 1)
   const platform = {
     ...basePlatform,
     fixedParts: basePlatform.fixedParts.map((part, index) =>
       index === 0
-        ? part
+        ? {
+            ...part,
+            size: [0.6, 0.04, 0.72] as Point3,
+            centre: [0, deckY, 0] as Point3
+          }
         : {
             ...part,
             centre: [
               index % 2 ? -0.18 : 0.18,
-              part.centre[1],
-              index % 2 ? -0.4 : 0.4
+              deckTop - port('latch-housing', 'y-low', 1),
+              index % 2 ? -0.3 : 0.3
             ] as Point3
           }
     )
@@ -636,8 +671,8 @@ export function createSyntheticQuadrupedRobotDefinition({
       id: 'quadruped-work-candidate',
       label: 'Synthetic work candidate - source and capability unverified'
     },
-    referenceBaseHeight: 0.26,
-    chassis: part([0.54, 0.18, 0.82], [0, 0.09, 0], 12),
+    referenceBaseHeight: 0.32,
+    chassis: part([0.54, 0.18, 0.82], [0, chassisY, 0], 12),
     platform,
     stages,
     armAxes: ARM_AXES,
@@ -645,9 +680,9 @@ export function createSyntheticQuadrupedRobotDefinition({
     arms,
     legs,
     presets: {
-      travel: pose(0, 0, 0),
-      bilateralHarvest: pose(0.8, 1.1, 0.2, 0),
-      basketPlacement: pose(0.4, 0.2, -0.3)
+      travel: pose(0, 0, 'travel'),
+      bilateralHarvest: pose(0.8, 1.1, 'work', 0),
+      basketPlacement: pose(0.4, 0.2, 'work')
     }
   })
 }

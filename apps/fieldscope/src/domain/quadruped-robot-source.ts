@@ -8,9 +8,13 @@ import {
   type WalkingRigidTransform
 } from './walking-robot-definition'
 import { interval, subtract } from './scalar-arithmetic'
-import { TriangleBuilder } from './mesh'
+import templateData from './assets/quadruped-source-template-2.json'
 import {
-  createAnnularSourceMaterial,
+  instantiateSourceModule,
+  instantiateSourcePanel,
+  readQuadrupedTemplate
+} from './quadruped-source-template'
+import {
   type WalkingRobotBody,
   type WalkingRobotJoint,
   type WalkingRobotPart,
@@ -27,6 +31,49 @@ import {
   type QuadrupedRobotPoseResult
 } from './quadruped-robot-kinematics'
 
+const template = readQuadrupedTemplate(templateData)
+function modulePort(id: string, portId: string): Point3 {
+  const port = template.modules
+    .find((module) => module.id === id)
+    ?.ports.find((port) => port.id === portId)
+  if (!port)
+    throw new Error('Missing material attachment port: ' + id + '/' + portId)
+  return port.position
+}
+type Material = ReturnType<typeof instantiateSourceModule> & {
+  readonly faceTags?: Readonly<Record<number, string>>
+}
+function templateMaterial(id: string, size?: Point3): Material {
+  const module = template.modules.find((item) => item.id === id)
+  if (!module) throw new Error('Missing source module: ' + id)
+  return instantiateSourceModule(module, size)
+}
+function boxMaterial(
+  size: Point3,
+  material: string,
+  family?: string
+): Material {
+  if (family)
+    return {
+      ...templateMaterial(family, size),
+      faceTags: { 24: 'y-high', 30: 'y-low' }
+    }
+  const module = template.modules.find(
+    (item) =>
+      item.material === material &&
+      item.dimensions.kind === 'rigid' &&
+      item.size.every((value, axis) => value === size[axis])
+  )
+  if (!module)
+    throw new Error(
+      'Unsupported rigid box dimensions: ' + material + ' ' + size.join(',')
+    )
+  return {
+    ...instantiateSourceModule(module),
+    faceTags: { 24: 'y-high', 30: 'y-low' }
+  }
+}
+
 export const rigidFrame = (
   position: Point3 = [0, 0, 0]
 ): WalkingRigidTransform => ({ position, rotation: [0, 0, 0, 1] })
@@ -38,7 +85,43 @@ export function freezeSource<T>(value: T): T {
   return value
 }
 export interface QuadrupedRobotPart extends WalkingRobotPart {
+  readonly sourceModuleId: string
   readonly kind: 'fixed' | 'stage' | 'arm' | 'tool' | 'leg' | 'basket' | 'mount'
+}
+interface MaterialConnection {
+  readonly id: string
+  readonly parent: readonly WalkingPatchReference[]
+  readonly child: readonly WalkingPatchReference[]
+}
+interface SlidingInterface {
+  readonly jointId: string
+  readonly parent: QuadrupedRobotPart
+  readonly child: QuadrupedRobotPart
+  readonly parentCavity: readonly WalkingPatchReference[]
+}
+function materialReferences(
+  part: QuadrupedRobotPart,
+  face: string
+): WalkingPatchReference[] {
+  const patches = part.patches.filter((patch) =>
+    patch.id.startsWith(part.id + '-source-' + face + '-')
+  )
+  if (!patches.length)
+    throw new Error('Missing original connection face: ' + part.id + '/' + face)
+  return patches.map((patch) => ({ part, patch, localFrame: part.localFrame }))
+}
+function materialConnection(
+  id: string,
+  parent: QuadrupedRobotPart,
+  parentFace: string,
+  child: QuadrupedRobotPart,
+  childFace: string
+): MaterialConnection {
+  return {
+    id,
+    parent: materialReferences(parent, parentFace),
+    child: materialReferences(child, childFace)
+  }
 }
 interface Chain {
   readonly id: string
@@ -61,12 +144,23 @@ export interface QuadrupedRobotSource {
     >
   }
   readonly contacts: {
+    readonly sliders: readonly SlidingInterface[]
+    readonly pivots: readonly {
+      jointId: string
+      parent: readonly WalkingPatchReference[]
+      child: readonly WalkingPatchReference[]
+    }[]
+    readonly connections: readonly {
+      id: string
+      parent: readonly WalkingPatchReference[]
+      child: readonly WalkingPatchReference[]
+    }[]
     readonly feet: readonly WalkingPatchReference[]
     readonly cutters: readonly WalkingPatchReference[]
     readonly bearings: readonly {
       jointId: string
-      parent: WalkingPatchReference
-      child: WalkingPatchReference
+      parent: readonly WalkingPatchReference[]
+      child: readonly WalkingPatchReference[]
     }[]
   }
   readonly massProperties: {
@@ -82,7 +176,15 @@ export interface QuadrupedBasketMount {
   readonly source: QuadrupedRobotSource
   readonly input: BasketMountInput
   readonly parts: readonly QuadrupedRobotPart[]
-  readonly contacts: { readonly supports: readonly WalkingPatchReference[] }
+  readonly contacts: {
+    readonly connections: readonly MaterialConnection[]
+    readonly supports: readonly WalkingPatchReference[]
+    readonly supportPairs: readonly {
+      id: string
+      parent: readonly WalkingPatchReference[]
+      child: readonly WalkingPatchReference[]
+    }[]
+  }
   readonly opening: { readonly min: Point3; readonly max: Point3 }
 }
 type BodyDraft = Omit<WalkingRobotBody, 'parts'> & {
@@ -96,7 +198,7 @@ function materialPart(
   material: string,
   size: Point3,
   frame: WalkingRigidTransform,
-  builder: TriangleBuilder,
+  builder: Material,
   face?: { offset: number; count: number; name: string }
 ): QuadrupedRobotPart {
   if (
@@ -106,8 +208,28 @@ function materialPart(
   )
     throw new Error('Incomplete quadruped material')
   const regions = builder.regions()
+  const nativePatches = regions.flatMap((region) =>
+    ['x-low', 'x-high', 'y-low', 'y-high', 'z-low', 'z-high', 'cavity'].flatMap(
+      (tag) => {
+        const patches = builder.patches.filter(
+          (patch) =>
+            patch.regionId === region.id && patch.id.startsWith(tag + '-')
+        )
+        return patches.length
+          ? [
+              {
+                id: id + '-source-' + tag + '-' + region.id,
+                region,
+                ranges: patches.flatMap((patch) => patch.ranges)
+              }
+            ]
+          : []
+      }
+    )
+  )
   return {
     id,
+    sourceModuleId: builder.moduleId,
     bodyId,
     kind,
     size,
@@ -118,18 +240,28 @@ function materialPart(
       indices: builder.indices
     },
     regions,
-    patches: face
-      ? regions.map((region) => ({
-          id: id + '-' + face.name + '-' + region.id,
-          region,
-          ranges: [
-            {
-              indexStart: region.indexStart + face.offset,
-              indexCount: face.count
-            }
-          ]
-        }))
-      : [],
+    patches: [
+      ...(face
+        ? regions.flatMap((region) => {
+            const patches = builder.patches.filter(
+              (patch) =>
+                patch.regionId === region.id &&
+                patch.id.startsWith(
+                  (builder.faceTags?.[face.offset] ?? '') + '-'
+                )
+            )
+            if (!patches.length) return []
+            return [
+              {
+                id: id + '-' + face.name + '-' + region.id,
+                region,
+                ranges: patches.flatMap((patch) => patch.ranges)
+              }
+            ]
+          })
+        : []),
+      ...nativePatches
+    ],
     material: { material, evidence: definition.evidence }
   }
 }
@@ -184,6 +316,19 @@ function validateFixedMaterialWidth(bodies: readonly BodyDraft[]) {
     throw new Error('body-width-exceeded')
 }
 
+function validateMaterialRepeats(parts: readonly QuadrupedRobotPart[]) {
+  const counts = new Map<string, number>()
+  for (const part of parts) {
+    const count = (counts.get(part.sourceModuleId) ?? 0) + 1
+    const module = template.modules.find(
+      (module) => module.id === part.sourceModuleId
+    )
+    if (!module || count > module.maxRepeat)
+      throw new Error('Unsupported material repeat count')
+    counts.set(module.id, count)
+  }
+}
+
 function buildSource(
   definition: QuadrupedRobotDefinition
 ): QuadrupedRobotSource {
@@ -200,9 +345,10 @@ function buildSource(
   const feet: WalkingPatchReference[] = [],
     bearings: {
       jointId: string
-      parent: WalkingPatchReference
-      child: WalkingPatchReference
+      parent: readonly WalkingPatchReference[]
+      child: readonly WalkingPatchReference[]
     }[] = []
+  const sliders: SlidingInterface[] = []
   const armChains: Chain[] = [],
     legChains: Chain[] = []
   const stageJointIds: Record<'left' | 'right', string[]> = {
@@ -222,8 +368,7 @@ function buildSource(
     centre: Point3,
     material = 'structural-cover'
   ) => {
-    const builder = new TriangleBuilder()
-    builder.box([0, 0, 0], size)
+    const builder = boxMaterial(size, material)
     let face: { offset: number; count: number; name: string } | undefined
     if (id.endsWith('-pad'))
       face = { offset: 30, count: 6, name: 'ground-contact' }
@@ -261,6 +406,28 @@ function buildSource(
     })
     masses.push({ bodyId: id, massKg, localCoM })
   }
+  const attachModule = (
+    bodyId: string,
+    id: string,
+    moduleId: string,
+    kind: QuadrupedRobotPart['kind'],
+    frame: WalkingRigidTransform = rigidFrame()
+  ) => {
+    const module = template.modules.find((item) => item.id === moduleId)
+    if (!module) throw new Error('Missing material module')
+    const part = materialPart(
+      definition,
+      id,
+      bodyId,
+      kind,
+      module.material,
+      module.size,
+      frame,
+      instantiateSourceModule(module)
+    )
+    body(bodyId).parts.push(part)
+    return part
+  }
   const joint = (
     id: string,
     parent: string,
@@ -296,10 +463,6 @@ function buildSource(
     const make = (
       bodyId: string,
       suffix: string,
-      inner: number,
-      outer: number,
-      low: number,
-      high: number,
       localFrame: WalkingRigidTransform,
       face?: { offset: number; count: number; name: string }
     ) => {
@@ -309,93 +472,90 @@ function buildSource(
         bodyId,
         bodyId === child && kind === 'fixed' ? 'leg' : kind,
         'joint-housing',
-        [0.11 * scale, 0.11 * scale, 0.11 * scale],
+        [0.13 * scale, 0.13 * scale, 0.13 * scale],
         localFrame,
-        createAnnularSourceMaterial(
-          axis,
-          inner * scale,
-          outer * scale,
-          low * scale,
-          high * scale
-        ),
+        (() => {
+          const role = suffix.endsWith('thrust-race') ? 'race' : suffix.slice(1)
+          let label = 'main'
+          if (scale === 0.5) label = 'wrist'
+          if (scale === 0.65) label = 'ankle'
+          if (scale === 0.75) label = 'hip'
+          const material = templateMaterial('bearing-' + label + '-' + role)
+          const positions = [...material.positions]
+          for (let offset = 0; offset < positions.length; offset += 3) {
+            const [x, y, z] = positions.slice(offset, offset + 3)
+            if (axis === 'y') positions.splice(offset, 3, z, x, y)
+            if (axis === 'z') positions.splice(offset, 3, y, z, x)
+          }
+          return {
+            ...material,
+            positions,
+            faceTags: { 0: 'x-low', 6: 'x-high' }
+          }
+        })(),
         face
       )
       body(bodyId).parts.push(part)
       return part
     }
-    make(parent, '-housing', 0.04, 0.055, -0.04, -0.02, frame)
-    const washer = make(
-      parent,
-      '-thrust-race',
-      0.012,
-      0.034,
-      -0.024,
-      -0.02,
-      frame,
-      { offset: 6, count: 6, name: 'bearing-contact' }
+    make(parent, '-housing', frame)
+    make(parent, '-back-cap', frame)
+    make(child, '-outer-cap', rigidFrame())
+    const washer = make(parent, '-thrust-race', frame, {
+      offset: 6,
+      count: 6,
+      name: 'bearing-contact'
+    })
+    const sleeve = make(child, '-sleeve', rigidFrame(), {
+      offset: 0,
+      count: 6,
+      name: 'bearing-contact'
+    })
+    const axisIndex = ['x', 'y', 'z'].indexOf(axis)
+    const plane = Math.max(
+      ...washer.shape.positions.filter((_, index) => index % 3 === axisIndex)
     )
-    const sleeve = make(
-      child,
-      '-sleeve',
-      0.012,
-      0.034,
-      -0.02,
-      0.018,
-      rigidFrame(),
-      { offset: 0, count: 6, name: 'bearing-contact' }
-    )
-    const point: Point3 = [
-      axis === 'x' ? -0.02 * scale : 0,
-      axis === 'y' ? -0.02 * scale : 0,
-      axis === 'z' ? -0.02 * scale : 0
-    ]
-    washer.patches.forEach((patch, index) =>
-      bearings.push({
-        jointId: child,
-        parent: {
+    const point = [0, 0, 0] as [number, number, number]
+    point[axisIndex] = plane
+    bearings.push({
+      jointId: child,
+      parent: washer.patches
+        .filter((patch) => patch.id.includes('-bearing-contact-'))
+        .map((patch) => ({
           part: washer,
           patch,
           localFrame: composeRigidTransform(frame, rigidFrame(point))
-        },
-        child: {
+        })),
+      child: sleeve.patches
+        .filter((patch) => patch.id.includes('-bearing-contact-'))
+        .map((patch) => ({
           part: sleeve,
-          patch: sleeve.patches[index],
+          patch,
           localFrame: rigidFrame(point)
-        }
-      })
-    )
+        }))
+    })
   }
   const link = (
     bodyId: string,
     length: number,
     section: number,
-    kind: QuadrupedRobotPart['kind']
+    kind: QuadrupedRobotPart['kind'],
+    moduleId = 'link-assembly'
   ) => {
-    if (length <= 0.12 || section <= 0)
+    if (length < 0.2 || length > 1.14 || section !== 0.14)
       throw new Error('Unsupported link material profile')
-    const endClearance = Math.min(0.085, length * 0.3)
-    box(
-      bodyId,
-      bodyId + '-cover',
-      kind,
-      [section, section, length - 2 * endClearance],
-      [0, 0, length / 2]
-    )
-    box(
-      bodyId,
-      bodyId + '-root-neck',
-      kind,
-      [0.008, 0.008, 0.042],
-      [0, 0, 0.045],
-      'structural-metal'
-    )
-    box(
-      bodyId,
-      bodyId + '-tip-neck',
-      kind,
-      [0.012, 0.008, 0.06],
-      [-0.03, 0, length - 0.055],
-      'structural-metal'
+    const material = templateMaterial(moduleId, [section, 0.08, length])
+    body(bodyId).parts.push(
+      materialPart(
+        definition,
+        bodyId + '-cover',
+        bodyId,
+        kind,
+        'structural-cover',
+        [section, 0.08, length],
+        rigidFrame(),
+        material
+      )
     )
   }
   box(
@@ -405,25 +565,37 @@ function buildSource(
     definition.chassis.size,
     definition.chassis.centre
   )
-  // Platform rails leave the side stage bores open; the declared fixed envelope is retained.
+  // A connected deck and disjoint outriggers leave both stage bores empty.
   const deck = definition.platform.fixedParts[0]
   if (!deck) throw new Error('Missing basket platform')
-  for (const sign of [-1, 1]) {
+  body('base').parts.push(
+    materialPart(
+      definition,
+      'platform-deck',
+      'base',
+      'fixed',
+      'structural-metal',
+      deck.size,
+      rigidFrame(deck.centre),
+      templateMaterial('platform-deck', deck.size)
+    )
+  )
+  for (const sign of [-1, 1])
     box(
       'base',
-      'platform-rail-' + sign,
+      'stage-base-bridge-' + sign,
       'fixed',
-      [0.05, deck.size[1], deck.size[2]],
-      [sign * 0.15, deck.centre[1], deck.centre[2]]
+      [0.028, 0.04, 0.14],
+      [
+        deck.centre[0] +
+          sign *
+            (modulePort('platform-deck', 'x-high')[0] -
+              modulePort('stage-base-bridge', 'x-low')[0]),
+        deck.centre[1],
+        deck.centre[2]
+      ],
+      'structural-metal'
     )
-    box(
-      'base',
-      'platform-crossmember-' + sign,
-      'fixed',
-      [deck.size[0], deck.size[1], 0.04],
-      [0, deck.centre[1], sign * 0.28]
-    )
-  }
   definition.platform.fixedParts
     .slice(1)
     .forEach((part, index) =>
@@ -455,6 +627,7 @@ function buildSource(
       rigidFrame([stage.mount.position[0], 0, stage.mount.position[2]]),
       stage.fixedHousing.massKg
     )
+    let previousShell: QuadrupedRobotPart | undefined
     for (let index = 0; index < segmentCount; index++) {
       const id = index === 0 ? parent : side + '-stage-' + index
       if (index > 0) {
@@ -475,46 +648,63 @@ function buildSource(
       }
       const w = width - 2 * index * (wall + clearance),
         d = depth - 2 * index * (wall + clearance)
-      for (const sign of [-1, 1]) {
-        box(
-          id,
-          id + '-side-' + sign,
-          index === 0 ? 'fixed' : 'stage',
-          [wall, height, d],
-          [(sign * (w - wall)) / 2, height / 2, 0],
-          'structural-metal'
-        )
-        box(
-          id,
-          id + '-face-' + sign,
-          index === 0 ? 'fixed' : 'stage',
-          [w - 2 * wall, height, wall],
-          [0, height / 2, (sign * (d - wall)) / 2],
-          'structural-metal'
-        )
-      }
+      const material = templateMaterial(
+        index === 0 ? 'stage-housing' : 'stage-segment-' + index,
+        [w, height, d]
+      )
+      const shell = materialPart(
+        definition,
+        id + '-shell',
+        id,
+        index === 0 ? 'fixed' : 'stage',
+        'structural-metal',
+        [w, height, d],
+        rigidFrame([0, height / 2, 0]),
+        material
+      )
+      body(id).parts.push(shell)
+      if (previousShell)
+        sliders.push({
+          jointId: id,
+          parent: previousShell,
+          child: shell,
+          parentCavity: materialReferences(previousShell, 'cavity')
+        })
+      previousShell = shell
       parent = id
     }
     const crown = side + '-shoulder-stage'
     fixed(crown, parent, rigidFrame([0, stage.mount.position[1], 0]), 0)
-    box(crown, crown + '-bridge', 'stage', [0.04, 0.025, 0.8], [0, -0.015, 0])
+    const shoulderModule = 'shoulder-deck-' + side
+    const rootHeight = definition.arms.find((arm) => arm.side === side)?.mount
+      .position[1]
+    if (rootHeight === undefined)
+      throw new Error('Missing shoulder root height')
+    const deckY =
+      rootHeight +
+      modulePort('bearing-main-back-cap', 'x-low')[0] -
+      modulePort(shoulderModule, 'y-high')[1]
+    attachModule(
+      crown,
+      crown + '-cover',
+      shoulderModule,
+      'stage',
+      rigidFrame([0, deckY, 0])
+    )
+    const plugY =
+      deckY +
+      modulePort(shoulderModule, 'y-low')[1] -
+      modulePort('shoulder-plug', 'y-high')[1]
+    attachModule(
+      crown,
+      crown + '-plug',
+      'shoulder-plug',
+      'stage',
+      rigidFrame([0, plugY, 0])
+    )
     for (const arm of definition.arms.filter((item) => item.side === side)) {
-      const sign = side === 'left' ? -1 : 1
-      box(
-        crown,
-        side + '-' + arm.role + '-mount-crossbar',
-        'stage',
-        [0.25, 0.025, 0.02],
-        [0, -0.015, arm.mount.position[2]]
-      )
-      box(
-        crown,
-        side + '-' + arm.role + '-mount-post',
-        'stage',
-        [0.012, 0.085, 0.012],
-        [arm.mount.position[0] + sign * 0.045, 0.0175, arm.mount.position[2]],
-        'structural-metal'
-      )
+      if (arm.wrist.length !== 0.15)
+        throw new Error('Unsupported rigid wrist material profile')
       const id = side + '-' + arm.role
       const ids: string[] = []
       let parentId = crown
@@ -522,7 +712,7 @@ function buildSource(
         ['rootYaw', arm.mount, 0.08, [0, 0, 0]],
         [
           'rootPitch',
-          rigidFrame([0, 0, 0.12]),
+          rigidFrame(modulePort('shoulder-yoke', 'next-joint')),
           arm.upper.massKg,
           arm.upper.localCoM
         ],
@@ -540,13 +730,13 @@ function buildSource(
         ],
         [
           'wristYaw',
-          rigidFrame([0, 0, arm.wrist.length * 0.4]),
+          rigidFrame(modulePort('wrist-pitch-carrier', 'next-joint')),
           arm.wrist.massKg / 3,
           [0, 0, 0.015]
         ],
         [
           'wristRoll',
-          rigidFrame([0, 0, arm.wrist.length * 0.4]),
+          rigidFrame(modulePort('wrist-yaw-carrier', 'next-joint')),
           arm.wrist.massKg / 3,
           [0, 0, 0.008]
         ]
@@ -567,82 +757,156 @@ function buildSource(
           definition.armAxes[name],
           frame,
           'arm',
-          name.startsWith('wrist') ? 0.27 : 1
+          name.startsWith('wrist') ? 0.5 : 1
         )
         ids.push(child)
+        if (name === 'wristPitch')
+          attachModule(child, child + '-carrier', 'wrist-pitch-carrier', 'arm')
+        if (name === 'wristYaw')
+          attachModule(child, child + '-carrier', 'wrist-yaw-carrier', 'arm')
+        if (name === 'wristRoll')
+          attachModule(
+            child,
+            child + '-carrier',
+            'wrist-tool-carrier',
+            'arm',
+            rigidFrame([
+              0,
+              0,
+              modulePort('bearing-wrist-outer-cap', 'x-high')[0] -
+                modulePort('wrist-tool-carrier', 'z-low')[2]
+            ])
+          )
         parentId = child
       }
-      box(
-        ids[0],
-        id + '-root-yoke',
-        'arm',
-        [0.012, 0.012, 0.055],
-        [-0.03, 0, 0.075],
-        'structural-metal'
+      body(ids[0]).parts.push(
+        materialPart(
+          definition,
+          id + '-root-yoke',
+          ids[0],
+          'arm',
+          'structural-metal',
+          [0.145, 0.179, 0.265],
+          rigidFrame(),
+          templateMaterial('shoulder-yoke')
+        )
       )
       link(ids[1], arm.upper.length, arm.upper.section, 'arm')
-      link(ids[2], arm.forearm.length, arm.forearm.section, 'arm')
+      link(
+        ids[2],
+        arm.forearm.length,
+        arm.forearm.section,
+        'arm',
+        'forearm-link'
+      )
       const toolId = id + '-tool'
       const toolMass = combinedMass([arm.tool, arm.guard])
       fixed(
         toolId,
         parentId,
-        rigidFrame([0, 0, arm.wrist.length * 0.2]),
+        rigidFrame([
+          0,
+          0,
+          modulePort('bearing-wrist-outer-cap', 'x-high')[0] -
+            modulePort('wrist-tool-carrier', 'z-low')[2] +
+            modulePort('wrist-tool-carrier', 'z-high')[2]
+        ]),
         toolMass.massKg,
         toolMass.localCoM
       )
-      const [tw, th, tl] = arm.tool.size
-      box(
+      if (
+        arm.tool.size.some(
+          (value, axis) => value !== [0.08, 0.06, 0.12][axis]
+        ) ||
+        arm.guard.size.some((value, axis) => value !== [0.11, 0.08, 0.14][axis])
+      )
+        throw new Error('Unsupported rigid tool assembly profile')
+      const palmModule = arm.role + '-palm'
+      const palmPosition: Point3 = [0, 0, -modulePort(palmModule, 'z-low')[2]]
+      attachModule(
         toolId,
         toolId + '-palm',
+        palmModule,
         'tool',
-        [tw, th, 0.02],
-        [0, 0, 0.01],
-        arm.role === 'holder' ? 'soft-contact' : 'structural-metal'
+        rigidFrame(palmPosition)
       )
       for (const sign of [-1, 1]) {
+        const side = sign < 0 ? 'low' : 'high',
+          opposite = sign < 0 ? 'high' : 'low'
         if (arm.role === 'holder') {
-          box(
+          attachModule(
             toolId,
             toolId + '-padded-finger-' + sign,
+            'holder-finger',
             'tool',
-            [0.014, th / 2, tl - 0.02],
-            [(sign * (tw - 0.014)) / 2, 0, (tl + 0.02) / 2],
-            'soft-contact'
+            rigidFrame([
+              modulePort(palmModule, 'x-' + side)[0] -
+                modulePort('holder-finger', 'x-' + side)[0],
+              0,
+              palmPosition[2] +
+                modulePort(palmModule, 'z-high')[2] -
+                modulePort('holder-finger', 'z-low')[2]
+            ])
           )
-          box(
+          attachModule(
             toolId,
             toolId + '-foliage-guide-' + sign,
+            'foliage-guide',
             'tool',
-            [0.008, 0.012, tl],
-            [sign * (tw / 2 + 0.006), th / 2, tl / 2],
-            'soft-contact'
+            rigidFrame([
+              modulePort(palmModule, 'x-' + side)[0] -
+                modulePort('foliage-guide', 'x-' + opposite)[0],
+              modulePort(palmModule, 'y-high')[1] -
+                modulePort('foliage-guide', 'y-high')[1],
+              palmPosition[2] +
+                modulePort(palmModule, 'z-low')[2] -
+                modulePort('foliage-guide', 'z-low')[2]
+            ])
           )
         } else {
-          box(
+          const guardModule = sign < 0 ? 'cutter-guard-left' : 'cutter-guard'
+          const parentPort = modulePort(palmModule, 'guard-' + sign),
+            childPort = modulePort(guardModule, 'attachment')
+          attachModule(
             toolId,
             toolId + '-guard-' + sign,
+            guardModule,
             'tool',
-            [0.01, arm.guard.size[1], arm.guard.size[2]],
-            [(sign * (arm.guard.size[0] - 0.01)) / 2, 0, arm.guard.centre[2]],
-            'structural-cover'
+            rigidFrame(
+              parentPort.map(
+                (value, axis) => value + palmPosition[axis] - childPort[axis]
+              ) as unknown as Point3
+            )
           )
           const blade = joint(
             toolId + '-blade-' + sign,
             toolId,
-            rigidFrame([sign * 0.003, 0, 0.023]),
+            rigidFrame(modulePort(palmModule, 'blade-axis-' + sign)),
             'y',
             [-0.24, 0.24],
             0
           )
-          box(
-            blade,
+          const bladeMaterial = templateMaterial('cutter-blade')
+          const bladePart = materialPart(
+            definition,
             blade + '-material',
+            blade,
             'tool',
-            [0.012, 0.006, tl - 0.02],
-            [0, sign * 0.003, (tl - 0.02) / 2],
-            'cutting-edge'
+            'cutting-edge',
+            [0.012, 0.006, 0.12 - 0.02],
+            rigidFrame([
+              0,
+              -modulePort('cutter-blade', sign < 0 ? 'y-high' : 'y-low')[1],
+              -modulePort('cutter-blade', 'z-low')[2]
+            ]),
+            { ...bladeMaterial, faceTags: { 24: 'y-high', 30: 'y-low' } },
+            {
+              offset: sign < 0 ? 24 : 30,
+              count: 6,
+              name: 'blade-shear-contact'
+            }
           )
+          body(blade).parts.push(bladePart)
         }
       }
       armChains.push({
@@ -664,13 +928,21 @@ function buildSource(
       leg.jointRanges.hipAbduction,
       0
     )
-    bearing('base', abduction, 'z', leg.mount, 'fixed')
+    bearing('base', abduction, 'z', leg.mount, 'fixed', 0.75)
+    const inward =
+      (leg.side === 'left' ? 1 : -1) * (leg.station === 'front' ? 1 : -1)
+    attachModule(
+      'base',
+      id + '-mount',
+      'hip-base-mount-' + inward,
+      'fixed',
+      leg.mount
+    )
+    const hipModule = 'hip-yoke-' + -inward
+    attachModule(abduction, id + '-hip-yoke', hipModule, 'leg')
     const down: WalkingRigidTransform = {
-      position: [0, 0, leg.station === 'front' ? 0.12 : -0.12],
-      rotation:
-        leg.station === 'front'
-          ? [Math.SQRT1_2, 0, 0, Math.SQRT1_2]
-          : [0, Math.SQRT1_2, -Math.SQRT1_2, 0]
+      position: modulePort(hipModule, 'next-joint'),
+      rotation: [Math.SQRT1_2, 0, 0, Math.SQRT1_2]
     }
     const hip = joint(
       id + '-hipPitch',
@@ -702,49 +974,423 @@ function buildSource(
       leg.jointRanges.anklePitch,
       0
     )
-    bearing(knee, ankle, 'x', ankleFrame, 'leg', 0.4)
+    bearing(knee, ankle, 'x', ankleFrame, 'leg', 0.65)
+    attachModule(
+      ankle,
+      id + '-ankle-carrier',
+      'ankle-carrier',
+      'leg',
+      rigidFrame()
+    )
     const foot = id + '-foot'
     fixed(
       foot,
       ankle,
       {
-        position: [0, 0, 0.025],
-        rotation: [-Math.SQRT1_2, 0, 0, Math.SQRT1_2]
+        position: [0, 0, modulePort('ankle-carrier', 'z-high')[2]],
+        rotation: [0, 0, 0, 1]
       },
       leg.foot.massKg,
-      leg.foot.localCoM
+      [leg.foot.localCoM[0], leg.foot.localCoM[2], -leg.foot.localCoM[1]]
     )
     link(hip, leg.upper.length, leg.upper.section, 'leg')
-    link(knee, leg.lower.length, leg.lower.section, 'leg')
-    box(
-      foot,
-      foot + '-pad',
-      'leg',
-      leg.foot.size,
-      [0, -leg.foot.size[1] / 2, 0],
-      'soft-contact'
+    link(knee, leg.lower.length, leg.lower.section, 'leg', 'lower-leg-link')
+    const footMaterial = templateMaterial('foot-pad', leg.foot.size)
+    const permute = (point: Point3): Point3 => [point[0], point[2], -point[1]]
+    const footPositions = footMaterial.positions.flatMap((_, i) =>
+      i % 3 === 0
+        ? permute([
+            footMaterial.positions[i],
+            footMaterial.positions[i + 1],
+            footMaterial.positions[i + 2]
+          ])
+        : []
+    )
+    body(foot).parts.push(
+      materialPart(
+        definition,
+        foot + '-pad',
+        foot,
+        'leg',
+        'soft-contact',
+        [leg.foot.size[0], leg.foot.size[2], leg.foot.size[1]],
+        rigidFrame([0, 0, modulePort('foot-pad', 'y-high')[1]]),
+        {
+          ...footMaterial,
+          positions: footPositions,
+          ports: footMaterial.ports.map((port) => ({
+            ...port,
+            position: permute(port.position)
+          })),
+          faceTags: { 30: 'y-low' }
+        },
+        { offset: 30, count: 6, name: 'ground-contact' }
+      )
     )
     const sole = body(foot).parts[0]
+    const soleZ =
+      modulePort('foot-pad', 'y-high')[1] - modulePort('foot-pad', 'y-low')[1]
     feet.push({
       part: sole,
       patch: sole.patches[0],
-      localFrame: rigidFrame([0, -leg.foot.size[1], 0])
+      localFrame: {
+        position: [0, 0, soleZ],
+        rotation: [-Math.SQRT1_2, 0, 0, Math.SQRT1_2]
+      }
     })
     legChains.push({
       id,
       jointIds: [abduction, hip, knee, ankle],
       rootBodyId: abduction,
       terminalBodyId: foot,
-      activePoint: [0, -leg.foot.size[1], 0]
+      activePoint: [0, 0, soleZ]
     })
   }
+  const parts = bodies.flatMap((body) => body.parts)
+  const connections: MaterialConnection[] = []
+  const connect = (
+    id: string,
+    firstId: string,
+    firstFace: string,
+    secondId: string,
+    secondFace: string
+  ) => {
+    const first = parts.find((part) => part.id === firstId),
+      second = parts.find((part) => part.id === secondId)
+    if (!first || !second) throw new Error('Missing connection part')
+    connections.push(
+      materialConnection(id, first, firstFace, second, secondFace)
+    )
+  }
+  // Every closed bearing is physically connected through back-cap, race,
+  // moving sleeve and outer-cap; the revolute face is separately declared.
+  for (const bearing of bearings) {
+    const id = bearing.jointId
+    connect(
+      id + '-housing-attachment',
+      id + '-housing',
+      'x-low',
+      id + '-back-cap',
+      'x-high'
+    )
+    connect(
+      id + '-race-attachment',
+      id + '-back-cap',
+      'x-high',
+      id + '-thrust-race',
+      'x-low'
+    )
+    connect(
+      id + '-cap-attachment',
+      id + '-sleeve',
+      'x-high',
+      id + '-outer-cap',
+      'x-low'
+    )
+  }
+  for (const leg of definition.legs) {
+    const id = leg.side + '-' + leg.station
+    const inward =
+      (leg.side === 'left' ? 1 : -1) * (leg.station === 'front' ? 1 : -1)
+    connect(
+      id + '-mount-to-base',
+      'chassis',
+      leg.side === 'left' ? 'x-low' : 'x-high',
+      id + '-mount',
+      inward === 1 ? 'x-high' : 'x-low'
+    )
+    connect(
+      id + '-mount-to-bearing',
+      id + '-mount',
+      'z-high',
+      id + '-hipAbduction-back-cap',
+      'x-low'
+    )
+    connect(
+      id + '-hip-carrier-root',
+      id + '-hipAbduction-outer-cap',
+      'x-high',
+      id + '-hip-yoke',
+      'z-low'
+    )
+    connect(
+      id + '-hip-carrier-tip',
+      id + '-hip-yoke',
+      'x-high',
+      id + '-hipPitch-back-cap',
+      'x-low'
+    )
+    connect(
+      id + '-upper-root',
+      id + '-hipPitch-outer-cap',
+      'x-high',
+      id + '-hipPitch-cover',
+      'x-low'
+    )
+    connect(
+      id + '-upper-tip',
+      id + '-hipPitch-cover',
+      'x-high',
+      id + '-kneePitch-back-cap',
+      'x-low'
+    )
+    connect(
+      id + '-lower-root',
+      id + '-kneePitch-outer-cap',
+      'x-high',
+      id + '-kneePitch-cover',
+      'x-low'
+    )
+    connect(
+      id + '-lower-tip',
+      id + '-kneePitch-cover',
+      'x-high',
+      id + '-anklePitch-back-cap',
+      'x-low'
+    )
+    connect(
+      id + '-ankle-carrier-root',
+      id + '-anklePitch-outer-cap',
+      'x-high',
+      id + '-ankle-carrier',
+      'x-low'
+    )
+    connect(
+      id + '-sole-attachment',
+      id + '-ankle-carrier',
+      'z-high',
+      id + '-foot-pad',
+      'y-high'
+    )
+  }
+
+  connect('chassis-to-platform', 'chassis', 'y-high', 'platform-deck', 'y-low')
+  definition.platform.fixedParts
+    .slice(1)
+    .forEach((_, index) =>
+      connect(
+        'platform-latch-' + index,
+        'platform-deck',
+        'y-high',
+        'fixed-latch-housing-' + index,
+        'y-low'
+      )
+    )
+  for (const side of ['left', 'right'] as const) {
+    const sign = side === 'left' ? -1 : 1
+    connect(
+      side + '-platform-bridge',
+      'platform-deck',
+      sign < 0 ? 'x-low' : 'x-high',
+      'stage-base-bridge-' + sign,
+      sign < 0 ? 'x-high' : 'x-low'
+    )
+    connect(
+      side + '-bridge-stage',
+      'stage-base-bridge-' + sign,
+      sign < 0 ? 'x-low' : 'x-high',
+      side + '-stage-fixed-shell',
+      sign < 0 ? 'x-high' : 'x-low'
+    )
+    const finalId =
+      side +
+      '-stage-' +
+      (definition.stages[side].telescope.segmentCount - 1) +
+      '-shell'
+    connect(
+      side + '-stage-crown-plug',
+      finalId,
+      'cavity',
+      side + '-shoulder-stage-plug',
+      'x-low'
+    )
+    connect(
+      side + '-crown-deck',
+      side + '-shoulder-stage-plug',
+      'y-high',
+      side + '-shoulder-stage-cover',
+      'y-low'
+    )
+  }
+  const pivots: {
+    jointId: string
+    parent: WalkingPatchReference[]
+    child: WalkingPatchReference[]
+  }[] = []
+  for (const arm of definition.arms) {
+    const id = arm.side + '-' + arm.role,
+      tool = id + '-tool'
+    connect(
+      id + '-stage-root',
+      arm.side + '-shoulder-stage-cover',
+      'y-high',
+      id + '-rootYaw-back-cap',
+      'x-low'
+    )
+    connect(
+      id + '-yoke-root',
+      id + '-rootYaw-outer-cap',
+      'x-high',
+      id + '-root-yoke',
+      'y-low'
+    )
+    connect(
+      id + '-yoke-tip',
+      id + '-root-yoke',
+      'x-high',
+      id + '-rootPitch-back-cap',
+      'x-low'
+    )
+    for (const [joint, next] of [
+      ['rootPitch', 'elbowPitch'],
+      ['elbowPitch', 'wristPitch']
+    ]) {
+      connect(
+        id + '-' + joint + '-link-root',
+        id + '-' + joint + '-outer-cap',
+        'x-high',
+        id + '-' + joint + '-cover',
+        'x-low'
+      )
+      connect(
+        id + '-' + joint + '-link-tip',
+        id + '-' + joint + '-cover',
+        'x-high',
+        id + '-' + next + '-back-cap',
+        'x-low'
+      )
+    }
+    connect(
+      id + '-pitch-carrier-root',
+      id + '-wristPitch-outer-cap',
+      'x-high',
+      id + '-wristPitch-carrier',
+      'x-low'
+    )
+    connect(
+      id + '-pitch-carrier-tip',
+      id + '-wristPitch-carrier',
+      'y-high',
+      id + '-wristYaw-back-cap',
+      'x-low'
+    )
+    connect(
+      id + '-yaw-carrier-root',
+      id + '-wristYaw-outer-cap',
+      'x-high',
+      id + '-wristYaw-carrier',
+      'y-low'
+    )
+    connect(
+      id + '-yaw-carrier-tip',
+      id + '-wristYaw-carrier',
+      'z-high',
+      id + '-wristRoll-back-cap',
+      'x-low'
+    )
+    connect(
+      id + '-roll-carrier',
+      id + '-wristRoll-outer-cap',
+      'x-high',
+      id + '-wristRoll-carrier',
+      'z-low'
+    )
+    connect(
+      id + '-palm',
+      id + '-wristRoll-carrier',
+      'z-high',
+      tool + '-palm',
+      'z-low'
+    )
+    for (const sign of [-1, 1]) {
+      const face = sign < 0 ? 'x-low' : 'x-high',
+        opposite = sign < 0 ? 'x-high' : 'x-low'
+      if (arm.role === 'holder') {
+        connect(
+          tool + '-finger-' + sign,
+          tool + '-palm',
+          'z-high',
+          tool + '-padded-finger-' + sign,
+          'z-low'
+        )
+        connect(
+          tool + '-guide-' + sign,
+          tool + '-palm',
+          face,
+          tool + '-foliage-guide-' + sign,
+          opposite
+        )
+      } else {
+        connect(
+          tool + '-guard-' + sign,
+          tool + '-palm',
+          face,
+          tool + '-guard-' + sign,
+          opposite
+        )
+        const palm = parts.find((part) => part.id === tool + '-palm'),
+          blade = parts.find(
+            (part) => part.id === tool + '-blade-' + sign + '-material'
+          )
+        if (!palm || !blade) throw new Error('Missing cutter pivot material')
+        pivots.push({
+          jointId: tool + '-blade-' + sign,
+          parent: materialReferences(palm, sign < 0 ? 'y-high' : 'y-low'),
+          child: materialReferences(blade, sign < 0 ? 'y-low' : 'y-high')
+        })
+      }
+    }
+  }
   validateFixedMaterialWidth(bodies)
+  const expectedDeck: Point3 = [
+    definition.chassis.centre[0],
+    definition.chassis.centre[1] +
+      modulePort('chassis-shell', 'y-high')[1] -
+      modulePort('platform-deck', 'y-low')[1],
+    definition.chassis.centre[2]
+  ]
+  if (deck.centre.some((value, axis) => value !== expectedDeck[axis]))
+    throw new Error('Unsupported deck attachment profile')
+  for (const side of ['left', 'right'] as const) {
+    const sign = side === 'left' ? -1 : 1,
+      stage = definition.stages[side]
+    const expectedX =
+      deck.centre[0] +
+      sign *
+        (modulePort('platform-deck', 'x-high')[0] +
+          modulePort('stage-base-bridge', 'x-high')[0] -
+          modulePort('stage-base-bridge', 'x-low')[0] +
+          modulePort('stage-housing', 'x-high')[0])
+    if (
+      stage.mount.position[0] !== expectedX ||
+      stage.mount.position[2] !== deck.centre[2] ||
+      stage.fixedHousing.centre[0] !== expectedX ||
+      stage.fixedHousing.centre[2] !== deck.centre[2] ||
+      stage.fixedHousing.centre[1] !== stage.fixedHousing.size[1] / 2 ||
+      stage.mount.rotation.some((value, axis) => value !== [0, 0, 0, 1][axis])
+    )
+      throw new Error('Unsupported stage bridge attachment profile')
+  }
+  const latchY =
+    deck.centre[1] +
+    modulePort('platform-deck', 'y-high')[1] -
+    modulePort('latch-housing', 'y-low')[1]
+  if (
+    definition.platform.fixedParts
+      .slice(1)
+      .some((part) => part.centre[1] !== latchY)
+  )
+    throw new Error('Unsupported fixed latch attachment profile')
+  validateMaterialRepeats(bodies.flatMap((body) => body.parts))
   return freezeSource({
     id: definition.definitionId + '-source',
     definition,
     parts: bodies.flatMap((item) => item.parts),
     rig: { bodies, joints, armChains, legChains, stageJointIds },
     contacts: {
+      sliders,
+      pivots,
+      connections,
       feet,
       bearings,
       cutters: bodies
@@ -774,114 +1420,331 @@ function buildMount(
   input: BasketMountInput
 ): QuadrupedBasketMount {
   if (input.basket.payloadKg !== 0) throw new Error('Missing load-geometry')
-  const parts: QuadrupedRobotPart[] = []
-  const supports: WalkingPatchReference[] = []
-  const box = (
+  const parts: QuadrupedRobotPart[] = [],
+    supports: WalkingPatchReference[] = []
+  const module = template.modules.find((module) => module.id === 'basket-panel')
+  if (!module) throw new Error('Missing adjustable panel source')
+  const panel = (
     id: string,
     kind: QuadrupedRobotPart['kind'],
-    size: Point3,
-    centre: Point3
+    low: Point3,
+    high: Point3,
+    support = false
   ) => {
-    const builder = new TriangleBuilder()
-    builder.box([0, 0, 0], size)
+    const material = {
+      ...instantiateSourcePanel(module, low, high),
+      faceTags: { 24: 'y-high', 30: 'y-low' }
+    }
+    const size = high.map(
+      (value, axis) => value - low[axis]
+    ) as unknown as Point3
+    let contactFace: { offset: number; count: number; name: string } | undefined
+    if (support) contactFace = { offset: 24, count: 6, name: 'basket-contact' }
+    else if (kind === 'basket')
+      contactFace = { offset: 30, count: 6, name: 'basket-underside' }
     const part = materialPart(
       source.definition,
       id,
       'base',
       kind,
-      'basket-material',
+      kind === 'mount' ? 'structural-metal' : 'basket-material',
       size,
-      rigidFrame(centre),
-      builder,
-      id.startsWith('basket-support-')
-        ? { offset: 24, count: 6, name: 'basket-contact' }
-        : undefined
+      rigidFrame(),
+      material,
+      contactFace
     )
     parts.push(part)
-    if (part.patches.length)
+    if (support)
       supports.push({
         part,
         patch: part.patches[0],
-        localFrame: rigidFrame([centre[0], centre[1] + size[1] / 2, centre[2]])
+        localFrame: rigidFrame([
+          (low[0] + high[0]) / 2,
+          high[1],
+          (low[2] + high[2]) / 2
+        ])
       })
+    return part
   }
+  const platformParts = source.parts.filter(
+    (part) =>
+      part.id === 'platform-deck' || part.id.startsWith('fixed-latch-housing-')
+  )
+  const top = (part: QuadrupedRobotPart) =>
+    part.localFrame.position[1] +
+    Math.max(...part.shape.positions.filter((_, i) => i % 3 === 1))
+  const platformTop = Math.max(...platformParts.map(top))
   const [w, h, l] = input.basket.externalSize,
     [iw, ih, il] = input.basket.internalSize
-  const platformTop = Math.max(
-    ...source.definition.platform.fixedParts.map(
-      (part) => part.centre[1] + part.size[1] / 2
+  const [pw, pl] = source.definition.platform.padSize
+  const crossbarTop = platformTop + 0.025,
+    railTop = crossbarTop + 0.025
+  const bottom = railTop + 0.02,
+    floor = h - ih,
+    floorTop = bottom + floor,
+    basketTop = bottom + h
+  const railEnd = Math.max(l / 2 + 0.015, 0.34)
+  // Two transverse beams sit on the permanent housings; the adjustable rails
+  // occupy the next physical layer and carry the four declared support pads.
+  for (const sign of [-1, 1])
+    panel(
+      'basket-base-crossbar-' + sign,
+      'mount',
+      [-0.3, platformTop, sign * 0.3 - 0.04],
+      [0.3, crossbarTop, sign * 0.3 + 0.04]
+    )
+  for (const [index, x] of [
+    ...new Set(input.supports.map(([x]) => x))
+  ].entries())
+    panel(
+      'basket-support-rail-' + index,
+      'mount',
+      [x - pw / 2, crossbarTop, -railEnd],
+      [x + pw / 2, railTop, railEnd]
+    )
+  input.supports.forEach(([x, z], index) =>
+    panel(
+      'basket-support-' + index,
+      'mount',
+      [x - pw / 2, railTop, z - pl / 2],
+      [x + pw / 2, bottom, z + pl / 2],
+      true
     )
   )
-  const bottom = platformTop + 0.02,
-    floor = h - ih
-  if (input.basket.bottom.kind === 'flat') {
-    box('basket-bottom', 'basket', [w, floor, l], [0, bottom + floor / 2, 0])
-  } else {
-    // The synthetic material profile divides the declared floor depth into slab and pads.
-    box(
+  if (input.basket.bottom.kind === 'flat')
+    panel(
       'basket-bottom',
       'basket',
-      [w, floor / 2, l],
-      [0, bottom + floor * 0.75, 0]
+      [-w / 2, bottom, -l / 2],
+      [w / 2, floorTop, l / 2]
     )
-    input.basket.bottom.contacts.forEach((contact, index) => {
-      box(
-        'basket-bottom-pad-' + index,
-        'basket',
-        [contact.size[0], floor / 2, contact.size[1]],
-        [contact.centre[0], bottom + floor / 4, contact.centre[1]]
+  else {
+    const padTop = bottom + floor / 2
+    panel(
+      'basket-bottom',
+      'basket',
+      [-w / 2, padTop, -l / 2],
+      [w / 2, floorTop, l / 2]
+    )
+    input.basket.bottom.contacts.forEach(
+      ({ centre: [x, z], size: [width, length] }, index) =>
+        panel(
+          'basket-bottom-pad-' + index,
+          'basket',
+          [x - width / 2, bottom, z - length / 2],
+          [x + width / 2, padTop, z + length / 2]
+        )
+    )
+  }
+  panel(
+    'basket-side--1',
+    'basket',
+    [-w / 2, floorTop, -l / 2],
+    [-iw / 2, basketTop, l / 2]
+  )
+  panel(
+    'basket-side-1',
+    'basket',
+    [iw / 2, floorTop, -l / 2],
+    [w / 2, basketTop, l / 2]
+  )
+  panel(
+    'basket-end--1',
+    'basket',
+    [-iw / 2, floorTop, -l / 2],
+    [iw / 2, basketTop, -il / 2]
+  )
+  panel(
+    'basket-end-1',
+    'basket',
+    [-iw / 2, floorTop, il / 2],
+    [iw / 2, basketTop, l / 2]
+  )
+  const sideRailTop = bottom - 0.002
+  panel(
+    'basket-width-adjustment-beam',
+    'mount',
+    [-w / 2 - 0.015, railTop, -0.03],
+    [w / 2 + 0.015, sideRailTop, 0.03]
+  )
+  for (const sign of [-1, 1]) {
+    const lowX = sign < 0 ? -w / 2 - 0.015 : w / 2,
+      highX = sign < 0 ? -w / 2 : w / 2 + 0.015
+    panel(
+      'basket-width-stop-' + sign,
+      'mount',
+      [lowX, sideRailTop, -0.03],
+      [highX, bottom + 0.025, 0.03]
+    )
+    const lowZ = sign < 0 ? -l / 2 - 0.015 : l / 2
+    const highZ = sign < 0 ? -l / 2 : l / 2 + 0.015
+    const railMinX = Math.min(...input.supports.map(([x]) => x - pw / 2))
+    const railMaxX = Math.max(...input.supports.map(([x]) => x + pw / 2))
+    panel(
+      'basket-retainer-crossbar-' + sign,
+      'mount',
+      [railMinX, railTop, lowZ],
+      [railMaxX, bottom, highZ]
+    )
+    panel(
+      'basket-length-latch-' + sign,
+      'mount',
+      [-0.025, bottom, lowZ],
+      [0.025, bottom + input.retention.engagement, highZ]
+    )
+  }
+  const undersides = parts
+    .filter((part) =>
+      input.basket.bottom.kind === 'flat'
+        ? part.id === 'basket-bottom'
+        : part.id.startsWith('basket-bottom-pad-')
+    )
+    .flatMap((part) => {
+      const coordinates = [0, 1, 2].map((axis) =>
+        part.shape.positions.filter((_, index) => index % 3 === axis)
+      )
+      const centre: Point3 = [
+        (Math.min(...coordinates[0]) + Math.max(...coordinates[0])) / 2,
+        Math.min(...coordinates[1]),
+        (Math.min(...coordinates[2]) + Math.max(...coordinates[2])) / 2
+      ]
+      return part.patches
+        .filter((patch) => patch.id.includes('-basket-underside-'))
+        .map((patch) => ({ part, patch, localFrame: rigidFrame(centre) }))
+    })
+  if (!undersides.length)
+    throw new Error('Missing original basket underside patches')
+  const supportPairs = supports.map((support, index) => ({
+    id: 'basket-support-' + index,
+    parent: [support],
+    child: undersides
+  }))
+
+  const connections: MaterialConnection[] = []
+  const allParts = [...source.parts, ...parts]
+  const requirePart = (id: string) => {
+    const part = allParts.find((part) => part.id === id)
+    if (!part) throw new Error('Missing mount connection part: ' + id)
+    return part
+  }
+  const connect = (
+    id: string,
+    parent: string,
+    parentFace: string,
+    child: string,
+    childFace: string
+  ) =>
+    connections.push(
+      materialConnection(
+        id,
+        requirePart(parent),
+        parentFace,
+        requirePart(child),
+        childFace
+      )
+    )
+  for (const sign of [-1, 1]) {
+    const crossbar = requirePart('basket-base-crossbar-' + sign)
+    connections.push({
+      id: 'basket-base-' + sign,
+      parent: platformParts.flatMap((part) =>
+        materialReferences(part, 'y-high')
+      ),
+      child: materialReferences(crossbar, 'y-low')
+    })
+    for (let i = 0; i < new Set(input.supports.map(([x]) => x)).size; i++) {
+      connect(
+        'basket-rail-base-' + sign + '-' + i,
+        crossbar.id,
+        'y-high',
+        'basket-support-rail-' + i,
+        'y-low'
+      )
+      connect(
+        'basket-retainer-rail-' + sign + '-' + i,
+        'basket-support-rail-' + i,
+        'y-high',
+        'basket-retainer-crossbar-' + sign,
+        'y-low'
+      )
+    }
+    connect(
+      'basket-width-stop-' + sign,
+      'basket-width-adjustment-beam',
+      'y-high',
+      'basket-width-stop-' + sign,
+      'y-low'
+    )
+    connect(
+      'basket-length-latch-' + sign,
+      'basket-retainer-crossbar-' + sign,
+      'y-high',
+      'basket-length-latch-' + sign,
+      'y-low'
+    )
+    for (const side of ['side', 'end'])
+      connect(
+        'basket-floor-' + side + '-' + sign,
+        'basket-bottom',
+        'y-high',
+        'basket-' + side + '-' + sign,
+        'y-low'
+      )
+    const stop = requirePart('basket-width-stop-' + sign),
+      latch = requirePart('basket-length-latch-' + sign)
+    connections.push({
+      id: 'basket-width-retention-' + sign,
+      parent: materialReferences(stop, sign < 0 ? 'x-high' : 'x-low'),
+      child: ['basket-bottom', 'basket-side-' + sign].flatMap((id) =>
+        materialReferences(requirePart(id), sign < 0 ? 'x-low' : 'x-high')
+      )
+    })
+    connections.push({
+      id: 'basket-length-retention-' + sign,
+      parent: materialReferences(latch, sign < 0 ? 'z-high' : 'z-low'),
+      child: ['basket-bottom', 'basket-end-' + sign].flatMap((id) =>
+        materialReferences(requirePart(id), sign < 0 ? 'z-low' : 'z-high')
       )
     })
   }
-  for (const sign of [-1, 1]) {
-    box(
-      'basket-side-' + sign,
-      'basket',
-      [(w - iw) / 2, ih, l],
-      [(sign * (w + iw)) / 4, bottom + floor + ih / 2, 0]
+  const railPositions = [...new Set(input.supports.map(([x]) => x))]
+  railPositions.forEach((_, index) =>
+    connect(
+      'basket-width-beam-rail-' + index,
+      'basket-support-rail-' + index,
+      'y-high',
+      'basket-width-adjustment-beam',
+      'y-low'
     )
-    box(
-      'basket-end-' + sign,
-      'basket',
-      [iw, ih, (l - il) / 2],
-      [0, bottom + floor + ih / 2, (sign * (l + il)) / 4]
-    )
-  }
-  input.supports.forEach(([x, z], index) => {
-    const [pw, pl] = source.definition.platform.padSize
-    box(
+  )
+  input.supports.forEach(([x], index) =>
+    connect(
+      'basket-pad-rail-' + index,
+      'basket-support-rail-' + railPositions.indexOf(x),
+      'y-high',
       'basket-support-' + index,
-      'mount',
-      [pw, 0.02, pl],
-      [x, platformTop + 0.01, z]
+      'y-low'
     )
-  })
-  for (const sign of [-1, 1]) {
-    box(
-      'basket-width-stop-' + sign,
-      'mount',
-      [0.015, 0.025, 0.06],
-      [sign * (input.stopSpan[0] / 2 + 0.0075), bottom + 0.0125, 0]
+  )
+  if (input.basket.bottom.kind === 'pads')
+    input.basket.bottom.contacts.forEach((_, index) =>
+      connect(
+        'basket-pad-floor-' + index,
+        'basket-bottom-pad-' + index,
+        'y-high',
+        'basket-bottom',
+        'y-low'
+      )
     )
-    box(
-      'basket-length-latch-' + sign,
-      'mount',
-      [0.05, input.retention.engagement, 0.015],
-      [
-        0,
-        bottom + input.retention.engagement / 2,
-        sign * (input.stopSpan[1] / 2 + 0.0075)
-      ]
-    )
-  }
+  validateMaterialRepeats([...source.parts, ...parts])
   return freezeSource({
     source,
     input,
     parts,
-    contacts: { supports },
+    contacts: { supports, supportPairs, connections },
     opening: {
-      min: [-iw / 2, bottom + h, -il / 2],
-      max: [iw / 2, bottom + h, il / 2]
+      min: [-iw / 2, basketTop, -il / 2],
+      max: [iw / 2, basketTop, il / 2]
     }
   })
 }

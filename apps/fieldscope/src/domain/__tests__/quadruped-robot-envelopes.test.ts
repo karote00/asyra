@@ -31,6 +31,12 @@ describe('complete quadruped pose envelopes', () => {
           mount
         )
         const result = envelopes.prepare(pose)
+        expect(result.reference).toBe(
+          pose.bodyTransforms.find((body) => body.id === 'base')?.transform
+        )
+        expect(result.reference.position[1]).toBe(
+          source.definition.referenceBaseHeight
+        )
         expect(result.contributors.length).toBe(
           source.parts.length + mount.parts.length
         )

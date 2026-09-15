@@ -2,6 +2,7 @@ import { Matrix4, Quaternion, Vector3 } from 'three'
 import * as cropSource from '../../domain/crop-models'
 import * as robotSource from '../../domain/robot-model'
 import { expect, it, vi } from 'vitest'
+import { WalkingSourceRelationEvaluator } from '../walking-source-relation'
 import { SiteGeometry } from '../../render-app/site-geometry'
 import { RobotProjection } from '../../render-app/robot-projection'
 import {
@@ -899,6 +900,106 @@ const frameDifference = (a: Dyadic, b: Dyadic) =>
   frameSum(a, { significand: -b.significand, exponent: b.exponent })
 const expectFrameValue = (actual: Dyadic, expected: Dyadic) =>
   expect(frameDifference(actual, expected).significand).toBe(0n)
+
+it('exact frame coefficients retain values without representation growth', () => {
+  const frames = Object.freeze(
+    Array.from({ length: 24 }, (_, index) =>
+      prepareQueryExactForwardFrame({
+        position: index % 2 ? [0.125, -0.0625, 0] : [0, 0, 0],
+        rotation: [0, 0, 0, 1]
+      })
+    ).concat(
+      prepareQueryExactForwardFrame({
+        position: [-0.5, 0.25, -0.125],
+        rotation: [0, 1, 0, 0]
+      })
+    )
+  )
+  const rotations = [
+    prepareQueryExactForwardFrame({
+      position: [-0, 1e-200, -3],
+      rotation: [0.2, 0.3, 0.4, Math.sqrt(0.71)]
+    }),
+    prepareQueryExactInstanceFrame({ position: [0, -1, 0.125], yaw: -0.37 })
+  ]
+  const apply = (frame: (typeof frames)[number], point: readonly Dyadic[]) =>
+    frame.matrix.map((row, axis) =>
+      row.reduce(
+        (sum, value, index) => frameSum(sum, frameProduct(value, point[index])),
+        frame.position[axis]
+      )
+    )
+  const target = prepareQueryExactForwardFrame({
+    position: [-2, -0.5, -0.125],
+    rotation: [0, 1, 0, 0]
+  })
+  for (const point of [
+    [0, 0, 0],
+    [1, -2, 3],
+    [-0.25, 0.375, -1.5]
+  ]) {
+    const exact = point.map(dyadic)
+    const actual = frames.reduce((p, frame) => apply(frame, p), exact),
+      expected = apply(target, exact)
+    actual.forEach((value, axis) => expectFrameValue(value, expected[axis]))
+  }
+  const shape = Object.freeze({
+    kind: 'triangles' as const,
+    positions: Object.freeze([
+      0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1
+    ]),
+    indices: Object.freeze([
+      0, 3, 2, 0, 2, 1, 4, 5, 6, 4, 6, 7, 0, 4, 7, 0, 7, 3, 1, 2, 6, 1, 6, 5, 3,
+      7, 6, 3, 6, 2, 0, 1, 5, 0, 5, 4
+    ])
+  })
+  const region = Object.freeze({
+    id: 'frame-chain-control',
+    kind: 'closed-solid' as const,
+    indexStart: 0,
+    indexCount: 36
+  })
+  const evaluator = new WalkingSourceRelationEvaluator({
+    maxRegionPairs: 4,
+    maxExactPredicates: 2000000,
+    maxBits: 16384
+  })
+  const prepared = evaluator.prepare(shape, region)
+  expect(prepared.certified).toBe(true)
+  const first = { region: prepared, frames }
+  expect(
+    evaluator.relate(
+      first,
+      { region: prepared, frames: Object.freeze([target]) },
+      0
+    ).kind
+  ).toBe('volume-overlap')
+  expect(
+    evaluator.relate(
+      first,
+      {
+        region: prepared,
+        frames: Object.freeze([
+          prepareQueryExactForwardFrame({
+            position: [3, 0, 0],
+            rotation: [0, 0, 0, 1]
+          })
+        ])
+      },
+      0
+    ).kind
+  ).toBe('separated')
+  for (const frame of [...frames, ...rotations])
+    for (const value of [
+      ...frame.matrix.flat(),
+      ...frame.position,
+      frame.determinant
+    ]) {
+      if (value.significand === 0n) expect(value.exponent).toBe(0)
+      else expect(value.significand % 2n).not.toBe(0n)
+    }
+  expect(evaluator.work.maxRationalBitsRequired).toBeLessThanOrEqual(16384)
+})
 
 it('publishes exact original quaternion coefficients with compatible outward frames', () => {
   for (const rotation of [

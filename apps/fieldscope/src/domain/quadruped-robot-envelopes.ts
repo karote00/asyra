@@ -26,6 +26,7 @@ interface Contributor {
   readonly bounds: Bounds
 }
 export interface QuadrupedRobotEnvelope {
+  readonly reference: WalkingRigidTransform
   readonly pose: QuadrupedRobotPoseResult
   readonly contributors: readonly Contributor[]
   readonly bounds: Bounds
@@ -132,7 +133,10 @@ export class QuadrupedRobotEnvelopeOwner {
         .filter((item) => item.kind === 'fixed')
         .map((item) => item.bounds)
     )
+    const reference = transforms.get('base')
+    if (!reference) throw new Error('Missing canonical base reference')
     this.current = freezeSource({
+      reference,
       pose,
       contributors,
       bounds: union(contributors.map((item) => item.bounds)),

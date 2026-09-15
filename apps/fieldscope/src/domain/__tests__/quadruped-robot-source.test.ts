@@ -1,10 +1,169 @@
 import { describe, expect, it } from 'vitest'
+import { createHash } from 'node:crypto'
 import { createSyntheticQuadrupedRobotDefinition } from '../quadruped-robot-definition'
 import { createSyntheticWalkingRobotDefinition } from '../walking-robot-definition'
 import { createSyntheticBasketInput } from '../basket-interface'
 import { QuadrupedRobotSourceOwner } from '../quadruped-robot-source'
 
+function expectedMaterialIds(
+  source: ReturnType<QuadrupedRobotSourceOwner['prepare']>,
+  mount: ReturnType<QuadrupedRobotSourceOwner['mount']>
+) {
+  const ids = [
+    'chassis',
+    'platform-deck',
+    'stage-base-bridge--1',
+    'stage-base-bridge-1'
+  ]
+  source.definition.platform.fixedParts
+    .slice(1)
+    .forEach((_, i) => ids.push('fixed-latch-housing-' + i))
+  for (const side of ['left', 'right'] as const) {
+    for (
+      let i = 0;
+      i < source.definition.stages[side].telescope.segmentCount;
+      i++
+    )
+      ids.push(side + '-stage-' + (i === 0 ? 'fixed' : i) + '-shell')
+    ids.push(side + '-shoulder-stage-cover', side + '-shoulder-stage-plug')
+  }
+  const bearing = (id: string) => {
+    for (const suffix of [
+      'housing',
+      'back-cap',
+      'outer-cap',
+      'thrust-race',
+      'sleeve'
+    ])
+      ids.push(id + '-' + suffix)
+  }
+  for (const arm of source.definition.arms) {
+    const id = arm.side + '-' + arm.role,
+      tool = id + '-tool'
+    for (const joint of [
+      'rootYaw',
+      'rootPitch',
+      'elbowPitch',
+      'wristPitch',
+      'wristYaw',
+      'wristRoll'
+    ])
+      bearing(id + '-' + joint)
+    ids.push(
+      id + '-root-yoke',
+      id + '-rootPitch-cover',
+      id + '-elbowPitch-cover',
+      tool + '-palm'
+    )
+    for (const wrist of ['wristPitch', 'wristYaw', 'wristRoll'])
+      ids.push(id + '-' + wrist + '-carrier')
+    for (const sign of [-1, 1])
+      ids.push(
+        ...(arm.role === 'holder'
+          ? [tool + '-padded-finger-' + sign, tool + '-foliage-guide-' + sign]
+          : [tool + '-guard-' + sign, tool + '-blade-' + sign + '-material'])
+      )
+  }
+  for (const leg of source.definition.legs) {
+    const id = leg.side + '-' + leg.station
+    for (const joint of ['hipAbduction', 'hipPitch', 'kneePitch', 'anklePitch'])
+      bearing(id + '-' + joint)
+    ids.push(
+      id + '-mount',
+      id + '-hip-yoke',
+      id + '-hipPitch-cover',
+      id + '-kneePitch-cover',
+      id + '-ankle-carrier',
+      id + '-foot-pad'
+    )
+  }
+  for (const sign of [-1, 1])
+    ids.push(
+      'basket-base-crossbar-' + sign,
+      'basket-side-' + sign,
+      'basket-end-' + sign,
+      'basket-width-stop-' + sign,
+      'basket-retainer-crossbar-' + sign,
+      'basket-length-latch-' + sign
+    )
+  ids.push('basket-bottom', 'basket-width-adjustment-beam')
+  ;[...new Set(mount.input.supports.map(([x]) => x))].forEach((_, i) =>
+    ids.push('basket-support-rail-' + i)
+  )
+  mount.input.supports.forEach((_, i) => ids.push('basket-support-' + i))
+  if (mount.input.basket.bottom.kind === 'pads')
+    mount.input.basket.bottom.contacts.forEach((_, i) =>
+      ids.push('basket-bottom-pad-' + i)
+    )
+  return ids.sort()
+}
+
 describe('quadruped canonical material and definition lifetime', () => {
+  it.each([
+    [0.028, 0.04, 0.14],
+    [0.04, 0.04, 0.04]
+  ])(
+    'rejects a deck size %j that belongs to another material module',
+    (x, y, z) => {
+      const raw = structuredClone(createSyntheticQuadrupedRobotDefinition())
+      ;(raw.platform.fixedParts[0] as unknown as { size: number[] }).size = [
+        x,
+        y,
+        z
+      ]
+      expect(() => new QuadrupedRobotSourceOwner().prepare(raw)).toThrow(
+        /Unsupported/
+      )
+    }
+  )
+  it('binds the platform to its own rigid module without changing validated default buffers', () => {
+    const source = new QuadrupedRobotSourceOwner().prepare(
+      createSyntheticQuadrupedRobotDefinition()
+    )
+    expect(
+      source.parts.find((part) => part.id === 'platform-deck')?.sourceModuleId
+    ).toBe('platform-deck')
+    expect(
+      createHash('sha256')
+        .update(
+          JSON.stringify(
+            source.parts.map((part) => [
+              part.id,
+              part.sourceModuleId,
+              part.localFrame.position,
+              part.localFrame.rotation,
+              part.shape.positions,
+              part.shape.indices
+            ])
+          )
+        )
+        .digest('hex')
+    ).toBe('af81c78473d6ece669e0afd58107429ab3232798270c8bddcb3c82c607b9e966')
+  })
+  it.each([
+    ['width', 0, 0.5],
+    ['height', 1, 0.05],
+    ['length', 2, 0.8]
+  ] as const)(
+    'rejects unsupported rigid deck %s instead of rewriting the definition',
+    (_name, axis, value) => {
+      const raw = structuredClone(createSyntheticQuadrupedRobotDefinition())
+      ;(raw.platform.fixedParts[0].size as unknown as number[])[axis] = value
+      expect(() => new QuadrupedRobotSourceOwner().prepare(raw)).toThrow(
+        /Unsupported/
+      )
+    }
+  )
+  it.each([0, 1, 2])(
+    'rejects an incompatible deck centre axis %i instead of leaving bridges behind',
+    (axis) => {
+      const raw = structuredClone(createSyntheticQuadrupedRobotDefinition())
+      ;(raw.platform.fixedParts[0].centre as unknown as number[])[axis] += 0.01
+      expect(() => new QuadrupedRobotSourceOwner().prepare(raw)).toThrow(
+        /Unsupported/
+      )
+    }
+  )
   it('issues four complete leg chains and four root-pitch arm chains from original closed material', () => {
     const owner = new QuadrupedRobotSourceOwner()
     const definition = createSyntheticQuadrupedRobotDefinition()
@@ -97,6 +256,59 @@ describe('quadruped canonical material and definition lifetime', () => {
 })
 
 describe('named quadruped designed contact evidence', () => {
+  it('covers the independently required material inventory including all fixed parts and actual sliding joints', () => {
+    const owner = new QuadrupedRobotSourceOwner(),
+      source = owner.prepare(createSyntheticQuadrupedRobotDefinition())
+    const mount = owner.mount(source, createSyntheticBasketInput([0.6, 0.2, 1]))
+    const parts = [...source.parts, ...mount.parts]
+    const expected = expectedMaterialIds(source, mount)
+    expect(parts.map((part) => part.id).sort()).toEqual(expected)
+    for (const removed of parts)
+      expect(
+        parts
+          .filter((part) => part !== removed)
+          .map((part) => part.id)
+          .sort()
+      ).not.toEqual(expected)
+    const groups = [
+      ...source.contacts.bearings,
+      ...source.contacts.connections,
+      ...(source.contacts.pivots ?? []),
+      ...mount.contacts.supportPairs,
+      ...(mount.contacts.connections ?? [])
+    ]
+    const declared = new Set(
+      groups.flatMap((group) =>
+        [...group.parent, ...group.child].map((reference) => reference.part)
+      )
+    )
+    for (const slider of source.contacts.sliders ?? []) {
+      declared.add(slider.parent)
+      declared.add(slider.child)
+    }
+    expect(
+      parts.filter((part) => !declared.has(part)).map((part) => part.id)
+    ).toEqual([])
+    expect(
+      source.contacts.sliders?.map((slider) => slider.jointId).sort()
+    ).toEqual(
+      source.rig.joints
+        .filter((joint) => joint.motion === 'prismatic')
+        .map((joint) => joint.id)
+        .sort()
+    )
+  })
+  it('publishes paired original patch collections for each designed contact', () => {
+    const owner = new QuadrupedRobotSourceOwner()
+    const source = owner.prepare(createSyntheticQuadrupedRobotDefinition())
+    const mount = owner.mount(source, createSyntheticBasketInput([0.6, 0.2, 1]))
+    expect(source.contacts.bearings).toHaveLength(40)
+    for (const bearing of source.contacts.bearings) {
+      expect(Array.isArray(bearing.parent)).toBe(true)
+      expect(Array.isArray(bearing.child)).toBe(true)
+    }
+    expect(mount.contacts).toHaveProperty('supportPairs')
+  })
   it('retains exact original face references for feet, basket support and revolute bearings', () => {
     const owner = new QuadrupedRobotSourceOwner()
     const source = owner.prepare(createSyntheticQuadrupedRobotDefinition())
@@ -106,7 +318,10 @@ describe('named quadruped designed contact evidence', () => {
     expect(mount.contacts.supports).toHaveLength(mount.input.supports.length)
     for (const contact of [
       ...source.contacts.feet,
-      ...source.contacts.bearings.flatMap((pair) => [pair.parent, pair.child]),
+      ...source.contacts.bearings.flatMap((pair) => [
+        ...pair.parent,
+        ...pair.child
+      ]),
       ...mount.contacts.supports
     ]) {
       expect([...source.parts, ...mount.parts]).toContain(contact.part)
@@ -136,7 +351,9 @@ describe('basket bottom material follows the admitted contact shape', () => {
     const bottom = Math.min(
       ...flat.parts
         .filter((part) => part.kind === 'basket')
-        .map((part) => part.localFrame.position[1] - part.size[1] / 2)
+        .map((part) =>
+          Math.min(...part.shape.positions.filter((_, i) => i % 3 === 1))
+        )
     )
     const belowFloor =
       bottom + (input.basket.externalSize[1] - input.basket.internalSize[1]) / 4
@@ -146,8 +363,14 @@ describe('basket bottom material follows the admitted contact shape', () => {
           part.kind === 'basket' &&
           point.every(
             (value, axis) =>
-              value > part.localFrame.position[axis] - part.size[axis] / 2 &&
-              value < part.localFrame.position[axis] + part.size[axis] / 2
+              value >
+                Math.min(
+                  ...part.shape.positions.filter((_, i) => i % 3 === axis)
+                ) &&
+              value <
+                Math.max(
+                  ...part.shape.positions.filter((_, i) => i % 3 === axis)
+                )
           )
       )
     expect(contains(flat, [0, belowFloor, 0])).toBe(true)

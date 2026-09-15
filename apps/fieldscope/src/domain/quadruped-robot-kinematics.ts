@@ -25,6 +25,7 @@ export interface QuadrupedRobotPoseResult {
   readonly bodyTransforms: readonly {
     id: string
     transform: WalkingRigidTransform
+    frameChain: readonly WalkingRigidTransform[]
     sourceParts: readonly QuadrupedRobotPart[]
   }[]
   readonly frames: {
@@ -66,11 +67,13 @@ export function evaluateQuadrupedRobotPose(
     ) as (keyof typeof source.definition.legAxes)[])
       values.set(id + '-' + key, leg[key])
   }
+  const frameChains = new Map<string, readonly WalkingRigidTransform[]>()
   const transforms = evaluateArticulatedTransforms(
     source.rig.bodies,
     source.rig.joints,
     values,
-    rigidFrame([0, source.definition.referenceBaseHeight, 0])
+    rigidFrame([0, source.definition.referenceBaseHeight, 0]),
+    (bodyId, chain) => frameChains.set(bodyId, chain)
   )
   const frame = (id: string, point: Point3 = [0, 0, 0]) => {
     const transform = transforms.get(id)
@@ -85,6 +88,11 @@ export function evaluateQuadrupedRobotPose(
     bodyTransforms: source.rig.bodies.map((body) => ({
       id: body.id,
       transform: frame(body.id),
+      frameChain:
+        frameChains.get(body.id) ??
+        (() => {
+          throw new Error('Missing canonical frame chain')
+        })(),
       sourceParts: source.parts.filter((part) => part.bodyId === body.id)
     })),
     frames: {
@@ -96,10 +104,18 @@ export function evaluateQuadrupedRobotPose(
         chainId: chain.id,
         ...frame(chain.terminalBodyId, chain.activePoint)
       })),
-      feet: source.rig.legChains.map((chain) => ({
-        chainId: chain.id,
-        ...frame(chain.terminalBodyId, chain.activePoint)
-      }))
+      feet: source.rig.legChains.map((chain) => {
+        const contact = source.contacts.feet.find(
+          (contact) => contact.part.bodyId === chain.terminalBodyId
+        )
+        const body = transforms.get(chain.terminalBodyId)
+        if (!contact || !body)
+          throw new Error('Missing canonical sole contact frame')
+        return {
+          chainId: chain.id,
+          ...composeRigidTransform(body, contact.localFrame)
+        }
+      })
     }
   })
 }
@@ -123,6 +139,20 @@ export function createQuadrupedCandidatePoses(
     (joint) => joint.id === 'left-holder-rootPitch'
   )
   if (!rootJoint || !shoulder) throw new Error('Missing placement root')
+  const wristYawJoint = source.rig.joints.find(
+    (joint) => joint.id === 'left-holder-wristYaw'
+  )
+  const wristRollJoint = source.rig.joints.find(
+    (joint) => joint.id === 'left-holder-wristRoll'
+  )
+  const toolBody = source.rig.bodies.find(
+    (body) => body.id === 'left-holder-tool'
+  )
+  if (!wristYawJoint || !wristRollJoint || !toolBody?.fixedFrame)
+    throw new Error('Missing placement wrist frames')
+  const firstWristSpan = wristYawJoint.frame.position[2]
+  const distalWristSpan =
+    wristRollJoint.frame.position[2] + toolBody.fixedFrame.position[2]
   const ancestors = new Set<string>()
   let bodyId: string | null = rootJoint.childBodyId
   while (bodyId) {
@@ -177,7 +207,7 @@ export function createQuadrupedCandidatePoses(
     rigidFrame([
       -arm.tool.activePoint[0],
       -arm.tool.activePoint[1],
-      -arm.tool.activePoint[2] - 0.6 * arm.wrist.length
+      -arm.tool.activePoint[2] - distalWristSpan
     ])
   )
   const localCentre = composeRigidTransform(
@@ -202,11 +232,11 @@ export function createQuadrupedCandidatePoses(
   const horizontal =
     Math.hypot(localCentre[0], localCentre[2]) -
     shoulder.frame.position[2] -
-    0.4 * arm.wrist.length * Math.cos(totalPitch)
+    firstWristSpan * Math.cos(totalPitch)
   const down =
     -localCentre[1] +
     shoulder.frame.position[1] -
-    0.4 * arm.wrist.length * Math.sin(totalPitch)
+    firstWristSpan * Math.sin(totalPitch)
   const a = arm.upper.length,
     b = arm.forearm.length
   const cosine =
