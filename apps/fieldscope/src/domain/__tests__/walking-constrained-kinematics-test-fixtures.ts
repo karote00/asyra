@@ -1,3 +1,4 @@
+import { expect } from 'vitest'
 import {
   dyadic,
   divide,
@@ -207,4 +208,70 @@ export function cycleFixture(
       budget: { maxOperations: 10000000, maxBits: 24000 }
     }
   }
+}
+
+export const sum = (values: readonly Fraction[]) =>
+  values.reduce(plus, exact(0))
+export const vectorPlus = (a: readonly Fraction[], b: readonly Fraction[]) =>
+  a.map((value, index) => plus(value, b[index]))
+export const vectorMinus = (a: readonly Fraction[], b: readonly Fraction[]) =>
+  a.map((value, index) => minus(value, b[index]))
+export function hamilton(a: readonly Fraction[], b: readonly Fraction[]) {
+  return [
+    sum([
+      times(a[3], b[0]),
+      times(a[0], b[3]),
+      times(a[1], b[2]),
+      negate(times(a[2], b[1]))
+    ]),
+    sum([
+      times(a[3], b[1]),
+      negate(times(a[0], b[2])),
+      times(a[1], b[3]),
+      times(a[2], b[0])
+    ]),
+    sum([
+      times(a[3], b[2]),
+      times(a[0], b[1]),
+      negate(times(a[1], b[0])),
+      times(a[2], b[3])
+    ]),
+    sum([
+      times(a[3], b[3]),
+      negate(times(a[0], b[0])),
+      negate(times(a[1], b[1])),
+      negate(times(a[2], b[2]))
+    ])
+  ]
+}
+export function rotateOracle(
+  q: readonly Fraction[],
+  point: readonly Fraction[]
+) {
+  const norm = sum(q.map((value) => times(value, value)))
+  const conjugate = [...q.slice(0, 3).map(negate), q[3]]
+  return hamilton(hamilton(q, [...point, exact(0)]), conjugate)
+    .slice(0, 3)
+    .map((value) => over(value, norm))
+}
+export function pointOracle(
+  frame: {
+    origin: readonly Fraction[]
+    matrix: readonly (readonly Fraction[])[]
+  },
+  point: readonly Fraction[]
+) {
+  return vectorPlus(
+    frame.origin,
+    frame.matrix.map((row) =>
+      sum(row.map((value, index) => times(value, point[index])))
+    )
+  )
+}
+export const inRange = (
+  value: Fraction,
+  bounds: { low: number; high: number }
+) => {
+  expect(minus(value, exact(bounds.low)).numerator).toBeGreaterThanOrEqual(0n)
+  expect(minus(exact(bounds.high), value).numerator).toBeGreaterThanOrEqual(0n)
 }
