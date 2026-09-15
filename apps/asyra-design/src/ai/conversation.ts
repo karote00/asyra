@@ -57,6 +57,7 @@ export interface AiActiveTurn {
 }
 
 export interface AiSettledTurn {
+  readonly requestAttachments?: readonly AiImageAttachment[]
   readonly waitingDurationMs?: number
   readonly replyToTurnId?: string
   readonly retryOfTurnId?: string
@@ -438,7 +439,9 @@ export const createAiConversationController = (
       if (disposed) {
         throw new AiConversationError('AI_CONVERSATION_DISPOSED')
       }
-      let { attachments, intent } = normalizeSubmission(source)
+      const normalized = normalizeSubmission(source)
+      const attachments = normalized.attachments
+      let intent = normalized.intent
       if (!intent) {
         throw new AiConversationError('AI_CONVERSATION_INVALID_INTENT')
       }
@@ -467,7 +470,13 @@ export const createAiConversationController = (
       if (submission?.detailOption && !replyTo) {
         throw new AiConversationError('AI_CONVERSATION_INVALID_REPLY')
       }
-      if (attachments.length === 0 && replyTo) attachments = replyTo.attachments
+      const referenceTurn = replyTo ?? retryOf
+      const requestAttachments =
+        attachments.length > 0
+          ? attachments
+          : (referenceTurn?.requestAttachments ??
+            referenceTurn?.attachments ??
+            EMPTY_IMAGE_ATTACHMENTS)
       let requestIntent = intent
       if (submission?.detailOption) {
         const maximum = submission.detailOption === 'maximum'
@@ -543,9 +552,9 @@ export const createAiConversationController = (
             )
           },
           conversationId,
-          ...(attachments.length > 0
+          ...(requestAttachments.length > 0
             ? {
-                imageAttachments: attachments.map((attachment) => ({
+                imageAttachments: requestAttachments.map((attachment) => ({
                   dataUrl: attachment.dataUrl,
                   mediaType: attachment.mediaType,
                   name: attachment.name,
@@ -583,6 +592,7 @@ export const createAiConversationController = (
         finishedAtMs - currentTurn.startedAtMs - waitingDurationMs
       const settled = Object.freeze({
         attachments,
+        requestAttachments,
         replyToTurnId,
         retryOfTurnId: retryOf?.turnId,
         originalIntent,

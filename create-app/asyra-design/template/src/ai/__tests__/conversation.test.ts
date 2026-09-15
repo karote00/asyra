@@ -27,6 +27,77 @@ const createFeature = (
   execute: vi.fn(execute)
 })
 
+it('keeps inherited reference images out of text replies while retaining provider context across answers and retry', async () => {
+  const attachment = {
+    dataUrl: 'data:image/png;base64,YQ==',
+    mediaType: 'image/png' as const,
+    name: 'reference.png',
+    size: 1
+  }
+  const question = executed(
+    {
+      action: 'request_drawing_detail_choice',
+      clarification: {
+        kind: 'drawing-detail',
+        optionIds: ['balanced', 'maximum']
+      },
+      status: 'no-change'
+    },
+    'request_drawing_detail_choice'
+  )
+  const pending = createDeferred<unknown>()
+  const feature = createFeature(
+    vi
+      .fn()
+      .mockResolvedValueOnce(question)
+      .mockImplementationOnce(() => pending.promise)
+      .mockResolvedValueOnce({
+        status: 'failed',
+        stage: 'provider',
+        code: 'AI_PROVIDER_TRANSPORT_FAILED'
+      })
+      .mockResolvedValue({ status: 'executed', actionResults: [] })
+  )
+  const controller = createAiConversationController({
+    feature,
+    getElementType: vi.fn()
+  })
+  await controller.submit({
+    intent: 'Draw the reference at 240 by 240',
+    attachments: [attachment]
+  })
+  const answer = controller.submit('That is fine')
+  expect(controller.getSnapshot().activeTurn?.attachments).toEqual([])
+  expect(feature.execute).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      metadata: expect.objectContaining({ imageAttachments: [attachment] })
+    })
+  )
+  pending.resolve(question)
+  expect((await answer).attachments).toEqual([])
+  const failed = await controller.submit('Balanced, please')
+  expect(failed.attachments).toEqual([])
+  expect(feature.execute).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      metadata: expect.objectContaining({ imageAttachments: [attachment] })
+    })
+  )
+  await controller.retry(failed.turnId)
+  expect(feature.execute).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      metadata: expect.objectContaining({ imageAttachments: [attachment] })
+    })
+  )
+  await controller.submit('Draw a new circle')
+  expect(feature.execute).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      metadata: expect.not.objectContaining({
+        imageAttachments: expect.anything()
+      })
+    })
+  )
+})
+
 describe('Asyra Design AI conversation controller', () => {
   it('retains ordered safe progress with the settled turn and brackets history correlation', async () => {
     const history = {

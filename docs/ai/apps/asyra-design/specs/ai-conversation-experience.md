@@ -8,6 +8,12 @@ the left. The App conversation controller owns request lifecycle, answered quest
 continuation and recovery; the panel is a projection. One active request is admitted.
 A resolved provider attempt may ask a question rather than complete the user goal.
 
+Each message displays only attachments submitted with that message. Answer and
+retry requests retain the original reference as request context without presenting
+it as a newly attached image. Explicit Edit request restores the complete request
+and reference to the draft for review. Composer keyboard events stay in the text
+input, preserving native editing and IME without invoking canvas shortcuts.
+
 Questions expose clickable choices and a text answer path, preserve subject,
 dimensions, attachments and target context, and record the selected answer. Waiting
 for an answer or approval has no active-work spinner. Approval is governed by the

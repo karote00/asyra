@@ -206,6 +206,54 @@ describe('AI Agent conversation panel intent boundary', () => {
     expect(harness.feature.execute).toHaveBeenCalledOnce()
   })
 
+  it('restores the reference into an explicitly edited failed text continuation', async () => {
+    const harness = createPanelHarness()
+    const attachment = {
+      dataUrl: 'data:image/png;base64,YQ==',
+      mediaType: 'image/png' as const,
+      name: 'reference.png',
+      size: 1
+    }
+    harness.feature.execute = vi
+      .fn()
+      .mockResolvedValueOnce({
+        status: 'executed',
+        actionResults: [
+          {
+            actionName: 'request_clarification',
+            result: {
+              status: 'no-change',
+              clarification: { kind: 'question', question: 'Keep the size?' }
+            }
+          }
+        ]
+      })
+      .mockResolvedValue({
+        status: 'failed',
+        stage: 'provider',
+        code: 'AI_PROVIDER_TIMEOUT'
+      })
+    render(
+      <AiConversationPanel
+        confirmation={harness.confirmation}
+        conversation={harness.conversation}
+        onClose={vi.fn()}
+      />
+    )
+    await act(async () => {
+      await harness.conversation.submit({
+        intent: 'Draw the reference at 240 by 240',
+        attachments: [attachment]
+      })
+      await harness.conversation.submit('Yes')
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Edit request' }))
+    expect(screen.getAllByRole('img')).toHaveLength(2)
+    expect(
+      (screen.getByLabelText('Message Agent') as HTMLTextAreaElement).value
+    ).toBe('Draw the reference at 240 by 240\nYes')
+  })
+
   it('keeps mouse, touch, and keyboard cancellation inside the Agent control while the document is locked', () => {
     const harness = createPanelHarness()
     render(
@@ -259,6 +307,53 @@ describe('AI Agent conversation panel intent boundary', () => {
     expect(escapedDocumentInteraction).not.toHaveBeenCalled()
     expect(harness.feature.cancel).toHaveBeenCalledOnce()
     expect(harness.feature.cancel).toHaveBeenCalledWith('user-cancelled')
+  })
+
+  it('keeps typing, editing shortcuts and IME keys inside the composer without preventing native editing', () => {
+    const harness = createPanelHarness()
+    render(
+      <AiConversationPanel
+        confirmation={harness.confirmation}
+        conversation={harness.conversation}
+        onClose={vi.fn()}
+      />
+    )
+    const input = screen.getByLabelText('Message Agent')
+    const shortcut = vi.fn()
+    window.addEventListener('keydown', shortcut)
+    window.addEventListener('keyup', shortcut)
+    try {
+      for (const key of [
+        'r',
+        'o',
+        'v',
+        'p',
+        'Backspace',
+        'Delete',
+        ' ',
+        'Escape',
+        'Enter',
+        'z'
+      ]) {
+        for (const type of ['keydown', 'keyup']) {
+          const event = new KeyboardEvent(type, {
+            key,
+            bubbles: true,
+            cancelable: true,
+            metaKey: key === 'z',
+            isComposing: key === 'Enter'
+          })
+          fireEvent(input, event)
+          expect(event.defaultPrevented).toBe(false)
+        }
+      }
+      expect(shortcut).not.toHaveBeenCalled()
+      fireEvent.keyDown(document.body, { key: 'r' })
+      expect(shortcut).toHaveBeenCalledOnce()
+    } finally {
+      window.removeEventListener('keydown', shortcut)
+      window.removeEventListener('keyup', shortcut)
+    }
   })
 
   it('adds the same removable image draft through file selection and drag-and-drop, then preserves it in the submitted turn', async () => {
@@ -664,6 +759,7 @@ describe('AI Agent conversation panel intent boundary', () => {
         screen.queryByRole('button', { name: `Choose ${label}` })
       ).toBeNull()
       expect(feature.execute).toHaveBeenCalledTimes(2)
+      expect(screen.queryAllByRole('img')).toHaveLength(withAttachment ? 1 : 0)
     }
   )
 })

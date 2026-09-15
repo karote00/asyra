@@ -305,7 +305,7 @@ const AiConversationPanelLayout = ({
         ? `${turn.originalIntent}\n${turn.intent}`
         : turn.intent
     )
-    setDraftAttachments(turn.attachments)
+    setDraftAttachments(turn.requestAttachments ?? turn.attachments)
     promptRef.current?.focus({ preventScroll: true })
   }
 
@@ -414,6 +414,8 @@ const AiConversationPanelLayout = ({
             data-ai-agent-prompt="true"
             id="ai-agent-input"
             onChange={(event) => setDraft(event.target.value)}
+            onKeyDown={(event) => event.stopPropagation()}
+            onKeyUp={(event) => event.stopPropagation()}
             placeholder="Describe a drawing or refinement…"
             ref={promptRef}
             value={draft}
@@ -501,11 +503,7 @@ const AiConversationFeed = ({
   }, [confirmationSnapshot, conversationSnapshot])
 
   const submitDrawingDetailChoice = useCallback(
-    (
-      turnId: string,
-      attachments: readonly AiImageAttachment[],
-      optionId: AiDrawingDetailOptionId
-    ) => {
+    (turnId: string, optionId: AiDrawingDetailOptionId) => {
       const snapshot = conversation.getSnapshot()
       const latestSettled =
         snapshot.settledTurns[snapshot.settledTurns.length - 1]
@@ -518,7 +516,6 @@ const AiConversationFeed = ({
       }
       try {
         const settlement = conversation.submit({
-          attachments,
           intent: optionId === 'maximum' ? 'Maximum detail' : 'Balanced detail',
           detailOption: optionId,
           replyToTurnId: turnId
@@ -658,11 +655,7 @@ const AiConversationFeed = ({
                             choice={choice}
                             key={choice.id}
                             onChoose={() =>
-                              submitDrawingDetailChoice(
-                                turn.turnId,
-                                turn.attachments,
-                                choice.id
-                              )
+                              submitDrawingDetailChoice(turn.turnId, choice.id)
                             }
                           />
                         ))}

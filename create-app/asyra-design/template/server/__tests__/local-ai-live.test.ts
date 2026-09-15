@@ -42,6 +42,7 @@ it.skipIf(process.env.E2E_LOCAL_AI !== 'true')(
                 namespace: packet.params?.namespace,
                 argumentKeys: Object.keys(packet.params?.arguments ?? {}),
                 itemKeys: Object.keys(packet.params?.item ?? {}),
+                phase: packet.params?.item?.phase,
                 status: packet.params?.turn?.status,
                 errorCode: packet.error?.code
               })
@@ -54,7 +55,12 @@ it.skipIf(process.env.E2E_LOCAL_AI !== 'true')(
       return child
     }) as typeof spawn)
     const bytes = await readFile(
-      new URL('../../e2e/fixtures/local-vector-reference.png', import.meta.url)
+      new URL(
+        process.env.LOCAL_AI_LOGO_REPLAY === 'true'
+          ? './fixtures/logo-thumbnail.png'
+          : '../../e2e/fixtures/local-vector-reference.png',
+        import.meta.url
+      )
     )
     const replayInput: AiProviderInput | undefined = process.env
       .LOCAL_AI_TEST_INPUT
@@ -65,7 +71,9 @@ it.skipIf(process.env.E2E_LOCAL_AI !== 'true')(
       result = await requestLocalAiActionBatch(
         replayInput ?? {
           intent:
-            'Use vtracer on attachment 0 and insert the exact resulting vector image at original size. Preserve all returned polygon paths.',
+            process.env.LOCAL_AI_LOGO_REPLAY === 'true'
+              ? '這樣就好。保留目前細節，用 vtracer 轉成可編輯向量，依原要求繪製。'
+              : 'Use vtracer on attachment 0 and insert the exact resulting vector image at original size. Preserve all returned polygon paths.',
           context: {
             workspaceId: 'workspace',
             elementCount: 0,
@@ -80,6 +88,15 @@ it.skipIf(process.env.E2E_LOCAL_AI !== 'true')(
           ],
           attempt: 1,
           metadata: {
+            ...(process.env.LOCAL_AI_LOGO_REPLAY === 'true'
+              ? {
+                  replyTo: {
+                    turnId: 'reference-request',
+                    intent:
+                      '幫我畫這張，240*240 px，只要 logo。已接受目前細節，不需要更高解析度。'
+                  }
+                }
+              : {}),
             imageAttachments: [
               {
                 mediaType: 'image/png',

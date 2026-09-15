@@ -2,11 +2,75 @@ import { expect, test } from '@playwright/test'
 import { createPreparedDrawingArtifact } from './action-batch-interceptor'
 import {
   createTestDocumentIdentity,
+  getActiveTool,
   getCoreDocumentDigest,
   getUndoHistoryDepth,
   undo,
   waitForAppReady
 } from './test-utils'
+
+test('text answers keep the original reference only on its message and typing never switches canvas tools', async ({
+  page
+}, testInfo) => {
+  const requests: { metadata: { imageAttachments?: unknown[] } }[] = []
+  await page.route('**/api/ai/status', (route) =>
+    route.fulfill({ json: { state: 'ready' } })
+  )
+  await page.route('**/api/ai/action-batch', (route) => {
+    requests.push(route.request().postDataJSON())
+    return route.fulfill({
+      json: {
+        batchId: `question-${requests.length}`,
+        actions: [
+          {
+            id: 'ask',
+            name: 'request_clarification',
+            arguments: { question: 'Keep the original dimensions?' },
+            summary: 'Confirm dimensions'
+          }
+        ]
+      }
+    })
+  })
+  await page.goto(createTestDocumentIdentity().url)
+  await waitForAppReady(page)
+  await page.getByRole('button', { name: 'Open Agent' }).click()
+  const composer = page.getByLabel('Message Agent')
+  await composer.click()
+  for (const key of ['r', 'o', 'p', 'v', 'Backspace', 'Space']) {
+    await page.keyboard.press(key)
+    expect(await getActiveTool(page)).toBe('select')
+    await expect(composer).toBeFocused()
+  }
+  await page
+    .getByLabel('Choose images')
+    .setInputFiles('e2e/fixtures/local-vector-reference.png')
+  await composer.fill('Draw this reference at 240 by 240')
+  await page.getByRole('button', { name: 'Send', exact: true }).click()
+  await expect(page.getByText('Waiting for your answer')).toBeVisible()
+  await composer.fill('Yes, keep the dimensions')
+  await page.getByRole('button', { name: 'Send', exact: true }).click()
+  await expect(page.getByTestId('ai-agent-message')).toHaveCount(2)
+  await expect(page.getByTestId('ai-agent-message').last()).toHaveAttribute(
+    'data-outcome',
+    'no-change'
+  )
+  await expect(
+    page.getByLabel('Your message').first().getByRole('img')
+  ).toHaveCount(1)
+  await expect(
+    page.getByLabel('Your message').last().getByRole('img')
+  ).toHaveCount(0)
+  expect(requests[1].metadata.imageAttachments).toEqual(
+    requests[0].metadata.imageAttachments
+  )
+  await page
+    .getByTestId('ai-agent-panel')
+    .screenshot({ path: testInfo.outputPath('text-answer.png') })
+  await page.getByRole('button', { name: 'Close Agent panel' }).click()
+  await page.keyboard.press('r')
+  await expect.poll(() => getActiveTool(page)).toBe('rectangle')
+})
 
 const drawing = (seed: string) =>
   createPreparedDrawingArtifact(
