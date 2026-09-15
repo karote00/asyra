@@ -774,9 +774,14 @@ identities, exact budgets and all existing visibility/coverage/work oracles are
 unchanged. Ordinary controls additionally use canonical bounded sheet sources;
 legacy behavior remains ordinary. The existing external test supervisor owns
 both classes, finite wall deadlines, output limits, process-group cleanup and CPU
-accounting. Profile selection uses the profile config and the same worker
-acknowledgement setup; selected-profile evidence cannot claim full ordinary
-coverage. The 30-second full-site observation/inventory, 20-second relation,
+accounting. The required profile gate discovers the exact profile class and
+partitions it into the walking-constrained-kinematics owner and every remaining
+profile. The disjoint groups run sequentially through the profile config and the
+same worker acknowledgement setup, each with the unchanged 20-minute supervisor
+deadline. A new profile automatically joins the remaining group; missing,
+duplicated or incomplete group coverage fails before full profile completion.
+Selected/group profile evidence cannot claim full ordinary coverage. The
+30-second full-site observation/inventory, 20-second relation,
 45-second observation-bootstrap and 60-second local-action-bootstrap per-case
 ceilings are engineering initial values, not product performance promises. No
 source, motion, observation or decision budget is increased. Existing numerical

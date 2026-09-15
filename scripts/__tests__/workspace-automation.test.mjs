@@ -171,6 +171,9 @@ test('CI bounds workspace test concurrency without dropping test owners', () => 
   const fieldscopeVitest = readText('apps/fieldscope/vitest.config.ts')
   const fieldscopeVitestSetup = readText('apps/fieldscope/vitest.setup.ts')
   const profileVitest = readText('apps/fieldscope/vitest.profile.config.ts')
+  const profileGroups = readText(
+    'apps/fieldscope/scripts/run-profile-groups.py'
+  )
   const walkingMotionProfile = readText(
     'apps/fieldscope/src/simulation/__tests__/walking-motion.profile.test.ts'
   )
@@ -182,8 +185,15 @@ test('CI bounds workspace test concurrency without dropping test owners', () => 
   assert.equal(scripts['test:ci'], 'yarn test:scripts && turbo run test:ci')
   assert.equal(
     fieldscopeScripts['test:profiles'],
-    'node --test scripts/__tests__/supervise-tests.test.mjs && python3 scripts/supervise-tests.py --profile'
+    'node --test scripts/__tests__/supervise-tests.test.mjs scripts/__tests__/run-profile-groups.test.mjs && python3 scripts/run-profile-groups.py'
   )
+  assert.match(
+    profileGroups,
+    /HEAVY_PROFILE = \([\s\S]*walking-constrained-kinematics\.profile\.test\.ts/
+  )
+  assert.match(profileGroups, /rglob\("\*" \+ PROFILE_SUFFIX\)/)
+  assert.match(profileGroups, /for name in \("heavy", "remaining"\)/)
+  assert.match(profileGroups, /sorted\(heavy \+ remaining\) != all_profiles/)
   assert.equal(
     fieldscopeScripts['test:local'],
     'node --test scripts/__tests__/supervise-tests.test.mjs && python3 scripts/supervise-tests.py'
