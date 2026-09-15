@@ -1,3 +1,20 @@
+# Website homepage - accepted continuous story
+
+## Current contract
+
+The product owner approved replacing the former homepage with the six-chapter
+green spatial story. The current visual, content, ownership and verification
+contract is [the homepage contract](../../../../apps/asyra-framework-site/docs/spatial-story.md#current-homepage-contract).
+It supersedes the older composition requirements recorded below: the factory
+film, five brand chapters, separate architecture explainer and PoC comparison
+are no longer homepage requirements. `/story` is removed, not redirected.
+Supporting documentation, product case, Runtime Atlas, releases and roadmap
+retain their independent owners. Existing SEO/indexing environment policy is
+preserved. Product evidence and the three build/evaluate entry points follow
+the story without repeating it.
+
+## Prior composition record - superseded
+
 # Website Product and Technical Evidence Plan
 
 ## Status

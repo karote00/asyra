@@ -52,8 +52,8 @@ test('landing and supporting routes render the shared site shell components', as
     readSiteFile('components/site-frame.tsx')
   ])
 
-  assert.match(landing, /<SiteHeader variant="landing"\s*\/>/)
-  assert.match(landing, /<SiteFooter\s*\/>/)
+  assert.match(landing, /<SpatialStory footer=\{<SiteFooter \/>\}/)
+  assert.match(landing, /<HomeResources\s*\/>/)
   assert.doesNotMatch(landing, /<header className="site-header"/)
   assert.doesNotMatch(landing, /<footer className="site-footer"/)
   assert.match(frame, /<SiteHeader\s*\/>/)

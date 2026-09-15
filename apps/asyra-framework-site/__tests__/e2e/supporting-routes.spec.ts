@@ -52,7 +52,6 @@ const assertMinimumFontSize = async (
 }
 
 const popupRouteSamples = [
-  '/',
   '/docs',
   '/docs/start/preset-2d',
   '/atlas',
@@ -1150,7 +1149,6 @@ test('every public mobile hero keeps a compact reading hierarchy', async ({
   page
 }, testInfo) => {
   const routes = [
-    ['landing', '/', '.hero', '.hero__lead'],
     ['docs', '/docs', '.page-hero', '.page-hero__copy > p:last-of-type'],
     [
       'docs-detail',
@@ -1307,8 +1305,8 @@ test('mobile supporting copy keeps a readable minimum size', async ({
     await page.setViewportSize({ width, height: 844 })
 
     await page.goto('/')
-    await assertMinimumFontSize(page, '.poc-story__governance', 14)
-    await page.locator('.poc-story__inner').screenshot({
+    await assertMinimumFontSize(page, '#start-building article p', 14)
+    await page.locator('#start-building').screenshot({
       animations: 'disabled',
       path: testInfo.outputPath(`home-workflow-supporting-copy-${width}.png`)
     })

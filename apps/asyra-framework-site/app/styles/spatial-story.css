@@ -1,0 +1,63 @@
+/* Route-local utilities; existing site base styles are retained. */
+@import 'tailwindcss/theme' layer(theme);
+@import 'tailwindcss/utilities' layer(utilities);
+@source '../../components/spatial-story.tsx';
+@source '../../components/home-resources.tsx';
+
+/* CSS 3D projection integration: transforms must retain real plane depth.
+   The viewport owns clipping, never an intermediate transformed ancestor. */
+.story-depth {
+  transform-style: preserve-3d;
+}
+[data-scene-viewport] {
+  perspective: 1400px;
+  --scene-scale: 0.75;
+}
+.spatial-story-shell {
+  position: relative;
+  z-index: 21;
+  background: #f4f1e7;
+  color: #183f35;
+  overflow-x: clip;
+}
+.spatial-story-shell h1,
+.spatial-story-shell h2,
+.spatial-story-shell p {
+  margin: 0;
+}
+.spatial-story-shell a {
+  box-shadow: none;
+  text-decoration: none;
+  color: inherit;
+}
+.spatial-story-shell a:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 5px;
+}
+.spatial-story-shell section {
+  scroll-margin-top: 80px;
+}
+/* The useful server-rendered snapshots scale before hydration and with no JS. */
+@media (max-width: 1023px) {
+  [data-scene-viewport] {
+    --scene-scale: 0.35;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spatial-story-shell {
+    scroll-behavior: auto;
+  }
+}
+/* Fallback frames reserve the full projection height. Focused architecture
+   snapshots use the available width instead of desktop's wide scene bounds. */
+[data-static-scene] [data-scene-viewport] {
+  --scene-scale: 0.5;
+}
+@media (max-width: 1023px) {
+  [data-static-scene] [data-scene-viewport] {
+    --scene-scale: 0.34;
+  }
+  [data-focused-snapshot] {
+    --scene-scale: 0.5 !important;
+  }
+}

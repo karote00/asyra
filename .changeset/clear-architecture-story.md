@@ -2,4 +2,4 @@
 '@asyra/flow-inspector': patch
 ---
 
-Document the website's five brand-story chapters and scroll-driven architecture, including native navigation and complete reading across motion and viewport modes.
+Update the Website Landing Inspector for the accepted six-chapter continuous homepage, staged house-to-tower example, native navigation, product evidence and building entry points. Retire the standalone story route and obsolete film/comparison requirements.
