@@ -3569,6 +3569,7 @@ test(
       await frame.locator('#target-controls > summary').click()
       await frame.locator('#target-select').selectOption(id)
       await expect(frame.locator('#target-result')).toContainText('Revision 5')
+      await page.waitForLoadState('networkidle')
       const current = server.service.getTarget(id)
       const allocation = structuredClone(current.history.at(-1).state)
       allocation.works.forEach((w) => {
@@ -3585,12 +3586,25 @@ test(
         },
         LOCAL_ACTOR
       )
+      const refreshedState = page.waitForResponse(
+        (response) =>
+          new URL(response.url()).pathname === '/api/state' &&
+          response.request().method() === 'GET'
+      )
       await frame.locator('#refresh').click()
-      await expect(frame.locator('#target-result')).toContainText('Revision 5')
+      await refreshedState
+      await expect(frame.locator('#target-result')).toContainText('Revision 6')
       await frame
         .locator('#target-reason')
         .fill('Do not overwrite from stale editor')
+      const staleDecision = page.waitForRequest(
+        (request) =>
+          new URL(request.url()).pathname === '/api/targets/decide' &&
+          request.method() === 'POST'
+      )
       await frame.locator('#target-save').click()
+      const staleRequest = await staleDecision
+      assert.equal(staleRequest.postDataJSON().expectedRevision, 5)
       await expect(frame.locator('#target-notice')).toContainText('stale')
       const api = await fetch(server.origin + '/api/targets/' + id).then((r) =>
         r.json()
