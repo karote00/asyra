@@ -34,13 +34,7 @@ test('architecture emphasis adds no client execution or alternate runtime', asyn
     1
   )
   assert.doesNotMatch(page, /Governed Feature runtime path/)
-  assert.ok(
-    page.indexOf('id="action-film-title"') <
-      page.indexOf('<ArchitectureStory />')
-  )
-  assert.ok(
-    page.indexOf('<ArchitectureStory />') < page.indexOf('id="feature-code"')
-  )
+  assert.doesNotMatch(page, /ArchitectureStory|action-film-title/)
   assert.match(component, /own acknowledgement/)
   assert.match(component, /App Feature and public API/)
   assert.match(component, /Transaction and canonical owner/)

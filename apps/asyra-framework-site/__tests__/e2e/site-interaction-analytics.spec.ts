@@ -48,7 +48,7 @@ test('enabled analytics records CTA and SPA navigation once without query string
   await page.goto('/?email=private@example.com')
   await expect(page.locator('#asyra-ga-init')).toBeAttached()
   await page
-    .locator('.hero a[data-site-cta][href="/docs/start/custom-composition"]')
+    .locator('header a[data-site-cta][href="/docs/start/custom-composition"]')
     .click()
   await expect(page).toHaveURL(/\/docs\/start\/custom-composition$/)
   await expect
@@ -57,7 +57,7 @@ test('enabled analytics records CTA and SPA navigation once without query string
   expect(events.find(([, name]) => name === SITE_EVENTS.cta)?.[2]).toEqual({
     page_path: '/',
     cta_id: 'compose',
-    link_area: 'hero'
+    link_area: 'header'
   })
   await page
     .getByRole('navigation', { name: 'Primary navigation' })
