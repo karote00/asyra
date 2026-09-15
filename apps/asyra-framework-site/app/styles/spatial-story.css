@@ -1,0 +1,189 @@
+/* Route-local utilities; existing site base styles are retained. */
+@import 'tailwindcss/theme' layer(theme);
+@import 'tailwindcss/utilities' layer(utilities);
+@source '../../components/spatial-story.tsx';
+@source '../../components/home-resources.tsx';
+
+/* CSS 3D projection integration: transforms must retain real plane depth.
+   The viewport owns clipping, never an intermediate transformed ancestor. */
+.story-depth {
+  transform-style: preserve-3d;
+}
+[data-scene-viewport] {
+  perspective: 1400px;
+  --scene-scale: 0.75;
+}
+.spatial-story-shell {
+  position: relative;
+  z-index: 21;
+  background: #f4f1e7;
+  color: #183f35;
+  overflow-x: clip;
+}
+.spatial-story-shell h1,
+.spatial-story-shell h2,
+.spatial-story-shell p {
+  margin: 0;
+}
+.spatial-story-shell a {
+  box-shadow: none;
+  text-decoration: none;
+  color: inherit;
+}
+.spatial-story-shell a:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 5px;
+}
+.spatial-story-shell .wordmark {
+  color: var(--color-green-deep);
+}
+.spatial-story-shell section {
+  scroll-margin-top: 80px;
+}
+/* The useful server-rendered snapshots scale before hydration and with no JS. */
+@media (max-width: 1023px) {
+  [data-scene-viewport] {
+    --scene-scale: 0.35;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spatial-story-shell {
+    scroll-behavior: auto;
+  }
+}
+/* The frame and its copy reflow together. Keep the animated canvas bounded on
+   wide screens; static snapshots reserve space proportional to their width. */
+[data-story-track] {
+  max-width: 1800px;
+  margin-inline: auto;
+}
+[data-story-chapter] > div:first-child {
+  min-width: 0;
+}
+[data-story-chapter] h1,
+[data-story-chapter] h2 {
+  font-size: clamp(40px, 4.25vw, 74px);
+}
+[data-story-chapter] > div:first-child > p:not(:first-child) {
+  max-width: 420px;
+}
+[data-static-scene] {
+  container-type: inline-size;
+  height: auto;
+  margin-top: 12px;
+}
+[data-static-scene] [data-scene-viewport] {
+  height: clamp(270px, 90cqw, 410px);
+  min-height: 0;
+  --scene-scale: min(0.5, calc(100cqw / 1000px));
+}
+[data-static-scene] [data-focused-snapshot] {
+  height: clamp(340px, 110cqw, 440px);
+  --scene-scale: min(0.5, calc(100cqw / 750px)) !important;
+}
+@media (min-width: 768px) {
+  .spatial-story-shell[data-motion='off'] [data-story-chapter] {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+    align-items: center;
+    gap: 24px;
+    padding: 64px 32px;
+  }
+  .spatial-story-shell[data-motion='off'] [data-static-scene] {
+    margin-top: 0;
+  }
+  .spatial-story-shell[data-motion='off'] [data-story-chapter] h1,
+  .spatial-story-shell[data-motion='off'] [data-story-chapter] h2 {
+    font-size: clamp(40px, 4.5vw, 52px);
+  }
+}
+@media (min-width: 1024px) {
+  .spatial-story-shell[data-motion='on'] [data-story-track] {
+    padding-inline: clamp(32px, 4vw, 72px) 24px;
+    grid-template-columns: minmax(0, 0.38fr) minmax(0, 0.62fr);
+  }
+  .spatial-story-shell[data-motion='on'] [data-story-track] > div:last-child {
+    container-type: inline-size;
+  }
+  .spatial-story-shell[data-motion='on'] [data-shared-scene] {
+    height: min(100%, clamp(520px, 80cqw, 900px));
+    margin-top: clamp(0px, calc((100svh - 80px - 80cqw) * 0.15), 60px);
+  }
+  .spatial-story-shell[data-motion='on']
+    [data-story-chapter]
+    > div:first-child {
+    top: clamp(112px, 17svh, 180px);
+    padding-right: 24px;
+  }
+}
+@media (max-width: 767px) {
+  [data-story-chapter] {
+    padding-block: 40px;
+  }
+  [data-story-chapter] > div:first-child > ol {
+    margin-top: 24px;
+  }
+}
+
+/* Static captions occupy their own row below the projected artwork canvas. */
+[data-static-scene] {
+  padding-bottom: 40px;
+}
+[data-static-scene] [data-scene-caption] {
+  top: 100%;
+  bottom: auto;
+}
+
+/* A still illustration uses its intrinsic aspect ratio, not a projected stage.
+   Its caption follows the image in normal flow with the same content edges. */
+[data-static-scene]:has([data-static-illustration]) {
+  padding-bottom: 0;
+}
+[data-static-scene] [data-static-illustration] {
+  height: auto;
+}
+[data-static-illustration] > img {
+  height: auto;
+}
+[data-static-illustration] > [data-scene-caption] {
+  position: static;
+  margin-top: 16px;
+  gap: 24px;
+}
+
+/* Homepage resources continue the story's content gutters at every breakpoint. */
+#built-with-asyra,
+#start-building,
+.spatial-story-shell section[aria-label='Start your next product'] {
+  padding-inline: 0;
+}
+#built-with-asyra > div,
+#start-building > div,
+.spatial-story-shell section[aria-label='Start your next product'] > div,
+.spatial-story-shell .site-footer {
+  max-width: 1800px;
+  padding-inline: 24px;
+}
+@media (min-width: 768px) and (max-width: 1023px) {
+  #built-with-asyra > div,
+  #start-building > div,
+  .spatial-story-shell section[aria-label='Start your next product'] > div,
+  .spatial-story-shell .site-footer {
+    padding-inline: 32px;
+  }
+}
+@media (min-width: 1024px) {
+  #built-with-asyra > div,
+  #start-building > div,
+  .spatial-story-shell section[aria-label='Start your next product'] > div,
+  .spatial-story-shell .site-footer {
+    padding-inline: clamp(32px, 4vw, 72px) 24px;
+  }
+}
+
+.spatial-story-shell .site-footer nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: 14px;
+}
