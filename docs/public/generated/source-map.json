@@ -16,7 +16,7 @@
     },
     {
       "id": "start/create-design-app",
-      "pageSha256": "f646e736122a5332a52f3e06e26083447f19b031d4ce119270a5d80a741e5ddd",
+      "pageSha256": "87bbd0e550649031f529d345f1bfc49fa364450e15fabc5fe7025640aa11232f",
       "sources": [
         {
           "path": "create-app/asyra-design/package.json",
@@ -24,7 +24,7 @@
         },
         {
           "path": "create-app/asyra-design/template/README.md",
-          "sha256": "5119d879329d61c113dc064c1b60d3e8d9a16b883061f8e0fd66d22ed61a64ce"
+          "sha256": "d6e36f081b324f24bcc7124725dbf5f88bb81232431ec5489c7c3ccf997f24b6"
         }
       ]
     },
@@ -618,7 +618,7 @@
         },
         {
           "path": "docs/ai/apps/asyra-design/ARCHITECTURE.md",
-          "sha256": "b9d56b75f08facbaa09da3227978c53138dc3148031b0c8b062ccc1850708aec"
+          "sha256": "f95877aaf81c1f63aad72553cc6dab5c8dbe1f6aece01f557eb7b3c74b660fe7"
         },
         {
           "path": "docs/ai/apps/asyra-design/modules/init-and-startup.md",

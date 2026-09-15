@@ -57,7 +57,7 @@
       "wordCount": 658
     },
     {
-      "contentSha256": "f646e736122a5332a52f3e06e26083447f19b031d4ce119270a5d80a741e5ddd",
+      "contentSha256": "87bbd0e550649031f529d345f1bfc49fa364450e15fabc5fe7025640aa11232f",
       "description": "Begin with the maintained Asyra Design product template and extend it as an app owner.",
       "headings": [
         {
@@ -102,6 +102,10 @@
         },
         {
           "depth": 2,
+          "title": "Optional local AI subscription"
+        },
+        {
+          "depth": 2,
           "title": "Validate before extending further"
         },
         {
@@ -122,7 +126,7 @@
       "path": "start/create-design-app.md",
       "section": "Start",
       "title": "Create a complete design app",
-      "wordCount": 595
+      "wordCount": 682
     },
     {
       "contentSha256": "fe0dc685c5f70631bfabd32ae2594b9fb5da59959821ad2df46d1361de0394c4",
