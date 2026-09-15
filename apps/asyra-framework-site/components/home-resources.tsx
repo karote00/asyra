@@ -8,7 +8,7 @@ export function HomeResources() {
       >
         <div className="mx-auto grid max-w-[1440px] items-center gap-10 lg:grid-cols-[.8fr_1.2fr] lg:gap-20">
           <div>
-            <p className="text-[11px] uppercase tracking-[.2em] opacity-60">
+            <p className="text-[12px] uppercase tracking-[.2em] opacity-80">
               Built with Asyra
             </p>
             <h2
@@ -23,20 +23,20 @@ export function HomeResources() {
               Asyra Design brings editable layers, app-owned tools, history and
               persistence together in a working design product.
             </p>
-            <div className="mt-8 flex flex-wrap gap-6 text-sm">
+            <div className="mt-8 flex flex-wrap gap-6 text-base">
               <a
                 data-site-cta=""
                 href="https://asyra-design.vercel.app/?fileId=demo"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="border-b border-current pb-2"
+                className="inline-flex min-h-11 items-center border-b border-current pb-2"
               >
                 Try the live product ↗
               </a>
               <a
                 data-site-cta=""
                 href="/asyra-design"
-                className="border-b border-current pb-2"
+                className="inline-flex min-h-11 items-center border-b border-current pb-2"
               >
                 Read the product case →
               </a>
@@ -64,7 +64,7 @@ export function HomeResources() {
         className="relative z-20 bg-[#e7ebdd] px-6 py-20 lg:px-[8vw] lg:py-28"
       >
         <div className="mx-auto max-w-[1440px]">
-          <p className="text-[11px] uppercase tracking-[.2em] opacity-60">
+          <p className="text-[12px] uppercase tracking-[.2em] opacity-80">
             From here, into code
           </p>
           <h2
@@ -101,13 +101,13 @@ export function HomeResources() {
                 <h3 className="m-0 font-serif text-[26px] leading-tight">
                   {item.title}
                 </h3>
-                <p className="flex-1 pt-4 text-sm leading-relaxed opacity-75">
+                <p className="flex-1 pt-4 text-base leading-relaxed opacity-75">
                   {item.body}
                 </p>
                 <a
                   data-site-cta=""
                   href={item.href}
-                  className="mt-7 border-b border-current pb-2 text-sm"
+                  className="mt-7 inline-flex min-h-11 items-center border-b border-current pb-2 text-base"
                 >
                   {item.link} →
                 </a>

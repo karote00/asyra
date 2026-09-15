@@ -165,3 +165,17 @@ phone chapters stack them with artwork-height reservations derived from the
 container width. Focused architecture snapshots retain enough height to keep
 the state plane clear of their captions. Resizing changes the layout as well as
 the illustration scale, without changing the story clock or authored poses.
+
+### Homepage reading and navigation
+
+Desktop navigation exposes Docs, Runtime Atlas and GitHub directly; the native
+Menu disclosure is reserved for widths below 1024px. Chapter navigation remains
+visible from 1280px where both sets of links fit without crowding. Navigation
+controls have 44px minimum height and 14px type. Body copy uses 16px on compact
+screens and 18–20px on desktop; steps use 14–16px. Captions, architecture labels,
+resource links and the homepage footer use a matching readable hierarchy.
+
+Animated presentation requires at least 1024px width and 760px height. Shorter
+windows use the complete static story in natural flow, including reduced-motion
+and no-JavaScript reading. Header control bounds, overlap, text floors, seven
+responsive widths and the short-window reading path have permanent UX tests.

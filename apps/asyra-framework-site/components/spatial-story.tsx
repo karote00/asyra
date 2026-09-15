@@ -92,7 +92,7 @@ function Notebook({ frame }: { frame: StoryFrame }) {
     <div className="relative h-[370px] w-[500px] rounded-[5px] border border-[#34574a]/40 bg-[#fbf8ee] text-[#183f35] shadow-[0_15px_50px_#183f3520]">
       <div className="absolute inset-x-0 top-0 flex h-11 items-center justify-between border-b border-[#183f35]/15 px-6 text-xs">
         <span className="font-serif text-lg">Your composition</span>
-        <span className="text-[9px] uppercase tracking-[.15em]">
+        <span className="text-[12px] uppercase tracking-[.15em]">
           An idea, made visible
         </span>
       </div>
@@ -107,7 +107,7 @@ function Notebook({ frame }: { frame: StoryFrame }) {
         <DrawingOutput frame={frame} />
       </div>
       <div className="absolute left-[322px] right-5 top-[86px]">
-        <span className="text-[9px] uppercase tracking-[.15em] opacity-50">
+        <span className="text-[12px] uppercase tracking-[.15em] opacity-50">
           Site 001
         </span>
         <h3 className="mt-3 font-serif text-[29px] font-normal leading-[1.1]">
@@ -115,7 +115,7 @@ function Notebook({ frame }: { frame: StoryFrame }) {
           <br />
           Room to grow.
         </h3>
-        <p className="mt-4 text-[11px] leading-relaxed opacity-60">
+        <p className="mt-4 text-[14px] leading-relaxed opacity-75">
           Same footprint.
           <br />
           Different building rule.
@@ -201,11 +201,11 @@ function StructurePlane({ name, frame }: { name: string; frame: StoryFrame }) {
         className="absolute bottom-0 left-0 h-[9px] w-full bg-[#718e74]"
         style={{ transformOrigin: 'bottom', transform: 'rotateX(90deg)' }}
       />
-      <code className="absolute left-6 top-6 block border-l-2 border-[#183f35]/35 pl-3 text-[12px]">
+      <code className="absolute left-6 top-6 block border-l-2 border-[#183f35]/35 pl-3 text-[18px]">
         {code}
       </code>
       {name === 'state' && (
-        <div className="absolute left-6 top-[54px] font-mono text-[11px]">
+        <div className="absolute left-6 top-[54px] font-mono text-[16px]">
           <span
             data-scene-inverse="saved"
             style={{ opacity: 1 - frame.effects.saved }}
@@ -222,8 +222,8 @@ function StructurePlane({ name, frame }: { name: string; frame: StoryFrame }) {
         </div>
       )}
       <div className="absolute inset-x-0 bottom-0 flex h-[58px] items-center justify-between border-t border-[#183f35]/20 px-6">
-        <strong className="font-serif text-[28px] font-normal">{title}</strong>
-        <span className="relative text-[10px] uppercase tracking-[.1em]">
+        <strong className="font-serif text-[32px] font-normal">{title}</strong>
+        <span className="relative text-[14px] uppercase tracking-[.1em]">
           {name === 'state' ? (
             <>
               <span
@@ -263,7 +263,7 @@ function ExtraView({
 }) {
   return (
     <div className="h-[270px] w-[260px] rounded-[5px] border border-[#183f35]/30 bg-[#fbf8ee] p-6 text-[#183f35] shadow-[0_12px_35px_#183f351a]">
-      <span className="text-[9px] uppercase tracking-[.16em]">
+      <span className="text-[12px] uppercase tracking-[.16em]">
         {history ? 'One more capability' : 'Another projection'}
       </span>
       <h3 className="mt-3 font-serif text-[27px] font-normal">
@@ -302,7 +302,7 @@ function StoryScene({
   const caption = (
     <div
       data-scene-caption
-      className="absolute inset-x-6 bottom-7 flex justify-between border-t border-[#183f35]/20 pt-3 text-[9px] uppercase tracking-[.13em] opacity-60 lg:inset-x-10"
+      className="absolute inset-x-6 bottom-7 flex justify-between border-t border-[#183f35]/20 pt-3 text-[12px] leading-relaxed tracking-[.025em] text-[#34574a] lg:inset-x-10"
     >
       <span>One illustrative composition</span>
       <span>Powered by Asyra</span>
@@ -408,9 +408,9 @@ function StoryChapter({ index }: { index: number }) {
       className="relative px-6 py-16 lg:px-0 lg:py-0 lg:group-data-[motion=on]:min-h-[calc(var(--chapter-length)*100svh+var(--chapter-tail))]"
     >
       <div className="relative lg:group-data-[motion=on]:sticky lg:group-data-[motion=on]:top-[22svh] lg:group-data-[motion=on]:py-8">
-        <p className="mb-7! flex items-center gap-3 text-[10px] uppercase tracking-[.16em]">
+        <p className="mb-7! flex items-center gap-3 text-[12px] uppercase tracking-[.16em]">
           <span className="h-px w-7 bg-current" />0{index + 1}{' '}
-          <span className="opacity-60">{chapter.eyebrow}</span>
+          <span className="opacity-80">{chapter.eyebrow}</span>
         </p>
         <Heading
           id={`title-${chapter.id}`}
@@ -418,13 +418,13 @@ function StoryChapter({ index }: { index: number }) {
         >
           {chapter.title}
         </Heading>
-        <p className="mt-6! max-w-[340px] text-[14px] leading-[1.8] opacity-75 lg:text-[15px]">
+        <p className="mt-6! max-w-[420px] text-[16px] leading-[1.7] text-[#34574a] lg:text-[clamp(18px,1.35vw,20px)]">
           {chapter.detail}
         </p>
-        <ol className="mt-8 list-none space-y-3 border-l border-[#183f35]/25 pl-4 text-[11px] leading-relaxed">
+        <ol className="mt-8 list-none space-y-3 border-l border-[#183f35]/25 pl-4 text-[14px] leading-relaxed lg:text-[16px]">
           {chapter.steps.map((step, i) => (
             <li key={step} data-scene-step={i}>
-              <span className="mr-3 opacity-40">0{i + 1}</span>
+              <span className="mr-3 opacity-70">0{i + 1}</span>
               {step}
             </li>
           ))}
@@ -432,7 +432,7 @@ function StoryChapter({ index }: { index: number }) {
         {index === 0 && (
           <a
             href="#select"
-            className="mt-8 inline-flex items-center gap-6 border-b border-current pb-2 text-[12px]"
+            className="mt-8 inline-flex items-center gap-6 min-h-11 border-b border-current pb-2 text-[15px]"
           >
             Follow the idea <span>↓</span>
           </a>
@@ -440,7 +440,7 @@ function StoryChapter({ index }: { index: number }) {
         {index === 5 && (
           <a
             href="/docs/start/custom-composition"
-            className="mt-8 inline-flex items-center gap-8 rounded-full bg-[#183f35] px-6 py-3 text-[13px] text-[#f4f1e7]!"
+            className="mt-8 inline-flex items-center gap-8 rounded-full bg-[#183f35] px-6 py-3 text-[15px] text-[#f4f1e7]!"
           >
             Start building <span>↗</span>
           </a>
@@ -558,7 +558,7 @@ export function SpatialStory({
     }
     const measure = () => {
       animated =
-        !media.matches && window.innerWidth >= 1024 && window.innerHeight >= 650
+        !media.matches && window.innerWidth >= 1024 && window.innerHeight >= 760
       root.dataset.motion = animated ? 'on' : 'off'
       measurements = sections.map((section) => ({
         top: section.getBoundingClientRect().top + window.scrollY - 80,
@@ -604,21 +604,21 @@ export function SpatialStory({
       <header className="fixed inset-x-0 top-0 z-50 flex h-20 items-center justify-between border-b border-[#183f35]/15 bg-[#f4f1e7]/95 px-6 backdrop-blur-sm lg:px-[4vw]">
         <a
           href="/"
-          className="font-serif text-[34px] tracking-[-.05em]"
+          className="inline-flex min-h-11 items-center font-serif text-[34px] tracking-[-.05em]"
           aria-label="Asyra home"
         >
           asyra.
         </a>
         <nav
           aria-label="Story chapters"
-          className="hidden items-center gap-5 text-[10px] lg:flex"
+          className="hidden items-center gap-4 text-[14px] xl:flex"
         >
           {storyChapters.map((chapter, i) => (
             <a
               key={chapter.id}
               data-chapter-link={i}
               href={`#${chapter.id}`}
-              className="border-b border-transparent py-2 opacity-50 aria-[current=step]:border-current aria-[current=step]:opacity-100"
+              className="inline-flex min-h-11 items-center border-b border-transparent py-2 opacity-75 aria-[current=step]:border-current aria-[current=step]:opacity-100"
             >
               {
                 [
@@ -633,17 +633,40 @@ export function SpatialStory({
             </a>
           ))}
         </nav>
-        <div className="flex items-center gap-5 text-[11px]">
-          <a data-site-cta="" href="/docs/start/custom-composition">
+        <div className="flex items-center gap-4 text-[14px]">
+          <nav
+            aria-label="Primary navigation"
+            className="hidden items-center gap-5 lg:flex"
+          >
+            <a className="inline-flex min-h-11 items-center" href="/docs">
+              Docs
+            </a>
+            <a className="inline-flex min-h-11 items-center" href="/atlas">
+              Runtime Atlas
+            </a>
+            <a
+              className="inline-flex min-h-11 items-center"
+              href="https://github.com/karote00/asyra"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              GitHub ↗
+            </a>
+          </nav>
+          <a
+            className="inline-flex min-h-11 items-center font-medium"
+            data-site-cta=""
+            href="/docs/start/custom-composition"
+          >
             Start building ↗
           </a>
-          <details className="relative">
-            <summary className="cursor-pointer list-none rounded border border-[#183f35]/25 px-3 py-2">
+          <details className="relative lg:hidden">
+            <summary className="inline-flex min-h-11 cursor-pointer list-none items-center rounded border border-[#183f35]/25 px-3 py-2">
               Menu
             </summary>
             <nav
               aria-label="Primary navigation"
-              className="absolute right-0 top-full mt-3 grid min-w-48 gap-4 rounded-lg border border-[#183f35]/20 bg-[#f4f1e7] p-5 text-sm shadow-xl"
+              className="absolute right-0 top-full mt-3 grid min-w-56 gap-1 rounded-lg border border-[#183f35]/20 bg-[#f4f1e7] p-4 text-base shadow-xl [&_a]:flex [&_a]:min-h-11 [&_a]:items-center"
             >
               <a href="/docs">Docs</a>
               <a href="/atlas">Runtime Atlas</a>
