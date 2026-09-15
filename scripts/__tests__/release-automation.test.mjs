@@ -238,7 +238,8 @@ test('release template excludes local runtime data directories', () => {
     '__tests__/playwright-config.test.mjs',
     'server/__tests__/action-batch.test.ts',
     'src/ai/__tests__/detailed-tabby.test.ts',
-    'src/common-apis/element/__tests__/vector-parent-creation.test.ts'
+    'src/common-apis/element/__tests__/vector-parent-creation.test.ts',
+    'e2e/ai-conversation-flow.spec.ts'
   ])
 
   const releaseTemplate = readFileSync(
