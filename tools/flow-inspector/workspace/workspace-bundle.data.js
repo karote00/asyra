@@ -141,7 +141,7 @@
               "one accepted image attachment",
               "App context and registered backend-facing action descriptions",
               "request abort signal",
-              "server-only provider endpoint, model, and API key for ordinary model-backed requests"
+              "server-only backend selection and model; HTTP endpoint/API key or local Codex subscription login for ordinary model-backed requests"
             ],
             "outputs": [
               "artifact:server-prepared-action-batch",
@@ -152,7 +152,7 @@
               "This step starts only when Actor A presses Send on an ordinary Agent turn; App navigation, required fileId resolution, document load, Agent readiness, and attachment selection do not request or execute a drawing.",
               "requestActionBatch() is the only public provider request and performs exactly one same-origin HTTP POST for the accepted turn.",
               "The browser request carries the submitted intent, attachment metadata and data URL, bounded App context without a domain prompt or image-tool catalog, registered action descriptions, attempt number, and abort ownership without reading canonical document persistence.",
-              "The backend-only Asyra Design domain prompt and image-tool catalog are added only after complete server configuration supplies the provider endpoint, model, and API key for an ordinary request.",
+              "The backend-only Asyra Design domain prompt and image-tool catalog are added only after complete server configuration supplies either HTTP endpoint, model, and API key, or the explicit local-codex backend, model, and local subscription login for an ordinary request.",
               "The backend sends the API key only in the provider authorization header; it never enters the browser, App context, logs, provider request body, action batch, canonical state, persistence, or Collaboration.",
               "The backend owns input matching and ordinary provider response construction. An ordinary request uses the configured backend model path and returns one AiActionBatch with its batchId and already-prepared arguments.",
               "The checked-in crdt-7076 backend sample remains the local full-flow request path: its documented URL uses fileId=crdt-7076-sample as both socket-authoritative document identity and Collaboration identity; the backend accepts its exact checked-in image and instruction through the ordinary request body.",
@@ -170,7 +170,7 @@
             "bypasses": [
               "An aborted request cancels the same provider/backend attempt and creates no Runtime, canonical, history, persistence, or CRDT result.",
               "A malformed or unsupported request fails at the provider/backend boundary before Runtime resolution.",
-              "An ordinary model-backed request with incomplete server-only provider endpoint, model, or API key configuration fails with 503 before an upstream request; an upstream transport, status, or response failure returns 502 before Runtime resolution.",
+              "An ordinary model-backed request with incomplete server-only selected-backend configuration fails with 503 before an upstream request; an upstream transport, status, or response failure returns 502 before Runtime resolution.",
               "An Actor that only opens the sample URL performs ordinary socket document startup with zero action-batch request. Socket unavailability selects the existing provisional local session and never a second App startup route."
             ],
             "allowedContributors": [
@@ -180,6 +180,7 @@
               "backend-owned action-batch preparation",
               "backend-owned Asyra Design domain prompt and registered image-tool catalog",
               "completely configured server-only provider endpoint, model, and API key",
+              "explicit local-codex selection, loopback and same-origin admission, one request-owned tool-free Codex process, and subscription account-type check",
               "Node.js native fetch with the API key in the authorization header",
               "checked-in crdt-7076 sample input",
               "checked-in ordered crdt-7076 AiActionBatch instruction file",
@@ -197,7 +198,8 @@
               "provider prompt, configuration, or model work for the exact crdt-7076 sample",
               "model fallback for a partially matching crdt-7076 sample",
               "frontend replacement IDs for server-issued stable descriptor IDs",
-              "a second provider, request method, payload format, compatibility alias, or plan API alias",
+              "a second browser provider, request method, payload format, compatibility alias, or plan API alias",
+              "credential file reads or copies, account identity in output, raw provider logs, local Codex environment tools, or automatic HTTP fallback",
               "artificial provider delay or failure simulation",
               "Runtime, Core, Render, or Collaboration behavior flags"
             ],
@@ -228,6 +230,7 @@
             "specRefs": [
               "#pre-canonical-owner-attribution",
               "#request-time-backend-action-batch-contract",
+              "#local-subscription-backend",
               "#server-prepared-aiactionbatch-contract",
               "#non-negotiable-equivalence",
               "#step-local-gates"

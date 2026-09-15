@@ -1481,6 +1481,16 @@ required fileId selects only the persisted document and Collaboration session
   Actor B applies accepted remote canonical state with zero persistence, Undo,
   or echo publication.
 
+### Local Subscription Backend
+
+The current App server can explicitly select a local Codex subscription backend
+behind the existing same-origin action-batch request. Its configuration,
+credential isolation, process lifecycle, local request admission, supported
+capabilities, and formal cases are defined in the
+[Local AI provider contract](../../specs/local-ai-provider.md). This extends
+backend model selection without changing the browser provider, action-batch
+format, canonical execution, or the exact sample bypass described above.
+
 ### Server-prepared AiActionBatch Contract
 
 The backend owns model preparation; `@asyra/ai-agent-runtime` owns only

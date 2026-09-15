@@ -126,7 +126,7 @@
       specRefs: [
         '#pre-canonical-owner-attribution',
         '#request-time-backend-action-batch-contract',
-        'docs/ai/apps/asyra-design/specs/local-ai-provider.md',
+        '#local-subscription-backend',
         '#server-prepared-aiactionbatch-contract',
         '#non-negotiable-equivalence',
         '#step-local-gates'
