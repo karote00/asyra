@@ -81,7 +81,7 @@ export async function readBaselines(github, repository, targetApp = '') {
   return baselines
 }
 
-export function verifyProject(project, app) {
+export async function verifyProject(project, app, vercel) {
   assert.equal(project.name, app.id, 'Unexpected Vercel project')
   assert.equal(project.rootDirectory, app.root, 'Unexpected Vercel root')
   assert.ok(
@@ -93,8 +93,7 @@ export function verifyProject(project, app) {
     false,
     'Disable automatic production domain assignment before release'
   )
-  const current = project.targets?.production
-  assert.ok(current?.id, 'Missing current production deployment')
+  const current = await readProductionDeployment(vercel, project, app)
   assert.equal(
     current.meta?.githubCommitSha ?? current.meta?.releaseSha,
     app.baseline.sha,
@@ -107,6 +106,45 @@ export function verifyProject(project, app) {
       'Online deployment changed after the release plan'
     )
   return current.id
+}
+
+// A project's production target may be canceled or staged. The stable host's
+// alias is the authority for what visitors receive, refreshed at each gate.
+async function readProductionDeployment(vercel, project, app) {
+  assert.ok(project.id, 'Missing Vercel project ID')
+  const alias = await vercel(`/v4/aliases/${encodeURIComponent(app.host)}`)
+  assert.equal(alias.alias, app.host, 'Unexpected production alias')
+  assert.equal(
+    alias.projectId,
+    project.id,
+    'Production alias belongs to another project'
+  )
+  assert.ok(!alias.redirect, 'Production alias must not redirect')
+  assert.ok(alias.deploymentId, 'Missing deployment for production alias')
+  const current = await vercel(
+    `/v13/deployments/${encodeURIComponent(alias.deploymentId)}`
+  )
+  assert.equal(
+    current.id,
+    alias.deploymentId,
+    'Production deployment ID mismatch'
+  )
+  assert.equal(
+    current.projectId,
+    project.id,
+    'Production deployment belongs to another project'
+  )
+  assert.equal(
+    current.readyState,
+    'READY',
+    'Production deployment is not ready'
+  )
+  assert.equal(
+    current.target,
+    'production',
+    'Unexpected deployment environment'
+  )
+  return current
 }
 
 export async function deploymentUsage(vercel, now = Date.now()) {
@@ -228,7 +266,7 @@ export async function publishPlan({
   const previous = new Map()
   for (const app of selected) {
     const project = await vercel(`/v9/projects/${app.id}`)
-    previous.set(app.id, verifyProject(project, app))
+    previous.set(app.id, await verifyProject(project, app, vercel))
     assert.ok(
       !project.ssoProtection || bypassSecrets[app.id],
       `${app.id} needs an automation bypass secret before creating a deployment`
@@ -237,7 +275,7 @@ export async function publishPlan({
   assertBudget({ ...(await usage(vercel)), requested: selected.length })
   for (const app of selected) {
     assert.equal(
-      verifyProject(await vercel(`/v9/projects/${app.id}`), app),
+      await verifyProject(await vercel(`/v9/projects/${app.id}`), app, vercel),
       previous.get(app.id)
     )
     const deployment = await vercel(
@@ -293,22 +331,35 @@ export async function publishPlan({
         bypassSecret: bypassSecrets[app.id]
       })
       assert.equal(
-        verifyProject(await vercel(`/v9/projects/${app.id}`), app),
+        await verifyProject(
+          await vercel(`/v9/projects/${app.id}`),
+          app,
+          vercel
+        ),
         previous.get(app.id)
       )
       await vercel(`/v10/projects/${app.id}/promote/${deployment.id}`, 'POST')
       promoted = true
-      // Promotion is asynchronous. The canonical project target must match before smoke.
+      // Promotion is asynchronous. Wait for the stable host to serve the candidate.
       let current
       for (let attempt = 0; attempt < 30; attempt++) {
-        current = await vercel(`/v9/projects/${app.id}`)
-        if (current.targets?.production?.id === deployment.id) break
+        current = await readProductionDeployment(
+          vercel,
+          await vercel(`/v9/projects/${app.id}`),
+          app
+        )
+        if (current.id === deployment.id) break
         await new Promise((resolve) => setTimeout(resolve, 2000))
       }
       assert.equal(
-        current.targets?.production?.id,
+        current.id,
         deployment.id,
         'Production promotion did not settle'
+      )
+      assert.equal(
+        current.meta?.githubCommitSha ?? current.meta?.releaseSha,
+        plan.sha,
+        'Promoted deployment has a different source SHA'
       )
       await smoke(`https://${app.host}`, app)
       await status('success', `https://${app.host}`)

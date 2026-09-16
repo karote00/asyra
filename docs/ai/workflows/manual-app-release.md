@@ -126,12 +126,27 @@ previous production ID and Actions run. Only a successful final smoke receives
 a success status. Initial setup reads the existing Vercel-created Production
 environment's successful record; its legacy environment name is retained as
 an immutable external compatibility identity. Before any publication, the live
-Vercel production target must match that baseline. Missing records, failed
+deployment serving the stable production host must match that baseline. Missing records, failed
 post-promotion checks, manual rollbacks or other drift require reconciliation;
 the workflow does not silently choose a new baseline.
 
-For reconciliation, inspect the live Vercel production target, its source SHA,
-stable domain and smoke results. An owner may then create a corrected GitHub
+Publication resolves the stable host through `GET /v4/aliases/{host}`, then
+reads that alias's deployment through `GET /v13/deployments/{deploymentId}`.
+The alias must match the host and project without redirecting; the deployment
+must belong to that project, be `READY`, target `production`, and match the
+baseline SHA and recorded deployment ID when present. A project's
+`targets.production` can refer to a canceled or staged deployment and is not
+proof of what the stable host serves.
+
+The service refreshes this evidence at admission, before creation, and before
+promotion; it does not cache routing across those boundaries. After promotion,
+it polls the stable host's alias for the new deployment ID (at most 30 reads,
+two seconds apart), verifies its source SHA, and only then runs stable-domain
+smoke. Unchanged routing times out; missing, redirected, cross-project or
+non-ready routing fails closed. No baseline is rewritten to match a candidate.
+
+For reconciliation, inspect the deployment serving the stable production host,
+its source SHA and smoke results. An owner may then create a corrected GitHub
 Deployment record with that actual SHA, deployment ID, a success status and a
 reason linking the recovery evidence. Never mark a failed candidate successful
 to unblock the next run. Package versions are not website version identities.
