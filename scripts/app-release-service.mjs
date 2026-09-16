@@ -186,11 +186,8 @@ export async function waitForDeployment(
         'Vercel built a different commit'
       )
       assert.equal(deployment.target, 'production')
-      assert.equal(
-        deployment.aliasAssigned,
-        false,
-        'Deployment unexpectedly received production domains'
-      )
+      // Generated team/branch aliases can exist on staged deployments.
+      // publishPlan checks the stable host's actual routing before promotion.
       assert.match(deployment.url, /^[a-z0-9-]+\.vercel\.app$/)
       return deployment
     }
