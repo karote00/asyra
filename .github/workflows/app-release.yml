@@ -23,6 +23,7 @@ jobs:
       contents: read
       deployments: write
     uses: ./.github/workflows/app-release-pipeline.yml
+    secrets: inherit
     with:
       force_app: ${{ inputs.force_app }}
       reason: ${{ inputs.reason }}
