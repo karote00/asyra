@@ -2,6 +2,7 @@
 
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { setImmediate } from 'node:timers/promises'
 import {
   createApi,
   deploymentUsage,
@@ -23,6 +24,7 @@ const app = {
   release: true
 }
 const project = {
+  id: 'project-id',
   name: app.id,
   rootDirectory: app.root,
   autoAssignCustomDomains: false,
@@ -31,16 +33,87 @@ const project = {
   }
 }
 
-test('project admission rejects Git connections, automatic aliases and online drift', () => {
-  assert.equal(verifyProject(project, app), 'old')
+const liveDeployment = {
+  id: 'old',
+  projectId: project.id,
+  readyState: 'READY',
+  target: 'production',
+  meta: { githubCommitSha: app.baseline.sha }
+}
+const liveAlias = {
+  alias: app.host,
+  projectId: project.id,
+  deploymentId: 'old'
+}
+const liveApi = async (url) => {
+  if (url === `/v4/aliases/${app.host}`) return liveAlias
+  assert.equal(url, '/v13/deployments/old')
+  return liveDeployment
+}
+
+test('project admission rejects Git connections, automatic aliases and online drift', async () => {
+  assert.equal(await verifyProject(project, app, liveApi), 'old')
   for (const changed of [
     { link: {} },
     { autoAssignCustomDomains: true },
-    { rootDirectory: 'other' },
-    { targets: { production: { id: 'old', meta: { githubCommitSha: sha } } } }
+    { rootDirectory: 'other' }
   ])
-    assert.throws(() => verifyProject({ ...project, ...changed }, app))
+    await assert.rejects(
+      verifyProject({ ...project, ...changed }, app, liveApi)
+    )
+  await assert.rejects(
+    verifyProject(
+      project,
+      { ...app, baseline: { sha, deploymentId: 'old' } },
+      liveApi
+    ),
+    /Online SHA/
+  )
+  await assert.rejects(
+    verifyProject(
+      project,
+      { ...app, baseline: { ...app.baseline, deploymentId: 'other' } },
+      liveApi
+    ),
+    /Online deployment/
+  )
 })
+
+for (const changed of [
+  { alias: 'other.vercel.app' },
+  { projectId: 'other-project' },
+  { deploymentId: null },
+  { redirect: 'https://other.example' }
+]) {
+  test(`invalid stable alias is rejected: ${JSON.stringify(changed)}`, async () => {
+    await assert.rejects(
+      verifyProject(project, app, async (url) => {
+        assert.equal(url, `/v4/aliases/${app.host}`)
+        return { ...liveAlias, ...changed }
+      })
+    )
+  })
+}
+for (const changed of [
+  { id: 'other' },
+  { projectId: 'other-project' },
+  { readyState: 'CANCELED' },
+  { readyState: 'ERROR' },
+  { readyState: 'BUILDING' },
+  { target: 'preview' },
+  { meta: {} }
+]) {
+  test(`invalid live deployment is rejected: ${JSON.stringify(changed)}`, async () => {
+    await assert.rejects(
+      verifyProject(project, app, async (url) => {
+        if (url === `/v4/aliases/${app.host}`) return liveAlias
+        assert.equal(url, '/v13/deployments/old')
+        return { ...liveDeployment, ...changed }
+      })
+    )
+  })
+}
+
 test('HTTP client never retries mutations or leaks response bodies and rejects redirects', async () => {
   let calls = 0
   const api = createApi(
@@ -129,10 +202,17 @@ function harness(failSmoke = false) {
         return { id: 1 }
       },
       vercel: async (url, method = 'GET', body) => {
-        if (method === 'GET')
-          return promoted
-            ? { ...project, targets: { production: { id: 'new' } } }
-            : project
+        if (method === 'GET') {
+          if (url === `/v9/projects/${app.id}`) return project
+          if (url === `/v4/aliases/${app.host}`)
+            return { ...liveAlias, deploymentId: promoted ? 'new' : 'old' }
+          assert.equal(url, `/v13/deployments/${promoted ? 'new' : 'old'}`)
+          return {
+            ...liveDeployment,
+            id: promoted ? 'new' : 'old',
+            meta: { githubCommitSha: promoted ? sha : app.baseline.sha }
+          }
+        }
         mutations.push({ url, method, body })
         if (url.includes('/promote/')) promoted = true
         return { id: 'new' }
@@ -140,6 +220,40 @@ function harness(failSmoke = false) {
     }
   }
 }
+test('a canceled production target does not override the READY deployment serving the stable host', async () => {
+  const { options, mutations } = harness()
+  const original = options.vercel
+  options.plan.apps = [
+    { ...app, baseline: { ...app.baseline, deploymentId: null } }
+  ]
+  options.vercel = async (url, method = 'GET', body) => {
+    if (method === 'GET' && url.startsWith('/v9/projects/'))
+      return {
+        ...project,
+        targets: {
+          production: {
+            id: 'canceled',
+            readyState: 'CANCELED',
+            aliasAssigned: false,
+            meta: { githubCommitSha: 'c'.repeat(40) }
+          }
+        }
+      }
+    return original(url, method, body)
+  }
+  await publishPlan(options)
+  assert.equal(
+    mutations.filter((entry) => entry.url === '/v13/deployments').length,
+    1
+  )
+  assert.equal(
+    mutations.find((entry) => entry.body?.payload)?.body.payload
+      .previousDeploymentId,
+    'old'
+  )
+  assert.equal(mutations.at(-1).body.state, 'success')
+})
+
 test('one selected App creates exactly one deployment from the admitted SHA', async () => {
   const { options, mutations } = harness()
   await publishPlan(options)
@@ -282,12 +396,19 @@ for (const target of RELEASE_APPS) {
     options.vercel = async (url, method = 'GET', body) => {
       requests.push(url)
       if (method === 'GET') {
-        assert.equal(url, `/v9/projects/${target.id}`)
+        if (url === `/v9/projects/${target.id}`)
+          return { ...project, name: target.id, rootDirectory: target.root }
+        if (url === `/v4/aliases/${target.host}`)
+          return {
+            ...liveAlias,
+            alias: target.host,
+            deploymentId: promoted ? 'new' : 'old'
+          }
+        assert.equal(url, `/v13/deployments/${promoted ? 'new' : 'old'}`)
         return {
-          ...project,
-          name: target.id,
-          rootDirectory: target.root,
-          targets: promoted ? { production: { id: 'new' } } : project.targets
+          ...liveDeployment,
+          id: promoted ? 'new' : 'old',
+          meta: { githubCommitSha: promoted ? sha : app.baseline.sha }
         }
       }
       mutations.push({ url, method, body })
@@ -311,3 +432,127 @@ for (const target of RELEASE_APPS) {
     assert.equal(mutations.at(-1).body.state, 'success')
   })
 }
+
+for (const gate of [1, 2, 3]) {
+  test(`live alias drift at release gate ${gate} stops publication`, async () => {
+    const { options, mutations } = harness()
+    const original = options.vercel
+    let reads = 0
+    options.vercel = async (url, method = 'GET', body) => {
+      if (url === `/v4/aliases/${app.host}` && ++reads === gate)
+        return { ...liveAlias, deploymentId: 'other' }
+      if (url === '/v13/deployments/other')
+        return {
+          ...liveDeployment,
+          id: 'other',
+          meta: { githubCommitSha: sha }
+        }
+      return original(url, method, body)
+    }
+    await assert.rejects(publishPlan(options), /Online SHA/)
+    assert.equal(reads, gate)
+    assert.equal(
+      mutations.filter((entry) => entry.url.includes('/promote/')).length,
+      0
+    )
+    assert.equal(
+      mutations.filter((entry) => entry.url === '/v13/deployments').length,
+      gate === 3 ? 1 : 0
+    )
+    if (gate < 3) assert.equal(mutations.length, 0)
+    else assert.equal(mutations.at(-1).body.state, 'failure')
+  })
+}
+
+test('a missing production alias fails closed before any mutation', async () => {
+  const { options, mutations } = harness()
+  const original = options.vercel
+  options.vercel = async (url, ...args) => {
+    if (url.startsWith('/v4/aliases/')) throw new Error('Alias not found (404)')
+    return original(url, ...args)
+  }
+  await assert.rejects(publishPlan(options), /Alias not found/)
+  assert.equal(mutations.length, 0)
+})
+
+test('stable-host reads are fresh at every gate and delayed promotion waits for routing', async () => {
+  const { options, mutations } = harness()
+  const original = options.vercel
+  const requests = []
+  let aliasReads = 0
+  let stableSmoke = false
+  options.vercel = async (url, method = 'GET', body) => {
+    if (method === 'GET') requests.push(url)
+    if (url === `/v4/aliases/${app.host}` && ++aliasReads === 4)
+      return liveAlias
+    if (url === '/v13/deployments/old') return liveDeployment
+    return original(url, method, body)
+  }
+  options.smoke = async (origin) => {
+    if (origin === `https://${app.host}`) {
+      assert.equal(aliasReads, 5)
+      stableSmoke = true
+    }
+  }
+  await publishPlan(options)
+  assert.equal(stableSmoke, true)
+  assert.equal(
+    requests.filter((url) => url.startsWith('/v4/aliases/')).length,
+    5
+  )
+  assert.equal(
+    requests.filter((url) => url.startsWith('/v13/deployments/')).length,
+    5
+  )
+  assert.equal(mutations.at(-1).body.state, 'success')
+})
+
+test('promotion to the wrong SHA never reaches stable smoke or success', async () => {
+  const { options, mutations } = harness()
+  const original = options.vercel
+  options.vercel = async (url, ...args) => {
+    const result = await original(url, ...args)
+    return url === '/v13/deployments/new'
+      ? { ...result, meta: { githubCommitSha: app.baseline.sha } }
+      : result
+  }
+  options.smoke = async (origin) =>
+    assert.notEqual(origin, `https://${app.host}`)
+  await assert.rejects(
+    publishPlan(options),
+    /after promotion.*different source SHA/
+  )
+  assert.equal(mutations.at(-1).body.state, 'failure')
+})
+
+test('promotion polling is bounded when the stable alias never moves', async (context) => {
+  context.mock.timers.enable({ apis: ['setTimeout'] })
+  const { options, mutations } = harness()
+  const original = options.vercel
+  let aliasReads = 0
+  options.vercel = async (url, ...args) => {
+    if (url === `/v4/aliases/${app.host}`) {
+      aliasReads++
+      return liveAlias
+    }
+    if (url === '/v13/deployments/old') return liveDeployment
+    return original(url, ...args)
+  }
+  options.smoke = async (origin) =>
+    assert.notEqual(origin, `https://${app.host}`)
+  const result = assert.rejects(
+    publishPlan(options),
+    /after promotion.*did not settle/
+  )
+  for (let attempt = 0; attempt < 30; attempt++) {
+    await setImmediate()
+    context.mock.timers.tick(2000)
+  }
+  await result
+  assert.equal(aliasReads, 33)
+  assert.equal(
+    mutations.filter((entry) => entry.url.includes('/promote/')).length,
+    1
+  )
+  assert.equal(mutations.at(-1).body.state, 'failure')
+})
