@@ -1,4 +1,4 @@
-"""Run complete FieldScope profiles as two sequential supervised groups."""
+"""Run complete FieldScope profiles as three sequential supervised groups."""
 
 import json
 import os

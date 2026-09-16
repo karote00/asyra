@@ -192,8 +192,11 @@ test('CI bounds workspace test concurrency without dropping test owners', () => 
     /HEAVY_PROFILE = \([\s\S]*walking-constrained-kinematics\.profile\.test\.ts/
   )
   assert.match(profileGroups, /rglob\("\*" \+ PROFILE_SUFFIX\)/)
-  assert.match(profileGroups, /for name in \("heavy", "remaining"\)/)
-  assert.match(profileGroups, /sorted\(heavy \+ remaining\) != all_profiles/)
+  assert.match(profileGroups, /for name in \("heavy", "source", "remaining"\)/)
+  assert.match(
+    profileGroups,
+    /sorted\(heavy \+ source \+ remaining\) != all_profiles/
+  )
   assert.equal(
     fieldscopeScripts['test:local'],
     'node --test scripts/__tests__/supervise-tests.test.mjs && python3 scripts/supervise-tests.py'
