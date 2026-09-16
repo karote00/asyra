@@ -1302,10 +1302,22 @@ function targetsMain(command) {
 }
 
 function isDirectIntegrationCommand(command) {
-  return (
-    /\bgh\s+pr\s+merge\b/i.test(command) ||
-    /\bgit\b[^\n;&|]*\bmerge\b/i.test(command)
-  )
+  const groups = safeShellTokenGroups(command)
+  if (!groups) {
+    return (
+      /\bgh\s+pr\s+merge\b/i.test(command) ||
+      /\bgit\b[^\n;&|]*\bmerge\b/i.test(command)
+    )
+  }
+  return groups.some((tokens) => {
+    const executable = path.basename(tokens[0] || '')
+    if (executable === 'gh') return tokens[1] === 'pr' && tokens[2] === 'merge'
+    if (executable !== 'git') return false
+    const subcommand = recognizedGitSubcommand(tokens)
+    if (subcommand === 'merge') return true
+    if (subcommand === 'add' || subcommand === 'commit') return false
+    return /\bgit\b[^\n;&|]*\bmerge\b/i.test(command)
+  })
 }
 
 function isDirectCommitCommand(command) {
@@ -1401,6 +1413,40 @@ function normalizeSafeShellToken(token) {
   const interior = token.slice(1, -1)
   if (/[\\'"]/.test(interior)) return null
   return interior
+}
+
+function safeShellTokenGroups(command) {
+  const segments = splitShellSegments(command)
+  if (!segments || segments.length === 0) return null
+  const groups = segments.map((segment) => {
+    const raw = segment.match(/(?:[^\s"']+|"[^"]*"|'[^']*')+/g) || []
+    return raw.map(normalizeSafeShellToken)
+  })
+  if (
+    groups.some(
+      (tokens) => tokens.length === 0 || tokens.some((token) => token === null)
+    )
+  )
+    return null
+  return groups
+}
+
+function recognizedGitSubcommand(tokens) {
+  let index = 1
+  while (index < tokens.length) {
+    if (tokens[index] === '-C' && tokens[index + 1]) {
+      index += 2
+      continue
+    }
+    if (tokens[index] === '--no-pager') {
+      index += 1
+      continue
+    }
+    break
+  }
+  const subcommand = tokens[index]
+  if (!subcommand || subcommand.startsWith('-')) return null
+  return subcommand
 }
 
 function isSupportedCommitCommand(command) {

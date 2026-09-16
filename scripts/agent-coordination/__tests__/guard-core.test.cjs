@@ -314,7 +314,13 @@ test('pre-tool requires the integration wrapper for direct merge commands', () =
   register(registryPath, 0, makeTask(root))
   for (const command of [
     'gh pr merge 123 --squash',
-    'git merge codex/source'
+    'git merge codex/source',
+    `git -C ${root} merge codex/source`,
+    'git --no-pager merge codex/source',
+    'git -c merge.tool=false merge codex/source',
+    `git --no-pager -C ${root} merge codex/source`,
+    `git -C ${root} --no-pager merge codex/source`,
+    `git -C ${root} -C . merge codex/source`
   ]) {
     const result = evaluatePreTool({
       registryPath,
@@ -326,6 +332,35 @@ test('pre-tool requires the integration wrapper for direct merge commands', () =
       }
     })
     assert.equal(result.code, 'integration_required', command)
+  }
+})
+
+test('merge text in approved add paths is not treated as integration', () => {
+  const root = makeTemporaryDirectory()
+  const baselineHead = initializeMinimalRepository(root)
+  const registryPath = registryPathFor(root)
+  const commands = [
+    'git add -- scripts/prepare-agent-local-merge.mjs',
+    'git add -- docs/local-merge-preparation.md'
+  ]
+  register(
+    registryPath,
+    0,
+    makeTask(root, { approvedCommands: commands, baselineHead })
+  )
+
+  for (const command of commands) {
+    const result = evaluatePreTool({
+      registryPath,
+      event: {
+        taskId: 'task-a',
+        cwd: root,
+        toolName: 'Bash',
+        toolInput: { command }
+      }
+    })
+    assert.equal(result.decision, 'allow', command)
+    assert.equal(result.code, 'approved_command', command)
   }
 })
 
@@ -1047,7 +1082,7 @@ test('pre-commit binds branch, head, staged tree, exact paths, gates, and review
       taskId: 'task-a',
       cwd: root,
       toolName: 'Bash',
-      toolInput: { command: "git commit -m 'validated change'" }
+      toolInput: { command: "git commit -m 'validated merge preparation'" }
     }
   })
   assert.equal(directCommit.decision, 'allow', directCommit.reason)
