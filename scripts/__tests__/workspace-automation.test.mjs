@@ -501,7 +501,7 @@ test('E2E automation cancels superseded runs and installs only Chromium', () => 
     /group: e2e-\$\{\{ github\.workflow \}\}-\$\{\{ github\.event\.pull_request\.number \|\| github\.ref \}\}/
   )
   assert.match(e2e, /cancel-in-progress: true/)
-  assert.equal(chromiumInstallCount, 2)
+  assert.equal(chromiumInstallCount, 4)
   assert.doesNotMatch(e2e, /playwright install --with-deps\s*$/m)
 })
 
@@ -760,4 +760,24 @@ test('workspace version planning materializes release ranges without changing fi
     collaborationUpdate?.manifest.dependencies['@asyra/factory'],
     factoryManifest.version
   )
+})
+
+test('Board, render timing and functional E2E have independent required jobs', () => {
+  const workflow = readText('.github/workflows/e2e.yml')
+  const jobs = workflow.split('\njobs:\n')[1].split(/(?=^ {2}[\w-]+:\n)/m)
+  const board = jobs.find((job) => job.startsWith('  flow-inspector-board:'))
+  const timing = jobs.find((job) => job.startsWith('  render-performance:'))
+  const functional = jobs.find((job) => job.startsWith('  e2e-tests:'))
+  assert.ok(board, 'Board must report its own result')
+  assert.ok(timing, 'timing must report its own result')
+  assert.match(board, /node --test --test-concurrency=1 .*board\*\.test\.cjs/)
+  assert.match(timing, /E2E_SUITE: performance/)
+  assert.match(functional, /E2E_SUITE: functional/)
+  assert.doesNotMatch(functional, /Verify Flow Inspector board/)
+  for (const job of [board, timing, functional]) {
+    assert.doesNotMatch(job, /continue-on-error: true/)
+    assert.doesNotMatch(job, /^ {4}needs:/m)
+  }
+  const main = readText('.github/workflows/main.yml')
+  assert.match(main, /FLOW_E2E_RESULT: \$\{\{ needs\.design-e2e\.result \}\}/)
 })
