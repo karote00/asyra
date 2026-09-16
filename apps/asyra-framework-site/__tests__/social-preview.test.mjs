@@ -8,15 +8,16 @@ import process from 'node:process'
 /* global fetch, URL */
 
 const siteRoot = path.resolve(import.meta.dirname, '..')
-const imagePath = '/product-evidence/asyra-design-7076-product-evidence.jpg'
+const imagePath = '/brand/asyra-foundation-green-v1.png'
 
-test('social previews use the unchanged canonical 7076 product screenshot', async () => {
+test('social previews publish the approved green infrastructure artwork', async () => {
   const published = await readFile(path.join(siteRoot, 'public', imagePath))
-  const original = await readFile(
-    path.resolve(siteRoot, '../../docs/public/assets', path.basename(imagePath))
+  assert.deepEqual(
+    [...published.subarray(0, 8)],
+    [137, 80, 78, 71, 13, 10, 26, 10]
   )
-  assert.deepEqual(published, original)
-  assert.deepEqual([...published.subarray(0, 3)], [0xff, 0xd8, 0xff])
+  assert.equal(published.readUInt32BE(16), 1733)
+  assert.equal(published.readUInt32BE(20), 907)
   assert.ok(published.byteLength < 5_000_000)
 })
 
@@ -26,13 +27,13 @@ test('root metadata includes large Open Graph and Twitter preview images', async
   assert.match(layout, /openGraph:\s*\{\s*images: \[socialImage\]/u)
   assert.match(layout, /twitter:\s*\{\s*images: \[socialImage\]/u)
   assert.match(layout, /card: 'summary_large_image'/u)
-  assert.match(layout, /width: 1280/u)
-  assert.match(layout, /height: 720/u)
-  assert.match(layout, /type: 'image\/jpeg'/u)
+  assert.match(layout, /width: 1733/u)
+  assert.match(layout, /height: 907/u)
+  assert.match(layout, /type: 'image\/png'/u)
 })
 
 test(
-  'built HTML exposes a fetchable JPEG preview to LinkedInBot',
+  'built HTML exposes a fetchable PNG preview to LinkedInBot',
   {
     skip: !process.env.SITE_URL
   },
@@ -54,9 +55,9 @@ test(
     const imageUrl = new URL(meta('og:image'))
     assert.equal(imageUrl.protocol, 'https:')
     assert.equal(imageUrl.pathname, imagePath)
-    assert.equal(meta('og:image:width'), '1280')
-    assert.equal(meta('og:image:height'), '720')
-    assert.equal(meta('og:image:type'), 'image/jpeg')
+    assert.equal(meta('og:image:width'), '1733')
+    assert.equal(meta('og:image:height'), '907')
+    assert.equal(meta('og:image:type'), 'image/png')
     assert.ok(meta('og:image:alt'))
     assert.equal(meta('twitter:image'), imageUrl.href)
     assert.equal(meta('twitter:card'), 'summary_large_image')
@@ -64,7 +65,7 @@ test(
       new URL(imageUrl.pathname, process.env.SITE_URL)
     )
     assert.equal(imageResponse.status, 200)
-    assert.match(imageResponse.headers.get('content-type'), /image\/jpeg/u)
+    assert.match(imageResponse.headers.get('content-type'), /image\/png/u)
     assert.deepEqual(
       Buffer.from(await imageResponse.arrayBuffer()),
       await readFile(path.join(siteRoot, 'public', imagePath))

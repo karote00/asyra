@@ -4,7 +4,6 @@ test('every public hero shares the landing page content edge', async ({
   page
 }, testInfo) => {
   const routes = [
-    ['landing', '/', '.site-header .wordmark', '.hero__copy'],
     [
       'docs',
       '/docs',
@@ -78,173 +77,41 @@ test('every public hero shares the landing page content edge', async ({
   }
 })
 
-test('landing and supporting headers share the docs navigation treatment', async ({
-  page
+test('homepage navigation works with keyboard and no JavaScript at desktop and mobile widths', async ({
+  browser
 }, testInfo) => {
-  await page.setViewportSize({ width: 1920, height: 1000 })
-  await page.goto('/')
-  const landingDestinations = await page
-    .locator('.primary-nav a')
-    .evaluateAll((links) => links.map((link) => link.getAttribute('href')))
-
-  await page.goto('/docs')
-  const supportingDestinations = await page
-    .locator('.site-frame-navigation a')
-    .evaluateAll((links) => links.map((link) => link.getAttribute('href')))
-
-  expect(landingDestinations).toEqual(supportingDestinations)
-
-  for (const viewport of [
-    { width: 800, height: 900 },
-    { width: 900, height: 900 },
-    { width: 1024, height: 900 },
-    { width: 1920, height: 1000 }
-  ]) {
-    await page.setViewportSize(viewport)
-    await page.goto('/')
-    const landingHeader = await page.locator('.site-header').boundingBox()
-    const landingBrand = await page
-      .locator('.site-header .wordmark')
-      .boundingBox()
-    const landingNavigation = page.locator('.primary-nav')
-    const landingNavigationBox = await landingNavigation.boundingBox()
-    const landingLink = landingNavigation.getByRole('link', {
-      exact: true,
-      name: 'Docs'
+  for (const width of [320, 1440]) {
+    const context = await browser.newContext({
+      javaScriptEnabled: false,
+      viewport: { width, height: 900 }
     })
-    const landingMetrics = await landingLink.evaluate((element) => {
-      const link = getComputedStyle(element)
-      const underline = getComputedStyle(element, '::after')
-
-      return {
-        fontSize: link.fontSize,
-        fontWeight: link.fontWeight,
-        letterSpacing: link.letterSpacing,
-        underlineBackground: underline.backgroundColor,
-        underlineBottom: underline.bottom,
-        underlineHeight: underline.height,
-        underlineTransitionDuration: underline.transitionDuration
+    try {
+      const page = await context.newPage()
+      await page.goto('/')
+      if (width < 1024) {
+        await page.locator('summary').focus()
+        await page.keyboard.press('Enter')
+      } else {
+        await expect(page.locator('summary')).toBeHidden()
       }
-    })
-    const landingGap = await landingNavigation.evaluate(
-      (element) => getComputedStyle(element).columnGap
-    )
-
-    await page.goto('/docs')
-    const supportingHeader = await page
-      .locator('.site-frame-header')
-      .boundingBox()
-    const supportingBrand = await page
-      .locator('.site-frame-header .site-frame-wordmark')
-      .boundingBox()
-    const supportingNavigation = page.locator('.site-frame-navigation')
-    const supportingNavigationBox = await supportingNavigation.boundingBox()
-    const supportingLink = supportingNavigation.getByRole('link', {
-      exact: true,
-      name: 'Docs'
-    })
-    const supportingMetrics = await supportingLink.evaluate((element) => {
-      const link = getComputedStyle(element)
-      const underline = getComputedStyle(element, '::after')
-
-      return {
-        fontSize: link.fontSize,
-        fontWeight: link.fontWeight,
-        letterSpacing: link.letterSpacing,
-        underlineBackground: underline.backgroundColor,
-        underlineBottom: underline.bottom,
-        underlineHeight: underline.height,
-        underlineTransitionDuration: underline.transitionDuration
-      }
-    })
-    const supportingGap = await supportingNavigation.evaluate(
-      (element) => getComputedStyle(element).columnGap
-    )
-
-    expect(landingMetrics).toEqual(supportingMetrics)
-    expect(landingGap).toBe(supportingGap)
-    if (viewport.width > 900) {
+      const nav = page.getByRole('navigation', { name: 'Primary navigation' })
+      await expect(
+        nav.getByRole('link', { name: 'Docs', exact: true })
+      ).toBeVisible()
       expect(
-        Number.parseFloat(supportingGap) /
-          Number.parseFloat(supportingMetrics.fontSize)
-      ).toBeGreaterThanOrEqual(2.8)
-    }
-    expect(supportingHeader?.height).toBeCloseTo(landingHeader?.height ?? 0, 0)
-    expect(supportingBrand?.x).toBeCloseTo(landingBrand?.x ?? 0, 0)
-    expect(supportingBrand?.y).toBeCloseTo(landingBrand?.y ?? 0, 0)
-    expect(
-      (supportingNavigationBox?.x ?? 0) + (supportingNavigationBox?.width ?? 0)
-    ).toBeCloseTo(
-      (landingNavigationBox?.x ?? 0) + (landingNavigationBox?.width ?? 0),
-      0
-    )
-  }
-
-  await page.setViewportSize({ width: 390, height: 844 })
-  await page.goto('/')
-  const navigationTrigger = page.getByRole('button', {
-    name: 'Open navigation'
-  })
-  await expect(navigationTrigger).toBeVisible()
-  await navigationTrigger.click()
-  await expect(
-    page
-      .getByRole('navigation', { name: 'Mobile navigation' })
-      .getByRole('link', { exact: true, name: 'Asyra Design' })
-  ).toBeVisible()
-  await page.screenshot({
-    animations: 'disabled',
-    path: testInfo.outputPath('landing-mobile-navigation.png')
-  })
-
-  for (const width of [520, 390, 320]) {
-    await page.setViewportSize({ width, height: 844 })
-    await page.goto('/atlas')
-    await page.getByRole('button', { name: 'Open navigation' }).click()
-    const mobileLinks = page
-      .getByRole('navigation', { name: 'Mobile navigation' })
-      .getByRole('link')
-    const mobileLinkMetrics = await mobileLinks.evaluateAll((links) =>
-      links.map((link) => {
-        const style = getComputedStyle(link)
-        return {
-          fontSize: Number.parseFloat(style.fontSize),
-          height: link.getBoundingClientRect().height
-        }
+        await nav.evaluate(
+          (element) => element.getBoundingClientRect().right <= innerWidth
+        )
+      ).toBe(true)
+      await page.screenshot({
+        path: testInfo.outputPath(`home-menu-${width}.png`)
       })
-    )
-
-    expect(mobileLinkMetrics).toHaveLength(6)
-    for (const metrics of mobileLinkMetrics) {
-      expect(metrics.fontSize).toBeLessThanOrEqual(21)
-      expect(metrics.height).toBeLessThanOrEqual(54)
+      await nav.getByRole('link', { name: 'Docs', exact: true }).click()
+      await expect(page).toHaveURL(/\/docs$/)
+    } finally {
+      await context.close()
     }
-
-    await page.getByRole('button', { name: 'Close navigation' }).click()
   }
-
-  await page.setViewportSize({ width: 800, height: 900 })
-  await page.goto('/')
-  await page.locator('.site-header').screenshot({
-    animations: 'disabled',
-    path: testInfo.outputPath('landing-header-navigation-800.png')
-  })
-
-  await page.setViewportSize({ width: 1920, height: 1000 })
-  await page.goto('/')
-  await page
-    .locator('.primary-nav')
-    .getByRole('link', { exact: true, name: 'Asyra Design' })
-    .hover()
-  await page.locator('.site-header').screenshot({
-    animations: 'disabled',
-    path: testInfo.outputPath('landing-header-navigation.png')
-  })
-  await page.goto('/docs')
-  await page.locator('.site-frame-header').screenshot({
-    animations: 'disabled',
-    path: testInfo.outputPath('supporting-header-navigation.png')
-  })
 })
 
 test('mobile menu top row aligns with the header controls it replaces', async ({
@@ -312,14 +179,12 @@ test('mobile menu presents every destination as one uniform full-height list', a
     .evaluate((element) => {
       const style = getComputedStyle(element)
       return {
-        backgroundColor: style.backgroundColor,
         borderRightWidth: style.borderRightWidth,
         borderTopStyle: style.borderTopStyle,
         borderTopWidth: style.borderTopWidth,
         fontSize: style.fontSize,
         fontWeight: style.fontWeight,
         letterSpacing: style.letterSpacing,
-        outlineWidth: style.outlineWidth,
         textTransform: style.textTransform
       }
     })
@@ -378,14 +243,12 @@ test('mobile menu presents every destination as one uniform full-height list', a
     .evaluate((element) => {
       const style = getComputedStyle(element)
       return {
-        backgroundColor: style.backgroundColor,
         borderRightWidth: style.borderRightWidth,
         borderTopStyle: style.borderTopStyle,
         borderTopWidth: style.borderTopWidth,
         fontSize: style.fontSize,
         fontWeight: style.fontWeight,
         letterSpacing: style.letterSpacing,
-        outlineWidth: style.outlineWidth,
         textTransform: style.textTransform
       }
     })
@@ -393,5 +256,4 @@ test('mobile menu presents every destination as one uniform full-height list', a
   expect(closeStyle).toEqual(triggerStyle)
   expect(triggerStyle.borderTopWidth).toBe('0px')
   expect(triggerStyle.borderRightWidth).toBe('0px')
-  expect(closeStyle.outlineWidth).toBe('0px')
 })

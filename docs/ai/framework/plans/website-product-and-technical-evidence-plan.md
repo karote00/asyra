@@ -1,3 +1,20 @@
+# Website homepage - accepted continuous story
+
+## Current contract
+
+The product owner approved replacing the former homepage with the six-chapter
+green spatial story. The current visual, content, ownership and verification
+contract is [the homepage contract](../../../../apps/asyra-framework-site/docs/spatial-story.md#current-homepage-contract).
+It supersedes the older composition requirements recorded below: the factory
+film, five brand chapters, separate architecture explainer and PoC comparison
+are no longer homepage requirements. `/story` is removed, not redirected.
+Supporting documentation, product case, Runtime Atlas, releases and roadmap
+retain their independent owners. Existing SEO/indexing environment policy is
+preserved. Product evidence and the three build/evaluate entry points follow
+the story without repeating it.
+
+## Prior composition record - superseded
+
 # Website Product and Technical Evidence Plan
 
 ## Status
@@ -417,3 +434,66 @@ and 320 CSS px. Assert matching content edges, column/row separation, the 8:5
 frame, and decoded high-definition dimensions.
 Run the existing landing gates and PR CI; completion requires owner review,
 and this task does not authorize merge or production deployment.
+
+## Scroll-driven architecture story
+
+The product owner approved a bounded scroll-driven prototype on 2026-09-15.
+Replace the static runtime list with one architecture story between the film
+and Feature code. Preserve the accepted film, native controls, illustrations,
+public Feature example, supporting routes, and all Framework behavior.
+
+- Explain person or AI intent, App Feature and public API, transaction and
+  canonical owner, then projections. These are responsibility boundaries, not
+  the factory film's illustrative A–D stations or four mandatory packages.
+- On wide, sufficiently tall screens, keep the complete architecture diagram
+  beside four short reading stages. Highlight the corresponding boundary as
+  its explanation crosses the reading area. Ordinary page scrolling remains
+  native, reversible, and skippable through a link to the code example.
+- Mobile, short viewports, reduced-motion preferences, and browsers without
+  named view-timeline support receive compact, complete content in DOM order.
+  No text depends on motion, JavaScript, hover, color, or video playback.
+- Use a server-rendered story with native CSS timelines. Its only changing
+  input is scroll geometry, owned by the browser. No client component, scroll
+  listener, observer, timer, frame loop, cache, or video seeking is introduced.
+  The existing Feature runtime remains descriptive evidence, not a simulation.
+- Keep the animated section to roughly three desktop viewport heights or less.
+  All four diagram nodes stay readable, and scroll position never hides copy.
+- Formal browser cases cover forward/reverse scrolling, skipping to code,
+  stationary scroll progress, responsive edges, live preference/viewport
+  changes, no JavaScript, unsupported timelines, idle video, and screenshots.
+  Unit/contract, naming, lint, type, build, route smoke, film regression, and
+  the PR's required CI gates complete this bounded delivery.
+
+## Brand story chapters
+
+The product owner expanded the prototype on 2026-09-15 into a complete brand
+story and authorized removing repeated information before final review. This
+chapter contract supersedes the previous section order, while preserving the
+approved visual identity, product truth, public code, media, and route owners.
+
+1. **Imagine:** the product-first Hero and the open-ended domain possibilities.
+2. **Build:** validated ideas continue into products, followed by the actual
+   Asyra Design proof and its live destination.
+3. **Evolve:** one Feature owns a behavior change; modular growth and shared
+   information explain how the product can keep developing.
+4. **Inside:** the accepted film, exact architecture story, real Feature
+   example, and the Framework/Preset/App/Service composition responsibilities.
+5. **Begin:** current starting paths and the domain-owned closing invitation.
+
+A compact chapter navigation follows normal page scrolling and provides
+ordinary anchor links. Native CSS may emphasize the chapter being read, but
+never gates content, intercepts scrolling, or starts media. Reduced-motion and
+unsupported browsers keep the same chapter links and complete reading. All
+previous section IDs and supporting routes remain available.
+
+Copy should speak to the product builder first, avoid defensive lists and
+repeated infrastructure summaries, and use the live product as evidence. Keep
+current availability distinct from roadmap, with a clear roadmap destination.
+Do not promise universal backend or runtime support, shipped industry apps,
+or production readiness without engineering review.
+
+Verification extends the bounded gates above with complete chapter order,
+all five anchor destinations, keyboard skipping, sticky navigation bounds,
+mobile/reduced-motion/no-JavaScript reading, current support copy, and actual
+full-page plus chapter screenshots. New source identifiers remain site-owned
+and do not alter persisted data or Framework APIs.

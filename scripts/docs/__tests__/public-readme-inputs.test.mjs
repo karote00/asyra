@@ -44,7 +44,7 @@ test('root README follows the product-to-proof reader journey', () => {
   const readme = fs.readFileSync(path.join(repositoryRoot, 'README.md'), 'utf8')
   const productEvidencePath = path.join(
     repositoryRoot,
-    'docs/public/assets/asyra-design-7076-product-evidence.jpg'
+    'apps/asyra-design/brand/asyra-design-7076-product-evidence.jpg'
   )
   const collaborationEvidencePath = path.join(
     repositoryRoot,
@@ -104,7 +104,7 @@ test('root README follows the product-to-proof reader journey', () => {
   assert.match(readme, /Asyra Design case study/u)
   assert.match(
     readme,
-    /!\[Asyra Design showing the complete 7,076-element editable cat drawing\]\(docs\/public\/assets\/asyra-design-7076-product-evidence\.jpg\)/u
+    /!\[Asyra Design showing the complete 7,076-element editable cat drawing\]\(apps\/asyra-design\/brand\/asyra-design-7076-product-evidence\.jpg\)/u
   )
   const productEvidence = fs.readFileSync(productEvidencePath)
   assert.deepEqual([...productEvidence.subarray(0, 3)], [0xff, 0xd8, 0xff])

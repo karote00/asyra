@@ -1,0 +1,47 @@
+/* Named sibling view timelines and their capability gate are native CSS
+   integration; layout and typography otherwise use component utilities.
+   No time-based animation, client observer, or scroll interception is needed. */
+@supports (animation-timeline: view()) and (timeline-scope: --intent-stage) {
+  @media (min-width: 1100px) and (min-height: 760px) and (prefers-reduced-motion: no-preference) {
+    .architecture-story__body {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      column-gap: clamp(40px, 6vw, 120px);
+      timeline-scope:
+        --intent-stage, --feature-stage, --transaction-stage, --projection-stage;
+    }
+
+    .architecture-story__diagram {
+      position: sticky;
+      top: calc((100vh - 510px) / 2);
+    }
+
+    .architecture-story__stage {
+      min-height: 60vh;
+      view-timeline-axis: block;
+      view-timeline-inset: 35% 35%;
+    }
+
+    .architecture-story__node {
+      animation-name: architecture-boundary-emphasis;
+      animation-duration: auto;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+    }
+  }
+}
+
+@keyframes architecture-boundary-emphasis {
+  0%,
+  100% {
+    background-color: transparent;
+    border-color: rgb(255 255 255 / 20%);
+    color: var(--code-text);
+  }
+
+  25%,
+  75% {
+    background-color: var(--signal-blue-deep);
+    border-color: var(--signal-blue-deep);
+    color: var(--paper-bright);
+  }
+}

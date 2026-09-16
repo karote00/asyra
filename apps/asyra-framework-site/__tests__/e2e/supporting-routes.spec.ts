@@ -52,7 +52,6 @@ const assertMinimumFontSize = async (
 }
 
 const popupRouteSamples = [
-  '/',
   '/docs',
   '/docs/start/preset-2d',
   '/atlas',
@@ -187,7 +186,7 @@ test('the shared mobile menu stays borderless and modal on every page', async ({
 
       const trigger = page.getByRole('button', { name: 'Open navigation' })
       await expect(trigger).toBeVisible()
-      if (route === '/' && width === 390) {
+      if (route === '/docs' && width === 390) {
         await page
           .locator('header')
           .first()
@@ -760,7 +759,7 @@ test('Asyra Design ownership rows do not add a disconnected timeline stroke', as
   })
 })
 
-test('landing and supporting routes share the landing footer at every responsive mode', async ({
+test('landing and supporting routes share footer content with their own responsive gutters', async ({
   page
 }, testInfo) => {
   const readFooter = async () =>
@@ -811,7 +810,10 @@ test('landing and supporting routes share the landing footer at every responsive
     await page.goto('/roadmap')
     const supportingFooter = await readFooter()
 
-    expect(supportingFooter).toEqual(landingFooter)
+    expect(supportingFooter.links).toEqual(landingFooter.links)
+    expect(supportingFooter.text).toEqual(landingFooter.text)
+    expect(supportingFooter.className).toEqual(landingFooter.className)
+    expect(landingFooter.hasHorizontalOverflow).toBe(false)
     expect(supportingFooter.hasHorizontalOverflow).toBe(false)
     expect(supportingFooter.identity).toBeNull()
     expect(supportingFooter.text).not.toMatch(/2026|MIT License/)
@@ -1150,7 +1152,6 @@ test('every public mobile hero keeps a compact reading hierarchy', async ({
   page
 }, testInfo) => {
   const routes = [
-    ['landing', '/', '.hero', '.hero__lead'],
     ['docs', '/docs', '.page-hero', '.page-hero__copy > p:last-of-type'],
     [
       'docs-detail',
@@ -1199,15 +1200,12 @@ test('every public mobile hero keeps a compact reading hierarchy', async ({
           Number.parseFloat(getComputedStyle(element).fontSize)
         )
 
-      expect(metrics.titleFontSize).toBeLessThanOrEqual(
-        name === 'landing' ? 34 : 32
-      )
+      expect(metrics.titleFontSize).toBeLessThanOrEqual(32)
       expect(
         metrics.titleLineHeight / metrics.titleFontSize
       ).toBeGreaterThanOrEqual(0.98)
       expect(metrics.titleFontSize / bodyFontSize).toBeLessThanOrEqual(2.15)
       let maximumHeroHeight = 430
-      if (name === 'landing') maximumHeroHeight = 760
       if (name === 'asyra-design') maximumHeroHeight = 1100
       if (name === 'atlas') maximumHeroHeight = 480
       expect(metrics.height).toBeLessThanOrEqual(maximumHeroHeight)
@@ -1307,8 +1305,8 @@ test('mobile supporting copy keeps a readable minimum size', async ({
     await page.setViewportSize({ width, height: 844 })
 
     await page.goto('/')
-    await assertMinimumFontSize(page, '.poc-story__governance', 14)
-    await page.locator('.poc-story__inner').screenshot({
+    await assertMinimumFontSize(page, '#start-building article p', 14)
+    await page.locator('#start-building').screenshot({
       animations: 'disabled',
       path: testInfo.outputPath(`home-workflow-supporting-copy-${width}.png`)
     })
