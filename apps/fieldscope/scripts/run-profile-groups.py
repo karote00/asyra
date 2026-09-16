@@ -160,15 +160,62 @@ def run_supervisor(app, supervisor, files, environment=None):
     return receipt
 
 
-def group_summary(name, files, receipt):
+def bounded_utf8_suffix(value):
+    if not isinstance(value, str):
+        return None
+    encoded = value.encode("utf-8", errors="replace")
+    if len(encoded) <= MAX_RECEIPT_ERROR_BYTES:
+        return value
+    bounded = encoded[-MAX_RECEIPT_ERROR_BYTES:]
+    while bounded and bounded[0] & 0xC0 == 0x80:
+        bounded = bounded[1:]
+    return bounded.decode("utf-8")
+
+
+def supervisor_failure(receipt):
+    supervisor = receipt.get("receipt")
+    projected = None
+    if isinstance(supervisor, dict):
+        projected = {
+            key: supervisor.get(key)
+            for key in (
+                "outcome",
+                "completion",
+                "exitCode",
+                "error",
+                "reaped",
+                "workInterpretation",
+                "unknownTail",
+                "processWallMs",
+                "summaryPath",
+                "logPath",
+            )
+        }
+        projected["consoleTail"] = bounded_utf8_suffix(
+            supervisor.get("consoleTail")
+        )
     return {
+        "reason": receipt.get("error"),
+        "exitCode": receipt.get("exitCode"),
+        "stderr": bounded_utf8_suffix(receipt.get("stderr")),
+        "supervisor": projected,
+    }
+
+
+def group_summary(name, files, receipt):
+    supervisor = receipt.get("receipt")
+    detail = supervisor if isinstance(supervisor, dict) else receipt
+    summary = {
         "name": name,
         "files": files,
         "outcome": receipt.get("outcome"),
         "completion": receipt.get("completion"),
-        "summaryPath": receipt.get("summaryPath"),
-        "logPath": receipt.get("logPath"),
+        "summaryPath": detail.get("summaryPath"),
+        "logPath": detail.get("logPath"),
     }
+    if not complete_receipt(receipt, files):
+        summary["failure"] = supervisor_failure(receipt)
+    return summary
 
 
 def run_profile_groups(app=APP, supervisor=SUPERVISOR, environment=None):

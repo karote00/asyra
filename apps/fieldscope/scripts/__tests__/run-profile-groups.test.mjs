@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { Buffer } from 'node:buffer'
 import { spawn, spawnSync } from 'node:child_process'
 import {
   mkdirSync,
@@ -120,13 +121,32 @@ if mode == 'source-incomplete' and files == [
 if mode == 'remaining-incomplete' and files == [
         'src/runtime/__tests__/nested/new-owner.profile.test.ts']:
     result['completion'] = 'incomplete'
+if mode == 'remaining-error' and files == [
+        'src/runtime/__tests__/nested/new-owner.profile.test.ts']:
+    result.update({
+        'outcome': 'failed',
+        'completion': 'incomplete',
+        'exitCode': 7,
+        'error': 'Vitest remaining failure',
+        'workInterpretation': 'lower-bound',
+        'unknownTail': True,
+        'processWallMs': 4321.5,
+        'consoleTail': '界' * 9000 + 'remaining-tail-end',
+        'summaryPath': 'remaining-summary.json',
+        'logPath': 'remaining-console.log',
+    })
+    sys.stderr.write('remaining wrapper stderr')
+if mode == 'malformed':
+    sys.stderr.write('錯' * 9000 + 'malformed-stderr-end')
+    print('not-json')
+    raise SystemExit(9)
 if mode == 'wrong-selection':
     result['selection'] = {**selection, 'files': files + ['unexpected.profile.test.ts']}
 if mode == 'error':
     result['outcome'] = 'failed'
     result['exitCode'] = 7
 print(json.dumps(result))
-if mode == 'error':
+if result['outcome'] == 'failed':
     raise SystemExit(7)
 `
   )
@@ -247,6 +267,68 @@ test('fails full completion when the source or remaining group is incomplete', (
       completion
     )
   }
+})
+
+test('preserves bounded failed receipt and malformed output diagnostics', (t) => {
+  const receiptRoot = fixture()
+  t.after(() => rmSync(receiptRoot, { recursive: true, force: true }))
+  const receiptResult = run(
+    receiptRoot,
+    writeFakeSupervisor(receiptRoot),
+    'remaining-error'
+  )
+  assert.deepEqual(receiptResult.calls, [[heavy], [source], [remaining]])
+  const remainingGroup = receiptResult.result.groups.at(-1)
+  assert.equal(remainingGroup.summaryPath, 'remaining-summary.json')
+  assert.equal(remainingGroup.logPath, 'remaining-console.log')
+  assert.equal(
+    remainingGroup.failure.reason,
+    'Supervisor group did not return a complete exact selection'
+  )
+  assert.equal(remainingGroup.failure.exitCode, 7)
+  assert.equal(remainingGroup.failure.stderr, 'remaining wrapper stderr')
+  assert.deepEqual(
+    {
+      ...remainingGroup.failure.supervisor,
+      consoleTail: undefined
+    },
+    {
+      outcome: 'failed',
+      completion: 'incomplete',
+      exitCode: 7,
+      error: 'Vitest remaining failure',
+      reaped: true,
+      workInterpretation: 'lower-bound',
+      unknownTail: true,
+      processWallMs: 4321.5,
+      summaryPath: 'remaining-summary.json',
+      logPath: 'remaining-console.log',
+      consoleTail: undefined
+    }
+  )
+  assert.ok(
+    Buffer.byteLength(remainingGroup.failure.supervisor.consoleTail, 'utf8') <=
+      8000
+  )
+  assert.match(
+    remainingGroup.failure.supervisor.consoleTail,
+    /remaining-tail-end$/
+  )
+
+  const malformedRoot = fixture()
+  t.after(() => rmSync(malformedRoot, { recursive: true, force: true }))
+  const malformedResult = run(
+    malformedRoot,
+    writeFakeSupervisor(malformedRoot),
+    'malformed'
+  )
+  assert.deepEqual(malformedResult.calls, [[heavy]])
+  const malformedFailure = malformedResult.result.groups[0].failure
+  assert.match(malformedFailure.reason, /did not return one JSON receipt/)
+  assert.equal(malformedFailure.exitCode, 9)
+  assert.equal(malformedFailure.supervisor, null)
+  assert.ok(Buffer.byteLength(malformedFailure.stderr, 'utf8') <= 8000)
+  assert.match(malformedFailure.stderr, /malformed-stderr-end$/)
 })
 
 test('forwards interruption to the active supervisor and waits for its cleanup', async (t) => {
