@@ -47,6 +47,12 @@ force only its fixed App.
 This intentionally bypasses deployment deduplication and consumes quota.
 Ordinary retries must inspect previous results before starting another run.
 
+Each manual entry explicitly uses `secrets: inherit` when calling the trusted
+release pipeline so its publication job can resolve the environment secrets.
+Keep Vercel credentials in `app-production`; do not copy them to repository
+secrets. The pipeline must not forward secrets to artifact verification or
+consume them in planning. Only publication binds to `app-production`.
+
 ## Setup and cutover
 
 The default branch must contain the reviewed workflows before the manual entry
@@ -185,6 +191,12 @@ Build CPU/time, transfer, Functions and storage remain separate usage measures.
   it adds neither an approval nor a wait timer after manual dispatch.
 
 ## Failure and recovery
+
+- If publication reports `Missing credential for https://api.vercel.com`, check
+  that `VERCEL_TOKEN` exists in `app-production` and the manual entry forwards
+  secrets to the release pipeline. The token value cannot be read back from
+  GitHub. After merging a workflow correction, start a new **Run workflow** on
+  `main`; re-running an older run keeps its original workflow revision.
 
 - Before promotion: leave the current domain untouched. Inspect the recorded
   deployment ID. A timeout may have completed remotely; never blindly retry.
