@@ -1,9 +1,14 @@
 # M6: Independent Pilots and Release Review
 
 Status: active - development authorized 2026-09-12 after the M5 merge.
-M6 acceptance, M6 merge and R0 publication are not authorized by this task.
+The 2026-09-13 multi-agent handoff authorizes continued plan implementation,
+development pushes and sub-PR integration. The user separately authorized merging
+original PR #195 on 2026-09-13; it merged as `7e9ad9734`. Continued work now uses
+`codex/asyra-sim-capacity-goal`, created from the resulting main, with verified
+capacity commits replayed. This new goal branch must not be merged into main
+without new authorization. External acceptance and R0 publication remain open.
 
-## Bounded task contract
+## Original recovery slice contract
 
 Baseline: 599cb5b916d25e157c3d5b40ce14b3bb5e93785f from fetched main after PR #192.
 Branch: `codex/asyra-sim-m6-pilot-review`.
@@ -87,7 +92,6 @@ user instructions identify the exact file, controls and success/failure outcome.
 Self-review: this implements existing pilot/distribution contracts within ui;
 it does not add product semantics, expand Inspector boundaries or replace G7.
 
-
 ## UI slice evidence before candidate generation
 
 The new supplied-file E2E fails with ENOENT before the fixture exists. The
@@ -111,3 +115,2511 @@ Bounded review confirms exact byte copying, local document linking, original
 notices/checksum guards and unchanged ui/solver/storage ownership. Commit this
 validated tooling stage before invoking the clean producer; its source tests and
 packaged browser evidence remain the next checkpoint.
+
+## Completed recovery evidence and continued development - 2026-09-13
+
+The producer and packaged workflow above subsequently completed on exact source
+`593762b965aacd83e3323245c35765e14da1889c`. The clean consumer rebuilt and packed
+19 Framework inputs, retained 387 registry identities, passed 678 isolated App
+tests and the type/bundle gates, and assembled 31 dependency notice records.
+All five affected packaged browser cases passed; source, candidate and SDK
+recovery-fixture bytes and the final candidate checksums agreed. All eight CI
+checks passed on that same HEAD. These are completed recovery-slice results,
+not evidence for later source changes or full M6 acceptance.
+
+The original producer record is
+`apps/asyra-sim/.artifacts/consumers/593762b965aa-9PKgp4/consumer-evidence.json`;
+the packaged browser record is `tmp/m6/packaged-report.json`. The candidate
+archive SHA-256 is
+`fe1f23d6ffe7d6ff3a042757c2c08f36d0961ac726d2b76943f413a76f94dfa4`.
+The handoff review found no concrete defect in the bounded recovery code diff;
+the five distribution tests passed again on 2026-09-13. Prior screenshot review
+remains historical evidence, not a new visual review.
+
+Continued development first investigates the representative capacity failure
+against the unchanged workload, precision and resource limits. A separate
+method-owner execution contract must precede any correction; the original
+recovery slice above is not retroactively expanded. Preserve the M5 failing
+regression and original reports.
+
+## Step Execution Card - exact-source test supervision delivery
+
+Owner: R0 Inspector `ui` and `user-workbench-terminal`, limited to the
+versioned local distribution and clean exact-source consumer route. Inputs are
+the clean source/lock, validated packed Framework inputs, explicit App or exact
+monorepo manifests and the existing three heavy proof files. The output is a
+consumer and optional SDK whose local test entry retains ordinary coverage and
+runs all three heavy files once under the existing finite process/idle cleanup
+supervision. The repository alone owns the CI workflow ordering oracle.
+
+Formal RED on 2026-09-14 proved four delivery gaps: the consumer used naked
+Vitest, the SDK omitted the supervisor and portable oracle, the source entry did
+not execute its repository-only CI oracle, and runtime selection could not prove
+a standalone owned installation. The outer producer also retained a five-minute
+test timeout around a longer supervised job. The bounded correction copies the
+portable files into both consumer and SDK, accepts only an App-local installation
+or the exact `asyra/apps/asyra-sim` manifest/layout, and gives only
+`consumer-tests` a 21-minute outer deadline around the 20-minute envelope and
+its 60-second cleanup reserve. Build, install and archive guards remain five
+minutes; numerical method behavior and the product's default 30-second limit are
+unchanged.
+
+The focused portable/CI/consumer/distribution oracles pass 25/25 after the
+correction. Exact-source production and packaged browser evidence remain later
+gates; this tooling checkpoint is not a local candidate pass or external R0
+acceptance.
+
+## Completed local candidate delivery evidence - 2026-09-14
+
+The follow-on producer and packaged workflow completed against exact source
+`1874e9832006a75ff400f9b35f0691ffd906a235` (tree
+`5f0253c5515755df9b6dbf67c25bc2cb6ae2e73f`). A later documentation commit does
+not change that built source identity. The immutable producer record is
+`apps/asyra-sim/.artifacts/consumers/1874e9832006-0xX3z9/consumer-evidence.json`.
+The assembled local candidate is the sibling
+`asyra-sim-0.1.0-alpha.0-1874e9832006/` directory and archive. The archive
+SHA-256 is
+`e41715c5f821b30e0a3228c1b653aa0b95ee93778dc4cb6bb71c9e4276aa2e5e`;
+the distribution manifest passed before and after browser validation.
+
+The loopback-only packaged launcher served the candidate on
+`http://127.0.0.1:3020`. Four bounded one-worker/no-retry batches passed 39
+distinct cases: 11 failure/resource cases, 15 method/data cases, three
+comparison/recovery cases and 10 persistence/history/original-part/theme cases.
+`methods.spec.ts` ran once, in the method/data batch. Source, candidate example
+and candidate SDK copies of `missing-method-project.json` all have SHA-256
+`6df67609d9c34502aa7bcd028e4b03dd70bde21847f754cd0dc805c6ab909c40`.
+The packaged launcher was stopped and port 3020 was released.
+
+Browser artifacts are under
+`tmp/m6-final/packaged-{failures,data,recovery,persistence}/`. The inspected
+packaged screenshots are:
+
+- `tmp/m6-final/packaged-recovery/e2e-__tests__-candidate-co-19a74-aceable-body-correspondence/three-candidate-comparison.png`
+- `tmp/m6-final/packaged-recovery/e2e-__tests__-candidate-co-19a74-aceable-body-correspondence/three-candidate-comparison-narrow.png`
+- `tmp/m6-final/packaged-recovery/e2e-__tests__-pilot-recove-c8ad5--without-coordinator-repair/missing-method-retained-history.png`
+- `tmp/m6-final/packaged-failures/e2e-__tests__-workbench-fl-8e463--with-no-successful-verdict/worker-failure.png`
+- `tmp/m6-final/packaged-failures/e2e-__tests__-workbench-fl-ba360--the-original-storage-owner/saving-failure.png`
+- `tmp/m6-final/packaged-data/e2e-__tests__-methods-a-us-55fba-immutable-method-provenance/retained-method-provenance.png`
+- `tmp/m6-final/packaged-persistence/e2e-__tests__-original-par-d9486-d-rejects-surrogate-methods/original-part-result.png`
+- `tmp/m6-final/packaged-persistence/e2e-__tests__-theme-theme--b7f76-riment-or-losing-light-mode/dark-workbench.png`
+
+They show the normal packaged UI, explicit failed/unknown and save-failure
+states, retained missing method history, A/B/C comparison, method provenance
+`original-part-clearance-v1@1.0.3`, original-part results and dark-theme layout.
+The product runtime default remains 30 seconds.
+
+`consumer-evidence.json` is an immutable producer-time snapshot, so its
+`remainingGates` still names the packaged offline journey that the subsequent
+39-case run completed. It must not be edited retroactively. Its lock SHA-256
+`2a91e0b6fac05495a4e1993a2f9358b58798bf45b487dd911c65ddce45a2a032`
+matches the lock covered by the 2026-09-12 dependency audit already recorded in
+`release/LOCAL_CANDIDATE.md`; this is lock-identity reuse of that dated result,
+not a fresh audit. The candidate contains 31 dependency notice records.
+
+This closes local developer candidate production and packaged validation only.
+The reference M1 / 8 GB run, independent numerical review, two real
+non-developer pilots and a maintenance owner remain unarranged. M6 and external
+R0 acceptance therefore remain open.
+
+### Current-source candidate refresh - 2026-09-14
+
+After the two reviewed test-only timeout calibrations reached the goal, a new
+exact-source producer completed on `54c625466247715390fdc3701d2d16c58531494c`
+(tree `c3d493573b15f10134e91c58ddebce83a69e8221`). Its immutable record is
+`apps/asyra-sim/.artifacts/consumers/54c625466247-WWWDIv/consumer-evidence.json`;
+the archive SHA-256 is
+`d9f963bd51a8ea3818004027cee78c1aa57ed38d7fc45ce60b2c5c036fc43c4e`,
+and the candidate distribution checksum verification passed. Both changed SDK
+test files exactly match this source; production behavior and product deadlines
+did not change.
+
+The refreshed candidate's `site/` is byte-identical to the `1874e9832006`
+candidate that actually passed the 39 packaged browser cases above: each has 17
+files and 2,612,342 bytes, recursive comparison found no mismatch, and both
+sorted relative-path content manifests have SHA-256
+`3571a86ff3b847fae96085d76739ded16921bc9976080fb2aed8340c98ee90ca`.
+Examples, runtime and verification scripts, dependency notices and the recovery
+fixture are also unchanged. No browser rerun occurred for `54c625466247`; its
+packaged UI evidence is the prior 39-case run plus this exact production-site
+equivalence. A later documentation-only commit is not part of either built
+candidate.
+
+The user authorized research into suitable public validation data and, when
+unavailable, reproducible synthetic data grounded in real-world conditions.
+Record source permission, provenance, assumptions and validation scope. Public
+or synthetic cases do not count as reference-hardware measurements, independent
+human numerical review, or either non-developer pilot. Maintenance authority and
+physical evidence cannot be inferred from generated data. M6 and R0 remain open
+until their actual required evidence exists.
+
+## Capacity task iteration - 2026-09-13
+
+The method owner remains responsible for FIRST_RELEASE G2/G4 and the unchanged
+39-body, 30-fixture, 200-keyframe, 298-pair, three-candidate workload. The M5
+regression and reports remain intact. Formal current-source regression reproduces
+500,000 logical mesh-work exhaustion after 134 temporal evaluations; all 298
+pairs are unresolved. This is not a wall-clock or temporal-node-budget failure.
+
+Two bounded corrections have passed independent review without closing G4:
+deterministic dual-tree descent raises progress to 17,686 evaluations, and
+first-witness interval certification raises it to 19,996. The latter still spends
+211,066 work on joint-2/table (199 clear intervals) and 186,994 on joint-2/obstacle-10
+(96 clear intervals before exhaustion). Its 22,017 convex calls replace the
+initial profile's zero convex calls: hierarchy order and redundant samples no
+longer explain the entire failure. Do not continue local sampling/tree patches.
+
+Revised Step Execution Card: `method`, Inspector `method` fields, numerical-method
+spec and runtime-profile representative workload. Inputs remain admitted frozen
+source geometry, domain-owned point/interval pair poses, and current budgets and
+checkpoints. Output remains complete method evidence or explicit unresolved
+coverage. Only conservative full-source rejection is allowed; bounding solids
+never supply contact geometry, a penetration verdict, or a substitute witness.
+Existing source geometry, thresholds, precision, tick accounting, legacy method
+ordering and immutable history remain unchanged. No pose or temporal cache.
+
+The next segment first profiles candidate separating directions against complete
+source bounds, on the two measured expensive pairs at their ordinary static and
+interval queries. Compare current axis-aligned rejection with outward projection
+onto fixed directions derived from each current orientation. Count candidate
+projection operations, certified rejections and actual current-query work.
+Preparation is measured separately and is never presented as free production
+work. These are formal test-owned profiles, not a production fast path.
+
+Discovery and mutation stay in `analysis/methods/**`, directly owned tests and
+this existing plan. No new repository-wide audit or workload change. Before any
+third production correction, replace this profiling hypothesis with a reviewed
+implementation plan only if profiles show material benefit after its added work.
+That plan must include exact source enclosure, independent analytical truth,
+rotated/static/continuous and near-threshold cases, containment/crossing negatives,
+full-source and hierarchy-disabled agreement, deterministic work counts, current
+cancellation, and source/pose/threshold invalidation. If root bounds cannot reject
+the costly pairs, record that result and do not install an ineffective shortcut.
+
+Self-review: this replaces the exhausted local optimization plan with a bounded
+method-certificate investigation. It maps to the existing Inspector permission
+for conservative rejection and changes neither product geometry nor cache
+ownership. Focused proof must pass before the unchanged three-candidate gate;
+no release, reference-hardware or independent-pilot claim follows from this slice.
+
+### Revised certificate implementation plan
+
+The test-owned node-certificate probe now establishes material benefit after
+charging every attempted candidate axis to the unchanged combined 500,000 work
+limit. For table at [0,2], original work 80,644 becomes 6,638 including 100 axes;
+for obstacle-10 at [2,3], 65,502 becomes 4,502 including 156 axes. Its expensive
+[3.75,4] and [4,4.25] windows fall from 205,000/185,302 to 28,137/23,512 including
+17,312/14,121 axes. Complete coverage and leaf classifications match the original
+runs. Preparation remains included and separately reported. Four cases pass
+within their unchanged 20-second guards. A prior [3,4] profile exceeded that
+guard and was split into quarter-second cases; its failure record is retained.
+Root-only rejection is rejected as insufficient: it saves work but leaves the
+most expensive subtree queries unresolved within the full-run budget.
+
+The next implementation is one pure method-owned full-source-bound projection
+helper, consumed only by original-part root/node/triangle rejection. Each call
+first uses the existing world-axis gap. When insufficient, try the three axes
+from each current pose in fixed order. The midpoint proposal is merely a fixed
+nonzero search direction; outward inverse rotation and interval dot products
+bound the projection of every point of the complete local bounds at every
+admitted pose/time. Divide a positive projection gap by an outward direction
+norm. Return only a conservative lower gap; zero/overlap has no collision or
+clearance meaning. The helper receives the current search threshold, including
+zero after a clearance witness; every attempted axis calls the existing tick.
+Mixed analytical/mesh queries retain their existing path in this slice.
+
+At the root, a positive full-source gap may return the existing real source-point
+upper witness and the certified lower gap, never a bounding-box corner witness.
+At a subtree or triangle, a positive gap rejects only that source subset.
+Retain the original static membership phase and the interval witness.lower
+containment condition; absence of a surface crossing must not turn contained
+solids into clearance. No current pose, projected bound or temporal certificate
+survives its query. Mesh preparation lifetime and equivalent hit charging remain
+unchanged. Method version 1.0.2 describes the completed bounded correction; old
+reports and studies remain unchanged and old methods are never aliased.
+
+Before production edits, independent review must accept this plan and permanent
+red tests must show the current unnecessary source-traversal work. Required
+proofs include analytical rotated and translated closed solids, near-threshold
+and crossing negatives, source-point upper witnesses, original contact/warning
+priority, both pair directions, hierarchy-disabled classification, deterministic
+reruns, changed source/pose/threshold, exact work ceilings and cancellation during
+axis attempts. Then run the direct method suite and independent numerical oracle,
+naming, typecheck and lint before the original three-candidate capacity gate.
+The feasibility adapter is not shipped as a product route and is not itself a
+correctness oracle. Failure returns to this exact method boundary and does not
+permit another speculative shortcut, smaller fixture, extra budget or fallback.
+
+The third slice's first production attempt exposed an owner mismatch: omitting
+cardinal candidate axes kept the dual-tree 576-work gate but used 54,997 work
+against the unchanged 50,000 obstacle gate. Existing worldBounds forwards an
+interval box through a quaternion cross-product expression, repeating the box
+variables and weakening the world-axis enclosure. Cardinal inverse projections
+were therefore not redundant in the feasibility profile. The bounded correction
+is to share one pure inverse-direction source projection with worldBounds itself,
+then omit genuinely repeated cardinal candidate queries. First prove exact
+rational rotated-box extrema and cardinal tightness red on the current owner;
+also retain interval-rotation vertex enclosure and near-contact negative cases.
+No domain pose, source geometry, work ceiling, or budget changes are authorized.
+
+The corrected third slice passed 103 direct method tests, independent review
+(40 tests), typecheck, focused ESLint, naming (11), and diff checks. Exact
+rational/cardinal source-width regressions were red before worldBounds changed
+(3.68 versus 0.8 and 6 versus 2), then green with the same projection owner.
+The unchanged 10,000/50,000 representative pair work ceilings and 576 dual-tree
+ceiling pass in both pair directions. These are bounded method results, not G4.
+
+The complete unchanged representative profile remains partial after 20,189
+evaluations and 500,197 accounted work (7.862 seconds on this development host).
+Its first partial pair is joint-2 versus obstacle-11: 385,726 work, comprising
+249,830 static and 135,896 interval work, with 90 evaluations and 70 clear
+certificates. The previous obstacle-10 pair now completes all 199 intervals in
+29,449 work. Evidence is in tmp/capacity/representative-world-bounds.log. The
+three-candidate browser milestone is not rerun while its focused full-workload
+prerequisite remains red.
+
+The next bounded diagnostic remains at the method owner and this newly measured
+obstacle-11 pair. Separate static membership, source hierarchy/triangle queries,
+convex queries, and interval work by fixed trajectory windows before choosing
+any further algorithm. Inspect whether late source-order discovery of a valid
+penetration witness dominates; do not infer this from the previous baseline or
+assume trajectory keyframes can be merged outside the domain contract. Any next
+production iteration requires a revised reviewed plan and a permanent work-count
+red oracle, with full source, warning/penetration semantics, thresholds, shared
+poses, and the existing budget unchanged.
+
+### Fourth bounded iteration - query-local sibling ordering
+
+The current source-query profile splits obstacle-11 into eight fixed one-second
+windows, each retaining the 20-second test guard and the original 500,000 work
+budget. The five expensive windows use 150,070 / 300,053 / 141,911 / 420,497 /
+164,078 work; membership is small, while static triangle and interval queries
+predominate. Exact same-time/source/pose/control comparisons found only nine
+repeated admitted interval queries totaling 70,069 work. That approximately six
+percent opportunity does not justify treating interval reuse as the main fix.
+A diagnostic reversed complete index order preserved all source offsets,
+components, representatives, leaf states and penetration while reducing the
+2-second window from 300,053 to 183,570 combined work and the 4-second window
+from 420,497 to 309,453. Each includes 3,134 extra reordering units. Reversal is
+a diagnostic control, not the proposed production heuristic.
+
+Step Execution Card: owner remains Inspector `method`; inputs, evidence outputs,
+shared domain poses, full-source and containment contracts are unchanged. The
+first avoidable owner work is source-order descent before establishing useful
+witnesses. One candidate orders only the two child pairs of an existing node
+expansion. Sort by conservative world-axis gap ascending, then squared world-box
+center distance, then original source order. Centers select order only and never
+supply product bounds, witnesses, membership or contact. Leaves gain no scoring.
+No global queue, pose cache, sampled collision route or domain change is allowed.
+
+A pending entry owns its two already computed complete world bounds and their
+threshold-independent world gap, consumed once when that exact entry is popped.
+Its lifetime is one distance/lowerOver call. Every prepared node pair charges its
+existing node work immediately, even if later early exit leaves it unvisited;
+one additional tick charges each sibling ordering decision. Projected rejection
+still runs at pop with the current search threshold, including zero after a
+warning witness. No threshold-dependent projected score is retained. Pending
+entries and all their bounds disappear when the current query returns or throws.
+All children and original triangles remain eligible; a warning still requires
+searching every potentially intersecting region for penetration.
+
+The reviewer and root accepted formal test-first experimentation instead of
+copying the solver or adding test-only production hooks. First add a permanent
+multi-component work oracle that is red on the current source-order method,
+including source permutations, rotation, reversed pairs, late penetration and
+exhaustive truth. After that red and plan review, implement this one candidate.
+Then require those truth/work oracles, prior 576/10,000/50,000 gates, cancellation,
+and both fixed representative windows to pass with material work reduction
+(including the new decision charges). If this candidate fails those conditions,
+remove only this uncommitted candidate's production change and replan; do not
+retain it because it has been written or tune a heuristic to a fixture. Existing
+full-workload red tests and prior immutable evidence remain preserved.
+
+The sibling-order candidate failed its predeclared material-benefit gates. The
+formal baseline was 300,053 versus a 240,000 ceiling and 420,497 versus a 336,000
+ceiling. Candidate work increased to 316,490 and 454,787 respectively, despite
+passing all twelve direct multi-component and prior bounded-work cases (the
+dual-tree combined work was 536, below its unchanged 576 ceiling). There was no
+observed truth regression; the cost hypothesis was wrong. The uncommitted
+production candidate was restored to the reviewed third-slice implementation.
+Its permanent red work tests, diagnostic controls, and bounded output logs in
+tmp/capacity/sibling-order-{red,candidate}.log remain preserved. No alternative
+heuristic was substituted. The next iteration must re-audit the same source
+query owner and revise the plan before any further implementation.
+
+The next diagnostic tests a different canonical decision, not another ordering
+heuristic. Once a real static warning witness exists, the remaining question is
+penetration. A strict positive certificate separating the complete original
+source bounds would exclude penetration everywhere; the current search only
+rechecks subtree bounds at the lowered zero threshold. Passively measure a
+zero-threshold root certificate at the first real triangle warning witness in
+the same two obstacle-11 windows. Keep the baseline traversal running unchanged,
+record each completed query's remaining actual work and every probe axis cost,
+and require the certificate to enclose the real upper witness with no later
+penetration. No production early return is authorized by this diagnostic alone.
+
+The zero-threshold root-box diagnostic disproved this candidate before any
+production edit: the two windows had 30/33 first-warning probes and zero
+positive full-root certificates, costing 120/132 additional logical units with
+no saved work. Baseline completion subsequently found real penetration in
+13/11 of those queries and positive-lower clearance warnings in 17/22. The
+complete convex-query counts were respectively 17/13 penetration, 158/203
+positive-lower warning, 7,408/14,181 separated, and 7/16 uncertain results.
+Unconditional warning early return would therefore be incorrect. The formal
+profile passes its truth checks and is retained in warning-separation-profile
+and tmp/capacity/warning-separation-states.log; this candidate does not proceed
+to production.
+
+A separately authorized passive extension used the already established warning's
+fixed axis to project every original source vertex with outward arithmetic.
+This remained rejection-only, never convex-hull collision geometry or a product
+upper witness. It also produced zero certificates in both windows. The complete
+vertex/norm probe costs were 106,110 and 116,721 units, with zero saved work;
+all baseline penetration and uncertain results remained present. This direction
+is stopped without a production patch (tmp/capacity/vertex-separation-profile.log).
+
+Read-only temporal-contract review also rules out treating a first clearance
+warning as permission to skip subsequent required witness samples: the current
+1.0.2 strategy explicitly requires remaining samples and a final certificate
+unless strict full-interval clearance was proven. The same-pose penetration
+priority and independent collision/clearance product findings remain binding.
+No temporal shortcut or new retained-pose cache was implemented. Production
+remains the independently reviewed third slice pending a new bounded owner plan.
+
+The next same-query reuse audit measured exact completed projected-gap calls with
+both query pose identities, all twelve bounds coordinates and the current
+threshold fixed. Repeated value-equal calls account for 28,299 / 44,370 axis work,
+but 55,573 / 77,417 lookups already exceed that saving before any bound interning
+preparation. Reference-identical repeats account for only 150 / 216 units.
+No query cache is justified by these results.
+
+The next bounded feasibility adapter changes only triangle broad rejection:
+compare the current local-box world bound with the outward extrema of the three
+actual source vertices at the same admitted pose/interval. A triangle and its
+motion are enclosed because each triangle point is a convex combination of the
+three transformed vertices at every admitted time. This never supplies collision
+or contact geometry. Root/node hierarchy, all source triangles and membership
+remain untouched. Account for the replacement's three point transforms versus
+the original three inverse-axis box projections, and separately measure avoided
+axis queries, convex calls and the unchanged logical work budget. There is no
+additional mesh scan or retained pose state. Only material evidence permits a
+reviewed implementation plan and independent enclosure/work regressions.
+
+### Immutable hierarchy partition feasibility
+
+Exact triangle bounds reduce convex calls substantially but logical work only
+3.3% / 6.7%, so no triangle correction is frozen. Complete query-local node source
+extrema, including each transformed source point, bound union and lookup, instead
+exhaust the unchanged combined budget at 500,001 in both windows. It is rejected.
+The existing median hierarchy has 74,977 / 94,423 internal-node visits, of which
+72,372 / 90,716 visit positive-overlap siblings; visit-weighted overlap relative
+to the smaller child's surface area is 0.586 / 0.591. A frequently visited
+1,101-triangle node has 0.829 sibling overlap. These structural observations
+justify one immutable partition probe, not another query ordering heuristic.
+
+The root and independent reviewer froze one source-complete SAH feasibility
+rule before execution: eight fixed bins on each of three local axes, surface
+area times source count, four-triangle leaves, deterministic axis/bin ties and
+source-offset ties. Keep every original triangle exactly once, its vertices,
+component and representative unchanged. Empty/degenerate partitions use the
+existing legal median construction, never a different product geometry.
+Every added scan/assignment/partition/prefix-suffix pass charges each 256 items
+including its final partial chunk; each actual candidate split cost evaluation
+charges one additional unit. Existing preparation charges remain, all new work
+is included in prepared.work, warm runs pay equivalent preparation and failed
+preparation is not retained. No bin, leaf, budget or charging changes may follow
+measurement to make a fixture pass. A formal test-owned rebuilt index probe must
+show total preparation-plus-query benefit, truth and fixed prior work limits
+before a reviewed test-first production plan can be proposed.
+
+### Lazy immutable refinement - bounded implementation experiment
+
+The fully charged eager SAH probe improves the two windows to 169,653 / 234,238
+work but regresses the complete workload: 33 meshes consume 26,081 median plus
+449,840 SAH preparation units and leave coverage partial after 10,149 evaluations.
+Eager preparation is rejected. The next experiment preserves that exact SAH
+algorithm and charging but moves its owner to the first real hierarchy use.
+
+Inspector `method` still owns immutable geometry/hierarchy preparation and all
+query evidence. Distance uses the unchanged median index for complete-root
+rejection and every membership test; only after those admissions does it obtain
+completed refined indices before constructing pending node pairs. lowerOver
+likewise retains root rejection and positive-witness containment admission before
+refinement. Exhaustive mode and already-leaf indices require no refinement.
+Median indices remain intact. No names, poses, times or past query performance
+select the strategy. Completed refinements are keyed only by exact frozen source
+geometry/hierarchy mode in the existing allowed preparation lifetime; invocation
+state records whether the equivalent cold cost has already been charged. Warm
+first use charges that same cost with the current checkpoint. Incomplete/aborted
+refinement is not retained and cannot fall back to median as successful evidence.
+
+Root and independent review authorized a real, uncommitted owner experiment
+instead of fragile test proxies. Permanent tests precede implementation for
+cheap-root and membership bypasses, same geometry in two poses, cold/warm charge
+parity, unused warm refinements, exhaustive bypass and aborted preparation.
+The existing representative and fixed-window work regressions are already red.
+All prior work ceilings remain unchanged; the known approximately 60,000 cold
+refinement cost may itself violate the 50,000 obstacle gate. Such a failure must
+be reported, not hidden with a selector or raised ceiling. Candidate production
+is accepted only after full workload, work-count, truth and independent review;
+otherwise preserve evidence and restore only the uncommitted experiment.
+
+The real lazy-owner experiment passed all four preparation lifetime/admission
+contracts, both twenty-percent fixed-window improvements and the unchanged
+460-of-576 dual-tree gate. It nevertheless consumed 66,482 units in both
+obstacle-10 directions, exceeding the unchanged 50,000 ceiling. The candidate
+is rejected; only its two uncommitted production files were restored. No full
+workload/browser rerun or geometry-dependent selector follows this failure.
+The formal red and candidate outputs remain in
+`tmp/capacity/lazy-hierarchy-red.log` and
+`tmp/capacity/lazy-hierarchy-candidate.log`; the rejected source diff is retained
+as `tmp/capacity/lazy-hierarchy-rejected.patch` for reproducing that historical
+experiment, not as current product implementation.
+
+### Permanent capacity diagnostic commands
+
+Hypothesis profiles are permanent, explicitly selected evidence, not ordinary
+passing capacity gates. Run a specific profile with
+`SIM_CAPACITY_DIAGNOSTICS=1 yarn workspace @asyra/asyra-sim test:local <file> --maxWorkers=1`.
+The selected files are `source-query-cost.test.ts` and the method test files
+ending in `-profile.test.ts`. Each retains its fixed twenty-second case guard.
+Run expensive windows separately by test title when necessary. Negative net
+benefit and partial budget exhaustion are expected diagnostic observations;
+a passing profile assertion does not mean its strategy is adopted or G4 passes.
+The source/node projected-bound adapters describe the earlier feasibility
+hypothesis and must not be cited as an unmodified pre-projection baseline on
+current 1.0.2 production. Current-owner profiles report current production.
+
+`SIM_LAZY_HIERARCHY_EXPERIMENT=1 yarn workspace @asyra/asyra-sim test:local lazy-hierarchy.test.ts --maxWorkers=1`
+selects the generic refinement lifetime contracts first exercised by the rejected
+SAH experiment. The current API implements admitted-component refinement, so
+these four contracts now pass without reconstructing SAH. The historical SAH
+candidate still failed its 50,000 ceiling; its retained patch and recorded logs
+are that algorithm's evidence. SAH/rotation eager adapters explicitly disable
+newer demand-time refinement so it cannot replace their historical hierarchies.
+The reverse-order, triangle-bound and node-source-bound adapters use the same
+control to preserve their original index/metadata relationships. Actual
+`source-query-cost.test.ts` and representative goal gates use current production.
+
+`representative-work.test.ts`, `representative-resource.browser.spec.ts` and
+`sibling-order-work.test.ts` retain their original selection and unchanged work
+assertions. They are actual outstanding capacity/work regressions, not hidden
+hypotheses. The representative goal remains incomplete.
+
+### Median axis mismatch observation
+
+A passive fixed-original-node diagnostic compares the current full-box longest
+axis with the spread of the same `lo + hi` sorting key. It never changes product
+indices or recursively repartitions the hierarchy. Across the two fixed windows,
+600 nodes have mismatched axes, with 13,240 / 18,471 actual world-bound visits
+out of 74,977 / 94,423 internal visits. Hypothetical median partition on the
+other axis changes visit-weighted local overlap from 8,563 to 8,214 and from
+12,195 to 10,770. These small local changes are not actual saved query work;
+current complete query work remains 300,053 / 420,497. The observation does
+not justify another production partition candidate. Diagnostic scans/sorts are
+measurement overhead, not free product preparation or a proposed work budget.
+
+### Single-pass immutable local rotation probe
+
+The next method-owned test-only hypothesis preserves the original median leaves
+and visits each original node once in postorder. The primary description is
+<a href="https://hwrt.cs.utah.edu/papers/hwrt_rotations.pdf" target="_blank" rel="noopener noreferrer">Kopta et al., section 1.2</a>.
+This is immutable source preparation, never pose refitting or contact geometry.
+For children `L=(A,B), R=(C,D)`, the fixed candidate order is swapping R with A,
+R with B, L with C, L with D, then regrouping `(A,C)|(B,D)` and
+`(A,D)|(B,C)`. Invalid candidates are absent. Compare the change in complete
+unnormalized internal surface-area cost, using only changed internal bounds;
+fixed leaf costs cancel. Strictly negative cost is required, ties retain the
+first candidate and no-op takes precedence. Nonfinite costs select no-op.
+No additional passes, new partition rules or triangle/leaf splitting/merging.
+
+Each original node visit, each actual bounds union, every candidate evaluation
+including rejected candidates, and each constructed internal node costs one
+checkpoint. Reuse a candidate's completed bounds when constructing its selected
+node; do not charge or compute the union twice. Preserve all existing median
+preparation charges. Tests must prove original leaf identity exactly once,
+complete offsets/components/representatives, exact child unions, acyclicity,
+unchanged original source index, and independent whole-tree area nonincrease.
+The two existing windows and unchanged 50,000/576 work gates decide whether
+this test-owned probe merits a production plan; observations alone do not.
+
+The rotation probe completes both windows with identical leaf state/penetration
+evidence and unchanged source leaf identities, offsets, components and source
+index. Original preparation is 3,176 and additional charged rotation work is
+14,292. Total work is 266,659 / 380,416 versus 300,053 / 420,497: improvements
+of 11.1% / 9.5%, below the existing 240,000 / 336,000 window ceilings. This
+single-pass candidate is rejected before production or full-workload testing.
+Do not add passes or tune its fixed candidates to rescue it. The three tiny
+rotation oracles pass, including exact work counts 11 / 24 / 21; the two actual
+source windows pass their diagnostic truth checks. These are hypothesis results,
+not completed capacity gates. Evidence: `tmp/capacity/rotation-oracle.log` and
+`tmp/capacity/rotation-preparation-profile.log`. Production remains unchanged.
+
+### Replan - Euclidean world-bound certificate
+
+After the rejected hierarchy candidates, the method Inspector and fixed 500,000
+work goal remain unchanged. Retained two-window profiles identify static work
+221,263 / 287,845 and interval work 78,790 / 132,652; membership is only
+172 / 3,439. Repeated projection memoization and source-world-bound rebuilding
+have already failed their net-cost tests. The next single hypothesis addresses
+`mesh-index.boundsGap`: its current maximum coordinate gap is conservative but
+weaker than the outward Euclidean norm of all positive coordinate gaps.
+
+First run a passive `euclidean-bounds-profile.test.ts` on the same two windows.
+At each actual oriented projection call, its explicit current threshold is the
+authority, including zero after an initial or later warning. Reconstruct the
+already available world bounds for measurement only; a possible implementation
+would consume those caller-owned completed bounds. Try the norm only when at
+least two coordinates have positive gaps and the existing maximum has not
+already rejected. Count every attempted complete outward norm certificate as
+one added checkpoint, including failed rejection. This is the same logical unit
+as one complete directional projection certificate, not free arithmetic.
+Record eligible calls, strict new proofs, existing projection work that would
+be bypassed, and baseline outcome/total work. Do not infer avoided descendants
+from hit rate; positive evidence needs actual bounded owner work-delta profiling
+before a production plan. A zero-benefit result stops this hypothesis.
+
+The future independent oracle, only if warranted, is the exact rational
+3/256, 4/256, 0 gap with distance 5/256 and threshold 9/512, reversed pair,
+zero/contact overlap, interval enclosure, and actual work/cancellation checks.
+No new triangle solver, geometry, hierarchy strategy, cache, severity shortcut,
+threshold or budget change is permitted. The bounded source owner and direct
+method tests are the only implementation scope, pending independent review.
+
+The passive norm counts were 7,730 / 12,105, with 2,482 / 5,102 strict
+proofs. The actual test-owned adapter then charged every norm directly through
+the original query checkpoint: 6,836 / 10,298 attempts after pruning. Complete
+query work became 296,368 / 409,102, only 1.2% / 2.7% below baseline. Every
+leaf start/end/state/penetration remained identical. This fails the fixed
+20-percent material-work requirement; no production norm change or broader
+gate follows. The adapter's reconstruction of caller-owned world bounds is
+measurement overhead, never a proposed free second production computation.
+Evidence: `tmp/capacity/euclidean-bounds-profile.log` and
+`tmp/capacity/euclidean-bounds-delta.log`. Typecheck and focused ESLint pass.
+
+The next read-only owner observation is existing source topology: joint-2 has
+4,404 triangles in 36 closed components (sizes 48, 96, 124 and 256), while
+obstacle-11 has 620 triangles in five 124-triangle closed components. Neither
+has a topology issue. Current median construction partitions all triangles
+globally instead of preserving these component subtrees. This is metadata for
+replanning only; no new component partition algorithm has been authorized or
+implemented by this observation.
+
+### Replan - preserve admitted component hierarchy
+
+The root authorized one test-owned construction using existing topology only.
+Collect every original triangle and group by its already-admitted component
+number. Build the unchanged longest-full-bound-axis median triangle hierarchy
+within each group, with the existing four-triangle leaf limit and source-offset
+sort tie. Build a deterministic median hierarchy over complete component roots,
+using the same longest-bound-axis rule and original component number as tie.
+A top-level leaf hands off to the complete component subtree; it is never a
+convex surrogate. Membership retains the identical representatives and triangle
+component ownership. No source split/merge, inferred topology, new axis heuristic
+or threshold changes. The immutable original median index is never modified.
+
+The probe preserves the original index preparation charge and adds every actual
+original-node collection visit, every rebuilt triangle/top node, each new
+bounds scan and grouping pass in 256-item chunks including each tail, and every
+new sort's comparisons in 256-comparison chunks including the tail. Component
+lookup/handoff is part of its charged top-node visit; no free second index build.
+Warm preparation must include the full extra construction cost under the existing
+prepared-index owner. Aborted construction returns nothing and retains nothing.
+
+Before the two fixed-window measurements, permanent structural tests must prove
+all offsets/components/representatives unchanged, all component roots complete,
+leaf limit four, exact child bounds, unchanged source index, cancellation and
+deterministic ordering. Overlapping and nested source components must retain
+inside/outside/uncertain membership behavior. Then compare actual cold total
+work and complete temporal/severity evidence against the fixed 240,000/336,000
+window ceilings. Only material improvement permits the unchanged 50,000/576
+gates; production still requires a separately reviewed implementation plan.
+
+The component probe improves complete fixed-window work to 208,105 / 306,172
+(30.6% / 27.2%), with original preparation 3,176 plus added preparation 10,366.
+All original triangle objects, offsets, components, representatives and temporal
+leaf state/penetration are preserved. The two structural tests pass, including
+nested/overlapping membership and cancellation. The unchanged prior gates run
+through `SIM_COMPONENT_HIERARCHY_EXPERIMENT=1` and
+`component-prior-gates.test.ts`, which imports the original oracle files and
+applies only the test-owned index builder. Eight of ten cases pass: both 50,000
+obstacle directions and all dual-tree cases, including 576 work, pass. Both
+10,000 table directions fail at 16,661 because eager extra preparation is paid
+before root rejection. Eager component preparation is not accepted; no
+production changes follow without another bounded owner replan. Evidence is in
+`tmp/capacity/component-oracle.log`, `component-preparation-profile.log` and
+`component-prior-gates.log`.
+
+### Actual-demand component refinement - owner card
+
+The eager candidate is replaced by a reviewed-lifecycle experiment at method
+hierarchy entry. Keep the complete immutable median index for all existing root
+rejection and closed-component membership. For distance, refine only after both
+membership directions finish without resolving penetration; for lowerOver,
+refine only after root rejection and the positive-witness containment admission.
+Obtain both completed refined indices before capturing the initial pending roots.
+Only the existing hierarchy=false and non-mesh routes bypass this construction;
+no body, source name, component count, triangle count or cost selector is added.
+
+The exact component builder and all previously frozen collection/grouping/node/
+scan/sort charges remain. Original median preparation is never removed. Completed
+component indices may join the existing exact-frozen-geometry/hierarchy-mode
+prepared artifact; invocation-owned state records already charged refinements.
+Cold and warm first actual use charge identical extra work with fresh checkpoints.
+Unused warm artifacts cost nothing extra; mutable or replaced source geometry
+cannot hit them. Interrupted refinement or an exhausted warm charge must not
+publish invocation success or a partial retained artifact. No poses, witnesses
+or temporal bounds enter the retained cache.
+
+Formal `component-lifetime.test.ts` tests precede the production experiment:
+root-clear and membership-resolved bypass, hierarchy=false, unused warm artifact,
+same geometry at distinct poses and reversed pairs, equal cold/warm work,
+interrupted preparation/retry, and actual current-query refined-root consumption.
+The implementation allowlist is `mesh-index.ts`, `original-mesh-query.ts` and
+direct method tests; only after independent card review may the uncommitted
+owner experiment start. Re-run unchanged 10,000 / 50,000 / 576 gates and both
+240,000 / 336,000 windows, followed by the real full representative gate only
+if every owner gate passes. No commit/push or completed capacity claim precedes
+those results and independent review. Failed work is preserved as evidence.
+
+The actual-demand owner passes all 25 fixed/lifecycle cases, plus 23 original
+mesh/motion/lifetime tests and the independent reviewer's 21 oracle/lifecycle
+cases. The full representative gate remains partial at 500,197 work and 20,195
+evaluations, first incomplete pair joint-2/obstacle-11 at 96 evaluations (73
+clear interval certificates). Only three refinements were actually built,
+costing 11,653 in addition to 28,943 median preparation. The full red evidence
+is `tmp/capacity/component-full-representative.log`; no browser rerun follows.
+
+Production is frozen while `component-transfer-profile.test.ts` compares the
+same original 200-keyframe/full-pair schedule at the unchanged 500,000 budget.
+One explicitly named median control makes refinement return its input without
+new work; it must reproduce the earlier 20,189 total / 90 target evaluations
+before any delta is interpreted. The other run keeps the current candidate.
+Each case retains the twenty-second guard and records original segment times,
+actual target prefix work, first unresolved intervals, and median/refinement/
+axis/membership costs separately. This is no reordered or split-run completion
+claim. The scheduler pushes original segments in ascending order and pops them
+from the end, so full traversal begins at time eight; isolated [2,3]/[4,5]
+windows are not equivalent to the first visited prefix and may clip boundary
+segments. No new strategy or production edit is authorized by this comparison.
+
+The exact-order control reproduces 20,189 total / 90 target evaluations. Across
+the common 83 completely visited original segments [4.663316582914573, 8],
+control work is 269,342 versus candidate 195,752 (27.3% less), including the
+candidate's 1,287 newly needed refinement units. Static work is 184,454 versus
+128,700, interval work 84,888 versus 67,052, and directional axes 152,239 versus
+97,046; membership is identical at 138. This demonstrates genuine transfer of
+the component improvement, separate from the preceding obstacle pair's 12,092
+saved work. It does not complete the full goal.
+
+The expensive original segment is number 115,
+[4.623115577889447, 4.663316582914573]. The candidate completes it using 158,944
+work (83,611 static and 75,333 interval); the control exhausts after only a
+partial 116,384 inside this segment, leaving a frontier at 4.643216080402009.
+Those two costs are not comparable complete intervals. The candidate proceeds
+through segment 114 and exhausts in 113, with unresolved frontier at
+4.542713567839196. Evidence: `tmp/capacity/component-transfer-profile.log`.
+Independent review and the root accepted this as a validated owner improvement,
+with the full G4 gate still red. The next bounded replan may only diagnose
+repeated static/interval work in original segment 115; it does not authorize
+sample/pose reuse or another production change without measured counts and
+review of the exact ownership/identity contract.
+
+### Exact segment repetition diagnosis
+
+Step card: method owner, current component baseline `979ca24ad`, original
+segment 115 only. The permanent opt-in `segment-repetition-profile.test.ts`
+executes every static and interval query with the original settings and 500,000
+work guard. It records exact ordered geometry identities, complete poses,
+original segment/time, threshold, tolerance and iterations; interval identity
+also includes the complete witness. Binary64 negative zero is distinguished.
+Repeated completed inputs must produce identical complete outputs. Actual
+static/interval work and original/refinement preparation are recorded separately.
+Reported duplicate work is an optimistic upper bound before any lookup or
+identity cost, not an implemented saving. Exceptions are not reusable evidence.
+No production, cache contract, temporal schedule, severity rule, or full goal
+gate changes are authorized. Run with `SIM_CAPACITY_DIAGNOSTICS=1` and the exact
+file, retaining its twenty-second guard. Review the measured ownership and
+identity contract before proposing any reuse.
+
+The passive case completes seven evaluations/four clear leaves in 172,486 work:
+3,176 original preparation, 10,366 refinement, and exactly 158,944 query work,
+reproducing the complete original segment's full-run cost. Thirteen static
+calls contain eight exact-input repeats costing 52,522. Ten interval calls
+contain three exact-input repeats costing 23,045. A separate positive-admission
+comparison that omits the rest of the witness finds the same three calls and
+cost, so no additional witness-equivalence assumption is needed for these
+observed repeats. All repeated complete outputs agree. Combined repeated work
+is 75,567 (47.5% of this segment's query work), before lookup/identity/checkpoint
+costs. This does not estimate whole-workload completion or authorize a cache.
+Focused diagnostic, app typecheck, focused ESLint and naming 11/11 pass.
+Evidence: `tmp/capacity/segment-repetition.log`. The first attempted diagnostic
+assertion referenced a nonexistent snapshot budget field; the formal resource
+profile owner now supplies the unchanged 500,000 limit explicitly.
+
+### Subdivision evidence ownership card
+
+Objective: eliminate demonstrated repeated completed work inside one original
+segment while preserving the complete temporal/severity contract. The root approved this bounded card and its explicit Inspector/spec update;
+it does not permit a generic pose cache. Direct owners
+are `continuous-query.ts`, the original-part kernel adapter and its existing
+mesh budget owner; direct tests, manifest/spec and Inspector wording are the
+only accompanying edits. No domain, geometry, threshold, version-history or
+budget changes; no cross-segment or cross-query evidence retention.
+
+The proposed original-only capability has two explicit lifetimes:
+
+- A node records each successfully completed start/middle/end DistanceEvidence.
+  Only when it actually subdivides does it hand start/middle to its left child
+  and middle/end to its right child. Children still visit samples in exactly
+  the existing order and preserve the original best-witness and penetration
+  rules. Original segment roots carry no inherited evidence. The node artifact
+  contains endpoint time and complete evidence, never poses or a pose-key map.
+  Uncompleted/null calls are never handed off. Each actual inherited read pays
+  one mesh work unit and a fresh cancellation checkpoint before returning it.
+- The original kernel explicitly declares eligibility only on its actual
+  `lowerOver` mesh route (at least one side is a mesh). That interval lower
+  certificate depends on a positive static lower bound for containment
+  admission, but not the witness axis, upper bound or other witness metadata.
+  A completed early certificate (including zero) is reusable only within that
+  same node and only when both original and final witnesses have positive
+  lower bounds. Zero admission is not a complete certificate; null is exhaustion.
+  Each successful certificate handoff likewise pays one unit/checkpoint. If
+  either witness is not positively admitted, the final query stays unchanged.
+  Generic/primitive kernels opt into neither lifetime and retain their current
+  sampling, certificate calls and witness dependencies. Native/native shapes
+  inside the original-part adapter use witness-axis separation and must never
+  opt into the interval-certificate handoff; method identity alone is insufficient.
+
+The reuse operation must charge through the same `OriginalMeshQuery` budget
+owner and use the adapter's existing MeshWorkLimit-to-null boundary. A failed
+charge cannot publish a witness or certificate; established earlier evidence
+and unproved lower-zero/unresolved behavior remain unchanged. Node evaluation,
+retained-leaf, wall-time and cancellation budgets are not reduced. Evidence is
+released with pending node ownership and never retained in immutable geometry
+preparation. Snapshot, ordered pair, settings and kernel are fixed for the whole
+query; original segment plus exact parent/child endpoint construction establishes
+identity without fuzzy numerical comparisons or cross-keyframe equality.
+
+Proposed Inspector cache-dimension addition for review: “Completed static
+evidence may be handed from a parent to its children only within the same
+original segment and original-part pair invocation; a completed same-node
+interval certificate may be handed to final certification only under that
+kernel's positive-witness admission contract. Each handoff charges owned work
+and checks cancellation; no poses, cross-segment results or query evidence are
+retained beyond the pending-node lifetime.” The existing immutable preparation
+rule remains intact. The direct method spec must explain these two lifetimes
+and preserve the requirement to consume remaining samples after unsuccessful
+early clearance, including warning-to-later-penetration cases.
+
+Formal red oracles precede implementation: parent/child endpoint actual calls
+and exact evidence against a no-handoff control; repeated midpoint ancestry;
+separate original segments sharing a timestamp cannot share evidence; same-node
+positive-admission lower calls two-to-one with independent rational enclosures;
+zero admission followed by positive admission still recomputes; generic
+witness-axis-dependent kernels and original native/native pairs still recompute; threshold equality/contact,
+midpoint and endpoint penetration, reversal and deterministic reruns; changed
+source/pose/settings and fresh query produce fresh calls. Budget/cancellation
+oracles exercise each handoff and prove no unpaid result publication, unchanged
+node evaluation counts, and preservation of already completed witnesses.
+Permanent tests must assert actual charged reuse work, not only output equality.
+
+Gates: focused correctness/work/lifecycle, independent review, unchanged
+10,000/50,000/576 and two-window work gates, then the current exact segment
+profile and one full representative gate only if prior gates pass. The full
+500,000 representative remains decisive and red until a complete result is
+actually obtained. No browser rerun before that milestone. If the proposed
+lifetime conflicts with Inspector/product semantics or materially changes
+complete evidence, stop and revise the card; do not hide it by weakening tests.
+
+Readiness review corrected one eligibility boundary before implementation:
+original native/native queries use witness-axis separation, so only the actual
+mesh `lowerOver` route declares positive-witness-only dependency. Inspector and
+spec now express that exact restriction. The first formal run was five red and
+two green tests (`tmp/capacity/handoff-red.log`): repeated work and missing paid
+handoffs failed, while native-axis and changed-admission protection already held.
+The implementation adds two optional kernel capabilities, explicit child endpoint
+evidence fields, and one actual mesh-budget handoff operation. No result map or
+pose artifact is created.
+
+Focused synthetic source-independent evidence has 13 static / 10 interval calls
+without handoff versus 5 / 7 with 11 charged handoffs; the complete result is
+identical, including seven node evaluations. It uses dyadic sphere radii and
+independent rational separation bounds. Additional tests cover original segment
+separation, fresh queries, changed source/pose/settings, reversal, later
+penetration, native axis dependence, nonpositive-to-positive admission, unpaid
+handoffs and cancellation. The complete original segment source oracle compares
+all PairEvidence fields against the same current kernel without handoff and
+passes: 172,486 becomes 96,930 total work. Original/refinement preparation remains
+13,542, query work is 83,388 including eleven handoff units, and no exact repeated
+static or interval calls remain. This is a 47.5% reduction of that complete
+segment's query work, with original sampling decisions and four clear leaves.
+
+The unchanged 10,000/50,000/576 and two-window gates pass (14 tests), as do source,
+motion, lifetime and independent mesh oracles. Typecheck, focused ESLint and
+naming 11/11 pass; the regenerated Inspector catalog passes 8/8. Evidence is in
+`tmp/capacity/handoff-owner-gates.log`, `handoff-source-equivalence.log`,
+`handoff-segment-profile.log` and `handoff-final-focused.log`. Independent code
+review and the subsequent full representative gate are the remaining boundaries;
+G4 is not yet complete.
+
+The independent production review passed and separately reran 26 tests. The
+unchanged full gate still fails complete coverage: 500,197 accounted work,
+20,234 evaluations, first partial joint-2/obstacle-11 at 135 evaluations. Its
+397,818 work includes 279,895 static, 117,903 interval and 20 paid handoffs.
+The preceding obstacle-10 remains 17,357. This improves the previous 20,195
+whole / 96 target evaluations but is not complete G4. Evidence:
+`tmp/capacity/handoff-full-representative.log` (8,111 ms). No browser run follows.
+
+Direct diagnostic compatibility: the historical component transfer comparison
+and the six existing historical hierarchy/bounds adapters (component, SAH,
+rotation, reverse traversal, triangle bounds, source-node bounds) explicitly use
+`evidence-recomputation-control.ts` to retain pre-handoff temporal behavior.
+Their previous refinement controls remain intact. This preserves the recorded
+hypothesis isolation and median control's 20,189 / 90 prefix. Current source
+profiles, segment repetition and actual representative/sibling goal gates keep
+current production. The helper is test-owned and never used by runtime code.
+
+Historical replay closure: the six selected second-two adapters pass; the
+component-transfer median control again reproduces exactly 20,189 total and
+90 target evaluations. Focused closeout typecheck, ESLint and naming 11/11 pass.
+Logs: `tmp/capacity/handoff-historical-replay.log`,
+`handoff-transfer-control.log`, and `handoff-closeout-*.log`. The completed
+handoff slice is frozen for scoped review/commit. The next discovery is limited
+to the new actual original-segment frontier and completed-query cost attribution;
+no new production strategy follows directly from the partial aggregate.
+
+### Actual frontier cost attribution card
+
+Method owner, baseline `fcbb00605`: one passive replay of the original ordered
+representative input with the unchanged 500,000 budget and twenty-second case
+guard. The test must reproduce 20,234 whole / 135 target evaluations before
+interpreting costs. Instrument only the existing public query, kinematics,
+preparation, membership and axis operations; do not inject a new production hook.
+Each static row captures its exact input time and original segment, each lower
+row its exact interval, and each records complete output or MeshWorkLimit plus
+actual work. Static callbacks do not reveal parent node intervals; the profile
+must not invent these from the most recent interval. Handoffs get their own
+work counter, without borrowing a recent pose/time. All errors propagate.
+
+Output is bounded to segment totals, largest completed queries, the actual
+exhausted query and nearby final leaf intervals/severity. Unvisited pending
+unresolved leaves are distinguished from the actual exhausted input. Separate
+median/refinement preparation, membership, axis and residual traversal costs;
+world-bound reconstruction counts are CPU observations, not savings in logical
+work. Compare only completely visited identical original segments against the
+retained baseline; do not compare partial aggregate costs. The next isolated
+probe, if needed, is limited to that actual frontier original segment. No
+production strategy, schedule change or new cache follows from this diagnosis.
+
+The isolated segment 74 probe retains the same original endpoints and separates
+its cold preparation from query work. Its added passive axis attribution uses
+the actual threshold argument (clearance versus zero penetration search) and
+actual completed projection rejection, not a guessed witness phase. First
+warning work also accounts for the initial canonical source representative
+upper witness before tracking improving convex results. No query is skipped.
+
+The same segment-only attribution additionally registers exact original and
+refined Bounds object identities as node or triangle bounds. It separates
+actual projection attempts/axis charges/rejections by that source level and
+records projection/convex elapsed time as a supplementary CPU signal. A
+triangle-level rejection avoids one convex call after its triangle-pair tick
+has already been paid; node rejection can avoid descendant work. Unknown
+metadata is reported separately, never guessed from bounds values. This is
+passive accounting, not authorization to remove any rejection policy.
+
+The passive replay reproduces 20,234 / 135. Its actual exhausted call is the
+static endpoint at 3.0150753768844223 in original segment 74
+[2.9748743718592965, 3.0150753768844223], consuming only its remaining 1,008 units;
+that partial call is not comparable to a complete query. The segment's retained
+leaf is finding from an already completed midpoint witness; earlier pending
+segments remain unresolved. The common 85 completed segments 114–198 cost
+262,790 including handoffs, versus the retained 378,588 (30.6% less).
+
+The isolated complete segment costs 42,963: 13,542 cold preparation and 29,421
+query work. All three static results are positive-lower warning witnesses,
+without penetration; final interval lower is zero. Actual warning arrives late:
+only 119/162/196 static work remains after it. Complete triangle-level projection
+performs 5,226 charged axes, zero rejections and zero avoided convex queries;
+node/root projection performs 8,847 axes and 50 rejections. Exact source-bound
+metadata has no unclassified calls. Projection CPU is supplementary: roughly
+19 ms for triangle axes, while interval convex calls consume roughly 373 ms in
+this recorded run. Evidence: `actual-frontier-profile.log`,
+`frontier-segment74.log`, `frontier-segment74-phases.log`, and
+`frontier-segment74-levels.log` under `tmp/capacity/`. No production policy changed.
+
+### Final triangle projection policy probe
+
+Reviewed bounded hypothesis: retain complete source root/node pose-axis rejection
+and every existing charge; at the final original triangle pair only, compare
+cheap world-gap rejection followed by the unchanged complete convex query
+against the current additional pose-axis attempt. No descendant work remains
+at that source level. A test-owned adapter must identify exact original triangle
+Bounds objects, never infer from leaf size or treat a four-triangle leaf as a
+triangle. It may return no additional certificate at that exact optional call;
+all actual triangle ticks, convex queries, geometry and thresholds remain owned
+by current production. No source shape is replaced and uncertainty cannot turn
+into fabricated clearance.
+
+First compare the same segment 74 source and settings with current control,
+including complete evidence, actual work, axis attempts/rejections, convex call
+counts and CPU. Repeat the cold case in alternating order to expose warm-up
+noise; elapsed time supplements fixed logical work and the unchanged twenty-
+second guard. Require no increase in complete convex calls on this measured
+zero-rejection case and report all repeated timings rather than choosing the
+best sample. Then run the existing 10k/50k/576 and two-window tests through the
+same test-owned adapter, preserving their assertions and original guard. If
+any required correctness or cost gate fails, stop/replan; do not redefine units,
+tune axes, or claim success merely because fewer axes were charged. Production
+requires a separately reviewed formal red/correction card after this evidence.
+
+### Final triangle projection policy - validated owner correction
+
+The method-owner correction retains root and hierarchy-node pose-axis rejection,
+but final original triangle pairs now use the existing world-gap test followed
+by the complete convex query. Both original triangle work charges remain intact;
+no source triangle, precision setting, threshold, sample order or native route
+changes. The implementation allowlist is the two original-mesh query call sites,
+the method manifest, their direct formal tests and source diagnostics, this plan,
+the method spec and the exact Inspector projection.
+
+The test-owned pre-policy probe used source `7a889ff27`. Its three alternating
+cold control/candidate timings were 599.6/547.2, 571.6/543.6 and 548.3/520.3 ms.
+These are recorded experiments, not old-policy runs performed by current tests.
+For complete original segment 74, PairEvidence was identical; total work changed
+from 42,963 to 37,737, eliminating 5,226 actually unperformed triangle axes.
+Convex calls remained 1,742 and node axes remained 8,847. The predeclared median
+CPU regression ceiling passed. Formal production-route red/green, cancellation,
+the original 576/10k/50k ceilings, both fixed windows and source/rational/motion
+controls passed; independent review also ran 25 passing tests.
+
+The unchanged full representative gate remains red: 20,237 whole evaluations,
+138 on the first partial joint-2 / obstacle-11 pair, and 500,197 observed charged
+work at exhaustion. The original ceiling remains 500,000. Its 9,760 ms partial
+run is not directly comparable with the prior partial run's elapsed time, and
+three additional evaluations are not proof of complete coverage.
+
+A separate bounded complete-prefix control supplied the missing transfer evidence.
+The candidate file was saved exactly; only the two current-task call sites were
+temporarily restored to the verified pre-policy behavior for the permanent
+comparison, then restored with exact SHA-256 verification. The same 85 original
+segments 114 through 198 produced 90 leaves equal in every field. Charged work
+was 262,790 versus 219,923 (16.31% less), including unchanged refinement 1,287,
+membership 138 and handoff 19. Convex calls were 14,264 versus 14,289; observed
+same-prefix query time was 5,604 versus 5,313 ms, with convex time 4,503 versus
+4,386 ms. Logs are `triangle-transfer-control-complete.log` and
+`triangle-transfer-candidate-complete.log` under `tmp/capacity/`.
+The current exhausted query is an interval in original segment 71,
+[2.8542713567839195, 2.8944723618090453]. These complete-prefix measurements support
+accepting the owner improvement, while G4 remains open.
+
+Current triangle-policy diagnostics measure current production, with pre-policy
+values explicitly labeled as recorded data. The actual-frontier and component
+transfer diagnostics likewise state their current geometry policy; their old
+evaluation counts remain historical observations rather than claims that the old
+full solver was rerun. No production history switch or copied solver was added.
+Final direct compatibility tests (30), typecheck, scoped ESLint, naming (11) and
+catalog projection checks passed. No browser gate was rerun.
+
+Closeout review caught an accidental overwrite of this plan with a test file
+before remote push. The full pre-policy plan was restored byte-for-byte before
+this bounded result section was appended; existing DoD, rejected hypotheses and
+accepted decisions remain preserved. No production or formal test was reverted.
+The next possible witnessed-zero derivation still requires its own exact
+Inspector/spec readiness and formal red tests; it is not implemented here.
+
+### Witnessed-zero interval certificate - bounded readiness card
+
+Owner: R0 Inspector `method`, complete continuous evidence. Inputs remain the
+validated detached pair snapshot, shared domain kinematics, fixed settings and
+owned execution budget. Output remains the same bounded PairEvidence; failure
+belongs to `method`. This replan follows the accepted final-triangle correction
+at `6862daf58` and restored plan at `d735bd45d`; G4 remains red at the unchanged
+500,000 ceiling. Discovery is limited to the current continuous node, original
+mesh lower adapter, their direct formal tests and existing frontier evidence.
+
+The first unnecessary owner work is a full interval mesh certificate whose exact
+completed result is already implied by an admitted static witness. The current
+mesh `lowerOver` returns either zero or a strict lower bound above the configured
+threshold. A completed full-source static upper bound at a time inside that same
+interval, at or below that threshold, excludes the latter result. Therefore zero
+is the exact threshold-certificate result, not a guessed contact or clearance.
+Native/native interval kernels can return a positive value below the threshold
+and are excluded. Raw `lowerOver` callers do not establish temporal provenance
+and will retain their current implementation.
+
+Proposed boundary: only the continuous node may request this derivation after it
+has consumed a non-null witness from its own static samples or approved same-
+segment endpoint handoff. Its ordered pair, geometry, settings, original segment
+and invocation remain fixed, and witnessTime must lie in the node's closed
+interval. An explicit original adapter capability checks the actual mesh route.
+It returns zero after one owned work unit and cancellation checkpoint, undefined
+for an ineligible native route, and null on exhaustion. The existing lower route
+handles misses. Each derivation is newly charged; no map, retained pose, new
+geometry cache or cross-node/cross-segment result lookup is introduced.
+
+Derivation occurs only where the current node requests its early or final
+interval certificate. It never ends the remaining static sampling on a warning;
+all current sample order, penetration priority, temporal evaluations, leaf caps
+and exhaustion handling remain. A failed derivation charge cannot publish a
+successful interval result; already established static witnesses still survive.
+Static point intervals retain their existing static lower bound.
+
+Proposed internal names are method-owned `deriveZeroLower` and
+`chargeEvidenceDerivation`; they are not persisted identities. The pending
+1.0.2 release remains the version owner, and immutable older artifacts are not
+rewritten. Allowed implementation files are continuous-query.ts,
+original-part-method.ts and original-mesh-query.ts, their direct methods tests,
+the method manifest/spec, this plan and the exact Inspector projection. Shared
+domain, triangle algorithms, precision, budgets and source fixtures are excluded.
+
+Formal test-first gates: zero lower from a strictly below-threshold or exact-
+threshold completed source witness; remaining samples still upgrade an earlier
+warning to penetration; native axis-sensitive lower remains unchanged; no
+cross-segment/pair/settings evidence; exhausted derivation cannot succeed; and
+actual original mesh calls/work match independently queried lowerOver output.
+The source route must prove saved traversal work and separately count every
+derivation charge even when lowerOver is not called. Existing rational mesh,
+subdivision, motion, cancellation and 576/10k/50k ceilings remain unchanged.
+After focused correctness/work gates and independent review, compare the same
+complete current frontier segment and existing fixed windows before one full
+representative run. No browser run until that source gate is green.
+
+Self-review: the implication concerns only a threshold certificate at its
+provenance owner, not a first-warning severity shortcut. The thin spec and exact
+Inspector must agree before formal red tests or production edits. Stop on any
+native-route leak, invalid witness provenance, lost charge, changed completed
+evidence or failed fixed ceiling; do not retune prior rejected candidates. This
+card records readiness only until independent review accepts it.
+
+Independent readiness review passed. The existing completed-lower handoff keeps
+priority over a final zero derivation; exactly one operation is consumed and
+charged. Formal cases additionally require upper above threshold to use the
+original lower route, and an out-of-interval near witness followed by a genuinely
+clear source interval to prove temporal isolation. Early equality derivation
+must still consume the remaining samples. Naming baseline passed 11 tests and
+the regenerated Inspector catalog passed 8 tests before formal red work.
+
+Formal `witnessed-zero-work.test.ts` detected the missing owner operation:
+6 failures and 5 passing controls before production. The three bounded owner
+changes then passed all 11 cases, including independent raw full-source
+lowerOver results, both ordered pairs, native positive lower below threshold,
+out-of-interval source isolation, equality, later penetration, actual one-unit
+charge and cancellation. Existing direct 9-file gates passed 68 cases, including
+the original work ceilings and subdivision/source evidence. No raw lowerOver
+implementation, static sampling order or numerical bound formula changed.
+
+The permanent `witnessed-zero-source-work.test.ts` compares exactly the current
+source route with only this derivation disabled, using the same admitted input
+and budget. Both complete fixed windows preserve every PairEvidence field:
+window [2,3] costs 179,454 versus 152,833; [4,5] costs 196,189 versus 183,208.
+Each candidate derives 23 certificates and charges all 23 units. Static costs
+remain 135,258 and 135,947 respectively. Observed CPU is 2,547/1,502 ms and
+3,689/3,293 ms; these are local timing observations, not hardware acceptance.
+The true frontier segment 71 remains 24,467 in both routes with no eligible
+derivation; the window savings must not be attributed to that specific query.
+All three controls and candidates complete, and per-run static + interval +
+handoff + derivation charges equal the actual context work exactly.
+
+Current representative/frontier profiling now separates derivation charges and
+includes them in pair/prefix totals even when no lowerOver callback occurs.
+The current triangle-policy profile keeps its original work/axis/convex ceilings
+while permitting fewer actual operations after a valid certificate derivation;
+it still requires real node rejection and source convex work. No complete G4
+or browser rerun has occurred at this checkpoint; independent code review and
+the remaining direct gates precede any new full-run claim.
+
+Independent production review passed with 26 independently rerun small cases.
+The warranted full representative gate nevertheless remains red: total observed
+work 500,197, whole evaluations 20,240, first partial joint-2 / obstacle-11 at
+141 evaluations and 75 clear intervals. Derivation calls and charged units both
+equal 456. The dominant pair uses 398,216 units: static 310,392, interval 87,745,
+handoff 21 and derivation 58. Two earlier obstacle-17 pairs each derive 199 times
+and together save 398 units, so three added target evaluations alone do not prove
+equal-prefix transfer. The 8,239 ms elapsed time is a partial-run observation.
+Evidence is `tmp/capacity/witnessed-zero-full-representative.log`; no browser run.
+Production is frozen for root evaluation of this bounded improvement.
+
+The current frontier profile now records the accepted pre-derivation counts as
+historical metadata and expects the observed current 20,240/141 counts. The old
+pre-triangle assertion-only environment selector has been removed: its recorded
+temporary source-restoration experiment is historical, and restoring only two
+triangle call sites would no longer reproduce that older complete method after
+this new derivation. Current goal gates remain selected with their original
+coverage and resource assertions; no diagnostic is claimed as a G4 pass.
+
+The requested bounded complete-prefix control now passes in the permanent source
+test's `commonPrefix` case. Both runs cover exact original segments 114 through
+198, produce 95 evaluations and 90 leaves equal in every field, and charge the
+same cold preparation lifetime. Total work is 232,178 versus 218,840 (5.74% less):
+static 149,346 and handoff 19 stay identical; interval work falls from 82,813 to
+69,459, with all 16 new derivation units included. The earlier full-run prefix
+already had original preparation paid, whereas this isolated comparison includes
+12,255 additional preparation units on both sides; these are not interchangeable
+baseline totals. Observed same-input time is 5,287 versus 4,772 ms. Both complete
+leaf arrays and all charged categories are retained in
+`tmp/capacity/witnessed-zero-prefix.log`. No further full or browser run occurred.
+This supports a bounded canonical improvement, not completion of G4; any next
+iteration must begin at the actual new frontier rather than partial aggregate
+CPU/evaluation counts.
+
+### Current frontier - existing source representative seed diagnosis
+
+Owner remains Inspector `method`, complete original source evidence. Root
+authorized one passive exact-frontier replay under the unchanged 500k/20s guards
+to answer the missing operation/time question, not another hopeful goal run.
+`current141-frontier.log` reproduces 20,240/141 evaluations: the exhausted query
+is static, original segment 67 at 2.693467336683417, after 2,292 remaining work,
+1,025 node axes and no convex call. Its initial source upper is 1.0397306474722536.
+The largest complete static query at segment 114 time 4.582914572864322 costs
+6,148: first warning at 5,986 and 162 work afterwards. Its complete witnessed
+upper is 0.010714356302402587. This is actual phase evidence, not an inference
+from partial aggregate CPU or evaluation totals.
+
+The bounded hypothesis uses only existing admitted closed-component source
+representatives: whether their actual point pairs can establish a legal warning
+upper before triangle traversal, allowing the unchanged complete penetration
+search to start with threshold zero. This is not a first-warning exit and would
+not guarantee the same final witness; any later implementation would need its
+own observable-evidence/version review. No production edit is authorized here.
+
+Diagnostic scope is exactly those two static times on the original joint-2 /
+obstacle-11 pair. Run each original query to completion with its unchanged
+source/index/settings and fresh budget, then measure complete source-point
+distances from the actual prepared index representatives. All 36 + 5 transforms
+and 36 x 5 point-pair norms are counted separately, one work/checkpoint per actual
+operation, with an immediate combined 500k guard. Existing baseline preparation
+and query costs remain charged. This conservative probe does not claim to reuse
+membership transforms merely because it calls the same helper.
+
+Permanent test boundary is `methods/__tests__/component-seed-profile.test.ts`;
+the only other edit is this plan. Capture exact source index/pose identity, the
+baseline completed evidence, candidate legal upper and full added work. If no
+candidate upper is strictly below the current threshold, stop this hypothesis;
+do not expand to all vertices, select new representatives or change the fixture.
+A positive result is only admission to a reviewed actual-delta experiment, not
+permission to accept changed witnesses or bypass full penetration traversal.
+The existing Inspector source-witness and no-pose-retention contracts are
+unchanged; no new cache dimensions or product identities are introduced.
+
+The passive hypothesis is rejected. Both original static queries complete and
+the exact 36-by-5 existing representative sets are checked: frame 67 has minimum
+point-pair upper 0.1545195846814336; frame 114 has 0.12632201793555548. Neither
+reaches the 0.02 warning threshold, despite improving the first-representative
+upper near 1.04. Each adds 41 actual point transforms and 180 actual norms, all
+221 units counted. No threshold-zero search could begin from these witnesses,
+so an actual-delta experiment would have no supporting admission evidence.
+Original completed source results remain finding without penetration, upper
+0.007203098142746448 and 0.010714356302402587 respectively. No production change,
+alternate representative selection or all-vertex scan follows this negative.
+
+Permanent replay: set `SIM_CAPACITY_DIAGNOSTICS=1` and run the app test command
+for `src/analysis/methods/__tests__/component-seed-profile.test.ts`. Its two cases
+assert the negative warning admission and retain the entire added-work count;
+logs are `tmp/capacity/component-seed-profile.log`. This is an explicitly opt-in
+rejected hypothesis, while the ordinary representative capacity gate stays red
+and selected. The separate exact-frontier replay also passed its current numeric
+expectations without a full-goal completion claim.
+
+### Completed source witness transport - passive readiness
+
+Objective: test whether an already completed nonpenetrating source witness can
+provide a legal upper seed at the next actual sample, without treating its old
+distance as evidence at the new pose. Owner is Inspector `method`; only a new
+permanent methods test and this plan may change. Production, cache dimensions,
+sample order, full penetration traversal and observable witness policy stay fixed.
+
+Cases are frozen to segment 114 start-to-middle and segment 74 middle-to-end,
+whose completed source witnesses appear in `current141-frontier.log`. Capture
+the actual ordered geometry identities, old static poses and complete world
+witness enclosures from ordinary queries. Outward inverse-transform each whole
+enclosure, then forward-transform it at the new static pose and use the outward
+norm upper only. Never use a midpoint, penetration witness, lower certificate,
+different segment or old result as the new result. Charge one admission check,
+two inverse transforms, two forward transforms and one norm: six actual units
+per eligible transfer, one on rejection, under the combined 500k/20s guard.
+
+Oracle: independently known dyadic source coordinates under cardinal and exact
+normalized rational rotations must remain enclosed, including asymmetric wide
+input enclosures; exact rational squared distance bounds test the upper. The
+two passive source cases retain unchanged full baseline queries and report the
+transported upper, all added costs and first-warning work before the target.
+No membership transform reuse is assumed. Stop on invalid provenance or no legal
+early warning; any positive result still needs a separate actual-delta and
+observable-evidence review before production. Reviewer approved this mathematical
+protocol; no source triangle/barycentric API expansion is part of this probe.
+
+The independent oracle passed three cases before the two passive source cases
+were enabled; all five then passed. Transported upper is 0.016053481245753624 at
+segment 114's midpoint and 0.00802329653171193 at segment 74's endpoint, both below
+0.02, each with all six added units. Baseline target work is 5,168 and 6,092;
+first-warning work 5,049 and 5,902 is only an avoidable-work upper limit, not an
+actual saving. The original source query results remain untouched. Evidence is
+`tmp/capacity/witness-transport-profile.log`, with the numerical oracle in the
+same permanent `witness-transport-profile.test.ts` (source profiling is opt-in).
+This positive admission supports review of an actual-delta/observable-contract
+proposal only: a new seed may change which legal witness wins, so complete
+PairEvidence equality cannot be silently replaced by classification equality.
+
+### Transported witness - bounded actual-delta diagnostic
+
+Objective: measure the actual traversal effect of the two reviewed seeds,
+without production edits. Scope is a test-owned shared transport/interception
+helper, its unchanged existing mathematical oracles, one new diagnostic test
+and this plan. Cases stay segment 114 start-to-middle and 74 middle-to-end.
+Each candidate must first compute its source witness in the same real query
+context and pay all original source/preparation work. The target then pays all
+six transport units through the existing owned tick before its ordinary distance
+call. Intercept only that call's existing private witness() values, restoring
+the method in finally; do not copy the solver or change original traversal.
+
+Observable oracle, reviewed against version 1.0.2's nonunique valid witness
+contract: the two targets must preserve threshold classification, penetration
+and query time. Old axis, lower, convergence and iterations are not transported;
+the unchanged solver establishes them. New upper/lower/witness coordinates may
+differ but must be finite ordered conservative bounds; overlap with baseline
+bounds is only a consistency check, never independent truth. Preserve existing
+full-field equivalence tests. Add an exact dyadic closed-box squared-distance
+seed-path oracle and a later-component penetration case before actual source
+deltas, so a warning cannot hide penetration. Source-point upper validity follows
+the independently checked whole-enclosure transport; lower validity retains the
+original full-source certificates. No general plain-DistanceEvidence admission
+API is implied by this controlled frozen-geometry/static-unit-pose prototype.
+
+Report source, target, added and total work plus convex calls and CPU for control
+and candidate. Original 500k/20s guards remain; neither setup nor warm preparation
+is free. Stop on changed classification/penetration, invalid bounds, missing
+provenance or no net material benefit. A positive result requires a separately
+reviewed production ownership/provenance card; no full/browser run follows this
+diagnostic directly.
+
+The exact source experiment has material target savings: segment 114 target
+5,168 to 2,058 units, convex calls 386 to zero; segment 74 target 6,092 to 2,451,
+convex calls 448 to two. Each includes all six added seed units. Paid work before
+the target remains exactly 19,690 and 25,143 on both sides. Complete segment work
+is 30,453/27,343 and 31,236/27,595, with observed CPU 150/108 and 145/105 ms.
+Target numeric witnesses are explicitly different: 114 upper rises from
+0.015552252265540694 to 0.016053481245753624 and lower changes; 74 retains its upper
+but lower changes. Both remain nonpenetrating findings with valid source bounds.
+The complete PairEvidence for both segments nevertheless remains equal in every
+field, and the new diagnostic asserts that stronger observed equivalence.
+
+Independent seeded-path cases passed for the exact dyadic box gap squared under
+both hierarchy modes, later-component penetration despite a warning seed, and
+finally restoration after budget exhaustion. The original three transport
+oracles retain their behavior after shared test-helper extraction. All actual
+source inputs remain immutable controlled snapshots and domain static poses;
+this test interception does not grant general admission to plain DistanceEvidence.
+Evidence is `tmp/capacity/witness-seed-profile.log`. No production edit or broader
+capacity/browser gate has been performed; independent diagnostic review precedes
+the next explicit production readiness decision.
+
+### Fresh static witness transport - method owner readiness
+
+Objective: retain the measured source-point upper-bound benefit without changing
+samples, severity, geometry, precision or the 500k/20s guards. This card governs
+only Inspector `method`, the version 1.0.2 temporal/source-query contract and its
+existing method implementation allowlist. Inputs remain the admitted snapshot,
+ordered immutable mesh pair, canonical domain static poses, settings and budget;
+outputs remain conservative evidence and explicit unresolved coverage.
+
+Only a completed **fresh** earlier static sample in the same current continuous
+node may seed its next fresh sample. Eligibility is finite nonpenetrating
+`0 < lower <= upper < threshold`, with both mesh geometry objects and their
+positions/indices frozen. No inherited endpoint, parent/child seed, other node,
+segment or invocation supplies a seed. The first consumed sample in a node and
+point-only queries have no seed. Final samples, inherited samples, ineligible
+outputs and samples whose next endpoint is inherited create no handle. The
+continuous/domain owner establishes actual time-to-pose correspondence through
+`shapesAt`; the per-pair sampler creates the handle only from its own completed
+distance inputs and output. A private runtime brand and private query scope
+reject fabricated or foreign handles without any global registry. Admission
+also checks the same node, ordered geometry, settings and original segment,
+with source time inside the node and no later than the target.
+
+Capture copies and freezes the complete source interval poses and witness
+enclosures for one owned work unit, charged before publication. If capture
+exhausts after distance completed, retain that completed sample, publish no
+handle, and stop before any further sample or interval certificate. Consumption
+costs admission one, two inverse transforms, two forward transforms and one
+norm: six additional units, each with cancellation. Whole enclosures move;
+midpoints and old lower/axis/penetration/convergence metadata do not. The target
+still runs the existing complete distance owner, membership and penetration
+search. Unseeded inputs take their ordinary algorithm. Handles exist only in
+the current node's consumed fresh-sample state and never enter pending endpoint
+slots, geometry preparation or a pose cache. Failure remains owned by `method`.
+
+Implementation boundary: `continuous-query.ts`, `original-part-method.ts`,
+`original-mesh-query.ts`, a directly owned opaque sampler helper if needed, and
+their permanent `methods/__tests__` regressions. Thin spec/Inspector/manifest
+and direct profiling charge consumers may be synchronized. No domain/framework,
+public naked-DistanceEvidence seed API, new dependency or persisted schema.
+
+Before production, prove a formal work regression red and test runtime forgery,
+foreign scope/node/geometry, mutable-buffer rejection, immutable packet isolation,
+fresh versus inherited ordering, exact capture/consumption charges and cancellation
+at each boundary. Capture exhaustion must preserve the just-completed witness;
+consumption exhaustion must preserve prior evidence without a free target result.
+Keep static-point/native behavior and existing endpoint handoff unchanged. Retain
+the exact rational transported/source distance oracle and later-component
+penetration case, fixed 10k/50k/576 ceilings, subdivision/witnessed-zero tests,
+naming, focused lint/type and Inspector/catalog projections. Independently review
+the complete bounded correction before one representative source gate. Full G4
+remains red until its unchanged gate passes; no browser gate before that. Stop
+and replan on provenance, accounting, truth or fixed-resource failure; do not
+expand source eligibility or silently weaken existing full-field comparisons.
+
+The formal owner tests first failed because no scoped static sampler existed.
+The bounded implementation now passes 29 source/lifetime/schedule cases,
+including capture and all six consumption cancellation boundaries, runtime
+forgery/scope rejection, copied-packet isolation, later-component penetration,
+and completed evidence retained on either exhaustion path. Existing numerical,
+motion, subdivision and fixed 10k/50k/576 tests remain green. The two exact
+complete segment controls disable only the new sampler: segment 114 work is
+30,453/27,351 and segment 74 is 31,236/23,810, with full PairEvidence equality.
+Each candidate pays two captures and twelve consumption units; all static,
+interval, handoff, derivation and source charges sum exactly to context work.
+`fresh-witness-source-work.test.ts` permanently asserts that accounting and
+improvement. The older passive/interception profiles explicitly disable the
+new sampler to replay their recorded pre-sampler experiment, not double-seed
+the current implementation. Representative/current-frontier diagnostics retain
+the actual route and report source charges separately.
+
+Independent final review passed all 29 new small cases and closed the profiling
+charge omission. The authorized single representative rerun remains **RED**:
+`tmp/capacity/fresh-full-representative.log` records 500,197 total observed units,
+20,262 evaluations and the same first partial joint-2/obstacle-11 pair at 163
+evaluations (75 certified clear intervals). Its 398,216 units comprise static
+310,083, interval 87,745, source 287, handoff 21 and derivation 80. The explicit
+sum-to-context invariant passed; original preparation is 28,943 and refinement
+11,653. Observed runtime was 11.46 seconds under the unchanged guard. The extra
+22 evaluations are not a complete-prefix improvement proof or goal completion.
+No second full run or browser gate followed. Preserve this actual failure while
+reviewing bounded transfer/frontier evidence for the next decision.
+
+The initial 114–198 prefix comparison tested stronger-than-spec full-field
+equality and was **RED**. Both cold runs complete the same
+85 original segments, 95 evaluations and 90 leaves (17 findings/73 clear): work
+218,840/202,102, static 149,346/132,531, interval 69,459 unchanged, handoff 19,
+derivation 16, source 0/77. Only leaf index 6 upper differs, from
+0.010611026269177653 to 0.012944618198707215; its original interval, witness time,
+lower, classification, penetration and reason and all other 89 leaves agree.
+Evidence: `tmp/capacity/fresh-prefix-accounting.log`. Do not silently relax the
+assertion or treat bound overlap as source truth.
+
+Bounded replan, same `method` owner: isolate that exact original frame interval
+in the existing fresh source test, trace the sampler's actual completed issued
+source and its consumption identity, ordered immutable geometry, actual static
+poses/times and whole witness enclosures through the target upper. Independently
+review its complete source-enclosure/norm certificate using the retained exact
+rational transport oracle. Production and the original assertion stayed frozen
+during that proof.
+Only after that proof may review distinguish the spec's nonunique valid upper
+from the extra equality hypothesis; all other fields remain exact. No new full
+or browser run, changed geometry/budget, or broader seed lifetime is authorized.
+
+The isolated source proof identifies original segment 117. Actual sampler-issued
+sources run start 4.703517587939698 to middle 4.723618090452261 to endpoint
+4.743718592964824; copied poses/witness enclosures, ordered geometry and consumed
+handle identities match their completed source queries. Reconstructed whole-box
+transport uppers 0.015576778518212557 and 0.012944618198707215 equal the actual
+target seed, target output and selected endpoint bound. Independent review passed
+this provenance proof (`tmp/capacity/fresh-upper-provenance.log`). Any revised
+prefix criterion must explicitly preserve all other fields and the other 89
+leaves, retaining the recorded stronger-equality failure rather than treating
+bound overlap as truth.
+
+Root explicitly accepted this proven single upper difference under version
+1.0.2. The revised formal prefix oracle fixes only segment 117's expected upper
+to 0.012944618198707215, verifies its old control value and compares the whole
+PairEvidence exactly with that single expected change. The original red log
+and `sameCompleteEvidence: false` diagnostic remain; no other leaf or field is
+relaxed. This is method-semantic compatibility, not G4 completion.
+The final bounded source file passed all four cases, including this prefix and
+its source-provenance proof (`tmp/capacity/fresh-prefix-final.log`). The actual
+frontier diagnostic now asserts the observed 20,262/163 evaluation counts; it
+was updated without another full run. Production remains frozen for scoped
+commit after these gates, with full G4 explicitly red.
+
+Read-only next-hypothesis check rejects merely passing eligible warning handles
+through parent/child endpoint handoffs: an upper below threshold makes the
+parent a finding leaf, so it never subdivides. Thus current eligible handles
+cannot reach such inherited endpoints. Broader clear/uncertain source eligibility
+would require a separate reviewed owner contract and evidence; this slice does
+not introduce it.
+
+### Adjacent original segment - passive upper-source protocol
+
+Objective: test the mathematical/cost premise for one boundary, original segment
+114 to 113 in the actual descending LIFO order. This is only a new permanent
+test-owned passive profile and this short card; production, Inspector lifetime
+and current handles remain unchanged. Execute both complete current baseline
+segments in one query/context with original geometry, settings, 500k work and
+20s guard. Capture only segment 114's actual first fresh completed finite
+nonpenetrating positive warning and copied immutable poses/witnesses (one extra
+unit); at segment 113's first fresh sample, charge admission plus two inverse,
+two forward and one norm (six). Explicitly verify reverse time, adjacent indices,
+shared boundary, ordered immutable geometry and actual input identities. Confirm
+114 completion from canonical LIFO order, observed sample order and final leaves.
+Inject nothing. Prove reverse-time whole-enclosure transport with an independent
+exact source-point oracle, then report upper eligibility, the original target
+cost/first-warning upper limit and all seven added units separately from existing
+sampler work. No saving or production acceptance follows a positive upper alone.
+Stop on source/provenance/guard failure or no viable bound; any actual-delta
+experiment requires separate review. No full or browser gate.
+
+The passive oracle and source case passed. At 114 start the actual upper is
+0.010714356302402587; backward transport to 113 start gives 0.008179753354794837,
+below 0.02. The untouched target uses 5,208 units (1,943 pose axes, 390 convex
+queries, zero membership units), first warning at 4,947 units; that is only a
+potential-saving upper limit. Original work 37,128 plus the seven extra units
+is 37,135, with both segments complete. Source leaves are nonempty, cover their
+original end and never resume after 113 begins. Evidence is
+`tmp/capacity/adjacent-passive.log`; independent passive review passed.
+
+Next test-only actual-delta protocol: execute those same two full current
+segments for both cold control and candidate, preserving order/settings and
+every existing sampler operation. Candidate alone pays capture one and consume
+six; inject the proven points only at 113's first fresh distance through the
+existing private-witness test adapter, restoring its descriptor in `finally`.
+All original distance, membership, penetration and subsequent fresh samples run.
+Log complete evidence and exact cost categories before assertions. Source 114
+remains entirely equal; all non-upper fields remain exact. Only the first
+target's independently proven seed upper, and a leaf/global upper selecting
+that exact witness, may differ. Later sample upper propagation or any other
+observable difference stays red for explicit review, never automatic relaxation.
+Here non-upper equality governs emitted PairEvidence, including every leaf lower.
+Internal static axis/iterations/convergence may be recomputed by the unchanged
+solver and are logged individually; no metadata is manually rewritten. Any
+later upper propagation remains subject to the stated provenance/stop rule.
+The predeclared material gate is target cost including its six extra units at
+most 80% of control, lower whole paid work and no added target convex queries,
+under the unchanged 500k/20s guards. One bounded test-owned experiment only;
+no production, full gate or cross-segment handle implementation follows without
+separate review of its actual result.
+
+The actual delta passed its fixed gates: target work including consumption falls
+from 5,208 to 1,987, target convex queries from 390 to 40, and total paid work
+from 37,128 to 33,908 including all seven added units. Both complete emitted
+PairEvidence values are exactly equal; all later static samples remain equal.
+The original solver improves the injected upper 0.008179753354794837 to the same
+final upper/source points as control (0.0011536664118260158). Only the internal
+first-target lower differs, decreasing from 0.00029149003885364783 to
+0.00007219820252812868; the original control lower certificate also covers that
+smaller bound. No solver metadata is overwritten.
+
+The first run's extra assertion that final points must equal the initial seed
+was red, retained in `tmp/capacity/adjacent-delta.log`. Root and independent
+review explicitly accepted replacing that unsupported equality with exact final
+control source points, the conservative lower ordering, all later static fields
+and complete emitted evidence equality. The bounded rerun passed all three
+cases in `tmp/capacity/adjacent-delta-final.log`. This is a test-owned actual-delta
+result, not production readiness or G4 completion; cross-segment production
+ownership remains unchanged and prohibited by the current contract.
+
+### Adjacent boundary source - bounded method readiness
+
+Owner: Inspector `method`, original-part 1.0.2 strategy. Extend only the
+sampler-owned source lifetime from a complete original root to its immediately
+adjacent descending original root; this is a new explicit exception, not an
+interpretation of the previous prohibition. Allowed implementation is existing
+methods and direct formal tests, with matching method spec/manifest/Inspector.
+No framework, domain, geometry, budget, sampling or severity change is allowed.
+
+The source is the first fresh sample of an unclamped original root, actually
+completed and admitted by the existing opaque sampler: frozen ordered mesh pair,
+actual canonical static poses, finite nonpenetrating positive warning. Keep its
+already-paid immutable handle locally. Publish only after that complete root
+finishes as a nonpenetrating finding without exhaustion or subdivision; charge
+one additional checkpoint before publishing. No general segment-completion
+tracker is needed. A single invocation-owned slot expires at the next root,
+matched or not. Only its immediately lower original segment with the exact shared
+keyframe boundary and complete frame bounds may consume it at its first fresh
+sample. No arbitrary reverse-time, clamped, point, child, native or skipped-segment
+handoff is admitted. Continuous owns actual completion/time-to-pose provenance;
+the sampler validates its unforgeable scope, original source origin, immutable
+ordered geometry, settings and explicit adjacent admission. The sampler publication operation converts only its own opaque node handle
+into an opaque boundary handle sharing the already-paid immutable payload; an
+origin flag alone cannot authorize cross-node use. All source copies and
+whole-enclosure transport stay in one numerical owner.
+
+Preserve the first source separately from later middle/end handles. Take and
+clear the boundary slot before matching the next root, including a mismatch.
+Capture remains one unit, paid once even when that source also seeds its own
+node. Each separate same-node consumption still pays its own six units; eight
+is the boundary source path cost, not an inclusive node total. Boundary publication adds one; target admission plus two inverse/two forward
+transforms and norm add six. This eight-unit path must be measured afresh rather
+than reusing the seven-unit diagnostic result. Invalid attempted admission pays
+its actual check; no unpaid packet or target witness is published. Publication
+exhaustion retains the complete source leaf, publishes no packet and stops before
+the next sample. Consumption exhaustion retains prior completed evidence and
+leaves unproved coverage unresolved. Clear the slot on consumption, mismatch,
+exhaustion and invocation end. Existing same-node and endpoint handoffs remain
+separate; native/point-only and ordinary unseeded work remain unchanged.
+
+Formal red first: exact source/target provenance, no publication from incomplete,
+clamped, penetrating or child nodes, nonadjacent/geometry/scope rejection, single
+use/disposal, all new charge cancellation points and preserved completed leaf;
+reverse-time rational source enclosure, later penetration, unchanged ordinary
+fresh/native paths and exact accounting. Then existing 10k/50k/576 work gates,
+subdivision/source oracles and exact 114-to-113 production work/evidence control,
+type/lint/naming and independent review. Preserve emitted semantic certificates;
+log and review any nonunique witness difference before changing an oracle. Stop
+on provenance, accounting, correctness or fixed-budget regression. No full or
+browser run until the root agent reviews this complete bounded correction.
+
+The formal owner regression was red (20 failures, one existing rejection pass)
+before implementation and now passes 22 cases including the temporal-limit
+regression; the unchanged fresh provenance
+and schedule cases add 29 passes. Production uses the sampler publication
+operation and a separately retained first source, never a later sample's handle.
+The actual 114-to-113 source control disables only boundary publication while
+keeping ordinary fresh sampling. Its complete emitted evidence is exactly equal:
+37,128 to 33,908 total units, complete target sample 5,209 to 1,988 and
+390 to 40 convex queries. These target counts include both samples' actual
+capture charge; the earlier 5,208/1,987 diagnostic excluded that common unit.
+Source charges rise 28 to 35: publication one plus consumption six; the original
+capture was already charged and is not duplicated. Every category sums exactly.
+
+Original 10k/50k/576, rational and subdivision gates passed. The existing complete
+114-to-198 prefix keeps its previously approved single-upper oracle unchanged:
+95 evaluations, 90 leaves, current work 197,028 versus the preceding fresh-only
+record 202,102. This is a bounded complete-prefix result, not G4. Manifest text
+initially exceeded its existing schema bound; a concise 1.0.2 strategy summary
+fixed that direct consumer failure without changing schema limits. Version and
+source tests now pass. The historical adjacent probe explicitly disables boundary
+publication to replay the bf510dd43 source policy; current production work is
+proved separately by `adjacent-witness-source-work.test.ts`. Original red logs
+remain. Independent final review and root checkpoint precede any full gate.
+
+Root review added a formal temporal-limit boundary: when maxIntervals prevents
+another root, no publication is charged. The test was red before the single
+remaining-evaluations guard; the completed source leaf and partial remainder
+remain intact. Per-target work now measures every actual source charge at the
+exact target time, including capture, instead of adding a presumed six units.
+
+The independently reviewed correction received one unchanged full representative
+run, retained in `tmp/capacity/adjacent-full-representative.log`. It remains red:
+partial coverage, 20,265 evaluations and first partial joint-2/obstacle-11 at
+166 evaluations with 75 clear intervals. All categories total 500,197 observed
+units; that pair uses 398,216 = 306,103 static + 91,548 interval + 462 source +
+21 handoff + 82 derivation. Original preparation is 28,943 and demanded refinement
+11,653; observed duration 12.065 seconds remains within the 20-second guard.
+This does not close G4. No browser or repeated full run follows; bounded complete
+source/prefix evidence and the unchanged full red record remain separate.
+
+### Missed nonwarning boundary source - passive method iteration
+
+Re-read method Inspector and 1.0.2 source restrictions after the full red result.
+The next hypothesis changes neither geometry nor sampling: a completed finite
+nonpenetrating surface witness with `0 < lower <= upper` remains a valid source
+when its old upper is not below the threshold. Only investigate currently missed
+`upper >= threshold` first samples in the fixed complete original prefix 114–198.
+Mutation scope is one permanent opt-in passive test and this card; production,
+Inspector and method strategy remain unchanged. No full or browser gate.
+
+Keep the current solver and existing warning-source route active. Observe actual
+first-root inputs/output and copy immutable source poses/witnesses for one charged
+unit, including captures later discarded. A single test-owned sidecar records
+that root's actual completed whole-interval clearance certificate or finding
+samples; any child traversal invalidates it. At the next complete adjacent root,
+charge publication one and admission/inverse/forward/norm six only for a complete
+clear or nonpenetrating finding source. The final real PairEvidence must confirm
+every claimed original root leaf, exact frame bounds and state. No seed is
+injected and no verdict is transported. Count all attempts and discarded copies,
+actual target work, transported upper eligibility and first-warning work only as
+an upper limit on potential savings. Charge every added operation live within the
+unchanged 500k/20s guard; normal source charges remain separate. Inspect all fixed
+sources, never select successful cases after measurement. Independent rational
+source-point transport covers nonwarning/equal-threshold admission. Stop on
+provenance/accounting failure or insufficient net potential; a positive bound
+alone does not authorize production or establish actual savings.
+
+The single passive run passed both exact nonwarning/equal-threshold source
+oracles and the fixed prefix case in 8.053 seconds. It captured 69 eligible first
+sources, discarded two and published 67; none of their transported upper bounds
+fell below 0.02. Additional work is 69 capture + 67 publication + 402 transport
+= 538. The unchanged production work is exactly 197,028, total 197,566; this
+hypothesis has zero before-warning saving potential and net upper limit -538.
+Evidence is `tmp/capacity/nonwarning-boundary.log`; independent review passed.
+Publication is observed at next-root entry and checked against final exact root
+leaves, not presented as production cancellation proof. This rejects only the
+fixed-prefix extra-warning-source hypothesis, not every numerical use of a
+larger legal upper. Stop this direction; no production expansion or full run.
+
+### Edge-cross directions - bounded passive method card
+
+The method re-audit separates CPU work from charged traversal: replacing generic
+triangle convex iteration alone cannot reduce the unchanged per-triangle logical
+charge. Rejected sibling order, SAH/rotation, source-bound tightening and seed
+variants remain closed. Current source-box rejection tests only the two poses'
+six face directions; prior root and triangle probes did not test the nine pairwise
+edge-cross directions. The geometric candidate follows
+<a href="https://www.geometrictools.com/Documentation/DynamicCollisionDetection.pdf" target="_blank" rel="noopener noreferrer">Eberly, section 2.1</a>;
+boxes remain rejection enclosures, never product geometry or contact witnesses.
+
+Freeze one existing original point: joint-2/obstacle-11, frame 67 at
+2.693467336683417. This is the recorded exhausted operation in
+`current141-frontier.log`, independently completed for 16,564 units in the
+existing component-source probe. Later fresh/adjacent strategies preserve static
+point behavior. Use the unchanged source snapshot/settings, 500k work and 20s
+guard; no new full replay or case selection. Allowed edits are one permanent
+opt-in passive test and this card, not production or Inspector semantics.
+
+Run the original distance owner unchanged. Only after its ordinary face-direction
+rejection fails, evaluate the fixed three-by-three edge-cross family. Directions
+are fixed proposals from the actual normalized static poses; outward projection
+of complete source bounds and a positive norm certify every result. Degenerate
+proposals provide no conclusion. Prepare six pose directions and nine crosses
+lazily once for this exact query, charging fifteen units; all nine attempted
+certificates charge one each, including degenerates. No axes, poses or evidence
+survive the query, no triangle/final-pair policy changes, and no selected axis is
+tuned from results. All diagnostic operations checkpoint the original live guard.
+
+Test-only exact Bounds/node identity and actual parent lineage record the visited
+node-pair order. Bound the already-observed descendant work a positive certificate
+could avoid; union nested spans so no work is counted twice. Keep legacy work at
+the rejecting node paid. Report original preparation separately, all actually
+paid diagnostic overhead, and prospective attempt cost only for nodes outside
+those pruned spans. This is an optimistic work upper limit, never claimed actual
+savings. Unknown lineage or incomplete baseline stops the profile. Independent
+rational skew boxes must have overlapping face projections but a positive
+edge-cross gap; every successful source-root certificate must agree with the
+unchanged original result. Preserve all source membership/penetration paths.
+If no positive net upper limit exists, reject without implementation; a positive
+bound requires a separately reviewed actual-delta plan and all unchanged gates.
+No production or full gate follows this card automatically.
+
+The fixed frame 67 passive run is negative: original work 16,564 reproduced
+(3,176 median preparation, 10,366 component refinement, 3,022 query work).
+Across 808 visited node pairs, 454 eligible pairs paid all nine attempts:
+4,101 additional actual units including the 15 direction preparations. Thirty
+maximal positive certificates could avoid at most 1,648 observed descendant
+units; even after removing attempts inside those pruned spans, prospective
+cost is 2,283 and optimistic net savings are -635. Reject this fixed policy
+without production changes or another full run. The independent rational
+oracle and passive case both pass. Reproduce with
+`SIM_CAPACITY_DIAGNOSTICS=1 yarn workspace @asyra/asyra-sim test:local src/analysis/methods/__tests__/cross-axis-profile.test.ts --maxWorkers=1`;
+recorded evidence is `tmp/capacity/cross-axis-profile.log`. This negative
+upper-bound result does not claim measured production savings or close G4.
+
+### Whole-interval nonpenetration - bounded passive card
+
+Objective: test whether the existing original-mesh interval owner can prove a
+strictly positive source-surface gap cheaply enough to replace repeated static
+penetration work. This is a measurement, not permission to skip samples or
+change their witnesses. Allowlist: this plan and a permanent
+`interval-separation-profile.test.ts`; production and Inspector remain unchanged.
+Freeze the already studied complete original root 114 for joint-2/obstacle-11.
+Run its three current samples in their original order and same context, recording
+actual paid source seeds and full sample costs. Retain the first completed
+positive, finite, nonpenetrating static evidence, including its original full
+membership query. Capture the actual canonical complete-root interval inputs
+from the existing interval request; do not substitute endpoint hulls.
+After the unchanged root completes, call raw `lowerOver` once with threshold
+zero and otherwise unchanged tolerance, iterations and work guard. Charge every
+operation in that same context, bypassing no predicates and never deriving zero
+from the warning threshold. Zero or exhaustion is no proof. Only if the two
+remaining samples actually received paid warning seed enclosures and the full
+interval gap is positive may their recorded full sample costs form an optimistic
+replacement upper limit. Subtract the entire extra interval work; source handling
+would still need payment in any real strategy. Preserve the original emitted
+result, all geometry identities and late penetration evidence. This one opt-in
+case keeps the 500,000-unit and 20-second guards. A positive result requires a
+new output-owner contract and independent oracle before any actual-delta or
+production change; otherwise stop without another full gate.
+
+The one root 114 run completed: baseline 27,351 units, added raw interval query
+3,261, total 30,612. Its positive gap is 0.00003580624320353997, so a complete
+nonpenetration certificate exists on this source interval. The frozen replacement
+eligibility nevertheless fails: middle's paid seed upper is 0.016053481245753624,
+but end's is 0.021907327376442704, above the 0.02 warning threshold. The original
+end solve returns lower 0.02000268079160805 and upper 0.02042792871405647;
+its 5,600 units and middle's 2,059 units are not claimed replaced. Under this
+card the replacement upper limit is zero and net is -3,261. Preserve the complete
+original three samples and unchanged finding; no production or full run follows.
+This rejects the frozen two-warning-seed eligibility, not the mathematical
+positive-gap certificate or an unreviewed alternative output contract.
+The permanent opt-in case passes (374 ms); reproduce with
+`SIM_CAPACITY_DIAGNOSTICS=1 yarn workspace @asyra/asyra-sim test:local src/analysis/methods/__tests__/interval-separation-profile.test.ts --maxWorkers=1`.
+Recorded evidence: `tmp/capacity/interval-separation-profile.log`.
+
+### Fixed-prefix interval certificate census
+
+Replan the previous single-root eligibility result into one complete passive
+census of the already studied original roots 114–198. The method-query Inspector
+still permits only current production source lifetimes; this diagnostic does not
+add a product cache, witness route or sample bypass. Allowlist: this plan and
+`interval-census-profile.test.ts`. Keep the full current baseline once, expecting
+197,028 charged units and complete coverage. Collect every original root in its
+actual descending pop order, not a selection ranked by likely savings. A root is
+eligible only with its first completed finite positive nonpenetrating witness,
+no subdivision/exhaustion/penetration, exactly three fresh samples and two actual
+paid warning seeds. Match one complete original leaf and the actual canonical
+full-root interval request. Record all exclusions; root 114 is naturally excluded
+and its already measured certificate is not rerun.
+For every eligible root, then call raw threshold-zero `lowerOver` once in that
+same context, keeping tolerance/iterations/checkpoints and the aggregate
+500,000-unit/20-second guards. Prove each geometry's original median and component
+refinement had already completed and been paid before that root's first sample
+completed; otherwise stop instead of borrowing future preparation for free.
+Every successful and failed certificate cost counts. On exhaustion stop in
+original order, report the remaining untested population and incomplete census;
+partial results are not a completed positive or negative census.
+Only positive-gap roots may contribute their original middle/end sample costs
+to an optimistic replacement upper limit, from which all certificate costs are
+subtracted. Post-baseline preparation is warm and the upper limit includes
+source charges a real replacement still needs, so this is not a real execution
+saving. A positive result needs a separately reviewed original-order actual-delta
+protocol paying all preparation, source and certificate operations anew. Retain
+all original evidence and late-penetration decisions; no production/full gate.
+
+The complete census reproduced baseline 197,028 units across all 85 roots:
+66 had fewer than three fresh samples, two subdivided, three failed seed
+eligibility and eleven had penetration. All three eligible roots were measured
+in original order: 130 returned zero for 2,125 units; 118 returned zero for 1,343;
+117 returned positive gap 0.0004905192849552485 for 1,859. Only root 117 contributes
+3,138 units of optimistic replacement work. Total certificate work 5,327 exceeds
+that bound by 2,189; aggregate actual work is 202,355. Census is complete with
+zero untested roots. Reject this fixed policy across the full frozen population;
+do not select root 117 alone as a success or expand production. The mathematical
+certificate remains valid, but the measured strategy cannot justify reducing the
+500,000-unit goal workload. The one permanent case passes in 7.02 seconds.
+Reproduce with `SIM_CAPACITY_DIAGNOSTICS=1 yarn workspace @asyra/asyra-sim test:local src/analysis/methods/__tests__/interval-census-profile.test.ts --maxWorkers=1`;
+recorded evidence is `tmp/capacity/interval-census-profile.log`. G4 remains red.
+
+### Shared-boundary pose identity - minimum numerical card
+
+Before another prefix census, compare only existing snapshot 0 boundary 114:
+original segment 114 start versus segment 113 end at the same stored time.
+Allowlist: this plan and `boundary-pose-profile.test.ts`. Use all original joint
+keys and the canonical interpolation, shared-pair kinematics and collider compose
+owners, with both Number and outward interval algebras. Keep stored keyframe
+values, actual Number outputs and interval enclosures distinct. The exact
+mathematical endpoint joint values are the stored keyframe scalars; assert both
+interval interpolations enclose them. Number FK is observation, not an exact
+geometric oracle. Compare each endpoint of all fourteen pose intervals using
+binary64 identity including signed zero. Report pose overlap separately; it is
+not a same-pose or outside-membership proof. Any unequal pose stops direct
+boundary evidence handoff. This one bounded numerical test performs no mesh
+query, full prefix or production edit, and does not authorize a tolerance or
+whole-source displacement certificate. Such a certificate needs a separate
+mathematical contract and review.
+
+The minimum numerical result is exact pose identity for this ordered pair:
+all fourteen interval pose components and fourteen Number components match.
+Joint 4 and joint 6 interval enclosures differ between interpolation endpoints,
+but do not change this pair's relative poses. All six joint enclosures contain
+their stored canonical endpoint values. The exploratory assertion predicting a
+pose difference was wrong; retain `tmp/capacity/boundary-pose-identity-prediction-red.log`
+and replace that prediction with the observed exact-identity regression. This
+result supports only boundary 114 of this pair, not generic endpoint equality.
+A later cost proof still needs actual-source lifetime, paid preflight and complete
+output semantics; no source is fabricated for a root whose first solve was skipped.
+Reproduce the numerical oracle with
+`yarn workspace @asyra/asyra-sim test:local src/analysis/methods/__tests__/boundary-pose-profile.test.ts --maxWorkers=1`.
+
+### First deterministic endpoint preflight - bounded cost card
+
+Use only boundary 198→197, the first descending complete nonpenetrating source
+with upper above the threshold in the retained complete-prefix evidence. Do not
+choose a later boundary after seeing its cost. Allowlist: this plan and permanent
+`endpoint-preflight-profile.test.ts`; no production or prefix/full execution.
+Run source root 198 normally in a fresh context, capturing its actual first
+completed finite positive nonpenetrating distance and canonical ordered inputs.
+A source upper at/below 0.02 already excludes target strict clearance; stop.
+After complete source-root evidence, pay capture/copy one, publication one,
+target endpoint pair-pose construction one, target full-interval pair-pose
+construction one and admission one. Every actual operation checkpoints before
+work; failed admission keeps its paid costs. Require exact fourteen interval
+pose components at the shared endpoint, same immutable geometry/settings and
+canonical segment/time identity. Raw target `lowerOver` then uses threshold 0.02
+and unchanged tolerance/iterations, charging all preparation and traversal.
+A failed/exhausted proof does not clear or skip any target sample.
+If strict clearance is proved, measure the ordinary source198→target197 control
+in a separate fresh context with no shared prepared cache. Both source outputs
+and charges must agree. This prevents preflight preparation from warming the
+control target; candidate preparation remains fully charged even if newly
+created. Report target distance/interval/source charges separately. The entire
+original target query, not just its first static sample, is the optimistic
+replacement upper limit. Subtract all five added operations and raw proof work.
+This is only cost feasibility: changing emitted upper/witnessTime or source
+lifetime is not accepted. A skipped first static supplies no source to another
+root. Keep 500,000 work and 20 seconds per test, report an incomparable or
+exhausted measurement honestly, and stop on failed eligibility/nonpositive net
+without moving to another case.
+
+Boundary 198→197 is eligible but its fixed cost result is negative. Independent
+contexts each spend 3,178 on the identical complete source. All fourteen shared
+endpoint pose components match. Raw preflight proves gap 0.19848731382941417
+for one unit; the five additional operations make six. The ordinary complete
+target costs only two units: static one plus interval one. Candidate total 3,184
+versus control 3,180 gives net upper limit -4. The source upper differs from the
+original target upper, so no new emitted-result equivalence is claimed. Stop
+this fixed experiment without selecting a more expensive boundary; this does
+not establish that every other clear root also has one-unit static cost.
+The permanent case passes in 231 ms; reproduce with
+`SIM_CAPACITY_DIAGNOSTICS=1 yarn workspace @asyra/asyra-sim test:local src/analysis/methods/__tests__/endpoint-preflight-profile.test.ts --maxWorkers=1`.
+Recorded evidence: `tmp/capacity/endpoint-preflight-profile.log`. No production,
+prefix or full-goal query followed this result.
+
+### Current static-work population - task iteration replan
+
+Stop selecting isolated replacement cases. Current retained full evidence has
+306,103 static units but only pair aggregates; the older frontier log exposes
+only a stale top-six sample. The first unresolved owner question is which
+actual static samples and primitive operations accumulate that current cost.
+Allowlist: this plan and the existing `actual-frontier-profile.test.ts` only.
+Extend its already collected rows into a complete project-local artifact, with
+actual sampler-origin node/segment/start/end/time and root-first/middle/end or
+child role. Do not infer static ownership from the last interpolation call.
+Inherited endpoints have no distance row; record their charged handoff separately.
+Classify source capture/consume/publication through actual sampler and publication
+wrappers; publication must not borrow a stale sample origin. Preparation and
+refinement are nested subitems of query work, never additional total charges.
+Run exactly one current `representative` mode under the original 500,000-unit,
+20-second limits with no extra geometry calls or changed source/query order.
+Require the recorded 20,265 evaluations, 166 target evaluations and unchanged
+partial target, with all distance/lower/source/handoff/derivation charges summing
+to the actual invocation delta. Retain complete and exhausted rows separately,
+all segment totals and final leaves; unvisited regions remain unknown. Write the
+full artifact before numerical expectations so a mismatch is preserved, then
+stop on any mismatch without another replay. Console output is a bounded bucket
+summary and artifact path, not another top-N-only record. This diagnostic does
+not pass G4 and cannot authorize a production strategy before distribution review.
+
+The single current diagnostic passes in 12.23 seconds and reproduces 20,265/166
+evaluations and 398,216 target units. The full query-population artifact is
+`tmp/capacity/actual-frontier-representative-population.json`: 299 query rows,
+156 observed segments, and all source-operation events. Static work 306,103 is
+175,841 root-first (156 calls), 59,659 root-middle (30), 56,388 root-end (26),
+and 14,215 child-middle (3); all static calls complete. Interval work is 87,745
+complete plus 3,803 exhausted. The actual frontier is original segment 43,
+[1.728643216080402, 1.7688442211055277], not the old frame-67 frontier.
+Source work is capture 45 + consume 396 + publication 21; handoff 21 and derived
+zero 82 close the exact invocation sum. Static axes 131,901, membership 7,612
+and refinement 1,287 are nested subitems, not extra charges. First samples of
+entirely clear segments cost only 22,138 (7.2% of static); finding-segment static
+calls total 252,646. Thus cheap clear-first replacement is not the main route.
+The recorded artifact includes existing complete-prefix and frontier-neighbor
+leaf subsets, alongside every query and segment outcome. A direct writer addition
+now includes all target leaves on future authorized runs; no replay was made
+only to enrich those leaf fields. This run is complete cost attribution of the
+observed execution, not complete G4 coverage; unvisited intervals remain unknown.
+Reproduce only at the next authorized diagnostic checkpoint with
+`SIM_CAPACITY_DIAGNOSTICS=1 yarn workspace @asyra/asyra-sim test:local src/analysis/methods/__tests__/actual-frontier-profile.test.ts -t 'attributes completed and exhausted queries - representative' --maxWorkers=1`.
+Next bounded review uses this population to identify actual finding-root axis
+costs and repeated bound work before proposing any correction. No new full run
+or production change follows the diagnostic alone.
+
+### Read-only axis ownership replan
+
+The complete population does not justify a pose cache: 27 repeated public
+static argument tuples cost 57,643 units, but 24 have different initial upper
+inputs and 15 have different recorded distance outputs. Only three occurrences
+have no source-consumption work on either side; the nonadjacent 127→52 occurrence
+is outside an adjacent-source lifetime. The two adjacent unseeded occurrences
+cost 5,678 units (1.85% of static), not the claimed full repeated-work population.
+Unrecorded witness metadata is not assumed equal.
+`projectedBoundsGap` charges one checkpoint for each actual noncardinal
+source-bounds separation query. The 131,901 units are those queries, not direction
+construction work; 110,705 belong to finding segments. Same-query poses do allow
+reusing fixed direction proposals, their norms and each side's inverse-direction
+and translation coefficients. This differs from the previously rejected complete
+bounds-pair gap lookup. Nevertheless each new node pair still requires its
+bounds-dependent dot/gap certificate and the unchanged query checkpoint. Merely
+preparing coefficients therefore saves zero logical units; charged preparation
+would add work. Existing timing is 2,794 ms for static queries and 769 ms for all
+node projections, including bounds-dependent arithmetic, not a measured saving.
+Independent numerical/ownership review agrees: do not implement or profile this
+CPU-only extraction as a solution to the fixed 500,000-work G4 goal. A useful next
+owner strategy must reduce actual visited pairs/certificate queries or establish
+an independently valid evidence handoff, not rename arithmetic to lower its bill.
+No new cache, production change or geometry run follows this read-only replan.
+
+### Static optional projection policy - fixed comparison card
+
+No retained experiment has compared omitting static noncardinal node-box
+certificates across the current fixed population. Earlier triangle omission kept
+node projections; gap-cache profiles ran the original certificates. Freeze a
+single control/candidate comparison on complete original roots 114–198, each in
+its own cold context and under the existing 500,000-work/20-second limits.
+Allowlist: this plan and `static-projection-profile.test.ts`, using a test-private
+synchronous distance scope. The candidate returns the already computed world
+AABB gap instead of invoking optional noncardinal projection only in static
+queries. Full interval projection, original triangles, membership, source seeding,
+publication and all remaining solver work remain unchanged and charged. This
+removes actual certificate operations, never their charge alone. Every new
+membership/refinement/triangle query caused by weaker pruning remains paid.
+Soundness review confirms weaker rejection cannot itself establish false
+clearance, but it may alter witnesses, lower bounds, unknowns, subdivision and
+cost. Therefore retain complete PairEvidence equality with the current control;
+write both full results and cost artifacts before asserting equality. Do not
+exempt upper or severity fields after observing a mismatch. A mismatch stops for
+review, as does incomplete coverage or resource exhaustion. At least 20 percent
+less whole paid work is required for further study; candidate measured runtime
+must not exceed 1.2 times the control or the unchanged per-case 20-second guard.
+CPU observations from this single comparison are not a hardware benchmark.
+Both actual pipelines produce their own private seeds; no fabricated seed or
+replayed bare public-argument tuple is accepted. The existing rational/full-source
+oracles remain necessary for any subsequent accepted strategy. No production or
+full-goal run follows this comparison, and no different subset is chosen on failure.
+
+The unique two-strategy comparison is rejected at its material-work gate.
+Complete PairEvidence equality passes, but control 197,028 becomes candidate
+185,288: only 5.96% saved, below the frozen 20%. Removing 49,322 static-axis
+queries adds 37,582 other distance-work units, leaving only 11,740 net saved.
+Convex queries increase from 11,662 to 15,877; observed CPU rises from 6,746 ms
+to 8,031 ms (1.1905 ratio). Interval 69,459, source 105, handoff 19, derivation 16,
+median preparation 3,176, refinement 10,366 and nested membership 138 remain
+identical. The recorded ratio lies below 1.2, but the preceding work assertion
+stops the test before its CPU assertion; no broader performance pass is claimed.
+Preserve the explicit opt-in expected-red comparison and both complete result
+artifacts `tmp/capacity/static-projection-control.json` and
+`tmp/capacity/static-projection-candidate.json`, plus
+`tmp/capacity/static-projection-profile.log`. Run both cases together with
+`SIM_CAPACITY_DIAGNOSTICS=1 yarn workspace @asyra/asyra-sim test:local src/analysis/methods/__tests__/static-projection-profile.test.ts --maxWorkers=1`.
+No production change, alternative subset, adjusted threshold or full run follows.
+
+### Replan - strict terminal-pair cost boundary
+
+Re-reading the method-query Inspector and actual static traversal separates two
+sites: the pending node pair still invokes optional projection after its node
+checkpoint, whereas the subsequent final triangle pair already uses only world
+gap and the complete original convex query. Membership and demanded preparation
+precede both. For two leaves containing exactly one triangle each, bypassing the
+node projection adds at most one triangle checkpoint. A successful optional
+certificate already costs at least one checkpoint; an unsuccessful or all-cardinal
+attempt reaches that same triangle anyway. This establishes local logical-cost
+nonincrease, not CPU, numeric-evidence or later temporal-work equivalence.
+
+However, the retained source metadata already excludes this site from the fixed
+population. Joint-2 component sizes are 48, 96, 124 and 256; obstacle-11 has five
+124-triangle components. Current component trees split only when their triangle
+count exceeds four, with floor-half partitioning. Such trees cannot create a
+one-triangle leaf: the smallest split is five into two and three. The top component
+tree returns the complete component root at its own terminal case, rather than
+creating a new triangle leaf. Thus the fixed 114–198 pair has zero eligible
+singleton leaf pairs, independent of pose and query outcome. Do not run a new
+comparison, build charged or uncharged lookup metadata, enlarge the cutoff or
+claim this rule can improve G4. The previous broad-omission comparison remains
+expected red. This read-only structural exclusion does not change production,
+Inspector behavior, source geometry or the fixed resource gates.
+
+The next read-only question is a different owner choice: finer triangle leaves
+inside actual-demand admitted-component refinement, paired with the strict
+singleton-node projection rule. Retained SAH and component experiments fixed
+triangle leaves at four; rotations explicitly preserved original leaves. None
+compared this combination. Original median preparation and closed-component
+membership remain separate owners. A future bounded candidate must charge every
+new refinement node, bounds scan, sort chunk and warm preparation, plus every
+actual traversal and triangle query. Finer leaves can increase those costs, so
+local singleton dominance does not prove net benefit. Current builder terminal
+handling at limit one is specifically the top-level component-subtree handoff;
+it does not construct triangle bounds and cannot be reused blindly for singleton
+triangle leaves. This is an unmeasured implementation-boundary review, not an
+approved experiment or a claim that changing leaf size will satisfy G4.
+
+### Proposed comparison - singleton component leaves
+
+Freeze one new generic strategy: triangle leaves of one inside demanded component
+refinement, with optional static node projection omitted only when both actual
+terminal nodes contain one triangle. Root admission, original median preparation,
+component membership, top component handoff and interval projection stay intact.
+This is a proposal pending independent owner review, not production acceptance.
+Avoid a second builder or a bounds-identity scan: the smallest proposed isolation
+is an internal triangle-limit argument on the real refinement builder (default
+four), plus a private static traversal-node gap entry receiving the actual nodes
+and defaulting to the existing projection. Run this experiment on a separate codex/ branch and linked worktree beneath
+the main repository’s .worktrees directory, created from the committed readiness
+head. Preserve its complete candidate and permanent tests together. A negative
+result is not integrated into the goal branch; only a positive, independently
+reviewed result may be integrated. No orphan tests or public multi-policy API
+are left on the goal branch. Tests alone select one and intercept
+that entry; ordinary execution keeps its current policy. Separate top-component
+handoff from singleton triangle bounds construction. Each strategy owns an
+independent preparation map throughout its execution; never mix artifacts built
+with different limits or publish a general runtime policy/cache contract.
+
+Proposed allowlist is this plan, `mesh-index.ts`, `original-mesh-query.ts`, and
+permanent singleton hierarchy oracle/profile tests. First prove unchanged default
+routing, exact source triangle identities/components/representatives, singleton
+bounds and unions, nested/overlapping membership, reversed pairs, penetration,
+unknowns, complete evidence and cancellation. The
+existing three-box source gives an independent preparation count: default 84;
+singleton 204 = 23 original collect visits + 1 grouping chunk + three component
+subtrees each charging 23 builds, 23 bounds scans and 11 sort chunks + 5 top
+visits, 2 top scans and 2 top sorts. Verify those categories with an independent
+per-node/scan/sort oracle, not just two unexplained constants. Charge cold/warm
+preparation equally and retain
+no interrupted artifact. Original runtime checkpoints remain unchanged.
+Only after those proofs and reviewed isolation, compare both cold strategies on
+the same complete roots 114–198 with full PairEvidence equality, at least 20%
+whole-paid-work reduction, CPU ratio at most 1.2 and each existing 500,000-work /
+20-second guard. Record all preparation, traversal, axes and convex work before
+assertions. Any changed evidence, incomplete coverage or failed gate stops for
+review without tuning leaf size, subset or thresholds. No full-goal run follows.
+
+### Isolated comparison result and bounded replan
+
+The singleton experiment is preserved with its permanent tests on
+`codex/asyra-sim-singleton-comparison`, head `32e414137`, under the main repository's
+`.worktrees/asyra-sim-singleton-comparison`. The goal branch contains neither
+experimental entry. Its fixed 114–198 control completes 95 evaluations for 197,028
+work; the singleton candidate exhausts 500,001 work after 94 evaluations with
+partial coverage. Nested refinement is 28,446, static axes 161,498 and interval
+axes 120,817. Coverage fails before complete-evidence, 20% work and CPU assertions;
+partial totals cannot establish savings. The isolated plan and two complete JSON
+artifacts retain the detailed result. Do not integrate or retune this candidate.
+
+This next read-only iteration finds no currently supported material candidate.
+The saved population contains 306,103 static work and 131,901 axis work. Nested
+membership kernels account for 7,612; even adding the conservative maximum of
+215 static calls times all 41 component-representative admission checkpoints
+bounds that membership work at 16,427. For the fixed complete prefix, the analogous
+bound is 138 + 105 times 41 = 4,443 out of 197,028. These are optimistic removable
+work ceilings, not permission to omit membership or mathematical limits on G4.
+They provide no standalone basis for the frozen comparison's 20% work target.
+
+The final triangle's original checkpoint remains necessary, while iterations
+inside its convex solver have no additional logical charge. A different triangle
+solver would therefore need a conservative, independently proved lower/upper
+certificate that avoids subsequent actual node or triangle work, rather than only
+faster arithmetic. Current saved data do not establish that benefit or the source
+provenance needed to retain such results. Broad projection omission and the finer
+hierarchy have measured negative results; pose-coefficient reuse instead has no
+logical-work saving under the current accounting model. Neither observation
+proves other algorithms impossible. Any future proposal needs a falsifiable
+complete-source work argument, a small independent certificate oracle, all cold/
+warm preparation and execution charges, and unchanged complete evidence gates.
+No new candidate, measurement, cache, production edit or full run is authorized
+by this replan. G4 remains unresolved at its unchanged 500,000-work goal.
+
+### Read-only readiness - source-fitted node frames
+
+<a href="https://www.cs.cornell.edu/courses/cs667/2005sp/readings/gottschalk96.pdf" target="_blank" rel="noopener noreferrer">OBBTree (1996), section 4</a>
+provides a different hypothesis: covariance proposes an orientation, while all
+source extrema certify its box. Keep the current component hierarchy, triangle
+objects, partition order and leaf size four; no hull, splitter, package or
+black-box PCA. The paper does not establish benefit for this method or budget.
+
+Leaf MeshTriangle vertices provide the complete source. A charged geometry pass
+could record node spans into original triangle references and combine moments.
+Propose one fixed Jacobi sweep, planes (0,1), (0,2), (1,2), not an exact eigensolver.
+For its finite nonzero quaternion q, the certificate frame is the single exact
+unit quaternion q/||q||. Outward normalization encloses that frame; independent
+interval components must not be treated as an arbitrary orthonormal matrix.
+Every node needs outward extrema over all its original vertices in that frame;
+child boxes in different frames cannot replace that scan. An invalid proposal
+supplies no additional certificate. This normalization/enclosure implication is
+the first unresolved technical proof, before any fit-quality experiment.
+
+Proposed fees: node collection/span record one; triangle-reference appends per 256
+including tail; leaf vertex moments per 256 including tail or internal merge one;
+three rotation attempts per node including no-ops; normalization one; full-source
+vertex extrema per 256 per node including tail; node-artifact publication one.
+Original preparation remains paid. Fully fitting N nodes and T triangles costs
+at least 8N + ceil(T/256). Here T=5,024 and N >= 2,510, giving 20,100 extra units
+before larger scan chunks and runtime. This lower bound does not disprove
+viability. Warm use pays equivalent cost; only completed artifacts tied to exact
+immutable geometry, refinement identity and fixed policy may be retained.
+Cancellation retains no partial artifact, and no query poses are cached.
+
+A future node query keeps the cheap world gap, then charges each needed
+domain-pose/frame composition and each actual noncardinal face certificate.
+No nine cross axes are added. Positive projected separation is lower-bound-only;
+root membership, original triangle solving, witnesses and temporal/uncertainty
+semantics stay authoritative. Full evidence and whole paid cost must be tested.
+
+The independent small source oracle is a closed octahedron with vertices
+±(12,16,0), ±(-4,3,0), ±(0,0,5/8), and a copy shifted by (-12,9,0).
+Exact q=(0,0,1,2)/sqrt(5) gives extents 20, 5, 5/8 and distance five: axis
+(-4/5,3/5,0) proves separation, while actual source tips differing by (-4,3,0)
+prove the matching upper bound despite overlapping world AABBs. Rational extrema,
+reverse order, interval-motion enclosure, degenerate proposals, full source and
+cost/cancellation/cold-warm oracles are prerequisites. This section authorizes
+no fitting code, measurement, benchmark or full run; benefit remains unmeasured.
+
+### Candidate 30 - planar-region prerequisite (frozen before implementation)
+
+Only the source-only prerequisite steps 1/2 are authorized. Inspector `method`
+(original-source completeness, numerical uncertainty and paid immutable preparation;
+implementation allowlist `analysis/methods/**`) remains unchanged. Input is the
+unaltered representativeSnapshot(0), all 39 bindings in source order; the reviewed
+census is read-only provenance for the sources reached by 174 static traversals.
+Output is only exact coplanar adjacency regions and a research admission receipt,
+never a convex patch, witness, collision result or method capability. The frozen
+allowlist is two permanent test-owned planar-region files and this plan.
+
+Step contract: construct complete exact-coordinate adjacency, classify each
+shared edge's four vertices for exact coplanarity, and count maximal connected
+coplanar regions. A common coordinate plane is an exact fast path; otherwise use
+exact binary64-to-integer dyadics and the determinant directly (no tolerance or
+rounded zero). All graph operations, key construction, reads/allocations and
+exact primitives are charged. The original admitted topology is still required;
+this test does not replace topology admission or certify self-intersection.
+All complete bindings are processed; an exhausted binding remains incomplete and
+later bindings unvisited. No partial count is a positive admission.
+
+No output cache or pose state is introduced: repeat preparation on unchanged
+inputs performs the same operations/charges, including warm use. No asset-hash
+alias combines separately bound geometry. The complete source-only invocation
+has a single 230088 charged-preparation ceiling and 20-second guard; reaching the
+ceiling cannot leave a positive query-work reserve and rejects this route.
+The arithmetic is the optimistic static-replacement ceiling 308183 minus required
+net saving 78095. It gives old membership/preparation as free removable credit,
+so it is generous, not a predicted runtime. Stop at the ceiling; do not retry.
+
+For every source appearing in the census static-traversal population, require
+optimistic region count <= triangle count / 4. The factor four is a frozen
+research admission against existing four-triangle leaves, not an impossibility
+theorem. This pure region partition cannot certify convex unions: even a planar
+annulus stays one optimistic region. No arrangement, new hull, feature walking,
+new pose probe, full benchmark, production/default/version or geometry change.
+Only a passing complete screen returns to the parent for step 3 authorization.
+
+Before the single source run, permanent oracles cover exact non-cardinal planes,
+small noncoplanarity, planar fans/holes, disconnected regions, complete original
+triangle partition, invalid adjacency, deterministic charges, fresh/warm lifetime
+and interruption at every checkpoint. Focused tests, TypeScript, lint/format and
+naming/placement/Inspector contracts precede the source run; final scoped review
+and one independent review follow the complete package. No per-edit full runs.
+
+Candidate 30 prerequisite outcome: **preparation-cost rejection; stop before
+step 3**. The single source-only invocation reached the frozen 230088 charge
+ceiling in 18.89375 ms. One binding completed, one was interrupted, and 37 remain
+unvisited. The complete base binding has 1400 original triangles, 884 maximal
+coplanar regions and 148295 preparation charges; the next joint-1 binding used
+the remaining 81793 charges without publishing any region result. All three
+bindings required by the static-traversal census are unvisited. Their factor-four
+test is therefore UNKNOWN, not failed. The base's ratio is descriptive only and
+does not stand in for the required population.
+
+The complete-work optimistic floor is 578095. Giving this static-only route all
+308183 observed static traversal charges as removable, including original work
+which actually must remain, adding just the paid incomplete preparation already
+gives 500000. Finishing preparation and any positive new query work exceed that
+ceiling. This rejects the frozen all-binding preparation route and fee contract;
+it does not establish that every planar-patch decomposition, demand-owned
+preparation, nonplanar SWIFT++ design or the overall G4 goal is impossible. No
+source filter, binding order, predicate fee or limit was changed after observation.
+No arrangement, convex-union/global-intersection proof, feature walk, original
+distance query, full capacity gate or production/version change was performed.
+
+The result is an exact-coplanar-region prerequisite, not a certified surface
+patch. Plane tests use exact shared-coordinate identities or exact binary64
+dyadic determinants. Existing complete source topology is an input precondition;
+this helper does not claim to detect geometric self-intersection. Each predicate
+primitive includes its bounded scalar/record storage; variable source scans,
+map accesses, graph visits and transitions carry explicit individual charges.
+Snapshot creation, read-only census decoding and output receipt serialization
+are test harness work outside the measured preparation owner. There is no
+retained geometry/asset alias or result cache; repeat preparation reconstructs
+its scratch and pays the same work. No partial binding product survives a throw.
+
+Before the source run, seven small permanent oracles passed, along with
+TypeScript, ESLint, Prettier checks and 21 naming/placement/Inspector contracts.
+The known fan oracle was corrected before that run: its eight boundary points
+contain a midpoint on each square side, so a nonzero center dent makes exactly
+four planes, two triangles per straight side, rather than eight. Its exact
+subnormal departure still distinguishes the flat one-region source. The census
+file is caller-supplied and checked against the reviewed exact SHA-256 rather
+than a worktree path serving as a code identifier. Existing failed focused/lint
+logs remain preserved; successful corrected gate output is retained in the task.
+The one source-screen test passed as a correctly recorded negative admission.
+
+Evidence: `tmp/capacity/planar-region-screen.json` (56255 bytes), including all
+39 bindings, complete source/input hashes, explicit incomplete/unvisited states,
+the completed original triangle partition and every charge category. SHA-256:
+`2882fa4f46153c632c516813de37988d58f66e8cc6bfcb87cd551057cfb90405`.
+Reproduction entry is `SIM_PLANAR_REGION_SCREEN=1` with
+`SIM_PLANAR_CENSUS_FILE` pointing to the preserved reviewed census, running
+`planar-region.test.ts -t 'screens all original source bindings once under the frozen preparation ceiling'`.
+No second source run is needed for closure. Current default authority remains
+method 1.0.2 and G4 remains RED; independent review is the next boundary.
+
+### Iteration-local convex support arithmetic reuse - frozen owner slice
+
+The canonical convex query currently repeats the inverse direction rotation and
+triangle interval dot products (or radial norm) when a nonconverged iteration
+consumes both its support lower bound and its next source witness. Reuse is owned
+by that single synchronous iteration and its two shapes/directions. A private
+completed directional record may serve the bound and, only after the existing
+convergence check, the point. Initial and zero-axis spanning vertices remain
+point-only. Records cannot survive an iteration, query, changed pose or source.
+No retained cache, public observer, method/default/version or Inspector change
+is authorized. The existing pure analytical method owner remains authoritative.
+
+Permanent tests first freeze full binary64 evidence and actual rotate/dot/norm
+counts for triangle, native, interval, early-return, tied and changed-pose cases.
+They must fail on duplicate work before implementation, then prove fresh query
+and iteration lifetimes. Instrumentation is a test-owned isolated module closure.
+Original triangle membership, interval predicates, simplex order and all mesh
+charge/checkpoint order remain unchanged. Private record allocation and field
+reads are additional CPU operations, not a logical fee discount; savings claims
+are limited to physically eliminated arithmetic. Existing owner/cancellation
+regressions, type, lint, naming and format gates precede independent review.
+
+Only after that review may the one opt-in scenario-zero population parity gate
+run against the reviewed census SHA-256
+`b79710033eadf5263f17b13744c754c58ef353abd65f85fedd318cf940014f99`.
+It preserves the original 39-body/30-fixture/200-frame/298-pair input, recorded
+pair evidence, 500197 charged mesh work and 20265 evaluations with partial
+coverage. The runtime's existing 30000 ms deadline remains distinct from test
+harness timeout. No evidence comparison may be widened after observation, and
+parity with incomplete evidence is not G4 passage or a 500k capacity improvement.
+
+The bounded implementation now shares two private support records per regular
+iteration; standalone lower bounds and point-only initial/spanning calls retain
+their original arithmetic route. Each record adds one fixed object allocation
+and constant field accesses; no lookup table, persistent lifetime or fee relabeling
+exists. Triangle dots and radial norms are the same already-produced interval
+values. Selected triangle witnesses still refer to original vertices, with the
+same earliest tie, and world point transforms remain after the convergence check.
+
+Before implementation, all nine binary64 evidence hashes matched, while the
+permanent operation-count assertion failed on the expected duplicates. Afterward
+those same hashes match: rotate calls 210 to 168, explicit dot calls 677 to 623,
+and norm calls 103 to 83 across the frozen cases. These count actual canonical
+operations, not mesh logical work, CPU milliseconds, or a full-population saving.
+The early-converged case stays at 6/8/4, and point-only spanning work is preserved.
+Four focused tests cover these cases, repeated and changed-input invocations,
+all eight rotation interruption sites of the one-iteration case, and reentrant
+execution. Interval and original mesh owner regressions pass (58 tests); eight
+existing pair-profile diagnostics remain opt-in and were not executed as a new
+benchmark. Naming, placement and Inspector checks pass (21 contracts), with type,
+ESLint and format checks. Population parity required independent review before
+execution. Its frozen comparator is exact persisted pair JSON, matching the
+reviewed census format; that artifact cannot distinguish signed zero. The small
+binary64 receipts separately preserve signed zero and every full output field.
+
+Independent geometry review accepted the exact implementation/test/fixture/plan
+hashes. The single authorized full-population parity gate then passed on
+2026-09-13: all 298 persisted pair records exactly match the reviewed census,
+with 500197 logical mesh work units, 20265 evaluations and partial coverage.
+The first partial pair remains index 101,
+`example:joint-2/main-body::obstacle-11/main-body`. All remaining unresolved
+coverage is retained. This validates unchanged recorded evidence and charges;
+G4 remains RED and this does not establish a 500k capacity improvement.
+
+The measured geometry invocation wall time was 10004.961167 ms within the
+unchanged 30000 ms runtime deadline. The Vitest case took 10493 ms and its
+complete harness 10.89 s, within the 45000 ms test allowance. No complete CPU
+time measurement or paired CPU comparison was captured; no speedup percentage
+is claimed. Deterministic eliminated arithmetic remains the bounded CPU-work
+evidence. The one approved run was not repeated for timing or reporting.
+
+Formal generated local evidence is `tmp/capacity/convex-support-reuse.json`
+(22048120 bytes), SHA-256
+`fa685329ffc68c295d4f369b43687202a2c57a87fb312122d20a1a67687475a6`.
+It preserves every pair record, full input/control hashes, measured wall time,
+work, evaluations, coverage and first partial pair. It may remain a local generated
+artifact rather than a 22 MB Git source file. The control census SHA-256 remains
+`b79710033eadf5263f17b13744c754c58ef353abd65f85fedd318cf940014f99`;
+input SHA-256 remains
+`4c7b21228a7b621bf2e94b8991c25bebea78fe6c3f1d63203c141d0dca788291`.
+The permanent opt-in reproduction entry, from the candidate worktree root, is:
+
+```sh
+cd apps/asyra-sim
+SIM_SUPPORT_REUSE_POPULATION=1 SIM_SUPPORT_REUSE_CONTROL_FILE=../../../asyra-sim-temporal-opportunity-census/tmp/capacity/temporal-opportunity-census.json node ../../../../node_modules/vitest/vitest.mjs run src/analysis/methods/__tests__/convex-support-reuse.test.ts -t 'preserves the complete recorded scenario-zero population and charged work' --maxWorkers=1
+```
+
+The reviewed census path must refer to the exact hash above; the test verifies it
+before geometry work. No method identity/version, production budget, geometry,
+continuous coverage, containment, witness or Inspector contract changed.
+
+### Heavy correctness test supervision - bounded execution repair
+
+Owner: project-owned Sim test execution, not the analytical method or Worker.
+CI run 34767093929 spent 8m37s in validate and 6m01s in Test; successful
+34772350442 spent 10m29s and 4m45s respectively. The fresh source prefix's
+20000 ms harness timeout covered two synchronous queries and assertions and
+reported after 30166 ms. Its work/evidence assertions are not wall-time SLAs.
+The other five reported failures remain separate findings; cb8089f71 is retained.
+
+Freeze eight files: scripts/supervise-tests.py and its scripts/**tests** oracle,
+methods/**tests**/heavy-test-progress.ts and its oracle, the existing
+fresh-witness-source-work.test.ts, app package.json, CI main.yml and this plan.
+No product, Inspector, global Vitest timeout, dependency or capacity change.
+The existing 500k work, 30s product deadline and 64 MiB envelope remain intact.
+
+Use the previously proved capacity watchdog's independent POSIX process-group,
+pipe, monotonic deadline and wait4 mechanisms, without its 2M scenario mode.
+Freeze a configurable provisional 20-minute CI job envelope, with 60 seconds
+reserved for termination/artifacts and a 120-second no-effective-progress
+window for the supervised heavy file. These engineering values need calibration;
+they are neither measured SLAs nor performance acceptance thresholds. CI supplies
+the original absolute job deadline through a project-local receipt so Turbo's
+environment filtering cannot renew it. Local execution uses the same explicit
+configuration. A heartbeat never renews either useful progress or the hard stop.
+
+Normal tests retain existing Vitest case timeouts. Both local and CI suite
+entry points run ordinary files and the isolated heavy file exactly once, even
+when an ordinary assertion fails. Only the supervised heavy file disables its
+20-second case timer, guarded by inherited receipt descriptors. Its four original
+cases and every evidence/work assertion remain unchanged. Paid work receipts are
+aggregated at checkpoints rather than emitted for every arithmetic operation;
+fixture/query/assertion stages and completed cases are finite and ordered.
+Independent wall/CPU performance assertions and product cancellation/deadline
+tests remain independent gates. No progress observation manufactures clear output.
+
+Formal RED precedes implementation: checkpoint-free busy child, ineffective
+heartbeat, advancing work beyond hard stop, missing/failing final result,
+truncated receipt, late completion, owned descendants and cancellation; observer
+tests prove work is observed without altering charges or source results. Only
+normal exit plus all required assertion-completion receipts passes. Forced
+termination preserves the last complete accounting as a lower bound and labels
+the tail unknown. Startup, child/process wall and CPU are reported separately.
+Then run small supervision/progress tests, runner regressions, type/lint/naming,
+one complete heavy file and the necessary app suite. Independent bounded review
+closes this slice; no algorithm candidate, population benchmark or G4 claim.
+
+Implementation verification: seven external-process regressions first failed
+without the supervisor, then passed. The final suite adds phase-selection and
+CI prerequisite oracles (nine total), plus two paid-progress observer tests.
+Independent review strengthened the CI oracle with missing/duplicate marker
+mutations and duplicate package invocation; each weakness was reproduced RED
+before its assertion was repaired. No evidence comparator was weakened.
+The original runner's 13 cancellation/deadline tests also passed unchanged.
+
+The single formal app test entry retained its ordinary failure and then ran all
+four heavy cases successfully (14.29s tests, prefix 13.027s). Its final receipt
+observed 548662 work across seven separate test queries; this is not one product
+run or a larger per-query cap. JSONL and summaries remain under
+`tmp/test-supervision/1789362643917160000-43858/`. The initial ordinary run had
+30 missing-built-package suites and the pre-existing G4 partial-coverage failure;
+117 files / 634 tests passed. Checkout-local immutable installation and the
+canonical `yarn react:build --filter=@asyra/asyra-sim` (17 tasks) supplied the
+normal CI prerequisite. Only those 30 setup-failed files were replayed: 199 tests
+passed, recorded in `tmp/test-supervision/1789362877532413000-45274/`.
+The heavy proof and the unchanged G4 failure were not rerun. TypeScript, scoped
+ESLint/format, naming and diff checks passed. G4 remains RED.
+
+CI repository variables are `TEST_JOB_MINUTES`, `TEST_IDLE_MS` and
+`TEST_CLEANUP_MS`; local execution accepts `TEST_JOB_MS`, `TEST_IDLE_MS` and
+`TEST_CLEANUP_MS`. A recorded CI deadline remains authoritative even when Turbo
+filters environment flags; elapsed setup never grants a fresh child budget.
+Both output streams are bounded at 64 MiB independently of product evidence.
+Reports use `supervisedWallMs` for READY through fixture/query/assertion/exit;
+it is not pure geometry time. Receipt observation times identify finite stages.
+The earlier preserved receipt used the misleading field name `geometryWallMs`;
+its value covers that same whole supervised phase and is not relabeled in place.
+CI emits bounded summaries in its always step. Full JSONL/console receipts are
+project-local only; this slice adds no downloadable CI artifact service.
+
+### Approved workload-count gate removal
+
+The approved capacity slice removes the two fixed 500,000 abort gates, not the
+finite source/pair/trajectory limits, 30-second/100,000-node defaults, cancellation,
+120-second/one-million-node maxima or retained evidence limits. Original three
+MVP candidate geometry, precision and coverage remain fixed. Method 1.0.3 records
+the new execution policy; historical evidence is unchanged.
+
+Bounded owner order: domain topology cooperation, snapshot admission and warning
+schema, then original-mesh method cooperation and work accounting. The initial
+formal RED cases detected the vertex/graph/sort checkpoint gaps, rejection of
+500,464 pair/segment combinations and the default mesh abort at 500,001 paid work.
+Focused corrections passed before the complete app gate.
+
+That complete gate exposed an accounting error in the first correction: extra
+lifecycle checkpoints had been counted as extra geometry work, violating the
+existing projected-rejection and subdivision work oracles. The revised bounded
+slice separates execution checks from the original paid-work callback and
+forwards both through its direct diagnostic observers. Keep every existing work
+threshold and cold/warm parity assertion. Update the new method-version oracle;
+make the existing exhausted workpiece oracle's diagnostic limit explicit.
+The representative query completed 298 pairs and 59,332 evaluations, but its
+20-second harness expired after 41,870 ms in the concurrent ordinary suite.
+Use the existing external correctness-test supervisor for this complete case
+and the existing witnessed-zero complete-prefix cases, preserving all assertions,
+the independent hard deadline, useful-work receipts and owned-process cleanup.
+This test supervision does not change product wall-time or performance gates.
+After the bounded correction, run focused work/lifecycle gates, the original
+three browser MVP cases, app tests/build, type/lint/naming and one diff review.
+
+The bounded correction passed 14 focused work/lifetime/version tests, the topology
+and admission regressions, naming, app typecheck/lint and the 17-task canonical
+build. The complete app entry passed 148 ordinary files / 835 tests, with the
+existing 24 opt-in files / 76 tests skipped. Its supervised phases passed all
+four fresh-witness, one representative and four witnessed-zero cases; final exact
+work receipts were 548,662, 1,055,698 and 1,062,094 respectively. The representative
+case retained all 298 pairs and 59,332 evaluations. Every owned process was reaped.
+Receipts: `tmp/test-supervision/1789375790783192000-27801/`. The supervisor's ten
+process/scheduling regressions passed. These are correctness proofs, not product
+wall-time measurements.
+
+All three unchanged browser MVP cases were then measured with method 1.0.3,
+39 bodies, 40,388 triangles, 298 pairs, 200 keyframes and the original 30-second /
+100,000-node budget. Candidate 1 completed full coverage in 22,536 ms with 59,332
+evaluations and zero unresolved pairs. Candidates 2 and 3 timed out with partial
+coverage in 30,353 ms / 58,538 evaluations and 30,282 ms / 26,133 evaluations.
+The browser gate is therefore 1 PASS / 2 FAIL, not a capacity closeout. The
+original precision and complete-coverage assertions were not changed. Report:
+`apps/asyra-sim/.artifacts/browser-report.json`; failure traces remain in the
+app's `test-results/`. No repeat was run to select a favorable timing result.
+Further completion work must address the measured execution owner within the
+existing product budgets; no fixed work cap is reinstated and timeout remains
+partial/nonpass.
+
+The coordinator's single bounded review found no blocking issue in the frozen
+capacity/cancellation change; the browser failures remain open. The next method
+step is diagnosis only: measure candidates 2 and 3 once each using their unchanged
+sources and precision, a 120-second checkpointed diagnostic window, and the
+existing external supervisor's finite process/idle/cleanup guards. The permanent
+opt-in capacity-owner profile records per-pair time and work plus nested static,
+interval, preparation, membership, convex and bounds counters. Nested timings
+are explicitly overlapping instrumented measurements, not a product SLA.
+Only this profile and this plan may change. No production algorithm change or
+repeated candidate search is allowed before the first expensive canonical owner
+and a bounded correction plan are supported by these measurements. This stage
+initially treated 30 seconds as the large-benchmark gate; the contract check
+below corrects that assumption without rewriting the observed failures.
+
+The one complete diagnostic per failed candidate finished with full coverage:
+candidate 2 used 1,236,842 paid work / 59,334 evaluations in 30,262 instrumented ms;
+candidate 3 used 1,412,850 / 59,368 in 59,075 ms. Files are
+`tmp/capacity/candidate-2-owner-profile.json` and
+`tmp/capacity/candidate-3-owner-profile.json`. The owned external process exited
+successfully and was reaped with an exact 2,649,692-work final receipt. An initial
+collection failure before any test ran was corrected with the supervisor's
+required threads pool; neither geometry case was repeated. These measurements
+identify expensive interval convex queries but authorize no algorithm changes.
+
+The subsequent minimum contract check confirmed FIRST_RELEASE G4 requires the
+published hardware/browser/method profile, while runtime-profile declares a
+30-second default and supported 0.1–120-second range. TEST_STRATEGY requires the
+full benchmark and numerical budgets, not an unconditional 30-second threshold
+for every large candidate. The coordinator directed calibration to the existing
+120-second / 100,000-node large-benchmark profile instead of another speculative
+solver iteration. Production defaults/maxima, geometry, precision, all three
+candidate sources and every timeout/cancel negative oracle remain unchanged.
+
+This bounded test/profile slice touches only the representative browser test,
+TEST_STRATEGY, runtime-profile and this plan. It records real host/browser/method
+metadata, derives per-case deadlines from the declared budget plus finite setup
+and cleanup allowances, and verifies Worker disposal. The dedicated global
+deadline is 3 * (120,000 + 15,000) + 60,000 = 465,000 ms. Preserve the original
+30-second RED report at
+`tmp/capacity/representative-resource-default-30s.browser-report.json`.
+Run naming/type/lint and the unchanged default-resource/runner negative tests,
+then all three browser candidates once. Only complete coverage and bounded
+evidence for all three plus cleanup can pass this declared profile; no claim
+of default-30-second or reference-hardware completion follows from it.
+
+The calibrated browser profile passed all three candidates in one formal run:
+20,493 / 25,406 / 44,163 ms; 59,332 / 59,334 / 59,368 evaluations; and
+59,317 / 59,318 / 59,335 retained leaves. Every result is completed/complete with
+all 298 pairs, zero unresolved pairs, no execution errors and zero remaining
+analysis Workers after disposal. All three verdicts are `does-not-meet` because
+the complete analysis found issues; completion is not a clearance verdict.
+Page-heap samples peaked at 122,558,341 / 114,687,252 / 106,092,559 bytes.
+Host: Apple M3 Max, 16 logical CPUs, arm64, 48 GiB physical memory,
+Darwin 25.6.0, Chrome 152.0.7977.83, method 1.0.3. These page-heap samples exclude
+Worker/native/GPU and total browser resident memory. No M1/8 GiB, external pilot
+or independent numerical-validation claim is made. The owned test server exited
+and port 7094 had no remaining listener. The report is
+`apps/asyra-sim/.artifacts/browser-report.json` (3 PASS, no skips/retries).
+The unchanged resource/default-budget/runner negative tests passed 21/21;
+naming, typecheck, lint and diff checks passed. The earlier complete app suite
+and build remain valid because this calibration changed no production code.

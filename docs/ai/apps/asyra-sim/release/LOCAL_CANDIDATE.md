@@ -9,6 +9,59 @@ We provide a trustworthy environment for executing experiments, not a guarantee
 that users' experimental assumptions hold. Incomplete or unresolved analysis
 never means clear. Official provenance is not independent validation.
 
+## Validated local candidate - 2026-09-14
+
+The current exact-source local candidate was built from source commit
+`54c625466247715390fdc3701d2d16c58531494c`, tree
+`c3d493573b15f10134e91c58ddebce83a69e8221`. Documentation commits made after
+that build do not change its identity. Its producer record is
+`apps/asyra-sim/.artifacts/consumers/54c625466247-WWWDIv/consumer-evidence.json`;
+the assembled directory and archive are beside that record. The archive
+SHA-256 is
+`d9f963bd51a8ea3818004027cee78c1aa57ed38d7fc45ce60b2c5c036fc43c4e`,
+and the included distribution manifest passed after assembly.
+
+The current candidate's production `site/` is byte-identical to the archived
+candidate built from `1874e9832006a75ff400f9b35f0691ffd906a235` (tree
+`5f0253c5515755df9b6dbf67c25bc2cb6ae2e73f`). Recursive comparison found the
+same 17 files and 2,612,342 bytes with no mismatch; both sorted relative-path
+content manifests have SHA-256
+`3571a86ff3b847fae96085d76739ded16921bc9976080fb2aed8340c98ee90ca`.
+The examples, launcher and verification scripts, dependency records, notices,
+and recovery fixture are also unchanged. The current SDK copies the two later
+test timeout calibrations and passed the exact-source producer suite. The
+archived candidate and archive SHA-256
+`e41715c5f821b30e0a3228c1b653aa0b95ee93778dc4cb6bb71c9e4276aa2e5e`
+remain the source of the browser run described next; browser tests were not
+rerun for `54c625466247`.
+
+The byte-identical packaged static App from `1874e9832006` passed 39 distinct
+browser cases across failure and
+resource handling, method/data flows, A/B/C comparison and supplied-file
+recovery, plus persistence/history/original-part/theme behavior. Screenshots and
+test attachments are retained under
+`tmp/m6-final/packaged-{failures,data,recovery,persistence}/`; the inspected
+records include desktop and narrow comparisons, retained missing-method history,
+explicit Worker and storage failures, method provenance, original-part results
+and dark-theme layout. The launcher was stopped after validation and port 3020
+was released.
+
+The current producer record's `remainingGates` is its immutable producer-time
+snapshot. The packaged journey named there is supported by the archived
+`1874e9832006` 39-case browser run and the later exact production-site byte
+equivalence verification recorded above; no browser run was repeated for the
+current candidate.
+The generated lock SHA-256
+`2a91e0b6fac05495a4e1993a2f9358b58798bf45b487dd911c65ddce45a2a032`
+matches the lock reviewed by the dated 2026-09-12 audit below. No fresh
+dependency audit was performed for this documentation closeout. The candidate
+contains 31 dependency notice records.
+
+This evidence validates a local developer candidate. The reference M1 / 8 GB
+run, independent numerical review, two real non-developer pilots and a
+maintenance owner remain unarranged, so M6 and external R0 acceptance remain
+open.
+
 ## Start without the monorepo
 
 The distributed folder contains a production `site/`, a loopback-only launcher,
@@ -148,6 +201,11 @@ yarn test:local
 yarn build
 node scripts/run-e2e.mjs e2e/__tests__
 ```
+
+The local test command runs the shipped portable supervisor oracle, then the
+ordinary suite and all three heavy proof files under finite process, idle and
+cleanup guards. It resolves Vitest only from this `sdk/app` installation and
+does not require a repository checkout or an ancestor `.github` workflow.
 
 Follow the [local SDK guide](../specs/extensions-sdk-v0.md). Its repository-root
 commands correspond to the local consumer commands above. Register reviewed

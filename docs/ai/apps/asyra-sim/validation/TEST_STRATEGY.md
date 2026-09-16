@@ -135,6 +135,23 @@ one six-axis robot, tool and workpiece, approximately 30 fixed analysis shapes,
 approximately 200 keyframes, and three sequential candidates. This is a test
 target, not a measured capacity claim.
 
+The large original-workcell browser benchmark uses an explicit supported
+120-second / 100,000-node budget for each candidate. Preserve its original
+39 bodies, 40,388 triangles, 298 pairs, 200 keyframes and numerical settings.
+The ordinary product default remains 30 seconds; its timeout/cancellation
+negative tests remain unchanged. A pass must name the selected benchmark
+profile and actual CPU, physical memory, OS, browser and method version, and
+must show complete coverage, bounded retained evidence and Worker cleanup for
+all three candidates. It does not claim all candidates pass at the default
+budget or on unmeasured reference hardware.
+
+Each benchmark test allows its 120-second execution budget plus 15 seconds for
+fixture/setup/cleanup. The dedicated three-case command supplies a finite
+465,000-ms global harness deadline: three such allowances plus the existing
+60-second server-start allowance. Run
+`APP_URL=http://127.0.0.1:7094 yarn workspace @asyra/asyra-sim test:e2e src/analysis/methods/__tests__/representative-resource.browser.spec.ts --global-timeout=465000`.
+These test allowances do not renew or extend the Worker-owned execution budget.
+
 Also include small analytical, near-threshold, and over-budget scenes. Record
 hardware, OS, browser, engine version, shape count, pair count, time range,
 segment count, numerical settings, wall time, measurable memory, cancellation
