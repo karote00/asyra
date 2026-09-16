@@ -145,6 +145,13 @@ two seconds apart), verifies its source SHA, and only then runs stable-domain
 smoke. Unchanged routing times out; missing, redirected, cross-project or
 non-ready routing fails closed. No baseline is rewritten to match a candidate.
 
+A READY staged deployment can have `aliasAssigned: true` and generated team or
+branch aliases while the stable host still serves the previous deployment.
+That flag does not prove production traffic moved. Readiness checks the exact
+source SHA, production target and deployment URL; the pre-promotion stable-host
+lookup separately rejects routing drift. Do not remove generated aliases or
+change credentials to make that flag false.
+
 For reconciliation, inspect the deployment serving the stable production host,
 its source SHA and smoke results. An owner may then create a corrected GitHub
 Deployment record with that actual SHA, deployment ID, a success status and a

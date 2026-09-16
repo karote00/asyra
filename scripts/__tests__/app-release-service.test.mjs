@@ -156,7 +156,7 @@ test('baseline ignores incomplete releases and reads legacy successes during boo
   }, 'owner/project')
   assert.equal(result['asyra-sim'].sha, sha)
 })
-test('a ready deployment must contain the exact source SHA and stay unaliased', async () => {
+test('a ready deployment validates its source and environment, not automatic alias assignment', async () => {
   const ready = {
     readyState: 'READY',
     meta: { githubCommitSha: sha },
@@ -168,12 +168,15 @@ test('a ready deployment must contain the exact source SHA and stay unaliased', 
     (await waitForDeployment(async () => ready, 'new', sha)).url,
     ready.url
   )
-  await assert.rejects(
-    waitForDeployment(
-      async () => ({ ...ready, aliasAssigned: true }),
-      'new',
-      sha
+  for (const aliasAssigned of [true, false, undefined]) {
+    const candidate = { ...ready, aliasAssigned }
+    assert.equal(
+      await waitForDeployment(async () => candidate, 'new', sha),
+      candidate
     )
+  }
+  await assert.rejects(
+    waitForDeployment(async () => ({ ...ready, target: 'preview' }), 'new', sha)
   )
   await assert.rejects(
     waitForDeployment(async () => ({ ...ready, meta: {} }), 'new', sha)
@@ -556,3 +559,183 @@ test('promotion polling is bounded when the stable alias never moves', async (co
   )
   assert.equal(mutations.at(-1).body.state, 'failure')
 })
+
+// Provider shape observed in run 35137695813: READY + aliasAssigned=true,
+// generated team/branch aliases, while the configured production host stayed old.
+for (const targets of [RELEASE_APPS, ...RELEASE_APPS.map((entry) => [entry])]) {
+  test(`generated aliases allow complete publication for ${targets.map((entry) => entry.id).join(', ')}`, async () => {
+    const events = []
+    const promoted = new Set()
+    const baselines = Object.fromEntries(
+      targets.map((entry) => [
+        entry.id,
+        { ...app.baseline, deploymentId: `old-${entry.id}` }
+      ])
+    )
+    const plan = createReleasePlan({
+      sha,
+      targetApp: targets.length === 1 ? targets[0].id : '',
+      baselines,
+      snapshot: () =>
+        RELEASE_APPS.map((entry) => ({ name: entry.id, root: entry.root })),
+      diff: () => ['yarn.lock'],
+      ancestor: () => ''
+    })
+    // Use the real wait and smoke functions, unlike isolated orchestration tests.
+    await publishPlan({
+      plan,
+      repository: 'owner/project',
+      runUrl: 'https://github.com/karote00/asyra/actions/runs/1',
+      usage: async () => ({ total: 0, managed: 0 }),
+      vercel: async (url, method = 'GET', body) => {
+        if (method === 'POST' && url === '/v13/deployments') {
+          assert.equal(body.gitSource.sha, sha)
+          events.push(`create:${body.project}`)
+          return { id: `new-${body.project}` }
+        }
+        for (const entry of targets) {
+          if (url === `/v9/projects/${entry.id}`)
+            return {
+              ...project,
+              id: entry.id,
+              name: entry.id,
+              rootDirectory: entry.root
+            }
+          if (url === `/v4/aliases/${entry.host}`)
+            return {
+              alias: entry.host,
+              projectId: entry.id,
+              deploymentId: `${promoted.has(entry.id) ? 'new' : 'old'}-${entry.id}`
+            }
+          if (url === `/v13/deployments/old-${entry.id}`)
+            return {
+              ...liveDeployment,
+              id: `old-${entry.id}`,
+              projectId: entry.id
+            }
+          if (url === `/v13/deployments/new-${entry.id}`)
+            return {
+              id: `new-${entry.id}`,
+              projectId: entry.id,
+              readyState: 'READY',
+              target: 'production',
+              meta: { githubCommitSha: sha },
+              aliasAssigned: true,
+              alias: [
+                `${entry.id}-team.vercel.app`,
+                `${entry.id}-git-commit-team.vercel.app`
+              ],
+              url: `${entry.id}-candidate.vercel.app`
+            }
+          if (url === `/v10/projects/${entry.id}/promote/new-${entry.id}`) {
+            assert.equal(method, 'POST')
+            assert.ok(
+              events.includes(`smoke:${entry.id}-candidate.vercel.app:/`)
+            )
+            events.push(`promote:${entry.id}`)
+            promoted.add(entry.id)
+            return {}
+          }
+        }
+        assert.fail(`Unexpected provider request: ${method} ${url}`)
+      },
+      smoke: (origin, entry, unused, protection) =>
+        smokeOrigin(
+          origin,
+          entry,
+          async (url) => {
+            if (url.pathname === '/app.js')
+              return new Response('app()', {
+                headers: { 'content-type': 'application/javascript' }
+              })
+            assert.equal(promoted.has(entry.id), url.hostname === entry.host)
+            events.push(`smoke:${url.hostname}:${url.pathname}`)
+            return new Response(
+              '<html><script src="/app.js"></script></html>',
+              { headers: { 'content-type': 'text/html' } }
+            )
+          },
+          protection
+        ),
+      github: async (url, method, body) => {
+        assert.equal(method, 'POST')
+        if (url.endsWith('/deployments')) {
+          assert.equal(
+            body.payload.previousDeploymentId,
+            body.payload.deploymentId.replace('new-', 'old-')
+          )
+          return { id: body.payload.deploymentId }
+        }
+        if (body.state === 'success') {
+          assert.ok(
+            events.some(
+              (event) =>
+                event === `smoke:${new URL(body.environment_url).hostname}:/`
+            )
+          )
+          events.push(`success:${body.environment_url}`)
+        }
+        return {}
+      }
+    })
+    assert.equal(
+      events.filter((event) => event.startsWith('create:')).length,
+      targets.length
+    )
+    assert.equal(
+      events.filter((event) => event.startsWith('promote:')).length,
+      targets.length
+    )
+    assert.equal(
+      events.filter((event) => event.startsWith('success:')).length,
+      targets.length
+    )
+    for (const entry of targets) {
+      for (const path of entry.id === 'asyra-framework'
+        ? ['/', '/docs', '/atlas']
+        : ['/']) {
+        assert.ok(
+          events.includes(`smoke:${entry.id}-candidate.vercel.app:${path}`)
+        )
+        assert.ok(events.includes(`smoke:${entry.host}:${path}`))
+      }
+    }
+  })
+}
+
+for (const aliasAssigned of [true, false]) {
+  test(`premature production routing is rejected even when aliasAssigned is ${aliasAssigned}`, async () => {
+    const { options, mutations } = harness()
+    const original = options.vercel
+    let built = false
+    options.wait = waitForDeployment
+    options.vercel = async (url, method = 'GET', body) => {
+      if (url === '/v13/deployments/new') {
+        built = true
+        return {
+          ...liveDeployment,
+          id: 'new',
+          meta: { githubCommitSha: sha },
+          aliasAssigned,
+          url: 'new.vercel.app'
+        }
+      }
+      if (url === `/v4/aliases/${app.host}` && built)
+        return { ...liveAlias, deploymentId: 'new' }
+      return original(url, method, body)
+    }
+    await assert.rejects(
+      publishPlan(options),
+      /before promotion.*Online SHA changed/
+    )
+    assert.equal(
+      mutations.filter((entry) => entry.url === '/v13/deployments').length,
+      1
+    )
+    assert.equal(
+      mutations.filter((entry) => entry.url.includes('/promote/')).length,
+      0
+    )
+    assert.equal(mutations.at(-1).body.state, 'failure')
+  })
+}
