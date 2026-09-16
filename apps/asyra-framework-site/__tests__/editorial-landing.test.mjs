@@ -54,7 +54,7 @@ test('the landing owns a reproducible and size-bounded product evidence derivati
     readFile(
       path.join(
         siteRoot,
-        '../../docs/public/assets/asyra-design-7076-product-evidence.jpg'
+        '../asyra-design/brand/asyra-design-7076-product-evidence.jpg'
       )
     ),
     readFile(

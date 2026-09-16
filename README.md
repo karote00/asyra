@@ -27,7 +27,7 @@ Features, editable information, the official `2D` Preset, rendering, Undo/Redo,
 persistence, and explicit optional AI and collaboration composition on the
 current browser/Core runtime.
 
-![Asyra Design showing the complete 7,076-element editable cat drawing](docs/public/assets/asyra-design-7076-product-evidence.jpg)
+![Asyra Design showing the complete 7,076-element editable cat drawing](apps/asyra-design/brand/asyra-design-7076-product-evidence.jpg)
 
 _The maintained 7,076-element sample rendered in Asyra Design without any
 subsequent selection or geometry edit: one App-owned
