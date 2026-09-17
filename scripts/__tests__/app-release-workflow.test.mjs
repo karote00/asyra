@@ -18,6 +18,11 @@ test('release controller is manual, upstream-main-only and waits for every verif
   assert.match(workflow, /environment: app-production/)
   assert.match(workflow, /cancel-in-progress: false/)
   assert.doesNotMatch(workflow, /main.yml|e2e.yml/)
+  assert.doesNotMatch(
+    workflow.split('\n  publish:\n')[0],
+    /secrets\.|environment:|secrets:/,
+    'Planning and artifact verification must not consume production secrets'
+  )
   const publish = workflow.split('\n  publish:\n')[1]
   assert.match(
     publish,
@@ -78,6 +83,11 @@ test('manual entries share one pipeline and pin independent App selection', () =
       entry,
       /uses: \.\/\.github\/workflows\/app-release-pipeline.yml/
     )
+    assert.match(
+      entry,
+      /^ {4}uses: \.\/\.github\/workflows\/app-release-pipeline.yml\n {4}secrets: inherit$/m,
+      `${file} must forward secrets into the trusted release pipeline`
+    )
     assert.match(entry, /deployments: write/)
     assert.match(
       entry,
@@ -85,7 +95,7 @@ test('manual entries share one pipeline and pin independent App selection', () =
     )
     assert.doesNotMatch(
       entry,
-      /concurrency:|secrets:|environment:|runs-on:|run:|pull_request:|push:/
+      /concurrency:|environment:|runs-on:|run:|pull_request:|push:/
     )
     if (target) {
       assert.ok(entry.includes(`target_app: '${target}'`))
@@ -122,10 +132,7 @@ test('manual entries share one pipeline and pin independent App selection', () =
     controller,
     /readBaselines\(\s*github,\s*repository,\s*process.env.TARGET_APP\s*\)/
   )
-  assert.match(
-    controller,
-    /assert.deepEqual\([\s\n]*plan,[\s\n]*JSON.parse\(process.env.RELEASE_PLAN\)/
-  )
+  assert.match(controller, /assert.deepEqual\([\s\n]*plan,[\s\n]*admittedPlan/)
 })
 
 // Count calls, not unique filenames: two paths to one reusable workflow run twice.
@@ -196,5 +203,13 @@ test('manual dispatch is the only human approval while environment secrets and m
   assert.doesNotMatch(
     read('scripts/app-release.mjs'),
     /before approving|waiting for approval/
+  )
+})
+
+test('production artifact checkout explicitly freezes the caller commit', () => {
+  const workflow = read('.github/workflows/production-artifacts.yml')
+  assert.match(
+    workflow,
+    /with:\n +ref: \$\{\{ github.sha \}\}\n +persist-credentials: false/
   )
 })

@@ -32,7 +32,7 @@ export function createApi(origin, token, query = {}, fetcher = fetch) {
     // No automatic mutation retries: a timeout may already have created a deployment.
     assert.ok(
       response.ok,
-      `${origin} ${method} failed (${response.status}); inspect the provider before retrying`
+      `${origin} ${method} ${url.pathname} failed (${response.status}); inspect the provider before retrying`
     )
     const text = await response.text()
     return text ? JSON.parse(text) : {}
@@ -81,7 +81,7 @@ export async function readBaselines(github, repository, targetApp = '') {
   return baselines
 }
 
-export function verifyProject(project, app) {
+export async function verifyProject(project, app, vercel) {
   assert.equal(project.name, app.id, 'Unexpected Vercel project')
   assert.equal(project.rootDirectory, app.root, 'Unexpected Vercel root')
   assert.ok(
@@ -93,8 +93,7 @@ export function verifyProject(project, app) {
     false,
     'Disable automatic production domain assignment before release'
   )
-  const current = project.targets?.production
-  assert.ok(current?.id, 'Missing current production deployment')
+  const current = await readProductionDeployment(vercel, project, app)
   assert.equal(
     current.meta?.githubCommitSha ?? current.meta?.releaseSha,
     app.baseline.sha,
@@ -107,6 +106,45 @@ export function verifyProject(project, app) {
       'Online deployment changed after the release plan'
     )
   return current.id
+}
+
+// A project's production target may be canceled or staged. The stable host's
+// alias is the authority for what visitors receive, refreshed at each gate.
+async function readProductionDeployment(vercel, project, app) {
+  assert.ok(project.id, 'Missing Vercel project ID')
+  const alias = await vercel(`/v4/aliases/${encodeURIComponent(app.host)}`)
+  assert.equal(alias.alias, app.host, 'Unexpected production alias')
+  assert.equal(
+    alias.projectId,
+    project.id,
+    'Production alias belongs to another project'
+  )
+  assert.ok(!alias.redirect, 'Production alias must not redirect')
+  assert.ok(alias.deploymentId, 'Missing deployment for production alias')
+  const current = await vercel(
+    `/v13/deployments/${encodeURIComponent(alias.deploymentId)}`
+  )
+  assert.equal(
+    current.id,
+    alias.deploymentId,
+    'Production deployment ID mismatch'
+  )
+  assert.equal(
+    current.projectId,
+    project.id,
+    'Production deployment belongs to another project'
+  )
+  assert.equal(
+    current.readyState,
+    'READY',
+    'Production deployment is not ready'
+  )
+  assert.equal(
+    current.target,
+    'production',
+    'Unexpected deployment environment'
+  )
+  return current
 }
 
 export async function deploymentUsage(vercel, now = Date.now()) {
@@ -133,7 +171,8 @@ export async function waitForDeployment(
   vercel,
   id,
   sha,
-  sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+  sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+  projectId
 ) {
   for (let attempt = 0; attempt < 200; attempt++) {
     const deployment = await vercel(`/v13/deployments/${id}`)
@@ -142,17 +181,21 @@ export async function waitForDeployment(
       `Deployment ${id} ${deployment.readyState}`
     )
     if (deployment.readyState === 'READY') {
+      assert.equal(deployment.id, id, 'Deployment ID mismatch')
+      if (projectId)
+        assert.equal(
+          deployment.projectId,
+          projectId,
+          'Deployment belongs to another project'
+        )
       assert.equal(
         deployment.meta?.githubCommitSha ?? deployment.gitSource?.sha,
         sha,
         'Vercel built a different commit'
       )
       assert.equal(deployment.target, 'production')
-      assert.equal(
-        deployment.aliasAssigned,
-        false,
-        'Deployment unexpectedly received production domains'
-      )
+      // Generated team/branch aliases can exist on staged deployments.
+      // publishPlan checks the stable host's actual routing before promotion.
       assert.match(deployment.url, /^[a-z0-9-]+\.vercel\.app$/)
       return deployment
     }
@@ -226,9 +269,11 @@ export async function publishPlan({
   const selected = plan.apps.filter((app) => app.release)
   // Verify every selected project before consuming any deployment quota.
   const previous = new Map()
+  const projectIds = new Map()
   for (const app of selected) {
     const project = await vercel(`/v9/projects/${app.id}`)
-    previous.set(app.id, verifyProject(project, app))
+    previous.set(app.id, await verifyProject(project, app, vercel))
+    projectIds.set(app.id, project.id)
     assert.ok(
       !project.ssoProtection || bypassSecrets[app.id],
       `${app.id} needs an automation bypass secret before creating a deployment`
@@ -236,47 +281,21 @@ export async function publishPlan({
   }
   assertBudget({ ...(await usage(vercel)), requested: selected.length })
   for (const app of selected) {
+    const project = await vercel(`/v9/projects/${app.id}`)
     assert.equal(
-      verifyProject(await vercel(`/v9/projects/${app.id}`), app),
+      project.id,
+      projectIds.get(app.id),
+      'Project ID changed after admission'
+    )
+    assert.equal(
+      await verifyProject(project, app, vercel),
       previous.get(app.id)
     )
-    const deployment = await vercel(
-      `/v13/deployments${app.forced ? '?forceNew=1' : ''}`,
-      'POST',
-      {
-        name: app.id,
-        project: app.id,
-        target: 'production',
-        gitSource: {
-          type: 'github',
-          org: repository.split('/')[0],
-          repo: repository.split('/')[1],
-          ref: plan.sha,
-          sha: plan.sha
-        },
-        projectSettings: { skipGitConnectDuringLink: true },
-        meta: {
-          releaseOwner: 'manual-app-release',
-          releaseSha: plan.sha,
-          releaseRun: runUrl
-        }
-      }
-    )
-    // Write the deployment ID immediately, before waiting, to make failures reviewable.
-    const record = await github(`/repos/${repository}/deployments`, 'POST', {
-      ref: plan.sha,
-      auto_merge: false,
-      required_contexts: [],
-      environment: `app-production - ${app.id}`,
-      production_environment: true,
-      payload: {
-        schema: 1,
-        deploymentId: deployment.id,
-        previousDeploymentId: previous.get(app.id),
-        runUrl,
-        reason: plan.reason
-      }
-    })
+    let deployment
+    let record
+    let promoted = false
+    let promotionRequested = false
+    let restorationAttempted = false
     const status = (state, environmentUrl) =>
       github(`/repos/${repository}/deployments/${record.id}/statuses`, 'POST', {
         state,
@@ -284,41 +303,147 @@ export async function publishPlan({
         log_url: runUrl,
         ...(environmentUrl ? { environment_url: environmentUrl } : {})
       })
-    await status('in_progress')
-    let promoted = false
+    // Promotion can re-enable automatic domains. Restore the admitted policy,
+    // including after an ambiguous response, without retrying either mutation.
+    const restorePolicy = async () => {
+      restorationAttempted = true
+      const path = `/v9/projects/${encodeURIComponent(project.id)}`
+      const current = await vercel(`/v9/projects/${app.id}`)
+      assert.equal(
+        current.id,
+        project.id,
+        'Project ID changed during promotion'
+      )
+      if (current.autoAssignCustomDomains === true) {
+        await vercel(path, 'PATCH', { autoAssignCustomDomains: false })
+        assert.equal(
+          (await vercel(`/v9/projects/${app.id}`)).autoAssignCustomDomains,
+          false,
+          'Automatic domain assignment was not disabled'
+        )
+      } else {
+        assert.equal(
+          current.autoAssignCustomDomains,
+          false,
+          'Unknown automatic domain policy'
+        )
+      }
+    }
     try {
-      const ready = await wait(vercel, deployment.id, plan.sha)
+      deployment = await vercel(
+        `/v13/deployments${app.forced ? '?forceNew=1' : ''}`,
+        'POST',
+        {
+          name: app.id,
+          project: app.id,
+          target: 'production',
+          gitSource: {
+            type: 'github',
+            org: repository.split('/')[0],
+            repo: repository.split('/')[1],
+            ref: plan.sha,
+            sha: plan.sha
+          },
+          projectSettings: { skipGitConnectDuringLink: true },
+          meta: {
+            releaseOwner: 'manual-app-release',
+            releaseSha: plan.sha,
+            releaseRun: runUrl
+          }
+        }
+      )
+      assert.ok(
+        typeof deployment?.id === 'string' && deployment.id.length > 0,
+        'Missing deployment ID'
+      )
+      // Write the deployment ID immediately, before waiting, to make failures reviewable.
+      record = await github(`/repos/${repository}/deployments`, 'POST', {
+        ref: plan.sha,
+        auto_merge: false,
+        required_contexts: [],
+        environment: `app-production - ${app.id}`,
+        production_environment: true,
+        payload: {
+          schema: 1,
+          deploymentId: deployment.id,
+          previousDeploymentId: previous.get(app.id),
+          runUrl,
+          reason: plan.reason
+        }
+      })
+      assert.ok(record?.id, 'Missing GitHub deployment record ID')
+      await status('in_progress')
+      const ready = await wait(
+        vercel,
+        deployment.id,
+        plan.sha,
+        undefined,
+        project.id
+      )
       await smoke(`https://${ready.url}`, app, undefined, {
         bypassOrigin: `https://${ready.url}`,
         bypassSecret: bypassSecrets[app.id]
       })
+      const currentProject = await vercel(`/v9/projects/${app.id}`)
       assert.equal(
-        verifyProject(await vercel(`/v9/projects/${app.id}`), app),
+        currentProject.id,
+        project.id,
+        'Project ID changed before promotion'
+      )
+      assert.equal(
+        await verifyProject(currentProject, app, vercel),
         previous.get(app.id)
       )
-      await vercel(`/v10/projects/${app.id}/promote/${deployment.id}`, 'POST')
+      promotionRequested = true
+      await vercel(
+        `/v10/projects/${encodeURIComponent(project.id)}/promote/${encodeURIComponent(deployment.id)}`,
+        'POST',
+        {}
+      )
       promoted = true
-      // Promotion is asynchronous. The canonical project target must match before smoke.
+      // Promotion is asynchronous. Wait for the stable host to serve the candidate.
       let current
       for (let attempt = 0; attempt < 30; attempt++) {
-        current = await vercel(`/v9/projects/${app.id}`)
-        if (current.targets?.production?.id === deployment.id) break
+        current = await readProductionDeployment(
+          vercel,
+          await vercel(`/v9/projects/${app.id}`),
+          app
+        )
+        if (current.id === deployment.id) break
         await new Promise((resolve) => setTimeout(resolve, 2000))
       }
       assert.equal(
-        current.targets?.production?.id,
+        current.id,
         deployment.id,
         'Production promotion did not settle'
       )
+      assert.equal(
+        current.meta?.githubCommitSha ?? current.meta?.releaseSha,
+        plan.sha,
+        'Promoted deployment has a different source SHA'
+      )
+      await restorePolicy()
       await smoke(`https://${app.host}`, app)
       await status('success', `https://${app.host}`)
     } catch (error) {
-      await status('failure').catch(() => {
-        // Preserve the original deployment failure if GitHub reporting is unavailable.
-      })
-      // Recovery is deliberately explicit: external data compatibility cannot be inferred.
+      let recovery = ''
+      if (promotionRequested && !restorationAttempted) {
+        try {
+          await restorePolicy()
+        } catch (restoreError) {
+          recovery = ` Policy restoration failed: ${restoreError.message}`
+        }
+      }
+      if (record?.id) {
+        await status('failure').catch(() => {
+          // Preserve the original failure if GitHub reporting is unavailable.
+        })
+      }
+      let phase = 'before promotion'
+      if (promotionRequested) phase = 'with promotion outcome unknown'
+      if (promoted) phase = 'after promotion'
       throw new Error(
-        `${app.id} failed ${promoted ? 'after' : 'before'} promotion. Deployment ${deployment.id}; previous ${previous.get(app.id)}. ${error.message}`
+        `${app.id} failed ${phase}. Deployment ${deployment?.id ?? 'unknown (creation may have completed; inspect provider)'}; previous ${previous.get(app.id)}. ${error.message}${recovery}`
       )
     }
   }

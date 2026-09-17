@@ -22,6 +22,7 @@ jobs:
       contents: read
       deployments: write
     uses: ./.github/workflows/app-release-pipeline.yml
+    secrets: inherit
     with:
       target_app: 'asyra-sim'
       force_app: ${{ inputs.force_rebuild && 'asyra-sim' || '' }}

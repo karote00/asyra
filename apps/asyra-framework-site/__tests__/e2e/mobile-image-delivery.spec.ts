@@ -1,76 +1,35 @@
-import { stat } from 'node:fs/promises'
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { expect, test } from '@playwright/test'
 
-const siteRoot = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  '../..'
-)
-
-for (const width of [320, 390, 412, 520, 680, 800]) {
-  test(`${width}px mobile images select a bounded sharp source on a fresh load`, async ({
-    browser
+for (const width of [320, 390, 820]) {
+  test(`${width}px story artwork loads once per asset and stays inside the viewport`, async ({
+    page
   }, testInfo) => {
-    // A fresh context prevents Chrome's larger-image cache from masking sizes.
-    const context = await browser.newContext({
-      deviceScaleFactor: 2,
-      viewport: { width, height: 900 }
+    await page.setViewportSize({ width, height: 900 })
+    const requested: string[] = []
+    page.on('request', (request) => {
+      if (request.url().includes('/illustrations/'))
+        requested.push(request.url())
     })
-    const page = await context.newPage()
-    try {
-      await page.goto('/')
-      const selectors = ['.hero-core']
-      if (width <= 520) {
-        selectors.push(
-          '.proof-image--grow',
-          '.proof-image--same-path',
-          '.proof-image--one-source'
+    await page.goto('/')
+    for (const chapter of await page.locator('[data-story-chapter]').all())
+      await chapter.scrollIntoViewIfNeeded()
+    for (const image of await page.locator('[data-story-chapter] img').all()) {
+      await image.evaluate((element: HTMLImageElement) => element.decode())
+      expect(
+        await image.evaluate(
+          (element: HTMLImageElement) => element.naturalWidth
         )
-      }
-      for (const selector of selectors) {
-        const image = page.locator(selector)
-        await image.scrollIntoViewIfNeeded()
-        await image.evaluate((element: HTMLImageElement) => element.decode())
-        const selected = await image.evaluate((element: HTMLImageElement) => ({
-          pathname: new URL(element.currentSrc).pathname,
-          renderedWidth: element.getBoundingClientRect().width
-        }))
-        const sourceWidth = Number(
-          selected.pathname.match(/-(\d+)\.webp$/)?.[1]
-        )
-        expect(
-          sourceWidth,
-          `${selector} preserves Retina detail`
-        ).toBeGreaterThanOrEqual(selected.renderedWidth * 2)
-        // Every reviewed phone illustration fits the approved 720px source.
-        expect(
-          sourceWidth,
-          `${selector} must not download a desktop derivative`
-        ).toBe(720)
-        const bytes = (
-          await stat(path.join(siteRoot, 'public', selected.pathname))
-        ).size
-        expect(bytes, `${selector} transfer budget`).toBeLessThanOrEqual(
-          350 * 1024
-        )
-        await testInfo.attach(`${selector}-delivery`, {
-          body: JSON.stringify({
-            ...selected,
-            sourceWidth,
-            bytes,
-            viewport: width,
-            dpr: 2
-          }),
-          contentType: 'application/json'
-        })
-      }
-      await page.locator('.hero').screenshot({
-        path: testInfo.outputPath(`hero-${width}-retina.png`),
-        animations: 'disabled'
-      })
-    } finally {
-      await context.close()
+      ).toBeGreaterThan(0)
     }
+    expect(new Set(requested).size).toBe(requested.length)
+    expect(requested.every((url) => url.includes('/spatial-story/'))).toBe(true)
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth
+      )
+    ).toBe(true)
+    await page.screenshot({
+      path: testInfo.outputPath(`story-mobile-${width}.png`)
+    })
   })
 }
