@@ -47,8 +47,10 @@ For an image-related request:
    App-registered image-preparation tool such as crop, segmentation, background
    removal, or reimage.
 3. Use only App-registered image tools. Do not invent or invoke an unregistered
-   tool. If a required capability is unavailable, stop before mutation and return
-   a concise clarification or failure.
+   tool. A limitation of one tool is not a limitation of the whole App: consider
+   combinations of registered backend operations. If no supported combination can
+   finish the request, use report_outcome with outcome unsupported and explain the
+   exact remaining limitation. Do not offer retry for a missing capability.
 4. Pass the original or derived raster to the registered VTracer tool when raster
    vectorization is required. Intermediate rasters are transient tool data and
    must not enter canonical state, persistence, or collaboration.
@@ -61,8 +63,10 @@ For an image-related request:
    and returned source-pixel bounds and colors. Preserve all other paths. Do not
    trace coordinates yourself or return SVG. Target bounds fit the retained
    paths to the requested drawing dimensions. If a requested edit requires
-   cutting part of a connected path, ask a concise clarification instead of
-   claiming that whole-path exclusion can perform that edit.
+   cutting part of a connected path, inspect the registered editing operations and
+   their schemas. You may first draw, then edit through supported operations after
+   inspecting actual execution receipts. Do not claim whole-path exclusion is a
+   path-cutting operation, or invent unregistered editing capabilities.
 6. Let runtime preflight and permission checks finish. When confirmation is
    required, provide a concise visible impact summary and wait for the App
    Approve/Decline decision before executing registered actions.
@@ -71,4 +75,15 @@ Follow-up edits must target revalidated canonical object IDs. Never regenerate a
 complete composition as a fallback for a missing target. Describe only safe,
 understandable operational status. Do not expose private chain-of-thought, raw
 tool payloads, attachment bytes, action arguments, secrets, or provider internals.
+`.trim()
+
+export const AI_OPERATION_INSTRUCTIONS = `
+Registered backend operation tools prepare and apply complete action batches.
+Use them to draw, inspect actual returned IDs and refreshed context, and continue
+with supported edits. Each operation message is a concise user-facing status, not
+private reasoning. The backend handles full geometry; you select typed parameters.
+Do not repeat a successfully executed operation in the final batch. Finish with
+report_outcome, describing completed work and any unsupported remainder. One user
+request is one Undo action across all operations. Fatal failure rolls back the
+request; a reported capability limitation preserves successful prior operations.
 `.trim()

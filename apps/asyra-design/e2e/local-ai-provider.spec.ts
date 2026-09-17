@@ -219,3 +219,92 @@ test('local subscription traces the reference logo at 240px without its separate
     clip: { x: 240, y: 40, width: 400, height: 360 }
   })
 })
+
+test('local subscription uses acknowledged drawing IDs for a dependent edit in one undo', async ({
+  page
+}, testInfo) => {
+  test.skip(
+    process.env.E2E_LOCAL_AI !== 'true',
+    'Requires a local subscription'
+  )
+  test.setTimeout(330_000)
+  const { getUndoHistoryDepth, undo, redo, getCoreDocumentDigest } =
+    await import('./test-utils')
+  const receipts: Promise<string>[] = []
+  page.on('response', (response) => {
+    if (
+      response.url().endsWith('/api/ai/action-batch') &&
+      response.headers()['content-type']?.includes('application/x-ndjson')
+    )
+      receipts.push(response.text())
+  })
+  await page.goto(createTestDocumentIdentity().url)
+  await waitForAppReady(page)
+  const before = await getCoreDocumentDigest(page)
+  const depth = await getUndoHistoryDepth(page)
+  await page.getByRole('button', { name: 'Open Agent' }).click()
+  await expect(page.getByText('Local AI connected')).toBeVisible({
+    timeout: 15_000
+  })
+  await page
+    .getByLabel('Choose images')
+    .setInputFiles('e2e/fixtures/reference-logo.png')
+  await page
+    .getByLabel('Message Agent')
+    .fill(
+      'Trace this image at 240 by 240 pixels with VTracer. First insert all paths, including TM, using the backend operation. After the app reports the actual created element IDs, use the registered visibility operation to hide only the separate TM mark at the lower right. Do not exclude the mark before insertion. Finish by explaining the result.'
+    )
+  const started = Date.now()
+  await page.getByRole('button', { name: 'Send', exact: true }).click()
+  await expect(page.getByTestId('ai-agent-message').last()).toHaveAttribute(
+    'data-outcome',
+    'success',
+    { timeout: 305_000 }
+  )
+  const frames = (await Promise.all(receipts)).flatMap((body) =>
+    body
+      .trim()
+      .split('\n')
+      .map((line) => JSON.parse(line))
+  )
+  const batches = frames.filter((frame) => frame.type === 'batch')
+  expect(batches.length).toBeGreaterThanOrEqual(2)
+  expect(
+    batches.flatMap((frame) =>
+      frame.batch.actions.map((action: { name: string }) => action.name)
+    )
+  ).toContain('set_element_visibility')
+  const visibility = await page.evaluate(async () => {
+    const core = (await import('../src/testing/runtime-access')).core
+    return [...core.deps.sceneTree.getAllElements().values()]
+      .filter((element) => element.get('type') === 'vector')
+      .map((element) => ({
+        name: element.get('name'),
+        visible: element.get('visible')
+      }))
+  })
+  expect(visibility).toHaveLength(38)
+  expect(visibility.filter((element) => element.visible === false)).toEqual([
+    { name: 'path-22', visible: false }
+  ])
+  expect(await getUndoHistoryDepth(page)).toBe(depth + 1)
+  const after = await getCoreDocumentDigest(page)
+  const elapsedMs = Date.now() - started
+  await writeFile(
+    testInfo.outputPath('operation-evidence.json'),
+    JSON.stringify({
+      elapsedMs,
+      batchCount: batches.length,
+      actionNames: batches.flatMap((frame) =>
+        frame.batch.actions.map((action: { name: string }) => action.name)
+      ),
+      undoEntries: 1
+    })
+  )
+  await page.screenshot({ path: testInfo.outputPath('dependent-edit.png') })
+  await page.getByRole('button', { name: 'Close Agent panel' }).click()
+  await undo(page)
+  expect(await getCoreDocumentDigest(page)).toEqual(before)
+  await redo(page)
+  expect(await getCoreDocumentDigest(page)).toEqual(after)
+})

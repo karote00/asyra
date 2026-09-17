@@ -165,6 +165,61 @@ export const summarizeAiTurn = (turn: AiSettledTurn): AiTurnSummary => {
       message =
         'The AI returned an invalid drawing response. Your drawing is unchanged.'
   }
+  if (
+    isPlainObject(turn.result) &&
+    isPlainObject(turn.result.transaction) &&
+    turn.result.transaction.status === 'unknown'
+  ) {
+    return Object.freeze({
+      durationLabel: formatElapsedTime(turn.durationMs),
+      message:
+        'The request stopped, but its changes could not be fully rolled back. Review the canvas before continuing.',
+      outcome: turn.outcome
+    })
+  }
+  if (
+    isPlainObject(turn.result) &&
+    isPlainObject(turn.result.transaction) &&
+    turn.result.transaction.status === 'rolled-back'
+  ) {
+    return Object.freeze({
+      durationLabel: formatElapsedTime(turn.durationMs),
+      message:
+        turn.outcome === 'cancelled'
+          ? 'The request was stopped. All changes from this request were rolled back.'
+          : 'The request could not be completed. All changes from this request were rolled back.',
+      outcome: turn.outcome
+    })
+  }
+  const reported =
+    isPlainObject(turn.result) &&
+    turn.result.status === 'executed' &&
+    Array.isArray(turn.result.actionResults)
+      ? turn.result.actionResults.findLast(
+          (entry: unknown) =>
+            isPlainObject(entry) &&
+            entry.actionName === AiActionNames.REPORT_OUTCOME
+        )
+      : undefined
+  if (
+    isPlainObject(reported) &&
+    isPlainObject(reported.result) &&
+    typeof reported.result.message === 'string' &&
+    reported.result.message.length <= 1000
+  ) {
+    let disposition = ''
+    if (reported.result.outcome === 'unsupported') {
+      disposition =
+        turn.outcome === 'partial'
+          ? '\n\nEarlier changes are kept. You can undo this request.'
+          : '\n\nNo canvas changes were made.'
+    }
+    return Object.freeze({
+      durationLabel: formatElapsedTime(turn.durationMs),
+      message: reported.result.message + disposition,
+      outcome: turn.outcome
+    })
+  }
   const question = projectAiQuestion(turn)
   if (question) {
     message = question.message
@@ -201,6 +256,11 @@ export const summarizeAiTurn = (turn: AiSettledTurn): AiTurnSummary => {
 export const canRetryAiTurn = (turn: AiSettledTurn): boolean => {
   if (turn.outcome !== 'failed' && turn.outcome !== 'cancelled') return false
   if (!isPlainObject(turn.result)) return false
+  if (
+    isPlainObject(turn.result.transaction) &&
+    turn.result.transaction.status === 'unknown'
+  )
+    return false
   return [
     'context',
     'provider',

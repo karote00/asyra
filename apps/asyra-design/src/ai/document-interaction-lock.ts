@@ -118,9 +118,11 @@ const isViewportZoomModifierChange = (event: Event): boolean => {
 const isAllowedInteraction = (event: Event): boolean => {
   const interactionTarget = getInteractionTarget(event)
   return (
+    interactionTarget === AiDocumentInteractionTargets.AGENT_INTERFACE ||
     isViewportZoomModifierChange(event) ||
     (isAgentCancelActivation(event) &&
-      interactionTarget === AiDocumentInteractionTargets.AGENT_CANCEL) ||
+      (interactionTarget === AiDocumentInteractionTargets.AGENT_CANCEL ||
+        interactionTarget === AiDocumentInteractionTargets.AGENT_CONTROL)) ||
     (event.type === 'wheel' &&
       interactionTarget === AiDocumentInteractionTargets.VIEWPORT_NAVIGATION)
   )

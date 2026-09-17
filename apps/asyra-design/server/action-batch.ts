@@ -1,11 +1,19 @@
-import type { AiToolProgress } from '../src/ai/action-batch-protocol'
+import type {
+  AiToolProgress,
+  ExecuteAiBatch
+} from '../src/ai/action-batch-protocol'
 import { admitsLocalProviderRequest } from './local-request-admission'
 import { createHash, randomUUID } from 'node:crypto'
 import { Buffer } from 'node:buffer'
 import { existsSync, readFileSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import { ACTION_BATCH_ENDPOINT } from '../src/ai/action-batch-endpoint'
+import { createBatchExchange } from './batch-exchange'
+import {
+  ACTION_BATCH_ENDPOINT,
+  AI_BATCH_RECEIPT_HEADER,
+  AI_BATCH_EXECUTION_HEADER
+} from '../src/ai/action-batch-endpoint'
 import type {
   AiActionBatch,
   AiJsonValue,
@@ -119,6 +127,7 @@ export type RequestModelActionBatch = (
   options: {
     readonly signal?: AbortSignal
     readonly onProgress?: (event: AiToolProgress) => void
+    readonly executeBatch?: ExecuteAiBatch
   }
 ) => Promise<AiActionBatch>
 
@@ -138,6 +147,7 @@ export const resolveActionBatchRequest = async (
   options: {
     readonly requestModelActionBatch?: RequestModelActionBatch
     readonly onProgress?: (event: AiToolProgress) => void
+    readonly executeBatch?: ExecuteAiBatch
     readonly requestId?: string
     readonly signal?: AbortSignal
   } = {}
@@ -179,7 +189,8 @@ export const resolveActionBatchRequest = async (
   try {
     batch = await requestModelActionBatch(input, {
       signal: options.signal,
-      onProgress: options.onProgress
+      onProgress: options.onProgress,
+      executeBatch: options.executeBatch
     })
   } catch (error) {
     const code = readErrorCode(error)
@@ -290,13 +301,13 @@ const readJsonBody = async (
   }
 }
 
-export const createActionBatchMiddleware =
-  (
-    options: {
-      readonly requestModelActionBatch?: RequestModelActionBatch
-    } = {}
-  ) =>
-  async (
+export const createActionBatchMiddleware = (
+  options: {
+    readonly requestModelActionBatch?: RequestModelActionBatch
+  } = {}
+) => {
+  const exchange = createBatchExchange()
+  return async (
     request: IncomingMessage,
     response: ServerResponse,
     next: MiddlewareNext
@@ -333,9 +344,38 @@ export const createActionBatchMiddleware =
           'The action-batch request body is invalid.'
         )
       }
+      const receiptToken = request.headers[AI_BATCH_RECEIPT_HEADER]
+      if (receiptToken !== undefined) {
+        if (
+          !admitsLocalProviderRequest(request) ||
+          typeof receiptToken !== 'string'
+        ) {
+          sendJson(response, 403, { code: 'ACTION_BATCH_RECEIPT_FORBIDDEN' })
+          return
+        }
+        const accepted = exchange.accept(receiptToken, input)
+        sendJson(response, accepted ? 200 : 409, { accepted })
+        return
+      }
+      const canExecute =
+        request.headers[AI_BATCH_EXECUTION_HEADER] === '1' &&
+        request.headers.accept?.includes('application/x-ndjson') &&
+        admitsLocalProviderRequest(request)
       const batch = await resolveActionBatchRequest(
         input as unknown as AiProviderInput,
         {
+          ...(canExecute
+            ? {
+                executeBatch: (prepared) =>
+                  exchange.execute(prepared, controller.signal, (frame) => {
+                    if (response.destroyed || response.writableEnded)
+                      throw new Error('Request closed')
+                    if (!response.headersSent)
+                      response.setHeader('content-type', 'application/x-ndjson')
+                    response.write(JSON.stringify(frame) + '\n')
+                  })
+              }
+            : {}),
           onProgress: (event) => {
             if (
               !request.headers.accept?.includes('application/x-ndjson') ||
@@ -350,7 +390,8 @@ export const createActionBatchMiddleware =
               JSON.stringify({
                 type: 'activity',
                 tool: event.tool,
-                status: event.status
+                status: event.status,
+                ...(event.message ? { message: event.message } : {})
               }) + '\n'
             )
           },
@@ -395,6 +436,8 @@ export const createActionBatchMiddleware =
         sendJson(response, 500, { code: 'ACTION_BATCH_INTERNAL_ERROR' })
       }
     } finally {
+      controller.abort('request settled')
       request.removeListener('aborted', abort)
     }
   }
+}

@@ -1,4 +1,7 @@
-import type { AiToolProgress } from '../src/ai/action-batch-protocol'
+import type {
+  AiToolProgress,
+  ExecuteAiBatch
+} from '../src/ai/action-batch-protocol'
 import type {
   AiActionBatch,
   AiProviderInput
@@ -40,6 +43,7 @@ interface AiModelBackendOptions {
   readonly environment?: Readonly<Record<string, string | undefined>>
   readonly fetch?: typeof fetch
   readonly onProgress?: (event: AiToolProgress) => void
+  readonly executeBatch?: ExecuteAiBatch
   readonly signal?: AbortSignal
 }
 
@@ -140,7 +144,8 @@ export const requestConfiguredAiActionBatch = async (
       model,
       executable,
       signal: options.signal,
-      onProgress: options.onProgress
+      onProgress: options.onProgress,
+      executeBatch: options.executeBatch
     })
     if (options.signal?.aborted) {
       throw new AiModelBackendError(

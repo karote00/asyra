@@ -21,7 +21,7 @@ existing runtime policy, with a concrete change summary and an explicit decision
 
 Current activity is derived from real execution phases, with one concise visible
 status and collapsed details. No synthetic reasoning or timed percentage is allowed.
-Model reasoning/commentary streaming remains outside this version. App-owned text
+Private model reasoning is never displayed. Explicit operational messages from registered backend operations may be displayed. App-owned text
 is English; user text and model-authored content retain their language.
 
 Completion describes actual results and does not certify visual fidelity. Failure
@@ -42,8 +42,7 @@ success toast cannot imply that a later failed revision succeeded.
 
 Submission and continuation enter the existing App feature and same-origin
 requestActionBatch route. The App server owns prompt, provider, registered image
-tools and sanitized errors. Only a completed prepared AiActionBatch reaches runtime
-resolution, permission, registered actions and the canonical transaction. Conversation
+tools and sanitized errors. Each completed prepared AiActionBatch reaches runtime resolution, permission and registered actions inside one invocation transaction. The server waits for execution receipts before continuing AI work. Conversation
 state, status and UI never become canonical or shared document state. UI may not
 prepare geometry, bypass permission, or infer rollback. No credential or raw provider
 log may reach UI, templates or reports.
@@ -75,8 +74,30 @@ PR head must pass; automated assertions alone do not close visual acceptance.
 
 The same action-batch POST may negotiate newline-delimited response framing with
 Accept: application/x-ndjson, application/json. The server emits only registered
-tool name/status activity, then exactly one final batch or sanitized error. JSON
+tool name/status activity, sequential prepared batches with correlated acknowledgements, then one final batch or sanitized error. JSON
 responses remain accepted. This is framing of the same prepared batch, not another
-provider route or action format. Partial result data never enters runtime execution.
+provider route or action format. Only complete prepared batches enter execution; incomplete model output never does.
 The optional provider progress callback is observational, bounded and retired when
 the request settles or aborts. It contains no model thoughts or tool payloads.
+
+## Multi-step execution and capability limits
+
+AI may analyze tool summaries, choose a registered backend operation, observe its
+actual canonical execution result, and continue within the same request. The
+backend prepares all action arguments; the AI never reconstructs bulk geometry.
+Each batch retains ordinary resolution and permission checks. Tool artifacts are
+request-owned and cannot be used by another request. Execution receipts contain
+bounded results and refreshed App context, never complete document geometry.
+
+One invocation owns one transaction and the existing document interaction lock.
+The lock blocks document edits while allowing Agent panel open/close, approval,
+Stop, scrolling and draft typing. Agent DOM events remain isolated from canvas
+shortcuts and mutation controls.
+Normal settlement commits all completed batches into one Undo entry. Capability
+limits are normal settlement: explain the unsupported remainder and whether any
+changes were made, with no Try again. A limitation of one tool requires checking
+other registered operations before declaring App capability unavailable. Never
+invent a tool or silently claim an incomplete request is complete. Fatal errors,
+cancellation and transport loss roll back the invocation and release its lock.
+Questions before drawing remain non-mutating clarification; a new user request
+never silently joins an already settled transaction.

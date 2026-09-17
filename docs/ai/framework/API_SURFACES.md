@@ -986,3 +986,14 @@ Only a fresh Core may reapply after complete reset.
   use render/engine abstractions.
 - Model mutation requests should be transaction-bounded by caller-side API boundaries.
 - Transaction mutations are local by default; shared YJS append only happens when `options.shared` matches a registered data channel.
+
+### AI invocation execution receipts
+
+`AiProvider.requestActionBatch` receives an optional runtime-owned
+`executeBatch(AiActionBatch): Promise<AiBatchReceipt>` callback. It executes each
+complete batch through ordinary resolution, permission and confirmation, returning
+redacted action results and refreshed context. Calls are sequential and valid only
+while the owning provider invocation remains pending. All batches and the final
+returned batch share one transaction; fatal failure or cancellation rolls back.
+Provider retry is forbidden once a batch is admitted. App-specific tool catalogs
+and geometry preparation remain backend-owned.

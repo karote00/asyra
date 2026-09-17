@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { projectAiDrawingDetailChoice, summarizeAiTurn } from '../presentation'
+import {
+  canRetryAiTurn,
+  projectAiDrawingDetailChoice,
+  summarizeAiTurn
+} from '../presentation'
 import { AiActionNames, AiDrawingDetailOptionIds } from '../../constants'
 
 const turn = (
@@ -30,6 +34,21 @@ const turn = (
 })
 
 describe('Asyra Design AI presentation summaries', () => {
+  it('never claims an unknown rollback left the canvas unchanged or permits replay', () => {
+    const failed = {
+      ...turn('failed'),
+      result: {
+        status: 'failed',
+        stage: 'provider',
+        transaction: { status: 'unknown' }
+      }
+    }
+    expect(summarizeAiTurn(failed).message).toBe(
+      'The request stopped, but its changes could not be fully rolled back. Review the canvas before continuing.'
+    )
+    expect(canRetryAiTurn(failed)).toBe(false)
+  })
+
   it('uses distinct safe summaries for every terminal outcome', () => {
     const summaries = [
       'success',
@@ -139,5 +158,36 @@ describe('Asyra Design AI presentation summaries', () => {
         }
       })
     ).toBeNull()
+  })
+})
+
+describe('capability outcomes', () => {
+  it('explains an unsupported remainder after earlier changes without replacing it with success', () => {
+    const original = turn('partial')
+    const result = {
+      ...original,
+      result: {
+        ...original.result,
+        actionResults: [
+          ...original.result.actionResults,
+          {
+            actionId: 'outcome',
+            actionName: 'report_outcome',
+            result: {
+              status: 'no-change',
+              outcome: 'unsupported',
+              message:
+                'I traced the image, but this app cannot cut the connected mark.'
+            }
+          }
+        ]
+      }
+    }
+    expect(summarizeAiTurn(result).message).toContain(
+      'cannot cut the connected mark'
+    )
+    expect(summarizeAiTurn(result).message).toContain(
+      'Earlier changes are kept'
+    )
   })
 })

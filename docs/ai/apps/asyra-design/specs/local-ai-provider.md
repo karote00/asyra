@@ -10,7 +10,7 @@ Local Codex requires an installed compatible Codex app-server, a configured
 No dependency installation, login, account switching, or API fallback occurs.
 
 The existing same-origin action-batch endpoint remains the execution route. It may
-stream registered VTracer activity followed by one final batch or sanitized error;
+stream registered tool activity and sequential complete prepared batches, then a final batch or sanitized error;
 JSON responses remain supported. Model commentary and reasoning are not streamed.
 The panel uses a separate `/api/ai/status` POST for connection readiness.
 For local Codex it admits only loopback peers, loopback Host, JSON requests, and
@@ -23,7 +23,7 @@ The exact registered sample keeps its existing provider-free behavior.
 Each accepted ordinary request owns one ephemeral app-server thread and one
 child process. No process or model work starts on App startup. The process is
 closed before success or failure settles. Cancellation, a five-minute deadline,
-protocol errors, unavailable login, and malformed output cannot publish a batch.
+protocol errors, unavailable login, and malformed output cannot commit an invocation. Failed or cancelled requests roll back intermediate writes.
 Parallel turns have independent process, output, cancellation, and configuration.
 No retained cache or cross-turn conversation is introduced.
 
@@ -35,7 +35,7 @@ Submitted intent, bounded context, registered action descriptions, accepted
 images, and the backend domain prompt enter the model request alongside that personal guidance. Native image
 inputs carry image bytes once; prompt metadata omits those bytes. Local Codex
 has no filesystem, shell, web, plugin, MCP, or image-generation tools. The backend
-exposes only its registered VTracer tool for submitted PNG/JPEG attachments; tool
+exposes its registered VTracer tool for submitted PNG/JPEG attachments and registered backend operation tools; image tool
 arguments select an attachment index, never a path or URL. Conversion uses the
 existing App worker and the owning request cancellation, with at most four calls.
 The request-owned image tool retains the parsed vector paths and returns only
@@ -46,7 +46,7 @@ Insert and replacement model-facing schemas accept these references only for
 compatible image requests. References cannot cross requests. The final browser
 batch still contains complete descriptors, never unresolved image references.
 Whole-path exclusion supports removing separate marks; it does not claim raster
-inpainting or cutting a region out of a connected path. Unknown references,
+inpainting or cutting a region out of a connected path. AI may combine other registered editing operations before reporting an unsupported remainder. Unknown references,
 unknown excluded paths, empty results and invalid bounds fail before mutation.
 Repeated conversion of the same attachment in one request reuses its completed
 conversion; no image, SVG or artifact is retained across requests.
@@ -62,11 +62,8 @@ protocol errors. Only the account type is checked in memory. Configuration and
 credentials are excluded from templates. Authentication and rate limits remain
 with the user's subscription; inference still runs remotely.
 
-Only a completed final JSON `AiActionBatch` envelope reaches the existing
-runtime. Commentary, reasoning, unregistered tool events, failed/interrupted turns, malformed
-JSON, and unknown backend selection cannot become product output. Existing
-permission, transaction, canonical mutation, rendering, and collaboration owners
-remain unchanged. There is no provider retry or fallback in this adapter.
+Only complete backend-prepared `AiActionBatch` envelopes reach the runtime. Intermediate operations await an execution receipt before AI continuation. Commentary, reasoning, unregistered tool events, failed/interrupted turns, malformed
+JSON, and unknown backend selection cannot become product output. Existing permission, canonical mutation, rendering and collaboration owners remain unchanged. One invocation transaction encloses all batches; each batch repeats permission and confirmation against the latest bounded context. There is no provider retry or fallback in this adapter.
 
 ## Product cases and completion gates
 
@@ -87,3 +84,21 @@ than claiming a live inference check. Probes return only sanitized status.
 A mocked protocol test does not claim live
 subscription execution; report separately whether a compatible local CLI was
 available for a live check.
+
+## Backend operation execution
+
+The request-owned tool catalog combines image analysis/conversion tools and typed
+backend operation APIs derived from the registered App action catalog. Complete
+artifacts remain on the backend. Operation parameters select references and edits;
+the backend prepares action arguments and streams a complete batch to the App.
+The runtime resolves, authorizes and executes it before returning redacted action
+results and refreshed context. The model may continue with another operation.
+At most 32 tool calls (including at most four VTracer calls) and the existing
+five-minute request deadline bound execution. No retries occur after a batch starts.
+
+The same-origin action-batch route accepts one-use receipt tokens only from the
+owning stream and retires them on acknowledgement, disconnect or settlement.
+A receipt acknowledges provisional execution within the open transaction, not a
+committed or durable document. Final report_outcome is non-mutating and explains
+completion or a capability limit; unsupported work is not a retryable error.
+HTTP and exact-sample single-batch providers retain the same ordinary runtime path.

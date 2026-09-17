@@ -183,3 +183,41 @@ it.each([
     provider.dispose()
   }
 )
+
+describe('sequential server prepared batch transport', () => {
+  it('acknowledges only after the runtime executor returns its actual result', async () => {
+    const receiptToken = '12345678-1234-1234-1234-123456789abc'
+    const receipt = { actionResults: [], context: { actual: true } }
+    const calls: string[] = []
+    const provider = createServerActionBatchProvider({
+      fetch: (async (_url, init) => {
+        if ((init?.headers as Record<string, string>)?.['x-ai-batch-receipt']) {
+          calls.push('receipt')
+          expect(JSON.parse(String(init?.body))).toEqual(receipt)
+          return new Response('{}', { status: 200 })
+        }
+        return new Response(
+          [
+            JSON.stringify({ type: 'batch', receiptToken, batch }),
+            JSON.stringify({
+              type: 'result',
+              batch: { ...batch, batchId: 'final' }
+            })
+          ].join('\n'),
+          { headers: { 'content-type': 'application/x-ndjson' } }
+        )
+      }) as never
+    })
+    const result = await provider.requestActionBatch(input, {
+      signal: new AbortController().signal,
+      executeBatch: async (prepared) => {
+        calls.push('execute')
+        expect(prepared).toEqual(batch)
+        return receipt
+      }
+    })
+    expect(result.batchId).toBe('final')
+    expect(calls).toEqual(['execute', 'receipt'])
+    provider.dispose()
+  })
+})

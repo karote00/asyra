@@ -308,3 +308,87 @@ describe('crdt-7076 action-batch backend sample', () => {
     expect(documentElementIds).toHaveLength(7_076)
   })
 })
+
+it('streams a prepared operation and resumes only after its one-use same-origin receipt', async () => {
+  const { AI_BATCH_EXECUTION_HEADER, AI_BATCH_RECEIPT_HEADER } =
+    await import('../../src/ai/action-batch-endpoint')
+  let acknowledged = false
+  const prepared = {
+    batchId: 'intermediate',
+    actions: [
+      {
+        id: 'a',
+        name: 'select_elements',
+        arguments: { elementIds: ['actual'] },
+        summary: 'Select'
+      }
+    ]
+  }
+  const middleware = createActionBatchMiddleware({
+    requestModelActionBatch: async (_input, options) => {
+      if (!options.executeBatch)
+        throw new Error('Missing batch execution transport')
+      const receipt = await options.executeBatch(prepared)
+      expect(receipt.context).toEqual({ actual: true })
+      acknowledged = true
+      return { ...prepared, batchId: 'final' }
+    }
+  })
+  const server = createServer((request, response) => {
+    void middleware(request, response, () => response.end())
+  })
+  try {
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
+    const origin = `http://127.0.0.1:${(server.address() as AddressInfo).port}`
+    const endpoint = origin + ACTION_BATCH_ENDPOINT
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        origin,
+        'content-type': 'application/json',
+        accept: 'application/x-ndjson',
+        [AI_BATCH_EXECUTION_HEADER]: '1'
+      },
+      body: JSON.stringify({
+        intent: 'Select',
+        context: {},
+        actions: [],
+        attempt: 1
+      })
+    })
+    if (!response.body) throw new Error('Missing stream')
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder()
+    let text = ''
+    while (!text.includes('\n'))
+      text += decoder.decode((await reader.read()).value)
+    const frame = JSON.parse(text.trim())
+    expect(frame.type).toBe('batch')
+    expect(acknowledged).toBe(false)
+    const send = (requestOrigin: string) =>
+      fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          origin: requestOrigin,
+          'content-type': 'application/json',
+          [AI_BATCH_RECEIPT_HEADER]: frame.receiptToken
+        },
+        body: JSON.stringify({ actionResults: [], context: { actual: true } })
+      })
+    expect((await send('https://foreign.example')).status).toBe(403)
+    expect(acknowledged).toBe(false)
+    expect((await send(origin)).status).toBe(200)
+    expect((await send(origin)).status).toBe(409)
+    text = ''
+    while (true) {
+      const part = await reader.read()
+      if (part.done) break
+      text += decoder.decode(part.value)
+    }
+    expect(JSON.parse(text.trim()).batch.batchId).toBe('final')
+    expect(acknowledged).toBe(true)
+  } finally {
+    server.closeAllConnections()
+    await new Promise<void>((resolve) => server.close(() => resolve()))
+  }
+})

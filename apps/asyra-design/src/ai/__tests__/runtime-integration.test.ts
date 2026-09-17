@@ -331,7 +331,7 @@ describe('Asyra Design server action-batch runtime integration', () => {
     }
   })
 
-  it('waits for visible confirmation and opens no transaction on denial', async () => {
+  it('waits for visible confirmation and rolls back the invocation on denial', async () => {
     vi.mocked(elementApis.getElementType).mockReturnValue('group')
     const batch: AiActionBatch = {
       actions: [
@@ -390,7 +390,7 @@ describe('Asyra Design server action-batch runtime integration', () => {
         reason: 'confirmation-cancelled',
         status: 'cancelled'
       })
-      expect(transactionApis.runTransaction).not.toHaveBeenCalled()
+      expect(transactionApis.runTransaction).toHaveBeenCalledOnce()
     } finally {
       unsubscribe()
       await runtime.dispose()

@@ -1,4 +1,5 @@
 export const AiActionNames = Object.freeze({
+  REPORT_OUTCOME: 'report_outcome',
   REPLACE_VECTOR_COMPOSITION: 'replace_vector_composition',
   REQUEST_CLARIFICATION: 'request_clarification',
   INSERT_VECTOR_COMPOSITION: 'insert_vector_composition',

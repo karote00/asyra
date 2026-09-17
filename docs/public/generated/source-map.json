@@ -294,15 +294,15 @@
     },
     {
       "id": "build/ai-actions",
-      "pageSha256": "a8d4ddc1ee7a644cc804d5873a283c6791c4cb99053cabad53e8bffd946919a3",
+      "pageSha256": "bbc0b535f8841bb3e58c076ce64e03c25510d65cc97bdc643619f900b423416b",
       "sources": [
         {
           "path": "docs/ai/framework/packages/ai-agent-runtime.md",
-          "sha256": "7ade825d6dedffe924fe98830338e42306cdbe0203fc026ae13caaa734dc22f9"
+          "sha256": "f4dd8cdc78a132831ae7fa28fa9c249f0aa2f0bf6c47271f2a781576cc9b6e40"
         },
         {
           "path": "docs/ai/framework/golden-paths/compose-ai-agent-runtime.md",
-          "sha256": "3595c887a4ac388549c6214259e8fbfe6aac9a01eb715dd481036a7f3fcdc65e"
+          "sha256": "6f148da11a808d816427c6c32a080121074a01fc9167d09ac61b9e8363b4c8b4"
         }
       ]
     },
@@ -312,7 +312,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/ai-agent-runtime.md",
-          "sha256": "7ade825d6dedffe924fe98830338e42306cdbe0203fc026ae13caaa734dc22f9"
+          "sha256": "f4dd8cdc78a132831ae7fa28fa9c249f0aa2f0bf6c47271f2a781576cc9b6e40"
         },
         {
           "path": "docs/ai/framework/packages/feature-system.md",
@@ -326,7 +326,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/ai-agent-runtime.md",
-          "sha256": "7ade825d6dedffe924fe98830338e42306cdbe0203fc026ae13caaa734dc22f9"
+          "sha256": "f4dd8cdc78a132831ae7fa28fa9c249f0aa2f0bf6c47271f2a781576cc9b6e40"
         },
         {
           "path": "packages/ai-agent-runtime/package.json",

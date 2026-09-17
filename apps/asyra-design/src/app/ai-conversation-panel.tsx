@@ -57,7 +57,7 @@ const ActiveDuration = ({ turn }: { readonly turn?: AiActiveTurn }) => {
   )
 }
 
-const stopAgentCancelActivationPropagation = (event: SyntheticEvent): void => {
+const stopAgentInteractionPropagation = (event: SyntheticEvent): void => {
   event.stopPropagation()
 }
 
@@ -318,6 +318,17 @@ const AiConversationPanelLayout = ({
 
   return (
     <aside
+      {...AiDocumentInteractionTargetProps.AGENT_INTERFACE}
+      onClick={stopAgentInteractionPropagation}
+      onKeyDown={stopAgentInteractionPropagation}
+      onKeyUp={stopAgentInteractionPropagation}
+      onMouseDown={stopAgentInteractionPropagation}
+      onMouseUp={stopAgentInteractionPropagation}
+      onPointerDown={stopAgentInteractionPropagation}
+      onPointerUp={stopAgentInteractionPropagation}
+      onTouchEnd={stopAgentInteractionPropagation}
+      onTouchStart={stopAgentInteractionPropagation}
+      onWheel={stopAgentInteractionPropagation}
       aria-label="Agent conversation"
       aria-modal="false"
       className="fixed bottom-0 right-0 top-10 z-50 flex w-[384px] max-w-[calc(100vw-24px)] flex-col overflow-hidden border-l border-[#45464b] bg-[#202124] text-[#f5f5f5] shadow-[-18px_0_48px_rgba(0,0,0,0.32)]"
@@ -440,17 +451,17 @@ const AiConversationPanelLayout = ({
                   disabled={conversationSnapshot.activeTurn?.stopping}
                   className="rounded-md border border-[#6c4d4d] bg-[#382727] px-3 py-1.5 text-[10px] text-[#ffb8b8] hover:bg-[#472e2e]"
                   onClick={(event) => {
-                    stopAgentCancelActivationPropagation(event)
+                    stopAgentInteractionPropagation(event)
                     conversation.cancel('user-cancelled')
                   }}
-                  onKeyDown={stopAgentCancelActivationPropagation}
-                  onKeyUp={stopAgentCancelActivationPropagation}
-                  onMouseDown={stopAgentCancelActivationPropagation}
-                  onMouseUp={stopAgentCancelActivationPropagation}
-                  onPointerDown={stopAgentCancelActivationPropagation}
-                  onPointerUp={stopAgentCancelActivationPropagation}
-                  onTouchEnd={stopAgentCancelActivationPropagation}
-                  onTouchStart={stopAgentCancelActivationPropagation}
+                  onKeyDown={stopAgentInteractionPropagation}
+                  onKeyUp={stopAgentInteractionPropagation}
+                  onMouseDown={stopAgentInteractionPropagation}
+                  onMouseUp={stopAgentInteractionPropagation}
+                  onPointerDown={stopAgentInteractionPropagation}
+                  onPointerUp={stopAgentInteractionPropagation}
+                  onTouchEnd={stopAgentInteractionPropagation}
+                  onTouchStart={stopAgentInteractionPropagation}
                   type="button"
                 >
                   Stop
@@ -606,6 +617,16 @@ const AiConversationFeed = ({
                 data-message-role="assistant"
                 className="min-w-0 self-stretch py-1 pr-3 text-[12px] leading-5 text-[#e1dff0]"
               >
+                {turn.progress
+                  .filter((update) => update.message)
+                  .map((update, index) => (
+                    <p
+                      key={index}
+                      className="mb-2 mt-0 whitespace-pre-wrap break-words"
+                    >
+                      {update.message}
+                    </p>
+                  ))}
                 {!settled ? (
                   <div
                     role="status"

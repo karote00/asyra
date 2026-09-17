@@ -2,12 +2,17 @@ import {
   AiProviderError,
   createGenericHttpAiProvider,
   type AiActionBatch,
+  type AiBatchReceipt,
   type AiFetchResponse,
   type GenericHttpAiProvider,
   type GenericHttpAiProviderOptions
 } from '@asyra/ai-agent-runtime'
 import { measureBrowserDragAsyncPhase } from '@asyra/utils'
-import { ACTION_BATCH_ENDPOINT } from './action-batch-endpoint'
+import {
+  ACTION_BATCH_ENDPOINT,
+  AI_BATCH_RECEIPT_HEADER,
+  AI_BATCH_EXECUTION_HEADER
+} from './action-batch-endpoint'
 import type { AiToolProgress } from './action-batch-protocol'
 
 export { ACTION_BATCH_ENDPOINT } from './action-batch-endpoint'
@@ -46,7 +51,9 @@ const isResponse = (value: AiFetchResponse): value is Response =>
 const readActivityStream = async (
   response: Response,
   signal: AbortSignal,
-  onProgress?: (event: AiToolProgress) => void
+  onProgress?: (event: AiToolProgress) => void,
+  executeBatch?: (batch: AiActionBatch) => Promise<AiBatchReceipt>,
+  sendReceipt?: (token: string, receipt: AiBatchReceipt) => Promise<void>
 ): Promise<AiActionBatch> => {
   const reader = response.body?.getReader()
   if (!reader) throw backendFailure('ACTION_BATCH_MODEL_INVALID_RESPONSE')
@@ -58,7 +65,7 @@ const readActivityStream = async (
   let buffer = ''
   let bytes = 0
   let batch: AiActionBatch | undefined
-  const consume = (line: string) => {
+  const consume = async (line: string) => {
     let event: Record<string, unknown>
     try {
       event = JSON.parse(line)
@@ -67,6 +74,21 @@ const readActivityStream = async (
     }
     if (!event || typeof event !== 'object' || batch)
       throw backendFailure('ACTION_BATCH_MODEL_INVALID_RESPONSE')
+    if (event.type === 'batch') {
+      if (
+        !executeBatch ||
+        !sendReceipt ||
+        typeof event.receiptToken !== 'string' ||
+        !/^[a-f0-9-]{36}$/.test(event.receiptToken) ||
+        !event.batch ||
+        typeof event.batch !== 'object'
+      )
+        throw backendFailure('ACTION_BATCH_MODEL_INVALID_RESPONSE')
+      const receipt = await executeBatch(event.batch as AiActionBatch)
+      if (signal.aborted) throw backendFailure('ACTION_BATCH_ABORTED')
+      await sendReceipt(event.receiptToken, receipt)
+      return
+    }
     if (event.type === 'error') throw backendFailure(event.code)
     if (event.type === 'result') {
       if (!event.batch || typeof event.batch !== 'object')
@@ -76,13 +98,20 @@ const readActivityStream = async (
     }
     if (
       event.type !== 'activity' ||
-      event.tool !== 'vtracer' ||
+      typeof event.tool !== 'string' ||
+      !/^[a-zA-Z0-9_-]{1,64}$/.test(event.tool) ||
       (event.status !== 'running' && event.status !== 'completed')
     )
       throw backendFailure('ACTION_BATCH_MODEL_INVALID_RESPONSE')
     if (!signal.aborted) {
       try {
-        onProgress?.({ tool: event.tool, status: event.status })
+        onProgress?.({
+          tool: event.tool,
+          status: event.status,
+          ...(typeof event.message === 'string' && event.message.length <= 1000
+            ? { message: event.message }
+            : {})
+        })
       } catch {
         /* Observation cannot change execution. */
       }
@@ -100,11 +129,11 @@ const readActivityStream = async (
       while ((index = buffer.indexOf('\n')) >= 0) {
         const line = buffer.slice(0, index)
         buffer = buffer.slice(index + 1)
-        if (line.trim()) consume(line)
+        if (line.trim()) await consume(line)
       }
     }
     buffer += decoder.decode()
-    if (buffer.trim()) consume(buffer)
+    if (buffer.trim()) await consume(buffer)
     if (signal.aborted)
       throw new AiProviderError({
         code: 'AI_PROVIDER_ABORTED',
@@ -134,7 +163,12 @@ export const createServerActionBatchProvider = (
       const provider = createGenericHttpAiProvider({
         endpoint: ACTION_BATCH_ENDPOINT,
         timeoutMs: ACTION_BATCH_TIMEOUT_MS,
-        headers: { accept: 'application/x-ndjson, application/json' },
+        headers: {
+          accept: 'application/x-ndjson, application/json',
+          ...(requestOptions.executeBatch
+            ? { [AI_BATCH_EXECUTION_HEADER]: '1' }
+            : {})
+        },
         fetch: async (...args) => {
           const response = await (options.fetch ?? globalThis.fetch)(...args)
           if (!response.ok && isResponse(response))
@@ -148,7 +182,24 @@ export const createServerActionBatchProvider = (
             const batch = await readActivityStream(
               response,
               args[1].signal,
-              requestOptions.onProgress
+              requestOptions.onProgress,
+              requestOptions.executeBatch,
+              async (token, receipt) => {
+                const acknowledged = await (options.fetch ?? globalThis.fetch)(
+                  ACTION_BATCH_ENDPOINT,
+                  {
+                    method: 'POST',
+                    signal: args[1].signal,
+                    headers: {
+                      'content-type': 'application/json',
+                      [AI_BATCH_RECEIPT_HEADER]: token
+                    },
+                    body: JSON.stringify(receipt)
+                  }
+                )
+                if (!acknowledged.ok)
+                  throw backendFailure('ACTION_BATCH_MODEL_FAILED')
+              }
             )
             return { ok: true, status: 200, json: async () => batch }
           }

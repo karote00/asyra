@@ -78,6 +78,7 @@ describe('Asyra Design AI actions', () => {
     const actions = createAiActions(actionApis())
 
     expect(actions.map(({ name }) => name)).toEqual([
+      AiActionNames.REPORT_OUTCOME,
       AiActionNames.REQUEST_CLARIFICATION,
       AiActionNames.REQUEST_DRAWING_DETAIL_CHOICE,
       AiActionNames.INSERT_VECTOR_COMPOSITION,
@@ -173,5 +174,27 @@ describe('Asyra Design AI actions', () => {
       )
     ).rejects.toBeInstanceOf(AiActionError)
     expect(apis.setElementVisible).not.toHaveBeenCalled()
+  })
+})
+
+describe('reported capability boundaries', () => {
+  it('returns a specific unsupported outcome without mutating the canvas', async () => {
+    const apis = actionApis()
+    const result = await actionByName(
+      AiActionNames.REPORT_OUTCOME,
+      apis
+    ).execute(
+      {
+        outcome: 'unsupported',
+        message: 'This app cannot generate raster images.'
+      },
+      executionContext()
+    )
+    expect(result).toMatchObject({
+      status: 'no-change',
+      outcome: 'unsupported',
+      message: 'This app cannot generate raster images.'
+    })
+    for (const api of Object.values(apis)) expect(api).not.toHaveBeenCalled()
   })
 })

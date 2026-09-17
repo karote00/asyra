@@ -58,6 +58,8 @@ const fakeServer = (
     onRequest?: (packet: Packet) => void
     delayedClose?: boolean
     toolCall?: boolean
+    toolName?: string
+    toolArguments?: unknown
     toolResultOutput?: (summary: { imageArtifactId: string }) => string
   } = {}
 ) => {
@@ -119,7 +121,7 @@ const fakeServer = (
             item: {
               type: 'dynamicToolCall',
               id: 'call-1',
-              tool: 'vtracer',
+              tool: options.toolName ?? 'vtracer',
               status: 'completed',
               success: true
             }
@@ -155,8 +157,8 @@ const fakeServer = (
                 threadId: 'thread-1',
                 turnId: 'turn-1',
                 callId: 'call-1',
-                tool: 'vtracer',
-                arguments: { attachmentIndex: 0 }
+                tool: options.toolName ?? 'vtracer',
+                arguments: options.toolArguments ?? { attachmentIndex: 0 }
               }
             })
           else finish()
@@ -316,6 +318,9 @@ describe('local subscription AI backend', () => {
       runtimeWorkspaceRoots: [],
       allowProviderModelFallback: false
     })
+    expect(thread?.developerInstructions).toContain(
+      'Return the prepared action batch without invoking backend operation tools'
+    )
     expect(thread?.config).toMatchObject({
       'features.shell_tool': false,
       'features.unified_exec': false,
@@ -536,4 +541,52 @@ describe('local subscription AI backend', () => {
     expect(first.child.kill).toHaveBeenCalledOnce()
     expect(second.child.kill).toHaveBeenCalledOnce()
   })
+})
+
+it('waits for a canonical operation receipt before continuing the native model', async () => {
+  const child = fakeServer({
+    toolCall: true,
+    toolName: 'set_element_visibility',
+    toolArguments: {
+      arguments: { elementId: 'actual-id', visible: false },
+      message: 'I am hiding the separate mark.'
+    }
+  })
+  spawn.mockReturnValue(child.child)
+  const executeBatch = vi.fn(async (prepared) => {
+    expect(prepared.actions[0].arguments).toEqual({
+      elementId: 'actual-id',
+      visible: false
+    })
+    return {
+      actionResults: [
+        {
+          actionId: prepared.actions[0].id,
+          actionName: 'set_element_visibility',
+          result: { status: 'complete', appliedElementIds: ['actual-id'] }
+        }
+      ],
+      context: { selectedIds: ['actual-id'] }
+    }
+  })
+  await requestConfiguredAiActionBatch(
+    {
+      ...input,
+      actions: [
+        {
+          name: 'set_element_visibility',
+          description: 'Set visibility',
+          inputSchema: {}
+        }
+      ]
+    },
+    { environment, executeBatch }
+  )
+  expect(executeBatch).toHaveBeenCalledOnce()
+  const response = child.packets.find(
+    (packet) => 'result' in packet
+  ) as unknown as { result: { contentItems: { text: string }[] } }
+  expect(
+    JSON.parse(response.result.contentItems[0].text).context.selectedIds
+  ).toEqual(['actual-id'])
 })

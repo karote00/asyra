@@ -324,6 +324,7 @@ const executePrepared = async (
 describe('Asyra Design AI composition action catalog', () => {
   it('registers the server-facing actions in deterministic order', () => {
     expect(createAiActions(actionApis()).map(({ name }) => name)).toEqual([
+      AiActionNames.REPORT_OUTCOME,
       AiActionNames.REQUEST_CLARIFICATION,
       AiActionNames.REQUEST_DRAWING_DETAIL_CHOICE,
       AiActionNames.INSERT_VECTOR_COMPOSITION,

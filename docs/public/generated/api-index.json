@@ -158,6 +158,7 @@
             "AiAuditActionSummary",
             "AiAuditError",
             "AiAuditOutcome",
+            "AiBatchReceipt",
             "AiConfirmationError",
             "AiConfirmationErrorCode",
             "AiConfirmationHandler",

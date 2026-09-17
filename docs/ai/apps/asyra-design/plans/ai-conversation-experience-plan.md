@@ -293,3 +293,68 @@ adopting a package or copying a developer-oriented tool log into a drawing app.
   and suppresses blind retry for partial results.
 - Inspector: 100 contract tests passed. Generated consumer: READY across 12 packages
   and six phases. Final source/template parity and PR-head CI are the delivery gates.
+
+## Multi-step backend operations - 2026-09-18
+
+Authorized scope: extend the existing provider request with sequential prepared
+batch execution and acknowledged results, App-owned backend operation tools,
+truthful operational messages and capability outcomes, one invocation transaction,
+permanent runtime/server/controller/browser tests, current contracts and generated
+Design template parity. No new dependencies, image generation, geometry cutting
+algorithm, authentication, rendering or persistence owners are introduced.
+
+The AI analyzes registered tool summaries and selects backend operations. Backend
+owners retain complete tool artifacts for the request, prepare canonical action
+arguments, and await runtime execution receipts before returning to the AI. A tool
+limitation does not imply that the whole App cannot satisfy a request; the AI may
+combine registered operations and inspect their results. Unsupported work ends
+with a specific user explanation, not an opaque error or an unconditional retry.
+
+One request opens one ordinary transaction and interaction lock. Multiple prepared
+batches, intermediate messages and follow-up edits remain inside it. Normal
+completion, including an explained capability limit after successful edits,
+commits once. Fatal execution errors, cancellation and transport failure roll back
+through the existing transaction owner. Every terminal path releases the lock.
+No new user request or unrelated manual document edit joins the transaction.
+
+Owner slices: (1) runtime sequential execution and receipts, (2) server operation
+catalog and same-origin acknowledgement transport, (3) conversation projection and
+capability outcomes, (4) integrated live subscription, Undo/Redo, visual and template
+validation. Existing single-batch HTTP/sample callers retain their payload and
+canonical path. Intermediate batches require explicit transport support.
+
+Required evidence: two dependent batches see actual returned IDs, one commit and
+Undo/Redo; per-batch permission; duplicate/late/foreign receipt rejection; no retry
+after mutation; cancellation/exception rollback; unsupported before/after edits;
+no raw protocol errors in UI; exact reference image live execution; narrow/desktop
+screenshots. Run affected runtime/App/server suites, typecheck/build, lint/naming,
+Inspector contracts, applicable canonical full-flow gates, template parity and CI
+on the final PR head. Stop for an out-of-scope canonical prerequisite; do not add
+fixture-specific behavior or weaken existing resource guards.
+
+Validation refinement: the outer transaction also spans provider and confirmation
+waiting, so the App interaction lock must admit panel controls without admitting
+document edits. The panel isolates its own DOM events; the toolbar toggle admits
+activation only while locked and preserves ordinary shortcuts once unlocked.
+Existing narrow/desktop close/reopen, approval, shortcut and Stop browser cases
+remain the acceptance contract. This is an interaction-boundary correction within
+the multi-step slice, with no change to canonical transaction or input owners.
+
+### Implementation evidence - 2026-09-18
+
+- Acknowledged backend operations, actual canonical IDs/context, per-batch
+  permission and confirmation, and one invocation transaction are implemented.
+- Runtime 84, App AI 175, additional App Vitest 401, backend 106 tests pass.
+  The configured local environment has one pre-existing no-env assumption
+  failure; all five environment tests pass in the clean generated template.
+- Twelve conversation/live-subscription browser cases pass. Nine focused cases
+  also pass against the final rebuilt artifacts, including narrow/desktop
+  confirmation and recovery, capability remainders and exact Undo/Redo checks.
+- Real reference-logo execution removes the separate TM path. A dependent-edit
+  case inserts all 38 paths, then hides only the TM path from actual returned IDs:
+  two batches, one Undo entry, approximately 24.6 seconds in the final run.
+- Runtime/App/template builds, typecheck, naming, lint (no errors), public docs,
+  template parity, 30 affected Inspector/catalog tests and full 7,076-element
+  canonical rendering pass. App screenshots and the reference crop were inspected.
+- PR-head CI remains the remote delivery gate; this evidence does not claim
+  pixel-identical logo fidelity or a guaranteed model latency.

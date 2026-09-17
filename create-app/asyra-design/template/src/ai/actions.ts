@@ -945,7 +945,42 @@ export const createAiActions = (
         })
       }
     })
+  const reportOutcome: AiActionDefinition<{
+    readonly outcome: 'completed' | 'unsupported'
+    readonly message: string
+  }> = {
+    name: AiActionNames.REPORT_OUTCOME,
+    description:
+      'End this request with a specific user-facing result or capability limitation. This action makes no canvas changes. Use only as the final action after considering available tool combinations.',
+    inputSchema: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['outcome', 'message'],
+      properties: {
+        outcome: { type: 'string', enum: ['completed', 'unsupported'] },
+        message: { type: 'string', minLength: 1, maxLength: 1000 }
+      }
+    },
+    execute: async (args, context) => {
+      assertNotAborted(context)
+      if (
+        !args ||
+        !['completed', 'unsupported'].includes(args.outcome) ||
+        typeof args.message !== 'string' ||
+        !args.message.trim() ||
+        args.message.length > 1000
+      )
+        throw new AiActionError()
+      return Object.freeze({
+        action: AiActionNames.REPORT_OUTCOME,
+        status: 'no-change',
+        outcome: args.outcome,
+        message: args.message.trim()
+      })
+    }
+  }
   return Object.freeze([
+    Object.freeze(reportOutcome),
     clarification,
     drawingDetailChoice,
     ...createCompositionActions(apis, mutationOptions, hostYield, paintYield),

@@ -1063,7 +1063,7 @@
       "wordCount": 525
     },
     {
-      "contentSha256": "a8d4ddc1ee7a644cc804d5873a283c6791c4cb99053cabad53e8bffd946919a3",
+      "contentSha256": "bbc0b535f8841bb3e58c076ce64e03c25510d65cc97bdc643619f900b423416b",
       "description": "Expose bounded action schemas and permissions so AI intent uses the same canonical transaction paths as people.",
       "headings": [
         {
@@ -1113,6 +1113,10 @@
         {
           "depth": 2,
           "title": "Next"
+        },
+        {
+          "depth": 2,
+          "title": "Sequential backend operations"
         }
       ],
       "id": "build/ai-actions",
@@ -1123,7 +1127,7 @@
       "path": "build/ai-actions.md",
       "section": "Extend",
       "title": "Build registered AI actions",
-      "wordCount": 505
+      "wordCount": 597
     },
     {
       "contentSha256": "45dbd214f148ec37a72b7352baaa4632267c78b6a0132902532639c160d4c5cd",

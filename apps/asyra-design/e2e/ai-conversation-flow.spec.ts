@@ -6,6 +6,7 @@ import {
   getCoreDocumentDigest,
   getUndoHistoryDepth,
   undo,
+  redo,
   waitForAppReady
 } from './test-utils'
 
@@ -163,6 +164,7 @@ for (const width of [360, 1280]) {
       'data-outcome',
       'success'
     )
+    await page.setViewportSize({ width, height: 900 })
     const before = await getCoreDocumentDigest(page)
     const depth = await getUndoHistoryDepth(page)
     await page
@@ -174,6 +176,9 @@ for (const width of [360, 1280]) {
     await page.getByRole('button', { name: 'Send', exact: true }).click()
     const message = page.getByTestId('ai-agent-message').last()
     await expect(message).toHaveAttribute('data-outcome', 'active')
+    await page.getByLabel('Message Agent').fill('r')
+    expect(await getActiveTool(page)).toBe('select')
+    await page.getByLabel('Message Agent').fill('')
     await expect(message.getByLabel('Your message')).toContainText(intent)
     await expect(message.getByLabel('Agent response')).not.toContainText(intent)
     const bounds = await message.getByLabel('Your message').boundingBox()
@@ -373,3 +378,120 @@ test('incomplete replacement rolls back inserted content and partial output neve
     .getByTestId('ai-agent-panel')
     .screenshot({ path: testInfo.outputPath('partial.png') })
 })
+
+for (const width of [360, 1280]) {
+  test(`dependent batches keep one undo and explain a capability remainder at ${width}px`, async ({
+    page
+  }, testInfo) => {
+    const prepared = drawing('multi-step')
+    const receipts: unknown[] = []
+    await page.route('**/api/ai/status', (route) =>
+      route.fulfill({ json: { state: 'ready' } })
+    )
+    await page.route('**/api/ai/action-batch', async (route) => {
+      if (route.request().headers()['x-ai-batch-receipt']) {
+        receipts.push(route.request().postDataJSON())
+        await route.fulfill({ json: { accepted: true } })
+        return
+      }
+      const first = {
+        batchId: 'insert-first',
+        actions: [
+          {
+            id: 'insert',
+            name: 'insert_vector_composition',
+            arguments: prepared,
+            summary: 'Draw reference'
+          }
+        ]
+      }
+      const second = {
+        batchId: 'refine-next',
+        actions: [
+          {
+            id: 'select',
+            name: 'select_elements',
+            arguments: { elementIds: [prepared.groupDescriptor.id] },
+            summary: 'Select the created drawing'
+          }
+        ]
+      }
+      const final = {
+        batchId: 'end',
+        actions: [
+          {
+            id: 'report',
+            name: 'report_outcome',
+            arguments: {
+              outcome: 'unsupported',
+              message:
+                'The vector drawing is ready. This app cannot generate a raster texture for it yet.'
+            },
+            summary: 'Explain the remaining limitation'
+          }
+        ]
+      }
+      await route.fulfill({
+        contentType: 'application/x-ndjson',
+        body: [
+          {
+            type: 'activity',
+            tool: 'insert_vector_composition',
+            status: 'running',
+            message:
+              'I am adding the vector drawing, then checking the requested texture.'
+          },
+          {
+            type: 'batch',
+            receiptToken: '11111111-1111-1111-1111-111111111111',
+            batch: first
+          },
+          {
+            type: 'batch',
+            receiptToken: '22222222-2222-2222-2222-222222222222',
+            batch: second
+          },
+          { type: 'result', batch: final }
+        ]
+          .map((frame) => JSON.stringify(frame))
+          .join('\n')
+      })
+    })
+    await page.goto(createTestDocumentIdentity().url)
+    await waitForAppReady(page)
+    await page.setViewportSize({ width, height: 900 })
+    const before = await getCoreDocumentDigest(page)
+    const depth = await getUndoHistoryDepth(page)
+    await page.getByRole('button', { name: 'Open Agent' }).click()
+    await page
+      .getByLabel('Message Agent')
+      .fill(
+        'Draw the reference, select it, and add a raster texture if supported.'
+      )
+    await page.getByRole('button', { name: 'Send', exact: true }).click()
+    await expect(page.getByTestId('ai-agent-message')).toHaveAttribute(
+      'data-outcome',
+      'partial'
+    )
+    await expect(
+      page
+        .getByTestId('ai-agent-message')
+        .getByText('Earlier changes are kept.', { exact: false })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('button', { name: 'Try again', exact: true })
+    ).toHaveCount(0)
+    expect(receipts).toHaveLength(2)
+    expect(await getUndoHistoryDepth(page)).toBe(depth + 1)
+    const after = await getCoreDocumentDigest(page)
+    expect(after).not.toEqual(before)
+    await page.screenshot({
+      path: testInfo.outputPath('multi-step-capability.png')
+    })
+    await page.getByRole('button', { name: 'Close Agent panel' }).click()
+    await undo(page)
+    expect(await getCoreDocumentDigest(page)).toEqual(before)
+    await redo(page)
+    expect(await getCoreDocumentDigest(page)).toEqual(after)
+  })
+}

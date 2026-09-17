@@ -283,7 +283,16 @@ const outcomeForResult = (
     .filter((status): status is 'complete' | 'no-change' | 'partial' =>
       Boolean(status)
     )
-  if (statuses.includes('partial')) {
+  const unsupported = readActionResults(result).some(
+    (action) =>
+      isPlainObject(action.result) &&
+      action.result.action === AiActionNames.REPORT_OUTCOME &&
+      action.result.outcome === 'unsupported'
+  )
+  if (
+    statuses.includes('partial') ||
+    (unsupported && statuses.includes('complete'))
+  ) {
     return 'partial'
   }
   if (
