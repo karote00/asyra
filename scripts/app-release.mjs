@@ -7,6 +7,8 @@ import {
   readBaselines
 } from './app-release-service.mjs'
 
+const command = process.argv[2]
+assert.ok(['plan', 'publish'].includes(command), 'Unknown release command')
 assert.equal(
   process.env.GITHUB_EVENT_NAME,
   'workflow_dispatch',
@@ -29,6 +31,23 @@ assert.equal(
   'Checkout does not match the dispatch commit'
 )
 const repository = process.env.GITHUB_REPOSITORY
+assert.match(
+  repository ?? '',
+  /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/,
+  'Missing or invalid GITHUB_REPOSITORY'
+)
+let admittedPlan
+if (command === 'publish') {
+  assert.ok(process.env.VERCEL_TEAM_ID, 'Missing VERCEL_TEAM_ID')
+  assert.ok(process.env.VERCEL_TOKEN, 'Missing VERCEL_TOKEN')
+  assert.ok(process.env.RELEASE_PLAN, 'Missing RELEASE_PLAN')
+  assert.match(
+    process.env.GITHUB_RUN_ID ?? '',
+    /^\d+$/,
+    'Missing or invalid GITHUB_RUN_ID'
+  )
+  admittedPlan = JSON.parse(process.env.RELEASE_PLAN)
+}
 const github = createApi('https://api.github.com', process.env.GH_TOKEN)
 const baselines = await readBaselines(
   github,
@@ -43,7 +62,7 @@ const plan = createReleasePlan({
   reason: process.env.RELEASE_REASON
 })
 
-if (process.argv[2] === 'plan') {
+if (command === 'plan') {
   appendFileSync(
     process.env.GITHUB_OUTPUT,
     `plan=${JSON.stringify(plan)}\nhas_changes=${plan.apps.some((app) => app.release)}\napps=${JSON.stringify(plan.apps.filter((app) => app.release).map((app) => app.id))}\n`
@@ -60,13 +79,11 @@ if (process.argv[2] === 'plan') {
   )
   console.log(JSON.stringify(plan, null, 2))
 } else {
-  assert.equal(process.argv[2], 'publish')
   assert.deepEqual(
     plan,
-    JSON.parse(process.env.RELEASE_PLAN),
+    admittedPlan,
     'Plan changed during verification; start a new release'
   )
-  assert.ok(process.env.VERCEL_TEAM_ID, 'Missing VERCEL_TEAM_ID')
   const vercel = createApi('https://api.vercel.com', process.env.VERCEL_TOKEN, {
     teamId: process.env.VERCEL_TEAM_ID
   })

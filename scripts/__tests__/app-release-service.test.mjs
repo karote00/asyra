@@ -158,6 +158,7 @@ test('baseline ignores incomplete releases and reads legacy successes during boo
 })
 test('a ready deployment validates its source and environment, not automatic alias assignment', async () => {
   const ready = {
+    id: 'new',
     readyState: 'READY',
     meta: { githubCommitSha: sha },
     target: 'production',
@@ -416,7 +417,7 @@ for (const target of RELEASE_APPS) {
       }
       mutations.push({ url, method, body })
       if (url.includes('/promote/')) {
-        assert.equal(url, `/v10/projects/${target.id}/promote/new`)
+        assert.equal(url, `/v10/projects/${project.id}/promote/new`)
         promoted = true
       }
       return { id: 'new' }
@@ -430,7 +431,7 @@ for (const target of RELEASE_APPS) {
     assert.equal(creates[0].body.gitSource.sha, sha)
     assert.equal(
       requests.filter((url) => url.startsWith('/v9/projects/')).length,
-      4
+      5
     )
     assert.equal(mutations.at(-1).body.state, 'success')
   })
