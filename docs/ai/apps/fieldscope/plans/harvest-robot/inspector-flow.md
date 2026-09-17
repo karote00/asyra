@@ -789,10 +789,13 @@ Selected/group profile evidence cannot claim full ordinary coverage. The
 45-second observation-bootstrap and 60-second local-action-bootstrap per-case
 ceilings are engineering initial values, not product performance promises. No
 source, motion, observation or decision budget is increased. Existing numerical
-profile guards remain unchanged. The source group contains 56 cases: all 15
-crop-model cases, all nine crop-partition cases, 23 site-geometry cases and nine
-scene-demand cases. Their ordinary counterparts retain two bounded site-geometry
-controls and six synthetic or hand-authored scene-demand controls.
+profile guards remain unchanged. The source group contains 57 cases: all 15
+crop-model cases, all nine crop-partition cases, 23 site-geometry cases, nine
+scene-demand cases and the complete cold hierarchy/two-warm-pose collision profile.
+The collision test keeps its 10-second ceiling and exact source/work/inventory
+assertions; bounded hierarchy guard controls remain ordinary. Their ordinary
+counterparts retain two bounded site-geometry controls and six synthetic or
+hand-authored scene-demand controls.
 
 ## A - Feasibility domain (current M1)
 

@@ -2661,8 +2661,10 @@ Each group retains the original 20-minute deadline, worker acknowledgements,
 bounded artifacts and owned cleanup. Only three exact complete receipts publish
 full profile completion; filtered/group artifacts are profile evidence, never
 ordinary coverage.
-The source group contains 56 cases: all 15 crop-model cases, all nine
-crop-partition cases, 23 site-geometry cases and nine scene-demand cases. Their
+The source group contains 57 cases: all 15 crop-model cases, all nine
+crop-partition cases, 23 site-geometry cases, nine scene-demand cases and the
+complete cold hierarchy/two-warm-pose collision profile with its unchanged
+10-second ceiling and work/inventory assertions. Their
 ordinary counterparts retain two bounded site-geometry controls and six
 synthetic or hand-authored scene-demand controls. The remaining group retains the
 existing nine actual-source cases, seven version-two request/nonlinear admission

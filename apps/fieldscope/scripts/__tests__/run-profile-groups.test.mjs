@@ -189,6 +189,20 @@ print(json.dumps(result))
 test.before(() => mkdirSync(artifacts, { recursive: true }))
 test.after(() => rmSync(artifacts, { recursive: true, force: true }))
 
+test('runs the complete cold hierarchy workload in the supervised source profile group', () => {
+  const profile = 'src/simulation/__tests__/collision.source.profile.test.ts'
+  assert.ok(discover(app).source.includes(profile))
+  const title =
+    'profiles cold source hierarchy and two warm poses without Cartesian triangle traversal'
+  assert.ok(readFileSync(path.join(app, profile), 'utf8').includes(title))
+  assert.ok(
+    !readFileSync(
+      path.join(app, 'src/simulation/__tests__/collision.test.ts'),
+      'utf8'
+    ).includes(title)
+  )
+})
+
 test('discovers the exact profile config class and automatically assigns nested source and remaining files', (t) => {
   const root = fixture()
   t.after(() => rmSync(root, { recursive: true, force: true }))

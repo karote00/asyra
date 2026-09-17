@@ -40,9 +40,13 @@ produce full profile completion; selected/group artifacts are never ordinary
 full-suite evidence. CPU is accounted, not capped; this guard does not enforce
 peak RSS.
 
-The automatically discovered source-construction group contains 56 cases: all
+The automatically discovered source-construction group contains 57 cases: all
 15 crop-model cases, all nine crop-partition cases, 23 site-geometry cases and
-nine scene-demand cases. The remaining profile group contains the existing nine actual-source
+nine scene-demand cases, plus the complete cold hierarchy/two-warm-pose collision
+profile. The collision profile keeps its 10-second test ceiling and exact source,
+work-count and inventory assertions; bounded hierarchy guard controls remain
+in the ordinary collision suite. The remaining profile group contains the existing
+nine actual-source
 observation/relation cases, seven version-two request and nonlinear admission
 cases, and ten current whole-source relation cases. The version-two contract,
 motion and relation cases retain their shared actual-source fixtures; the whole
