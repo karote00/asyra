@@ -358,3 +358,15 @@ the multi-step slice, with no change to canonical transaction or input owners.
   canonical rendering pass. App screenshots and the reference crop were inspected.
 - PR-head CI remains the remote delivery gate; this evidence does not claim
   pixel-identical logo fidelity or a guaranteed model latency.
+
+### Activity synchronization correction - 2026-09-18
+
+The status headline and Activity history share one App-owned projection of
+existing runtime events and controller approval/stop state. Tool labels identify
+VTracer or the registered operation; completion explicitly waits for AI rather
+than inventing another processing stage. Operational messages stay with their
+entry, the active entry is marked Current, and terminal summaries are labelled
+Result. This slice changes presentation, its formal unit/browser tests, current
+contracts and template parity only; backend, transaction and geometry owners are
+unchanged. Validation includes staged streaming at 360px and 1280px, settled
+marker removal, retained messages, and no history reprojection on draft typing.

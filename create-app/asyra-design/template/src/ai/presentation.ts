@@ -1,3 +1,4 @@
+import type { AiRuntimeProgressUpdate } from '@asyra/ai-agent-runtime'
 import type { AiConversationOutcome, AiSettledTurn } from './conversation'
 import { AiActionNames, AiDrawingDetailOptionIds } from '../constants'
 
@@ -270,15 +271,74 @@ export const canRetryAiTurn = (turn: AiSettledTurn): boolean => {
   ].includes(String(turn.result.stage))
 }
 
-export const currentAiActivity = (
-  phase?: string,
-  toolStatus?: string
-): string => {
-  if (toolStatus === 'running') return 'Converting image to vectors…'
-  if (toolStatus === 'completed') return 'Preparing the vector drawing…'
-  if (phase === 'execution') return 'Updating canvas…'
-  if (phase === 'confirmation') return 'Awaiting approval'
-  return 'Working…'
+const activityToolLabels: Readonly<Record<string, string>> = Object.freeze({
+  vtracer: 'VTracer image tracing',
+  [AiActionNames.INSERT_VECTOR_COMPOSITION]: 'Add vector drawing',
+  [AiActionNames.REPLACE_VECTOR_COMPOSITION]: 'Replace vector drawing',
+  [AiActionNames.REMOVE_AI_COMPOSITION]: 'Remove drawing',
+  [AiActionNames.SET_ELEMENT_VISIBILITY]: 'Change element visibility',
+  [AiActionNames.SELECT_ELEMENTS]: 'Select elements',
+  [AiActionNames.UPDATE_COMPOSITION_ELEMENTS]: 'Update drawing elements'
+})
+
+const activityLabel = (update: AiRuntimeProgressUpdate): string => {
+  if (update.tool && update.toolStatus) {
+    const tool = Object.hasOwn(activityToolLabels, update.tool)
+      ? activityToolLabels[update.tool]
+      : 'App tool'
+    return update.toolStatus === 'running'
+      ? `${tool} - running`
+      : `${tool} - finished; waiting for AI`
+  }
+  switch (update.phase) {
+    case 'context':
+      return 'Reading drawing context'
+    case 'provider':
+      return 'Waiting for AI response'
+    case 'resolution':
+      return 'Checking requested actions'
+    case 'permission':
+      return 'Checking action permissions'
+    case 'confirmation':
+      return 'Awaiting approval'
+    case 'execution':
+      return 'Running app actions'
+    case 'settled':
+      if (update.outcome === 'failed') return 'Failed'
+      if (update.outcome === 'cancelled') return 'Stopped'
+      return 'Finished'
+  }
+}
+
+/** One projection per turn render; the current entry is shared with the history. */
+export const projectAiActivity = (
+  updates: readonly AiRuntimeProgressUpdate[],
+  state: {
+    readonly stopping?: boolean
+    readonly awaitingApproval?: boolean
+    readonly outcome?: AiConversationOutcome
+  } = {}
+) => {
+  const entries: { label: string; message?: string }[] = updates.map(
+    (update) => ({
+      label: activityLabel(update),
+      ...(update.message ? { message: update.message } : {})
+    })
+  )
+  let terminalLabel: string | undefined
+  if (state.outcome) {
+    terminalLabel = 'Finished'
+    if (state.outcome === 'failed') terminalLabel = 'Failed'
+    if (state.outcome === 'cancelled') terminalLabel = 'Stopped'
+  } else if (state.stopping) {
+    terminalLabel = 'Stopping…'
+  } else if (state.awaitingApproval) {
+    terminalLabel = 'Awaiting approval'
+  }
+  if (terminalLabel && entries.at(-1)?.label !== terminalLabel)
+    entries.push({ label: terminalLabel })
+  if (!entries.length) entries.push({ label: 'Starting request' })
+  return { entries, current: entries[entries.length - 1] }
 }
 
 export const projectAiQuestion = (

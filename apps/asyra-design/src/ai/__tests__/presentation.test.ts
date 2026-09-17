@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { projectAiActivity } from '../presentation'
 import {
   canRetryAiTurn,
   projectAiDrawingDetailChoice,
@@ -190,4 +191,73 @@ describe('capability outcomes', () => {
       'Earlier changes are kept'
     )
   })
+})
+
+describe('shared current activity and activity history', () => {
+  it('reuses the latest event label and identifies the actual tool and AI continuation', () => {
+    const projection = projectAiActivity([
+      { attempt: 1, phase: 'context', summary: 'legacy context' },
+      {
+        attempt: 1,
+        phase: 'provider',
+        tool: 'vtracer',
+        toolStatus: 'running',
+        summary: 'Running a tool'
+      },
+      {
+        attempt: 1,
+        phase: 'provider',
+        tool: 'vtracer',
+        toolStatus: 'completed',
+        summary: 'Tool completed'
+      }
+    ])
+    expect(projection.entries.map((entry) => entry.label)).toEqual([
+      'Reading drawing context',
+      'VTracer image tracing - running',
+      'VTracer image tracing - finished; waiting for AI'
+    ])
+    expect(projection.current).toBe(projection.entries.at(-1))
+  })
+  it('keeps backend operation messages attached to their event and projects real control states', () => {
+    const updates = [
+      {
+        attempt: 1,
+        phase: 'provider' as const,
+        tool: 'set_element_visibility',
+        toolStatus: 'running' as const,
+        summary: 'Running a tool',
+        message: '正在隱藏 TM'
+      }
+    ]
+    const projection = projectAiActivity(updates)
+    expect(projection.current).toMatchObject({
+      label: 'Change element visibility - running',
+      message: '正在隱藏 TM'
+    })
+    for (const [state, label] of [
+      [{ stopping: true }, 'Stopping…'],
+      [{ awaitingApproval: true }, 'Awaiting approval']
+    ] as const) {
+      const controlled = projectAiActivity(updates, state)
+      expect(controlled.current).toBe(controlled.entries.at(-1))
+      expect(controlled.current.label).toBe(label)
+    }
+  })
+})
+
+it('ends history with the authoritative result even when cancellation emitted no terminal progress', () => {
+  const projection = projectAiActivity(
+    [
+      {
+        attempt: 1,
+        phase: 'provider',
+        tool: 'vtracer',
+        toolStatus: 'running',
+        summary: 'Running a tool'
+      }
+    ],
+    { outcome: 'cancelled' }
+  )
+  expect(projection.entries.at(-1)?.label).toBe('Stopped')
 })

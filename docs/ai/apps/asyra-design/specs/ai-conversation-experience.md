@@ -20,7 +20,15 @@ for an answer or approval has no active-work spinner. Approval is governed by th
 existing runtime policy, with a concrete change summary and an explicit decision.
 
 Current activity is derived from real execution phases, with one concise visible
-status and collapsed details. No synthetic reasoning or timed percentage is allowed.
+status and collapsed details. One App-owned activity projection produces the
+ordered entries and the current entry shared by the headline and Activity list.
+The list marks exactly one current entry while work is active, including real
+approval/stop states. Tool events identify the registered tool or operation;
+tool completion explicitly transitions to waiting for AI, not an invented next
+processing stage. Model-authored operational messages stay attached to their
+corresponding event. Settlement removes the current marker and labels the final
+summary as Result (questions remain questions). No synthetic reasoning or timed
+percentage is allowed.
 Private model reasoning is never displayed. Explicit operational messages from registered backend operations may be displayed. App-owned text
 is English; user text and model-authored content retain their language.
 

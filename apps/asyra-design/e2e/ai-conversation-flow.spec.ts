@@ -1,3 +1,4 @@
+import { createServer, type ServerResponse } from 'node:http'
 import { expect, test } from '@playwright/test'
 import { createPreparedDrawingArtifact } from './action-batch-interceptor'
 import {
@@ -493,5 +494,130 @@ for (const width of [360, 1280]) {
     expect(await getCoreDocumentDigest(page)).toEqual(before)
     await redo(page)
     expect(await getCoreDocumentDigest(page)).toEqual(after)
+  })
+}
+
+for (const width of [360, 1280]) {
+  test(`current activity matches the streamed history at ${width}px`, async ({
+    page
+  }, testInfo) => {
+    let response: ServerResponse | undefined
+    let connected: (() => void) | undefined
+    const connection = new Promise<void>((resolve) => {
+      connected = resolve
+    })
+    const server = createServer((request, outgoing) => {
+      request.resume()
+      outgoing.writeHead(200, {
+        'content-type': 'application/x-ndjson',
+        'access-control-allow-origin': '*'
+      })
+      outgoing.flushHeaders()
+      response = outgoing
+      connected?.()
+    })
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
+    const address = server.address()
+    if (!address || typeof address === 'string')
+      throw new Error('Missing fixture address')
+    try {
+      await page.route('**/api/ai/status', (route) =>
+        route.fulfill({ json: { state: 'ready' } })
+      )
+      await page.route('**/api/ai/action-batch', (route) =>
+        route.continue({
+          url: `http://127.0.0.1:${address.port}/api/ai/action-batch`
+        })
+      )
+      await page.goto(createTestDocumentIdentity().url)
+      await waitForAppReady(page)
+      await page.setViewportSize({ width, height: 900 })
+      await page.getByRole('button', { name: 'Open Agent' }).click()
+      await page
+        .getByLabel('Message Agent')
+        .fill('Trace the reference, then change visibility')
+      await page.getByRole('button', { name: 'Send', exact: true }).click()
+      await connection
+      if (!response) throw new Error('Missing stream')
+      await page.getByText('Activity', { exact: true }).click()
+      const status = page.getByRole('status', { name: 'Current activity' })
+      const current = page
+        .getByLabel('Operational progress')
+        .locator('[aria-current="step"]')
+      const events = [
+        {
+          tool: 'vtracer',
+          status: 'running',
+          label: 'VTracer image tracing - running'
+        },
+        {
+          tool: 'vtracer',
+          status: 'completed',
+          label: 'VTracer image tracing - finished; waiting for AI'
+        },
+        {
+          tool: 'set_element_visibility',
+          status: 'running',
+          label: 'Change element visibility - running',
+          message: '正在隱藏右下角的標記。'
+        }
+      ]
+      for (const event of events) {
+        response.write(
+          JSON.stringify({
+            type: 'activity',
+            tool: event.tool,
+            status: event.status,
+            message: event.message
+          }) + '\n'
+        )
+        await expect(status).toHaveText(event.label)
+        await expect(current).toHaveCount(1)
+        await expect(current).toContainText(event.label)
+        await expect(
+          page.getByText('Running a tool', { exact: true })
+        ).toHaveCount(0)
+      }
+      await expect(current).toContainText('正在隱藏右下角的標記。')
+      await page
+        .getByTestId('ai-agent-panel')
+        .screenshot({ path: testInfo.outputPath('current-activity.png') })
+      response.end(
+        JSON.stringify({
+          type: 'result',
+          batch: {
+            batchId: 'activity-result',
+            actions: [
+              {
+                id: 'report',
+                name: 'report_outcome',
+                arguments: {
+                  outcome: 'completed',
+                  message: 'No canvas changes were needed.'
+                },
+                summary: 'Report result'
+              }
+            ]
+          }
+        }) + '\n'
+      )
+      await expect(page.getByTestId('ai-agent-message')).toHaveAttribute(
+        'data-outcome',
+        'no-change'
+      )
+      await expect(status).toHaveCount(0)
+      await expect(current).toHaveCount(0)
+      await expect(page.getByText('Result', { exact: true })).toBeVisible()
+      await expect(page.getByLabel('Operational progress')).toContainText(
+        '正在隱藏右下角的標記。'
+      )
+      await page
+        .getByTestId('ai-agent-panel')
+        .screenshot({ path: testInfo.outputPath('activity-result.png') })
+    } finally {
+      response?.end()
+      server.closeAllConnections()
+      await new Promise<void>((resolve) => server.close(() => resolve()))
+    }
   })
 }

@@ -1562,6 +1562,7 @@
             ],
             "conditions": [
               "Append the user message before execution and preserve its identity through settlement.",
+              "One App activity projection owns both the current headline and ordered Activity entries, identifies real tool transitions, attaches model updates to their event, and projects approval/stop from existing controller state. Settlement clears the current marker and separates Result from work history.",
               "Questions wait for user input; provider completion alone does not complete the drawing goal.",
               "Panel closure hides presentation; document disposal cancels and retires late events.",
               "Only existing feature and requestActionBatch owners may execute; status never writes canonical state.",

@@ -65,7 +65,7 @@ describe('AI Agent conversation panel intent boundary', () => {
     act(() => {
       void harness.conversation.submit('Draw')
     })
-    const project = vi.spyOn(presentation, 'currentAiActivity')
+    const project = vi.spyOn(presentation, 'projectAiActivity')
     for (const value of ['N', 'Ne', 'Next']) {
       fireEvent.change(screen.getByLabelText('Message Agent'), {
         target: { value }
@@ -608,8 +608,8 @@ describe('AI Agent conversation panel intent boundary', () => {
     expect(settledMessage.tagName).toBe('ARTICLE')
     expect(settledMessage.getAttribute('data-outcome')).toBe('success')
     expect(screen.getByText('畫一個貓臉')).toBeTruthy()
-    expect(screen.getByText('Understanding the request')).toBeTruthy()
-    expect(screen.getByText('Applying changes')).toBeTruthy()
+    expect(screen.getByText('Reading drawing context')).toBeTruthy()
+    expect(screen.getByText('Running app actions')).toBeTruthy()
     expect(screen.getByText('Elapsed 1.3s')).toBeTruthy()
     expect(screen.queryByText('You')).toBeNull()
     expect(screen.queryByText(/secret-action-id/)).toBeNull()

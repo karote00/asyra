@@ -25,7 +25,7 @@ import type {
 } from '../ai/conversation'
 import {
   canRetryAiTurn,
-  currentAiActivity,
+  projectAiActivity,
   formatElapsedTime,
   projectAiQuestion,
   summarizeAiTurn,
@@ -584,14 +584,11 @@ const AiConversationFeed = ({
           if (canAnswer) questionStatus = 'Waiting for your answer'
           const latest = timeline.at(-1)?.turnId === turn.turnId
           const stopping = !settled && conversationSnapshot.activeTurn?.stopping
-          let activity = currentAiActivity(
-            turn.progress.at(-1)?.phase,
-            turn.progress.at(-1)?.tool === 'vtracer'
-              ? turn.progress.at(-1)?.toolStatus
-              : undefined
-          )
-          if (stopping) activity = 'Stopping…'
-          if (pendingConfirmation) activity = 'Awaiting approval'
+          const activity = projectAiActivity(turn.progress, {
+            outcome: settled?.outcome,
+            stopping: Boolean(stopping),
+            awaitingApproval: !settled && Boolean(pendingConfirmation)
+          })
           return (
             <article
               className="flex min-w-0 flex-col gap-3"
@@ -617,34 +614,39 @@ const AiConversationFeed = ({
                 data-message-role="assistant"
                 className="min-w-0 self-stretch py-1 pr-3 text-[12px] leading-5 text-[#e1dff0]"
               >
-                {turn.progress
-                  .filter((update) => update.message)
-                  .map((update, index) => (
-                    <p
-                      key={index}
-                      className="mb-2 mt-0 whitespace-pre-wrap break-words"
-                    >
-                      {update.message}
-                    </p>
-                  ))}
                 {!settled ? (
                   <div
                     role="status"
-                    className="flex items-center gap-2 text-[#b9b2d4]"
+                    aria-label="Current activity"
+                    className="flex items-start gap-2 text-[#b9b2d4]"
                   >
                     {!pendingConfirmation ? (
                       <span
                         aria-hidden="true"
-                        className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#9f8cff]"
+                        className="mt-2 h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-[#9f8cff]"
                       />
                     ) : null}
-                    {activity}
+                    <span className="min-w-0 break-words">
+                      {activity.current.label}
+                    </span>
                   </div>
                 ) : (
-                  <p className="m-0 whitespace-pre-wrap break-words">
-                    {summary?.message}
-                  </p>
+                  <div>
+                    {!question ? (
+                      <p className="mb-1 mt-0 text-[10px] text-[#96939f]">
+                        Result
+                      </p>
+                    ) : null}
+                    <p className="m-0 whitespace-pre-wrap break-words">
+                      {summary?.message}
+                    </p>
+                  </div>
                 )}
+                {!settled && activity.current.message ? (
+                  <p className="mb-0 mt-2 whitespace-pre-wrap break-words">
+                    {activity.current.message}
+                  </p>
+                ) : null}
                 {confirmationSnapshot.decisions
                   ?.filter((decision) => decision.turnId === turn.turnId)
                   .map((decision) => (
@@ -684,18 +686,39 @@ const AiConversationFeed = ({
                     ) : null}
                   </>
                 ) : null}
-                {turn.progress.length > 0 && !question ? (
+                {!question && (turn.progress.length > 0 || !settled) ? (
                   <details className="mt-2 text-[10px] text-[#96939f]">
                     <summary className="cursor-pointer">Activity</summary>
                     <ol
                       aria-label="Operational progress"
                       className="my-1 list-none space-y-1 pl-3"
                     >
-                      {turn.progress.map((update, index) => (
-                        <li key={`${turn.turnId}:${index}`}>
-                          {update.summary}
-                        </li>
-                      ))}
+                      {activity.entries.map((entry, index) => {
+                        const current = !settled && entry === activity.current
+                        return (
+                          <li
+                            key={`${turn.turnId}:${index}`}
+                            aria-current={current ? 'step' : undefined}
+                            className={
+                              current
+                                ? 'rounded border-l-2 border-[#9f8cff] bg-[#2b2738] px-2 py-1 text-[#ded8ff]'
+                                : 'py-1'
+                            }
+                          >
+                            {current ? (
+                              <span className="mr-2 text-[9px] uppercase">
+                                Current
+                              </span>
+                            ) : null}
+                            <span>{entry.label}</span>
+                            {entry.message ? (
+                              <p className="mb-0 mt-1 whitespace-pre-wrap break-words">
+                                {entry.message}
+                              </p>
+                            ) : null}
+                          </li>
+                        )
+                      })}
                     </ol>
                   </details>
                 ) : null}
