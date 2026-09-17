@@ -1,22 +1,23 @@
+import {
+  farm,
+  robot,
+  setup,
+  batch,
+  sweep,
+  coverage,
+  expectedInventory
+} from './collision-test-fixtures'
 import { expect, it, vi } from 'vitest'
 import { Matrix4, Quaternion, Vector3 } from 'three'
 import { prepareHierarchy, queryHierarchy } from './source-hierarchy'
 import { SiteGeometry } from '../../render-app/site-geometry'
-import { RobotProjection } from '../../render-app/robot-projection'
 import {
   buildSiteMeshes,
   type SiteMesh
 } from '../../render-app/site-projection'
 import { readSpatialDescriptor } from '../../engine/spatial-contract'
-import {
-  DEFAULT_CONFIGURATION,
-  type FarmConfiguration
-} from '../../domain/farm-configuration'
-import {
-  DEFAULT_ROBOT,
-  assessRobotDesign,
-  validateRobot
-} from '../../domain/robot-configuration'
+import { DEFAULT_CONFIGURATION } from '../../domain/farm-configuration'
+import { DEFAULT_ROBOT } from '../../domain/robot-configuration'
 import type { Point3 } from '../../domain/greenhouse'
 import { REST_JOINTS, prepareRobotRig } from '../../domain/robot-kinematics'
 import type { RobotSource, DockSource } from '../../render-app/robot-projection'
@@ -38,19 +39,8 @@ import {
   prepareQueryInstanceFrame,
   transformQueryPoint
 } from '../ray-query'
-import {
-  SurfaceQueries,
-  type SurfaceBatch,
-  type SurfaceSweepBatch,
-  type SurfaceCoverageBatch
-} from '../collision'
+import { SurfaceQueries, type SurfaceSweepBatch } from '../collision'
 
-const farm = {
-  ...DEFAULT_CONFIGURATION,
-  strips: [{ id: 'soil', kind: 'soil' as const, width: 6.3 }]
-}
-const robot = new RobotProjection()
-robot.update(assessRobotDesign(validateRobot(DEFAULT_ROBOT), farm))
 function triangle(id: string, positions: number[]): SiteMesh {
   return {
     id,
@@ -74,51 +64,6 @@ function triangle(id: string, positions: number[]): SiteMesh {
       wireframe: false,
       selectable: false
     }) as SiteMesh['descriptor']
-  }
-}
-function setup(
-  meshes: SiteMesh[],
-  configuration: FarmConfiguration = farm,
-  site = new SiteGeometry()
-) {
-  const scene = site.prepareScene(configuration, meshes)
-  const receipt: GeometryReceipt = Object.freeze({
-    revision: 1,
-    scene,
-    robot: robot.getSource(),
-    dock: robot.getDockSource()
-  })
-  const owner = new QueryGeometry({
-    isCurrentReceipt: (value) => value === receipt,
-    isCurrentScene: site.isCurrentScene.bind(site),
-    isCurrentRobot: robot.isCurrentSource.bind(robot),
-    isCurrentDock: robot.isCurrentDockSource.bind(robot)
-  })
-  return {
-    site,
-    owner,
-    source: owner.prepare(receipt),
-    query: new SurfaceQueries(owner)
-  }
-}
-function batch(): SurfaceBatch {
-  return {
-    source: 'synthetic',
-    time: 1,
-    validFrom: 0,
-    validUntil: 10,
-    leaves: 'source-pose',
-    fruits: 'all-attached',
-    robot: {
-      base: { position: [0, 0, 0], rotation: [0, 0, 0, 1] },
-      joints: { ...REST_JOINTS }
-    },
-    pairs: [
-      {
-        first: { mesh: 0, instance: 0, triangle: 0 },
-        second: { mesh: 1, instance: 0, triangle: 0 }
-      }
-    ]
   }
 }
 const plane = [0, 0, 0, 4, 0, 0, 0, 4, 0]
@@ -431,24 +376,6 @@ it('does not exempt intersecting original robot surfaces and preserves empty bat
   })
 })
 
-function sweep(): SurfaceSweepBatch {
-  const initial = batch()
-  return {
-    source: initial.source,
-    from: 1,
-    until: 3,
-    validFrom: 0,
-    validUntil: 10,
-    robot: initial.robot,
-    leaves: 'source-pose-throughout',
-    fruits: 'all-attached-throughout',
-    pairs: initial.pairs.map((pair) => ({
-      ...pair,
-      firstTranslation: [0, 0, 2],
-      secondTranslation: [0, 0, 0]
-    }))
-  }
-}
 const shiftedPlane = (z: number) => [0, 0, z, 4, 0, z, 0, 4, z]
 it.each([
   ['interior', 1, 0.5],
@@ -683,22 +610,6 @@ it('keeps relative displacement and large finite simulation-time conversion cons
   expect(contact.contactTime.high).toBeLessThanOrEqual(input.until)
 })
 
-function coverage(): SurfaceCoverageBatch {
-  const input = sweep()
-  return {
-    source: input.source,
-    from: input.from,
-    until: input.until,
-    validFrom: input.validFrom,
-    validUntil: input.validUntil,
-    robot: input.robot,
-    leaves: input.leaves,
-    fruits: input.fruits,
-    displacement: [0, 0, 2],
-    held: 'empty',
-    maxTrianglePairs: 100
-  }
-}
 function smallCoverage(
   meshes: SiteMesh[] = [],
   overlapping = false,
@@ -770,38 +681,6 @@ function smallCoverage(
     query: new SurfaceQueries(owner)
   }
 }
-function expectedInventory(source: ReturnType<typeof setup>['source']) {
-  const robots = source.meshes.filter((mesh) => mesh.kind === 'robot'),
-    environment = source.meshes.filter((mesh) => mesh.kind !== 'robot')
-  const triangles = (mesh: (typeof robots)[number]) => {
-    if (mesh.shape.kind !== 'triangles')
-      throw new Error('Invalid fixture source')
-    return mesh.shape.indices.length / 3
-  }
-  let meshPairs = 0,
-    trianglePairs = 0,
-    environmentInstances = 0
-  for (const mesh of environment)
-    environmentInstances += mesh.descriptor?.instances?.length ?? 1
-  for (let i = 0; i < robots.length; i++) {
-    for (const mesh of environment) {
-      const instances = mesh.descriptor?.instances?.length ?? 1
-      meshPairs += instances
-      trianglePairs += triangles(robots[i]) * triangles(mesh) * instances
-    }
-    for (let j = i + 1; j < robots.length; j++) {
-      meshPairs++
-      trianglePairs += triangles(robots[i]) * triangles(robots[j])
-    }
-  }
-  return {
-    robotParts: robots.length,
-    environmentInstances,
-    meshPairs,
-    trianglePairs
-  }
-}
-
 it('covers the complete original pair domain with exact-budget middle contact', () => {
   const f = smallCoverage([triangle('obstacle', shiftedPlane(1))]),
     input = coverage()
@@ -1330,53 +1209,6 @@ it('keeps every original region triangle and exhaustive nonseparated pair across
           selected.results.filter((value) => value.status === status).length
         ).toBe(full.results.filter((value) => value.status === status).length)
     }
-  }
-})
-
-it('profiles cold source hierarchy and two warm poses without Cartesian triangle traversal', () => {
-  const configuration = { ...DEFAULT_CONFIGURATION, length: 2.2 },
-    site = new SiteGeometry()
-  const f = setup(buildSiteMeshes(configuration, site), configuration, site),
-    tree = prepareHierarchy(f.source)
-  expect(tree.work.leafReferences).toBe(tree.work.builtTriangles)
-  console.log(
-    'hierarchy cold source profile',
-    JSON.stringify({
-      work: tree.work,
-      milliseconds: tree.milliseconds,
-      payloadBytes: tree.payloadBytes
-    })
-  )
-  for (const yaw of [0, 0.4]) {
-    const input = coverage()
-    if (!input.robot) throw new Error('Expected robot')
-    input.robot = {
-      ...input.robot,
-      base: {
-        position: [0, 0, 0],
-        rotation: [0, Math.sin(yaw / 2), 0, Math.cos(yaw / 2)]
-      }
-    }
-    const baselineStart = performance.now(),
-      baseline = f.query.cover(f.source, { ...input, maxTrianglePairs: 0 }),
-      baselineMs = performance.now() - baselineStart
-    const report = queryHierarchy(tree, input)
-    expect(report.work.total).toBe(expectedInventory(f.source).trianglePairs)
-    expect(
-      report.work.excluded + report.work.candidates + report.work.unvisited
-    ).toBe(report.work.total)
-    expect(report.work.nodePairs).toBeLessThanOrEqual(500000)
-    expect(report.candidates).toHaveLength(0)
-    console.log(
-      'hierarchy warm pose profile',
-      JSON.stringify({
-        yaw,
-        baselineRemaining: baseline.coverage.unvisited,
-        baselineMs,
-        work: report.work,
-        milliseconds: report.milliseconds
-      })
-    )
   }
 })
 

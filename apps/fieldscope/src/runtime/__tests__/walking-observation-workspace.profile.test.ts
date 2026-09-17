@@ -11,10 +11,10 @@ import { roundFraction } from '../../domain/scalar-arithmetic'
 import { createSyntheticWalkingRobotDefinition } from '../../domain/walking-robot-definition'
 import { createWalkingRuntimeSelection } from '../../domain/walking-runtime-selection'
 
-it('walking observation selected action binds the issued non-stowed root and retires stale motion with bounded canonical sources', () => {
+it('walking observation selected action binds the issued non-stowed root and retires stale motion', () => {
   const fixture = cycleFixture({ sourceProfile: 'solid-articulation/2' })
   const f = walkingObservationWorkspaceFixture(
-    'bounded-source',
+    'actual-site',
     fixture.source.definition
   )
   if (f.report.status === 'legacy-view')
@@ -141,10 +141,10 @@ it('walking observation selected action binds the issued non-stowed root and ret
   expect(f.workspace.isCurrent(result.observation)).toBe(false)
   expect(f.workspace.observeSelectedAction(request).status).toBe('unavailable')
   f.workspace.close()
-})
+}, 30000)
 
-it('walking observation workspace rejects missing and malformed scenarios before changing current admitted inputs with bounded canonical sources', () => {
-  const f = walkingObservationWorkspaceFixture('bounded-source')
+it('walking observation workspace rejects missing and malformed scenarios before changing current admitted inputs', () => {
+  const f = walkingObservationWorkspaceFixture('actual-site')
   const before = f.sourceOwner.work
   expect(f.workspace.observe(f.request)).toEqual({
     status: 'unavailable',
@@ -228,10 +228,10 @@ it('walking observation workspace rejects missing and malformed scenarios before
   expect(() => f.workspace.configure(f.config, f.world)).toThrow()
   expect(() => f.workspace.observe(f.request)).toThrow()
   f.operating.clear()
-})
+}, 30000)
 
-it('walking observation workspace never promotes incomplete optics dynamics or bounded work into complete-empty with bounded canonical sources', () => {
-  const f = walkingObservationWorkspaceFixture('bounded-source')
+it('walking observation workspace never promotes incomplete optics dynamics or bounded work into complete-empty', () => {
+  const f = walkingObservationWorkspaceFixture('actual-site')
   const observe = () => {
     const result = f.workspace.observe(f.request)
     if (result.status !== 'available') throw new Error(result.reason)
@@ -276,4 +276,4 @@ it('walking observation workspace never promotes incomplete optics dynamics or b
   expect(observe().observation.reasons).toContain('incomplete-frustum-or-range')
   f.workspace.close()
   f.operating.clear()
-})
+}, 30000)

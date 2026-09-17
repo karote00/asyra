@@ -2,6 +2,15 @@ import { expect, it } from 'vitest'
 import type { WalkingStowedEnvelope } from '../../domain/walking-robot-envelopes'
 import type { SceneDemand, SceneDemandExclusion } from '../scene-demand'
 import { WalkingTransitScreen } from '../walking-transit-screen'
+import {
+  prepareSceneDemand,
+  prepareSceneObservationSpace,
+  SceneDemandSourceBoundsOwner
+} from '../scene-demand'
+import { DEFAULT_CONFIGURATION } from '../../domain/farm-configuration'
+import { readSpatialDescriptor } from '../../engine/spatial-contract'
+import { readSourceRegions } from '../../domain/source-occupancy'
+import type { SiteMesh } from '../../render-app/site-projection'
 
 const box = (min: [number, number, number], max: [number, number, number]) => ({
   min,
@@ -64,6 +73,120 @@ it('shares one W1 index for arbitrary volume queries and changing transit margin
   )
   screen.clear()
   expect(screen.isCurrentVolume(first)).toBe(false)
+})
+
+it('shares one membership-aware W1 tree for route and complete observation inventories', () => {
+  const descriptor = readSpatialDescriptor({
+    kind: 'mesh',
+    position: [0, 0, 0],
+    rotation: [0, 0, 0, 1],
+    shape: {
+      kind: 'triangles',
+      positions: [0, 0, 0, 0.1, 0, 0, 0, 0.1, 0],
+      indices: [0, 1, 2]
+    },
+    instances: [
+      { position: [2, 0.2, 0.5], yaw: 0 },
+      ...Array.from({ length: 1024 }, (_, i) => ({
+        position: [50 + i * 2, 0.2, 0.5],
+        yaw: 0
+      }))
+    ],
+    color: 0,
+    opacity: 1,
+    wireframe: false,
+    selectable: false
+  }) as SiteMesh['descriptor']
+  const mesh: SiteMesh = {
+    id: 'observation-index-source',
+    layer: 'supports',
+    visible: true,
+    descriptor,
+    regions: readSourceRegions(
+      [{ id: 'sheet', kind: 'sheet', indexStart: 0, indexCount: 3 }],
+      3
+    )
+  }
+  const sourceOwner = new SceneDemandSourceBoundsOwner()
+  const source = prepareSceneDemand(
+    { ...DEFAULT_CONFIGURATION, length: 2.2 },
+    { revision: 1, meshes: [mesh], plants: [], fruits: [] },
+    {
+      version: 1,
+      route: {
+        kind: 'soil-strip',
+        bay: 0,
+        stripId: 'strip-3',
+        from: 0.25,
+        until: 1.9
+      },
+      evidence: {
+        kind: 'synthetic',
+        id: 'shared-index',
+        label: 'Synthetic shared index'
+      },
+      growth: { kind: 'bounded', coverage: 'complete', volumes: [] },
+      clearanceMargin: { kind: 'bounded', metres: 0 }
+    },
+    sourceOwner
+  )
+  let current = source
+  const screen = new WalkingTransitScreen((value) => value === current)
+  const near = box([1.9, 0.1, 0.4], [2.2, 0.4, 0.6])
+  const route = screen.queryVolume(source, near)
+  const observation = prepareSceneObservationSpace(source, sourceOwner)
+  const observed = screen.queryObservationVolume(source, observation, near)
+  expect(route.coverage).toBe('covered')
+  expect(observed.coverage).toBe('covered')
+  expect(observed.affected).toEqual([observation.sources[0]])
+  expect(observed.inventory).toBe(observation.sources)
+  expect(screen.work.builds).toBe(2)
+  expect(screen.work.upgrades).toBe(1)
+  expect(observed.work.builds).toBe(1)
+  expect(observed.work.indexEntries).toBe(
+    observation.sources.length +
+      source.freePassage.exclusions.filter((v) => v.kind !== 'source').length
+  )
+  const freshScreen = new WalkingTransitScreen()
+  const fresh = freshScreen.queryObservationVolume(source, observation, near)
+  expect(fresh.affected).toEqual(observed.affected)
+  expect(fresh.coverage).toBe(observed.coverage)
+  expect(freshScreen.work.builds).toBe(1)
+  expect(freshScreen.work.upgrades).toBe(0)
+  expect(screen.queryVolume(source, near).affected).toEqual(route.affected)
+  expect(screen.work.builds).toBe(2)
+  expect(observed.work.nodeVisits).toBeLessThan(40)
+  expect(observed.work.detailedOverlaps).toBe(1)
+  const offRoute = screen.queryObservationVolume(
+    source,
+    observation,
+    box([49.9, 0.1, 0.4], [50.2, 0.4, 0.6])
+  )
+  expect(offRoute.coverage).toBe('covered')
+  expect(offRoute.affected[0]).toBe(observation.sources[1])
+  expect(screen.queryVolume(source, offRoute.bounds).coverage).toBe(
+    'outside-route'
+  )
+  expect(screen.isCurrentVolume(observed)).toBe(true)
+  expect(screen.isCurrentVolume({ ...observed })).toBe(false)
+  expect(
+    screen.queryObservationVolume(
+      source,
+      observation,
+      box([-1, 0, 0], [0, 1, 1])
+    ).coverage
+  ).not.toBe('covered')
+  current = { ...source, identity: {} }
+  expect(screen.isCurrentVolume(observed)).toBe(false)
+  expect(
+    screen.queryObservationVolume(current, observation, near).coverage
+  ).toBe('unknown')
+  expect(screen.work.builds).toBe(2)
+  expect(
+    screen.queryObservationVolume(source, { ...observation }, near).coverage
+  ).toBe('unknown')
+  screen.clear()
+  expect(screen.isCurrentVolume(offRoute)).toBe(false)
 })
 
 it('builds one immutable index for one W1 route and reuses it across base actions', () => {

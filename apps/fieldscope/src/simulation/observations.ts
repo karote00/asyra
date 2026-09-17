@@ -2,7 +2,8 @@ import type { WalkingOperatingReport } from '../runtime/walking-operating-worksp
 import type { WalkingRobotSource } from '../domain/walking-robot-source'
 import type { CropSpecies } from '../domain/crop-layout'
 import type { CropSourceAnatomyPatch, CropFruit } from '../domain/crop-models'
-import type { SceneDemand } from './scene-demand'
+import { isSceneObservationSpace } from './scene-demand'
+import type { SceneDemand, SceneObservationSpace } from './scene-demand'
 import {
   WalkingTransitScreen,
   type WalkingSceneCandidates
@@ -708,6 +709,7 @@ export class TargetObservations {
       screen,
       dynamics,
       snapshot.run?.held.length === 0,
+      (bounds) => screen.queryVolume(demand, bounds),
       () => {
         this.current(context)
       },
@@ -1075,12 +1077,18 @@ export class WalkingActionObservations {
   private readonly localRays: RayQueries
   private issued = new WeakMap<
     WalkingActionVolumeObservation,
-    { query: WalkingSceneCandidates; dynamic: SyntheticDynamicSnapshot }
+    {
+      query: WalkingSceneCandidates
+      dynamic: SyntheticDynamicSnapshot
+      space: SceneObservationSpace
+    }
   >()
   private closed = false
   constructor(
     private readonly geometry: QueryGeometry,
     private readonly owners: {
+      prepareObservationSpace(demand: SceneDemand): SceneObservationSpace
+      isCurrentObservationSpace(space: SceneObservationSpace): boolean
       isCurrentContext(context: WalkingActionObservationContext): boolean
       screen: WalkingTransitScreen
       dynamics: SyntheticDynamicSceneOwner
@@ -1117,6 +1125,12 @@ export class WalkingActionObservations {
       context.now >= input.validUntil
     )
       reject()
+    const space = this.owners.prepareObservationSpace(context.demand)
+    if (
+      !isSceneObservationSpace(context.demand, space) ||
+      !this.owners.isCurrentObservationSpace(space)
+    )
+      reject()
     const completed = observeActionKernel(
       this.geometry,
       this.localRays,
@@ -1126,6 +1140,12 @@ export class WalkingActionObservations {
       this.owners.screen,
       this.owners.dynamics,
       context.report.load.kind === 'empty',
+      (bounds) =>
+        this.owners.screen.queryObservationVolume(
+          context.demand,
+          space,
+          bounds
+        ),
       () => {
         this.current(context)
       },
@@ -1138,7 +1158,7 @@ export class WalkingActionObservations {
       format: 'walking-action-volume-observation/1',
       context
     })
-    this.issued.set(result, completed)
+    this.issued.set(result, { ...completed, space })
     return result
   }
   isCurrent(result: WalkingActionVolumeObservation): boolean {
@@ -1147,6 +1167,8 @@ export class WalkingActionObservations {
     try {
       this.current(result.context)
       return (
+        this.owners.isCurrentObservationSpace(issued.space) &&
+        isSceneObservationSpace(result.context.demand, issued.space) &&
         this.owners.screen.isCurrentVolume(issued.query) &&
         this.owners.dynamics.isCurrent(issued.dynamic)
       )
@@ -1169,6 +1191,9 @@ function observeActionKernel(
   screen: WalkingTransitScreen,
   dynamics: SyntheticDynamicSceneOwner,
   emptyLoad: boolean,
+  queryVolume: (
+    bounds: WalkingSceneCandidates['bounds']
+  ) => WalkingSceneCandidates,
   current: () => void,
   queryRays: (
     batch: WalkingWorldRayBatch,
@@ -1261,7 +1286,7 @@ function observeActionKernel(
   })
   if (reliability.status !== 'reliable')
     reasons.push('insufficient-synthetic-optics')
-  const query = screen.queryVolume(demand, {
+  const query = queryVolume({
     ...sightBounds,
     size: max.map(
       (v, i) => subtract(interval(v), interval(min[i])).high

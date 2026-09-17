@@ -4,6 +4,7 @@ import { createRobotWorkspace } from './robot-workspace'
 import { createSceneDemandWorkspace } from './scene-demand-workspace'
 import { createWalkingOperatingWorkspace } from './walking-operating-workspace'
 import { createWalkingObservationWorkspace } from './walking-observation-workspace'
+import { createWalkingLocalActionWorkspace } from './walking-local-action-workspace'
 import { SiteGeometry } from '../render-app/site-geometry'
 import { moveCamera, lookCamera } from '../render-app/camera-flight'
 import {
@@ -179,6 +180,13 @@ export async function bootstrap(
     updateSelectedRobot
   )
   const walkingObservation = createWalkingObservationWorkspace({
+    prepareObservationSpace: (demand) => {
+      if (!sceneDemandWorkspace.isCurrent(demand))
+        throw new Error('Stale walking observation demand')
+      return sceneDemandWorkspace.prepareObservationSpace()
+    },
+    isCurrentObservationSpace: sceneDemandWorkspace.isCurrentObservationSpace,
+    getSourceWork: sceneDemandWorkspace.getSourceWork,
     getOperating: walkingOperating.get,
     isCurrentOperating: walkingOperating.isCurrent,
     getDemand: sceneDemandWorkspace.get,
@@ -186,6 +194,12 @@ export async function bootstrap(
     getScene: () => geometry.getScene(),
     isCurrentScene: (scene) => geometry.isCurrentScene(scene),
     screen: walkingOperating.getObservationScreen()
+  })
+  const walkingLocalAction = createWalkingLocalActionWorkspace({
+    getOperating: walkingOperating.get,
+    isCurrentOperating: walkingOperating.isCurrent,
+    observe: walkingObservation.observeSelectedAction,
+    isCurrentObservation: walkingObservation.isCurrent
   })
   robotMeshes = robotProjection.update(robot.get())
   const readZoom = (next: SpatialCamera) => {
@@ -548,8 +562,9 @@ export async function bootstrap(
     if (disposePromise) return disposePromise
     closed = true
     sceneDemandWorkspace.close()
-    walkingOperating.close()
+    walkingLocalAction.close()
     walkingObservation.close()
+    walkingOperating.close()
     robot.close()
     robotProjection.clear()
     walkingRobotProjection.clear()
@@ -663,6 +678,12 @@ export async function bootstrap(
       setWalkingRuntimeSelection: walkingOperating.setSelection,
       getWalkingOperatingReport: walkingOperating.get,
       configureWalkingObservationScenario: walkingObservation.configure,
+      configureWalkingRuntimeMonitor: walkingLocalAction.configureMonitor,
+      startWalkingLocalAction: walkingLocalAction.start,
+      continueWalkingLocalAction: walkingLocalAction.continue,
+      completeWalkingLocalAction: walkingLocalAction.complete,
+      getWalkingLocalActionDecision: walkingLocalAction.get,
+      isCurrentWalkingLocalActionDecision: walkingLocalAction.isCurrent,
       observeWalkingAction: walkingObservation.observe,
       getWalkingActionObservation: walkingObservation.get,
       isCurrentWalkingActionObservation: walkingObservation.isCurrent,

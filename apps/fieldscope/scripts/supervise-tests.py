@@ -73,7 +73,7 @@ def bounded_milliseconds(value):
     return milliseconds
 
 
-def select_tests(app, files, title):
+def select_tests(app, files, title, profile=False):
     if title is not None:
         if not title or len(title) > 4096 or "\0" in title or "\n" in title:
             raise ValueError("Selected test title is invalid")
@@ -86,8 +86,8 @@ def select_tests(app, files, title):
         if (not requested or Path(requested).is_absolute() or
                 Path(requested).as_posix() != requested or
                 not TEST_PATH.fullmatch(requested) or
-                requested.endswith(".profile.test.ts")):
-            raise ValueError("Selected path is not an ordinary FieldScope test")
+                requested.endswith(".profile.test.ts") != profile):
+            raise ValueError("Selected path does not belong to the requested test class")
         try:
             candidate = (app / requested).resolve(strict=True)
             candidate.relative_to(app.resolve(strict=True))
@@ -97,12 +97,24 @@ def select_tests(app, files, title):
             raise RuntimeError("Selected test is not a file")
         selected.append(requested)
     if title is not None:
-        return dict(kind="selected-title", coverage="filtered",
+        return dict(kind="selected-profile-title" if profile else "selected-title",
+                    coverage="filtered-profiles" if profile else "filtered",
                     files=selected, title=title)
     if selected:
-        return dict(kind="selected-files", coverage="filtered",
+        return dict(kind="selected-profile-files" if profile else "selected-files",
+                    coverage="filtered-profiles" if profile else "filtered",
                     files=selected, title=None)
-    return dict(kind="ordinary-suite", coverage="full", files=[], title=None)
+    return dict(kind="profile-suite" if profile else "ordinary-suite",
+                coverage="profiles" if profile else "full", files=[], title=None)
+
+
+def test_command(app, node, vitest, selection, profile=False):
+    config = "vitest.profile.config.ts" if profile else "vitest.config.ts"
+    command = [node, str(vitest), "run", "--config", str(app / config),
+               *selection["files"]]
+    if selection["title"] is not None:
+        command.extend(["-t", selection["title"]])
+    return command
 
 
 def terminate_process_group(pid):
@@ -244,6 +256,10 @@ def run_command(command, hard_stop_ms, selection, artifacts,
     if result["outcome"] == "passed":
         if selection["coverage"] == "full":
             result["completion"] = "full-suite-complete"
+        elif selection["coverage"] == "profiles":
+            result["completion"] = "profile-suite-complete"
+        elif selection["coverage"] == "filtered-profiles":
+            result["completion"] = "filtered-profile-selection-complete"
         else:
             result["completion"] = "filtered-selection-complete"
     result["logPath"] = str(log_path)
@@ -256,6 +272,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--file", action="append", default=[])
     parser.add_argument("--title")
+    parser.add_argument("--profile", action="store_true")
     parser.add_argument(
         "--hard-stop-ms",
         type=bounded_milliseconds,
@@ -263,20 +280,11 @@ def main():
     )
     args = parser.parse_args()
     owner, vitest, artifacts = resolve_runtime()
-    selection = select_tests(APP, args.file, args.title)
+    selection = select_tests(APP, args.file, args.title, profile=args.profile)
     node = subprocess.check_output(
         ["node", "-p", "process.execPath"], cwd=APP, text=True
     ).strip()
-    command = [
-        node,
-        str(vitest),
-        "run",
-        "--config",
-        str(APP / "vitest.config.ts"),
-        *selection["files"],
-    ]
-    if selection["title"] is not None:
-        command.extend(["-t", selection["title"]])
+    command = test_command(APP, node, vitest, selection, profile=args.profile)
     result = run_command(command, args.hard_stop_ms, selection, artifacts)
     print(json.dumps(result), flush=True)
     return 0 if result["outcome"] == "passed" else 1
