@@ -9,7 +9,10 @@ import { requestConfiguredAiActionBatch } from '../ai-model-provider'
 const { spawn } = vi.hoisted(() => ({ spawn: vi.fn() }))
 vi.mock('node:child_process', () => ({ spawn }))
 vi.mock('../../vtracer-tool-server.mjs', () => ({
-  convertVTracerBuffer: vi.fn(async () => '<svg width="1" height="1"></svg>')
+  convertVTracerBuffer: vi.fn(
+    async () =>
+      '<svg width="1" height="1"><path d="M0,0L1,0L1,1Z" fill="#000000"/></svg>'
+  )
 }))
 
 const input = {
@@ -55,6 +58,7 @@ const fakeServer = (
     onRequest?: (packet: Packet) => void
     delayedClose?: boolean
     toolCall?: boolean
+    toolResultOutput?: (summary: { imageArtifactId: string }) => string
   } = {}
 ) => {
   const child = new EventEmitter() as EventEmitter & {
@@ -103,6 +107,14 @@ const fakeServer = (
       packets.push(packet)
       queueMicrotask(() => {
         if ('result' in packet) {
+          if (options.toolResultOutput) {
+            const response = packet.result as {
+              contentItems: { text: string }[]
+            }
+            options.output = options.toolResultOutput(
+              JSON.parse(response.contentItems[0].text)
+            )
+          }
           notify('item/completed', {
             item: {
               type: 'dynamicToolCall',
@@ -168,6 +180,58 @@ afterEach(() => {
 })
 
 describe('local subscription AI backend', () => {
+  it('resolves a compact tool reference before the prepared batch reaches the caller', async () => {
+    const server = fakeServer({
+      toolCall: true,
+      toolResultOutput: (summary) =>
+        JSON.stringify({
+          batchId: 'prepared',
+          actions: [
+            {
+              id: 'draw',
+              name: 'insert_vector_composition',
+              summary: 'Reference',
+              arguments: {
+                imageArtifactId: summary.imageArtifactId,
+                bounds: { x: 0, y: 0, width: 240, height: 240 },
+                compositionRole: 'Reference',
+                excludePathIds: []
+              }
+            }
+          ]
+        })
+    })
+    const result = await requestConfiguredAiActionBatch(
+      {
+        ...input,
+        actions: [
+          {
+            name: 'insert_vector_composition',
+            description: 'Draw',
+            inputSchema: {}
+          }
+        ],
+        metadata: {
+          imageAttachments: [
+            {
+              dataUrl: 'data:image/png;base64,YQ==',
+              mediaType: 'image/png',
+              size: 1
+            }
+          ]
+        }
+      },
+      { environment }
+    )
+    expect(result.actions[0].arguments).toMatchObject({
+      artifactVersion: 1,
+      elementCount: 1,
+      pointCount: 3,
+      groupBounds: { x: 0, y: 0, width: 240, height: 240 }
+    })
+    expect(JSON.stringify(result)).not.toContain('imageArtifactId')
+    expect(server.child.kill).toHaveBeenCalledOnce()
+  })
   it('executes the registered VTracer tool and resumes the same model turn', async () => {
     const server = fakeServer({ toolCall: true })
     const result = await requestConfiguredAiActionBatch(

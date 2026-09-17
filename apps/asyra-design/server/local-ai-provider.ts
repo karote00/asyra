@@ -71,7 +71,10 @@ const runLocalAiProvider = async (
 ): Promise<unknown> => {
   if (options.signal?.aborted) throw failure('AI_MODEL_BACKEND_ABORTED')
   const imageTools = createLocalImageTools(input)
-  const inputItems = turnInput(input, imageTools.definitions)
+  const inputItems = turnInput(
+    { ...input, actions: imageTools.modelActions(input.actions) },
+    imageTools.definitions
+  )
   const toolController = new AbortController()
   const toolTasks = new Set<Promise<void>>()
   const toolCalls = new Set<string>()
@@ -363,7 +366,7 @@ const runLocalAiProvider = async (
     if (completedTurnId !== turnId || finalText === undefined)
       throw failure('AI_MODEL_BACKEND_INVALID_RESPONSE')
     try {
-      return JSON.parse(finalText)
+      return imageTools.resolveBatch(JSON.parse(finalText))
     } catch {
       throw failure('AI_MODEL_BACKEND_INVALID_RESPONSE')
     }

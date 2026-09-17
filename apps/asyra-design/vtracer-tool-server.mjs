@@ -25,6 +25,8 @@ const optionsForProfile = (profile) => {
   }
   return {
     hierarchical: 'stacked',
+    // Preserve small intentional foreground details in submitted references.
+    filterSpeckle: 4,
     mode: 'polygon',
     optimize: 0,
     pathPrecision: 2,

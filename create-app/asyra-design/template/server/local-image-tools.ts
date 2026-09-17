@@ -1,6 +1,14 @@
 import { Buffer } from 'node:buffer'
 import { AiImageToolIds } from './ai-domain-prompt'
 import type { AiProviderInput } from '../src/ai/action-batch-protocol'
+import { AiActionNames } from '../src/constants/ai-actions'
+import {
+  LOCAL_VECTOR_REFERENCE_SCHEMA,
+  parseLocalVectorArtifact,
+  prepareLocalVectorArtifact,
+  vectorArtifactSummary,
+  type LocalVectorArtifact
+} from './local-vector-artifact'
 
 interface ConversionInput {
   readonly bytes: Uint8Array
@@ -29,13 +37,15 @@ export const createLocalImageTools = (
       isRecord(attachment) &&
       ['image/png', 'image/jpeg'].includes(String(attachment.mediaType))
   )
+  const artifacts = new Map<string, LocalVectorArtifact>()
+  const converted = new Map<number, string>()
   const definitions = compatible
     ? [
         {
           type: 'function',
           name: AiImageToolIds.VTRACER,
           description:
-            'Vectorize one submitted PNG/JPEG attachment into exact editable SVG polygon paths. Use its zero-based attachmentIndex. The App cannot create or insert raster images. Preserve the returned paths when constructing vector descriptors.',
+            'Vectorize one submitted PNG/JPEG attachment. Returns an imageArtifactId and path IDs with source-pixel bounds, colors and point counts. Use the reference in an insert/replace action with target bounds and optional excludePathIds. The server creates all editable coordinates. Do not request code execution, SVG parsing or raster editing to use this result. Separate marks can be omitted by their path IDs.',
           inputSchema: {
             type: 'object',
             additionalProperties: false,
@@ -47,6 +57,77 @@ export const createLocalImageTools = (
     : []
   return {
     definitions,
+    modelActions: (actions: AiProviderInput['actions']) =>
+      actions.map((action) => {
+        if (!compatible) return action
+        if (action.name === AiActionNames.INSERT_VECTOR_COMPOSITION)
+          return {
+            ...action,
+            description:
+              'Insert the VTracer imageArtifactId at target bounds, optionally omitting whole path IDs. Backend constructs the editable drawing.',
+            inputSchema: LOCAL_VECTOR_REFERENCE_SCHEMA
+          }
+        if (action.name === AiActionNames.REPLACE_VECTOR_COMPOSITION)
+          return {
+            ...action,
+            description:
+              'Replace the revalidated compositionId with a VTracer drawing reference. Backend constructs editable geometry atomically.',
+            inputSchema: {
+              type: 'object',
+              additionalProperties: false,
+              required: ['compositionId', 'drawing'],
+              properties: {
+                compositionId: { type: 'string' },
+                drawing: LOCAL_VECTOR_REFERENCE_SCHEMA
+              }
+            }
+          }
+        return action
+      }),
+    resolveBatch: (value: unknown) => {
+      if (!isRecord(value) || !Array.isArray(value.actions))
+        throw new Error('Invalid action batch')
+      return {
+        ...value,
+        actions: value.actions.map((action: unknown) => {
+          if (!isRecord(action)) throw new Error('Invalid action')
+          const replacing =
+            action.name === AiActionNames.REPLACE_VECTOR_COMPOSITION
+          if (
+            !compatible ||
+            (!replacing &&
+              action.name !== AiActionNames.INSERT_VECTOR_COMPOSITION)
+          )
+            return action
+          const args = action.arguments
+          if (!isRecord(args)) throw new Error('Invalid image reference')
+          const reference = replacing ? args.drawing : args
+          if (
+            !isRecord(reference) ||
+            typeof reference.imageArtifactId !== 'string'
+          )
+            throw new Error('Missing image reference')
+          const artifact = artifacts.get(reference.imageArtifactId)
+          if (!artifact) throw new Error('Unknown image reference')
+          if (
+            replacing &&
+            (typeof args.compositionId !== 'string' ||
+              !args.compositionId ||
+              Object.keys(args).some(
+                (key) => !['compositionId', 'drawing'].includes(key)
+              ))
+          )
+            throw new Error('Invalid replacement')
+          const drawing = prepareLocalVectorArtifact(artifact, reference)
+          return {
+            ...action,
+            arguments: replacing
+              ? { compositionId: args.compositionId, drawing }
+              : drawing
+          }
+        })
+      }
+    },
     call: async (
       name: string,
       args: unknown,
@@ -82,6 +163,8 @@ export const createLocalImageTools = (
         bytes.toString('base64') !== encoded
       )
         throw new Error('Invalid attachment')
+      const previous = converted.get(args.attachmentIndex as number)
+      if (previous) return previous
       const svg = await convert({
         bytes,
         contentType: String(attachment.mediaType),
@@ -90,7 +173,11 @@ export const createLocalImageTools = (
       })
       if (signal.aborted || Buffer.byteLength(svg) > 8 * 1024 * 1024)
         throw new Error('Image tool unavailable')
-      return svg
+      const artifact = parseLocalVectorArtifact(svg)
+      const summary = JSON.stringify(vectorArtifactSummary(artifact))
+      artifacts.set(artifact.imageArtifactId, artifact)
+      converted.set(args.attachmentIndex as number, summary)
+      return summary
     }
   }
 }

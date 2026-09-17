@@ -8,7 +8,10 @@ describe('local provider image tools', () => {
     size: 1
   }
   it('vectorizes only the referenced submitted image through the existing converter', async () => {
-    const convert = vi.fn(async () => '<svg width="1" height="1"></svg>')
+    const convert = vi.fn(
+      async () =>
+        '<svg width="1" height="1"><path d="M0,0L1,0L1,1Z" fill="#000000"/></svg>'
+    )
     const tools = createLocalImageTools(
       { metadata: { imageAttachments: [attachment] } },
       convert
@@ -17,7 +20,7 @@ describe('local provider image tools', () => {
     const signal = new AbortController().signal
     expect(
       await tools.call('vtracer', { attachmentIndex: 0 }, signal)
-    ).toContain('<svg')
+    ).toContain('imageArtifactId')
     expect(convert).toHaveBeenCalledOnce()
     expect(convert.mock.calls[0]).toEqual([
       {

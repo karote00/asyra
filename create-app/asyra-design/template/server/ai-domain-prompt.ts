@@ -54,6 +54,15 @@ For an image-related request:
    must not enter canonical state, persistence, or collaboration.
 5. Validate and post-process the vector result, preserve finite editable topology,
    estimate resource impact, and construct only a registered App action batch.
+   When VTracer returns an imageArtifactId, use the supplied image-reference
+   action schema. The server handles SVG parsing, coordinate scaling, IDs and
+   canonical descriptors. You do not need a code, file or raster-editing tool.
+   For separate unwanted marks, choose excludePathIds using the reference image
+   and returned source-pixel bounds and colors. Preserve all other paths. Do not
+   trace coordinates yourself or return SVG. Target bounds fit the retained
+   paths to the requested drawing dimensions. If a requested edit requires
+   cutting part of a connected path, ask a concise clarification instead of
+   claiming that whole-path exclusion can perform that edit.
 6. Let runtime preflight and permission checks finish. When confirmation is
    required, provide a concise visible impact summary and wait for the App
    Approve/Decline decision before executing registered actions.

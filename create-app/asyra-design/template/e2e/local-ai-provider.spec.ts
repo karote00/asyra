@@ -147,3 +147,75 @@ test('local subscription continues a text-only drawing after a detail choice', a
     })
   ])
 })
+
+test('local subscription traces the reference logo at 240px without its separate mark', async ({
+  page
+}, testInfo) => {
+  test.skip(
+    process.env.E2E_LOCAL_AI !== 'true',
+    'Requires an explicitly enabled local subscription'
+  )
+  test.setTimeout(330_000)
+  const identity = createTestDocumentIdentity()
+  await page.goto(identity.url)
+  await waitForAppReady(page)
+  await page.getByRole('button', { name: 'Open Agent' }).click()
+  await expect(page.getByText('Local AI connected')).toBeVisible({
+    timeout: 15_000
+  })
+  await page
+    .getByLabel('Choose images')
+    .setInputFiles('e2e/fixtures/reference-logo.png')
+  await page
+    .getByLabel('Message Agent')
+    .fill('畫這個 Logo，尺寸 240*240 px，不要右下角 TM 的字')
+  const started = Date.now()
+  await page.getByRole('button', { name: 'Send', exact: true }).click()
+  const messages = page.getByTestId('ai-agent-message')
+  await expect(messages.last()).toHaveAttribute(
+    'data-outcome',
+    /success|failed|failure/,
+    { timeout: 305_000 }
+  )
+  const balanced = page.getByRole('button', { name: /Balanced detail/ })
+  if (await balanced.isVisible()) {
+    await balanced.click()
+    await expect(messages.last()).toHaveAttribute(
+      'data-outcome',
+      /success|failed|failure/,
+      { timeout: 305_000 }
+    )
+  }
+  await expect(messages.last()).toHaveAttribute('data-outcome', 'success')
+  const elements = await page.evaluate(async () => {
+    const core = (await import('../src/testing/runtime-access')).core
+    if (!core) throw new Error('App runtime unavailable')
+    return [...core.deps.sceneTree.getAllElements().values()]
+      .filter((element) => element.get('type') !== 'workspace')
+      .map((element) => ({
+        id: element.id,
+        type: element.get('type'),
+        name: element.get('name'),
+        computed: element.getAllComputedData()
+      }))
+  })
+  const vectors = elements.filter(({ type }) => type === 'vector')
+  expect(vectors).toHaveLength(37)
+  expect(vectors.map(({ name }) => name)).not.toContain('path-22')
+  expect(elements.find(({ type }) => type === 'group')).toMatchObject({
+    computed: { width: 240, height: 240 }
+  })
+  await writeFile(
+    testInfo.outputPath('reference-state.json'),
+    JSON.stringify({
+      url: page.url(),
+      elapsedMs: Date.now() - started,
+      elements
+    })
+  )
+  await page.screenshot({ path: testInfo.outputPath('reference-logo.png') })
+  await page.screenshot({
+    path: testInfo.outputPath('reference-detail.png'),
+    clip: { x: 240, y: 40, width: 400, height: 360 }
+  })
+})

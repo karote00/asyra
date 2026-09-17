@@ -38,7 +38,18 @@ has no filesystem, shell, web, plugin, MCP, or image-generation tools. The backe
 exposes only its registered VTracer tool for submitted PNG/JPEG attachments; tool
 arguments select an attachment index, never a path or URL. Conversion uses the
 existing App worker and the owning request cancellation, with at most four calls.
-The model receives the resulting SVG and prepares editable batch descriptors.
+The request-owned image tool retains the parsed vector paths and returns only
+an opaque artifact ID plus path IDs, colors, bounds and point counts to the
+model. The model selects target bounds and optional whole-path exclusions;
+the backend prepares the existing editable batch descriptors deterministically.
+Insert and replacement model-facing schemas accept these references only for
+compatible image requests. References cannot cross requests. The final browser
+batch still contains complete descriptors, never unresolved image references.
+Whole-path exclusion supports removing separate marks; it does not claim raster
+inpainting or cutting a region out of a connected path. Unknown references,
+unknown excluded paths, empty results and invalid bounds fail before mutation.
+Repeated conversion of the same attachment in one request reuses its completed
+conversion; no image, SVG or artifact is retained across requests.
 Image understanding and action generation are supported; requests requiring an
 unavailable image tool fail instead of inventing its result.
 
