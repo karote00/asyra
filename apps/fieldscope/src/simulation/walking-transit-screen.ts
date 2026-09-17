@@ -4,7 +4,13 @@ import type {
 } from '../domain/walking-robot-envelopes'
 import type { Point3 } from '../domain/greenhouse'
 import { add, interval, subtract } from '../domain/scalar-arithmetic'
-import type { SceneDemand, SceneDemandExclusion } from './scene-demand'
+import { isSceneObservationSpace } from './scene-demand'
+import type {
+  SceneObservationSpace,
+  SceneDemand,
+  SceneDemandExclusion,
+  SceneDemandSource
+} from './scene-demand'
 
 export interface WalkingTransitAction {
   readonly identity: Readonly<object>
@@ -13,7 +19,9 @@ export interface WalkingTransitAction {
 }
 
 export interface WalkingTransitWork {
+  readonly upgrades: number
   readonly builds: number
+  readonly nodeVisits: number
   readonly indexEntries: number
   readonly validationVisits: number
   readonly queries: number
@@ -41,7 +49,10 @@ export interface WalkingSceneCandidates {
   readonly route: SceneDemand['route']
   readonly bounds: WalkingEnvelopeBounds
   readonly padding: number
-  readonly coverage: 'covered' | 'outside-route' | 'unknown'
+  readonly scope: 'route' | 'observation'
+  readonly observationSpace?: SceneObservationSpace
+  readonly coverage:
+    'covered' | 'outside-route' | 'outside-observation-domain' | 'unknown'
   readonly affected: readonly SceneDemandExclusion[]
   readonly reasons: readonly string[]
   readonly work: WalkingTransitWork
@@ -52,6 +63,9 @@ interface Entry {
   readonly min: number
   readonly max: number
   readonly ordinal: number
+  readonly observationOrdinal: number
+  readonly route?: SceneDemandExclusion
+  readonly observation?: SceneDemandSource
 }
 interface Node extends Entry {
   readonly subtreeMax: number
@@ -82,7 +96,9 @@ const overlaps = (
   )
 const resultWork = (before: WalkingTransitWork, after: WalkingTransitWork) =>
   Object.freeze({
+    upgrades: after.upgrades - before.upgrades,
     builds: after.builds - before.builds,
+    nodeVisits: after.nodeVisits - before.nodeVisits,
     indexEntries: after.indexEntries - before.indexEntries,
     validationVisits: after.validationVisits - before.validationVisits,
     queries: after.queries - before.queries,
@@ -94,7 +110,9 @@ const resultWork = (before: WalkingTransitWork, after: WalkingTransitWork) =>
 /** Route-local broad phase only. Overlap requests bounded W3 local work. */
 export class WalkingTransitScreen {
   readonly work = {
+    upgrades: 0,
     builds: 0,
+    nodeVisits: 0,
     indexEntries: 0,
     validationVisits: 0,
     queries: 0,
@@ -103,7 +121,12 @@ export class WalkingTransitScreen {
     contributors: 0,
     clears: 0
   }
+  private observationValidation?: {
+    space: SceneObservationSpace
+    valid: boolean
+  }
   private key?: Readonly<{
+    observationSpace?: SceneObservationSpace
     demandIdentity: SceneDemand['identity']
     route: SceneDemand['route']
     exclusions: SceneDemand['freePassage']['exclusions']
@@ -163,20 +186,90 @@ export class WalkingTransitScreen {
     return this.validation
   }
 
-  private prepare(demand: SceneDemand) {
+  private admitObservation(demand: SceneDemand, space?: SceneObservationSpace) {
+    if (!space || !isSceneObservationSpace(demand, space)) return false
+    if (
+      this.observationValidation &&
+      this.observationValidation.space === space
+    )
+      return this.observationValidation.valid
+    let valid =
+      !!space &&
+      space.provenance === 'w1-canonical-obstacles/1' &&
+      space.status === 'complete' &&
+      !!space.domain &&
+      validBounds(space.domain) &&
+      Array.isArray(space.sources) &&
+      space.reasons.length === 0
+    if (space && Array.isArray(space.sources))
+      for (const source of space.sources) {
+        this.work.validationVisits++
+        if (source.kind !== 'source' || !validBounds(source.bounds))
+          valid = false
+      }
+    this.observationValidation = { space, valid }
+    return valid
+  }
+
+  private prepare(demand: SceneDemand, space?: SceneObservationSpace) {
     if (
       this.key?.demandIdentity === demand.identity &&
       this.key.route === demand.route &&
-      this.key.exclusions === demand.freePassage.exclusions
+      this.key.exclusions === demand.freePassage.exclusions &&
+      (!space || this.key.observationSpace === space)
     )
       return
-    const entries = demand.freePassage.exclusions
-      .map((item, ordinal) => ({
-        exclusion: item,
-        min: item.bounds.min[0],
-        max: item.bounds.max[0],
-        ordinal
-      }))
+    if (
+      space &&
+      this.key?.demandIdentity === demand.identity &&
+      !this.key.observationSpace
+    )
+      this.work.upgrades++
+    const members = new Map<
+      SceneDemandExclusion,
+      {
+        route?: SceneDemandExclusion
+        observation?: SceneDemandSource
+        ordinal: number
+        observationOrdinal: number
+      }
+    >()
+    if (space && this.admitObservation(demand, space))
+      space.sources.forEach((source, ordinal) =>
+        members.set(source, {
+          observation: source,
+          ordinal,
+          observationOrdinal: ordinal
+        })
+      )
+    demand.freePassage.exclusions.forEach((item, ordinal) => {
+      const source =
+        item.kind === 'source' ? (item.observationSource ?? item) : item
+      const previous = members.get(source)
+      members.set(source, {
+        ...previous,
+        route: item,
+        ordinal,
+        observationOrdinal: previous?.observationOrdinal ?? -1
+      })
+    })
+    const entries: Entry[] = [...members.values()]
+      .map((member) => {
+        const exclusion = member.route ?? member.observation
+        if (!exclusion) throw new Error('Missing indexed membership')
+        return {
+          ...member,
+          exclusion,
+          min: Math.min(
+            exclusion.bounds.min[0],
+            member.observation?.bounds.min[0] ?? Infinity
+          ),
+          max: Math.max(
+            exclusion.bounds.max[0],
+            member.observation?.bounds.max[0] ?? -Infinity
+          )
+        }
+      })
       .sort((a, b) => a.min - b.min || a.ordinal - b.ordinal)
     const build = (from: number, until: number): Node | undefined => {
       if (from >= until) return undefined
@@ -197,6 +290,7 @@ export class WalkingTransitScreen {
     }
     this.root = build(0, entries.length)
     this.key = Object.freeze({
+      observationSpace: space,
       demandIdentity: demand.identity,
       route: demand.route,
       exclusions: demand.freePassage.exclusions
@@ -283,7 +377,12 @@ export class WalkingTransitScreen {
       this.isCurrentDemand(result.demand) &&
       this.key?.demandIdentity === result.demand.identity &&
       this.key.route === result.route &&
-      this.key.exclusions === result.inventory
+      (result.scope === 'observation'
+        ? this.key.observationSpace === result.observationSpace &&
+          !!result.observationSpace &&
+          isSceneObservationSpace(result.demand, result.observationSpace) &&
+          result.inventory === result.observationSpace.sources
+        : this.key.exclusions === result.inventory)
     )
   }
 
@@ -291,6 +390,23 @@ export class WalkingTransitScreen {
     demand: SceneDemand,
     bounds: WalkingEnvelopeBounds,
     margin = 0
+  ): WalkingSceneCandidates {
+    return this.query(demand, bounds, margin, 'route')
+  }
+  queryObservationVolume(
+    demand: SceneDemand,
+    space: SceneObservationSpace,
+    bounds: WalkingEnvelopeBounds,
+    margin = 0
+  ): WalkingSceneCandidates {
+    return this.query(demand, bounds, margin, 'observation', space)
+  }
+  private query(
+    demand: SceneDemand,
+    bounds: WalkingEnvelopeBounds,
+    margin: number,
+    scope: 'route' | 'observation',
+    space?: SceneObservationSpace
   ): WalkingSceneCandidates {
     if (!Number.isFinite(margin) || margin < 0)
       throw new Error('Invalid source query padding')
@@ -309,7 +425,12 @@ export class WalkingTransitScreen {
         format: 'walking-scene-candidates/1',
         provenance: 'w1-canonical-obstacles/1',
         demand,
-        inventory: demand.freePassage?.exclusions ?? Object.freeze([]),
+        scope,
+        ...(scope === 'observation' ? { observationSpace: space } : {}),
+        inventory:
+          (scope === 'observation'
+            ? space?.sources
+            : demand.freePassage?.exclusions) ?? Object.freeze([]),
         route: demand.route,
         bounds: swept,
         padding: margin,
@@ -325,18 +446,30 @@ export class WalkingTransitScreen {
       return publish('unknown', [], ['stale-scene-demand'])
     if (!Array.isArray(demand.freePassage?.exclusions))
       return publish('unknown', [], ['missing-source-inventory'])
-    if (!demand.route || !demand.freePassage.route)
-      return publish('unknown', [], ['missing-route'])
     if (!validBounds(swept))
       return publish('unknown', [], ['invalid-transit-bounds'])
-    const admission = this.admitDemand(demand)
-    if (!admission.valid)
-      return publish('unknown', [], ['invalid-transit-bounds'])
-    if (admission.unresolved.length)
-      return publish('unknown', [], admission.unresolved)
-    if (admission.status === 'blocked')
-      return publish('unknown', [], ['free-passage-blocked'])
-    const coverage = demand.freePassage.route
+    let coverage: SceneDemand['freePassage']['route']
+    if (scope === 'observation') {
+      if (!this.admitObservation(demand, space))
+        return publish(
+          'unknown',
+          [],
+          ['unknown-observation-inventory', ...(space?.reasons ?? [])]
+        )
+      coverage = space?.domain ?? null
+    } else {
+      if (!demand.route || !demand.freePassage.route)
+        return publish('unknown', [], ['missing-route'])
+      const admission = this.admitDemand(demand)
+      if (!admission.valid)
+        return publish('unknown', [], ['invalid-transit-bounds'])
+      if (admission.unresolved.length)
+        return publish('unknown', [], admission.unresolved)
+      if (admission.status === 'blocked')
+        return publish('unknown', [], ['free-passage-blocked'])
+      coverage = demand.freePassage.route
+    }
+    if (!coverage) return publish('unknown', [], ['missing-observation-domain'])
     if (
       swept.min.some(
         (minimum, axis) => lowerDifference(minimum, margin) < coverage.min[axis]
@@ -345,15 +478,23 @@ export class WalkingTransitScreen {
         (maximum, axis) => upperSum(maximum, margin) > coverage.max[axis]
       )
     )
-      return publish('outside-route', [], ['outside-route-coverage'])
-    this.prepare(demand)
+      return scope === 'route'
+        ? publish('outside-route', [], ['outside-route-coverage'])
+        : publish(
+            'outside-observation-domain',
+            [],
+            ['outside-observation-domain']
+          )
+    this.prepare(demand, space)
     this.work.queries++
     const candidates: Entry[] = []
     const query = (node?: Node) => {
-      if (!node || node.subtreeMax < lowerDifference(swept.min[0], margin))
-        return
+      if (!node) return
+      this.work.nodeVisits++
+      if (node.subtreeMax < lowerDifference(swept.min[0], margin)) return
       query(node.left)
       if (
+        (scope === 'route' ? !!node.route : !!node.observation) &&
         node.min <= upperSum(swept.max[0], margin) &&
         node.max >= lowerDifference(swept.min[0], margin)
       ) {
@@ -363,12 +504,18 @@ export class WalkingTransitScreen {
       if (node.min <= upperSum(swept.max[0], margin)) query(node.right)
     }
     query(this.root)
+    const memberOf = (candidate: Entry) => {
+      const member = scope === 'route' ? candidate.route : candidate.observation
+      if (!member) throw new Error('Missing query membership')
+      return member
+    }
     const affected = candidates
       .filter((candidate) => {
-        const min = candidate.exclusion.bounds.min.map((value) =>
+        const member = memberOf(candidate)
+        const min = member.bounds.min.map((value) =>
           lowerDifference(value, margin)
         ) as unknown as Point3
-        const max = candidate.exclusion.bounds.max.map((value) =>
+        const max = member.bounds.max.map((value) =>
           upperSum(value, margin)
         ) as unknown as Point3
         const expanded: WalkingEnvelopeBounds = {
@@ -382,8 +529,12 @@ export class WalkingTransitScreen {
         this.work.detailedOverlaps++
         return true
       })
-      .sort((a, b) => a.ordinal - b.ordinal)
-      .map((candidate) => candidate.exclusion)
+      .sort((a, b) =>
+        scope === 'route'
+          ? a.ordinal - b.ordinal
+          : a.observationOrdinal - b.observationOrdinal
+      )
+      .map(memberOf)
     this.work.contributors += affected.length
     if (!this.isCurrentDemand(demand))
       return publish('unknown', [], ['stale-scene-demand'])
@@ -394,6 +545,7 @@ export class WalkingTransitScreen {
     this.issued = new WeakSet()
     this.key = undefined
     this.validation = undefined
+    this.observationValidation = undefined
     this.root = undefined
     this.work.clears++
   }

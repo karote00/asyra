@@ -93,6 +93,28 @@ Failure owner: W1 reports invalid, blocked or unknown source demand and never
 selects another lane or robot configuration.
 Cache dimensions: none proposed; one preparation per relevant source revision.
 
+W1 also owns an on-request immutable observationSpace for the simulator sensor backend.
+Its complete inventory retains every canonical obstacle mesh/region/instance in
+the explicit cucumbers/tomatoes/net/ties/supports/clips/film/steel/barriers
+taxonomy. The domain is the hull of the configured full-site observation volume
+(-site.height through site.eave) and every outward source bound; source extents
+are never clipped. SceneDemandSourceBoundsOwner retains only exact farm/PreparedScene
+local bounds, descriptor/instance frames, whole world bounds and canonical region
+source products. Unknown/invalid routes request no source data. Valid route views
+prepare only needed whole bounds and intersecting regions; later complete inventory
+reuses those exact source objects and does not repeat their transforms.
+scene-demand-workspace is the sole runtime owner. It prepares inventory only for
+an explicit valid observation request, never for default initialization/get/render.
+Route/evidence/growth/margin changes reuse the same inventory with a new demand
+wrapper; farm/scene replacement retires it without eagerly preparing a successor.
+Close releases retained products. Actual route/observation deltas distinguish
+source keys, local/frame/whole/region preparations and inventory builds/reuses.
+Missing source/frame/bounds or an unclassified physical layer
+makes this inventory unknown. Soil/drains remain terrain/channel owners;
+passages/dimensions/base are not obstacles. Route clearance exclusions are views
+of these same source products plus route-only growth and channels. Completeness
+means only this declared inventory, never terrain clearance or action permission.
+
 ### W2 - Versioned walking source and kinematics
 
 Owner: FieldScope canonical walking-robot definition, source and pure kinematics.
@@ -228,6 +250,16 @@ reuse this tree; directed padding remains query work. Coverage is covered only
 inside the complete route. Provenance w1-canonical-obstacles/1 names only W1
 canonical obstacles, not soil, drains or every rendered scene layer. This is
 geometric acceleration, never observation or motion permission.
+
+One active membership-aware tree contains route-only constraints initially;
+the first observation may replace it once with complete observation sources and
+route constraints. The previous root is not retained; route-to-full upgrade is
+explicit work, not a claim of one total build. queryVolume preserves route coverage;
+queryObservationVolume requires the complete observationSpace domain and only
+returns observation members. Both owner-issued receipts reuse the same tree.
+No second index, per-action whole-farm preparation or bare caller domain grants
+coverage. Revision replacement retires both receipt kinds. Work counts actual
+index entries, node visits and affected candidate/detail work.
 Definition/profile/load changes prepare their W2 owners. Pose/view/camera/read
 does not rebuild the index or source geometry. Source replacement and disposal
 retire currentness. Currentness compares the live W1 demand and W2 source/envelope
@@ -642,15 +674,25 @@ coverage, original visible static/anatomy or tracked dynamic witnesses, reasons
 and actual work. This is observation preparation, never action permission.
 Conditions: farm geometry preserves exact scene/demand/walking-source identity;
 the shared optical kernel requires reliable optics, contained camera-to-action
-sight volume, covered W1/dynamic domains and zero unresolved/unvisited work for
+sight volume, independently current W1 and predeclared finite synthetic dynamic
+domains that both contain that sight volume, and zero unresolved/unvisited work for
 complete-empty. Any candidate prevents complete-empty. The base camera is an
 explicit synthetic mount on the actual base body, not a hardware calibration.
 Nonempty load, missing plant state, expired/stale evidence or budget exhaustion
 cannot grant movement. No bypass or caller-supplied safe/coverage flags.
 Allowed contributors: QueryGeometry farm-only preparation, RayQueries scoped
 world-frame numerical predicates, existing action-volume kernel and the SAME
-WalkingTransitScreen instance already owned by W3a. The entire sight volume
-includes opaque sources between camera and action even outside action bounds.
+WalkingTransitScreen instance already owned by W3a. queryObservationVolume
+covers the entire sight hull with observationSpace, including every opaque
+source in the declared W1 canonical-obstacle inventory between camera and action
+even outside action bounds. Soil/drain optics remains a separate owner.
+WalkingActionObservations requires the scene-demand workspace's lazy observation
+space issuer and currentness check. It requests that product only after walking
+scenario, report, route, time and frame admission. Legacy TargetObservations
+retains its CanonicalMission route query; both adapters supply their issued query
+to one optical kernel, which never prepares an inventory. Dynamic domain is
+declared before configuration from the chosen synthetic scenario, independently
+of the later W1 inventory; result-driven domain expansion is forbidden.
 Forbidden contributors: legacy mission/session/robot/dock receipts or pose for
 walking; a second spatial index, per-action whole-farm preparation, W1 inventory
 as detections, controller/UI/monitor decisions or selected-chain motion changes.
@@ -667,6 +709,93 @@ later monitors and controller own action holds. Formal production cases cover
 complete-empty, authored crop hit, source-bounds-separated foreground occlusion,
 moving-to-stationary identity, stale and insufficient inputs, actual work reuse
 and legacy preservation. No whole-farm heavy gate is claimed by this slice.
+
+### W6 prerequisite - Synthetic runtime monitor and local action decision
+
+Owners: walking-runtime-monitor and walking-local-action-workspace, composed by
+bootstrap after observation and disposed before it. The monitor consumes an
+explicit finite synthetic profile, two ordered timestamped base orientations,
+and current phase's three exact support sole force intervals. Source, load
+object, mass-properties, cycle, phase, profile and domain time are exact lifetime
+bindings. Conservative computed tilt/rate and strictly positive force lower
+bounds must fit the profile; missing, foreign, expired or insufficient samples
+are unknown/hold. Work counts actual fixed-dimension arithmetic and samples,
+with no farm or geometry traversal. No terrain/support/fall certificate results.
+
+The local-action owner accepts raw current-source cycle and selected-root recipes,
+existing bounded relation budget and fresh monitor samples. It prepares one
+canonical cycle/motion and one entire-interval selected vertex sweep, then calls
+the internal owner-bound observation entry, the local relation owner and monitor.
+Observation camera, sweep and support anchors share the motion world frame.
+The sweep is only a sensor action volume, never a collision proof. Complete-clear
+local relation coverage, current reliable complete observation and within-profile
+monitoring are all required for running. Unknown never permits continuation.
+
+Continue and complete require increasing domain time, monotonic progress and
+fresh observation/monitor work. Same cycle/motion reads reuse the issued relation
+with zero certification/predicate work; source/demand/load replacement retires
+the action. Person overlap is a policy hold, including a stationary tracked
+person. Hard source detections hold; foliage reports unavailable contact-risk
+until its no-hook/no-tug owner exists. Completion at progress one denotes only
+the simulation decision, not motor execution or landing.
+
+Allowed contributors: canonical cycle/motion/local relation, live production
+observation and the synthetic monitor. Forbidden: caller observation receipts,
+hidden W1 candidate decisions, legacy pose, endpoint-only sweeps, raised budgets,
+baseline certificates, terrain clearance or hardware claims. Failure remains
+with the first unavailable owner and its original reasons/work. The bounded
+production normal must pass without fixture bypass; remaining coverage failures
+stop this owner rather than changing the sweep or fabricating clear evidence.
+
+The bounded view cases preserve the original desired-world camera as held when
+part of the sweep is behind its +Z view; progress cannot advance. A separate
+explicit synthetic inspection-head action view mounts at the actual definition's
+right inspectionHeads.centre and aims +Z toward the owner-issued sweep bounds'
+eight-corner centre before configuration or decisions. FOV, range, optics, farm,
+source, anchors and sweep remain the same. The original tight-domain inspection
+scenario remains a held/no-progress regression: its duplicate exact-sum rounding
+is not authority for the runtime camera's composed sight bounds. The observed
+failure is outside-dynamic-domain; no exact ULP discrepancy is claimed.
+The positive scenario predeclares the current configurationSite finite tracked
+area [0,-height,0] to [bays*width,eave,length], independently of observation
+results and without source preparation. Returned canonical sight bounds must
+be contained in that domain, and separately in the lazy observationSpace.
+No epsilon, post-result expansion or alternate camera predictor grants coverage.
+Only the existing directed complete-frustum/range test
+admits this view; failed admission stops without viewpoint searching or tuning.
+This is a synthetic scenario, never calibrated hardware capability.
+
+Observation/relation verification scheduling: the serial profile gate retains
+the existing nine actual-source cases and adds the complete related cohorts:
+seven version-two request/nonlinear admission cases and ten current whole-source
+relation cases. The relation cohort keeps one shared source preparation across
+its two stale-provenance, three preset all-pair, one request/accounting, two
+translation, one remaining-inventory and one target-partition cases. Their
+authored geometry, source identities, exact budgets, per-case ceilings and all
+existing visibility/coverage/work oracles are unchanged. Ordinary controls retain
+the small two-solid boundary and subdivision-exhaustion cases, first-visited
+canonical rows, legacy admissions and direct source/compiler correctness. The existing external test supervisor owns
+both classes, finite wall deadlines, output limits, process-group cleanup and CPU
+accounting. The required profile gate discovers the exact profile class and
+partitions it into the walking-constrained-kinematics owner, every nested
+`*.source.profile.test.ts` file and every remaining profile. The three disjoint
+groups run sequentially through the profile config and the same worker
+acknowledgement setup, each with the unchanged 20-minute supervisor deadline. A
+new source profile automatically joins the source group, while any other new
+profile joins the remaining group; missing,
+duplicated or incomplete group coverage fails before full profile completion.
+Selected/group profile evidence cannot claim full ordinary coverage. The
+30-second full-site observation/inventory, 20-second relation,
+45-second observation-bootstrap and 60-second local-action-bootstrap per-case
+ceilings are engineering initial values, not product performance promises. No
+source, motion, observation or decision budget is increased. Existing numerical
+profile guards remain unchanged. The source group contains 57 cases: all 15
+crop-model cases, all nine crop-partition cases, 23 site-geometry cases, nine
+scene-demand cases and the complete cold hierarchy/two-warm-pose collision profile.
+The collision test keeps its 10-second ceiling and exact source/work/inventory
+assertions; bounded hierarchy guard controls remain ordinary. Their ordinary
+counterparts retain two bounded site-geometry controls and six synthetic or
+hand-authored scene-demand controls.
 
 ## A - Feasibility domain (current M1)
 
