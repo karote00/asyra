@@ -1545,6 +1545,62 @@
             "failureOwnerStepId": "evaluate-performance-and-equivalence"
           },
           {
+            "id": "capture-drawing-review",
+            "order": 0.5,
+            "laneId": "app-canonical",
+            "title": "Inspect the rendered drawing",
+            "ownerPackage": "App inspection action",
+            "purpose": "Provide actual bounded rendered evidence for AI review without canonical writes.",
+            "inputs": [
+              "canonical target ID",
+              "current rendered projection",
+              "request abort signal"
+            ],
+            "outputs": [
+              "bounded PNG and object summaries or explicit unavailable result"
+            ],
+            "conditions": [
+              "Core and Render resolve the target subtree and flush current projected draws before an engine-neutral snapshot query.",
+              "The configured engine extracts real subtree content, excluding overlays and camera framing; no synthetic or stale image is admitted.",
+              "PNG size and object metadata are bounded. Capture does not change selection, viewport or canonical state and owns no image cache.",
+              "Before mutation the provider reviews tool summaries, selects representations from the supported App component conversion catalog, preserves unmapped vector geometry, and iterates supported preparation parameters. Known data discrepancies are addressed before any expensive rendered review; unchanged deterministic conversions are not retries.",
+              "The existing acknowledged batch receipt carries image evidence after mutating operations; local provider emits native image content for AI comparison and repeated supported corrections. Automatic images do not require duplicate explicit captures."
+            ],
+            "bypasses": [
+              "Missing target, unsupported engine or unavailable capture returns an explicit limitation."
+            ],
+            "allowedContributors": [
+              "App inspection/common APIs",
+              "Core render facade",
+              "Render projection and engine-neutral query",
+              "configured render engine",
+              "local provider image reply adapter"
+            ],
+            "forbiddenContributors": [
+              "canonical writes during capture",
+              "editor overlays",
+              "diagnostic or synthetic product images",
+              "direct concrete engine access from App",
+              "cross-request image cache"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "apps/asyra-design/src/ai",
+              "apps/asyra-design/src/common-apis",
+              "apps/asyra-design/src/constants",
+              "apps/asyra-design/server",
+              "apps/asyra-design/e2e",
+              "packages/core/src",
+              "packages/render/src",
+              "packages/render-engine/src",
+              "packages/render-engine-pixi/src"
+            ],
+            "specRefs": [
+              "#rendered-drawing-review"
+            ],
+            "failureOwnerStepId": "capture-drawing-review"
+          },
+          {
             "id": "conversation-lifecycle",
             "order": 0,
             "laneId": "app-canonical",

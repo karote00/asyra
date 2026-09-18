@@ -18,6 +18,10 @@ export interface RegisterRenderLayerOptions {
 }
 
 export interface RenderRawAPIs {
+  captureElementSnapshot: (
+    elementId: string,
+    maxDimension?: number
+  ) => import('@asyra/render-engine').RenderEngineSnapshotResult
   initRender: (width: number, height: number, color: number) => Promise<unknown>
   renderIsReady: () => void
   registerRenderLayer: (

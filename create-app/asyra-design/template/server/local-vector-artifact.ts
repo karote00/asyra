@@ -154,8 +154,16 @@ export const parseLocalVectorArtifact = (
   return { imageArtifactId: randomUUID(), width, height, paths }
 }
 
+const vectorComponentTargets = {
+  oval: 'Whole single-contour circles or ellipses with solid fill; no holes or irregular artwork.',
+  rect: 'Whole single-contour axis-aligned rectangles with square corners and solid fill; no holes, rounded corners or rotated artwork.'
+} as const
+
+type VectorComponentType = keyof typeof vectorComponentTargets
+
 export const vectorArtifactSummary = (artifact: LocalVectorArtifact) => ({
   imageArtifactId: artifact.imageArtifactId,
+  componentTargets: vectorComponentTargets,
   width: artifact.width,
   height: artifact.height,
   paths: artifact.paths.map(({ id, fill, bounds, pointCount, rings }) => ({
@@ -174,6 +182,23 @@ export const LOCAL_VECTOR_REFERENCE_SCHEMA = {
   properties: {
     imageArtifactId: { type: 'string' },
     compositionRole: { type: 'string', minLength: 1, maxLength: 160 },
+    componentMappings: {
+      type: 'array',
+      description:
+        'Map whole paths to supported App components after data review. Only select when the component preserves the intended shape; a matching bounding box is insufficient. Unmapped paths remain vectors.',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['pathId', 'componentType'],
+        properties: {
+          pathId: { type: 'string', minLength: 1 },
+          componentType: {
+            type: 'string',
+            enum: Object.keys(vectorComponentTargets)
+          }
+        }
+      }
+    },
     ovalPathIds: {
       type: 'array',
       uniqueItems: true,
@@ -216,7 +241,8 @@ export const prepareLocalVectorArtifact = (
           'bounds',
           'compositionRole',
           'excludePathIds',
-          'ovalPathIds'
+          'ovalPathIds',
+          'componentMappings'
         ].includes(key)
     ) ||
     input.imageArtifactId !== artifact.imageArtifactId ||
@@ -263,6 +289,34 @@ export const prepareLocalVectorArtifact = (
     artifact.paths.some((path) => ovals.has(path.id) && path.rings.length !== 1)
   )
     return invalid()
+  const mappings =
+    input.componentMappings === undefined ? [] : input.componentMappings
+  if (!Array.isArray(mappings)) return invalid()
+  const components = new Map<string, VectorComponentType>(
+    [...ovals].map((id) => [id as string, 'oval'])
+  )
+  for (const mapping of mappings) {
+    if (
+      !record(mapping) ||
+      Object.keys(mapping).some(
+        (key) => !['pathId', 'componentType'].includes(key)
+      ) ||
+      typeof mapping.pathId !== 'string' ||
+      !pathIds.has(mapping.pathId) ||
+      excluded.has(mapping.pathId) ||
+      components.has(mapping.pathId) ||
+      typeof mapping.componentType !== 'string' ||
+      !Object.hasOwn(vectorComponentTargets, mapping.componentType)
+    )
+      return invalid()
+    components.set(mapping.pathId, mapping.componentType as VectorComponentType)
+  }
+  if (
+    artifact.paths.some(
+      (path) => components.has(path.id) && path.rings.length !== 1
+    )
+  )
+    return invalid()
   const retained = artifact.paths.filter(({ id }) => !excluded.has(id))
   if (!retained.length) invalid()
   const source = boundsOf(
@@ -275,7 +329,11 @@ export const prepareLocalVectorArtifact = (
     x: target.x + ((point.x - source.x) * target.width) / source.width,
     y: target.y + ((point.y - source.y) * target.height) / source.height
   })
-  const base = (type: 'group' | 'vector' | 'oval', name: string, b: Bounds) => {
+  const base = (
+    type: 'group' | 'vector' | VectorComponentType,
+    name: string,
+    b: Bounds
+  ) => {
     const id = randomUUID()
     return {
       id,
@@ -300,17 +358,19 @@ export const prepareLocalVectorArtifact = (
   }
   const roleToElementIds: Record<string, string[]> = {}
   const prepared = retained.map((path) => {
-    const isOval = ovals.has(path.id)
+    const componentType = components.get(path.id)
     const mappedOrigin = mapPoint(path.bounds)
-    const rings = isOval ? [] : path.rings.map((ring) => ring.map(mapPoint))
-    const b = isOval
+    const rings = componentType
+      ? []
+      : path.rings.map((ring) => ring.map(mapPoint))
+    const b = componentType
       ? {
           ...mappedOrigin,
           width: (path.bounds.width * target.width) / source.width,
           height: (path.bounds.height * target.height) / source.height
         }
       : boundsOf(rings.flat())
-    const common = base(isOval ? 'oval' : 'vector', path.id, {
+    const common = base(componentType ?? 'vector', path.id, {
       ...b,
       x: b.x - target.x,
       y: b.y - target.y
@@ -329,7 +389,7 @@ export const prepareLocalVectorArtifact = (
       }
     ]
     roleToElementIds[path.id] = [common.id]
-    if (isOval)
+    if (componentType)
       return { descriptor: { ...common, fills }, pointCount: 0, role: path.id }
     const points: Record<string, unknown> = {},
       segments: Record<string, unknown> = {},

@@ -1,8 +1,13 @@
+import type { AiActionBatch } from '../src/ai/action-batch-protocol'
+import { AiActionNames } from '../src/constants/ai-actions'
 import type {
   AiToolProgress,
   ExecuteAiBatch
 } from '../src/ai/action-batch-protocol'
-import { createLocalOperationTools } from './local-operation-tools'
+import {
+  createLocalOperationTools,
+  localToolContent
+} from './local-operation-tools'
 import { createLocalImageTools } from './local-image-tools'
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process'
 import { homedir } from 'node:os'
@@ -81,7 +86,24 @@ const runLocalAiProvider = async (
   if (options.signal?.aborted) throw failure('AI_MODEL_BACKEND_ABORTED')
   const imageTools = createLocalImageTools(input)
   const operations = options.executeBatch
-    ? createLocalOperationTools(input.actions, imageTools, options.executeBatch)
+    ? createLocalOperationTools(
+        input.actions,
+        imageTools,
+        options.executeBatch,
+        {
+          reviewTargetId:
+            isRecord(input.metadata) &&
+            isRecord(input.metadata.aiTargets) &&
+            typeof input.metadata.aiTargets.compositionId === 'string'
+              ? input.metadata.aiTargets.compositionId
+              : undefined,
+          onInspection: (status) =>
+            options.onProgress?.({
+              tool: AiActionNames.INSPECT_DRAWING,
+              status
+            })
+        }
+      )
     : undefined
   const definitions = [
     ...imageTools.definitions,
@@ -215,7 +237,7 @@ const runLocalAiProvider = async (
               id: value.id,
               result: {
                 success: true,
-                contentItems: [{ type: 'inputText', text: svg }]
+                contentItems: localToolContent(svg)
               }
             }) + '\n'
           )
@@ -411,7 +433,10 @@ const runLocalAiProvider = async (
     if (completedTurnId !== turnId || finalText === undefined)
       throw failure('AI_MODEL_BACKEND_INVALID_RESPONSE')
     try {
-      return imageTools.resolveBatch(JSON.parse(finalText))
+      const batch = imageTools.resolveBatch(JSON.parse(finalText))
+      return operations
+        ? operations.settleOutcome(batch as unknown as AiActionBatch)
+        : batch
     } catch {
       throw failure('AI_MODEL_BACKEND_INVALID_RESPONSE')
     }

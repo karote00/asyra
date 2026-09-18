@@ -1,6 +1,9 @@
 import type { AiActionBatch } from '../../src/ai/action-batch-protocol'
 import { describe, expect, it, vi } from 'vitest'
-import { createLocalOperationTools } from '../local-operation-tools'
+import {
+  createLocalOperationTools,
+  localToolContent
+} from '../local-operation-tools'
 import { createLocalImageTools } from '../local-image-tools'
 import { AiActionNames } from '../../src/constants/ai-actions'
 
@@ -86,4 +89,164 @@ describe('backend operation tools', () => {
     ).rejects.toThrow()
     expect(executeBatch).not.toHaveBeenCalled()
   })
+})
+
+const png =
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aGioAAAAASUVORK5CYII='
+
+it('returns native image content without placing image bytes in text', () => {
+  const receipt = {
+    actionResults: [
+      {
+        actionName: AiActionNames.INSPECT_DRAWING,
+        result: {
+          available: true,
+          image: { dataUrl: png, width: 1, height: 1 }
+        }
+      }
+    ]
+  }
+  const content = localToolContent(JSON.stringify(receipt))
+  expect(content).toContainEqual({ type: 'inputImage', imageUrl: png })
+  expect(
+    JSON.stringify(content.filter((item) => item.type === 'inputText'))
+  ).not.toContain('base64')
+  expect(() =>
+    localToolContent(
+      JSON.stringify({
+        actionResults: [
+          {
+            actionName: AiActionNames.INSPECT_DRAWING,
+            result: {
+              available: true,
+              image: {
+                dataUrl: 'https://example.com/image.png',
+                width: 1,
+                height: 1
+              }
+            }
+          }
+        ]
+      })
+    )
+  ).toThrow()
+})
+
+it('captures fresh evidence after each mutation using the acknowledged composition ID', async () => {
+  const execute = vi.fn(async (batch: AiActionBatch) => ({
+    actionResults: batch.actions.map((action) => ({
+      actionId: action.id,
+      actionName: action.name,
+      result:
+        action.name === AiActionNames.INSPECT_DRAWING
+          ? { available: true, image: { dataUrl: png, width: 1, height: 1 } }
+          : { compositionId: 'actual-composition', status: 'complete' }
+    })),
+    context: {}
+  }))
+  const tools = createLocalOperationTools(
+    [AiActionNames.INSPECT_DRAWING, AiActionNames.SET_ELEMENT_VISIBILITY].map(
+      (name) => ({ name, description: name, inputSchema: {} })
+    ),
+    createLocalImageTools({}),
+    execute
+  )
+  for (const visible of [true, false]) {
+    const receipt = await tools.call(
+      AiActionNames.SET_ELEMENT_VISIBILITY,
+      {
+        arguments: { elementIds: ['shape'], visible },
+        message: 'Adjusting the drawing'
+      },
+      new AbortController().signal
+    )
+    expect(localToolContent(receipt)).toContainEqual({
+      type: 'inputImage',
+      imageUrl: png
+    })
+  }
+  expect(execute).toHaveBeenCalledTimes(4)
+  expect(execute.mock.calls[1][0].actions[0]).toMatchObject({
+    name: AiActionNames.INSPECT_DRAWING,
+    arguments: { elementId: 'actual-composition' }
+  })
+})
+
+it('stops mutations at the review budget and never certifies unavailable evidence', async () => {
+  let available = false
+  const execute = vi.fn(async (batch: AiActionBatch) => ({
+    actionResults: batch.actions.map((action) => ({
+      actionId: action.id,
+      actionName: action.name,
+      result:
+        action.name === AiActionNames.INSPECT_DRAWING
+          ? { available }
+          : { compositionId: 'drawing' }
+    })),
+    context: {}
+  }))
+  const tools = createLocalOperationTools(
+    [AiActionNames.INSPECT_DRAWING, AiActionNames.SET_ELEMENT_VISIBILITY].map(
+      (name) => ({ name, description: name, inputSchema: {} })
+    ),
+    createLocalImageTools({}),
+    execute
+  )
+  const completed: AiActionBatch = {
+    batchId: 'done',
+    actions: [
+      {
+        id: 'report',
+        name: AiActionNames.REPORT_OUTCOME,
+        arguments: { outcome: 'completed', message: 'Done' },
+        summary: 'Done'
+      }
+    ]
+  }
+  const change = () =>
+    tools.call(
+      AiActionNames.SET_ELEMENT_VISIBILITY,
+      {
+        arguments: { elementIds: ['shape'], visible: true },
+        message: 'Adjusting'
+      },
+      new AbortController().signal
+    )
+  await change()
+  expect(tools.settleOutcome(completed).actions[0].arguments).toMatchObject({
+    outcome: 'unsupported',
+    message: 'This app could not complete visual review of the drawing.'
+  })
+  available = true
+  await change()
+  expect(tools.settleOutcome(completed)).toBe(completed)
+  for (let index = 2; index < 6; index++) await change()
+  expect(execute).toHaveBeenCalledTimes(12)
+  expect(await change()).toContain('No further changes were applied')
+  expect(execute).toHaveBeenCalledTimes(12)
+})
+
+it('does not admit unreviewed mutations in the final response', () => {
+  const execute = vi.fn()
+  const tools = createLocalOperationTools(
+    [AiActionNames.INSPECT_DRAWING, AiActionNames.SET_ELEMENT_VISIBILITY].map(
+      (name) => ({ name, description: name, inputSchema: {} })
+    ),
+    createLocalImageTools({}),
+    execute
+  )
+  expect(() =>
+    tools.settleOutcome({
+      batchId: 'late',
+      actions: [
+        {
+          id: 'late-edit',
+          name: AiActionNames.SET_ELEMENT_VISIBILITY,
+          arguments: { elementId: 'shape', visible: false },
+          summary: 'Late edit'
+        }
+      ]
+    })
+  ).toThrow('Final response cannot contain unreviewed drawing operations')
+  expect(execute).not.toHaveBeenCalled()
 })

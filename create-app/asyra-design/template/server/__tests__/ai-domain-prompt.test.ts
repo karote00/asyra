@@ -54,3 +54,31 @@ it('requires iterative review and native primitives without inventing visual evi
   )
   expect(AI_OPERATION_INSTRUCTIONS).toContain('no improvement')
 })
+
+it('prioritizes cheaper data review before mutation, then requires actual visual review', () => {
+  expect(
+    AI_OPERATION_INSTRUCTIONS.indexOf('Stage 1 - data review')
+  ).toBeGreaterThanOrEqual(0)
+  expect(
+    AI_OPERATION_INSTRUCTIONS.indexOf('Stage 2 - visual review')
+  ).toBeGreaterThan(AI_OPERATION_INSTRUCTIONS.indexOf('Stage 1 - data review'))
+  expect(AI_OPERATION_INSTRUCTIONS).toContain(
+    'before calling any mutating backend operation'
+  )
+  expect(AI_OPERATION_INSTRUCTIONS).toContain(
+    'Do not repeat an identical deterministic tool call'
+  )
+  expect(AI_OPERATION_INSTRUCTIONS).toContain(
+    'Data review cannot certify visual fidelity'
+  )
+})
+
+it('reviews all objects against supported component mappings, not just Oval detection', () => {
+  expect(AI_APP_PROMPT).toContain('every meaningful object')
+  expect(AI_APP_PROMPT).toContain('componentTargets')
+  expect(AI_APP_PROMPT).toContain('componentMappings')
+  expect(AI_APP_PROMPT).toContain('not only the outer frame')
+  expect(AI_APP_PROMPT).toContain(
+    'Do not select a component from bounding-box shape alone'
+  )
+})

@@ -395,3 +395,88 @@ on satisfaction, unsupported work, no improvement, cancellation or runtime limit
 Gates: test-first artifact/prompt regression, native consumer admission, operation
 receipt tests, server/App tests, typecheck, naming, lint, template parity and
 Inspector contract. Stop on unavailable evidence rather than inventing review.
+
+### Rendered review loop - 2026-09-18
+
+Bounded scope: engine-neutral subtree snapshot query (Render Engine/Pixi),
+Render/Core facade, App read-only inspection action and registry, local provider
+image-result delivery and completion admission, prompt, direct tests/docs,
+Changeset and generated template. No new dependencies, canonical renderer
+geometry, transaction semantics, image generation or arbitrary node-editing API.
+
+Owner step: capture-drawing-review. Inputs: current canonical target ID, current
+render projection and cancellation. Outputs: fresh bounded PNG and target/object
+metadata or explicit unavailable result. App selects the target; Render flushes
+and resolves its handle; engine extracts its real subtree. No UI screenshots,
+custom renderer access, diagnostics-as-content, hidden state edits or cached image.
+Boundary: App inspection/common API; Core facade; Render projection; Render
+Engine/Pixi snapshot query and their tests/docs. Failure owner: inspection action.
+Cases/gates: missing/unsupported/invalid targets, capped pixels, fresh image after
+edit, no camera/selection writes, native image tool delivery, final inspection
+after edits, repeated corrections and one Undo, real-subscription visual proof.
+
+Stage 1 implements/tests capture at the declared Render/Core contributors. Stage
+2 admits read-only inspection through existing App action execution. Stage 3
+delivers image evidence to the provider and requires review before completion.
+Inspect the matching owner contract before each stage. Test each stage before
+advancing; stop on stale evidence or unsupported capture instead of fallback.
+
+#### Bounded iteration - operation schema and two-stage review
+
+Live native-image delivery succeeded, but repeated refinement failed because the
+update action advertised an untyped updates array. The model guessed string items
+and misplaced fillColor. The first incorrect owner is the App action inputSchema,
+within resolve-server-prepared-action-batch's registered definition contributor.
+Replace that incomplete schema with the existing geometry/style union; do not add
+client geometry validation or change canonical mutation. Add a schema regression
+before implementation, then rerun the real repeated-refinement case.
+
+User clarification: review tool data before admitting any drawing mutation. AI
+first checks structural summaries, constraints and supported backend parameters;
+iterate only when inputs/options can improve the result. Identical deterministic
+conversion is not a useful retry. Only after this cheaper review should the backend
+prepare/apply batches. Actual-rendered review remains required afterward and after
+corrections; it supplements rather than replaces data review. Scope adds prompt,
+its formal policy tests and the existing request/inspection contract descriptions.
+Self-review: no new tools, model-side geometry processing, provider retry after
+mutation, transaction changes or fabricated visual evidence. Gates remain scoped
+schema/prompt tests, App/server suites and real native-image refinement with Undo.
+
+#### User scope clarification - App component mapping
+
+Data review chooses representations from App-supported component conversions,
+not only Oval versus vector. The current AI drawing descriptor admits Rectangle,
+Oval, Vector and Group; Frame is a preset component but has no AI drawing action
+contract here. Extend the existing server artifact owner with explicit per-path
+componentMappings for supported Rectangle/Oval substitutions, while preserving
+unmapped vector geometry and the existing composition Group. Keep ovalPathIds
+compatible as an existing wire field; reject duplicate/conflicting selections,
+unknown targets, exclusions and compound paths before descriptor creation.
+
+The backend exposes the actual conversion catalog with the artifact summary and
+reference schema; AI selects only conversions supported by both that catalog and
+the action schema, based on semantic/reference evidence, not bounding-box shape.
+Do not invent OCR, Frame conversion, custom component reconstruction or new native
+components. Tests: mixed Rectangle/Oval/Vector preparation, negative mapping
+admission, prompt/catalog consistency and real canonical mixed-component rendering.
+Owner remains backend artifact preparation under request-backend-action-batch;
+no rendering, transaction or framework component semantics change in this slice.
+
+Mixed-component browser admission exposed an existing descriptor-schema mismatch:
+Rectangle's canonical component ID is rect, while the AI schema advertised
+rectangle. The typed schema regression fails before correction. Use rect in the
+registered descriptor schema, conversion catalog and canonical assertions; retain
+Rectangle only as a display name. No component alias or canonical migration is
+introduced. This is the first incorrect registered-definition boundary, not a
+reason to add a renderer fallback. Repeat mixed-component and live image gates.
+
+Final local validation for rendered review and component mapping: App AI 184,
+backend 117, engine 9, Pixi 15, Render 223 and Core 241 tests passed. Real local
+subscription evidence includes repeated native-image refinement with exact
+one-Undo/Redo restoration, native Rectangle creation from an image, and a 240px
+reference logo without its separate mark. Typecheck and App/template builds pass.
+The live gate must run with App source and tests frozen: editing even a server
+unit-test file triggers Vite reload and invalidates a live conversation result.
+The reload-interrupted run is not model latency evidence. The frozen final browser suite passed all 12 cases, including live refinement.
+PR-head CI remains required before delivery. Polygon tracing quality remains a documented
+limitation; this scope does not install or substitute another conversion tool.

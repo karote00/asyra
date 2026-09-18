@@ -57,7 +57,7 @@ const descriptor = {
     ...bounds.properties,
     id: text,
     name: text,
-    type: { enum: ['group', 'rectangle', 'oval', 'vector'] },
+    type: { enum: ['group', 'rect', 'oval', 'vector'] },
     props: {
       type: 'object',
       required: ['position', 'dimension', 'fills', 'strokes'],

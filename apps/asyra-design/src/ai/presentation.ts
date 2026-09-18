@@ -273,6 +273,7 @@ export const canRetryAiTurn = (turn: AiSettledTurn): boolean => {
 
 const activityToolLabels: Readonly<Record<string, string>> = Object.freeze({
   vtracer: 'Converting artwork to vectors',
+  [AiActionNames.INSPECT_DRAWING]: 'Reviewing the drawing',
   [AiActionNames.INSERT_VECTOR_COMPOSITION]: 'Adding the drawing',
   [AiActionNames.REPLACE_VECTOR_COMPOSITION]: 'Replacing the drawing',
   [AiActionNames.REMOVE_AI_COMPOSITION]: 'Removing the drawing',

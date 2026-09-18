@@ -684,7 +684,37 @@ const createCompositionActions = (
         properties: Object.freeze({
           updates: Object.freeze({
             minItems: 1,
-            type: 'array'
+            type: 'array',
+            items: {
+              type: 'object',
+              additionalProperties: false,
+              required: ['elementId'],
+              properties: {
+                elementId: { type: 'string', minLength: 1 },
+                geometry: {
+                  type: 'object',
+                  additionalProperties: false,
+                  required: ['scaleX', 'scaleY'],
+                  properties: {
+                    scaleX: { type: 'number', exclusiveMinimum: 0 },
+                    scaleY: { type: 'number', exclusiveMinimum: 0 }
+                  }
+                },
+                style: {
+                  type: 'object',
+                  additionalProperties: false,
+                  properties: {
+                    fillColor: { type: 'string' },
+                    strokeColor: { type: 'string' }
+                  },
+                  oneOf: [
+                    { required: ['fillColor'] },
+                    { required: ['strokeColor'] }
+                  ]
+                }
+              },
+              oneOf: [{ required: ['geometry'] }, { required: ['style'] }]
+            }
           })
         }),
         required: Object.freeze(['updates']),

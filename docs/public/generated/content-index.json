@@ -1313,7 +1313,7 @@
       "wordCount": 399
     },
     {
-      "contentSha256": "3b8910534a98b9460f57ed54fe8ad900ae672f29c383558403209b7ef9dc32fd",
+      "contentSha256": "181850c14032cc9e4f8cec2c8e1124f7c3df3443a357ae0b8c9994ee6d0a9cb1",
       "description": "The strict composition facade for Framework capabilities and lifecycle.",
       "headings": [
         {
@@ -1358,6 +1358,10 @@
         },
         {
           "depth": 2,
+          "title": "Rendered subtree inspection"
+        },
+        {
+          "depth": 2,
           "title": "Canonical sources and release inventory"
         }
       ],
@@ -1369,7 +1373,7 @@
       "path": "reference/packages/core.md",
       "section": "Reference",
       "title": "@asyra/core",
-      "wordCount": 672
+      "wordCount": 726
     },
     {
       "contentSha256": "c2bc81415b3770b776ecd0b282c3889325c76a75a26bdb2d50be5a85b84b042d",
@@ -1844,7 +1848,7 @@
       "wordCount": 381
     },
     {
-      "contentSha256": "981df10323d75fbf2e242af7c4070f39e377f59466471e5b400b345d655004b0",
+      "contentSha256": "8d14600f2148d974b2f1f247dffbdbcc2f46325ff854849960376f317bae8f88",
       "description": "Projection, render-layer registration, interaction bridges, and renderer orchestration.",
       "headings": [
         {
@@ -1889,6 +1893,10 @@
         },
         {
           "depth": 2,
+          "title": "Rendered subtree inspection"
+        },
+        {
+          "depth": 2,
           "title": "Canonical sources and release inventory"
         }
       ],
@@ -1900,10 +1908,10 @@
       "path": "reference/packages/render.md",
       "section": "Reference",
       "title": "@asyra/render",
-      "wordCount": 485
+      "wordCount": 529
     },
     {
-      "contentSha256": "212eb15123459dc4528adbc539861a4575ea7979da639ce6c339f7d18c854fcc",
+      "contentSha256": "8cb722dd37096748fdb51f7bf88bc473ff306611915b01ec460bad19875fdbdb",
       "description": "Public engine-provider contract that keeps renderer implementations replaceable.",
       "headings": [
         {
@@ -1948,6 +1956,10 @@
         },
         {
           "depth": 2,
+          "title": "Rendered subtree inspection"
+        },
+        {
+          "depth": 2,
           "title": "Canonical sources and release inventory"
         }
       ],
@@ -1959,10 +1971,10 @@
       "path": "reference/packages/render-engine.md",
       "section": "Reference",
       "title": "@asyra/render-engine",
-      "wordCount": 374
+      "wordCount": 460
     },
     {
-      "contentSha256": "5ced80e9d45c5efe14eb632d25c82ba5e2f729b4f95ec7059bba41881d29c95d",
+      "contentSha256": "d8855ab072aa0d7bf46cbac826cacc6c0eb45883db3f2cb9f6bcb2b931069e04",
       "description": "Official optional Pixi provider for the current browser-based 2D baseline.",
       "headings": [
         {
@@ -2007,6 +2019,10 @@
         },
         {
           "depth": 2,
+          "title": "Rendered subtree inspection"
+        },
+        {
+          "depth": 2,
           "title": "Canonical sources and release inventory"
         }
       ],
@@ -2018,7 +2034,7 @@
       "path": "reference/packages/render-engine-pixi.md",
       "section": "Reference",
       "title": "@asyra/render-engine-pixi",
-      "wordCount": 352
+      "wordCount": 405
     },
     {
       "contentSha256": "4f8bc35fd5435934068a2ed81aa578f788edb6d866b2495cf83ba852deb74231",

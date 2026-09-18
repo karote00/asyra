@@ -224,7 +224,22 @@ export type RenderEngineHitTestQuery = Readonly<{
   point: RenderEnginePoint
 }>
 
+export type RenderEngineSnapshotQuery = Readonly<{
+  type: 'snapshot'
+  object: RenderEngineObjectHandle
+  maxDimension: number
+}>
+
+export type RenderEngineSnapshotResult = Readonly<{
+  type: 'snapshot'
+  dataUrl: string
+  width: number
+  height: number
+  bounds: RenderEngineBounds
+}>
+
 export type RenderEngineQuery =
+  | RenderEngineSnapshotQuery
   | RenderEngineGetBoundsQuery
   | RenderEngineToLocalQuery
   | RenderEngineToGlobalQuery
@@ -247,6 +262,7 @@ export type RenderEngineHitQueryResult = Readonly<{
 }>
 
 export type RenderEngineQueryResult =
+  | RenderEngineSnapshotResult
   | RenderEngineBoundsQueryResult
   | RenderEnginePointQueryResult
   | RenderEngineHitQueryResult

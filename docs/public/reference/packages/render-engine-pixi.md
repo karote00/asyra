@@ -62,6 +62,13 @@ This is the current official 2D provider. It is not evidence of production 3D
 or HYBRID support. Migration must keep Pixi imports isolated here, maintain
 abstract capability conformance, and preserve explicit dirty/flush behavior.
 
+## Rendered subtree inspection
+
+The optional engine `snapshot` query extracts the current target subtree as a
+PNG on white, using Pixi canvas extraction. It excludes camera framing and editor
+overlays, validates positive bounds, caps each side at 1024 pixels and the data
+URL at 8 MiB, and never substitutes a synthetic image on failure.
+
 ## Canonical sources and release inventory
 
 - [Package contract](../../../ai/framework/packages/render-engine-pixi.md)

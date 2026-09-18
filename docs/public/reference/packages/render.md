@@ -80,6 +80,13 @@ composition. Geometry and visual correctness must use canonical source-space
 oracles before screenshot evidence. Migration must preserve layer z-order,
 strategy registration, normalized events, and deterministic resource cleanup.
 
+## Rendered subtree inspection
+
+`render.captureElementSnapshot(elementId, maxDimension = 1024)` flushes pending
+draws, resolves the projected target handle and requests the optional engine
+`snapshot` capability. The result contains a PNG data URL, pixel dimensions and
+local bounds. Capture is read-only and owns no cross-call image cache.
+
 ## Canonical sources and release inventory
 
 - [Package contract](../../../ai/framework/packages/render.md)

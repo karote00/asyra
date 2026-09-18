@@ -97,6 +97,51 @@ describe('Asyra Design AI actions', () => {
     })
   })
 
+  it('advertises canonical native component IDs accepted by the App', () => {
+    const action = actionByName(
+      AiActionNames.INSERT_VECTOR_COMPOSITION,
+      actionApis()
+    )
+    const schema = JSON.stringify(action.inputSchema)
+    expect(schema).toContain('"rect"')
+    expect(schema).not.toContain('"rectangle"')
+  })
+
+  it('advertises structured refinement items with nested style and geometry fields', () => {
+    const action = actionByName(
+      AiActionNames.UPDATE_COMPOSITION_ELEMENTS,
+      actionApis()
+    )
+    expect(action.inputSchema).toMatchObject({
+      properties: {
+        updates: {
+          type: 'array',
+          items: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['elementId'],
+            properties: {
+              elementId: { type: 'string' },
+              geometry: {
+                properties: {
+                  scaleX: { type: 'number' },
+                  scaleY: { type: 'number' }
+                }
+              },
+              style: {
+                properties: {
+                  fillColor: { type: 'string' },
+                  strokeColor: { type: 'string' }
+                }
+              }
+            },
+            oneOf: [{ required: ['geometry'] }, { required: ['style'] }]
+          }
+        }
+      }
+    })
+  })
+
   it('returns App-owned drawing-detail options without mutating the document', async () => {
     const apis = actionApis()
     const action = actionByName(

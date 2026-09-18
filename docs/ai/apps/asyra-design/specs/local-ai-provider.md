@@ -120,3 +120,52 @@ bounds, with original fill/order/role. Compound paths are ineligible so holes
 are not silently filled. Selection is not automatic shape recognition or
 arbitrary path cutting. Unknown, duplicate, excluded or ineligible IDs fail
 before canonical mutation. Unselected paths remain unchanged.
+
+## Rendered drawing review
+
+Review has two stages. Before any mutation, AI reviews tool-result summaries
+against user intent: dimensions, bounds, colors, topology summaries, unwanted
+marks, native primitives and resource cost. It iterates supported inputs/options
+and chooses backend preparation parameters first. Identical deterministic tools
+are not rerun without changed inputs. VTracer currently has no adjustable trace
+settings; its retained artifact supports bounds, exclusions and componentMappings.
+The backend catalog currently permits whole-path Rectangle/Oval conversion; the
+composition uses Group, and remaining artwork retains Vector. App/preset types
+without registered AI preparation contracts are not advertised as conversions.
+Every mapping must reference one retained single-contour path and a registered
+target, without duplicates or conflicts. Backend preserves order, mapped bounds,
+fill and role IDs; AI judges semantic suitability using reference/tool evidence.
+Bounds alone do not establish a shape. Existing ovalPathIds remains compatible.
+No geometry processing moves into the model. Data review does not prove appearance;
+remaining visual uncertainty must be checked after rendering. The update action
+advertises typed object items with nested geometry/style fields, not an untyped
+array that requires the model to guess its editing protocol.
+
+A registered read-only inspect_drawing operation captures the requested canonical
+composition through Core -> Render -> the configured engine. Capture flushes the
+current projection and extracts only that element subtree, excluding editor
+overlays and viewport framing. It returns a bounded PNG (at most 1024 pixels per
+side), capture bounds and bounded object summaries. Missing/unsupported capture
+is an explicit unavailable result; never use a synthetic replacement image.
+Images are transient operation results, never canonical document properties.
+
+After each acknowledged mutating operation, the backend automatically inspects
+the actual composition ID from its receipt or existing target metadata. An
+explicit inspect_drawing call can select an existing target. Up to 200 object
+summaries accompany the whole rendered subtree.
+
+Local provider tool replies deliver the PNG as native image input plus text
+metadata, not base64 text in the prompt. AI compares the original intent/reference
+with this actual output, identifies differences, makes supported targeted edits,
+and inspects again after the final edit before reporting completion. Unsupported
+edits and lack of improvement end with a concrete limitation, not blind retry.
+The AI makes the visual assessment; App checks object validity and snapshot
+availability, while the user remains the final judge of satisfaction.
+
+Capture is read-only, keeps camera/selection/document state unchanged, and does
+not add an Undo entry. All edits retain the existing one-request transaction.
+Six inspections per request bound image work; existing cancellation/deadline and
+tool-call guards remain. At the inspection budget no further mutations are
+admitted. Final model batches cannot contain new mutating drawing operations
+that bypass rendered review. Capture failures downgrade a completed report to an explicit visual
+review limitation; they cannot falsely certify quality.

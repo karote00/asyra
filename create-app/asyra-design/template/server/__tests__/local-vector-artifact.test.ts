@@ -251,3 +251,93 @@ describe('explicit native oval preparation', () => {
     ).toThrow()
   })
 })
+
+describe('App component mapping before drawing', () => {
+  const artifact = parseLocalVectorArtifact(
+    '<svg width="100" height="100"><path d="M0,0L40,0L40,40L0,40Z" fill="#FF0000"/><path d="M70,0L90,20L70,40L50,20Z" fill="#0000FF"/><path d="M0,60L40,100L0,100Z" fill="#00FF00"/></svg>'
+  )
+  const args = {
+    imageArtifactId: artifact.imageArtifactId,
+    compositionRole: 'Mixed drawing',
+    bounds: { x: 10, y: 20, width: 180, height: 200 },
+    excludePathIds: []
+  }
+  it('maps each supported component explicitly while keeping other geometry as vectors', () => {
+    expect(vectorArtifactSummary(artifact)).toMatchObject({
+      componentTargets: {
+        rect: expect.any(String),
+        oval: expect.any(String)
+      }
+    })
+    const result = prepareLocalVectorArtifact(artifact, {
+      ...args,
+      componentMappings: [
+        { pathId: 'path-1', componentType: 'rect' },
+        { pathId: 'path-2', componentType: 'oval' }
+      ]
+    })
+    const descriptors = result.slices.flatMap((slice) => slice.descriptors)
+    expect(descriptors.map((item) => item.type)).toEqual([
+      'rect',
+      'oval',
+      'vector'
+    ])
+    expect(descriptors[0]).toMatchObject({
+      x: 0,
+      y: 0,
+      width: 80,
+      height: 80,
+      fills: [{ color: '#FF0000' }]
+    })
+    expect(descriptors[1]).toMatchObject({
+      x: 100,
+      y: 0,
+      width: 80,
+      height: 80,
+      fills: [{ color: '#0000FF' }]
+    })
+    expect(descriptors[0]).not.toHaveProperty('points')
+    expect(descriptors[1]).not.toHaveProperty('points')
+    expect(descriptors[2]).toHaveProperty('points')
+    expect(result.pointCount).toBe(3)
+    expect(artifact.paths.map((path) => path.pointCount)).toEqual([4, 4, 3])
+  })
+  it('rejects unsupported, conflicting, excluded or compound component mappings', () => {
+    for (const componentMappings of [
+      null,
+      [{ pathId: 'missing', componentType: 'rect' }],
+      [{ pathId: 'path-1', componentType: 'text' }],
+      [
+        { pathId: 'path-1', componentType: 'rect' },
+        { pathId: 'path-1', componentType: 'oval' }
+      ],
+      [{ pathId: 'path-1', componentType: 'rect', extra: true }]
+    ])
+      expect(() =>
+        prepareLocalVectorArtifact(artifact, { ...args, componentMappings })
+      ).toThrow()
+    const mapping = [{ pathId: 'path-1', componentType: 'rect' }]
+    expect(() =>
+      prepareLocalVectorArtifact(artifact, {
+        ...args,
+        componentMappings: mapping,
+        ovalPathIds: ['path-1']
+      })
+    ).toThrow()
+    expect(() =>
+      prepareLocalVectorArtifact(artifact, {
+        ...args,
+        componentMappings: mapping,
+        excludePathIds: ['path-1']
+      })
+    ).toThrow()
+    const compound = parseLocalVectorArtifact(svg)
+    expect(() =>
+      prepareLocalVectorArtifact(compound, {
+        ...args,
+        imageArtifactId: compound.imageArtifactId,
+        componentMappings: mapping
+      })
+    ).toThrow()
+  })
+})

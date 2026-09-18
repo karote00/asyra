@@ -16,6 +16,10 @@ import type {
 } from '../types/render.js'
 
 export interface RenderRequests {
+  captureElementSnapshot: (
+    elementId: string,
+    maxDimension?: number
+  ) => import('@asyra/render-engine').RenderEngineSnapshotResult
   initRender: (width: number, height: number, color: number) => Promise<unknown>
   getViewportPosition: () => PositionData
   getViewportScale: () => number
@@ -55,6 +59,9 @@ export interface RenderRequests {
 
 export const createRenderAPIs = (requests: RenderRequests) => {
   return {
+    captureElementSnapshot(elementId: string, maxDimension?: number) {
+      return requests.captureElementSnapshot(elementId, maxDimension)
+    },
     renderIsReady() {
       renderIsReady()
     },

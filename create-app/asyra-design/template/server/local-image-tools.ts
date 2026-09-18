@@ -45,7 +45,7 @@ export const createLocalImageTools = (
           type: 'function',
           name: AiImageToolIds.VTRACER,
           description:
-            'Vectorize one submitted PNG/JPEG attachment. Returns an imageArtifactId and path IDs with source-pixel bounds, colors, point counts and subpath counts. Use the reference in an insert/replace action with target bounds and optional excludePathIds and ovalPathIds for intended single-contour circles/ellipses. The server creates all editable coordinates. Do not request code execution, SVG parsing or raster editing to use this result. Separate marks can be omitted by their path IDs.',
+            'Vectorize one submitted PNG/JPEG attachment. Returns an imageArtifactId and path IDs with source-pixel bounds, colors, point counts and subpath counts. Use the reference in an insert/replace action with target bounds and optional excludePathIds and componentMappings from the returned componentTargets catalog. Review all shapes for supported App component representations before drawing. The server creates all editable coordinates. Do not request code execution, SVG parsing or raster editing to use this result. Separate marks can be omitted by their path IDs.',
           inputSchema: {
             type: 'object',
             additionalProperties: false,
@@ -64,7 +64,7 @@ export const createLocalImageTools = (
           return {
             ...action,
             description:
-              'Insert the VTracer imageArtifactId at target bounds, optionally omitting whole path IDs or replacing selected single-contour paths with native Ovals using ovalPathIds. Backend constructs the editable drawing.',
+              'Insert the VTracer imageArtifactId at target bounds, optionally omitting whole path IDs or mapping selected whole single-contour paths to supported native components using componentMappings. Backend constructs the editable drawing.',
             inputSchema: LOCAL_VECTOR_REFERENCE_SCHEMA
           }
         if (action.name === AiActionNames.REPLACE_VECTOR_COMPOSITION)

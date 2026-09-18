@@ -12,7 +12,7 @@ interface MockStageRecord {
 interface MockApplicationRecord {
   stage: MockStageRecord
   canvas: unknown
-  renderer: { resize: MockFunction }
+  renderer: { resize: MockFunction; extract: { canvas: MockFunction } }
   ticker: {
     add: MockFunction
     remove: MockFunction
@@ -176,6 +176,10 @@ vi.mock('pixi.js', () => {
 
     emit(type: string, event: unknown) {
       this.listeners.get(type)?.forEach((listener) => listener(event))
+    }
+
+    getLocalBounds() {
+      return { x: 0, y: 0, width: this.width, height: this.height }
     }
 
     getBounds() {
@@ -369,6 +373,13 @@ vi.mock('pixi.js', () => {
       getBoundingClientRect: () => ({ left: 0, top: 0 })
     }
     readonly renderer = {
+      extract: {
+        canvas: vi.fn(() => ({
+          width: 1024,
+          height: 512,
+          toDataURL: vi.fn(() => 'data:image/png;base64,cG5n')
+        }))
+      },
       resize: vi.fn(),
       render: vi.fn(),
       events: {
@@ -477,6 +488,64 @@ describe('PixiRenderEngine', () => {
 
   afterEach(() => {
     vi.unstubAllGlobals()
+  })
+
+  it('extracts the real target at bounded resolution and rejects empty captures', async () => {
+    const engine = new PixiRenderEngine()
+    await engine.initialize({ host: {}, width: 800, height: 600 })
+    const created = engine.execute({
+      type: 'create-object',
+      requestId: 'snapshot-target',
+      objectType: 'graphics'
+    })
+    const object = created.object
+    if (!object) throw new Error('Missing created object')
+    engine.execute({
+      type: 'update-object',
+      object,
+      properties: { width: 4000, height: 2000 }
+    })
+    const result = engine.query({
+      type: 'snapshot',
+      object,
+      maxDimension: 1024
+    })
+    expect(result).toMatchObject({
+      type: 'snapshot',
+      width: 1024,
+      height: 512,
+      dataUrl: 'data:image/png;base64,cG5n'
+    })
+    const extract = pixiState.applications[0].renderer.extract.canvas
+    expect(extract).toHaveBeenCalledOnce()
+    expect(extract).toHaveBeenCalledWith(
+      expect.objectContaining({
+        target: pixiState.graphics[0],
+        resolution: 1024 / 4000,
+        clearColor: '#ffffff'
+      })
+    )
+    expect(() =>
+      engine.query({ type: 'snapshot', object, maxDimension: 2048 })
+    ).toThrow()
+    extract.mockReturnValueOnce({
+      width: 2048,
+      height: 512,
+      toDataURL: () => 'data:image/png;base64,cG5n'
+    })
+    expect(() =>
+      engine.query({ type: 'snapshot', object, maxDimension: 1024 })
+    ).toThrow('Snapshot image unavailable')
+    Object.assign(pixiState.graphics[0], {
+      getLocalBounds: () => ({ x: 0, y: 0, width: 0, height: 0 })
+    })
+    expect(() =>
+      engine.query({ type: 'snapshot', object, maxDimension: 1024 })
+    ).toThrow('Snapshot target has no finite visible bounds')
+    engine.destroy()
+    expect(() =>
+      engine.query({ type: 'snapshot', object, maxDimension: 1024 })
+    ).toThrow()
   })
 
   it('preserves the current bounded device resolution and resize target', async () => {
