@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import { EventEmitter } from 'node:events'
 import { PassThrough, Writable } from 'node:stream'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { createLocalAiUsage } from '../local-ai-usage'
 import { checkLocalAiProvider } from '../local-ai-provider'
 import { requestConfiguredAiActionBatch } from '../ai-model-provider'
 import { convertVTracerBuffer } from '../../vtracer-tool-server.mjs'
@@ -236,9 +237,106 @@ const untilTurn = async (packets: Packet[]) => {
 afterEach(() => {
   vi.useRealTimers()
   vi.resetAllMocks()
+  vi.restoreAllMocks()
 })
 
 describe('local subscription AI backend', () => {
+  it('records cumulative usage once for the request without logging user content', async () => {
+    const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+    const server = fakeServer({ hold: true })
+    const pending = requestConfiguredAiActionBatch(
+      {
+        ...input,
+        metadata: {
+          conversationId: 'conversation-1',
+          turnId: 'conversation-1:turn:2',
+          replyTo: {
+            turnId: 'conversation-1:turn:1',
+            intent: 'private request'
+          }
+        }
+      },
+      { environment }
+    )
+    await untilTurn(server.packets)
+    const total = {
+      inputTokens: 100,
+      cachedInputTokens: 40,
+      outputTokens: 20,
+      reasoningOutputTokens: 10,
+      totalTokens: 120
+    }
+    server.notify('thread/tokenUsage/updated', {
+      tokenUsage: { total, last: total }
+    })
+    server.notify('thread/tokenUsage/updated', {
+      tokenUsage: { total, last: total }
+    })
+    server.finish()
+    await pending
+    expect(log).toHaveBeenCalledTimes(1)
+    const record = JSON.parse(log.mock.calls[0][0])
+    expect(record).toMatchObject({
+      event: 'ai_request_usage',
+      provider: 'local-codex',
+      outcome: 'completed',
+      usageStatus: 'reported',
+      conversationId: 'conversation-1',
+      turnId: 'conversation-1:turn:2',
+      replyToTurnId: 'conversation-1:turn:1',
+      tokens: total
+    })
+    expect(JSON.stringify(record)).not.toMatch(
+      /private request|private@example|Create a rectangle/
+    )
+    log.mockRestore()
+  })
+
+  it('does not count connection probes as drawing requests', async () => {
+    const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+    fakeServer()
+    await checkLocalAiProvider({ model: 'selected-model', executable: 'codex' })
+    expect(log).not.toHaveBeenCalled()
+  })
+
+  it('records partial usage on cancellation and ignores other threads', async () => {
+    const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+    const server = fakeServer({ hold: true })
+    const controller = new AbortController()
+    const pending = requestConfiguredAiActionBatch(input, {
+      environment,
+      signal: controller.signal
+    })
+    const checked = expect(pending).rejects.toMatchObject({
+      code: 'AI_MODEL_BACKEND_ABORTED'
+    })
+    await untilTurn(server.packets)
+    const total = {
+      inputTokens: 100,
+      cachedInputTokens: 40,
+      outputTokens: 20,
+      reasoningOutputTokens: 10,
+      totalTokens: 120
+    }
+    server.notify('thread/tokenUsage/updated', { tokenUsage: { total } })
+    server.notify('thread/tokenUsage/updated', {
+      threadId: 'other-thread',
+      tokenUsage: { total: { ...total, inputTokens: 999, totalTokens: 1019 } }
+    })
+    server.notify('thread/tokenUsage/updated', {
+      turnId: 'other-turn',
+      tokenUsage: { total: { ...total, inputTokens: 999, totalTokens: 1019 } }
+    })
+    controller.abort()
+    await checked
+    expect(log).toHaveBeenCalledTimes(1)
+    expect(JSON.parse(log.mock.calls[0][0])).toMatchObject({
+      outcome: 'cancelled',
+      usageStatus: 'partial',
+      tokens: total
+    })
+  })
+
   it('resolves a compact tool reference before the prepared batch reaches the caller', async () => {
     const server = fakeServer({
       toolCall: true,
@@ -662,6 +760,7 @@ describe('local subscription AI backend', () => {
   })
 
   it('bounds a stalled provider with a deadline and closes its child', async () => {
+    const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
     vi.useFakeTimers()
     const server = fakeServer({ hold: true })
     const promise = requestConfiguredAiActionBatch(input, { environment })
@@ -672,6 +771,11 @@ describe('local subscription AI backend', () => {
     await checked
     expect(server.child.kill).toHaveBeenCalledOnce()
     expect(vi.getTimerCount()).toBe(0)
+    expect(JSON.parse(log.mock.calls[0][0])).toMatchObject({
+      outcome: 'timed_out',
+      usageStatus: 'unavailable',
+      tokens: null
+    })
   })
 
   it.each(['request', 'tool', 'malformed', 'oversized', 'exit', 'spawn-error'])(
@@ -789,4 +893,100 @@ it('waits for a canonical operation receipt before continuing the native model',
   expect(
     JSON.parse(response.result.contentItems[0].text).context.selectedIds
   ).toEqual(['actual-id'])
+})
+
+describe('local AI usage accounting', () => {
+  const total = {
+    inputTokens: 100,
+    cachedInputTokens: 40,
+    outputTokens: 20,
+    reasoningOutputTokens: 10,
+    totalTokens: 120
+  }
+  it('keeps the latest cumulative snapshot, ignores older snapshots, and finishes once', () => {
+    const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+    const usage = createLocalAiUsage(input, 'selected-model')
+    usage.update({ total, last: total })
+    const next = { ...total, inputTokens: 200, totalTokens: 220 }
+    usage.update({ total: next, last: total })
+    usage.update({ total })
+    usage.finish('completed')
+    usage.finish('failed')
+    usage.update({ total: next })
+    expect(log).toHaveBeenCalledTimes(1)
+    expect(JSON.parse(log.mock.calls[0][0]).tokens).toEqual(next)
+  })
+  it.each(['cancelled', 'timed_out', 'failed'] as const)(
+    'marks observed usage as partial after %s',
+    (outcome) => {
+      const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+      const usage = createLocalAiUsage(input, 'selected-model')
+      usage.update({ total })
+      usage.finish(outcome)
+      expect(JSON.parse(log.mock.calls[0][0])).toMatchObject({
+        outcome,
+        usageStatus: 'partial',
+        tokens: total
+      })
+    }
+  )
+  it('reports missing usage as unavailable rather than zero and isolates requests', () => {
+    const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+    const first = createLocalAiUsage(input, 'selected-model')
+    const second = createLocalAiUsage(input, 'selected-model')
+    first.update({ total })
+    second.finish('completed')
+    first.finish('completed')
+    const records = log.mock.calls.map(([line]) => JSON.parse(line))
+    expect(records[0]).toMatchObject({
+      tokens: null,
+      usageStatus: 'unavailable'
+    })
+    expect(records[1].tokens).toEqual(total)
+    expect(records[0].requestId).not.toBe(records[1].requestId)
+  })
+  it.each([
+    { ...total, outputTokens: -1 },
+    { ...total, inputTokens: 1.5 },
+    { ...total, totalTokens: 999 },
+    { ...total, cachedInputTokens: 101 },
+    { ...total, reasoningOutputTokens: 21 },
+    { ...total, inputTokens: Number.MAX_SAFE_INTEGER + 1 },
+    { totalTokens: 120 }
+  ])('rejects invalid usage without corrupting earlier evidence', (invalid) => {
+    const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+    const usage = createLocalAiUsage(input, 'selected-model')
+    usage.update({ total })
+    usage.update({ total: invalid })
+    usage.finish('completed')
+    expect(JSON.parse(log.mock.calls[0][0])).toMatchObject({
+      usageStatus: 'partial',
+      tokens: total
+    })
+  })
+  it('does not allow the logging sink to break request settlement', () => {
+    vi.spyOn(console, 'info').mockImplementation(() => {
+      throw new Error('sink closed')
+    })
+    expect(() =>
+      createLocalAiUsage(input, 'selected-model').finish('failed')
+    ).not.toThrow()
+  })
+  it('does not log credentials or arbitrary metadata from the provider', () => {
+    const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+    const usage = createLocalAiUsage(
+      {
+        ...input,
+        metadata: {
+          conversationId: 'private@example.test',
+          turnId: 'bad\nvalue',
+          secret: 'Bearer private'
+        }
+      },
+      'selected-model'
+    )
+    usage.update({ total: { ...total, secret: 'Bearer private' } })
+    usage.finish('completed')
+    expect(log.mock.calls[0][0]).not.toMatch(/private|secret|bad/)
+  })
 })

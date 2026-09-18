@@ -1,3 +1,4 @@
+import { createLocalAiUsage } from './local-ai-usage'
 import { LocalComponentAnalysisLimits } from './local-component-analysis-limits'
 import type { AiActionBatch } from '../src/ai/action-batch-protocol'
 import { AiActionNames } from '../src/constants/ai-actions'
@@ -83,7 +84,8 @@ const runLocalAiProvider = async (
     readonly executeBatch?: ExecuteAiBatch
     readonly signal?: AbortSignal
     readonly checkOnly?: boolean
-  }
+  },
+  usage?: ReturnType<typeof createLocalAiUsage>
 ): Promise<unknown> => {
   if (options.signal?.aborted) throw failure('AI_MODEL_BACKEND_ABORTED')
   const imageTools = createLocalImageTools(input)
@@ -288,6 +290,11 @@ const runLocalAiProvider = async (
     if (typeof value.method !== 'string') return protocolFailure()
     const params = value.params
     if (!isRecord(params) || params.threadId !== threadId || !threadId) return
+    if (value.method === 'thread/tokenUsage/updated') {
+      if (!turnId || !params.turnId || params.turnId === turnId)
+        usage?.update(params.tokenUsage)
+      return
+    }
     if (turnId && params.turnId && params.turnId !== turnId)
       return protocolFailure()
     if (value.method === 'item/completed') {
@@ -478,10 +485,26 @@ interface LocalAiProviderOptions {
   readonly signal?: AbortSignal
 }
 
-export const requestLocalAiActionBatch = (
+export const requestLocalAiActionBatch = async (
   input: AiProviderInput,
   options: LocalAiProviderOptions
-): Promise<unknown> => runLocalAiProvider(input, options)
+): Promise<unknown> => {
+  const usage = createLocalAiUsage(input, options.model)
+  let outcome: Parameters<typeof usage.finish>[0] = 'failed'
+  try {
+    const result = await runLocalAiProvider(input, options, usage)
+    outcome = 'completed'
+    return result
+  } catch (error) {
+    if (error instanceof AiModelBackendError) {
+      if (error.code === 'AI_MODEL_BACKEND_ABORTED') outcome = 'cancelled'
+      if (error.code === 'AI_MODEL_BACKEND_TIMEOUT') outcome = 'timed_out'
+    }
+    throw error
+  } finally {
+    usage.finish(outcome)
+  }
+}
 
 export const checkLocalAiProvider = async (
   options: LocalAiProviderOptions

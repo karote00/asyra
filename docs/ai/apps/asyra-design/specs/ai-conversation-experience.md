@@ -118,3 +118,14 @@ the input system after composer autofocus. Clicking the canvas while the Agent
 is idle restores drawing shortcuts without closing the panel or discarding the
 draft. Composer typing and IME editing stay isolated from canvas actions; the
 active Agent document interaction lock remains authoritative.
+
+### Local provider usage observability
+
+The local provider owns one bounded usage accumulator per invocation and emits
+one structured `ai_request_usage` server log at settlement. It consumes provider
+cumulative totals without summing repeated notifications. Correlation identifiers
+connect attempts and clarification turns; no prompt, attachment, account or tool
+payload enters this record. Cancellation and failure retain partial observations;
+missing usage remains unavailable. Usage diagnostics cannot change action
+execution, cancellation, final batches, or the conversation UI. The App development
+guide defines the record fields and aggregation rules.
