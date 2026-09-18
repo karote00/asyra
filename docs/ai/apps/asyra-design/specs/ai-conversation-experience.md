@@ -39,7 +39,14 @@ metadata identifies that entry while work is active. Tool events use user-facing
 AI-wait terminology. Completed tool work transitions to Reviewing the results;
 it does not imply that the whole request has finished. Model-authored operational messages stay attached to their
 corresponding event. Settlement clears the active accessibility metadata and labels the final
-summary as Result (questions remain questions). No synthetic reasoning or timed
+summary as Result (questions remain questions). A 12 by 12 pixel bell appears beside the duration after every terminal outcome.
+It rocks left and right twice over one second, then remains still and visible.
+Reduced-motion preferences suppress the animation. The icon conveys that work
+has ended; the existing result explains success, partial completion or failure.
+Questions awaiting an answer do not show the bell. Its accessible label is
+Request finished. Conversation panel text, including Activity, duration, choices,
+composer and connection status, uses 12px type. Duration shows only formatted time
+with an accessible Elapsed time label; no large completion banner is displayed. No synthetic reasoning or timed
 percentage is allowed.
 Private model reasoning is never displayed. Explicit operational messages from registered backend operations may be displayed. App-owned text
 is English; user text and model-authored content retain their language.

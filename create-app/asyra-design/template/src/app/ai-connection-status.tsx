@@ -40,7 +40,7 @@ export const AiConnectionStatus = ({
   if (connected) indicatorColor = 'bg-[#74c69d]'
   else if (canRetry) indicatorColor = 'bg-[#dda56b]'
   return (
-    <div className="mb-2 flex items-start gap-2 text-[10px] leading-4 text-[#9b9da7]">
+    <div className="mb-2 flex items-start gap-2 text-[12px] leading-4 text-[#9b9da7]">
       <span
         aria-hidden="true"
         className={`mt-[5px] h-1.5 w-1.5 shrink-0 rounded-full ${indicatorColor}`}
@@ -51,7 +51,7 @@ export const AiConnectionStatus = ({
       {canRetry ? (
         <button
           aria-label="Check AI connection"
-          className="shrink-0 rounded px-1 text-[10px] leading-4 text-[#c7bfff] hover:text-white focus-visible:outline focus-visible:outline-1 focus-visible:outline-[#9b87ff]"
+          className="shrink-0 rounded px-1 text-[12px] leading-4 text-[#c7bfff] hover:text-white focus-visible:outline focus-visible:outline-1 focus-visible:outline-[#9b87ff]"
           onClick={() => setRevision((current) => current + 1)}
           type="button"
         >

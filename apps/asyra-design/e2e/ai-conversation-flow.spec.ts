@@ -280,6 +280,9 @@ for (const width of [360, 1280]) {
     await expect(message).toHaveAttribute('data-outcome', 'active')
     release()
     await expect(message).toHaveAttribute('data-outcome', 'failed')
+    await expect(
+      message.getByRole('status', { name: 'Request status' })
+    ).toContainText('Request finished')
     await expect(message).toContainText('timed out')
     expect(await getCoreDocumentDigest(page)).toEqual(before)
     await expect(page.getByLabel('Current AI history action')).toHaveCount(0)
@@ -304,6 +307,9 @@ for (const width of [360, 1280]) {
       'data-outcome',
       'success'
     )
+    await expect(
+      page.getByRole('status', { name: 'Request status' }).last()
+    ).toContainText('Request finished')
     expect(await getUndoHistoryDepth(page)).toBe(depth + 1)
     const ids = await page.evaluate(async () => {
       const { core } = await import('../src/testing/runtime-access')
@@ -566,6 +572,9 @@ for (const width of [360, 1280]) {
       page.getByRole('button', { name: 'Try again', exact: true })
     ).toHaveCount(0)
     expect(receipts).toHaveLength(2)
+    await expect(
+      page.getByRole('status', { name: 'Request status' }).last()
+    ).toContainText('Request finished')
     expect(await getUndoHistoryDepth(page)).toBe(depth + 1)
     const after = await getCoreDocumentDigest(page)
     expect(after).not.toEqual(before)
@@ -764,6 +773,47 @@ for (const width of [360, 1280]) {
         'no-change'
       )
       await expect(status).toHaveCount(0)
+      const bell = page
+        .getByRole('status', { name: 'Request status' })
+        .locator('svg')
+      await expect(bell).toHaveAttribute('width', '12')
+      await expect(bell).toHaveAttribute('height', '12')
+      const animation = await bell.evaluate((element) => {
+        const style = getComputedStyle(element)
+        return [style.animationDuration, style.animationIterationCount]
+      })
+      expect(animation).toEqual(['0.5s', '2'])
+      await expect
+        .poll(() =>
+          bell.evaluate((element) =>
+            element
+              .getAnimations()
+              .every((animation) => animation.playState === 'finished')
+          )
+        )
+        .toBe(true)
+      await expect(bell).toBeVisible()
+      const fontSizes = await page
+        .getByTestId('ai-agent-panel')
+        .evaluate((panel) =>
+          [...panel.querySelectorAll('*')]
+            .filter(
+              (element) =>
+                [...element.childNodes].some(
+                  (node) =>
+                    node.nodeType === Node.TEXT_NODE && node.textContent?.trim()
+                ) && !element.closest('.sr-only')
+            )
+            .map((element) => getComputedStyle(element).fontSize)
+        )
+      expect([...new Set(fontSizes)]).toEqual(['12px'])
+
+      await expect(
+        page.getByRole('status', { name: 'Request status' })
+      ).toContainText('Request finished')
+      await expect(
+        page.getByRole('status', { name: 'Request status' })
+      ).toBeInViewport()
       await expect(current).toHaveCount(0)
       await expect(page.getByText('Result', { exact: true })).toBeVisible()
       await expect(page.getByLabel('Operational progress')).toContainText(

@@ -69,20 +69,20 @@ describe('Asyra Design AI presentation summaries', () => {
       'The request failed. Review the canvas before trying again.'
     ])
     expect(summaries.map((summary) => summary.durationLabel)).toEqual(
-      Array.from({ length: 5 }, () => 'Elapsed 1.3s')
+      Array.from({ length: 5 }, () => '1.3s')
     )
     expect(
       summarizeAiTurn({
         ...turn('success'),
         durationMs: 40_500
       }).durationLabel
-    ).toBe('Elapsed 41s')
+    ).toBe('41s')
     expect(
       summarizeAiTurn({
         ...turn('success'),
         durationMs: 65_000
       }).durationLabel
-    ).toBe('Elapsed 1m 5s')
+    ).toBe('1m 5s')
     expect(new Set(summaries.map((summary) => summary.message))).toHaveProperty(
       'size',
       5

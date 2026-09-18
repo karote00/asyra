@@ -128,22 +128,22 @@ const partialCounts = (
 export const formatElapsedTime = (durationMs: number): string => {
   const seconds = Math.max(0, durationMs) / 1_000
   if (seconds < 10) {
-    return `Elapsed ${Math.max(0.1, seconds).toFixed(1)}s`
+    return `${Math.max(0.1, seconds).toFixed(1)}s`
   }
 
   const roundedSeconds = Math.round(seconds)
   if (roundedSeconds < 60) {
-    return `Elapsed ${roundedSeconds}s`
+    return `${roundedSeconds}s`
   }
 
   const minutes = Math.floor(roundedSeconds / 60)
   const remainingSeconds = roundedSeconds % 60
   if (minutes < 60) {
-    return `Elapsed ${minutes}m ${remainingSeconds}s`
+    return `${minutes}m ${remainingSeconds}s`
   }
 
   const hours = Math.floor(minutes / 60)
-  return `Elapsed ${hours}h ${minutes % 60}m ${remainingSeconds}s`
+  return `${hours}h ${minutes % 60}m ${remainingSeconds}s`
 }
 
 export const summarizeAiTurn = (turn: AiSettledTurn): AiTurnSummary => {

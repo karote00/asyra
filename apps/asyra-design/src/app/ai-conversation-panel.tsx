@@ -58,6 +58,32 @@ const ActiveDuration = ({ turn }: { readonly turn?: AiActiveTurn }) => {
   )
 }
 
+const TurnCompletionStatus = () => (
+  <span
+    role="status"
+    aria-label="Request status"
+    title="Request finished"
+    className="inline-flex shrink-0 items-center text-[#c7bfff]"
+  >
+    <svg
+      aria-hidden="true"
+      width="12"
+      height="12"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="origin-top animate-[conversation-bell_500ms_ease-in-out_2] motion-reduce:animate-none"
+    >
+      <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
+      <path d="M10 21h4" />
+    </svg>
+    <span className="sr-only">Request finished</span>
+  </span>
+)
+
 const stopAgentInteractionPropagation = (event: SyntheticEvent): void => {
   event.stopPropagation()
 }
@@ -135,20 +161,20 @@ const DrawingDetailChoiceCard = ({
   const content = (
     <>
       <div className="flex items-start justify-between gap-2">
-        <p className="m-0 text-[11px] font-semibold text-[#f0edff]">
+        <p className="m-0 text-[12px] font-semibold text-[#f0edff]">
           {choice.label}
         </p>
         {onChoose ? (
-          <span aria-hidden="true" className="text-[10px] text-[#c7bfff]">
+          <span aria-hidden="true" className="text-[12px] text-[#c7bfff]">
             Choose →
           </span>
         ) : null}
       </div>
-      <p className="mb-0 mt-1 text-[9px] leading-4 text-[#aaa6b3]">
+      <p className="mb-0 mt-1 text-[12px] leading-4 text-[#aaa6b3]">
         {choice.description}
       </p>
       {choice.resourceWarning ? (
-        <p className="mb-0 mt-1.5 rounded bg-[#3a2f24] px-2 py-1.5 text-[9px] leading-4 text-[#f1c58f]">
+        <p className="mb-0 mt-1.5 rounded bg-[#3a2f24] px-2 py-1.5 text-[12px] leading-4 text-[#f1c58f]">
           {choice.resourceWarning}
         </p>
       ) : null}
@@ -332,20 +358,20 @@ const AiConversationPanelLayout = ({
       onWheel={stopAgentInteractionPropagation}
       aria-label="Agent conversation"
       aria-modal="false"
-      className="fixed bottom-0 right-0 top-10 z-50 flex w-[384px] max-w-[calc(100vw-24px)] flex-col overflow-hidden border-l border-[#45464b] bg-[#202124] text-[#f5f5f5] shadow-[-18px_0_48px_rgba(0,0,0,0.32)]"
+      className="fixed bottom-0 right-0 top-10 z-50 flex w-[384px] max-w-[calc(100vw-24px)] flex-col overflow-hidden border-l border-[#45464b] bg-[#202124] text-[12px] text-[#f5f5f5] shadow-[-18px_0_48px_rgba(0,0,0,0.32)]"
       data-testid="ai-agent-panel"
       role="complementary"
     >
       <header className="flex items-center justify-between border-b border-[#38393e] px-4 py-3">
         <span
           aria-hidden="true"
-          className="grid h-7 w-7 place-items-center rounded-lg bg-[#7c5cff] text-[11px] font-bold text-white"
+          className="grid h-7 w-7 place-items-center rounded-lg bg-[#7c5cff] text-[12px] font-bold text-white"
         >
           AI
         </span>
         <button
           aria-label="Close Agent panel"
-          className="grid h-7 w-7 place-items-center rounded-md border-0 bg-transparent text-lg text-[#b8b9c0] hover:bg-[#303136] hover:text-white"
+          className="grid h-7 w-7 place-items-center rounded-md border-0 bg-transparent text-[12px] text-[#b8b9c0] hover:bg-[#303136] hover:text-white"
           onClick={close}
           type="button"
         >
@@ -358,10 +384,10 @@ const AiConversationPanelLayout = ({
         className="shrink-0 border-b border-[#454052] bg-[#282530] px-4 py-3"
         role="note"
       >
-        <p className="m-0 text-[11px] font-medium leading-5 text-[#e0d9ff]">
+        <p className="m-0 text-[12px] font-medium leading-5 text-[#e0d9ff]">
           Your AI subscription
         </p>
-        <p className="m-0 mt-1 text-[11px] leading-[18px] text-[#c7c4d0]">
+        <p className="m-0 mt-1 text-[12px] leading-[18px] text-[#c7c4d0]">
           Local AI uses your own subscription and counts toward its usage
           limits. Asyra Design does not provide an AI subscription.
         </p>
@@ -424,7 +450,7 @@ const AiConversationPanelLayout = ({
         ) : null}
         {attachmentError ? (
           <p
-            className="mb-2 mt-0 rounded-md border border-[#765052] bg-[#342426] px-2 py-1.5 text-[10px] text-[#ffc0c3]"
+            className="mb-2 mt-0 rounded-md border border-[#765052] bg-[#342426] px-2 py-1.5 text-[12px] text-[#ffc0c3]"
             role="alert"
           >
             {attachmentError}
@@ -436,7 +462,7 @@ const AiConversationPanelLayout = ({
           </label>
           <textarea
             aria-label="Message Agent"
-            className="block min-h-[72px] w-full resize-none rounded-t-lg border-0 bg-transparent px-3 py-2 text-[11px] leading-5 text-white outline-none placeholder:text-[#777982]"
+            className="block min-h-[72px] w-full resize-none rounded-t-lg border-0 bg-transparent px-3 py-2 text-[12px] leading-5 text-white outline-none placeholder:text-[#777982]"
             data-ai-agent-prompt="true"
             id="ai-agent-input"
             onChange={(event) => setDraft(event.target.value)}
@@ -450,7 +476,7 @@ const AiConversationPanelLayout = ({
             <div className="flex items-center gap-2">
               <button
                 aria-label="Add image"
-                className="h-7 rounded-md border border-transparent bg-transparent px-2 text-[10px] text-[#c7c8ce] enabled:hover:border-[#696b74] enabled:hover:bg-[#303136] disabled:cursor-not-allowed disabled:text-[#6f7077]"
+                className="h-7 rounded-md border border-transparent bg-transparent px-2 text-[12px] text-[#c7c8ce] enabled:hover:border-[#696b74] enabled:hover:bg-[#303136] disabled:cursor-not-allowed disabled:text-[#6f7077]"
                 disabled={active}
                 onClick={() => imageInputRef.current?.click()}
                 type="button"
@@ -464,7 +490,7 @@ const AiConversationPanelLayout = ({
                   {...AiDocumentInteractionTargetProps.AGENT_CANCEL}
                   aria-label="Cancel request"
                   disabled={conversationSnapshot.activeTurn?.stopping}
-                  className="rounded-md border border-[#6c4d4d] bg-[#382727] px-3 py-1.5 text-[10px] text-[#ffb8b8] hover:bg-[#472e2e]"
+                  className="rounded-md border border-[#6c4d4d] bg-[#382727] px-3 py-1.5 text-[12px] text-[#ffb8b8] hover:bg-[#472e2e]"
                   onClick={(event) => {
                     stopAgentInteractionPropagation(event)
                     conversation.cancel('user-cancelled')
@@ -483,7 +509,7 @@ const AiConversationPanelLayout = ({
                 </button>
               ) : null}
               <button
-                className="h-7 rounded-md border border-[#8d7bff] bg-[#745cff] px-3 text-[10px] font-medium text-white enabled:hover:bg-[#856fff] disabled:cursor-not-allowed disabled:border-[#44454b] disabled:bg-[#303136] disabled:text-[#777982]"
+                className="h-7 rounded-md border border-[#8d7bff] bg-[#745cff] px-3 text-[12px] font-medium text-white enabled:hover:bg-[#856fff] disabled:cursor-not-allowed disabled:border-[#44454b] disabled:bg-[#303136] disabled:text-[#777982]"
                 disabled={!canSend}
                 type="submit"
               >
@@ -580,7 +606,7 @@ const AiConversationFeed = ({
         ref={conversationBodyRef}
       >
         {conversationSnapshot.settledTurns.length === 0 && !active ? (
-          <div className="rounded-lg border border-[#393a40] bg-[#27282d] p-3 text-[11px] leading-5 text-[#c9cad0]">
+          <div className="rounded-lg border border-[#393a40] bg-[#27282d] p-3 text-[12px] leading-5 text-[#c9cad0]">
             Describe what you would like to draw, or add a reference image. You
             can refine the result in later turns.
           </div>
@@ -652,7 +678,7 @@ const AiConversationFeed = ({
                 ) : (
                   <div>
                     {!question ? (
-                      <p className="mb-1 mt-0 text-[10px] text-[#96939f]">
+                      <p className="mb-1 mt-0 text-[12px] text-[#96939f]">
                         Result
                       </p>
                     ) : null}
@@ -670,7 +696,7 @@ const AiConversationFeed = ({
                   ?.filter((decision) => decision.turnId === turn.turnId)
                   .map((decision) => (
                     <p
-                      className="my-2 text-[11px] text-[#aaa6b3]"
+                      className="my-2 text-[12px] text-[#aaa6b3]"
                       key={decision.confirmationId}
                     >
                       {decision.accepted ? 'Approved' : 'Declined'}:{' '}
@@ -679,11 +705,11 @@ const AiConversationFeed = ({
                   ))}
                 {question ? (
                   <>
-                    <p className="mb-0 mt-1 text-[10px] text-[#aaa6b3]">
+                    <p className="mb-0 mt-1 text-[12px] text-[#aaa6b3]">
                       {questionStatus}
                     </p>
                     {answer ? (
-                      <p className="my-1 text-[11px] text-[#c7bfff]">
+                      <p className="my-1 text-[12px] text-[#c7bfff]">
                         Selected: {answer.intent}
                       </p>
                     ) : null}
@@ -707,7 +733,7 @@ const AiConversationFeed = ({
                 ) : null}
                 {!question && (turn.progress.length > 0 || !settled) ? (
                   <details
-                    className="mt-2 text-[10px] text-[#96939f]"
+                    className="mt-2 text-[12px] text-[#96939f]"
                     onToggle={syncScrollPosition}
                   >
                     <summary className="cursor-pointer">Activity</summary>
@@ -744,7 +770,7 @@ const AiConversationFeed = ({
                   <div className="mt-3 flex flex-wrap gap-2">
                     {canRetryAiTurn(settled) ? (
                       <button
-                        className="rounded-md border border-[#625586] px-3 py-1.5 text-[11px] hover:bg-[#302b3e]"
+                        className="rounded-md border border-[#625586] px-3 py-1.5 text-[12px] hover:bg-[#302b3e]"
                         type="button"
                         onClick={() =>
                           void conversation
@@ -756,7 +782,7 @@ const AiConversationFeed = ({
                       </button>
                     ) : null}
                     <button
-                      className="rounded-md border border-[#484950] px-3 py-1.5 text-[11px] hover:bg-[#303136]"
+                      className="rounded-md border border-[#484950] px-3 py-1.5 text-[12px] hover:bg-[#303136]"
                       type="button"
                       onClick={() => editRequest(settled)}
                     >
@@ -764,18 +790,21 @@ const AiConversationFeed = ({
                     </button>
                   </div>
                 ) : null}
-                <p
-                  aria-label="Elapsed time"
-                  className="mb-0 mt-2 text-[10px] text-[#85828f]"
-                >
-                  {settled ? (
-                    summary?.durationLabel
-                  ) : (
-                    <ActiveDuration
-                      turn={conversationSnapshot.activeTurn ?? undefined}
-                    />
-                  )}
-                </p>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  {settled && !question ? <TurnCompletionStatus /> : null}
+                  <span
+                    aria-label="Elapsed time"
+                    className="text-[12px] text-[#96939f]"
+                  >
+                    {settled ? (
+                      summary?.durationLabel
+                    ) : (
+                      <ActiveDuration
+                        turn={conversationSnapshot.activeTurn ?? undefined}
+                      />
+                    )}
+                  </span>
+                </div>
               </div>
             </article>
           )
@@ -786,13 +815,13 @@ const AiConversationFeed = ({
             aria-label="AI action confirmation"
             className="rounded-lg border border-[#7b5b38] bg-[#30281f] p-3"
           >
-            <p className="m-0 text-[11px] font-semibold text-[#ffd7a3]">
+            <p className="m-0 text-[12px] font-semibold text-[#ffd7a3]">
               Confirm action
             </p>
-            <p className="mb-2 mt-1 text-[11px] leading-5 text-[#e8dfd3]">
+            <p className="mb-2 mt-1 text-[12px] leading-5 text-[#e8dfd3]">
               {pendingConfirmation.summary.message}
             </p>
-            <div className="mb-3 flex gap-1.5 text-[9px] uppercase tracking-wide">
+            <div className="mb-3 flex gap-1.5 text-[12px] uppercase tracking-wide">
               {pendingConfirmation.summary.destructive ? (
                 <span className="rounded bg-[#5a3028] px-1.5 py-0.5 text-[#ffb3a3]">
                   Destructive
@@ -807,14 +836,14 @@ const AiConversationFeed = ({
             </div>
             <div className="flex justify-end gap-2">
               <button
-                className="rounded-md border border-[#5a5b62] bg-transparent px-3 py-1.5 text-[10px] text-[#dadbe0] hover:bg-[#37383d]"
+                className="rounded-md border border-[#5a5b62] bg-transparent px-3 py-1.5 text-[12px] text-[#dadbe0] hover:bg-[#37383d]"
                 onClick={() => confirmation.resolve(false)}
                 type="button"
               >
                 Decline
               </button>
               <button
-                className="rounded-md border border-[#8d7bff] bg-[#745cff] px-3 py-1.5 text-[10px] font-medium text-white hover:bg-[#856fff]"
+                className="rounded-md border border-[#8d7bff] bg-[#745cff] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#856fff]"
                 onClick={() => confirmation.resolve(true)}
                 type="button"
               >
@@ -827,7 +856,7 @@ const AiConversationFeed = ({
 
       {showJump ? (
         <button
-          className="mx-auto mb-2 rounded-full border border-[#514a68] bg-[#292630] px-3 py-1 text-[11px]"
+          className="mx-auto mb-2 rounded-full border border-[#514a68] bg-[#292630] px-3 py-1 text-[12px]"
           type="button"
           onClick={() => {
             followLatestRef.current = true

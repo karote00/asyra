@@ -99,6 +99,50 @@ describe('AI Agent conversation panel intent boundary', () => {
     })
   })
 
+  it.each([
+    ['success', 'Completed'],
+    ['partial', 'Partially completed'],
+    ['failed', 'Failed'],
+    ['cancelled', 'Stopped'],
+    ['no-change', 'No changes']
+  ] as const)(
+    'shows a persistent, accessible %s outcome beside its duration',
+    async (outcome) => {
+      const harness = createPanelHarness()
+      const request = harness.conversation.submit('Draw')
+      harness.pending.resolve({ status: 'executed', actionResults: [] })
+      await request
+      const snapshot = harness.conversation.getSnapshot()
+      render(
+        <AiConversationPanel
+          confirmation={harness.confirmation}
+          conversation={{
+            ...harness.conversation,
+            subscribe: () => () => undefined,
+            getSnapshot: () => ({
+              ...snapshot,
+              settledTurns: snapshot.settledTurns.map((turn) => ({
+                ...turn,
+                outcome
+              }))
+            })
+          }}
+          onClose={vi.fn()}
+        />
+      )
+      const status = screen.getByRole('status', { name: 'Request status' })
+      expect(status.textContent).toBe('Request finished')
+      expect(status.querySelector('svg')?.getAttribute('width')).toBe('12')
+      expect(status.querySelector('svg')?.getAttribute('height')).toBe('12')
+      expect(
+        status.parentElement?.querySelector('[aria-label="Elapsed time"]')
+      ).toBeTruthy()
+      expect(
+        screen.queryByRole('status', { name: 'Current activity' })
+      ).toBeNull()
+    }
+  )
+
   it('discloses personal subscription usage immediately when the panel opens', () => {
     const harness = createPanelHarness()
     render(
@@ -241,6 +285,9 @@ describe('AI Agent conversation panel intent boundary', () => {
       })
       await harness.pending.promise
     })
+    expect(
+      screen.getByRole('status', { name: 'Request status' }).textContent
+    ).toContain('Request finished')
     expect(screen.getByText(/timed out/)).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Edit request' }))
@@ -677,7 +724,7 @@ describe('AI Agent conversation panel intent boundary', () => {
     expect(screen.getByText('畫一個貓臉')).toBeTruthy()
     expect(screen.getByText('Reviewing the drawing')).toBeTruthy()
     expect(screen.getByText('Applying changes')).toBeTruthy()
-    expect(screen.getByText('Elapsed 1.3s')).toBeTruthy()
+    expect(screen.getByText('1.3s')).toBeTruthy()
     expect(screen.queryByText('You')).toBeNull()
     expect(screen.queryByText(/secret-action-id/)).toBeNull()
     expect(screen.queryByText(/secret-canonical-id/)).toBeNull()
@@ -724,6 +771,7 @@ describe('AI Agent conversation panel intent boundary', () => {
     expect(
       await screen.findByText('Choose a drawing detail level.')
     ).toBeTruthy()
+    expect(screen.queryByRole('status', { name: 'Request status' })).toBeNull()
     expect(screen.getByText('Balanced detail')).toBeTruthy()
     expect(screen.queryByText('7,111 editable elements')).toBeNull()
     expect(screen.queryByText('At least 115,000 points')).toBeNull()
