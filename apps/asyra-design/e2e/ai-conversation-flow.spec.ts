@@ -673,6 +673,59 @@ for (const width of [360, 1280]) {
       await page
         .getByTestId('ai-agent-panel')
         .screenshot({ path: testInfo.outputPath('current-activity.png') })
+      const feed = page.getByRole('region', { name: 'Conversation messages' })
+      const jump = page.getByRole('button', { name: 'Jump to latest' })
+      const remainingScroll = () =>
+        feed.evaluate(
+          (element) =>
+            element.scrollHeight - element.scrollTop - element.clientHeight
+        )
+      const sendActivity = async (message: string) => {
+        response?.write(
+          JSON.stringify({
+            type: 'activity',
+            tool: 'vtracer',
+            status: 'completed',
+            message
+          }) + '\n'
+        )
+        await expect(current).toContainText(message)
+      }
+      // A short feed starts following without an initial scroll gesture.
+      await expect.poll(remainingScroll).toBeLessThanOrEqual(1)
+      for (let index = 0; index < 20; index++) {
+        await sendActivity(`Review pass ${index + 1}`)
+        await expect.poll(remainingScroll).toBeLessThanOrEqual(1)
+        await expect(jump).toHaveCount(0)
+      }
+      expect(
+        await feed.evaluate((element) => element.scrollTop)
+      ).toBeGreaterThan(0)
+      await expect(current).toBeInViewport()
+      // Even a small deliberate upward scroll pauses following.
+      await feed.evaluate((element) => {
+        element.scrollTop -= 20
+      })
+      await expect(jump).toBeVisible()
+      const readingPosition = await feed.evaluate(
+        (element) => element.scrollTop
+      )
+      await sendActivity('Continue while reading history')
+      expect(await feed.evaluate((element) => element.scrollTop)).toBe(
+        readingPosition
+      )
+      await expect(jump).toBeVisible()
+      // Returning to the bottom restores following for the next update.
+      await feed.evaluate((element) => {
+        element.scrollTop = element.scrollHeight
+      })
+      await expect(jump).toHaveCount(0)
+      await sendActivity('Continue at the bottom')
+      await expect.poll(remainingScroll).toBeLessThanOrEqual(1)
+      await expect(current).toBeInViewport()
+      await page.getByTestId('ai-agent-panel').screenshot({
+        path: testInfo.outputPath('activity-following.png')
+      })
       // Real layout regression: collapsing a long history at scrollTop zero
       // must clear the jump affordance without relying on a scroll event.
       for (let index = 0; index < 24; index++) {
@@ -686,7 +739,7 @@ for (const width of [360, 1280]) {
       }
       await expect(
         page.getByLabel('Operational progress').locator('li')
-      ).toHaveCount(29)
+      ).toHaveCount(51)
       response.end(
         JSON.stringify({
           type: 'result',
@@ -719,7 +772,6 @@ for (const width of [360, 1280]) {
       await page
         .getByTestId('ai-agent-panel')
         .screenshot({ path: testInfo.outputPath('activity-result.png') })
-      const feed = page.getByRole('region', { name: 'Conversation messages' })
       await feed.evaluate((element) => {
         element.scrollTop = 0
       })

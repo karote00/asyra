@@ -2,6 +2,7 @@ import { AiConnectionStatus } from './ai-connection-status'
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type ChangeEvent,
@@ -522,15 +523,18 @@ const AiConversationFeed = ({
   const syncScrollPosition = useCallback(() => {
     const body = conversationBodyRef.current
     if (!body) return
-    const atBottom = body.scrollHeight - body.scrollTop - body.clientHeight < 32
+    const atBottom = body.scrollHeight - body.scrollTop - body.clientHeight <= 1
     followLatestRef.current = atBottom
     setShowJump(!atBottom)
   }, [])
   const active = conversationSnapshot.activeTurn !== null
-  useEffect(() => {
+  // Follow before paint can emit scroll events for the newly grown content.
+  // Otherwise those events can mistake layout growth for reading older messages.
+  useLayoutEffect(() => {
     const body = conversationBodyRef.current
     if (body && followLatestRef.current) {
       body.scrollTop = body.scrollHeight
+      setShowJump(false)
     }
   }, [confirmationSnapshot, conversationSnapshot])
 

@@ -27,6 +27,12 @@ distinct messages and repeated activities separated by another activity remain.
 The projection leaves runtime events intact. Expanding or collapsing Activity
 rechecks the actual scroll extent: Jump to latest appears only while content
 remains below the viewport, without requiring a subsequent scroll event.
+New activity follows the latest entry when the feed previously fit without
+scrolling or the reader was at the bottom (within one pixel for rounding).
+A reader who scrolls upward keeps their position during incoming updates;
+returning to the bottom or choosing Jump to latest resumes following.
+Following is applied before paint so layout-induced scroll events cannot
+reinterpret newly added content as a reader scrolling away.
 The last list entry represents the current activity, including real approval/stop
 states, without a visible Current badge or separate highlight. Accessibility
 metadata identifies that entry while work is active. Tool events use user-facing descriptions of the work, without tool names or
