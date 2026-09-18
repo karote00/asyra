@@ -21,6 +21,133 @@ No new dependency is selected by this plan.
 
 ## Decisions
 
+### Evidence-led representation selection - 2026-09-19
+
+AI owns interpretation of the user's intent, decomposition strategy and the
+decision to adopt a representation. The backend supplies registered, deterministic
+analysis and execution; it does not decide what the artwork means. No blanket
+preference for Oval or any other component is permitted. A candidate should be
+converted only when analysis and the intended result justify it.
+
+Reference practices: <a href="https://www.anthropic.com/engineering/writing-tools-for-agents" target="_blank" rel="noopener noreferrer">Anthropic tool design</a>
+emphasizes meaningful, bounded tool responses and outcome-based evaluations;
+<a href="https://v0.app/docs/design-mode" target="_blank" rel="noopener noreferrer">v0 Design Mode</a>
+provides selected-object visual context. One user prompt can drive multiple
+analysis/action/review iterations; these sources do not establish perfect output.
+
+Research synthesis and resulting flow:
+
+- A single user message may initiate several model/tool/review cycles. The
+  <a href="https://www.anthropic.com/engineering/building-effective-agents" target="_blank" rel="noopener noreferrer">Anthropic agent workflow guidance</a>
+  describes feedback-driven tool use; it does not imply one generation is enough.
+- Give the model the original reference, user constraints, current component and
+  operation catalog, compact source summaries, analysis limits and actual rendered
+  evidence. A broad instruction such as “improve quality” cannot replace these inputs.
+- Treat candidate selection as a semantic decision and geometric measurement as a
+  deterministic backend responsibility. Do not spend model output on coordinates
+  the backend already owns. Compact evidence is a design goal; token/latency gains
+  require measurement and are not asserted by this change.
+
+| Phase | AI responsibility | Backend/App responsibility |
+| --- | --- | --- |
+| Interpret | Identify foreground/background intent, constraints and plausible representations | Supply registered operations, components and current context |
+| Trace | Select an available tool and inspect compact path summaries | Preserve source geometry and return request-owned artifact IDs |
+| Data review | Nominate plausible candidates and assess whether conversion helps the request | Measure fit/topology, disclose limits, return bounded analysis receipts |
+| Prepare | Select evidence-backed mappings, retain vectors, or explain an unmet constraint | Validate receipt/source/selection and construct canonical batch actions |
+| Visual review | Compare the actual render with the original request; choose supported corrections | Apply batches, return fresh rendered evidence and object IDs |
+| Finish | Report achieved results and concrete remaining differences | Close the existing turn transaction as one Undo commit |
+
+The merged-background case has two different questions: whether a contour matches
+an available component, and whether foreground/background can be separated without
+losing details. This change provides evidence for the former and identifies the
+latter as a decomposition requirement. It does not pretend that a whole-path
+replacement can solve both or introduce a logo-specific backend rule.
+
+Step Execution Card - request-backend-action-batch:
+
+- Product source: local-ai-provider, evidence-led component analysis below.
+  Inspector: request-backend-action-batch and its existing review receipt loop.
+- Inputs: current-request immutable vector artifact, AI-selected path IDs,
+  registered component catalog and existing drawing target bounds.
+- Outputs: bounded read-only analysis receipt containing contour identities,
+  measured fit errors, conversion eligibility and limitations; AI-selected
+  receipt-backed mappings resolved to existing prepared drawing descriptors.
+- Conditions: analysis precedes approximating a traced path with a component.
+  No automatic mutation or semantic selection. Original vectors remain when
+  no mapping is selected; unknown/cross-request/mismatched receipts fail closed.
+- Bypasses: no plausible candidate requires no analysis; complex/compound
+  artwork reports that decomposition is required, never silently fills holes.
+- Contributors/owner: App backend artifact analysis, image-tool adapter, local
+  provider dispatch and domain prompt. No frontend geometry reconstruction,
+  image identity branches, AI-generated coordinate arrays or renderer repairs.
+- Boundary: App server, directly affected progress presentation/schema consumers
+  only if needed, existing local-ai E2E, source spec/Inspector and generated template.
+- Names: ANALYZE_VECTOR_COMPONENTS / analyze_vector_components in the existing
+  backend tool registry; analysisId is request-local, never persisted. No change
+  to canonical component or document identities.
+- Lifetime/work: each explicit bounded analysis produces one immutable receipt;
+  repeated preparations consume its completed eligibility results without
+  remeasuring curves. No cross-request cache or automatic background analysis.
+- Gates: test-first catalog/prompt/analysis and receipt admission; exact/near
+  primitive, irregular, compound, invalid, cancellation, work-count and isolation
+  cases; full App tests/typecheck/build, actual mixed-component drawing with one
+  Undo/Redo, template parity, naming/lint/Inspector and latest-head CI.
+- Scope excludes adding segmentation, raster generation, arbitrary path surgery,
+  new components, clipping, dependencies, model changes or deadline changes.
+  These are capabilities the AI may consider only when actually registered;
+  this slice makes their absence explicit rather than promising them in prose.
+- Parallel-analysis extension authorized by the user: admit up to 128 independent
+  read-only analysis calls without awaiting preceding replies (10- and 100-call regressions).
+  Each call retains its own request/call/analysis identity; responses may arrive in
+  any order. Mutating/other tools remain exclusive, and final settlement drains
+  outstanding analysis work. The 32-call non-analysis budget is preserved separately.
+  This is concurrent protocol dispatch, not a claim of parallel CPU execution.
+  Tests cover all-started-before-first-result, correlation, failures/cancellation,
+  and rejection of overlapping writes. Same owner step/boundary as above.
+- DoD: AI can obtain inexpensive geometric evidence, choose a supported mapping
+  and render/review it; compound artwork cannot be falsely certified convertible.
+  Do not claim this alone reconstructs the reference logo's merged background.
+
+### Analysis budget decision - 2026-09-19
+
+The user's 100-object scenario illustrates the workflow; it does not set the
+limit. Limits are conservative, adjustable defaults for heterogeneous user
+machines, not derived from one workstation's benchmark and not a performance SLA.
+
+- Prefer one package of up to 128 candidate paths from one artifact. The backend
+  divides it into jobs of at most 16 paths, yields between jobs, and returns one
+  complete report. The model need not orchestrate a promise per object.
+- Reserve a shared total of 128 candidate analyses per turn before queuing work.
+  Separate independent calls remain supported, up to 128 calls within that same
+  candidate budget. Repeated candidates consume budget; reuse earlier evidence
+  when the source has not changed.
+- Run one CPU job at a time on the existing Node event loop. There are no new
+  workers or dependencies. These limits bound bursts and memory without assuming
+  a user's core count, CPU speed or available memory; batch boundaries permit
+  cancellation and I/O. They do not promise a fixed duration on every machine.
+- Retain 8,192 samples and 100,000 intersection checks per path; responses contain
+  at most eight contour summaries per candidate and no coordinate arrays.
+  Overflow reports its limitation and leaves the original vectors intact.
+- Preserve 32 non-analysis calls and at most 160 total protocol calls. Analysis
+  cannot consume the allowance needed for applying and reviewing the drawing.
+- Permanent tests cover complete 100-candidate packages, 10/100 independent
+  submissions, matching replies, pre-reserved budgets, queued cancellation and
+  exclusive non-analysis tools. No machine-specific latency test is required.
+  The 7076 sample is not rerun, per the user's vector-only scope clarification.
+
+Local validation for this slice: full App suites, server regression suite,
+typecheck/build, naming/lint, Inspector and generated-template parity passed.
+Permanent cases cover one 100-candidate package dispatched as 16/16/16/16/16/16/4,
+10/100 independent calls, combined receipts, work reuse, budgets and cancellation.
+The six deterministic local-AI browser cases passed; the final mixed-component
+case and a real-subscription image case passed after the final receipt changes.
+The live image case observed the actual analysis call and native Rectangle output.
+Both actual App screenshots were inspected: the live blue square is a Rectangle,
+the white compound background remains a Vector, and the mixed fixture contains
+Rectangle/Oval/Vector with exact one-Undo/Redo restoration. Latest-head PR CI is
+the remaining remote integration check.
+No 7076 gate or machine-specific performance gate is required for this slice.
+
 ### Stable conversation and roles
 
 - Append a user message immediately when submission is accepted. Render it on the

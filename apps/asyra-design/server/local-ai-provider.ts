@@ -1,3 +1,4 @@
+import { LocalComponentAnalysisLimits } from './local-component-analysis-limits'
 import type { AiActionBatch } from '../src/ai/action-batch-protocol'
 import { AiActionNames } from '../src/constants/ai-actions'
 import type {
@@ -22,6 +23,7 @@ import {
 import { AiModelBackendError } from './ai-model-provider'
 
 const maximumProtocolBytes = 32 * 1024 * 1024
+const maximumOperationCalls = 32
 const requestTimeoutMs = 300_000
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -114,7 +116,7 @@ const runLocalAiProvider = async (
     definitions
   )
   const toolController = new AbortController()
-  const toolTasks = new Set<Promise<void>>()
+  const toolTasks = new Map<Promise<void>, string>()
   const toolCalls = new Set<string>()
   let child: ChildProcessWithoutNullStreams
   try {
@@ -143,6 +145,7 @@ const runLocalAiProvider = async (
     { resolve: (value: unknown) => void; reject: (error: Error) => void }
   >()
   let imageCallCount = 0
+  let operationCallCount = 0
   let sequence = 0
   let buffer = ''
   let bytes = 0
@@ -202,32 +205,49 @@ const runLocalAiProvider = async (
         !definitions.some((tool) => tool.name === params.tool) ||
         typeof params.callId !== 'string' ||
         toolCalls.has(params.callId) ||
-        toolCalls.size >= 32 ||
+        toolCalls.size >=
+          maximumOperationCalls +
+            LocalComponentAnalysisLimits.callsPerRequest ||
+        (params.tool !== AiImageToolIds.ANALYZE_VECTOR_COMPONENTS &&
+          operationCallCount >= maximumOperationCalls) ||
         (params.tool === AiImageToolIds.VTRACER && imageCallCount >= 4) ||
-        toolTasks.size > 0
+        (toolTasks.size > 0 &&
+          (params.tool !== AiImageToolIds.ANALYZE_VECTOR_COMPONENTS ||
+            [...toolTasks.values()].some(
+              (name) => name !== AiImageToolIds.ANALYZE_VECTOR_COMPONENTS
+            )))
       )
         return protocolFailure()
       const toolName = String(params.tool)
+      if (toolName !== AiImageToolIds.ANALYZE_VECTOR_COMPONENTS)
+        operationCallCount++
       if (toolName === AiImageToolIds.VTRACER) imageCallCount += 1
-      const message =
+      let message: string | undefined
+      if (toolName === AiImageToolIds.ANALYZE_VECTOR_COMPONENTS)
+        message = 'Analyzing shape options'
+      else if (
         isRecord(params.arguments) &&
         typeof params.arguments.message === 'string' &&
         params.arguments.message.length <= 1000
-          ? params.arguments.message
-          : undefined
+      )
+        message = params.arguments.message
       options.onProgress?.({
         tool: toolName,
         status: 'running',
         ...(message ? { message } : {})
       })
       toolCalls.add(params.callId)
-      const owner =
-        toolName === AiImageToolIds.VTRACER ? imageTools : operations
+      const owner = imageTools.definitions.some(
+        (tool) => tool.name === toolName
+      )
+        ? imageTools
+        : operations
       if (!owner) return protocolFailure()
       const task = owner
         .call(toolName, params.arguments, toolController.signal)
         .then((svg) => {
           if (terminalError || stopped) return
+          toolTasks.delete(task)
           options.onProgress?.({
             tool: toolName,
             status: 'completed'
@@ -252,7 +272,7 @@ const runLocalAiProvider = async (
           )
         )
         .finally(() => toolTasks.delete(task))
-      toolTasks.add(task)
+      toolTasks.set(task, toolName)
       return
     }
     if (value.id !== undefined) {
@@ -429,6 +449,7 @@ const runLocalAiProvider = async (
     }
     turnId = started.turn.id
     await completion
+    await Promise.all(toolTasks.keys())
     if (terminalError) throw terminalError
     if (completedTurnId !== turnId || finalText === undefined)
       throw failure('AI_MODEL_BACKEND_INVALID_RESPONSE')
@@ -445,7 +466,7 @@ const runLocalAiProvider = async (
     options.signal?.removeEventListener('abort', abort)
     stop()
     await closed
-    await Promise.allSettled(toolTasks)
+    await Promise.allSettled(toolTasks.keys())
   }
 }
 

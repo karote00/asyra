@@ -5,6 +5,8 @@ import { PassThrough, Writable } from 'node:stream'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { checkLocalAiProvider } from '../local-ai-provider'
 import { requestConfiguredAiActionBatch } from '../ai-model-provider'
+import { convertVTracerBuffer } from '../../vtracer-tool-server.mjs'
+import { AiImageToolIds } from '../ai-domain-prompt'
 
 const { spawn } = vi.hoisted(() => ({ spawn: vi.fn() }))
 vi.mock('node:child_process', () => ({ spawn }))
@@ -60,7 +62,13 @@ const fakeServer = (
     toolCall?: boolean
     toolName?: string
     toolArguments?: unknown
-    toolResultOutput?: (summary: { imageArtifactId: string }) => string
+    analyzeComponents?: boolean
+    parallelAnalyses?: number
+    overlapTool?: string
+    toolResultOutput?: (summary: {
+      imageArtifactId: string
+      analysisId?: string
+    }) => string
   } = {}
 ) => {
   const child = new EventEmitter() as EventEmitter & {
@@ -70,6 +78,7 @@ const fakeServer = (
     kill: ReturnType<typeof vi.fn>
   }
   const packets: Packet[] = []
+  let analysisReplies = 0
   const send = (packet: unknown) =>
     child.stdout.write(JSON.stringify(packet) + '\n')
   const notify = (method: string, params: Record<string, unknown>) =>
@@ -109,6 +118,54 @@ const fakeServer = (
       packets.push(packet)
       queueMicrotask(() => {
         if ('result' in packet) {
+          if (options.analyzeComponents && packet.id === 99) {
+            const response = packet.result as {
+              contentItems: { text: string }[]
+            }
+            const summary = JSON.parse(response.contentItems[0].text)
+            setImmediate(() => {
+              for (
+                let index = 0;
+                index < (options.parallelAnalyses ?? 1);
+                index++
+              )
+                send({
+                  id: 100 + index,
+                  method: 'item/tool/call',
+                  params: {
+                    threadId: 'thread-1',
+                    turnId: 'turn-1',
+                    callId: `analysis-${index}`,
+                    tool: AiImageToolIds.ANALYZE_VECTOR_COMPONENTS,
+                    arguments: {
+                      imageArtifactId: summary.imageArtifactId,
+                      pathIds: [`path-${index + 1}`]
+                    }
+                  }
+                })
+              if (options.overlapTool)
+                send({
+                  id: 500,
+                  method: 'item/tool/call',
+                  params: {
+                    threadId: 'thread-1',
+                    turnId: 'turn-1',
+                    callId: 'overlap',
+                    tool: options.overlapTool,
+                    arguments: { attachmentIndex: 0 }
+                  }
+                })
+            })
+            return
+          }
+          if (
+            options.parallelAnalyses &&
+            packet.id !== undefined &&
+            packet.id >= 100
+          ) {
+            analysisReplies++
+            if (analysisReplies < options.parallelAnalyses) return
+          }
           if (options.toolResultOutput) {
             const response = packet.result as {
               contentItems: { text: string }[]
@@ -232,6 +289,149 @@ describe('local subscription AI backend', () => {
       groupBounds: { x: 0, y: 0, width: 240, height: 240 }
     })
     expect(JSON.stringify(result)).not.toContain('imageArtifactId')
+    expect(server.child.kill).toHaveBeenCalledOnce()
+  })
+  it('dispatches analysis in the same turn and prepares only the evidence-backed mapping', async () => {
+    vi.mocked(convertVTracerBuffer).mockResolvedValueOnce(
+      '<svg width="100" height="100"><path d="M0,0L100,0L100,100L0,100Z" fill="#008800"/></svg>'
+    )
+    const server = fakeServer({
+      toolCall: true,
+      analyzeComponents: true,
+      toolResultOutput: (summary) =>
+        JSON.stringify({
+          batchId: 'analyzed',
+          actions: [
+            {
+              id: 'draw',
+              name: 'insert_vector_composition',
+              summary: 'Reviewed drawing',
+              arguments: {
+                imageArtifactId: summary.imageArtifactId,
+                analysisIds: [summary.analysisId],
+                bounds: { x: 0, y: 0, width: 240, height: 240 },
+                compositionRole: 'Reference',
+                excludePathIds: [],
+                componentMappings: [{ pathId: 'path-1', componentType: 'rect' }]
+              }
+            }
+          ]
+        })
+    })
+    const result = await requestConfiguredAiActionBatch(
+      {
+        ...input,
+        actions: [
+          {
+            name: 'insert_vector_composition',
+            description: 'Draw',
+            inputSchema: {}
+          }
+        ],
+        metadata: {
+          imageAttachments: [
+            {
+              dataUrl: 'data:image/png;base64,YQ==',
+              mediaType: 'image/png',
+              size: 1
+            }
+          ]
+        }
+      },
+      { environment }
+    )
+    expect(result.actions[0].arguments).toMatchObject({
+      slices: [
+        {
+          descriptors: [
+            expect.objectContaining({ type: 'rect', width: 240, height: 240 })
+          ]
+        }
+      ]
+    })
+    expect(
+      server.packets.filter((packet) => packet.method === 'turn/start')
+    ).toHaveLength(1)
+    expect(JSON.stringify(result)).not.toMatch(/analysisId|imageArtifactId/)
+    expect(server.child.kill).toHaveBeenCalledOnce()
+  })
+  it.each([10, 100])(
+    'admits %i independent analyses before any reply and correlates every result',
+    async (count) => {
+      vi.mocked(convertVTracerBuffer).mockResolvedValueOnce(
+        `<svg width="100" height="100">${Array.from({ length: count }, (_, i) => `<path d="M${i},0L${i + 1},0L${i + 1},10L${i},10Z" fill="#008800"/>`).join('')}</svg>`
+      )
+      const server = fakeServer({
+        toolCall: true,
+        analyzeComponents: true,
+        parallelAnalyses: count
+      })
+      const progress: string[] = []
+      await expect(
+        requestConfiguredAiActionBatch(
+          {
+            ...input,
+            metadata: {
+              imageAttachments: [
+                {
+                  dataUrl: 'data:image/png;base64,YQ==',
+                  mediaType: 'image/png',
+                  size: 1
+                }
+              ]
+            }
+          },
+          {
+            environment,
+            onProgress: (event) => {
+              if (event.tool === AiImageToolIds.ANALYZE_VECTOR_COMPONENTS)
+                progress.push(event.status)
+            }
+          }
+        )
+      ).resolves.toEqual(batch)
+      expect(progress.slice(0, count)).toEqual(Array(count).fill('running'))
+      expect(progress.slice(count)).toEqual(Array(count).fill('completed'))
+      const receipts = server.packets
+        .filter((packet) => packet.id !== undefined && packet.id >= 100)
+        .map((packet) => {
+          const response = (
+            packet as unknown as {
+              result: { contentItems: { text: string }[] }
+            }
+          ).result
+          const report = JSON.parse(response.contentItems[0].text)
+          expect(report.paths[0].pathId).toBe(`path-${Number(packet.id) - 99}`)
+          return report.analysisId
+        })
+      expect(receipts).toHaveLength(count)
+      expect(new Set(receipts).size).toBe(count)
+      expect(server.child.kill).toHaveBeenCalledOnce()
+    }
+  )
+  it('rejects an exclusive tool while analysis work is outstanding', async () => {
+    const server = fakeServer({
+      toolCall: true,
+      analyzeComponents: true,
+      overlapTool: AiImageToolIds.VTRACER
+    })
+    await expect(
+      requestConfiguredAiActionBatch(
+        {
+          ...input,
+          metadata: {
+            imageAttachments: [
+              {
+                dataUrl: 'data:image/png;base64,YQ==',
+                mediaType: 'image/png',
+                size: 1
+              }
+            ]
+          }
+        },
+        { environment }
+      )
+    ).rejects.toMatchObject({ code: 'AI_MODEL_BACKEND_INVALID_RESPONSE' })
     expect(server.child.kill).toHaveBeenCalledOnce()
   })
   it('executes the registered VTracer tool and resumes the same model turn', async () => {

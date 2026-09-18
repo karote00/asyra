@@ -1,3 +1,5 @@
+import { createLocalImageTools } from '../server/local-image-tools'
+import { AiImageToolIds } from '../server/ai-domain-prompt'
 import {
   parseLocalVectorArtifact,
   prepareLocalVectorArtifact
@@ -461,7 +463,7 @@ for (const source of ['text', 'image'] as const) {
       .fill(
         source === 'text'
           ? '請畫一個 100×100 的藍色圓形。'
-          : 'Use the registered VTracer tool to vectorize the entire attached 64x64 image exactly, preserving its blue square and white background, and insert the resulting editable vectors at original size. Do not redraw or approximate the reference.'
+          : 'Trace the attached 64x64 image, preserving its blue square and white background at original size. Analyze plausible component conversions using the registered backend analysis tool. Use native Rectangles for eligible squares if they preserve this reference; retain any ineligible paths as vectors. Review the actual rendered result before finishing.'
       )
     await page.getByRole('button', { name: 'Send', exact: true }).click()
     const response = await responsePromise
@@ -505,6 +507,9 @@ for (const source of ['text', 'image'] as const) {
       })
     } else {
       expect(blue?.type).toBe('rect')
+      expect(frames.join('')).toContain(
+        AiImageToolIds.ANALYZE_VECTOR_COMPONENTS
+      )
       expect(
         elements.every((element) =>
           ['vector', 'rect', 'oval'].includes(element.type as string)
@@ -1087,17 +1092,69 @@ test('local subscription receives fresh images during repeated refinement', asyn
 test('backend component mappings render native Rectangle and Oval with remaining Vector', async ({
   page
 }, testInfo) => {
-  const artifact = parseLocalVectorArtifact(
-    '<svg width="100" height="100"><path d="M0,0L40,0L40,40L0,40Z" fill="#FF0000"/><path d="M70,0L90,20L70,40L50,20Z" fill="#0000FF"/><path d="M0,60L40,100L0,100Z" fill="#00FF00"/></svg>'
+  const tools = createLocalImageTools(
+    {
+      metadata: {
+        imageAttachments: [
+          {
+            dataUrl: 'data:image/png;base64,YQ==',
+            mediaType: 'image/png',
+            size: 1
+          }
+        ]
+      }
+    },
+    async () =>
+      '<svg width="100" height="100"><path d="M0,0L40,0L40,40L0,40Z" fill="#FF0000"/><path d="M90,20C90,31.0457,81.0457,40,70,40C58.9543,40,50,31.0457,50,20C50,8.9543,58.9543,0,70,0C81.0457,0,90,8.9543,90,20Z" fill="#0000FF"/><path d="M0,60L40,100L0,100Z" fill="#00FF00"/></svg>'
   )
-  const drawing = prepareLocalVectorArtifact(artifact, {
-    imageArtifactId: artifact.imageArtifactId,
-    compositionRole: 'Component review',
-    bounds: { x: 50, y: 50, width: 180, height: 200 },
-    excludePathIds: [],
-    componentMappings: [
-      { pathId: 'path-1', componentType: 'rect' },
-      { pathId: 'path-2', componentType: 'oval' }
+  const signal = new AbortController().signal
+  const source = JSON.parse(
+    await tools.call(AiImageToolIds.VTRACER, { attachmentIndex: 0 }, signal)
+  )
+  const evidence = JSON.parse(
+    await tools.call(
+      AiImageToolIds.ANALYZE_VECTOR_COMPONENTS,
+      {
+        imageArtifactId: source.imageArtifactId,
+        pathIds: ['path-1', 'path-2', 'path-3']
+      },
+      signal
+    )
+  )
+  expect(evidence.paths[0].candidates).toContainEqual(
+    expect.objectContaining({ componentType: 'rect', eligible: true })
+  )
+  expect(evidence.paths[1].candidates).toContainEqual(
+    expect.objectContaining({ componentType: 'oval', eligible: true })
+  )
+  expect(
+    evidence.paths[2].candidates.every(
+      (candidate: { eligible: boolean }) => !candidate.eligible
+    )
+  ).toBe(true)
+  await testInfo.attach('component-analysis', {
+    body: JSON.stringify(evidence),
+    contentType: 'application/json'
+  })
+  const prepared = tools.resolveBatch({
+    batchId: 'components',
+    actions: [
+      {
+        id: 'draw',
+        name: 'insert_vector_composition',
+        summary: 'Draw reviewed components',
+        arguments: {
+          imageArtifactId: source.imageArtifactId,
+          analysisIds: [evidence.analysisId],
+          compositionRole: 'Component review',
+          bounds: { x: 50, y: 50, width: 180, height: 200 },
+          excludePathIds: [],
+          componentMappings: [
+            { pathId: 'path-1', componentType: 'rect' },
+            { pathId: 'path-2', componentType: 'oval' }
+          ]
+        }
+      }
     ]
   })
   await page.route('**/api/ai/status', (route) =>
@@ -1105,21 +1162,13 @@ test('backend component mappings render native Rectangle and Oval with remaining
   )
   await page.route('**/api/ai/action-batch', (route) =>
     route.fulfill({
-      json: {
-        batchId: 'components',
-        actions: [
-          {
-            id: 'draw',
-            name: 'insert_vector_composition',
-            arguments: drawing,
-            summary: 'Draw reviewed components'
-          }
-        ]
-      }
+      json: prepared
     })
   )
   await page.goto(createTestDocumentIdentity().url)
   await waitForAppReady(page)
+  const before = await getCoreDocumentDigest(page)
+  const depth = await getUndoHistoryDepth(page)
   await page.getByRole('button', { name: 'Open Agent' }).click()
   await page
     .getByLabel('Message Agent')
@@ -1142,4 +1191,10 @@ test('backend component mappings render native Rectangle and Oval with remaining
   })
   expect(types).toEqual(['oval', 'rect', 'vector'])
   await page.screenshot({ path: testInfo.outputPath('component-mapping.png') })
+  const after = await getCoreDocumentDigest(page)
+  expect(await getUndoHistoryDepth(page)).toBe(depth + 1)
+  await undo(page)
+  expect(await getCoreDocumentDigest(page)).toEqual(before)
+  await redo(page)
+  expect(await getCoreDocumentDigest(page)).toEqual(after)
 })

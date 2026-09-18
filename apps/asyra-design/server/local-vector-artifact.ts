@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { Bezier } from 'bezier-js'
+import { LocalComponentAnalysisLimits } from './local-component-analysis-limits'
 
 interface Point {
   x: number
@@ -229,6 +230,15 @@ export const LOCAL_VECTOR_REFERENCE_SCHEMA = {
   required: ['imageArtifactId', 'bounds', 'compositionRole', 'excludePathIds'],
   properties: {
     imageArtifactId: { type: 'string' },
+    analysisIds: {
+      type: 'array',
+      items: { type: 'string' },
+      minItems: 1,
+      maxItems: LocalComponentAnalysisLimits.callsPerRequest,
+      uniqueItems: true,
+      description:
+        'Required for componentMappings or ovalPathIds. Use same-request analysis receipts for this artifact and only select eligible path/component pairs.'
+    },
     compositionRole: { type: 'string', minLength: 1, maxLength: 160 },
     componentMappings: {
       type: 'array',

@@ -25,6 +25,54 @@ The exact registered sample keeps its existing provider-free behavior.
 
 ## Owner and data contract
 
+### Evidence-led component analysis
+
+The model evaluates whether a registered component better meets the request;
+there is no unconditional preference for native primitives. It may select up to
+128 candidate path IDs from a current-request artifact for read-only component
+analysis. Analysis returns an opaque analysisId, contour IDs and geometric
+measurements for the registered axis-aligned Oval/Rectangle conversions, including
+boundary deviation, area difference, topology limitations and eligibility.
+Measurements describe geometry, not semantic meaning or visual approval. No
+coordinate arrays, automatic conversion, canonical writes or model request are produced.
+
+Approximate mappings submitted through the local image adapter must reference a
+nonempty analysisIds containing same-request receipts for the same artifact.
+Independent reports may be combined; each selected path/component pair must have
+eligible evidence in at least one referenced report. Only eligible
+results may be selected; the backend consumes completed analysis rather than
+recomputing it during preparation. Unmapped geometry and whole-path exclusions
+retain their existing meaning. Analysis never authorizes excluded or unknown IDs.
+The original geometry is preserved when AI chooses not to convert.
+
+Compound contours, self-intersections, degenerate geometry and excessive fit
+error cannot authorize whole-path conversion. The response identifies the
+limitation and available next step, without pretending segmentation or contour
+surgery is registered. Analysis uses bounded approximation with disclosed
+sampling tolerance; it is not a proof of semantic equivalence. At most 128
+analysis receipts are retained per request, with eight contour summaries per path
+and the full contour count. Sampling/precision/intersection budgets return explicit
+noneligible evidence rather than failing the whole conversation. After applying a
+selected conversion, existing actual-render review and one-request Undo remain.
+
+Independent analysis calls may be issued concurrently without waiting for earlier
+results, up to the request budget of 128 calls and 128 total candidate paths.
+Every response is correlated to its own tool call and receipt, and final settlement waits for outstanding work.
+Other tools, including writes, remain exclusive. Candidate slots are reserved
+before waiting. A request-owned queue runs one bounded
+CPU job of at most 16 candidates at a time and yields between jobs. A whole
+package returns one complete receipt after every job finishes, never a partial
+receipt. These are conservative adjustable defaults, not machine-based SLAs.
+Non-analysis calls retain their 32-call
+limit, total protocol admission is 160, and abort cleanup remains enforced.
+Concurrency does not imply CPU parallelism.
+
+Required cases: 10/100 simultaneous analyses and result correlation; exclusive writes;
+exact and near primitives; irregular and compound paths; malformed
+or cross-request references; analysis cancellation/budgets; zero canonical writes;
+no repeated analysis during multiple preparations; mixed native/Vector rendering
+and exact Undo/Redo restoration. Token savings are not claimed without measurements.
+
 `request-backend-action-batch` owns selection, provider invocation, and errors.
 Each accepted ordinary request owns one ephemeral app-server thread and one
 child process. No process or model work starts on App startup. The process is

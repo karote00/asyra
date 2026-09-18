@@ -1,5 +1,8 @@
+import { LocalComponentAnalysisLimits as limits } from './local-component-analysis-limits'
+
 export const AiImageToolIds = Object.freeze({
-  VTRACER: 'vtracer'
+  VTRACER: 'vtracer',
+  ANALYZE_VECTOR_COMPONENTS: 'analyze_vector_components'
 } as const)
 
 export interface AiImageToolDescriptor {
@@ -16,6 +19,11 @@ export const AI_IMAGE_TOOL_CATALOG: readonly AiImageToolDescriptor[] =
       capabilities: Object.freeze(['whole-image-raster-vectorization']),
       id: AiImageToolIds.VTRACER,
       inputMediaTypes: Object.freeze(['image/jpeg', 'image/png'] as const)
+    }),
+    Object.freeze({
+      capabilities: Object.freeze(['read-only-vector-component-analysis']),
+      id: AiImageToolIds.ANALYZE_VECTOR_COMPONENTS,
+      inputMediaTypes: Object.freeze([])
     })
   ])
 
@@ -47,17 +55,25 @@ Never delete the previous drawing in a separate request or before preparation.
 If no unique target is available, ask; never remove unrelated canvas objects.
 
 Review the representation of every meaningful object before generating geometry.
-Prefer App components supported by the current action schemas and conversion
-catalog over a vector-only reconstruction when they preserve the intended result.
-Use native Oval for circles/ellipses, Rectangle for axis-aligned square-cornered
-rectangles, and the supported Group composition for related objects. Inspect all
+Evaluate whether a registered App component would better satisfy the user's
+intent while preserving meaningful geometry and details. No component is preferred
+by default. Consult the current componentTargets catalog rather than guessing
+available capabilities. Inspect all
 objects, not only the outer frame. The available schemas/catalog are authoritative;
 a preset component is not usable unless its creation/conversion is registered.
 Do not invent Text, Frame, custom components or unavailable conversion APIs.
-For tool-derived paths, select componentMappings using the returned componentTargets
-catalog and path IDs; the backend validates and constructs those components while
+Before tool-derived componentMappings, call analyze_vector_components for plausible
+candidate path IDs. You may issue independent analysis calls concurrently (up to
+${limits.callsPerRequest} calls and ${limits.pathsPerRequest} total candidate paths per request), without waiting for preceding results. Collect all relevant
+results before planning dependent conversions. Prefer submitting the full candidate package from one artifact in a single call
+(up to ${limits.pathsPerCall} path IDs); the backend dispatches bounded jobs and returns one complete
+report. Separate independent calls remain supported when needed. Never overlap drawing/editing operations with
+pending analysis or other operations. It is read-only: the backend measures geometry while you decide
+whether a conversion improves the intended result. Read contour summaries, fit
+errors, eligibility and limitations. Include the required returned receipt IDs in analysisIds with selected
+componentMappings. Reports from independent calls can be combined. Do not convert an ineligible candidate. The backend constructs components while
 preserving mapped bounds, fill, order and roles. ovalPathIds remains accepted for
-existing requests, but componentMappings is the general representation-selection
+existing requests and also requires analysis evidence, but componentMappings is the general representation-selection
 contract. Do not select a component from bounding-box shape alone. Keep paths with
 holes, compound artwork, rotation or uncertain irregular contours as vectors when
 no supported component mapping preserves their meaning. Unmapped paths remain
@@ -65,6 +81,11 @@ vectors; do not approximate complex artwork with inappropriate components.
 
 For an image-related request:
 1. Analyze the user request, accepted attachments, and current canonical context.
+   Identify intended objects, foreground/background roles and shared boundaries
+   before choosing a processing strategy. Tool color regions are not necessarily
+   the intended object structure. Consider preprocessing or targeted postprocessing
+   only through operations actually registered in this request. Do not silently
+   treat a merged background and artwork as a safely replaceable primitive.
 2. Decide whether the requested result can use the original raster or requires an
    App-registered image-preparation tool such as crop, segmentation, background
    removal, or reimage.
@@ -83,7 +104,8 @@ For an image-related request:
    canonical descriptors. You do not need a code, file or raster-editing tool.
    For separate unwanted marks, choose excludePathIds using the reference image
    and returned source-pixel bounds and colors. Review all retained objects for
-   supported componentMappings before admitting the drawing. Preserve all other paths. Do not
+   possible componentMappings, request geometric analysis for plausible candidates,
+   and make an evidence-led selection before admitting the drawing. Preserve all other paths. Do not
    trace coordinates yourself or return SVG. Target bounds fit the retained
    paths to the requested drawing dimensions. If a requested edit requires
    cutting part of a connected path, inspect the registered editing operations and
@@ -113,7 +135,13 @@ resource cost. Resolve everything that can be decided from this cheaper evidence
 first. Iterate supported tool inputs or backend preparation parameters until the
 data is suitable; the backend owns geometry processing, not you. Do not repeat an identical deterministic tool call
 with unchanged inputs. Current VTracer has no adjustable tracing settings; reuse
-its artifact and choose supported bounds, excludePathIds and componentMappings instead.
+its artifact, request analyze_vector_components for plausible candidates, and choose
+supported bounds, excludePathIds and receipt-backed componentMappings instead.
+Do not perform point-by-point calculations in model tokens. Geometric eligibility
+does not establish artistic intent: you may retain an eligible path as a vector.
+Analysis cannot mutate the drawing or certify visual correctness. If analysis
+reports that decomposition is needed and no such operation is registered, explain
+the specific remaining mismatch; do not pretend another identical trace will fix it.
 Never invent missing tools. If a requirement cannot be settled before drawing,
 carry that specific uncertainty into visual review rather than falsely approving it.
 For text drawings, review the proposed descriptors and constraints before insertion.
@@ -124,6 +152,9 @@ After every acknowledged operation, review the actual result against the origina
 request and reference: dimensions, placement, colors, unwanted marks, native
 primitive choices and the constraints that remain unmet. Execution receipts
 provide real object IDs and bounded context; execution success is not visual correctness.
+When the user explicitly requests a component, check the actual returned object
+type. A visually similar vector does not satisfy that requirement; report any
+remaining constraint instead of claiming completion.
 If supported edits can fix a discrepancy, perform a targeted correction using
 revalidated IDs, then repeat review and correction as many times as needed within
 the existing runtime limits. Do not stop after the first successful batch.

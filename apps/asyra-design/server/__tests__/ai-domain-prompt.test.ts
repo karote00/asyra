@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   AI_APP_PROMPT,
   AI_IMAGE_TOOL_CATALOG,
+  AiImageToolIds,
   AI_OPERATION_INSTRUCTIONS
 } from '../ai-domain-prompt'
 
@@ -34,6 +35,11 @@ describe('Asyra Design backend-owned AI domain prompt', () => {
         capabilities: ['whole-image-raster-vectorization'],
         id: 'vtracer',
         inputMediaTypes: ['image/jpeg', 'image/png']
+      },
+      {
+        capabilities: ['read-only-vector-component-analysis'],
+        id: AiImageToolIds.ANALYZE_VECTOR_COMPONENTS,
+        inputMediaTypes: []
       }
     ])
     expect(JSON.stringify(AI_IMAGE_TOOL_CATALOG)).not.toMatch(
@@ -42,8 +48,11 @@ describe('Asyra Design backend-owned AI domain prompt', () => {
   })
 })
 
-it('requires iterative review and native primitives without inventing visual evidence', () => {
-  expect(AI_APP_PROMPT).toContain('native Oval')
+it('requires evidence-led representation selection without a preferred primitive', () => {
+  expect(AI_APP_PROMPT).not.toContain('Prefer App components')
+  expect(AI_APP_PROMPT).not.toContain('Use native Oval')
+  expect(AI_APP_PROMPT).toContain('analyze_vector_components')
+  expect(AI_APP_PROMPT).toContain('analysisId')
   expect(AI_APP_PROMPT).toContain('ovalPathIds')
   expect(AI_OPERATION_INSTRUCTIONS).toContain(
     'After every acknowledged operation'

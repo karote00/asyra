@@ -1,7 +1,10 @@
+import { setImmediate as yieldToEventLoop } from 'node:timers/promises'
+import { LocalComponentAnalysisLimits as limits } from './local-component-analysis-limits'
 import { Buffer } from 'node:buffer'
 import { AiImageToolIds } from './ai-domain-prompt'
 import type { AiProviderInput } from '../src/ai/action-batch-protocol'
 import { AiActionNames } from '../src/constants/ai-actions'
+import { analyzeVectorComponents } from './local-vector-component-analysis'
 import {
   LOCAL_VECTOR_REFERENCE_SCHEMA,
   parseLocalVectorArtifact,
@@ -39,6 +42,10 @@ export const createLocalImageTools = (
   )
   const artifacts = new Map<string, LocalVectorArtifact>()
   const converted = new Map<number, string>()
+  const analyses = new Map<string, ReturnType<typeof analyzeVectorComponents>>()
+  let analysisPathCount = 0
+  let analysisCalls = 0
+  let analysisQueue = Promise.resolve()
   const definitions = compatible
     ? [
         {
@@ -51,6 +58,26 @@ export const createLocalImageTools = (
             additionalProperties: false,
             properties: { attachmentIndex: { type: 'integer', minimum: 0 } },
             required: ['attachmentIndex']
+          }
+        },
+        {
+          type: 'function',
+          name: AiImageToolIds.ANALYZE_VECTOR_COMPONENTS,
+          description: `Read-only geometric analysis of up to ${limits.pathsPerCall} plausible path candidates from a current-request vector artifact. Up to ${limits.callsPerRequest} independent calls and ${limits.pathsPerRequest} total candidate paths may be submitted per request without awaiting earlier replies. Prefer submitting all candidates from the same artifact in one call; the backend schedules bounded jobs. Await all relevant results before selecting conversions. Returns analysisId, contour identities, fit errors, topology limitations and eligible registered components. You decide whether a conversion improves the intended result; no automatic drawing or segmentation occurs. List the required receipt IDs in analysisIds when selecting componentMappings; independent reports may be combined. Preserve vectors when no suitable conversion exists.`,
+          inputSchema: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['imageArtifactId', 'pathIds'],
+            properties: {
+              imageArtifactId: { type: 'string' },
+              pathIds: {
+                type: 'array',
+                minItems: 1,
+                maxItems: limits.pathsPerCall,
+                uniqueItems: true,
+                items: { type: 'string' }
+              }
+            }
           }
         }
       ]
@@ -118,7 +145,62 @@ export const createLocalImageTools = (
               ))
           )
             throw new Error('Invalid replacement')
-          const drawing = prepareLocalVectorArtifact(artifact, reference)
+          const mappings = reference.componentMappings ?? []
+          const ovalIds = reference.ovalPathIds ?? []
+          if (!Array.isArray(mappings) || !Array.isArray(ovalIds))
+            throw new Error('Invalid component selection')
+          if (
+            mappings.length ||
+            ovalIds.length ||
+            reference.analysisIds !== undefined
+          ) {
+            const receiptIds = reference.analysisIds
+            if (
+              !Array.isArray(receiptIds) ||
+              !receiptIds.length ||
+              receiptIds.length > limits.callsPerRequest ||
+              new Set(receiptIds).size !== receiptIds.length ||
+              receiptIds.some((id) => typeof id !== 'string')
+            )
+              throw new Error('Missing or mismatched component analysis')
+            const evidence = receiptIds.map((id) => {
+              const report = analyses.get(id)
+              if (
+                !report ||
+                report.imageArtifactId !== artifact.imageArtifactId
+              )
+                throw new Error('Missing or mismatched component analysis')
+              return report
+            })
+            const selections = [
+              ...mappings,
+              ...ovalIds.map((pathId) => ({ pathId, componentType: 'oval' }))
+            ]
+            for (const selection of selections) {
+              if (
+                !isRecord(selection) ||
+                !evidence.some((analysis) =>
+                  analysis.paths.some(
+                    (path) =>
+                      path.pathId === selection.pathId &&
+                      path.candidates.some(
+                        (candidate) =>
+                          candidate.componentType === selection.componentType &&
+                          candidate.eligible
+                      )
+                  )
+                )
+              )
+                throw new Error(
+                  'Component selection is not eligible in this analysis'
+                )
+            }
+          }
+          const { analysisIds: _analysisIds, ...preparedReference } = reference
+          const drawing = prepareLocalVectorArtifact(
+            artifact,
+            preparedReference
+          )
           return {
             ...action,
             arguments: replacing
@@ -134,6 +216,66 @@ export const createLocalImageTools = (
       signal: AbortSignal
     ): Promise<string> => {
       if (signal.aborted) throw new Error('Image tool cancelled')
+      if (name === AiImageToolIds.ANALYZE_VECTOR_COMPONENTS) {
+        if (
+          !isRecord(args) ||
+          Object.keys(args).length !== 2 ||
+          typeof args.imageArtifactId !== 'string' ||
+          !Array.isArray(args.pathIds) ||
+          args.pathIds.some((id) => typeof id !== 'string')
+        )
+          throw new Error('Invalid component analysis request')
+        const artifact = artifacts.get(args.imageArtifactId)
+        if (!artifact) throw new Error('Unknown image reference')
+        if (
+          !args.pathIds.length ||
+          args.pathIds.length > limits.pathsPerCall ||
+          new Set(args.pathIds).size !== args.pathIds.length
+        )
+          throw new Error('Invalid analysis selection')
+        if (
+          analysisCalls >= limits.callsPerRequest ||
+          analysisPathCount + args.pathIds.length > limits.pathsPerRequest
+        )
+          return JSON.stringify({
+            available: false,
+            message:
+              'The analysis limit has been reached. Use existing results or explain remaining constraints.'
+          })
+        // Reserve before any await so parallel submissions cannot oversubscribe.
+        analysisCalls++
+        analysisPathCount += args.pathIds.length
+        const pathIds = [...args.pathIds] as string[]
+        const task = analysisQueue.then(async () => {
+          let report: ReturnType<typeof analyzeVectorComponents> | undefined
+          for (
+            let offset = 0;
+            offset < pathIds.length;
+            offset += limits.pathsPerJob
+          ) {
+            if (signal.aborted) throw new Error('Image tool cancelled')
+            // One bounded CPU job at a time; yield so Stop and I/O stay responsive.
+            await yieldToEventLoop()
+            if (signal.aborted) throw new Error('Image tool cancelled')
+            const partial = analyzeVectorComponents(
+              artifact,
+              pathIds.slice(offset, offset + limits.pathsPerJob),
+              signal
+            )
+            if (report) report.paths.push(...partial.paths)
+            else report = partial
+          }
+          if (!report || signal.aborted) throw new Error('Image tool cancelled')
+          // Publish one complete receipt, never a partially analyzed package.
+          analyses.set(report.analysisId, report)
+          return JSON.stringify(report)
+        })
+        analysisQueue = task.then(
+          () => undefined,
+          () => undefined
+        )
+        return task
+      }
       if (
         name !== AiImageToolIds.VTRACER ||
         !isRecord(args) ||
