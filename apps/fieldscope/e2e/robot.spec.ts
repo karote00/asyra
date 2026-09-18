@@ -1,4 +1,168 @@
-import { expect, test } from '@playwright/test'
+import { readFileSync } from 'node:fs'
+import { expect, test, type Page } from '@playwright/test'
+
+async function assertRenderedScene(
+  page: Page,
+  raster: string,
+  region?: { x: number; y: number; width: number; height: number }
+) {
+  const colors = await page.evaluate(
+    async (data) => {
+      const image = new Image()
+      image.src = `data:image/png;base64,${data.raster}`
+      await image.decode()
+      const sample = document.createElement('canvas')
+      sample.width = sample.height = 32
+      const context = sample.getContext('2d')
+      if (!context) throw new Error('Missing raster decoder')
+      const bounds = data.region ?? {
+        x: 0,
+        y: 0,
+        width: image.width,
+        height: image.height
+      }
+      context.drawImage(
+        image,
+        bounds.x,
+        bounds.y,
+        bounds.width,
+        bounds.height,
+        0,
+        0,
+        32,
+        32
+      )
+      const pixels = context.getImageData(0, 0, 32, 32).data
+      const distinct = new Set<string>()
+      for (let i = 0; i < pixels.length; i += 4)
+        distinct.add(
+          `${pixels[i] >> 4}:${pixels[i + 1] >> 4}:${pixels[i + 2] >> 4}`
+        )
+      return distinct.size
+    },
+    { raster, region }
+  )
+  expect(
+    colors,
+    'The robot close-up canvas must render the scene'
+  ).toBeGreaterThan(8)
+}
+
+test('the scene liveness guard rejects a uniform canvas image', async ({
+  page
+}) => {
+  const raster = await page.evaluate(() => {
+    const canvas = document.createElement('canvas')
+    canvas.width = canvas.height = 32
+    const context = canvas.getContext('2d')
+    if (!context) throw new Error('Missing raster fixture context')
+    context.fillStyle = '#e7ede3'
+    context.fillRect(0, 0, 32, 32)
+    return canvas.toDataURL('image/png').split(',')[1]
+  })
+  await expect(assertRenderedScene(page, raster)).rejects.toThrow(
+    'The robot close-up canvas must render the scene'
+  )
+})
+
+test('the scene liveness guard rejects the observed blank view with overlays', async ({
+  page
+}) => {
+  // Original 1440x1100 page capture; this inclusive visible scene rectangle
+  // retains its title, dimensions, navigation help and ready badge overlays.
+  const raster = readFileSync(
+    new URL('./fixtures/robot-blank-view.png', import.meta.url)
+  ).toString('base64')
+  await expect(
+    assertRenderedScene(page, raster, {
+      x: 32,
+      y: 269,
+      width: 1376,
+      height: 612
+    })
+  ).rejects.toThrow('The robot close-up canvas must render the scene')
+})
+
+test('keeps the selected strip identity through deletion and history', async ({
+  page
+}) => {
+  await page.goto('/')
+  await expect(page.getByText('空間模型已就緒')).toBeVisible()
+  const robot = page.getByRole('tab', { name: '機器人', exact: true })
+  const farm = page.getByRole('tab', { name: '溫室', exact: true })
+  await robot.click()
+  const lane = page.getByRole('combobox', { name: '巡邏路線', exact: true })
+  const selected = lane.locator('option:checked')
+  const identity = await lane.inputValue()
+  await expect(selected).toHaveText('第 1 棟 - 土壤 3')
+  await lane.selectOption({ label: '第 1 棟 - 土壤 5' })
+  await expect(selected).toHaveText('第 1 棟 - 土壤 5')
+  await lane.selectOption({ label: '第 1 棟 - 土壤 3' })
+  await expect(lane).toHaveValue(identity)
+  await farm.click()
+  await page.getByRole('button', { name: '刪除第 1 項', exact: true }).click()
+  await robot.click()
+  await expect(lane).toHaveValue(identity)
+  await expect(selected).toHaveText('第 1 棟 - 土壤 2')
+  await page.getByRole('button', { name: '復原 ⌘Z', exact: true }).click()
+  await expect(selected).toHaveText('第 1 棟 - 土壤 3')
+  await farm.click()
+  await page.getByRole('button', { name: '刪除第 3 項', exact: true }).click()
+  await robot.click()
+  await expect(lane).toHaveValue(identity)
+  await expect(selected).toHaveText('路線已不符合溫室配置')
+  await page.getByRole('button', { name: '復原 ⌘Z', exact: true }).click()
+  await expect(selected).toHaveText('第 1 棟 - 土壤 3')
+  await page.getByRole('button', { name: '重做 ⇧⌘Z', exact: true }).click()
+  await expect(selected).toHaveText('路線已不符合溫室配置')
+})
+
+test('selects the walking model through history and focuses its canonical bounds', async ({
+  page
+}, testInfo) => {
+  await page.goto('/')
+  await expect(page.getByText('空間模型已就緒')).toBeVisible()
+  await page.getByRole('tab', { name: '機器人', exact: true }).click()
+  const walking = page.getByRole('button', {
+    name: '多腳左右雙組手臂',
+    exact: true
+  })
+  const legacy = page.getByRole('button', {
+    name: '舊輪式單臂',
+    exact: true
+  })
+  await walking.click()
+  await expect(walking).toHaveAttribute('aria-pressed', 'true')
+  await expect(legacy).toHaveAttribute('aria-pressed', 'false')
+  await expect(
+    page.getByText('目前僅供模型外觀與通行粗篩；巡邏採摘尚未完成。', {
+      exact: true
+    })
+  ).toBeVisible()
+  await expect(page.getByText(/合成六腳、四臂採收模型/)).toContainText('0.58 m')
+  await expect(
+    page.getByRole('spinbutton', { name: '寬度', exact: true })
+  ).toHaveCount(0)
+
+  await page.getByRole('button', { name: '近看機器人', exact: true }).click()
+  const canvasBounds = await page.locator('canvas').boundingBox()
+  if (!canvasBounds) throw new Error('Missing canvas bounds')
+  const raster = (
+    await page.screenshot({
+      path: testInfo.outputPath('walking-model.png'),
+      fullPage: false
+    })
+  ).toString('base64')
+  await assertRenderedScene(page, raster, canvasBounds)
+
+  await page.getByRole('button', { name: '復原 ⌘Z', exact: true }).click()
+  await expect(legacy).toHaveAttribute('aria-pressed', 'true')
+  await expect(
+    page.getByRole('spinbutton', { name: '寬度', exact: true })
+  ).toBeVisible()
+  await page.getByRole('button', { name: '重做 ⇧⌘Z', exact: true }).click()
+  await expect(walking).toHaveAttribute('aria-pressed', 'true')
+})
 
 for (const width of [390, 1440])
   for (const locale of ['zh-TW', 'en'] as const) {
@@ -102,7 +266,8 @@ for (const width of [390, 1440])
             exact: true
           })
           .click()
-      await page.locator('#configuration-panel').evaluate(async (node) => {
+      const workspace = page.locator('.scene-workspace')
+      await workspace.evaluate(async (node) => {
         await Promise.all(
           node
             .getAnimations({ subtree: true })
@@ -115,10 +280,74 @@ for (const width of [390, 1440])
             (await page.getByTestId('scene').boundingBox())?.width ?? 0
         )
         .toBeGreaterThan(width - 80)
-      await page.screenshot({
-        path: testInfo.outputPath('robot-closeup.png'),
-        fullPage: false
-      })
+      const canvas = page.locator('canvas')
+      await expect
+        .poll(() =>
+          canvas.evaluate((node: HTMLCanvasElement) => {
+            const bounds = node.getBoundingClientRect()
+            return (
+              Math.abs(node.width - bounds.width) <= 1 &&
+              Math.abs(node.height - bounds.height) <= 1
+            )
+          })
+        )
+        .toBe(true)
+      await canvas.evaluate(
+        () =>
+          new Promise<void>((resolve) =>
+            requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+          )
+      )
+      const panelIssues = await page.evaluate((wide) => {
+        const workspace =
+          document.querySelector<HTMLElement>('.scene-workspace')
+        if (!workspace) return ['missing workspace']
+        const workspaceBounds = workspace.getBoundingClientRect()
+        const panels = wide
+          ? [
+              { selector: '#layer-panel', side: 'left' },
+              { selector: '#configuration-panel', side: 'right' }
+            ]
+          : [{ selector: '#configuration-panel', side: 'right' }]
+        return panels.flatMap(({ selector, side }) => {
+          const panel = document.querySelector<HTMLElement>(selector)
+          const content = panel?.querySelector<HTMLElement>(
+            '.workspace-panel-content'
+          )
+          if (!panel || !content) return [`${selector}:missing`]
+          const issues: string[] = []
+          if (getComputedStyle(content).visibility !== 'hidden')
+            issues.push(`${selector}:visible`)
+          if (wide) {
+            if (panel.getBoundingClientRect().width > 1)
+              issues.push(`${selector}:expanded`)
+          } else {
+            const bounds = content.getBoundingClientRect()
+            if (
+              side === 'right'
+                ? bounds.left < workspaceBounds.right - 1
+                : bounds.right > workspaceBounds.left + 1
+            )
+              issues.push(`${selector}:overlap`)
+          }
+          return issues
+        })
+      }, width >= 1100)
+      expect(
+        panelIssues,
+        'Closed panels must reach their collapsed visual state'
+      ).toEqual([])
+      // Inspect the exact saved frame, not a later canvas capture. Raster
+      // liveness complements the exact source-space projection oracles.
+      const canvasBounds = await canvas.boundingBox()
+      if (!canvasBounds) throw new Error('Missing canvas bounds')
+      const raster = (
+        await page.screenshot({
+          path: testInfo.outputPath('robot-closeup.png'),
+          fullPage: false
+        })
+      ).toString('base64')
+      await assertRenderedScene(page, raster, canvasBounds)
       expect(errors).toEqual([])
     })
   }

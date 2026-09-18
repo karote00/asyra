@@ -58,3 +58,42 @@ it('keeps surface hair UVs nondegenerate for normal-mapped shading', () => {
     expect(Math.abs(determinant)).toBeGreaterThan(1e-9)
   }
 })
+
+it('reports hair source triangle ownership without changing generated buffers', () => {
+  const create = () => {
+    const mesh = new TriangleBuilder()
+    mesh.triangle([0, 0, 0], [1, 0, 0], [0, 1, 0])
+    mesh.triangle([2, 0, 0], [3, 0, 0], [2, 1, 0])
+    return mesh
+  }
+  const canonical = create(),
+    observed = create()
+  appendSurfaceHairs(canonical, 20, 0.001, true, [0.1, 0.2, 0.05])
+  const spans: {
+    sourceTriangle: number
+    vertexStart: number
+    vertexCount: number
+    indexStart: number
+    indexCount: number
+  }[] = []
+  appendSurfaceHairs(observed, 20, 0.001, true, [0.1, 0.2, 0.05], (span) =>
+    spans.push(span)
+  )
+  expect(observed.shape()).toEqual(canonical.shape())
+  expect(spans).toEqual([
+    {
+      sourceTriangle: 0,
+      vertexStart: 6,
+      vertexCount: 40,
+      indexStart: 6,
+      indexCount: 90
+    },
+    {
+      sourceTriangle: 3,
+      vertexStart: 46,
+      vertexCount: 40,
+      indexStart: 96,
+      indexCount: 90
+    }
+  ])
+})

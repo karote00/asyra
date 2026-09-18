@@ -1,0 +1,1594 @@
+import { walkingActionFixture } from './walking-observation-test-fixtures'
+import { beforeAll, expect, it, vi } from 'vitest'
+import { Quaternion, Vector3 } from 'three'
+import { SiteGeometry } from '../../render-app/site-geometry'
+import { readSpatialDescriptor } from '../../engine/spatial-contract'
+import {
+  buildSiteMeshes,
+  type SiteMesh
+} from '../../render-app/site-projection'
+import { RobotProjection } from '../../render-app/robot-projection'
+import {
+  DEFAULT_CONFIGURATION,
+  configurationSite
+} from '../../domain/farm-configuration'
+import { createLayout } from '../../domain/greenhouse'
+import {
+  DEFAULT_ROBOT,
+  assessRobotDesign,
+  validateRobot
+} from '../../domain/robot-configuration'
+import * as crops from '../../domain/crop-models'
+import * as models from '../../domain/robot-model'
+import * as lanes from '../../domain/harvest-assessment'
+import type { CanonicalMission, DispatchEvidence } from '../contracts'
+import { HarvestSession } from '../session'
+import { QueryGeometry } from '../geometry'
+import { RayQueries } from '../ray-query'
+import { WalkingTransitScreen } from '../walking-transit-screen'
+import { SyntheticDynamicSceneOwner } from '../synthetic-dynamic-scene'
+import {
+  prepareSceneDemand,
+  SceneDemandSourceBoundsOwner
+} from '../scene-demand'
+import {
+  TargetObservations,
+  type ObservationContext,
+  type TargetReading,
+  type ViewRequest,
+  type ActionVolumeRequest
+} from '../observations'
+
+const geometry = new SiteGeometry(),
+  projection = new RobotProjection()
+const farm = { ...DEFAULT_CONFIGURATION, length: 2.2 }
+const actionRouteCentre = () => {
+  const index = farm.strips.findIndex((strip) => strip.id === 'strip-3')
+  const strip = createLayout(configurationSite(farm), farm.strips).strips[index]
+  return (strip.x + (strip.x + strip.width)) / 2
+}
+const report = assessRobotDesign(
+  validateRobot({ ...DEFAULT_ROBOT, end: 1.7, patrolMinutes: 1 }),
+  farm
+)
+let receipt: CanonicalMission
+beforeAll(() => {
+  const scene = geometry.prepareScene(farm, buildSiteMeshes(farm, geometry))
+  projection.update(report)
+  receipt = Object.freeze({
+    revision: 1,
+    report,
+    farm,
+    scene,
+    robot: projection.getSource()
+  })
+})
+const dispatchEvidence = (mission = receipt): DispatchEvidence => ({
+  id: 'dispatch',
+  source: 'synthetic',
+  missionRevision: 1,
+  sceneRevision: mission.scene.revision,
+  robotRevision: mission.robot.revision,
+  observedAt: 0,
+  validFrom: 0,
+  validUntil: 1000,
+  survey: {
+    ground: 'prepared',
+    entranceWidth: 2,
+    entranceHeight: 3,
+    frontHeadland: 2,
+    rearHeadland: 2
+  },
+  battery: { soc: 0.8, socUncertainty: 0.05 },
+  dock: 'available',
+  stowed: true,
+  crate: {
+    id: 'crate-1',
+    cultivar: 'cucumber',
+    tareKg: 1,
+    load: {
+      baseMass: 30,
+      payload: 0,
+      nextFruit: 0,
+      payloadLimit: 8,
+      fill: 0,
+      returnFill: 0.8,
+      latched: true,
+      scaleTrusted: true,
+      track: 0.4,
+      baseHeight: 0.25,
+      payloadHeight: 0.5,
+      baseOffset: 0,
+      payloadOffset: 0,
+      roll: 0,
+      lateralAcceleration: 0,
+      uncertainty: 0.01
+    }
+  },
+  intervals: {
+    dispatch: { from: 0, until: 10 },
+    return: { from: 10, until: 20 }
+  }
+})
+
+function setup(
+  mutableContext = false,
+  sourceMission = receipt,
+  sourceGeometry = geometry
+) {
+  const receipt = sourceMission,
+    geometry = sourceGeometry
+  const session = new HarvestSession(
+    receipt,
+    {
+      isCurrentMission: (value) => value === receipt,
+      isCurrentScene: geometry.isCurrentScene.bind(geometry),
+      isCurrentRobot: projection.isCurrentSource.bind(projection)
+    },
+    {
+      // These explicit doubles only enter the already-tested session foundation.
+      dispatch: (requests) =>
+        requests.map((request) => ({
+          request,
+          status: 'clear',
+          coverage: 'complete',
+          reasons: []
+        })),
+      resume: async (request) => ({
+        request,
+        status: 'held',
+        validFrom: request.now,
+        validUntil: request.now + 1,
+        reasons: ['not-in-this-slice']
+      })
+    }
+  )
+  expect(
+    session.start(session.getSnapshot().generation, dispatchEvidence(receipt))
+  ).toBe(true)
+  const tuple = Object.freeze({
+    revision: receipt.revision,
+    scene: receipt.scene,
+    robot: receipt.robot,
+    dock: projection.getDockSource()
+  })
+  const query = new QueryGeometry({
+    isCurrentReceipt: (value) => value === tuple,
+    isCurrentScene: geometry.isCurrentScene.bind(geometry),
+    isCurrentRobot: projection.isCurrentSource.bind(projection),
+    isCurrentDock: projection.isCurrentDockSource.bind(projection)
+  })
+  const source = query.prepare(tuple)
+  let context: ObservationContext
+  const renew = () => {
+    const next = {
+      snapshot: session.getSnapshot(),
+      mission: receipt,
+      geometry: source
+    }
+    return (context = mutableContext ? next : Object.freeze(next))
+  }
+  renew()
+  const observations = new TargetObservations(session, query, {
+    // This fixture issued the actual session with this exact mission above.
+    isCurrentContext: (value) => value === context && value.mission === receipt,
+    isCurrentMission: (value) => value === receipt
+  })
+  const target = receipt.scene.fruits[0]
+  if (!target) throw new Error('Missing actual crop target')
+  const reading = (): TargetReading => ({
+    kind: 'target',
+    source: 'synthetic-injected',
+    assumption: 'Explicit scenario assumption',
+    id: 'reading-1',
+    runId: session.getSnapshot().run?.id ?? '',
+    generation: session.getSnapshot().generation,
+    missionRevision: receipt.revision,
+    sceneRevision: receipt.scene.revision,
+    robotRevision: receipt.robot.revision,
+    dockRevision: tuple.dock.revision,
+    observedAt: 0,
+    validFrom: 0,
+    validUntil: 10,
+    targetId: target.id,
+    cultivar: null,
+    pose: null,
+    maturity: null,
+    coverage: null,
+    stem: null,
+    approach: null,
+    extraction: null,
+    quality: { spines: null, calyx: null, pedicel: null, contactDamage: null }
+  })
+  return {
+    session,
+    query,
+    source,
+    observations,
+    renew,
+    reading,
+    target,
+    context: () => context
+  }
+}
+
+it('admits only labeled assumptions without filling unknowns or creating another target', () => {
+  const f = setup(),
+    input = f.reading(),
+    snapshot = f.session.getSnapshot()
+  const crop = vi.spyOn(crops, 'createCropModels'),
+    robot = vi.spyOn(models, 'createRobotModel'),
+    assess = vi.spyOn(lanes, 'assessHarvestLane')
+  try {
+    const first = f.observations.admit(f.context(), input)
+    input.quality.calyx = 'intact'
+    const second = f.observations.admit(f.context(), {
+      ...f.reading(),
+      id: 'reading-2'
+    })
+    expect(first.reading.targetId).toBe(f.target.id)
+    expect(second.reading.targetId).toBe(first.reading.targetId)
+    expect(first.reading.quality).toEqual({
+      spines: null,
+      calyx: null,
+      pedicel: null,
+      contactDamage: null
+    })
+    expect(first.reading.coverage).toBeNull()
+    expect(first.reading.maturity).toBeNull()
+    expect(Object.isFrozen(first.reading.quality)).toBe(true)
+    expect(f.session.getSnapshot() === snapshot).toBe(true)
+    expect(crop).not.toHaveBeenCalled()
+    expect(robot).not.toHaveBeenCalled()
+    expect(assess).not.toHaveBeenCalled()
+  } finally {
+    crop.mockRestore()
+    robot.mockRestore()
+    assess.mockRestore()
+  }
+})
+
+it('rejects copied, stale and cancelled contexts while geometry itself remains current', () => {
+  const f = setup(),
+    context = f.context(),
+    snapshot = f.session.getSnapshot()
+  expect(() => f.observations.admit({ ...context }, f.reading())).toThrow()
+  expect(f.session.getSnapshot() === snapshot).toBe(true)
+  f.session.pause(snapshot.generation)
+  expect(() => f.observations.admit(context, f.reading())).toThrow()
+  f.renew()
+  expect(f.observations.admit(f.context(), f.reading()).reading.targetId).toBe(
+    f.target.id
+  )
+  f.session.cancel(snapshot.generation)
+  f.renew()
+  expect(() => f.observations.admit(f.context(), f.reading())).toThrow()
+  expect(f.query.read(f.source) === f.source).toBe(true)
+})
+
+it('validates the detached snapshot once and checks explicit validity and target fields', () => {
+  const f = setup()
+  let reads = 0
+  const input = f.reading()
+  Object.defineProperty(input, 'observedAt', {
+    enumerable: true,
+    get: () => (++reads === 1 ? 0 : NaN)
+  })
+  expect(f.observations.admit(f.context(), input).reading.observedAt).toBe(0)
+  expect(reads).toBe(1)
+  const cases: Partial<TargetReading>[] = [
+    { runId: 'other' },
+    { generation: 0 },
+    { missionRevision: 9 },
+    { sceneRevision: -1 },
+    { robotRevision: NaN },
+    { dockRevision: -1 },
+    { targetId: 'missing' },
+    { observedAt: 1 },
+    { observedAt: NaN },
+    { validUntil: 0 },
+    { validFrom: 1 },
+    { coverage: { visible: 1, total: 0 } },
+    { coverage: { visible: 0.5, total: 1 } },
+    {
+      cultivar:
+        f.target.plant.species === 'cucumber-1914'
+          ? 'tomato-yu-nu'
+          : 'cucumber-1914'
+    },
+    { pose: { position: [0, NaN, 0], rotation: [0, 0, 0, 1] } },
+    { pose: { position: [0, 0, 0], rotation: [0, 0, 0, 2] } },
+    { stem: { targetId: 'neighbor', recognized: true, cutSite: null } }
+  ]
+  const snapshot = f.session.getSnapshot()
+  for (const patch of cases)
+    expect(() =>
+      f.observations.admit(f.context(), { ...f.reading(), ...patch })
+    ).toThrow()
+  expect(f.session.getSnapshot() === snapshot).toBe(true)
+})
+
+it('accepts still-valid earlier evidence at the current clock without extending expiry', () => {
+  const f = setup(),
+    input = f.reading()
+  f.session.advance(f.session.getSnapshot().generation, 5)
+  f.renew()
+  expect(f.observations.admit(f.context(), input).reading.validUntil).toBe(10)
+  f.session.advance(f.session.getSnapshot().generation, 10)
+  f.renew()
+  expect(() => f.observations.admit(f.context(), input)).toThrow()
+})
+
+it('keeps quality and target pedicel assumptions independent and rejects action confirmations', () => {
+  const f = setup(),
+    input = f.reading()
+  input.quality.calyx = 'intact'
+  input.approach = 'clear'
+  input.coverage = { visible: 0, total: 0 }
+  input.stem = { targetId: f.target.id, recognized: true, cutSite: [1, 2, 3] }
+  const admitted = f.observations.admit(f.context(), input)
+  expect(admitted.reading.quality.spines).toBeNull()
+  expect(admitted.reading.quality.contactDamage).toBeNull()
+  expect(admitted.reading.coverage).toEqual({ visible: 0, total: 0 })
+  expect(() =>
+    f.observations.admit(f.context(), {
+      ...input,
+      kind: 'cut',
+      actionId: 'caller-made'
+    } as unknown as TargetReading)
+  ).toThrow()
+})
+
+it('rechecks the actual snapshot before return and rejects retired shared geometry', () => {
+  const f = setup(),
+    input = f.reading(),
+    generation = f.session.getSnapshot().generation
+  Object.defineProperty(input, 'assumption', {
+    enumerable: true,
+    get: () => {
+      f.session.pause(generation)
+      return 'Caller changes context during capture'
+    }
+  })
+  expect(() => f.observations.admit(f.context(), input)).toThrow()
+  f.renew()
+  f.query.clear()
+  expect(() => f.observations.admit(f.context(), f.reading())).toThrow()
+})
+
+it('rejects all confirmations and undeclared claims without altering an active run', () => {
+  const f = setup(),
+    snapshot = f.session.getSnapshot()
+  for (const kind of ['support', 'cut', 'retention', 'placement']) {
+    expect(() =>
+      f.observations.admit(f.context(), {
+        ...f.reading(),
+        kind,
+        actionId: 'invented'
+      } as unknown as TargetReading)
+    ).toThrow()
+  }
+  expect(() =>
+    f.observations.admit(f.context(), {
+      ...f.reading(),
+      detected: true
+    } as TargetReading)
+  ).toThrow()
+  const input = f.reading()
+  input.cultivar = f.target.plant.species
+  input.pose = { position: [1, 2, 3], rotation: [0, 0, 0, 1] }
+  input.maturity = 'green'
+  input.coverage = { visible: 2, total: 3 }
+  const result = f.observations.admit(f.context(), input)
+  expect(result.reading.source).toBe('synthetic-injected')
+  expect(result.reading.pose).toEqual(input.pose)
+  expect(result.reading.coverage).toEqual({ visible: 2, total: 3 })
+  expect(f.session.getSnapshot() === snapshot).toBe(true)
+  f.session.dispose()
+  f.renew()
+  expect(() => f.observations.admit(f.context(), input)).toThrow()
+})
+
+it.each(['position', 'rotation', 'cutSite'])(
+  'rejects sparse %s arrays before admitting numeric evidence',
+  (field) => {
+    const f = setup(),
+      snapshot = f.session.getSnapshot()
+    const points = new Array(3) as [number, number, number]
+    const rotation = new Array(4) as [number, number, number, number]
+    const patches: Record<string, Partial<TargetReading>> = {
+      position: { pose: { position: points, rotation: [0, 0, 0, 1] } },
+      rotation: { pose: { position: [0, 0, 0], rotation } },
+      cutSite: {
+        stem: { targetId: f.target.id, recognized: true, cutSite: points }
+      }
+    }
+    expect(() =>
+      f.observations.admit(f.context(), { ...f.reading(), ...patches[field] })
+    ).toThrow()
+    expect(f.session.getSnapshot() === snapshot).toBe(true)
+  }
+)
+
+function actionObservation(extra?: SiteMesh) {
+  const site = extra ? new SiteGeometry() : geometry
+  const mission = extra
+    ? Object.freeze({
+        ...receipt,
+        scene: site.prepareScene(farm, [...buildSiteMeshes(farm, site), extra])
+      })
+    : receipt
+  const f = setup(false, mission, site)
+  const sourceOwner = new SceneDemandSourceBoundsOwner()
+  const demand = prepareSceneDemand(
+    farm,
+    mission.scene,
+    {
+      version: 1,
+      route: {
+        kind: 'soil-strip',
+        bay: 0,
+        stripId: 'strip-3',
+        from: 0.25,
+        until: 1.9
+      },
+      evidence: {
+        kind: 'synthetic',
+        id: 'action-survey',
+        label: 'Synthetic route'
+      },
+      growth: { kind: 'bounded', coverage: 'complete', volumes: [] },
+      clearanceMargin: { kind: 'bounded', metres: 0 }
+    },
+    sourceOwner
+  )
+  if (!demand.route) throw new Error('Missing source route')
+  const screen = new WalkingTransitScreen((value) => value === demand)
+  const dynamics = new SyntheticDynamicSceneOwner()
+  const world = {
+    format: 'synthetic-dynamic-scene/1' as const,
+    assumption: 'Explicit finite actors',
+    domain: demand.route.volume,
+    validFrom: 0,
+    validUntil: 10,
+    actors: []
+  }
+  dynamics.prepare(world)
+  const observations = new TargetObservations(
+    f.session,
+    f.query,
+    {
+      isCurrentContext: (value) => value === f.context(),
+      isCurrentMission: (value) => value === mission
+    },
+    { screen, dynamics }
+  )
+  const base = viewpoint(f)
+  const { targetIds: _targets, samplesPerTarget: _samples, ...binding } = base
+  const x = (demand.route.volume.min[0] + demand.route.volume.max[0]) / 2
+  const request: ActionVolumeRequest = {
+    ...binding,
+    source: 'synthetic-action-volume/1',
+    actionId: 'local-action',
+    actionBounds: { min: [x - 0.01, 0.12, 1.5], max: [x + 0.01, 0.14, 1.55] },
+    camera: {
+      pose: { position: [x, 0.13, 1], rotation: [0, 0, 0, 1] },
+      halfWidthSlope: 1,
+      halfHeightSlope: 1,
+      maxDistance: 2
+    },
+    optics: {
+      illumination: 0.875,
+      filmTransmission: 0.875,
+      weatherTransmission: 0.875,
+      shadowFraction: 0.125,
+      glare: 0.0625
+    },
+    model: {
+      format: 'synthetic-action-volume/1',
+      minSignal: 0.5,
+      maxGlare: 0.125,
+      maxCandidates: 64,
+      maxRays: 16,
+      maxActors: 64
+    }
+  }
+  return {
+    ...f,
+    observations,
+    demand,
+    sourceOwner,
+    screen,
+    dynamics,
+    world,
+    request
+  }
+}
+
+it('computes complete-empty only for the entire declared synthetic sight volume', () => {
+  const f = actionObservation()
+  const sensorQuery = vi.spyOn(f.screen, 'queryVolume')
+  const observationQuery = vi.spyOn(f.screen, 'queryObservationVolume')
+  const result = f.observations.observeActionVolume(
+    f.context(),
+    f.demand,
+    f.request
+  )
+  expect(result.coverage).toBe('complete-empty')
+  expect(sensorQuery).toHaveBeenCalledTimes(1)
+  expect(observationQuery).not.toHaveBeenCalled()
+  expect(result.reliability.signal.low).toBeGreaterThan(0.5)
+  expect(result.detections).toEqual([])
+  expect(result.work).toMatchObject({
+    sightQueries: 1,
+    rayBatches: 0,
+    sourceActorVisits: 0
+  })
+  expect(f.observations.isCurrentAction(result)).toBe(true)
+  expect(f.observations.isCurrentAction({ ...result })).toBe(false)
+  f.observations.observeActionVolume(f.context(), f.demand, f.request)
+  expect(f.screen.work.builds).toBe(1)
+  expect(() =>
+    f.observations.observeActionVolume(f.context(), f.demand, {
+      ...f.request,
+      safe: true
+    } as never)
+  ).toThrow()
+  expect(() =>
+    f.observations.observeActionVolume(f.context(), { ...f.demand }, f.request)
+  ).toThrow()
+})
+
+it('declared synthetic sight volume below route height is obstacle-inventory evidence only with bounded canonical sources', () => {
+  const f = walkingActionFixture('bounded-source')
+  const walking = f
+  const domain = {
+    min: [0, -f.demand.farm.height, 0] as const,
+    max: [100, 20, 10] as const
+  }
+  f.dynamics.prepare({ ...f.world, domain })
+  const request = {
+    ...walking.input,
+    actionBounds: {
+      min: [2.44, -0.21, 1.5] as const,
+      max: [2.46, -0.19, 1.55] as const
+    },
+    camera: {
+      ...f.input.camera,
+      pose: {
+        position: [2.45, -0.2, 1] as const,
+        rotation: [0, 0, 0, 1] as const
+      }
+    }
+  }
+  const result = walking.observations.observeActionVolume(
+    walking.context,
+    request
+  )
+  expect(result.coverage).toBe('complete-empty')
+  expect(result.detections).toEqual([])
+  expect(result.work.sightQueries).toBe(1)
+  const space = walking.getSpace()
+  if (!space) throw new Error('Missing lazy obstacle inventory')
+  expect(space.provenance).toBe('w1-canonical-obstacles/1')
+  expect(
+    space.sources.some(
+      (v) => v.mesh.layer === 'soil' || v.mesh.layer === 'drains'
+    )
+  ).toBe(false)
+  const outside = walking.observations.observeActionVolume(walking.context, {
+    ...request,
+    actionBounds: {
+      min: [2.44, domain.min[1] - 2, 1.5],
+      max: [2.46, domain.min[1] - 1, 1.55]
+    }
+  })
+  expect(outside.coverage).not.toBe('complete-empty')
+  expect(outside.reasons).toContain('outside-observation-domain')
+})
+it('walking observation shares the action kernel with exact walking currentness and no legacy context with bounded canonical sources', () => {
+  const { observations, context, input, operating, prepareSpace } =
+    walkingActionFixture('bounded-source')
+  const result = observations.observeActionVolume(context, input)
+  expect(prepareSpace).toHaveBeenCalledTimes(1)
+  expect(result.format).toBe('walking-action-volume-observation/1')
+  expect(result.context).toBe(context)
+  expect(result.coverage).toBe('complete-empty')
+  expect(observations.isCurrent(result)).toBe(true)
+  const again = observations.observeActionVolume(context, input)
+  expect(again.work.membershipBuilds).toBe(0)
+  expect(again.work.cameraFrames).toBe(1)
+  expect(again.work.sightQueries).toBe(1)
+  expect(operating.transitScreen.work.builds).toBe(1)
+  expect(
+    observations.observeActionVolume(context, {
+      ...input,
+      optics: { ...input.optics, illumination: null }
+    }).coverage
+  ).not.toBe('complete-empty')
+  operating.clear()
+  expect(observations.isCurrent(result)).toBe(false)
+})
+
+it('keeps lighting, frustum, source domain and budget failures non-complete', () => {
+  const f = actionObservation()
+  for (const optics of [
+    { ...f.request.optics, illumination: 0.125 },
+    { ...f.request.optics, shadowFraction: 1 },
+    { ...f.request.optics, glare: 0.5 },
+    { ...f.request.optics, weatherTransmission: null }
+  ])
+    expect(
+      f.observations.observeActionVolume(f.context(), f.demand, {
+        ...f.request,
+        optics
+      }).coverage
+    ).not.toBe('complete-empty')
+  expect(
+    f.observations.observeActionVolume(f.context(), f.demand, {
+      ...f.request,
+      camera: { ...f.request.camera, halfWidthSlope: 0.001 }
+    }).coverage
+  ).not.toBe('complete-empty')
+  f.dynamics.prepare({ ...f.world, domain: f.request.actionBounds })
+  expect(
+    f.observations.observeActionVolume(f.context(), f.demand, f.request)
+      .coverage
+  ).not.toBe('complete-empty')
+})
+
+it('observes a foreground person outside the action box without turning a stopped person into empty space', () => {
+  const f = actionObservation(),
+    x = f.request.camera.pose.position[0]
+  const bounds = {
+    min: [x - 0.02, 0.1, 1.2] as const,
+    max: [x + 0.02, 0.16, 1.3] as const
+  }
+  const actor = {
+    trackId: 'person-1',
+    kind: 'person' as const,
+    states: [{ from: 0, until: 10, motion: 'moving' as const, bounds }]
+  }
+  f.dynamics.prepare({ ...f.world, actors: [actor] })
+  const result = f.observations.observeActionVolume(
+    f.context(),
+    f.demand,
+    f.request
+  )
+  expect(result.coverage).toBe('partial')
+  expect(result.detections).toContainEqual(
+    expect.objectContaining({
+      kind: 'dynamic',
+      trackId: 'person-1',
+      actorKind: 'person',
+      motion: 'moving'
+    })
+  )
+  expect(
+    f.observations.observeActionVolume(f.context(), f.demand, {
+      ...f.request,
+      model: { ...f.request.model, maxActors: 0 }
+    }).coverage
+  ).not.toBe('complete-empty')
+  f.dynamics.prepare({
+    ...f.world,
+    actors: [
+      { ...actor, states: [{ ...actor.states[0], motion: 'stationary' }] }
+    ]
+  })
+  expect(f.observations.isCurrentAction(result)).toBe(false)
+  const stopped = f.observations.observeActionVolume(
+    f.context(),
+    f.demand,
+    f.request
+  )
+  expect(stopped.detections).toContainEqual(
+    expect.objectContaining({
+      trackId: 'person-1',
+      actorKind: 'person',
+      motion: 'stationary'
+    })
+  )
+  expect(f.screen.work.builds).toBe(1)
+})
+
+it('retains actual authored leaf ray identity for a foreground source outside the action box', () => {
+  const f = actionObservation()
+  if (!f.demand.route) throw new Error('Missing source route')
+  const route = f.demand.route.volume
+  const selected = f.demand.freePassage.exclusions.flatMap((item) => {
+    if (item.kind !== 'source') return []
+    const patch = item.mesh.sourceAnatomy?.patches.find(
+      (p) => p.role === 'leaf-blade' && p.source.region === item.region
+    )
+    const mesh = f.source.meshes.find((m) => m.origin === item.mesh)
+    if (!patch || !mesh || mesh.shape.kind !== 'triangles') return []
+    const shape = mesh.shape,
+      start = patch.source.ranges[0].indexStart
+    const points = [0, 1, 2].map((i) =>
+      f.query.placePoint(
+        f.source,
+        mesh,
+        [0, 1, 2].map(
+          (axis) => shape.positions[shape.indices[start + i] * 3 + axis]
+        ) as [number, number, number],
+        item.instance
+      )
+    )
+    const centre = points[0].map(
+      (_, axis) =>
+        points[0][axis] / 3 + points[1][axis] / 3 + points[2][axis] / 3
+    ) as [number, number, number]
+    if (
+      !centre.every(
+        (v, axis) => v > route.min[axis] + 0.05 && v < route.max[axis] - 0.05
+      )
+    )
+      return []
+    const normal = new Vector3(...points[1])
+      .sub(new Vector3(...points[0]))
+      .cross(new Vector3(...points[2]).sub(new Vector3(...points[0])))
+      .normalize()
+    return normal.length() ? [{ item, patch, mesh, centre, normal }] : []
+  })[0]
+  if (!selected) throw new Error('Missing actual interior leaf source')
+  const { centre, normal } = selected
+  const origin = new Vector3(...centre).addScaledVector(normal, 0.02)
+  const target = new Vector3(...centre).addScaledVector(normal, -0.01)
+  const request: ActionVolumeRequest = {
+    ...f.request,
+    actionBounds: {
+      min: target.toArray().map((v) => v - 0.0001) as [number, number, number],
+      max: target.toArray().map((v) => v + 0.0001) as [number, number, number]
+    },
+    camera: {
+      ...f.request.camera,
+      pose: {
+        position: origin.toArray(),
+        rotation: new Quaternion()
+          .setFromUnitVectors(new Vector3(0, 0, 1), normal.clone().negate())
+          .toArray()
+      },
+      halfWidthSlope: 10,
+      halfHeightSlope: 10
+    },
+    model: { ...f.request.model, maxCandidates: 4096, maxRays: 64 }
+  }
+  const result = f.observations.observeActionVolume(
+    f.context(),
+    f.demand,
+    request
+  )
+  expect(result.coverage).toBe('partial')
+  const visible = result.detections.find(
+    (d) => d.kind === 'static' && d.anatomy.some((p) => p.role === 'leaf-blade')
+  )
+  expect(visible).toBeDefined()
+  if (!visible || visible.kind !== 'static')
+    throw new Error('Missing canonical leaf witness')
+  expect(visible.mesh.origin).toBe(selected.item.mesh)
+  expect(visible.region).toBe(selected.item.region)
+  expect(visible.instance).toBe(selected.item.instance)
+  expect(visible.anatomy).toContain(selected.patch)
+  expect(result.work.rayBatches).toBe(1)
+  const again = f.observations.observeActionVolume(
+    f.context(),
+    f.demand,
+    request
+  )
+  expect(again.work.membershipBuilds).toBe(0)
+  expect(again.work.membershipVisits).toBe(0)
+  expect(again.work.placements).toBeGreaterThan(0)
+  expect(again.work.placementMembershipChecks).toBe(again.work.placements)
+  expect(again.work.placements).toBe(result.work.placements)
+  const source = f.context().geometry
+  const includes = Array.prototype.includes
+  let scans = 0
+  const scan = vi.spyOn(Array.prototype, 'includes')
+  scan.mockImplementation(function (this: readonly unknown[], value, from) {
+    if (this === source.meshes) scans++
+    return includes.call(this, value, from)
+  })
+  try {
+    for (let index = 0; index < 3; index++) {
+      const repeated = f.observations.observeActionVolume(
+        f.context(),
+        f.demand,
+        request
+      )
+      expect(repeated.work.placementMembershipChecks).toBe(
+        again.work.placements
+      )
+      expect(repeated.work.placements).toBe(again.work.placements)
+    }
+    expect(scans).toBe(0)
+  } finally {
+    scan.mockRestore()
+  }
+})
+
+it('queries an opaque foreground source outside the action box and never leaks its hidden person', () => {
+  const x = actionRouteCentre()
+  const prepare = vi.spyOn(SiteGeometry.prototype, 'prepareScene')
+  const occluder: SiteMesh = {
+    id: 'authored-foreground',
+    layer: 'barriers',
+    visible: true,
+    regions: Object.freeze([
+      Object.freeze({
+        id: 'surface',
+        kind: 'sheet',
+        indexStart: 0,
+        indexCount: 3
+      })
+    ]),
+    descriptor: readSpatialDescriptor({
+      kind: 'mesh',
+      position: [0, 0, 0],
+      rotation: [0, 0, 0, 1],
+      shape: {
+        kind: 'triangles',
+        positions: [x - 0.04, 0.08, 1.25, x + 0.04, 0.08, 1.25, x, 0.2, 1.25],
+        indices: [0, 1, 2]
+      },
+      color: 0xffffff,
+      opacity: 1,
+      wireframe: false,
+      selectable: false
+    }) as SiteMesh['descriptor']
+  }
+  const f = actionObservation(occluder)
+  expect(prepare).toHaveBeenCalledTimes(1)
+  prepare.mockRestore()
+  expect(f.request.camera.pose.position[0]).toBe(x)
+  const bounds = f.request.actionBounds
+  const direct = f.screen.queryVolume(f.demand, {
+    ...bounds,
+    size: bounds.min.map((v, i) => bounds.max[i] - v) as [
+      number,
+      number,
+      number
+    ]
+  })
+  expect(
+    direct.affected.some(
+      (e) => e.kind === 'source' && e.mesh.id === occluder.id
+    )
+  ).toBe(false)
+  f.dynamics.prepare({
+    ...f.world,
+    actors: [
+      {
+        trackId: 'hidden-person',
+        kind: 'person',
+        states: [
+          {
+            from: 0,
+            until: 10,
+            motion: 'stationary',
+            bounds: { min: [x - 0.01, 0.12, 1.4], max: [x + 0.01, 0.14, 1.45] }
+          }
+        ]
+      }
+    ]
+  })
+  const result = f.observations.observeActionVolume(
+    f.context(),
+    f.demand,
+    f.request
+  )
+  expect(result.coverage).toBe('partial')
+  expect(
+    result.detections.some(
+      (d) => d.kind === 'static' && d.mesh.origin.id === occluder.id
+    )
+  ).toBe(true)
+  expect(result.detections.some((d) => d.kind === 'dynamic')).toBe(false)
+  expect(JSON.stringify(result.detections)).not.toContain('hidden-person')
+  expect(result.work.rayBatches).toBe(1)
+  expect(
+    f.observations.observeActionVolume(f.context(), f.demand, {
+      ...f.request,
+      model: { ...f.request.model, maxRays: 0 }
+    })
+  ).toMatchObject({ coverage: 'partial', detections: [] })
+  expect(
+    f.observations.observeActionVolume(f.context(), f.demand, {
+      ...f.request,
+      model: { ...f.request.model, maxCandidates: 0 }
+    }).coverage
+  ).not.toBe('complete-empty')
+})
+
+it('counts far actor source work without local sampling and rejects stale action time', () => {
+  const f = actionObservation(),
+    x = f.request.camera.pose.position[0]
+  f.dynamics.prepare({
+    ...f.world,
+    actors: [
+      {
+        trackId: 'far-person',
+        kind: 'person',
+        states: [
+          {
+            from: 0,
+            until: 10,
+            motion: 'moving',
+            bounds: { min: [x - 0.01, 0.12, 0.4], max: [x + 0.01, 0.14, 0.5] }
+          }
+        ]
+      }
+    ]
+  })
+  const result = f.observations.observeActionVolume(
+    f.context(),
+    f.demand,
+    f.request
+  )
+  expect(result).toMatchObject({
+    coverage: 'complete-empty',
+    detections: [],
+    work: {
+      sourceActorVisits: 1,
+      samples: 0,
+      rayBatches: 0,
+      membershipBuilds: 0
+    }
+  })
+  expect(() =>
+    f.observations.observeActionVolume(f.context(), f.demand, {
+      ...f.request,
+      observedAt: 1
+    })
+  ).toThrow()
+  expect(
+    f.observations.observeActionVolume(f.context(), f.demand, {
+      ...f.request,
+      camera: { ...f.request.camera, maxDistance: 0.1 }
+    }).coverage
+  ).not.toBe('complete-empty')
+  expect(
+    f.observations.observeActionVolume(f.context(), f.demand, {
+      ...f.request,
+      leaves: 'unknown'
+    }).coverage
+  ).not.toBe('complete-empty')
+  f.screen.clear()
+  expect(f.observations.isCurrentAction(result)).toBe(false)
+})
+
+it('does not publish a sampled source hit outside the queried sight volume', () => {
+  const x = actionRouteCentre()
+  const prepare = vi.spyOn(SiteGeometry.prototype, 'prepareScene')
+  const source: SiteMesh = {
+    id: 'source-extending-outside-sight',
+    layer: 'barriers',
+    visible: true,
+    regions: Object.freeze([
+      Object.freeze({
+        id: 'surface',
+        kind: 'sheet',
+        indexStart: 0,
+        indexCount: 3
+      })
+    ]),
+    descriptor: readSpatialDescriptor({
+      kind: 'mesh',
+      position: [0, 0, 0],
+      rotation: [0, 0, 0, 1],
+      shape: {
+        kind: 'triangles',
+        positions: [x - 0.01, 0.1, 1.25, x + 0.9, 0.1, 1.25, x, 0.2, 1.25],
+        indices: [0, 1, 2]
+      },
+      color: 0xffffff,
+      opacity: 1,
+      wireframe: false,
+      selectable: false
+    }) as SiteMesh['descriptor']
+  }
+  const f = actionObservation(source)
+  expect(prepare).toHaveBeenCalledTimes(1)
+  prepare.mockRestore()
+  expect(f.request.camera.pose.position[0]).toBe(x)
+  const result = f.observations.observeActionVolume(f.context(), f.demand, {
+    ...f.request,
+    camera: { ...f.request.camera, halfWidthSlope: 2 }
+  })
+  expect(result.coverage).toBe('partial')
+  expect(result.detections).toEqual([])
+  expect(result.reasons).toContain('ray-witness-outside-sight')
+})
+
+function viewpoint(f: ReturnType<typeof setup>): ViewRequest {
+  const reading = f.reading()
+  return {
+    id: reading.id,
+    source: 'synthetic-viewpoint',
+    assumption: 'Declared synthetic camera rays',
+    runId: reading.runId,
+    generation: reading.generation,
+    missionRevision: reading.missionRevision,
+    sceneRevision: reading.sceneRevision,
+    robotRevision: reading.robotRevision,
+    dockRevision: reading.dockRevision,
+    observedAt: 0,
+    validFrom: 0,
+    validUntil: 10,
+    targetIds: [f.target.id],
+    samplesPerTarget: 4,
+    leaves: 'source-pose',
+    fruits: 'all-attached',
+    camera: {
+      pose: {
+        position: [
+          f.target.position[0],
+          f.target.position[1],
+          f.target.position[2] - 0.5
+        ],
+        rotation: [0, 0, 0, 1]
+      },
+      halfWidthSlope: 1,
+      halfHeightSlope: 1,
+      maxDistance: 2
+    }
+  }
+}
+
+it('samples an explicit synthetic viewpoint without treating source labels as maturity or quality', () => {
+  const f = setup()
+  const result = f.observations.view(f.context(), viewpoint(f))
+  expect(result.samples).toHaveLength(4)
+  expect(result.coverage.occluded).toBe(4)
+  expect(
+    result.samples.every(
+      (sample) =>
+        sample.ray?.status === 'hit' && sample.ray.mesh.layer === 'film'
+    )
+  ).toBe(true)
+  console.info(
+    'actual viewpoint source profile',
+    JSON.stringify({
+      coverage: result.coverage,
+      work: result.work,
+      samples: result.samples.map((sample) => ({
+        status: sample.status,
+        reason: sample.reason,
+        requested: sample.requested.triangle,
+        hit:
+          sample.ray?.status === 'hit'
+            ? { mesh: sample.ray.mesh.origin.id, triangle: sample.ray.triangle }
+            : null
+      }))
+    })
+  )
+  expect(result.work.cameraFrames).toBe(1)
+  expect(result.work.rayBatches).toBe(1)
+  expect(result.rays?.work.fk).toBe(1)
+  expect(result.rays?.work.vertexVisits).toBe(0)
+  expect(
+    result.samples.every((sample) => sample.requested.targetId === f.target.id)
+  ).toBe(true)
+  expect('maturity' in result).toBe(false)
+  expect('quality' in result).toBe(false)
+})
+
+it('observes actual near target surfaces from inside the greenhouse with separate requested and hit identities', () => {
+  const f = setup(),
+    input = viewpoint(f)
+  input.camera.pose = {
+    position: [
+      f.target.position[0],
+      f.target.position[1],
+      f.target.position[2] + 0.5
+    ],
+    rotation: [0, 1, 0, 0]
+  }
+  const result = f.observations.view(f.context(), input)
+  console.info(
+    'interior viewpoint source profile',
+    JSON.stringify({
+      coverage: result.coverage,
+      samples: result.samples.map((sample) => ({
+        status: sample.status,
+        reason: sample.reason,
+        requested: sample.requested.triangle,
+        hit:
+          sample.ray?.status === 'hit'
+            ? { mesh: sample.ray.mesh.origin.id, triangle: sample.ray.triangle }
+            : null
+      }))
+    })
+  )
+  expect(result.coverage.visible).toBeGreaterThan(0)
+  for (const sample of result.samples.filter(
+    (item) => item.status === 'visible'
+  )) {
+    expect(sample.ray?.status).toBe('hit')
+    if (sample.ray?.status !== 'hit') throw new Error('Missing actual hit')
+    expect(
+      sample.ray.mesh.plants?.[sample.ray.instance] === f.target.plant
+    ).toBe(true)
+    const hit = sample.ray
+    expect(
+      hit.mesh.partitions?.some(
+        (part) =>
+          part.fruitId === f.target.source.id &&
+          part.indexStart <= hit.triangle * 3 &&
+          hit.triangle * 3 < part.indexStart + part.indexCount
+      )
+    ).toBe(true)
+  }
+})
+
+it('keeps empty, out-of-view and unknown dynamics distinct without a ray batch', () => {
+  const f = setup(),
+    input = viewpoint(f),
+    query = vi.spyOn(RayQueries.prototype, 'query')
+  try {
+    input.targetIds = []
+    const empty = f.observations.view(f.context(), input)
+    expect(empty.coverage).toEqual({
+      total: 0,
+      visible: 0,
+      occluded: 0,
+      outsideView: 0,
+      unknown: 0
+    })
+    expect(empty.work.cameraFrames).toBe(0)
+    const away = viewpoint(f)
+    away.camera.pose = {
+      position: [
+        f.target.position[0],
+        f.target.position[1],
+        f.target.position[2] + 0.5
+      ],
+      rotation: [0, 0, 0, 1]
+    }
+    expect(f.observations.view(f.context(), away).coverage.outsideView).toBe(4)
+    const unknown = viewpoint(f)
+    unknown.leaves = 'unknown'
+    expect(f.observations.view(f.context(), unknown).coverage.unknown).toBe(4)
+    unknown.leaves = 'source-pose'
+    unknown.fruits = 'unknown'
+    expect(f.observations.view(f.context(), unknown).coverage.unknown).toBe(4)
+    expect(query).not.toHaveBeenCalled()
+  } finally {
+    query.mockRestore()
+  }
+})
+
+it('rejects malformed budgets, sparse cameras and historical pose requests before queries', () => {
+  const f = setup(),
+    query = vi.spyOn(RayQueries.prototype, 'query')
+  try {
+    for (const count of [0, 65, NaN, 1.5])
+      expect(() =>
+        f.observations.view(f.context(), {
+          ...viewpoint(f),
+          samplesPerTarget: count
+        })
+      ).toThrow()
+    for (const targetIds of [
+      [f.target.id, f.target.id],
+      ['missing'],
+      new Array(1) as string[]
+    ])
+      expect(() =>
+        f.observations.view(f.context(), { ...viewpoint(f), targetIds })
+      ).toThrow()
+    const sparse = viewpoint(f)
+    sparse.camera.pose = {
+      position: new Array(3) as [number, number, number],
+      rotation: [0, 0, 0, 1]
+    }
+    expect(() => f.observations.view(f.context(), sparse)).toThrow()
+    sparse.camera.pose = {
+      position: [0, 0, 0],
+      rotation: new Array(4) as [number, number, number, number]
+    }
+    expect(() => f.observations.view(f.context(), sparse)).toThrow()
+    f.session.advance(f.session.getSnapshot().generation, 1)
+    f.renew()
+    expect(() => f.observations.view(f.context(), viewpoint(f))).toThrow()
+    expect(query).not.toHaveBeenCalled()
+  } finally {
+    query.mockRestore()
+  }
+})
+
+it('uses one real current-pose ray batch and original source ranges without source regeneration', () => {
+  const f = setup(),
+    query = vi.spyOn(RayQueries.prototype, 'query'),
+    crop = vi.spyOn(crops, 'createCropModels'),
+    robot = vi.spyOn(models, 'createRobotModel'),
+    prepare = vi.spyOn(f.query, 'prepare')
+  const snapshot = f.session.getSnapshot()
+  try {
+    const result = f.observations.view(f.context(), viewpoint(f))
+    expect(query).toHaveBeenCalledTimes(1)
+    expect(
+      query.mock.calls[0][1].robot?.joints === snapshot.run?.pose.joints
+    ).toBe(true)
+    expect(
+      query.mock.calls[0][1].robot?.base.position === snapshot.run?.pose.base
+    ).toBe(true)
+    expect(crop).not.toHaveBeenCalled()
+    expect(robot).not.toHaveBeenCalled()
+    expect(prepare).not.toHaveBeenCalled()
+    const identities = result.samples.map(({ requested }) => {
+      const { mesh, instance, triangle } = requested
+      expect(mesh.plants?.[instance] === f.target.plant).toBe(true)
+      expect(
+        mesh.partitions?.some(
+          (part) =>
+            part.fruitId === f.target.source.id &&
+            part.indexStart <= triangle * 3 &&
+            triangle * 3 < part.indexStart + part.indexCount
+        )
+      ).toBe(true)
+      return `${f.source.meshes.indexOf(mesh)}:${instance}:${triangle}`
+    })
+    expect(new Set(identities).size).toBe(4)
+    expect(Object.isFrozen(result.samples[0].requested.point)).toBe(true)
+    expect(f.session.getSnapshot() === snapshot).toBe(true)
+  } finally {
+    query.mockRestore()
+    crop.mockRestore()
+    robot.mockRestore()
+    prepare.mockRestore()
+  }
+})
+
+it('does not certify a requested back surface from a nearer hit on the same actual target', () => {
+  const f = setup(),
+    input = viewpoint(f)
+  input.samplesPerTarget = 16
+  input.camera.pose = {
+    position: [
+      f.target.position[0],
+      f.target.position[1],
+      f.target.position[2] + 0.5
+    ],
+    rotation: [0, 1, 0, 0]
+  }
+  const result = f.observations.view(f.context(), input)
+  const different = result.samples.filter(
+    (sample) =>
+      sample.status === 'visible' &&
+      sample.ray?.status === 'hit' &&
+      (sample.ray.mesh !== sample.requested.mesh ||
+        sample.ray.triangle !== sample.requested.triangle)
+  )
+  expect(different.length).toBeGreaterThan(0)
+  expect(
+    different.every((sample) => sample.reason === 'target-surface-ray')
+  ).toBe(true)
+})
+
+it('classifies camera frustum interiors and exclusions while retaining a rounded boundary as unknown', () => {
+  const f = setup(),
+    input = viewpoint(f)
+  input.samplesPerTarget = 1
+  input.leaves = 'unknown'
+  const point = f.observations.view(f.context(), input).samples[0].requested
+    .point
+  input.leaves = 'source-pose'
+  input.camera.pose = {
+    position: [point[0] - 1, point[1], point[2] - 1],
+    rotation: [0, 0, 0, 1]
+  }
+  input.camera.halfWidthSlope = 0.5
+  expect(f.observations.view(f.context(), input).coverage.outsideView).toBe(1)
+  input.camera.halfWidthSlope = 2
+  expect(f.observations.view(f.context(), input).work.rayBatches).toBe(1)
+  input.camera.halfWidthSlope = 1
+  input.camera.pose = {
+    position: [point[0] - Math.SQRT2, point[1], point[2]],
+    rotation: [0, Math.sin(Math.PI / 8), 0, Math.cos(Math.PI / 8)]
+  }
+  const boundary = f.observations.view(f.context(), input)
+  expect(boundary.coverage.unknown).toBe(1)
+  expect(boundary.samples[0].reason).toBe('camera-frustum')
+  expect(boundary.work.rayBatches).toBe(0)
+})
+
+it('keeps behind-sample and overlapping non-target provider witnesses unknown', () => {
+  const f = setup(),
+    input = viewpoint(f)
+  const baseline = f.observations.view(f.context(), input)
+  if (!baseline.rays) throw new Error('Missing real provider batch')
+  const query = vi.spyOn(RayQueries.prototype, 'query')
+  try {
+    // Direct consumer oracle: explicitly supply possible certified provider
+    // distances after a computed ray misses its ideal source sample. This does
+    // not claim to reproduce a particular floating-point miss in the real scene.
+    for (const kind of ['behind', 'overlap']) {
+      query.mockReturnValue({
+        ...baseline.rays,
+        results: baseline.samples.map((sample) => {
+          if (sample.ray?.status !== 'hit')
+            throw new Error('Missing actual film witness')
+          const low =
+            kind === 'behind'
+              ? sample.sampleDistance.high + 1
+              : sample.sampleDistance.low
+          const high = kind === 'behind' ? low : sample.sampleDistance.high
+          return {
+            ...sample.ray,
+            distance: low + (high - low) / 2,
+            distanceBounds: Object.freeze({ low, high })
+          }
+        })
+      })
+      const result = f.observations.view(f.context(), input)
+      expect(result.coverage.unknown).toBe(4)
+      expect(result.coverage.occluded).toBe(0)
+      expect(
+        result.samples.every(
+          (sample) =>
+            sample.ray?.status === 'hit' &&
+            sample.reason === 'non-target-distance-unresolved'
+        )
+      ).toBe(true)
+    }
+  } finally {
+    query.mockRestore()
+  }
+})
+
+it('encloses requested sample distance before rounded ray subtraction', () => {
+  const f = setup(),
+    input = viewpoint(f)
+  input.leaves = 'unknown'
+  input.samplesPerTarget = 1
+  const first = f.observations.view(f.context(), input).samples[0]
+  expect(first.requested.point[0]).toBeGreaterThan(0)
+  expect(first.requested.point[0]).toBeLessThan(4)
+  input.camera.pose = {
+    ...input.camera.pose,
+    position: [-(2 ** 54), first.requested.point[1], first.requested.point[2]]
+  }
+  const result = f.observations.view(f.context(), input)
+  // Exact source point minus camera is strictly between these adjacent floats.
+  expect(result.samples[0].sampleDistance.low).toBeLessThanOrEqual(2 ** 54)
+  expect(result.samples[0].sampleDistance.high).toBeGreaterThanOrEqual(
+    2 ** 54 + 4
+  )
+})
+
+it('freezes owned viewpoint output without freezing the composition context', () => {
+  const f = setup(true),
+    input = viewpoint(f),
+    context = f.context()
+  input.leaves = 'unknown'
+  expect(Object.isFrozen(context)).toBe(false)
+  const result = f.observations.view(context, input)
+  expect(result.context).toBe(context)
+  expect(Object.isFrozen(context)).toBe(false)
+  for (const owned of [
+    result,
+    result.samples,
+    result.samples[0],
+    result.samples[0].sampleDistance,
+    result.coverage,
+    result.work
+  ])
+    expect(Object.isFrozen(owned)).toBe(true)
+})
+
+it('requires explicit distal pedicel evidence instead of accepting an old transient shape', () => {
+  const f = setup(),
+    input = f.reading()
+  const { pedicel, ...oldQuality } = input.quality
+  expect(pedicel).toBeNull()
+  for (const value of [undefined, 'retained', true, 3, []]) {
+    expect(() =>
+      f.observations.admit(f.context(), {
+        ...input,
+        quality: { ...input.quality, pedicel: value }
+      } as TargetReading)
+    ).toThrow()
+  }
+  expect(() =>
+    f.observations.admit(f.context(), {
+      ...input,
+      quality: oldQuality
+    } as TargetReading)
+  ).toThrow()
+})
+
+function qualityReading(
+  f: ReturnType<typeof setup>,
+  cultivar: NonNullable<TargetReading['cultivar']>
+) {
+  const target = f.source.fruits.find(
+    (fruit) => fruit.plant.species === cultivar
+  )
+  if (!target) throw new Error('Missing declared crop fixture')
+  return {
+    ...f.reading(),
+    targetId: target.id,
+    cultivar,
+    quality: {
+      spines: 'intact' as const,
+      calyx: 'intact' as const,
+      pedicel: 'intact' as const,
+      contactDamage: 'none-observed' as const
+    }
+  } as TargetReading
+}
+
+it('assesses declared cucumber requirements without certifying physical or post-pick quality', () => {
+  const f = setup(),
+    input = qualityReading(f, 'cucumber-1914')
+  input.quality.calyx = 'lost'
+  input.quality.pedicel = null
+  const result = f.observations.assessQuality(f.context(), input)
+  expect(result.requirements).toEqual({
+    spines: 'satisfied',
+    calyx: 'not-applicable',
+    pedicel: 'not-applicable',
+    contactDamage: 'satisfied'
+  })
+  expect(result.status).toBe('satisfied')
+  expect(result.physicalIntegrity).toBe('unverified')
+  expect(result.observation.reading).toEqual(input)
+  expect(result).not.toHaveProperty('retained')
+  expect(result).not.toHaveProperty('placementAllowed')
+  expect(Object.isFrozen(result.requirements)).toBe(true)
+  expect(Object.isFrozen(result)).toBe(true)
+  input.quality.spines = 'lost'
+  expect(result.observation.reading.quality.spines).toBe('intact')
+})
+
+it('keeps tomato calyx and distal pedicel independent of stem recognition and contact damage', () => {
+  const f = setup(),
+    input = qualityReading(f, 'tomato-yu-nu')
+  input.stem = {
+    targetId: input.targetId,
+    recognized: true,
+    cutSite: [0, 0, 0]
+  }
+  input.quality.spines = 'lost'
+  input.quality.pedicel = 'lost'
+  input.quality.contactDamage = null
+  const result = f.observations.assessQuality(f.context(), input)
+  expect(result.status).toBe('not-satisfied')
+  expect(result.requirements).toEqual({
+    spines: 'not-applicable',
+    calyx: 'satisfied',
+    pedicel: 'not-satisfied',
+    contactDamage: 'unknown'
+  })
+  input.quality.pedicel = null
+  expect(f.observations.assessQuality(f.context(), input).status).toBe(
+    'unknown'
+  )
+  input.quality.pedicel = 'intact'
+  input.quality.calyx = 'lost'
+  expect(
+    f.observations.assessQuality(f.context(), input).requirements.calyx
+  ).toBe('not-satisfied')
+})
+
+it('retains unknown crop requirements and separate contact failures without hidden-truth inference', () => {
+  const f = setup(),
+    input = qualityReading(f, 'cucumber-1914')
+  input.quality.contactDamage = 'observed'
+  const damaged = f.observations.assessQuality(f.context(), input)
+  expect(damaged.status).toBe('not-satisfied')
+  expect(damaged.requirements.spines).toBe('satisfied')
+  expect(damaged.requirements.contactDamage).toBe('not-satisfied')
+  input.cultivar = null
+  const unknown = f.observations.assessQuality(f.context(), input)
+  expect(unknown.status).toBe('unknown')
+  expect(unknown.requirements).toEqual({
+    spines: 'unknown',
+    calyx: 'unknown',
+    pedicel: 'unknown',
+    contactDamage: 'not-satisfied'
+  })
+  input.cultivar = 'cucumber-1914'
+  input.quality.contactDamage = null
+  input.quality.spines = null
+  input.approach = 'clear'
+  input.extraction = 'clear'
+  expect(f.observations.assessQuality(f.context(), input).status).toBe(
+    'unknown'
+  )
+})
+
+it('assesses one detached current reading with no query, source or session work', () => {
+  const f = setup(true),
+    input = qualityReading(f, 'tomato-yu-nu'),
+    snapshot = f.session.getSnapshot(),
+    context = f.context()
+  let reads = 0
+  Object.defineProperty(input, 'observedAt', {
+    enumerable: true,
+    get: () => (++reads === 1 ? 0 : NaN)
+  })
+  const admit = vi.spyOn(f.observations, 'admit'),
+    ray = vi.spyOn(RayQueries.prototype, 'query'),
+    prepare = vi.spyOn(f.query, 'prepare'),
+    crop = vi.spyOn(crops, 'createCropModels'),
+    model = vi.spyOn(models, 'createRobotModel')
+  try {
+    const result = f.observations.assessQuality(context, input)
+    expect(result.physicalIntegrity).toBe('unverified')
+    expect(admit).toHaveBeenCalledTimes(1)
+    expect(reads).toBe(1)
+    expect(f.session.getSnapshot()).toBe(snapshot)
+    expect(Object.isFrozen(context)).toBe(false)
+    expect(ray).not.toHaveBeenCalled()
+    expect(prepare).not.toHaveBeenCalled()
+    expect(crop).not.toHaveBeenCalled()
+    expect(model).not.toHaveBeenCalled()
+  } finally {
+    admit.mockRestore()
+    ray.mockRestore()
+    prepare.mockRestore()
+    crop.mockRestore()
+    model.mockRestore()
+  }
+  expect(() =>
+    f.observations.assessQuality({ ...context }, f.reading())
+  ).toThrow()
+  f.session.advance(snapshot.generation, 5)
+  f.renew()
+  expect(
+    f.observations.assessQuality(f.context(), qualityReading(f, 'tomato-yu-nu'))
+      .status
+  ).toBe('satisfied')
+  f.session.advance(snapshot.generation, 10)
+  f.renew()
+  expect(() => f.observations.assessQuality(f.context(), f.reading())).toThrow()
+  f.session.cancel(snapshot.generation)
+  f.renew()
+  expect(() =>
+    f.observations.assessQuality(f.context(), {
+      ...f.reading(),
+      validUntil: 100
+    })
+  ).toThrow()
+})
+
+it('bounded walking sources require actual rays and retain canonical mesh region and instance identity', () => {
+  const f = walkingActionFixture('bounded-source')
+  const request = {
+    ...f.input,
+    camera: {
+      ...f.input.camera,
+      pose: { position: [1, 0.2, 1] as const, rotation: [0, 0, 0, 1] as const }
+    },
+    actionBounds: {
+      min: [0.9, 0.1, 1.5] as const,
+      max: [1.1, 0.3, 1.55] as const
+    }
+  }
+  f.dynamics.prepare({
+    ...f.world,
+    domain: { min: [0, -1, 0], max: [10, 3, 3] }
+  })
+  const result = f.observations.observeActionVolume(f.context, request)
+  expect(result.coverage).toBe('partial')
+  expect(result.work.candidateVisits).toBeGreaterThan(0)
+  expect(result.work.rayTriangles).toBeGreaterThan(0)
+  const hit = result.detections.find((value) => value.kind === 'static')
+  if (!hit || hit.kind !== 'static')
+    throw new Error('Missing canonical sheet ray witness')
+  expect(hit.mesh.origin).toBe(f.scene.meshes[0])
+  expect(hit.region).toBe(f.scene.meshes[0].regions[0])
+  expect(hit.instance).toBe(0)
+  expect(f.scene.meshes[0].descriptor.instances).toHaveLength(2)
+  const exhausted = f.observations.observeActionVolume(f.context, {
+    ...request,
+    model: { ...request.model, maxRays: 0 }
+  })
+  expect(exhausted.coverage).not.toBe('complete-empty')
+  expect(exhausted.unvisited).toBeGreaterThan(0)
+  expect(exhausted.detections).toEqual([])
+  f.operating.clear()
+  expect(f.observations.isCurrent(result)).toBe(false)
+})
