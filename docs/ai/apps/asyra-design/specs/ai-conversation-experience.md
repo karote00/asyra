@@ -110,3 +110,11 @@ invent a tool or silently claim an incomplete request is complete. Fatal errors,
 cancellation and transport loss roll back the invocation and release its lock.
 Questions before drawing remain non-mutating clarification; a new user request
 never silently joins an already settled transaction.
+
+### Canvas keyboard handoff
+
+Opening the Agent with its keyboard shortcut must not leave held modifiers in
+the input system after composer autofocus. Clicking the canvas while the Agent
+is idle restores drawing shortcuts without closing the panel or discarding the
+draft. Composer typing and IME editing stay isolated from canvas actions; the
+active Agent document interaction lock remains authoritative.

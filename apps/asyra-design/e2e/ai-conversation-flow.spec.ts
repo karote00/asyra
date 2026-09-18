@@ -51,6 +51,49 @@ for (const width of [360, 1280]) {
   })
 }
 
+test('canvas click restores shortcuts while the Agent stays open and preserves composer editing', async ({
+  page
+}, testInfo) => {
+  await page.route('**/api/ai/status', (route) =>
+    route.fulfill({ json: { state: 'ready' } })
+  )
+  await page.goto(createTestDocumentIdentity().url)
+  await waitForAppReady(page)
+  await page.keyboard.press('r')
+  await page
+    .getByTestId('canvas-render-container')
+    .locator('canvas')
+    .click({ position: { x: 500, y: 350 } })
+  await page.keyboard.press('v')
+  await page.keyboard.press('ControlOrMeta+i')
+  const composer = page.getByLabel('Message Agent')
+  await expect(composer).toBeFocused()
+  await composer.fill('Keep this draft')
+  const canvas = page.getByTestId('canvas-render-container').locator('canvas')
+  await canvas.click({ position: { x: 500, y: 350 } })
+  await expect(page.getByTestId('canvas-host')).toBeFocused()
+  for (const [key, tool] of [
+    ['r', 'rectangle'],
+    ['o', 'oval'],
+    ['v', 'select']
+  ]) {
+    await page.keyboard.press(key)
+    await expect.poll(() => getActiveTool(page)).toBe(tool)
+  }
+  await expect(page.getByTestId('ai-agent-panel')).toBeVisible()
+  await expect(composer).toHaveValue('Keep this draft')
+  await composer.click()
+  await page.keyboard.press('r')
+  await expect(composer).toBeFocused()
+  expect(await getActiveTool(page)).toBe('select')
+  await canvas.click({ position: { x: 500, y: 350 } })
+  await page.keyboard.press('o')
+  await expect.poll(() => getActiveTool(page)).toBe('oval')
+  await page.screenshot({
+    path: testInfo.outputPath('canvas-focus-agent-open.png')
+  })
+})
+
 test('text answers keep the original reference only on its message and typing never switches canvas tools', async ({
   page
 }, testInfo) => {
