@@ -23,9 +23,9 @@ Current activity is derived from real execution phases, with one concise visible
 status and collapsed details. One App-owned activity projection produces the
 ordered entries and the current entry shared by the headline and Activity list.
 The list marks exactly one current entry while work is active, including real
-approval/stop states. Tool events identify the registered tool or operation;
-tool completion explicitly transitions to waiting for AI, not an invented next
-processing stage. Model-authored operational messages stay attached to their
+approval/stop states. Tool events use user-facing descriptions of the work, without tool names or
+AI-wait terminology. Completed tool work transitions to Reviewing the results;
+it does not imply that the whole request has finished. Model-authored operational messages stay attached to their
 corresponding event. Settlement removes the current marker and labels the final
 summary as Result (questions remain questions). No synthetic reasoning or timed
 percentage is allowed.

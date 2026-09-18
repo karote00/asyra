@@ -194,7 +194,7 @@ describe('capability outcomes', () => {
 })
 
 describe('shared current activity and activity history', () => {
-  it('reuses the latest event label and identifies the actual tool and AI continuation', () => {
+  it('reuses the latest activity description without exposing tools or AI wait states', () => {
     const projection = projectAiActivity([
       { attempt: 1, phase: 'context', summary: 'legacy context' },
       {
@@ -213,9 +213,9 @@ describe('shared current activity and activity history', () => {
       }
     ])
     expect(projection.entries.map((entry) => entry.label)).toEqual([
-      'Reading drawing context',
-      'VTracer image tracing - running',
-      'VTracer image tracing - finished; waiting for AI'
+      'Reviewing the drawing',
+      'Converting artwork to vectors',
+      'Reviewing the results'
     ])
     expect(projection.current).toBe(projection.entries.at(-1))
   })
@@ -232,7 +232,7 @@ describe('shared current activity and activity history', () => {
     ]
     const projection = projectAiActivity(updates)
     expect(projection.current).toMatchObject({
-      label: 'Change element visibility - running',
+      label: 'Adjusting element visibility',
       message: '正在隱藏 TM'
     })
     for (const [state, label] of [
@@ -260,4 +260,25 @@ it('ends history with the authoritative result even when cancellation emitted no
     { outcome: 'cancelled' }
   )
   expect(projection.entries.at(-1)?.label).toBe('Stopped')
+})
+
+it('describes provider work and unknown tools without exposing implementation names', () => {
+  for (const update of [
+    {
+      attempt: 1,
+      phase: 'provider' as const,
+      summary: 'Waiting for AI response'
+    },
+    {
+      attempt: 1,
+      phase: 'provider' as const,
+      summary: 'Running a tool',
+      tool: 'private_internal_tool',
+      toolStatus: 'running' as const
+    }
+  ]) {
+    const projection = projectAiActivity([update])
+    expect(projection.current.label).toBe('Working on your request')
+    expect(projection.current).toBe(projection.entries.at(-1))
+  }
 })

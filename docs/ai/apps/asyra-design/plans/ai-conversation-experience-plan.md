@@ -362,9 +362,9 @@ the multi-step slice, with no change to canonical transaction or input owners.
 ### Activity synchronization correction - 2026-09-18
 
 The status headline and Activity history share one App-owned projection of
-existing runtime events and controller approval/stop state. Tool labels identify
-VTracer or the registered operation; completion explicitly waits for AI rather
-than inventing another processing stage. Operational messages stay with their
+existing runtime events and controller approval/stop state. Activity labels describe the work in English without exposing tool names or
+AI-wait terminology. Completed tool work shows Reviewing the results without
+implying that the entire request is finished. Operational messages stay with their
 entry, the active entry is marked Current, and terminal summaries are labelled
 Result. This slice changes presentation, its formal unit/browser tests, current
 contracts and template parity only; backend, transaction and geometry owners are

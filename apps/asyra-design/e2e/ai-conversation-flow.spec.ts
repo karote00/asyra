@@ -548,17 +548,17 @@ for (const width of [360, 1280]) {
         {
           tool: 'vtracer',
           status: 'running',
-          label: 'VTracer image tracing - running'
+          label: 'Converting artwork to vectors'
         },
         {
           tool: 'vtracer',
           status: 'completed',
-          label: 'VTracer image tracing - finished; waiting for AI'
+          label: 'Reviewing the results'
         },
         {
           tool: 'set_element_visibility',
           status: 'running',
-          label: 'Change element visibility - running',
+          label: 'Adjusting element visibility',
           message: '正在隱藏右下角的標記。'
         }
       ]

@@ -272,37 +272,35 @@ export const canRetryAiTurn = (turn: AiSettledTurn): boolean => {
 }
 
 const activityToolLabels: Readonly<Record<string, string>> = Object.freeze({
-  vtracer: 'VTracer image tracing',
-  [AiActionNames.INSERT_VECTOR_COMPOSITION]: 'Add vector drawing',
-  [AiActionNames.REPLACE_VECTOR_COMPOSITION]: 'Replace vector drawing',
-  [AiActionNames.REMOVE_AI_COMPOSITION]: 'Remove drawing',
-  [AiActionNames.SET_ELEMENT_VISIBILITY]: 'Change element visibility',
-  [AiActionNames.SELECT_ELEMENTS]: 'Select elements',
-  [AiActionNames.UPDATE_COMPOSITION_ELEMENTS]: 'Update drawing elements'
+  vtracer: 'Converting artwork to vectors',
+  [AiActionNames.INSERT_VECTOR_COMPOSITION]: 'Adding the drawing',
+  [AiActionNames.REPLACE_VECTOR_COMPOSITION]: 'Replacing the drawing',
+  [AiActionNames.REMOVE_AI_COMPOSITION]: 'Removing the drawing',
+  [AiActionNames.SET_ELEMENT_VISIBILITY]: 'Adjusting element visibility',
+  [AiActionNames.SELECT_ELEMENTS]: 'Selecting elements',
+  [AiActionNames.UPDATE_COMPOSITION_ELEMENTS]: 'Refining the drawing'
 })
 
 const activityLabel = (update: AiRuntimeProgressUpdate): string => {
   if (update.tool && update.toolStatus) {
     const tool = Object.hasOwn(activityToolLabels, update.tool)
       ? activityToolLabels[update.tool]
-      : 'App tool'
-    return update.toolStatus === 'running'
-      ? `${tool} - running`
-      : `${tool} - finished; waiting for AI`
+      : 'Working on your request'
+    return update.toolStatus === 'running' ? tool : 'Reviewing the results'
   }
   switch (update.phase) {
     case 'context':
-      return 'Reading drawing context'
+      return 'Reviewing the drawing'
     case 'provider':
-      return 'Waiting for AI response'
+      return 'Working on your request'
     case 'resolution':
-      return 'Checking requested actions'
+      return 'Reviewing the planned changes'
     case 'permission':
-      return 'Checking action permissions'
+      return 'Checking whether changes can be applied'
     case 'confirmation':
       return 'Awaiting approval'
     case 'execution':
-      return 'Running app actions'
+      return 'Applying changes'
     case 'settled':
       if (update.outcome === 'failed') return 'Failed'
       if (update.outcome === 'cancelled') return 'Stopped'
