@@ -699,17 +699,8 @@ const AiConversationFeed = ({
                           <li
                             key={`${turn.turnId}:${index}`}
                             aria-current={current ? 'step' : undefined}
-                            className={
-                              current
-                                ? 'rounded border-l-2 border-[#9f8cff] bg-[#2b2738] px-2 py-1 text-[#ded8ff]'
-                                : 'py-1'
-                            }
+                            className="py-1"
                           >
-                            {current ? (
-                              <span className="mr-2 text-[9px] uppercase">
-                                Current
-                              </span>
-                            ) : null}
                             <span>{entry.label}</span>
                             {entry.message ? (
                               <p className="mb-0 mt-1 whitespace-pre-wrap break-words">

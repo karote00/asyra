@@ -22,11 +22,12 @@ existing runtime policy, with a concrete change summary and an explicit decision
 Current activity is derived from real execution phases, with one concise visible
 status and collapsed details. One App-owned activity projection produces the
 ordered entries and the current entry shared by the headline and Activity list.
-The list marks exactly one current entry while work is active, including real
-approval/stop states. Tool events use user-facing descriptions of the work, without tool names or
+The last list entry represents the current activity, including real approval/stop
+states, without a visible Current badge or separate highlight. Accessibility
+metadata identifies that entry while work is active. Tool events use user-facing descriptions of the work, without tool names or
 AI-wait terminology. Completed tool work transitions to Reviewing the results;
 it does not imply that the whole request has finished. Model-authored operational messages stay attached to their
-corresponding event. Settlement removes the current marker and labels the final
+corresponding event. Settlement clears the active accessibility metadata and labels the final
 summary as Result (questions remain questions). No synthetic reasoning or timed
 percentage is allowed.
 Private model reasoning is never displayed. Explicit operational messages from registered backend operations may be displayed. App-owned text

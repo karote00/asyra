@@ -573,6 +573,9 @@ for (const width of [360, 1280]) {
         )
         await expect(status).toHaveText(event.label)
         await expect(current).toHaveCount(1)
+        await expect(current).toHaveText(
+          event.message ? event.label + event.message : event.label
+        )
         await expect(current).toContainText(event.label)
         await expect(
           page.getByText('Running a tool', { exact: true })

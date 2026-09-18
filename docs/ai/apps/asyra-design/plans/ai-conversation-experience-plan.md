@@ -365,7 +365,8 @@ The status headline and Activity history share one App-owned projection of
 existing runtime events and controller approval/stop state. Activity labels describe the work in English without exposing tool names or
 AI-wait terminology. Completed tool work shows Reviewing the results without
 implying that the entire request is finished. Operational messages stay with their
-entry, the active entry is marked Current, and terminal summaries are labelled
+entry, the last entry indicates current activity without a badge or highlight,
+and terminal summaries are labelled
 Result. This slice changes presentation, its formal unit/browser tests, current
 contracts and template parity only; backend, transaction and geometry owners are
 unchanged. Validation includes staged streaming at 360px and 1280px, settled
