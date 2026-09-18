@@ -252,3 +252,25 @@ comparison records actual App pixel error, canonical control counts, conversion
 time, and one Undo/Redo; smoother curves alone are not a quality pass.
 Rendered review snapshots report their actual enclosing extraction frame so
 fractional curve bounds cannot silently crop the evidence.
+
+## Concise decision flow
+
+Ordinary supported requests proceed through tools and the existing two review
+stages without model narration, progress prose, repeated preference questions or
+requests to approve an already-authorized next step. App-authored status remains
+English. Model-authored questions/outcomes retain unrestricted language.
+
+Supply native tool definitions once. In operation mode, the text input retains
+only action schemas needed by final-response controls; registered operations use
+their native tool schemas. Preserve original constraints, references, current
+context, tool results and receipt identity. Routine operation calls require only
+arguments; a short message is optional for a concrete user-relevant impact.
+
+Use existing defaults for non-material choices. Ask a single concise question
+only when required input or genuine ambiguity prevents a correct action, with
+short choices when applicable. Required approval remains enforced by runtime.
+Finish with one short factual sentence; include an unmet requirement or next step
+when necessary. Do not expose tool names, model reasoning or technical payloads.
+Conciseness never permits silent failure, hidden partial output, omitted review
+or guesses about destructive targets. These are guidance and payload reductions,
+not a guarantee of model latency or a measured token reduction.

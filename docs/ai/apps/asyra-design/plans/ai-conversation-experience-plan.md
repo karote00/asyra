@@ -21,6 +21,32 @@ No new dependency is selected by this plan.
 
 ## Decisions
 
+### Concise decision flow - 2026-09-19
+
+Step Execution Card - request-backend-action-batch:
+
+- Spec: local-ai-provider, Concise decision flow; Inspector: the existing
+  request-backend-action-batch owner, registered-tool and receipt-review loop.
+- Inputs: original intent, reference, bounded context, registered action/tool
+  schemas and acknowledged evidence. Outputs: tool parameters, prepared batches,
+  necessary clarification or one concise outcome. No new execution route.
+- Ordinary supported work proceeds without narration or redundant questions;
+  ambiguous targets, material missing input and required approvals still stop.
+- Allowed contributors/files: server/ai-domain-prompt.ts, local-ai-provider.ts,
+  local-operation-tools.ts, their direct tests, specs, this Inspector condition
+  and generated template. Backend owns defaults for routine operational labels;
+  model retains semantic decisions, data review and visual review.
+- Forbidden: frontend model prompts, geometric changes, credential/model changes,
+  weakened validation, skipped review, new dependencies, runtime/Undo changes.
+- Work: native tool schemas supplied once per request; no duplicate catalog or
+  operation schemas in the text input. Final-response action schemas remain.
+- Gates: test-first compact payload and parameter-only operation cases, preserved
+  optional meaningful messages and invalid-input rejection, prompt policy tests,
+  full App tests/typecheck/build, Inspector generation/tests, template parity,
+  naming/lint and latest-head CI. No latency or token-saving percentage claim.
+- Failure owner: request-backend-action-batch. Stop if the change needs a new
+  runtime owner, changes canonical behavior or removes required decision evidence.
+
 ### Evidence-led representation selection - 2026-09-19
 
 AI owns interpretation of the user's intent, decomposition strategy and the

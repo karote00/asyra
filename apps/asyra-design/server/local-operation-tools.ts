@@ -123,7 +123,7 @@ export const createLocalOperationTools = (
       inputSchema: {
         type: 'object',
         additionalProperties: false,
-        required: ['arguments', 'message'],
+        required: ['arguments'],
         properties: {
           arguments: action.inputSchema,
           message: {
@@ -131,7 +131,7 @@ export const createLocalOperationTools = (
             minLength: 1,
             maxLength: 1000,
             description:
-              'A short user-facing operational update, not private reasoning.'
+              'Optional: one short phrase only for a material user-relevant impact. Omit for routine operations; the App supplies status.'
           }
         }
       }
@@ -146,9 +146,10 @@ export const createLocalOperationTools = (
         !registered.some((action) => action.name === name) ||
         !isRecord(args) ||
         !isRecord(args.arguments) ||
-        typeof args.message !== 'string' ||
-        !args.message.trim() ||
-        args.message.length > 1000 ||
+        (args.message !== undefined &&
+          (typeof args.message !== 'string' ||
+            !args.message.trim() ||
+            args.message.length > 1000)) ||
         Object.keys(args).some((key) => !['arguments', 'message'].includes(key))
       )
         throw new Error('Invalid backend operation')
@@ -176,15 +177,17 @@ export const createLocalOperationTools = (
           ],
           context: {}
         })
+      const message =
+        typeof args.message === 'string' ? args.message : 'Updating the drawing'
       const prepared = images.resolveBatch({
         batchId: randomUUID(),
-        explanation: args.message,
+        explanation: message,
         actions: [
           {
             id: randomUUID(),
             name,
             arguments: args.arguments,
-            summary: args.message
+            summary: message
           }
         ]
       }) as unknown as AiActionBatch

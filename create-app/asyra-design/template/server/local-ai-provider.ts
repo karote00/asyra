@@ -35,10 +35,7 @@ const failure = (code: AiModelBackendError['code']) =>
     'The local AI provider could not complete the request.'
   )
 
-const turnInput = (
-  input: AiProviderInput,
-  definitions: unknown
-): Record<string, unknown>[] => {
+const turnInput = (input: AiProviderInput): Record<string, unknown>[] => {
   const metadata: unknown = isRecord(input.metadata)
     ? { ...input.metadata }
     : input.metadata
@@ -66,7 +63,6 @@ const turnInput = (
       type: 'text',
       text: JSON.stringify({
         input: { ...input, metadata },
-        imageTools: definitions,
         protocolVersion: 1
       })
     },
@@ -113,10 +109,15 @@ const runLocalAiProvider = async (
     ...imageTools.definitions,
     ...(operations?.definitions ?? [])
   ]
-  const inputItems = turnInput(
-    { ...input, actions: imageTools.modelActions(input.actions) },
-    definitions
+  const operationNames = new Set(
+    operations?.definitions.map((tool) => tool.name)
   )
+  const inputItems = turnInput({
+    ...input,
+    actions: imageTools
+      .modelActions(input.actions)
+      .filter((action) => !operationNames.has(action.name))
+  })
   const toolController = new AbortController()
   const toolTasks = new Map<Promise<void>, string>()
   const toolCalls = new Set<string>()

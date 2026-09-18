@@ -67,10 +67,72 @@ describe('backend operation tools', () => {
     const prepared = executeBatch.mock.calls[0]?.[0]
     if (!prepared) throw new Error('Missing prepared batch')
     expect(JSON.stringify(prepared)).not.toContain('imageArtifactId')
+    expect(prepared.actions[0].summary).toBe(
+      'Tracing is complete. I am adding the editable drawing.'
+    )
     expect(prepared.actions[0].name).toBe(
       AiActionNames.INSERT_VECTOR_COMPOSITION
     )
   })
+
+  it('executes routine operations with parameters only and supplies the App status', async () => {
+    const executeBatch = vi.fn(async (_batch: AiActionBatch) => ({
+      actionResults: [],
+      context: {}
+    }))
+    const operations = createLocalOperationTools(
+      [
+        {
+          name: AiActionNames.SELECT_ELEMENTS,
+          description: 'Select',
+          inputSchema: {}
+        }
+      ],
+      createLocalImageTools({}),
+      executeBatch
+    )
+    expect(operations.definitions[0].inputSchema.required).toEqual([
+      'arguments'
+    ])
+    await operations.call(
+      AiActionNames.SELECT_ELEMENTS,
+      { arguments: { elementIds: ['a'] } },
+      new AbortController().signal
+    )
+    expect(executeBatch).toHaveBeenCalledOnce()
+    expect(executeBatch.mock.calls[0][0].actions[0].summary).toBe(
+      'Updating the drawing'
+    )
+  })
+
+  it.each([null, 1, '', '   ', 'x'.repeat(1001)])(
+    'rejects malformed optional operation messages before execution: %s',
+    async (message) => {
+      const executeBatch = vi.fn(async (_batch: AiActionBatch) => ({
+        actionResults: [],
+        context: {}
+      }))
+      const operations = createLocalOperationTools(
+        [
+          {
+            name: AiActionNames.SELECT_ELEMENTS,
+            description: 'Select',
+            inputSchema: {}
+          }
+        ],
+        createLocalImageTools({}),
+        executeBatch
+      )
+      await expect(
+        operations.call(
+          AiActionNames.SELECT_ELEMENTS,
+          { arguments: {}, message },
+          new AbortController().signal
+        )
+      ).rejects.toThrow('Invalid backend operation')
+      expect(executeBatch).not.toHaveBeenCalled()
+    }
+  )
 
   it('does not expose or execute an unregistered capability', async () => {
     const executeBatch = vi.fn()

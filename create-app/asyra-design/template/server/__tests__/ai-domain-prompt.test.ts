@@ -91,3 +91,18 @@ it('reviews all objects against supported component mappings, not just Oval dete
     'Do not select a component from bounding-box shape alone'
   )
 })
+
+it('requires concise decisions and only material clarification without dropping review', () => {
+  expect(AI_APP_PROMPT).toContain('without narration, plans, progress prose')
+  expect(AI_APP_PROMPT).toContain(
+    'Use existing defaults for non-material choices'
+  )
+  expect(AI_APP_PROMPT).toContain('one short question')
+  expect(AI_APP_PROMPT).toContain('one short factual sentence')
+  expect(AI_APP_PROMPT).toContain('Required App approvals remain')
+  expect(AI_OPERATION_INSTRUCTIONS).toContain(
+    'Routine operations send arguments only'
+  )
+  expect(AI_OPERATION_INSTRUCTIONS).toContain('Stage 1 - data review')
+  expect(AI_OPERATION_INSTRUCTIONS).toContain('Stage 2 - visual review')
+})

@@ -241,6 +241,39 @@ afterEach(() => {
 })
 
 describe('local subscription AI backend', () => {
+  it('sends native tool schemas once and retains only final control actions in text', async () => {
+    const server = fakeServer()
+    const action = {
+      name: 'select_elements',
+      description: 'Select',
+      inputSchema: { type: 'object' }
+    }
+    const control = {
+      name: 'report_outcome',
+      description: 'Report',
+      inputSchema: { type: 'object' }
+    }
+    await requestConfiguredAiActionBatch(
+      { ...input, actions: [action, control] },
+      {
+        environment,
+        executeBatch: async () => ({ actionResults: [], context: {} })
+      }
+    )
+    const definitions = server.packets.find(
+      ({ method }) => method === 'thread/start'
+    )?.params.dynamicTools as { name: string }[]
+    expect(
+      definitions.filter(({ name }) => name === 'select_elements')
+    ).toHaveLength(1)
+    const items = server.packets.find(({ method }) => method === 'turn/start')
+      ?.params.input as { text: string }[]
+    const payload = JSON.parse(items[0].text)
+    expect(payload).not.toHaveProperty('imageTools')
+    expect(payload.input.actions).toEqual([control])
+    expect(payload.input.intent).toBe(input.intent)
+  })
+
   it('records cumulative usage once for the request without logging user content', async () => {
     const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
     const server = fakeServer({ hold: true })
@@ -835,6 +868,9 @@ describe('local subscription AI backend', () => {
     const items = second.packets.find(({ method }) => method === 'turn/start')
       ?.params.input as { type: string; text?: string; url?: string }[]
     expect(items[0].text).not.toContain('YQ==')
+    expect(JSON.parse(items[0].text ?? '{}').input.actions).toEqual(
+      imageInput.actions
+    )
     expect(items[1]).toEqual({
       type: 'image',
       url: 'data:image/png;base64,YQ=='
