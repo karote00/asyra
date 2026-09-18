@@ -145,7 +145,9 @@ describe('AI runtime invocation lifecycle', () => {
         attempt: 1
       },
       {
-        signal: expect.any(AbortSignal)
+        signal: expect.any(AbortSignal),
+        onProgress: expect.any(Function),
+        executeBatch: expect.any(Function)
       }
     )
     expect(result).toEqual({
@@ -295,7 +297,7 @@ describe('AI runtime invocation lifecycle', () => {
     await runtime.dispose()
   })
 
-  it('returns confirmation cancellation without opening a transaction', async () => {
+  it('rolls back the invocation transaction on confirmation cancellation', async () => {
     const transaction = transactionEvidence()
     const runtime = createAiAgentRuntime(
       runtimeInput({
@@ -322,7 +324,7 @@ describe('AI runtime invocation lifecycle', () => {
         batchId: 'batch-1'
       }
     })
-    expect(transaction.run).not.toHaveBeenCalled()
+    expect(transaction.run).toHaveBeenCalledOnce()
 
     await runtime.dispose()
   })
@@ -368,7 +370,8 @@ describe('AI runtime invocation lifecycle', () => {
             evaluate: vi.fn(async () => 'confirm' as const)
           },
           transactionRunner: {
-            run: vi.fn(async () => {
+            run: vi.fn(async (_label, execute) => {
+              await execute()
               throw new Error('transaction failed')
             })
           }
@@ -451,7 +454,7 @@ describe('AI runtime invocation lifecycle', () => {
       stage: 'resolution',
       retryCount: 0
     })
-    expect(resolutionTransaction.run).not.toHaveBeenCalled()
+    expect(resolutionTransaction.run).toHaveBeenCalledOnce()
 
     const transaction = transactionEvidence()
     const runtime = createAiAgentRuntime(

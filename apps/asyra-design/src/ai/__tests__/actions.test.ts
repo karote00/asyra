@@ -41,14 +41,50 @@ const executionContext = () => ({
 })
 
 describe('Asyra Design AI actions', () => {
+  it('describes executable descriptor and slice fields to the model', () => {
+    const action = actionByName(
+      AiActionNames.INSERT_VECTOR_COMPOSITION,
+      actionApis()
+    )
+    expect(action.inputSchema).toMatchObject({
+      properties: {
+        groupDescriptor: {
+          required: expect.arrayContaining(['id', 'name', 'props', 'type'])
+        },
+        slices: {
+          items: {
+            required: expect.arrayContaining([
+              'descriptors',
+              'pointCount',
+              'roles'
+            ]),
+            properties: {
+              descriptors: {
+                items: {
+                  properties: {
+                    type: { enum: expect.arrayContaining(['oval', 'vector']) },
+                    fills: { type: 'array' }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    })
+  })
+
   it('publishes one deterministic backend-facing action catalog', () => {
     const actions = createAiActions(actionApis())
 
     expect(actions.map(({ name }) => name)).toEqual([
+      AiActionNames.REPORT_OUTCOME,
+      AiActionNames.REQUEST_CLARIFICATION,
       AiActionNames.REQUEST_DRAWING_DETAIL_CHOICE,
       AiActionNames.INSERT_VECTOR_COMPOSITION,
       AiActionNames.UPDATE_COMPOSITION_ELEMENTS,
       AiActionNames.REMOVE_AI_COMPOSITION,
+      AiActionNames.REPLACE_VECTOR_COMPOSITION,
       AiActionNames.SET_ELEMENT_VISIBILITY,
       AiActionNames.SELECT_ELEMENTS
     ])
@@ -58,6 +94,51 @@ describe('Asyra Design AI actions', () => {
       expect(action.inputSchema).toEqual(expect.any(Object))
       expect(action).not.toHaveProperty('schema')
       expect(action).not.toHaveProperty('prepare')
+    })
+  })
+
+  it('advertises canonical native component IDs accepted by the App', () => {
+    const action = actionByName(
+      AiActionNames.INSERT_VECTOR_COMPOSITION,
+      actionApis()
+    )
+    const schema = JSON.stringify(action.inputSchema)
+    expect(schema).toContain('"rect"')
+    expect(schema).not.toContain('"rectangle"')
+  })
+
+  it('advertises structured refinement items with nested style and geometry fields', () => {
+    const action = actionByName(
+      AiActionNames.UPDATE_COMPOSITION_ELEMENTS,
+      actionApis()
+    )
+    expect(action.inputSchema).toMatchObject({
+      properties: {
+        updates: {
+          type: 'array',
+          items: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['elementId'],
+            properties: {
+              elementId: { type: 'string' },
+              geometry: {
+                properties: {
+                  scaleX: { type: 'number' },
+                  scaleY: { type: 'number' }
+                }
+              },
+              style: {
+                properties: {
+                  fillColor: { type: 'string' },
+                  strokeColor: { type: 'string' }
+                }
+              }
+            },
+            oneOf: [{ required: ['geometry'] }, { required: ['style'] }]
+          }
+        }
+      }
     })
   })
 
@@ -138,5 +219,27 @@ describe('Asyra Design AI actions', () => {
       )
     ).rejects.toBeInstanceOf(AiActionError)
     expect(apis.setElementVisible).not.toHaveBeenCalled()
+  })
+})
+
+describe('reported capability boundaries', () => {
+  it('returns a specific unsupported outcome without mutating the canvas', async () => {
+    const apis = actionApis()
+    const result = await actionByName(
+      AiActionNames.REPORT_OUTCOME,
+      apis
+    ).execute(
+      {
+        outcome: 'unsupported',
+        message: 'This app cannot generate raster images.'
+      },
+      executionContext()
+    )
+    expect(result).toMatchObject({
+      status: 'no-change',
+      outcome: 'unsupported',
+      message: 'This app cannot generate raster images.'
+    })
+    for (const api of Object.values(apis)) expect(api).not.toHaveBeenCalled()
   })
 })

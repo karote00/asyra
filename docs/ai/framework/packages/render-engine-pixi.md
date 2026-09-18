@@ -59,6 +59,12 @@ package-resolution path.
    (including engine-created mesh geometry while preserving shared textures),
    destroys the application, and returns deterministic cleanup counts.
 
+Snapshot extraction encloses fractional local bounds in an integer frame before
+Pixi rasterization, normalizing machine-precision noise at integer boundaries.
+The resolution budget and returned bounds use that same frame. This prevents
+fractional content from being truncated and keeps image coordinates consistent
+with review metadata, without changing the target or viewport.
+
 Unsupported capabilities and initialization failures do not emit fallback
 surface output or a successful ready result.
 

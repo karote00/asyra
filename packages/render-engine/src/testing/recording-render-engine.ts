@@ -62,7 +62,10 @@ export class RecordingRenderEngine implements RenderEngine {
   constructor(options: RecordingRenderEngineOptions) {
     this.name = options.name
     this.capabilities = new Set(
-      options.capabilities ?? Object.values(RenderEngineCapabilities)
+      options.capabilities ??
+        Object.values(RenderEngineCapabilities).filter(
+          (value) => value !== RenderEngineCapabilities.SNAPSHOT
+        )
     )
   }
 
@@ -93,6 +96,8 @@ export class RecordingRenderEngine implements RenderEngine {
     this.assertReady()
 
     switch (query.type) {
+      case 'snapshot':
+        throw new Error('Recording engine does not produce rendered images')
       case 'get-bounds':
         this.assertOwnedObject(query.object)
         return {

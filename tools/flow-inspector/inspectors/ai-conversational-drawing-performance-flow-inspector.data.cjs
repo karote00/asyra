@@ -33,11 +33,12 @@
         'After Actor A submits an ordinary Agent turn, send its intent, exact image attachment, bounded App context, registered actions, and abort signal through the one same-origin requestActionBatch() transport; the backend owns the Asyra Design domain prompt and provider request, while the exact crdt-7076 sample directly returns its checked-in ordered AiActionBatch instruction file before loading prompt or model work and before Runtime resolution.',
       inputs: [
         'artifact:precanonical-owner-attribution',
+        'artifact:ai-batch-execution-receipt',
         'Actor A Agent intent',
         'one accepted image attachment',
         'App context and registered backend-facing action descriptions',
         'request abort signal',
-        'server-only provider endpoint, model, and API key for ordinary model-backed requests'
+        'server-only backend selection and model; HTTP endpoint/API key or local Codex subscription login for ordinary model-backed requests'
       ],
       outputs: [
         'artifact:server-prepared-action-batch',
@@ -46,11 +47,14 @@
       ],
       conditions: [
         'This step starts only when Actor A presses Send on an ordinary Agent turn; App navigation, required fileId resolution, document load, Agent readiness, and attachment selection do not request or execute a drawing.',
-        'requestActionBatch() is the only public provider request and performs exactly one same-origin HTTP POST for the accepted turn.',
+        'requestActionBatch() is the only public provider request. One same-origin HTTP POST streams the accepted turn; correlated same-origin execution receipts acknowledge intermediate prepared batches before AI continuation.',
         'The browser request carries the submitted intent, attachment metadata and data URL, bounded App context without a domain prompt or image-tool catalog, registered action descriptions, attempt number, and abort ownership without reading canonical document persistence.',
-        'The backend-only Asyra Design domain prompt and image-tool catalog are added only after complete server configuration supplies the provider endpoint, model, and API key for an ordinary request.',
+        'The backend-only Asyra Design domain prompt and image-tool catalog are added only after complete server configuration supplies either HTTP endpoint, model, and API key, or the explicit local-codex backend, model, and local subscription login for an ordinary request.',
         'The backend sends the API key only in the provider authorization header; it never enters the browser, App context, logs, provider request body, action batch, canonical state, persistence, or Collaboration.',
-        'The backend owns input matching and ordinary provider response construction. An ordinary request uses the configured backend model path and returns one AiActionBatch with its batchId and already-prepared arguments.',
+        'Ordinary local turns use native registered tool schemas once, retain final-response control schemas in text, and proceed through parameter-only routine operations with App-owned status labels. The model only asks for material missing input or genuine ambiguity and returns a concise factual outcome; required approvals, original evidence and both review stages remain enforced by their existing owners.',
+        'The backend owns input matching and ordinary provider response construction. An ordinary request uses the configured backend model path and returns complete AiActionBatch values with batchId and already-prepared arguments. Sequential intermediate batches await canonical receipts before the model continues.',
+        'For local image requests, the request-owned VTracer tool returns an opaque artifact ID and path bounds/color/count summaries, never SVG coordinates. The model selects target bounds, optional whole-path exclusions and supported single-contour componentMappings for native component preparation. The worker emits spline contours; the backend admits absolute M/L/C/Z geometry, preserves cubic controls, closure, winding and holes, computes true curve bounds once per request artifact, and transforms anchors and controls together without clipping or polygon flattening; this backend owner resolves only same-request references into complete canonical descriptors before Runtime admission. Repeated calls for the same attachment reuse the completed conversion only within that request; unknown references, unknown paths, duplicate/excluded/compound Oval selections, empty output, or invalid bounds fail here. The domain prompt requires receipt-based review and repeated supported corrections without claiming visual fidelity from execution success.',
+        'The AI selects plausible representation candidates from the registered catalog, without a preferred component. Request-owned read-only vector analysis returns contour identities, measured fit errors, topology limitations and an opaque analysis receipt. Whole-path component mappings require eligible results from a same-request receipt for the same source artifact; preparation consumes this completed evidence without remeasuring. Analysis never mutates canonical state, chooses artistic intent, exposes coordinate arrays or claims visual approval. Unsupported compound reconstruction remains explicit; original unmapped vectors are preserved. Up to 128 independent read-only analyses with a shared 128-candidate reservation budget may be dispatched concurrently with separately correlated replies; final settlement drains pending work, other tools remain exclusive, a request-owned single-job CPU queue yields between jobs, and request abort plus separate 32 non-analysis/160 total call budgets still apply.',
         'The checked-in crdt-7076 backend sample remains the local full-flow request path: its documented URL uses fileId=crdt-7076-sample as both socket-authoritative document identity and Collaboration identity; the backend accepts its exact checked-in image and instruction through the ordinary request body.',
         'The crdt-7076 sample uses the same socket-authoritative startup as every other fileId. When the socket is unavailable, the formal provisional local document still accepts Actor A HTTP action-batch execution and retains publications in the ordinary outbox; there is no compressed-document Core.load bootstrap, sample-only Reset behavior, or socket bypass. The permanent standalone Reset remains available for every fileId.',
         'After the exact image and instruction match, the exact crdt-7076 sample backend reads the checked-in ordered AiActionBatch instruction file directly before loading the domain prompt, provider configuration, or model path and returns it without SVG, VTracer, image conversion, geometry reconstruction, normalization, or model work.',
@@ -64,9 +68,9 @@
         'PreparedDrawingArtifact avoids a second frontend point-object graph; Runtime and the App action execute the returned server-prepared descriptor identities.'
       ],
       bypasses: [
-        'An aborted request cancels the same provider/backend attempt and creates no Runtime, canonical, history, persistence, or CRDT result.',
+        'An aborted request cancels the same provider/backend attempt; the invocation transaction rolls back any intermediate canonical changes.',
         'A malformed or unsupported request fails at the provider/backend boundary before Runtime resolution.',
-        'An ordinary model-backed request with incomplete server-only provider endpoint, model, or API key configuration fails with 503 before an upstream request; an upstream transport, status, or response failure returns 502 before Runtime resolution.',
+        'An ordinary model-backed request with incomplete server-only selected-backend configuration fails with 503 before an upstream request; an upstream transport, status, or response failure returns 502 before Runtime resolution.',
         'An Actor that only opens the sample URL performs ordinary socket document startup with zero action-batch request. Socket unavailability selects the existing provisional local session and never a second App startup route.'
       ],
       allowedContributors: [
@@ -76,6 +80,7 @@
         'backend-owned action-batch preparation',
         'backend-owned Asyra Design domain prompt and registered image-tool catalog',
         'completely configured server-only provider endpoint, model, and API key',
+        'explicit local-codex selection, loopback and same-origin admission, one request-owned Codex process, personal global instructions only, App-owned VTracer calls on submitted attachments, and subscription account-type check',
         'Node.js native fetch with the API key in the authorization header',
         'checked-in crdt-7076 sample input',
         'checked-in ordered crdt-7076 AiActionBatch instruction file',
@@ -86,14 +91,15 @@
         'server-response inbox, startup response preload, or resident action batch',
         'fileId, URL, query parameter, or App bootstrap selecting an action payload',
         'frontend action fixture import, phrase branch, geometry preparation, materialization, or response construction',
-        'retained SVG, VTracer input, alternate drawing source, regeneration fallback, or request-time geometry reconstruction',
+        'retained SVG or tool output across ordinary requests; VTracer input, alternate drawing source, regeneration fallback, or request-time geometry reconstruction for the exact crdt-7076 sample',
         'frontend item, path, point, style, bounds, role, or model semantic validation',
         'frontend model normalization or drawing-artifact encoding',
         'frontend domain prompt, image-tool catalog, provider endpoint, model setting, or API key',
         'provider prompt, configuration, or model work for the exact crdt-7076 sample',
         'model fallback for a partially matching crdt-7076 sample',
         'frontend replacement IDs for server-issued stable descriptor IDs',
-        'a second provider, request method, payload format, compatibility alias, or plan API alias',
+        'a second browser provider or alternate action execution source, compatibility alias, or plan API alias; execution receipts are control acknowledgements on the existing route',
+        'credential file reads or copies, account identity in output, raw provider logs, local Codex environment tools, or automatic HTTP fallback',
         'artificial provider delay or failure simulation',
         'Runtime, Core, Render, or Collaboration behavior flags'
       ],
@@ -107,13 +113,19 @@
         'apps/asyra-design/src/init/__tests__/init-app.test.ts',
         'apps/asyra-design/src/ai/startup.ts',
         'apps/asyra-design/src/ai/server-action-batch-provider.ts',
+        'apps/asyra-design/src/ai/action-batch-protocol.ts',
+        'apps/asyra-design/src/ai/action-batch-endpoint.ts',
         'apps/asyra-design/src/ai/context.ts',
         'apps/asyra-design/src/ai/__tests__',
         'apps/asyra-design/src/startup.ts',
         'apps/asyra-design/server',
+        'apps/asyra-design/vtracer-tool-server.mjs',
+        'apps/asyra-design/__tests__/vtracer-tool-server.test.mjs',
         'apps/asyra-design/server/ai-domain-prompt.ts',
         'apps/asyra-design/server/ai-model-provider.ts',
         'apps/asyra-design/samples/crdt-7076',
+        'apps/asyra-design/e2e/local-ai-provider.spec.ts',
+        'apps/asyra-design/e2e/fixtures/local-vector-reference.png',
         'apps/asyra-design/e2e/action-batch-interceptor.ts',
         'apps/asyra-design/e2e/test-utils.ts',
         'apps/asyra-design/e2e/conversational-ai.spec.ts',
@@ -124,6 +136,7 @@
       specRefs: [
         '#pre-canonical-owner-attribution',
         '#request-time-backend-action-batch-contract',
+        '#local-subscription-backend',
         '#server-prepared-aiactionbatch-contract',
         '#non-negotiable-equivalence',
         '#step-local-gates'
@@ -148,12 +161,13 @@
       outputs: [
         'artifact:resolved-ai-action-batch',
         'artifact:bounded-ai-action-batch-preview',
+        'artifact:ai-batch-execution-receipt',
         'artifact:ai-action-batch-ingestion-timing'
       ],
       conditions: [
         'This step is selected because corrected attribution found front-end action-schema geometry preparation before Group creation, while the product contract now assigns model preparation to the backend.',
         'requestActionBatch() is the only public provider request and resolveAiActionBatch() is the only Runtime resolution entry. There is no public or internal plan API, alias, compatibility wrapper, alternate payload mode, or client preparation mode.',
-        'The same-origin server transport hands the one returned AiActionBatch contract to Runtime; no URL, startup, or alternate source selects another execution or canonical mutation path.',
+        'One invocation transaction contains every sequential prepared batch, including intermediate receipts and final settlement. Each batch repeats permission and confirmation; no provider retry occurs after mutation. Fatal errors or cancellation roll back the invocation. The same-origin server transport hands each returned AiActionBatch contract to Runtime; no URL, startup, or alternate source selects another execution or canonical mutation path.',
         'AiActionBatch carries one batchId, explanation, ordered actions, and bounded summaries. Runtime preflights only that small control envelope, including the empty-batch rule, duplicate action ids, and unknown actions; it does not traverse item, path, point, style, bounds, or geometry arguments.',
         'Each action definition exposes one backend-facing inputSchema for server action-batch construction and one executor; it has no client action schema, parse, prepare, validation mode, or payload-size flag.',
         'The server-prepared action arguments are not recursively cloned or frozen by Runtime. Permission and execution receive the exact same arguments identity.',
@@ -167,7 +181,7 @@
         'ResolvedAiActionBatch and PermissionReadyAiActionBatch remain local, noncanonical, and nonshared; shared props, components, elements, Factory evidence, and CRDT data remain in their existing owners.'
       ],
       bypasses: [
-        'An invalid control envelope fails before permission, transaction, or executor work.',
+        'An invalid control envelope fails before that batch permission or executor work; the invocation transaction rolls back.',
         'A no-confirmation permission result still creates only the bounded terminal preview and never a full-argument preview.'
       ],
       allowedContributors: [
@@ -207,6 +221,7 @@
         'apps/asyra-design/src/init/foundation/init-features.ts',
         'apps/asyra-design/src/init/foundation/__tests__/init-features.test.ts',
         'apps/asyra-design/src/ai/actions.ts',
+        'apps/asyra-design/src/ai/prepared-drawing-schema.ts',
         'apps/asyra-design/src/ai/runtime-input.ts',
         'apps/asyra-design/src/ai/startup.ts',
         'apps/asyra-design/src/ai/conversation.ts',
@@ -586,7 +601,7 @@
         'Server-prepared Group and child descriptors provide exact bounds, stable IDs, relationships, complete source creation data, geometry data, point counts, roles, and slice boundaries; the App builds no intermediate point-object graph and performs no repeated vector validation, bounds, or normalization.',
         'After those prepared descriptors provide exact bounds, the App publishes a runtime-only loading state, commits a connected App DOM overlay, and crosses a browser paint opportunity before the first canonical mutation.',
         'The App acquires one runtime-only document interaction lock before opening the outer App transaction; the lock allows ordinary viewport pan and zoom to repaint the live loading frame and Vector output while it blocks every other document interaction, document mutation, and canonical mutation.',
-        'Viewport navigation while locked continues through ordinary Feature execution and may cross its existing transaction wrapper, but produces no canonical mutation or history and does not alter the AI action transaction evidence or accepted composition bounds; AI cancellation remains available.',
+        'Viewport navigation while locked continues through ordinary Feature execution and may cross its existing transaction wrapper, but produces no canonical mutation or history and does not alter the AI action transaction evidence or accepted composition bounds; AI cancellation, approval, conversation scrolling and typing, and panel open/close remain available within the isolated Agent interface; those DOM events cannot reach canvas shortcuts or document mutation controls.',
         'The single composition route uses the existing Core.createElementsInParent(...) plural route to create one Group, crosses one browser paint opportunity after that Group and before the first child batch, and only then submits multiple deterministic progressive plural Core child batches through the same route.',
         'Progressive batch boundaries use one fixed 2,048-point budget and an element-count budget capped at 32 elements per work unit; one indivisible element may exceed only the point budget.',
         'Every successful canonical slice completes its ordinary Factory, Preset, Render, and UI projection, commits actual element progress, awaits one browser paint opportunity, and then continues through the single serialized action loop with a fixed point budget of 2,048 and at most 32 elements after rechecking the Feature-owned AbortSignal.',
@@ -1434,7 +1449,140 @@
     }
   ]
 
+  const compositionStep = steps.find(
+    (step) => step.id === 'stage-local-interactive-composition'
+  )
+  compositionStep.conditions.push(
+    'Reference replacement inserts the prepared drawing then removes only the validated old composition inside the same outer transaction. Incomplete insertion, target change or failed removal throws and rolls back the whole replacement.'
+  )
+  compositionStep.specRefs.push('#conversation-lifecycle')
+  steps.push({
+    id: 'capture-drawing-review',
+    order: 2.5,
+    laneId: 'app-canonical',
+    title: 'Inspect the rendered drawing',
+    ownerPackage: 'App inspection action',
+    purpose: 'Provide actual bounded rendered evidence for AI review without canonical writes.',
+    inputs: ['artifact:resolved-ai-action-batch', 'canonical target ID', 'current rendered projection', 'request abort signal'],
+    outputs: ['artifact:rendered-drawing-review'],
+    conditions: [
+      'Core and Render resolve the target subtree and flush current projected draws before an engine-neutral snapshot query.',
+      'The configured engine extracts real subtree content, excluding overlays and camera framing; no synthetic or stale image is admitted.',
+      'PNG size and object metadata are bounded. Capture does not change selection, viewport or canonical state and owns no image cache.',
+      'Before mutation the provider reviews tool summaries, selects representations from the supported App component conversion catalog, preserves unmapped vector geometry, and iterates supported preparation parameters. Known data discrepancies are addressed before any expensive rendered review; unchanged deterministic conversions are not retries.',
+      'The existing acknowledged batch receipt carries image evidence after mutating operations; local provider emits native image content for AI comparison and repeated supported corrections. Automatic images do not require duplicate explicit captures.'
+    ],
+    bypasses: ['Missing target, unsupported engine or unavailable capture returns an explicit limitation.'],
+    allowedContributors: ['App inspection/common APIs', 'Core render facade', 'Render projection and engine-neutral query', 'configured render engine', 'local provider image reply adapter'],
+    forbiddenContributors: ['canonical writes during capture', 'editor overlays', 'diagnostic or synthetic product images', 'direct concrete engine access from App', 'cross-request image cache'],
+    cacheDimensions: [],
+    implementationBoundary: ['apps/asyra-design/src/ai', 'apps/asyra-design/src/common-apis', 'apps/asyra-design/src/constants', 'apps/asyra-design/server', 'apps/asyra-design/e2e', 'packages/core/src', 'packages/render/src', 'packages/render-engine/src', 'packages/render-engine-pixi/src'],
+    specRefs: ['#rendered-drawing-review'],
+    failureOwnerStepId: 'capture-drawing-review'
+  })
+
+  steps.push({
+    id: 'conversation-lifecycle',
+    order: 0,
+    laneId: 'app-canonical',
+    title: 'Present and continue the drawing conversation',
+    ownerPackage: 'App conversation controller',
+    purpose:
+      'Own stable user messages, request lifecycle, question answers and safe recovery independently of provider attempt completion.',
+    inputs: [
+      'user intent and attachments',
+      'answer or retry correlated to a prior request',
+      'bounded runtime progress, approval decision and authoritative result'
+    ],
+    outputs: [
+      'artifact:conversation-projection',
+      'artifact:conversation-submission'
+    ],
+    conditions: [
+      'Append the user message before execution and preserve its identity through settlement.',
+      'One App activity projection owns both the current headline and ordered Activity entries, describes real work transitions without tool names or AI-wait terminology, attaches model updates to their event, and projects approval/stop from existing controller state. Settlement clears the current marker and separates Result from work history.',
+      'Questions wait for user input; provider completion alone does not complete the drawing goal.',
+      'Panel closure hides presentation; document disposal cancels and retires late events.',
+      'Only existing feature and requestActionBatch owners may execute; status never writes canonical state.',
+      'Capability limits are normal explained outcomes with no blind retry; successful prior changes are described accurately and remain one undoable action.'
+    ],
+    bypasses: [
+      'Reject duplicate active submissions and stale answers.',
+      'Failed, cancelled or partial work never produces an unconditional success message.',
+      'Retry requires a confirmed pre-write failure or cancellation; unknown application is not replayed.'
+    ],
+    allowedContributors: [
+      'App conversation, confirmation and presentation adapters',
+      'App panel and history presentation',
+      'bounded runtime outcomes and current target references'
+    ],
+    forbiddenContributors: [
+      'geometry traversal or model output normalization in the panel',
+      'raw provider logs or personal account data',
+      'fabricated reasoning or progress',
+      'UI-owned canonical writes or rollback',
+      'additional provider transport'
+    ],
+    cacheDimensions: [],
+    implementationBoundary: [
+      'apps/asyra-design/src/ai/conversation.ts',
+      'apps/asyra-design/src/ai/presentation.ts',
+      'apps/asyra-design/src/ai/confirmation.ts',
+      'apps/asyra-design/src/ai/__tests__',
+      'apps/asyra-design/src/app',
+      'apps/asyra-design/e2e',
+      'docs/ai/apps/asyra-design/specs/ai-conversation-experience.md'
+    ],
+    specRefs: ['#conversation-lifecycle'],
+    failureOwnerStepId: 'conversation-lifecycle'
+  })
+
+  steps
+    .find((step) => step.id === 'request-backend-action-batch')
+    .inputs.push('artifact:conversation-submission', 'artifact:rendered-drawing-review')
   const routes = [
+    {
+      id: 'route-resolved-action-to-drawing-inspection',
+      from: 'resolve-server-prepared-action-batch',
+      to: 'capture-drawing-review',
+      kind: 'handoff',
+      predicate: 'A resolved, permitted inspect_drawing operation executes read-only inspection through the ordinary action executor, inside the owning invocation.',
+      producedArtifacts: ['artifact:resolved-ai-action-batch']
+    },
+    {
+      id: 'route-drawing-inspection-to-provider',
+      from: 'capture-drawing-review',
+      to: 'request-backend-action-batch',
+      kind: 'handoff',
+      predicate: 'The read-only result returns through the existing action receipt; the local backend delivers actual image content for visual review or an explicit unavailable result before further supported corrections.',
+      producedArtifacts: ['artifact:rendered-drawing-review']
+    },
+    {
+      id: 'route-executed-batch-receipt-to-provider',
+      from: 'resolve-server-prepared-action-batch',
+      to: 'request-backend-action-batch',
+      kind: 'handoff',
+      predicate:
+        'After an intermediate prepared batch passes permission and canonical execution, return redacted action results and refreshed context within the still-open invocation transaction. The backend awaits this receipt before AI continuation.',
+      producedArtifacts: ['artifact:ai-batch-execution-receipt']
+    },
+    {
+      id: 'route-conversation-projection',
+      from: 'conversation-lifecycle',
+      kind: 'terminal',
+      predicate:
+        'The panel projects document-scoped conversation state without canonical writes.',
+      producedArtifacts: ['artifact:conversation-projection']
+    },
+    {
+      id: 'route-conversation-to-action-batch',
+      from: 'conversation-lifecycle',
+      to: 'request-backend-action-batch',
+      kind: 'handoff',
+      predicate:
+        'An admitted submission preserves original intent, attachments and revalidated target context; questions and unsafe retries do not submit.',
+      producedArtifacts: ['artifact:conversation-submission']
+    },
     {
       id: 'route-server-prepared-action-batch-to-runtime',
       from: 'request-backend-action-batch',
@@ -2016,6 +2164,41 @@
 
   const artifacts = [
     {
+      id: 'artifact:rendered-drawing-review',
+      ownerStepId: 'capture-drawing-review',
+      title: 'Fresh rendered drawing evidence',
+      channel: 'Read-only action result in the existing same-origin execution receipt',
+      consumerStepIds: ['request-backend-action-batch'],
+      terminal: false,
+      description: 'Bounded real PNG, local capture bounds and object summaries or an explicit unavailable result. Transient evidence only; no document, camera, selection or Undo mutation.'
+    },
+    {
+      id: 'artifact:ai-batch-execution-receipt',
+      ownerStepId: 'resolve-server-prepared-action-batch',
+      title: 'Provisional canonical batch execution receipt',
+      channel: 'same-origin one-use execution acknowledgement',
+      consumerStepIds: ['request-backend-action-batch'],
+      terminal: false,
+      description:
+        'Redacted action results and refreshed bounded App context; not a commit, persisted snapshot or full geometry payload.'
+    },
+    {
+      id: 'artifact:conversation-projection',
+      ownerStepId: 'conversation-lifecycle',
+      channel:
+        'Document-scoped role-specific messages, actual activity, decisions and safe recovery controls',
+      consumerStepIds: [],
+      terminal: true
+    },
+    {
+      id: 'artifact:conversation-submission',
+      ownerStepId: 'conversation-lifecycle',
+      channel:
+        'One admitted feature request retaining original intent, attachments and current targets',
+      consumerStepIds: ['request-backend-action-batch'],
+      terminal: false
+    },
+    {
       id: 'artifact:server-prepared-action-batch',
       ownerStepId: 'request-backend-action-batch',
       channel:
@@ -2052,7 +2235,8 @@
         '@asyra/ai-agent-runtime ResolvedAiActionBatch and PermissionReadyAiActionBatch handoff preserving batchId and action argument identity',
       consumerStepIds: [
         'yield-ai-loading-paint',
-        'stage-local-interactive-composition'
+        'stage-local-interactive-composition',
+        'capture-drawing-review'
       ],
       terminal: false
     },

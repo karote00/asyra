@@ -9,6 +9,7 @@ import {
 } from './audit.js'
 import {
   AiActionBatchResolutionError,
+  AiActionBatchContractError,
   resolveAiActionBatchWithRegistry,
   type AiActionBatchResolutionErrorCode,
   type ResolvedAiAction,
@@ -62,6 +63,8 @@ export interface AiConfirmationHandler {
 }
 
 export interface AiTransactionRunner {
+  /** Reject with the original callback error only after successful rollback;
+   * reject with a distinct error if transaction settlement itself fails. */
   run<T>(label: string, execute: () => Promise<T>): Promise<T>
 }
 
@@ -129,6 +132,9 @@ export type AiRuntimeProgressPhase =
 export type AiRuntimeProgressOutcome = 'cancelled' | 'executed' | 'failed'
 
 export interface AiRuntimeProgressUpdate {
+  readonly message?: string
+  readonly tool?: string
+  readonly toolStatus?: 'running' | 'completed'
   readonly actionCount?: number
   readonly attempt: number
   readonly outcome?: AiRuntimeProgressOutcome
@@ -193,6 +199,7 @@ export interface AiRuntimeExecutedResult {
 }
 
 export interface AiRuntimeCancelledResult {
+  readonly transaction?: { readonly status: 'rolled-back' | 'unknown' }
   readonly status: 'cancelled'
   readonly reason: 'aborted' | 'confirmation-cancelled'
   readonly preview?: AiActionBatchPreview
@@ -200,6 +207,7 @@ export interface AiRuntimeCancelledResult {
 }
 
 export interface AiRuntimeFailedResult {
+  readonly transaction?: { readonly status: 'rolled-back' | 'unknown' }
   readonly status: 'failed'
   readonly batchId?: string
   readonly code: AiRuntimeFailureCode
@@ -550,6 +558,8 @@ interface AiInvocationEvidence {
   readonly batch?: Pick<ResolvedAiActionBatch, 'batchId' | 'explanation'>
   readonly preview?: AiActionBatchPreview
   readonly retryCount: number
+  readonly executionStarted?: boolean
+  readonly transactionStatus?: 'rolled-back' | 'unknown'
 }
 
 interface AiStableFailure {
@@ -626,6 +636,8 @@ const stableFailure = (
   error: unknown,
   fallback: AiStableFailure
 ): AiStableFailure => {
+  if (error instanceof AiActionBatchContractError)
+    return toAiProviderRequestFailure(error, 1)
   if (error instanceof AiActionBatchResolutionError) {
     return {
       code: error.code,
@@ -768,6 +780,13 @@ const createFailedResult = (
       : {
           batchId: evidence.batch.batchId
         }),
+    ...(evidence.executionStarted
+      ? {
+          transaction: Object.freeze({
+            status: evidence.transactionStatus ?? ('unknown' as const)
+          })
+        }
+      : {}),
     code: failure.code,
     message: failure.message,
     ...(evidence.preview === undefined
@@ -816,7 +835,16 @@ const createCancelledResult = (
     result.preview = evidence.preview
   }
 
-  return Object.freeze(result)
+  return Object.freeze({
+    ...result,
+    ...(evidence.executionStarted
+      ? {
+          transaction: Object.freeze({
+            status: evidence.transactionStatus ?? ('unknown' as const)
+          })
+        }
+      : {})
+  })
 }
 
 const validateRuntimeOptions = (
@@ -1005,10 +1033,18 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
         this.redactionOptions
       )
 
+    let providerFailure: AiStableFailure | undefined
+    let attempt = 1
+    const allResults: AiActionExecutionResult[] = []
+    const batchIds = new Set<string>()
+    let acceptingBatches = false
+    let batchPending = false
+    let callbackFailure: unknown
+    let batchSettlement: Promise<void> | undefined
     try {
       const intent =
         typeof request.intent === 'string' ? request.intent.trim() : ''
-      if (!intent) {
+      if (!intent)
         return createFailedResult(
           {
             code: 'AI_RUNTIME_INVALID_INTENT',
@@ -1018,224 +1054,271 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
           evidence,
           this.redactionOptions
         )
-      }
-
+      if (signal.aborted) throw INVOCATION_ABORTED
       emitProgress({
-        attempt: 1,
+        attempt,
         phase: 'context',
         summary: 'Understanding the request'
       })
-      const context = redactAiValue(
+      let context = redactAiValue(
         await runAbortable(signal, () =>
-          this.contextProvider.getContext({
-            intent,
-            signal
-          })
+          this.contextProvider.getContext({ intent, signal })
         ),
         this.redactionOptions
       )
       currentStage = 'registry'
       const actions = this.registry.list()
-
-      currentStage = 'provider'
-      let attempt = 1
-      let resolved: ResolvedAiActionBatch
-      while (true) {
+      const executePrepared = async (actionBatch: AiActionBatch) => {
+        currentStage = 'resolution'
         emitProgress({
           attempt,
-          phase: 'provider',
-          summary: 'Requesting an action batch'
+          phase: 'resolution',
+          summary: 'Resolving app actions'
         })
-        try {
-          const actionBatch = await runAbortable(signal, () =>
-            this.provider.requestActionBatch(
-              Object.freeze({
-                actions,
-                attempt,
-                context,
-                intent,
-                ...(request.metadata === undefined
-                  ? {}
-                  : {
-                      metadata: request.metadata
-                    })
-              }),
-              {
-                signal
-              }
-            )
+        const resolved = this.resolveAiActionBatch(actionBatch, { signal })
+        if (batchIds.has(resolved.batchId))
+          throw new AiActionBatchResolutionError(
+            'AI_ACTION_BATCH_DUPLICATE_ACTION_ID',
+            'A prepared batch cannot execute twice in one invocation.'
           )
-          currentStage = 'resolution'
-          emitProgress({
-            attempt,
-            phase: 'resolution',
-            summary: 'Resolving app actions'
-          })
-          resolved = this.resolveAiActionBatch(actionBatch, {
-            signal
-          })
-          break
-        } catch (error) {
-          if (signal.aborted || error === INVOCATION_ABORTED) {
-            throw INVOCATION_ABORTED
-          }
-          if (error instanceof AiActionBatchResolutionError) {
-            throw error
-          }
-
-          currentStage = 'provider'
-          const providerFailure = toAiProviderRequestFailure(error, attempt)
-          if (
-            !shouldRetryAiProviderFailure(providerFailure, this.retryPolicy)
-          ) {
-            const failed = createFailedResult(
-              {
-                code: providerFailure.code,
-                message: providerFailure.message,
-                stage: providerFailure.stage
-              },
-              {
-                retryCount: attempt - 1
-              },
-              this.redactionOptions
-            )
-            emitProgress({
-              attempt,
-              outcome: 'failed',
-              phase: 'settled',
-              summary: 'Failed'
-            })
-            return failed
-          }
-
-          attempt += 1
-          evidence = {
-            retryCount: attempt - 1
-          }
+        batchIds.add(resolved.batchId)
+        evidence = {
+          ...evidence,
+          batch: resolved,
+          retryCount: attempt - 1
         }
-      }
-
-      evidence = {
-        batch: resolved,
-        retryCount: attempt - 1
-      }
-      currentStage = 'permission'
-      emitProgress({
-        actionCount: resolved.actions.length,
-        attempt,
-        batchId: resolved.batchId,
-        phase: 'permission',
-        summary: 'Checking action permissions'
-      })
-      const permissionReady = await evaluateAiActionBatchPermissions(
-        resolved,
-        context,
-        this.permissionPolicy
-      )
-
-      currentStage = 'confirmation'
-      if (permissionReady.confirmationRequired) {
+        currentStage = 'permission'
         emitProgress({
-          actionCount: permissionReady.actions.length,
+          actionCount: resolved.actions.length,
           attempt,
-          batchId: permissionReady.batchId,
-          phase: 'confirmation',
-          summary: 'Waiting for confirmation'
+          batchId: resolved.batchId,
+          phase: 'permission',
+          summary: 'Checking action permissions'
         })
-      }
-      let confirmed: ConfirmedAiActionBatch
-      try {
-        confirmed = await confirmAiActionBatch(
-          permissionReady,
-          this.confirmationHandler,
-          signal,
-          this.redactionOptions
+        const permissionReady = await evaluateAiActionBatchPermissions(
+          resolved,
+          context,
+          this.permissionPolicy
         )
-      } catch (error) {
-        if (
-          error instanceof AiConfirmationError &&
-          error.code === 'AI_CONFIRMATION_CANCELLED'
-        ) {
-          const cancelled = createCancelledResult(
-            'confirmation-cancelled',
-            {
-              ...evidence,
-              preview: createAiActionBatchPreview(
-                permissionReady,
-                this.redactionOptions
-              )
-            },
-            this.redactionOptions
-          )
+
+        currentStage = 'confirmation'
+        if (permissionReady.confirmationRequired) {
           emitProgress({
             actionCount: permissionReady.actions.length,
             attempt,
             batchId: permissionReady.batchId,
-            outcome: 'cancelled',
-            phase: 'settled',
-            summary: 'Cancelled'
+            phase: 'confirmation',
+            summary: 'Waiting for confirmation'
           })
-          return cancelled
         }
-        throw error
-      }
-      evidence = {
-        ...evidence,
-        preview: confirmed.preview
-      }
-
-      currentStage = 'transaction'
-      emitProgress({
-        actionCount: confirmed.actions.length,
-        attempt,
-        batchId: confirmed.batchId,
-        phase: 'execution',
-        summary: 'Applying changes'
-      })
-      const execution = await runAiActionBatchTransaction(
-        this.transactionRunner,
-        signal,
-        async () => {
-          currentStage = 'execution'
-          const result = await executeAiActions(
-            confirmed,
+        let confirmed: ConfirmedAiActionBatch
+        try {
+          confirmed = await confirmAiActionBatch(
+            permissionReady,
+            this.confirmationHandler,
             signal,
             this.redactionOptions
           )
+        } catch (error) {
+          evidence = {
+            ...evidence,
+            preview: createAiActionBatchPreview(
+              permissionReady,
+              this.redactionOptions
+            )
+          }
+          throw error
+        }
+        evidence = {
+          ...evidence,
+          preview: confirmed.preview
+        }
+
+        currentStage = 'transaction'
+        emitProgress({
+          actionCount: confirmed.actions.length,
+          attempt,
+          batchId: confirmed.batchId,
+          phase: 'execution',
+          summary: 'Applying changes'
+        })
+        currentStage = 'execution'
+        evidence = { ...evidence, executionStarted: true }
+        const execution = await executeAiActions(
+          confirmed,
+          signal,
+          this.redactionOptions
+        )
+        allResults.push(...execution.actionResults)
+        return { confirmed, execution }
+      }
+      currentStage = 'transaction'
+      const executed = await runAiActionBatchTransaction(
+        {
+          run: async (label, execute) => {
+            let callbackFailed = false
+            let callbackError: unknown
+            try {
+              return await this.transactionRunner.run(label, async () => {
+                try {
+                  return await execute()
+                } catch (error) {
+                  callbackFailed = true
+                  callbackError = error
+                  throw error
+                }
+              })
+            } catch (error) {
+              // A conforming runner preserves the callback error only after rollback.
+              // A different rejection belongs to the transaction owner itself.
+              if (callbackFailed && error === callbackError) {
+                evidence = { ...evidence, transactionStatus: 'rolled-back' }
+              } else {
+                evidence = { ...evidence, transactionStatus: 'unknown' }
+                currentStage = 'transaction'
+                providerFailure = undefined
+              }
+              throw error
+            }
+          }
+        },
+        signal,
+        async () => {
+          let finalBatch: AiActionBatch
+          while (true) {
+            currentStage = 'provider'
+            emitProgress({
+              attempt,
+              phase: 'provider',
+              summary: 'Requesting an action batch'
+            })
+            acceptingBatches = true
+            try {
+              finalBatch = await runAbortable(signal, () =>
+                this.provider.requestActionBatch(
+                  Object.freeze({
+                    actions,
+                    attempt,
+                    context,
+                    intent,
+                    ...(request.metadata === undefined
+                      ? {}
+                      : { metadata: request.metadata })
+                  }),
+                  {
+                    signal,
+                    executeBatch: async (batch) => {
+                      if (!acceptingBatches || batchPending || signal.aborted) {
+                        callbackFailure = new AiExecutionError()
+                        throw callbackFailure
+                      }
+                      batchPending = true
+                      let settle!: () => void
+                      batchSettlement = new Promise<void>((resolve) => {
+                        settle = resolve
+                      })
+                      try {
+                        const { execution } = await executePrepared(batch)
+                        currentStage = 'context'
+                        const updatedContext = redactAiValue(
+                          await runAbortable(signal, () =>
+                            this.contextProvider.getContext({ intent, signal })
+                          ),
+                          this.redactionOptions
+                        )
+                        context = updatedContext
+                        currentStage = 'provider'
+                        return Object.freeze({
+                          actionResults: execution.actionResults,
+                          context: updatedContext
+                        })
+                      } catch (error) {
+                        callbackFailure = error
+                        throw error
+                      } finally {
+                        batchPending = false
+                        settle()
+                      }
+                    },
+                    onProgress: (event) => {
+                      if (
+                        !acceptingBatches ||
+                        signal.aborted ||
+                        !event ||
+                        typeof event.tool !== 'string' ||
+                        !/^[a-zA-Z0-9_-]{1,64}$/.test(event.tool) ||
+                        !['running', 'completed'].includes(event.status)
+                      )
+                        return
+                      emitProgress({
+                        attempt,
+                        phase: 'provider',
+                        tool: event.tool,
+                        toolStatus: event.status,
+                        ...(typeof event.message === 'string' &&
+                        event.message.length <= 1000
+                          ? { message: event.message }
+                          : {}),
+                        summary:
+                          event.status === 'running'
+                            ? 'Running a tool'
+                            : 'Tool completed'
+                      })
+                    }
+                  }
+                )
+              )
+              if (callbackFailure) throw callbackFailure
+              if (batchPending) throw new AiExecutionError()
+              break
+            } catch (error) {
+              if (signal.aborted || error === INVOCATION_ABORTED)
+                throw INVOCATION_ABORTED
+              if (callbackFailure) throw callbackFailure
+              const failure = toAiProviderRequestFailure(error, attempt)
+              if (
+                batchIds.size > 0 ||
+                !shouldRetryAiProviderFailure(failure, this.retryPolicy)
+              ) {
+                providerFailure = failure
+                throw error
+              }
+              attempt += 1
+              evidence = { retryCount: attempt - 1 }
+            } finally {
+              acceptingBatches = false
+              await batchSettlement
+            }
+          }
+          const { confirmed } = await executePrepared(finalBatch)
+          currentStage = 'audit'
+          const audit = createAiRuntimeAudit(
+            {
+              actionResults: allResults,
+              ...(confirmed.explanation === undefined
+                ? {}
+                : { explanation: confirmed.explanation }),
+              outcome: 'executed',
+              batchId: confirmed.batchId,
+              retryCount: evidence.retryCount
+            },
+            this.redactionOptions
+          )
           currentStage = 'transaction'
-          return result
+          return Object.freeze({
+            actionResults: Object.freeze([...allResults]),
+            audit,
+            batchId: confirmed.batchId,
+            preview: confirmed.preview,
+            status: 'executed' as const,
+            transaction: Object.freeze({ status: 'committed' as const })
+          })
         }
       )
-      currentStage = 'audit'
-      const audit = createAiRuntimeAudit(
-        {
-          actionResults: execution.actionResults,
-          ...(confirmed.explanation === undefined
-            ? {}
-            : {
-                explanation: confirmed.explanation
-              }),
-          outcome: 'executed',
-          batchId: confirmed.batchId,
-          retryCount: evidence.retryCount
-        },
-        this.redactionOptions
-      )
-
-      const executed: AiRuntimeExecutedResult = Object.freeze({
-        actionResults: execution.actionResults,
-        audit,
-        batchId: confirmed.batchId,
-        preview: confirmed.preview,
-        status: 'executed',
-        transaction: Object.freeze({
-          status: 'committed'
-        })
-      })
       emitProgress({
-        actionCount: confirmed.actions.length,
+        actionCount: allResults.length,
         attempt,
-        batchId: confirmed.batchId,
+        batchId: executed.batchId,
         outcome: 'executed',
         phase: 'settled',
         summary: 'Completed'
@@ -1246,8 +1329,24 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
         return createCancelledResult('aborted', evidence, this.redactionOptions)
       }
 
+      if (
+        error instanceof AiConfirmationError &&
+        error.code === 'AI_CONFIRMATION_CANCELLED'
+      ) {
+        emitProgress({
+          attempt,
+          outcome: 'cancelled',
+          phase: 'settled',
+          summary: 'Cancelled'
+        })
+        return createCancelledResult(
+          'confirmation-cancelled',
+          evidence,
+          this.redactionOptions
+        )
+      }
       const failed = createFailedResult(
-        stableFailure(error, STAGE_FAILURES[currentStage]),
+        providerFailure ?? stableFailure(error, STAGE_FAILURES[currentStage]),
         evidence,
         this.redactionOptions
       )

@@ -48,6 +48,7 @@ export type {
 export type {
   AiActionBatch,
   AiActionBatchAction,
+  AiBatchReceipt,
   AiProvider,
   AiProviderErrorCode,
   AiProviderErrorOptions,

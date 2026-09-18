@@ -52,3 +52,36 @@ Browser changes also require the relevant Playwright suite. Collaboration
 changes require the complete local services and `yarn test:e2e:collaboration`.
 Do not treat a screenshot as a substitute for a source-space or state-owner
 assertion.
+
+## Local AI usage records
+
+Each `local-codex` drawing provider invocation emits one JSON line to the App
+server's standard output with `event: "ai_request_usage"` and `schemaVersion: 1`.
+Keep your normal server logs to retain these records; this does not create a
+separate usage database or send telemetry elsewhere. Connection probes produce
+no drawing usage record. The HTTP provider has no token accounting contract yet.
+
+Records include a unique `requestId`, configured model, attempt, elapsed time,
+provider outcome, and validated conversation/turn/reply identifiers when supplied.
+They omit prompts, images, tool arguments/results, account details and credentials.
+
+`tokens` contains the latest valid provider-reported cumulative snapshot for the
+invocation: `inputTokens`, `cachedInputTokens`, `outputTokens`,
+`reasoningOutputTokens`, and `totalTokens`. Tool follow-ups and visual reviews
+inside that invocation are already included. Repeated notifications are not
+summed. Cached input is a subset of input; reasoning output is a subset of output.
+Do not add those subsets again. Elapsed time includes backend/tool waiting and
+is not a measure of model compute or billable tokens.
+
+- `reported`: the provider completed and supplied valid usage observations.
+- `partial`: the invocation failed, was cancelled or timed out after a valid
+  observation, or supplied malformed usage data. Counts are observed evidence,
+  not a guarantee of final billed usage.
+- `unavailable`: no valid observation; `tokens` is `null`, never an invented zero.
+
+For a complete user request, follow `replyToTurnId` to include clarification
+turns, group attempts by `conversationId` and `turnId`, and sum each unique
+`requestId` once. Concurrent invocations remain separate. Keep partial and
+unavailable records visible when calculating averages; do not interpret missing
+usage as free work. These token records do not establish subscription percentage
+or monetary cost. Provider outcome does not certify final document settlement.

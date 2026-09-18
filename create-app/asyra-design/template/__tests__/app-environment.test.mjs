@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { URL } from 'node:url'
 
 import { loadEnvironment, resolveEnvironment } from '../app-environment.mjs'
 
@@ -34,7 +35,10 @@ test('a deployed HTTPS origin remains the single app URL', () => {
 test('missing project environment uses safe development defaults without a browser socket override', () => {
   const environment = {}
 
-  loadEnvironment(environment)
+  loadEnvironment(
+    environment,
+    new URL('./fixtures/missing-project/.env', import.meta.url)
+  )
 
   assert.equal(environment.APP_URL, undefined)
   assert.equal(environment.VITE_COLLABORATION_WS_URL, undefined)

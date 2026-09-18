@@ -124,8 +124,8 @@ class InputSystem {
   }
 
   private addKeyboardListeners(host: Window): void {
-    this.keyboardBindings().forEach(([name, listener]) =>
-      host.addEventListener(name, listener)
+    this.keyboardBindings().forEach((binding) =>
+      host.addEventListener(...binding)
     )
   }
 
@@ -133,8 +133,8 @@ class InputSystem {
     host: Window,
     attempt = (cleanup: () => void) => cleanup()
   ): void {
-    this.keyboardBindings().forEach(([name, listener]) =>
-      attempt(() => host.removeEventListener(name, listener))
+    this.keyboardBindings().forEach((binding) =>
+      attempt(() => host.removeEventListener(...binding))
     )
   }
 
@@ -153,9 +153,10 @@ class InputSystem {
     )
   }
 
-  private keyboardBindings(): [string, EventListener][] {
+  private keyboardBindings(): [string, EventListener, boolean?][] {
     return [
       ['keydown', this.browserListener(this.handleKeyDown as EventListener)],
+      ['keyup', this.browserListener(this.releaseKey as EventListener), true],
       ['keyup', this.browserListener(this.handleKeyUp as EventListener)]
     ]
   }
@@ -296,6 +297,16 @@ class InputSystem {
     }
   }
 
+  // Release bookkeeping must survive editors stopping event propagation.
+  // Capture never dispatches actions or interferes with native text editing.
+  private releaseKey = (event: KeyboardEvent) => {
+    const key = this.keyMap.mapKey(event.code)
+    if (key) {
+      this.activeKeys.delete(key)
+      this.clearTimer(key)
+    }
+  }
+
   private handleKeyUp = (event: KeyboardEvent) => {
     if (!this._isInputActive(event) || this._hasTriggerBrowserShortcut(event)) {
       event.preventDefault()
@@ -303,8 +314,7 @@ class InputSystem {
 
     const key = this.keyMap.mapKey(event.code)
     if (key) {
-      this.activeKeys.delete(key)
-      this.clearTimer(key)
+      this.releaseKey(event)
 
       this.checkCombinations(InputType.KEYBOARD)
     }

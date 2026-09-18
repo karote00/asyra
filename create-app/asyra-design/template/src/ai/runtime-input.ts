@@ -5,6 +5,7 @@ import type {
   AiTransactionRunner,
   CreateAiAgentRuntimeInput
 } from '@asyra/ai-agent-runtime'
+import { createAiInspectionAction } from './inspection'
 import { createAiActions } from './actions'
 import {
   createAiConfirmationHandler,
@@ -26,7 +27,7 @@ export interface CreateAiRuntimeInputOptions {
 export const createAiRuntimeInput = (
   options: CreateAiRuntimeInputOptions
 ): CreateAiAgentRuntimeInput => ({
-  actionDefinitions: createAiActions(),
+  actionDefinitions: [...createAiActions(), createAiInspectionAction()],
   confirmationHandler: createAiConfirmationHandler(options.requestConfirmation),
   contextProvider: createAiContextProvider(),
   options: options.runtimeOptions,

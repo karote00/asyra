@@ -262,6 +262,8 @@ export const createAPIs = (
   }
 
   const renderRequests: RenderRequests = {
+    captureElementSnapshot: (elementId, maxDimension) =>
+      render.captureElementSnapshot(elementId, maxDimension),
     initRender: (width: number, height: number, color: number) =>
       render.init(width, height, color),
     getViewportPosition: () => render.getViewportPosition(),

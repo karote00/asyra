@@ -29,7 +29,20 @@ export const AiHistoryMessageBar = ({
   useEffect(() => history.subscribe(setHistorySnapshot), [history])
 
   const control = historySnapshot.control
-  if (!control || historySnapshot.disposed) {
+  const [expiredActionId, setExpiredActionId] = useState<number | null>(null)
+  useEffect(() => {
+    if (!control) return
+    const timer = setTimeout(() => setExpiredActionId(control.actionId), 12000)
+    return () => clearTimeout(timer)
+  }, [control?.actionId])
+  const latest = conversationSnapshot.settledTurns.at(-1)
+  if (
+    !control ||
+    expiredActionId === control.actionId ||
+    historySnapshot.disposed ||
+    conversationSnapshot.activeTurn ||
+    (latest && latest.turnId !== control.turnId)
+  ) {
     return null
   }
 

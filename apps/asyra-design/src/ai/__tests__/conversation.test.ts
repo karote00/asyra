@@ -27,6 +27,77 @@ const createFeature = (
   execute: vi.fn(execute)
 })
 
+it('keeps inherited reference images out of text replies while retaining provider context across answers and retry', async () => {
+  const attachment = {
+    dataUrl: 'data:image/png;base64,YQ==',
+    mediaType: 'image/png' as const,
+    name: 'reference.png',
+    size: 1
+  }
+  const question = executed(
+    {
+      action: 'request_drawing_detail_choice',
+      clarification: {
+        kind: 'drawing-detail',
+        optionIds: ['balanced', 'maximum']
+      },
+      status: 'no-change'
+    },
+    'request_drawing_detail_choice'
+  )
+  const pending = createDeferred<unknown>()
+  const feature = createFeature(
+    vi
+      .fn()
+      .mockResolvedValueOnce(question)
+      .mockImplementationOnce(() => pending.promise)
+      .mockResolvedValueOnce({
+        status: 'failed',
+        stage: 'provider',
+        code: 'AI_PROVIDER_TRANSPORT_FAILED'
+      })
+      .mockResolvedValue({ status: 'executed', actionResults: [] })
+  )
+  const controller = createAiConversationController({
+    feature,
+    getElementType: vi.fn()
+  })
+  await controller.submit({
+    intent: 'Draw the reference at 240 by 240',
+    attachments: [attachment]
+  })
+  const answer = controller.submit('That is fine')
+  expect(controller.getSnapshot().activeTurn?.attachments).toEqual([])
+  expect(feature.execute).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      metadata: expect.objectContaining({ imageAttachments: [attachment] })
+    })
+  )
+  pending.resolve(question)
+  expect((await answer).attachments).toEqual([])
+  const failed = await controller.submit('Balanced, please')
+  expect(failed.attachments).toEqual([])
+  expect(feature.execute).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      metadata: expect.objectContaining({ imageAttachments: [attachment] })
+    })
+  )
+  await controller.retry(failed.turnId)
+  expect(feature.execute).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      metadata: expect.objectContaining({ imageAttachments: [attachment] })
+    })
+  )
+  await controller.submit('Draw a new circle')
+  expect(feature.execute).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      metadata: expect.not.objectContaining({
+        imageAttachments: expect.anything()
+      })
+    })
+  )
+})
+
 describe('Asyra Design AI conversation controller', () => {
   it('retains ordered safe progress with the settled turn and brackets history correlation', async () => {
     const history = {
@@ -261,6 +332,35 @@ describe('Asyra Design AI conversation controller', () => {
         turnId: 'conversation-duration:turn:1'
       }
     ])
+  })
+
+  it('excludes approval waiting from execution duration', async () => {
+    let time = 1000
+    const feature = createFeature(async ({ progressObserver }) => {
+      time = 1500
+      progressObserver({
+        attempt: 1,
+        phase: 'confirmation',
+        summary: 'Waiting for confirmation'
+      })
+      time = 11500
+      progressObserver({
+        attempt: 1,
+        phase: 'execution',
+        summary: 'Applying changes'
+      })
+      time = 12000
+      return executed({ status: 'complete' })
+    })
+    const controller = createAiConversationController({
+      feature,
+      getElementType: vi.fn(),
+      now: () => time
+    })
+    await expect(controller.submit('draw')).resolves.toMatchObject({
+      durationMs: 1000,
+      waitingDurationMs: 10000
+    })
   })
 
   it('contains presentation observer failures without changing turn execution', async () => {
@@ -542,6 +642,46 @@ describe('Asyra Design AI conversation controller', () => {
 
     await expect(controller.submit('request')).resolves.toMatchObject({
       outcome
+    })
+  })
+})
+
+it('rejects stale or unknown reply targets before provider work', async () => {
+  const feature = createFeature(async () => executed({ status: 'no-change' }))
+  const conversation = createAiConversationController({
+    feature,
+    getElementType: vi.fn()
+  })
+  const first = await conversation.submit('Draw a 240x240 logo')
+  await conversation.submit('Another request')
+  for (const replyToTurnId of [first.turnId, 'unknown']) {
+    await expect(
+      conversation.submit({ intent: 'Balanced', replyToTurnId })
+    ).rejects.toMatchObject({ code: 'AI_CONVERSATION_INVALID_REPLY' })
+  }
+  expect(feature.execute).toHaveBeenCalledTimes(2)
+})
+
+describe('conversation recovery admission', () => {
+  it('rejects replay of a partially applied result', async () => {
+    const controller = createAiConversationController({
+      feature: {
+        cancel: () => false,
+        execute: async () => ({
+          status: 'executed',
+          actionResults: [
+            {
+              actionName: 'insert_vector_composition',
+              result: { status: 'partial' }
+            }
+          ]
+        })
+      },
+      getElementType: () => undefined
+    })
+    const turn = await controller.submit('draw')
+    await expect(controller.retry(turn.turnId)).rejects.toMatchObject({
+      code: 'AI_CONVERSATION_UNSAFE_RETRY'
     })
   })
 })

@@ -205,6 +205,7 @@ class Core implements CoreAPIs {
 
   setupInputSystem!: InputSystemAPIs['setupInputSystem']
 
+  captureElementSnapshot!: RenderAPIs['captureElementSnapshot']
   initRender!: RenderAPIs['initRender']
   renderIsReady!: RenderAPIs['renderIsReady']
   registerRenderLayer!: RenderAPIs['registerRenderLayer']

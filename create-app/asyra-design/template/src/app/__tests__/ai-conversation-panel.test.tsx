@@ -1,3 +1,4 @@
+import * as presentation from '../../ai/presentation'
 import {
   act,
   cleanup,
@@ -6,7 +7,7 @@ import {
   screen,
   waitFor
 } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AiConversationPanel } from '../ai-conversation-panel'
 import { createAiConversationController } from '../../ai/conversation'
 import { createAiConfirmationBroker } from '../../ai/confirmation'
@@ -39,8 +40,153 @@ const createPanelHarness = () => {
 }
 
 describe('AI Agent conversation panel intent boundary', () => {
+  beforeEach(() => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response(JSON.stringify({ state: 'ready' })))
+    )
+  })
   afterEach(() => {
     cleanup()
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+  })
+
+  it('rechecks whether latest is visible after Activity changes the scroll extent', async () => {
+    const harness = createPanelHarness()
+    render(
+      <AiConversationPanel
+        confirmation={harness.confirmation}
+        conversation={harness.conversation}
+        onClose={vi.fn()}
+      />
+    )
+    act(() => {
+      void harness.conversation.submit('Draw')
+    })
+    const body = screen.getByRole('region', { name: 'Conversation messages' })
+    const details = screen.getByText('Activity').closest('details')
+    if (!details) throw new Error('Missing Activity disclosure')
+    let height = 1200
+    Object.defineProperties(body, {
+      scrollHeight: { get: () => height },
+      clientHeight: { get: () => 500 }
+    })
+    body.scrollTop = 0
+    fireEvent.scroll(body)
+    expect(screen.getByRole('button', { name: 'Jump to latest' })).toBeTruthy()
+    // A collapse can leave other messages below the viewport.
+    height = 700
+    fireEvent(details, new Event('toggle'))
+    expect(screen.getByRole('button', { name: 'Jump to latest' })).toBeTruthy()
+    // No scroll event is guaranteed when already at scrollTop zero.
+    height = 400
+    fireEvent(details, new Event('toggle'))
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('button', { name: 'Jump to latest' })
+      ).toBeNull()
+    )
+    height = 900
+    fireEvent(details, new Event('toggle'))
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Jump to latest' })
+      ).toBeTruthy()
+    )
+    await act(async () => {
+      harness.pending.resolve({ status: 'executed', actionResults: [] })
+    })
+  })
+
+  it.each([
+    ['success', 'Completed'],
+    ['partial', 'Partially completed'],
+    ['failed', 'Failed'],
+    ['cancelled', 'Stopped'],
+    ['no-change', 'No changes']
+  ] as const)(
+    'shows a persistent, accessible %s outcome beside its duration',
+    async (outcome) => {
+      const harness = createPanelHarness()
+      const request = harness.conversation.submit('Draw')
+      harness.pending.resolve({ status: 'executed', actionResults: [] })
+      await request
+      const snapshot = harness.conversation.getSnapshot()
+      render(
+        <AiConversationPanel
+          confirmation={harness.confirmation}
+          conversation={{
+            ...harness.conversation,
+            subscribe: () => () => undefined,
+            getSnapshot: () => ({
+              ...snapshot,
+              settledTurns: snapshot.settledTurns.map((turn) => ({
+                ...turn,
+                outcome
+              }))
+            })
+          }}
+          onClose={vi.fn()}
+        />
+      )
+      const status = screen.getByRole('status', { name: 'Request status' })
+      expect(status.textContent).toBe('Request finished')
+      expect(status.querySelector('svg')?.getAttribute('width')).toBe('12')
+      expect(status.querySelector('svg')?.getAttribute('height')).toBe('12')
+      expect(
+        status.parentElement?.querySelector('[aria-label="Elapsed time"]')
+      ).toBeTruthy()
+      expect(
+        screen.queryByRole('status', { name: 'Current activity' })
+      ).toBeNull()
+    }
+  )
+
+  it('discloses personal subscription usage immediately when the panel opens', () => {
+    const harness = createPanelHarness()
+    render(
+      <AiConversationPanel
+        confirmation={harness.confirmation}
+        conversation={harness.conversation}
+        onClose={vi.fn()}
+      />
+    )
+    const notice = screen.getByRole('note', { name: 'Your AI subscription' })
+    expect(notice.textContent).toContain(
+      'Local AI uses your own subscription and counts toward its usage limits.'
+    )
+    expect(notice.textContent).toContain(
+      'Asyra Design does not provide an AI subscription.'
+    )
+    expect(harness.feature.execute).not.toHaveBeenCalled()
+    expect(screen.queryByTestId('ai-agent-message')).toBeNull()
+  })
+
+  it('does not reproject conversation history while editing the next draft', async () => {
+    const harness = createPanelHarness()
+    render(
+      <AiConversationPanel
+        confirmation={harness.confirmation}
+        conversation={harness.conversation}
+        onClose={vi.fn()}
+      />
+    )
+    await screen.findByText('Local AI connected')
+    act(() => {
+      void harness.conversation.submit('Draw')
+    })
+    const project = vi.spyOn(presentation, 'projectAiActivity')
+    for (const value of ['N', 'Ne', 'Next']) {
+      fireEvent.change(screen.getByLabelText('Message Agent'), {
+        target: { value }
+      })
+    }
+    expect(project).not.toHaveBeenCalled()
+    await act(async () => {
+      harness.pending.resolve({ status: 'executed', actionResults: [] })
+    })
+    expect(project).toHaveBeenCalled()
   })
 
   it('accepts one trimmed draft, stays non-modal, and exposes active cancellation', () => {
@@ -56,7 +202,7 @@ describe('AI Agent conversation panel intent boundary', () => {
 
     expect(screen.getByTestId('ai-agent-panel')).toBeTruthy()
     expect(screen.queryByTestId('ai-agent-message')).toBeNull()
-    expect(screen.getByText('Agent ready')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Add image' })).toBeTruthy()
     expect(screen.getByRole('complementary').getAttribute('aria-modal')).toBe(
       'false'
     )
@@ -88,8 +234,66 @@ describe('AI Agent conversation panel intent boundary', () => {
     ).toBe(AiDocumentInteractionTargets.AGENT_CANCEL)
 
     fireEvent.click(screen.getByRole('button', { name: 'Close Agent panel' }))
-    expect(harness.feature.cancel).toHaveBeenCalledWith('panel-closed')
+    expect(harness.feature.cancel).not.toHaveBeenCalled()
     expect(onClose).toHaveBeenCalledOnce()
+  })
+
+  it('keeps the same user message node on the right from submission through settlement', async () => {
+    const harness = createPanelHarness()
+    render(
+      <AiConversationPanel
+        confirmation={harness.confirmation}
+        conversation={harness.conversation}
+        onClose={vi.fn()}
+      />
+    )
+    fireEvent.change(screen.getByLabelText('Message Agent'), {
+      target: { value: 'Draw a 240px logo' }
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }))
+    const userMessage = screen.getByLabelText('Your message')
+    expect(userMessage.textContent).toBe('Draw a 240px logo')
+    expect(userMessage.className).toContain('self-end')
+    expect(screen.getByLabelText('Agent response').textContent).not.toContain(
+      'Draw a 240px logo'
+    )
+    await act(async () => {
+      harness.pending.resolve({ status: 'executed', actionResults: [] })
+      await harness.pending.promise
+    })
+    expect(screen.getByLabelText('Your message')).toBe(userMessage)
+  })
+
+  it('offers a safe retry without restoring the request into the composer', async () => {
+    const harness = createPanelHarness()
+    render(
+      <AiConversationPanel
+        confirmation={harness.confirmation}
+        conversation={harness.conversation}
+        onClose={vi.fn()}
+      />
+    )
+    fireEvent.change(screen.getByLabelText('Message Agent'), {
+      target: { value: 'Replace the previous drawing using this image' }
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }))
+    await act(async () => {
+      harness.pending.resolve({
+        status: 'failed',
+        stage: 'provider',
+        code: 'AI_PROVIDER_TIMEOUT'
+      })
+      await harness.pending.promise
+    })
+    expect(
+      screen.getByRole('status', { name: 'Request status' }).textContent
+    ).toContain('Request finished')
+    expect(screen.getByText(/timed out/)).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Edit request' })).toBeNull()
+    expect(
+      (screen.getByLabelText('Message Agent') as HTMLTextAreaElement).value
+    ).toBe('')
   })
 
   it('does not submit whitespace or queue a second active turn', () => {
@@ -114,6 +318,54 @@ describe('AI Agent conversation panel intent boundary', () => {
     fireEvent.change(input, { target: { value: 'second' } })
     expect((send as HTMLButtonElement).disabled).toBe(true)
     expect(harness.feature.execute).toHaveBeenCalledOnce()
+  })
+
+  it('keeps failed continuation context in history without duplicating composer attachments', async () => {
+    const harness = createPanelHarness()
+    const attachment = {
+      dataUrl: 'data:image/png;base64,YQ==',
+      mediaType: 'image/png' as const,
+      name: 'reference.png',
+      size: 1
+    }
+    harness.feature.execute = vi
+      .fn()
+      .mockResolvedValueOnce({
+        status: 'executed',
+        actionResults: [
+          {
+            actionName: 'request_clarification',
+            result: {
+              status: 'no-change',
+              clarification: { kind: 'question', question: 'Keep the size?' }
+            }
+          }
+        ]
+      })
+      .mockResolvedValue({
+        status: 'failed',
+        stage: 'provider',
+        code: 'AI_PROVIDER_TIMEOUT'
+      })
+    render(
+      <AiConversationPanel
+        confirmation={harness.confirmation}
+        conversation={harness.conversation}
+        onClose={vi.fn()}
+      />
+    )
+    await act(async () => {
+      await harness.conversation.submit({
+        intent: 'Draw the reference at 240 by 240',
+        attachments: [attachment]
+      })
+      await harness.conversation.submit('Yes')
+    })
+    expect(screen.queryByRole('button', { name: 'Edit request' })).toBeNull()
+    expect(screen.getAllByRole('img')).toHaveLength(1)
+    expect(
+      (screen.getByLabelText('Message Agent') as HTMLTextAreaElement).value
+    ).toBe('')
   })
 
   it('keeps mouse, touch, and keyboard cancellation inside the Agent control while the document is locked', () => {
@@ -169,6 +421,53 @@ describe('AI Agent conversation panel intent boundary', () => {
     expect(escapedDocumentInteraction).not.toHaveBeenCalled()
     expect(harness.feature.cancel).toHaveBeenCalledOnce()
     expect(harness.feature.cancel).toHaveBeenCalledWith('user-cancelled')
+  })
+
+  it('keeps typing, editing shortcuts and IME keys inside the composer without preventing native editing', () => {
+    const harness = createPanelHarness()
+    render(
+      <AiConversationPanel
+        confirmation={harness.confirmation}
+        conversation={harness.conversation}
+        onClose={vi.fn()}
+      />
+    )
+    const input = screen.getByLabelText('Message Agent')
+    const shortcut = vi.fn()
+    window.addEventListener('keydown', shortcut)
+    window.addEventListener('keyup', shortcut)
+    try {
+      for (const key of [
+        'r',
+        'o',
+        'v',
+        'p',
+        'Backspace',
+        'Delete',
+        ' ',
+        'Escape',
+        'Enter',
+        'z'
+      ]) {
+        for (const type of ['keydown', 'keyup']) {
+          const event = new KeyboardEvent(type, {
+            key,
+            bubbles: true,
+            cancelable: true,
+            metaKey: key === 'z',
+            isComposing: key === 'Enter'
+          })
+          fireEvent(input, event)
+          expect(event.defaultPrevented).toBe(false)
+        }
+      }
+      expect(shortcut).not.toHaveBeenCalled()
+      fireEvent.keyDown(document.body, { key: 'r' })
+      expect(shortcut).toHaveBeenCalledOnce()
+    } finally {
+      window.removeEventListener('keydown', shortcut)
+      window.removeEventListener('keyup', shortcut)
+    }
   })
 
   it('adds the same removable image draft through file selection and drag-and-drop, then preserves it in the submitted turn', async () => {
@@ -314,8 +613,8 @@ describe('AI Agent conversation panel intent boundary', () => {
   })
 
   it.each([
-    ['Allow', true],
-    ['Deny', false]
+    ['Approve', true],
+    ['Decline', false]
   ] as const)(
     'renders a concise confirmation and routes %s to the broker',
     async (decision, expected) => {
@@ -418,16 +717,14 @@ describe('AI Agent conversation panel intent boundary', () => {
     })
     fireEvent.click(screen.getByRole('button', { name: 'Send' }))
 
-    expect(
-      await screen.findByText('Drawing updated successfully.')
-    ).toBeTruthy()
+    expect(await screen.findByText('Updated 1 editable element.')).toBeTruthy()
     const settledMessage = screen.getByTestId('ai-agent-message')
     expect(settledMessage.tagName).toBe('ARTICLE')
     expect(settledMessage.getAttribute('data-outcome')).toBe('success')
     expect(screen.getByText('畫一個貓臉')).toBeTruthy()
-    expect(screen.getByText('Understanding the request')).toBeTruthy()
+    expect(screen.getByText('Reviewing the drawing')).toBeTruthy()
     expect(screen.getByText('Applying changes')).toBeTruthy()
-    expect(screen.getByText('Elapsed 1.3s')).toBeTruthy()
+    expect(screen.getByText('1.3s')).toBeTruthy()
     expect(screen.queryByText('You')).toBeNull()
     expect(screen.queryByText(/secret-action-id/)).toBeNull()
     expect(screen.queryByText(/secret-canonical-id/)).toBeNull()
@@ -474,12 +771,13 @@ describe('AI Agent conversation panel intent boundary', () => {
     expect(
       await screen.findByText('Choose a drawing detail level.')
     ).toBeTruthy()
+    expect(screen.queryByRole('status', { name: 'Request status' })).toBeNull()
     expect(screen.getByText('Balanced detail')).toBeTruthy()
-    expect(screen.getByText('7,111 editable elements')).toBeTruthy()
-    expect(screen.getByText('At least 115,000 points')).toBeTruthy()
+    expect(screen.queryByText('7,111 editable elements')).toBeNull()
+    expect(screen.queryByText('At least 115,000 points')).toBeNull()
     expect(screen.getByText('Maximum detail')).toBeTruthy()
-    expect(screen.getByText('27,471 editable elements')).toBeTruthy()
-    expect(screen.getByText('295,794 points')).toBeTruthy()
+    expect(screen.queryByText('27,471 editable elements')).toBeNull()
+    expect(screen.queryByText('295,794 points')).toBeNull()
     expect(
       screen.getByText(
         'May temporarily use much more memory and reduce app responsiveness.'
@@ -489,12 +787,20 @@ describe('AI Agent conversation panel intent boundary', () => {
     expect(screen.queryByText('You')).toBeNull()
   })
 
-  it.each([
-    ['Balanced detail', '以平衡細節繪製這張圖'],
-    ['Maximum detail', '以最高細節繪製這張圖']
-  ] as const)(
-    'submits the %s choice once with the retained reference attachment',
-    async (label, expectedIntent) => {
+  it.each(
+    [
+      ['Balanced detail', 'draw this image with balanced detail'],
+      ['Maximum detail', 'draw this image with maximum detail']
+    ].flatMap(
+      ([label, expectedIntent]) =>
+        [
+          [label, expectedIntent, true],
+          [label, expectedIntent, false]
+        ] as const
+    )
+  )(
+    'submits the %s choice with original context (attachment: %s)',
+    async (label, expectedIntent, withAttachment) => {
       const referenceAttachment = Object.freeze({
         dataUrl: 'data:image/png;base64,cmV0YWluZWQtcmVmZXJlbmNl',
         mediaType: 'image/png' as const,
@@ -544,7 +850,7 @@ describe('AI Agent conversation panel intent boundary', () => {
 
       await act(async () => {
         await conversation.submit({
-          attachments: [referenceAttachment],
+          attachments: withAttachment ? [referenceAttachment] : [],
           intent: '請依照這張圖繪製'
         })
       })
@@ -560,20 +866,15 @@ describe('AI Agent conversation panel intent boundary', () => {
       expect(feature.execute.mock.calls[1][0]).toMatchObject({
         intent: expectedIntent,
         metadata: {
-          imageAttachments: [
-            {
-              dataUrl: referenceAttachment.dataUrl,
-              mediaType: referenceAttachment.mediaType,
-              name: referenceAttachment.name,
-              size: referenceAttachment.size
-            }
-          ]
+          replyTo: { intent: '請依照這張圖繪製', turnId: expect.any(String) },
+          ...(withAttachment ? { imageAttachments: [referenceAttachment] } : {})
         }
       })
       expect(
         screen.queryByRole('button', { name: `Choose ${label}` })
       ).toBeNull()
       expect(feature.execute).toHaveBeenCalledTimes(2)
+      expect(screen.queryAllByRole('img')).toHaveLength(withAttachment ? 1 : 0)
     }
   )
 })

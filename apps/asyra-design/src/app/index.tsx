@@ -94,25 +94,16 @@ const App: React.FC<AppProps> = ({
     [getCanvasHost]
   )
   const closeAiPanel = useCallback(
-    ({
-      cancelActive,
-      focusTarget
-    }: {
-      cancelActive: boolean
-      focusTarget?: HTMLElement | null
-    }) => {
-      if (cancelActive && ai.conversation.getSnapshot().activeTurn) {
-        ai.conversation.cancel('panel-closed')
-      }
+    ({ focusTarget }: { focusTarget?: HTMLElement | null }) => {
       setAiOpen(false)
       focusAfterPanelClose(focusTarget)
     },
-    [ai, focusAfterPanelClose]
+    [focusAfterPanelClose]
   )
   const toggleAiPanel = useCallback(
     (invoker: HTMLElement | null) => {
       if (aiOpen) {
-        closeAiPanel({ cancelActive: true, focusTarget: invoker })
+        closeAiPanel({ focusTarget: invoker })
         return
       }
 
@@ -215,11 +206,7 @@ const App: React.FC<AppProps> = ({
         <AiConversationPanel
           confirmation={ai.confirmation}
           conversation={ai.conversation}
-          onClose={() =>
-            closeAiPanel({
-              cancelActive: false
-            })
-          }
+          onClose={() => closeAiPanel({})}
         />
       ) : null}
       <AiHistoryMessageBar

@@ -3,6 +3,7 @@ import {
   assertRenderEngineCapabilities,
   type RenderEngine,
   type RenderEngineProvider,
+  type RenderEngineSnapshotResult,
   type RenderEngineObjectHandle
 } from '@asyra/render-engine'
 import {
@@ -121,6 +122,20 @@ class Render {
 
   getEngine(): RenderEngine | null {
     return this.engine ?? this.providedEngine
+  }
+
+  captureElementSnapshot(
+    elementId: string,
+    maxDimension = 1024
+  ): RenderEngineSnapshotResult {
+    const engine = this.requireEngine()
+    assertRenderEngineCapabilities(engine, [RenderEngineCapabilities.SNAPSHOT])
+    this.flushFrame()
+    const object = this.viewport.getElementById(elementId)?.getEngineHandle()
+    if (!object) throw new Error('Snapshot target is unavailable')
+    const result = engine.query({ type: 'snapshot', object, maxDimension })
+    if (result.type !== 'snapshot') throw new Error('Invalid snapshot result')
+    return result
   }
 
   start(): void {

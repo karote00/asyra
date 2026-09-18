@@ -37,6 +37,10 @@ Normalize raw keyboard/mouse/pointer input into framework input events.
   boundary. Keyboard listeners belong to `host`; pointer/wheel listeners belong
   to `pointerTarget`, defaulting to `host`. Repeating the same pair is
   idempotent.
+- Keyboard key release bookkeeping runs in host capture phase even when an
+  app-owned editor stops propagation. Capture only clears the released key and
+  its timer; it neither prevents native editing nor dispatches combinations.
+  Shortcut dispatch remains in bubble phase so editor isolation is preserved.
 - `switchWatchedElement(element)` derives the element's owning `Window`. A
   target/document switch removes exact prior listeners before attaching the new
   host/target pair.

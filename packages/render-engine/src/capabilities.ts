@@ -2,6 +2,7 @@ import { UnsupportedRenderEngineCapabilityError } from './errors.js'
 import type { RenderEngine, RenderEngineCapability } from './types.js'
 
 export const RenderEngineCapabilities = {
+  SNAPSHOT: 'snapshot',
   OBJECTS: 'objects',
   GRAPHICS: 'graphics',
   INTERACTION: 'interaction',

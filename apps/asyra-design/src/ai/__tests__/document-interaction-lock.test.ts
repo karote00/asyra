@@ -137,6 +137,37 @@ describe('Asyra Design AI document interaction lock', () => {
     }
   })
 
+  it('keeps Agent panel controls, scrolling and typing available while document edits remain locked', () => {
+    const panel = document.createElement('aside')
+    panel.setAttribute(
+      AI_DOCUMENT_INTERACTION_TARGET_ATTRIBUTE,
+      AiDocumentInteractionTargets.AGENT_INTERFACE
+    )
+    const control = document.createElement('button')
+    panel.append(control)
+    const canvasControl = document.createElement('button')
+    document.body.append(panel, canvasControl)
+    const release = createDocumentInteractionLock().acquire()
+    try {
+      for (const type of [
+        'click',
+        'pointerdown',
+        'wheel',
+        'keydown',
+        'input'
+      ]) {
+        const allowed = new Event(type, { bubbles: true, cancelable: true })
+        control.dispatchEvent(allowed)
+        expect(allowed.defaultPrevented).toBe(false)
+        const blocked = new Event(type, { bubbles: true, cancelable: true })
+        canvasControl.dispatchEvent(blocked)
+        expect(blocked.defaultPrevented).toBe(true)
+      }
+    } finally {
+      release()
+    }
+  })
+
   it('keeps nested acquisition active until the final idempotent release', () => {
     const edit = document.createElement('button')
     document.body.append(edit)

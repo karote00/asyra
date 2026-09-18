@@ -110,7 +110,7 @@ describe('complete server-prepared AiActionBatch resolution', () => {
       expect(execute).not.toHaveBeenCalled()
       expect(evidence.permission).not.toHaveBeenCalled()
       expect(evidence.confirm).not.toHaveBeenCalled()
-      expect(evidence.transactionRun).not.toHaveBeenCalled()
+      expect(evidence.transactionRun).toHaveBeenCalledOnce()
     }
   )
 
@@ -190,7 +190,7 @@ describe('complete server-prepared AiActionBatch resolution', () => {
       expect(execute).not.toHaveBeenCalled()
       expect(evidence.permission).not.toHaveBeenCalled()
       expect(evidence.confirm).not.toHaveBeenCalled()
-      expect(evidence.transactionRun).not.toHaveBeenCalled()
+      expect(evidence.transactionRun).toHaveBeenCalledOnce()
     }
   )
 })

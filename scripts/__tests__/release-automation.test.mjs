@@ -238,7 +238,8 @@ test('release template excludes local runtime data directories', () => {
     '__tests__/playwright-config.test.mjs',
     'server/__tests__/action-batch.test.ts',
     'src/ai/__tests__/detailed-tabby.test.ts',
-    'src/common-apis/element/__tests__/vector-parent-creation.test.ts'
+    'src/common-apis/element/__tests__/vector-parent-creation.test.ts',
+    'e2e/ai-conversation-flow.spec.ts'
   ])
 
   const releaseTemplate = readFileSync(
@@ -819,7 +820,10 @@ test('canonical Asyra Design source uses workspace Framework dependencies during
   for (const [packageName, version] of frameworkDependencies) {
     assert.equal(version, 'workspace:*', packageName)
   }
-  assert.equal(manifest.scripts?.typecheck, 'tsc -p tsconfig.typecheck.json')
+  assert.equal(
+    manifest.scripts?.typecheck,
+    'tsc -p tsconfig.typecheck.json && tsc -p tsconfig.ai-server.json'
+  )
 
   const typecheckConfig = JSON.parse(
     readFileSync(

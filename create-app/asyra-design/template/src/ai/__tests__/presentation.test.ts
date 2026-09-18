@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { projectAiDrawingDetailChoice, summarizeAiTurn } from '../presentation'
+import { projectAiActivity } from '../presentation'
+import {
+  canRetryAiTurn,
+  formatElapsedTime,
+  projectAiDrawingDetailChoice,
+  summarizeAiTurn
+} from '../presentation'
 import { AiActionNames, AiDrawingDetailOptionIds } from '../../constants'
 
 const turn = (
@@ -30,6 +36,21 @@ const turn = (
 })
 
 describe('Asyra Design AI presentation summaries', () => {
+  it('never claims an unknown rollback left the canvas unchanged or permits replay', () => {
+    const failed = {
+      ...turn('failed'),
+      result: {
+        status: 'failed',
+        stage: 'provider',
+        transaction: { status: 'unknown' }
+      }
+    }
+    expect(summarizeAiTurn(failed).message).toBe(
+      'The request stopped, but its changes could not be fully rolled back. Review the canvas before continuing.'
+    )
+    expect(canRetryAiTurn(failed)).toBe(false)
+  })
+
   it('uses distinct safe summaries for every terminal outcome', () => {
     const summaries = [
       'success',
@@ -42,27 +63,27 @@ describe('Asyra Design AI presentation summaries', () => {
     )
 
     expect(summaries.map((summary) => summary.message)).toEqual([
-      'Drawing updated successfully.',
+      'Updated 1 editable element.',
       'Partially updated the drawing: 1 applied, 1 skipped.',
       'No canvas changes were needed.',
       'The request was cancelled.',
-      'The request failed without applying changes.'
+      'The request failed. Review the canvas before trying again.'
     ])
     expect(summaries.map((summary) => summary.durationLabel)).toEqual(
-      Array.from({ length: 5 }, () => 'Elapsed 1.3s')
+      Array.from({ length: 5 }, () => '1.3s')
     )
     expect(
       summarizeAiTurn({
         ...turn('success'),
         durationMs: 40_500
       }).durationLabel
-    ).toBe('Elapsed 41s')
+    ).toBe('41s')
     expect(
       summarizeAiTurn({
         ...turn('success'),
         durationMs: 65_000
       }).durationLabel
-    ).toBe('Elapsed 1m 5s')
+    ).toBe('1m 5s')
     expect(new Set(summaries.map((summary) => summary.message))).toHaveProperty(
       'size',
       5
@@ -104,18 +125,15 @@ describe('Asyra Design AI presentation summaries', () => {
       choices: [
         {
           description: 'Faster and lighter for editing.',
-          elementCount: 7111,
           id: AiDrawingDetailOptionIds.BALANCED,
           label: 'Balanced detail',
-          pointCountLabel: 'At least 115,000 points',
           resourceWarning: null
         },
         {
-          description: 'Uses the highest live-validated vector detail.',
-          elementCount: 27_471,
+          description:
+            'Preserves more detail with potentially more editable shapes.',
           id: AiDrawingDetailOptionIds.MAXIMUM,
           label: 'Maximum detail',
-          pointCountLabel: '295,794 points',
           resourceWarning:
             'May temporarily use much more memory and reduce app responsiveness.'
         }
@@ -143,4 +161,162 @@ describe('Asyra Design AI presentation summaries', () => {
       })
     ).toBeNull()
   })
+})
+
+describe('capability outcomes', () => {
+  it('explains an unsupported remainder after earlier changes without replacing it with success', () => {
+    const original = turn('partial')
+    const result = {
+      ...original,
+      result: {
+        ...original.result,
+        actionResults: [
+          ...original.result.actionResults,
+          {
+            actionId: 'outcome',
+            actionName: 'report_outcome',
+            result: {
+              status: 'no-change',
+              outcome: 'unsupported',
+              message:
+                'I traced the image, but this app cannot cut the connected mark.'
+            }
+          }
+        ]
+      }
+    }
+    expect(summarizeAiTurn(result).message).toContain(
+      'cannot cut the connected mark'
+    )
+    expect(summarizeAiTurn(result).message).toBe(
+      'I traced the image, but this app cannot cut the connected mark.'
+    )
+  })
+})
+
+describe('shared current activity and activity history', () => {
+  it('collapses only consecutive identical visible activity and preserves distinct messages', () => {
+    const completed = {
+      attempt: 1,
+      phase: 'provider' as const,
+      tool: 'vtracer',
+      toolStatus: 'completed' as const,
+      summary: 'Tool completed'
+    }
+    const updates = [
+      completed,
+      { ...completed, tool: 'analyze_vector' },
+      { ...completed, message: 'First finding' },
+      { ...completed, message: 'First finding' },
+      { ...completed, message: 'Second finding' },
+      { attempt: 1, phase: 'context' as const, summary: 'Context' },
+      completed
+    ]
+    const projection = projectAiActivity(updates)
+    expect(projection.entries).toEqual([
+      { label: 'Reviewing the results' },
+      { label: 'Reviewing the results', message: 'First finding' },
+      { label: 'Reviewing the results', message: 'Second finding' },
+      { label: 'Reviewing the drawing' },
+      { label: 'Reviewing the results' }
+    ])
+    expect(projection.current).toBe(projection.entries.at(-1))
+    expect(updates).toHaveLength(7)
+  })
+
+  it('reuses the latest activity description without exposing tools or AI wait states', () => {
+    const projection = projectAiActivity([
+      { attempt: 1, phase: 'context', summary: 'legacy context' },
+      {
+        attempt: 1,
+        phase: 'provider',
+        tool: 'vtracer',
+        toolStatus: 'running',
+        summary: 'Running a tool'
+      },
+      {
+        attempt: 1,
+        phase: 'provider',
+        tool: 'vtracer',
+        toolStatus: 'completed',
+        summary: 'Tool completed'
+      }
+    ])
+    expect(projection.entries.map((entry) => entry.label)).toEqual([
+      'Reviewing the drawing',
+      'Converting artwork to vectors',
+      'Reviewing the results'
+    ])
+    expect(projection.current).toBe(projection.entries.at(-1))
+  })
+  it('keeps backend operation messages attached to their event and projects real control states', () => {
+    const updates = [
+      {
+        attempt: 1,
+        phase: 'provider' as const,
+        tool: 'set_element_visibility',
+        toolStatus: 'running' as const,
+        summary: 'Running a tool',
+        message: '正在隱藏 TM'
+      }
+    ]
+    const projection = projectAiActivity(updates)
+    expect(projection.current).toMatchObject({
+      label: 'Adjusting element visibility',
+      message: '正在隱藏 TM'
+    })
+    for (const [state, label] of [
+      [{ stopping: true }, 'Stopping…'],
+      [{ awaitingApproval: true }, 'Awaiting approval']
+    ] as const) {
+      const controlled = projectAiActivity(updates, state)
+      expect(controlled.current).toBe(controlled.entries.at(-1))
+      expect(controlled.current.label).toBe(label)
+    }
+  })
+})
+
+it('ends history with the authoritative result even when cancellation emitted no terminal progress', () => {
+  const projection = projectAiActivity(
+    [
+      {
+        attempt: 1,
+        phase: 'provider',
+        tool: 'vtracer',
+        toolStatus: 'running',
+        summary: 'Running a tool'
+      }
+    ],
+    { outcome: 'cancelled' }
+  )
+  expect(projection.entries.at(-1)?.label).toBe('Stopped')
+})
+
+it('describes provider work and unknown tools without exposing implementation names', () => {
+  for (const update of [
+    {
+      attempt: 1,
+      phase: 'provider' as const,
+      summary: 'Waiting for AI response'
+    },
+    {
+      attempt: 1,
+      phase: 'provider' as const,
+      summary: 'Running a tool',
+      tool: 'private_internal_tool',
+      toolStatus: 'running' as const
+    }
+  ]) {
+    const projection = projectAiActivity([update])
+    expect(projection.current.label).toBe('Working on your request')
+    expect(projection.current).toBe(projection.entries.at(-1))
+  }
+})
+
+it('starts elapsed time at zero without inventing a minimum duration', () => {
+  for (const duration of [-1, 0, 1, 24, 49]) {
+    expect(formatElapsedTime(duration)).toBe('0s')
+  }
+  expect(formatElapsedTime(100)).toBe('0.1s')
+  expect(formatElapsedTime(1250)).toBe('1.3s')
 })

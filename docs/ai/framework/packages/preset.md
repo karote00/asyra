@@ -19,6 +19,15 @@ transform-only property capability for position, dimension, rotation, scale,
 and skew. Transform deltas retain existing path/fill/stroke/hit geometry;
 selection and path-edit overlays continue to follow the same Render result.
 
+Solid nonzero compound Vector contours are projected into disjoint winding-filled
+regions. Opposite winding leaves transparent holes; same winding stays filled
+once, including nested islands and intersecting contours. Curves remain canonical
+editable controls. Render-only adaptive subdivision uses a 0.05 local-unit
+flatness bound and a 16-level recursion guard. One prepared geometry supplies
+both fill faces and hit testing per strategy invocation; transform-only updates
+continue to reuse the existing Render projection. Single contours, gradients,
+evenodd projection and strokes retain their existing routes.
+
 ## Public Contract
 
 ```ts

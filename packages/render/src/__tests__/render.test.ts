@@ -22,6 +22,35 @@ describe('Render', () => {
     render = new Render({ engine })
   })
 
+  it('captures only the requested current subtree through the abstract engine', async () => {
+    await render.init(800, 600, 0xffffff)
+    const element = new RenderContainer()
+    render.viewport.view.addChild(element)
+    render.viewport.getElementById = vi.fn(() => element)
+    const expected = {
+      type: 'snapshot' as const,
+      dataUrl: 'data:image/png;base64,cG5n',
+      width: 240,
+      height: 240,
+      bounds: { x: 0, y: 0, width: 240, height: 240 }
+    }
+    engine.query = vi.fn(() => expected)
+    Object.defineProperty(engine, 'capabilities', {
+      value: new Set([...engine.capabilities, 'snapshot'])
+    })
+    const flush = vi.spyOn(render, 'flushFrame')
+    expect(render.captureElementSnapshot('drawing', 1024)).toEqual(expected)
+    expect(flush).toHaveBeenCalledOnce()
+    expect(engine.query).toHaveBeenCalledWith({
+      type: 'snapshot',
+      object: element.getEngineHandle(),
+      maxDimension: 1024
+    })
+    render.viewport.getElementById = vi.fn(() => undefined)
+    expect(() => render.captureElementSnapshot('missing', 1024)).toThrow()
+    expect(engine.query).toHaveBeenCalledOnce()
+  })
+
   // Test constructor
   it('should instantiate ViewportLayer', () => {
     expect(render.viewport).toBeInstanceOf(ViewportLayerModule.ViewportLayer)

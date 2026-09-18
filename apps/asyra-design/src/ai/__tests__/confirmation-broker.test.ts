@@ -18,16 +18,16 @@ const removalPreview: AiActionBatchPreview = Object.freeze({
 })
 
 describe('Asyra Design AI confirmation broker', () => {
-  it('resolves false immediately when no mounted presentation consumer exists', async () => {
+  it('retains a confirmation before the presentation subscribes', async () => {
     const broker = createAiConfirmationBroker()
     broker.beginTurn('conversation-1:turn:1')
-
-    await expect(
-      broker.requestConfirmation(removalPreview, {
-        signal: new AbortController().signal
-      })
-    ).resolves.toBe(false)
-    expect(broker.getSnapshot().pending).toBeNull()
+    const pending = broker.requestConfirmation(removalPreview, {
+      signal: new AbortController().signal
+    })
+    expect(broker.getSnapshot().pending).not.toBeNull()
+    broker.subscribe(() => undefined)
+    broker.resolve(true)
+    await expect(pending).resolves.toBe(true)
   })
 
   it('projects one concise impact summary without low-level arguments', async () => {
@@ -99,7 +99,7 @@ describe('Asyra Design AI confirmation broker', () => {
     expect(broker.getSnapshot().pending).toBeNull()
   })
 
-  it('denies pending work when the panel unmounts or broker disposes', async () => {
+  it('preserves pending work while the panel is hidden and denies on disposal', async () => {
     const broker = createAiConfirmationBroker()
     const unsubscribe = broker.subscribe(() => undefined)
     broker.beginTurn('conversation-4:turn:1')
@@ -108,7 +108,9 @@ describe('Asyra Design AI confirmation broker', () => {
     })
 
     unsubscribe()
-    await expect(unmounted).resolves.toBe(false)
+    expect(broker.getSnapshot().pending).not.toBeNull()
+    broker.resolve(true)
+    await expect(unmounted).resolves.toBe(true)
 
     broker.subscribe(() => undefined)
     broker.beginTurn('conversation-4:turn:2')
@@ -121,6 +123,7 @@ describe('Asyra Design AI confirmation broker', () => {
     expect(broker.getSnapshot()).toEqual({
       activeTurnId: null,
       disposed: true,
+      decisions: [],
       pending: null
     })
   })

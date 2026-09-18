@@ -26,6 +26,7 @@ import {
   Graphics,
   Mesh,
   MeshGeometry,
+  Rectangle,
   Texture,
   Ticker,
   type FederatedPointerEvent
@@ -243,6 +244,64 @@ export class PixiRenderEngine implements RenderEngine {
     const app = this.assertReady()
 
     switch (query.type) {
+      case 'snapshot': {
+        if (
+          !Number.isInteger(query.maxDimension) ||
+          query.maxDimension < 1 ||
+          query.maxDimension > 1024
+        )
+          throw new RangeError('Snapshot dimension must be between 1 and 1024')
+        const target = this.getOwnedObject(query.object)
+        const local = target.getLocalBounds()
+        const bounds = {
+          x: local.x,
+          y: local.y,
+          width: local.width,
+          height: local.height
+        }
+        if (
+          !Object.values(bounds).every(Number.isFinite) ||
+          bounds.width <= 0 ||
+          bounds.height <= 0
+        )
+          throw new Error('Snapshot target has no finite visible bounds')
+        // Pixi truncates extraction frames to whole local units before applying
+        // resolution. Enclose fractional content explicitly and report the same
+        // frame so image pixels and review coordinates describe one region.
+        const enclosingSize = (size: number) =>
+          Math.max(1, Math.ceil(size - Number.EPSILON * Math.max(1, size) * 4))
+        bounds.width = enclosingSize(bounds.width)
+        bounds.height = enclosingSize(bounds.height)
+        const canvas = app.renderer.extract.canvas({
+          target,
+          frame: new Rectangle(bounds.x, bounds.y, bounds.width, bounds.height),
+          resolution: Math.min(
+            4,
+            query.maxDimension / Math.max(bounds.width, bounds.height)
+          ),
+          clearColor: '#ffffff',
+          antialias: true
+        })
+        const dataUrl = canvas.toDataURL?.('image/png')
+        if (
+          !Number.isInteger(canvas.width) ||
+          !Number.isInteger(canvas.height) ||
+          canvas.width < 1 ||
+          canvas.height < 1 ||
+          canvas.width > query.maxDimension ||
+          canvas.height > query.maxDimension ||
+          !dataUrl?.startsWith('data:image/png;base64,') ||
+          dataUrl.length > 8 * 1024 * 1024
+        )
+          throw new Error('Snapshot image unavailable')
+        return {
+          type: 'snapshot',
+          dataUrl,
+          width: canvas.width,
+          height: canvas.height,
+          bounds
+        }
+      }
       case 'get-bounds': {
         const bounds = this.getOwnedObject(query.object).getBounds()
         return {

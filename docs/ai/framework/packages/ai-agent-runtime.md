@@ -30,6 +30,7 @@ disposes only resources listed in `ownedResources`.
 app Feature intent + AbortSignal
 -> app context provider
 -> deterministic provider-safe action catalog
+-> one app transaction runner
 -> provider.requestActionBatch()
 -> server-prepared AiActionBatch
 -> Runtime.resolveAiActionBatch()
@@ -37,16 +38,15 @@ app Feature intent + AbortSignal
    -> bind ordered actions to registered executors
 -> app permission for every action
 -> optional complete-batch confirmation through AiActionBatchPreview
--> one app transaction runner
 -> registered app executors in order
 -> app common/public APIs and canonical owners
 -> optional detached operational progress observations
 -> detached redacted terminal result
 ```
 
-The provider request and optional retry complete before the transaction opens.
+The invocation transaction encloses provider work and every sequential batch. Provider retries are allowed only before any batch is admitted.
 `AiProvider.requestActionBatch()` is the only provider request contract. It
-returns one server-prepared `AiActionBatch` with one `batchId`, optional
+may await `options.executeBatch(batch)` to receive actual redacted action results and refreshed context before continuing. Every batch uses the same resolution/permission/execution owners and outer transaction. The final return is one server-prepared `AiActionBatch` with one `batchId`, optional
 explanation, and ordered actions containing execution arguments plus a bounded
 redaction-ready summary. A live backend provider and a test transport return
 that same contract; the response source cannot select a different resolution,
@@ -60,12 +60,18 @@ validate, normalize, clone, or freeze nested arguments. The resulting
 server-prepared arguments identity. `PermissionReadyAiActionBatch` adds only
 permission decisions; `AiActionBatchPreview` redacts and retains only bounded
 summaries. Invalid control envelopes, permission denial, and confirmation
-cancellation apply no canonical prefix. Once execution begins, provider retry
+cancellation apply no prefix from that batch and roll back earlier batches in the invocation. Once execution begins, provider retry
 is forbidden. Executor failure means a rejected/throwing executor or fatal
 canonical consistency failure; it propagates through the one app transaction
 runner so its ordinary rollback contract owns reversal. An app may instead
 resolve an executor with detached recoverable partial-item evidence, allowing
 successful sibling mutations to commit in the same intended undo unit.
+
+The transaction runner rejects with the original callback error only after
+successful rollback. A distinct settlement error reports transaction failure and
+an unknown canvas state; consumers must not claim successful rollback or offer
+blind replay. A normal callback rejection after earlier execution reports
+`transaction.status: rolled-back`.
 
 ## Public Surface
 
@@ -192,3 +198,13 @@ Product contract:
 
 Dedicated Inspector:
 `../plans/ai-agent-runtime-flow-inspector.html`.
+
+### Provider tool activity
+
+Providers may use the optional request-options `onProgress` callback with a bounded
+registered tool name and `running` or `completed` status. Runtime forwards it as
+provider-phase progress with `tool` and `toolStatus`; invalid names/statuses, aborted
+work and callbacks after request settlement are ignored. Activity is observational:
+consumer exceptions cannot alter execution. It must not contain raw tool arguments,
+model reasoning, credentials or account data. The final batch remains the only
+input to action resolution and permission.
