@@ -519,6 +519,13 @@ const AiConversationFeed = ({
     () => confirmation.subscribe(setConfirmationSnapshot),
     [confirmation]
   )
+  const syncScrollPosition = useCallback(() => {
+    const body = conversationBodyRef.current
+    if (!body) return
+    const atBottom = body.scrollHeight - body.scrollTop - body.clientHeight < 32
+    followLatestRef.current = atBottom
+    setShowJump(!atBottom)
+  }, [])
   const active = conversationSnapshot.activeTurn !== null
   useEffect(() => {
     const body = conversationBodyRef.current
@@ -564,13 +571,7 @@ const AiConversationFeed = ({
     <>
       <section
         aria-label="Conversation messages"
-        onScroll={(event) => {
-          const body = event.currentTarget
-          const atBottom =
-            body.scrollHeight - body.scrollTop - body.clientHeight < 32
-          followLatestRef.current = atBottom
-          setShowJump(!atBottom)
-        }}
+        onScroll={syncScrollPosition}
         className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 py-4"
         ref={conversationBodyRef}
       >
@@ -701,7 +702,10 @@ const AiConversationFeed = ({
                   </>
                 ) : null}
                 {!question && (turn.progress.length > 0 || !settled) ? (
-                  <details className="mt-2 text-[10px] text-[#96939f]">
+                  <details
+                    className="mt-2 text-[10px] text-[#96939f]"
+                    onToggle={syncScrollPosition}
+                  >
                     <summary className="cursor-pointer">Activity</summary>
                     <ol
                       aria-label="Operational progress"

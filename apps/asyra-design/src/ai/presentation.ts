@@ -318,12 +318,17 @@ export const projectAiActivity = (
     readonly outcome?: AiConversationOutcome
   } = {}
 ) => {
-  const entries: { label: string; message?: string }[] = updates.map(
-    (update) => ({
+  const entries: { label: string; message?: string }[] = []
+  for (const update of updates) {
+    const entry = {
       label: activityLabel(update),
       ...(update.message ? { message: update.message } : {})
-    })
-  )
+    }
+    const previous = entries.at(-1)
+    if (previous?.label !== entry.label || previous.message !== entry.message) {
+      entries.push(entry)
+    }
+  }
   let terminalLabel: string | undefined
   if (state.outcome) {
     terminalLabel = 'Finished'

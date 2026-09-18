@@ -52,6 +52,53 @@ describe('AI Agent conversation panel intent boundary', () => {
     vi.restoreAllMocks()
   })
 
+  it('rechecks whether latest is visible after Activity changes the scroll extent', async () => {
+    const harness = createPanelHarness()
+    render(
+      <AiConversationPanel
+        confirmation={harness.confirmation}
+        conversation={harness.conversation}
+        onClose={vi.fn()}
+      />
+    )
+    act(() => {
+      void harness.conversation.submit('Draw')
+    })
+    const body = screen.getByRole('region', { name: 'Conversation messages' })
+    const details = screen.getByText('Activity').closest('details')
+    if (!details) throw new Error('Missing Activity disclosure')
+    let height = 1200
+    Object.defineProperties(body, {
+      scrollHeight: { get: () => height },
+      clientHeight: { get: () => 500 }
+    })
+    body.scrollTop = 0
+    fireEvent.scroll(body)
+    expect(screen.getByRole('button', { name: 'Jump to latest' })).toBeTruthy()
+    // A collapse can leave other messages below the viewport.
+    height = 700
+    fireEvent(details, new Event('toggle'))
+    expect(screen.getByRole('button', { name: 'Jump to latest' })).toBeTruthy()
+    // No scroll event is guaranteed when already at scrollTop zero.
+    height = 400
+    fireEvent(details, new Event('toggle'))
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('button', { name: 'Jump to latest' })
+      ).toBeNull()
+    )
+    height = 900
+    fireEvent(details, new Event('toggle'))
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Jump to latest' })
+      ).toBeTruthy()
+    )
+    await act(async () => {
+      harness.pending.resolve({ status: 'executed', actionResults: [] })
+    })
+  })
+
   it('discloses personal subscription usage immediately when the panel opens', () => {
     const harness = createPanelHarness()
     render(

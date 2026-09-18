@@ -194,6 +194,35 @@ describe('capability outcomes', () => {
 })
 
 describe('shared current activity and activity history', () => {
+  it('collapses only consecutive identical visible activity and preserves distinct messages', () => {
+    const completed = {
+      attempt: 1,
+      phase: 'provider' as const,
+      tool: 'vtracer',
+      toolStatus: 'completed' as const,
+      summary: 'Tool completed'
+    }
+    const updates = [
+      completed,
+      { ...completed, tool: 'analyze_vector' },
+      { ...completed, message: 'First finding' },
+      { ...completed, message: 'First finding' },
+      { ...completed, message: 'Second finding' },
+      { attempt: 1, phase: 'context' as const, summary: 'Context' },
+      completed
+    ]
+    const projection = projectAiActivity(updates)
+    expect(projection.entries).toEqual([
+      { label: 'Reviewing the results' },
+      { label: 'Reviewing the results', message: 'First finding' },
+      { label: 'Reviewing the results', message: 'Second finding' },
+      { label: 'Reviewing the drawing' },
+      { label: 'Reviewing the results' }
+    ])
+    expect(projection.current).toBe(projection.entries.at(-1))
+    expect(updates).toHaveLength(7)
+  })
+
   it('reuses the latest activity description without exposing tools or AI wait states', () => {
     const projection = projectAiActivity([
       { attempt: 1, phase: 'context', summary: 'legacy context' },

@@ -639,6 +639,11 @@ for (const width of [360, 1280]) {
           label: 'Reviewing the results'
         },
         {
+          tool: 'analyze_vector',
+          status: 'completed',
+          label: 'Reviewing the results'
+        },
+        {
           tool: 'set_element_visibility',
           status: 'running',
           label: 'Adjusting element visibility',
@@ -668,6 +673,20 @@ for (const width of [360, 1280]) {
       await page
         .getByTestId('ai-agent-panel')
         .screenshot({ path: testInfo.outputPath('current-activity.png') })
+      // Real layout regression: collapsing a long history at scrollTop zero
+      // must clear the jump affordance without relying on a scroll event.
+      for (let index = 0; index < 24; index++) {
+        response.write(
+          JSON.stringify({
+            type: 'activity',
+            tool: 'vtracer',
+            status: index % 2 === 0 ? 'running' : 'completed'
+          }) + '\n'
+        )
+      }
+      await expect(
+        page.getByLabel('Operational progress').locator('li')
+      ).toHaveCount(29)
       response.end(
         JSON.stringify({
           type: 'result',
@@ -700,6 +719,28 @@ for (const width of [360, 1280]) {
       await page
         .getByTestId('ai-agent-panel')
         .screenshot({ path: testInfo.outputPath('activity-result.png') })
+      const feed = page.getByRole('region', { name: 'Conversation messages' })
+      await feed.evaluate((element) => {
+        element.scrollTop = 0
+      })
+      await expect(
+        page.getByRole('button', { name: 'Jump to latest' })
+      ).toBeVisible()
+      await page.getByText('Activity', { exact: true }).click()
+      await expect(
+        page.getByRole('button', { name: 'Jump to latest' })
+      ).toHaveCount(0)
+      await page.getByTestId('ai-agent-panel').screenshot({
+        path: testInfo.outputPath('activity-collapsed.png')
+      })
+      await page.getByText('Activity', { exact: true }).click()
+      await expect(
+        page.getByRole('button', { name: 'Jump to latest' })
+      ).toBeVisible()
+      await page.getByRole('button', { name: 'Jump to latest' }).click()
+      await expect(
+        page.getByRole('button', { name: 'Jump to latest' })
+      ).toHaveCount(0)
     } finally {
       response?.end()
       server.closeAllConnections()

@@ -22,6 +22,11 @@ existing runtime policy, with a concrete change summary and an explicit decision
 Current activity is derived from real execution phases, with one concise visible
 status and collapsed details. One App-owned activity projection produces the
 ordered entries and the current entry shared by the headline and Activity list.
+Consecutive entries with identical visible labels and messages appear once;
+distinct messages and repeated activities separated by another activity remain.
+The projection leaves runtime events intact. Expanding or collapsing Activity
+rechecks the actual scroll extent: Jump to latest appears only while content
+remains below the viewport, without requiring a subsequent scroll event.
 The last list entry represents the current activity, including real approval/stop
 states, without a visible Current badge or separate highlight. Accessibility
 metadata identifies that entry while work is active. Tool events use user-facing descriptions of the work, without tool names or
