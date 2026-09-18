@@ -503,3 +503,160 @@ consumer declarations and a source-of-truth link from its specification section.
 No viewer exception or weakened test is allowed. Existing full contracts already
 reproduce the failures. Run the complete Flow Inspector suite before another push;
 App behavior, engine code and geometry stay frozen during this documentation slice.
+
+### Reference tracing quality - bounded follow-up
+
+Objective: preserve smooth reference contours through the existing image tool,
+backend preparation and canonical editable Vector path. Reuse installed VTracer
+in spline mode and the declared bezier-js dependency; no new tool or dependency.
+Scope: the App VTracer worker, request-owned vector artifact parser/preparer,
+their permanent tests, local-AI E2E, current specification/Inspector condition,
+and generated template parity. UI, timeout, model settings, one-request Undo,
+framework rendering, sample instruction artifacts and component selection policy
+remain unchanged. Stop if fidelity requires a framework geometry semantic change.
+
+Step Execution Card - request-backend-action-batch:
+
+- Contract: local-ai-provider.md, reference curve fidelity; Inspector request
+  step inputs/outputs and local subscription backend clause.
+- Inputs: accepted image, request abort signal, tool-produced SVG; same-request
+  artifact reference, target bounds, exclusions and component mappings.
+- Outputs: compact summary and complete canonical descriptors with real cubic
+  controls, exact curve bounds, preserved contour order, winding and fills.
+- Conditions: only the registered worker dialect is admitted; invalid geometry
+  fails at this backend owner before mutation. Straight segments remain supported;
+  degenerate nonpainting contours are omitted, never substituted.
+- Contributors: existing worker, backend parser/preparer and installed bezier-js.
+  Forbidden: model-authored coordinate reconstruction, frontend preparation,
+  fixture-specific output, renderer patches and cross-request caches.
+- Boundary: apps/asyra-design/vtracer-tool-server.mjs, server/local-vector-artifact.ts,
+  existing server/__tests__, __tests__/vtracer-tool-server.test.mjs and
+  e2e/local-ai-provider.spec.ts. Documentation clarifies this same owner.
+- Reuse: conversion and curve bounds are computed once per request attachment;
+  preparation reuses that artifact and only maps selected geometry. Preserve
+  existing conversion-call-count and request-isolation tests; no new cache.
+- Names: local curve/anchor types are App-internal; existing artifact IDs,
+  component IDs, property names and prepared descriptor wire version remain.
+- Gates: red-first cubic/closure/bounds/scaling cases, real reference small-detail
+  and curve preservation, full backend/App gates, typecheck/build, naming/lint,
+  Inspector contracts, template parity, ordinary Agent E2E with actual rendered
+  comparison and one Undo/Redo. Inspect overview and detail crops at recorded zoom.
+- Completion: exact native control-point preservation and improved measured
+  reference fidelity through the real App, with conversion/geometry size evidence;
+  do not claim fewer AI iterations or pixel-exact tracing without measurements.
+
+#### Quality iteration - locate fidelity loss before tuning again
+
+The native cubic/closure/bounds tests pass and canonical points match every
+prepared descriptor, but actual rendered MAE regressed from 11.765 to 14.103
+with photo spline and 13.731 with poster spline. Smoothness alone is insufficient.
+Replace blind profile tuning with an owner-local attribution: compare original
+raster, tool SVG, prepared paths and actual App extraction in the existing formal
+E2E before changing production options again. Same request-backend-action-batch
+owner, files, curve-fidelity spec and gates; no renderer work is authorized.
+If the first loss is tool fitting, choose a bounded documented configuration
+using measured candidates; if backend translation loses semantics, fix that
+translation and add its source-space regression. If renderer semantics are the
+first loss, stop for scope. Self-review: comparison alignment and source bounds
+must be recorded, oracle thresholds are not relaxed to bless an inferior result,
+and final evidence must still come from the ordinary App action with Undo/Redo.
+
+Attribution result: cutout spline improves native SVG MAE from 11.624 to 8.005
+(7.991 after identical bounds normalization), but App extraction remains 12.421.
+Canonical and computed points/segments/bounds match prepared data exactly. The
+formal native compound-contour browser test proves its transparent central hole
+is filled green ([0,136,0,255]) instead of showing the white background. The
+current Preset nonzero path sends all contours to ordinary engine fill without
+preserving the hole. Framework/Preset geometry semantics are the explicit scope
+stop condition above. Request expansion before editing those owners; do not push
+or claim quality completion while this gate fails. Backend edits and permanent
+failure evidence remain in this worktree for the user's scope decision.
+
+
+#### Authorized compound-fill correction
+
+The user authorized fixing the discovered Vector fill defect together with the
+reference-quality slice. Extend the frozen scope to the Preset's solid nonzero
+compound-contour projection and its hit area, direct tests, and package contract.
+Keep canonical points, native cubic controls, persistence, strokes, gradients,
+single-contour rendering, engine APIs, and transform-only updates unchanged.
+
+Step Execution Card - retain-vector-render-geometry:
+
+- Sources: Vector local geometry Inspector's complete-snapshot geometry/style
+  miss route; Preset Vector fill contract and the failing linear/cubic hole E2E.
+- Inputs: complete canonical Vector paths, fill rule, and existing local offset.
+- Output: non-overlapping fill faces and matching hit geometry for nonzero
+  compound contours. These are ordinary transient render geometry, never scene
+  objects, background-colored masks, or AI-generated replacement artwork.
+- Conditions: closed, solid, nonzero compound paths use winding-aware geometric
+  projection; single-contour, gradient, stroke and evenodd routes remain as-is.
+- Allowed contributors: Preset Vector strategy and internal geometry helper.
+  Forbidden: app identity, reference-image recognition, diagnostic polygons,
+  canonical edits, Pixi dependencies and fallback fills.
+- Boundary: packages/preset/src/components and src/__tests__, Preset docs,
+  existing local AI E2E and this plan. Failure owner is the geometry projection.
+- Algorithm: adaptively subdivide cubic contours for render projection only;
+  split horizontal slabs at vertices and segment crossings, then emit disjoint
+  trapezoids for intervals with nonzero winding. This supports opposite/same
+  winding, nested islands, intersecting contours and contour-order invariance.
+- Names: internal compound-fill geometry only, no wire/persistence changes.
+- Reuse: one prepared geometry per strategy invocation shared by fill and hit;
+  transform-only updates keep bypassing the strategy. No additional retained cache.
+- Gates: existing hole E2E is red; add winding/area/crossing/curve unit oracles,
+  rerun Preset tests, actual App quality comparison and Undo/Redo, render delta
+  regressions, full project gates and final CI. Stop for a new semantic owner
+  outside this explicit scope; do not weaken the image-fidelity oracle.
+
+
+Compound-hole E2E passes for both linear and cubic contours. Extending winding
+projection to single contours did not improve the image comparison, so retain
+that existing route. Native and parsed SVG rasterizations are identical. The
+remaining discrepancy is the current PR's snapshot consumer: Pixi truncates
+fractional local capture sizes before applying resolution (249.98 becomes 249),
+then the review image is stretched against its reported untruncated bounds.
+
+Step Execution Card - capture-drawing-review:
+
+- Sources: local-ai-provider rendered drawing review and Inspector capture step.
+- Inputs/outputs/contributors/bypasses: unchanged engine-neutral query and actual
+  rendered subtree; output is bounded PNG with its actual capture bounds.
+- Correction: the concrete engine supplies an enclosing integer extraction frame,
+  with machine-precision integer normalization, and derives the resolution from
+  that same frame. Report that actual frame in the receipt. No synthetic image,
+  canonical write, camera mutation, new cache or new public API.
+- Scope: existing Pixi snapshot implementation/unit cases, its package docs,
+  existing App quality E2E and specification. This corrects a direct regression
+  exposed by this PR's fractional curve geometry, not an unrelated engine refactor.
+- Gates: fractional/subpixel/near-integer capture unit cases fail before the fix;
+  Pixi suite, actual App extraction/quality/Undo tests, snapshot consumer regressions,
+  package builds and final CI. Failure owner remains capture-drawing-review.
+
+
+The full App gate reproduced a test-isolation defect: the missing-environment
+case reads the developer's `.env`. Bounded correction is the existing environment
+test only: pass an explicit missing fixture path and leave local configuration
+and production loading behavior unchanged. `.env.example` is a setup template,
+not a test fixture. When a local `.env` is needed and absent, copy the example
+to `.env`; never overwrite an existing developer configuration. Tests define
+their own inputs and do not load `.env.example`.
+
+The source-space fill regressions, actual linear/cubic hole E2E, and extraction
+regressions pass. Actual App reference MAE is 8.362 versus the old polygon
+baseline 11.765 (about 29% lower); native SVG is 8.005. The selected trace has 44
+elements and 4,841 anchors/controls versus 38 and 621 before. Conversion measured
+about 32 ms. This proves this reference's fidelity, not universal tracing
+quality, reduced AI iteration count, or a runtime speedup.
+
+The same-image, original-instruction local subscription browser test passed in
+39.7 seconds including startup (the conversation displayed 34 seconds). It
+produced a 240 x 240 editable composition and excluded the separate TM path;
+overview and detail screenshots were inspected. The frozen browser regression
+suite passed 21 cases, with six opt-in subscription cases skipped in that run.
+Full App tests passed. The environment example is excluded from test inputs.
+Curve work-count coverage proves two cubic bounds computations on admission,
+none across three preparations, and fresh computation for a new artifact.
+The final 7,076-element gate passed. Clean template consumption reports READY
+for 12 packages and six phases; package consumption, naming, lint, public docs
+and template parity pass. Exact-head remote CI must still pass before PR review
+notification.

@@ -26,6 +26,7 @@ import {
   Graphics,
   Mesh,
   MeshGeometry,
+  Rectangle,
   Texture,
   Ticker,
   type FederatedPointerEvent
@@ -264,8 +265,16 @@ export class PixiRenderEngine implements RenderEngine {
           bounds.height <= 0
         )
           throw new Error('Snapshot target has no finite visible bounds')
+        // Pixi truncates extraction frames to whole local units before applying
+        // resolution. Enclose fractional content explicitly and report the same
+        // frame so image pixels and review coordinates describe one region.
+        const enclosingSize = (size: number) =>
+          Math.max(1, Math.ceil(size - Number.EPSILON * Math.max(1, size) * 4))
+        bounds.width = enclosingSize(bounds.width)
+        bounds.height = enclosingSize(bounds.height)
         const canvas = app.renderer.extract.canvas({
           target,
+          frame: new Rectangle(bounds.x, bounds.y, bounds.width, bounds.height),
           resolution: Math.min(
             4,
             query.maxDimension / Math.max(bounds.width, bounds.height)

@@ -452,6 +452,14 @@ vi.mock('pixi.js', () => {
     FillGradient: MockFillGradient,
     FillPattern: MockFillPattern,
     Graphics: MockGraphics,
+    Rectangle: class {
+      constructor(
+        public x: number,
+        public y: number,
+        public width: number,
+        public height: number
+      ) {}
+    },
     Matrix: MockMatrix,
     Mesh: MockMesh,
     MeshGeometry: MockMeshGeometry,
@@ -547,6 +555,50 @@ describe('PixiRenderEngine', () => {
       engine.query({ type: 'snapshot', object, maxDimension: 1024 })
     ).toThrow()
   })
+
+  it.each([
+    [249.98, 249.99999999999997, 250, 250],
+    [250.00000000000003, 250, 250, 250],
+    [0.25, 0.75, 1, 1],
+    [1024.25, 512.5, 1025, 513]
+  ])(
+    'captures fractional bounds %s x %s without truncating content',
+    async (width, height, frameWidth, frameHeight) => {
+      const engine = new PixiRenderEngine()
+      await engine.initialize({ host: {}, width: 800, height: 600 })
+      const { object } = engine.execute({
+        type: 'create-object',
+        requestId: 'fractional-snapshot',
+        objectType: 'graphics'
+      })
+      if (!object) throw new Error('Missing target')
+      Object.assign(pixiState.graphics[0], {
+        getLocalBounds: () => ({ x: -0.25, y: 1.125, width, height })
+      })
+      const result = engine.query({
+        type: 'snapshot',
+        object,
+        maxDimension: 1024
+      })
+      expect(
+        pixiState.applications[0].renderer.extract.canvas
+      ).toHaveBeenCalledWith(
+        expect.objectContaining({
+          frame: expect.objectContaining({
+            x: -0.25,
+            y: 1.125,
+            width: frameWidth,
+            height: frameHeight
+          }),
+          resolution: Math.min(4, 1024 / Math.max(frameWidth, frameHeight))
+        })
+      )
+      expect(result).toMatchObject({
+        bounds: { x: -0.25, y: 1.125, width: frameWidth, height: frameHeight }
+      })
+      engine.destroy()
+    }
+  )
 
   it('preserves the current bounded device resolution and resize target', async () => {
     const runtimeWindow = { devicePixelRatio: 3 }

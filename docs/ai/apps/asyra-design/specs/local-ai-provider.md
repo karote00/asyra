@@ -123,6 +123,27 @@ before canonical mutation. Unselected paths remain unchanged.
 
 ## Rendered drawing review
 
+### Reference curve fidelity
+
+The registered image worker traces references in spline mode. The request-owned
+backend admits its absolute M/L/C/Z path dialect and preserves cubic control
+points in the existing editable Vector descriptor schema. It preserves contour
+order, closure, winding, fills and holes; it does not flatten curves into line
+segments or ask the model to reconstruct geometry. Unknown commands or malformed
+paths fail before mutation. Controls and fitted curves may extend slightly beyond
+the source image; admission bounds coordinates to one image extent beyond each
+edge and never clips them. Target sizing uses actual curve extrema, not the control
+polygon, and maps anchors and controls by the same transform. Bounds are computed
+with the request-owned artifact once and reused by preparation.
+
+Native component mapping remains an explicit supported model selection. Spline
+tracing does not recognize semantic components and does not guarantee exact raster
+reproduction. Formal cases cover mixed straight/cubic segments, closing curves,
+holes, nonuniform scaling, invalid input and retained small reference details.
+Completion requires native controls in canonical App data, one Undo/Redo and
+actual App screenshots plus measured reference comparison; conversion time and
+geometry size are reported separately from model latency.
+
 Review has two stages. Before any mutation, AI reviews tool-result summaries
 against user intent: dimensions, bounds, colors, topology summaries, unwanted
 marks, native primitives and resource cost. It iterates supported inputs/options
@@ -169,3 +190,11 @@ tool-call guards remain. At the inspection budget no further mutations are
 admitted. Final model batches cannot contain new mutating drawing operations
 that bypass rendered review. Capture failures downgrade a completed report to an explicit visual
 review limitation; they cannot falsely certify quality.
+
+The retained `photo-faithful` profile identifier uses poster-color spline fitting,
+cutout hierarchy, speckle threshold 2 and path precision 2. It preserves small
+reference details without introducing another converter. The permanent reference
+comparison records actual App pixel error, canonical control counts, conversion
+time, and one Undo/Redo; smoother curves alone are not a quality pass.
+Rendered review snapshots report their actual enclosing extraction frame so
+fractional curve bounds cannot silently crop the evidence.

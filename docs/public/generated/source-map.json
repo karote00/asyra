@@ -52,7 +52,7 @@
         },
         {
           "path": "docs/ai/framework/packages/preset.md",
-          "sha256": "28ab01c7e3a460032b103b2d8c0ce1a0f61713d01e0f5aafce92bed8a4ed6e8a"
+          "sha256": "c622b758433c1a14ce15ce3220dce503b3b2986ccc14a0d6566fda66f6938e1e"
         }
       ]
     },
@@ -434,11 +434,11 @@
     },
     {
       "id": "reference/packages/preset",
-      "pageSha256": "ef420f8ace24da15019404adf8c0c43f6ac9d8c4028dc6d7bacc623ee043dc9a",
+      "pageSha256": "aaf77100ea84e00a87f4731d25edcc1b6cf58d4f0bb3d044321ddfb4eeea09cf",
       "sources": [
         {
           "path": "docs/ai/framework/packages/preset.md",
-          "sha256": "28ab01c7e3a460032b103b2d8c0ce1a0f61713d01e0f5aafce92bed8a4ed6e8a"
+          "sha256": "c622b758433c1a14ce15ce3220dce503b3b2986ccc14a0d6566fda66f6938e1e"
         },
         {
           "path": "packages/preset/package.json",
@@ -504,11 +504,11 @@
     },
     {
       "id": "reference/packages/render-engine-pixi",
-      "pageSha256": "d8855ab072aa0d7bf46cbac826cacc6c0eb45883db3f2cb9f6bcb2b931069e04",
+      "pageSha256": "6b1da10bd572467992694c5e0ae923f7d803b97db81d494b35b37b4c2a69c34f",
       "sources": [
         {
           "path": "docs/ai/framework/packages/render-engine-pixi.md",
-          "sha256": "b117cd086ad0a5e8f48ba0ce5899a490c3044f7ee623a3d84d68093eb5f53e7c"
+          "sha256": "655841af2490415a128c1748cfdef7de7cb4f4e1196f463a1ee1724d850a9eee"
         },
         {
           "path": "packages/render-engine-pixi/package.json",

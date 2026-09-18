@@ -24,13 +24,16 @@ const optionsForProfile = (profile) => {
     )
   }
   return {
-    hierarchical: 'stacked',
+    hierarchical: 'cutout',
     // Preserve small intentional foreground details in submitted references.
-    filterSpeckle: 4,
-    mode: 'polygon',
+    filterSpeckle: 2,
+    // Preserve fitted cubic contours through backend descriptor preparation.
+    mode: 'spline',
     optimize: 0,
     pathPrecision: 2,
-    preset: 'photo'
+    // The photo preset merges nearby tones and rounds intentional corners.
+    // Reference artwork needs the fuller poster palette and corner detection.
+    preset: 'poster'
   }
 }
 

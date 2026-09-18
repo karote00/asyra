@@ -67,7 +67,9 @@ abstract capability conformance, and preserve explicit dirty/flush behavior.
 The optional engine `snapshot` query extracts the current target subtree as a
 PNG on white, using Pixi canvas extraction. It excludes camera framing and editor
 overlays, validates positive bounds, caps each side at 1024 pixels and the data
-URL at 8 MiB, and never substitutes a synthetic image on failure.
+URL at 8 MiB, and never substitutes a synthetic image on failure. Fractional
+local bounds use an enclosing integer extraction frame; returned bounds describe
+that same frame so review coordinates agree with the image.
 
 ## Canonical sources and release inventory
 

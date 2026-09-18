@@ -1671,7 +1671,7 @@
       "wordCount": 372
     },
     {
-      "contentSha256": "ef420f8ace24da15019404adf8c0c43f6ac9d8c4028dc6d7bacc623ee043dc9a",
+      "contentSha256": "aaf77100ea84e00a87f4731d25edcc1b6cf58d4f0bb3d044321ddfb4eeea09cf",
       "description": "Optional official design-tool baseline with selectable defaults and replaceable providers.",
       "headings": [
         {
@@ -1727,7 +1727,7 @@
       "path": "reference/packages/preset.md",
       "section": "Reference",
       "title": "@asyra/preset",
-      "wordCount": 436
+      "wordCount": 468
     },
     {
       "contentSha256": "28f044123e1b6f60c18a4f39910a2560f4301026e8850f1c4e91557fa5d5ac8e",
@@ -1974,7 +1974,7 @@
       "wordCount": 460
     },
     {
-      "contentSha256": "d8855ab072aa0d7bf46cbac826cacc6c0eb45883db3f2cb9f6bcb2b931069e04",
+      "contentSha256": "6b1da10bd572467992694c5e0ae923f7d803b97db81d494b35b37b4c2a69c34f",
       "description": "Official optional Pixi provider for the current browser-based 2D baseline.",
       "headings": [
         {
@@ -2034,7 +2034,7 @@
       "path": "reference/packages/render-engine-pixi.md",
       "section": "Reference",
       "title": "@asyra/render-engine-pixi",
-      "wordCount": 405
+      "wordCount": 427
     },
     {
       "contentSha256": "4f8bc35fd5435934068a2ed81aa578f788edb6d866b2495cf83ba852deb74231",

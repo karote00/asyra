@@ -1,8 +1,13 @@
 import { randomUUID } from 'node:crypto'
+import { Bezier } from 'bezier-js'
 
 interface Point {
   x: number
   y: number
+}
+interface VectorAnchor extends Point {
+  inControl?: Point
+  outControl?: Point
 }
 interface Bounds {
   x: number
@@ -13,7 +18,7 @@ interface Bounds {
 interface VectorPath {
   id: string
   fill: string
-  rings: Point[][]
+  rings: VectorAnchor[][]
   bounds: Bounds
   pointCount: number
 }
@@ -29,7 +34,7 @@ const invalid = (): never => {
   throw new Error('Invalid vector artifact')
 }
 const numberPattern = '-?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?'
-const tokensPattern = new RegExp(`[MLZ]|${numberPattern}`, 'g')
+const tokensPattern = new RegExp(`[MLCZ]|${numberPattern}`, 'g')
 const boundsOf = (points: readonly Point[]): Bounds => {
   let x = Infinity,
     y = Infinity,
@@ -53,29 +58,71 @@ const attributes = (source: string): Record<string, string> => {
   if (source.replace(pattern, '').trim()) invalid()
   return result
 }
+const curveBounds = (rings: readonly VectorAnchor[][]): Bounds => {
+  const extrema: Point[] = []
+  for (const ring of rings) {
+    ring.forEach((start, index) => {
+      const end = ring[(index + 1) % ring.length]
+      if (start.outControl && end.inControl) {
+        const bounds = new Bezier(
+          start,
+          start.outControl,
+          end.inControl,
+          end
+        ).bbox()
+        extrema.push(
+          { x: bounds.x.min, y: bounds.y.min },
+          { x: bounds.x.max, y: bounds.y.max }
+        )
+      } else extrema.push(start, end)
+    })
+  }
+  return boundsOf(extrema)
+}
 const parseRings = (
   source: string,
   width: number,
   height: number
-): Point[][] => {
+): VectorAnchor[][] => {
   if (source.replace(tokensPattern, '').replace(/[,\s]/g, '')) invalid()
   const tokens = source.match(tokensPattern) ?? []
-  const rings: Point[][] = []
-  let current: Point[] | undefined
+  const rings: VectorAnchor[][] = []
+  let current: VectorAnchor[] | undefined
   let index = 0
   let command = ''
+  const readPoint = (): Point => {
+    const x = Number(tokens[index++]),
+      y = Number(tokens[index++])
+    // Fitted curves may overshoot image edges. Admit bounded native output;
+    // clipping controls changes the curve rather than validating it.
+    if (
+      !Number.isFinite(x) ||
+      !Number.isFinite(y) ||
+      x < -width ||
+      y < -height ||
+      x > 2 * width ||
+      y > 2 * height
+    )
+      invalid()
+    return { x, y }
+  }
   while (index < tokens.length) {
-    if (/^[MLZ]$/.test(tokens[index])) {
+    if (/^[MLCZ]$/.test(tokens[index])) {
       command = tokens[index++]
       if (command === 'Z') {
         if (!current || current.length === 0) return invalid()
         if (
+          current.length > 1 &&
           current[0].x === current.at(-1)?.x &&
           current[0].y === current.at(-1)?.y
-        )
+        ) {
+          current[0].inControl = current.at(-1)?.inControl
           current.pop()
-        if (current.length >= 3) rings.push(current)
+        }
+        if (current.length >= 3 || current.some((anchor) => anchor.outControl))
+          rings.push(current)
         current = undefined
+        command = ''
         continue
       }
       if (command === 'M') {
@@ -83,26 +130,23 @@ const parseRings = (
         current = []
       }
     }
-    if (!current || !['M', 'L'].includes(command)) return invalid()
-    const x = Number(tokens[index++]),
-      y = Number(tokens[index++])
-    if (
-      !Number.isFinite(x) ||
-      !Number.isFinite(y) ||
-      x < 0 ||
-      y < 0 ||
-      x > width ||
-      y > height
-    )
-      invalid()
-    current.push({ x, y })
-    command = 'L'
+    if (!current || !['M', 'L', 'C'].includes(command)) return invalid()
+    if (command === 'C') {
+      const start = current.at(-1)
+      if (!start) return invalid()
+      start.outControl = readPoint()
+      const inControl = readPoint()
+      current.push({ ...readPoint(), inControl })
+    } else {
+      current.push(readPoint())
+      command = 'L'
+    }
   }
   if (current) invalid()
   return rings
 }
 
-/** Admits only the polygon SVG dialect emitted by the registered VTracer worker. */
+/** Admits only the absolute M/L/C/Z dialect emitted by the registered worker. */
 export const parseLocalVectorArtifact = (
   source: string
 ): LocalVectorArtifact => {
@@ -140,14 +184,18 @@ export const parseLocalVectorArtifact = (
     const rings = parseRings(pathAttrs.d, width, height)
     const points = rings.flat()
     if (!points.length) continue
-    const bounds = boundsOf(points)
+    const bounds = curveBounds(rings)
     if (bounds.width <= 0 || bounds.height <= 0) continue
     paths.push({
       id: `path-${paths.length + 1}`,
       fill: pathAttrs.fill.toUpperCase(),
       rings,
       bounds,
-      pointCount: points.length
+      pointCount: points.reduce(
+        (count, point) =>
+          count + 1 + Number(!!point.inControl) + Number(!!point.outControl),
+        0
+      )
     })
   }
   if (!paths.length || root[2].replace(pathPattern, '').trim()) invalid()
@@ -360,16 +408,13 @@ export const prepareLocalVectorArtifact = (
   const prepared = retained.map((path) => {
     const componentType = components.get(path.id)
     const mappedOrigin = mapPoint(path.bounds)
-    const rings = componentType
-      ? []
-      : path.rings.map((ring) => ring.map(mapPoint))
-    const b = componentType
-      ? {
-          ...mappedOrigin,
-          width: (path.bounds.width * target.width) / source.width,
-          height: (path.bounds.height * target.height) / source.height
-        }
-      : boundsOf(rings.flat())
+    // Reuse the admitted curve bounds. Preparation only transforms selected
+    // anchors/controls; it does not reconstruct or remeasure the source curve.
+    const b = {
+      ...mappedOrigin,
+      width: (path.bounds.width * target.width) / source.width,
+      height: (path.bounds.height * target.height) / source.height
+    }
     const common = base(componentType ?? 'vector', path.id, {
       ...b,
       x: b.x - target.x,
@@ -394,7 +439,7 @@ export const prepareLocalVectorArtifact = (
     const points: Record<string, unknown> = {},
       segments: Record<string, unknown> = {},
       networks: Record<string, unknown> = {}
-    rings.forEach((ring, ringIndex) => {
+    path.rings.forEach((ring, ringIndex) => {
       const pointIds = ring.map((point, index) => {
         const id = `${common.id}-p-${ringIndex}-${index}`
         points[id] = {
@@ -402,18 +447,36 @@ export const prepareLocalVectorArtifact = (
           kind: 'anchor',
           anchorType: 'sharp',
           handleMode: 'none',
-          ...point
+          ...mapPoint(point)
         }
         return id
       })
       const segmentIds = pointIds.map((startId, index) => {
         const id = `${common.id}-s-${ringIndex}-${index}`
+        const next = (index + 1) % ring.length
+        const endId = pointIds[next]
+        const addControl = (
+          point: Point | undefined,
+          anchorId: string,
+          role: 'in' | 'out'
+        ) => {
+          if (!point) return null
+          const controlId = `${anchorId}-${role}`
+          points[controlId] = {
+            id: controlId,
+            kind: 'control',
+            controlForId: anchorId,
+            controlRole: role,
+            ...mapPoint(point)
+          }
+          return controlId
+        }
         segments[id] = {
           id,
           startId,
-          endId: pointIds[(index + 1) % pointIds.length],
-          outControlId: null,
-          inControlId: null
+          endId,
+          outControlId: addControl(ring[index].outControl, startId, 'out'),
+          inControlId: addControl(ring[next].inControl, endId, 'in')
         }
         return id
       })

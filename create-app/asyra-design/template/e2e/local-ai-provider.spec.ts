@@ -2,9 +2,13 @@ import {
   parseLocalVectorArtifact,
   prepareLocalVectorArtifact
 } from '../server/local-vector-artifact'
-import { writeFile } from 'node:fs/promises'
+import { readFile, writeFile } from 'node:fs/promises'
+import { convertBuffer } from '@visioncortex/vtracer'
+import { convertVTracerBuffer } from '../vtracer-tool-server.mjs'
 import { expect, test, type Page } from '@playwright/test'
 import {
+  captureBrowserErrors,
+  getCapturedBrowserErrors,
   getCoreDocumentDigest,
   getUndoHistoryDepth,
   undo,
@@ -12,6 +16,24 @@ import {
   createTestDocumentIdentity,
   waitForAppReady
 } from './test-utils'
+
+test.beforeEach(({ page }) => {
+  page.setDefaultTimeout(30_000)
+  captureBrowserErrors(page)
+})
+
+test.afterEach(async ({ page }, testInfo) => {
+  const errors = getCapturedBrowserErrors(page)
+  await writeFile(
+    testInfo.outputPath('browser-errors.json'),
+    JSON.stringify(errors)
+  )
+  if (errors.length)
+    await testInfo.attach('browser-errors', {
+      body: JSON.stringify(errors),
+      contentType: 'application/json'
+    })
+})
 
 const captureProviderFrames = async (page: Page, outputPath: string) => {
   const frames: string[] = []
@@ -50,6 +72,360 @@ const captureProviderFrames = async (page: Page, outputPath: string) => {
     }
   })
   return frames
+}
+
+const loadReferenceArtifact = async () => {
+  const artifact = parseLocalVectorArtifact(
+    await convertVTracerBuffer({
+      bytes: await readFile('e2e/fixtures/reference-logo.png'),
+      contentType: 'image/png',
+      profile: 'photo-faithful',
+      signal: new AbortController().signal
+    })
+  )
+  // Fixture oracle: the detached mark occupies the lower-right strip, outside
+  // the main circular artwork. Do not tie semantic assertions to tracer order.
+  const marks = artifact.paths.filter(
+    ({ bounds }) =>
+      bounds.x > artifact.width * 0.75 && bounds.y > artifact.height * 0.92
+  )
+  expect(marks).toHaveLength(1)
+  return { artifact, markId: marks[0].id }
+}
+
+test('reference spline contours improve rendered fidelity and remain editable through one Undo', async ({
+  page
+}, testInfo) => {
+  const bytes = await readFile('e2e/fixtures/reference-logo.png')
+  // The polygon branch exists only as the previous-behavior comparison oracle.
+  const baselineSvg = convertBuffer(bytes, {
+    hierarchical: 'stacked',
+    filterSpeckle: 4,
+    mode: 'polygon',
+    optimize: 0,
+    pathPrecision: 2,
+    preset: 'photo'
+  })
+  const started = performance.now()
+  const splineSvg = await convertVTracerBuffer({
+    bytes,
+    contentType: 'image/png',
+    profile: 'photo-faithful',
+    signal: new AbortController().signal
+  })
+  const conversionMs = performance.now() - started
+  const snapshots: string[] = []
+  const normalizedSources: string[] = []
+  const metrics: unknown[] = []
+  await page.route('**/api/ai/status', (route) =>
+    route.fulfill({ json: { state: 'ready' } })
+  )
+  await page.goto(createTestDocumentIdentity().url)
+  await waitForAppReady(page)
+  for (const [index, svg] of [baselineSvg, splineSvg].entries()) {
+    const artifact = parseLocalVectorArtifact(svg)
+    const minX = Math.min(...artifact.paths.map((p) => p.bounds.x))
+    const minY = Math.min(...artifact.paths.map((p) => p.bounds.y))
+    const sourceWidth =
+      Math.max(...artifact.paths.map((p) => p.bounds.x + p.bounds.width)) - minX
+    const sourceHeight =
+      Math.max(...artifact.paths.map((p) => p.bounds.y + p.bounds.height)) -
+      minY
+    normalizedSources.push(
+      svg.replace(
+        /<svg[^>]*>/,
+        `<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1000" viewBox="${minX} ${minY} ${sourceWidth} ${sourceHeight}" preserveAspectRatio="none">`
+      )
+    )
+    const parsedPaths = artifact.paths
+      .map((path) => {
+        const commands = path.rings
+          .map((ring) => {
+            let d = `M${ring[0].x},${ring[0].y}`
+            ring.forEach((start, pointIndex) => {
+              const end = ring[(pointIndex + 1) % ring.length]
+              if (start.outControl || end.inControl) {
+                const out = start.outControl ?? start
+                const incoming = end.inControl ?? end
+                d += ` C${out.x},${out.y} ${incoming.x},${incoming.y} ${end.x},${end.y}`
+              } else d += ` L${end.x},${end.y}`
+            })
+            return `${d} Z`
+          })
+          .join(' ')
+        return `<path d="${commands}" fill="${path.fill}"/>`
+      })
+      .join('')
+    normalizedSources.push(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1000" viewBox="${minX} ${minY} ${sourceWidth} ${sourceHeight}" preserveAspectRatio="none">${parsedPaths}</svg>`
+    )
+    const drawing = prepareLocalVectorArtifact(artifact, {
+      imageArtifactId: artifact.imageArtifactId,
+      compositionRole:
+        index === 0 ? 'Reference - polygon baseline' : 'Reference - curves',
+      bounds: { x: 20 + 300 * index, y: 20, width: 250, height: 250 },
+      excludePathIds: []
+    })
+    const before = await getCoreDocumentDigest(page)
+    const history = await getUndoHistoryDepth(page)
+    await page.route(
+      '**/api/ai/action-batch',
+      (route) =>
+        route.fulfill({
+          json: {
+            batchId: `reference-quality-${index}`,
+            actions: [
+              {
+                id: 'draw',
+                name: 'insert_vector_composition',
+                arguments: drawing,
+                summary: 'Draw reference'
+              }
+            ]
+          }
+        }),
+      { times: 1 }
+    )
+    await page.getByRole('button', { name: 'Open Agent' }).click()
+    await page
+      .getByLabel('Message Agent')
+      .fill('Draw the submitted reference with editable contours.')
+    await page.getByRole('button', { name: 'Send', exact: true }).click()
+    await expect(page.getByTestId('ai-agent-message').last()).toHaveAttribute(
+      'data-outcome',
+      'success'
+    )
+    await page.getByRole('button', { name: 'Close Agent panel' }).click()
+    expect(await getUndoHistoryDepth(page)).toBe(history + 1)
+    const after = await getCoreDocumentDigest(page)
+    const state = await page.evaluate(
+      async ({ groupId, childIds }) => {
+        const core = (await import('../src/testing/runtime-access')).core
+        if (!core) throw new Error('App runtime unavailable')
+        const elements = childIds.map((id) => {
+          const element = core.deps.sceneTree.getAllElements().get(id)
+          if (!element) throw new Error('Missing reference element')
+          return {
+            id,
+            points: element.get('points'),
+            segments: element.get('segments'),
+            networks: element.get('networks')
+          }
+        })
+        return {
+          elements,
+          computed: childIds.map((id) => core.getElementComputedData(id)),
+          snapshot: core.captureElementSnapshot(groupId, 1000),
+          zoom: core.getSystemProperty('zoom')
+        }
+      },
+      {
+        groupId: drawing.groupDescriptor.id,
+        childIds: drawing.slices.flatMap((s) => s.descriptors.map((d) => d.id))
+      }
+    )
+    const expected = drawing.slices.flatMap((s) =>
+      s.descriptors.map((d) => ({
+        id: d.id,
+        points: d.points,
+        segments: d.segments,
+        networks: d.networks
+      }))
+    )
+    expect(state.elements).toEqual(expected)
+    await writeFile(
+      testInfo.outputPath(`geometry-${index}.json`),
+      JSON.stringify({
+        expected: drawing.slices.flatMap((s) => s.descriptors),
+        computed: state.computed
+      })
+    )
+    // Snapshot dimensions follow rendered content bounds and its aspect ratio;
+    // the requested dimension is an upper bound, not a fixed canvas width.
+    expect(state.snapshot.width).toBeGreaterThan(0)
+    expect(state.snapshot.width).toBeLessThanOrEqual(1000)
+    const controls = state.elements
+      .flatMap((e) =>
+        Object.values(e.points as Record<string, { kind: string }>)
+      )
+      .filter((p) => p.kind === 'control').length
+    if (index === 1) expect(controls).toBeGreaterThan(100)
+    snapshots.push(state.snapshot.dataUrl)
+    metrics.push({
+      mode: index === 0 ? 'polygon' : 'spline',
+      svgBytes: svg.length,
+      pointCount: drawing.pointCount,
+      elementCount: drawing.elementCount,
+      controls,
+      conversionMs: index === 1 ? conversionMs : null,
+      zoom: state.zoom,
+      bounds: state.snapshot.bounds
+    })
+    await writeFile(
+      testInfo.outputPath(`reference-${index}.png`),
+      Buffer.from(state.snapshot.dataUrl.split(',')[1], 'base64')
+    )
+    await page.screenshot({
+      path: testInfo.outputPath(`reference-app-${index}.png`)
+    })
+    await undo(page)
+    expect(await getCoreDocumentDigest(page)).toEqual(before)
+    await redo(page)
+    expect(await getCoreDocumentDigest(page)).toEqual(after)
+  }
+  const comparison = await page.evaluate(
+    async ({ original, images }) => {
+      const rasterized: string[] = []
+      const pixels = async (source: string) => {
+        const image = new Image()
+        image.src = source
+        await image.decode()
+        const canvas = document.createElement('canvas')
+        canvas.width = 250
+        canvas.height = 250
+        const context = canvas.getContext('2d')
+        if (!context) throw new Error('Canvas 2D context unavailable')
+        context.fillStyle = '#ffffff'
+        context.fillRect(0, 0, 250, 250)
+        context.drawImage(image, 0, 0, 250, 250)
+        rasterized.push(canvas.toDataURL())
+        return context.getImageData(0, 0, 250, 250).data
+      }
+      const reference = await pixels(original)
+      const errors = []
+      for (const image of images) {
+        const data = await pixels(image)
+        let error = 0
+        for (let i = 0; i < data.length; i++)
+          if (i % 4 !== 3) error += Math.abs(data[i] - reference[i])
+        errors.push(error / (250 * 250 * 3))
+      }
+      return {
+        polygonMeanAbsoluteError: errors[0],
+        splineMeanAbsoluteError: errors[1],
+        polygonToolMeanAbsoluteError: errors[2],
+        splineToolMeanAbsoluteError: errors[3],
+        normalizedToolErrors: errors.slice(4),
+        rasterized
+      }
+    },
+    {
+      original: `data:image/png;base64,${bytes.toString('base64')}`,
+      images: [
+        ...snapshots,
+        ...[baselineSvg, splineSvg, ...normalizedSources].map(
+          (svg) =>
+            `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`
+        )
+      ]
+    }
+  )
+  await writeFile(
+    testInfo.outputPath('reference-quality.json'),
+    JSON.stringify(
+      {
+        url: page.url(),
+        viewport: page.viewportSize(),
+        metrics,
+        comparison: { ...comparison, rasterized: undefined }
+      },
+      null,
+      2
+    )
+  )
+  for (const [index, dataUrl] of comparison.rasterized.entries())
+    await writeFile(
+      testInfo.outputPath(`diagnostic-${index}.png`),
+      Buffer.from(dataUrl.split(',')[1], 'base64')
+    )
+  expect(comparison.normalizedToolErrors[0]).toBe(
+    comparison.normalizedToolErrors[1]
+  )
+  expect(comparison.normalizedToolErrors[2]).toBe(
+    comparison.normalizedToolErrors[3]
+  )
+  expect(comparison.splineMeanAbsoluteError).toBeLessThan(
+    comparison.polygonMeanAbsoluteError
+  )
+})
+
+for (const contour of ['linear', 'cubic'] as const) {
+  test(`native ${contour} compound contours preserve their transparent holes`, async ({
+    page
+  }, testInfo) => {
+    const outline =
+      contour === 'linear'
+        ? 'M10,10L90,10L90,90L10,90Z'
+        : 'M10,50C10,-10,90,-10,90,50C90,110,10,110,10,50Z'
+    const artifact = parseLocalVectorArtifact(
+      `<svg width="100" height="100"><path d="${outline} M40,40L40,60L60,60L60,40Z" fill="#008800"/></svg>`
+    )
+    const drawing = prepareLocalVectorArtifact(artifact, {
+      imageArtifactId: artifact.imageArtifactId,
+      compositionRole: 'Cubic hole',
+      bounds: { x: 20, y: 20, width: 160, height: 180 },
+      excludePathIds: []
+    })
+    await page.route('**/api/ai/status', (route) =>
+      route.fulfill({ json: { state: 'ready' } })
+    )
+    await page.route('**/api/ai/action-batch', (route) =>
+      route.fulfill({
+        json: {
+          batchId: 'cubic-hole',
+          actions: [
+            {
+              id: 'draw',
+              name: 'insert_vector_composition',
+              arguments: drawing,
+              summary: 'Draw curve with hole'
+            }
+          ]
+        }
+      })
+    )
+    await page.goto(createTestDocumentIdentity().url)
+    await waitForAppReady(page)
+    await page.getByRole('button', { name: 'Open Agent' }).click()
+    await page
+      .getByLabel('Message Agent')
+      .fill('Draw the curved shape with its central hole.')
+    await page.getByRole('button', { name: 'Send', exact: true }).click()
+    await expect(page.getByTestId('ai-agent-message')).toHaveAttribute(
+      'data-outcome',
+      'success'
+    )
+    const capture = await page.evaluate(async (id) => {
+      const core = (await import('../src/testing/runtime-access')).core
+      if (!core) throw new Error('No App')
+      const image = core.captureElementSnapshot(id, 720)
+      const bitmap = new Image()
+      bitmap.src = image.dataUrl
+      await bitmap.decode()
+      const canvas = document.createElement('canvas')
+      canvas.width = image.width
+      canvas.height = image.height
+      const ctx = canvas.getContext('2d')
+      if (!ctx) throw new Error('Canvas 2D context unavailable')
+      ctx.drawImage(bitmap, 0, 0)
+      return {
+        image,
+        pixel: Array.from(
+          ctx.getImageData(
+            Math.floor(image.width / 2),
+            Math.floor(image.height / 2),
+            1,
+            1
+          ).data
+        )
+      }
+    }, drawing.groupDescriptor.id)
+    await writeFile(
+      testInfo.outputPath('cubic-hole.png'),
+      Buffer.from(capture.image.dataUrl.split(',')[1], 'base64')
+    )
+    expect(capture.pixel).toEqual([255, 255, 255, 255])
+  })
 }
 
 for (const source of ['text', 'image'] as const) {
@@ -252,16 +628,34 @@ test('local subscription traces the reference logo at 240px without its separate
       }))
   })
   const shapes = elements.filter(({ type }) => type !== 'group')
-  expect(shapes).toHaveLength(37)
+  const { artifact, markId } = await loadReferenceArtifact()
+  expect(shapes).toHaveLength(artifact.paths.length - 1)
   expect(shapes.map(({ name }) => name).sort()).toEqual(
-    Array.from({ length: 38 }, (_, index) => `path-${index + 1}`)
-      .filter((name) => name !== 'path-22')
+    artifact.paths
+      .map((path) => path.id)
+      .filter((id) => id !== markId)
       .sort()
   )
-  expect(shapes.find(({ name }) => name === 'path-1')).toMatchObject({
-    type: 'oval',
-    computed: { width: 240, height: 240 }
-  })
+  const primaryPath = artifact.paths.reduce((largest, path) =>
+    path.bounds.width * path.bounds.height >
+    largest.bounds.width * largest.bounds.height
+      ? path
+      : largest
+  )
+  // The main cutout carries internal artwork and is not a solid Oval.
+  expect(shapes.find(({ name }) => name === primaryPath.id)?.type).toBe(
+    'vector'
+  )
+  expect(
+    shapes
+      .flatMap(({ computed }) =>
+        Object.values(
+          (computed as { points: Record<string, { kind: string }> }).points ??
+            {}
+        )
+      )
+      .filter((point) => point.kind === 'control').length
+  ).toBeGreaterThan(100)
   expect(elements.find(({ type }) => type === 'group')).toMatchObject({
     computed: { width: 240, height: 240 }
   })
@@ -345,9 +739,10 @@ test('local subscription uses acknowledged drawing IDs for a dependent edit in o
         visible: element.get('visible')
       }))
   })
-  expect(visibility).toHaveLength(38)
+  const { artifact, markId } = await loadReferenceArtifact()
+  expect(visibility).toHaveLength(artifact.paths.length)
   expect(visibility.filter((element) => element.visible === false)).toEqual([
-    { name: 'path-22', visible: false }
+    { name: markId, visible: false }
   ])
   expect(await getUndoHistoryDepth(page)).toBe(depth + 1)
   const after = await getCoreDocumentDigest(page)

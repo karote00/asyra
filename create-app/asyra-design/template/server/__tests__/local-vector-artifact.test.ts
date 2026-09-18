@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import { Bezier } from 'bezier-js'
 import { createLocalImageTools } from '../local-image-tools'
 import { readFile } from 'node:fs/promises'
 import { convertVTracerBuffer } from '../../vtracer-tool-server.mjs'
@@ -18,6 +19,134 @@ const input = {
   }
 }
 const signal = () => new AbortController().signal
+
+describe('native cubic reference geometry', () => {
+  // Two cubic halves have extrema at y=5 and y=95, although controls lie
+  // outside the image. Endpoints alone would report a zero-height shape.
+  const curved =
+    '<svg width="100" height="100"><path d="M10,50C10,-10,90,-10,90,50C90,110,10,110,10,50Z M40,40L40,60L60,60L60,40Z" fill="#008800"/></svg>'
+  it('measures each admitted curve once and reuses its bounds across preparations', () => {
+    const bbox = vi.spyOn(Bezier.prototype, 'bbox')
+    try {
+      const artifact = parseLocalVectorArtifact(curved)
+      expect(bbox).toHaveBeenCalledTimes(2)
+      for (const size of [120, 240, 480]) {
+        const drawing = prepareLocalVectorArtifact(artifact, {
+          imageArtifactId: artifact.imageArtifactId,
+          compositionRole: 'Curved reference',
+          bounds: { x: 0, y: 0, width: size, height: size },
+          excludePathIds: []
+        })
+        expect(drawing.slices[0].descriptors[0]).toMatchObject({
+          width: size,
+          height: size
+        })
+      }
+      expect(bbox).toHaveBeenCalledTimes(2)
+      parseLocalVectorArtifact(curved)
+      expect(bbox).toHaveBeenCalledTimes(4)
+    } finally {
+      bbox.mockRestore()
+    }
+  })
+  it('preserves cubic controls, closing endpoints, holes and exact curve bounds under nonuniform scaling', () => {
+    const artifact = parseLocalVectorArtifact(curved)
+    expect(artifact.paths[0]).toMatchObject({
+      bounds: { x: 10, y: 5, width: 80, height: 90 },
+      pointCount: 10
+    })
+    const drawing = prepareLocalVectorArtifact(artifact, {
+      imageArtifactId: artifact.imageArtifactId,
+      compositionRole: 'Curved reference',
+      bounds: { x: 20, y: 30, width: 160, height: 90 },
+      excludePathIds: []
+    })
+    const descriptor = drawing.slices[0].descriptors[0]
+    expect(descriptor).toMatchObject({
+      x: 0,
+      y: 0,
+      width: 160,
+      height: 90,
+      fillRule: 'nonzero'
+    })
+    const points = Object.values(descriptor.points) as {
+      id: string
+      kind: string
+      x: number
+      y: number
+      controlForId?: string
+      controlRole?: string
+    }[]
+    expect(points.filter((point) => point.kind === 'control')).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ x: 20, y: 15, controlRole: 'out' }),
+        expect.objectContaining({ x: 180, y: 15, controlRole: 'in' }),
+        expect.objectContaining({ x: 180, y: 135, controlRole: 'out' }),
+        expect.objectContaining({ x: 20, y: 135, controlRole: 'in' })
+      ])
+    )
+    const networks = Object.values(descriptor.networks) as {
+      pointIds: string[]
+      segmentIds: string[]
+      closed: boolean
+    }[]
+    expect(networks.map((n) => n.pointIds.length)).toEqual([2, 4])
+    expect(networks.every((n) => n.closed)).toBe(true)
+    const segments = Object.values(descriptor.segments) as {
+      startId: string
+      endId: string
+      outControlId: string | null
+      inControlId: string | null
+    }[]
+    expect(segments[1].endId).toBe(segments[0].startId)
+    for (const segment of segments.slice(0, 2)) {
+      expect(points.find((p) => p.id === segment.outControlId)).toMatchObject({
+        kind: 'control',
+        controlForId: segment.startId,
+        controlRole: 'out'
+      })
+      expect(points.find((p) => p.id === segment.inControlId)).toMatchObject({
+        kind: 'control',
+        controlForId: segment.endId,
+        controlRole: 'in'
+      })
+    }
+    expect(drawing.pointCount).toBe(points.length)
+    expect(artifact.paths[0].bounds).toEqual({
+      x: 10,
+      y: 5,
+      width: 80,
+      height: 90
+    })
+  })
+  it('keeps a single-anchor closed cubic and mixed line/curve contours', () => {
+    for (const d of [
+      'M50,50C0,0,100,0,50,50Z',
+      'M10,50L10,10C10,0,90,0,90,10L90,50Z'
+    ]) {
+      const artifact = parseLocalVectorArtifact(
+        `<svg width="100" height="100"><path d="${d}" fill="#000000"/></svg>`
+      )
+      expect(artifact.paths).toHaveLength(1)
+      expect(artifact.paths[0].bounds.height).toBeGreaterThan(0)
+    }
+  })
+  it.each([
+    'M0,0C1,2,3,4Z',
+    'M0,0C1,2,3,4,5,6',
+    'M0,0C1,2,3,4,5,6ZZ',
+    'M0,0C1,2,3,4,1e999,6Z',
+    'M0,0C1,2,3,4,999999,6Z',
+    'M0,0Q1,2,3,4Z',
+    'M0,0L80,0M10,10L20,10L20,20Z'
+  ])('rejects malformed or unsupported geometry: %s', (d) => {
+    expect(() =>
+      parseLocalVectorArtifact(
+        `<svg width="100" height="100"><path d="${d}" fill="#000000"/></svg>`
+      )
+    ).toThrow('Invalid vector artifact')
+  })
+})
 
 describe('request-owned vector artifacts', () => {
   it('omits nonpainting degenerate SVG subpaths without dropping valid neighboring geometry', () => {
@@ -52,6 +181,23 @@ describe('request-owned vector artifacts', () => {
     )
     expect(mouth).toBeDefined()
     expect(mouth?.bounds.width).toBeGreaterThan(10)
+    const drawing = prepareLocalVectorArtifact(artifact, {
+      imageArtifactId: artifact.imageArtifactId,
+      compositionRole: 'Reference',
+      bounds: { x: 0, y: 0, width: 240, height: 240 },
+      excludePathIds: []
+    })
+    const controls = drawing.slices
+      .flatMap((slice) => slice.descriptors)
+      .flatMap((descriptor) => Object.values(descriptor.points ?? {}))
+      .filter(
+        (point) =>
+          typeof point === 'object' &&
+          point !== null &&
+          'kind' in point &&
+          point.kind === 'control'
+      )
+    expect(controls.length).toBeGreaterThan(100)
   })
   it('returns compact summaries and expands selected geometry without model-authored coordinates', async () => {
     const convert = vi.fn(async () => svg)

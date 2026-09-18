@@ -31,6 +31,7 @@ import {
   getRenderableFills
 } from './fills.js'
 import { PRESET_REGISTRATION } from '../registration.js'
+import { prepareVectorCompoundFill } from './vector-compound-fill.js'
 
 const emitVectorRenderCounter = emitDiagnosticCounter
 
@@ -1205,7 +1206,23 @@ const renderVectorGraphic = (
     pointOffset
   )
 
-  if (hasRenderableFill) {
+  const compoundFill =
+    hasRenderableFill &&
+    renderData.fillRule === 'nonzero' &&
+    hasClosedNetwork &&
+    shape.paths.length > 1 &&
+    !fillPayload.some((fill) => fill.kind === 'gradient')
+      ? prepareVectorCompoundFill(shape)
+      : undefined
+
+  if (compoundFill) {
+    cache.__vectorFillHitCache = undefined
+    ;(
+      graphic as { hitArea: { contains: (x: number, y: number) => boolean } }
+    ).hitArea = {
+      contains: compoundFill.contains
+    }
+  } else if (hasRenderableFill) {
     const preparedFillShape = prepareEvenOddShape(shape)
     const hitCache = cache.__vectorFillHitCache
     const reuseHitArea =
@@ -1297,7 +1314,15 @@ const renderVectorGraphic = (
   } else {
     cache.__evenOddFillCache?.fill?.dispose()
     cache.__evenOddFillCache = undefined
-    if (renderData.fillRule === 'nonzero' && hasClosedNetwork) {
+    if (compoundFill) {
+      cache.__vectorFillCache = undefined
+      drawFillFaces(graphic, compoundFill.faces)
+      if (compoundFill.faces.length > 0) {
+        applyRenderableFill(graphic as { fill: unknown }, fillPayload, {
+          replayPath: () => drawFillFaces(graphic, compoundFill.faces)
+        })
+      }
+    } else if (renderData.fillRule === 'nonzero' && hasClosedNetwork) {
       cache.__vectorFillCache = undefined
       drawVectorPath(graphic, orderedNetworks, points, segments, pointOffset)
       applyRenderableFill(graphic as { fill: unknown }, fillPayload, {
