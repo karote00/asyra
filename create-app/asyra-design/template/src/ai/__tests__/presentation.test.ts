@@ -188,8 +188,8 @@ describe('capability outcomes', () => {
     expect(summarizeAiTurn(result).message).toContain(
       'cannot cut the connected mark'
     )
-    expect(summarizeAiTurn(result).message).toContain(
-      'Earlier changes are kept'
+    expect(summarizeAiTurn(result).message).toBe(
+      'I traced the image, but this app cannot cut the connected mark.'
     )
   })
 })

@@ -264,7 +264,7 @@ describe('AI Agent conversation panel intent boundary', () => {
     expect(screen.getByLabelText('Your message')).toBe(userMessage)
   })
 
-  it('offers a safe retry and editable retained request after a provider deadline', async () => {
+  it('offers a safe retry without restoring the request into the composer', async () => {
     const harness = createPanelHarness()
     render(
       <AiConversationPanel
@@ -290,10 +290,10 @@ describe('AI Agent conversation panel intent boundary', () => {
     ).toContain('Request finished')
     expect(screen.getByText(/timed out/)).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: 'Edit request' }))
+    expect(screen.queryByRole('button', { name: 'Edit request' })).toBeNull()
     expect(
       (screen.getByLabelText('Message Agent') as HTMLTextAreaElement).value
-    ).toBe('Replace the previous drawing using this image')
+    ).toBe('')
   })
 
   it('does not submit whitespace or queue a second active turn', () => {
@@ -320,7 +320,7 @@ describe('AI Agent conversation panel intent boundary', () => {
     expect(harness.feature.execute).toHaveBeenCalledOnce()
   })
 
-  it('restores the reference into an explicitly edited failed text continuation', async () => {
+  it('keeps failed continuation context in history without duplicating composer attachments', async () => {
     const harness = createPanelHarness()
     const attachment = {
       dataUrl: 'data:image/png;base64,YQ==',
@@ -361,11 +361,11 @@ describe('AI Agent conversation panel intent boundary', () => {
       })
       await harness.conversation.submit('Yes')
     })
-    fireEvent.click(screen.getByRole('button', { name: 'Edit request' }))
-    expect(screen.getAllByRole('img')).toHaveLength(2)
+    expect(screen.queryByRole('button', { name: 'Edit request' })).toBeNull()
+    expect(screen.getAllByRole('img')).toHaveLength(1)
     expect(
       (screen.getByLabelText('Message Agent') as HTMLTextAreaElement).value
-    ).toBe('Draw the reference at 240 by 240\nYes')
+    ).toBe('')
   })
 
   it('keeps mouse, touch, and keyboard cancellation inside the Agent control while the document is locked', () => {

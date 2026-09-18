@@ -10,8 +10,8 @@ A resolved provider attempt may ask a question rather than complete the user goa
 
 Each message displays only attachments submitted with that message. Answer and
 retry requests retain the original reference as request context without presenting
-it as a newly attached image. Explicit Edit request restores the complete request
-and reference to the draft for review. Composer keyboard events stay in the text
+it as a newly attached image. No Edit request action or automatic draft restoration
+is offered. Panel text supports native mouse selection and copying. Composer keyboard events stay in the text
 input, preserving native editing and IME without invoking canvas shortcuts.
 
 Questions expose clickable choices and a text answer path, preserve subject,
@@ -53,7 +53,8 @@ is English; user text and model-authored content retain their language.
 
 Completion describes actual results and does not certify visual fidelity. Failure
 identifies a sanitized cause and canvas disposition, retains the request and image,
-and offers edit/resend or safe retry. Retry is admitted only for confirmed pre-write
+and offers safe retry when eligible. Partial-result messages do not append a generic
+reminder that earlier changes are kept or that Undo is available. Retry is admitted only for confirmed pre-write
 failure or cancellation; partial/unknown outcomes require review. An explicit image
 tracing request uses registered VTracer or fails honestly, never a fabricated trace.
 Replacement prepares new content before changing old content and executes in one

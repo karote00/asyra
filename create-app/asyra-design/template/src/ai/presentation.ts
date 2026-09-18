@@ -212,9 +212,7 @@ export const summarizeAiTurn = (turn: AiSettledTurn): AiTurnSummary => {
     let disposition = ''
     if (reported.result.outcome === 'unsupported') {
       disposition =
-        turn.outcome === 'partial'
-          ? '\n\nEarlier changes are kept. You can undo this request.'
-          : '\n\nNo canvas changes were made.'
+        turn.outcome === 'partial' ? '' : '\n\nNo canvas changes were made.'
     }
     return Object.freeze({
       durationLabel: formatElapsedTime(turn.durationMs),

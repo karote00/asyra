@@ -567,7 +567,10 @@ for (const width of [360, 1280]) {
       page
         .getByTestId('ai-agent-message')
         .getByText('Earlier changes are kept.', { exact: false })
-    ).toBeVisible()
+    ).toHaveCount(0)
+    await expect(
+      page.getByRole('button', { name: 'Edit request', exact: true })
+    ).toHaveCount(0)
     await expect(
       page.getByRole('button', { name: 'Try again', exact: true })
     ).toHaveCount(0)
@@ -835,6 +838,28 @@ for (const width of [360, 1280]) {
       await page.getByTestId('ai-agent-panel').screenshot({
         path: testInfo.outputPath('activity-collapsed.png')
       })
+      const resultText = page.getByText('No canvas changes were needed.', {
+        exact: true
+      })
+      const textBounds = await resultText.boundingBox()
+      if (!textBounds) throw new Error('Missing result text')
+      await page.mouse.move(
+        textBounds.x + 1,
+        textBounds.y + textBounds.height / 2
+      )
+      await page.mouse.down()
+      await page.mouse.move(
+        textBounds.x + textBounds.width - 1,
+        textBounds.y + textBounds.height / 2,
+        { steps: 12 }
+      )
+      await page.mouse.up()
+      expect(
+        await page.evaluate(() => window.getSelection()?.toString())
+      ).toContain('canvas changes')
+      await page
+        .getByTestId('ai-agent-panel')
+        .screenshot({ path: testInfo.outputPath('selected-result-text.png') })
       await page.getByText('Activity', { exact: true }).click()
       await expect(
         page.getByRole('button', { name: 'Jump to latest' })

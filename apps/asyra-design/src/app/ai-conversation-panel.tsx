@@ -9,7 +9,6 @@ import {
   type DragEvent,
   type FormEvent,
   type ReactNode,
-  type RefObject,
   type SyntheticEvent
 } from 'react'
 import type {
@@ -21,8 +20,7 @@ import type {
   AiConversationController,
   AiConversationSnapshot,
   AiImageAttachment,
-  AiImageMediaType,
-  AiSettledTurn
+  AiImageMediaType
 } from '../ai/conversation'
 import {
   canRetryAiTurn,
@@ -210,11 +208,9 @@ export interface AiConversationPanelProps {
 const AiConversationPanelLayout = ({
   conversation,
   onClose,
-  children,
-  editRequestRef
+  children
 }: AiConversationPanelProps & {
   readonly children: ReactNode
-  readonly editRequestRef: RefObject<((turn: AiSettledTurn) => void) | null>
 }) => {
   const imageInputRef = useRef<HTMLInputElement>(null)
   const promptRef = useRef<HTMLTextAreaElement>(null)
@@ -326,23 +322,6 @@ const AiConversationPanelLayout = ({
     onClose()
   }, [onClose])
 
-  const editRequest = (turn: AiSettledTurn) => {
-    setDraft(
-      turn.originalIntent && turn.originalIntent !== turn.intent
-        ? `${turn.originalIntent}\n${turn.intent}`
-        : turn.intent
-    )
-    setDraftAttachments(turn.requestAttachments ?? turn.attachments)
-    promptRef.current?.focus({ preventScroll: true })
-  }
-
-  useEffect(() => {
-    editRequestRef.current = editRequest
-    return () => {
-      editRequestRef.current = null
-    }
-  })
-
   return (
     <aside
       {...AiDocumentInteractionTargetProps.AGENT_INTERFACE}
@@ -358,7 +337,7 @@ const AiConversationPanelLayout = ({
       onWheel={stopAgentInteractionPropagation}
       aria-label="Agent conversation"
       aria-modal="false"
-      className="fixed bottom-0 right-0 top-10 z-50 flex w-[384px] max-w-[calc(100vw-24px)] flex-col overflow-hidden border-l border-[#45464b] bg-[#202124] text-[12px] text-[#f5f5f5] shadow-[-18px_0_48px_rgba(0,0,0,0.32)]"
+      className="fixed bottom-0 right-0 top-10 z-50 flex w-[384px] max-w-[calc(100vw-24px)] flex-col overflow-hidden select-text border-l border-[#45464b] bg-[#202124] text-[12px] text-[#f5f5f5] shadow-[-18px_0_48px_rgba(0,0,0,0.32)]"
       data-testid="ai-agent-panel"
       role="complementary"
     >
@@ -525,11 +504,8 @@ const AiConversationPanelLayout = ({
 
 const AiConversationFeed = ({
   conversation,
-  confirmation,
-  onEdit
-}: Pick<AiConversationPanelProps, 'conversation' | 'confirmation'> & {
-  readonly onEdit: (turn: AiSettledTurn) => void
-}) => {
+  confirmation
+}: Pick<AiConversationPanelProps, 'conversation' | 'confirmation'>) => {
   const conversationBodyRef = useRef<HTMLElement>(null)
   const followLatestRef = useRef(true)
   const [showJump, setShowJump] = useState(false)
@@ -596,7 +572,6 @@ const AiConversationFeed = ({
     ? [...turns, conversationSnapshot.activeTurn]
     : turns
 
-  const editRequest = onEdit
   return (
     <>
       <section
@@ -761,32 +736,18 @@ const AiConversationFeed = ({
                     </ol>
                   </details>
                 ) : null}
-                {settled &&
-                latest &&
-                !active &&
-                (settled.outcome === 'failed' ||
-                  settled.outcome === 'cancelled' ||
-                  settled.outcome === 'partial') ? (
+                {settled && latest && !active && canRetryAiTurn(settled) ? (
                   <div className="mt-3 flex flex-wrap gap-2">
-                    {canRetryAiTurn(settled) ? (
-                      <button
-                        className="rounded-md border border-[#625586] px-3 py-1.5 text-[12px] hover:bg-[#302b3e]"
-                        type="button"
-                        onClick={() =>
-                          void conversation
-                            .retry(turn.turnId)
-                            .catch(() => undefined)
-                        }
-                      >
-                        Try again
-                      </button>
-                    ) : null}
                     <button
-                      className="rounded-md border border-[#484950] px-3 py-1.5 text-[12px] hover:bg-[#303136]"
+                      className="rounded-md border border-[#625586] px-3 py-1.5 text-[12px] hover:bg-[#302b3e]"
                       type="button"
-                      onClick={() => editRequest(settled)}
+                      onClick={() =>
+                        void conversation
+                          .retry(turn.turnId)
+                          .catch(() => undefined)
+                      }
                     >
-                      Edit request
+                      Try again
                     </button>
                   </div>
                 ) : null}
@@ -873,13 +834,11 @@ const AiConversationFeed = ({
 }
 
 export const AiConversationPanel = (props: AiConversationPanelProps) => {
-  const editRequestRef = useRef<((turn: AiSettledTurn) => void) | null>(null)
   return (
-    <AiConversationPanelLayout {...props} editRequestRef={editRequestRef}>
+    <AiConversationPanelLayout {...props}>
       <AiConversationFeed
         conversation={props.conversation}
         confirmation={props.confirmation}
-        onEdit={(turn) => editRequestRef.current?.(turn)}
       />
     </AiConversationPanelLayout>
   )
