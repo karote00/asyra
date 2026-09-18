@@ -143,7 +143,8 @@
               "App context and registered backend-facing action descriptions",
               "request abort signal",
               "server-only backend selection and model; HTTP endpoint/API key or local Codex subscription login for ordinary model-backed requests",
-              "artifact:conversation-submission"
+              "artifact:conversation-submission",
+              "artifact:rendered-drawing-review"
             ],
             "outputs": [
               "artifact:server-prepared-action-batch",
@@ -1546,18 +1547,19 @@
           },
           {
             "id": "capture-drawing-review",
-            "order": 0.5,
+            "order": 2.5,
             "laneId": "app-canonical",
             "title": "Inspect the rendered drawing",
             "ownerPackage": "App inspection action",
             "purpose": "Provide actual bounded rendered evidence for AI review without canonical writes.",
             "inputs": [
+              "artifact:resolved-ai-action-batch",
               "canonical target ID",
               "current rendered projection",
               "request abort signal"
             ],
             "outputs": [
-              "bounded PNG and object summaries or explicit unavailable result"
+              "artifact:rendered-drawing-review"
             ],
             "conditions": [
               "Core and Render resolve the target subtree and flush current projected draws before an engine-neutral snapshot query.",
@@ -1658,6 +1660,26 @@
           }
         ],
         "routes": [
+          {
+            "id": "route-resolved-action-to-drawing-inspection",
+            "from": "resolve-server-prepared-action-batch",
+            "to": "capture-drawing-review",
+            "kind": "handoff",
+            "predicate": "A resolved, permitted inspect_drawing operation executes read-only inspection through the ordinary action executor, inside the owning invocation.",
+            "producedArtifacts": [
+              "artifact:resolved-ai-action-batch"
+            ]
+          },
+          {
+            "id": "route-drawing-inspection-to-provider",
+            "from": "capture-drawing-review",
+            "to": "request-backend-action-batch",
+            "kind": "handoff",
+            "predicate": "The read-only result returns through the existing action receipt; the local backend delivers actual image content for visual review or an explicit unavailable result before further supported corrections.",
+            "producedArtifacts": [
+              "artifact:rendered-drawing-review"
+            ]
+          },
           {
             "id": "route-executed-batch-receipt-to-provider",
             "from": "resolve-server-prepared-action-batch",
@@ -2332,6 +2354,17 @@
         ],
         "artifacts": [
           {
+            "id": "artifact:rendered-drawing-review",
+            "ownerStepId": "capture-drawing-review",
+            "title": "Fresh rendered drawing evidence",
+            "channel": "Read-only action result in the existing same-origin execution receipt",
+            "consumerStepIds": [
+              "request-backend-action-batch"
+            ],
+            "terminal": false,
+            "description": "Bounded real PNG, local capture bounds and object summaries or an explicit unavailable result. Transient evidence only; no document, camera, selection or Undo mutation."
+          },
+          {
             "id": "artifact:ai-batch-execution-receipt",
             "ownerStepId": "resolve-server-prepared-action-batch",
             "title": "Provisional canonical batch execution receipt",
@@ -2393,7 +2426,8 @@
             "channel": "@asyra/ai-agent-runtime ResolvedAiActionBatch and PermissionReadyAiActionBatch handoff preserving batchId and action argument identity",
             "consumerStepIds": [
               "yield-ai-loading-paint",
-              "stage-local-interactive-composition"
+              "stage-local-interactive-composition",
+              "capture-drawing-review"
             ],
             "terminal": false
           },

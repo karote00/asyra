@@ -493,3 +493,13 @@ spatial rendering. Test-first rejection/capability admission, both engine suites
 and the full monorepo React build precede the next push. The capture owner still
 reports unavailable for engines without the capability; no active spatial plan
 or Inspector route gains a new output or behavior.
+
+#### Inspector closure correction
+
+Full CI contracts, beyond the focused catalog tests, detect an unregistered output
+artifact and a missing anchor in the Inspector's declared specification document.
+The bounded repair is the capture step's artifact, incoming/outgoing handoff routes,
+consumer declarations and a source-of-truth link from its specification section.
+No viewer exception or weakened test is allowed. Existing full contracts already
+reproduce the failures. Run the complete Flow Inspector suite before another push;
+App behavior, engine code and geometry stay frozen during this documentation slice.

@@ -5634,3 +5634,17 @@ It precedes the existing request owner without changing prepared geometry owners
 Reference replacement prepares and inserts the new composition before removing only
 the validated old target inside the existing outer transaction. Any incomplete
 replacement throws so the canonical transaction rolls back the entire change.
+
+## Rendered drawing review
+
+The optional read-only inspection route accepts a resolved inspect_drawing action,
+flushes current projection through Core/Render, and asks the configured engine for
+a bounded real subtree PNG. The existing execution receipt returns that image and
+object summaries to the backend for native image delivery, or an explicit
+unavailable result. This route creates no canonical, camera, selection or Undo
+changes and supplies no synthetic fallback.
+
+The current two-stage data/component and visual-review contract is maintained in
+<a href="../../specs/local-ai-provider.md#rendered-drawing-review" target="_blank" rel="noopener noreferrer">the local AI provider specification</a>.
+This follow-up does not reopen the completed performance milestone or change its
+creation, collaboration and transaction equivalence claims.
