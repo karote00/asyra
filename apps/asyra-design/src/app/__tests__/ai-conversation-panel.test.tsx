@@ -52,6 +52,26 @@ describe('AI Agent conversation panel intent boundary', () => {
     vi.restoreAllMocks()
   })
 
+  it('discloses personal subscription usage immediately when the panel opens', () => {
+    const harness = createPanelHarness()
+    render(
+      <AiConversationPanel
+        confirmation={harness.confirmation}
+        conversation={harness.conversation}
+        onClose={vi.fn()}
+      />
+    )
+    const notice = screen.getByRole('note', { name: 'Your AI subscription' })
+    expect(notice.textContent).toContain(
+      'Local AI uses your own subscription and counts toward its usage limits.'
+    )
+    expect(notice.textContent).toContain(
+      'Asyra Design does not provide an AI subscription.'
+    )
+    expect(harness.feature.execute).not.toHaveBeenCalled()
+    expect(screen.queryByTestId('ai-agent-message')).toBeNull()
+  })
+
   it('does not reproject conversation history while editing the next draft', async () => {
     const harness = createPanelHarness()
     render(

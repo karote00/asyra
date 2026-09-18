@@ -9,6 +9,12 @@ Local Codex requires an installed compatible Codex app-server, a configured
 `AI_PROVIDER_EXECUTABLE` selects the installed executable; otherwise use `codex`.
 No dependency installation, login, account switching, or API fallback occurs.
 
+Opening the Agent panel immediately shows a persistent English notice below
+its header: local AI uses the user's own subscription and usage limits, and
+Asyra Design does not provide a subscription. It is visible before typing,
+submission or connection readiness, outside the scrolling conversation feed.
+The notice is provider-neutral and does not imply additional provider support.
+
 The existing same-origin action-batch endpoint remains the execution route. It may
 stream registered tool activity and sequential complete prepared batches, then a final batch or sanitized error;
 JSON responses remain supported. Model commentary and reasoning are not streamed.

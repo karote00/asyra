@@ -352,6 +352,20 @@ const AiConversationPanelLayout = ({
         </button>
       </header>
 
+      <div
+        aria-label="Your AI subscription"
+        className="shrink-0 border-b border-[#454052] bg-[#282530] px-4 py-3"
+        role="note"
+      >
+        <p className="m-0 text-[11px] font-medium leading-5 text-[#e0d9ff]">
+          Your AI subscription
+        </p>
+        <p className="m-0 mt-1 text-[11px] leading-[18px] text-[#c7c4d0]">
+          Local AI uses your own subscription and counts toward its usage
+          limits. Asyra Design does not provide an AI subscription.
+        </p>
+      </div>
+
       {children}
       <form
         aria-label="Agent message form"

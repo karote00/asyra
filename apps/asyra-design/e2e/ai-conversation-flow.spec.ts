@@ -11,6 +11,46 @@ import {
   waitForAppReady
 } from './test-utils'
 
+for (const width of [360, 1280]) {
+  test(`opening the Agent immediately discloses personal subscription usage at ${width}px`, async ({
+    page
+  }, testInfo) => {
+    await page.setViewportSize({ width: 1280, height: 720 })
+    let providerRequests = 0
+    await page.route('**/api/ai/status', (route) =>
+      route.fulfill({ json: { state: 'unconfigured' } })
+    )
+    await page.route('**/api/ai/action-batch', (route) => {
+      providerRequests++
+      return route.abort()
+    })
+    await page.goto(createTestDocumentIdentity().url)
+    await waitForAppReady(page)
+    await page.setViewportSize({ width, height: 720 })
+    await page.getByRole('button', { name: 'Open Agent' }).click()
+    const notice = page.getByRole('note', { name: 'Your AI subscription' })
+    await expect(notice).toBeVisible()
+    await expect(notice).toContainText(
+      'Local AI uses your own subscription and counts toward its usage limits.'
+    )
+    await expect(page.getByLabel('Message Agent')).toBeEmpty()
+    await expect(
+      page.getByRole('button', { name: 'Send', exact: true })
+    ).toBeInViewport()
+    const bounds = await notice.boundingBox()
+    if (!bounds) throw new Error('Subscription notice has no visible bounds')
+    expect(bounds.x).toBeGreaterThanOrEqual(0)
+    expect(bounds.x + bounds.width).toBeLessThanOrEqual(width)
+    await page.getByTestId('ai-agent-panel').screenshot({
+      path: testInfo.outputPath('subscription-notice.png')
+    })
+    await page.getByRole('button', { name: 'Close Agent panel' }).click()
+    await page.getByRole('button', { name: 'Open Agent' }).click()
+    await expect(notice).toBeVisible()
+    expect(providerRequests).toBe(0)
+  })
+}
+
 test('text answers keep the original reference only on its message and typing never switches canvas tools', async ({
   page
 }, testInfo) => {
