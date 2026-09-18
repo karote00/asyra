@@ -371,3 +371,27 @@ Result. This slice changes presentation, its formal unit/browser tests, current
 contracts and template parity only; backend, transaction and geometry owners are
 unchanged. Validation includes staged streaming at 360px and 1280px, settled
 marker removal, retained messages, and no history reprojection on draft typing.
+
+### Refinement and native primitives - 2026-09-18
+
+Owner step: request-backend-action-batch (App server). Inputs are the original
+intent/reference, request-owned trace artifact, registered schemas and actual
+execution receipts. Output remains prepared canonical batches and a truthful
+completion report. Scope: server domain instructions, explicit oval path
+selection in artifact preparation, direct tests, current specs and generated
+template. No renderer, transaction, timeout or canonical mutation changes.
+
+The server accepts optional ovalPathIds for explicit semantic replacement of
+whole single-contour paths with native Oval descriptors; absent selection keeps
+the original vectors. Preserve bounds, fill, order, roles and unaffected paths.
+Reject foreign, duplicate, excluded or compound-path selections. No geometric
+heuristic, brand-specific correction or automatic conversion is permitted. The
+request-owned artifact remains the geometry owner; no additional cache is added.
+
+Prompt policy requires receipt-based review and repeated supported edits before
+report_outcome, preserving one Undo. Only supplied evidence may support review;
+visual fidelity cannot be asserted without actual rendered-image feedback. Stop
+on satisfaction, unsupported work, no improvement, cancellation or runtime limits.
+Gates: test-first artifact/prompt regression, native consumer admission, operation
+receipt tests, server/App tests, typecheck, naming, lint, template parity and
+Inspector contract. Stop on unavailable evidence rather than inventing review.

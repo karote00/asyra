@@ -158,11 +158,12 @@ export const vectorArtifactSummary = (artifact: LocalVectorArtifact) => ({
   imageArtifactId: artifact.imageArtifactId,
   width: artifact.width,
   height: artifact.height,
-  paths: artifact.paths.map(({ id, fill, bounds, pointCount }) => ({
+  paths: artifact.paths.map(({ id, fill, bounds, pointCount, rings }) => ({
     id,
     fill,
     bounds,
-    pointCount
+    pointCount,
+    subpathCount: rings.length
   }))
 })
 
@@ -173,6 +174,13 @@ export const LOCAL_VECTOR_REFERENCE_SCHEMA = {
   properties: {
     imageArtifactId: { type: 'string' },
     compositionRole: { type: 'string', minLength: 1, maxLength: 160 },
+    ovalPathIds: {
+      type: 'array',
+      uniqueItems: true,
+      items: { type: 'string' },
+      description:
+        'Optional IDs of whole single-contour paths that represent intended circles or ellipses. Replace each with one filled native Oval at its mapped bounds, preserving color and order. Do not select irregular artwork, paths with holes, or excluded paths.'
+    },
     excludePathIds: {
       type: 'array',
       uniqueItems: true,
@@ -207,7 +215,8 @@ export const prepareLocalVectorArtifact = (
           'imageArtifactId',
           'bounds',
           'compositionRole',
-          'excludePathIds'
+          'excludePathIds',
+          'ovalPathIds'
         ].includes(key)
     ) ||
     input.imageArtifactId !== artifact.imageArtifactId ||
@@ -243,6 +252,17 @@ export const prepareLocalVectorArtifact = (
     [...excluded].some((id) => typeof id !== 'string' || !pathIds.has(id))
   )
     invalid()
+  const ovalIds = input.ovalPathIds === undefined ? [] : input.ovalPathIds
+  if (!Array.isArray(ovalIds)) return invalid()
+  const ovals = new Set(ovalIds)
+  if (
+    ovals.size !== ovalIds.length ||
+    [...ovals].some(
+      (id) => typeof id !== 'string' || !pathIds.has(id) || excluded.has(id)
+    ) ||
+    artifact.paths.some((path) => ovals.has(path.id) && path.rings.length !== 1)
+  )
+    return invalid()
   const retained = artifact.paths.filter(({ id }) => !excluded.has(id))
   if (!retained.length) invalid()
   const source = boundsOf(
@@ -255,7 +275,7 @@ export const prepareLocalVectorArtifact = (
     x: target.x + ((point.x - source.x) * target.width) / source.width,
     y: target.y + ((point.y - source.y) * target.height) / source.height
   })
-  const base = (type: 'group' | 'vector', name: string, b: Bounds) => {
+  const base = (type: 'group' | 'vector' | 'oval', name: string, b: Bounds) => {
     const id = randomUUID()
     return {
       id,
@@ -280,13 +300,37 @@ export const prepareLocalVectorArtifact = (
   }
   const roleToElementIds: Record<string, string[]> = {}
   const prepared = retained.map((path) => {
-    const rings = path.rings.map((ring) => ring.map(mapPoint))
-    const b = boundsOf(rings.flat())
-    const common = base('vector', path.id, {
+    const isOval = ovals.has(path.id)
+    const mappedOrigin = mapPoint(path.bounds)
+    const rings = isOval ? [] : path.rings.map((ring) => ring.map(mapPoint))
+    const b = isOval
+      ? {
+          ...mappedOrigin,
+          width: (path.bounds.width * target.width) / source.width,
+          height: (path.bounds.height * target.height) / source.height
+        }
+      : boundsOf(rings.flat())
+    const common = base(isOval ? 'oval' : 'vector', path.id, {
       ...b,
       x: b.x - target.x,
       y: b.y - target.y
     })
+    const fills = [
+      {
+        id: `${common.id}-fill`,
+        type: 'fill',
+        kind: 'solid',
+        color: path.fill,
+        opacity: 1,
+        visible: true,
+        colorFormat: 'hex',
+        defaultColorFormat: 'hex',
+        gradient: null
+      }
+    ]
+    roleToElementIds[path.id] = [common.id]
+    if (isOval)
+      return { descriptor: { ...common, fills }, pointCount: 0, role: path.id }
     const points: Record<string, unknown> = {},
       segments: Record<string, unknown> = {},
       networks: Record<string, unknown> = {}
@@ -339,19 +383,7 @@ export const prepareLocalVectorArtifact = (
             ].map((key) => [key, `${common.id}-${key}`])
           )
         },
-        fills: [
-          {
-            id: `${common.id}-fill`,
-            type: 'fill',
-            kind: 'solid',
-            color: path.fill,
-            opacity: 1,
-            visible: true,
-            colorFormat: 'hex',
-            defaultColorFormat: 'hex',
-            gradient: null
-          }
-        ]
+        fills
       },
       pointCount: path.pointCount,
       role: path.id
@@ -383,7 +415,7 @@ export const prepareLocalVectorArtifact = (
     groupBounds: target,
     groupDescriptor,
     parent: 'workspace',
-    pointCount: retained.reduce((sum, path) => sum + path.pointCount, 0),
+    pointCount: prepared.reduce((sum, item) => sum + item.pointCount, 0),
     roleToElementIds,
     skipped: [],
     slices

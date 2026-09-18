@@ -1,3 +1,7 @@
+import {
+  parseLocalVectorArtifact,
+  prepareLocalVectorArtifact
+} from '../server/local-vector-artifact'
 import { writeFile } from 'node:fs/promises'
 import { expect, test } from '@playwright/test'
 import { createTestDocumentIdentity, waitForAppReady } from './test-utils'
@@ -200,7 +204,13 @@ test('local subscription traces the reference logo at 240px without its separate
       }))
   })
   const vectors = elements.filter(({ type }) => type === 'vector')
-  expect(vectors).toHaveLength(37)
+  expect(vectors).toHaveLength(36)
+  expect(elements.filter(({ type }) => type === 'oval')).toEqual([
+    expect.objectContaining({
+      name: 'path-1',
+      computed: expect.objectContaining({ width: 240, height: 240 })
+    })
+  ])
   expect(vectors.map(({ name }) => name)).not.toContain('path-22')
   expect(elements.find(({ type }) => type === 'group')).toMatchObject({
     computed: { width: 240, height: 240 }
@@ -277,7 +287,9 @@ test('local subscription uses acknowledged drawing IDs for a dependent edit in o
   const visibility = await page.evaluate(async () => {
     const core = (await import('../src/testing/runtime-access')).core
     return [...core.deps.sceneTree.getAllElements().values()]
-      .filter((element) => element.get('type') === 'vector')
+      .filter((element) =>
+        ['oval', 'vector'].includes(String(element.get('type')))
+      )
       .map((element) => ({
         name: element.get('name'),
         visible: element.get('visible')
@@ -307,4 +319,68 @@ test('local subscription uses acknowledged drawing IDs for a dependent edit in o
   expect(await getCoreDocumentDigest(page)).toEqual(before)
   await redo(page)
   expect(await getCoreDocumentDigest(page)).toEqual(after)
+})
+
+test('backend-selected circles become native Ovals through the ordinary Agent action', async ({
+  page
+}, testInfo) => {
+  const artifact = parseLocalVectorArtifact(
+    '<svg width="100" height="100"><path d="M50,0L85,15L100,50L85,85L50,100L15,85L0,50L15,15Z" fill="#008800"/></svg>'
+  )
+  const drawing = prepareLocalVectorArtifact(artifact, {
+    imageArtifactId: artifact.imageArtifactId,
+    compositionRole: 'Native circle',
+    bounds: { x: 50, y: 50, width: 240, height: 240 },
+    excludePathIds: [],
+    ovalPathIds: ['path-1']
+  })
+  await page.route('**/api/ai/status', (route) =>
+    route.fulfill({ json: { state: 'ready' } })
+  )
+  await page.route('**/api/ai/action-batch', (route) =>
+    route.fulfill({
+      json: {
+        batchId: 'native-oval',
+        actions: [
+          {
+            id: 'draw',
+            name: 'insert_vector_composition',
+            arguments: drawing,
+            summary: 'Draw the circle'
+          }
+        ]
+      }
+    })
+  )
+  await page.goto(createTestDocumentIdentity().url)
+  await waitForAppReady(page)
+  await page.getByRole('button', { name: 'Open Agent' }).click()
+  await page
+    .getByLabel('Message Agent')
+    .fill('Draw a 240 by 240 green circle using Oval.')
+  await page.getByRole('button', { name: 'Send', exact: true }).click()
+  await expect(page.getByTestId('ai-agent-message')).toHaveAttribute(
+    'data-outcome',
+    'success'
+  )
+  const elements = await page.evaluate(async () => {
+    const core = (await import('../src/testing/runtime-access')).core
+    if (!core) throw new Error('App runtime unavailable')
+    return [...core.deps.sceneTree.getAllElements().values()]
+      .filter(
+        (element) =>
+          !['workspace', 'group'].includes(String(element.get('type')))
+      )
+      .map((element) => ({
+        type: element.get('type'),
+        computed: element.getAllComputedData()
+      }))
+  })
+  expect(elements).toHaveLength(1)
+  expect(elements[0]).toMatchObject({
+    type: 'oval',
+    computed: { width: 240, height: 240 }
+  })
+  expect(drawing.pointCount).toBe(0)
+  await page.screenshot({ path: testInfo.outputPath('native-oval.png') })
 })

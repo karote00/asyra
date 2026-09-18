@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { AI_APP_PROMPT, AI_IMAGE_TOOL_CATALOG } from '../ai-domain-prompt'
+import {
+  AI_APP_PROMPT,
+  AI_IMAGE_TOOL_CATALOG,
+  AI_OPERATION_INSTRUCTIONS
+} from '../ai-domain-prompt'
 
 describe('Asyra Design backend-owned AI domain prompt', () => {
   it('defines the registered App action and image-tool policy on the server', () => {
@@ -36,4 +40,17 @@ describe('Asyra Design backend-owned AI domain prompt', () => {
       /background-removal|segmentation|crop/
     )
   })
+})
+
+it('requires iterative review and native primitives without inventing visual evidence', () => {
+  expect(AI_APP_PROMPT).toContain('native Oval')
+  expect(AI_APP_PROMPT).toContain('ovalPathIds')
+  expect(AI_OPERATION_INSTRUCTIONS).toContain(
+    'After every acknowledged operation'
+  )
+  expect(AI_OPERATION_INSTRUCTIONS).toContain('repeat review and correction')
+  expect(AI_OPERATION_INSTRUCTIONS).toContain(
+    'execution success is not visual correctness'
+  )
+  expect(AI_OPERATION_INSTRUCTIONS).toContain('no improvement')
 })

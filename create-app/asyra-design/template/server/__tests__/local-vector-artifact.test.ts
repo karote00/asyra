@@ -2,7 +2,11 @@ import { describe, expect, it, vi } from 'vitest'
 import { createLocalImageTools } from '../local-image-tools'
 import { readFile } from 'node:fs/promises'
 import { convertVTracerBuffer } from '../../vtracer-tool-server.mjs'
-import { parseLocalVectorArtifact } from '../local-vector-artifact'
+import {
+  parseLocalVectorArtifact,
+  prepareLocalVectorArtifact,
+  vectorArtifactSummary
+} from '../local-vector-artifact'
 
 const svg =
   '<svg width="100" height="100"><path d="M0,0L80,0L80,80L0,80Z M20,20L20,40L40,40L40,20Z" fill="#008800"/><path d="M85,85L95,85L95,95L85,95Z" fill="#008800"/></svg>'
@@ -168,5 +172,82 @@ describe('request-owned vector artifacts', () => {
       )
     ).rejects.toThrow()
     expect(convert).not.toHaveBeenCalled()
+  })
+})
+
+describe('explicit native oval preparation', () => {
+  const source =
+    '<svg width="100" height="100"><path d="M40,0L68,12L80,40L68,68L40,80L12,68L0,40L12,12Z" fill="#008800"/><path d="M85,85L95,85L95,95L85,95Z" fill="#FFFFFF"/></svg>'
+  const artifact = parseLocalVectorArtifact(source)
+  const args = {
+    imageArtifactId: artifact.imageArtifactId,
+    compositionRole: 'Drawing',
+    bounds: { x: 10, y: 20, width: 190, height: 190 },
+    excludePathIds: []
+  }
+  it('uses one native oval instead of polygon segments and preserves neighboring geometry', () => {
+    const original = prepareLocalVectorArtifact(artifact, args)
+    const result = prepareLocalVectorArtifact(artifact, {
+      ...args,
+      ovalPathIds: ['path-1']
+    })
+    const descriptors = result.slices.flatMap((slice) => slice.descriptors)
+    expect(descriptors[0]).toMatchObject({
+      type: 'oval',
+      x: 0,
+      y: 0,
+      width: 160,
+      height: 160,
+      fills: [{ color: '#008800' }]
+    })
+    expect(descriptors[0]).not.toHaveProperty('points')
+    expect(descriptors[0]).not.toHaveProperty('segments')
+    expect(descriptors[1]).toMatchObject({
+      type: 'vector',
+      x: 170,
+      y: 170,
+      width: 20,
+      height: 20
+    })
+    expect(result.roleToElementIds['path-1']).toEqual([descriptors[0].id])
+    expect(result.pointCount).toBe(
+      original.pointCount - artifact.paths[0].pointCount
+    )
+    expect(
+      result.slices.reduce((sum, slice) => sum + slice.pointCount, 0)
+    ).toBe(result.pointCount)
+    expect(artifact.paths[0].pointCount).toBe(8)
+    expect(vectorArtifactSummary(artifact).paths[0]).toMatchObject({
+      subpathCount: 1
+    })
+    expect(original.slices[0].descriptors[0].type).toBe('vector')
+  })
+  it('rejects invalid or compound selections before producing descriptors', () => {
+    for (const ovalPathIds of [
+      ['missing'],
+      ['path-1', 'path-1'],
+      [1],
+      null,
+      'path-1'
+    ]) {
+      expect(() =>
+        prepareLocalVectorArtifact(artifact, { ...args, ovalPathIds })
+      ).toThrow()
+    }
+    expect(() =>
+      prepareLocalVectorArtifact(artifact, {
+        ...args,
+        ovalPathIds: ['path-1'],
+        excludePathIds: ['path-1']
+      })
+    ).toThrow()
+    const compound = parseLocalVectorArtifact(svg)
+    expect(() =>
+      prepareLocalVectorArtifact(compound, {
+        ...args,
+        imageArtifactId: compound.imageArtifactId,
+        ovalPathIds: ['path-1']
+      })
+    ).toThrow()
   })
 })

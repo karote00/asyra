@@ -102,3 +102,21 @@ A receipt acknowledges provisional execution within the open transaction, not a
 committed or durable document. Final report_outcome is non-mutating and explains
 completion or a capability limit; unsupported work is not a retryable error.
 HTTP and exact-sample single-batch providers retain the same ordinary runtime path.
+
+## Review and native primitives
+
+The domain prompt requires review of the original constraints after each
+acknowledged operation and permits repeated supported corrections in the same
+request. Receipts prove execution, not visual fidelity. Without rendered-image
+feedback the model must state visual uncertainty rather than claim it inspected
+the canvas. Stop if requirements are satisfied, supported edits are exhausted,
+no improvement is obtained, or cancellation/runtime limits are reached.
+
+Prefer native Oval for intended circles/ellipses, including circular outlines,
+and native Rectangle for rectangles. Preserve deliberately irregular contours.
+Image-reference preparation accepts optional ovalPathIds: explicitly selected
+whole single-contour paths become filled native Ovals at their original mapped
+bounds, with original fill/order/role. Compound paths are ineligible so holes
+are not silently filled. Selection is not automatic shape recognition or
+arbitrary path cutting. Unknown, duplicate, excluded or ineligible IDs fail
+before canonical mutation. Unselected paths remain unchanged.
