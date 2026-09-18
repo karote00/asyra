@@ -123,3 +123,9 @@ may move the generic adapter/contracts to dedicated packages and install the
 default provider through Preset. Preset would own default composition, not SDK
 execution, robot semantics, or collision decisions. No extraction is performed
 in this task.
+
+
+The CUSTOM engine advertises only its implemented object, graphics, interaction,
+resource and spatial capabilities. The optional framework snapshot query is not
+supported and fails with UnsupportedRenderEngineCapabilityError before projection
+or drawing. Adding a framework capability does not opt this engine into it.

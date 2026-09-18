@@ -480,3 +480,16 @@ unit-test file triggers Vite reload and invalidates a live conversation result.
 The reload-interrupted run is not model latency evidence. The frozen final browser suite passed all 12 cases, including live refinement.
 PR-head CI remains required before delivery. Polygon tracing quality remains a documented
 limitation; this scope does not install or substitute another conversion tool.
+
+#### CI direct-consumer compatibility correction
+
+The new optional query exposed two direct consumers: FieldScope and Asyra Sim
+ThreeEngine assumed every remaining query had point coordinates and advertised
+all enum capabilities automatically. CI correctly rejects the widened union.
+Bounded correction is their engine files, existing engine tests and capability
+documentation only: list the capabilities actually implemented and explicitly
+reject snapshot before projection work. Do not implement 3D capture or change
+spatial rendering. Test-first rejection/capability admission, both engine suites,
+and the full monorepo React build precede the next push. The capture owner still
+reports unavailable for engines without the capability; no active spatial plan
+or Inspector route gains a new output or behavior.
