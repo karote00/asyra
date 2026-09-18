@@ -782,7 +782,7 @@ for (const width of [360, 1280]) {
         const style = getComputedStyle(element)
         return [style.animationDuration, style.animationIterationCount]
       })
-      expect(animation).toEqual(['0.5s', '2'])
+      expect(animation).toEqual(['1s', '1'])
       await expect
         .poll(() =>
           bell.evaluate((element) =>

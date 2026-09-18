@@ -127,8 +127,9 @@ const partialCounts = (
 
 export const formatElapsedTime = (durationMs: number): string => {
   const seconds = Math.max(0, durationMs) / 1_000
+  if (seconds < 0.05) return '0s'
   if (seconds < 10) {
-    return `${Math.max(0.1, seconds).toFixed(1)}s`
+    return `${seconds.toFixed(1)}s`
   }
 
   const roundedSeconds = Math.round(seconds)

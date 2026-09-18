@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { projectAiActivity } from '../presentation'
 import {
   canRetryAiTurn,
+  formatElapsedTime,
   projectAiDrawingDetailChoice,
   summarizeAiTurn
 } from '../presentation'
@@ -310,4 +311,12 @@ it('describes provider work and unknown tools without exposing implementation na
     expect(projection.current.label).toBe('Working on your request')
     expect(projection.current).toBe(projection.entries.at(-1))
   }
+})
+
+it('starts elapsed time at zero without inventing a minimum duration', () => {
+  for (const duration of [-1, 0, 1, 24, 49]) {
+    expect(formatElapsedTime(duration)).toBe('0s')
+  }
+  expect(formatElapsedTime(100)).toBe('0.1s')
+  expect(formatElapsedTime(1250)).toBe('1.3s')
 })

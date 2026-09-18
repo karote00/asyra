@@ -40,10 +40,12 @@ textarea {
   100% {
     transform: rotate(0deg);
   }
-  25% {
-    transform: rotate(16deg);
-  }
-  75% {
+  12.5%,
+  62.5% {
     transform: rotate(-16deg);
+  }
+  37.5%,
+  87.5% {
+    transform: rotate(16deg);
   }
 }
