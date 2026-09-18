@@ -188,7 +188,7 @@
         },
         {
           "path": "docs/ai/framework/packages/input-system.md",
-          "sha256": "25f8024bcc2bd80b6386512e480d53ed0159382f341c3ed1c65d3eb6857528d3"
+          "sha256": "f98b75ca0bf3f435c76321d4a4fe80897221beb8c6307313df63316d8e365c06"
         },
         {
           "path": "docs/ai/framework/plans/headless-core-and-core-kernel-future-plan.md",
@@ -410,7 +410,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/input-system.md",
-          "sha256": "25f8024bcc2bd80b6386512e480d53ed0159382f341c3ed1c65d3eb6857528d3"
+          "sha256": "f98b75ca0bf3f435c76321d4a4fe80897221beb8c6307313df63316d8e365c06"
         },
         {
           "path": "packages/input-system/package.json",
