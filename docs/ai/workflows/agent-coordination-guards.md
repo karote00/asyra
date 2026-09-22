@@ -5,6 +5,18 @@ worktree, Inspector, test-first, review and PR workflow. It is not an operating
 system sandbox, an authenticated agent identity provider, or a replacement for
 product reasoning. Framework and app behavior are outside its mutation scope.
 
+Multi-agent work is opt-in only. The repository's active Codex configuration
+keeps multi-agent tools disabled, and the reusable role files are stored as
+templates under `docs/ai/workflows/multi-agent-templates/` instead of the active
+`.codex/agents/` loading path. AGENTS.md, this guard, hooks, role templates,
+skills, and agent judgment cannot authorize spawning or delegating to another
+agent. Use this coordination layer for multi-agent writes only when the user
+explicitly asks for multi-agent work in the current task.
+
+Single-agent protection remains active through project hooks and the core guard
+checks where applicable. Keeping hooks active is not the same as enabling
+multi-agent tools or starting subagents.
+
 ## Task boundary
 
 The coordinator registers one versioned task before enabling its writes. The

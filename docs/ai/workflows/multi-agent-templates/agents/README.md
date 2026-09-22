@@ -1,8 +1,19 @@
-# Project agent roles
+# Opt-in project agent role templates
 
-These eight reusable role definitions are project-scoped. They do not represent
-eight continuously running workers. The existing project configuration allows
-seven subagent threads in addition to the leader; it has not been changed.
+These eight reusable role definitions are templates only. They are intentionally
+stored outside `.codex/agents/` so Codex does not load them as project-scoped
+custom agents by default.
+
+The active project configuration keeps multi-agent tools disabled. A role
+template, AGENTS.md instruction, skill, hook, or coordinator rule is not user
+authorization to spawn or delegate to another agent. Use these templates only
+when the user explicitly asks for multi-agent work in the current task.
+
+To opt in for a user-authorized task, copy the selected role file into
+`.codex/agents/`, update `.codex/config.toml` from
+`docs/ai/workflows/multi-agent-templates/config.opt-in.example.toml`, restart or
+reload the Codex session as needed, and remove the active project agent config
+when the authorized task is complete.
 
 | Role                    | Model           | Effort   | Assignment                                                |
 | ----------------------- | --------------- | -------- | --------------------------------------------------------- |
@@ -16,6 +27,9 @@ seven subagent threads in addition to the leader; it has not been changed.
 | `evidence_researcher`   | `gpt-5.6-terra` | `medium` | Bounded primary-source and repository evidence            |
 
 ## Leader coordination
+
+These instructions apply only after explicit user authorization enables
+multi-agent work for the current task.
 
 Select the role, model and effort before dispatch. Read only the selected role
 file, then provide the task objective, exact worktree/branch/source, necessary
@@ -52,11 +66,13 @@ background wake-up service for a stopped desktop task.
 
 ## Runtime binding and verification
 
-The TOML role files are the authoritative definitions. This session's exposed
-collaboration API accepts explicit model/effort values but has no custom-role
-selector. Until native name-based loading is confirmed, the leader reads the
-selected file and explicitly supplies its instructions, model and effort to the
-delegation tool. Do not claim that a filename or task name alone activated a role.
+The TOML role files are the template definitions. When copied into the active
+`.codex/agents/` directory for a user-authorized task, Codex treats them as
+project-scoped custom agents. This session's exposed collaboration API accepts
+explicit model/effort values but has no custom-role selector. Until native
+name-based loading is confirmed, the leader reads the selected file and
+explicitly supplies its instructions, model and effort to the delegation tool.
+Do not claim that a filename or task name alone activated a role.
 
 All eight files passed TOML parsing and required-field checks. Native automatic
 loading and live dispatch should be verified on the next necessary assignment,
@@ -64,8 +80,9 @@ not by creating an otherwise unnecessary model task. Existing running agents do
 not change model merely because a role file changed.
 
 No new SDK, model provider, API key, global configuration, dependency or runtime
-was introduced. Role instructions do not grant new filesystem, Git, publication
-or hardware permissions. The current goal PRs must not merge into main.
+is required by these templates. Role instructions do not grant new filesystem,
+Git, publication or hardware permissions. The current goal PRs must not merge
+into main.
 
 Official format reference:
 <a href="https://learn.chatgpt.com/docs/agent-configuration/subagents#custom-agents" target="_blank" rel="noopener noreferrer">Codex Custom Agents</a>.
