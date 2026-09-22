@@ -107,7 +107,7 @@ describe.sequential('AI agent Feature lifecycle', () => {
       }): Promise<AiAgentFeatureResult>
     }
     await api.execute({
-      intent: '  畫一個貓臉  ',
+      intent: '  draw a cat face  ',
       metadata: {
         conversationId: 'conversation-1',
         turnId: 'conversation-1:turn:1'
@@ -116,7 +116,7 @@ describe.sequential('AI agent Feature lifecycle', () => {
     })
 
     expect(run).toHaveBeenCalledWith({
-      intent: '畫一個貓臉',
+      intent: 'draw a cat face',
       metadata: {
         conversationId: 'conversation-1',
         turnId: 'conversation-1:turn:1'

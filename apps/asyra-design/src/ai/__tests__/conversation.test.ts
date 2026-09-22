@@ -97,13 +97,17 @@ describe('Asyra Design AI conversation controller', () => {
       getElementType: vi.fn(() => 'oval')
     })
 
-    await expect(controller.submit('  畫一個貓臉  ')).resolves.toMatchObject({
+    await expect(
+      controller.submit('  draw a cat face  ')
+    ).resolves.toMatchObject({
       conversationId: 'conversation-a',
-      intent: '畫一個貓臉',
+      intent: 'draw a cat face',
       outcome: 'success',
       turnId: 'conversation-a:turn:1'
     })
-    await expect(controller.submit('把眼睛放大一點')).resolves.toMatchObject({
+    await expect(
+      controller.submit('make the eyes bigger')
+    ).resolves.toMatchObject({
       conversationId: 'conversation-a',
       turnId: 'conversation-a:turn:2'
     })
@@ -141,7 +145,7 @@ describe('Asyra Design AI conversation controller', () => {
     }
     const settlement = controller.submit({
       attachments: [sourceAttachment],
-      intent: '  請依照這張圖繪製  '
+      intent: '  draw from this image  '
     })
 
     const active = controller.getSnapshot().activeTurn
@@ -153,13 +157,13 @@ describe('Asyra Design AI conversation controller', () => {
           size: 5
         }
       ],
-      intent: '請依照這張圖繪製'
+      intent: 'draw from this image'
     })
     expect(Object.isFrozen(active?.attachments)).toBe(true)
     expect(Object.isFrozen(active?.attachments[0])).toBe(true)
     expect(feature.execute).toHaveBeenCalledWith(
       expect.objectContaining({
-        intent: '請依照這張圖繪製',
+        intent: 'draw from this image',
         metadata: expect.objectContaining({
           imageAttachments: [
             {
@@ -187,7 +191,7 @@ describe('Asyra Design AI conversation controller', () => {
           name: 'tabby.png'
         }
       ],
-      intent: '請依照這張圖繪製'
+      intent: 'draw from this image'
     })
   })
 
@@ -300,8 +304,8 @@ describe('Asyra Design AI conversation controller', () => {
     await expect(controller.submit('   ')).rejects.toMatchObject({
       code: 'AI_CONVERSATION_INVALID_INTENT'
     })
-    const first = controller.submit('畫一個貓臉')
-    await expect(controller.submit('第二個回合')).rejects.toEqual(
+    const first = controller.submit('draw a cat face')
+    await expect(controller.submit('second turn')).rejects.toEqual(
       expect.objectContaining<Partial<AiConversationError>>({
         code: 'AI_CONVERSATION_TURN_ACTIVE'
       })
@@ -327,7 +331,7 @@ describe('Asyra Design AI conversation controller', () => {
       targetTypes.get(elementId)
     )
     const feature = createFeature(async (request) => {
-      if (request.intent === '畫一個貓臉') {
+      if (request.intent === 'draw a cat face') {
         return executed({
           appliedElementIds: [
             'face-1',
@@ -360,14 +364,14 @@ describe('Asyra Design AI conversation controller', () => {
       getElementType
     })
 
-    await controller.submit('畫一個貓臉')
+    await controller.submit('draw a cat face')
     targetTypes.delete('whisker-gone')
-    await controller.submit('把眼睛放大一點')
+    await controller.submit('make the eyes bigger')
 
     expect(feature.execute).toHaveBeenNthCalledWith(
       2,
       expect.objectContaining({
-        intent: '把眼睛放大一點',
+        intent: 'make the eyes bigger',
         metadata: {
           aiTargets: {
             compositionId: 'group-1',
@@ -460,7 +464,7 @@ describe('Asyra Design AI conversation controller', () => {
       feature,
       getElementType: vi.fn()
     })
-    const settlement = controller.submit('畫一個貓臉')
+    const settlement = controller.submit('draw a cat face')
 
     expect(controller.cancel('user-cancelled')).toBe(true)
     expect(feature.cancel).toHaveBeenCalledWith('user-cancelled')
