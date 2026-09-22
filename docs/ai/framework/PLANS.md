@@ -13,9 +13,13 @@ worktrees, and child PRs targeting `codex/adoption-onboarding`. Review and
 validate each child before authorized integration. No multi-agent delegation
 is authorized.
 
-The program is planned, not implemented. Its first task reconciles existing
-entry authorities; the first small child PR repairs stale example links.
-Runtime and release work require their own bounded task contracts.
+The program is the single adoption journey owner. Its first task is in progress:
+one child PR repaired stale example links, and the current
+README/homepage-baseline child records that the root README and six-chapter
+homepage are already implemented and locally covered at
+`b44be9e77b6a742ad8094da008b4122c06d51a2a`. Runtime readiness, release-owner
+mapping, community policy, integration review, merge, publication and deployment
+remain separate states with their own bounded task contracts.
 
 ## Active Public Entry Experience Plans
 
@@ -25,9 +29,9 @@ or unsupported capability claims.
 
 1. Root README comprehension and evidence
 
-- Reorder the repository entry around real product proof, a concrete value
-  comparison, one verified public Feature, supported starting paths, ownership,
-  and current support.
+- Current baseline has already reordered the repository entry around real
+  product proof, a concrete value comparison, one verified public Feature,
+  supported starting paths, ownership, and current support.
 - Preserve the accepted public README inventory, generated-surface ownership,
   contribution policy, and validation contracts.
 - Plan:
@@ -35,10 +39,11 @@ or unsupported capability claims.
 
 2. Website product and technical evidence
 
-- Preserve the accepted result-first landing identity while adding current
-  product, code, ownership, and readiness evidence.
-- Rebalance or consolidate conceptual sections instead of extending the page
-  with more unverified abstraction.
+- Current homepage authority is the accepted six-chapter spatial story at `/`,
+  with product evidence and three build/evaluate entries following it.
+- Treat the older product-and-technical-evidence and five-chapter brand-story
+  sections as version background unless a new homepage task explicitly changes
+  the current spatial-story contract.
 - Plan:
   `docs/ai/framework/plans/website-product-and-technical-evidence-plan.md`
 

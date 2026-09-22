@@ -2,10 +2,19 @@
 
 ## Status and execution agreement
 
-Planned on 2026-09-23. Product direction accepted; implementation has not
-started in this program. This document owns the program sequence and handoff
-contract. Existing runtime, App, release, and homepage authorities continue to
-own their exact behavior until an explicitly scoped task reconciles them.
+Planned on 2026-09-23. Product direction accepted. This document is the single
+adoption journey owner for the program sequence, task dependencies, handoff
+contract, and current adoption baseline; related README and website plans remain
+specialized authorities and must link back here instead of becoming competing
+program plans. Existing runtime, App, release, and homepage authorities continue
+to own their exact behavior until an explicitly scoped task reconciles them.
+
+Task 1 is partially in progress. The stale example-link child PR recorded below
+completed one bounded documentation repair. The 2026-09-23
+`codex/adoption-entry-contracts` baseline records the current root README and
+homepage authority only. Minimal runtime readiness, release owner mapping,
+community policy, and later public activation work remain pending and require
+their own bounded task slices.
 
 The user selected sequential, separate conversations with PR review between
 tasks to control usage. This agreement supersedes the original proposal's
@@ -107,6 +116,43 @@ The initial read-only assessment found:
 These are observations from the initial local inspection, not an assertion about
 the latest remote main. Task 1 must record its exact baseline commit once.
 
+Task 1 README/homepage baseline recorded from
+`b44be9e77b6a742ad8094da008b4122c06d51a2a` on 2026-09-23:
+
+- Root `README.md` has already implemented the product-first public entry
+  composition: Asyra Design evidence, the 7,076-element product proof, a
+  conventional-versus-Asyra ownership comparison, a copyable Undo/Redo Feature
+  excerpt, package-first and complete Design product starting paths, ownership
+  boundaries, current support, and explicit non-capabilities.
+- Existing README validators and tests now assert that composition, including
+  `scripts/docs/__tests__/public-readme-inputs.test.mjs` and the public README
+  validation workflow. This verifies the current README contract at this
+  baseline; it does not prove the complete adoption program, future generic
+  starter, publication readiness, or release-owner work.
+- The homepage at `apps/asyra-framework-site/app/page.tsx` currently composes
+  `SpatialStory`, `HomeResources`, and `SiteFooter`, with
+  `apps/asyra-framework-site/docs/spatial-story.md` as the current visual,
+  content, route, and verification contract. The prior observation that
+  `spatial-story.tsx` and `home-resources.tsx` were absent is historical and is
+  contradicted by this baseline.
+- The accepted homepage is the six-chapter green spatial story at `/`; `/story`
+  is removed. Current direct tests include homepage composition, route removal,
+  six distinct chapters, server-owned product resources, native navigation,
+  continuity, static snapshots, and Playwright coverage for desktop, mobile,
+  reduced-motion, no-JavaScript, and building-replacement cases.
+- Homepage CTAs and resource entries currently route to the live Asyra Design
+  product, `/asyra-design`, `/docs/start/custom-composition`,
+  `/docs/start/create-design-app`, and `/atlas`. This records the current entry
+  implementation and tests, not final product-owner acceptance of every visual
+  detail or integration with future adoption tasks.
+- The six-chapter spatial story has a current contract and formal tests. Do not
+  resurrect the retired factory film, five-chapter brand story, separate
+  architecture explainer, PoC comic, or missing attachment description as the
+  current homepage authority without a new product-owner decision.
+- Remaining task 1 gaps after this README/homepage slice: minimal runtime
+  readiness, exact release owners, community/support reconciliation, FieldScope
+  source claims, and any integrated validation after child PRs merge.
+
 ## Relationship to Design AI work
 
 The separate task titled `確認 asyra-design 的本機 AI 訂閱` owns the ongoing
@@ -132,11 +178,12 @@ full Design agent being complete and does not require a model account or key.
 
 ## Sequential tasks
 
-All tasks below are pending. No PR has been created by this program.
+Tasks below are tracked by review and integration state. A child PR can complete
+one bounded slice without completing the whole task or adoption program.
 
 | Task | Bounded result and owners | Acceptance and dependency |
 | --- | --- | --- |
-| 1 - Reconcile contracts | This plan, existing entry/README/site plans, directly relevant public-entry authorities | Record baseline and actual homepage authority; reconcile old decisions without erasing history; identify exact minimal-runtime readiness work, existing gates, and release owners. Documentation PR only; no runtime or site behavior changes. |
+| 1 - Reconcile contracts | This plan, existing entry/README/site plans, directly relevant public-entry authorities | In progress. Example-link repair is recorded above. README/homepage baseline is recorded at `b44be9e77`; the current root README composition and six-chapter homepage authority are implemented and locally testable at that baseline. Minimal-runtime readiness, existing gates beyond this slice, release owners, support/community, and remaining public-entry reconciliation stay pending. Documentation PR only; no runtime or site behavior changes. |
 | 2 - Minimal canonical App | One explicitly authored App source and its direct tests/docs | Registered Feature -> App API -> canonical transaction -> projection; add/edit, Undo/Redo, validated Save/Reload, failure reporting and lifecycle. Prove supported runtime composition without Design domain coupling. Depends on task 1. |
 | 3 - CLI and standalone template | Generic CLI, generation/release integration, canonical source instructions and generated output | Safe generation, supported package managers, public imports, independent install/build/typecheck/test, canonical behavior, no workspace hoisting dependency, template parity. Replace retired-contract tests deliberately. Depends on task 2. No registry publication. |
 | 4 - AI-first starter onboarding | Canonical starter AGENTS/docs/tests and generated sync | One bounded priority-field extension preserves mutation, Undo, projection and saved-data compatibility through formal tests. Record whether the exercise was actually performed; instructions alone are not proof. Depends on task 3. No runtime AI provider. |
