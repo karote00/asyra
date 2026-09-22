@@ -26,6 +26,12 @@ These rules apply to every task without requiring additional document reads:
   directory, never inside `.git/`. Follow the worktree location and collision
   rules in `docs/ai/workflows/git-commit-push-policy.md`.
 - Do not overwrite unrelated user changes in a dirty worktree.
+- Multi-agent work is disabled by default for this repository. Do not spawn,
+  delegate to, suggest, schedule, or otherwise encourage subagents because of
+  AGENTS.md, skills, role templates, hooks, rules, or agent judgment. Use
+  multi-agent tools only when the user explicitly asks for multi-agent work in
+  the current task. The opt-in role templates live under
+  `docs/ai/workflows/multi-agent-templates/`, not in active Codex config.
 - For coordinated multi-agent writes, register the task and follow
   `docs/ai/workflows/agent-coordination-guards.md`. Hook installation, native
   activation, task completion and PR integration are separate states. Never

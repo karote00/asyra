@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
+  existsSync,
   readFileSync,
+  readdirSync,
   mkdirSync,
   mkdtempSync,
   writeFileSync,
@@ -178,6 +180,42 @@ test('project hooks are synchronous, bounded and limited to supported boundaries
     'WebSearch',
     new RegExp(config.hooks.PreToolUse[0].matcher)
   )
+})
+
+test('project Codex defaults stay single-agent and keep custom roles opt-in', () => {
+  const projectConfig = readFileSync(
+    new URL('../../.codex/config.toml', import.meta.url),
+    'utf8'
+  )
+  assert.match(projectConfig, /^\[agents\]$/m)
+  assert.match(projectConfig, /^enabled = false$/m)
+  assert.doesNotMatch(projectConfig, /^max_concurrent_threads_per_session\s*=/m)
+
+  assert.equal(
+    existsSync(new URL('../../.codex/agents', import.meta.url)),
+    false
+  )
+
+  const templateRoot = new URL(
+    '../../docs/ai/workflows/multi-agent-templates/',
+    import.meta.url
+  )
+  const templateConfig = readFileSync(
+    new URL('config.opt-in.example.toml', templateRoot),
+    'utf8'
+  )
+  assert.match(templateConfig, /^max_concurrent_threads_per_session = 7$/m)
+  const roleFiles = readdirSync(new URL('agents/', templateRoot)).filter(
+    (entry) => entry.endsWith('.toml')
+  )
+  assert.equal(roleFiles.length, 8)
+  for (const roleFile of roleFiles) {
+    const roleText = readFileSync(new URL(`agents/${roleFile}`, templateRoot), {
+      encoding: 'utf8'
+    })
+    assert.match(roleText, /^name = "[a-z0-9_]+"$/m)
+    assert.match(roleText, /^developer_instructions = """$/m)
+  }
 })
 
 const registry = {
