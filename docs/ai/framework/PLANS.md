@@ -14,11 +14,14 @@ validate each child before authorized integration. No multi-agent delegation
 is authorized.
 
 The program is the single adoption journey owner. Its first task is in progress:
-one child PR repaired stale example links, and the current
-README/homepage-baseline child records that the root README and six-chapter
-homepage are already implemented and locally covered at
-`b44be9e77b6a742ad8094da008b4122c06d51a2a`. Runtime readiness, release-owner
-mapping, community policy, integration review, merge, publication and deployment
+one child PR repaired stale example links, the current README/homepage-baseline
+child records that the root README and six-chapter homepage are already
+implemented and locally covered at
+`b44be9e77b6a742ad8094da008b4122c06d51a2a`, and the starter-readiness child
+freezes the next minimal canonical App scope as supported Core/Preset startup,
+App-owned Item data, Feature/App API transactions, projection, Undo/Redo, and
+explicit Save/Reload. Release-owner mapping, community policy, FieldScope
+claim reconciliation, integration review, merge, publication and deployment
 remain separate states with their own bounded task contracts.
 
 ## Active Public Entry Experience Plans

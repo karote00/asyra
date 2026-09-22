@@ -176,6 +176,190 @@ second. Do not duplicate Design provider, image processing, research, panel, or
 text-rendering implementation. Generic starter delivery does not depend on the
 full Design agent being complete and does not require a model account or key.
 
+## Generic starter implementation readiness
+
+Prepared on 2026-09-23 from
+`origin/codex/adoption-onboarding` at
+`0065d1504ac34889ded7adaea494e0d6f34b8262`. This documentation-only slice
+freezes the smallest implementation-ready plan for the next minimal canonical
+App task. It does not implement the starter and must not be described as
+starter completion.
+
+### Starter decision
+
+- Source owner: create the canonical App source under a new app workspace, with
+  the exact path selected in the implementation task before edits. Do not use
+  `apps/asyra`, `create-app/asyra`, or
+  `release-configs/create-asyra-app.json` as a silent resurrection of the
+  retired React-only starter. `scripts/__tests__/create-app-cli.test.mjs`
+  currently asserts that those paths and the `create-asyra-app` public name stay
+  absent; the CLI/template slice must replace that contract in the same
+  coherent change that introduces any successor CLI path.
+- Minimal domain: use an App-owned `Item` with `id`, `title`, and `status`.
+  The canonical `id` is the Scene Tree element id. `title` and `status` are
+  stored in one App-owned Props property component attached to an App-owned
+  component type. Current `PropertySchema` supports string fields plus a
+  synchronous `validate` callback, so `status` should be a string field with an
+  App-owned allowed-status validator rather than a fabricated enum schema. If
+  implementation evidence shows that this cannot satisfy load fallback and
+  runtime reject semantics, the minimal fallback is one validated object
+  property that contains both fields, with the exact public API gap recorded.
+- Composition: use `@asyra/core` as the public lifecycle facade. Before
+  `core.start(...)`, register the App component/property schema, Feature,
+  projection owner, load hook, diagnostics hook, any save hook needed for App
+  version stamping, and cleanup. Apply `@asyra/preset` with profile `2D` and
+  `defaults: []` to bind the official Pixi render provider without installing
+  default product modules, then call `core.start(container, renderOptions)` and
+  treat the resolved promise as readiness. This stays on a supported
+  browser/Core composition path. Do not treat the current no-provider
+  compatibility branch as Headless support, and do not install an empty custom
+  provider merely to pass startup.
+- Dependencies: the minimal App needs `@asyra/core`, `@asyra/preset`,
+  `@asyra/render-engine-pixi` through Preset profile binding, and React/Vite
+  only for the UI shell. It does not need Collaboration, AI runtime, backend,
+  Design domain, release scripts, or new third-party packages in the starter
+  App slice. Add `@asyra/persistence` only if the implementation uses a
+  reference `DocumentLoadSource` or provider type directly; explicit
+  Save/Reload can otherwise call `core.save()` and `core.load(...)` through the
+  App document adapter.
+
+### One complete starter data path
+
+- Product action path: UI command or keyboard shortcut invokes the registered
+  Feature. The Feature calls the App API only; the App API wraps one finite
+  `runTransaction(...)` per intended add or edit action and calls Core facades
+  such as `core.createElementsInParent(...)` for Item creation and
+  `core.updateElementProperties(...)` for `title/status` edits. The App API is
+  the canonical product owner for defaults, status eligibility, empty-title
+  policy, and error messages.
+- Canonical owners: Scene Tree owns Item entity identity and hierarchy; Props
+  Manager owns `title/status` validation, runtime rejection, load fallback, and
+  serialization; Factory owns the single undo entry and Undo/Redo replay; Core
+  coordinates startup, registration, load/save, shared publication observation,
+  and owner facades. React owns only transient input text, selected row, and
+  command affordances.
+- Projection and UI subscription: create one App projection store from Core
+  observation facades. Consume completed document changes through
+  `core.subscribeToSharedPublication(...)` and, where a UI value needs a
+  derived registration, `core.registerUIProperty(...)`,
+  `core.getUIPropertySubject(...)`, and `core.onUIPropertyChange(...)`. The
+  projection reads current canonical data through `core.getElementData(...)`,
+  `core.getElementComputedData(...)`, and the App-owned Item property relation.
+  It must not keep a second editable document or make React state the source of
+  persisted item data.
+- Undo/Redo: expose Undo/Redo through the existing Factory/Core route. The next
+  implementation may use the public `undoWithRenderPolicy(...)` /
+  `redoWithRenderPolicy(...)` helpers re-exported from `@asyra/core` or an App
+  command path that already wraps those helpers. It must verify add, edit,
+  Undo, Redo, projection refresh, and explicit serialization through the normal
+  caller path, not by editing Factory history directly.
+- Save/Reload: use explicit `core.save()` for a portable document snapshot; it
+  is not an automatic durability acknowledgement and must not be scheduled from
+  every transaction. Save writes the returned `CoreRawData` into the App's
+  selected local storage/export owner. Reload reads untrusted data, runs the
+  App version/load hook chain through `core.preflightLoad(...)` for
+  user-facing diagnostics, then `core.load(...)` only when accepted. Unknown
+  starter versions, invalid Item status, malformed property payloads, and
+  invalid hierarchy must be reported in the App UI and either rejected or fall
+  back according to the owning Core/Props/Scene validation path. The V1 starter
+  must state its document version and include a minimal migration hook, even if
+  the first hook only accepts the current version.
+
+### Direct API and formal-test evidence
+
+- Lifecycle and public facade: `docs/ai/framework/packages/core.md`,
+  `docs/public/reference/packages/core.md`, `packages/core/src/index.ts`,
+  `packages/core/src/core.ts`,
+  `packages/core/src/__tests__/core-start-render.test.ts`,
+  `packages/core/src/__tests__/render-engine-provider.test.ts`, and
+  `packages/core/src/__tests__/core-runtime-reset.test.ts`.
+- Feature path and transaction owner:
+  `docs/ai/framework/packages/feature-system.md`,
+  `docs/ai/framework/packages/factory.md`,
+  `docs/ai/framework/rules/data-flow-and-transactions.md`,
+  `packages/core/src/__tests__/registration-facade.test.ts`,
+  `packages/factory/src/__tests__/factory.test.ts`,
+  `packages/factory/src/__tests__/history-depth.test.ts`, and
+  `packages/factory/src/__tests__/shared-publication.test.ts`.
+- App-owned schema, canonical properties, and projection:
+  `docs/ai/framework/packages/props-manager.md`,
+  `docs/ai/framework/packages/scene-tree.md`,
+  `docs/ai/framework/packages/ui-context.md`,
+  `packages/core/src/__tests__/define-component.test.ts`,
+  `packages/core/src/__tests__/define-property-component.test.ts`,
+  `packages/core/src/__tests__/element-property-api.test.ts`,
+  `packages/scene-tree/src/__tests__/property-type-projection.test.ts`, and
+  `packages/preset/src/__tests__/selection-subscriptions.test.ts`.
+- Explicit persistence and load validation:
+  `docs/ai/framework/packages/persistence.md`,
+  `docs/public/start/custom-composition.md`,
+  `packages/core/src/__tests__/transaction-persistence.test.ts`, and
+  `packages/core/src/__tests__/load-validation.test.ts`.
+- Preset/provider composition:
+  `docs/ai/framework/packages/preset.md`,
+  `docs/public/start/preset-2d.md`,
+  `packages/preset/src/__tests__/apply-preset.test.ts`, and
+  `packages/preset/src/__tests__/profile-provider.test.ts`.
+- CLI/template/release ownership:
+  `docs/ai/framework/rules/generated-artifacts.md`,
+  `docs/ai/framework/rules/release-version-topology.md`,
+  `scripts/__tests__/create-app-cli.test.mjs`,
+  `scripts/release-template.js`,
+  `release-configs/asyra-design.json`,
+  `scripts/__tests__/release-template-readiness.test.mjs`,
+  `scripts/__tests__/release-clean-consumer.test.mjs`,
+  `scripts/__tests__/app-release-plan.test.mjs`,
+  `scripts/__tests__/app-release-service.test.mjs`,
+  `scripts/__tests__/app-release-workflow.test.mjs`,
+  `scripts/__tests__/app-release-verification.test.mjs`,
+  `docs/ai/framework/plans/completed/local-versioned-package-install-research-plan.md`,
+  and
+  `docs/ai/framework/plans/completed/create-asyra-design-app-release-plan.md`.
+
+### Next implementation task contract
+
+The next minimal canonical App task is limited to startup, add/edit Item,
+Undo/Redo, projection, and explicit Save/Reload. Authorized mutation families
+are the new canonical App source, its app-local docs/tests, and only the direct
+workspace metadata required to run that App. It must not create the public CLI,
+generated template, release config, package publication, homepage routing,
+community policy, FieldScope evidence, Design AI work, or release scripts.
+
+Acceptance for that task:
+
+- App startup registers the App component/property/Feature/projection before
+  `core.start(...)`, applies a real supported provider path, reaches ready, and
+  disposes subscriptions/cleanup without late writes.
+- Add and edit run through Feature -> App API -> one transaction -> Core owner
+  facade, with invalid status and invalid load values covered by formal tests.
+- Undo and Redo restore canonical state and refresh the same projection used by
+  UI; no second editable document exists.
+- Save returns a versioned `CoreRawData` snapshot and Reload validates,
+  reports errors, applies only accepted data, and preserves document-version
+  behavior.
+- Focused gates should include the new App unit/integration tests plus the
+  relevant existing package tests named above if implementation touches their
+  owner contract. Full visual, 7076, release, or generated-template gates are
+  not part of the minimal App slice unless that implementation broadens into
+  those owners.
+
+Inspector readiness: this readiness slice does not create a runtime flow. The
+next implementation should first check whether it changes or proves an existing
+Inspector-governed owner. Framework transaction/load/persistence semantics
+already have owner contracts in the package docs and retained Inspectors
+referenced from those docs. A starter-specific runtime Inspector is not a
+prerequisite for a small App slice unless the implementation changes a governed
+step or discovers that ordinary app-local docs and tests cannot express the App
+product contract.
+
+True starter prerequisites are: supported Core/Preset browser composition, an
+App-owned Item schema decision, the Feature/App API transaction path, explicit
+Save/Reload validation, and a replacement plan for the retired generic CLI
+contract when the CLI slice begins. Community/support wording, FieldScope crop
+claims, homepage/public activation, registry publication, and Design AI evidence
+remain separate adoption tasks and must not block the minimal starter App
+implementation.
+
 ## Sequential tasks
 
 Tasks below are tracked by review and integration state. A child PR can complete
@@ -184,8 +368,8 @@ one bounded slice without completing the whole task or adoption program.
 | Task | Bounded result and owners | Acceptance and dependency |
 | --- | --- | --- |
 | 1 - Reconcile contracts | This plan, existing entry/README/site plans, directly relevant public-entry authorities | In progress. Example-link repair is recorded above. README/homepage baseline is recorded at `b44be9e77`; the current root README composition and six-chapter homepage authority are implemented and locally testable at that baseline. Minimal-runtime readiness, existing gates beyond this slice, release owners, support/community, and remaining public-entry reconciliation stay pending. Documentation PR only; no runtime or site behavior changes. |
-| 2 - Minimal canonical App | One explicitly authored App source and its direct tests/docs | Registered Feature -> App API -> canonical transaction -> projection; add/edit, Undo/Redo, validated Save/Reload, failure reporting and lifecycle. Prove supported runtime composition without Design domain coupling. Depends on task 1. |
-| 3 - CLI and standalone template | Generic CLI, generation/release integration, canonical source instructions and generated output | Safe generation, supported package managers, public imports, independent install/build/typecheck/test, canonical behavior, no workspace hoisting dependency, template parity. Replace retired-contract tests deliberately. Depends on task 2. No registry publication. |
+| 2 - Minimal canonical App | One explicitly authored App source and its direct tests/docs | Frozen next scope: supported Core/Preset startup, App-owned Item `id/title/status`, registered Feature -> App API -> one transaction -> Core owner facade, projection without a second editable document, Undo/Redo, explicit versioned Save/Reload with validation and error reporting. Use the readiness decisions above; do not create the CLI/template/release surface in this slice. Depends on task 1. |
+| 3 - CLI and standalone template | Generic CLI, generation/release integration, canonical source instructions and generated output | Safe generation, supported package managers, public imports, independent install/build/typecheck/test, canonical behavior, no workspace hoisting dependency, template parity. Replace the current retired generic-starter test contract in the same coherent slice that introduces any successor CLI path. Depends on task 2. No registry publication. |
 | 4 - AI-first starter onboarding | Canonical starter AGENTS/docs/tests and generated sync | One bounded priority-field extension preserves mutation, Undo, projection and saved-data compatibility through formal tests. Record whether the exercise was actually performed; instructions alone are not proof. Depends on task 3. No runtime AI provider. |
 | 5 - Entry routing and product evidence | Root README, public docs/llms generators, existing homepage entry points and verified case evidence | Generic / Design / advanced hierarchy, current links, truthful App evidence, preserved visual/accessibility contracts. Reconcile only remaining README/site plan work. Depends on tasks 3-4; public activation waits for verified CLI availability. |
 | 6 - Community and support | SUPPORT.md, canonical support generators/validators, directly affected App release wording | Synchronized policy, private security route, no SLA or implied PR acceptance. Confirm Discussions availability before publishing active links. Sim reporting path may change; remaining release obligations stay explicit. Depends on task 1; remains sequential by default. |
