@@ -323,6 +323,10 @@ export class ThreeEngine implements RenderEngine {
       throw new UnsupportedRenderEngineCapabilityError(this.name, [
         RenderEngineCapabilities.SNAPSHOT
       ])
+    if (query.type === 'get-local-content-bounds')
+      throw new UnsupportedRenderEngineCapabilityError(this.name, [
+        RenderEngineCapabilities.LOCAL_CONTENT_BOUNDS
+      ])
     this.syncProjection()
     if (query.type === 'hit-test')
       return { type: 'hit', target: this.pick(query.point), point: query.point }

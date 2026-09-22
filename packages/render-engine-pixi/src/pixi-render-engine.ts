@@ -27,6 +27,7 @@ import {
   Mesh,
   MeshGeometry,
   Rectangle,
+  Text,
   Texture,
   Ticker,
   type FederatedPointerEvent
@@ -79,6 +80,10 @@ const toUint32Array = (value: ArrayLike<number> | undefined) =>
   value ? Uint32Array.from(value) : new Uint32Array(0)
 
 export class PixiRenderEngine implements RenderEngine {
+  private readonly textChildren = new WeakMap<Graphics, Text[]>()
+  private readonly liveText = new Set<Text>()
+  private textResolutionDirty = false
+
   readonly name = 'pixi'
   readonly capabilities: ReadonlySet<RenderEngineCapability> = new Set(
     Object.values(RenderEngineCapabilities)
@@ -190,11 +195,13 @@ export class PixiRenderEngine implements RenderEngine {
         return { commandType: command.type, status: 'applied' }
       }
       case 'append-child':
+        this.textResolutionDirty = true
         this.getOwnedObject(command.parent).addChild(
           this.getOwnedObject(command.child)
         )
         return { commandType: command.type, status: 'applied' }
       case 'remove-child':
+        this.textResolutionDirty = true
         this.getOwnedObject(command.parent).removeChild(
           this.getOwnedObject(command.child)
         )
@@ -231,10 +238,16 @@ export class PixiRenderEngine implements RenderEngine {
         app.renderer.resize(command.width, command.height)
         return { commandType: command.type, status: 'applied' }
       case 'set-viewport':
+        if (
+          app.stage.scale.x !== command.scale.x ||
+          app.stage.scale.y !== command.scale.y
+        )
+          this.textResolutionDirty = true
         app.stage.position.set(command.position.x, command.position.y)
         app.stage.scale.set(command.scale.x, command.scale.y)
         return { commandType: command.type, status: 'applied' }
       case 'flush':
+        this.updateTextResolution()
         app.render()
         return { commandType: command.type, status: 'applied' }
     }
@@ -272,16 +285,24 @@ export class PixiRenderEngine implements RenderEngine {
           Math.max(1, Math.ceil(size - Number.EPSILON * Math.max(1, size) * 4))
         bounds.width = enclosingSize(bounds.width)
         bounds.height = enclosingSize(bounds.height)
-        const canvas = app.renderer.extract.canvas({
-          target,
-          frame: new Rectangle(bounds.x, bounds.y, bounds.width, bounds.height),
-          resolution: Math.min(
-            4,
-            query.maxDimension / Math.max(bounds.width, bounds.height)
-          ),
-          clearColor: '#ffffff',
-          antialias: true
-        })
+        const resolution = Math.min(
+          4,
+          query.maxDimension / Math.max(bounds.width, bounds.height)
+        )
+        const canvas = this.withSnapshotTextResolution(target, resolution, () =>
+          app.renderer.extract.canvas({
+            target,
+            frame: new Rectangle(
+              bounds.x,
+              bounds.y,
+              bounds.width,
+              bounds.height
+            ),
+            resolution,
+            clearColor: '#ffffff',
+            antialias: true
+          })
+        )
         const dataUrl = canvas.toDataURL?.('image/png')
         if (
           !Number.isInteger(canvas.width) ||
@@ -302,8 +323,13 @@ export class PixiRenderEngine implements RenderEngine {
           bounds
         }
       }
+      case 'get-local-content-bounds':
       case 'get-bounds': {
-        const bounds = this.getOwnedObject(query.object).getBounds()
+        const object = this.getOwnedObject(query.object)
+        const bounds =
+          query.type === 'get-local-content-bounds'
+            ? object.getLocalBounds()
+            : object.getBounds()
         return {
           type: 'bounds',
           bounds: {
@@ -479,6 +505,11 @@ export class PixiRenderEngine implements RenderEngine {
     properties: RenderEngineObjectProperties,
     updateGeometry = true
   ): void {
+    const previousScaleX = object.scale.x,
+      previousScaleY = object.scale.y
+    const previousSkewX = object.skew.x,
+      previousSkewY = object.skew.y
+    const previousRotation = object.rotation
     const numericProperties = [
       'x',
       'y',
@@ -543,6 +574,15 @@ export class PixiRenderEngine implements RenderEngine {
       object.skew.set(skewX ?? object.skew.x, skewY ?? object.skew.y)
     }
 
+    if (
+      previousScaleX !== object.scale.x ||
+      previousScaleY !== object.scale.y ||
+      previousSkewX !== object.skew.x ||
+      previousSkewY !== object.skew.y ||
+      previousRotation !== object.rotation
+    )
+      this.textResolutionDirty = true
+
     if (object instanceof Mesh) {
       const geometry = properties.geometry as MeshProperties | undefined
       if (geometry && updateGeometry) {
@@ -566,8 +606,39 @@ export class PixiRenderEngine implements RenderEngine {
   ): void {
     switch (operation.type) {
       case 'clear':
+        this.clearTextChildren(graphics)
         graphics.clear()
         break
+      case 'text': {
+        const text = new Text({
+          text: operation.text,
+          style: {
+            fontFamily: operation.fontFamily,
+            fontSize: operation.fontSize,
+            fontWeight: operation.fontWeight,
+            fontStyle: operation.fontStyle,
+            align: operation.align,
+            lineHeight: operation.lineHeight,
+            letterSpacing: operation.letterSpacing,
+            fill: operation.color,
+            wordWrap: true,
+            wordWrapWidth: operation.width,
+            breakWords: true
+          }
+        })
+        const remainingWidth = Math.max(0, operation.width - text.width)
+        text.x = operation.x
+        if (operation.align === 'right') text.x += remainingWidth
+        if (operation.align === 'center') text.x += remainingWidth / 2
+        text.y = operation.y
+        graphics.addChild(text)
+        this.liveText.add(text)
+        this.textResolutionDirty = true
+        const children = this.textChildren.get(graphics) ?? []
+        children.push(text)
+        this.textChildren.set(graphics, children)
+        break
+      }
       case 'rect':
         graphics.rect(
           operation.x,
@@ -653,7 +724,94 @@ export class PixiRenderEngine implements RenderEngine {
     this.resources.delete(handle)
   }
 
+  private updateTextResolution(): void {
+    if (!this.textResolutionDirty) return
+    this.textResolutionDirty = false
+    const pixelRatio = this.assertReady().renderer.resolution
+    for (const text of this.liveText) {
+      const { a, b, c, d } = text.getGlobalTransform()
+      const first = a * a + b * b,
+        second = c * c + d * d
+      const cross = a * c + b * d
+      const scale = Math.sqrt(
+        (first + second + Math.hypot(first - second, 2 * cross)) / 2
+      )
+      this.setTextResolution(text, pixelRatio * scale)
+    }
+  }
+
+  private setTextResolution(text: Text, density: number): void {
+    const width = Math.max(1, text.width),
+      height = Math.max(1, text.height)
+    const resolution = Math.min(
+      4,
+      density,
+      4096 / Math.max(width, height),
+      Math.sqrt((4 * 1024 * 1024) / (width * height))
+    )
+    if (
+      Number.isFinite(resolution) &&
+      resolution > 0 &&
+      text.resolution !== resolution
+    )
+      text.resolution = resolution
+  }
+
+  private withSnapshotTextResolution<T>(
+    target: Container,
+    density: number,
+    capture: () => T
+  ): T {
+    // Extraction renders in the target's local space. Compose only descendants'
+    // linear transforms, so screen zoom and target placement cannot affect density.
+    const restore: { text: Text; resolution: number }[] = []
+    const pending = [{ object: target, a: 1, b: 0, c: 0, d: 1 }]
+    try {
+      while (pending.length) {
+        const next = pending.pop()
+        if (!next) break
+        const { object, a, b, c, d } = next
+        if (object instanceof Text && this.liveText.has(object)) {
+          restore.push({ text: object, resolution: object.resolution })
+          const first = a * a + b * b,
+            second = c * c + d * d
+          const scale = Math.sqrt(
+            (first + second + Math.hypot(first - second, 2 * (a * c + b * d))) /
+              2
+          )
+          this.setTextResolution(object, density * scale)
+        }
+        for (const child of object.children) {
+          child.updateLocalTransform()
+          const local = child.localTransform
+          pending.push({
+            object: child,
+            a: a * local.a + c * local.b,
+            b: b * local.a + d * local.b,
+            c: a * local.c + c * local.d,
+            d: b * local.c + d * local.d
+          })
+        }
+      }
+      return capture()
+    } finally {
+      for (const { text, resolution } of restore) {
+        if (text.resolution !== resolution) text.resolution = resolution
+      }
+    }
+  }
+
+  private clearTextChildren(graphics: Graphics): void {
+    for (const text of this.textChildren.get(graphics) ?? []) {
+      graphics.removeChild(text)
+      this.liveText.delete(text)
+      text.destroy()
+    }
+    this.textChildren.delete(graphics)
+  }
+
   private destroyPixiObject(object: PixiObject): void {
+    if (object instanceof Graphics) this.clearTextChildren(object)
     object.parent?.removeChild(object)
     const ownedGeometry = object instanceof Mesh ? object.geometry : null
     try {

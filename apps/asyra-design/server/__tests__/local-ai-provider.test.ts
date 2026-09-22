@@ -1,3 +1,4 @@
+import type { AiProviderInput } from '../../src/ai/action-batch-protocol'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { EventEmitter } from 'node:events'
@@ -60,7 +61,12 @@ const fakeServer = (
     hold?: boolean
     onRequest?: (packet: Packet) => void
     delayedClose?: boolean
+    research?: boolean
     toolCall?: boolean
+    followupTool?: (receipt: Record<string, unknown>) => {
+      name: string
+      args: unknown
+    }
     toolName?: string
     toolArguments?: unknown
     analyzeComponents?: boolean
@@ -119,6 +125,28 @@ const fakeServer = (
       packets.push(packet)
       queueMicrotask(() => {
         if ('result' in packet) {
+          if (options.followupTool && packet.id === 99) {
+            const response = packet.result as {
+              contentItems: { text: string }[]
+            }
+            const followup = options.followupTool(
+              JSON.parse(response.contentItems[0].text)
+            )
+            setImmediate(() =>
+              send({
+                id: 100,
+                method: 'item/tool/call',
+                params: {
+                  threadId: 'thread-1',
+                  turnId: 'turn-1',
+                  callId: 'followup-1',
+                  tool: followup.name,
+                  arguments: followup.args
+                }
+              })
+            )
+            return
+          }
           if (options.analyzeComponents && packet.id === 99) {
             const response = packet.result as {
               contentItems: { text: string }[]
@@ -153,7 +181,14 @@ const fakeServer = (
                     turnId: 'turn-1',
                     callId: 'overlap',
                     tool: options.overlapTool,
-                    arguments: { attachmentIndex: 0 }
+                    arguments: {
+                      attachmentIndex: 0,
+                      plan: {
+                        strategy: 'preserve-vectors',
+                        reason:
+                          'Preserve the supplied irregular vector artwork.'
+                      }
+                    }
                   }
                 })
             })
@@ -207,6 +242,24 @@ const fakeServer = (
         if (packet.method === 'turn/start') result = { turn: { id: 'turn-1' } }
         send({ id: packet.id, result })
         if (packet.method === 'turn/start' && !options.hold) {
+          if (options.research) {
+            notify('item/started', {
+              item: {
+                id: 'search-1',
+                type: 'webSearch',
+                status: 'inProgress',
+                action: { type: 'search', query: 'private-query-not-for-ui' }
+              }
+            })
+            notify('item/completed', {
+              item: {
+                id: 'search-1',
+                type: 'webSearch',
+                status: 'completed',
+                action: { type: 'search', query: 'private-query-not-for-ui' }
+              }
+            })
+          }
           if (options.toolCall)
             send({
               id: 99,
@@ -216,7 +269,13 @@ const fakeServer = (
                 turnId: 'turn-1',
                 callId: 'call-1',
                 tool: options.toolName ?? 'vtracer',
-                arguments: options.toolArguments ?? { attachmentIndex: 0 }
+                arguments: options.toolArguments ?? {
+                  attachmentIndex: 0,
+                  plan: {
+                    strategy: 'preserve-vectors',
+                    reason: 'Preserve the supplied irregular vector artwork.'
+                  }
+                }
               }
             })
           else finish()
@@ -644,7 +703,10 @@ describe('local subscription AI backend', () => {
       approvalPolicy: 'never',
       sandbox: 'read-only',
       environments: [],
-      dynamicTools: [],
+      dynamicTools: expect.arrayContaining([
+        expect.objectContaining({ name: 'search_reference_images' }),
+        expect.objectContaining({ name: 'import_reference_image' })
+      ]),
       selectedCapabilityRoots: [],
       runtimeWorkspaceRoots: [],
       allowProviderModelFallback: false
@@ -657,7 +719,7 @@ describe('local subscription AI backend', () => {
       'features.unified_exec': false,
       'features.plugins': false,
       'features.apps': false,
-      web_search: 'disabled',
+      web_search: 'cached',
       mcp_servers: {}
     })
     expect(JSON.stringify(server.packets)).not.toContain('private@example.test')
@@ -1023,6 +1085,284 @@ describe('local AI usage accounting', () => {
     )
     usage.update({ total: { ...total, secret: 'Bearer private' } })
     usage.finish('completed')
-    expect(log.mock.calls[0][0]).not.toMatch(/private|secret|bad/)
+    const serialized = log.mock.calls[0][0]
+    const record = JSON.parse(serialized)
+    for (const key of ['metadata', 'conversationId', 'turnId', 'secret'])
+      expect(record).not.toHaveProperty(key)
+    expect(record.tokens).toEqual(total)
+    for (const value of [
+      'private@example.test',
+      'bad\nvalue',
+      'Bearer private'
+    ])
+      expect(serialized).not.toContain(JSON.stringify(value))
+  })
+})
+
+it.each([
+  AiImageToolIds.VECTORIZE_IMAGE_LAYERS,
+  AiImageToolIds.VTRACER,
+  AiImageToolIds.REVIEW_VECTOR_CONTOURS,
+  AiImageToolIds.APPLY_CONTOUR_REFINEMENTS
+])(
+  'returns a recoverable missing decision/parameter failure for %s',
+  async (toolName) => {
+    const server = fakeServer({
+      toolCall: true,
+      toolName,
+      toolArguments: { attachmentIndex: 0 },
+      toolResultOutput: () => JSON.stringify(batch)
+    })
+    const result = await requestConfiguredAiActionBatch(
+      {
+        ...input,
+        metadata: {
+          imageAttachments: [
+            {
+              dataUrl: 'data:image/png;base64,YQ==',
+              mediaType: 'image/png',
+              size: 1
+            }
+          ]
+        }
+      },
+      { environment, signal: new AbortController().signal }
+    )
+    expect(result).toEqual(batch)
+    const reply = server.packets.find(
+      (packet) => packet.id === 99 && 'result' in packet
+    )
+    expect(reply).toMatchObject({
+      result: {
+        success: false,
+        contentItems: [
+          expect.objectContaining({
+            text: expect.stringMatching(/separate|Contour/)
+          })
+        ]
+      }
+    })
+  }
+)
+
+it('allows native conceptual research without an image and exposes only safe activity', async () => {
+  const child = fakeServer({ research: true })
+  spawn.mockReturnValue(child.child)
+  const onProgress = vi.fn()
+  const result = await requestConfiguredAiActionBatch(input, {
+    environment,
+    onProgress
+  })
+  expect(result).toEqual(batch)
+  expect(
+    child.packets.find((packet) => packet.method === 'thread/start')?.params
+      .config
+  ).toMatchObject({ web_search: 'cached', 'features.shell_tool': false })
+  expect(onProgress).toHaveBeenCalledWith({
+    tool: 'research_design_context',
+    status: 'running'
+  })
+  expect(onProgress).toHaveBeenCalledWith({
+    tool: 'research_design_context',
+    status: 'completed'
+  })
+  expect(JSON.stringify(onProgress.mock.calls)).not.toContain(
+    'private-query-not-for-ui'
+  )
+})
+
+describe('native semantic design handoff', () => {
+  const actions: AiProviderInput['actions'] = [
+    { name: 'report_outcome', description: 'Report', inputSchema: {} },
+    {
+      name: 'apply_prepared_design',
+      description: 'Apply',
+      inputSchema: {
+        type: 'object',
+        properties: { design: { type: 'object' } }
+      }
+    },
+    { name: 'review_design', description: 'Measure', inputSchema: {} },
+    { name: 'inspect_drawing', description: 'Review', inputSchema: {} }
+  ]
+  const draft = {
+    name: 'Sketch',
+    width: 300,
+    height: 200,
+    children: [
+      {
+        key: 'heading',
+        name: 'Heading',
+        type: 'text',
+        width: 280,
+        height: 60,
+        text: 'A fresh idea'
+      }
+    ]
+  }
+  it('prepares without an image, applies only the receipt and reviews canonical output', async () => {
+    const child = fakeServer({
+      toolCall: true,
+      toolName: 'prepare_design',
+      toolArguments: { draft },
+      followupTool: (receipt) => ({
+        name: 'apply_prepared_design',
+        args: {
+          arguments: { artifactId: receipt.artifactId },
+          message: 'Create the design'
+        }
+      }),
+      output: JSON.stringify({
+        batchId: 'done',
+        actions: [
+          {
+            id: 'report',
+            name: 'report_outcome',
+            arguments: { outcome: 'completed', message: 'Design created.' },
+            summary: 'Report result'
+          }
+        ]
+      })
+    })
+    spawn.mockReturnValue(child.child)
+    const executeBatch = vi.fn(async (prepared) => {
+      const a = prepared.actions[0]
+      if (a.name === 'apply_prepared_design') {
+        expect(a.arguments.design.entries[1].descriptor.text).toBe(
+          'A fresh idea'
+        )
+        expect(a.arguments).not.toHaveProperty('artifactId')
+        return {
+          actionResults: [
+            {
+              actionId: a.id,
+              actionName: a.name,
+              result: { compositionId: 'actual-root' }
+            }
+          ],
+          context: {}
+        }
+      }
+      expect(a.arguments).toEqual({ elementId: 'actual-root' })
+      if (a.name === 'review_design')
+        return {
+          actionResults: [
+            {
+              actionId: a.id,
+              actionName: a.name,
+              result: {
+                complete: true,
+                measuredTextIds: ['heading'],
+                findings: []
+              }
+            }
+          ],
+          context: {}
+        }
+      return {
+        actionResults: [
+          {
+            actionId: a.id,
+            actionName: a.name,
+            result: {
+              available: true,
+              image: {
+                width: 1,
+                height: 1,
+                dataUrl:
+                  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aGioAAAAASUVORK5CYII='
+              }
+            }
+          }
+        ],
+        context: {}
+      }
+    })
+    await expect(
+      requestConfiguredAiActionBatch(
+        { ...input, actions },
+        { environment, executeBatch }
+      )
+    ).resolves.toMatchObject({ batchId: 'done' })
+    expect(
+      executeBatch.mock.calls.map(([request]) => request.actions[0].name)
+    ).toEqual(['apply_prepared_design', 'review_design', 'inspect_drawing'])
+    const thread = child.packets.find(
+      (p) => p.method === 'thread/start'
+    )?.params
+    expect(thread?.dynamicTools).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: 'prepare_design' })
+      ])
+    )
+    const advertised = JSON.stringify(thread?.dynamicTools)
+    expect(advertised).not.toContain('"properties":{"design":')
+    const preparedReply = child.packets.find(
+      (p) => p.id === 99 && 'result' in p
+    )
+    expect(JSON.stringify(preparedReply)).not.toMatch(/descriptor|points|props/)
+  })
+  it('reports invalid design references as tool failures without executing a batch or ending transport', async () => {
+    const child = fakeServer({
+      toolCall: true,
+      toolName: 'apply_prepared_design',
+      toolArguments: { arguments: { artifactId: 'unknown' } },
+      output: JSON.stringify({
+        batchId: 'done',
+        actions: [
+          {
+            id: 'report',
+            name: 'report_outcome',
+            arguments: {
+              outcome: 'unsupported',
+              message: 'No design was applied.'
+            },
+            summary: 'Report result'
+          }
+        ]
+      })
+    })
+    spawn.mockReturnValue(child.child)
+    const executeBatch = vi.fn()
+    await expect(
+      requestConfiguredAiActionBatch(
+        { ...input, actions },
+        { environment, executeBatch }
+      )
+    ).resolves.toMatchObject({ batchId: 'done' })
+    expect(executeBatch).not.toHaveBeenCalled()
+    expect(
+      child.packets.find((p) => p.id === 99 && 'result' in p)
+    ).toMatchObject({ result: { success: false } })
+  })
+  it('resolves preparation receipts in the non-streaming final batch route too', async () => {
+    const child = fakeServer({
+      toolCall: true,
+      toolName: 'prepare_design',
+      toolArguments: { draft },
+      toolResultOutput: (summary) =>
+        JSON.stringify({
+          batchId: 'prepared',
+          actions: [
+            {
+              id: 'a',
+              name: 'apply_prepared_design',
+              arguments: {
+                artifactId: (summary as unknown as { artifactId: string })
+                  .artifactId
+              },
+              summary: 'Create design'
+            }
+          ]
+        })
+    })
+    spawn.mockReturnValue(child.child)
+    const result = await requestConfiguredAiActionBatch(
+      { ...input, actions },
+      { environment }
+    )
+    expect(result.actions[0].arguments).toMatchObject({
+      design: { version: 1, entries: expect.any(Array) }
+    })
   })
 })

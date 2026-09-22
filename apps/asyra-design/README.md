@@ -228,12 +228,26 @@ identity and credentials do not enter the frontend, Git, or generated template.
 Keep `.env` private. A deployed website cannot automatically use its visitors'
 local subscriptions.
 
-Text-to-action and image-understanding requests use the registered App action
-schemas, including complete prepared drawing descriptors. The local provider
-can call the App-owned VTracer worker for uploaded PNG/JPEG images. It cannot
-read arbitrary paths or URLs, generate images, or insert raster elements. WebP
-can be understood but must be supplied as PNG/JPEG for vectorization.
-Filesystem, shell, web, MCP and plugin tools remain disabled.
+The Agent can create editable layouts and illustrations from a text brief, revise
+selected objects, organize layers, align/distribute siblings, trace references, or
+answer questions without changing the canvas. Text remains editable text; frames,
+rectangles, ovals and vector paths remain normal design objects. Groups do not
+imply a reusable component/instance system. Unsupported operations are explained.
+
+The model chooses content, style and useful research. Its native cached web search
+can research concepts and references; it must not put private canvas data in search
+queries. A separate bounded App import accepts public reference images and checks
+URLs, redirects, media type and size. The model cannot read arbitrary local paths,
+run shell commands, use plugins/MCP, generate raster images or insert raster layers.
+Uploaded PNG/JPEG images can be selectively vectorized with the App-owned VTracer
+worker; WebP must be supplied as PNG/JPEG for vectorization.
+
+Prepared drafts are validated before canonical writes. After changes, native text
+measurements precede image review, so concrete overflow can be corrected without
+repeated screenshots. Review uses actual canvas captures, with bounded correction
+cycles and explicit remaining limitations. Execution success alone is not visual
+approval. Ordinary later failures retain completed changes; one request remains
+one Undo. Explicit cancellation follows the App's rollback policy.
 
 Codex may apply your personal global `AGENTS.md` or `AGENTS.override.md` from its
 effective home directory. Project instructions remain excluded. Personal
@@ -244,6 +258,11 @@ The composer groups attachments, text, and Send in one input area. Detail
 questions have clickable choices for text and image requests; choosing continues
 the original request without retyping. Activity is expandable, and questions
 show a waiting state instead of claiming the drawing is complete.
+
+New and history controls switch conversations within the current document session;
+unsent drafts are retained while the panel stays mounted. Navigation is disabled
+during execution and never modifies the canvas. The context indicator shows the
+current selection. Conversation history is not stored across App reloads.
 
 App UI labels and hints use English. AI responses follow the request and personal
 language preferences; the App does not impose a response language.

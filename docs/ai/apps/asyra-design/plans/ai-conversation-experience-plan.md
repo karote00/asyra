@@ -1,10 +1,17 @@
 # Plan: AI Conversation Experience
 
+## Current direction
+
+The [Editable Design Agent plan](ai-design-agent-plan.md) now owns the broader
+prompt-to-editable-design work, native research, complete UI/UX and PR delivery.
+The sections below retain prior accepted contracts and historical local evidence;
+they do not establish completion of the new plan.
+
 ## Status and bounded contract
 
 Design decisions fixed on 2026-09-15. Implementation authorized in the existing
-`codex/design-local-codex` worktree. Final integration and PR-head CI validation
-are in progress. Scope includes the owner files and permanent tests below.
+`codex/design-local-codex` worktree. The current pre-trace decomposition slice is local-only, with no push or CI
+monitoring. Scope includes the owner files and permanent tests below.
 
 Objective: make the complete drawing conversation understandable and actionable
 from submission through progress, questions, execution, revision, and recovery.
@@ -16,10 +23,149 @@ confirmation integration, bounded server diagnostics and domain guidance, their
 formal tests, current contracts, and generated Asyra Design template parity.
 Shared runtime changes require a separately bounded owner slice when existing
 public events cannot express an accepted outcome. Do not change canonical geometry,
-rendering, collaboration, persistence, authentication, or dependency versions.
-No new dependency is selected by this plan.
+rendering, collaboration, persistence or authentication. Dependency additions
+are limited to the user-approved sharp dependency in the pre-trace slice below.
+
+## Activity rows - 2026-09-19
+
+Bounded UI correction: replace the generic working label with Planning the drawing;
+render labels and distinct attached messages as sibling rows with identical spacing.
+Preserve activity ordering, current-step ownership, deduplication and scrolling.
+Two formal regressions failed before the correction. Geometry, tracing and prompt
+quality are inspection-only for this request; no changes to those owners.
+
+## Backend contour review and bounded refinement - 2026-09-19
+
+Step Execution Card - request-backend-action-batch:
+
+- Product contract: AI selects intended straight/smooth regions; backend measures
+  cubic straightness and tangent discontinuity, prepares optional bounded edits,
+  and returns before/after evidence. Visual interpretation remains with AI.
+- Inputs: current-request artifact and selected path IDs; outputs: opaque review
+  receipt, ranked local proposals, optional derived artifact for existing drawing
+  operations. Source artifacts remain immutable. No coordinate arrays in replies.
+- Scope/allowlist: App server image tools, contour helper, vector artifact measured
+  bounds, domain prompt, provider progress/error handling, direct tests, existing
+  Inspector condition/spec/plan, generated template. No renderer, canonical schema,
+  Undo, UI, VTracer settings, dependencies or provider authentication changes.
+- Conditions: explicit proposal selection from a same-request review; at most
+  0.5 source-pixel displacement against the original artifact across all passes;
+  preserve anchors, sharp corners, fills and path order. Compound/degenerate or
+  self-intersecting paths are report-only. At most three refinement generations.
+- Budgets: 16 paths/review, 128 cumulative paths, 64 proposals/report; retain bounded
+  request-local proposals, never remeasure a selected proposal during admission.
+  Every apply validates combined geometry before publishing a new artifact.
+- Tool IDs belong to AiImageToolIds; all receipts/segment indices are request-local,
+  not persisted identities. Reuse existing component topology checks and bounds
+  ownership. Do not claim source-raster or semantic fidelity from geometry alone.
+- Gates: formal tests first for straightness, tangent continuity, corner refusal,
+  displacement cap, stale/foreign receipts, cancellation, compounded drift,
+  immutable source/order, and prepared consumer integration; server suite, typecheck,
+  build, naming, Inspector and generated template checks. No paid/live model calls.
+- Failure owner: backend image preparation. Stop on uncertainty/budget with a
+  concrete limitation. No guessed star primitive, special logo or blanket smoothing.
+- Closure is this bounded local correction capability, not perfect image recovery.
+  No push or CI monitoring.
+- Evidence: 213 server tests passed (one opt-in live test skipped), including
+  contour admission, bounded drift, conflict rejection, convergence and generation
+  limits. Actual App rendering of a receipted straight-edge refinement passed
+  pixel-row checks and one Undo/Redo; App and 1000px captures were inspected.
+  Typecheck/build, focused lint, naming and 25 Inspector contracts passed. No
+  subscription/model call was made; model uptake and arbitrary-logo fidelity are
+  not claimed by these deterministic tests.
+
+## Fidelity intent and output-scale review - 2026-09-19
+
+Step Execution Card - request-backend-action-batch:
+
+- Scope: existing contour review/refinement tools, preparation admission, prompt,
+  direct tests, spec/Inspector and generated template. No new tools/dependencies,
+  renderer, Undo, UI or VTracer parameter changes. No push or live AI calls.
+- Require quality intent (faithful or cleanup) and intended output width/height
+  on contour review. Faithful reports measurements without cleanup proposals.
+  Cleanup proposals must satisfy both the original 0.5 source-pixel limit and a
+  0.5 final drawing-pixel limit, using the larger nonuniform scale factor.
+- AI selects intent from the request; ask only when material ambiguity remains.
+  Preserve requested distinctive details; rough source pixels are not inherently
+  errors. Output pixels mean drawing units, not screen zoom/device pixels.
+- Receipts carry policy and both scales; apply checks cumulative original-source
+  deviation again. Preparation checks actual insertion/replacement bounds, so
+  later enlargement cannot bypass admission. Previous artifacts remain available.
+- Stop conditions: worsening appearance, no eligible improvement, unsafe contour,
+  exhausted budget. Measurements do not prove raster fidelity or semantic approval.
+- Gates: test-first faithful/no-cleanup, missing/invalid policy, 2x/nonuniform
+  scale, cumulative apply and later resize rejection; backend suite, typecheck,
+  build, lint/naming, existing contour E2E and template/Inspector parity.
 
 ## Decisions
+
+### Required image representation decision - 2026-09-19
+
+Step Execution Card - request-backend-action-batch:
+
+- Failure: real user run traced the whole reference despite a supported native
+  background. Previous tests supplied the separation decision themselves.
+- Contract/spec: local-ai-provider, Pre-trace layer decomposition; same Inspector
+  owner, registered image input and request-local prepared output.
+- Scope: server image-tool admission, prompt, direct protocol/visual tests,
+  contracts and generated template. No renderer, Undo, UI or dependencies.
+- Every ordinary trace requires a short explicit representation plan. The AI
+  selects native-background parameters or explains preserving vectors; the
+  backend executes that selection without interpreting the artwork. Missing
+  decisions fail before conversion, with a recoverable tool response.
+- Selected plans are returned with artifact evidence for data and visual review.
+  A native decision routes through separation, never whole-image tracing.
+- Cases/gates: missing/invalid plan, native routing and layer order, explicit
+  vector preservation and reused conversion, provider recovery, actual rendering,
+  server tests/typecheck/build, naming and template/Inspector parity.
+- Stop at this owner boundary; no automatic shape guessing, special logo rule,
+  extra planning round trip, push or CI monitoring. Live model choice requires
+  separate evidence; deterministic tests alone cannot establish visual judgment.
+- Validation: missing-decision/native-dispatch tests failed before the fix.
+  The complete live App test then passed with the original reference and ordinary
+  240x240/remove-TM request, with no primitive or decomposition hints. It produced
+  one native Oval background and vector foreground; actual App/detail screenshots
+  were inspected. This proves one real decision run, not universal model accuracy.
+  An isolated provider test without the complete App operation path reported
+  tools unavailable; it is not used as successful evidence. One App attempt was
+  cancelled by a development reload; the completed run used stable source.
+
+### Pre-trace layer decomposition - 2026-09-19
+
+Step Execution Card - request-backend-action-batch:
+
+- Objective: AI selects an intended solid native background before tracing;
+  the backend separates the residual raster and assembles native background
+  plus traced foreground in one existing prepared composition.
+- Spec: local-ai-provider, Pre-trace layer decomposition. Inspector: existing
+  request-backend-action-batch, including its registered tools and preparation.
+- Inputs: accepted PNG/JPEG/WebP, AI-selected rect/oval bounds and fill, explicit
+  color tolerance, optional explicit flat foreground palette and clipping choice. Outputs: request-owned artifact and
+  compact separation evidence, then complete ordered descriptors.
+- Scope: App server image tools/prompt/artifacts, direct tests and visual case,
+  sharp dependency/lockfile/notices, contracts and generated template.
+- AI owns interpretation; backend owns deterministic pixel processing and
+  coordinate mapping. No frontend geometry, renderer, Undo, permission or
+  provider authentication changes. No preferred primitive or logo-specific rule.
+- Bypass: ordinary tracing remains available when decomposition is unsuitable.
+  Unsupported textured/gradient backgrounds must not be claimed as separated.
+- New tool identity vectorize_image_layers belongs to AiImageToolIds; artifact
+  layer metadata is request-local, not a persisted schema or document migration.
+- User approved sharp after license discussion. Pin the security-fixed version;
+  preserve dependency license notices. No other new dependency or runtime upgrade.
+- Gates: test-first separation/coordinate/layer-order cases, invalid input,
+  cancellation and bounds, actual VTracer integration, App render and Undo,
+  App tests/typecheck/build, naming, Inspector and template parity.
+- Failure owner: backend image preparation. Stop for unsupported semantic
+  separation or failed validation; never return an unchanged image as success.
+- Delivery: local only. No push or CI monitoring for this slice.
+- Local evidence: 21 separation cases, 190 backend tests, existing App tests,
+  real reference raster -> VTracer -> native/vector preparation -> App capture
+  and one Undo/Redo passed. Original mislabeled WebP bytes are exercised directly.
+  The final flat-palette reference uses 37 elements including one native Oval;
+  rendered mean RGB error is 9.45/255. No live model call was used in these tests;
+  model strategy choice remains guided by the prompt rather than proven by this
+  deterministic rendering case.
 
 ### Concise decision flow - 2026-09-19
 
@@ -74,14 +220,14 @@ Research synthesis and resulting flow:
   the backend already owns. Compact evidence is a design goal; token/latency gains
   require measurement and are not asserted by this change.
 
-| Phase | AI responsibility | Backend/App responsibility |
-| --- | --- | --- |
-| Interpret | Identify foreground/background intent, constraints and plausible representations | Supply registered operations, components and current context |
-| Trace | Select an available tool and inspect compact path summaries | Preserve source geometry and return request-owned artifact IDs |
-| Data review | Nominate plausible candidates and assess whether conversion helps the request | Measure fit/topology, disclose limits, return bounded analysis receipts |
-| Prepare | Select evidence-backed mappings, retain vectors, or explain an unmet constraint | Validate receipt/source/selection and construct canonical batch actions |
-| Visual review | Compare the actual render with the original request; choose supported corrections | Apply batches, return fresh rendered evidence and object IDs |
-| Finish | Report achieved results and concrete remaining differences | Close the existing turn transaction as one Undo commit |
+| Phase         | AI responsibility                                                                 | Backend/App responsibility                                              |
+| ------------- | --------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| Interpret     | Identify foreground/background intent, constraints and plausible representations  | Supply registered operations, components and current context            |
+| Trace         | Select an available tool and inspect compact path summaries                       | Preserve source geometry and return request-owned artifact IDs          |
+| Data review   | Nominate plausible candidates and assess whether conversion helps the request     | Measure fit/topology, disclose limits, return bounded analysis receipts |
+| Prepare       | Select evidence-backed mappings, retain vectors, or explain an unmet constraint   | Validate receipt/source/selection and construct canonical batch actions |
+| Visual review | Compare the actual render with the original request; choose supported corrections | Apply batches, return fresh rendered evidence and object IDs            |
+| Finish        | Report achieved results and concrete remaining differences                        | Close the existing turn transaction as one Undo commit                  |
 
 The merged-background case has two different questions: whether a contour matches
 an available component, and whether foreground/background can be separated without
@@ -683,7 +829,7 @@ Step Execution Card - request-backend-action-batch:
   Forbidden: model-authored coordinate reconstruction, frontend preparation,
   fixture-specific output, renderer patches and cross-request caches.
 - Boundary: apps/asyra-design/vtracer-tool-server.mjs, server/local-vector-artifact.ts,
-  existing server/__tests__, __tests__/vtracer-tool-server.test.mjs and
+  existing server/**tests**, **tests**/vtracer-tool-server.test.mjs and
   e2e/local-ai-provider.spec.ts. Documentation clarifies this same owner.
 - Reuse: conversion and curve bounds are computed once per request attachment;
   preparation reuses that artifact and only maps selected geometry. Preserve
@@ -725,7 +871,6 @@ stop condition above. Request expansion before editing those owners; do not push
 or claim quality completion while this gate fails. Backend edits and permanent
 failure evidence remain in this worktree for the user's scope decision.
 
-
 #### Authorized compound-fill correction
 
 The user authorized fixing the discovered Vector fill defect together with the
@@ -747,7 +892,7 @@ Step Execution Card - retain-vector-render-geometry:
 - Allowed contributors: Preset Vector strategy and internal geometry helper.
   Forbidden: app identity, reference-image recognition, diagnostic polygons,
   canonical edits, Pixi dependencies and fallback fills.
-- Boundary: packages/preset/src/components and src/__tests__, Preset docs,
+- Boundary: packages/preset/src/components and src/**tests**, Preset docs,
   existing local AI E2E and this plan. Failure owner is the geometry projection.
 - Algorithm: adaptively subdivide cubic contours for render projection only;
   split horizontal slabs at vertices and segment crossings, then emit disjoint
@@ -760,7 +905,6 @@ Step Execution Card - retain-vector-render-geometry:
   rerun Preset tests, actual App quality comparison and Undo/Redo, render delta
   regressions, full project gates and final CI. Stop for a new semantic owner
   outside this explicit scope; do not weaken the image-fidelity oracle.
-
 
 Compound-hole E2E passes for both linear and cubic contours. Extending winding
 projection to single contours did not improve the image comparison, so retain
@@ -784,7 +928,6 @@ Step Execution Card - capture-drawing-review:
 - Gates: fractional/subpixel/near-integer capture unit cases fail before the fix;
   Pixi suite, actual App extraction/quality/Undo tests, snapshot consumer regressions,
   package builds and final CI. Failure owner remains capture-drawing-review.
-
 
 The full App gate reproduced a test-isolation defect: the missing-environment
 case reads the developer's `.env`. Bounded correction is the existing environment
@@ -813,3 +956,35 @@ The final 7,076-element gate passed. Clean template consumption reports READY
 for 12 packages and six phases; package consumption, naming, lint, public docs
 and template parity pass. Exact-head remote CI must still pass before PR review
 notification.
+
+## Activity stability and separated edge regression - 2026-09-19
+
+- UI segment: conversation presentation owns stable existing Activity DOM/text
+  and geometry while current status changes; append rows, preserve selection and
+  the existing scroll-follow rules. Reproduce with streaming E2E first.
+- Backend segment: request-backend-action-batch owns explicit native-background
+  separation and source evidence. Diagnose fringe fragments and lost boundary
+  contact using permanent raster fixtures and real tracing; correct only proven
+  separation/prompt defects. AI keeps semantic decisions.
+- Scope: panel/presentation, image-layer separation, domain prompt, direct tests,
+  contract docs and generated template. No renderer, Undo, dependency, remote
+  push, live subscription calls or CI monitoring.
+- Gates: failing regression first, focused UI/server tests, deterministic E2E,
+  typecheck, build, naming/lint, Inspector/template parity. Stop at unresolved
+  source evidence rather than adding logo-specific geometry.
+
+## Retain applied progress after ordinary failure
+
+Bounded owner step: `resolve-server-prepared-action-batch`. Runtime opts into
+committing applied progress on ordinary failure; App composition enables it and
+conversation/presentation reports the failed activity as partial. Preserve one
+canonical Undo, cancellation behavior, permissions and transaction settlement
+safety. No Factory savepoints, geometry changes, live subscription calls, push
+or CI monitoring. Gates: runtime failure-prefix/provider/cancellation/settlement
+tests, App presentation and composition tests, deterministic drawing-failure
+E2E with one Undo/Redo, typecheck, naming and template parity.
+
+Validated locally: 88 Runtime tests, 30 focused App tests, retained-drawing and
+incomplete-replacement Undo/Redo E2E, cancellation E2E, package/App builds,
+typecheck, scoped lint, naming, Inspector contract and generated-template parity.
+The retained-drawing screenshot was inspected. No live AI call or remote push.

@@ -6,7 +6,7 @@ export const VTRACER_ENDPOINT = '/api/ai-tools/vtracer'
 
 const require = createRequire(import.meta.url)
 const vtracerModulePath = require.resolve('@visioncortex/vtracer')
-const acceptedContentTypes = new Set(['image/jpeg', 'image/png'])
+const acceptedContentTypes = new Set(['image/jpeg', 'image/png', 'image/webp'])
 
 export class VTracerServerError extends Error {
   constructor(code, message) {

@@ -1,3 +1,4 @@
+import sharp from 'sharp'
 import { createLocalImageTools } from '../server/local-image-tools'
 import { AiImageToolIds } from '../server/ai-domain-prompt'
 import {
@@ -633,24 +634,10 @@ test('local subscription traces the reference logo at 240px without its separate
       }))
   })
   const shapes = elements.filter(({ type }) => type !== 'group')
-  const { artifact, markId } = await loadReferenceArtifact()
-  expect(shapes).toHaveLength(artifact.paths.length - 1)
-  expect(shapes.map(({ name }) => name).sort()).toEqual(
-    artifact.paths
-      .map((path) => path.id)
-      .filter((id) => id !== markId)
-      .sort()
-  )
-  const primaryPath = artifact.paths.reduce((largest, path) =>
-    path.bounds.width * path.bounds.height >
-    largest.bounds.width * largest.bounds.height
-      ? path
-      : largest
-  )
-  // The main cutout carries internal artwork and is not a solid Oval.
-  expect(shapes.find(({ name }) => name === primaryPath.id)?.type).toBe(
-    'vector'
-  )
+  const backgrounds = shapes.filter(({ type }) => type === 'oval')
+  expect(backgrounds).toHaveLength(1)
+  expect(backgrounds[0].computed).toMatchObject({ width: 240, height: 240 })
+  expect(shapes.some(({ type }) => type === 'vector')).toBe(true)
   expect(
     shapes
       .flatMap(({ computed }) =>
@@ -1109,7 +1096,17 @@ test('backend component mappings render native Rectangle and Oval with remaining
   )
   const signal = new AbortController().signal
   const source = JSON.parse(
-    await tools.call(AiImageToolIds.VTRACER, { attachmentIndex: 0 }, signal)
+    await tools.call(
+      AiImageToolIds.VTRACER,
+      {
+        attachmentIndex: 0,
+        plan: {
+          strategy: 'preserve-vectors',
+          reason: 'Preserve the supplied irregular vector artwork.'
+        }
+      },
+      signal
+    )
   )
   const evidence = JSON.parse(
     await tools.call(
@@ -1193,6 +1190,272 @@ test('backend component mappings render native Rectangle and Oval with remaining
   await page.screenshot({ path: testInfo.outputPath('component-mapping.png') })
   const after = await getCoreDocumentDigest(page)
   expect(await getUndoHistoryDepth(page)).toBe(depth + 1)
+  await undo(page)
+  expect(await getCoreDocumentDigest(page)).toEqual(before)
+  await redo(page)
+  expect(await getCoreDocumentDigest(page)).toEqual(after)
+})
+
+test('pre-trace decomposition renders an editable oval below reference vectors in one Undo', async ({
+  page
+}, testInfo) => {
+  // The uploaded .png file contains WebP bytes; preserve the actual user input.
+  const bytes = await readFile('e2e/fixtures/reference-logo.png')
+  const tools = createLocalImageTools({
+    metadata: {
+      imageAttachments: [
+        {
+          dataUrl: `data:image/png;base64,${bytes.toString('base64')}`,
+          mediaType: 'image/png',
+          size: bytes.length
+        }
+      ]
+    }
+  })
+  const summary = JSON.parse(
+    await tools.call(
+      AiImageToolIds.VTRACER,
+      {
+        attachmentIndex: 0,
+        plan: {
+          strategy: 'separate-background',
+          reason:
+            'A native circular base with white foreground preserves this reference.',
+          background: {
+            componentType: 'oval',
+            bounds: { x: 0, y: 0, width: 250, height: 250 },
+            fill: '#00643C'
+          },
+          foregroundColors: ['#FFFFFF'],
+          colorTolerance: 24,
+          clipToBackground: true
+        }
+      },
+      new AbortController().signal
+    )
+  )
+  const prepared = tools.resolveBatch({
+    batchId: 'layered-reference',
+    actions: [
+      {
+        id: 'draw',
+        name: 'insert_vector_composition',
+        summary: 'Draw reference',
+        arguments: {
+          imageArtifactId: summary.imageArtifactId,
+          compositionRole: 'Separated reference',
+          bounds: { x: 50, y: 50, width: 240, height: 240 },
+          excludePathIds: []
+        }
+      }
+    ]
+  })
+  const drawing = prepared.actions[0].arguments
+  const descriptors = drawing.slices.flatMap(
+    (slice: {
+      descriptors: { id: string; type: string; width: number; height: number }[]
+    }) => slice.descriptors
+  )
+  expect(descriptors[0]).toMatchObject({
+    type: 'oval',
+    width: 240,
+    height: 240
+  })
+  expect(
+    descriptors
+      .slice(1)
+      .every((descriptor: { type: string }) => descriptor.type === 'vector')
+  ).toBe(true)
+  await page.route('**/api/ai/status', (route) =>
+    route.fulfill({ json: { state: 'ready' } })
+  )
+  await page.route('**/api/ai/action-batch', (route) =>
+    route.fulfill({ json: prepared })
+  )
+  await page.goto(createTestDocumentIdentity().url)
+  await waitForAppReady(page)
+  const before = await getCoreDocumentDigest(page)
+  const depth = await getUndoHistoryDepth(page)
+  await page.getByRole('button', { name: 'Open Agent' }).click()
+  await page
+    .getByLabel('Message Agent')
+    .fill('Draw this reference at 240 by 240 with a native background.')
+  await page.getByRole('button', { name: 'Send', exact: true }).click()
+  await expect(page.getByTestId('ai-agent-message')).toHaveAttribute(
+    'data-outcome',
+    'success'
+  )
+  await page.getByRole('button', { name: 'Close Agent panel' }).click()
+  const snapshot = await page.evaluate(
+    async ({ groupId, backgroundId }) => {
+      const core = (await import('../src/testing/runtime-access')).core
+      if (!core) throw new Error('App unavailable')
+      const background = core.deps.sceneTree.getAllElements().get(backgroundId)
+      if (background?.get('type') !== 'oval')
+        throw new Error('Missing editable native background')
+      return core.captureElementSnapshot(groupId, 1000)
+    },
+    { groupId: drawing.groupDescriptor.id, backgroundId: descriptors[0].id }
+  )
+  const rendered = Buffer.from(snapshot.dataUrl.split(',')[1], 'base64')
+  await writeFile(testInfo.outputPath('layered-reference.png'), rendered)
+  await page.screenshot({
+    path: testInfo.outputPath('layered-reference-app.png')
+  })
+  const reference = await sharp(bytes)
+    .extract({ left: 0, top: 0, width: 250, height: 250 })
+    .resize(1000, 1000)
+    .flatten({ background: '#ffffff' })
+    .removeAlpha()
+    .raw()
+    .toBuffer()
+  const actual = await sharp(rendered)
+    .resize(1000, 1000)
+    .flatten({ background: '#ffffff' })
+    .removeAlpha()
+    .raw()
+    .toBuffer()
+  let error = 0
+  for (let index = 0; index < actual.length; index++)
+    error += Math.abs(actual[index] - reference[index])
+  const meanError = error / actual.length
+  await writeFile(
+    testInfo.outputPath('layered-reference-metrics.json'),
+    JSON.stringify({
+      meanError,
+      summary,
+      descriptors,
+      captureBounds: snapshot.bounds
+    })
+  )
+  expect(meanError).toBeLessThan(12)
+  expect(
+    summary.paths.every((path: { fill: string }) => path.fill === '#FFFFFF')
+  ).toBe(true)
+  expect(await getUndoHistoryDepth(page)).toBe(depth + 1)
+  const after = await getCoreDocumentDigest(page)
+  await undo(page)
+  expect(await getCoreDocumentDigest(page)).toEqual(before)
+  await redo(page)
+  expect(await getCoreDocumentDigest(page)).toEqual(after)
+})
+
+test('backend contour refinement renders the measured straight edge with one Undo', async ({
+  page
+}, testInfo) => {
+  const tools = createLocalImageTools(
+    {
+      metadata: {
+        imageAttachments: [
+          {
+            dataUrl: 'data:image/png;base64,YQ==',
+            mediaType: 'image/png',
+            size: 1
+          }
+        ]
+      }
+    },
+    async () =>
+      '<svg width="100" height="100"><path fill="#008800" d="M10,10C30,10.08 70,10.08 90,10L90,90L10,90Z"/></svg>'
+  )
+  const signal = new AbortController().signal
+  const original = JSON.parse(
+    await tools.call(
+      AiImageToolIds.VTRACER,
+      {
+        attachmentIndex: 0,
+        plan: {
+          strategy: 'preserve-vectors',
+          reason: 'Measure the intended straight edge.'
+        }
+      },
+      signal
+    )
+  )
+  const review = JSON.parse(
+    await tools.call(
+      AiImageToolIds.REVIEW_VECTOR_CONTOURS,
+      {
+        imageArtifactId: original.imageArtifactId,
+        pathIds: ['path-1'],
+        quality: { mode: 'cleanup', targetSize: { width: 400, height: 400 } }
+      },
+      signal
+    )
+  )
+  const proposal = review.proposals.find(
+    (p: { kind: string }) => p.kind === 'straighten'
+  )
+  const refined = JSON.parse(
+    await tools.call(
+      AiImageToolIds.APPLY_CONTOUR_REFINEMENTS,
+      { reviewId: review.reviewId, proposalIds: [proposal.id] },
+      signal
+    )
+  )
+  expect(refined.maxDisplacementPx).toBeLessThanOrEqual(0.5)
+  const prepared = tools.resolveBatch({
+    batchId: 'contour-refinement',
+    actions: [
+      {
+        id: 'draw',
+        name: 'insert_vector_composition',
+        arguments: {
+          imageArtifactId: refined.imageArtifactId,
+          compositionRole: 'Refined contour',
+          bounds: { x: 50, y: 50, width: 400, height: 400 },
+          excludePathIds: []
+        },
+        summary: 'Draw refined contour'
+      }
+    ]
+  })
+  await page.route('**/api/ai/status', (route) =>
+    route.fulfill({ json: { state: 'ready' } })
+  )
+  await page.route('**/api/ai/action-batch', (route) =>
+    route.fulfill({ json: prepared })
+  )
+  await page.goto(createTestDocumentIdentity().url)
+  await waitForAppReady(page)
+  const before = await getCoreDocumentDigest(page),
+    depth = await getUndoHistoryDepth(page)
+  await page.getByRole('button', { name: 'Open Agent' }).click()
+  await page.getByLabel('Message Agent').fill('Draw the refined contour.')
+  await page.getByRole('button', { name: 'Send', exact: true }).click()
+  await expect(page.getByTestId('ai-agent-message')).toHaveAttribute(
+    'data-outcome',
+    'success'
+  )
+  await page.getByRole('button', { name: 'Close Agent panel' }).click()
+  const drawing = prepared.actions[0].arguments
+  const capture = await page.evaluate(async (id) => {
+    const core = (await import('../src/testing/runtime-access')).core
+    if (!core) throw new Error('Missing App')
+    const group = core.deps.sceneTree.getAllElements().get(id)
+    if (!group) throw new Error('Missing group')
+    return core.captureElementSnapshot(id, 1000)
+  }, drawing.groupDescriptor.id)
+  const rendered = Buffer.from(capture.dataUrl.split(',')[1], 'base64')
+  await writeFile(testInfo.outputPath('refined-contour.png'), rendered)
+  await page.screenshot({
+    path: testInfo.outputPath('refined-contour-app.png')
+  })
+  const { data, info } = await sharp(rendered)
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true })
+  // The straight edge fills the same first interior scan line across its width.
+  const firstRows = []
+  for (const x of [100, 300, 500, 700, 900]) {
+    let y = 0
+    while (y < info.height && data[(y * info.width + x) * 4 + 3] < 200) y++
+    firstRows.push(y)
+  }
+  expect(Math.max(...firstRows) - Math.min(...firstRows)).toBeLessThanOrEqual(1)
+  expect(Math.max(...firstRows)).toBeLessThan(3)
+  expect(await getUndoHistoryDepth(page)).toBe(depth + 1)
+  const after = await getCoreDocumentDigest(page)
   await undo(page)
   expect(await getCoreDocumentDigest(page)).toEqual(before)
   await redo(page)

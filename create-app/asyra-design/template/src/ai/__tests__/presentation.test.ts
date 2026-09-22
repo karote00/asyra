@@ -36,6 +36,22 @@ const turn = (
 })
 
 describe('Asyra Design AI presentation summaries', () => {
+  it('explains a failed refinement with retained changes without offering replay', () => {
+    const failed = {
+      ...turn('partial'),
+      result: {
+        status: 'failed',
+        stage: 'execution',
+        failedAction: AiActionNames.UPDATE_COMPOSITION_ELEMENTS,
+        transaction: { status: 'committed' }
+      }
+    }
+    expect(summarizeAiTurn(failed).message).toBe(
+      'Refining the drawing could not be completed. Changes already applied have been kept.'
+    )
+    expect(canRetryAiTurn(failed)).toBe(false)
+  })
+
   it('never claims an unknown rollback left the canvas unchanged or permits replay', () => {
     const failed = {
       ...turn('failed'),
@@ -308,7 +324,7 @@ it('describes provider work and unknown tools without exposing implementation na
     }
   ]) {
     const projection = projectAiActivity([update])
-    expect(projection.current.label).toBe('Working on your request')
+    expect(projection.current.label).toBe('Planning the drawing')
     expect(projection.current).toBe(projection.entries.at(-1))
   }
 })
@@ -319,4 +335,52 @@ it('starts elapsed time at zero without inventing a minimum duration', () => {
   }
   expect(formatElapsedTime(100)).toBe('0.1s')
   expect(formatElapsedTime(1250)).toBe('1.3s')
+})
+
+it('shows concise execution descriptions instead of Applying changes', () => {
+  for (const summary of ['Smoothing the outlines', 'Reshaping the tail']) {
+    expect(
+      projectAiActivity([
+        {
+          attempt: 1,
+          phase: 'execution',
+          summary,
+          tool: AiActionNames.UPDATE_COMPOSITION_ELEMENTS
+        }
+      ]).current.label
+    ).toBe(summary)
+  }
+  for (const summary of [
+    'Applying changes',
+    'Updating the drawing',
+    '調整尾巴'
+  ]) {
+    expect(
+      projectAiActivity([
+        {
+          attempt: 1,
+          phase: 'execution',
+          summary,
+          tool: AiActionNames.UPDATE_COMPOSITION_ELEMENTS
+        }
+      ]).current.label
+    ).toBe('Refining the drawing')
+  }
+})
+
+it('names design preparation and application without exposing backend identifiers', () => {
+  for (const [tool, label] of [
+    ['prepare_design', 'Preparing the design'],
+    ['apply_prepared_design', 'Adding the design']
+  ]) {
+    const projection = projectAiActivity([
+      {
+        phase: 'provider',
+        summary: 'Running a tool',
+        tool,
+        toolStatus: 'running'
+      }
+    ])
+    expect(projection.current.label).toBe(label)
+  }
 })

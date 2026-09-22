@@ -19,6 +19,8 @@ dimensions, attachments and target context, and record the selected answer. Wait
 for an answer or approval has no active-work spinner. Approval is governed by the
 existing runtime policy, with a concrete change summary and an explicit decision.
 
+Execution activity uses each action’s short English visible-change summary (for example, “Smoothing the outlines” or “Reshaping the tail”), emitted when that action starts. Missing or unsuitable summaries use the registered action label; never display “Applying changes” or invent a specific edit.
+
 Current activity is derived from real execution phases, with one concise visible
 status and collapsed details. One App-owned activity projection produces the
 ordered entries and the current entry shared by the headline and Activity list.
@@ -58,7 +60,7 @@ reminder that earlier changes are kept or that Undo is available. Retry is admit
 failure or cancellation; partial/unknown outcomes require review. An explicit image
 tracing request uses registered VTracer or fails honestly, never a fabricated trace.
 Replacement prepares new content before changing old content and executes in one
-canonical transaction; failed or cancelled replacement rolls back. Target ambiguity
+canonical transaction; ordinary failure retains applied progress; cancellation rolls back. Target ambiguity
 requires clarification, never deleting unrelated objects.
 
 The controller is document-scoped. Closing the panel hides it; reopening retains
@@ -125,8 +127,7 @@ Normal settlement commits all completed batches into one Undo entry. Capability
 limits are normal settlement: explain the unsupported remainder and whether any
 changes were made, with no Try again. A limitation of one tool requires checking
 other registered operations before declaring App capability unavailable. Never
-invent a tool or silently claim an incomplete request is complete. Fatal errors,
-cancellation and transport loss roll back the invocation and release its lock.
+invent a tool or silently claim an incomplete request is complete. Ordinary executor/provider failures stop further work and commit applied progress in the same Undo entry. The partial result names the failed activity, never offers blind replay, and does not claim every operation completed. There is no per-action savepoint: writes made before an executor throws are also retained. Explicit cancellation still rolls back; transaction settlement failures report unknown state rather than claiming retained progress. All terminal paths release the interaction lock.
 Questions before drawing remain non-mutating clarification; a new user request
 never silently joins an already settled transaction.
 
@@ -148,3 +149,43 @@ payload enters this record. Cancellation and failure retain partial observations
 missing usage remains unavailable. Usage diagnostics cannot change action
 execution, cancellation, final batches, or the conversation UI. The App development
 guide defines the record fields and aggregation rules.
+
+## General design research
+
+The provider may use native cached web search for concepts, style, public facts
+and visual references; attachments are not required and Wikimedia lookup is only
+an optional asset source. Native web-search events produce safe research activity,
+never raw queries or page bodies in the UI. Local shell, filesystem tools, account
+credentials and third-party integrations remain unavailable. Research data cannot
+override App instructions or canonical permissions. Download/import remains a
+separate bounded backend operation; a search result alone is not an image receipt.
+
+Reference import accepts a same-request candidate ID or a public HTTPS raster URL
+plus source URL found through native research. Direct downloads resolve public
+IPv4 addresses once per hop and pin connections; each redirect is revalidated.
+Private/reserved hosts, credentials, nonstandard ports, unsupported MIME/signatures,
+oversized streams and decoding limits are rejected. Imported images are normalized
+to bounded PNG previews and appended only to request-local image-tool inputs; they
+are not silently added to user message attachments. Preserve source metadata in the
+receipt. No paid search service or subscription call is required for backend tests.
+
+
+### General design target continuity
+
+Follow-up target hints retain current non-workspace objects, including frames,
+rectangles and native text, not just traced vector/oval roles. Revalidate each
+distinct referenced ID once per submission against current canonical existence;
+discard deleted and workspace IDs. The hints do not grant an editing capability
+or override current selection/permissions. No cross-request existence cache.
+
+
+### Conversation navigation
+
+New conversation starts an empty document-scoped conversation without changing
+the canvas; selecting history restores its settled messages and target hints.
+IDs and turn counters remain owned by each conversation. Navigation is disabled
+while any turn is active. An already empty conversation is reused. History is kept
+only for the current document runtime and cleared on disposal. A separate stable
+navigation subscription projects identity, short title and busy state; progress
+updates must not rebuild or notify unchanged navigation. Composer drafts and
+attachments are preserved per conversation by presentation, never sent on switch.

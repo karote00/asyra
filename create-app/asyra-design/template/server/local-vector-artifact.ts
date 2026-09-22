@@ -1,3 +1,4 @@
+import type { NativeImageBackground } from './local-image-layer-separation'
 import { randomUUID } from 'node:crypto'
 import { Bezier } from 'bezier-js'
 import { LocalComponentAnalysisLimits } from './local-component-analysis-limits'
@@ -28,6 +29,8 @@ export interface LocalVectorArtifact {
   width: number
   height: number
   paths: VectorPath[]
+  background?: NativeImageBackground
+  sourceBounds?: Bounds
 }
 const record = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -80,6 +83,17 @@ const curveBounds = (rings: readonly VectorAnchor[][]): Bounds => {
   }
   return boundsOf(extrema)
 }
+/** Recompute derived measurements only when backend-owned contour data changes. */
+export const measureVectorPath = (
+  path: LocalVectorArtifact['paths'][number]
+) => ({
+  ...path,
+  bounds: curveBounds(path.rings),
+  pointCount: path.rings
+    .flat()
+    .reduce((n, p) => n + 1 + Number(!!p.inControl) + Number(!!p.outControl), 0)
+})
+
 const parseRings = (
   source: string,
   width: number,
@@ -213,6 +227,9 @@ type VectorComponentType = keyof typeof vectorComponentTargets
 export const vectorArtifactSummary = (artifact: LocalVectorArtifact) => ({
   imageArtifactId: artifact.imageArtifactId,
   componentTargets: vectorComponentTargets,
+  ...(artifact.background
+    ? { background: artifact.background, sourceBounds: artifact.sourceBounds }
+    : {}),
   width: artifact.width,
   height: artifact.height,
   paths: artifact.paths.map(({ id, fill, bounds, pointCount, rings }) => ({
@@ -376,13 +393,15 @@ export const prepareLocalVectorArtifact = (
   )
     return invalid()
   const retained = artifact.paths.filter(({ id }) => !excluded.has(id))
-  if (!retained.length) invalid()
-  const source = boundsOf(
-    retained.flatMap(({ bounds: b }) => [
-      { x: b.x, y: b.y },
-      { x: b.x + b.width, y: b.y + b.height }
-    ])
-  )
+  if (!retained.length && !artifact.background) invalid()
+  const source =
+    artifact.sourceBounds ??
+    boundsOf(
+      retained.flatMap(({ bounds: b }) => [
+        { x: b.x, y: b.y },
+        { x: b.x + b.width, y: b.y + b.height }
+      ])
+    )
   const mapPoint = (point: Point): Point => ({
     x: target.x + ((point.x - source.x) * target.width) / source.width,
     y: target.y + ((point.y - source.y) * target.height) / source.height
@@ -522,6 +541,37 @@ export const prepareLocalVectorArtifact = (
       role: path.id
     }
   })
+  if (artifact.background) {
+    const background = artifact.background
+    const origin = mapPoint(background.bounds)
+    const common = base(background.componentType, 'background', {
+      x: origin.x - target.x,
+      y: origin.y - target.y,
+      width: (background.bounds.width * target.width) / source.width,
+      height: (background.bounds.height * target.height) / source.height
+    })
+    roleToElementIds.background = [common.id]
+    prepared.unshift({
+      descriptor: {
+        ...common,
+        fills: [
+          {
+            id: `${common.id}-fill`,
+            type: 'fill',
+            kind: 'solid',
+            color: background.fill,
+            opacity: 1,
+            visible: true,
+            colorFormat: 'hex',
+            defaultColorFormat: 'hex',
+            gradient: null
+          }
+        ]
+      },
+      pointCount: 0,
+      role: 'background'
+    })
+  }
   const slices: {
     descriptors: (typeof prepared)[number]['descriptor'][]
     pointCount: number

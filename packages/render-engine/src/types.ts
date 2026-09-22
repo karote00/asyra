@@ -100,7 +100,25 @@ export type RenderEngineStrokeOperation = Readonly<{
   width: number
 }>
 
+export type RenderEngineTextOperation = Readonly<{
+  type: 'text'
+  text: string
+  x: number
+  y: number
+  width: number
+  height: number
+  fontFamily: string
+  fontSize: number
+  fontWeight: 'normal' | 'bold'
+  fontStyle: 'normal' | 'italic'
+  align: 'left' | 'center' | 'right'
+  lineHeight: number
+  letterSpacing: number
+  color: number | string
+}>
+
 export type RenderEngineDrawOperation =
+  | RenderEngineTextOperation
   | RenderEngineClearOperation
   | RenderEngineRectOperation
   | RenderEngineEllipseOperation
@@ -202,6 +220,11 @@ export type RenderEngineCommandResult = Readonly<{
   resource?: RenderEngineResourceHandle
 }>
 
+export type RenderEngineLocalContentBoundsQuery = Readonly<{
+  type: 'get-local-content-bounds'
+  object: RenderEngineObjectHandle
+}>
+
 export type RenderEngineGetBoundsQuery = Readonly<{
   type: 'get-bounds'
   object: RenderEngineObjectHandle
@@ -239,6 +262,7 @@ export type RenderEngineSnapshotResult = Readonly<{
 }>
 
 export type RenderEngineQuery =
+  | RenderEngineLocalContentBoundsQuery
   | RenderEngineSnapshotQuery
   | RenderEngineGetBoundsQuery
   | RenderEngineToLocalQuery

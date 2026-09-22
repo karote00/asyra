@@ -1,3 +1,8 @@
+import { AiDesignToolIds } from '../constants/ai-design'
+import {
+  AiReferenceToolIds,
+  AiResearchActivityIds
+} from '../constants/ai-research'
 import type { AiRuntimeProgressUpdate } from '@asyra/ai-agent-runtime'
 import type { AiConversationOutcome, AiSettledTurn } from './conversation'
 import { AiActionNames, AiDrawingDetailOptionIds } from '../constants'
@@ -193,6 +198,23 @@ export const summarizeAiTurn = (turn: AiSettledTurn): AiTurnSummary => {
       outcome: turn.outcome
     })
   }
+  if (
+    isPlainObject(turn.result) &&
+    turn.result.status === 'failed' &&
+    isPlainObject(turn.result.transaction) &&
+    turn.result.transaction.status === 'committed'
+  ) {
+    const label =
+      typeof turn.result.failedAction === 'string' &&
+      Object.hasOwn(activityToolLabels, turn.result.failedAction)
+        ? activityToolLabels[turn.result.failedAction]
+        : 'The remaining work'
+    return Object.freeze({
+      durationLabel: formatElapsedTime(turn.durationMs),
+      outcome: turn.outcome,
+      message: `${label} could not be completed. Changes already applied have been kept.`
+    })
+  }
   const reported =
     isPlainObject(turn.result) &&
     turn.result.status === 'executed' &&
@@ -272,6 +294,16 @@ export const canRetryAiTurn = (turn: AiSettledTurn): boolean => {
 
 const activityToolLabels: Readonly<Record<string, string>> = Object.freeze({
   vtracer: 'Converting artwork to vectors',
+  [AiDesignToolIds.PREPARE_DESIGN]: 'Preparing the design',
+  [AiActionNames.APPLY_PREPARED_DESIGN]: 'Adding the design',
+  [AiResearchActivityIds.RESEARCH_DESIGN_CONTEXT]: 'Researching design context',
+  [AiReferenceToolIds.SEARCH_REFERENCE_IMAGES]: 'Finding a reference',
+  [AiReferenceToolIds.IMPORT_REFERENCE_IMAGE]: 'Preparing the reference',
+  [AiActionNames.ORGANIZE_DESIGN]: 'Organizing layers',
+  [AiActionNames.ARRANGE_DESIGN]: 'Arranging the design',
+  [AiActionNames.REVIEW_DESIGN]: 'Checking the layout',
+  [AiActionNames.UPDATE_DESIGN_ELEMENT]: 'Refining the design',
+  [AiActionNames.READ_DESIGN_CONTEXT]: 'Reading the design',
   [AiActionNames.INSPECT_DRAWING]: 'Reviewing the drawing',
   [AiActionNames.INSERT_VECTOR_COMPOSITION]: 'Adding the drawing',
   [AiActionNames.REPLACE_VECTOR_COMPOSITION]: 'Replacing the drawing',
@@ -285,22 +317,36 @@ const activityLabel = (update: AiRuntimeProgressUpdate): string => {
   if (update.tool && update.toolStatus) {
     const tool = Object.hasOwn(activityToolLabels, update.tool)
       ? activityToolLabels[update.tool]
-      : 'Working on your request'
+      : 'Planning the drawing'
     return update.toolStatus === 'running' ? tool : 'Reviewing the results'
   }
   switch (update.phase) {
     case 'context':
       return 'Reviewing the drawing'
     case 'provider':
-      return 'Working on your request'
+      return 'Planning the drawing'
     case 'resolution':
       return 'Reviewing the planned changes'
     case 'permission':
       return 'Checking whether changes can be applied'
     case 'confirmation':
       return 'Awaiting approval'
-    case 'execution':
-      return 'Applying changes'
+    case 'execution': {
+      const summary = update.summary.trim()
+      if (
+        summary.length <= 100 &&
+        /^[\x20-\x7e]+$/.test(summary) &&
+        ![
+          'Applying changes',
+          'Updating the drawing',
+          'Preparing the drawing'
+        ].includes(summary)
+      )
+        return summary
+      return update.tool && Object.hasOwn(activityToolLabels, update.tool)
+        ? activityToolLabels[update.tool]
+        : 'Preparing the drawing'
+    }
     case 'settled':
       if (update.outcome === 'failed') return 'Failed'
       if (update.outcome === 'cancelled') return 'Stopped'

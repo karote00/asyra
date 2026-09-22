@@ -189,15 +189,40 @@ export const createSceneTreeAPIs = (
         )
       )
     },
-    getElementComputedData(elementId: string) {
+    getElementComputedData(elementId: string, fields?: readonly string[]) {
+      if (
+        fields !== undefined &&
+        (!Array.isArray(fields) ||
+          fields.length > 64 ||
+          fields.some(
+            (field) =>
+              typeof field !== 'string' ||
+              field.length === 0 ||
+              field.length > 128
+          ))
+      ) {
+        throw new Error(
+          'Computed field selection requires at most 64 nonempty field names of at most 128 characters.'
+        )
+      }
       const data = sceneTreeRequests.getElementComputedData(elementId)
       if (!data) {
         return undefined
       }
+      const selected =
+        fields === undefined
+          ? data
+          : Object.fromEntries(
+              [...new Set(fields)]
+                .filter((field) =>
+                  Object.prototype.hasOwnProperty.call(data, field)
+                )
+                .map((field) => [field, data[field]])
+            )
       if (typeof globalThis.structuredClone === 'function') {
-        return globalThis.structuredClone(data)
+        return globalThis.structuredClone(selected)
       }
-      return JSON.parse(JSON.stringify(data)) as Record<string, unknown>
+      return JSON.parse(JSON.stringify(selected)) as Record<string, unknown>
     },
     sceneTreeInit() {
       sceneTreeInit()

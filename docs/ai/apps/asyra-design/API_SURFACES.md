@@ -43,17 +43,18 @@ Completed plan:
 - `createServerActionBatchProvider(...)` is the single production
   provider composition. Its only request method is
   `requestActionBatch(input, { signal })`, which performs one same-origin HTTP
-  request after Actor A presses Send and returns one server-prepared
-  `AiActionBatch`
+  request after Actor A presses Send. Local operation mode can stream acknowledged
+  intermediate batches before its final server-prepared `AiActionBatch`
 - that request carries the submitted intent, exact image attachment, App
   context, registered backend-facing action descriptions, attempt number, and
   abort ownership. The browser context never contains the Asyra Design domain
   prompt, image-tool catalog, provider endpoint, model setting, or API key; no
   fileId, URL parameter, startup branch, resident batch, or IndexedDB response
   inbox selects its payload
-- ordinary requests require complete server-only
+- HTTP-provider requests require complete server-only
   `AI_PROVIDER_ENDPOINT`, `AI_PROVIDER_MODEL`, and `AI_PROVIDER_API_KEY`
-  settings. The server adds the App domain prompt
+  settings. Local mode uses `AI_PROVIDER_BACKEND=local-codex`, a configured model
+  and the user's local subscription; see `specs/local-ai-provider.md`. The server adds the App domain prompt
   and registered image-tool catalog, then uses Node.js native `fetch` to call
   the configured action-batch endpoint. The API key is sent only as a Bearer
   authorization header and never enters the browser or upstream JSON body
@@ -77,7 +78,7 @@ Completed plan:
 - `createAiRuntimeInput(...)` composes the app-owned context,
   bounded action catalog, permission map, confirmation adapter, and common
   transaction adapter around the formal provider
-- `runtime.run()` requests one `AiActionBatch`, and
+- `runtime.run()` owns one invocation and its acknowledged action batches, and
   `runtime.resolveAiActionBatch(batch, { signal })` is the only Runtime
   resolution entry
 - `AiActionBatch` contains one `batchId`, optional explanation, and ordered
@@ -805,3 +806,35 @@ Feature registry (`src/features/index.ts`):
 - Feature files should use `FeatureNames` constants, not ad-hoc string literals.
 - UI should read via providers/hooks and write via controller/common API paths.
 - If API contract changes, update this file and the matching `features/*` doc in the same change.
+
+## Editable design Agent operations
+
+The App's registered capabilities remain authoritative. The local provider exposes
+`prepare_design` for a bounded semantic draft only when `apply_prepared_design` is
+available, returning an opaque request-local artifact ID. Backend layout uses
+absolute, row, column or grid constraints and native frame/rect/oval/text/vector
+nodes; it does not invent content. Prepared data is admitted in full before writes.
+See `specs/design-preparation.md` and `specs/editable-text.md`.
+
+- `read_design_context`: selection or paginated current hierarchy, bounded summaries
+  and explicit truncation; no canonical mutation or geometry-payload copy.
+- `update_design_element`: targeted current-ID name, geometry, typography or primary
+  color edits through canonical APIs. Omitted values and unrelated objects stay unchanged.
+- `organize_design`: group, ungroup or reorder admitted current objects; a Group
+  does not establish a reusable component/instance system.
+- `arrange_design`: parent-local alignment or equal-gap distribution for admitted
+  siblings, preserving size, style and stack order.
+- `review_design`: bounded current structure/content observations, including native
+  text overflow. Incomplete evidence is explicit; complete is not a visual approval.
+
+Ordinary drawing mutations return measurements before rendered captures. Concrete
+text overflow can be corrected before another image is captured; read-only review
+remains available after the mutation budget. The model reviews the actual image
+and explains unresolved constraints rather than reporting unconditional success.
+
+Conversation `newConversation()` / `selectConversation(id)` retain document-session
+messages, target hints and turn identities without canvas writes. Active execution
+blocks navigation. `subscribeNavigation` / `getNavigationSnapshot` project only
+identity, title and busy state; progress does not rebuild this navigation projection.
+The panel preserves unsent drafts on switches while mounted. Reloading the document
+starts a new conversation runtime.

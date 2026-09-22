@@ -59,7 +59,7 @@ validate, normalize, clone, or freeze nested arguments. The resulting
 `ResolvedAiActionBatch`, permission policy, and executor preserve the exact
 server-prepared arguments identity. `PermissionReadyAiActionBatch` adds only
 permission decisions; `AiActionBatchPreview` redacts and retains only bounded
-summaries. Invalid control envelopes, permission denial, and confirmation
+summaries. With the default rollback policy, invalid control envelopes, permission denial, and confirmation
 cancellation apply no prefix from that batch and roll back earlier batches in the invocation. Once execution begins, provider retry
 is forbidden. Executor failure means a rejected/throwing executor or fatal
 canonical consistency failure; it propagates through the one app transaction
@@ -70,7 +70,7 @@ successful sibling mutations to commit in the same intended undo unit.
 The transaction runner rejects with the original callback error only after
 successful rollback. A distinct settlement error reports transaction failure and
 an unknown canvas state; consumers must not claim successful rollback or offer
-blind replay. A normal callback rejection after earlier execution reports
+blind replay. Under the default rollback policy, a normal callback rejection after earlier execution reports
 `transaction.status: rolled-back`.
 
 ## Public Surface
@@ -208,3 +208,19 @@ work and callbacks after request settlement are ignored. Activity is observation
 consumer exceptions cannot alter execution. It must not contain raw tool arguments,
 model reasoning, credentials or account data. The final batch remains the only
 input to action resolution and permission.
+
+### Optional failure retention
+
+`AiRuntimeOptions.failurePolicy` defaults to `rollback`. Asyra Design selects
+`preserve-progress`: after execution starts, an ordinary failure returns a failed
+result normally from the transaction callback so the canonical owner commits the
+applied writes once. Failed results then carry `transaction.status: committed`,
+redacted completed `actionResults`/audit, and optional `failedAction`. These are
+partial outcomes, not successful completion. There is no per-action savepoint;
+writes inside a throwing executor may also remain. Cancellation and confirmation
+cancellation still reject the callback. A transaction settlement rejection remains
+unknown and cannot report committed progress. No retry occurs after a batch starts.
+
+Execution progress is emitted per action at execution start, with the registered
+action name in `tool` and the bounded redacted action summary in `summary`.
+Consumers may map absent/non-text summaries to their own activity labels.

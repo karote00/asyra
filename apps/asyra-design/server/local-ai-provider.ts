@@ -1,3 +1,11 @@
+import {
+  createLocalDesignTools,
+  DesignReferenceError
+} from './local-design-tools'
+import { AiDesignToolIds } from '../src/constants/ai-design'
+import type { LocalActionPreparation } from './local-operation-tools'
+import { AiResearchActivityIds } from '../src/constants/ai-research'
+import { createLocalReferenceTools } from './local-reference-tools'
 import { createLocalAiUsage } from './local-ai-usage'
 import { LocalComponentAnalysisLimits } from './local-component-analysis-limits'
 import type { AiActionBatch } from '../src/ai/action-batch-protocol'
@@ -19,13 +27,17 @@ import type { AiProviderInput } from '../src/ai/action-batch-protocol'
 import {
   AI_APP_PROMPT,
   AI_OPERATION_INSTRUCTIONS,
-  AiImageToolIds
+  AiImageToolIds,
+  AiReferenceToolIds
 } from './ai-domain-prompt'
 import { AiModelBackendError } from './ai-model-provider'
 
 const maximumProtocolBytes = 32 * 1024 * 1024
 const maximumOperationCalls = 32
 const requestTimeoutMs = 300_000
+const isReadOnlyImageAnalysis = (name: unknown) =>
+  name === AiImageToolIds.ANALYZE_VECTOR_COMPONENTS ||
+  name === AiImageToolIds.REVIEW_VECTOR_CONTOURS
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
 
@@ -85,10 +97,18 @@ const runLocalAiProvider = async (
 ): Promise<unknown> => {
   if (options.signal?.aborted) throw failure('AI_MODEL_BACKEND_ABORTED')
   const imageTools = createLocalImageTools(input)
+  const references = createLocalReferenceTools(imageTools.addReference)
+  const designs = createLocalDesignTools(input.actions)
+  const preparation: LocalActionPreparation = {
+    modelActions: (actions) =>
+      designs.modelActions(imageTools.modelActions(actions)),
+    resolveBatch: (value) =>
+      designs.resolveBatch(imageTools.resolveBatch(value))
+  }
   const operations = options.executeBatch
     ? createLocalOperationTools(
         input.actions,
-        imageTools,
+        preparation,
         options.executeBatch,
         {
           reviewTargetId:
@@ -107,6 +127,8 @@ const runLocalAiProvider = async (
     : undefined
   const definitions = [
     ...imageTools.definitions,
+    ...references.definitions,
+    ...designs.definitions,
     ...(operations?.definitions ?? [])
   ]
   const operationNames = new Set(
@@ -114,7 +136,7 @@ const runLocalAiProvider = async (
   )
   const inputItems = turnInput({
     ...input,
-    actions: imageTools
+    actions: preparation
       .modelActions(input.actions)
       .filter((action) => !operationNames.has(action.name))
   })
@@ -211,23 +233,46 @@ const runLocalAiProvider = async (
         toolCalls.size >=
           maximumOperationCalls +
             LocalComponentAnalysisLimits.callsPerRequest ||
-        (params.tool !== AiImageToolIds.ANALYZE_VECTOR_COMPONENTS &&
+        (!isReadOnlyImageAnalysis(params.tool) &&
           operationCallCount >= maximumOperationCalls) ||
-        (params.tool === AiImageToolIds.VTRACER && imageCallCount >= 4) ||
+        ((params.tool === AiImageToolIds.VTRACER ||
+          params.tool === AiImageToolIds.VECTORIZE_IMAGE_LAYERS) &&
+          imageCallCount >= 4) ||
         (toolTasks.size > 0 &&
-          (params.tool !== AiImageToolIds.ANALYZE_VECTOR_COMPONENTS ||
+          (!isReadOnlyImageAnalysis(params.tool) ||
             [...toolTasks.values()].some(
-              (name) => name !== AiImageToolIds.ANALYZE_VECTOR_COMPONENTS
+              (name) => !isReadOnlyImageAnalysis(name)
             )))
       )
         return protocolFailure()
       const toolName = String(params.tool)
-      if (toolName !== AiImageToolIds.ANALYZE_VECTOR_COMPONENTS)
-        operationCallCount++
-      if (toolName === AiImageToolIds.VTRACER) imageCallCount += 1
+      if (!isReadOnlyImageAnalysis(toolName)) operationCallCount++
+      if (
+        toolName === AiImageToolIds.VTRACER ||
+        toolName === AiImageToolIds.VECTORIZE_IMAGE_LAYERS
+      )
+        imageCallCount += 1
       let message: string | undefined
-      if (toolName === AiImageToolIds.ANALYZE_VECTOR_COMPONENTS)
+      if (toolName === AiDesignToolIds.PREPARE_DESIGN)
+        message = 'Preparing the design'
+      else if (toolName === AiReferenceToolIds.SEARCH_REFERENCE_IMAGES)
+        message = 'Finding a reference'
+      else if (toolName === AiReferenceToolIds.IMPORT_REFERENCE_IMAGE)
+        message = 'Preparing the reference'
+      else if (toolName === AiImageToolIds.REVIEW_VECTOR_CONTOURS)
+        message = 'Checking contour quality'
+      else if (toolName === AiImageToolIds.APPLY_CONTOUR_REFINEMENTS)
+        message = 'Refining drawing contours'
+      else if (toolName === AiImageToolIds.ANALYZE_VECTOR_COMPONENTS)
         message = 'Analyzing shape options'
+      else if (
+        toolName === AiImageToolIds.VECTORIZE_IMAGE_LAYERS ||
+        (toolName === AiImageToolIds.VTRACER &&
+          isRecord(params.arguments) &&
+          isRecord(params.arguments.plan) &&
+          params.arguments.plan.strategy === 'separate-background')
+      )
+        message = 'Separating drawing layers'
       else if (
         isRecord(params.arguments) &&
         typeof params.arguments.message === 'string' &&
@@ -240,11 +285,17 @@ const runLocalAiProvider = async (
         ...(message ? { message } : {})
       })
       toolCalls.add(params.callId)
-      const owner = imageTools.definitions.some(
-        (tool) => tool.name === toolName
-      )
-        ? imageTools
-        : operations
+      let owner:
+        | typeof imageTools
+        | typeof references
+        | typeof designs
+        | typeof operations = operations
+      if (imageTools.definitions.some((tool) => tool.name === toolName))
+        owner = imageTools
+      else if (references.definitions.some((tool) => tool.name === toolName))
+        owner = references
+      else if (designs.definitions.some((tool) => tool.name === toolName))
+        owner = designs
       if (!owner) return protocolFailure()
       const task = owner
         .call(toolName, params.arguments, toolController.signal)
@@ -265,7 +316,76 @@ const runLocalAiProvider = async (
             }) + '\n'
           )
         })
-        .catch(() =>
+        .catch((error: unknown) => {
+          if (
+            error instanceof DesignReferenceError &&
+            !terminalError &&
+            !stopped &&
+            !toolController.signal.aborted
+          ) {
+            toolTasks.delete(task)
+            options.onProgress?.({ tool: toolName, status: 'completed' })
+            child.stdin.write(
+              JSON.stringify({
+                id: value.id,
+                result: {
+                  success: false,
+                  contentItems: [
+                    {
+                      type: 'inputText',
+                      text: JSON.stringify({
+                        available: false,
+                        message: error.message
+                      })
+                    }
+                  ]
+                }
+              }) + '\n'
+            )
+            return
+          }
+          if (
+            (toolName === AiImageToolIds.REVIEW_VECTOR_CONTOURS ||
+              toolName === AiImageToolIds.APPLY_CONTOUR_REFINEMENTS ||
+              toolName === AiImageToolIds.VECTORIZE_IMAGE_LAYERS ||
+              (toolName === AiImageToolIds.VTRACER &&
+                ((error instanceof Error &&
+                  error.message.startsWith(
+                    'An explicit image representation plan'
+                  )) ||
+                  (isRecord(params.arguments) &&
+                    isRecord(params.arguments.plan) &&
+                    params.arguments.plan.strategy ===
+                      'separate-background')))) &&
+            !terminalError &&
+            !stopped &&
+            !toolController.signal.aborted
+          ) {
+            toolTasks.delete(task)
+            options.onProgress?.({ tool: toolName, status: 'completed' })
+            child.stdin.write(
+              JSON.stringify({
+                id: value.id,
+                result: {
+                  success: false,
+                  contentItems: [
+                    {
+                      type: 'inputText',
+                      text: JSON.stringify({
+                        available: false,
+                        message:
+                          toolName === AiImageToolIds.REVIEW_VECTOR_CONTOURS ||
+                          toolName === AiImageToolIds.APPLY_CONTOUR_REFINEMENTS
+                            ? 'Contour review or refinement could not be accepted. Use valid same-request receipts and non-overlapping proposals within the source displacement budget. No artifact was changed. If no safe proposal remains, explain the remaining quality limitation; do not repeat unchanged inputs.'
+                            : 'Image preparation needs a valid explicit representation plan. Choose separate-background with native base parameters or preserve-vectors with a concrete reason. Could not separate this image using the supplied parameters. Check the selected solid fill, source bounds, tolerance and PNG/JPEG/WebP input (at most four million pixels). No drawing was applied by this tool. Revise meaningful parameters within the image-call budget, use another supported approach, or explain the remaining limitation. Do not repeat unchanged inputs.'
+                      })
+                    }
+                  ]
+                }
+              }) + '\n'
+            )
+            return
+          }
           fail(
             failure(
               toolName === AiImageToolIds.VTRACER
@@ -273,7 +393,7 @@ const runLocalAiProvider = async (
                 : 'AI_MODEL_BACKEND_TRANSPORT_FAILED'
             )
           )
-        )
+        })
         .finally(() => toolTasks.delete(task))
       toolTasks.set(task, toolName)
       return
@@ -298,6 +418,19 @@ const runLocalAiProvider = async (
     }
     if (turnId && params.turnId && params.turnId !== turnId)
       return protocolFailure()
+    if (
+      (value.method === 'item/started' || value.method === 'item/completed') &&
+      isRecord(params.item) &&
+      params.item.type === 'webSearch'
+    ) {
+      if (typeof params.item.id !== 'string' || !params.item.id)
+        return protocolFailure()
+      options.onProgress?.({
+        tool: AiResearchActivityIds.RESEARCH_DESIGN_CONTEXT,
+        status: value.method === 'item/started' ? 'running' : 'completed'
+      })
+      return
+    }
     if (value.method === 'item/completed') {
       const item = params.item
       if (!isRecord(item)) return protocolFailure()
@@ -417,7 +550,7 @@ const runLocalAiProvider = async (
         'features.memories': false,
         'features.shell_snapshot': false,
         'features.skill_mcp_dependency_install': false,
-        web_search: 'disabled',
+        web_search: 'cached',
         mcp_servers: {},
         'apps._default.enabled': false,
         'analytics.enabled': false,
@@ -462,7 +595,7 @@ const runLocalAiProvider = async (
     if (completedTurnId !== turnId || finalText === undefined)
       throw failure('AI_MODEL_BACKEND_INVALID_RESPONSE')
     try {
-      const batch = imageTools.resolveBatch(JSON.parse(finalText))
+      const batch = preparation.resolveBatch(JSON.parse(finalText))
       return operations
         ? operations.settleOutcome(batch as unknown as AiActionBatch)
         : batch

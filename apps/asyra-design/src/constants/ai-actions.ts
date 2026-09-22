@@ -1,4 +1,10 @@
 export const AiActionNames = Object.freeze({
+  APPLY_PREPARED_DESIGN: 'apply_prepared_design',
+  REVIEW_DESIGN: 'review_design',
+  ARRANGE_DESIGN: 'arrange_design',
+  ORGANIZE_DESIGN: 'organize_design',
+  UPDATE_DESIGN_ELEMENT: 'update_design_element',
+  READ_DESIGN_CONTEXT: 'read_design_context',
   INSPECT_DRAWING: 'inspect_drawing',
   REPORT_OUTCOME: 'report_outcome',
   REPLACE_VECTOR_COMPOSITION: 'replace_vector_composition',

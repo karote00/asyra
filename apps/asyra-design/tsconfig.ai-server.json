@@ -20,6 +20,9 @@
     "server/ai-status.ts",
     "server/__tests__/ai-status.test.ts",
     "server/__tests__/local-image-tools.test.ts",
-    "server/__tests__/local-ai-live.test.ts"
+    "server/__tests__/local-ai-live.test.ts",
+    "server/design-preparation.ts",
+    "server/__tests__/design-preparation.test.ts",
+    "server/__tests__/local-design-tools.test.ts"
   ]
 }

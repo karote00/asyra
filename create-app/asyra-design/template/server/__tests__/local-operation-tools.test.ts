@@ -8,6 +8,241 @@ import { createLocalImageTools } from '../local-image-tools'
 import { AiActionNames } from '../../src/constants/ai-actions'
 
 describe('backend operation tools', () => {
+  it('reviews measurements before images and resolves text overflow before completion', async () => {
+    let overflow = true
+    const executeBatch = vi.fn(async (batch: AiActionBatch) => ({
+      actionResults: [
+        {
+          actionId: 'r',
+          actionName: batch.actions[0].name,
+          result:
+            batch.actions[0].name === AiActionNames.REVIEW_DESIGN
+              ? {
+                  complete: true,
+                  measuredTextIds: ['t'],
+                  findings: overflow
+                    ? [{ kind: 'text-overflow', elementId: 't', bottom: 40 }]
+                    : []
+                }
+              : { available: true, compositionId: 'f' }
+        }
+      ],
+      context: {}
+    }))
+    const operations = createLocalOperationTools(
+      [
+        AiActionNames.UPDATE_DESIGN_ELEMENT,
+        AiActionNames.REVIEW_DESIGN,
+        AiActionNames.INSPECT_DRAWING
+      ].map((name) => ({ name, description: name, inputSchema: {} })),
+      { modelActions: (a) => a, resolveBatch: (v) => v },
+      executeBatch
+    )
+    const signal = new AbortController().signal
+    await operations.call(
+      AiActionNames.UPDATE_DESIGN_ELEMENT,
+      { arguments: { elementId: 't' } },
+      signal
+    )
+    expect(executeBatch.mock.calls.map(([b]) => b.actions[0].name)).toEqual([
+      AiActionNames.UPDATE_DESIGN_ELEMENT,
+      AiActionNames.REVIEW_DESIGN
+    ])
+    const outcome = {
+      batchId: 'done',
+      actions: [
+        {
+          id: 'done',
+          name: AiActionNames.REPORT_OUTCOME,
+          arguments: { outcome: 'completed' },
+          summary: 'Done'
+        }
+      ]
+    }
+    expect(
+      operations.settleOutcome(outcome).actions[0].arguments
+    ).toMatchObject({ outcome: 'unsupported' })
+    executeBatch.mockImplementationOnce(async () => ({
+      actionResults: [
+        {
+          actionId: 'other',
+          actionName: AiActionNames.REVIEW_DESIGN,
+          result: { complete: true, measuredTextIds: ['other'], findings: [] }
+        }
+      ],
+      context: {}
+    }))
+    await operations.call(
+      AiActionNames.REVIEW_DESIGN,
+      { arguments: { elementId: 'other' } },
+      signal
+    )
+    expect(
+      operations.settleOutcome(outcome).actions[0].arguments
+    ).toMatchObject({ outcome: 'unsupported' })
+    overflow = false
+    executeBatch.mockClear()
+    await operations.call(
+      AiActionNames.UPDATE_DESIGN_ELEMENT,
+      { arguments: { elementId: 't' } },
+      signal
+    )
+    expect(executeBatch.mock.calls.map(([b]) => b.actions[0].name)).toEqual([
+      AiActionNames.UPDATE_DESIGN_ELEMENT,
+      AiActionNames.REVIEW_DESIGN,
+      AiActionNames.INSPECT_DRAWING
+    ])
+    expect(operations.settleOutcome(outcome)).toBe(outcome)
+  })
+
+  it('bounds cheap correction cycles without preventing read-only review', async () => {
+    const executeBatch = vi.fn(async (batch: AiActionBatch) => ({
+      actionResults: [
+        {
+          actionId: 'r',
+          actionName: batch.actions[0].name,
+          result:
+            batch.actions[0].name === AiActionNames.REVIEW_DESIGN
+              ? { complete: true, findings: [{ kind: 'text-overflow' }] }
+              : { compositionId: 'f' }
+        }
+      ],
+      context: {}
+    }))
+    const operations = createLocalOperationTools(
+      [
+        AiActionNames.UPDATE_DESIGN_ELEMENT,
+        AiActionNames.REVIEW_DESIGN,
+        AiActionNames.INSPECT_DRAWING
+      ].map((name) => ({ name, description: name, inputSchema: {} })),
+      { modelActions: (a) => a, resolveBatch: (v) => v },
+      executeBatch
+    )
+    const signal = new AbortController().signal
+    for (let i = 0; i < 9; i++)
+      await operations.call(
+        AiActionNames.UPDATE_DESIGN_ELEMENT,
+        { arguments: { elementId: 't' } },
+        signal
+      )
+    expect(
+      executeBatch.mock.calls.filter(
+        ([b]) => b.actions[0].name === AiActionNames.UPDATE_DESIGN_ELEMENT
+      )
+    ).toHaveLength(8)
+    await operations.call(
+      AiActionNames.REVIEW_DESIGN,
+      { arguments: { elementId: 'f' } },
+      signal
+    )
+    expect(executeBatch.mock.calls.at(-1)?.[0].actions[0].name).toBe(
+      AiActionNames.REVIEW_DESIGN
+    )
+  })
+
+  it.each(['read_design_context', 'review_design'])(
+    'reads %s without automatic inspection or a failed review outcome',
+    async (readAction) => {
+      const executeBatch = vi.fn(async () => ({
+        actionResults: [],
+        context: {}
+      }))
+      const operations = createLocalOperationTools(
+        [readAction, AiActionNames.INSPECT_DRAWING].map((name) => ({
+          name,
+          description: name,
+          inputSchema: {}
+        })),
+        { modelActions: (actions) => actions, resolveBatch: (value) => value },
+        executeBatch
+      )
+      await operations.call(
+        readAction,
+        { arguments: { scope: 'selection' } },
+        new AbortController().signal
+      )
+      expect(executeBatch).toHaveBeenCalledTimes(1)
+      const batch = {
+        batchId: 'read',
+        actions: [
+          {
+            id: 'r',
+            name: readAction,
+            arguments: { scope: 'selection' }
+          }
+        ]
+      }
+      expect(operations.settleOutcome(batch)).toBe(batch)
+    }
+  )
+
+  it('can read after the visual correction budget is exhausted', async () => {
+    const executeBatch = vi.fn(async (batch: AiActionBatch) => ({
+      actionResults: [
+        {
+          actionId: 'r',
+          actionName: batch.actions[0].name,
+          result: { available: true }
+        }
+      ],
+      context: {}
+    }))
+    const operations = createLocalOperationTools(
+      [AiActionNames.READ_DESIGN_CONTEXT, AiActionNames.INSPECT_DRAWING].map(
+        (name) => ({ name, description: name, inputSchema: {} })
+      ),
+      { modelActions: (actions) => actions, resolveBatch: (value) => value },
+      executeBatch
+    )
+    const signal = new AbortController().signal
+    for (let i = 0; i < 6; i++)
+      await operations.call(
+        AiActionNames.INSPECT_DRAWING,
+        { arguments: { elementId: 'drawing' } },
+        signal
+      )
+    await operations.call(
+      AiActionNames.READ_DESIGN_CONTEXT,
+      { arguments: { scope: 'selection' } },
+      signal
+    )
+    expect(executeBatch).toHaveBeenCalledTimes(7)
+    expect(executeBatch.mock.calls[6][0].actions[0].name).toBe(
+      AiActionNames.READ_DESIGN_CONTEXT
+    )
+  })
+
+  it('reviews hierarchy operations from their receipt without requiring a drawing snapshot', async () => {
+    const executeBatch = vi.fn(async () => ({ actionResults: [], context: {} }))
+    const operations = createLocalOperationTools(
+      ['organize_design', AiActionNames.INSPECT_DRAWING].map((name) => ({
+        name,
+        description: name,
+        inputSchema: {}
+      })),
+      { modelActions: (actions) => actions, resolveBatch: (value) => value },
+      executeBatch
+    )
+    const result = await operations.call(
+      'organize_design',
+      { arguments: { operation: 'group', elementIds: ['a', 'b'] } },
+      new AbortController().signal
+    )
+    expect(JSON.parse(result)).toEqual({ actionResults: [], context: {} })
+    expect(executeBatch).toHaveBeenCalledTimes(1)
+    const batch = {
+      batchId: 'organization',
+      actions: [
+        {
+          id: 'g',
+          name: 'organize_design',
+          arguments: { operation: 'group', elementIds: ['a'] }
+        }
+      ]
+    }
+    expect(operations.settleOutcome(batch)).toBe(batch)
+  })
+
   it('prepares a referenced drawing on the backend and returns the acknowledged canonical result', async () => {
     const images = createLocalImageTools(
       {
@@ -26,7 +261,17 @@ describe('backend operation tools', () => {
     )
     const signal = new AbortController().signal
     const artifact = JSON.parse(
-      await images.call('vtracer', { attachmentIndex: 0 }, signal)
+      await images.call(
+        'vtracer',
+        {
+          attachmentIndex: 0,
+          plan: {
+            strategy: 'preserve-vectors',
+            reason: 'Preserve the supplied irregular vector artwork.'
+          }
+        },
+        signal
+      )
     )
     const executeBatch = vi.fn(async (_batch: AiActionBatch) => ({
       actionResults: [

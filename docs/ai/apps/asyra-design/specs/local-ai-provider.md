@@ -89,7 +89,7 @@ Submitted intent, bounded context, registered action descriptions, accepted
 images, and the backend domain prompt enter the model request alongside that personal guidance. Native image
 inputs carry image bytes once; prompt metadata omits those bytes. Local Codex
 has no filesystem, shell, web, plugin, MCP, or image-generation tools. The backend
-exposes its registered VTracer tool for submitted PNG/JPEG attachments and registered backend operation tools; image tool
+exposes its registered VTracer tool for submitted PNG/JPEG/WebP attachments and registered backend operation tools; image tool
 arguments select an attachment index, never a path or URL. Conversion uses the
 existing App worker and the owning request cancellation, with at most four calls.
 The request-owned image tool retains the parsed vector paths and returns only
@@ -253,6 +253,58 @@ time, and one Undo/Redo; smoother curves alone are not a quality pass.
 Rendered review snapshots report their actual enclosing extraction frame so
 fractional curve bounds cannot silently crop the evidence.
 
+## Pre-trace layer decomposition
+
+Ordinary `vtracer` calls require an explicit `plan` in the same call: either
+`{strategy:"preserve-vectors",reason}` or `{strategy:"separate-background",reason,
+background,colorTolerance,clipToBackground,foregroundColors?}`. Reasons are short
+(nonblank, at most 500 characters). The second choice executes the existing layer
+separation before tracing, and returns `representationPlan` with its artifact
+and separation evidence. Missing/invalid decisions cannot start conversion; the
+provider returns a recoverable tool response for the model to correct. The direct
+layer tool already requires explicit native-base parameters. No extra planning
+request or user-facing narration is introduced.
+
+The AI owns choosing the representation and must compare artifact evidence and
+actual rendered output with its plan and the user's request. The backend validates
+and executes that choice; it cannot prove the model's visual judgment. Complex
+foreground alone is not a reason to preserve a geometric background as vectors.
+Existing whole-image conversion reuse remains per attachment within the request;
+replies reflect the current admitted plan without reconverting the same raster.
+
+Before vectorization, AI decides which intended objects can use registered native
+components and which need tracing. `vectorize_image_layers` supports one solid
+rect/oval background selected by AI, its source-pixel bounds/fill, color tolerance
+(0–32 per channel), and an explicit choice to clip to that region. It separates
+pixels explained by that background only within the selected region, then traces
+the residual. Equal-colored pixels elsewhere remain unless explicitly clipped.
+For intentionally flat artwork AI may explicitly supply up to 16 foregroundColors;
+inside the region these plus the background form a palette instead of
+colorTolerance. Classification composites source alpha over the selected base
+before choosing the nearest RGB color; retained flat foreground becomes opaque.
+This avoids VTracer promoting nearly transparent matte RGB to solid fragments. Omission preserves
+nonmatching source colors; palette quantization must not be inferred for gradients
+or shading. This is compositing decomposition, not automatic semantic segmentation: matching
+interior colors can be represented by the underlying native fill. The model must
+not claim independent semantic objects or use this for textured/gradient bases.
+
+Actual byte signatures determine PNG/JPEG/WebP decoding even when an accepted
+attachment has a misleading extension or MIME type. Other formats are rejected;
+only submitted bytes are decoded, bounded to 16 MiB and four million
+pixels. Work observes cancellation, yields during pixel scans and has bounded
+native decode time. Up to four decompositions per request permit meaningful
+parameter refinement; unsupported or unchanged separation fails explicitly.
+Transient raster bytes never enter model text, document state or persistence.
+
+The artifact carries its native background and source frame. Preparation inserts
+that component first, followed by foreground vectors with the same transform;
+foreground exclusions must not stretch the surviving paths. A plain solid image
+may produce a native-only composition. Existing whole-image tracing preserves its
+current retained-path fitting behavior. Both review stages, execution admission,
+replacement and the single-turn Undo boundary remain unchanged. Tests must prove
+region-limited separation, same-color interior appearance, source placement,
+layer order, malformed/oversized input rejection and rendered composition/Undo.
+
 ## Concise decision flow
 
 Ordinary supported requests proceed through tools and the existing two review
@@ -274,3 +326,70 @@ when necessary. Do not expose tool names, model reasoning or technical payloads.
 Conciseness never permits silent failure, hidden partial output, omitted review
 or guesses about destructive targets. These are guidance and payload reductions,
 not a guarantee of model latency or a measured token reduction.
+
+## Backend contour review
+
+`review_vector_contours(imageArtifactId,pathIds,quality)` measures selected paths and
+returns same-request review receipts and bounded local proposals. `apply_contour_refinements(reviewId,proposalIds)` consumes an explicit non-overlapping subset
+and returns a new artifact for existing insert/replace actions, with before/after
+metrics. Both are optional capabilities selected by the AI based on intended
+straight or flowing regions. The backend never infers artistic meaning.
+
+Straightening requires the cubic control hull to stay within 0.5 source pixels of
+its chord and ordered control projections. Smoothing aligns incoming/outgoing
+handles only at shallow (<=30 degree) joins, retaining their lengths. Sharp corners,
+compound contours, self intersections, degeneracies and excessive measurement work
+remain report-only. Selected edits preserve anchors, fills and order; combined
+geometry is checked for contour intersection/winding before publication. These are
+bounded numerical checks, not proof of fidelity to the source raster.
+
+The displacement cap applies against the original trace across all generations;
+no cumulative drift is allowed. Derived bounds are recomputed once while the
+preparation frame remains fixed. Original artifacts/analysis receipts remain valid
+only for their own immutable source. At most three derived generations, 16 paths
+per review and 64 proposals per response; review shares the 128-path request budget
+and read-only queue with component analysis. Reports state truncation/limitations.
+Cancellation prevents publication. Failed proposals return a recoverable tool
+result; no unchanged retry or completed-quality claim is warranted.
+
+The AI selects proposals according to the original reference, reviews the new
+rendered result, and retains a previous artifact if appearance worsens. No supported
+proposal is a remaining capability limit, not an automatic pass. Source-error and
+local tangent/straightness metrics cannot replace visual interpretation.
+
+### Fidelity policy and final output scale
+
+Every contour review requires `quality: {mode: "faithful" | "cleanup", targetSize:
+{width, height}}`. Faithful intent preserves source irregularities and returns
+measurements without cleanup proposals. Cleanup permits selected corrections when
+intent justifies them. Plain tracing/recreation defaults to faithful; explicit
+clean/smooth/simplify requests indicate cleanup. Ask only for material ambiguity.
+The prompt must not classify source roughness as a conversion defect or discard
+texture merely for neatness.
+
+The backend caps displacement at both 0.5 original source pixels and 0.5 final
+**drawing** pixels (not screen zoom or device pixels). The conservative output
+scale is the larger width/height scale of the artifact preparation frame. Review
+filters proposals using the tighter bound and returns both scales and the policy;
+apply checks cumulative original-source displacement again. Preparing the derived
+artifact checks actual insertion/replacement dimensions, preventing later
+unreviewed enlargement from bypassing the output bound. Source-only limits remain
+in force for downscaling. Original artifacts remain available as an alternative.
+
+Improvement means the intended local defect decreases without new visual damage
+and while both displacement limits hold. Stop/revert on worsening appearance,
+no eligible improvement, unsafe contours or exhausted budgets. These geometric
+bounds are relative to traced geometry, not a pixel-similarity score against the
+reference. Sharp corners, narrow features, holes and gaps still require the
+existing topology checks and targeted visual review; no new gap/thickness oracle
+is claimed by this policy change.
+
+### Separated boundary review
+
+Faithful geometry does not require preserving antialias coverage as independent
+objects. Explicit flat palettes remain available in faithful mode. Visual review
+must check foreground-to-background contacts, not only the outer base or overall
+similarity. Raster clipping and a native curved base do not guarantee a shared
+exact vector boundary. Revise supported parameters only from source evidence;
+retain a better prior result or report the unresolved limitation rather than
+claiming completion or adding patch geometry.

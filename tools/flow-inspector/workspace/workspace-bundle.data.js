@@ -25,6 +25,8 @@
       "tools/flow-inspector/inspectors/canonical-projection-and-collaboration-contract-flow-inspector.data.cjs",
       "tools/flow-inspector/inspectors/canvas-pipeline-debugger-flow-inspector.data.cjs",
       "tools/flow-inspector/inspectors/create-asyra-design-app-release-flow-inspector.data.cjs",
+      "tools/flow-inspector/inspectors/editable-design-flow-inspector.data.cjs",
+      "tools/flow-inspector/inspectors/editable-text-flow-inspector.data.cjs",
       "tools/flow-inspector/inspectors/extendable-preset-flow-inspector.data.cjs",
       "tools/flow-inspector/inspectors/flow-inspector-core-proof-flow-inspector.data.cjs",
       "tools/flow-inspector/inspectors/flow-inspector-static-workspace-flow-inspector.data.cjs",
@@ -158,8 +160,13 @@
               "The backend-only Asyra Design domain prompt and image-tool catalog are added only after complete server configuration supplies either HTTP endpoint, model, and API key, or the explicit local-codex backend, model, and local subscription login for an ordinary request.",
               "The backend sends the API key only in the provider authorization header; it never enters the browser, App context, logs, provider request body, action batch, canonical state, persistence, or Collaboration.",
               "Ordinary local turns use native registered tool schemas once, retain final-response control schemas in text, and proceed through parameter-only routine operations with App-owned status labels. The model only asks for material missing input or genuine ambiguity and returns a concise factual outcome; required approvals, original evidence and both review stages remain enforced by their existing owners.",
+              "Provider-native cached web search may research concepts, styles, public facts or references without an attachment. Only safe research activity is projected; raw search queries and page bodies are not UI status. Wikimedia lookup is optional. Reference import is separately bounded; a search result is not an imported image receipt. Shell, credentials, local file tools and external integrations remain unavailable.",
               "The backend owns input matching and ordinary provider response construction. An ordinary request uses the configured backend model path and returns complete AiActionBatch values with batchId and already-prepared arguments. Sequential intermediate batches await canonical receipts before the model continues.",
               "For local image requests, the request-owned VTracer tool returns an opaque artifact ID and path bounds/color/count summaries, never SVG coordinates. The model selects target bounds, optional whole-path exclusions and supported single-contour componentMappings for native component preparation. The worker emits spline contours; the backend admits absolute M/L/C/Z geometry, preserves cubic controls, closure, winding and holes, computes true curve bounds once per request artifact, and transforms anchors and controls together without clipping or polygon flattening; this backend owner resolves only same-request references into complete canonical descriptors before Runtime admission. Repeated calls for the same attachment reuse the completed conversion only within that request; unknown references, unknown paths, duplicate/excluded/compound Oval selections, empty output, or invalid bounds fail here. The domain prompt requires receipt-based review and repeated supported corrections without claiming visual fidelity from execution success.",
+              "Before ordinary tracing, AI must submit a short explicit representation plan: preserve vectors with a reason or select a solid native background. Missing/invalid plans cannot start conversion; native plans dispatch separation within the same tool call and return plan evidence for data and rendered review. AI may select one solid native rect/oval background, source bounds, tolerance, optional explicit flat foreground palette and explicit regional clipping. The registered vectorize_image_layers backend tool separates only pixels explained by that region, traces residual PNG pixels, and returns request-local native-background/source-frame evidence. Preparation places the native component below foreground vectors using one shared transform, including native-only output. This is explicit compositing decomposition, never automatic semantic segmentation, whole-image color deletion, frontend geometry or a renderer patch. Four bounded decompositions allow refinement; malformed, cancelled, oversized or unchanged separation fails at this owner. Ordinary tracing and receipt-based review remain unchanged.",
+              "Explicit flat-palette separation classifies alpha-composited source colors over the selected native base before producing opaque foreground masks; faint matte RGB cannot become solid tracing fragments. Faithful contour intent does not disable palette cleanup. Native curved bases and traced foreground do not guarantee an exact shared boundary, so rendered contact review remains mandatory.",
+              "Contour review requires faithful/cleanup intent and final drawing dimensions. Faithful reviews only measure source irregularities. Cleanup proposals and cumulative refinements satisfy both 0.5 original-source pixels and 0.5 final drawing pixels using the larger nonuniform scale; preparation rechecks actual insertion/replacement dimensions so later enlargement cannot bypass the budget. Reports carry both units and the policy. These bounds do not certify raster fidelity, thin-feature preservation or visual approval; AI stops or reverts when appearance worsens or no eligible improvement remains.",
+              "The AI may request bounded source-pixel contour measurements for up to 16 selected paths, sharing the 128-path analysis budget. Request-owned review receipts retain local straighten/smooth-join proposals; only explicitly selected non-overlapping proposals produce a new immutable artifact. Backend preparation preserves anchors, fills, order and source frame, validates topology, and bounds displacement against the original trace to 0.5 source pixels across at most three generations. Sharp corners and compound/unsafe contours are not automatically smoothed. Reports include before/after metrics and remaining limitations, never visual-fidelity approval. No canonical state changes until the existing prepared drawing operation is acknowledged.",
               "The AI selects plausible representation candidates from the registered catalog, without a preferred component. Request-owned read-only vector analysis returns contour identities, measured fit errors, topology limitations and an opaque analysis receipt. Whole-path component mappings require eligible results from a same-request receipt for the same source artifact; preparation consumes this completed evidence without remeasuring. Analysis never mutates canonical state, chooses artistic intent, exposes coordinate arrays or claims visual approval. Unsupported compound reconstruction remains explicit; original unmapped vectors are preserved. Up to 128 independent read-only analyses with a shared 128-candidate reservation budget may be dispatched concurrently with separately correlated replies; final settlement drains pending work, other tools remain exclusive, a request-owned single-job CPU queue yields between jobs, and request abort plus separate 32 non-analysis/160 total call budgets still apply.",
               "The checked-in crdt-7076 backend sample remains the local full-flow request path: its documented URL uses fileId=crdt-7076-sample as both socket-authoritative document identity and Collaboration identity; the backend accepts its exact checked-in image and instruction through the ordinary request body.",
               "The crdt-7076 sample uses the same socket-authoritative startup as every other fileId. When the socket is unavailable, the formal provisional local document still accepts Actor A HTTP action-batch execution and retains publications in the ordinary outbox; there is no compressed-document Core.load bootstrap, sample-only Reset behavior, or socket bypass. The permanent standalone Reset remains available for every fileId.",
@@ -272,7 +279,7 @@
             "conditions": [
               "This step is selected because corrected attribution found front-end action-schema geometry preparation before Group creation, while the product contract now assigns model preparation to the backend.",
               "requestActionBatch() is the only public provider request and resolveAiActionBatch() is the only Runtime resolution entry. There is no public or internal plan API, alias, compatibility wrapper, alternate payload mode, or client preparation mode.",
-              "One invocation transaction contains every sequential prepared batch, including intermediate receipts and final settlement. Each batch repeats permission and confirmation; no provider retry occurs after mutation. Fatal errors or cancellation roll back the invocation. The same-origin server transport hands each returned AiActionBatch contract to Runtime; no URL, startup, or alternate source selects another execution or canonical mutation path.",
+              "One invocation transaction contains every sequential prepared batch, including intermediate receipts and final settlement. Each batch repeats permission and confirmation; no provider retry occurs after mutation. Asyra Design preserves applied progress after ordinary executor/provider failure, stops further work and reports partial completion with the failed activity. Cancellation rolls back; transaction settlement failure reports unknown state. There is no per-action savepoint. The same-origin server transport hands each returned AiActionBatch contract to Runtime; no URL, startup, or alternate source selects another execution or canonical mutation path.",
               "AiActionBatch carries one batchId, explanation, ordered actions, and bounded summaries. Runtime preflights only that small control envelope, including the empty-batch rule, duplicate action ids, and unknown actions; it does not traverse item, path, point, style, bounds, or geometry arguments.",
               "Each action definition exposes one backend-facing inputSchema for server action-batch construction and one executor; it has no client action schema, parse, prepare, validation mode, or payload-size flag.",
               "The server-prepared action arguments are not recursively cloned or frozen by Runtime. Permission and execution receive the exact same arguments identity.",
@@ -286,7 +293,7 @@
               "ResolvedAiActionBatch and PermissionReadyAiActionBatch remain local, noncanonical, and nonshared; shared props, components, elements, Factory evidence, and CRDT data remain in their existing owners."
             ],
             "bypasses": [
-              "An invalid control envelope fails before that batch permission or executor work; the invocation transaction rolls back.",
+              "An invalid control envelope fails before that batch permission or executor work; Asyra Design retains previously applied progress, while the default Runtime failure policy rolls back.",
               "A no-confirmation permission result still creates only the bounded terminal preview and never a full-argument preview."
             ],
             "allowedContributors": [
@@ -1568,6 +1575,7 @@
               "The configured engine extracts real subtree content, excluding overlays and camera framing; no synthetic or stale image is admitted.",
               "PNG size and object metadata are bounded. Capture does not change selection, viewport or canonical state and owns no image cache.",
               "Before mutation the provider reviews tool summaries, selects representations from the supported App component conversion catalog, preserves unmapped vector geometry, and iterates supported preparation parameters. Known data discrepancies are addressed before any expensive rendered review; unchanged deterministic conversions are not retries.",
+              "When registered, review_design runs before snapshot inspection. Concrete text-overflow findings return for correction without an image and prevent completed settlement until resolved. Eight mutating review cycles and six images bound this path; reads remain available and applied progress is retained.",
               "The existing acknowledged batch receipt carries image evidence after mutating operations; local provider emits native image content for AI comparison and repeated supported corrections. Automatic images do not require duplicate explicit captures."
             ],
             "bypasses": [
@@ -1622,9 +1630,11 @@
             ],
             "conditions": [
               "Append the user message before execution and preserve its identity through settlement.",
+              "Follow-up hints retain current non-workspace objects of any registered representation; revalidate distinct IDs once per submission and discard deleted/workspace references without granting new capabilities.",
               "One App activity projection owns both the current headline and ordered Activity entries, describes real work transitions without tool names or AI-wait terminology, attaches model updates to their event, and projects approval/stop from existing controller state. Settlement clears the current marker and separates Result from work history.",
               "Questions wait for user input; provider completion alone does not complete the drawing goal.",
               "Panel closure hides presentation; document disposal cancels and retires late events.",
+              "Document-scoped new/history navigation retains per-conversation messages and targets, rejects switches while active, and exposes stable navigation updates independently of progress; presentation preserves unsent drafts.",
               "Only existing feature and requestActionBatch owners may execute; status never writes canonical state.",
               "Capability limits are normal explained outcomes with no blind retry; successful prior changes are described accurately and remain one undoable action."
             ],
@@ -15872,6 +15882,7 @@
               "Factory derives an eligible staged canonical slice, committed remainder, or rollback compensation as one SharedPublication on the ordinary publication route.",
               "SharedPublication contains only transport identity, ordered slices, channel batches, and remote-apply deliveries; artifactId is opaque transport correlation and not a local History reference.",
               "Each staged publication receives stable transaction, publication, slice, and actual compensation identity from the existing journal.",
+              "Opaque publication IDs include one lazy random namespace per producer lifetime so fresh runtimes cannot replay an earlier local counter identity; existing saved IDs and compensation correlations remain unchanged.",
               "Acknowledged externally visible staged slices use the same journal evidence and recorded token for rollback compensation without republishing acknowledged records at commit.",
               "Shared-delivery bookkeeping records only the existing journal delivery outcome and never mirrors canonical payloads into another applied-result object.",
               "The production fast path performs no post-action save, equality comparison, finalize-save, full-document comparison, evidence clone, or recursive immutable-tree scan.",
@@ -17484,6 +17495,1123 @@
             ],
             "assertions": [
               "Asyra Design production wiring contains no optional debugger implementation or overlay chunk."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "editable-design",
+      "slug": "editable-design",
+      "title": "Editable Design Preparation",
+      "kind": "flow-v2",
+      "group": "Framework",
+      "subgroup": "Architecture and Runtime",
+      "lifecycle": "current",
+      "sourcePath": "tools/flow-inspector/inspectors/editable-design-flow-inspector.data.cjs",
+      "standalonePath": null,
+      "labels": [
+        "editable-design",
+        "Framework",
+        "Architecture and Runtime",
+        "flow-v2"
+      ],
+      "data": {
+        "schema": {
+          "id": "flow-inspector",
+          "version": 2
+        },
+        "target": {
+          "id": "editable-design",
+          "kind": "feature",
+          "title": "Editable Design Preparation",
+          "subtitle": "Model decisions to validated native design artifacts"
+        },
+        "authority": {
+          "specPath": "docs/ai/apps/asyra-design/specs/design-preparation.md",
+          "inspectorPath": "tools/flow-inspector/inspectors/editable-design-flow-inspector.data.cjs",
+          "semanticOwner": "General editable design preparation",
+          "inspectorOwner": "Design preparation and execution owners"
+        },
+        "links": [],
+        "lanes": [
+          {
+            "id": "preparation",
+            "title": "Design preparation",
+            "order": 1
+          }
+        ],
+        "steps": [
+          {
+            "id": "prepare-semantic-design",
+            "order": 1,
+            "laneId": "preparation",
+            "title": "Prepare semantic design",
+            "ownerPackage": "asyra-design server",
+            "purpose": "Resolve declared layout and native descriptor identities without inventing design content",
+            "inputs": [
+              "bounded semantic draft",
+              "request-local artifact session"
+            ],
+            "outputs": [
+              "artifact:prepared-design"
+            ],
+            "conditions": [
+              "Validate the complete draft before compiling",
+              "AI owns content and style",
+              "Text fit requires actual browser metrics",
+              "Retain analysis only for its immutable request-local artifact"
+            ],
+            "bypasses": [
+              "Read-only advice does not prepare a design"
+            ],
+            "allowedContributors": [
+              "server layout compiler",
+              "App-owned native descriptor protocol",
+              "request-local artifact owner"
+            ],
+            "forbiddenContributors": [
+              "Framework or Preset runtime imports",
+              "model calls inside preparation",
+              "remote fetch",
+              "browser writes",
+              "subject-specific layouts",
+              "font-fit claims from estimates"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "apps/asyra-design/server/design-preparation.ts",
+              "apps/asyra-design/tsconfig.ai-server.json",
+              "apps/asyra-design/package.json",
+              "apps/asyra-design/server/__tests__/design-preparation.test.ts",
+              "apps/asyra-design/src/ai/prepared-design.ts"
+            ],
+            "specRefs": [
+              "#semantic-preparation"
+            ],
+            "failureOwnerStepId": "prepare-semantic-design"
+          },
+          {
+            "id": "resolve-design-operations",
+            "order": 2,
+            "laneId": "preparation",
+            "title": "Resolve model design operations",
+            "ownerPackage": "asyra-design server",
+            "purpose": "Expose semantic preparation and resolve opaque references into canonical App batches",
+            "inputs": [
+              "registered actions",
+              "semantic draft call",
+              "artifact:prepared-design",
+              "operation receipts"
+            ],
+            "outputs": [
+              "artifact:resolved-design-operation"
+            ],
+            "conditions": [
+              "Require registered apply action",
+              "Keep artifacts request-local",
+              "Bound invalid attempts",
+              "Recover invalid draft/reference inputs without writes",
+              "Use the same resolver for dynamic and final batches"
+            ],
+            "bypasses": [
+              "No preparation capability when apply action is absent"
+            ],
+            "allowedContributors": [
+              "preparation session",
+              "native provider tool transport",
+              "existing operation review"
+            ],
+            "forbiddenContributors": [
+              "raw model canonical descriptors",
+              "reference-image prerequisite",
+              "network fetch",
+              "canvas mutation during preparation",
+              "new credentials"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "apps/asyra-design/server/local-design-tools.ts",
+              "apps/asyra-design/tsconfig.ai-server.json",
+              "apps/asyra-design/server/local-operation-tools.ts",
+              "apps/asyra-design/server/local-ai-provider.ts",
+              "apps/asyra-design/server/ai-domain-prompt.ts",
+              "apps/asyra-design/server/__tests__/local-design-tools.test.ts",
+              "apps/asyra-design/server/__tests__/local-operation-tools.test.ts",
+              "apps/asyra-design/server/__tests__/local-ai-provider.test.ts",
+              "apps/asyra-design/server/__tests__/ai-domain-prompt.test.ts",
+              "apps/asyra-design/src/constants/ai-design.ts",
+              "apps/asyra-design/src/ai/presentation.ts",
+              "apps/asyra-design/src/ai/__tests__/presentation.test.ts",
+              "apps/asyra-design/package.json"
+            ],
+            "specRefs": [
+              "#provider-handoff"
+            ],
+            "failureOwnerStepId": "resolve-design-operations"
+          },
+          {
+            "id": "apply-prepared-design",
+            "order": 3,
+            "laneId": "preparation",
+            "title": "Apply prepared editable design",
+            "ownerPackage": "asyra-design App",
+            "purpose": "Admit complete server artifacts and create editable hierarchy through canonical APIs",
+            "inputs": [
+              "artifact:resolved-design-operation",
+              "current workspace",
+              "abort signal",
+              "action permission"
+            ],
+            "outputs": [
+              "artifact:applied-design"
+            ],
+            "conditions": [
+              "Admit all entries before writes",
+              "Preserve parent order and IDs",
+              "Yield between bounded chunks",
+              "Use invocation transaction; retain progress on ordinary failure"
+            ],
+            "bypasses": [
+              "Read-only advice"
+            ],
+            "allowedContributors": [
+              "App admission",
+              "common element and hierarchy APIs",
+              "invocation transaction"
+            ],
+            "forbiddenContributors": [
+              "model-authored executable code",
+              "geometry reconstruction",
+              "renderer writes",
+              "permission bypass",
+              "custom Undo"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "apps/asyra-design/e2e/editable-design-variants.spec.ts",
+              "apps/asyra-design/src/ai/prepared-design-admission.ts",
+              "apps/asyra-design/src/ai/design-actions.ts",
+              "apps/asyra-design/src/ai/__tests__/design-actions.test.ts",
+              "apps/asyra-design/e2e/editable-design.spec.ts",
+              "apps/asyra-design/src/ai/runtime-input.ts",
+              "apps/asyra-design/src/ai/startup.ts",
+              "apps/asyra-design/src/constants/ai-actions.ts",
+              "apps/asyra-design/package.json"
+            ],
+            "specRefs": [
+              "#canonical-execution"
+            ],
+            "failureOwnerStepId": "apply-prepared-design"
+          },
+          {
+            "id": "read-design-fields",
+            "order": 4,
+            "laneId": "preparation",
+            "title": "Read selected canonical fields",
+            "ownerPackage": "@asyra/core",
+            "purpose": "Detach requested computed fields without cloning omitted geometry",
+            "inputs": [
+              "element ID",
+              "optional flat field selection",
+              "current computed projection"
+            ],
+            "outputs": [
+              "artifact:selected-design-fields"
+            ],
+            "conditions": [
+              "Validate field budget before source read",
+              "Read once per call",
+              "Clone selected own values only",
+              "No selection preserves existing whole observation"
+            ],
+            "bypasses": [
+              "Missing element returns undefined"
+            ],
+            "allowedContributors": [
+              "Core observation facade",
+              "existing shallow computed projection"
+            ],
+            "forbiddenContributors": [
+              "cross-call caches",
+              "nested omitted-field traversal",
+              "canonical writes",
+              "AI-specific field names"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "packages/core/src/apis/scene-tree.ts",
+              "packages/core/src/types/scene-tree.ts",
+              "packages/core/src/__tests__/scene-tree-api.test.ts",
+              "docs/ai/framework/API_SURFACES.md",
+              ".changeset/selective-computed-observation.md"
+            ],
+            "specRefs": [
+              "#context-and-targeted-operations"
+            ],
+            "failureOwnerStepId": "read-design-fields"
+          },
+          {
+            "id": "read-document-context",
+            "order": 5,
+            "laneId": "preparation",
+            "title": "Read bounded document context",
+            "ownerPackage": "asyra-design App",
+            "purpose": "Observe fresh editable metadata without vector geometry",
+            "inputs": [
+              "selection or direct children",
+              "offset and limit",
+              "artifact:selected-design-fields"
+            ],
+            "outputs": [
+              "artifact:document-context"
+            ],
+            "conditions": [
+              "Validate before reads",
+              "Page size at most 200",
+              "Explicit preview truncation",
+              "One source read per page object"
+            ],
+            "bypasses": [
+              "Unavailable parent returns no objects"
+            ],
+            "allowedContributors": [
+              "Common API observation",
+              "Core selected-field observation"
+            ],
+            "forbiddenContributors": [
+              "Document writes",
+              "Recursive traversal",
+              "Visual capture",
+              "Cross-call cache"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "apps/asyra-design/src/common-apis/design-context.ts",
+              "apps/asyra-design/src/common-apis/__tests__/design-context.test.ts",
+              "apps/asyra-design/package.json"
+            ],
+            "specRefs": [
+              "#context-and-targeted-operations"
+            ],
+            "failureOwnerStepId": "read-document-context"
+          },
+          {
+            "id": "expose-document-context",
+            "order": 6,
+            "laneId": "preparation",
+            "title": "Expose read-only document action",
+            "ownerPackage": "asyra-design App and provider",
+            "purpose": "Provide bounded context without mutation review",
+            "inputs": [
+              "page query",
+              "abort signal",
+              "artifact:document-context"
+            ],
+            "outputs": [
+              "artifact:context-action-receipt"
+            ],
+            "conditions": [
+              "Registered permission",
+              "No automatic inspection",
+              "No correction budget consumed"
+            ],
+            "bypasses": [
+              "Abort before observation"
+            ],
+            "allowedContributors": [
+              "Document context reader",
+              "Existing action transport"
+            ],
+            "forbiddenContributors": [
+              "Canvas writes",
+              "Screenshot capture",
+              "New transaction semantics"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "apps/asyra-design/src/ai/context-action.ts",
+              "apps/asyra-design/src/ai/__tests__/context-action.test.ts",
+              "apps/asyra-design/src/ai/runtime-input.ts",
+              "apps/asyra-design/src/ai/startup.ts",
+              "apps/asyra-design/src/constants/ai-actions.ts",
+              "apps/asyra-design/src/ai/presentation.ts",
+              "apps/asyra-design/server/local-operation-tools.ts",
+              "apps/asyra-design/server/__tests__/local-operation-tools.test.ts",
+              "apps/asyra-design/server/ai-domain-prompt.ts",
+              "apps/asyra-design/package.json"
+            ],
+            "specRefs": [
+              "#context-and-targeted-operations"
+            ],
+            "failureOwnerStepId": "expose-document-context"
+          },
+          {
+            "id": "revise-design-element",
+            "order": 7,
+            "laneId": "preparation",
+            "title": "Revise a current design element",
+            "ownerPackage": "asyra-design App",
+            "purpose": "Admit targeted native edits without replacing other objects",
+            "inputs": [
+              "current element ID",
+              "bounded property/style/name patch",
+              "abort signal"
+            ],
+            "outputs": [
+              "artifact:edited-design-receipt"
+            ],
+            "conditions": [
+              "Whole input validation before writes",
+              "Target and ancestor locks",
+              "Existing native property support",
+              "Invocation Undo and partial retention"
+            ],
+            "bypasses": [
+              "Unchanged values emit no writes"
+            ],
+            "allowedContributors": [
+              "Native text schema",
+              "Common geometry and style APIs",
+              "Core metadata API"
+            ],
+            "forbiddenContributors": [
+              "Custom rollback",
+              "Raw vector point patches",
+              "Unrelated element replacement",
+              "Permission bypass"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "apps/asyra-design/e2e/editable-design.spec.ts",
+              "apps/asyra-design/src/common-apis/design-edit.ts",
+              "apps/asyra-design/src/common-apis/__tests__/design-edit.test.ts",
+              "apps/asyra-design/src/ai/design-edit-action.ts",
+              "apps/asyra-design/src/ai/__tests__/design-edit-action.test.ts",
+              "apps/asyra-design/src/constants/ai-actions.ts",
+              "apps/asyra-design/src/ai/runtime-input.ts",
+              "apps/asyra-design/src/ai/startup.ts",
+              "apps/asyra-design/src/ai/presentation.ts",
+              "apps/asyra-design/server/ai-domain-prompt.ts",
+              "apps/asyra-design/package.json"
+            ],
+            "specRefs": [
+              "#context-and-targeted-operations"
+            ],
+            "failureOwnerStepId": "revise-design-element"
+          },
+          {
+            "id": "organize-design-hierarchy",
+            "order": 8,
+            "laneId": "preparation",
+            "title": "Organize current design hierarchy",
+            "ownerPackage": "asyra-design App",
+            "purpose": "Group, ungroup or reorder current editable objects through native owners",
+            "inputs": [
+              "operation",
+              "bounded current IDs",
+              "optional name or reorder index"
+            ],
+            "outputs": [
+              "artifact:organized-hierarchy-receipt"
+            ],
+            "conditions": [
+              "Complete admission before writes",
+              "Inherited locks",
+              "One raw read per touched node per call",
+              "Existing invocation Undo",
+              "Structural receipt review"
+            ],
+            "bypasses": [
+              "Unchanged reorder is a no-change result"
+            ],
+            "allowedContributors": [
+              "Common hierarchy APIs",
+              "Core metadata reads and rename"
+            ],
+            "forbiddenContributors": [
+              "Arbitrary reparent",
+              "Deleting children",
+              "Fabricated component instances",
+              "Custom geometry or rollback",
+              "Cross-call cache"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "apps/asyra-design/src/common-apis/design-organization.ts",
+              "apps/asyra-design/src/common-apis/__tests__/design-organization.test.ts",
+              "apps/asyra-design/src/ai/organization-action.ts",
+              "apps/asyra-design/src/ai/__tests__/organization-action.test.ts",
+              "apps/asyra-design/src/ai/runtime-input.ts",
+              "apps/asyra-design/src/ai/startup.ts",
+              "apps/asyra-design/src/constants/ai-actions.ts",
+              "apps/asyra-design/src/ai/presentation.ts",
+              "apps/asyra-design/server/local-operation-tools.ts",
+              "apps/asyra-design/server/__tests__/local-operation-tools.test.ts",
+              "apps/asyra-design/server/ai-domain-prompt.ts",
+              "apps/asyra-design/package.json",
+              "apps/asyra-design/e2e/design-organization.spec.ts"
+            ],
+            "specRefs": [
+              "#context-and-targeted-operations"
+            ],
+            "failureOwnerStepId": "organize-design-hierarchy"
+          },
+          {
+            "id": "arrange-design-elements",
+            "order": 9,
+            "laneId": "preparation",
+            "title": "Arrange current design elements",
+            "ownerPackage": "asyra-design App",
+            "purpose": "Align or distribute native projected bounds through canonical positions",
+            "inputs": [
+              "bounded sibling IDs",
+              "axis",
+              "alignment or optional gap",
+              "current native projection"
+            ],
+            "outputs": [
+              "artifact:arrangement-receipt"
+            ],
+            "conditions": [
+              "Complete admission before writes",
+              "Inherited locks",
+              "Four projected corners per target",
+              "One request-local observation per node",
+              "One plural write",
+              "Existing invocation Undo"
+            ],
+            "bypasses": [
+              "Unchanged arrangement performs no write"
+            ],
+            "allowedContributors": [
+              "Core native coordinate conversion",
+              "Preset group geometry projection",
+              "Core plural property update"
+            ],
+            "forbiddenContributors": [
+              "Path reconstruction",
+              "Renderer writes",
+              "Reparenting",
+              "Cross-call cache",
+              "Custom rollback"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "apps/asyra-design/src/common-apis/design-arrangement.ts",
+              "apps/asyra-design/src/common-apis/__tests__/design-arrangement.test.ts",
+              "apps/asyra-design/src/ai/arrangement-action.ts",
+              "apps/asyra-design/src/ai/__tests__/arrangement-action.test.ts",
+              "apps/asyra-design/src/ai/runtime-input.ts",
+              "apps/asyra-design/src/ai/startup.ts",
+              "apps/asyra-design/src/constants/ai-actions.ts",
+              "apps/asyra-design/src/ai/presentation.ts",
+              "apps/asyra-design/server/ai-domain-prompt.ts",
+              "apps/asyra-design/package.json",
+              "apps/asyra-design/e2e/design-organization.spec.ts"
+            ],
+            "specRefs": [
+              "#arrangement"
+            ],
+            "failureOwnerStepId": "arrange-design-elements"
+          },
+          {
+            "id": "review-current-design",
+            "order": 10,
+            "laneId": "preparation",
+            "title": "Review current design measurements",
+            "ownerPackage": "asyra-design App",
+            "purpose": "Report deterministic fit and bounds findings before visual judgment",
+            "inputs": [
+              "root ID",
+              "bounded current metadata",
+              "native content measurements"
+            ],
+            "outputs": [
+              "artifact:design-review-findings"
+            ],
+            "conditions": [
+              "At most 200 nodes",
+              "One selected observation per node",
+              "One text measurement batch",
+              "No screenshot"
+            ],
+            "bypasses": [
+              "Hidden text is not measured",
+              "Rotated parent-box checks report unavailable"
+            ],
+            "allowedContributors": [
+              "Core selected fields",
+              "Core native content observation"
+            ],
+            "forbiddenContributors": [
+              "Vector payload cloning",
+              "Font heuristics",
+              "Canonical writes",
+              "Visual-quality claims",
+              "Cross-call cache"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "apps/asyra-design/src/common-apis/design-review.ts",
+              "apps/asyra-design/src/common-apis/__tests__/design-review.test.ts",
+              "apps/asyra-design/src/ai/review-action.ts",
+              "apps/asyra-design/src/ai/__tests__/review-action.test.ts",
+              "apps/asyra-design/src/ai/runtime-input.ts",
+              "apps/asyra-design/src/ai/startup.ts",
+              "apps/asyra-design/src/ai/presentation.ts",
+              "apps/asyra-design/src/constants/ai-actions.ts",
+              "apps/asyra-design/server/local-operation-tools.ts",
+              "apps/asyra-design/server/__tests__/local-operation-tools.test.ts",
+              "apps/asyra-design/server/ai-domain-prompt.ts",
+              "apps/asyra-design/package.json",
+              "apps/asyra-design/e2e/native-text.spec.ts"
+            ],
+            "specRefs": [
+              "#deterministic-current-design-review"
+            ],
+            "failureOwnerStepId": "review-current-design"
+          }
+        ],
+        "routes": [],
+        "artifacts": [
+          {
+            "id": "artifact:context-action-receipt",
+            "ownerStepId": "expose-document-context",
+            "title": "read-only action receipt",
+            "channel": "owner receipt",
+            "consumerStepIds": [],
+            "terminal": true,
+            "description": "read-only action receipt"
+          },
+          {
+            "id": "artifact:edited-design-receipt",
+            "ownerStepId": "revise-design-element",
+            "title": "edited element ID and review target",
+            "channel": "owner receipt",
+            "consumerStepIds": [],
+            "terminal": true,
+            "description": "edited element ID and review target"
+          },
+          {
+            "id": "artifact:organized-hierarchy-receipt",
+            "ownerStepId": "organize-design-hierarchy",
+            "title": "canonical hierarchy receipt",
+            "channel": "owner receipt",
+            "consumerStepIds": [],
+            "terminal": true,
+            "description": "canonical hierarchy receipt"
+          },
+          {
+            "id": "artifact:arrangement-receipt",
+            "ownerStepId": "arrange-design-elements",
+            "title": "canonical positions and changed IDs",
+            "channel": "owner receipt",
+            "consumerStepIds": [],
+            "terminal": true,
+            "description": "canonical positions and changed IDs"
+          },
+          {
+            "id": "artifact:design-review-findings",
+            "ownerStepId": "review-current-design",
+            "title": "findings and explicit completeness",
+            "channel": "owner receipt",
+            "consumerStepIds": [],
+            "terminal": true,
+            "description": "findings and explicit completeness"
+          },
+          {
+            "id": "artifact:document-context",
+            "ownerStepId": "read-document-context",
+            "title": "Document context page",
+            "channel": "read-only action receipt",
+            "consumerStepIds": [
+              "expose-document-context"
+            ],
+            "terminal": false,
+            "description": "Canonical summaries and pagination without geometry"
+          },
+          {
+            "id": "artifact:selected-design-fields",
+            "ownerStepId": "read-design-fields",
+            "title": "Selected canonical fields",
+            "channel": "Core detached observation",
+            "consumerStepIds": [
+              "read-document-context"
+            ],
+            "terminal": false,
+            "description": "Fresh requested fields; no omitted vector payload"
+          },
+          {
+            "id": "artifact:prepared-design",
+            "ownerStepId": "prepare-semantic-design",
+            "title": "Prepared editable design",
+            "channel": "request-local artifact",
+            "consumerStepIds": [
+              "resolve-design-operations"
+            ],
+            "terminal": false,
+            "description": "Ordered canonical descriptors, semantic IDs and deterministic findings"
+          },
+          {
+            "id": "artifact:resolved-design-operation",
+            "ownerStepId": "resolve-design-operations",
+            "title": "Resolved design operation",
+            "channel": "App batch transport",
+            "consumerStepIds": [
+              "apply-prepared-design"
+            ],
+            "terminal": false,
+            "description": "Original validated canonical artifact resolved from the model receipt ID"
+          },
+          {
+            "id": "artifact:applied-design",
+            "ownerStepId": "apply-prepared-design",
+            "title": "Applied editable design",
+            "channel": "canonical document and action result",
+            "consumerStepIds": [],
+            "terminal": true,
+            "description": "Created root and semantic IDs for targeted edits and rendered review"
+          }
+        ],
+        "invariants": [],
+        "acceptanceContracts": [
+          {
+            "id": "bounded-design-preparation",
+            "title": "Bounded design preparation",
+            "assertions": [
+              "Drafts preserve literal content and declared styles",
+              "Bounds and IDs are validated",
+              "Preparation emits no canvas mutation",
+              "Reads reuse immutable findings"
+            ],
+            "stepIds": [
+              "prepare-semantic-design"
+            ],
+            "specRefs": [
+              "#product-cases-and-gates"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "editable-text",
+      "slug": "editable-text",
+      "title": "Editable Text Foundation",
+      "kind": "flow-v2",
+      "group": "Framework",
+      "subgroup": "Architecture and Runtime",
+      "lifecycle": "current",
+      "sourcePath": "tools/flow-inspector/inspectors/editable-text-flow-inspector.data.cjs",
+      "standalonePath": null,
+      "labels": [
+        "editable-text",
+        "Framework",
+        "Architecture and Runtime",
+        "flow-v2"
+      ],
+      "data": {
+        "schema": {
+          "id": "flow-inspector",
+          "version": 2
+        },
+        "target": {
+          "id": "editable-text",
+          "kind": "feature",
+          "title": "Editable Text Foundation",
+          "subtitle": "Neutral text projection and engine-owned materialization"
+        },
+        "authority": {
+          "specPath": "docs/ai/apps/asyra-design/specs/editable-text.md",
+          "inspectorPath": "tools/flow-inspector/inspectors/editable-text-flow-inspector.data.cjs",
+          "semanticOwner": "Editable text product contract",
+          "inspectorOwner": "Native text owners"
+        },
+        "links": [],
+        "lanes": [
+          {
+            "id": "text",
+            "title": "Native text",
+            "order": 1
+          }
+        ],
+        "steps": [
+          {
+            "id": "project-native-text",
+            "order": 1,
+            "laneId": "text",
+            "title": "Project native text",
+            "ownerPackage": "@asyra/render and @asyra/render-engine",
+            "purpose": "Project native text",
+            "inputs": [
+              "validated plain text and layout box",
+              "typography values"
+            ],
+            "outputs": [
+              "artifact:neutral-text-operation"
+            ],
+            "conditions": [
+              "Plain text only; explicit typography and layout bounds; existing graphics remain compatible."
+            ],
+            "bypasses": [
+              "No text operation for non-text components."
+            ],
+            "allowedContributors": [
+              "@asyra/render and @asyra/render-engine"
+            ],
+            "forbiddenContributors": [
+              "Pixi or DOM types",
+              "component semantics",
+              "font measurement heuristics"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "packages/render-engine/src/types.ts",
+              "packages/render/src/types/render-object.ts",
+              "packages/render/src/__tests__/native-text.test.ts"
+            ],
+            "specRefs": [
+              "#neutral-text-projection"
+            ],
+            "failureOwnerStepId": "project-native-text"
+          },
+          {
+            "id": "materialize-native-text",
+            "order": 2,
+            "laneId": "text",
+            "title": "Materialize native text",
+            "ownerPackage": "@asyra/render-engine-pixi",
+            "purpose": "Materialize native text",
+            "inputs": [
+              "artifact:neutral-text-operation"
+            ],
+            "outputs": [
+              "artifact:rendered-native-text"
+            ],
+            "conditions": [
+              "Snapshots use capture-relative text density and restore screen density even on failure; unrelated text is untouched.",
+              "Coalesce screen text resolution from renderer density and world scale; stable flush and pan do no resolution work; bound texture allocation and release owned text tracking.",
+              "Plain text only; explicit typography and layout bounds; existing graphics remain compatible."
+            ],
+            "bypasses": [
+              "No text operation for non-text components."
+            ],
+            "allowedContributors": [
+              "@asyra/render-engine-pixi"
+            ],
+            "forbiddenContributors": [
+              "HTML rendering",
+              "canonical writes",
+              "App decisions",
+              "destroying unrelated scene children"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "packages/render-engine-pixi/src/pixi-render-engine.ts",
+              "packages/render-engine-pixi/src/__tests__/pixi-render-engine.test.ts"
+            ],
+            "specRefs": [
+              "#engine-text-materialization"
+            ],
+            "failureOwnerStepId": "materialize-native-text"
+          },
+          {
+            "id": "define-canonical-text",
+            "order": 3,
+            "laneId": "text",
+            "title": "Define canonical text",
+            "ownerPackage": "@asyra/preset",
+            "purpose": "Expose validated editable text definitions for explicit App installation",
+            "inputs": [
+              "canonical property writes or persisted text fields",
+              "position and dimension properties"
+            ],
+            "outputs": [
+              "artifact:canonical-text-definition"
+            ],
+            "conditions": [
+              "Existing preset profiles remain unchanged; schema rejects invalid writes and defaults invalid loaded values"
+            ],
+            "bypasses": [
+              "Non-text components retain existing definitions"
+            ],
+            "allowedContributors": [
+              "preset definitions",
+              "public Core and utils contracts"
+            ],
+            "forbiddenContributors": [
+              "AI-owned document state",
+              "vectorized glyphs",
+              "App-specific content",
+              "Pixi imports"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "packages/preset/src/components/text.ts",
+              "packages/preset/src/props/components/text-component.ts",
+              "packages/preset/src/index.ts",
+              "packages/preset/src/__tests__/native-text.test.ts"
+            ],
+            "specRefs": [
+              "#canonical-text-component"
+            ],
+            "failureOwnerStepId": "define-canonical-text"
+          },
+          {
+            "id": "install-and-edit-text",
+            "order": 4,
+            "laneId": "text",
+            "title": "Install and edit text in Design",
+            "ownerPackage": "asyra-design",
+            "purpose": "Install canonical text definitions and expose selection-scoped manual editing",
+            "inputs": [
+              "artifact:canonical-text-definition",
+              "current selection typography",
+              "user field edit"
+            ],
+            "outputs": [
+              "artifact:editable-text-app"
+            ],
+            "conditions": [
+              "Register before core start; commit valid fields through canonical property transactions; scope subscriptions to typography"
+            ],
+            "bypasses": [
+              "No text section without a single selected text component"
+            ],
+            "allowedContributors": [
+              "App startup",
+              "UI property projection",
+              "canonical element API"
+            ],
+            "forbiddenContributors": [
+              "direct renderer mutation",
+              "per-keystroke document replacement",
+              "AI-only text storage"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "apps/asyra-design/src/init/capabilities/init-text.ts",
+              "apps/asyra-design/src/init/init-app.ts",
+              "apps/asyra-design/src/init/__tests__/init-text.test.ts",
+              "apps/asyra-design/src/init/__tests__/init-app.test.ts",
+              "apps/asyra-design/e2e/native-text.spec.ts",
+              "apps/asyra-design/src/properties/text.tsx",
+              "apps/asyra-design/src/properties/__tests__/text.test.tsx",
+              "apps/asyra-design/src/properties/panels/element-properties-panel.tsx"
+            ],
+            "specRefs": [
+              "#canonical-text-component"
+            ],
+            "failureOwnerStepId": "install-and-edit-text"
+          },
+          {
+            "id": "query-native-content-bounds",
+            "order": 5,
+            "laneId": "text",
+            "title": "Observe native content bounds",
+            "ownerPackage": "@asyra/render-engine-pixi",
+            "purpose": "Read native local content geometry without rasterization or layout decisions",
+            "inputs": [
+              "owned engine object",
+              "local-content-bounds capability"
+            ],
+            "outputs": [
+              "artifact:native-content-bounds"
+            ],
+            "conditions": [
+              "Require owned live object",
+              "No image extraction",
+              "Independent of viewport zoom"
+            ],
+            "bypasses": [
+              "Unsupported engine rejects measurement"
+            ],
+            "allowedContributors": [
+              "Neutral query contract",
+              "Native engine local bounds"
+            ],
+            "forbiddenContributors": [
+              "Font-size heuristics",
+              "Layout bounds as content evidence",
+              "Canonical writes",
+              "Raster capture"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "packages/render-engine/src/types.ts",
+              "packages/render-engine/src/capabilities.ts",
+              "packages/render-engine/src/__tests__/contract.test.ts",
+              "packages/render-engine/src/testing/recording-render-engine.ts",
+              "packages/render-engine-pixi/src/pixi-render-engine.ts",
+              "packages/render-engine-pixi/src/__tests__/pixi-render-engine.test.ts"
+            ],
+            "specRefs": [
+              "#native-content-measurement"
+            ],
+            "failureOwnerStepId": "query-native-content-bounds"
+          },
+          {
+            "id": "observe-rendered-content",
+            "order": 6,
+            "laneId": "text",
+            "title": "Observe a bounded batch of rendered content",
+            "ownerPackage": "@asyra/render",
+            "purpose": "Flush once and expose actual content bounds through Core",
+            "inputs": [
+              "1..200 unique element IDs",
+              "local-content-bounds engine",
+              "artifact:native-content-bounds"
+            ],
+            "outputs": [
+              "artifact:measured-content-bounds"
+            ],
+            "conditions": [
+              "Validate before flush",
+              "One flush per call",
+              "One native query per present target"
+            ],
+            "bypasses": [
+              "Missing target returns null bounds"
+            ],
+            "allowedContributors": [
+              "Render viewport handles",
+              "Neutral content query",
+              "Core forwarding"
+            ],
+            "forbiddenContributors": [
+              "Canonical writes",
+              "Raster capture",
+              "Heuristic font measurement",
+              "Cross-call cache"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "packages/render/src/render.ts",
+              "packages/render/src/index.ts",
+              "packages/render/src/__tests__/render.test.ts",
+              "packages/core/src/core.ts",
+              "packages/core/src/apis/create-apis.ts",
+              "packages/core/src/apis/render.ts",
+              "packages/core/src/types/render.ts",
+              "packages/core/src/__tests__/app-runtime-facade.test.ts",
+              "apps/asyra-design/e2e/native-text.spec.ts"
+            ],
+            "specRefs": [
+              "#native-content-measurement"
+            ],
+            "failureOwnerStepId": "observe-rendered-content"
+          }
+        ],
+        "routes": [
+          {
+            "id": "native-content-to-observation",
+            "from": "query-native-content-bounds",
+            "to": "observe-rendered-content",
+            "kind": "handoff",
+            "predicate": "Native content measurement requested",
+            "producedArtifacts": [
+              "artifact:native-content-bounds"
+            ]
+          },
+          {
+            "id": "project-to-engine",
+            "from": "project-native-text",
+            "to": "materialize-native-text",
+            "kind": "handoff",
+            "predicate": "A text operation is queued",
+            "producedArtifacts": [
+              "artifact:neutral-text-operation"
+            ]
+          },
+          {
+            "id": "text-definition-to-app",
+            "from": "define-canonical-text",
+            "to": "install-and-edit-text",
+            "kind": "handoff",
+            "predicate": "Design starts",
+            "producedArtifacts": [
+              "artifact:canonical-text-definition"
+            ]
+          }
+        ],
+        "artifacts": [
+          {
+            "id": "artifact:native-content-bounds",
+            "ownerStepId": "query-native-content-bounds",
+            "title": "local native content bounds",
+            "channel": "owner receipt",
+            "consumerStepIds": [
+              "observe-rendered-content"
+            ],
+            "terminal": false,
+            "description": "local native content bounds"
+          },
+          {
+            "id": "artifact:measured-content-bounds",
+            "ownerStepId": "observe-rendered-content",
+            "title": "per-ID native local bounds or missing-target null",
+            "channel": "owner receipt",
+            "consumerStepIds": [],
+            "terminal": true,
+            "description": "per-ID native local bounds or missing-target null"
+          },
+          {
+            "id": "artifact:neutral-text-operation",
+            "ownerStepId": "project-native-text",
+            "title": "Neutral text operation",
+            "channel": "render command",
+            "consumerStepIds": [
+              "materialize-native-text"
+            ],
+            "terminal": false,
+            "description": "Owned plain text and typography snapshot"
+          },
+          {
+            "id": "artifact:rendered-native-text",
+            "ownerStepId": "materialize-native-text",
+            "title": "Rendered native text",
+            "channel": "scene",
+            "consumerStepIds": [],
+            "terminal": true,
+            "description": "Engine-owned plain text projection"
+          },
+          {
+            "id": "artifact:canonical-text-definition",
+            "ownerStepId": "define-canonical-text",
+            "title": "Canonical text definitions",
+            "channel": "registration",
+            "consumerStepIds": [
+              "install-and-edit-text"
+            ],
+            "terminal": false,
+            "description": "Explicitly installed validated text schema and component"
+          },
+          {
+            "id": "artifact:editable-text-app",
+            "ownerStepId": "install-and-edit-text",
+            "title": "Editable App text",
+            "channel": "canonical document",
+            "consumerStepIds": [],
+            "terminal": true,
+            "description": "Text definitions installed and manual edits committed"
+          }
+        ],
+        "invariants": [],
+        "acceptanceContracts": [
+          {
+            "id": "text-lifecycle",
+            "title": "Native text lifecycle",
+            "assertions": [
+              "Caller mutation does not change queued text",
+              "Clear and destruction release engine-owned text only"
+            ],
+            "stepIds": [
+              "project-native-text",
+              "materialize-native-text"
+            ],
+            "specRefs": [
+              "#product-cases-and-gates"
             ]
           }
         ]

@@ -203,7 +203,17 @@ describe('request-owned vector artifacts', () => {
     const convert = vi.fn(async () => svg)
     const tools = createLocalImageTools(input, convert)
     const summary = JSON.parse(
-      await tools.call('vtracer', { attachmentIndex: 0 }, signal())
+      await tools.call(
+        'vtracer',
+        {
+          attachmentIndex: 0,
+          plan: {
+            strategy: 'preserve-vectors',
+            reason: 'Preserve irregular reference contours.'
+          }
+        },
+        signal()
+      )
     )
     expect(summary.paths).toHaveLength(2)
     expect(summary.paths[0]).toMatchObject({
@@ -211,9 +221,19 @@ describe('request-owned vector artifacts', () => {
       pointCount: 8
     })
     expect(JSON.stringify(summary)).not.toMatch(/<svg|"points"|"segments"/)
-    expect(await tools.call('vtracer', { attachmentIndex: 0 }, signal())).toBe(
-      JSON.stringify(summary)
-    )
+    expect(
+      await tools.call(
+        'vtracer',
+        {
+          attachmentIndex: 0,
+          plan: {
+            strategy: 'preserve-vectors',
+            reason: 'Preserve irregular reference contours.'
+          }
+        },
+        signal()
+      )
+    ).toBe(JSON.stringify(summary))
     expect(convert).toHaveBeenCalledOnce()
     const batch = tools.resolveBatch({
       batchId: 'test',
@@ -258,7 +278,17 @@ describe('request-owned vector artifacts', () => {
   it('rejects foreign references, unknown exclusions, empty geometry and invalid bounds', async () => {
     const tools = createLocalImageTools(input, async () => svg)
     const summary = JSON.parse(
-      await tools.call('vtracer', { attachmentIndex: 0 }, signal())
+      await tools.call(
+        'vtracer',
+        {
+          attachmentIndex: 0,
+          plan: {
+            strategy: 'preserve-vectors',
+            reason: 'Preserve irregular reference contours.'
+          }
+        },
+        signal()
+      )
     )
     const args = {
       imageArtifactId: summary.imageArtifactId,
@@ -302,7 +332,13 @@ describe('request-owned vector artifacts', () => {
       await expect(
         createLocalImageTools(input, async () => source).call(
           'vtracer',
-          { attachmentIndex: 0 },
+          {
+            attachmentIndex: 0,
+            plan: {
+              strategy: 'preserve-vectors',
+              reason: 'Preserve irregular reference contours.'
+            }
+          },
           signal()
         )
       ).rejects.toThrow()
@@ -313,7 +349,13 @@ describe('request-owned vector artifacts', () => {
     await expect(
       createLocalImageTools(input, convert).call(
         'vtracer',
-        { attachmentIndex: 0 },
+        {
+          attachmentIndex: 0,
+          plan: {
+            strategy: 'preserve-vectors',
+            reason: 'Preserve irregular reference contours.'
+          }
+        },
         controller.signal
       )
     ).rejects.toThrow()

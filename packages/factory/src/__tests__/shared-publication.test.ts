@@ -94,6 +94,47 @@ const requiredAt = <T>(values: readonly T[], index: number): T => {
 }
 
 describe('Factory action-level shared publication', () => {
+  it('gives fresh runtime producers distinct publication IDs despite equal local counters', () => {
+    const first = createHarness(),
+      second = createHarness()
+    for (const { factory } of [first, second]) {
+      factory.startTransaction()
+      update(factory, 'same-document-element', 1)
+      factory.endTransaction()
+    }
+    expect(first.publications[0].transactionId).toBe(
+      second.publications[0].transactionId
+    )
+    expect(first.publications[0].publicationId).not.toBe(
+      second.publications[0].publicationId
+    )
+    const accepted = new Map(
+      first.publications.map((p) => [p.publicationId, p])
+    )
+    second.publications.forEach((p) => accepted.set(p.publicationId, p))
+    expect(accepted.size).toBe(2)
+  })
+
+  it('allocates one namespace lazily per publishing producer and retains it across transactions', () => {
+    const random = vi.spyOn(globalThis.crypto, 'getRandomValues')
+    try {
+      const { factory, publications } = createHarness()
+      expect(random).not.toHaveBeenCalled()
+      for (let i = 0; i < 3; i++) {
+        factory.startTransaction()
+        update(factory, 'a', i + 1)
+        factory.endTransaction()
+      }
+      expect(random).toHaveBeenCalledTimes(1)
+      const namespaces = publications.map((p) => p.publicationId.split(':')[0])
+      expect(new Set(namespaces).size).toBe(1)
+      expect(namespaces[0]).toMatch(/^[0-9a-f]{32}$/)
+      expect(new Set(publications.map((p) => p.publicationId)).size).toBe(3)
+    } finally {
+      random.mockRestore()
+    }
+  })
+
   it('exposes one minimal ordered transport hierarchy with only actual rollback links', () => {
     interface TransportDelivery {
       readonly deliveryId: string
@@ -356,7 +397,7 @@ describe('Factory action-level shared publication', () => {
     factory.endTransaction()
     expect(publications).toHaveLength(1)
     expect(publications[0]).toMatchObject({
-      publicationId: '1:publication:1',
+      publicationId: expect.stringMatching(/^[0-9a-f]{32}:1:publication:1$/),
       artifactId: '1:artifact',
       transactionId: 1,
       origin: 'action'
@@ -1436,7 +1477,9 @@ describe('Factory action-level shared publication', () => {
 
     expect(publications).toHaveLength(1)
     expect(publicationDeliveries(requiredAt(publications, 0))).toHaveLength(2)
-    expect(publications[0]?.publicationId).toBe('1:publication:1')
+    expect(publications[0]?.publicationId).toMatch(
+      /^[0-9a-f]{32}:1:publication:1$/
+    )
   })
 
   it('discards an immediate batch that rolls back before its publication flush', async () => {
@@ -1507,7 +1550,7 @@ describe('Factory action-level shared publication', () => {
     expect(committedPublications).toHaveLength(1)
     expect(committedPublications[0]).toEqual(
       expect.objectContaining({
-        publicationId: '1:publication:1',
+        publicationId: expect.stringMatching(/^[0-9a-f]{32}:1:publication:1$/),
         origin: 'action'
       })
     )

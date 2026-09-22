@@ -18,6 +18,9 @@ export interface RegisterRenderLayerOptions {
 }
 
 export interface RenderRawAPIs {
+  measureElementContentBounds: (
+    elementIds: readonly string[]
+  ) => import('@asyra/render').RenderContentMeasurement[]
   captureElementSnapshot: (
     elementId: string,
     maxDimension?: number

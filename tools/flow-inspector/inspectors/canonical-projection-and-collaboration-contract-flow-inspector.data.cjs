@@ -518,6 +518,7 @@
         'Factory derives an eligible staged canonical slice, committed remainder, or rollback compensation as one SharedPublication on the ordinary publication route.',
         'SharedPublication contains only transport identity, ordered slices, channel batches, and remote-apply deliveries; artifactId is opaque transport correlation and not a local History reference.',
         'Each staged publication receives stable transaction, publication, slice, and actual compensation identity from the existing journal.',
+        'Opaque publication IDs include one lazy random namespace per producer lifetime so fresh runtimes cannot replay an earlier local counter identity; existing saved IDs and compensation correlations remain unchanged.',
         'Acknowledged externally visible staged slices use the same journal evidence and recorded token for rollback compensation without republishing acknowledged records at commit.',
         'Shared-delivery bookkeeping records only the existing journal delivery outcome and never mirrors canonical payloads into another applied-result object.',
         'The production fast path performs no post-action save, equality comparison, finalize-save, full-document comparison, evidence clone, or recursive immutable-tree scan.',

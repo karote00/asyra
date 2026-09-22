@@ -16,6 +16,9 @@ import type {
 } from '../types/render.js'
 
 export interface RenderRequests {
+  measureElementContentBounds: (
+    elementIds: readonly string[]
+  ) => import('@asyra/render').RenderContentMeasurement[]
   captureElementSnapshot: (
     elementId: string,
     maxDimension?: number
@@ -59,6 +62,9 @@ export interface RenderRequests {
 
 export const createRenderAPIs = (requests: RenderRequests) => {
   return {
+    measureElementContentBounds(elementIds: readonly string[]) {
+      return requests.measureElementContentBounds(elementIds)
+    },
     captureElementSnapshot(elementId: string, maxDimension?: number) {
       return requests.captureElementSnapshot(elementId, maxDimension)
     },

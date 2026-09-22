@@ -1,3 +1,4 @@
+import { AiReferenceToolIds } from './ai-domain-prompt'
 import { Buffer } from 'node:buffer'
 import { randomUUID } from 'node:crypto'
 import { AiActionNames } from '../src/constants/ai-actions'
@@ -6,9 +7,21 @@ import type {
   AiProviderInput,
   AiBatchReceipt
 } from '../src/ai/action-batch-protocol'
-import type { createLocalImageTools } from './local-image-tools'
+export interface LocalActionPreparation {
+  modelActions(actions: AiProviderInput['actions']): AiProviderInput['actions']
+  resolveBatch(value: unknown): unknown
+}
 
 const maximumInspectionCount = 6
+const maximumMeasurementCycles = 8
+const requiresVisualReview = (name: string) =>
+  ![
+    AiActionNames.SELECT_ELEMENTS,
+    AiActionNames.READ_DESIGN_CONTEXT,
+    AiActionNames.REVIEW_DESIGN,
+    AiActionNames.INSPECT_DRAWING,
+    AiActionNames.ORGANIZE_DESIGN
+  ].includes(name as never)
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -16,7 +29,7 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 /** Tool-specific preparation stays on the server; only canonical receipts return to the model. */
 export const createLocalOperationTools = (
   actions: AiProviderInput['actions'],
-  images: ReturnType<typeof createLocalImageTools>,
+  preparation: LocalActionPreparation,
   executeBatch: (batch: AiActionBatch) => Promise<AiBatchReceipt>,
   options: {
     reviewTargetId?: string
@@ -24,7 +37,7 @@ export const createLocalOperationTools = (
   } = {}
 ) => {
   const allowed = new Set<string>(Object.values(AiActionNames))
-  const registered = images
+  const registered = preparation
     .modelActions(actions)
     .filter(
       (action) =>
@@ -38,6 +51,34 @@ export const createLocalOperationTools = (
   let reviewTargetId = options.reviewTargetId
   let inspectionCount = 0
   let inspectionUnavailable = false
+  let measurementCycles = 0
+  const unresolvedTextOverflow = new Set<string>()
+  const canReview = registered.some(
+    (action) => action.name === AiActionNames.REVIEW_DESIGN
+  )
+  const updateMeasurementState = (receipt: AiBatchReceipt) => {
+    const review = receipt.actionResults.find(
+      (entry) => entry.actionName === AiActionNames.REVIEW_DESIGN
+    )
+    if (
+      review &&
+      isRecord(review.result) &&
+      Array.isArray(review.result.findings)
+    ) {
+      if (Array.isArray(review.result.measuredTextIds)) {
+        for (const id of review.result.measuredTextIds)
+          if (typeof id === 'string') unresolvedTextOverflow.delete(id)
+      }
+      for (const finding of review.result.findings) {
+        if (isRecord(finding) && finding.kind === 'text-overflow')
+          unresolvedTextOverflow.add(
+            typeof finding.elementId === 'string'
+              ? finding.elementId
+              : 'unidentified-text'
+          )
+      }
+    }
+  }
   const canInspect = registered.some(
     (action) => action.name === AiActionNames.INSPECT_DRAWING
   )
@@ -86,16 +127,14 @@ export const createLocalOperationTools = (
         batch.actions.some(
           (action) =>
             registered.some((definition) => definition.name === action.name) &&
-            ![
-              AiActionNames.SELECT_ELEMENTS,
-              AiActionNames.INSPECT_DRAWING
-            ].includes(action.name as never)
+            requiresVisualReview(action.name)
         )
       )
         throw new Error(
           'Final response cannot contain unreviewed drawing operations'
         )
-      if (!inspectionUnavailable) return batch
+      if (!inspectionUnavailable && unresolvedTextOverflow.size === 0)
+        return batch
       return {
         ...batch,
         actions: batch.actions.map((action) => {
@@ -110,7 +149,9 @@ export const createLocalOperationTools = (
             arguments: {
               outcome: 'unsupported',
               message:
-                'This app could not complete visual review of the drawing.'
+                unresolvedTextOverflow.size > 0
+                  ? 'Some text still extends beyond its text box. The drawing needs further adjustment.'
+                  : 'This app could not complete visual review of the drawing.'
             }
           }
         })
@@ -131,7 +172,7 @@ export const createLocalOperationTools = (
             minLength: 1,
             maxLength: 1000,
             description:
-              'Optional: one short phrase only for a material user-relevant impact. Omit for routine operations; the App supplies status.'
+              'Short English activity label (3-8 words) describing the actual visible change, e.g. Smoothing the outlines or Reshaping the tail. No tool names or generic Applying changes.'
           }
         }
       }
@@ -160,9 +201,9 @@ export const createLocalOperationTools = (
         return JSON.stringify(await inspect(reviewTargetId))
       }
       if (
-        canInspect &&
-        inspectionCount >= maximumInspectionCount &&
-        name !== AiActionNames.SELECT_ELEMENTS
+        ((canInspect && inspectionCount >= maximumInspectionCount) ||
+          (canReview && measurementCycles >= maximumMeasurementCycles)) &&
+        requiresVisualReview(name)
       )
         return JSON.stringify({
           actionResults: [
@@ -171,7 +212,7 @@ export const createLocalOperationTools = (
               result: {
                 status: 'no-change',
                 message:
-                  'The visual review limit has been reached. No further changes were applied. Explain remaining limitations.'
+                  'The review limit has been reached. No further changes were applied. Explain remaining limitations.'
               }
             }
           ],
@@ -179,7 +220,7 @@ export const createLocalOperationTools = (
         })
       const message =
         typeof args.message === 'string' ? args.message : 'Updating the drawing'
-      const prepared = images.resolveBatch({
+      const prepared = preparation.resolveBatch({
         batchId: randomUUID(),
         explanation: message,
         actions: [
@@ -192,8 +233,9 @@ export const createLocalOperationTools = (
         ]
       }) as unknown as AiActionBatch
       const receipt = await executeBatch(prepared)
+      if (name === AiActionNames.REVIEW_DESIGN) updateMeasurementState(receipt)
       if (signal.aborted) throw new Error('Backend operation cancelled')
-      if (canInspect && name !== AiActionNames.SELECT_ELEMENTS) {
+      if ((canInspect || canReview) && requiresVisualReview(name)) {
         for (const entry of receipt.actionResults) {
           if (
             isRecord(entry.result) &&
@@ -203,12 +245,38 @@ export const createLocalOperationTools = (
         }
         if (!reviewTargetId) inspectionUnavailable = true
         if (reviewTargetId) {
+          let measurement: AiBatchReceipt | undefined
+          if (canReview) {
+            measurementCycles++
+            measurement = await executeBatch({
+              batchId: randomUUID(),
+              actions: [
+                {
+                  id: randomUUID(),
+                  name: AiActionNames.REVIEW_DESIGN,
+                  arguments: { elementId: reviewTargetId },
+                  summary: 'Checking the layout'
+                }
+              ]
+            })
+            if (signal.aborted) throw new Error('Backend operation cancelled')
+            updateMeasurementState(measurement)
+            if (unresolvedTextOverflow.size > 0 || !canInspect)
+              return JSON.stringify({
+                ...receipt,
+                actionResults: [
+                  ...receipt.actionResults,
+                  ...measurement.actionResults
+                ]
+              })
+          }
           const inspection = await inspect(reviewTargetId)
           if (signal.aborted) throw new Error('Backend operation cancelled')
           return JSON.stringify({
             ...receipt,
             actionResults: [
               ...receipt.actionResults,
+              ...(measurement?.actionResults ?? []),
               ...inspection.actionResults
             ]
           })
@@ -231,7 +299,8 @@ export const localToolContent = (
     for (const entry of value.actionResults) {
       if (
         !isRecord(entry) ||
-        entry.actionName !== AiActionNames.INSPECT_DRAWING ||
+        (entry.actionName !== AiActionNames.INSPECT_DRAWING &&
+          entry.actionName !== AiReferenceToolIds.IMPORT_REFERENCE_IMAGE) ||
         !isRecord(entry.result) ||
         entry.result.available !== true
       )

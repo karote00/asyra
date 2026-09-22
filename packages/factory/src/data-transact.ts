@@ -408,6 +408,7 @@ class DataTransact {
   private transactionId = 0
   private currentTransactionId = 0
   private currentArtifactId = ''
+  private publicationNamespace: string | undefined
   private activeOrigin: TransactionOrigin = 'action'
   private rollbackOnly = false
   private rollbackFailure: TransactionFailure | undefined
@@ -2032,8 +2033,12 @@ class DataTransact {
   }
 
   private nextPublicationId(): string {
+    this.publicationNamespace ??= Array.from(
+      globalThis.crypto.getRandomValues(new Uint32Array(4)),
+      (value) => value.toString(16).padStart(8, '0')
+    ).join('')
     this.publicationSequence += 1
-    return `${this.currentTransactionId}:publication:${this.publicationSequence}`
+    return `${this.publicationNamespace}:${this.currentTransactionId}:publication:${this.publicationSequence}`
   }
 
   private createSharedPublication(

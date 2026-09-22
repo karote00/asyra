@@ -52,7 +52,8 @@ export interface SceneTreeRawAPIs {
     options?: EVENT_OPTIONS
   ) => readonly string[]
   getElementComputedData: (
-    elementId: string
+    elementId: string,
+    fields?: readonly string[]
   ) => Record<string, unknown> | undefined
   moveElements: (
     request: MoveHierarchyRequest,

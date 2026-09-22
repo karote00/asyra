@@ -33,7 +33,7 @@ test('the server rejects unsupported content, profile, empty input, and pre-abor
     },
     {
       bytes: new Uint8Array([1]),
-      contentType: 'image/webp',
+      contentType: 'image/tiff',
       profile: 'photo-faithful'
     },
     {
@@ -69,4 +69,18 @@ test('the server rejects unsupported content, profile, empty input, and pre-abor
     }),
     (error) => error?.code === 'VTRACER_ABORTED'
   )
+})
+
+test('the server accepts an explicitly typed WebP reference', async () => {
+  const bytes = await readFile(
+    path.join(appRoot, 'e2e/fixtures/reference-logo.png')
+  )
+  assert.equal(bytes.subarray(8, 12).toString('ascii'), 'WEBP')
+  const svg = await convertVTracerBuffer({
+    bytes,
+    contentType: 'image/webp',
+    profile: 'photo-faithful',
+    signal: new globalThis.AbortController().signal
+  })
+  assert.match(svg, /<svg[^>]+width="250"[^>]+height="253"/)
 })

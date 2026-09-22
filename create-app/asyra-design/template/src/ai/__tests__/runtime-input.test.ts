@@ -16,6 +16,7 @@ describe('Asyra Design Agent runtime input', () => {
       provider
     })
 
+    expect(input.options?.failurePolicy).toBe('preserve-progress')
     expect(input.provider).toBe(provider)
     expect(input.actionDefinitions).toEqual(
       expect.arrayContaining([

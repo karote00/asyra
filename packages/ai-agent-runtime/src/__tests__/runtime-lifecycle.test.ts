@@ -96,6 +96,129 @@ const runtimeInput = (
 })
 
 describe('AI runtime invocation lifecycle', () => {
+  it('preserves the completed action prefix after a later executor fails when requested', async () => {
+    const transaction = transactionEvidence()
+    const execute = vi
+      .fn()
+      .mockResolvedValueOnce({ changed: true })
+      .mockRejectedValueOnce(new Error('private failure'))
+    const batch = candidateActionBatch()
+    const runtime = createAiAgentRuntime(
+      runtimeInput({
+        options: { failurePolicy: 'preserve-progress' },
+        transactionRunner: transaction.runner,
+        actionDefinitions: [visibilityAction(execute)],
+        provider: {
+          requestActionBatch: async () => ({
+            ...batch,
+            actions: [
+              ...batch.actions,
+              ...batch.actions.map((action) => ({ ...action, id: 'action-2' }))
+            ]
+          })
+        }
+      })
+    )
+    const result = await runtime.run({
+      intent: 'draw then refine',
+      signal: new AbortController().signal
+    })
+    expect(result).toMatchObject({
+      status: 'failed',
+      transaction: { status: 'committed' },
+      failedAction: 'set_element_visibility',
+      actionResults: [{ actionId: 'action-1' }]
+    })
+    expect(result.audit.actions).toHaveLength(1)
+    expect(transaction.commits).toBe(1)
+    expect(transaction.rollbacks).toBe(0)
+    expect(JSON.stringify(result)).not.toContain('private failure')
+  })
+
+  it('preserves an intermediate batch after provider failure without retrying', async () => {
+    const transaction = transactionEvidence()
+    const requestActionBatch = vi.fn(async (_request, options) => {
+      await options.executeBatch(candidateActionBatch())
+      throw new Error('provider stopped')
+    })
+    const runtime = createAiAgentRuntime(
+      runtimeInput({
+        options: { failurePolicy: 'preserve-progress' },
+        transactionRunner: transaction.runner,
+        provider: { requestActionBatch }
+      })
+    )
+    const result = await runtime.run({
+      intent: 'draw',
+      signal: new AbortController().signal
+    })
+    expect(result).toMatchObject({
+      status: 'failed',
+      stage: 'provider',
+      transaction: { status: 'committed' }
+    })
+    expect(result.audit.actions).toHaveLength(1)
+    expect(transaction.commits).toBe(1)
+    expect(requestActionBatch).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not claim preserved progress if transaction settlement fails', async () => {
+    const runtime = createAiAgentRuntime(
+      runtimeInput({
+        options: { failurePolicy: 'preserve-progress' },
+        transactionRunner: {
+          run: async (_label, execute) => {
+            await execute()
+            throw new Error('settlement failed')
+          }
+        },
+        provider: {
+          requestActionBatch: async (_request, options) => {
+            if (!options.executeBatch) throw new Error('Batch executor missing')
+            await options.executeBatch(candidateActionBatch())
+            throw new Error('provider failed')
+          }
+        }
+      })
+    )
+    expect(
+      await runtime.run({
+        intent: 'draw',
+        signal: new AbortController().signal
+      })
+    ).toMatchObject({
+      status: 'failed',
+      stage: 'transaction',
+      transaction: { status: 'unknown' }
+    })
+  })
+
+  it('still rolls back cancellation with preserve-progress enabled', async () => {
+    const transaction = transactionEvidence()
+    const controller = new AbortController()
+    const runtime = createAiAgentRuntime(
+      runtimeInput({
+        options: { failurePolicy: 'preserve-progress' },
+        transactionRunner: transaction.runner,
+        actionDefinitions: [
+          visibilityAction(
+            vi.fn(async () => {
+              controller.abort()
+              return { apiKey: 'test', changed: true }
+            })
+          )
+        ]
+      })
+    )
+    expect(
+      await runtime.run({ intent: 'draw', signal: controller.signal })
+    ).toMatchObject({
+      status: 'cancelled',
+      transaction: { status: 'rolled-back' }
+    })
+    expect(transaction.commits).toBe(0)
+  })
+
   it('orchestrates one complete accepted action batch and returns detached terminal output', async () => {
     const transaction = transactionEvidence()
     const execute = vi.fn(async () => ({

@@ -171,3 +171,8 @@ describe('@asyra/render-engine contract', () => {
     )
   })
 })
+
+it('does not advertise actual content measurement from the recording engine', () => {
+  const engine = new RecordingRenderEngine({ name: 'content-contract' })
+  expect(engine.capabilities.has('local-content-bounds')).toBe(false)
+})

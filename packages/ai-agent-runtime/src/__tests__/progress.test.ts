@@ -92,6 +92,35 @@ const phases = (updates: readonly AiRuntimeProgressUpdate[]) =>
   updates.map((update) => update.phase)
 
 describe('AI runtime operational progress', () => {
+  it('reports the specific action summary when that action starts executing', async () => {
+    const updates: AiRuntimeProgressUpdate[] = []
+    const batch = candidateActionBatch()
+    const runtime = createAiAgentRuntime(
+      runtimeInput({
+        provider: {
+          requestActionBatch: async () => ({
+            ...batch,
+            actions: batch.actions.map((action) => ({
+              ...action,
+              summary: 'Smoothing the outlines'
+            }))
+          })
+        }
+      })
+    )
+    await runtime.run({
+      intent: 'smooth',
+      signal: new AbortController().signal,
+      progressObserver: (update) => updates.push(update)
+    })
+    expect(
+      updates.find((update) => update.phase === 'execution')
+    ).toMatchObject({
+      summary: 'Smoothing the outlines',
+      tool: 'set_element_visibility'
+    })
+  })
+
   it('emits ordered frozen operational phases with only safe detached metadata', async () => {
     const updates: AiRuntimeProgressUpdate[] = []
     const runtime = createAiAgentRuntime(runtimeInput())
@@ -142,7 +171,8 @@ describe('AI runtime operational progress', () => {
         attempt: 1,
         phase: 'execution',
         batchId: 'batch-1',
-        summary: 'Applying changes'
+        tool: 'set_element_visibility',
+        summary: 'Preparing the drawing'
       },
       {
         actionCount: 1,

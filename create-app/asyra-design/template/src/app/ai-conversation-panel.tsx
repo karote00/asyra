@@ -1,3 +1,7 @@
+import {
+  AiConversationNavigation,
+  AiSelectionContext
+} from './ai-conversation-navigation'
 import { AiConnectionStatus } from './ai-connection-status'
 import {
   useCallback,
@@ -216,6 +220,12 @@ const AiConversationPanelLayout = ({
   const promptRef = useRef<HTMLTextAreaElement>(null)
   const [draft, setDraft] = useState('')
   const [aiAvailable, setAiAvailable] = useState(true)
+  const drafts = useRef(
+    new Map<
+      string,
+      { text: string; attachments: readonly AiImageAttachment[] }
+    >()
+  )
   const [draftAttachments, setDraftAttachments] = useState<
     readonly AiImageAttachment[]
   >([])
@@ -318,6 +328,22 @@ const AiConversationPanelLayout = ({
     [conversation, draft, draftAttachments, aiAvailable]
   )
 
+  const navigateConversation = (id: string | null) => {
+    drafts.current.set(conversation.getSnapshot().conversationId, {
+      text: draft,
+      attachments: draftAttachments
+    })
+    if (id === null) conversation.newConversation()
+    else conversation.selectConversation(id)
+    const restored = drafts.current.get(
+      conversation.getSnapshot().conversationId
+    )
+    setDraft(restored?.text ?? '')
+    setDraftAttachments(restored?.attachments ?? [])
+    setAttachmentError(null)
+    promptRef.current?.focus({ preventScroll: true })
+  }
+
   const close = useCallback(() => {
     onClose()
   }, [onClose])
@@ -348,6 +374,10 @@ const AiConversationPanelLayout = ({
         >
           AI
         </span>
+        <AiConversationNavigation
+          conversation={conversation}
+          onNavigate={navigateConversation}
+        />
         <button
           aria-label="Close Agent panel"
           className="grid h-7 w-7 place-items-center rounded-md border-0 bg-transparent text-[12px] text-[#b8b9c0] hover:bg-[#303136] hover:text-white"
@@ -373,6 +403,7 @@ const AiConversationPanelLayout = ({
       </div>
 
       {children}
+      <AiSelectionContext />
       <form
         aria-label="Agent message form"
         className={`shrink-0 border-t p-3 transition-colors ${
@@ -646,8 +677,11 @@ const AiConversationFeed = ({
                         className="mt-2 h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-[#9f8cff]"
                       />
                     ) : null}
-                    <span className="min-w-0 break-words">
-                      {activity.current.label}
+                    <span
+                      className="min-w-0 truncate"
+                      title={activity.current.message || activity.current.label}
+                    >
+                      {activity.current.message || activity.current.label}
                     </span>
                   </div>
                 ) : (
@@ -662,11 +696,6 @@ const AiConversationFeed = ({
                     </p>
                   </div>
                 )}
-                {!settled && activity.current.message ? (
-                  <p className="mb-0 mt-2 whitespace-pre-wrap break-words">
-                    {activity.current.message}
-                  </p>
-                ) : null}
                 {confirmationSnapshot.decisions
                   ?.filter((decision) => decision.turnId === turn.turnId)
                   .map((decision) => (
@@ -716,22 +745,26 @@ const AiConversationFeed = ({
                       aria-label="Operational progress"
                       className="my-1 list-none space-y-1 pl-3"
                     >
-                      {activity.entries.map((entry, index) => {
-                        const current = !settled && entry === activity.current
-                        return (
+                      {activity.entries.flatMap((entry, index) => {
+                        const lines =
+                          entry.message && entry.message !== entry.label
+                            ? [entry.label, entry.message]
+                            : [entry.label]
+                        return lines.map((line, lineIndex) => (
                           <li
-                            key={`${turn.turnId}:${index}`}
-                            aria-current={current ? 'step' : undefined}
-                            className="py-1"
+                            key={`${turn.turnId}:${index}:${lineIndex}`}
+                            aria-current={
+                              !settled &&
+                              entry === activity.current &&
+                              lineIndex === lines.length - 1
+                                ? 'step'
+                                : undefined
+                            }
+                            className="whitespace-pre-wrap break-words py-1"
                           >
-                            <span>{entry.label}</span>
-                            {entry.message ? (
-                              <p className="mb-0 mt-1 whitespace-pre-wrap break-words">
-                                {entry.message}
-                              </p>
-                            ) : null}
+                            {line}
                           </li>
-                        )
+                        ))
                       })}
                     </ol>
                   </details>

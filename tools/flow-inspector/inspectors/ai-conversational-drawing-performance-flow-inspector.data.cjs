@@ -52,8 +52,13 @@
         'The backend-only Asyra Design domain prompt and image-tool catalog are added only after complete server configuration supplies either HTTP endpoint, model, and API key, or the explicit local-codex backend, model, and local subscription login for an ordinary request.',
         'The backend sends the API key only in the provider authorization header; it never enters the browser, App context, logs, provider request body, action batch, canonical state, persistence, or Collaboration.',
         'Ordinary local turns use native registered tool schemas once, retain final-response control schemas in text, and proceed through parameter-only routine operations with App-owned status labels. The model only asks for material missing input or genuine ambiguity and returns a concise factual outcome; required approvals, original evidence and both review stages remain enforced by their existing owners.',
+        'Provider-native cached web search may research concepts, styles, public facts or references without an attachment. Only safe research activity is projected; raw search queries and page bodies are not UI status. Wikimedia lookup is optional. Reference import is separately bounded; a search result is not an imported image receipt. Shell, credentials, local file tools and external integrations remain unavailable.',
         'The backend owns input matching and ordinary provider response construction. An ordinary request uses the configured backend model path and returns complete AiActionBatch values with batchId and already-prepared arguments. Sequential intermediate batches await canonical receipts before the model continues.',
         'For local image requests, the request-owned VTracer tool returns an opaque artifact ID and path bounds/color/count summaries, never SVG coordinates. The model selects target bounds, optional whole-path exclusions and supported single-contour componentMappings for native component preparation. The worker emits spline contours; the backend admits absolute M/L/C/Z geometry, preserves cubic controls, closure, winding and holes, computes true curve bounds once per request artifact, and transforms anchors and controls together without clipping or polygon flattening; this backend owner resolves only same-request references into complete canonical descriptors before Runtime admission. Repeated calls for the same attachment reuse the completed conversion only within that request; unknown references, unknown paths, duplicate/excluded/compound Oval selections, empty output, or invalid bounds fail here. The domain prompt requires receipt-based review and repeated supported corrections without claiming visual fidelity from execution success.',
+        'Before ordinary tracing, AI must submit a short explicit representation plan: preserve vectors with a reason or select a solid native background. Missing/invalid plans cannot start conversion; native plans dispatch separation within the same tool call and return plan evidence for data and rendered review. AI may select one solid native rect/oval background, source bounds, tolerance, optional explicit flat foreground palette and explicit regional clipping. The registered vectorize_image_layers backend tool separates only pixels explained by that region, traces residual PNG pixels, and returns request-local native-background/source-frame evidence. Preparation places the native component below foreground vectors using one shared transform, including native-only output. This is explicit compositing decomposition, never automatic semantic segmentation, whole-image color deletion, frontend geometry or a renderer patch. Four bounded decompositions allow refinement; malformed, cancelled, oversized or unchanged separation fails at this owner. Ordinary tracing and receipt-based review remain unchanged.',
+        'Explicit flat-palette separation classifies alpha-composited source colors over the selected native base before producing opaque foreground masks; faint matte RGB cannot become solid tracing fragments. Faithful contour intent does not disable palette cleanup. Native curved bases and traced foreground do not guarantee an exact shared boundary, so rendered contact review remains mandatory.',
+        'Contour review requires faithful/cleanup intent and final drawing dimensions. Faithful reviews only measure source irregularities. Cleanup proposals and cumulative refinements satisfy both 0.5 original-source pixels and 0.5 final drawing pixels using the larger nonuniform scale; preparation rechecks actual insertion/replacement dimensions so later enlargement cannot bypass the budget. Reports carry both units and the policy. These bounds do not certify raster fidelity, thin-feature preservation or visual approval; AI stops or reverts when appearance worsens or no eligible improvement remains.',
+        'The AI may request bounded source-pixel contour measurements for up to 16 selected paths, sharing the 128-path analysis budget. Request-owned review receipts retain local straighten/smooth-join proposals; only explicitly selected non-overlapping proposals produce a new immutable artifact. Backend preparation preserves anchors, fills, order and source frame, validates topology, and bounds displacement against the original trace to 0.5 source pixels across at most three generations. Sharp corners and compound/unsafe contours are not automatically smoothed. Reports include before/after metrics and remaining limitations, never visual-fidelity approval. No canonical state changes until the existing prepared drawing operation is acknowledged.',
         'The AI selects plausible representation candidates from the registered catalog, without a preferred component. Request-owned read-only vector analysis returns contour identities, measured fit errors, topology limitations and an opaque analysis receipt. Whole-path component mappings require eligible results from a same-request receipt for the same source artifact; preparation consumes this completed evidence without remeasuring. Analysis never mutates canonical state, chooses artistic intent, exposes coordinate arrays or claims visual approval. Unsupported compound reconstruction remains explicit; original unmapped vectors are preserved. Up to 128 independent read-only analyses with a shared 128-candidate reservation budget may be dispatched concurrently with separately correlated replies; final settlement drains pending work, other tools remain exclusive, a request-owned single-job CPU queue yields between jobs, and request abort plus separate 32 non-analysis/160 total call budgets still apply.',
         'The checked-in crdt-7076 backend sample remains the local full-flow request path: its documented URL uses fileId=crdt-7076-sample as both socket-authoritative document identity and Collaboration identity; the backend accepts its exact checked-in image and instruction through the ordinary request body.',
         'The crdt-7076 sample uses the same socket-authoritative startup as every other fileId. When the socket is unavailable, the formal provisional local document still accepts Actor A HTTP action-batch execution and retains publications in the ordinary outbox; there is no compressed-document Core.load bootstrap, sample-only Reset behavior, or socket bypass. The permanent standalone Reset remains available for every fileId.',
@@ -167,7 +172,7 @@
       conditions: [
         'This step is selected because corrected attribution found front-end action-schema geometry preparation before Group creation, while the product contract now assigns model preparation to the backend.',
         'requestActionBatch() is the only public provider request and resolveAiActionBatch() is the only Runtime resolution entry. There is no public or internal plan API, alias, compatibility wrapper, alternate payload mode, or client preparation mode.',
-        'One invocation transaction contains every sequential prepared batch, including intermediate receipts and final settlement. Each batch repeats permission and confirmation; no provider retry occurs after mutation. Fatal errors or cancellation roll back the invocation. The same-origin server transport hands each returned AiActionBatch contract to Runtime; no URL, startup, or alternate source selects another execution or canonical mutation path.',
+        'One invocation transaction contains every sequential prepared batch, including intermediate receipts and final settlement. Each batch repeats permission and confirmation; no provider retry occurs after mutation. Asyra Design preserves applied progress after ordinary executor/provider failure, stops further work and reports partial completion with the failed activity. Cancellation rolls back; transaction settlement failure reports unknown state. There is no per-action savepoint. The same-origin server transport hands each returned AiActionBatch contract to Runtime; no URL, startup, or alternate source selects another execution or canonical mutation path.',
         'AiActionBatch carries one batchId, explanation, ordered actions, and bounded summaries. Runtime preflights only that small control envelope, including the empty-batch rule, duplicate action ids, and unknown actions; it does not traverse item, path, point, style, bounds, or geometry arguments.',
         'Each action definition exposes one backend-facing inputSchema for server action-batch construction and one executor; it has no client action schema, parse, prepare, validation mode, or payload-size flag.',
         'The server-prepared action arguments are not recursively cloned or frozen by Runtime. Permission and execution receive the exact same arguments identity.',
@@ -181,7 +186,7 @@
         'ResolvedAiActionBatch and PermissionReadyAiActionBatch remain local, noncanonical, and nonshared; shared props, components, elements, Factory evidence, and CRDT data remain in their existing owners.'
       ],
       bypasses: [
-        'An invalid control envelope fails before that batch permission or executor work; the invocation transaction rolls back.',
+        'An invalid control envelope fails before that batch permission or executor work; Asyra Design retains previously applied progress, while the default Runtime failure policy rolls back.',
         'A no-confirmation permission result still creates only the bounded terminal preview and never a full-argument preview.'
       ],
       allowedContributors: [
@@ -1462,21 +1467,52 @@
     laneId: 'app-canonical',
     title: 'Inspect the rendered drawing',
     ownerPackage: 'App inspection action',
-    purpose: 'Provide actual bounded rendered evidence for AI review without canonical writes.',
-    inputs: ['artifact:resolved-ai-action-batch', 'canonical target ID', 'current rendered projection', 'request abort signal'],
+    purpose:
+      'Provide actual bounded rendered evidence for AI review without canonical writes.',
+    inputs: [
+      'artifact:resolved-ai-action-batch',
+      'canonical target ID',
+      'current rendered projection',
+      'request abort signal'
+    ],
     outputs: ['artifact:rendered-drawing-review'],
     conditions: [
       'Core and Render resolve the target subtree and flush current projected draws before an engine-neutral snapshot query.',
       'The configured engine extracts real subtree content, excluding overlays and camera framing; no synthetic or stale image is admitted.',
       'PNG size and object metadata are bounded. Capture does not change selection, viewport or canonical state and owns no image cache.',
       'Before mutation the provider reviews tool summaries, selects representations from the supported App component conversion catalog, preserves unmapped vector geometry, and iterates supported preparation parameters. Known data discrepancies are addressed before any expensive rendered review; unchanged deterministic conversions are not retries.',
+      'When registered, review_design runs before snapshot inspection. Concrete text-overflow findings return for correction without an image and prevent completed settlement until resolved. Eight mutating review cycles and six images bound this path; reads remain available and applied progress is retained.',
       'The existing acknowledged batch receipt carries image evidence after mutating operations; local provider emits native image content for AI comparison and repeated supported corrections. Automatic images do not require duplicate explicit captures.'
     ],
-    bypasses: ['Missing target, unsupported engine or unavailable capture returns an explicit limitation.'],
-    allowedContributors: ['App inspection/common APIs', 'Core render facade', 'Render projection and engine-neutral query', 'configured render engine', 'local provider image reply adapter'],
-    forbiddenContributors: ['canonical writes during capture', 'editor overlays', 'diagnostic or synthetic product images', 'direct concrete engine access from App', 'cross-request image cache'],
+    bypasses: [
+      'Missing target, unsupported engine or unavailable capture returns an explicit limitation.'
+    ],
+    allowedContributors: [
+      'App inspection/common APIs',
+      'Core render facade',
+      'Render projection and engine-neutral query',
+      'configured render engine',
+      'local provider image reply adapter'
+    ],
+    forbiddenContributors: [
+      'canonical writes during capture',
+      'editor overlays',
+      'diagnostic or synthetic product images',
+      'direct concrete engine access from App',
+      'cross-request image cache'
+    ],
     cacheDimensions: [],
-    implementationBoundary: ['apps/asyra-design/src/ai', 'apps/asyra-design/src/common-apis', 'apps/asyra-design/src/constants', 'apps/asyra-design/server', 'apps/asyra-design/e2e', 'packages/core/src', 'packages/render/src', 'packages/render-engine/src', 'packages/render-engine-pixi/src'],
+    implementationBoundary: [
+      'apps/asyra-design/src/ai',
+      'apps/asyra-design/src/common-apis',
+      'apps/asyra-design/src/constants',
+      'apps/asyra-design/server',
+      'apps/asyra-design/e2e',
+      'packages/core/src',
+      'packages/render/src',
+      'packages/render-engine/src',
+      'packages/render-engine-pixi/src'
+    ],
     specRefs: ['#rendered-drawing-review'],
     failureOwnerStepId: 'capture-drawing-review'
   })
@@ -1500,9 +1536,11 @@
     ],
     conditions: [
       'Append the user message before execution and preserve its identity through settlement.',
+      'Follow-up hints retain current non-workspace objects of any registered representation; revalidate distinct IDs once per submission and discard deleted/workspace references without granting new capabilities.',
       'One App activity projection owns both the current headline and ordered Activity entries, describes real work transitions without tool names or AI-wait terminology, attaches model updates to their event, and projects approval/stop from existing controller state. Settlement clears the current marker and separates Result from work history.',
       'Questions wait for user input; provider completion alone does not complete the drawing goal.',
       'Panel closure hides presentation; document disposal cancels and retires late events.',
+      'Document-scoped new/history navigation retains per-conversation messages and targets, rejects switches while active, and exposes stable navigation updates independently of progress; presentation preserves unsent drafts.',
       'Only existing feature and requestActionBatch owners may execute; status never writes canonical state.',
       'Capability limits are normal explained outcomes with no blind retry; successful prior changes are described accurately and remain one undoable action.'
     ],
@@ -1539,14 +1577,18 @@
 
   steps
     .find((step) => step.id === 'request-backend-action-batch')
-    .inputs.push('artifact:conversation-submission', 'artifact:rendered-drawing-review')
+    .inputs.push(
+      'artifact:conversation-submission',
+      'artifact:rendered-drawing-review'
+    )
   const routes = [
     {
       id: 'route-resolved-action-to-drawing-inspection',
       from: 'resolve-server-prepared-action-batch',
       to: 'capture-drawing-review',
       kind: 'handoff',
-      predicate: 'A resolved, permitted inspect_drawing operation executes read-only inspection through the ordinary action executor, inside the owning invocation.',
+      predicate:
+        'A resolved, permitted inspect_drawing operation executes read-only inspection through the ordinary action executor, inside the owning invocation.',
       producedArtifacts: ['artifact:resolved-ai-action-batch']
     },
     {
@@ -1554,7 +1596,8 @@
       from: 'capture-drawing-review',
       to: 'request-backend-action-batch',
       kind: 'handoff',
-      predicate: 'The read-only result returns through the existing action receipt; the local backend delivers actual image content for visual review or an explicit unavailable result before further supported corrections.',
+      predicate:
+        'The read-only result returns through the existing action receipt; the local backend delivers actual image content for visual review or an explicit unavailable result before further supported corrections.',
       producedArtifacts: ['artifact:rendered-drawing-review']
     },
     {
@@ -2167,10 +2210,12 @@
       id: 'artifact:rendered-drawing-review',
       ownerStepId: 'capture-drawing-review',
       title: 'Fresh rendered drawing evidence',
-      channel: 'Read-only action result in the existing same-origin execution receipt',
+      channel:
+        'Read-only action result in the existing same-origin execution receipt',
       consumerStepIds: ['request-backend-action-batch'],
       terminal: false,
-      description: 'Bounded real PNG, local capture bounds and object summaries or an explicit unavailable result. Transient evidence only; no document, camera, selection or Undo mutation.'
+      description:
+        'Bounded real PNG, local capture bounds and object summaries or an explicit unavailable result. Transient evidence only; no document, camera, selection or Undo mutation.'
     },
     {
       id: 'artifact:ai-batch-execution-receipt',

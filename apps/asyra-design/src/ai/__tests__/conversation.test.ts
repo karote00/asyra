@@ -685,3 +685,128 @@ describe('conversation recovery admission', () => {
     })
   })
 })
+
+it('retains native design targets and revalidates each distinct object once per follow-up', async () => {
+  const types = new Map([
+    ['f', 'frame'],
+    ['t', 'text'],
+    ['r', 'rect'],
+    ['w', 'workspace']
+  ])
+  const getElementType = vi.fn((id: string) => types.get(id))
+  const feature = createFeature(async (request) =>
+    request.intent === 'create'
+      ? executed(
+          {
+            compositionId: 'f',
+            roleToElementIds: {
+              root: ['f'],
+              heading: ['t'],
+              card: ['r'],
+              duplicate: ['t'],
+              invalid: ['w']
+            },
+            appliedElementIds: ['f', 't', 'r'],
+            status: 'complete'
+          },
+          'apply_prepared_design'
+        )
+      : executed({ status: 'no-change' })
+  )
+  const controller = createAiConversationController({ feature, getElementType })
+  await controller.submit('create')
+  getElementType.mockClear()
+  await controller.submit('Revise the heading')
+  expect(feature.execute).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      metadata: expect.objectContaining({
+        aiTargets: {
+          compositionId: 'f',
+          roleToElementIds: {
+            root: ['f'],
+            heading: ['t'],
+            card: ['r'],
+            duplicate: ['t']
+          }
+        }
+      })
+    })
+  )
+  expect(getElementType).toHaveBeenCalledTimes(4)
+  types.delete('t')
+  await controller.submit('Organize the remaining design')
+  expect(feature.execute).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      metadata: expect.objectContaining({
+        aiTargets: {
+          compositionId: 'f',
+          roleToElementIds: { root: ['f'], card: ['r'] }
+        }
+      })
+    })
+  )
+})
+
+it('starts new conversations without losing prior messages or target context', async () => {
+  let id = 0
+  const feature = createFeature(async () =>
+    executed(
+      {
+        compositionId: 'f',
+        roleToElementIds: { heading: ['t'] },
+        status: 'complete'
+      },
+      'apply_prepared_design'
+    )
+  )
+  const controller = createAiConversationController({
+    feature,
+    getElementType: (id) => (id === 'f' ? 'frame' : 'text'),
+    createConversationId: () => `chat-${++id}`
+  })
+  await controller.submit('Create the first design')
+  const first = controller.getSnapshot()
+  controller.newConversation()
+  expect(controller.getSnapshot()).toMatchObject({
+    conversationId: 'chat-2',
+    settledTurns: [],
+    targetHints: { compositionId: null, roleToElementIds: {} }
+  })
+  controller.newConversation()
+  expect(controller.getSnapshot().conversationId).toBe('chat-2')
+  controller.selectConversation(first.conversationId)
+  expect(controller.getSnapshot().settledTurns).toEqual(first.settledTurns)
+  expect(controller.getSnapshot().targetHints).toEqual(first.targetHints)
+  await controller.submit('Revise the heading')
+  expect(controller.getSnapshot().settledTurns[1].turnId).toBe('chat-1:turn:2')
+  expect(() => controller.selectConversation('missing')).toThrow()
+})
+it('guards navigation during work and keeps navigation snapshots stable during progress', async () => {
+  const pending = createDeferred<unknown>()
+  let progress:
+    | Parameters<AiConversationFeature['execute']>[0]['progressObserver']
+    | undefined
+  const feature = createFeature((request) => {
+    progress = request.progressObserver
+    return pending.promise
+  })
+  const controller = createAiConversationController({
+    feature,
+    getElementType: () => undefined
+  })
+  const listener = vi.fn()
+  controller.subscribeNavigation(listener)
+  const task = controller.submit('Draw a scene')
+  const snapshot = controller.getNavigationSnapshot(),
+    calls = listener.mock.calls.length
+  progress?.({ stage: 'requesting', status: 'running' } as never)
+  expect(controller.getNavigationSnapshot()).toBe(snapshot)
+  expect(listener).toHaveBeenCalledTimes(calls)
+  expect(() => controller.newConversation()).toThrow()
+  expect(() => controller.selectConversation(snapshot.conversationId)).toThrow()
+  pending.resolve(executed({ status: 'no-change' }))
+  await task
+  expect(controller.getNavigationSnapshot().busy).toBe(false)
+  await controller.dispose()
+  expect(() => controller.newConversation()).toThrow()
+})

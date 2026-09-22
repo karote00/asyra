@@ -18,10 +18,20 @@ describe('local provider image tools', () => {
       { metadata: { imageAttachments: [attachment] } },
       convert
     )
-    expect(tools.definitions).toHaveLength(2)
+    expect(tools.definitions).toHaveLength(5)
     const signal = new AbortController().signal
     expect(
-      await tools.call('vtracer', { attachmentIndex: 0 }, signal)
+      await tools.call(
+        'vtracer',
+        {
+          attachmentIndex: 0,
+          plan: {
+            strategy: 'preserve-vectors',
+            reason: 'Preserve the supplied irregular vector artwork.'
+          }
+        },
+        signal
+      )
     ).toContain('imageArtifactId')
     expect(convert).toHaveBeenCalledOnce()
     expect(convert.mock.calls[0]).toEqual([
@@ -34,8 +44,26 @@ describe('local provider image tools', () => {
     ])
   })
   it.each([
-    ['shell', { attachmentIndex: 0 }],
-    ['vtracer', { attachmentIndex: 1 }],
+    [
+      'shell',
+      {
+        attachmentIndex: 0,
+        plan: {
+          strategy: 'preserve-vectors',
+          reason: 'Preserve the supplied irregular vector artwork.'
+        }
+      }
+    ],
+    [
+      'vtracer',
+      {
+        attachmentIndex: 1,
+        plan: {
+          strategy: 'preserve-vectors',
+          reason: 'Preserve irregular reference contours.'
+        }
+      }
+    ],
     ['vtracer', { attachmentIndex: 0, path: '/private/file.png' }]
   ])(
     'rejects unregistered capability or attachment input',
@@ -51,15 +79,17 @@ describe('local provider image tools', () => {
       expect(convert).not.toHaveBeenCalled()
     }
   )
-  it('does not advertise image generation or vectorization without a compatible attachment', () => {
-    expect(createLocalImageTools({}).definitions).toEqual([])
+  it('advertises reference vectorization before import but never image generation', () => {
+    expect(
+      createLocalImageTools({}).definitions.map((tool) => tool.name)
+    ).toContain('vtracer')
     expect(
       createLocalImageTools({
         metadata: {
-          imageAttachments: [{ ...attachment, mediaType: 'image/webp' }]
+          imageAttachments: [{ ...attachment, mediaType: 'image/gif' }]
         }
       }).definitions
-    ).toEqual([])
+    ).toHaveLength(5)
   })
 
   it('requires same-request analysis for mappings and reuses evidence during preparation', async () => {
@@ -72,7 +102,17 @@ describe('local provider image tools', () => {
     )
     const signal = new AbortController().signal
     const summary = JSON.parse(
-      await tools.call(AiImageToolIds.VTRACER, { attachmentIndex: 0 }, signal)
+      await tools.call(
+        AiImageToolIds.VTRACER,
+        {
+          attachmentIndex: 0,
+          plan: {
+            strategy: 'preserve-vectors',
+            reason: 'Preserve the supplied irregular vector artwork.'
+          }
+        },
+        signal
+      )
     )
     const args = {
       imageArtifactId: summary.imageArtifactId,
@@ -138,7 +178,17 @@ describe('local provider image tools', () => {
         convert
       )
       const otherSummary = JSON.parse(
-        await other.call(AiImageToolIds.VTRACER, { attachmentIndex: 0 }, signal)
+        await other.call(
+          AiImageToolIds.VTRACER,
+          {
+            attachmentIndex: 0,
+            plan: {
+              strategy: 'preserve-vectors',
+              reason: 'Preserve the supplied irregular vector artwork.'
+            }
+          },
+          signal
+        )
       )
       expect(() =>
         other.resolveBatch(
@@ -161,10 +211,30 @@ describe('local provider image tools', () => {
     )
     const signal = new AbortController().signal
     const source = JSON.parse(
-      await tools.call(AiImageToolIds.VTRACER, { attachmentIndex: 0 }, signal)
+      await tools.call(
+        AiImageToolIds.VTRACER,
+        {
+          attachmentIndex: 0,
+          plan: {
+            strategy: 'preserve-vectors',
+            reason: 'Preserve the supplied irregular vector artwork.'
+          }
+        },
+        signal
+      )
     )
     const other = JSON.parse(
-      await tools.call(AiImageToolIds.VTRACER, { attachmentIndex: 1 }, signal)
+      await tools.call(
+        AiImageToolIds.VTRACER,
+        {
+          attachmentIndex: 1,
+          plan: {
+            strategy: 'preserve-vectors',
+            reason: 'Preserve irregular reference contours.'
+          }
+        },
+        signal
+      )
     )
     const selection = {
       imageArtifactId: source.imageArtifactId,
@@ -245,7 +315,13 @@ describe('local provider image tools', () => {
     const source = JSON.parse(
       await tools.call(
         AiImageToolIds.VTRACER,
-        { attachmentIndex: 0 },
+        {
+          attachmentIndex: 0,
+          plan: {
+            strategy: 'preserve-vectors',
+            reason: 'Preserve the supplied irregular vector artwork.'
+          }
+        },
         controller.signal
       )
     )
@@ -290,7 +366,17 @@ describe('local provider image tools', () => {
     )
     const signal = new AbortController().signal
     const source = JSON.parse(
-      await tools.call(AiImageToolIds.VTRACER, { attachmentIndex: 0 }, signal)
+      await tools.call(
+        AiImageToolIds.VTRACER,
+        {
+          attachmentIndex: 0,
+          plan: {
+            strategy: 'preserve-vectors',
+            reason: 'Preserve the supplied irregular vector artwork.'
+          }
+        },
+        signal
+      )
     )
     const measure = vi.spyOn(analysis, 'analyzeVectorComponents')
     try {
@@ -329,7 +415,17 @@ describe('local provider image tools', () => {
     )
     const signal = new AbortController().signal
     const source = JSON.parse(
-      await tools.call(AiImageToolIds.VTRACER, { attachmentIndex: 0 }, signal)
+      await tools.call(
+        AiImageToolIds.VTRACER,
+        {
+          attachmentIndex: 0,
+          plan: {
+            strategy: 'preserve-vectors',
+            reason: 'Preserve the supplied irregular vector artwork.'
+          }
+        },
+        signal
+      )
     )
     const reports = await Promise.all(
       ['path-1', 'path-2'].map(async (pathId) =>
@@ -372,5 +468,275 @@ describe('local provider image tools', () => {
         }
       ]
     })
+  })
+})
+
+describe('contour review tool integration', () => {
+  const setup = () =>
+    createLocalImageTools(
+      {
+        metadata: {
+          imageAttachments: [
+            {
+              dataUrl: 'data:image/png;base64,YQ==',
+              mediaType: 'image/png',
+              size: 1
+            }
+          ]
+        }
+      },
+      async () =>
+        '<svg width="100" height="100"><path fill="#008800" d="M10,10C30,10.2 70,10.2 90,10L90,90L10,90Z"/></svg>'
+    )
+  const source = async (tools: ReturnType<typeof setup>) =>
+    JSON.parse(
+      await tools.call(
+        AiImageToolIds.VTRACER,
+        {
+          attachmentIndex: 0,
+          plan: { strategy: 'preserve-vectors', reason: 'Irregular artwork' }
+        },
+        new AbortController().signal
+      )
+    )
+  it('requires intent and output scale and keeps faithful reviews measurement-only', async () => {
+    const tools = setup(),
+      original = await source(tools),
+      signal = new AbortController().signal
+    await expect(
+      tools.call(
+        AiImageToolIds.REVIEW_VECTOR_CONTOURS,
+        { imageArtifactId: original.imageArtifactId, pathIds: ['path-1'] },
+        signal
+      )
+    ).rejects.toThrow()
+    const review = JSON.parse(
+      await tools.call(
+        AiImageToolIds.REVIEW_VECTOR_CONTOURS,
+        {
+          imageArtifactId: original.imageArtifactId,
+          pathIds: ['path-1'],
+          quality: { mode: 'faithful', targetSize: { width: 480, height: 480 } }
+        },
+        signal
+      )
+    )
+    expect(review.proposals).toHaveLength(0)
+    expect(review.paths).toHaveLength(1)
+    expect(review.quality.mode).toBe('faithful')
+  })
+  it('uses the larger output scale and rejects later enlargement of a refined artifact', async () => {
+    const tools = setup(),
+      original = await source(tools),
+      signal = new AbortController().signal
+    const call = (width: number, height: number) =>
+      tools.call(
+        AiImageToolIds.REVIEW_VECTOR_CONTOURS,
+        {
+          imageArtifactId: original.imageArtifactId,
+          pathIds: ['path-1'],
+          quality: { mode: 'cleanup', targetSize: { width, height } }
+        },
+        signal
+      )
+    const large = JSON.parse(await call(480, 160))
+    expect(large.proposals).toHaveLength(0) // 0.2 source pixels becomes 1.2 output pixels.
+    const review = JSON.parse(await call(160, 80))
+    const proposal = review.proposals.find(
+      (p: { kind: string }) => p.kind === 'straighten'
+    )
+    expect(proposal.displacementBoundOutputPx).toBeCloseTo(0.4)
+    const result = JSON.parse(
+      await tools.call(
+        AiImageToolIds.APPLY_CONTOUR_REFINEMENTS,
+        { reviewId: review.reviewId, proposalIds: [proposal.id] },
+        signal
+      )
+    )
+    expect(result.maxDisplacementOutputPx).toBeCloseTo(0.4)
+    const batch = (width: number) => ({
+      actions: [
+        {
+          name: 'insert_vector_composition',
+          arguments: {
+            imageArtifactId: result.imageArtifactId,
+            compositionRole: 'Refinement',
+            bounds: { x: 0, y: 0, width, height: 80 },
+            excludePathIds: []
+          }
+        }
+      ]
+    })
+    expect(() => tools.resolveBatch(batch(160))).not.toThrow()
+    expect(() => tools.resolveBatch(batch(480))).toThrow(/output/i)
+  })
+
+  it('publishes compact receipts and prepares only the selected derived artifact', async () => {
+    const tools = setup(),
+      signal = new AbortController().signal
+    const original = await source(tools)
+    const review = JSON.parse(
+      await tools.call(
+        AiImageToolIds.REVIEW_VECTOR_CONTOURS,
+        {
+          imageArtifactId: original.imageArtifactId,
+          pathIds: ['path-1'],
+          quality: { mode: 'cleanup', targetSize: { width: 100, height: 100 } }
+        },
+        signal
+      )
+    )
+    expect(review.proposals.length).toBeGreaterThan(0)
+    expect(review.proposals[0]).not.toHaveProperty('edits')
+    const proposal = review.proposals.find(
+      (p: { kind: string }) => p.kind === 'straighten'
+    )
+    const result = JSON.parse(
+      await tools.call(
+        AiImageToolIds.APPLY_CONTOUR_REFINEMENTS,
+        { reviewId: review.reviewId, proposalIds: [proposal.id] },
+        signal
+      )
+    )
+    expect(result.imageArtifactId).not.toBe(original.imageArtifactId)
+    expect(result.changes[0]).toMatchObject({ kind: 'straighten', after: 0 })
+    const prepare = (imageArtifactId: string) =>
+      tools.resolveBatch({
+        actions: [
+          {
+            name: 'insert_vector_composition',
+            arguments: {
+              imageArtifactId,
+              bounds: { x: 0, y: 0, width: 100, height: 100 },
+              compositionRole: 'Review',
+              excludePathIds: []
+            }
+          }
+        ]
+      }).actions[0].arguments
+    const points = (drawing: ReturnType<typeof prepare>) =>
+      (
+        drawing as {
+          slices: {
+            descriptors: { points: Record<string, { kind: string }> }[]
+          }[]
+        }
+      ).slices.flatMap(
+        (s: { descriptors: { points: Record<string, { kind: string }> }[] }) =>
+          s.descriptors.flatMap((d) => Object.values(d.points))
+      )
+    expect(
+      points(prepare(original.imageArtifactId)).filter(
+        (p: { kind: string }) => p.kind === 'control'
+      )
+    ).toHaveLength(2)
+    expect(
+      points(prepare(result.imageArtifactId)).filter(
+        (p: { kind: string }) => p.kind === 'control'
+      )
+    ).toHaveLength(0)
+    await expect(
+      setup().call(
+        AiImageToolIds.APPLY_CONTOUR_REFINEMENTS,
+        { reviewId: review.reviewId, proposalIds: [proposal.id] },
+        signal
+      )
+    ).rejects.toThrow(/receipt/)
+    const c = new AbortController()
+    c.abort()
+    await expect(
+      tools.call(
+        AiImageToolIds.REVIEW_VECTOR_CONTOURS,
+        {
+          imageArtifactId: original.imageArtifactId,
+          pathIds: ['path-1'],
+          quality: { mode: 'cleanup', targetSize: { width: 100, height: 100 } }
+        },
+        c.signal
+      )
+    ).rejects.toThrow()
+  })
+
+  it('caps the derived-artifact chain at three generations', async () => {
+    const tools = createLocalImageTools(
+      {
+        metadata: {
+          imageAttachments: [
+            {
+              dataUrl: 'data:image/png;base64,YQ==',
+              mediaType: 'image/png',
+              size: 1
+            }
+          ]
+        }
+      },
+      async () =>
+        '<svg width="100" height="100"><path fill="#008800" d="M10,10C30,10.2 70,10.2 90,10C89.8,30 89.8,70 90,90C70,89.8 30,89.8 10,90C10.2,70 10.2,30 10,10Z"/></svg>'
+    )
+    let current = await source(tools)
+    const signal = new AbortController().signal
+    for (let generation = 0; generation < 4; generation++) {
+      const review = JSON.parse(
+        await tools.call(
+          AiImageToolIds.REVIEW_VECTOR_CONTOURS,
+          {
+            imageArtifactId: current.imageArtifactId,
+            pathIds: ['path-1'],
+            quality: {
+              mode: 'cleanup',
+              targetSize: { width: 100, height: 100 }
+            }
+          },
+          signal
+        )
+      )
+      const proposal = review.proposals.find(
+        (p: { kind: string }) => p.kind === 'straighten'
+      )
+      expect(proposal).toBeDefined()
+      const result = JSON.parse(
+        await tools.call(
+          AiImageToolIds.APPLY_CONTOUR_REFINEMENTS,
+          { reviewId: review.reviewId, proposalIds: [proposal.id] },
+          signal
+        )
+      )
+      if (generation === 3) expect(result).toMatchObject({ available: false })
+      else {
+        expect(result.maxDisplacementPx).toBeLessThanOrEqual(0.5)
+        current = result
+      }
+    }
+  })
+
+  it('reserves the shared review budget before concurrent jobs and refuses invalid selection', async () => {
+    const tools = setup(),
+      original = await source(tools),
+      signal = new AbortController().signal
+    const requests = Array.from({ length: 129 }, () =>
+      tools.call(
+        AiImageToolIds.REVIEW_VECTOR_CONTOURS,
+        {
+          imageArtifactId: original.imageArtifactId,
+          pathIds: ['path-1'],
+          quality: { mode: 'cleanup', targetSize: { width: 100, height: 100 } }
+        },
+        signal
+      )
+    )
+    const results = (await Promise.all(requests)).map((s) => JSON.parse(s))
+    expect(results.filter((r) => r.reviewId)).toHaveLength(128)
+    expect(results[128]).toMatchObject({ available: false })
+    await expect(
+      tools.call(
+        AiImageToolIds.REVIEW_VECTOR_CONTOURS,
+        {
+          imageArtifactId: original.imageArtifactId,
+          pathIds: ['missing'],
+          quality: { mode: 'cleanup', targetSize: { width: 100, height: 100 } }
+        },
+        signal
+      )
+    ).rejects.toThrow()
   })
 })

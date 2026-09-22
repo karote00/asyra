@@ -86,6 +86,17 @@ interface MockMeshRecord {
 const pixiState = vi.hoisted(() => ({
   applications: [] as MockApplicationRecord[],
   graphics: [] as MockGraphicsRecord[],
+  texts: [] as {
+    options: Record<string, unknown>
+    destroyed: boolean
+    resolution: number
+    resolutionWrites: number[]
+    transformReads: number
+    width: number
+    height: number
+    x: number
+    y: number
+  }[],
   textures: [] as MockTextureRecord[],
   gradients: [] as MockGradientRecord[],
   patterns: [] as MockPatternRecord[],
@@ -176,6 +187,27 @@ vi.mock('pixi.js', () => {
 
     emit(type: string, event: unknown) {
       this.listeners.get(type)?.forEach((listener) => listener(event))
+    }
+
+    transformReads = 0
+    getGlobalTransform() {
+      this.transformReads++
+      let a = this.scale.x,
+        d = this.scale.y
+      let parent = this.parent
+      while (parent) {
+        a *= parent.scale.x
+        d *= parent.scale.y
+        parent = parent.parent
+      }
+      return { a, b: 0, c: 0, d }
+    }
+
+    get localTransform() {
+      return { a: this.scale.x, b: 0, c: 0, d: this.scale.y }
+    }
+    updateLocalTransform() {
+      return this.localTransform
     }
 
     getLocalBounds() {
@@ -373,6 +405,7 @@ vi.mock('pixi.js', () => {
       getBoundingClientRect: () => ({ left: 0, top: 0 })
     }
     readonly renderer = {
+      resolution: 1,
       extract: {
         canvas: vi.fn(() => ({
           width: 1024,
@@ -404,7 +437,8 @@ vi.mock('pixi.js', () => {
         throw error
       }
     })
-    readonly init = vi.fn(async () => {
+    readonly init = vi.fn(async (options: { resolution?: number }) => {
+      this.renderer.resolution = options.resolution ?? 1
       pixiState.operationTypes.push('initialize')
       if (pixiState.nextInitError) {
         const error = pixiState.nextInitError
@@ -445,7 +479,27 @@ vi.mock('pixi.js', () => {
     }
   }
 
+  class MockText extends MockContainer {
+    resolutionWrites: number[] = []
+    private textResolution = 1
+    get resolution() {
+      return this.textResolution
+    }
+    set resolution(value: number) {
+      this.textResolution = value
+      this.resolutionWrites.push(value)
+    }
+
+    constructor(readonly options: Record<string, unknown>) {
+      super()
+      this.width = 60
+      this.height = 24
+      pixiState.texts.push(this)
+    }
+  }
+
   return {
+    Text: MockText,
     Application: MockApplication,
     CanvasSource: MockCanvasSource,
     Container: MockContainer,
@@ -483,6 +537,7 @@ describe('PixiRenderEngine', () => {
   beforeEach(() => {
     pixiState.applications.length = 0
     pixiState.graphics.length = 0
+    pixiState.texts.length = 0
     pixiState.textures.length = 0
     pixiState.gradients.length = 0
     pixiState.patterns.length = 0
@@ -496,6 +551,319 @@ describe('PixiRenderEngine', () => {
 
   afterEach(() => {
     vi.unstubAllGlobals()
+  })
+
+  it('updates text density for zoom and inherited scale without work on stable flush or pan', async () => {
+    const engine = new PixiRenderEngine()
+    const { root } = await engine.initialize({
+      host: {},
+      width: 800,
+      height: 600,
+      resolution: 2
+    })
+    const { object } = engine.execute({
+      type: 'create-object',
+      requestId: 'text-density',
+      objectType: 'graphics'
+    })
+    if (!root || !object) throw new Error('Missing handles')
+    engine.execute({ type: 'append-child', parent: root, child: object })
+    engine.execute({
+      type: 'draw',
+      object,
+      operations: [
+        {
+          type: 'text',
+          text: 'Readable text',
+          x: 0,
+          y: 0,
+          width: 200,
+          height: 40,
+          fontFamily: 'sans-serif',
+          fontSize: 24,
+          fontWeight: 'normal',
+          fontStyle: 'normal',
+          align: 'left',
+          lineHeight: 30,
+          letterSpacing: 0,
+          color: '#000000'
+        }
+      ]
+    })
+    engine.execute({ type: 'flush' })
+    const text = pixiState.texts[0]
+    expect(text.resolution).toBe(2)
+    engine.execute({
+      type: 'set-viewport',
+      position: { x: 0, y: 0 },
+      scale: { x: 1.5, y: 1.5 }
+    })
+    engine.execute({ type: 'flush' })
+    expect(text.resolution).toBe(3)
+    const reads = text.transformReads,
+      writes = text.resolutionWrites.length
+    for (let i = 0; i < 5; i++) {
+      engine.execute({
+        type: 'set-viewport',
+        position: { x: i, y: i },
+        scale: { x: 1.5, y: 1.5 }
+      })
+      engine.execute({ type: 'flush' })
+    }
+    expect(text.transformReads).toBe(reads)
+    expect(text.resolutionWrites).toHaveLength(writes)
+    engine.execute({
+      type: 'update-object',
+      object,
+      properties: { scaleX: 2, scaleY: 2 }
+    })
+    engine.execute({ type: 'flush' })
+    expect(text.resolution).toBe(4)
+    text.width = 10000
+    engine.execute({
+      type: 'set-viewport',
+      position: { x: 0, y: 0 },
+      scale: { x: 2, y: 2 }
+    })
+    engine.execute({ type: 'flush' })
+    expect(text.resolution * text.width).toBeLessThanOrEqual(4096)
+    text.width = 2000
+    text.height = 2000
+    engine.execute({
+      type: 'set-viewport',
+      position: { x: 0, y: 0 },
+      scale: { x: 3, y: 3 }
+    })
+    engine.execute({ type: 'flush' })
+    expect(text.resolution ** 2 * text.width * text.height).toBeLessThanOrEqual(
+      4 * 1024 * 1024
+    )
+    const beforeClear = text.transformReads
+    engine.execute({ type: 'draw', object, operations: [{ type: 'clear' }] })
+    engine.execute({
+      type: 'set-viewport',
+      position: { x: 0, y: 0 },
+      scale: { x: 1, y: 1 }
+    })
+    engine.execute({ type: 'flush' })
+    expect(text.transformReads).toBe(beforeClear)
+    expect(text.destroyed).toBe(true)
+    engine.destroy()
+  })
+
+  it('materializes literal text and releases only owned text on clear and destroy', async () => {
+    const engine = new PixiRenderEngine()
+    await engine.initialize({ host: {}, width: 800, height: 600 })
+    const { object } = engine.execute({
+      type: 'create-object',
+      requestId: 'text',
+      objectType: 'graphics'
+    })
+    const { object: child } = engine.execute({
+      type: 'create-object',
+      requestId: 'child',
+      objectType: 'graphics'
+    })
+    if (!object || !child) throw new Error('Missing objects')
+    engine.execute({ type: 'append-child', parent: object, child })
+    const operation = {
+      type: 'text' as const,
+      text: '<b>世界</b>',
+      x: 12,
+      y: 20,
+      width: 240,
+      height: 80,
+      fontFamily: 'sans-serif',
+      fontSize: 24,
+      fontWeight: 'bold' as const,
+      fontStyle: 'normal' as const,
+      align: 'left' as const,
+      lineHeight: 30,
+      letterSpacing: 1,
+      color: '#123456'
+    }
+    engine.execute({ type: 'draw', object, operations: [operation] })
+    expect(pixiState.texts).toHaveLength(1)
+    expect(pixiState.texts[0]).toMatchObject({
+      x: 12,
+      y: 20,
+      options: {
+        text: '<b>世界</b>',
+        style: {
+          fontSize: 24,
+          fontWeight: 'bold',
+          wordWrap: true,
+          wordWrapWidth: 240,
+          lineHeight: 30,
+          letterSpacing: 1,
+          fill: '#123456'
+        }
+      }
+    })
+    engine.execute({ type: 'draw', object, operations: [{ type: 'clear' }] })
+    expect(pixiState.texts[0].destroyed).toBe(true)
+    expect(pixiState.graphics[0]).toHaveProperty('children', [
+      pixiState.graphics[1]
+    ])
+    expect(pixiState.graphics[1]).toHaveProperty('destroyed', false)
+    engine.execute({ type: 'draw', object, operations: [operation] })
+    engine.execute({ type: 'destroy-object', object })
+    expect(pixiState.texts[1].destroyed).toBe(true)
+    engine.destroy()
+  })
+
+  it('aligns short text within its explicit layout box', async () => {
+    const engine = new PixiRenderEngine()
+    await engine.initialize({ host: {}, width: 800, height: 600 })
+    const { object } = engine.execute({
+      type: 'create-object',
+      requestId: 'aligned-text',
+      objectType: 'graphics'
+    })
+    if (!object) throw new Error('Missing object')
+    for (const align of ['center', 'right'] as const) {
+      engine.execute({
+        type: 'draw',
+        object,
+        operations: [
+          {
+            type: 'text',
+            text: 'Short',
+            x: 10,
+            y: 0,
+            width: 240,
+            height: 40,
+            fontFamily: 'sans-serif',
+            fontSize: 20,
+            fontWeight: 'normal',
+            fontStyle: 'normal',
+            align,
+            lineHeight: 24,
+            letterSpacing: 0,
+            color: '#000000'
+          }
+        ]
+      })
+    }
+    expect(pixiState.texts.map((text) => text.x)).toEqual([100, 190])
+    engine.destroy()
+  })
+
+  it('captures text at target-relative density and restores screen density on success and failure', async () => {
+    const engine = new PixiRenderEngine()
+    const { root } = await engine.initialize({
+      host: {},
+      width: 800,
+      height: 600,
+      resolution: 2
+    })
+    const create = (parent: NonNullable<typeof root>, name: string) => {
+      const { object } = engine.execute({
+        type: 'create-object',
+        requestId: name,
+        objectType: 'graphics'
+      })
+      if (!object) throw new Error('Missing object')
+      engine.execute({ type: 'append-child', parent, child: object })
+      return object
+    }
+    if (!root) throw new Error('Missing root')
+    const target = create(root, 'capture')
+    engine.execute({
+      type: 'update-object',
+      object: target,
+      properties: { width: 400, height: 200 }
+    })
+    const nested = create(target, 'nested')
+    const unrelated = create(root, 'unrelated')
+    for (const object of [nested, unrelated]) {
+      engine.execute({
+        type: 'draw',
+        object,
+        operations: [
+          {
+            type: 'text',
+            text: 'Sharp text',
+            x: 0,
+            y: 0,
+            width: 100,
+            height: 30,
+            fontFamily: 'sans-serif',
+            fontSize: 20,
+            fontWeight: 'normal',
+            fontStyle: 'normal',
+            align: 'left',
+            lineHeight: 25,
+            letterSpacing: 0,
+            color: '#000000'
+          }
+        ]
+      })
+    }
+    engine.execute({
+      type: 'update-object',
+      object: nested,
+      properties: { scaleX: 0.5, scaleY: 0.5 }
+    })
+    engine.execute({
+      type: 'set-viewport',
+      position: { x: 0, y: 0 },
+      scale: { x: 0.25, y: 0.25 }
+    })
+    engine.execute({ type: 'flush' })
+    const [text, outside] = pixiState.texts
+    const screen = text.resolution,
+      outsideWrites = outside.resolutionWrites.length
+    const extract = pixiState.applications[0].renderer.extract.canvas
+    const original = extract.getMockImplementation()
+    if (!original) throw new Error('Missing extractor')
+    const inspectCapture = (...args: unknown[]) => {
+      expect(text.resolution).toBe(1.28)
+      expect(outside.resolutionWrites).toHaveLength(outsideWrites)
+      return original(...args)
+    }
+    extract.mockImplementationOnce(inspectCapture)
+    engine.query({ type: 'snapshot', object: target, maxDimension: 1024 })
+    expect(text.resolution).toBe(screen)
+    extract.mockImplementationOnce((...args: unknown[]) => {
+      inspectCapture(...args)
+      throw new Error('Extraction failed')
+    })
+    expect(() =>
+      engine.query({ type: 'snapshot', object: target, maxDimension: 1024 })
+    ).toThrow('Extraction failed')
+    expect(text.resolution).toBe(screen)
+    expect(outside.resolutionWrites).toHaveLength(outsideWrites)
+  })
+
+  it('measures native local content without snapshot extraction or world coordinates', async () => {
+    const engine = new PixiRenderEngine()
+    await engine.initialize({ host: {}, width: 800, height: 600 })
+    const { object } = engine.execute({
+      type: 'create-object',
+      requestId: 'content',
+      objectType: 'graphics'
+    })
+    if (!object) throw new Error('Missing object')
+    engine.execute({
+      type: 'update-object',
+      object,
+      properties: { x: 80, y: 40, width: 210, height: 55 }
+    })
+    expect(engine.capabilities.has('local-content-bounds')).toBe(true)
+    expect(engine.query({ type: 'get-local-content-bounds', object })).toEqual({
+      type: 'bounds',
+      bounds: { x: 0, y: 0, width: 210, height: 55 }
+    })
+    expect(engine.query({ type: 'get-bounds', object })).toEqual({
+      type: 'bounds',
+      bounds: { x: 80, y: 40, width: 210, height: 55 }
+    })
+    engine.execute({ type: 'destroy-object', object })
+    expect(() =>
+      engine.query({ type: 'get-local-content-bounds', object })
+    ).toThrow()
+    engine.destroy()
   })
 
   it('extracts the real target at bounded resolution and rejects empty captures', async () => {

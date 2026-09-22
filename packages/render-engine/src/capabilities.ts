@@ -3,6 +3,7 @@ import type { RenderEngine, RenderEngineCapability } from './types.js'
 
 export const RenderEngineCapabilities = {
   SNAPSHOT: 'snapshot',
+  LOCAL_CONTENT_BOUNDS: 'local-content-bounds',
   OBJECTS: 'objects',
   GRAPHICS: 'graphics',
   INTERACTION: 'interaction',

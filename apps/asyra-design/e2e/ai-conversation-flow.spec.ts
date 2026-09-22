@@ -11,6 +11,81 @@ import {
   waitForAppReady
 } from './test-utils'
 
+test('retains drawing after a failed refinement with one undo and redo', async ({
+  page
+}, testInfo) => {
+  const prepared = drawing('retained-progress')
+  await page.route('**/api/ai/status', (route) =>
+    route.fulfill({ json: { state: 'ready' } })
+  )
+  await page.route('**/api/ai/action-batch', (route) => {
+    if (route.request().headers()['x-ai-batch-receipt'])
+      return route.fulfill({ json: { accepted: true } })
+    return route.fulfill({
+      contentType: 'application/x-ndjson',
+      body: [
+        {
+          type: 'batch',
+          receiptToken: '11111111-1111-1111-1111-111111111111',
+          batch: {
+            batchId: 'insert',
+            actions: [
+              {
+                id: 'draw',
+                name: 'insert_vector_composition',
+                arguments: prepared,
+                summary: 'Add drawing'
+              }
+            ]
+          }
+        },
+        {
+          type: 'result',
+          batch: {
+            batchId: 'refine',
+            actions: [
+              {
+                id: 'refine',
+                name: 'update_composition_elements',
+                arguments: { updates: null },
+                summary: 'Refine drawing'
+              }
+            ]
+          }
+        }
+      ]
+        .map((frame) => JSON.stringify(frame))
+        .join('\n')
+    })
+  })
+  await page.goto(createTestDocumentIdentity().url)
+  await waitForAppReady(page)
+  const before = await getCoreDocumentDigest(page)
+  const depth = await getUndoHistoryDepth(page)
+  await page.getByRole('button', { name: 'Open Agent' }).click()
+  await page.getByLabel('Message Agent').fill('Draw and refine')
+  await page.getByRole('button', { name: 'Send', exact: true }).click()
+  await expect(page.getByTestId('ai-agent-message')).toHaveAttribute(
+    'data-outcome',
+    'partial'
+  )
+  await expect(page.getByTestId('ai-agent-message')).toContainText(
+    'Refining the drawing could not be completed. Changes already applied have been kept.'
+  )
+  await expect(
+    page.getByRole('button', { name: 'Try again', exact: true })
+  ).toHaveCount(0)
+  const after = await getCoreDocumentDigest(page)
+  expect(after).not.toEqual(before)
+  expect(await getUndoHistoryDepth(page)).toBe(depth + 1)
+  await page.screenshot({ path: testInfo.outputPath('retained-drawing.png') })
+  await page.getByRole('button', { name: 'Close Agent panel' }).click()
+  await undo(page)
+  expect(await getCoreDocumentDigest(page)).toEqual(before)
+  await redo(page)
+  expect(await getCoreDocumentDigest(page)).toEqual(after)
+})
+
 for (const width of [360, 1280]) {
   test(`opening the Agent immediately discloses personal subscription usage at ${width}px`, async ({
     page
@@ -386,7 +461,7 @@ test('a free-text clarification continues the original drawing and cancellation 
   release()
 })
 
-test('incomplete replacement rolls back inserted content and partial output never offers blind retry', async ({
+test('incomplete replacement preserves the original and partial output never offers blind retry', async ({
   page
 }, testInfo) => {
   const initial = drawing('rollback-original')
@@ -444,10 +519,17 @@ test('incomplete replacement rolls back inserted content and partial output neve
   await page.getByRole('button', { name: 'Approve', exact: true }).click()
   await expect(page.getByTestId('ai-agent-message').last()).toHaveAttribute(
     'data-outcome',
-    'failed'
+    'partial'
   )
+  const retained = await getCoreDocumentDigest(page)
+  expect(retained).not.toEqual(before)
+  expect(await getUndoHistoryDepth(page)).toBe(depth + 1)
+  await page.getByRole('button', { name: 'Close Agent panel' }).click()
+  await undo(page)
   expect(await getCoreDocumentDigest(page)).toEqual(before)
-  expect(await getUndoHistoryDepth(page)).toBe(depth)
+  await redo(page)
+  expect(await getCoreDocumentDigest(page)).toEqual(retained)
+  await page.getByRole('button', { name: 'Open Agent' }).click()
   await expect(page.getByRole('button', { name: 'Try again' })).toHaveCount(0)
   await send('Add a separate drawing')
   await expect(page.getByTestId('ai-agent-message').last()).toHaveAttribute(
@@ -662,6 +744,19 @@ for (const width of [360, 1280]) {
           message: '正在隱藏右下角的標記。'
         }
       ]
+      const firstRow = page
+        .getByLabel('Operational progress')
+        .locator('li')
+        .first()
+      const originalRow = await firstRow.elementHandle()
+      const originalText = await firstRow.textContent()
+      if (!originalRow || originalText === null)
+        throw new Error('Missing original Activity row')
+      const originalOffset = await firstRow.evaluate(
+        (row) =>
+          row.getBoundingClientRect().top -
+          (row.closest('section')?.getBoundingClientRect().top ?? 0)
+      )
       for (const event of events) {
         response.write(
           JSON.stringify({
@@ -671,16 +766,35 @@ for (const width of [360, 1280]) {
             message: event.message
           }) + '\n'
         )
-        await expect(status).toHaveText(event.label)
+        await expect(status).toHaveText(event.message ?? event.label)
         await expect(current).toHaveCount(1)
-        await expect(current).toHaveText(
-          event.message ? event.label + event.message : event.label
-        )
-        await expect(current).toContainText(event.label)
+        await expect(current).toHaveText(event.message ?? event.label)
+        expect(await originalRow.evaluate((row) => row.isConnected)).toBe(true)
+        await expect(firstRow).toHaveText(originalText)
+        expect(
+          await firstRow.evaluate(
+            (row) =>
+              row.getBoundingClientRect().top -
+              (row.closest('section')?.getBoundingClientRect().top ?? 0)
+          )
+        ).toBe(originalOffset)
         await expect(
           page.getByText('Running a tool', { exact: true })
         ).toHaveCount(0)
       }
+      const rowGaps = await page
+        .getByLabel('Operational progress')
+        .locator('li')
+        .evaluateAll((rows) =>
+          rows
+            .slice(1)
+            .map(
+              (row, i) =>
+                row.getBoundingClientRect().top -
+                rows[i].getBoundingClientRect().bottom
+            )
+        )
+      expect(Math.max(...rowGaps) - Math.min(...rowGaps)).toBeLessThan(1)
       await expect(current).toContainText('正在隱藏右下角的標記。')
       await page
         .getByTestId('ai-agent-panel')
@@ -751,7 +865,7 @@ for (const width of [360, 1280]) {
       }
       await expect(
         page.getByLabel('Operational progress').locator('li')
-      ).toHaveCount(51)
+      ).toHaveCount(74)
       response.end(
         JSON.stringify({
           type: 'result',

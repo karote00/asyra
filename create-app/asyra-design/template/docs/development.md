@@ -85,3 +85,60 @@ turns, group attempts by `conversationId` and `turnId`, and sum each unique
 unavailable records visible when calculating averages; do not interpret missing
 usage as free work. These token records do not establish subscription percentage
 or monetary cost. Provider outcome does not certify final document settlement.
+
+### Native backgrounds before tracing
+
+Local AI can use `vectorize_image_layers` after deciding that a solid native
+rect/oval better represents the intended background. It supplies source bounds,
+fill, tolerance and an explicit clipping choice. The backend separates matching
+pixels only inside that region, traces residual pixels and prepares the native
+base below the vectors in a shared source frame. Matching interior colors remain
+visible through the base; this is not semantic object segmentation. Gradient or
+textured backgrounds require another supported strategy. Both review stages and
+one-turn Undo still apply. Four image calls bound parameter refinement.
+
+sharp is a local, free dependency. See
+[third-party notices](../THIRD_PARTY_NOTICES.md) before redistributing native
+binaries; dependencies retain their own licenses independently of this App's MIT
+license. PNG/JPEG/WebP decoding is limited to four million pixels and 16 MiB.
+
+Image preparation requires an explicit representation plan in ordinary `vtracer`
+parameters: `preserve-vectors` with a reason, or `separate-background` with a reason
+and the native background parameters. The server executes that choice and returns
+plan evidence for review. Missing plans return to the model for correction before
+conversion. This prevents silent whole-image tracing, without having the backend
+choose shapes. The optional live App regression is `local subscription traces the reference logo`
+in `e2e/local-ai-provider.spec.ts`, enabled with `E2E_LOCAL_AI=true`. It uses the
+configured local subscription and checks the native-base result for an ordinary
+user request without specifying the primitive or separation parameters.
+
+### Local contour quality tools
+
+The local provider exposes `review_vector_contours` and `apply_contour_refinements`.
+AI selects intended straight/smooth regions; backend computes bounded proposals
+and validates a new request-local artifact before existing insert/replace actions.
+The 0.5 source-pixel cap is relative to the original trace across all passes, not
+reset on each refinement. No blanket smoothing or raster-fidelity claim is made;
+sharp corners, compound/unsafe paths and exhausted budgets remain explicit limits.
+Both source and derived artifacts stay available for visual comparison/reversion.
+The deterministic contour unit/tool/E2E tests do not consume an AI subscription.
+
+Contour review requires `quality.mode` (`faithful` or `cleanup`) and
+`quality.targetSize` in final drawing pixels. Faithful reviews are measurement-only.
+Cleanup must stay within 0.5 source pixels and 0.5 final drawing pixels, even across
+multiple passes. Preparation rechecks actual dimensions, so resizing a refined
+artifact beyond that budget is rejected; review at the intended size or retain the
+original. Screen zoom does not change the budget.
+
+### Flat-palette edge coverage
+
+Explicit foreground palettes classify source alpha composited over the selected
+native base before tracing. Nearly transparent matte colors must not become
+solid fragments. Retained flat colors form a binary mask; no-palette source
+colors/alpha remain unchanged. This does not establish exact shared boundaries
+between traced paths and a native curved base; rendered contact review remains
+required, including in faithful mode.
+
+Activity keeps one fixed-height current label above the append-only history.
+Detailed messages appear only in the history, so changing message length does
+not reposition existing rows.

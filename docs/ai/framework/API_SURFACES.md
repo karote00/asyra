@@ -27,6 +27,12 @@ Core API tier types (explicit ownership contract):
 
 Lifecycle and integration:
 
+- `measureElementContentBounds(elementIds)`: actual local rendered content bounds
+  for 1..200 unique current IDs; one projection flush then one query per present
+  object. Missing targets return null bounds. Requires the optional renderer
+  `local-content-bounds` capability. This is read-only content evidence, not
+  canonical layout geometry or a screenshot; results are detached.
+
 - `setRenderer(renderer: IRenderer): void`
 - `resizeRenderer(width: number, height: number): void`
   - validates finite positive CSS dimensions and forwards to the active
@@ -248,7 +254,13 @@ Scene/model bridge:
     compatibility options
   - owner rejection throws through the caller-owned transaction; no partial
     observer evidence is released before Factory owner commit
-- `getElementComputedData(elementId: string): Record<string, unknown> | undefined`
+- `getElementComputedData(elementId: string, fields?: readonly string[]): Record<string, unknown> | undefined`
+  - omitted `fields` preserves the detached whole projection; explicit fields
+    clone only requested own values, avoiding omitted geometry payloads
+  - accepts at most 64 nonempty flat names of at most 128 characters; duplicate
+    names are read once and invalid selections fail before reading the owner
+  - missing elements return `undefined`; empty selection for an existing element
+    returns `{}`; subsequent calls read fresh projection state without a cache
   - reads the current local projection only; the returned data is not canonical
     property, history, collaboration, or persistence evidence
 - `getCanonicalElementCount(): number`
@@ -358,6 +370,10 @@ Managed property bridges:
 
 - composition: `createAiAgentRuntime(...)`, `AiAgentRuntime`,
   `CreateAiAgentRuntimeInput`, `AiRunRequest`, and `AiRuntimeOptions`
+  - `failurePolicy` defaults to `rollback`; `preserve-progress` commits applied
+    writes on ordinary failure while keeping cancellation rollback.
+    Retained failures expose committed transaction status, completed redacted
+    `actionResults`, and optional `failedAction`; they remain failed results.
 - terminal output: `AiRuntimeResult`, `AiRuntimeExecutedResult`,
   `AiRuntimeCancelledResult`, `AiRuntimeFailedResult`, `AiRuntimeStage`, and
   `AiRuntimeFailureCode`
@@ -727,6 +743,10 @@ See `packages/collaboration.md` and
 
 - `PresetProfiles`: stable `2D`, `3D`, `HYBRID`, and `CUSTOM` ids; only `2D`
   and `CUSTOM` are currently available
+- optional canonical text exports: `TEXT_COMPONENT_TYPE`, `TEXT_COMPONENT_DEFINITION`,
+  `TEXT_PROPERTY_TYPE`, `TEXT_PROPERTY_DEFINITION`, `TEXT_PROPERTY_SCHEMA`,
+  `DEFAULT_TEXT_DATA` and `TEXT_RENDER_STRATEGY`; install explicitly without changing
+  default profiles. Plain editable text and typography use normal schema/history owners.
 - `PresetDefaults`: eight official selectable default ids
 - grouped `ViewportSystemPropertyKeys`, `InputSystemPropertyKeys`,
   `SelectionSystemPropertyKeys`, and `VectorEditingSystemPropertyKeys`, plus

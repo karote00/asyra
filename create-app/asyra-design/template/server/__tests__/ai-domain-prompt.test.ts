@@ -32,9 +32,24 @@ describe('Asyra Design backend-owned AI domain prompt', () => {
   it('advertises only registered backend image capabilities', () => {
     expect(AI_IMAGE_TOOL_CATALOG).toEqual([
       {
+        capabilities: ['explicit-solid-background-decomposition'],
+        id: AiImageToolIds.VECTORIZE_IMAGE_LAYERS,
+        inputMediaTypes: ['image/jpeg', 'image/png', 'image/webp']
+      },
+      {
         capabilities: ['whole-image-raster-vectorization'],
         id: 'vtracer',
-        inputMediaTypes: ['image/jpeg', 'image/png']
+        inputMediaTypes: ['image/jpeg', 'image/png', 'image/webp']
+      },
+      {
+        capabilities: ['bounded-contour-quality-review'],
+        id: 'review_vector_contours',
+        inputMediaTypes: []
+      },
+      {
+        capabilities: ['receipted-local-contour-refinement'],
+        id: 'apply_contour_refinements',
+        inputMediaTypes: []
       },
       {
         capabilities: ['read-only-vector-component-analysis'],
@@ -83,6 +98,10 @@ it('prioritizes cheaper data review before mutation, then requires actual visual
 })
 
 it('reviews all objects against supported component mappings, not just Oval detection', () => {
+  expect(AI_APP_PROMPT).toContain(
+    'vectorize_image_layers BEFORE whole-image tracing'
+  )
+  expect(AI_APP_PROMPT).toContain('Do not overlay a native base')
   expect(AI_APP_PROMPT).toContain('every meaningful object')
   expect(AI_APP_PROMPT).toContain('componentTargets')
   expect(AI_APP_PROMPT).toContain('componentMappings')
@@ -93,16 +112,40 @@ it('reviews all objects against supported component mappings, not just Oval dete
 })
 
 it('requires concise decisions and only material clarification without dropping review', () => {
-  expect(AI_APP_PROMPT).toContain('without narration, plans, progress prose')
+  expect(AI_APP_PROMPT).toContain('without user-facing narration, plan prose')
   expect(AI_APP_PROMPT).toContain(
     'Use existing defaults for non-material choices'
   )
   expect(AI_APP_PROMPT).toContain('one short question')
   expect(AI_APP_PROMPT).toContain('one short factual sentence')
   expect(AI_APP_PROMPT).toContain('Required App approvals remain')
-  expect(AI_OPERATION_INSTRUCTIONS).toContain(
-    'Routine operations send arguments only'
-  )
+  expect(AI_OPERATION_INSTRUCTIONS).toContain('include a short English message')
   expect(AI_OPERATION_INSTRUCTIONS).toContain('Stage 1 - data review')
   expect(AI_OPERATION_INSTRUCTIONS).toContain('Stage 2 - visual review')
+})
+
+it('keeps antialias cleanup and boundary-contact review independent of fidelity mode', () => {
+  expect(AI_OPERATION_INSTRUCTIONS).toContain(
+    'Antialias coverage is not intentional texture'
+  )
+  expect(AI_OPERATION_INSTRUCTIONS).toContain(
+    'foregroundColors remains appropriate in faithful mode'
+  )
+  expect(AI_OPERATION_INSTRUCTIONS).toContain(
+    'foreground-to-background boundary contacts'
+  )
+  expect(AI_OPERATION_INSTRUCTIONS).toContain(
+    'Do not certify a detached boundary as complete'
+  )
+})
+
+it('routes new layouts through semantic preparation and preserves targeted-edit intent', () => {
+  expect(AI_APP_PROMPT).toContain('use prepare_design when it is')
+  expect(AI_APP_PROMPT).toContain('apply_prepared_design')
+  expect(AI_APP_PROMPT).toContain('actual editable text')
+  expect(AI_APP_PROMPT).toContain(
+    'Never invent canonical IDs, properties or descriptors'
+  )
+  expect(AI_APP_PROMPT).toContain('not create a new design')
+  expect(AI_APP_PROMPT).toContain('Preparation is not')
 })
