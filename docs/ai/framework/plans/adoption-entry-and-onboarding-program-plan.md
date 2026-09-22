@@ -45,6 +45,14 @@ multi-agent delegation and autonomous execution across all workstreams.
 - First small child task: repair stale executable-example entry links to
   maintained, existing destinations as a bounded part of task 1. Do not publish
   unavailable generic-starter commands or rewrite all public documentation.
+- Child PR `codex/adoption-fix-example-links`: bounded scan of `README.md`,
+  `docs/ai/framework/GETTING_STARTED.md`, and `docs/public` found one active
+  broken entry, `GETTING_STARTED.md` linking to removed
+  `../../examples/README.md`. The replacement target is the maintained
+  `golden-paths/README.md` implementation playbook. Local validation confirmed
+  the target file exists, the scoped stale-link search is clean, and the public
+  documentation/readme validation scripts pass through their Node entrypoints.
+  This records a bounded part of task 1 only; task 1 remains pending.
 
 ## Product decisions
 
