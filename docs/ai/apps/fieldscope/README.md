@@ -1,243 +1,350 @@
-# 田巡 FieldScope
+# FieldScope
 
-田巡 FieldScope 是採收機器人的田區建模、離線模擬與實機監控工作站。
-「田巡」表達田區巡行與持續觀察；FieldScope 的範圍包括栽培環境、採收動作及
-作業證據，不限定某種作物或某一台採收器。這是產品命名提案，未宣稱商標可用性。
+FieldScope is a field modeling, offline simulation, and robot monitoring
+workstation for harvest robotics. Its scope covers cultivation environments,
+harvest actions, and operational evidence; it is not tied to one crop or one
+robot model. The name is a product proposal and does not claim trademark
+availability.
 
-## 本階段契約
+## Current Stage Contract
 
-在 `apps/fieldscope` 以 Asyra CUSTOM provider + Three.js 建立四連棟溫室。
-完成條件為等比例幾何、可操作的整體與夾具近看視角、圖層顯示、尺寸剖面與正式測試。
-修改範圍包括新 app、本文及必要的 Yarn workspace / Turbo 接線。
-既有 apps、框架 API、其他 Inspector 與既有 active plans 不變。
+`apps/fieldscope` builds a four-bay greenhouse with an Asyra CUSTOM provider and
+Three.js. Completion criteria are proportional geometry, usable overview and
+clip close-up camera views, layer display, a dimensioned cross-section, and
+formal tests. Existing apps, framework APIs, unrelated Inspectors, and existing
+active plans remain unchanged.
 
-本階段不執行採收模擬、不產生機器人安全判定、不連線實機；
-覆膜預設為 60% 不透明度的乳白半透明表面，包含四棟屋頂及外牆；
-保留端面開口，連棟之間不增加隔膜。可由圖層開關或不透明度控制檢視內部。
+This stage does not run harvest simulation, produce robot safety decisions, or
+connect to live hardware. Plastic film defaults to a milky translucent material
+at 60% opacity, covers the four roofs and outer walls, and keeps end openings
+clear. No internal membrane is added between connected bays. Layers and opacity
+controls can reveal the interior.
 
-沒有虛構即時遙測、收成數字、植株損傷或穩定度分數。
-以下分期是後續實作建議，不代表已完成或自動啟動那些功能。
+There is no fabricated live telemetry, harvest count, plant damage score, or
+stability score. The staged roadmap below is implementation guidance, not a
+claim that those features already exist or start automatically.
 
-## 尺寸與假設
+## Dimensions And Assumptions
 
-全場座標為公尺，X 跨棟、Y 向上、Z 沿棟長，原點位於左前方地面。
-預設四棟各寬 7m、長 50m、最高點 5m，總占地 28 × 50 = 1,400m²。
-以下構件數量與位置為預設設定；編輯後依設定重新計算。
+Scene units are metres. X crosses bays, Y points up, Z runs along bay depth, and
+the origin is the left-front ground point. Defaults are four bays, each 7m wide,
+50m long, and 5m high, for a total footprint of 28m x 50m = 1,400m². Component
+counts and positions are derived from the current settings.
 
-使用者已釐清原列數字總和：土壤與水溝實為 6.3m，不是 6.6m。
-最終每棟 X 向配置為：
+The confirmed per-bay strip width is 6.3m, not 6.6m:
 
-`0.35 留白 + 0.9 土壤 + 0.3 水溝 + 1.8 土壤 + 0.3 水溝 + 1.8 土壤 + 0.3 水溝 + 0.9 土壤 + 0.35 留白 = 7m`
+`0.35 margin + 0.9 soil + 0.3 drain + 1.8 soil + 0.3 drain + 1.8 soil + 0.3 drain + 0.9 soil + 0.35 margin = 7m`
 
-- 16 條土壤區共 1,080m²、12 條水溝共 180m²、全部邊界留白共 140m²。
-- 內部相鄰留白合併為 3 條 0.7m 走道；無黑色隔板或跨越走道的側牆斜撐。
-- 黑色硬質防水擋板僅沿 X=0 與 X=28 的外邊界配置。
-- 共用立柱位於 X=7、14、21 的走道中心線；0.7m 是土壤間毛寬，
-  **不是扣除立柱後的連續機器人淨寬**。未提供機器人規格，通行尚未驗證。
-- 水溝改為半圓主槽與槽口小圓角，預設寬 0.3m、槽底低於畦面 0.15m，
-  不假設目前有積水；尚未加入坡度、排水出口、端部轉向區或地形沉陷。
+- 16 soil beds total 1,080m², 12 drains total 180m², and all boundary margins
+  total 140m².
+- Internal adjacent margins merge into three 0.7m passages. There are no black
+  partitions or side-wall braces crossing those passages.
+- Black rigid waterproof barriers exist only at the outer X=0 and X=28 edges.
+- Shared posts sit on passage centerlines at X=7, 14, and 21. The 0.7m value is
+  gross width between soil beds, not continuous robot clearance after posts.
+  Robot passage has not been verified because robot dimensions are not known.
+- Drains use a semicircular main channel with small rounded lips. Default width
+  is 0.3m and the bottom is 0.15m below the bed surface. The model does not
+  assume standing water, slope, outlets, turnarounds, or terrain settlement.
 
-未經現地丈量的建模假設：簷高 3m、拱架每 1m、立柱每 5m、拱管直徑
-48mm、柱徑 76mm、柱埋深 0.4m、水溝深為寬度一半、擋板高 0.35m 且厚 20mm、
-每棟前後開口各寬 2m、高 2.5m。開口是覆膜與門框的開放部分，未模擬門扇。
+Unsurveyed modeling assumptions: eave height 3m, arches every 1m, posts every
+5m, arch tube diameter 48mm, post diameter 76mm, post embed depth 0.4m, drain
+depth equal to half the width, barriers 0.35m high and 20mm thick, and front and
+rear openings of up to 2m wide and 2.5m high per bay. Openings are gaps in the
+film and door frame; door panels are not modeled.
 
-圓拱半跨 a=3.5m、起拱高 h=2m，半徑 `R=(a²+h²)/(2h)=4.0625m`。
-圓心高度 `5-R=0.9375m`；由同一圓弧公式計算拱管與覆膜截面。
-每棟有 51 道拱架，共 204 道；五條共用柱線各有 11 支立柱，共 55 支。
-構造包括拱管、肩部及屋脊／屋面縱向桁條、水平繫樑、屋面斜撐、外牆 X 撐、
-前後門框、連棟上方 U 型天溝。除栽培管跨接彈簧夾外，未細分其他扣件、螺栓、管壁厚度及基礎工程。
-這是依構造原理建立的參數模型，並非某張核定施工圖的逐件復刻或耐風計算書。
+The circular arch uses half span `a=3.5m`, rise `h=2m`, and radius
+`R=(a²+h²)/(2h)=4.0625m`. Center height is `5-R=0.9375m`; arch tubes and film
+sections use the same arc formula. Each bay has 51 arches, for 204 total; five
+shared post lines each have 11 posts, for 55 total. The structure includes arch
+tubes, shoulder and ridge purlins, horizontal tie beams, roof braces, outer-wall
+X braces, end frames, and connected-bay U gutters. Except for crop support cross
+spring clips, bolts, tube wall thickness, foundations, and other fasteners are
+not modeled. This is a parametric model based on structural principles, not an
+approved construction drawing or wind calculation.
 
-栽培鋼管依使用者指定：水溝兩側各往土壤 15cm（量至管中心），直徑 20mm，
-埋深 15cm、地上高度 3.15m（原高度再延伸 15cm），單管總長 3.30m。Z=0.25 到 49.45m，每 0.6m 一支，
-每列 83 支，24 列共 1,992 支；前端留 0.25m，尾端留 0.55m，保留完整 0.6m 間距。
+Crop support pipes follow the user-specified layout: each drain side has support
+pipes 15cm into the soil, measured to pipe center. The pipe diameter is 20mm,
+embed depth is 15cm, above-ground height is 3.15m, and total pipe length is
+3.30m. Along Z, pipes run from 0.25m to 49.45m at 0.6m spacing, for 83 pipes per
+row and 1,992 pipes across 24 rows. The front inset is 0.25m, rear inset is
+0.55m, and full 0.6m spacing is preserved.
 
-橫樑每 5m 與直立管位置不重合，因此增加 24 根 Ø20mm 縱向連接管，跨完整 50m。
-連接管朝土壤側偏移 20mm，中心高度 2.966m，與 Ø48mm 橫樑下緣相切；
-直立管與縱向管側面相切。1,992 個直立管接點及 264 個橫樑接點共 2,256 個跨接彈簧夾。
-夾具外形參考使用者照片，安裝拓樸依安稼 EJ-101 原廠交叉接點近照：兩條長臂跨過第一根管背面，
-U 形彎頭與兩個自由端扣鉤在交叉點兩側扣住第二根管。鋼絲徑 2.5mm 與彎曲比例為
-視覺建模假設，依 20×20mm／20×48mm 接合管徑生成，不宣稱是原廠尺寸或已驗證夾持力。
-「夾具近看」對準場內第一列的真實接點，可獨立關閉栽培鋼管以觀察鋼絲全形。
-幾何在 runtime 啟動及已套用設定改變時建立，夾具依棟與批次分組，圖層切換與導覽共用已建立輸出。
+Because 5m beams do not align with vertical pipes, the model adds 24 Ø20mm
+longitudinal connector pipes across the full 50m. Connectors offset 20mm toward
+the soil side, have center height 2.966m, touch the underside of Ø48mm beams,
+and touch the side of vertical pipes. The 1,992 vertical-pipe joints and 264
+beam joints create 2,256 cross spring clips. Clip shape references user photos
+and a cross-joint product image: two long arms pass behind the first pipe, while
+the U bend and two free-end hooks grip the second pipe on both sides of the
+crossing. Wire diameter 2.5mm and bend proportions are visual modeling
+assumptions for 20x20mm and 20x48mm tube junctions; they do not claim factory
+dimensions or verified holding force. The clip close-up targets the first real
+interior joint and can hide crop support pipes to expose the wire shape.
 
-沿 24 列鋼管配置縱向攀爬網，Z=0.25 至 49.45m，網底 Y=0.45m、網頂 Y=3m，與橫樑同高；直立管高出網頂 15cm。
-網目暫採 15×15cm、網繩直徑 2mm；網面位於竿子朝水溝側的表面。在每根竿子的網頂高度以一條
-束帶固定，共 1,992 條；束帶包含扁平帶身、鎖頭與短尾。這些為外觀與位置模型，尚未模擬網的下垂與植物載重。
-網與束帶有獨立圖層，由同一次支架組裝輸出建立，導覽時不重新生成。
+The climbing net runs along 24 pipe rows from Z=0.25m to 49.45m. Net bottom is
+Y=0.45m, net top is Y=3m, matching beam height, and vertical pipes extend 15cm
+above the net. Mesh size is temporarily 15x15cm with 2mm cord diameter. The net
+plane sits on the drain-facing side of the pipe. One tie is placed at net-top
+height on each pipe, for 1,992 ties; each tie has a flat band, lock head, and
+short tail. These are appearance and position models only; net sag and plant
+loads are not simulated. Net and ties have independent layers and are produced
+by the same support assembly output, with no regeneration during navigation.
 
-參考來源：
+References:
 
-- <a href="https://www.an-ja.com.tw/product-detail-335582.html" target="_blank" rel="noopener noreferrer">安稼企業 - 跨接彈簧夾</a>：橫向弧與縱向弧扣合交叉鋼管的原理；該頁商品尺寸不代表本模型的 20mm 接點適配規格。
+- <a href="https://www.an-ja.com.tw/product-detail-335582.html" target="_blank" rel="noopener noreferrer">An-Ja cross spring clip product page</a>:
+  reference for the transverse and longitudinal arcs gripping crossed steel
+  pipes. The product page dimensions are not asserted as this model's 20mm joint
+  compatibility.
+- <a href="https://www.moa.gov.tw/ws.php?id=13673" target="_blank" rel="noopener noreferrer">Taiwan Ministry of Agriculture greenhouse standard drawing overview</a>:
+  background on module structures made from posts, beams, roof members, and
+  braces, including round roofs and plastic-film greenhouses. This model uses
+  that construction classification but does not inherit the old notice's legal,
+  wind, or dimensional certification.
+- <a href="https://book.tndais.gov.tw/Brochure/tech171.pdf" target="_blank" rel="noopener noreferrer">Tainan District Agricultural Research and Extension Station technical bulletin 108-1 (No.171)</a>:
+  search metadata references steel-pipe plastic-film greenhouse drawings,
+  single-bay and connected-bay drawings, and longitudinal purlin positions. The
+  source PDF failed to load during the original work, so no detailed drawing
+  parity is claimed.
+- <a href="https://www.agriharvest.tw/archives/18812/" target="_blank" rel="noopener noreferrer">AgriHarvest greenhouse durability article</a>:
+  background on facility scale, connected-bay drainage, and simple versus
+  reinforced structures.
 
+`domain/drain-profile.ts` owns the drain profile used by both 3D geometry and
+the cross-section. For channel width `w`, lip radius is `r=min(0.01m,w/10)`,
+main semicircle radius is `R=w/2-r`, center is `(w/2,-r)`, and channel bottom
+depth is `w/2`. Quarter-round lips are tangent to both the bed surface and main
+channel side. Lips stay inside the declared drain width and do not intrude into
+soil or support-pipe placement. Each row extrudes the profile along the full bay
+depth; end caps fill only below the profile curve, leaving the channel mouth
+open. Foundation depth follows the deepest drain. A default 0.3m drain has main
+radius 0.14m, lip radius 0.01m, and total depth 0.15m.
 
-- <a href="https://www.moa.gov.tw/ws.php?id=13673" target="_blank" rel="noopener noreferrer">農業部 - 訂定農業用溫室標準圖樣及其結構計算書簡介</a>：
-  以柱、樑、屋頂構材及斜撐形成模組，區分圓頂與塑膠覆膜。本文採構造分類，
-  不將舊公告的法規、抗風條件或標準尺寸套用為本模型的認證。
-- <a href="https://book.tndais.gov.tw/Brochure/tech171.pdf" target="_blank" rel="noopener noreferrer">臺南區農業改良場 - 技術專刊 108-1（No.171）</a>：
-  搜尋索引可見鋼管塑膠布溫室名稱圖、單棟／連棟圖及縱向桁條位置；
-  本次來源站 PDF 讀取失敗，未宣稱已逐圖核對其施工細節。
-- <a href="https://www.agriharvest.tw/archives/18812/" target="_blank" rel="noopener noreferrer">農傳媒 - 溫室要合宜耐用，魔鬼藏在細節裡</a>：
-  提供設施規模、連棟排水與簡易／加強型結構的現場背景。
+## Ownership And Update Boundaries
 
-水道剖面由 `domain/drain-profile.ts` 共用於 3D 與橫截面示意。
-槽口總寬為 w，圓角半徑 r=min(0.01m,w/10)，主半圓半徑 R=w/2-r，
-圓心位於 (w/2,-r)，槽底深 w/2；兩側四分之一圓角與土面水平相切，
-與主槽側面垂直相切。圓角包含於水道指定寬度內，不侵占土壤或改變插竿定位。
-每列沿完整棟長擠出剖面，端面只填曲線以下，槽口保持開放；地基依最深水道下移。
-預設 0.3m 水道的主槽半徑 0.14m、槽口圓角 0.01m、總深 0.15m。
+`domain/farm-configuration.ts` owns settings shape, defaults, and value
+validation. `domain/greenhouse.ts` owns circular arch and frame formulas.
+`domain/mesh.ts` produces engine-neutral triangle meshes.
+`render-app/site-projection.ts` builds the scene once on startup, applied
+setting changes, and history changes that alter settings, then freezes output
+as admitted descriptors. Applying unchanged settings, empty history operations,
+and camera operations do not rebuild geometry.
 
-## 實作所有權與更新邊界
+Scene settings use Core SceneTree's `farm-configuration` component and Props as
+data owners. The app follows Asyra Design's Feature / `runTransaction` /
+`undoWithRenderPolicy` / `redoWithRenderPolicy` pattern. The form is draft UI,
+not a separate history stack. One Apply settings action validates and prepares
+geometry first, then writes all settings in one transaction. Invalid input does
+not write data, add history, or replace the scene. Undo and redo reproject from
+canonical Props. Settings, view, and zoom each subscribe independently; typing
+only updates the form draft.
 
-`domain/farm-configuration.ts` 擁有設定結構、預設值與有效值驗證；
-`domain/greenhouse.ts` 擁有圓拱與骨架公式。`domain/mesh.ts` 生成引擎中立三角網格；
-`render-app/site-projection.ts` 在啟動、套用或歷史切換造成設定改變時生成一次場景，
-將輸出凍結為 admitted descriptor。配置未改變的套用、空歷史與相機操作不重建。
+Editable fields include length, width, height,
+`strips: [{ kind: 'soil' | 'drain', width: number }]`, support-pipe distance
+from drains, front and rear insets, pipe extension above beam, and net top and
+bottom heights. The strip array supports add, delete, and reorder. Support pipes
+are only placed on soil sides adjacent to drains; layouts may start with soil,
+start with drain, or contain only soil. All heights are measured from the soil
+surface. Distance from drains is measured to pipe center. Bay width minus total
+strip width is split equally into side margins. Bay count is fixed at four.
+Beam/eave height is 60% of total height, with the remaining 40% as arch rise;
+rise must not exceed half-span width. Arches repeat every 1m, posts and beams
+every 5m, and non-integer lengths fill the tail station. End opening half-width
+is `min(1m, bay width/4)` and height is `min(2.5m, eave*5/6)`. Support-pipe
+spacing is fixed at 0.6m with 0.15m embed depth; front inset starts the first
+station, and rear inset is a minimum. Net top and bottom are separated by at
+least 5cm, and net top cannot exceed the pipe top. Supported ranges are depth
+2-200m, width 2-20m, height 2-10m, and 1-32 strip items, with at least 2cm side
+margins and at most 20,000 support pipes per scene. These are editing and
+rendering limits, not structural load or construction feasibility guarantees.
 
-場景設定使用 Core SceneTree 的 `farm-configuration` 元件與 Props 作為資料所有者。
-參考 Asyra Design 的 Feature / `runTransaction` / `undoWithRenderPolicy` 與
-`redoWithRenderPolicy` 模式；表單只是草稿，不另建歷史堆疊。
-一次「套用設定」先驗證並準備幾何，再以一次交易更新整份 settings；
-無效輸入不寫資料、不增加歷史、不替換場景。復原或重做由 canonical Props 重新投影。
-設定、檢視、縮放各自訂閱，打字只更新表單草稿。
+Buttons and Command-Z / Shift-Command-Z (Ctrl also supported) undo and redo
+applied settings. Native text and number input shortcuts remain available;
+camera and layer operations are not recorded in settings history. Apply, undo,
+and redo reframe with the current camera direction. Save and load are not
+implemented yet, so reloads return to defaults.
 
-可編輯欄位包括長寬高、`strips: [{ kind: 'soil' | 'drain', width: number }]`、
-鋼管距水道、前後留白、超出橫樑高度及拉網上下緣。陣列支援新增、刪除與排序，
-水道只有鄰接土壤的一側設竿；土壤開頭、水道開頭或全土壤皆可。
-所有高度由土壤表面起算，距水道量至鋼管中心。
-單棟寬度扣除陣列總寬後平均分配為左右留白；棟數固定四棟。
-橫樑／簷高為總高 60%，其餘 40% 為圓拱起拱高，起拱高不得大於半跨寬。
-拱架每 1m、立柱與橫樑每 5m，非整數長度在尾端補齊骨架。
-端面開口半寬為 min(1m, 單棟寬/4)，高度為 min(2.5m, 簷高×5/6)。
-鋼管固定間距 0.6m、埋深 0.15m；前端按指定值起排，尾端至少保留指定值。
-拉網上下緣相隔至少 5cm，上緣不超過竿頂；預設仍與橫樑同高。
-支援深度 2–200m、寬度 2–20m、高度 2–10m、1–32 個畦溝項目，
-兩側至少各留 2cm，且單次場景最多 20,000 根栽培鋼管。
-這些是編輯與渲染範圍，並非結構承載或施工可行性驗證。
+`runtime/bootstrap.ts` registers view and camera Features, managed runtime
+properties, the CUSTOM provider, `core.registerRenderLayer`, and size
+observers. Layer toggles flow through
+`Feature -> latest view state -> Core system property -> SpatialLayer`. Opacity
+and simultaneous layer updates read the latest state inside the Feature queue.
+Camera state is transient presentation data; the camera Feature submits camera
+projection only and does not mutate geometry or documents. These view operations
+do not write document history.
 
-按鈕與 ⌘Z / ⇧⌘Z（亦支援 Ctrl）復原／重做已套用的設定。
-文字與數值輸入中保留原生編輯快捷鍵；相機與圖層不記入設定歷史。
-套用、復原與重做後，以目前視角重新取景。尚未實作存檔或載入，重新整理會恢復預設值。
+Three.js exists only in app-owned `engine/`. `@asyra/render` and the custom
+engine meet through the public `@asyra/render-engine` contract and do not import
+one another. The custom provider command implementation, spatial descriptor, and
+contract tests adapt the existing Asyra Sim Three.js adapter patterns without
+copying its product data model, analysis pipeline, or workstation architecture.
+No cross-app runtime import is added. If future users need a shared engine, that
+can be evaluated as a separate package extraction.
 
-`runtime/bootstrap.ts` 透過 Core 註冊 view 與 camera Features、managed runtime
-properties、CUSTOM provider、`core.registerRenderLayer` 及尺寸觀察者。
-圖層切換走 `Feature -> 最新 view state -> Core system property -> SpatialLayer`；
-不透明度與同時到達的圖層修改在 Feature 佇列內讀取最新狀態。
-相機屬暫態呈現資料，camera Feature 只提交相機投影，不改幾何或文件。
-這些檢視操作不寫入文件歷史。
+The scene layer has `zIndex=0`. Core's demand-driven scheduler merges render
+requests; there is no permanent animation loop. Camera operations do not notify
+the control panel, reread the canonical document, or rebuild triangle geometry.
+Layer and material updates reuse admitted shapes. Disposal cancels frames,
+unsubscribes observables, clears ResizeObserver, unregisters the layer, releases
+GPU resources, and resets Core runtime.
 
-Three.js 只存在 app-owned `engine/`；`@asyra/render` 和它以
-`@asyra/render-engine` 公開契約相接，不直接依賴彼此。
-自訂 provider 的通用命令實作、空間 descriptor 與契約測試改編自專案既有
-Asyra Sim 的 Three.js adapter；沒有複製其產品資料模型、分析 pipeline 或工作站架構，
-也沒有新增跨 app 執行期 import。未來若另有使用者需要共用引擎，另行評估抽取套件。
+Camera behavior:
 
-場景層 zIndex=0。Core 的 demand-driven scheduler 合併呈現請求；沒有常駐動畫 loop。
-相機操作不通知控制面板、重讀整份 canonical document 或重建三角幾何。
-圖層與材質更新沿用 admitted shape；銷毀時取消 frame、退訂 observable、
-清除 ResizeObserver、unregister layer、釋放 GPU resources，再 reset Core runtime。
-相機操作：Shift + 左鍵拖曳依視角 100% 時的距離與畫布像素比例平移；
-相同拖曳維持相同場景位移，不隨 zoom 減速。相機與 target 同步移動，不旋轉。
-旋轉以平移後位於 viewport 中心的 target 為軸，保留其位置，不重設至場景原點。
-每個視角皆可放大到 10000%，以縮小視角放大影像，相機位置不前移，
-避免靠近夾具時穿進鋼管內部。倍率同時計入相機距離與視角的投影比例。
-⌘1（亦支援 Ctrl+1）將完整場景包圍盒置中，以當前方向解算透視投影，使四邊各至少
-保留 24 CSS px；範圍包含基座與隱藏圖層，不依每次顯示開關重新掃描幾何。
-⌘0（亦支援 Ctrl+0）恢復目前預設視角的基準相機距離，保留平移與旋轉；
-100% 表示該視角預設距離與視角，非 1px=1m。文字編輯時不攔截這兩組快捷鍵。
-縮放數字有獨立訂閱，只在百分比改變時更新；平移與旋轉不通知圖層面板。
-包圍盒在 runtime 建立及設定改變時計算一次，fit 僅計算八個角點，不重建幾何。
+- Shift + left drag pans by the distance-to-pixel ratio at 100% for the current
+  view. Equal drags keep equal scene displacement and do not slow down at higher
+  zoom. Camera and target move together without rotation.
+- Orbit uses the target at the viewport center after panning, preserving that
+  position instead of resetting to scene origin.
+- Every view can zoom to 10000% by narrowing the view angle rather than moving
+  the camera forward, avoiding entry into pipe interiors near the clip view.
+  Magnification combines camera distance and field-of-view projection.
+- Command-1 (Ctrl+1 also supported) centers the full scene bounding box with at
+  least 24 CSS px margins on every side. The fit includes base and hidden layers
+  and does not rescan geometry per visibility toggle.
+- Command-0 (Ctrl+0 also supported) restores the current view's baseline
+  distance while preserving pan and rotation. 100% means the preset distance and
+  field of view, not 1px=1m. Text editing does not intercept these shortcuts.
+- Zoom numbers have an independent subscription and update only when percentage
+  changes. Pan and orbit do not notify the layer panel. The bounding box is
+  computed once on runtime build and setting changes; fit only projects its
+  eight corners.
 
-工作區左側為圖層面板，右側為設定編輯器；canvas 上方兩個圖示按鈕獨立切換，
-面板朝左右外緣滑動收合。桌面以欄寬變化釋放 canvas 空間，ResizeObserver 更新投影。
-1100px 以下採覆蓋式抽屜，預設收合，展開一側時關閉另一側。面板內容各自捲動。
-面板關閉後隱藏且 inert，無法被鍵盤聚焦；遵守 reduced-motion 設定。
-收合不卸載編輯器或 canvas，因此草稿、場景與歷史保留；面板開關屬 UI 暫態，不記入 Undo。
-控制面板在使用點以 `useSyncExternalStore` 訂閱 view；沒有 React.memo。
+Layout behavior:
 
-基準視角由目前場景設定與視角模式共同決定，僅在兩者變更時重算，運鏡期間重用。
+- The workspace has a layer panel on the left and settings editor on the right.
+  Two icon buttons above the canvas toggle them independently.
+- Panels collapse toward the outer edges. On desktop, column width changes free
+  canvas space and ResizeObserver updates projection.
+- Below 1100px, panels are overlay drawers, default collapsed, and opening one
+  side closes the other. Panel content scrolls independently.
+- Closed panels are hidden and inert, cannot receive keyboard focus, and respect
+  reduced-motion settings.
+- Collapsing panels does not unmount the editor or canvas, so drafts, scene, and
+  history are retained. Panel open state is transient UI and is not recorded in
+  Undo.
+- Controls subscribe at point of use with `useSyncExternalStore`; there is no
+  React.memo.
 
-Canvas 取得焦點後，W/S 沿觀看方向前後推移，A/D 沿畫面左右移動，E/Q 沿畫面上下移動。
-相機與 target 同步平移，保持觀看方向。自由飛行不含角色、重力或碰撞。
-移動速度獨立於光學 zoom、target 距離與預設視角，初始 6m/s；Shift 加速 4 倍。
-畫面上的對數速度滑桿可調 0.01–60m/s，右鍵＋滾輪也可調速；不自動因視角切換而重設。
-速度屬相機 runtime 的暫態，有獨立訂閱，不重建幾何、不寫入文件或 Undo。
-按鍵端傳入每秒 1.5 個方向單位，相機端乘以 `movementSpeed / 1.5` 換算成公尺。
-單次按下使用 1/30 秒位移，按住依幀間時間連續移動，多軸方向正規化。
-只在持續按鍵期間排程 animation frame；放開、焦點離開、視窗失焦、頁面隱藏及卸載時停止。
-一般滾輪使用 Dolly：固定 target 與 FOV，只移動鏡頭，距離按 `exp(deltaPixels × 0.001)`
-縮放；倍率由實際距離與 FOV 共同計算並即時顯示。倍率限制 1–10000%，距離不得越過 near plane。
-Shift 將滾輪 delta 乘 4；line/page wheel delta 先換算成像素。
-WASD／Q/E 則維持鏡頭與 target 同步平移，獨立公尺速度不受 Dolly 或光學縮放影響。
-右鍵＋滾輪只調整速度 `speed × exp(-deltaPixels × 0.002)`，不移動鏡頭。
-Alt＋滾輪與 +/- 保留光學 zoom 至 10000%，不影響移動速度。
-右鍵拖曳固定相機位置原地轉頭，以世界向上方向避免側滾；左鍵繞 target 旋轉、
-Shift 左鍵 pan、方向鍵旋轉、⌘1/⌘0 與設定 Undo/Redo 保留。
-文字輸入時不攔截移動鍵，修飾快捷鍵也不觸發移動。
+The baseline camera is determined only by current scene settings and view mode,
+and is reused during camera motion.
 
-## 後續實作順序
+After the canvas is focused, W/S moves forward/back along view direction, A/D
+moves left/right in screen space, and E/Q moves up/down. Camera and target move
+together, preserving view direction. Free flight has no avatar, gravity, or
+collision. Movement speed is independent of optical zoom, target distance, and
+preset view, starts at 6m/s, and Shift accelerates by 4x. The logarithmic speed
+slider supports 0.01-60m/s; right mouse plus wheel also changes speed. Speed is
+transient camera runtime state with an independent subscription and does not
+rebuild geometry or write document/Undo state. Key input provides 1.5 direction
+units per second; camera logic multiplies by `movementSpeed / 1.5` to convert to
+metres. One key press uses 1/30 second movement, held keys use frame delta, and
+multi-axis direction is normalized. Animation frames are scheduled only while
+keys are held and stop on keyup, blur, window blur, page hide, and unload.
 
-### 1. 可編輯田區與可替換栽培
+Ordinary wheel uses Dolly: target and FOV stay fixed, the camera moves by
+`exp(deltaPixels * 0.001)`, and magnification is calculated live from distance
+and FOV. Magnification is limited to 1-10000%, and distance cannot cross the
+near plane. Shift multiplies wheel delta by 4; line/page deltas are converted to
+pixels. WASD/Q/E keep camera and target moving together at metre speed,
+independent of Dolly or optical zoom. Right mouse plus wheel changes only speed
+with `speed * exp(-deltaPixels * 0.002)`. Alt + wheel and +/- preserve optical
+zoom to 10000% and do not affect movement speed. Right drag looks from a fixed
+camera position using world-up to avoid roll; left drag orbits target, Shift
+left drag pans, arrow keys orbit, and Command-1/Command-0 plus settings
+Undo/Redo remain. Text inputs do not intercept movement keys, and modifier
+shortcuts do not start movement.
 
-目前尺寸、畦溝與拉網編輯及 Undo/Redo 已完成。下一個可交付範圍：
-將設定升級為可儲存、有版本的 FarmDocument，加入
-植株行列、支架與通行偏好；Core SceneTree 管身分／階層，Props 管驗證後的 domain
-資料。所有新增、調整、替換經 Feature 和 app API，以一次使用者操作對應一次 undo。
-儲存與載入採 app-owned 版本遷移，幾何仍是衍生輸出。
+## Follow-Up Implementation Order
 
-PlantingSystem 以 registry 註冊攀藤網、竹竿、彎曲鐵架等策略，輸入畦面、行距、
-支點及植株錨點，輸出栽培構件與碰撞幾何。植株身分不因更換支架而消失。
-將「靠水溝側種植／靠走道側種植」分為植株位置與作業通行策略，
-不把土壤、水溝或留白的材質硬編碼成可走／不可走。
+### 1. Editable Field And Replaceable Cultivation
 
-1914 小胡瓜與玉女小蕃茄先有獨立作物 profile：株型、支架需求、株距、成熟果實位置、
-允許採收動作及待測力學參數。資料須有來源與不確定度，不能用通用藤蔓數值冒充品種實測。
-驗收：替換三種支架、調整種植側、Undo/Redo、無效尺寸拒絕、存檔往返、
-只重建受影響棟／行，且能顯示最窄有效通行截面。
+Size, strip, net editing, and Undo/Redo are currently complete. The next
+deliverable upgrades settings into a savable, versioned FarmDocument with plant
+rows, supports, and travel preferences. Core SceneTree owns identity and
+hierarchy, while Props owns validated domain data. All additions, adjustments,
+and replacements go through Feature and app APIs so one user action maps to one
+undo commit. Save/load uses app-owned version migration; geometry remains
+derived output.
 
-### 2. 機器人運動與離線採收流程
+PlantingSystem should register trellis net, bamboo stake, bent metal frame, and
+similar strategies. Inputs are soil beds, row spacing, supports, and plant
+anchors; outputs are cultivation components and collision geometry. Plant
+identity must survive support replacement. Plant position and travel strategy
+must be separated instead of hardcoding soil, drain, or margin material as
+walkable or blocked.
 
-先建立 RobotDefinition：底盤外形、輪距、輪徑、質量、重心、手臂關節軸／限制、
-夾具、刀具與採收箱。GLB 僅作外觀；碰撞殼、質量與關節不由外觀自動臆測。
-所有姿態採明確座標轉換：田區 -> 底盤 -> 手臂 -> 工具；保留模型版本。
+The 1914 cucumber and Jade cherry tomato profiles should start as independent
+crop profiles with plant habit, support needs, spacing, mature fruit positions,
+allowed harvest actions, and measured or pending mechanical parameters. Data
+must include sources and uncertainty; generic vine values must not masquerade as
+cultivar measurements. Acceptance: replace three support types, adjust planting
+side, Undo/Redo, reject invalid dimensions, save/load round trip, rebuild only
+affected bays/rows, and display the narrowest valid passage section.
 
-由路徑規劃器產生候選路徑，運動學解算器產生手臂姿態，再經碰撞與通行檢查。
-選擇走道或水溝時同時檢查寬度、高差、轉彎空間及立柱，而非僅檢查中心線。
-採收順序為接近、觀測、定位、伸臂、夾持／剪切、收回、置入容器、離開；
-每步有輸入、退出條件、失敗原因與可重播事件。
+### 2. Robot Motion And Offline Harvest Flow
 
-Worker 擁有固定步長的模擬時間與計算，UI 只取最新顯示 frame；場景靜態幾何及空間索引
-依幾何 revision 生成一次，姿態變化只更新動態碰撞包圍體。取消和文件替換淘汰舊結果。
-驗收：無實機仍能完整執行一趟、停止／重播、關節限制拒絕、柱碰撞與窄水溝拒絕、
-可重現相同種子／版本的運動結果。此階段只宣稱運動與幾何接觸結果。
+Define RobotDefinition first: chassis shape, wheelbase, wheel diameter, mass,
+center of gravity, arm joint axes and limits, gripper, cutter, and harvest bin.
+GLB is appearance only; collision shells, mass, and joints are not inferred from
+appearance. All poses use explicit coordinate transforms:
+field -> chassis -> arm -> tool, with model version retained.
 
-### 3. 植株損傷、土壤與採收箱動力學
+A path planner produces candidate routes, a kinematics solver produces arm
+poses, and collision/clearance checks validate them. Choosing a passage or drain
+checks width, height difference, turn space, and posts, not just centerlines.
+The harvest sequence is approach, observe, localize, extend arm, grip/cut,
+retract, place into container, and leave. Each step has inputs, exit conditions,
+failure reasons, and replayable events.
 
-在運動模型通過後，再評估物理引擎；新增依賴需另獲使用者批准。
-先將莖、枝、葉柄建成節點與彈性連接，量測彎曲剛度、摩擦及斷裂閾值，
-再評估軟體／有限元素的必要性。檢查連續運動中的接觸與拉扯，不只看兩端姿態。
+A worker owns fixed-step simulation time and compute. UI consumes only the
+latest display frame. Static scene geometry and spatial indexes are built once
+per geometry revision; pose changes update only dynamic collision bounds.
+Cancellation and document replacement retire old results. Acceptance: run a
+complete offline pass without hardware, stop/replay, reject joint-limit
+violations, reject post collisions and narrow drains, and reproduce motion
+results with the same seed/version. This stage claims only motion and geometric
+contact results.
 
-地面 profile 包括坡度、含水量、摩擦及輪下沉陷；底盤動力學計算支撐區域、
-重心投影、加速度與傾覆。採收箱建模固定方式、容器邊緣、有效載荷及移動中的
-果實／箱體作用；不能用靜態重心測試宣稱滿載轉彎不會打翻。
+### 3. Plant Damage, Soil, And Harvest Bin Dynamics
 
-驗收以實驗校正為主：枝條拉斷試驗、夾持損傷、不同土壤輪跡／下陷、載荷轉向與
-緊急停止。未校正的結果明確標示為風險估計；缺參數時回報不可判定。
+After the motion model passes, evaluate whether a physics engine is needed; new
+dependencies require separate user approval. First model stems, branches, and
+petioles as nodes with elastic connections, measure bending stiffness, friction,
+and break thresholds, then evaluate soft-body or finite-element needs. Check
+contact and pulling across continuous motion, not just endpoint poses.
 
-### 4. 實機監控與模擬對照
+Ground profiles include slope, water content, friction, and wheel sinkage.
+Chassis dynamics compute support region, center-of-gravity projection,
+acceleration, and rollover. Harvest-bin modeling includes fixture method,
+container edges, payload, and fruit/bin interaction during motion; static center
+of gravity cannot claim that a loaded turn will not tip.
 
-以 app adapter 接收 robot ID、schema version、時間戳、座標框架、序號與品質旗標，
-將 ROS 2 或設備 WebSocket 的訊息轉為中立遙測；具體協定待硬體選定。
-實機觀測與離線預測分開保留，使用相同場景及姿態投影，不互相覆蓋。
-過期、掉序、斷線、時間不同步與定位不可信均有清楚狀態。
+Acceptance is experiment-calibrated: branch break tests, gripping damage,
+different soil tracks and sinkage, payload turning, and emergency stops.
+Uncalibrated results must be clearly marked as risk estimates; missing
+parameters return indeterminate.
 
-先上線只讀監控、事件時間軸、故障位置與重播，再獨立設計設備命令授權、
-互鎖與確認。瀏覽器模擬不能取代硬體急停。警報依實測門檻與來源可追溯事件產生。
-驗收：斷線與重連、過期 frame、亂序資料、版本不合、重播對齊、模擬／實測偏差。
+### 4. Live Robot Monitoring And Simulation Comparison
 
-## 驗證與啟動
+An app adapter receives robot ID, schema version, timestamp, coordinate frame,
+sequence number, and quality flags, then converts ROS 2 or device WebSocket
+messages into neutral telemetry. The concrete protocol waits for hardware
+selection. Live observations and offline predictions remain separate, using the
+same scene and pose projection without overwriting one another. Stale,
+out-of-order, disconnected, time-unsynced, and untrusted positioning states are
+explicit.
 
-由 worktree 根目錄執行：
+Start with read-only monitoring, event timeline, fault location, and replay.
+Device command authorization, interlocks, and confirmation are designed
+separately. Browser simulation cannot replace hardware emergency stops. Alerts
+come from measured thresholds and traceable source events. Acceptance:
+disconnect/reconnect, stale frames, out-of-order data, version mismatch, replay
+alignment, and simulated/measured deviation.
+
+## Verification And Startup
+
+Run from the worktree root:
 
 ```bash
 yarn workspace @asyra/fieldscope dev
@@ -250,14 +357,19 @@ yarn lint:naming
 yarn gen:turbo:check
 ```
 
-先依 monorepo 既有流程安裝鎖檔依賴並建立 Framework packages。
-首次啟動將 `.env.example` 複製為 app 內 `.env`；`APP_URL` 是 Vite 與 Playwright
-共用的唯一 origin 設定，範例使用 `http://127.0.0.1:5178`。不得自動另找埠號。
-E2E 使用已安裝 Chrome，不下載瀏覽器；測試由一個 worker 執行，全域限時 180 秒，
-測試 server 由 Playwright 管理生命週期。若已有服務，先核對它是本 worktree。
+Install lockfile dependencies and build Framework packages through the existing
+monorepo flow first. On first startup, copy `.env.example` to the app-local
+`.env`; `APP_URL` is the only shared Vite and Playwright origin setting, with
+`http://127.0.0.1:5178` as the example. Do not auto-select a different port.
+E2E uses installed Chrome and does not download browsers. Tests run with one
+worker and a 180-second global timeout. Playwright owns the test server
+lifecycle; if a service already exists, verify it belongs to this worktree.
 
-正式測試覆蓋尺寸閉合、拱頂／端點、構件數、下凹深度、外側擋板範圍、
-CUSTOM 引擎契約、幾何 admission、正常 runtime 下相機不通知 UI 且只 build 一次、
-連續修改不覆蓋、非法值拒絕及 disposal。E2E 使用真實 app 路徑，
-另覆蓋參數化端點、typed 畦溝、單次交易歷史及 rebuild 次數；
-保存編輯後設定、透視、端面、俯視、內部與窄螢幕畫面；數值正確性以 source-space 測試為準。
+Formal tests cover dimension closure, arch peaks and endpoints, component
+counts, recessed drain depth, outer barrier extents, CUSTOM engine contract,
+geometry admission, camera operations not notifying UI under normal runtime,
+single build per settings revision, consecutive edits not overwriting each
+other, invalid value rejection, and disposal. E2E uses the real app path and
+also covers parameterized endpoints, typed strips, single-transaction history,
+rebuild counts, saved edited settings, perspective/front/top/inside/narrow
+viewport screenshots, and source-space numeric correctness.

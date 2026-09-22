@@ -42,39 +42,43 @@ export function validateConfiguration(
   const range = (name: string, n: number, min: number, max: number) => {
     if (!Number.isFinite(n) || n < min || n > max)
       throw new Error(
-        `${name}必須介於 ${Number(min.toFixed(3))} 與 ${Number(max.toFixed(3))} 公尺`
+        `${name} must be between ${Number(min.toFixed(3))} and ${Number(max.toFixed(3))} metres`
       )
   }
-  range('縱向深度', value.length, 2, 200)
-  range('單棟寬度', value.width, 2, 20)
-  range('總高度', value.height, 2, 10)
+  range('depth', value.length, 2, 200)
+  range('single bay width', value.width, 2, 20)
+  range('total height', value.height, 2, 10)
   if (
     !Array.isArray(value.strips) ||
     !value.strips.length ||
     value.strips.length > 32
   )
-    throw new Error('畦溝配置需要 1 至 32 個項目')
+    throw new Error('strip layout requires 1 to 32 items')
   value.strips.forEach((strip) => {
     if (strip.kind !== 'soil' && strip.kind !== 'drain')
-      throw new Error('畦溝種類必須是土壤或水道')
-    range('畦溝寬度', strip.width, 0.05, 20)
+      throw new Error('strip type must be soil or drain')
+    range('strip width', strip.width, 0.05, 20)
   })
   const site = configurationSite(value)
   if (site.margin < 0.02)
-    throw new Error('畦溝總寬必須小於單棟寬度，左右至少各留 2cm')
+    throw new Error(
+      'total strip width must be less than single bay width, with at least 2cm on each side'
+    )
   if (value.height - site.eave > site.width / 2)
-    throw new Error('拱頂起拱高度不可超過半跨寬；請增加寬度或降低高度')
-  range('鋼管距水道', value.soilInset, 0.01, 5)
-  range('前端留白', value.startInset, 0, value.length)
-  range('尾端留白', value.endInset, 0, value.length)
+    throw new Error(
+      'arch rise cannot exceed the half span; increase width or lower height'
+    )
+  range('pipe distance from drain', value.soilInset, 0.01, 5)
+  range('front inset', value.startInset, 0, value.length)
+  range('rear inset', value.endInset, 0, value.length)
   if (value.startInset + value.endInset > value.length - 0.6)
-    throw new Error('前後留白之間至少需保留 60cm')
-  range('鋼管超出橫樑', value.topExtension, 0, 2)
+    throw new Error('front and rear insets must leave at least 60cm')
+  range('pipe extension above beam', value.topExtension, 0, 2)
   if (site.eave + value.topExtension >= site.height)
-    throw new Error('栽培鋼管頂端必須低於拱頂')
-  range('網底高度', value.netBottom, 0, site.eave + value.topExtension)
+    throw new Error('crop support pipe top must be below the arch peak')
+  range('net bottom height', value.netBottom, 0, site.eave + value.topExtension)
   range(
-    '網頂高度',
+    'net top height',
     value.netTop,
     value.netBottom + 0.05,
     site.eave + value.topExtension
@@ -86,7 +90,9 @@ export function validateConfiguration(
         value.strips[i + 1]?.kind === 'drain') &&
       strip.width < value.soilInset + 0.01
     )
-      throw new Error('水道旁土壤寬度不足以容納鋼管與指定距離')
+      throw new Error(
+        'soil beside the drain is too narrow for the support pipe and requested distance'
+      )
   })
   const sides = value.strips.reduce(
     (sum, strip, i) =>
@@ -105,7 +111,7 @@ export function validateConfiguration(
     20000
   )
     throw new Error(
-      '目前單次場景最多支援 20,000 根栽培鋼管，請縮短深度或減少水道'
+      'the current scene supports at most 20,000 crop support pipes; reduce depth or drain count'
     )
   return Object.freeze({
     ...value,

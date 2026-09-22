@@ -4,8 +4,8 @@ test('focused canvas moves with W/S and right-drag looks around without changing
   page
 }, testInfo) => {
   await page.goto('/')
-  await expect(page.getByText('空間模型已就緒')).toBeVisible()
-  await page.getByRole('button', { name: '夾具近看', exact: true }).click()
+  await expect(page.getByText('Spatial model ready')).toBeVisible()
+  await page.getByRole('button', { name: 'Clip close-up', exact: true }).click()
   const scene = page.getByTestId('scene')
   const canvas = page.locator('canvas')
   await scene.focus()
@@ -34,12 +34,12 @@ test('focused canvas moves with W/S and right-drag looks around without changing
     path: testInfo.outputPath('flight-look.png'),
     fullPage: true
   })
-  await page.getByLabel('溫室縱向深度', { exact: true }).focus()
+  await page.getByLabel('Greenhouse depth', { exact: true }).focus()
   const editing = await canvas.screenshot()
   await page.keyboard.press('w')
   expect((await canvas.screenshot()).equals(editing)).toBe(true)
   await expect(
-    page.getByRole('button', { name: '復原 ⌘Z', exact: true })
+    page.getByRole('button', { name: 'Undo ⌘Z', exact: true })
   ).toBeDisabled()
 })
 
@@ -47,7 +47,7 @@ test('wheel travels in world space and right-wheel changes speed without moving 
   page
 }) => {
   await page.goto('/')
-  await expect(page.getByText('空間模型已就緒')).toBeVisible()
+  await expect(page.getByText('Spatial model ready')).toBeVisible()
   const scene = page.getByTestId('scene')
   const canvas = page.locator('canvas')
   await canvas.hover()
@@ -61,7 +61,7 @@ test('wheel travels in world space and right-wheel changes speed without moving 
   const cameraImage = () =>
     canvas.screenshot({
       mask: [
-        page.getByRole('slider', { name: '鏡頭移動速度' }),
+        page.getByRole('slider', { name: 'Camera movement speed' }),
         page.getByTestId('movement-speed')
       ]
     })
@@ -73,13 +73,13 @@ test('wheel travels in world space and right-wheel changes speed without moving 
   await page.keyboard.press('Shift')
   await expect(page.getByTestId('movement-speed')).toHaveText('13.35 m/s')
   expect((await cameraImage()).equals(traveled)).toBe(true)
-  await page.getByTitle('恢復 100%（⌘0）').click()
+  await page.getByTitle('Restore 100% (⌘0)').click()
   await canvas.hover()
   await page.keyboard.down('Alt')
   await page.mouse.wheel(0, -Math.log(15.21) * 1000)
   await page.keyboard.up('Alt')
   await expect(page.getByTestId('zoom-percent')).toHaveText('1521%')
   await expect(page.getByTestId('movement-speed')).toHaveText('13.35 m/s')
-  await page.getByTitle('恢復 100%（⌘0）').click()
+  await page.getByTitle('Restore 100% (⌘0)').click()
   await expect(page.getByTestId('movement-speed')).toHaveText('13.35 m/s')
 })

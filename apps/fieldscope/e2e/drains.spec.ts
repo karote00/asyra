@@ -7,16 +7,20 @@ test('rounded drain mouth is visible through the real front camera', async ({
   page
 }, testInfo) => {
   await page.goto('/')
-  await expect(page.getByText('空間模型已就緒')).toBeVisible()
-  await page.getByRole('button', { name: '收合編輯面板', exact: true }).click()
-  await page.getByLabel('塑膠覆膜', { exact: true }).uncheck()
-  await page.getByRole('button', { name: '收合圖層面板', exact: true }).click()
+  await expect(page.getByText('Spatial model ready')).toBeVisible()
+  await page
+    .getByRole('button', { name: 'Collapse editor panel', exact: true })
+    .click()
+  await page.getByLabel('Plastic film', { exact: true }).uncheck()
+  await page
+    .getByRole('button', { name: 'Collapse layer panel', exact: true })
+    .click()
   await expect
     .poll(
       async () => (await page.getByTestId('scene').boundingBox())?.width ?? 0
     )
     .toBeGreaterThan(1300)
-  await page.getByRole('button', { name: '端面', exact: true }).click()
+  await page.getByRole('button', { name: 'Front', exact: true }).click()
   const scene = page.getByTestId('scene')
   const bounds = await scene.boundingBox()
   if (!bounds) throw new Error('Missing viewport')
@@ -55,6 +59,8 @@ test('rounded drain mouth is visible through the real front camera', async ({
     fullPage: true
   })
   await expect(
-    page.getByRole('img', { name: '土壤與半圓水道圓角的等比例剖面' })
+    page.getByRole('img', {
+      name: 'scaled section of soil beds and rounded semicircular drains'
+    })
   ).toBeVisible()
 })

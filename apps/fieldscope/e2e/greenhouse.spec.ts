@@ -20,10 +20,10 @@ test('real greenhouse route exposes the structure, section, inner aisle and resp
   const errors: string[] = []
   page.on('pageerror', (error) => errors.push(error.message))
   await page.goto('/')
-  await expect(page.getByText('空間模型已就緒')).toBeVisible()
+  await expect(page.getByText('Spatial model ready')).toBeVisible()
   await expect(page.locator('canvas')).toHaveCount(1)
   await expect(
-    page.getByRole('heading', { name: '每棟橫向配置' })
+    page.getByRole('heading', { name: 'Cross-bay layout' })
   ).toBeVisible()
   await page.evaluate(
     () =>
@@ -36,11 +36,13 @@ test('real greenhouse route exposes the structure, section, inner aisle and resp
     fullPage: true,
     animations: 'disabled'
   })
-  await page.getByLabel('塑膠覆膜', { exact: true }).uncheck()
-  await expect(page.getByLabel('塑膠覆膜', { exact: true })).not.toBeChecked()
-  await page.getByRole('button', { name: '端面', exact: true }).click()
+  await page.getByLabel('Plastic film', { exact: true }).uncheck()
   await expect(
-    page.getByRole('button', { name: '端面', exact: true })
+    page.getByLabel('Plastic film', { exact: true })
+  ).not.toBeChecked()
+  await page.getByRole('button', { name: 'Front', exact: true }).click()
+  await expect(
+    page.getByRole('button', { name: 'Front', exact: true })
   ).toHaveAttribute('aria-pressed', 'true')
   await page.evaluate(
     () =>
@@ -53,9 +55,9 @@ test('real greenhouse route exposes the structure, section, inner aisle and resp
     fullPage: true,
     animations: 'disabled'
   })
-  await page.getByRole('button', { name: '俯視', exact: true }).click()
+  await page.getByRole('button', { name: 'Top', exact: true }).click()
   await expect(
-    page.getByRole('button', { name: '俯視', exact: true })
+    page.getByRole('button', { name: 'Top', exact: true })
   ).toHaveAttribute('aria-pressed', 'true')
   await page.evaluate(
     () =>
@@ -68,9 +70,11 @@ test('real greenhouse route exposes the structure, section, inner aisle and resp
     fullPage: true,
     animations: 'disabled'
   })
-  await page.getByRole('button', { name: '走道內部', exact: true }).click()
+  await page
+    .getByRole('button', { name: 'Inside passage', exact: true })
+    .click()
   await expect(
-    page.getByRole('button', { name: '走道內部', exact: true })
+    page.getByRole('button', { name: 'Inside passage', exact: true })
   ).toHaveAttribute('aria-pressed', 'true')
   await page.evaluate(
     () =>
@@ -87,11 +91,15 @@ test('real greenhouse route exposes the structure, section, inner aisle and resp
   await scene.focus()
   await page.keyboard.press('ArrowRight')
   await page.keyboard.press('+')
-  await page.getByRole('button', { name: '透視', exact: true }).click()
-  await page.getByLabel('塑膠覆膜', { exact: true }).check()
+  await page.getByRole('button', { name: 'Perspective', exact: true }).click()
+  await page.getByLabel('Plastic film', { exact: true }).check()
   await page.setViewportSize({ width: 390, height: 844 })
-  await page.getByRole('button', { name: '展開圖層面板', exact: true }).click()
-  await expect(page.getByLabel('完整鋼架', { exact: true })).toBeVisible()
+  await page
+    .getByRole('button', { name: 'Expand layer panel', exact: true })
+    .click()
+  await expect(
+    page.getByLabel('Full steel frame', { exact: true })
+  ).toBeVisible()
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth
@@ -115,8 +123,8 @@ test('film is visible by default and Shift drag, Command 1 and Command 0 operate
   page
 }, testInfo) => {
   await page.goto('/')
-  await expect(page.getByText('空間模型已就緒')).toBeVisible()
-  await expect(page.getByLabel('覆膜不透明度', { exact: true })).toHaveValue(
+  await expect(page.getByText('Spatial model ready')).toBeVisible()
+  await expect(page.getByLabel('Film opacity', { exact: true })).toHaveValue(
     '60'
   )
   const settle = () =>
@@ -129,10 +137,10 @@ test('film is visible by default and Shift drag, Command 1 and Command 0 operate
   await settle()
   const canvas = page.locator('canvas')
   const covered = await canvas.screenshot()
-  await page.getByLabel('塑膠覆膜', { exact: true }).uncheck()
+  await page.getByLabel('Plastic film', { exact: true }).uncheck()
   await settle()
   expect((await canvas.screenshot()).equals(covered)).toBe(false)
-  await page.getByLabel('塑膠覆膜', { exact: true }).check()
+  await page.getByLabel('Plastic film', { exact: true }).check()
   const scene = page.getByTestId('scene')
   const bounds = await scene.boundingBox()
   if (!bounds) throw new Error('Missing canvas bounds')
@@ -172,7 +180,7 @@ test('film is visible by default and Shift drag, Command 1 and Command 0 operate
   await page.keyboard.down('Alt')
   await page.mouse.wheel(0, -300)
   await page.keyboard.up('Alt')
-  await page.getByTitle('適合畫面（⌘1）').click()
+  await page.getByTitle('Fit view (⌘1)').click()
   // Compare both routes with the same canvas focus outline.
   await scene.focus()
   await page.keyboard.press('Shift')
@@ -213,11 +221,11 @@ test('spring clips are inspectable at the real upright connection', async ({
   page
 }, testInfo) => {
   await page.goto('/')
-  await expect(page.getByText('空間模型已就緒')).toBeVisible()
-  await page.getByLabel('塑膠覆膜', { exact: true }).uncheck()
-  await page.getByRole('button', { name: '夾具近看', exact: true }).click()
+  await expect(page.getByText('Spatial model ready')).toBeVisible()
+  await page.getByLabel('Plastic film', { exact: true }).uncheck()
+  await page.getByRole('button', { name: 'Clip close-up', exact: true }).click()
   await expect(
-    page.getByRole('button', { name: '夾具近看', exact: true })
+    page.getByRole('button', { name: 'Clip close-up', exact: true })
   ).toHaveAttribute('aria-pressed', 'true')
   const settle = () =>
     page.evaluate(
@@ -232,13 +240,13 @@ test('spring clips are inspectable at the real upright connection', async ({
     fullPage: true
   })
   const withClip = await page.locator('canvas').screenshot()
-  await page.getByLabel('跨接彈簧夾', { exact: true }).uncheck()
+  await page.getByLabel('Cross spring clips', { exact: true }).uncheck()
   await settle()
   expect((await page.locator('canvas').screenshot()).equals(withClip)).toBe(
     false
   )
-  await page.getByLabel('跨接彈簧夾', { exact: true }).check()
-  await page.getByLabel('栽培鋼管', { exact: true }).uncheck()
+  await page.getByLabel('Cross spring clips', { exact: true }).check()
+  await page.getByLabel('Crop support pipes', { exact: true }).uncheck()
   await settle()
   await page.screenshot({
     path: testInfo.outputPath('wire-profile.png'),
@@ -264,9 +272,9 @@ test('trellis net and top cable ties are visible and independently controlled', 
   page
 }, testInfo) => {
   await page.goto('/')
-  await expect(page.getByText('空間模型已就緒')).toBeVisible()
-  await page.getByLabel('塑膠覆膜', { exact: true }).uncheck()
-  await page.getByRole('button', { name: '夾具近看', exact: true }).click()
+  await expect(page.getByText('Spatial model ready')).toBeVisible()
+  await page.getByLabel('Plastic film', { exact: true }).uncheck()
+  await page.getByRole('button', { name: 'Clip close-up', exact: true }).click()
   const canvas = page.locator('canvas')
   await canvas.hover()
   await page.keyboard.down('Alt')
@@ -285,16 +293,18 @@ test('trellis net and top cable ties are visible and independently controlled', 
     path: testInfo.outputPath('net-top.png'),
     fullPage: true
   })
-  await page.getByLabel('攀爬拉網', { exact: true }).uncheck()
+  await page.getByLabel('Climbing net', { exact: true }).uncheck()
   await settle()
   expect((await canvas.screenshot()).equals(withNet)).toBe(false)
-  await page.getByLabel('攀爬拉網', { exact: true }).check()
+  await page.getByLabel('Climbing net', { exact: true }).check()
   const withTies = await canvas.screenshot()
-  await page.getByLabel('網頂束帶', { exact: true }).uncheck()
+  await page.getByLabel('Net top ties', { exact: true }).uncheck()
   await settle()
   expect((await canvas.screenshot()).equals(withTies)).toBe(false)
-  await page.getByLabel('網頂束帶', { exact: true }).check()
-  await page.getByRole('button', { name: '走道內部', exact: true }).click()
+  await page.getByLabel('Net top ties', { exact: true }).check()
+  await page
+    .getByRole('button', { name: 'Inside passage', exact: true })
+    .click()
   await settle()
   await page.screenshot({
     path: testInfo.outputPath('net-rows.png'),
@@ -318,8 +328,8 @@ test('joint inspection reaches 10000 percent and restores the baseline', async (
   page
 }, testInfo) => {
   await page.goto('/')
-  await expect(page.getByText('空間模型已就緒')).toBeVisible()
-  await page.getByRole('button', { name: '夾具近看', exact: true }).click()
+  await expect(page.getByText('Spatial model ready')).toBeVisible()
+  await page.getByRole('button', { name: 'Clip close-up', exact: true }).click()
   const scene = page.getByTestId('scene')
   await scene.hover()
   await page.keyboard.down('Alt')

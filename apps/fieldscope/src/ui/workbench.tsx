@@ -16,11 +16,11 @@ import {
 } from '../render-app/site-projection'
 
 const CAMERA_LABELS: Record<CameraMode, string> = {
-  overview: '透視',
-  top: '俯視',
-  front: '端面',
-  inside: '走道內部',
-  joint: '夾具近看'
+  overview: 'Perspective',
+  top: 'Top',
+  front: 'Front',
+  inside: 'Inside passage',
+  joint: 'Clip close-up'
 }
 
 function Brand() {
@@ -43,7 +43,7 @@ function Brand() {
       </div>
       <div>
         <div className="text-lg font-semibold tracking-tight">
-          田巡 <span className="font-normal">FieldScope</span>
+          <span className="font-normal">FieldScope</span>
         </div>
         <div className="text-[10px] tracking-[0.19em] text-[#7a8779]">
           FARM ROBOTICS WORKSPACE
@@ -61,12 +61,14 @@ export function Workbench() {
         <header className="flex min-h-20 flex-wrap items-center justify-between gap-4 border-b border-[#dce1d6] bg-[#fafbf7] px-5 py-4 lg:px-8">
           <Brand />
           <div className="flex items-center gap-7 text-sm">
-            <span className="font-medium text-[#305d44]">溫室工作站</span>
+            <span className="font-medium text-[#305d44]">
+              Greenhouse workstation
+            </span>
             <span className="hidden text-[#8d968d] sm:inline">
-              採收機器人監控
+              Harvest robot monitor
             </span>
             <span className="rounded-full border border-[#dce4cf] bg-[#edf2e5] px-3 py-1 text-xs text-[#62764e]">
-              場景建置階段
+              Scene build stage
             </span>
           </div>
         </header>
@@ -77,10 +79,11 @@ export function Workbench() {
                 FIELD ENVIRONMENT / 01
               </div>
               <h1 className="text-2xl font-semibold tracking-tight">
-                從一座溫室，開始理解採收。
+                Start understanding harvest from one greenhouse.
               </h1>
               <p className="mt-2 text-sm text-[#818b7d]">
-                四連棟塑膠布溫室的空間原型，為未來每一次採收建立共同座標。
+                A spatial prototype of a four-bay plastic-film greenhouse gives
+                future harvest runs a shared coordinate frame.
               </p>
             </div>
             <div className="flex gap-6 text-right">
@@ -93,7 +96,7 @@ export function Workbench() {
             <section className="rounded-2xl border border-[#dde3d8] bg-[#fafbf7] p-5">
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-sm font-semibold">
-                  接下來，讓田區成為可測試的環境
+                  Next, make the field testable
                 </h2>
                 <span className="text-[10px] tracking-widest text-[#8c967f]">
                   ROADMAP
@@ -102,25 +105,25 @@ export function Workbench() {
               <div className="grid grid-cols-3 gap-4 text-xs">
                 <Roadmap
                   step="02"
-                  title="可替換栽培"
-                  text="攀藤網、竹竿、彎曲鐵架與作物行距。"
+                  title="Replaceable cultivation"
+                  text="Trellis nets, bamboo stakes, bent metal frames, and crop spacing."
                 />
                 <Roadmap
                   step="03"
-                  title="採收模擬"
-                  text="路徑、手臂、枝葉接觸與載運穩定性。"
+                  title="Harvest simulation"
+                  text="Paths, arms, foliage contact, and load stability."
                 />
                 <Roadmap
                   step="04"
-                  title="實機監控"
-                  text="同步姿態、任務事件、異常與重播。"
+                  title="Robot monitoring"
+                  text="Synchronized poses, task events, faults, and replay."
                 />
               </div>
             </section>
           </div>
           <footer className="mt-5 flex flex-wrap justify-between gap-2 text-[11px] text-[#8b9487]">
-            <span>田巡 FieldScope - 以真實尺度，建立採收的下一步。</span>
-            <span>Asyra + Three.js - 公尺座標</span>
+            <span>FieldScope - Build the next harvest step at real scale.</span>
+            <span>Asyra + Three.js - metre coordinates</span>
           </footer>
         </main>
       </div>
@@ -134,10 +137,10 @@ function FarmMetrics() {
       <Metric
         value={(config.width * 4 * config.length).toLocaleString()}
         unit="m²"
-        label="溫室占地"
+        label="Greenhouse footprint"
       />
-      <Metric value="4" unit="棟" label="相連溫室" />
-      <Metric value={config.height.toFixed(1)} unit="m" label="圓拱最高點" />
+      <Metric value="4" unit="bays" label="connected bays" />
+      <Metric value={config.height.toFixed(1)} unit="m" label="arch peak" />
     </>
   )
 }
@@ -310,9 +313,9 @@ function SceneWorkspace({
         />
         <span
           className="text-[11px] text-[#718268]"
-          title="點擊 canvas 後：W/S 前後、A/D 左右、E/Q 上下；按住 Shift 加速"
+          title="After focusing the canvas: W/S forward and back, A/D left and right, E/Q up and down; hold Shift to accelerate"
         >
-          WASD 移動 - Q/E 升降 - Shift 加速
+          WASD move - Q/E lift - Shift accelerate
         </span>
         <PanelToggle
           side="right"
@@ -333,14 +336,14 @@ function SceneWorkspace({
           {runtime ? (
             <Controls runtime={runtime} onError={setError} />
           ) : (
-            <p className="p-5 text-xs">準備場景控制項…</p>
+            <p className="p-5 text-xs">Preparing scene controls...</p>
           )}
         </div>
       </div>
       <div className="workspace-canvas relative min-w-0 bg-[#e8ede4]">
         <div className="pointer-events-none absolute left-5 top-5 z-10">
           <div className="mb-1 text-xs font-semibold text-[#4f624b]">
-            四連棟溫室
+            Four-bay greenhouse
           </div>
           <div className="font-mono text-[10px] tracking-wide text-[#82917c]">
             <SceneDimensions />
@@ -349,7 +352,7 @@ function SceneWorkspace({
         <div
           ref={host}
           data-testid="scene"
-          aria-label="可旋轉的四連棟溫室三維場景"
+          aria-label="rotatable 3D scene of a four-bay greenhouse"
           role="application"
           tabIndex={0}
           className="h-[440px] outline-offset-[-3px] sm:h-[540px] xl:h-[610px]"
@@ -403,7 +406,7 @@ function SceneWorkspace({
         />
         {!runtime && !error && (
           <div className="absolute inset-0 flex items-center justify-center text-sm text-[#75836e]">
-            正在建立溫室場景…
+            Building greenhouse scene...
           </div>
         )}
         {error && (
@@ -411,18 +414,18 @@ function SceneWorkspace({
             role="alert"
             className="absolute inset-6 flex items-center justify-center rounded-xl bg-white/90 p-6 text-sm text-red-700"
           >
-            場景啟動失敗：{error}
+            Scene startup failed: {error}
           </div>
         )}
         {runtime && <CameraToolbar runtime={runtime} onError={setError} />}
         {runtime && <ZoomControls runtime={runtime} />}
         {runtime && <MovementSpeedControl runtime={runtime} />}
         <div className="pointer-events-none absolute bottom-5 left-5 max-w-[calc(100%-10rem)] text-[10px] text-[#7b8873]">
-          左拖旋轉 - Shift 左拖平移 - 右拖轉頭 - 滾輪前後
+          Left drag orbit - Shift left drag pan - right drag look - wheel dolly
         </div>
         <div className="pointer-events-none absolute bottom-5 right-5 flex items-center gap-2 rounded-full bg-white/60 px-3 py-1 text-[10px] text-[#607350]">
           <span className="h-1.5 w-1.5 rounded-full bg-[#819c4d]" />
-          {runtime ? '空間模型已就緒' : '初始化中'}
+          {runtime ? 'Spatial model ready' : 'Initializing'}
         </div>
       </div>
       <div
@@ -435,7 +438,7 @@ function SceneWorkspace({
           {runtime ? (
             <ConfigurationEditor runtime={runtime} />
           ) : (
-            <p className="p-5 text-xs">準備場景設定…</p>
+            <p className="p-5 text-xs">Preparing scene settings...</p>
           )}
         </div>
       </div>
@@ -451,8 +454,8 @@ function PanelToggle({
   open: boolean
   onClick: () => void
 }) {
-  const name = side === 'left' ? '圖層面板' : '編輯面板'
-  const label = `${open ? '收合' : '展開'}${name}`
+  const name = side === 'left' ? 'layer panel' : 'editor panel'
+  const label = `${open ? 'Collapse ' : 'Expand '}${name}`
   const arrowPaths = {
     left: open ? 'm16 9-3 3 3 3' : 'm13 9 3 3-3 3',
     right: open ? 'm8 9 3 3-3 3' : 'm11 9-3 3 3 3'
@@ -516,12 +519,12 @@ function MovementSpeedControl({ runtime }: { runtime: FarmRuntime }) {
   return (
     <label
       className="absolute right-4 top-40 flex items-center gap-2 rounded-lg bg-[#f9fbf4]/90 px-3 py-2 text-[11px] text-[#527048]"
-      title="右鍵＋滾輪調速；Shift 加速 4 倍；Alt＋滾輪光學縮放"
+      title="Right mouse plus wheel adjusts speed; Shift accelerates 4x; Alt plus wheel uses optical zoom"
     >
-      移動速度
+      Movement speed
       <input
         type="range"
-        aria-label="鏡頭移動速度"
+        aria-label="Camera movement speed"
         min={Math.log(0.01)}
         max={Math.log(60)}
         step="any"
@@ -545,15 +548,15 @@ function ZoomControls({ runtime }: { runtime: FarmRuntime }) {
     <div className="absolute right-4 top-28 flex gap-1 rounded-lg border border-white/80 bg-[#f9fbf4]/90 p-1 text-[11px] text-[#527048]">
       <button
         onClick={runtime.fit}
-        title="適合畫面（⌘1）"
+        title="Fit view (⌘1)"
         className="rounded px-3 py-1.5 hover:bg-[#e3e9db]"
       >
-        適合畫面 <span className="text-[#8d9985]">⌘1</span>
+        Fit view <span className="text-[#8d9985]">⌘1</span>
       </button>
       <button
         onClick={runtime.actualSize}
-        title="恢復 100%（⌘0）"
-        aria-label="恢復 100% 縮放"
+        title="Restore 100% (⌘0)"
+        aria-label="Restore 100% zoom"
         className="min-w-20 rounded px-3 py-1.5 font-mono hover:bg-[#e3e9db]"
       >
         <span data-testid="zoom-percent">{percent}%</span>{' '}
@@ -578,13 +581,13 @@ function Controls({
     <aside className="border-t border-[#dce2d5] lg:border-l lg:border-t-0">
       <div className="border-b border-[#e0e5d9] px-5 py-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold">場景圖層</h2>
+          <h2 className="text-sm font-semibold">Scene layers</h2>
           <span className="font-mono text-[10px] text-[#9ba38e]">
             01 / ENVIRONMENT
           </span>
         </div>
         <p className="mt-1 text-[11px] text-[#87917e]">
-          切換覆膜，檢視溫室內部結構。
+          Toggle film to inspect the greenhouse structure.
         </p>
       </div>
       <div className="space-y-3.5 px-5 py-4">
@@ -608,13 +611,13 @@ function Controls({
         ))}
         <label className="block border-t border-[#e1e6da] pt-3">
           <span className="flex justify-between text-[11px] text-[#85917b]">
-            覆膜不透明度
+            Film opacity
             <span className="font-mono">
               {Math.round(view.filmOpacity * 100)}%
             </span>
           </span>
           <input
-            aria-label="覆膜不透明度"
+            aria-label="Film opacity"
             type="range"
             min="0"
             max="65"
@@ -627,7 +630,9 @@ function Controls({
         </label>
       </div>
       <div className="mx-4 rounded-xl bg-[#eef2e7] px-4 py-3">
-        <div className="text-[11px] font-semibold text-[#698052]">種植規劃</div>
+        <div className="text-[11px] font-semibold text-[#698052]">
+          Planting plan
+        </div>
         <div className="mt-2 flex flex-wrap gap-1.5">
           {CROPS.map((crop) => (
             <span
@@ -643,15 +648,20 @@ function Controls({
         </p>
       </div>
       <details className="px-5 py-4 text-[11px] text-[#7c8971]">
-        <summary className="font-medium">建模假設與結構參考</summary>
+        <summary className="font-medium">
+          Model assumptions and structure references
+        </summary>
         <p className="mt-3 leading-relaxed">
-          橫樑高度隨總高計算；拱架每 1m；立柱每 5m，尾端補齊；拱管直徑
-          48mm；立柱直徑 76mm；半圓水道深度為寬度一半，槽口圓角最大 1cm；擋板高
-          0.35m；端面開口依跨寬與簷高縮限，上限寬 2m、高
-          2.5m。通道淨寬須扣除立柱。
+          Beam height derives from total height; arches repeat every 1m; posts
+          and beams repeat every 5m, with the tail station filled; arch tube
+          diameter is 48mm; post diameter is 76mm; semicircular drain depth is
+          half the width; lip radius is at most 1cm; barriers are 0.35m high;
+          end openings are limited by bay width and eave height, up to 2m wide
+          and 2.5m high. Clear passage width must subtract posts.
         </p>
         <p className="mt-2 leading-relaxed">
-          這是尺寸與構造模型，尚未進行耐風、承載或機器人通行驗證。
+          This is a dimensional and structural model, not a wind, load, or robot
+          clearance verification.
         </p>
         <a
           href="https://book.tndais.gov.tw/Brochure/tech171.pdf"
@@ -659,7 +669,8 @@ function Controls({
           rel="noopener noreferrer"
           className="mt-2 inline-block underline"
         >
-          南改場溫網室技術專刊 ↗
+          Tainan District Agricultural Research and Extension Station greenhouse
+          technical bulletin ↗
         </a>
       </details>
     </aside>
@@ -680,7 +691,7 @@ function CrossSection() {
   return (
     <section className="rounded-2xl border border-[#dde3d8] bg-[#fafbf7] p-5">
       <div className="mb-4 flex items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold">每棟橫向配置</h2>
+        <h2 className="text-sm font-semibold">Cross-bay layout</h2>
         <span className="font-mono text-[10px] text-[#8d9880]">
           {config.width.toFixed(2)}m = {site.margin.toFixed(2)} +{' '}
           {config.strips
@@ -693,7 +704,7 @@ function CrossSection() {
         viewBox={`0 -0.04 ${config.width} ${sectionDepth + 0.22}`}
         className="w-full"
         role="img"
-        aria-label="土壤與半圓水道圓角的等比例剖面"
+        aria-label="scaled section of soil beds and rounded semicircular drains"
       >
         <rect
           x="0"
@@ -751,7 +762,7 @@ function CrossSection() {
       </svg>
       <div className="mt-2 flex flex-wrap gap-4 text-[10px] text-[#85917a]">
         <span>
-          ■ 土壤{' '}
+          ■ Soil{' '}
           {config.strips
             .filter((strip) => strip.kind === 'soil')
             .reduce((sum, strip) => sum + strip.width, 0)
@@ -759,14 +770,16 @@ function CrossSection() {
           m
         </span>
         <span className="text-[#668b8a]">
-          ■ 水道{' '}
-          {config.strips.filter((strip) => strip.kind === 'drain').length} 條
+          ■ Drain{' '}
+          {config.strips.filter((strip) => strip.kind === 'drain').length} items
         </span>
-        <span>兩側各留 {site.margin.toFixed(2)}m</span>
+        <span>side margins {site.margin.toFixed(2)}m</span>
       </div>
       <p className="mt-3 text-[11px] leading-relaxed text-[#8a9480]">
-        連棟留白合併為 {(site.margin * 2).toFixed(2)}m
-        走道；黑色硬質防水擋板只設在整體左右最外側。走道與水溝的採收用途，留待栽培配置及機器人規格共同決定。
+        Connected bay margins merge into a {(site.margin * 2).toFixed(2)}m
+        passage; black rigid waterproof barriers exist only on the far left and
+        right outside edges. Harvest use of passages and drains remains a joint
+        decision between cultivation layout and robot specifications.
       </p>
     </section>
   )
@@ -777,10 +790,10 @@ function PlantingSummary() {
   const site = configurationSite(config)
   return (
     <>
-      Ø20mm 栽培管，埋深 15cm、頂高{' '}
-      {(site.eave + config.topExtension).toFixed(2)}m，縱向間距 60cm。15cm
-      方格網由束帶固定，上緣 {config.netTop}m、下緣 {config.netBottom}
-      m。尚未配置植株。
+      Ø20mm support pipes, buried 15cm, top height{' '}
+      {(site.eave + config.topExtension).toFixed(2)}m, longitudinal spacing
+      60cm. A 15cm grid net is fixed with ties, with top edge {config.netTop}m,
+      bottom edge {config.netBottom}m. Plants are not configured yet.
     </>
   )
 }

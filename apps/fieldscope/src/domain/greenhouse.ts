@@ -19,7 +19,7 @@ export const BED_WIDTHS = Object.freeze([0.9, 0.3, 1.8, 0.3, 1.8, 0.3, 0.9])
 export type Site = { [K in keyof typeof SITE]: number }
 export const BED_STRIPS: readonly { kind: Strip['kind']; width: number }[] =
   BED_WIDTHS.map((width, i) => ({ kind: i % 2 ? 'drain' : 'soil', width }))
-export const CROPS = Object.freeze(['1914 小胡瓜', '玉女小蕃茄'])
+export const CROPS = Object.freeze(['1914 cucumber', 'Jade cherry tomato'])
 export interface Strip {
   bay: number
   kind: 'soil' | 'drain'

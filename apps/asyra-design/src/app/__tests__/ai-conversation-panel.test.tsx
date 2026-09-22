@@ -67,7 +67,7 @@ describe('AI Agent conversation panel intent boundary', () => {
 
     fireEvent.change(input, {
       target: {
-        value: '  畫一個貓臉  '
+        value: '  draw a cat face  '
       }
     })
     fireEvent.click(send)
@@ -75,7 +75,7 @@ describe('AI Agent conversation panel intent boundary', () => {
     expect(harness.feature.execute).toHaveBeenCalledOnce()
     expect(harness.feature.execute).toHaveBeenCalledWith(
       expect.objectContaining({
-        intent: '畫一個貓臉'
+        intent: 'draw a cat face'
       })
     )
     expect((input as HTMLTextAreaElement).value).toBe('')
@@ -211,7 +211,7 @@ describe('AI Agent conversation panel intent boundary', () => {
 
     fireEvent.change(screen.getByLabelText('Message Agent'), {
       target: {
-        value: '請依照這張圖繪製'
+        value: 'draw from this image'
       }
     })
     fireEvent.click(screen.getByRole('button', { name: 'Send' }))
@@ -219,7 +219,7 @@ describe('AI Agent conversation panel intent boundary', () => {
     await waitFor(() => {
       expect(harness.feature.execute).toHaveBeenCalledWith(
         expect.objectContaining({
-          intent: '請依照這張圖繪製',
+          intent: 'draw from this image',
           metadata: expect.objectContaining({
             imageAttachments: [
               expect.objectContaining({
@@ -413,7 +413,7 @@ describe('AI Agent conversation panel intent boundary', () => {
 
     fireEvent.change(screen.getByLabelText('Message Agent'), {
       target: {
-        value: '畫一個貓臉'
+        value: 'draw a cat face'
       }
     })
     fireEvent.click(screen.getByRole('button', { name: 'Send' }))
@@ -424,7 +424,7 @@ describe('AI Agent conversation panel intent boundary', () => {
     const settledMessage = screen.getByTestId('ai-agent-message')
     expect(settledMessage.tagName).toBe('ARTICLE')
     expect(settledMessage.getAttribute('data-outcome')).toBe('success')
-    expect(screen.getByText('畫一個貓臉')).toBeTruthy()
+    expect(screen.getByText('draw a cat face')).toBeTruthy()
     expect(screen.getByText('Understanding the request')).toBeTruthy()
     expect(screen.getByText('Applying changes')).toBeTruthy()
     expect(screen.getByText('Elapsed 1.3s')).toBeTruthy()
@@ -444,7 +444,7 @@ describe('AI Agent conversation panel intent boundary', () => {
     )
     fireEvent.change(screen.getByLabelText('Message Agent'), {
       target: {
-        value: '請依照這張圖繪製'
+        value: 'draw from this image'
       }
     })
     fireEvent.click(screen.getByRole('button', { name: 'Send' }))
@@ -490,8 +490,8 @@ describe('AI Agent conversation panel intent boundary', () => {
   })
 
   it.each([
-    ['Balanced detail', '以平衡細節繪製這張圖'],
-    ['Maximum detail', '以最高細節繪製這張圖']
+    ['Balanced detail', 'draw the reference image with balanced detail'],
+    ['Maximum detail', 'draw the reference image with maximum detail']
   ] as const)(
     'submits the %s choice once with the retained reference attachment',
     async (label, expectedIntent) => {
@@ -545,7 +545,7 @@ describe('AI Agent conversation panel intent boundary', () => {
       await act(async () => {
         await conversation.submit({
           attachments: [referenceAttachment],
-          intent: '請依照這張圖繪製'
+          intent: 'draw from this image'
         })
       })
 

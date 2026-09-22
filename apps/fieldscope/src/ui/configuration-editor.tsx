@@ -21,15 +21,15 @@ export function useFarmConfiguration() {
   )
 }
 const fields: [Exclude<keyof FarmConfiguration, 'strips'>, string][] = [
-  ['length', '溫室縱向深度'],
-  ['width', '單棟寬度'],
-  ['height', '溫室總高度'],
-  ['soilInset', '鋼管距水道邊緣'],
-  ['startInset', '鋼管前端留白'],
-  ['endInset', '鋼管尾端留白'],
-  ['topExtension', '鋼管超出橫樑'],
-  ['netTop', '拉網最高位置'],
-  ['netBottom', '拉網最低位置']
+  ['length', 'Greenhouse depth'],
+  ['width', 'Single bay width'],
+  ['height', 'Greenhouse height'],
+  ['soilInset', 'Pipe distance from drain edge'],
+  ['startInset', 'Front pipe inset'],
+  ['endInset', 'Rear pipe inset'],
+  ['topExtension', 'Pipe extension above beam'],
+  ['netTop', 'Net top height'],
+  ['netBottom', 'Net bottom height']
 ]
 export function ConfigurationEditor({ runtime }: { runtime: FarmRuntime }) {
   const config = useSyncExternalStore(
@@ -72,9 +72,9 @@ function ConfigurationForm({
   }
   const site = configurationSite(config)
   return (
-    <section className="bg-[#fafbf7] p-4" aria-label="場景設定">
+    <section className="bg-[#fafbf7] p-4" aria-label="Scene settings">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold">場景設定</h2>
+        <h2 className="text-sm font-semibold">Scene settings</h2>
         <div className="flex gap-2">
           <button
             type="button"
@@ -82,7 +82,7 @@ function ConfigurationForm({
             onClick={() => void act(runtime.undo)}
             className="rounded border px-3 py-2 text-xs disabled:opacity-40"
           >
-            復原 ⌘Z
+            Undo ⌘Z
           </button>
           <button
             type="button"
@@ -90,14 +90,15 @@ function ConfigurationForm({
             onClick={() => void act(runtime.redo)}
             className="rounded border px-3 py-2 text-xs disabled:opacity-40"
           >
-            重做 ⇧⌘Z
+            Redo ⇧⌘Z
           </button>
         </div>
       </div>
       <p className="mb-4 text-xs text-[#718268]">
-        單位：公尺。四連棟共用設定。橫樑高度為總高的
-        60%，兩側留白由單棟寬度扣除畦溝總寬後平均分配。鋼管間距維持
-        0.6m，尾端留白為最小距離。
+        Units: metres. Settings are shared by the four connected bays. Beam
+        height is 60% of total height, side margins split the remaining bay
+        width after strip widths, support pipe spacing stays 0.6m, and the rear
+        inset is a minimum distance.
       </p>
       <form
         onSubmit={(event) => {
@@ -129,7 +130,9 @@ function ConfigurationForm({
           ))}
         </fieldset>
         <div className="mt-5 flex items-center justify-between">
-          <h3 className="text-xs font-semibold">畦溝陣列 - 由左至右</h3>
+          <h3 className="text-xs font-semibold">
+            Strip layout - left to right
+          </h3>
           <button
             type="button"
             disabled={busy}
@@ -141,7 +144,7 @@ function ConfigurationForm({
             }
             className="rounded border px-3 py-2 text-xs"
           >
-            新增項目
+            Add item
           </button>
         </div>
         <div className="mt-3 grid gap-2" data-testid="strip-editor">
@@ -153,7 +156,7 @@ function ConfigurationForm({
               <span className="w-6 font-mono text-xs">{i + 1}</span>
               <select
                 disabled={busy}
-                aria-label={`第 ${i + 1} 項種類`}
+                aria-label={`item ${i + 1} type`}
                 value={strip.kind}
                 onChange={(event) =>
                   setDraft({
@@ -170,12 +173,12 @@ function ConfigurationForm({
                 }
                 className="rounded border bg-white p-2 text-xs"
               >
-                <option value="soil">土壤</option>
-                <option value="drain">水道</option>
+                <option value="soil">Soil</option>
+                <option value="drain">Drain</option>
               </select>
               <input
                 disabled={busy}
-                aria-label={`第 ${i + 1} 項寬度`}
+                aria-label={`item ${i + 1} width`}
                 type="number"
                 step="any"
                 value={Number.isFinite(strip.width) ? strip.width : ''}
@@ -200,7 +203,7 @@ function ConfigurationForm({
               <span className="text-xs">m</span>
               <button
                 type="button"
-                aria-label={`第 ${i + 1} 項向左`}
+                aria-label={`move item ${i + 1} left`}
                 disabled={busy || i === 0}
                 onClick={() => reorder(i, -1)}
                 className="px-2 disabled:opacity-30"
@@ -209,7 +212,7 @@ function ConfigurationForm({
               </button>
               <button
                 type="button"
-                aria-label={`第 ${i + 1} 項向右`}
+                aria-label={`move item ${i + 1} right`}
                 disabled={busy || i === draft.strips.length - 1}
                 onClick={() => reorder(i, 1)}
                 className="px-2 disabled:opacity-30"
@@ -218,7 +221,7 @@ function ConfigurationForm({
               </button>
               <button
                 type="button"
-                aria-label={`刪除第 ${i + 1} 項`}
+                aria-label={`delete item ${i + 1}`}
                 disabled={busy || draft.strips.length === 1}
                 onClick={() =>
                   setDraft({
@@ -228,13 +231,13 @@ function ConfigurationForm({
                 }
                 className="ml-auto px-2 text-xs text-[#975746]"
               >
-                刪除
+                Delete
               </button>
             </div>
           ))}
         </div>
         <details className="mt-3 text-xs text-[#718268]">
-          <summary>查看陣列資料</summary>
+          <summary>View strip data</summary>
           <pre className="mt-2 overflow-auto rounded bg-[#edf1e8] p-3">
             {JSON.stringify(draft.strips, null, 2)}
           </pre>
@@ -250,7 +253,7 @@ function ConfigurationForm({
             type="submit"
             className="rounded-lg bg-[#315a43] px-5 py-2 text-sm text-white disabled:opacity-40"
           >
-            {busy ? '套用中…' : '套用設定'}
+            {busy ? 'Applying...' : 'Apply settings'}
           </button>
           <button
             disabled={busy}
@@ -261,10 +264,10 @@ function ConfigurationForm({
             }}
             className="text-xs underline"
           >
-            放棄草稿
+            Discard draft
           </button>
           <span className="text-xs text-[#718268]">
-            已套用：橫樑 {site.eave.toFixed(2)}m、兩側各留{' '}
+            Applied: beam {site.eave.toFixed(2)}m, side margins{' '}
             {site.margin.toFixed(2)}m
           </span>
         </div>

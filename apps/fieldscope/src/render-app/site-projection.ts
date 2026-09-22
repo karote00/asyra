@@ -29,17 +29,17 @@ export type LayerId =
   | 'dimensions'
   | 'base'
 export const LAYER_LABELS: Record<Exclude<LayerId, 'base'>, string> = {
-  net: '攀爬拉網',
-  ties: '網頂束帶',
-  supports: '栽培鋼管',
-  clips: '跨接彈簧夾',
-  film: '塑膠覆膜',
-  steel: '完整鋼架',
-  soil: '土壤畦面',
-  drains: '凹陷水溝',
-  passages: '連棟走道',
-  barriers: '外側防水擋板',
-  dimensions: '尺寸參考線'
+  net: 'Climbing net',
+  ties: 'Net top ties',
+  supports: 'Crop support pipes',
+  clips: 'Cross spring clips',
+  film: 'Plastic film',
+  steel: 'Full steel frame',
+  soil: 'Soil beds',
+  drains: 'Recessed drains',
+  passages: 'Connected passages',
+  barriers: 'Outer waterproof barriers',
+  dimensions: 'Dimension guides'
 }
 export const INITIAL_LAYERS: Record<LayerId, boolean> = {
   net: true,

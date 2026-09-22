@@ -27,7 +27,7 @@ export function WorkbenchHeader() {
             h-[33px] rounded-[9px] leading-[30px] text-center
             [&_span]:text-[#64d2bd]"
         >
-          a<span>·</span>
+          a<span>-</span>
         </span>
 
         <strong>
