@@ -189,10 +189,7 @@ test('project Codex defaults stay single-agent and keep custom roles opt-in', ()
   )
   assert.match(projectConfig, /^\[agents\]$/m)
   assert.match(projectConfig, /^enabled = false$/m)
-  assert.doesNotMatch(
-    projectConfig,
-    /^max_concurrent_threads_per_session\s*=/m
-  )
+  assert.doesNotMatch(projectConfig, /^max_concurrent_threads_per_session\s*=/m)
 
   assert.equal(
     existsSync(new URL('../../.codex/agents', import.meta.url)),
