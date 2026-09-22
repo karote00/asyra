@@ -1,5 +1,13 @@
 # @asyra/reactive-events
 
+## 0.5.4
+
+### Patch Changes
+
+- Updated dependencies [22883b1]
+  - @asyra/utils@0.5.2
+  - @asyra/persistence@0.5.3
+
 ## 0.5.3
 
 ### Patch Changes

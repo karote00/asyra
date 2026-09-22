@@ -1,7 +1,7 @@
 {
   "pages": [
     {
-      "contentSha256": "64a854fecee1c9eb02748d9e2e8b4d7a66d6bf989f0c7bbfa9d3485ac75c9794",
+      "contentSha256": "09b5c9d12fcc3e2148a667d28b3a8579b487a56f44553c8507184b7f822bb5fd",
       "description": "Build domain-owned information products whose visual, collaborative, persistent, and AI-facing capabilities remain composable.",
       "headings": [
         {
@@ -11,6 +11,18 @@
         {
           "depth": 2,
           "title": "Choose your path"
+        },
+        {
+          "depth": 3,
+          "title": "Generic Starter source"
+        },
+        {
+          "depth": 3,
+          "title": "Complete Design product"
+        },
+        {
+          "depth": 3,
+          "title": "Advanced composition"
         },
         {
           "depth": 3,
@@ -54,7 +66,7 @@
       "path": "index.md",
       "section": "Overview",
       "title": "Asyra Framework",
-      "wordCount": 658
+      "wordCount": 836
     },
     {
       "contentSha256": "87bbd0e550649031f529d345f1bfc49fa364450e15fabc5fe7025640aa11232f",
@@ -2332,7 +2344,7 @@
       "wordCount": 450
     },
     {
-      "contentSha256": "30df57ada4dcf3bed7bb314d15b6d0982242beb53efe262a4e915f1ded5bb01a",
+      "contentSha256": "b4660429ab396323249d15af3f96b16c5c9a600f7576af231dae4e04e8a5766c",
       "description": "Current runtime support, candidate status, security reporting, license, migration, and publication boundaries.",
       "headings": [
         {
@@ -2353,7 +2365,7 @@
         },
         {
           "depth": 2,
-          "title": "Security reporting"
+          "title": "Community and security reporting"
         },
         {
           "depth": 2,
@@ -2378,7 +2390,7 @@
       "path": "reference/support-release.md",
       "section": "Reference",
       "title": "Support, security, and release boundaries",
-      "wordCount": 468
+      "wordCount": 520
     },
     {
       "contentSha256": "9e1954d8a150bfbb3317ad101032170dc9f9fb01ed01b64a08cf783ab38da1d4",

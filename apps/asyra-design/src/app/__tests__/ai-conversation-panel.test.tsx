@@ -304,7 +304,7 @@ describe('AI Agent conversation panel intent boundary', () => {
 
     fireEvent.change(input, {
       target: {
-        value: '  畫一個貓臉  '
+        value: '  draw a cat face  '
       }
     })
     fireEvent.click(send)
@@ -312,7 +312,7 @@ describe('AI Agent conversation panel intent boundary', () => {
     expect(harness.feature.execute).toHaveBeenCalledOnce()
     expect(harness.feature.execute).toHaveBeenCalledWith(
       expect.objectContaining({
-        intent: '畫一個貓臉'
+        intent: 'draw a cat face'
       })
     )
     expect((input as HTMLTextAreaElement).value).toBe('')
@@ -601,7 +601,7 @@ describe('AI Agent conversation panel intent boundary', () => {
 
     fireEvent.change(screen.getByLabelText('Message Agent'), {
       target: {
-        value: '請依照這張圖繪製'
+        value: 'draw from this image'
       }
     })
     fireEvent.click(screen.getByRole('button', { name: 'Send' }))
@@ -609,7 +609,7 @@ describe('AI Agent conversation panel intent boundary', () => {
     await waitFor(() => {
       expect(harness.feature.execute).toHaveBeenCalledWith(
         expect.objectContaining({
-          intent: '請依照這張圖繪製',
+          intent: 'draw from this image',
           metadata: expect.objectContaining({
             imageAttachments: [
               expect.objectContaining({
@@ -803,7 +803,7 @@ describe('AI Agent conversation panel intent boundary', () => {
 
     fireEvent.change(screen.getByLabelText('Message Agent'), {
       target: {
-        value: '畫一個貓臉'
+        value: 'draw a cat face'
       }
     })
     fireEvent.click(screen.getByRole('button', { name: 'Send' }))
@@ -833,7 +833,7 @@ describe('AI Agent conversation panel intent boundary', () => {
     )
     fireEvent.change(screen.getByLabelText('Message Agent'), {
       target: {
-        value: '請依照這張圖繪製'
+        value: 'draw from this image'
       }
     })
     fireEvent.click(screen.getByRole('button', { name: 'Send' }))

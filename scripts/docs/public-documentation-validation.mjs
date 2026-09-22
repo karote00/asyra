@@ -7,6 +7,7 @@ import ts from 'typescript'
 
 import { readPublicContentContract } from './public-content-contract.mjs'
 import { checkPublicDocumentation } from './public-documentation.mjs'
+import { validateCommunityPolicy } from './support-policy-validation.mjs'
 
 const BUILD_HEADINGS = Object.freeze([
   '## Prerequisites',
@@ -118,6 +119,25 @@ export const validateMarkdownLinks = ({ filePath, repositoryRoot, source }) => {
     localLinkCount += 1
   }
   return localLinkCount
+}
+
+export const validateStarterEntry = ({ source }) => {
+  if (
+    !source.includes(
+      'create-asyra-app` is not yet published to the public npm registry'
+    )
+  ) {
+    throw new Error('Public overview must state the unpublished Starter status')
+  }
+  if (
+    /\b(?:npx\s+create-asyra-app|npm\s+create\s+asyra-app|yarn\s+create\s+asyra-app)\b|https:\/\/www\.npmjs\.com\/package\/create-asyra-app/iu.test(
+      source
+    )
+  ) {
+    throw new Error(
+      'Public overview exposes an unpublished Starter command or installation CTA'
+    )
+  }
 }
 
 export const validatePublicImportMentions = ({ apiIndex, pageId, source }) => {
@@ -364,6 +384,14 @@ export const validatePublicDocumentation = async ({ repositoryRoot }) => {
   for (const page of content.pages) {
     const filePath = path.join(root, 'docs/public', page.path)
     const source = fs.readFileSync(filePath, 'utf8')
+    if (page.id === 'overview') validateStarterEntry({ source })
+    if (page.id === 'reference/support-release') {
+      validateCommunityPolicy({
+        discussionsEnabled: false,
+        source,
+        sourcePath: `docs/public/${page.path}`
+      })
+    }
     const removedPattern = REMOVED_EXAMPLE_PATTERNS.find((pattern) =>
       pattern.test(source)
     )

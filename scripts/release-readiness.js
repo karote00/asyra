@@ -362,6 +362,16 @@ export const verifyCleanConsumer = ({
   const expectedVersions = new Map(
     releaseSource.packages.map((record) => [record.name, record.version])
   )
+  const validatedArtifacts = validateFrameworkReleasePackageArtifacts({
+    repositoryRoot: resolvedRoot,
+    artifactDirectory
+  })
+  const artifactIntegrities = Object.fromEntries(
+    validatedArtifacts.packages.map(({ packageName, integrity }) => [
+      packageName,
+      integrity
+    ])
+  )
   const prepared = prepareCleanConsumer({
     repositoryRoot: resolvedRoot,
     consumerDirectory,
@@ -393,6 +403,7 @@ export const verifyCleanConsumer = ({
         node: process.version,
         packageManager: 'yarn@4.3.1'
       },
+      artifactIntegrities,
       packages: installedPackages,
       phases: completedPhases
     })

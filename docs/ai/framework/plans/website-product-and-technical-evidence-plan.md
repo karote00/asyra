@@ -2,9 +2,13 @@
 
 ## Current contract
 
-The product owner approved replacing the former homepage with the six-chapter
-green spatial story. The current visual, content, ownership and verification
-contract is [the homepage contract](../../../../apps/asyra-framework-site/docs/spatial-story.md#current-homepage-contract).
+At adoption baseline `b44be9e77b6a742ad8094da008b4122c06d51a2a` on
+2026-09-23, the current homepage implementation is
+`apps/asyra-framework-site/app/page.tsx`, which composes `SpatialStory`,
+`HomeResources`, and `SiteFooter`. The product owner approved replacing the
+former homepage with the six-chapter green spatial story. The current visual,
+content, ownership and verification contract is
+[the homepage contract](../../../../apps/asyra-framework-site/docs/spatial-story.md#current-homepage-contract).
 It supersedes the older composition requirements recorded below: the factory
 film, five brand chapters, separate architecture explainer and PoC comparison
 are no longer homepage requirements. `/story` is removed, not redirected.
@@ -13,16 +17,59 @@ retain their independent owners. Existing SEO/indexing environment policy is
 preserved. Product evidence and the three build/evaluate entry points follow
 the story without repeating it.
 
+Direct evidence at this baseline:
+
+- `apps/asyra-framework-site/docs/spatial-story.md` defines the accepted
+  six-chapter story, `/` route ownership, `/story` removal, product evidence,
+  build/evaluate entries, native menu, responsive, reduced-motion and
+  no-JavaScript contracts.
+- `apps/asyra-framework-site/__tests__/home-integration.test.mjs` asserts one
+  six-chapter story, `HomeResources`, footer composition, old preview route
+  removal, product evidence, and the current resource routes.
+- `apps/asyra-framework-site/__tests__/spatial-story.test.mjs`,
+  `spatial-story-continuity.test.mjs`, and
+  `__tests__/e2e/spatial-story.spec.ts` cover continuity, finite/reversible
+  frames, static snapshots, desktop, mobile, reduced-motion, no-JavaScript, and
+  the building-replacement story.
+- `apps/asyra-framework-site/components/home-resources.tsx` currently routes
+  homepage CTAs to the live Asyra Design product, `/asyra-design`,
+  `/docs/start/custom-composition`, `/docs/start/create-design-app`, and
+  `/atlas`.
+
+Task 5's local entry revision keeps the same six-chapter story, product proof,
+three-card resource structure, and Atlas link. The cards now route in order to
+`/docs#generic-starter-source`, `/docs/start/create-design-app`, and
+`/docs/start/custom-composition`. The Starter card identifies source and
+onboarding availability while its public CLI remains unpublished. Direct
+homepage tests, 46-route smoke, and 18 desktop/mobile browser cases passed;
+entry screenshots remain under the Task 5 worktree's
+`apps/asyra-framework-site/test-results/platform/`. This is local review
+evidence, not deployment or product-owner acceptance.
+
+This records the current implemented and formally covered homepage baseline. It
+does not claim final product-owner acceptance of every visual detail, integrated
+CI completion, deployment, or future adoption-entry readiness. If that
+acceptance state is unclear, keep the spatial-story contract authoritative and
+record the review gap instead of declaring another homepage contract current.
+
 ## Prior composition record - superseded
 
 # Website Product and Technical Evidence Plan
 
 ## Status
 
-Implementation candidate completed on 2026-09-01. The landing now leads with
-the product-first thesis and includes current Asyra Design, Feature/runtime,
-ownership, and readiness evidence. Final completion remains pending product
-owner review and merge.
+Historical implementation candidate completed on 2026-09-01. At the adoption
+baseline, this record is superseded for current homepage authority by the
+six-chapter spatial-story contract above. Keep the historical product-first
+thesis, Asyra Design, Feature/runtime, ownership and readiness observations as
+background only; do not use them to override the current `/` implementation or
+to resurrect the retired factory film, five brand chapters, separate
+architecture explainer, or PoC comparison.
+
+Final completion of the current homepage still depends on the review,
+integration and deployment states owned by the website/homepage workflow and the
+adoption program. A page existing at `/` is implementation evidence, not proof
+that every adoption journey task is complete.
 
 This plan follows the completed
 [Asyra Result-First Landing Page Plan](completed/asyra-website-landing-page-plan.md)
@@ -465,6 +512,11 @@ public Feature example, supporting routes, and all Framework behavior.
   the PR's required CI gates complete this bounded delivery.
 
 ## Brand story chapters
+
+Historical note: this five-chapter brand story records a prior approved
+composition direction. It is not the current homepage contract after the
+six-chapter spatial story was accepted and implemented. Preserve it as version
+background only.
 
 The product owner expanded the prototype on 2026-09-15 into a complete brand
 story and authorized removing repeated information before final review. This

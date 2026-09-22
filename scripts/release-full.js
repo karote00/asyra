@@ -16,7 +16,7 @@ if (args.some((arg) => arg !== productArgument && arg !== '--plan')) {
 }
 
 const releasePlan = {
-  framework: [`yarn release:framework --prod=${product}`],
+  framework: ['yarn release:framework'],
   createApp: [`yarn release:create-app --prod=${product}`]
 }
 

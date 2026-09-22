@@ -6,6 +6,8 @@ const path = require('node:path')
 const { spawnSync } = require('node:child_process')
 
 const VERSION = 1
+const CURRENT_REGISTRY_VERSION = 2
+const ARCHIVE_SEGMENT_VERSION = 1
 const MAXIMUM_REGISTRY_BYTES = 2 * 1024 * 1024
 const MAXIMUM_TASKS = 256
 const MAXIMUM_TASK_ENTRIES = 2048
@@ -21,6 +23,7 @@ const STATES = new Set([
 ])
 const WRITER_STATES = new Set(['active'])
 const DEPENDENCY_COMPLETE_STATES = new Set(['complete'])
+const ARCHIVABLE_STATES = new Set(['complete', 'retired'])
 const SHA_PATTERN = /^[a-f0-9]{40}(?:[a-f0-9]{24})?$/
 const DIGEST_PATTERN = /^(?:absent|[a-f0-9]{64})$/
 const TASK_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/
@@ -269,7 +272,18 @@ function realDirectory(value, field) {
   return resolved
 }
 
-function normalizeTask(task) {
+function normalizeHistoricalWorktree(value) {
+  if (
+    typeof value !== 'string' ||
+    !path.isAbsolute(value) ||
+    path.resolve(value) !== value
+  ) {
+    fail('invalid_archive', 'Archived task worktree must be an absolute path.')
+  }
+  return value
+}
+
+function normalizeTask(task, { historical = false } = {}) {
   if (!task || typeof task !== 'object' || Array.isArray(task)) {
     fail('invalid_registry', 'task must be an object.')
   }
@@ -336,7 +350,9 @@ function normalizeTask(task) {
     coordinator: task.coordinator,
     kind: task.kind,
     integrationTargetTaskId: task.integrationTargetTaskId,
-    worktree: realDirectory(task.worktree, 'task.worktree'),
+    worktree: historical
+      ? normalizeHistoricalWorktree(task.worktree)
+      : realDirectory(task.worktree, 'task.worktree'),
     branch: task.branch,
     baselineHead: task.baselineHead,
     allowedPathPrefixes: normalizePathRules(
@@ -374,7 +390,13 @@ function normalizeTask(task) {
 }
 
 function emptyRegistry() {
-  return { version: VERSION, revision: 0, tasks: {} }
+  return {
+    version: VERSION,
+    revision: 0,
+    tasks: {},
+    archiveSegments: [],
+    archivedTasks: {}
+  }
 }
 
 function validateRegistryPath(registryPath) {
@@ -424,10 +446,140 @@ function validateRegistryPath(registryPath) {
   return absolutePath
 }
 
-function normalizeRegistry(registry) {
+function normalizeArchiveSegments(value, registryVersion) {
+  if (registryVersion === VERSION) {
+    if (value !== undefined && (!Array.isArray(value) || value.length !== 0)) {
+      fail('invalid_registry', 'Legacy registries cannot declare archives.')
+    }
+    return []
+  }
+  if (!Array.isArray(value) || value.length > MAXIMUM_TASK_ENTRIES) {
+    fail('invalid_registry', 'archiveSegments must be a bounded array.')
+  }
+  if (
+    value.some(
+      (segment) =>
+        typeof segment !== 'string' || !/^[a-f0-9]{64}$/.test(segment)
+    )
+  ) {
+    fail('invalid_registry', 'archiveSegments contains an invalid digest.')
+  }
+  return [...new Set(value)].sort()
+}
+
+function fsyncDirectory(directory) {
+  const descriptor = fs.openSync(directory, 'r')
+  try {
+    fs.fsyncSync(descriptor)
+  } finally {
+    fs.closeSync(descriptor)
+  }
+}
+
+function archiveDirectoryFor(registryPath, { create = false } = {}) {
+  const directory = path.join(path.dirname(registryPath), 'archive')
+  if (fs.existsSync(directory)) {
+    const stat = fs.lstatSync(directory)
+    if (!stat.isDirectory() || stat.isSymbolicLink()) {
+      fail('invalid_archive', 'Archive storage must be a regular directory.')
+    }
+  } else if (create) {
+    fs.mkdirSync(directory)
+    fsyncDirectory(path.dirname(directory))
+  } else {
+    fail('invalid_archive', 'Archive storage is missing.')
+  }
+  const repoRoot = path.dirname(path.dirname(path.dirname(registryPath)))
+  const realRoot = fs.realpathSync(repoRoot)
+  const realDirectory = fs.realpathSync(directory)
+  if (
+    !isWithin(realRoot, realDirectory) ||
+    path.resolve(directory) !== realDirectory
+  ) {
+    fail('invalid_archive', 'Archive storage leaves the repository.')
+  }
+  return directory
+}
+
+function archiveFileFor(registryPath, segment, options) {
+  return path.join(
+    archiveDirectoryFor(registryPath, options),
+    segment + '.json'
+  )
+}
+
+function normalizeArchiveSegment(value) {
+  if (
+    !value ||
+    value.version !== ARCHIVE_SEGMENT_VERSION ||
+    !value.task ||
+    typeof value.task !== 'object'
+  ) {
+    fail('invalid_archive', 'Archive segment has an invalid schema.')
+  }
+  const task = normalizeTask(value.task, { historical: true })
+  if (!ARCHIVABLE_STATES.has(task.state)) {
+    fail('invalid_archive', 'Archive segment contains a nonterminal task.')
+  }
+  return task
+}
+
+function loadArchiveTasks(registryPath, segments) {
+  const tasks = Object.create(null)
+  for (const segment of segments) {
+    const archivePath = archiveFileFor(registryPath, segment)
+    let serialized
+    try {
+      const stat = fs.lstatSync(archivePath)
+      if (
+        !stat.isFile() ||
+        stat.isSymbolicLink() ||
+        stat.size > MAXIMUM_REGISTRY_BYTES
+      ) {
+        fail(
+          'invalid_archive',
+          'Archive segment is not a bounded regular file.'
+        )
+      }
+      serialized = fs.readFileSync(archivePath, 'utf8')
+    } catch (error) {
+      if (error instanceof GuardError) throw error
+      fail('invalid_archive', 'Archive segment could not be read.')
+    }
+    if (sha256(serialized) !== segment) {
+      fail('invalid_archive', 'Archive segment content hash does not match.')
+    }
+    let parsed
+    try {
+      parsed = JSON.parse(serialized)
+    } catch {
+      fail('invalid_archive', 'Archive segment JSON is invalid.')
+    }
+    const task = normalizeArchiveSegment(parsed)
+    if (Object.prototype.hasOwnProperty.call(tasks, task.id)) {
+      fail('invalid_archive', `Archive contains duplicate task ${task.id}.`)
+    }
+    tasks[task.id] = task
+  }
+  return tasks
+}
+
+function persistedRegistry(registry) {
+  const persisted = {
+    version: registry.version,
+    revision: registry.revision,
+    tasks: registry.tasks
+  }
+  if (registry.version === CURRENT_REGISTRY_VERSION) {
+    persisted.archiveSegments = registry.archiveSegments
+  }
+  return persisted
+}
+
+function normalizeRegistry(registry, registryPath) {
   if (
     !registry ||
-    registry.version !== VERSION ||
+    ![VERSION, CURRENT_REGISTRY_VERSION].includes(registry.version) ||
     !Number.isInteger(registry.revision)
   ) {
     fail('invalid_registry', 'Registry version or revision is invalid.')
@@ -442,34 +594,79 @@ function normalizeRegistry(registry) {
   if (Object.keys(registry.tasks).length > MAXIMUM_TASKS) {
     fail('invalid_registry', 'Registry exceeds the bounded task limit.')
   }
-  const tasks = {}
+  const tasks = Object.create(null)
   for (const taskId of Object.keys(registry.tasks).sort()) {
     const task = normalizeTask(registry.tasks[taskId])
     if (task.id !== taskId)
       fail('invalid_registry', `Task key ${taskId} does not match its ID.`)
     tasks[taskId] = task
   }
-  validateTaskRelationships(tasks)
-  return { version: VERSION, revision: registry.revision, tasks }
+  const archiveSegments = normalizeArchiveSegments(
+    registry.archiveSegments,
+    registry.version
+  )
+  if (archiveSegments.length && !registryPath) {
+    fail(
+      'invalid_archive',
+      'Archive-backed registry requires its storage path.'
+    )
+  }
+  const archivedTasks = archiveSegments.length
+    ? loadArchiveTasks(registryPath, archiveSegments)
+    : {}
+  for (const taskId of Object.keys(tasks)) {
+    if (Object.prototype.hasOwnProperty.call(archivedTasks, taskId)) {
+      fail('invalid_archive', `Task ${taskId} exists live and archived.`)
+    }
+  }
+  validateTaskRelationships(tasks, archivedTasks)
+  return {
+    version: registry.version,
+    revision: registry.revision,
+    tasks,
+    archiveSegments,
+    archivedTasks
+  }
 }
 
-function validateTaskRelationships(tasks) {
+function validateTaskRelationships(tasks, archivedTasks = {}) {
+  const allTasks = { ...archivedTasks, ...tasks }
   for (const task of Object.values(tasks)) {
     if (
       task.kind === 'subpr' &&
       (!tasks[task.integrationTargetTaskId] ||
         tasks[task.integrationTargetTaskId].kind !== 'goal')
     ) {
-      fail(
-        'invalid_registry',
-        `${task.id} has no registered goal integration target.`
-      )
+      const code = archivedTasks[task.integrationTargetTaskId]
+        ? 'integration_target_archived'
+        : 'invalid_registry'
+      fail(code, `${task.id} has no live registered goal integration target.`)
     }
     for (const dependencyId of task.dependsOn) {
-      if (!tasks[dependencyId]) {
+      if (!allTasks[dependencyId]) {
         fail(
           'invalid_registry',
           `${task.id} depends on unknown task ${dependencyId}.`
+        )
+      }
+    }
+  }
+  for (const task of Object.values(archivedTasks)) {
+    if (
+      task.kind === 'subpr' &&
+      (!allTasks[task.integrationTargetTaskId] ||
+        allTasks[task.integrationTargetTaskId].kind !== 'goal')
+    ) {
+      fail(
+        'invalid_archive',
+        `${task.id} has no historical goal integration target.`
+      )
+    }
+    for (const dependencyId of task.dependsOn) {
+      if (!allTasks[dependencyId]) {
+        fail(
+          'invalid_archive',
+          `${task.id} depends on missing historical task ${dependencyId}.`
         )
       }
     }
@@ -481,11 +678,11 @@ function validateTaskRelationships(tasks) {
       fail('dependency_cycle', 'Task dependencies contain a cycle.')
     if (visited.has(task.id)) return
     visiting.add(task.id)
-    for (const dependencyId of task.dependsOn) visit(tasks[dependencyId])
+    for (const dependencyId of task.dependsOn) visit(allTasks[dependencyId])
     visiting.delete(task.id)
     visited.add(task.id)
   }
-  for (const task of Object.values(tasks)) visit(task)
+  for (const task of Object.values(allTasks)) visit(task)
   const active = Object.values(tasks).filter((task) =>
     WRITER_STATES.has(task.state)
   )
@@ -518,7 +715,7 @@ function validateTaskRelationships(tasks) {
   for (const task of active) {
     const incomplete = task.dependsOn.find(
       (dependencyId) =>
-        !DEPENDENCY_COMPLETE_STATES.has(tasks[dependencyId].state)
+        !DEPENDENCY_COMPLETE_STATES.has(allTasks[dependencyId].state)
     )
     if (incomplete) {
       fail(
@@ -541,7 +738,7 @@ function loadRegistry(registryPath) {
   } catch {
     fail('invalid_registry', 'Registry JSON could not be read.')
   }
-  return normalizeRegistry(parsed)
+  return normalizeRegistry(parsed, registryPath)
 }
 
 function sameAuthority(left, right) {
@@ -584,8 +781,8 @@ function withRegistryLock(registryPath, expectedRevision, update) {
     }
     const nextRegistry = update(registry)
     nextRegistry.revision = registry.revision + 1
-    const normalized = normalizeRegistry(nextRegistry)
-    const serialized = `${stableStringify(normalized)}\n`
+    const normalized = normalizeRegistry(nextRegistry, registryPath)
+    const serialized = `${stableStringify(persistedRegistry(normalized))}\n`
     if (Buffer.byteLength(serialized) > MAXIMUM_REGISTRY_BYTES) {
       fail(
         'invalid_registry',
@@ -601,6 +798,7 @@ function withRegistryLock(registryPath, expectedRevision, update) {
       fs.closeSync(descriptor)
     }
     fs.renameSync(temporaryPath, registryPath)
+    fsyncDirectory(path.dirname(registryPath))
     temporaryPath = undefined
     return normalized
   } finally {
@@ -651,6 +849,14 @@ function registerTask({ registryPath, expectedRevision, task }) {
       expectedRevision,
       (current) => {
         const previous = current.tasks[candidate.id]
+        if (
+          Object.prototype.hasOwnProperty.call(
+            current.archivedTasks,
+            candidate.id
+          )
+        ) {
+          fail('task_archived', 'Archived task identities cannot be reused.')
+        }
         if (previous && !sameAuthority(previous, candidate)) {
           fail(
             'task_authority_immutable',
@@ -672,6 +878,153 @@ function registerTask({ registryPath, expectedRevision, task }) {
     return allow('registered', 'Task registry update committed atomically.', {
       registryRevision: registry.revision
     })
+  })
+}
+
+function writeArchiveTask(registryPath, task) {
+  const serialized = `${stableStringify({
+    version: ARCHIVE_SEGMENT_VERSION,
+    task
+  })}\n`
+  if (Buffer.byteLength(serialized) > MAXIMUM_REGISTRY_BYTES) {
+    fail('invalid_archive', 'Archive task exceeds the bounded segment size.')
+  }
+  const segment = sha256(serialized)
+  const archivePath = archiveFileFor(registryPath, segment, { create: true })
+  if (fs.existsSync(archivePath)) {
+    const stat = fs.lstatSync(archivePath)
+    if (
+      !stat.isFile() ||
+      stat.isSymbolicLink() ||
+      fs.readFileSync(archivePath, 'utf8') !== serialized
+    ) {
+      fail('invalid_archive', 'Existing archive segment is not identical.')
+    }
+    return segment
+  }
+  const temporaryPath = `${archivePath}.${process.pid}.${crypto
+    .randomBytes(8)
+    .toString('hex')}.tmp`
+  let descriptor
+  try {
+    descriptor = fs.openSync(temporaryPath, 'wx', 0o600)
+    fs.writeFileSync(descriptor, serialized, 'utf8')
+    fs.fsyncSync(descriptor)
+    fs.closeSync(descriptor)
+    descriptor = undefined
+    try {
+      fs.linkSync(temporaryPath, archivePath)
+    } catch (error) {
+      if (
+        error.code !== 'EEXIST' ||
+        !fs.lstatSync(archivePath).isFile() ||
+        fs.lstatSync(archivePath).isSymbolicLink() ||
+        fs.readFileSync(archivePath, 'utf8') !== serialized
+      ) {
+        throw error
+      }
+    }
+    fsyncDirectory(path.dirname(archivePath))
+  } finally {
+    if (descriptor !== undefined) fs.closeSync(descriptor)
+    if (fs.existsSync(temporaryPath)) fs.unlinkSync(temporaryPath)
+  }
+  return segment
+}
+
+function retainedTaskIds(tasks) {
+  const retained = new Set(
+    Object.values(tasks)
+      .filter((task) => !ARCHIVABLE_STATES.has(task.state))
+      .map((task) => task.id)
+  )
+  const pending = [...retained]
+  while (pending.length) {
+    const task = tasks[pending.pop()]
+    const references = [
+      ...task.dependsOn,
+      ...(task.integrationTargetTaskId ? [task.integrationTargetTaskId] : [])
+    ]
+    for (const reference of references) {
+      if (tasks[reference] && !retained.has(reference)) {
+        retained.add(reference)
+        pending.push(reference)
+      }
+    }
+  }
+  return retained
+}
+
+function compactRegistry(
+  { registryPath, expectedRevision, coordinatorTaskId },
+  hooks = {}
+) {
+  return asDecision(() => {
+    if (!Number.isInteger(expectedRevision) || expectedRevision < 0) {
+      fail('invalid_input', 'expectedRevision must be a non-negative integer.')
+    }
+    let archivedCount = 0
+    let segmentsWritten = 0
+    const registry = withRegistryLock(
+      registryPath,
+      expectedRevision,
+      (current) => {
+        const coordinator = taskFor(current, coordinatorTaskId)
+        const registryRoot = path.dirname(
+          path.dirname(path.dirname(registryPath))
+        )
+        if (
+          !coordinator.coordinator ||
+          coordinator.state !== 'active' ||
+          coordinator.worktree !== fs.realpathSync(registryRoot)
+        ) {
+          fail(
+            'invalid_coordinator',
+            'Only an active repository-root coordinator may compact history.'
+          )
+        }
+        const retained = retainedTaskIds(current.tasks)
+        const tasks = {}
+        const newSegments = []
+        for (const task of Object.values(current.tasks)) {
+          if (retained.has(task.id)) {
+            tasks[task.id] = task
+            continue
+          }
+          const segment = writeArchiveTask(registryPath, task)
+          newSegments.push(segment)
+          archivedCount += 1
+        }
+        segmentsWritten = new Set(newSegments).size
+        if (hooks.afterArchiveWrite) hooks.afterArchiveWrite()
+        return {
+          version: CURRENT_REGISTRY_VERSION,
+          revision: current.revision,
+          tasks,
+          archiveSegments: [...current.archiveSegments, ...newSegments]
+        }
+      }
+    )
+    return allow('compacted', 'Terminal task history archived atomically.', {
+      registryRevision: registry.revision,
+      archivedTasks: archivedCount,
+      archiveSegmentsWritten: segmentsWritten,
+      liveTasks: Object.keys(registry.tasks).length
+    })
+  })
+}
+
+function readArchivedTask({ registryPath, taskId }) {
+  return asDecision(() => {
+    if (typeof taskId !== 'string' || !TASK_ID_PATTERN.test(taskId)) {
+      fail('invalid_input', 'Archived task ID is invalid.')
+    }
+    const registry = loadRegistry(registryPath)
+    if (!Object.prototype.hasOwnProperty.call(registry.archivedTasks, taskId)) {
+      fail('missing_archived_task', 'Archived task was not found.')
+    }
+    const task = registry.archivedTasks[taskId]
+    return allow('archived_task', 'Archived task snapshot is intact.', { task })
   })
 }
 
@@ -949,10 +1302,22 @@ function targetsMain(command) {
 }
 
 function isDirectIntegrationCommand(command) {
-  return (
-    /\bgh\s+pr\s+merge\b/i.test(command) ||
-    /\bgit\b[^\n;&|]*\bmerge\b/i.test(command)
-  )
+  const groups = safeShellTokenGroups(command)
+  if (!groups) {
+    return (
+      /\bgh\s+pr\s+merge\b/i.test(command) ||
+      /\bgit\b[^\n;&|]*\bmerge\b/i.test(command)
+    )
+  }
+  return groups.some((tokens) => {
+    const executable = path.basename(tokens[0] || '')
+    if (executable === 'gh') return tokens[1] === 'pr' && tokens[2] === 'merge'
+    if (executable !== 'git') return false
+    const subcommand = recognizedGitSubcommand(tokens)
+    if (subcommand === 'merge') return true
+    if (subcommand === 'add' || subcommand === 'commit') return false
+    return /\bgit\b[^\n;&|]*\bmerge\b/i.test(command)
+  })
 }
 
 function isDirectCommitCommand(command) {
@@ -1048,6 +1413,40 @@ function normalizeSafeShellToken(token) {
   const interior = token.slice(1, -1)
   if (/[\\'"]/.test(interior)) return null
   return interior
+}
+
+function safeShellTokenGroups(command) {
+  const segments = splitShellSegments(command)
+  if (!segments || segments.length === 0) return null
+  const groups = segments.map((segment) => {
+    const raw = segment.match(/(?:[^\s"']+|"[^"]*"|'[^']*')+/g) || []
+    return raw.map(normalizeSafeShellToken)
+  })
+  if (
+    groups.some(
+      (tokens) => tokens.length === 0 || tokens.some((token) => token === null)
+    )
+  )
+    return null
+  return groups
+}
+
+function recognizedGitSubcommand(tokens) {
+  let index = 1
+  while (index < tokens.length) {
+    if (tokens[index] === '-C' && tokens[index + 1]) {
+      index += 2
+      continue
+    }
+    if (tokens[index] === '--no-pager') {
+      index += 1
+      continue
+    }
+    break
+  }
+  const subcommand = tokens[index]
+  if (!subcommand || subcommand.startsWith('-')) return null
+  return subcommand
 }
 
 function isSupportedCommitCommand(command) {
@@ -1677,7 +2076,10 @@ function evaluateIntegration({ registryPath, event }) {
     }
     if (
       !['ready', 'complete'].includes(source.state) ||
-      !dependenciesComplete(source, registry.tasks)
+      !dependenciesComplete(source, {
+        ...registry.archivedTasks,
+        ...registry.tasks
+      })
     ) {
       fail(
         'source_not_ready',
@@ -1845,6 +2247,17 @@ function dispatch(command, input) {
         expectedRevision: input.expectedRevision,
         task: input.task
       })
+    case 'compact':
+      return compactRegistry({
+        registryPath,
+        expectedRevision: input.expectedRevision,
+        coordinatorTaskId: input.coordinatorTaskId
+      })
+    case 'history':
+      return readArchivedTask({
+        registryPath,
+        taskId: input.taskId
+      })
     case 'check':
       return checkTask({ registryPath, event: input })
     case 'pre-tool':
@@ -1863,6 +2276,7 @@ function dispatch(command, input) {
 module.exports = {
   VERSION,
   checkTask,
+  compactRegistry,
   dispatch,
   evaluateIntegration,
   evaluatePreCommit,
@@ -1870,6 +2284,7 @@ module.exports = {
   evaluateStop,
   hashToolInput,
   loadRegistry,
+  readArchivedTask,
   registerTask,
   registryPathForRepo
 }

@@ -1,0 +1,46 @@
+{
+  "name": "@asyra/starter-app",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": "24.x"
+  },
+  "packageManager": "yarn@4.3.1",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "react:build": "yarn build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:local": "vitest run",
+    "test:ci": "vitest run",
+    "lint": "eslint .",
+    "start": "vite dev"
+  },
+  "dependencies": {
+    "@asyra/core": "0.5.7",
+    "@asyra/preset": "0.5.8",
+    "@asyra/utils": "0.5.2",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.5",
+    "@vitejs/plugin-react": "^4.7.0",
+    "jsdom": "^27.4.0",
+    "typescript": "^5.7.2",
+    "vite": "^6.4.3",
+    "vitest": "^3.2.6",
+    "@eslint/compat": "^2.0.1",
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.0.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.5",
+    "prettier": "^3.9.6",
+    "typescript-eslint": "^8.54.0"
+  }
+}

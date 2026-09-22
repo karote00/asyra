@@ -24,7 +24,7 @@ export const AiDrawingDetailOptionIds = Object.freeze({
 
 export const AiDrawingDetailSelectionIntents = Object.freeze({
   BALANCED_EN: 'draw this image with balanced detail',
-  BALANCED_ZH: '以平衡細節繪製這張圖',
+  BALANCED_REFERENCE: 'draw the reference image with balanced detail',
   MAXIMUM_EN: 'draw this image with maximum detail',
-  MAXIMUM_ZH: '以最高細節繪製這張圖'
+  MAXIMUM_REFERENCE: 'draw the reference image with maximum detail'
 } as const)

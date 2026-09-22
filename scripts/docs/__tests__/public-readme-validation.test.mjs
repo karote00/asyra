@@ -9,7 +9,8 @@ import {
   validateReadmeLinks,
   validateReadmeLearningSurface,
   validateReadmeNamedImports,
-  validateReadmePolicy
+  validateReadmePolicy,
+  validateStarterPublicationState
 } from '../public-readme-validation.mjs'
 
 const repositoryRoot = path.resolve(
@@ -29,6 +30,7 @@ test('README policy rejects missing policy and external contribution invitations
   assert.throws(
     () =>
       validateReadmePolicy({
+        id: 'asyra-design',
         source: 'Use and fork this package.',
         sourcePath: 'README.md'
       }),
@@ -37,6 +39,7 @@ test('README policy rejects missing policy and external contribution invitations
   assert.throws(
     () =>
       validateReadmePolicy({
+        id: 'asyra-design',
         source:
           'This repository does not accept external issues or contributions. Pull requests are welcome.',
         sourcePath: 'README.md'
@@ -60,6 +63,36 @@ test('README learning surfaces reject retired example runners and source links',
       /removed executable-example surface/
     )
   }
+})
+
+test('unpublished Starter entry rejects public execution and installation CTAs', () => {
+  const source =
+    'Generic Starter source is available. create-asyra-app is not yet published to the public npm registry.'
+  assert.doesNotThrow(() =>
+    validateStarterPublicationState({ source, sourcePath: 'README.md' })
+  )
+  for (const command of [
+    'npx create-asyra-app my-app',
+    'npm create asyra-app my-app',
+    'yarn create asyra-app my-app'
+  ]) {
+    assert.throws(
+      () =>
+        validateStarterPublicationState({
+          source: `${source}\n${command}`,
+          sourcePath: 'README.md'
+        }),
+      /unpublished Starter command/u
+    )
+  }
+  assert.throws(
+    () =>
+      validateStarterPublicationState({
+        source: `${source}\n[Install Starter](https://www.npmjs.com/package/create-asyra-app)`,
+        sourcePath: 'README.md'
+      }),
+    /unpublished Starter command/u
+  )
 })
 
 test('README link validation rejects missing and unverified destinations', () => {
