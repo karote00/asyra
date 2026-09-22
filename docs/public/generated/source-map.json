@@ -24,7 +24,7 @@
         },
         {
           "path": "create-app/asyra-design/template/README.md",
-          "sha256": "e5b11b44e94fc127fd9cc2ddd767433e7a9bd9a9b4b392556c5356a7bc0d3ec2"
+          "sha256": "01a93628b884ea3cee3bef21853c5ed2f197d3411e90a720ca7ce61f0ea85d36"
         }
       ]
     },
@@ -138,7 +138,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/factory.md",
-          "sha256": "60257da9ca9d6b965b2f4f58a07a752748ada342af5e1101509f842a88764c3b"
+          "sha256": "85a42290366a6ec04d106fa73c98778f1a5fd6da0a4f0ad34dad860f1f958f5a"
         },
         {
           "path": "docs/ai/framework/packages/reactive-events.md",
@@ -228,7 +228,7 @@
         },
         {
           "path": "docs/ai/framework/packages/factory.md",
-          "sha256": "60257da9ca9d6b965b2f4f58a07a752748ada342af5e1101509f842a88764c3b"
+          "sha256": "85a42290366a6ec04d106fa73c98778f1a5fd6da0a4f0ad34dad860f1f958f5a"
         }
       ]
     },
@@ -298,7 +298,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/ai-agent-runtime.md",
-          "sha256": "f4dd8cdc78a132831ae7fa28fa9c249f0aa2f0bf6c47271f2a781576cc9b6e40"
+          "sha256": "a07073375ba0452eef30a388e790cf5c11cc964f5fd80b0faca2f596c95a59fc"
         },
         {
           "path": "docs/ai/framework/golden-paths/compose-ai-agent-runtime.md",
@@ -312,7 +312,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/ai-agent-runtime.md",
-          "sha256": "f4dd8cdc78a132831ae7fa28fa9c249f0aa2f0bf6c47271f2a781576cc9b6e40"
+          "sha256": "a07073375ba0452eef30a388e790cf5c11cc964f5fd80b0faca2f596c95a59fc"
         },
         {
           "path": "docs/ai/framework/packages/feature-system.md",
@@ -326,7 +326,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/ai-agent-runtime.md",
-          "sha256": "f4dd8cdc78a132831ae7fa28fa9c249f0aa2f0bf6c47271f2a781576cc9b6e40"
+          "sha256": "a07073375ba0452eef30a388e790cf5c11cc964f5fd80b0faca2f596c95a59fc"
         },
         {
           "path": "packages/ai-agent-runtime/package.json",
@@ -382,7 +382,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/factory.md",
-          "sha256": "60257da9ca9d6b965b2f4f58a07a752748ada342af5e1101509f842a88764c3b"
+          "sha256": "85a42290366a6ec04d106fa73c98778f1a5fd6da0a4f0ad34dad860f1f958f5a"
         },
         {
           "path": "packages/factory/package.json",
