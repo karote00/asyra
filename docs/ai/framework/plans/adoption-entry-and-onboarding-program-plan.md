@@ -12,9 +12,11 @@ to own their exact behavior until an explicitly scoped task reconciles them.
 Task 1 is partially in progress. The stale example-link child PR recorded below
 completed one bounded documentation repair. The 2026-09-23
 `codex/adoption-entry-contracts` baseline records the current root README and
-homepage authority only. Minimal runtime readiness, release owner mapping,
-community policy, and later public activation work remain pending and require
-their own bounded task slices.
+homepage authority only. The starter-readiness documentation slice is one
+merged result from PR #245; the earlier PR #244 was closed and must not be
+counted as a second delivery. Minimal runtime proof, community policy, and
+later public activation work remain pending and require their own bounded task
+slices.
 
 The user selected sequential, separate conversations with PR review between
 tasks to control usage. This agreement supersedes the original proposal's
@@ -62,6 +64,18 @@ multi-agent delegation and autonomous execution across all workstreams.
   the target file exists, the scoped stale-link search is clean, and the public
   documentation/readme validation scripts pass through their Node entrypoints.
   This records a bounded part of task 1 only; task 1 remains pending.
+- Child PR #243 `codex/adoption-entry-contracts`: merged at
+  `0065d1504ac34889ded7adaea494e0d6f34b8262` and recorded the README/homepage
+  baseline. Its Node validation covered focused public README inputs and
+  validation entrypoints, not the complete `yarn docs:readme:check` chain.
+  Visual evidence for GitHub-compatible desktop/narrow rendering with and
+  without media was not found in this bounded repair, so README visual
+  acceptance remains pending rather than completed.
+- Child PR #244 `codex/adoption-starter-readiness` was closed without a merge.
+  Child PR #245 `codex/adoption-starter-readiness-docs` is the merged
+  starter-readiness documentation result at
+  `b0c431fd4d832ec427a0766578d7bfb7f8785387`. Treat #244 and #245 as the same
+  intended document outcome, with only #245 integrated.
 
 ## Product decisions
 
@@ -150,8 +164,11 @@ Task 1 README/homepage baseline recorded from
   architecture explainer, PoC comic, or missing attachment description as the
   current homepage authority without a new product-owner decision.
 - Remaining task 1 gaps after this README/homepage slice: minimal runtime
-  readiness, exact release owners, community/support reconciliation, FieldScope
-  source claims, and any integrated validation after child PRs merge.
+  proof, complete public README gate execution, README rendering evidence,
+  community/support reconciliation, FieldScope source claims, and any integrated
+  validation after child PRs merge. Release/generation/consumer ownership is
+  mapped below, but later implementation slices must still execute their actual
+  commands.
 
 ## Relationship to Design AI work
 
@@ -187,14 +204,21 @@ starter completion.
 
 ### Starter decision
 
-- Source owner: create the canonical App source under a new app workspace, with
-  the exact path selected in the implementation task before edits. Do not use
-  `apps/asyra`, `create-app/asyra`, or
+- Source owner: create the canonical starter App source at `apps/starter-app`
+  with workspace name `@asyra/starter-app`. This is the App source identity,
+  not the public CLI package or generated-template identity. The name is
+  intentionally brand-neutral for app-owned source while preserving the accepted
+  product decision that a later zero-choice public builder command is
+  `create-asyra-app`.
+- Retired-starter boundary: do not use `apps/asyra`, `create-app/asyra`, or
   `release-configs/create-asyra-app.json` as a silent resurrection of the
   retired React-only starter. `scripts/__tests__/create-app-cli.test.mjs`
   currently asserts that those paths and the `create-asyra-app` public name stay
-  absent; the CLI/template slice must replace that contract in the same
-  coherent change that introduces any successor CLI path.
+  absent. The canonical App slice must not edit that test. The later
+  CLI/template slice must replace this retired-surface assertion in the same
+  coherent change that introduces the successor public CLI path and generated
+  template; until then, `apps/starter-app` is an internal canonical App source,
+  not public activation.
 - Minimal domain: use an App-owned `Item` with `id`, `title`, and `status`.
   The canonical `id` is the Scene Tree element id. `title` and `status` are
   stored in one App-owned Props property component attached to an App-owned
@@ -210,10 +234,12 @@ starter completion.
   version stamping, and cleanup. Apply `@asyra/preset` with profile `2D` and
   `defaults: []` to bind the official Pixi render provider without installing
   default product modules, then call `core.start(container, renderOptions)` and
-  treat the resolved promise as readiness. This stays on a supported
-  browser/Core composition path. Do not treat the current no-provider
-  compatibility branch as Headless support, and do not install an empty custom
-  provider merely to pass startup.
+  treat the resolved promise as readiness. `defaults: []` means no Preset
+  default product wiring, so the App must install its own projection
+  subscription, load refresh, UI property refresh, input shortcuts, and cleanup.
+  This stays on a supported browser/Core composition path. Do not treat the
+  current no-provider compatibility branch as Headless support, and do not
+  install an empty custom provider merely to pass startup.
 - Dependencies: the minimal App needs `@asyra/core`, `@asyra/preset`,
   `@asyra/render-engine-pixi` through Preset profile binding, and React/Vite
   only for the UI shell. It does not need Collaboration, AI runtime, backend,
@@ -239,14 +265,28 @@ starter completion.
   and owner facades. React owns only transient input text, selected row, and
   command affordances.
 - Projection and UI subscription: create one App projection store from Core
-  observation facades. Consume completed document changes through
-  `core.subscribeToSharedPublication(...)` and, where a UI value needs a
-  derived registration, `core.registerUIProperty(...)`,
-  `core.getUIPropertySubject(...)`, and `core.onUIPropertyChange(...)`. The
-  projection reads current canonical data through `core.getElementData(...)`,
-  `core.getElementComputedData(...)`, and the App-owned Item property relation.
-  It must not keep a second editable document or make React state the source of
-  persisted item data.
+  observation facades. Initial startup builds the projection after the App has
+  registered schemas/features/projection wiring, applied Preset, awaited
+  `core.start(...)`, and read current canonical data through
+  `core.getElementData(...)`, `core.getElementComputedData(...)`, and the
+  App-owned Item property relation. General add/edit mutations refresh the
+  projection from `core.subscribeToSharedPublication(...)` for completed
+  document publications. Undo and Redo use the existing
+  `undoWithRenderPolicy(...)` / `redoWithRenderPolicy(...)` route and refresh
+  through the same shared-publication consumer plus any App command completion
+  state needed for disabled/enabled controls. Reload is different: Core
+  `load(...)` applies validated package state and emits `fileLoadComplete()`;
+  it does not necessarily emit `sceneTreeLoadComplete`, and shared publication
+  must not be assumed to contain every load update. The App must subscribe to
+  the public `subscribeToFileLoadComplete(...)` entry for full projection
+  rebuild after accepted reload. Dispose calls every retained unsubscribe from
+  shared publication, file-load, UI property, shortcut, timer/resource, and
+  runtime cleanup registration, and must prove late callbacks cannot update a
+  retired projection. Where a UI value needs a derived registration, use
+  `core.registerUIProperty(...)`, `core.getUIPropertySubject(...)`, and
+  `core.onUIPropertyChange(...)`; registration alone does not install the
+  document-change subscription. The projection must not keep a second editable
+  document or make React state the source of persisted item data.
 - Undo/Redo: expose Undo/Redo through the existing Factory/Core route. The next
   implementation may use the public `undoWithRenderPolicy(...)` /
   `redoWithRenderPolicy(...)` helpers re-exported from `@asyra/core` or an App
@@ -255,15 +295,26 @@ starter completion.
   caller path, not by editing Factory history directly.
 - Save/Reload: use explicit `core.save()` for a portable document snapshot; it
   is not an automatic durability acknowledgement and must not be scheduled from
-  every transaction. Save writes the returned `CoreRawData` into the App's
-  selected local storage/export owner. Reload reads untrusted data, runs the
-  App version/load hook chain through `core.preflightLoad(...)` for
-  user-facing diagnostics, then `core.load(...)` only when accepted. Unknown
-  starter versions, invalid Item status, malformed property payloads, and
-  invalid hierarchy must be reported in the App UI and either rejected or fall
-  back according to the owning Core/Props/Scene validation path. The V1 starter
-  must state its document version and include a minimal migration hook, even if
-  the first hook only accepts the current version.
+  every transaction. The V1 App owns the selected local-storage/export slot,
+  writes only after `core.save()` resolves and the App storage/export operation
+  succeeds, and reports that App-level success explicitly. Storage/export
+  failure is an App UI error and must not be reported as a saved document. Save
+  hooks may stamp the starter document envelope/version, but Core still owns
+  package snapshot assembly and does no provider I/O.
+- Reload acceptance: read untrusted data from the App storage/import owner, run
+  the App version/load hook chain through `core.preflightLoad(...)` for
+  diagnostics, and call `core.load(...)` only when the App accepts the target.
+  The App accepts the current V1 starter version and any explicitly listed V1
+  migration inputs. Unknown starter versions are rejected by App policy before
+  `core.load(...)`; do not rely on Core to reject unknown App versions because
+  Core's migration contract passes through unmatched versions after synchronous
+  hooks. Malformed Core payload shapes can fall back through Core normalization
+  and package validators; invalid Item status or missing App-owned fields follow
+  the Props/App validator fallback only when that fallback is the declared V1
+  policy; invalid Scene hierarchy is rejected before package apply. Every
+  accepted reload must rebuild the projection through the `fileLoadComplete`
+  path above, and every rejected reload must leave the current document and
+  projection unchanged.
 
 ### Direct API and formal-test evidence
 
@@ -300,7 +351,7 @@ starter completion.
   `docs/public/start/preset-2d.md`,
   `packages/preset/src/__tests__/apply-preset.test.ts`, and
   `packages/preset/src/__tests__/profile-provider.test.ts`.
-- CLI/template/release ownership:
+- Release, generation, and consumer ownership:
   `docs/ai/framework/rules/generated-artifacts.md`,
   `docs/ai/framework/rules/release-version-topology.md`,
   `scripts/__tests__/create-app-cli.test.mjs`,
@@ -315,6 +366,41 @@ starter completion.
   `docs/ai/framework/plans/completed/local-versioned-package-install-research-plan.md`,
   and
   `docs/ai/framework/plans/completed/create-asyra-design-app-release-plan.md`.
+
+### Release, generation, and consumer step owners
+
+These are boundaries for later tasks, not work performed by this documentation
+slice.
+
+- App source owner: `apps/starter-app` and workspace `@asyra/starter-app`.
+  Inputs are app source, app-local docs/tests, and workspace metadata. Outputs
+  are runnable App source and formal App tests. Existing command for the next
+  App task: no script exists yet; the task must add app-local tests and then run
+  their actual workspace command. Until that script exists, do not list a
+  fabricated `yarn workspace @asyra/starter-app ...` command as current.
+- CLI and template generation owner: later CLI/template slice. Inputs are the
+  accepted `apps/starter-app` source, successor release config, CLI package,
+  generation rules, and the retired-starter test contract. Outputs are the
+  public `create-asyra-app` command, generated standalone template, and updated
+  assertions replacing the current retired-surface checks. Existing command
+  today only covers Asyra Design: `yarn release:app:check --prod=asyra-design`.
+  Any `--prod=starter-app` or `--prod=create-asyra-app` check is a next-task
+  addition, not an existing script.
+- Release-template owner: `scripts/release-template.js` plus a release config.
+  Inputs are `src`, `dest`, `license`, cleanup lists, and package manifests.
+  Outputs are copied template files, standalone README/LICENSE, exact
+  `@asyra/*` dependency versions, Node/Yarn metadata, and cleaned scripts/files.
+  The script may be used only after the successor release config exists.
+- Consumer-readiness owner: `scripts/release-readiness.js` and its tests for
+  framework clean/registry consumers. Inputs are validated framework package
+  artifacts or registry versions and the clean-consumer fixture. Outputs are
+  temporary project-local consumer directories under `tmp/` and executed install
+  or readiness commands. This does not prove a generated starter template unless
+  the CLI/template slice adds a matching generated-app consumer command.
+- Publication boundary: registry publication, push, tags, release records, live
+  site routing, and production deployment are external operations requiring
+  separate authorization. This adoption plan may name their owners but does not
+  perform or imply them.
 
 ### Next implementation task contract
 
@@ -342,6 +428,18 @@ Acceptance for that task:
   owner contract. Full visual, 7076, release, or generated-template gates are
   not part of the minimal App slice unless that implementation broadens into
   those owners.
+- Explicit next-task validation commands:
+  - Baseline naming gate before introducing identifiers:
+    `yarn lint:naming` when Yarn install state is available, otherwise the
+    direct Node entrypoint from package.json:
+    `node --test scripts/__tests__/brand-neutral-code.test.mjs scripts/__tests__/display-name-separators.test.mjs`.
+  - New starter App tests: next task adds the app-local script and runs the
+    actual command it adds. There is no existing `@asyra/starter-app` workspace
+    command at this baseline.
+  - If package owner contracts are touched, run the directly relevant existing
+    package tests listed in "Direct API and formal-test evidence"; otherwise
+    cite them as read evidence only.
+  - Always run `git diff --check` and a bounded final diff review.
 
 Inspector readiness: this readiness slice does not create a runtime flow. The
 next implementation should first check whether it changes or proves an existing
@@ -367,9 +465,9 @@ one bounded slice without completing the whole task or adoption program.
 
 | Task | Bounded result and owners | Acceptance and dependency |
 | --- | --- | --- |
-| 1 - Reconcile contracts | This plan, existing entry/README/site plans, directly relevant public-entry authorities | In progress. Example-link repair is recorded above. README/homepage baseline is recorded at `b44be9e77`; the current root README composition and six-chapter homepage authority are implemented and locally testable at that baseline. Minimal-runtime readiness, existing gates beyond this slice, release owners, support/community, and remaining public-entry reconciliation stay pending. Documentation PR only; no runtime or site behavior changes. |
-| 2 - Minimal canonical App | One explicitly authored App source and its direct tests/docs | Frozen next scope: supported Core/Preset startup, App-owned Item `id/title/status`, registered Feature -> App API -> one transaction -> Core owner facade, projection without a second editable document, Undo/Redo, explicit versioned Save/Reload with validation and error reporting. Use the readiness decisions above; do not create the CLI/template/release surface in this slice. Depends on task 1. |
-| 3 - CLI and standalone template | Generic CLI, generation/release integration, canonical source instructions and generated output | Safe generation, supported package managers, public imports, independent install/build/typecheck/test, canonical behavior, no workspace hoisting dependency, template parity. Replace the current retired generic-starter test contract in the same coherent slice that introduces any successor CLI path. Depends on task 2. No registry publication. |
+| 1 - Reconcile contracts | This plan, existing entry/README/site plans, directly relevant public-entry authorities | In progress. Example-link repair is recorded above. README/homepage baseline is recorded at `b44be9e77`; the current root README composition and six-chapter homepage authority are implemented and locally testable at that baseline, but README desktop/narrow media-present/media-missing rendering evidence remains pending. PR #245, not closed PR #244, records the starter-readiness documentation. This correction records canonical starter source naming, projection/load/save obligations, and release/generation/consumer owner boundaries. Runtime proof, complete `docs:readme:check`, support/community, FieldScope claim reconciliation, merge/publication/deployment, and public activation remain separate. Documentation PR only; no runtime or site behavior changes. |
+| 2 - Minimal canonical App | `apps/starter-app`, workspace `@asyra/starter-app`, and direct app-local tests/docs | Frozen next scope: supported Core/Preset startup, App-owned Item `id/title/status`, registered Feature -> App API -> one transaction -> Core owner facade, projection without a second editable document, Undo/Redo, explicit versioned Save/Reload with validation and error reporting. Use the readiness decisions above; do not create the CLI/template/release surface in this slice. Depends only on the integrated README/starter-readiness/correction documentation needed for this App scope, not on community policy, FieldScope claim work, homepage public activation, product evidence expansion, registry publication, or Design AI completion. |
+| 3 - CLI and standalone template | Generic CLI, generation/release integration, canonical source instructions and generated output | Safe generation, supported package managers, public imports, independent install/build/typecheck/test, canonical behavior, no workspace hoisting dependency, template parity. Replace the current retired generic-starter test contract in the same coherent slice that introduces the successor public `create-asyra-app` path. Depends on task 2. No registry publication. |
 | 4 - AI-first starter onboarding | Canonical starter AGENTS/docs/tests and generated sync | One bounded priority-field extension preserves mutation, Undo, projection and saved-data compatibility through formal tests. Record whether the exercise was actually performed; instructions alone are not proof. Depends on task 3. No runtime AI provider. |
 | 5 - Entry routing and product evidence | Root README, public docs/llms generators, existing homepage entry points and verified case evidence | Generic / Design / advanced hierarchy, current links, truthful App evidence, preserved visual/accessibility contracts. Reconcile only remaining README/site plan work. Depends on tasks 3-4; public activation waits for verified CLI availability. |
 | 6 - Community and support | SUPPORT.md, canonical support generators/validators, directly affected App release wording | Synchronized policy, private security route, no SLA or implied PR acceptance. Confirm Discussions availability before publishing active links. Sim reporting path may change; remaining release obligations stay explicit. Depends on task 1; remains sequential by default. |
