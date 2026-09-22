@@ -4,6 +4,19 @@ Never record completed plans here.
 
 This file tracks framework planning topics and points to detailed references.
 
+## Adoption and Onboarding Program
+
+The [Adoption Entry and Onboarding Program](plans/adoption-entry-and-onboarding-program-plan.md)
+coordinates result-first entry, the generic starter, AI onboarding, product
+evidence, and community policy. Use one agent per bounded task, separate
+worktrees, and child PRs targeting `codex/adoption-onboarding`. Review and
+validate each child before authorized integration. No multi-agent delegation
+is authorized.
+
+The program is planned, not implemented. Its first task reconciles existing
+entry authorities; the first small child PR repairs stale example links.
+Runtime and release work require their own bounded task contracts.
+
 ## Active Public Entry Experience Plans
 
 These plans improve how new visitors understand and verify the existing public
