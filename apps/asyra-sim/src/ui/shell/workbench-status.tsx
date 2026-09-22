@@ -32,8 +32,8 @@ export function WorkbenchStatus() {
 
       <span>
         Machine-scale geometry{' '}
-        <span className="footer-dot py-0 px-2 text-sim-muted">·</span> CUSTOM
-        renderer <span className="footer-dot py-0 px-2 text-sim-muted">·</span>{' '}
+        <span className="footer-dot py-0 px-2 text-sim-muted">-</span> CUSTOM
+        renderer <span className="footer-dot py-0 px-2 text-sim-muted">-</span>{' '}
         Not a released product
       </span>
     </footer>

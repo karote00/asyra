@@ -9900,7 +9900,7 @@ describe('PropsManager', () => {
     propsManager.updatePropsData(
       'pp-1',
       'x' as unknown as keyof PropertyComponentInstanceDataTypes,
-      '中文' as unknown as PropertyComponentInstanceDataTypes[keyof PropertyComponentInstanceDataTypes]
+      'invalid' as unknown as PropertyComponentInstanceDataTypes[keyof PropertyComponentInstanceDataTypes]
     )
 
     const position = positionComponent as unknown as {
@@ -9913,7 +9913,7 @@ describe('PropsManager', () => {
     const positionComponent = createProperty({
       id: 'pp-1',
       type: PropertyTypes.POSITION,
-      x: '中文',
+      x: 'invalid',
       y: null,
       xUnit: 'invalid-unit',
       yUnit: Unit.PERCENT

@@ -63,7 +63,7 @@ describe('AI current history Message Bar', () => {
     const settledTurn = {
       conversationId: 'conversation-a',
       durationMs: 1_250,
-      intent: '畫一個貓臉',
+      intent: 'draw a cat face',
       outcome: 'success',
       progress: [],
       result: {
