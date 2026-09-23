@@ -22,7 +22,7 @@ that fail on the current default App, then implement the change. Include the
 normal edit, Undo/Redo, Save/Reload, legacy missing field and invalid present
 field cases, plus a UI test for the control.
 
-Run `yarn test`, `yarn typecheck`, `yarn lint`, and `yarn react:build`. Report the
-changed owner files, the failing-before/passing-after test evidence, and any
-limits. Do not claim a separate agent conversation was verified unless you
-actually ran one.
+Use the package manager declared in `package.json` and run the tests,
+typecheck, lint and build commands in `AGENTS.md`. Report the changed owner
+files, the failing-before/passing-after test evidence, and any limits. Do not
+claim a separate agent conversation was verified unless you actually ran one.

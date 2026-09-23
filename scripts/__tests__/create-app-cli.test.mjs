@@ -146,6 +146,25 @@ for (const packageManager of ['yarn', 'npm']) {
           guide
         )
       }
+      for (const guide of [
+        'AGENTS.md',
+        'docs/ONBOARDING.md',
+        'docs/PRIORITY_AGENT_PROMPT.md'
+      ]) {
+        assert.match(
+          fs.readFileSync(path.join(projectDirectory, guide), 'utf8'),
+          /package manager declared in `package\.json`/u,
+          `${guide} must use the generated project's package manager`
+        )
+      }
+      const agentGuide = fs.readFileSync(
+        path.join(projectDirectory, 'AGENTS.md'),
+        'utf8'
+      )
+      for (const script of ['test', 'typecheck', 'lint', 'react:build']) {
+        assert.match(agentGuide, new RegExp(`yarn ${script}`, 'u'))
+        assert.match(agentGuide, new RegExp(`npm run ${script}`, 'u'))
+      }
       assert.equal(
         fs.existsSync(
           path.join(

@@ -44,8 +44,9 @@ present value outside the three legal values is rejected before Core load, so
 the current document, history and projection remain intact. Save/Reload and
 Undo/Redo use the same canonical owners as title/status.
 
-Run `yarn test`, `yarn typecheck`, `yarn lint`, and `yarn react:build`. The
-formal exercise is `src/examples/priority/__tests__/priority-example.test.ts`;
+Use the package manager declared in `package.json` and run the tests,
+typecheck, lint and build commands in `AGENTS.md`. The formal exercise is
+`src/examples/priority/__tests__/priority-example.test.ts`;
 the baseline domain, runtime and UI tests are under their respective
 `src/**/__tests__/` folders. See `docs/PRIORITY_EXERCISE.md` for the recorded
 exercise and `docs/PRIORITY_AGENT_PROMPT.md` for a prompt you can hand to a

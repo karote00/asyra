@@ -20,6 +20,14 @@ exercise.
   implementation. Cover one action/one Undo, Redo, projection, saved data,
   legacy missing fields, invalid present fields and existing title/status.
 
-Run `yarn test`, `yarn typecheck`, `yarn lint`, and `yarn react:build` before
-handing off changes. The default App remains title/status-only; the priority
-example is opt-in.
+Use the package manager declared in `package.json` for validation before
+handing off changes:
+
+| Check | Yarn project | npm project |
+| --- | --- | --- |
+| Tests | `yarn test` | `npm run test` |
+| Types | `yarn typecheck` | `npm run typecheck` |
+| Lint | `yarn lint` | `npm run lint` |
+| Build | `yarn react:build` | `npm run react:build` |
+
+The default App remains title/status-only; the priority example is opt-in.
