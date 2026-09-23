@@ -1,9 +1,12 @@
 import assert from 'node:assert/strict'
+import { execFileSync } from 'node:child_process'
+import { randomUUID } from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
-import test from 'node:test'
+import test, { after, before } from 'node:test'
 import { fileURLToPath } from 'node:url'
 
+import { readFrameworkReleaseSource } from '../framework-release-packages.js'
 import {
   DEFAULT_TEMPLATE_CONSUMER_DIRECTORY,
   prepareGeneratedTemplateConsumer,
@@ -18,11 +21,153 @@ const repositoryRoot = path.resolve(
   '..',
   '..'
 )
-const artifactDirectory = path.join(
-  repositoryRoot,
-  'tmp',
-  'framework-release-artifacts'
-)
+let artifactFixture
+let artifactDirectory
+
+const exportedPaths = (exportsValue) => {
+  if (typeof exportsValue === 'string') return [exportsValue]
+  if (!exportsValue || typeof exportsValue !== 'object') return []
+  return Object.values(exportsValue).flatMap(exportedPaths)
+}
+
+const tarballNameFor = ({ name, version }) =>
+  `${name.slice(1).replace('/', '-')}-${version}.tgz`
+
+const writeFile = (filePath, source) => {
+  fs.mkdirSync(path.dirname(filePath), { recursive: true })
+  fs.writeFileSync(filePath, source)
+}
+
+const createPackedArtifactFixture = () => {
+  const source = readFrameworkReleaseSource({ repositoryRoot })
+  const packageVersions = Object.fromEntries(
+    source.packages.map((record) => [record.name, record.version])
+  )
+  const rootLicense = fs.readFileSync(
+    path.join(repositoryRoot, 'LICENSE'),
+    'utf8'
+  )
+  const temporaryRoot = path.join(repositoryRoot, 'tmp')
+  fs.mkdirSync(temporaryRoot, { recursive: true })
+  const fixtureRoot = fs.mkdtempSync(
+    path.join(temporaryRoot, 'framework-release-package-fixture-')
+  )
+  const artifactDirectory = fs.mkdtempSync(
+    path.join(temporaryRoot, 'framework-release-artifacts-fixture-')
+  )
+
+  fs.mkdirSync(artifactDirectory, { recursive: true })
+
+  for (const record of source.packages) {
+    const packageRoot = path.join(fixtureRoot, record.directory, 'package')
+    const manifest = JSON.parse(
+      fs.readFileSync(path.join(repositoryRoot, record.manifestPath), 'utf8')
+    )
+    delete manifest.devDependencies
+    delete manifest.scripts
+    for (const dependencyField of [
+      'dependencies',
+      'peerDependencies',
+      'optionalDependencies'
+    ]) {
+      if (!manifest[dependencyField]) continue
+      for (const [dependencyName, version] of Object.entries(
+        manifest[dependencyField]
+      )) {
+        if (packageVersions[dependencyName] && version === 'workspace:*') {
+          manifest[dependencyField][dependencyName] =
+            packageVersions[dependencyName]
+        }
+      }
+    }
+    writeFile(
+      path.join(packageRoot, 'package.json'),
+      `${JSON.stringify(manifest, null, 2)}\n`
+    )
+    writeFile(path.join(packageRoot, 'LICENSE'), rootLicense)
+
+    const publicPaths = [
+      manifest.main,
+      manifest.module,
+      manifest.types,
+      ...exportedPaths(manifest.exports)
+    ].filter(Boolean)
+    for (const publicPath of publicPaths) {
+      const source =
+        publicPath.endsWith('.d.ts') || publicPath.endsWith('.d.mts')
+          ? 'export {}\n'
+          : 'export {}\n'
+      writeFile(
+        path.join(packageRoot, publicPath.replace(/^\.\//u, '')),
+        source
+      )
+    }
+
+    execFileSync(
+      'tar',
+      [
+        '-czf',
+        path.join(
+          artifactDirectory,
+          tarballNameFor({ name: record.name, version: record.version })
+        ),
+        '-C',
+        path.join(fixtureRoot, record.directory),
+        'package'
+      ],
+      { stdio: 'ignore' }
+    )
+  }
+
+  return { artifactDirectory, fixtureRoot }
+}
+
+before(() => {
+  artifactFixture = createPackedArtifactFixture()
+  artifactDirectory = artifactFixture.artifactDirectory
+})
+
+after(() => {
+  if (!artifactFixture) return
+  fs.rmSync(artifactFixture.artifactDirectory, { recursive: true, force: true })
+  fs.rmSync(artifactFixture.fixtureRoot, { recursive: true, force: true })
+})
+
+test('packed artifact fixture never deletes the shared release artifact owner', () => {
+  const sharedArtifactDirectory = path.join(
+    repositoryRoot,
+    'tmp',
+    'framework-release-artifacts'
+  )
+  const sentinelPath = path.join(
+    sharedArtifactDirectory,
+    `fixture-preservation-${randomUUID()}.txt`
+  )
+  fs.mkdirSync(sharedArtifactDirectory, { recursive: true })
+  fs.writeFileSync(sentinelPath, 'preserve shared artifacts\n', { flag: 'wx' })
+
+  try {
+    const isolatedFixture = createPackedArtifactFixture()
+    try {
+      assert.notEqual(
+        isolatedFixture.artifactDirectory,
+        sharedArtifactDirectory
+      )
+    } finally {
+      fs.rmSync(isolatedFixture.artifactDirectory, {
+        recursive: true,
+        force: true
+      })
+      fs.rmSync(isolatedFixture.fixtureRoot, { recursive: true, force: true })
+    }
+    assert.equal(
+      fs.readFileSync(sentinelPath, 'utf8'),
+      'preserve shared artifacts\n'
+    )
+  } finally {
+    fs.rmSync(sentinelPath)
+  }
+})
 
 test('generated template consumer path is constrained to one project tmp child', () => {
   assert.equal(
@@ -73,6 +218,31 @@ test('generated template uses only frozen public framework entrypoints', () => {
     '@asyra/ui-context',
     '@asyra/utils'
   ])
+
+  const starterContract = validateGeneratedTemplateContract({
+    repositoryRoot,
+    appName: 'starter-app'
+  })
+  assert.ok(starterContract.importCount > 0)
+  assert.deepEqual(starterContract.importedPackageNames, [
+    '@asyra/core',
+    '@asyra/preset',
+    '@asyra/utils'
+  ])
+  assert.deepEqual(starterContract.packageNames, [
+    '@asyra/core',
+    '@asyra/preset',
+    '@asyra/utils'
+  ])
+  assert.equal(
+    fs
+      .readFileSync(
+        path.join(starterContract.templateDirectory, 'vitest.config.ts'),
+        'utf8'
+      )
+      .includes('../../packages'),
+    false
+  )
 })
 
 test('generated template replaces framework resolution with packed artifacts', () => {
@@ -94,13 +264,14 @@ test('generated template replaces framework resolution with packed artifacts', (
       const dependency =
         prepared.manifest.dependencies?.[packageName] ??
         prepared.manifest.devDependencies?.[packageName]
+      const artifactDirectoryName = path.basename(artifactDirectory)
       assert.match(
         dependency,
         new RegExp(
-          `^file:\\.\\./framework-release-artifacts/.*-${version.replace(
+          `^file:\\.\\./${artifactDirectoryName.replace(
             /[.*+?^${}()|[\]\\]/gu,
             '\\$&'
-          )}\\.tgz$`,
+          )}/.*-${version.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')}\\.tgz$`,
           'u'
         )
       )

@@ -5506,6 +5506,14 @@ __metadata:
   languageName: node
   linkType: hard
 
+"create-asyra-app@workspace:create-app/starter-app":
+  version: 0.0.0-use.local
+  resolution: "create-asyra-app@workspace:create-app/starter-app"
+  bin:
+    create-asyra-app: ./bin/index.js
+  languageName: unknown
+  linkType: soft
+
 "create-asyra-design-app@workspace:create-app/asyra-design":
   version: 0.0.0-use.local
   resolution: "create-asyra-design-app@workspace:create-app/asyra-design"

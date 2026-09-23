@@ -1,0 +1,29 @@
+{
+  "name": "create-asyra-app",
+  "version": "0.1.0",
+  "description": "Create a standalone Asyra Starter App project",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": "24.x"
+  },
+  "bin": "./bin/index.js",
+  "files": [
+    "bin",
+    "template"
+  ],
+  "packageManager": "yarn@4.3.1",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/karote00/asyra.git",
+    "directory": "create-app/starter-app"
+  },
+  "homepage": "https://asyra-framework.vercel.app",
+  "keywords": [
+    "asyra",
+    "starter",
+    "framework",
+    "typescript",
+    "react"
+  ]
+}
