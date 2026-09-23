@@ -2,7 +2,8 @@ import type { CoreRawData } from '@asyra/utils'
 import {
   STARTER_STORAGE_SLOT,
   createStarterDocumentWrapper,
-  parseStarterDocumentWrapper
+  parseStarterDocumentWrapper,
+  type ItemFieldExtension
 } from '../domain/item-domain.js'
 
 export interface StarterStorage {
@@ -44,14 +45,15 @@ export const saveCoreDocument = (
 }
 
 export const readSavedCoreDocument = (
-  storage: StarterStorage
+  storage: StarterStorage,
+  itemField?: ItemFieldExtension
 ): { readonly core: CoreRawData; readonly savedAt: string } | LoadResult => {
   const serialized = storage.getItem(STARTER_STORAGE_SLOT)
   if (serialized === null) {
     return { ok: false, message: 'Nothing saved yet.' }
   }
 
-  const wrapper = parseStarterDocumentWrapper(serialized)
+  const wrapper = parseStarterDocumentWrapper(serialized, itemField)
   return {
     core: wrapper.core,
     savedAt: wrapper.savedAt

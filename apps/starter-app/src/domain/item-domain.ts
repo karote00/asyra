@@ -15,6 +15,14 @@ export interface ItemProjection {
   readonly id: string
   readonly title: string
   readonly status: ItemStatus
+  readonly fields?: Readonly<Record<string, string>>
+}
+
+export interface ItemFieldExtension {
+  readonly key: string
+  readonly defaultValue: string
+  readonly validate: (value: unknown) => boolean
+  readonly invalidMessage: string
 }
 
 export interface StarterDocumentWrapper {
@@ -41,7 +49,9 @@ export const isValidItemTitle = (value: unknown): value is string =>
 
 export const normalizeItemTitle = (value: string): string => value.trim()
 
-export const createItemPropertySchema = (): PropertySchema => ({
+export const createItemPropertySchema = (
+  itemField?: ItemFieldExtension
+): PropertySchema => ({
   type: ITEM_PROPERTY_TYPE,
   fields: [
     {
@@ -55,7 +65,17 @@ export const createItemPropertySchema = (): PropertySchema => ({
       kind: 'string',
       defaultValue: 'todo',
       validate: isItemStatus
-    }
+    },
+    ...(itemField
+      ? [
+          {
+            key: itemField.key,
+            kind: 'string' as const,
+            defaultValue: itemField.defaultValue,
+            validate: itemField.validate
+          }
+        ]
+      : [])
   ]
 })
 
@@ -96,7 +116,10 @@ export const assertStarterWrapper = (
   return value as unknown as StarterDocumentWrapper
 }
 
-export const assertStarterDomainData = (core: CoreRawData): void => {
+export const assertStarterDomainData = (
+  core: CoreRawData,
+  itemField?: ItemFieldExtension
+): void => {
   const props = core.props
   if (!isRecord(props)) {
     throw new StarterDomainError(
@@ -122,11 +145,19 @@ export const assertStarterDomainData = (core: CoreRawData): void => {
         `Item property "${propertyId}" has an invalid status.`
       )
     }
+    if (
+      itemField &&
+      Object.hasOwn(rawProperty, itemField.key) &&
+      !itemField.validate(rawProperty[itemField.key])
+    ) {
+      throw new StarterDomainError('item-field', itemField.invalidMessage)
+    }
   })
 }
 
 export const parseStarterDocumentWrapper = (
-  serialized: string
+  serialized: string,
+  itemField?: ItemFieldExtension
 ): StarterDocumentWrapper => {
   let parsed: unknown
   try {
@@ -139,7 +170,18 @@ export const parseStarterDocumentWrapper = (
   }
 
   const wrapper = assertStarterWrapper(parsed)
-  assertStarterDomainData(wrapper.core)
+  assertStarterDomainData(wrapper.core, itemField)
+  if (itemField) {
+    Object.values(wrapper.core.props).forEach((rawProperty) => {
+      if (
+        isRecord(rawProperty) &&
+        rawProperty.type === ITEM_PROPERTY_TYPE &&
+        !Object.hasOwn(rawProperty, itemField.key)
+      ) {
+        rawProperty[itemField.key] = itemField.defaultValue
+      }
+    })
+  }
   return wrapper
 }
 

@@ -132,6 +132,20 @@ for (const packageManager of ['yarn', 'npm']) {
         fs.existsSync(path.join(projectDirectory, 'README.md')),
         true
       )
+      for (const guide of [
+        'AGENTS.md',
+        'docs/ONBOARDING.md',
+        'docs/PRIORITY_AGENT_PROMPT.md',
+        'docs/PRIORITY_EXERCISE.md'
+      ]) {
+        const guidePath = path.join(projectDirectory, guide)
+        assert.equal(fs.existsSync(guidePath), true, guide)
+        assert.doesNotMatch(
+          fs.readFileSync(guidePath, 'utf8'),
+          /\.\.\/\.\.\/packages|apps\/starter-app|yarn workspace|yarn release:app|tmp\/framework/u,
+          guide
+        )
+      }
       assert.equal(
         fs.existsSync(
           path.join(
@@ -473,6 +487,14 @@ test('packed create-asyra-app restores the packable gitignore asset', () => {
     const [packRecord] = JSON.parse(packResult.stdout)
     assert.ok(
       packRecord.files.some((file) => file.path === 'template/gitignore')
+    )
+    assert.ok(
+      packRecord.files.some((file) => file.path === 'template/AGENTS.md')
+    )
+    assert.ok(
+      packRecord.files.some(
+        (file) => file.path === 'template/docs/PRIORITY_AGENT_PROMPT.md'
+      )
     )
     assert.equal(
       packRecord.files.some((file) => file.path === 'template/.gitignore'),

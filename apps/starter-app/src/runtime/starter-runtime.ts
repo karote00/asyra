@@ -28,6 +28,7 @@ import {
   createItemPropertySchema,
   isItemStatus,
   normalizeItemTitle,
+  type ItemFieldExtension,
   type ItemProjection,
   type ItemStatus
 } from '../domain/item-domain.js'
@@ -41,10 +42,18 @@ import {
 } from './storage.js'
 
 interface ItemCommandApi extends Record<string, unknown> {
-  addItem(input?: { title?: string; status?: ItemStatus }): string
+  addItem(input?: {
+    title?: string
+    status?: ItemStatus
+    fields?: Record<string, unknown>
+  }): string
   editItem(
     id: string,
-    update: { title?: string; status?: ItemStatus }
+    update: {
+      title?: string
+      status?: ItemStatus
+      fields?: Record<string, unknown>
+    }
   ): readonly string[]
 }
 
@@ -67,6 +76,7 @@ export interface StarterRuntime {
 export interface StarterRuntimeOptions {
   readonly storage?: StarterStorage
   readonly onLoadAccepted?: () => void
+  readonly itemField?: ItemFieldExtension
 }
 
 const assertStatus = (status: unknown): ItemStatus => {
@@ -88,6 +98,51 @@ const assertTitle = (title: unknown): string => {
     throw new StarterDomainError('item-title', 'Item title is required.')
   }
   return normalized
+}
+
+const assertItemFieldExtension = (itemField?: ItemFieldExtension): void => {
+  if (!itemField) {
+    return
+  }
+  if (
+    !itemField.key ||
+    itemField.key === 'title' ||
+    itemField.key === 'status' ||
+    !itemField.validate(itemField.defaultValue)
+  ) {
+    throw new StarterDomainError(
+      'item-field-definition',
+      'Item field must have a distinct key and a valid default.'
+    )
+  }
+}
+
+const assertItemFields = (
+  fields: Record<string, unknown> | undefined,
+  itemField: ItemFieldExtension | undefined,
+  includeDefault: boolean
+): Record<string, string> => {
+  if (
+    fields !== undefined &&
+    (!fields || typeof fields !== 'object' || Array.isArray(fields))
+  ) {
+    throw new StarterDomainError('item-field', 'Item fields must be an object.')
+  }
+  const keys = fields ? Object.keys(fields) : []
+  if (keys.some((key) => key !== itemField?.key)) {
+    throw new StarterDomainError('item-field', 'Unsupported Item field.')
+  }
+  if (!itemField) {
+    return {}
+  }
+  if (keys.length === 0) {
+    return includeDefault ? { [itemField.key]: itemField.defaultValue } : {}
+  }
+  const value = fields?.[itemField.key]
+  if (!itemField.validate(value)) {
+    throw new StarterDomainError('item-field', itemField.invalidMessage)
+  }
+  return { [itemField.key]: value as string }
 }
 
 const runActionTransaction = <T>(action: () => T): T =>
@@ -250,16 +305,23 @@ const createItemRenderStrategy = () => {
 
 const registerStarterSchema = (
   core: Core,
-  itemSchema: PropertySchema
+  itemSchema: PropertySchema,
+  itemField?: ItemFieldExtension
 ): void => {
+  const propertyKeys = [
+    'title',
+    'status',
+    ...(itemField ? [itemField.key] : [])
+  ]
   core.definePropertyComponent({
     type: ITEM_PROPERTY_TYPE,
     defaults: {
       title: 'Untitled item',
-      status: 'todo'
+      status: 'todo',
+      ...(itemField ? { [itemField.key]: itemField.defaultValue } : {})
     },
-    persistKeys: ['title', 'status'],
-    valueKeys: ['title', 'status']
+    persistKeys: propertyKeys,
+    valueKeys: propertyKeys
   })
   core.defineComponent({
     type: ITEM_COMPONENT_TYPE,
@@ -269,7 +331,7 @@ const registerStarterSchema = (
       {
         name: ITEM_PROPERTY_NAME,
         type: ITEM_PROPERTY_TYPE,
-        alias: ['title', 'status'],
+        alias: propertyKeys,
         schema: itemSchema
       }
     ],
@@ -288,12 +350,16 @@ const createEmptyCoreDocument = (): CoreRawData =>
     props: {}
   }) as unknown as CoreRawData
 
-const createItemApi = (core: Core): ItemCommandApi => {
+const createItemApi = (
+  core: Core,
+  itemField?: ItemFieldExtension
+): ItemCommandApi => {
   let nextOrdinal = 0
   return {
     addItem(input = {}) {
       const title = assertTitle(input.title ?? 'Untitled item')
       const status = assertStatus(input.status ?? 'todo')
+      const fields = assertItemFields(input.fields, itemField, true)
       return runActionTransaction(() => {
         const ordinal = nextOrdinal
         nextOrdinal += 1
@@ -318,7 +384,8 @@ const createItemApi = (core: Core): ItemCommandApi => {
           id: propertyId,
           type: ITEM_PROPERTY_TYPE,
           title,
-          status
+          status,
+          ...fields
         } as PropertyComponentRawData
         const [createdId] = core.createElementsInParentFromCanonicalData(
           [element],
@@ -339,6 +406,7 @@ const createItemApi = (core: Core): ItemCommandApi => {
       if (update.status !== undefined) {
         values.status = assertStatus(update.status)
       }
+      Object.assign(values, assertItemFields(update.fields, itemField, false))
       if (Object.keys(values).length === 0) {
         return Object.freeze([])
       }
@@ -395,14 +463,16 @@ let activeCore: Core = core
 export const createStarterRuntime = (
   options: StarterRuntimeOptions = {}
 ): StarterRuntime => {
+  const itemField = options.itemField
+  assertItemFieldExtension(itemField)
   const core = activeCore
   const storage = options.storage ?? defaultStorage()
-  const projection = new StarterProjectionStore(core)
-  const itemApi = createItemApi(core)
+  const projection = new StarterProjectionStore(core, itemField)
+  const itemApi = createItemApi(core, itemField)
   let disposed = false
   const disposeCallbacks: (() => void)[] = []
 
-  registerStarterSchema(core, createItemPropertySchema())
+  registerStarterSchema(core, createItemPropertySchema(itemField), itemField)
   core.setLoadSource({
     name: 'starter-empty-document',
     load: async () => createEmptyCoreDocument()
@@ -492,7 +562,7 @@ export const createStarterRuntime = (
         return { ok: false, message: 'Runtime is disposed.' }
       }
       try {
-        const loaded = readSavedCoreDocument(storage)
+        const loaded = readSavedCoreDocument(storage, itemField)
         if ('ok' in loaded) {
           return loaded
         }

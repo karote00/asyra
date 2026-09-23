@@ -529,8 +529,8 @@ one bounded slice without completing the whole task or adoption program.
 | --- | --- | --- |
 | 1 - Reconcile contracts | This plan, existing entry/README/site plans, directly relevant public-entry authorities | In progress. Example-link repair is recorded above. README/homepage baseline is recorded at `b44be9e77`; the current root README composition and six-chapter homepage authority are implemented and locally testable at that baseline, but README desktop/narrow media-present/media-missing rendering evidence remains pending. PR #245, not closed PR #244, records the starter-readiness documentation. This correction records canonical starter source naming, projection/load/save obligations, and release/generation/consumer owner boundaries. Runtime proof, complete `docs:readme:check`, support/community, FieldScope claim reconciliation, merge/publication/deployment, and public activation remain separate. Documentation PR only; no runtime or site behavior changes. |
 | 2 - Minimal canonical App | `apps/starter-app`, workspace `@asyra/starter-app`, and direct app-local tests/docs | Implemented in child PR #247. Validation recorded on the PR: naming guard via Node entrypoints, `yarn workspace @asyra/starter-app test`, `typecheck`, `lint`, `react:build`, and `test:e2e`; `git diff --check --cached` passed. E2E launched the real Vite App at `http://127.0.0.1:5192` in desktop and narrow Chrome projects and exercised add/edit/status/save/undo/redo/reload. CI remains pending until PR checks report. This slice does not create CLI/template/release/public activation/community/FieldScope/Design AI surfaces and does not complete the adoption program. |
-| 3 - CLI and standalone template | Public `create-asyra-app` CLI, `create-app/starter-app`, `release-configs/starter-app.json`, generated `create-app/starter-app/template`, and directly affected release/generation tests | Implemented in child PR #249 from `codex/adoption-task-3-cli-starter`, based on `origin/codex/adoption-onboarding` at `8cbbc4468`. Depends on merged Task 2 PR #247 and shared prompt/pre-push rules from #248, both verified in this base by content. Validation: naming guard, focused CLI/template tests, starter App test/typecheck/lint/react:build, `yarn lint:ci`, template sync, `yarn release:packages`, and packed-artifact `yarn release:template --prod=starter-app` passed. Packed-template evidence reported `READY` for install, typecheck, lint, build, test, and startup-smoke on Node `v24.13.0` with Yarn `4.3.1`. Registry evidence is not produced because registry publication is not authorized. No tag, release, merge, deployment, homepage activation, Task 4 AI-first exercise, or unrelated product work. |
-| 4 - AI-first starter onboarding | Canonical starter AGENTS/docs/tests and generated sync | One bounded priority-field extension preserves mutation, Undo, projection and saved-data compatibility through formal tests. Record whether the exercise was actually performed; instructions alone are not proof. Depends on task 3. No runtime AI provider. |
+| 3 - CLI and standalone template | Public `create-asyra-app` CLI, `create-app/starter-app`, `release-configs/starter-app.json`, generated `create-app/starter-app/template`, and directly affected release/generation tests | Merged in child PR #249 at `b1dcfa106b44a0f3b56ee605612b072e2dfb3602` into `codex/adoption-onboarding`; Task 4 starts from that exact integrated head. Task 3's local validation covered naming, focused CLI/template tests, Starter test/typecheck/lint/react:build, root lint, template sync, package artifacts, and packed-artifact template consumer install/typecheck/lint/build/test/startup smoke. This records Task 3 integration, not registry publication or public activation. |
+| 4 - AI-first starter onboarding | Canonical Starter AGENTS/onboarding/prompt, opt-in priority exercise and formal tests, generated template sync | Implemented locally on `codex/adoption-task-4-ai-first-starter` from integrated Task 3 head `b1dcfa106`; child PR and CI are pending. The priority tests failed before implementation and then passed through the App schema, Feature/API transaction, projection and Save/Reload owners. Starter test/typecheck/lint/build, desktop/narrow E2E, CLI/template tests, root lint, naming, template sync and packed-artifact generated consumer passed locally. The consumer reported `READY` for install/typecheck/lint/build/test/startup smoke on Node `v24.13.0` and Yarn `4.3.1`. No independent fresh coding-agent conversation or registry verification was performed; no AI provider was added. |
 | 5 - Entry routing and product evidence | Root README, public docs/llms generators, existing homepage entry points and verified case evidence | Generic / Design / advanced hierarchy, current links, truthful App evidence, preserved visual/accessibility contracts. Reconcile only remaining README/site plan work. Depends on tasks 3-4; public activation waits for verified CLI availability. |
 | 6 - Community and support | SUPPORT.md, canonical support generators/validators, directly affected App release wording | Synchronized policy, private security route, no SLA or implied PR acceptance. Confirm Discussions availability before publishing active links. Sim reporting path may change; remaining release obligations stay explicit. Depends on task 1; remains sequential by default. |
 | 7 - Integrated readiness and release handoff | Affected gate results, release records, this plan and index | Review all PRs and exact integrated source; verify standalone consumption, generated docs/templates, relevant site routes and links. Identify external operations separately. Public command and live destinations must work before claiming the adoption journey delivered. |
@@ -617,6 +617,71 @@ that changes the generated app to rely on local workspaces. Stop and report if
 the current package versions or public package exports cannot support the
 standalone template through packed artifacts, or if the registry evidence is
 requested before publication is authorized.
+
+### Task 4 bounded contract - AI-first Starter onboarding
+
+Objective and completion condition: ship concise, standalone-safe instructions
+that let a coding agent trace the Starter's canonical Item edit path, and retain
+one actual priority-field extension exercise as a project-owned example with
+formal tests. This task's agent performs the exercise; independent verification
+in a fresh coding-agent conversation is a separate, unperformed result.
+
+Authorized mutation scope: this plan only for Task 3/4 status and this contract;
+`apps/starter-app/AGENTS.md`, its README and onboarding/prompt documents;
+App-owned Item domain, runtime, projection, storage, and directly affected
+Starter tests; a small optional priority example/fixture under
+`apps/starter-app/src/examples/priority/`; a pending empty Changeset for the
+mixed-code PR; focused CLI/template tests only if needed to prove shipped
+instructions; and `create-app/starter-app/template/**` only as output of the
+existing `release:app` generator. The default Starter UI and Item behavior
+remain title/status-only; the exercise opts into an App-owned extra Item field
+through the same Feature -> App API -> transaction -> Core path. No second
+editable UI model or separate App/template generator is introduced.
+
+Priority is a persisted Item Props field with exactly `low`, `normal`, and
+`high`; its default is `normal`. New opt-in Items persist this field. On reload,
+a valid V1 Item property that lacks priority is admitted as legacy data and
+projects `normal`; an explicitly present value outside the domain is rejected
+by App admission before Core load, leaving canonical state, history, and
+projection unchanged. Other missing/invalid title or status data remain
+rejected. The wrapper version and storage slot stay unchanged.
+
+The example's authoritative field is the Props component. Its schema and App
+admission share one priority predicate. Feature commands validate before the
+App API's single `runTransaction`, which calls `core.updateElementProperties`;
+Core/Props owns the write and journal. Shared publications and file-load
+completion update the projection, which is read-only and document-lifetime
+scoped. An edit and its Undo/Redo each cause the expected bounded projection
+refresh, with no full-document read on normal edits; reload may perform one
+full refresh. Explicit Save is a separate storage acknowledgement.
+
+Formal acceptance cases: default Starter title/status behavior is unchanged;
+an opted-in add/edit persists priority through the App schema and existing
+mutation path; one edit creates one Undo entry, and Undo/Redo restore the
+priority projection; Save/Reload preserves priority and title/status; legal V1
+data missing priority uses `normal`; invalid priority is rejected at runtime
+and before load without changing document/history/projection. Tests are added
+before implementation and shown failing on the missing behavior.
+
+Required gates after the last relevant edit: `yarn lint:naming` before names
+spread and at completion; `yarn workspace @asyra/starter-app test`,
+`typecheck`, `lint`, `react:build`, and `test:e2e`; focused
+`node --test scripts/__tests__/create-app-cli.test.mjs scripts/__tests__/release-template-readiness.test.mjs`;
+`yarn release:app --prod=starter-app` and
+`yarn release:app:check --prod=starter-app`; `yarn release:packages` then
+`yarn release:template --prod=starter-app`; `yarn lint:ci`;
+`git diff --check` and bounded staged-diff review. After commit, run
+`yarn changeset:pr:check` with the exact integration base and Task 4 head,
+verify the committed source contains all tested behavior, then push and open
+one child PR. Re-run affected local gates before any subsequent push.
+
+Exclusions and stop conditions: no Framework contract or package changes,
+default priority control, AI panel/provider, new package-manager support,
+Task 5 public entry, release, tag, merge, publication, or deployment. If the
+example cannot remain a small App-owned opt-in exercise without copying the
+whole App or adding a second template tool, report the concrete tradeoff before
+expanding scope. Stop if a required local gate cannot pass; CI is not the
+diagnostic owner.
 
 ## Prompt and review contract
 
