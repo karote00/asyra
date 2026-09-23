@@ -1,0 +1,40 @@
+{
+  "name": "@asyra/starter-app",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": "24.x"
+  },
+  "packageManager": "yarn@4.3.1",
+  "scripts": {
+    "dev": "vite",
+    "build": "yarn build:dependencies && tsc --noEmit && vite build",
+    "build:dependencies": "../../node_modules/.bin/turbo run build:preset --filter @asyra/preset",
+    "react:build": "yarn build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:local": "vitest run",
+    "test:ci": "vitest run",
+    "test:e2e": "yarn build:dependencies && ../../node_modules/.bin/playwright test --config playwright.config.ts",
+    "lint": "node ../../node_modules/eslint/bin/eslint.js src e2e *.ts"
+  },
+  "dependencies": {
+    "@asyra/core": "workspace:*",
+    "@asyra/preset": "workspace:*",
+    "@asyra/utils": "workspace:*",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.5",
+    "@vitejs/plugin-react": "^4.7.0",
+    "jsdom": "^27.4.0",
+    "typescript": "^5.7.2",
+    "vite": "^6.4.3",
+    "vitest": "^3.2.6"
+  }
+}
