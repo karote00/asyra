@@ -6,7 +6,10 @@ import {
   createStarterDocumentWrapper
 } from '../../domain/item-domain.js'
 import { saveCoreDocument, type StarterStorage } from '../storage.js'
-import { createStarterRuntime } from '../starter-runtime.js'
+import {
+  createStarterRuntime,
+  getStarterItemRenderBounds
+} from '../starter-runtime.js'
 
 class MemoryStorage implements StarterStorage {
   readonly values = new Map<string, string>()
@@ -47,6 +50,20 @@ const settleProjection = async (): Promise<void> => {
 }
 
 describe('starter runtime canonical App path', () => {
+  it('lays out rendered starter items with complete non-overlapping bounds', () => {
+    const bounds = [0, 1, 2].map((index) => getStarterItemRenderBounds(index))
+
+    bounds.forEach((item) => {
+      expect(item.width).toBeGreaterThan(0)
+      expect(item.height).toBeGreaterThan(0)
+    })
+    bounds.slice(1).forEach((item, index) => {
+      const previous = bounds[index]
+      const gap = item.y - (previous.y + previous.height)
+      expect(gap).toBeGreaterThan(0)
+    })
+  })
+
   it('starts, edits, replays history, reloads admitted data, and disposes projections', async () => {
     const storage = new MemoryStorage()
     const loadAccepted = vi.fn()

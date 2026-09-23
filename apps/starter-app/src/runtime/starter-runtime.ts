@@ -108,6 +108,27 @@ const unavailableStorage = (reason: string): StarterStorage => ({
 
 const STARTER_RENDER_LAYER_NAME = 'starter-app.items'
 const STARTER_RENDER_FRAME_KEY = 'starter-app.render-frame'
+const STARTER_ITEM_RENDER_X = 24
+const STARTER_ITEM_RENDER_Y = 24
+const STARTER_ITEM_RENDER_WIDTH = 160
+const STARTER_ITEM_RENDER_HEIGHT = 72
+const STARTER_ITEM_RENDER_STEP = 88
+
+export interface StarterItemRenderBounds {
+  readonly x: number
+  readonly y: number
+  readonly width: number
+  readonly height: number
+}
+
+export const getStarterItemRenderBounds = (
+  index: number
+): StarterItemRenderBounds => ({
+  x: STARTER_ITEM_RENDER_X,
+  y: STARTER_ITEM_RENDER_Y + index * STARTER_ITEM_RENDER_STEP,
+  width: STARTER_ITEM_RENDER_WIDTH,
+  height: STARTER_ITEM_RENDER_HEIGHT
+})
 
 const ITEM_RENDER_COLORS: Record<ItemStatus, number> = {
   todo: 0xf7f2e8,
@@ -151,14 +172,13 @@ class StarterItemRenderLayer {
     }
     canvas.clear()
     items.forEach((item, index) => {
-      const x = 24
-      const y = 24 + index * 44
+      const { x, y, width, height } = getStarterItemRenderBounds(index)
       canvas.polygon(
         [
           { x, y },
-          { x: x + 160, y },
-          { x: x + 160, y: y + 72 },
-          { x, y: y + 72 }
+          { x: x + width, y },
+          { x: x + width, y: y + height },
+          { x, y: y + height }
         ],
         ITEM_RENDER_COLORS[item.status],
         { color: 0x27312f, width: 2 }
@@ -222,7 +242,7 @@ const createItemRenderStrategy = () => {
   ): void => {
     const status = isItemStatus(data.status) ? data.status : 'todo'
     graphic.clear()
-    graphic.rect(0, 0, 160, 72)
+    graphic.rect(0, 0, STARTER_ITEM_RENDER_WIDTH, STARTER_ITEM_RENDER_HEIGHT)
     graphic.fill(ITEM_RENDER_COLORS[status])
     graphic.stroke({ color: 0x27312f, width: 2 })
   }
