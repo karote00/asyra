@@ -10,36 +10,30 @@ import { fileURLToPath } from 'node:url'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-const supportedPackageManagers = ['yarn', 'npm', 'pnpm']
+const supportedPackageManagers = ['yarn', 'npm']
 const lockfileByPackageManager = {
   yarn: 'yarn.lock',
-  npm: 'package-lock.json',
-  pnpm: 'pnpm-lock.yaml'
+  npm: 'package-lock.json'
 }
 const installArgumentsByPackageManager = {
   yarn: ['install', '--no-immutable'],
-  npm: ['install'],
-  pnpm: ['install', '--no-frozen-lockfile']
+  npm: ['install']
 }
 const installCommandByPackageManager = {
   yarn: 'yarn install',
-  npm: 'npm install',
-  pnpm: 'pnpm install'
+  npm: 'npm install'
 }
 const startCommandByPackageManager = {
   yarn: 'yarn start',
-  npm: 'npm run start',
-  pnpm: 'pnpm start'
+  npm: 'npm run start'
 }
 const reactBuildScriptByPackageManager = {
   yarn: 'yarn build',
-  npm: 'npm run build',
-  pnpm: 'pnpm build'
+  npm: 'npm run build'
 }
 const manifestPackageManagerByPackageManager = {
   yarn: 'yarn@4.3.1',
-  npm: 'npm@10.8.2',
-  pnpm: 'pnpm@9.15.0'
+  npm: 'npm@10.8.2'
 }
 const readmeCommandsByPackageManager = {
   yarn: [
@@ -57,18 +51,10 @@ const readmeCommandsByPackageManager = {
     'npm run lint',
     'npm run react:build',
     'npm run start'
-  ],
-  pnpm: [
-    'pnpm install',
-    'pnpm test',
-    'pnpm typecheck',
-    'pnpm lint',
-    'pnpm react:build',
-    'pnpm start'
   ]
 }
 
-const usage = `Usage: create-asyra-app <project-name> [--package-manager=yarn|npm|pnpm]
+const usage = `Usage: create-asyra-app <project-name> [--package-manager=yarn|npm]
 
 Creates one standalone Starter App directory from the bundled template.`
 
@@ -129,7 +115,7 @@ async function promptForTargetName() {
 function assertPackageManager(packageManager) {
   if (supportedPackageManagers.includes(packageManager)) return
   throw new Error(
-    `Unsupported package manager "${packageManager}". Choose yarn, npm, or pnpm.`
+    `Unsupported package manager "${packageManager}". Choose yarn or npm.`
   )
 }
 
@@ -150,7 +136,7 @@ function writePackageManagerFiles(targetDir, packageManager) {
     const readme = fs
       .readFileSync(readmePath, 'utf8')
       .replace(
-        /```bash\n(?:yarn|npm|pnpm)[\s\S]*?(?:yarn|npm run|pnpm) start\n```/u,
+        /```bash\n(?:yarn|npm)[\s\S]*?(?:yarn|npm run) start\n```/u,
         `\`\`\`bash\n${commands}\n\`\`\``
       )
     fs.writeFileSync(readmePath, readme)

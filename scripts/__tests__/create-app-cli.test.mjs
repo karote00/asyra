@@ -25,7 +25,7 @@ const createFakePackageManagers = (testDirectory) => {
   const logPath = path.join(testDirectory, 'package-manager-log.jsonl')
   fs.mkdirSync(fakeBinDirectory)
 
-  for (const name of ['yarn', 'npm', 'pnpm']) {
+  for (const name of ['yarn', 'npm']) {
     const executable = path.join(fakeBinDirectory, name)
     fs.writeFileSync(
       executable,
@@ -40,7 +40,6 @@ fs.appendFileSync(${JSON.stringify(logPath)}, JSON.stringify({
 }) + '\\n')
 
 if (${JSON.stringify(name)} === 'npm') fs.writeFileSync(path.join(process.cwd(), 'package-lock.json'), '{}\\n')
-if (${JSON.stringify(name)} === 'pnpm') fs.writeFileSync(path.join(process.cwd(), 'pnpm-lock.yaml'), 'lockfileVersion: 9.0\\n')
 `,
       { mode: 0o755 }
     )
@@ -72,10 +71,7 @@ const runRealPackageManagerVersion = ({ cwd, packageManager }) =>
   spawnSync(packageManager, ['--version'], {
     cwd,
     encoding: 'utf8',
-    env: {
-      ...process.env,
-      COREPACK_ENABLE_NETWORK: '0'
-    }
+    env: { ...process.env, COREPACK_ENABLE_NETWORK: '0' }
   })
 
 test('the successor create-asyra-app surfaces replace retired starter assertions', () => {
@@ -98,7 +94,7 @@ test('the successor create-asyra-app surfaces replace retired starter assertions
   assert.match(rootReadme, /npx create-asyra-design-app my-product/u)
 })
 
-for (const packageManager of ['yarn', 'npm', 'pnpm']) {
+for (const packageManager of ['yarn', 'npm']) {
   test(`create-asyra-app safely creates a ${packageManager} project`, () => {
     const testDirectory = makeTempDirectory(`starter-cli-${packageManager}-`)
     const { fakeBinDirectory, readLog } =
@@ -124,8 +120,7 @@ for (const packageManager of ['yarn', 'npm', 'pnpm']) {
         log[0].args,
         {
           yarn: ['install', '--no-immutable'],
-          npm: ['install'],
-          pnpm: ['install', '--no-frozen-lockfile']
+          npm: ['install']
         }[packageManager]
       )
 
@@ -143,8 +138,7 @@ for (const packageManager of ['yarn', 'npm', 'pnpm']) {
             projectDirectory,
             {
               yarn: 'yarn.lock',
-              npm: 'package-lock.json',
-              pnpm: 'pnpm-lock.yaml'
+              npm: 'package-lock.json'
             }[packageManager]
           )
         ),
@@ -164,16 +158,13 @@ for (const packageManager of ['yarn', 'npm', 'pnpm']) {
         manifest.scripts['react:build'],
         {
           yarn: 'yarn build',
-          npm: 'npm run build',
-          pnpm: 'pnpm build'
+          npm: 'npm run build'
         }[packageManager]
       )
       if (packageManager === 'yarn') {
         assert.equal(manifest.packageManager, 'yarn@4.3.1')
-      } else if (packageManager === 'npm') {
-        assert.equal(manifest.packageManager, 'npm@10.8.2')
       } else {
-        assert.equal(manifest.packageManager, 'pnpm@9.15.0')
+        assert.equal(manifest.packageManager, 'npm@10.8.2')
       }
       assert.doesNotMatch(
         JSON.stringify(manifest),
@@ -183,6 +174,7 @@ for (const packageManager of ['yarn', 'npm', 'pnpm']) {
         path.join(projectDirectory, 'README.md'),
         'utf8'
       )
+      assert.doesNotMatch(readme, /pnpm/u)
       for (const command of {
         yarn: [
           'yarn install',
@@ -199,14 +191,6 @@ for (const packageManager of ['yarn', 'npm', 'pnpm']) {
           'npm run lint',
           'npm run react:build',
           'npm run start'
-        ],
-        pnpm: [
-          'pnpm install',
-          'pnpm test',
-          'pnpm typecheck',
-          'pnpm lint',
-          'pnpm react:build',
-          'pnpm start'
         ]
       }[packageManager]) {
         assert.match(readme, new RegExp(command.replaceAll(' ', '\\s+'), 'u'))
@@ -228,8 +212,7 @@ for (const packageManager of ['yarn', 'npm', 'pnpm']) {
         new RegExp(
           {
             yarn: 'yarn start',
-            npm: 'npm run start',
-            pnpm: 'pnpm start'
+            npm: 'npm run start'
           }[packageManager],
           'u'
         )
@@ -240,6 +223,33 @@ for (const packageManager of ['yarn', 'npm', 'pnpm']) {
     }
   })
 }
+
+test('create-asyra-app rejects pnpm before creating a project', () => {
+  const testDirectory = makeTempDirectory('starter-cli-pnpm-unsupported-')
+  try {
+    const help = runCli({ cwd: testDirectory, args: ['--help'] })
+    assert.equal(help.status, 0, help.stderr)
+    assert.match(help.stdout, /--package-manager=yarn\|npm/u)
+    assert.doesNotMatch(help.stdout, /pnpm/u)
+    const cliReadme = fs.readFileSync(
+      path.join(repositoryRoot, 'create-app/starter-app/README.md'),
+      'utf8'
+    )
+    assert.match(cliReadme, /`yarn` and `npm`/u)
+    assert.doesNotMatch(cliReadme, /pnpm/u)
+
+    const result = runCli({
+      cwd: testDirectory,
+      args: ['starter', '--package-manager=pnpm']
+    })
+    assert.notEqual(result.status, 0)
+    assert.match(result.stderr, /Unsupported package manager "pnpm"/u)
+    assert.match(result.stderr, /Choose yarn or npm/u)
+    assert.deepEqual(fs.readdirSync(testDirectory), [])
+  } finally {
+    fs.rmSync(testDirectory, { recursive: true, force: true })
+  }
+})
 
 test('create-asyra-app rejects unsafe names before creating files', () => {
   const emptyNameDirectory = makeTempDirectory('starter-cli-empty-name-')

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
+import { randomUUID } from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 import test, { after, before } from 'node:test'
@@ -138,24 +139,33 @@ test('packed artifact fixture never deletes the shared release artifact owner', 
     'tmp',
     'framework-release-artifacts'
   )
-  const sentinelPath = path.join(sharedArtifactDirectory, 'sentinel.txt')
+  const sentinelPath = path.join(
+    sharedArtifactDirectory,
+    `fixture-preservation-${randomUUID()}.txt`
+  )
   fs.mkdirSync(sharedArtifactDirectory, { recursive: true })
-  fs.writeFileSync(sentinelPath, 'preserve shared artifacts\n')
+  fs.writeFileSync(sentinelPath, 'preserve shared artifacts\n', { flag: 'wx' })
 
-  const isolatedFixture = createPackedArtifactFixture()
   try {
+    const isolatedFixture = createPackedArtifactFixture()
+    try {
+      assert.notEqual(
+        isolatedFixture.artifactDirectory,
+        sharedArtifactDirectory
+      )
+    } finally {
+      fs.rmSync(isolatedFixture.artifactDirectory, {
+        recursive: true,
+        force: true
+      })
+      fs.rmSync(isolatedFixture.fixtureRoot, { recursive: true, force: true })
+    }
     assert.equal(
       fs.readFileSync(sentinelPath, 'utf8'),
       'preserve shared artifacts\n'
     )
-    assert.notEqual(isolatedFixture.artifactDirectory, sharedArtifactDirectory)
   } finally {
-    fs.rmSync(isolatedFixture.artifactDirectory, {
-      recursive: true,
-      force: true
-    })
-    fs.rmSync(isolatedFixture.fixtureRoot, { recursive: true, force: true })
-    fs.rmSync(sentinelPath, { force: true })
+    fs.rmSync(sentinelPath)
   }
 })
 

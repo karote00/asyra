@@ -576,10 +576,11 @@ Required product cases and formal tests:
 - Existing destination directories are never overwritten.
 - Missing template, copy, install, and unsupported package-manager failures are
   reported with actionable error text and non-zero exit.
-- Declared package-manager modes cover `yarn`, `npm`, and `pnpm` with the
+- Declared package-manager modes cover `yarn` and `npm` with the
   correct lockfile, install command, and start command. The tests may stub the
-  package managers for CLI behavior, but the generated-template readiness gate
-  owns the real Yarn consumer proof.
+  package managers for CLI behavior, but must also verify that `pnpm` is
+  rejected before project creation. The generated-template readiness gate owns
+  the real Yarn consumer proof.
 - The generated template is source/template synchronized from
   `apps/starter-app`, contains only public `@asyra/*` imports, uses frozen
   package versions for packed-artifact verification, and contains no
@@ -596,6 +597,7 @@ Required gates for this slice:
   or `yarn lint:naming` when using the root script.
 - Focused CLI/generation tests:
   `node --test scripts/__tests__/create-app-cli.test.mjs scripts/__tests__/release-template-readiness.test.mjs`.
+  Root `test:scripts` runs the same CLI test in CI.
 - Starter App preservation gates:
   `yarn workspace @asyra/starter-app test`, `typecheck`, `lint`, and
   `react:build`.
