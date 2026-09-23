@@ -20,11 +20,8 @@ const repositoryRoot = path.resolve(
   '..',
   '..'
 )
-const artifactDirectory = path.join(
-  repositoryRoot,
-  'tmp',
-  'framework-release-artifacts'
-)
+let artifactFixture
+let artifactDirectory
 
 const exportedPaths = (exportsValue) => {
   if (typeof exportsValue === 'string') return [exportsValue]
@@ -49,14 +46,15 @@ const createPackedArtifactFixture = () => {
     path.join(repositoryRoot, 'LICENSE'),
     'utf8'
   )
-  const fixtureRoot = path.join(
-    repositoryRoot,
-    'tmp',
-    'framework-release-artifacts-fixture'
+  const temporaryRoot = path.join(repositoryRoot, 'tmp')
+  fs.mkdirSync(temporaryRoot, { recursive: true })
+  const fixtureRoot = fs.mkdtempSync(
+    path.join(temporaryRoot, 'framework-release-package-fixture-')
+  )
+  const artifactDirectory = fs.mkdtempSync(
+    path.join(temporaryRoot, 'framework-release-artifacts-fixture-')
   )
 
-  fs.rmSync(artifactDirectory, { recursive: true, force: true })
-  fs.rmSync(fixtureRoot, { recursive: true, force: true })
   fs.mkdirSync(artifactDirectory, { recursive: true })
 
   for (const record of source.packages) {
@@ -119,21 +117,46 @@ const createPackedArtifactFixture = () => {
       { stdio: 'ignore' }
     )
   }
+
+  return { artifactDirectory, fixtureRoot }
 }
 
 before(() => {
-  createPackedArtifactFixture()
+  artifactFixture = createPackedArtifactFixture()
+  artifactDirectory = artifactFixture.artifactDirectory
 })
 
 after(() => {
-  fs.rmSync(artifactDirectory, { recursive: true, force: true })
-  fs.rmSync(
-    path.join(repositoryRoot, 'tmp', 'framework-release-artifacts-fixture'),
-    {
+  if (!artifactFixture) return
+  fs.rmSync(artifactFixture.artifactDirectory, { recursive: true, force: true })
+  fs.rmSync(artifactFixture.fixtureRoot, { recursive: true, force: true })
+})
+
+test('packed artifact fixture never deletes the shared release artifact owner', () => {
+  const sharedArtifactDirectory = path.join(
+    repositoryRoot,
+    'tmp',
+    'framework-release-artifacts'
+  )
+  const sentinelPath = path.join(sharedArtifactDirectory, 'sentinel.txt')
+  fs.mkdirSync(sharedArtifactDirectory, { recursive: true })
+  fs.writeFileSync(sentinelPath, 'preserve shared artifacts\n')
+
+  const isolatedFixture = createPackedArtifactFixture()
+  try {
+    assert.equal(
+      fs.readFileSync(sentinelPath, 'utf8'),
+      'preserve shared artifacts\n'
+    )
+    assert.notEqual(isolatedFixture.artifactDirectory, sharedArtifactDirectory)
+  } finally {
+    fs.rmSync(isolatedFixture.artifactDirectory, {
       recursive: true,
       force: true
-    }
-  )
+    })
+    fs.rmSync(isolatedFixture.fixtureRoot, { recursive: true, force: true })
+    fs.rmSync(sentinelPath, { force: true })
+  }
 })
 
 test('generated template consumer path is constrained to one project tmp child', () => {
@@ -231,13 +254,14 @@ test('generated template replaces framework resolution with packed artifacts', (
       const dependency =
         prepared.manifest.dependencies?.[packageName] ??
         prepared.manifest.devDependencies?.[packageName]
+      const artifactDirectoryName = path.basename(artifactDirectory)
       assert.match(
         dependency,
         new RegExp(
-          `^file:\\.\\./framework-release-artifacts/.*-${version.replace(
+          `^file:\\.\\./${artifactDirectoryName.replace(
             /[.*+?^${}()|[\]\\]/gu,
             '\\$&'
-          )}\\.tgz$`,
+          )}/.*-${version.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')}\\.tgz$`,
           'u'
         )
       )

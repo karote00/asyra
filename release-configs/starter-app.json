@@ -9,6 +9,7 @@
   },
   "removeScripts": ["build:dependencies", "test:e2e"],
   "standaloneVitestConfig": true,
+  "packableGitignore": true,
   "cleanFiles": [
     "node_modules",
     "yarn.lock",

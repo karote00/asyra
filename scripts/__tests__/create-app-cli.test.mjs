@@ -68,6 +68,16 @@ const runCli = ({ cwd, args, env = {} }) =>
     }
   })
 
+const runRealPackageManagerVersion = ({ cwd, packageManager }) =>
+  spawnSync(packageManager, ['--version'], {
+    cwd,
+    encoding: 'utf8',
+    env: {
+      ...process.env,
+      COREPACK_ENABLE_NETWORK: '0'
+    }
+  })
+
 test('the successor create-asyra-app surfaces replace retired starter assertions', () => {
   for (const requiredPath of [
     'apps/starter-app',
@@ -150,11 +160,68 @@ for (const packageManager of ['yarn', 'npm', 'pnpm']) {
       const manifest = JSON.parse(
         fs.readFileSync(path.join(projectDirectory, 'package.json'), 'utf8')
       )
-      assert.equal(manifest.packageManager, 'yarn@4.3.1')
+      assert.equal(
+        manifest.scripts['react:build'],
+        {
+          yarn: 'yarn build',
+          npm: 'npm run build',
+          pnpm: 'pnpm build'
+        }[packageManager]
+      )
+      if (packageManager === 'yarn') {
+        assert.equal(manifest.packageManager, 'yarn@4.3.1')
+      } else if (packageManager === 'npm') {
+        assert.equal(manifest.packageManager, 'npm@10.8.2')
+      } else {
+        assert.equal(manifest.packageManager, 'pnpm@9.15.0')
+      }
       assert.doesNotMatch(
         JSON.stringify(manifest),
         /workspace:|(?:link|portal|patch):/
       )
+      const readme = fs.readFileSync(
+        path.join(projectDirectory, 'README.md'),
+        'utf8'
+      )
+      for (const command of {
+        yarn: [
+          'yarn install',
+          'yarn test',
+          'yarn typecheck',
+          'yarn lint',
+          'yarn react:build',
+          'yarn start'
+        ],
+        npm: [
+          'npm install',
+          'npm test',
+          'npm run typecheck',
+          'npm run lint',
+          'npm run react:build',
+          'npm run start'
+        ],
+        pnpm: [
+          'pnpm install',
+          'pnpm test',
+          'pnpm typecheck',
+          'pnpm lint',
+          'pnpm react:build',
+          'pnpm start'
+        ]
+      }[packageManager]) {
+        assert.match(readme, new RegExp(command.replaceAll(' ', '\\s+'), 'u'))
+      }
+      if (packageManager !== 'yarn') {
+        const versionResult = runRealPackageManagerVersion({
+          cwd: projectDirectory,
+          packageManager
+        })
+        assert.equal(
+          versionResult.status,
+          0,
+          `${packageManager} --version failed:\n${versionResult.stderr}`
+        )
+      }
       assert.match(result.stdout, new RegExp(`cd ${projectName}`, 'u'))
       assert.match(
         result.stdout,
@@ -223,27 +290,78 @@ test('create-asyra-app rejects unsafe names before creating files', () => {
   }
 })
 
-test('create-asyra-app never overwrites an existing directory', () => {
-  const testDirectory = makeTempDirectory('starter-cli-existing-')
-  const projectName = 'already-here'
-  const target = path.join(testDirectory, projectName)
+test('create-asyra-app never overwrites existing targets', () => {
+  for (const targetType of ['directory', 'file', 'symlink']) {
+    const testDirectory = makeTempDirectory(
+      `starter-cli-existing-${targetType}-`
+    )
+    const projectName = 'already-here'
+    const target = path.join(testDirectory, projectName)
+    const foreignDirectory = path.join(testDirectory, 'foreign-owner')
+    const foreignSentinel = path.join(foreignDirectory, 'sentinel.txt')
+
+    try {
+      if (targetType === 'directory') {
+        fs.mkdirSync(target)
+        fs.writeFileSync(path.join(target, 'sentinel.txt'), 'keep me\n')
+      } else if (targetType === 'file') {
+        fs.writeFileSync(target, 'keep me\n')
+      } else {
+        fs.mkdirSync(foreignDirectory)
+        fs.writeFileSync(foreignSentinel, 'keep foreign target\n')
+        fs.symlinkSync(foreignDirectory, target, 'dir')
+      }
+
+      const result = runCli({
+        cwd: testDirectory,
+        args: [projectName, '--package-manager=yarn']
+      })
+
+      assert.notEqual(result.status, 0, targetType)
+      assert.match(result.stderr, /already exists/u)
+      if (targetType === 'directory') {
+        assert.equal(
+          fs.readFileSync(path.join(target, 'sentinel.txt'), 'utf8'),
+          'keep me\n'
+        )
+        assert.equal(fs.existsSync(path.join(target, 'package.json')), false)
+      } else if (targetType === 'file') {
+        assert.equal(fs.readFileSync(target, 'utf8'), 'keep me\n')
+      } else {
+        assert.equal(
+          fs.readFileSync(foreignSentinel, 'utf8'),
+          'keep foreign target\n'
+        )
+      }
+    } finally {
+      fs.rmSync(testDirectory, { recursive: true, force: true })
+    }
+  }
+})
+
+test('create-asyra-app cleans up only its owned reservation after copy failures', () => {
+  const testDirectory = makeTempDirectory('starter-cli-copy-failure-')
+  const foreignDirectory = path.join(testDirectory, 'foreign-owner')
+  const foreignSentinel = path.join(foreignDirectory, 'sentinel.txt')
 
   try {
-    fs.mkdirSync(target)
-    fs.writeFileSync(path.join(target, 'sentinel.txt'), 'keep me\n')
-
+    fs.mkdirSync(foreignDirectory)
+    fs.writeFileSync(foreignSentinel, 'keep foreign owner\n')
     const result = runCli({
       cwd: testDirectory,
-      args: [projectName, '--package-manager=yarn']
+      args: ['starter', '--package-manager=yarn'],
+      env: {
+        STARTER_APP_TEST_FAIL_AFTER_RESERVE: '1'
+      }
     })
 
     assert.notEqual(result.status, 0)
-    assert.match(result.stderr, /already exists/u)
+    assert.match(result.stderr, /failed to create project files/u)
+    assert.equal(fs.existsSync(path.join(testDirectory, 'starter')), false)
     assert.equal(
-      fs.readFileSync(path.join(target, 'sentinel.txt'), 'utf8'),
-      'keep me\n'
+      fs.readFileSync(foreignSentinel, 'utf8'),
+      'keep foreign owner\n'
     )
-    assert.equal(fs.existsSync(path.join(target, 'package.json')), false)
   } finally {
     fs.rmSync(testDirectory, { recursive: true, force: true })
   }
@@ -310,6 +428,81 @@ test('create-asyra-app reports a missing bundled template', () => {
     assert.notEqual(result.status, 0)
     assert.match(result.stderr, /template directory not found/u)
     assert.equal(fs.existsSync(path.join(testDirectory, 'starter')), false)
+  } finally {
+    fs.rmSync(testDirectory, { recursive: true, force: true })
+  }
+})
+
+test('packed create-asyra-app restores the packable gitignore asset', () => {
+  const testDirectory = makeTempDirectory('starter-cli-packed-')
+  const packDirectory = path.join(testDirectory, 'pack')
+  const extractDirectory = path.join(testDirectory, 'extract')
+  const generateDirectory = path.join(testDirectory, 'generated')
+  const { fakeBinDirectory } = createFakePackageManagers(testDirectory)
+
+  try {
+    fs.mkdirSync(packDirectory)
+    fs.mkdirSync(extractDirectory)
+    fs.mkdirSync(generateDirectory)
+
+    const packResult = spawnSync(
+      'npm',
+      [
+        'pack',
+        path.join(repositoryRoot, 'create-app/starter-app'),
+        '--json',
+        '--pack-destination',
+        packDirectory
+      ],
+      {
+        cwd: testDirectory,
+        encoding: 'utf8'
+      }
+    )
+    assert.equal(packResult.status, 0, packResult.stderr)
+    const [packRecord] = JSON.parse(packResult.stdout)
+    assert.ok(
+      packRecord.files.some((file) => file.path === 'template/gitignore')
+    )
+    assert.equal(
+      packRecord.files.some((file) => file.path === 'template/.gitignore'),
+      false
+    )
+
+    const tarballPath = path.join(packDirectory, packRecord.filename)
+    const tarResult = spawnSync(
+      'tar',
+      ['-xzf', tarballPath, '-C', extractDirectory],
+      {
+        encoding: 'utf8'
+      }
+    )
+    assert.equal(tarResult.status, 0, tarResult.stderr)
+
+    const packedCliPath = path.join(extractDirectory, 'package/bin/index.js')
+    const result = spawnSync(
+      process.execPath,
+      [packedCliPath, 'packed-starter', '--package-manager=yarn'],
+      {
+        cwd: generateDirectory,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          PATH: `${fakeBinDirectory}${path.delimiter}${process.env.PATH ?? ''}`
+        }
+      }
+    )
+    assert.equal(result.status, 0, result.stderr)
+
+    const generatedProject = path.join(generateDirectory, 'packed-starter')
+    assert.equal(
+      fs.readFileSync(path.join(generatedProject, '.gitignore'), 'utf8'),
+      fs.readFileSync(
+        path.join(repositoryRoot, 'apps/starter-app/.gitignore'),
+        'utf8'
+      )
+    )
+    assert.equal(fs.existsSync(path.join(generatedProject, 'gitignore')), false)
   } finally {
     fs.rmSync(testDirectory, { recursive: true, force: true })
   }

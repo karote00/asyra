@@ -31,6 +31,42 @@ const startCommandByPackageManager = {
   npm: 'npm run start',
   pnpm: 'pnpm start'
 }
+const reactBuildScriptByPackageManager = {
+  yarn: 'yarn build',
+  npm: 'npm run build',
+  pnpm: 'pnpm build'
+}
+const manifestPackageManagerByPackageManager = {
+  yarn: 'yarn@4.3.1',
+  npm: 'npm@10.8.2',
+  pnpm: 'pnpm@9.15.0'
+}
+const readmeCommandsByPackageManager = {
+  yarn: [
+    'yarn install',
+    'yarn test',
+    'yarn typecheck',
+    'yarn lint',
+    'yarn react:build',
+    'yarn start'
+  ],
+  npm: [
+    'npm install',
+    'npm test',
+    'npm run typecheck',
+    'npm run lint',
+    'npm run react:build',
+    'npm run start'
+  ],
+  pnpm: [
+    'pnpm install',
+    'pnpm test',
+    'pnpm typecheck',
+    'pnpm lint',
+    'pnpm react:build',
+    'pnpm start'
+  ]
+}
 
 const usage = `Usage: create-asyra-app <project-name> [--package-manager=yarn|npm|pnpm]
 
@@ -98,6 +134,37 @@ function assertPackageManager(packageManager) {
 }
 
 function writePackageManagerFiles(targetDir, packageManager) {
+  const manifestPath = path.join(targetDir, 'package.json')
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'))
+  manifest.scripts = {
+    ...manifest.scripts,
+    'react:build': reactBuildScriptByPackageManager[packageManager]
+  }
+  manifest.packageManager =
+    manifestPackageManagerByPackageManager[packageManager]
+  fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`)
+
+  const readmePath = path.join(targetDir, 'README.md')
+  if (fs.existsSync(readmePath)) {
+    const commands = readmeCommandsByPackageManager[packageManager].join('\n')
+    const readme = fs
+      .readFileSync(readmePath, 'utf8')
+      .replace(
+        /```bash\n(?:yarn|npm|pnpm)[\s\S]*?(?:yarn|npm run|pnpm) start\n```/u,
+        `\`\`\`bash\n${commands}\n\`\`\``
+      )
+    fs.writeFileSync(readmePath, readme)
+  }
+
+  const packableGitignorePath = path.join(targetDir, 'gitignore')
+  const gitignorePath = path.join(targetDir, '.gitignore')
+  if (!fs.existsSync(gitignorePath) && fs.existsSync(packableGitignorePath)) {
+    fs.copyFileSync(packableGitignorePath, gitignorePath)
+  }
+  if (fs.existsSync(packableGitignorePath)) {
+    fs.rmSync(packableGitignorePath)
+  }
+
   if (packageManager === 'yarn') {
     fs.writeFileSync(
       path.join(targetDir, lockfileByPackageManager[packageManager]),
@@ -106,6 +173,20 @@ function writePackageManagerFiles(targetDir, packageManager) {
     fs.writeFileSync(
       path.join(targetDir, '.yarnrc.yml'),
       'nodeLinker: node-modules\nenableTransparentWorkspaces: false\n'
+    )
+  }
+}
+
+function copyTemplateContents(templateDir, targetDir) {
+  for (const entry of fs.readdirSync(templateDir, { withFileTypes: true })) {
+    fs.cpSync(
+      path.join(templateDir, entry.name),
+      path.join(targetDir, entry.name),
+      {
+        recursive: true,
+        force: false,
+        errorOnExist: true
+      }
     )
   }
 }
@@ -163,17 +244,29 @@ async function main() {
     console.error(`Error: template directory not found: ${templateDir}`)
     process.exit(1)
   }
-  if (fs.existsSync(targetDir)) {
-    console.error(`Error: directory "${targetName}" already exists.`)
-    process.exit(1)
-  }
-
   console.log(`Creating Asyra Starter App in ${targetName}`)
+  let ownsTarget = false
   try {
-    fs.cpSync(templateDir, targetDir, { recursive: true, errorOnExist: true })
+    fs.mkdirSync(targetDir, { mode: 0o755 })
+    ownsTarget = true
+    if (process.env.STARTER_APP_TEST_FAIL_AFTER_RESERVE === '1') {
+      throw new Error('test copy failure after target reservation')
+    }
+    copyTemplateContents(templateDir, targetDir)
     writePackageManagerFiles(targetDir, packageManager)
   } catch (error) {
-    fs.rmSync(targetDir, { recursive: true, force: true })
+    if (ownsTarget) {
+      fs.rmSync(targetDir, { recursive: true, force: true })
+    }
+    if (
+      error &&
+      typeof error === 'object' &&
+      'code' in error &&
+      (error.code === 'EEXIST' || error.code === 'ENOTDIR')
+    ) {
+      console.error(`Error: directory "${targetName}" already exists.`)
+      process.exit(1)
+    }
     console.error(`Error: failed to create project files: ${error.message}`)
     process.exit(1)
   }

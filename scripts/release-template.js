@@ -76,6 +76,7 @@ const REMOVE_SCRIPTS = config.removeScripts || []
 const REMOVE_SCRIPT_ARGUMENTS = config.removeScriptArguments || {}
 const SCRIPT_OVERRIDES = config.scriptOverrides || {}
 const STANDALONE_VITEST_CONFIG = config.standaloneVitestConfig === true
+const PACKABLE_GITIGNORE = config.packableGitignore === true
 const SOURCE_README = path.join(SRC_DIR, 'README.md')
 const SOURCE_EXAMPLE_ENVIRONMENT = path.join(SRC_DIR, '.env.example')
 const TEMPLATE_LICENSE = config.license
@@ -400,6 +401,10 @@ const gitignoreDest = path.join(DEST_DIR, '.gitignore')
 if (fs.existsSync(gitignoreSrc)) {
   fse.copySync(gitignoreSrc, gitignoreDest)
   if (VERBOSE) console.log('Copied .gitignore to template')
+  if (PACKABLE_GITIGNORE) {
+    fse.copySync(gitignoreSrc, path.join(DEST_DIR, 'gitignore'))
+    if (VERBOSE) console.log('Copied packable gitignore to template')
+  }
 }
 
 const IGNORED_COMPARISON_DIRECTORIES = new Set([
