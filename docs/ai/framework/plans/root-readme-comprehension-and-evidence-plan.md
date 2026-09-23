@@ -11,11 +11,16 @@ supported package-first and complete Design product starting paths, ownership
 boundaries, current support, and explicit non-capabilities.
 
 The implemented README shape is covered by existing public README validators and
-contract tests, including `scripts/docs/__tests__/public-readme-inputs.test.mjs`
-and `yarn docs:readme:check`. This is an implementation and local verification
-baseline, not a claim that every stage below has completed review, merge,
-publication, or the later adoption journey. Future README changes for the
-generic starter or public activation must be reconciled through the
+contract tests, including `scripts/docs/__tests__/public-readme-inputs.test.mjs`.
+The full `yarn docs:readme:check` gate additionally runs package README
+freshness, public README validation, `release:app:check --prod=asyra-design`,
+and public-documentation freshness. The #243 local Node checks covered focused
+README input/validation entrypoints only; they did not execute that complete
+Yarn gate because this worktree did not have Yarn install state. This is an
+implementation and local verification baseline, not a claim that every stage
+below has completed review, merge, publication, visual review, or the later
+adoption journey. Future README changes for the generic starter or public
+activation must be reconciled through the
 [Adoption Entry and Onboarding Program](adoption-entry-and-onboarding-program-plan.md),
 which owns the overall adoption journey.
 
@@ -84,7 +89,12 @@ the older "not started" status merely because later adoption tasks remain open.
 - **Required gates:** focused root README contract tests, full public README
   check, public-documentation freshness check, link validation, copy-style
   validation, Markdown rendering review on GitHub-compatible desktop and narrow
-  layouts, and a final bounded diff review.
+  layouts, and a final bounded diff review. The text/semantic checks and local
+  Node validators have existing baseline evidence; the GitHub-compatible
+  desktop/narrow rendering review remains the README owner's responsibility
+  whenever README layout or media changes. No existing evidence was found in
+  this bounded repair proving the desktop/narrow, media-present/media-missing
+  rendering matrix, so that visual acceptance is pending rather than completed.
 - **Excluded:** package README rewrites, App or CLI README rewrites, Framework or
   App behavior changes, new public APIs, new packages, website implementation,
   production deployment, and unsupported future capability claims.
@@ -258,15 +268,24 @@ Split the current broad domain story into three explicit levels:
 
 - Implemented at baseline: committed Asyra Design product evidence appears in
   the README with meaningful alternative text and captions.
-- Locally verified by README contract checks. Product-owner review and any
-  GitHub rendering re-review for later README changes remain separate.
+- Locally verified by focused README contract checks and direct public README
+  validation entrypoints. Product-owner review remains separate.
+- Pending visual acceptance: preserve the original README rendering
+  responsibility for GitHub-compatible desktop and narrow layouts, with media
+  present and with media unavailable. If a future README change alters layout,
+  media, image dimensions, captions, or the first-screen hierarchy, that task
+  must either cite committed visual evidence for this matrix or mark the matrix
+  pending. The responsibility belongs to the README change owner and is not
+  deferred to a later adoption redesign.
 
 ### Stage 4: Close contracts and validate
 
 - Implemented at baseline: focused root README tests assert the new semantic
   anchors and reject retired entry surfaces.
-- Required local validation for this baseline is `yarn docs:readme:check` plus
-  final bounded diff review.
+- Required local validation for this baseline remains the complete
+  `yarn docs:readme:check` plus final bounded diff review. The #243 work ran
+  focused Node checks for the README inputs/validation surface; record those as
+  executed checks only, not as a complete equivalent to the Yarn gate.
 - Product-owner review, merge state, public release, and later adoption-entry
   updates remain separate states.
 
@@ -296,7 +315,9 @@ Split the current broad domain story into three explicit levels:
 - All root and corpus-level public README gates must pass for any new change to
   this plan or README.
 - GitHub-compatible rendering review remains required when README layout or
-  media changes again.
+  media changes again, covering desktop and narrow layouts plus media-present
+  and media-unavailable states. Current baseline status: pending visual
+  evidence unless a future task cites committed artifacts from that matrix.
 - Product-owner review, merge, public release, and generic-starter activation
   are separate adoption program states.
 - No package, App, CLI, Framework runtime, or website behavior changes are
