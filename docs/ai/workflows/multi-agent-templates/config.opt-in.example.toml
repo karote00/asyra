@@ -1,0 +1,4 @@
+[agents]
+# Opt-in template only. Do not place this file at .codex/config.toml unless the
+# user explicitly asks to enable multi-agent work for the current task.
+max_concurrent_threads_per_session = 7

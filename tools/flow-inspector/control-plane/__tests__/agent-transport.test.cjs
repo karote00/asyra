@@ -66,14 +66,14 @@ test('protocol preserves UTF-8 across stream chunk boundaries', async () => {
   const protocol = createProtocol(child)
   child.once('request', ({ id }) => {
     const bytes = Buffer.from(
-      JSON.stringify({ id, result: { text: '正體中文' } }) + '\n'
+      JSON.stringify({ id, result: { text: 'café' } }) + '\n'
     )
-    const split = bytes.indexOf(Buffer.from('正')) + 1
+    const split = bytes.indexOf(Buffer.from('é')) + 1
     child.stdout.emit('data', bytes.subarray(0, split))
     child.stdout.emit('data', bytes.subarray(split))
   })
   assert.deepEqual(await protocol.request('initialize', {}), {
-    text: '正體中文'
+    text: 'café'
   })
   await protocol.close()
 })

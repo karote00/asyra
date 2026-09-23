@@ -9,10 +9,13 @@ const { afterEach, test } = require('node:test')
 
 const {
   checkTask,
+  compactRegistry,
   evaluateIntegration,
   evaluatePreCommit,
   evaluatePreTool,
   evaluateStop,
+  loadRegistry,
+  readArchivedTask,
   registerTask
 } = require('../guard-core.cjs')
 
@@ -311,7 +314,13 @@ test('pre-tool requires the integration wrapper for direct merge commands', () =
   register(registryPath, 0, makeTask(root))
   for (const command of [
     'gh pr merge 123 --squash',
-    'git merge codex/source'
+    'git merge codex/source',
+    `git -C ${root} merge codex/source`,
+    'git --no-pager merge codex/source',
+    'git -c merge.tool=false merge codex/source',
+    `git --no-pager -C ${root} merge codex/source`,
+    `git -C ${root} --no-pager merge codex/source`,
+    `git -C ${root} -C . merge codex/source`
   ]) {
     const result = evaluatePreTool({
       registryPath,
@@ -323,6 +332,35 @@ test('pre-tool requires the integration wrapper for direct merge commands', () =
       }
     })
     assert.equal(result.code, 'integration_required', command)
+  }
+})
+
+test('merge text in approved add paths is not treated as integration', () => {
+  const root = makeTemporaryDirectory()
+  const baselineHead = initializeMinimalRepository(root)
+  const registryPath = registryPathFor(root)
+  const commands = [
+    'git add -- scripts/prepare-agent-local-merge.mjs',
+    'git add -- docs/local-merge-preparation.md'
+  ]
+  register(
+    registryPath,
+    0,
+    makeTask(root, { approvedCommands: commands, baselineHead })
+  )
+
+  for (const command of commands) {
+    const result = evaluatePreTool({
+      registryPath,
+      event: {
+        taskId: 'task-a',
+        cwd: root,
+        toolName: 'Bash',
+        toolInput: { command }
+      }
+    })
+    assert.equal(result.decision, 'allow', command)
+    assert.equal(result.code, 'approved_command', command)
   }
 })
 
@@ -1044,7 +1082,7 @@ test('pre-commit binds branch, head, staged tree, exact paths, gates, and review
       taskId: 'task-a',
       cwd: root,
       toolName: 'Bash',
-      toolInput: { command: "git commit -m 'validated change'" }
+      toolInput: { command: "git commit -m 'validated merge preparation'" }
     }
   })
   assert.equal(directCommit.decision, 'allow', directCommit.reason)
@@ -1367,4 +1405,540 @@ test('CLI syntax failures return stable JSON without a stack dump', () => {
   assert.equal(response.decision, 'deny')
   assert.equal(response.code, 'invalid_input')
   assert.equal(result.stderr, '')
+})
+
+function legacyV1ReaderFixture(registry) {
+  if (
+    !registry ||
+    registry.version !== 1 ||
+    !Number.isInteger(registry.revision)
+  ) {
+    throw new Error('Registry version or revision is invalid.')
+  }
+  return { version: 1, revision: registry.revision, tasks: registry.tasks }
+}
+
+function archiveFiles(registryPath) {
+  const directory = path.join(path.dirname(registryPath), 'archive')
+  return fs.existsSync(directory) ? fs.readdirSync(directory).sort() : []
+}
+
+test('compact archives terminal snapshots and makes legacy readers fail closed', () => {
+  const root = makeTemporaryDirectory()
+  const otherRoot = makeTemporaryDirectory()
+  const registryPath = registryPathFor(root)
+  register(
+    registryPath,
+    0,
+    makeTask(root, {
+      id: 'coordinator',
+      coordinator: true,
+      kind: 'local',
+      branch: 'codex/coordinator',
+      semanticOwners: ['coordination/admin']
+    })
+  )
+  const completed = makeTask(otherRoot, {
+    id: 'completed',
+    state: 'complete',
+    branch: 'codex/completed',
+    semanticOwners: ['completed/owner']
+  })
+  register(registryPath, 1, completed)
+  const registeredSnapshot = loadRegistry(registryPath).tasks.completed
+
+  const unauthorized = compactRegistry({
+    registryPath,
+    expectedRevision: 2,
+    coordinatorTaskId: 'completed'
+  })
+  assert.equal(unauthorized.code, 'invalid_coordinator')
+  assert.equal(JSON.parse(fs.readFileSync(registryPath, 'utf8')).version, 1)
+
+  const cli = path.resolve(__dirname, '..', 'guard.cjs')
+  const invocation = spawnSync(process.execPath, [cli, 'compact'], {
+    cwd: projectRoot,
+    encoding: 'utf8',
+    input: JSON.stringify({
+      repoRoot: root,
+      expectedRevision: 2,
+      coordinatorTaskId: 'coordinator'
+    })
+  })
+  assert.equal(invocation.status, 0, invocation.stderr)
+  const result = JSON.parse(invocation.stdout)
+  assert.equal(result.decision, 'allow', result.reason)
+  assert.equal(result.details.archivedTasks, 1)
+  const stored = JSON.parse(fs.readFileSync(registryPath, 'utf8'))
+  assert.equal(stored.version, 2)
+  assert.deepEqual(Object.keys(stored.tasks), ['coordinator'])
+  assert.equal(stored.archiveSegments.length, 1)
+  assert.throws(() => legacyV1ReaderFixture(stored), /version/)
+
+  const archived = readArchivedTask({
+    registryPath,
+    taskId: 'completed'
+  })
+  assert.equal(archived.decision, 'allow')
+  assert.deepEqual(archived.details.task, registeredSnapshot)
+  for (const missing of ['toString', 'constructor', '__proto__', 'missing']) {
+    const lookup = readArchivedTask({ registryPath, taskId: missing })
+    assert.equal(lookup.decision, 'deny', missing)
+  }
+})
+
+test('compact retains every nonterminal task and its transitive current references', () => {
+  const root = makeTemporaryDirectory()
+  const otherRoot = makeTemporaryDirectory()
+  const thirdRoot = makeTemporaryDirectory()
+  const fourthRoot = makeTemporaryDirectory()
+  const registryPath = registryPathFor(root)
+  register(
+    registryPath,
+    0,
+    makeTask(root, {
+      id: 'coordinator',
+      coordinator: true,
+      kind: 'local',
+      branch: 'codex/coordinator',
+      semanticOwners: ['coordination/admin']
+    })
+  )
+  register(
+    registryPath,
+    1,
+    makeTask(otherRoot, {
+      id: 'goal',
+      state: 'complete',
+      branch: 'codex/goal',
+      semanticOwners: ['goal/owner']
+    })
+  )
+  register(
+    registryPath,
+    2,
+    makeTask(thirdRoot, {
+      id: 'dependency',
+      state: 'complete',
+      branch: 'codex/dependency',
+      semanticOwners: ['dependency/owner']
+    })
+  )
+  register(
+    registryPath,
+    3,
+    makeTask(fourthRoot, {
+      id: 'waiting-source',
+      state: 'paused',
+      kind: 'subpr',
+      integrationTargetTaskId: 'goal',
+      branch: 'codex/waiting-source',
+      semanticOwners: ['source/owner'],
+      dependsOn: ['dependency']
+    })
+  )
+  register(
+    registryPath,
+    4,
+    makeTask(fourthRoot, {
+      id: 'unreferenced',
+      state: 'retired',
+      branch: 'codex/unreferenced',
+      semanticOwners: ['unused/owner']
+    })
+  )
+
+  const result = compactRegistry({
+    registryPath,
+    expectedRevision: 5,
+    coordinatorTaskId: 'coordinator'
+  })
+  assert.equal(result.decision, 'allow', result.reason)
+  const stored = JSON.parse(fs.readFileSync(registryPath, 'utf8'))
+  assert.deepEqual(Object.keys(stored.tasks).sort(), [
+    'coordinator',
+    'dependency',
+    'goal',
+    'waiting-source'
+  ])
+  assert.equal(result.details.archivedTasks, 1)
+})
+
+test('archived complete tasks satisfy dependencies but archived identities cannot be reused or targeted', () => {
+  const root = makeTemporaryDirectory()
+  const completeRoot = makeTemporaryDirectory()
+  const retiredRoot = makeTemporaryDirectory()
+  const consumerRoot = makeTemporaryDirectory()
+  const registryPath = registryPathFor(root)
+  register(
+    registryPath,
+    0,
+    makeTask(root, {
+      id: 'coordinator',
+      coordinator: true,
+      kind: 'local',
+      branch: 'codex/coordinator',
+      semanticOwners: ['coordination/admin']
+    })
+  )
+  register(
+    registryPath,
+    1,
+    makeTask(completeRoot, {
+      id: 'completed',
+      state: 'complete',
+      branch: 'codex/completed',
+      semanticOwners: ['completed/owner']
+    })
+  )
+  register(
+    registryPath,
+    2,
+    makeTask(retiredRoot, {
+      id: 'retired',
+      state: 'retired',
+      branch: 'codex/retired',
+      semanticOwners: ['retired/owner']
+    })
+  )
+  assert.equal(
+    compactRegistry({
+      registryPath,
+      expectedRevision: 3,
+      coordinatorTaskId: 'coordinator'
+    }).decision,
+    'allow'
+  )
+
+  const dependency = registerTask({
+    registryPath,
+    expectedRevision: 4,
+    task: makeTask(consumerRoot, {
+      id: 'consumer',
+      branch: 'codex/consumer',
+      semanticOwners: ['consumer/owner'],
+      dependsOn: ['completed']
+    })
+  })
+  assert.equal(dependency.decision, 'allow', dependency.reason)
+  const retiredDependency = registerTask({
+    registryPath,
+    expectedRevision: 5,
+    task: makeTask(makeTemporaryDirectory(), {
+      id: 'retired-consumer',
+      branch: 'codex/retired-consumer',
+      semanticOwners: ['retired-consumer/owner'],
+      dependsOn: ['retired']
+    })
+  })
+  assert.equal(retiredDependency.code, 'dependency_incomplete')
+
+  const reused = registerTask({
+    registryPath,
+    expectedRevision: 5,
+    task: makeTask(completeRoot, {
+      id: 'completed',
+      state: 'complete',
+      branch: 'codex/completed',
+      semanticOwners: ['completed/owner']
+    })
+  })
+  assert.equal(reused.code, 'task_archived')
+
+  const archivedTarget = registerTask({
+    registryPath,
+    expectedRevision: 5,
+    task: makeTask(makeTemporaryDirectory(), {
+      id: 'source',
+      state: 'paused',
+      kind: 'subpr',
+      integrationTargetTaskId: 'completed',
+      branch: 'codex/source',
+      semanticOwners: ['source/owner']
+    })
+  })
+  assert.equal(archivedTarget.code, 'integration_target_archived')
+})
+
+test('compact is revision-CAS protected and archive-first failure leaves live state intact', () => {
+  const root = makeTemporaryDirectory()
+  const registryPath = registryPathFor(root)
+  register(
+    registryPath,
+    0,
+    makeTask(root, {
+      id: 'coordinator',
+      coordinator: true,
+      kind: 'local',
+      branch: 'codex/coordinator',
+      semanticOwners: ['coordination/admin']
+    })
+  )
+  register(
+    registryPath,
+    1,
+    makeTask(makeTemporaryDirectory(), {
+      id: 'completed',
+      state: 'complete',
+      branch: 'codex/completed',
+      semanticOwners: ['completed/owner']
+    })
+  )
+  const before = fs.readFileSync(registryPath, 'utf8')
+  const stale = compactRegistry({
+    registryPath,
+    expectedRevision: 1,
+    coordinatorTaskId: 'coordinator'
+  })
+  assert.equal(stale.code, 'stale_registry_revision')
+  assert.equal(fs.readFileSync(registryPath, 'utf8'), before)
+
+  const interrupted = compactRegistry(
+    {
+      registryPath,
+      expectedRevision: 2,
+      coordinatorTaskId: 'coordinator'
+    },
+    {
+      afterArchiveWrite() {
+        throw new Error('synthetic interruption')
+      }
+    }
+  )
+  assert.equal(interrupted.code, 'guard_error')
+  assert.equal(fs.readFileSync(registryPath, 'utf8'), before)
+  assert.equal(archiveFiles(registryPath).length, 1)
+
+  const retry = compactRegistry({
+    registryPath,
+    expectedRevision: 2,
+    coordinatorTaskId: 'coordinator'
+  })
+  assert.equal(retry.decision, 'allow', retry.reason)
+  assert.equal(archiveFiles(registryPath).length, 1)
+})
+
+test('archive loading fails closed for missing, tampered, symlinked, or duplicate task snapshots', () => {
+  const createCompacted = () => {
+    const root = makeTemporaryDirectory()
+    const registryPath = registryPathFor(root)
+    register(
+      registryPath,
+      0,
+      makeTask(root, {
+        id: 'coordinator',
+        coordinator: true,
+        kind: 'local',
+        branch: 'codex/coordinator',
+        semanticOwners: ['coordination/admin']
+      })
+    )
+    register(
+      registryPath,
+      1,
+      makeTask(makeTemporaryDirectory(), {
+        id: 'completed',
+        state: 'complete',
+        branch: 'codex/completed',
+        semanticOwners: ['completed/owner']
+      })
+    )
+    assert.equal(
+      compactRegistry({
+        registryPath,
+        expectedRevision: 2,
+        coordinatorTaskId: 'coordinator'
+      }).decision,
+      'allow'
+    )
+    const stored = JSON.parse(fs.readFileSync(registryPath, 'utf8'))
+    const archivePath = path.join(
+      path.dirname(registryPath),
+      'archive',
+      stored.archiveSegments[0] + '.json'
+    )
+    return { archivePath, registryPath, stored }
+  }
+
+  {
+    const { archivePath, registryPath } = createCompacted()
+    fs.rmSync(archivePath)
+    assert.throws(() => loadRegistry(registryPath), /archive/i)
+  }
+  {
+    const { archivePath, registryPath } = createCompacted()
+    fs.appendFileSync(archivePath, ' ')
+    assert.throws(() => loadRegistry(registryPath), /archive/i)
+  }
+  {
+    const { archivePath, registryPath } = createCompacted()
+    const outside = path.join(makeTemporaryDirectory(), 'outside.json')
+    fs.renameSync(archivePath, outside)
+    fs.symlinkSync(outside, archivePath)
+    assert.throws(() => loadRegistry(registryPath), /archive/i)
+  }
+  {
+    const { archivePath, registryPath, stored } = createCompacted()
+    const original = JSON.parse(fs.readFileSync(archivePath, 'utf8'))
+    original.task.state = 'retired'
+    const duplicate = JSON.stringify(original) + '\n'
+    const duplicateHash = digest(duplicate)
+    fs.writeFileSync(
+      path.join(path.dirname(archivePath), duplicateHash + '.json'),
+      duplicate
+    )
+    stored.archiveSegments.push(duplicateHash)
+    fs.writeFileSync(registryPath, JSON.stringify(stored) + '\n')
+    assert.throws(() => loadRegistry(registryPath), /duplicate|archive/i)
+  }
+})
+
+test('compact preserves legacy own task IDs without accepting inherited history keys', () => {
+  const root = makeTemporaryDirectory()
+  const registryPath = registryPathFor(root)
+  register(
+    registryPath,
+    0,
+    makeTask(root, {
+      id: 'coordinator',
+      coordinator: true,
+      kind: 'local',
+      branch: 'codex/coordinator',
+      semanticOwners: ['coordination/admin']
+    })
+  )
+  const stored = JSON.parse(fs.readFileSync(registryPath, 'utf8'))
+  stored.tasks.toString = makeTask(makeTemporaryDirectory(), {
+    id: 'toString',
+    state: 'complete',
+    branch: 'codex/to-string',
+    semanticOwners: ['historical/to-string']
+  })
+  stored.tasks.constructor = makeTask(makeTemporaryDirectory(), {
+    id: 'constructor',
+    state: 'complete',
+    branch: 'codex/constructor',
+    semanticOwners: ['historical/constructor']
+  })
+  fs.writeFileSync(registryPath, JSON.stringify(stored) + '\n')
+
+  const compacted = compactRegistry({
+    registryPath,
+    expectedRevision: 1,
+    coordinatorTaskId: 'coordinator'
+  })
+  assert.equal(compacted.decision, 'allow', compacted.reason)
+  for (const taskId of ['toString', 'constructor']) {
+    const lookup = readArchivedTask({ registryPath, taskId })
+    assert.equal(lookup.decision, 'allow', taskId)
+    assert.equal(lookup.details.task.id, taskId)
+  }
+  assert.equal(
+    readArchivedTask({ registryPath, taskId: '__proto__' }).decision,
+    'deny'
+  )
+})
+
+test('compact fsyncs each new directory entry before publishing the live registry', () => {
+  const root = makeTemporaryDirectory()
+  const registryPath = registryPathFor(root)
+  register(
+    registryPath,
+    0,
+    makeTask(root, {
+      id: 'coordinator',
+      coordinator: true,
+      kind: 'local',
+      branch: 'codex/coordinator',
+      semanticOwners: ['coordination/admin']
+    })
+  )
+  register(
+    registryPath,
+    1,
+    makeTask(makeTemporaryDirectory(), {
+      id: 'completed',
+      state: 'complete',
+      branch: 'codex/completed',
+      semanticOwners: ['completed/owner']
+    })
+  )
+  const archiveDirectory = path.join(path.dirname(registryPath), 'archive')
+  const registryDirectory = path.dirname(registryPath)
+  const descriptorPaths = new Map()
+  const events = []
+  const original = {
+    closeSync: fs.closeSync,
+    fsyncSync: fs.fsyncSync,
+    linkSync: fs.linkSync,
+    mkdirSync: fs.mkdirSync,
+    openSync: fs.openSync,
+    renameSync: fs.renameSync
+  }
+  fs.openSync = (filePath, ...arguments_) => {
+    const descriptor = original.openSync(filePath, ...arguments_)
+    descriptorPaths.set(descriptor, path.resolve(filePath))
+    return descriptor
+  }
+  fs.closeSync = (descriptor) => {
+    const result = original.closeSync(descriptor)
+    descriptorPaths.delete(descriptor)
+    return result
+  }
+  fs.fsyncSync = (descriptor) => {
+    events.push(['fsync', descriptorPaths.get(descriptor)])
+    return original.fsyncSync(descriptor)
+  }
+  fs.mkdirSync = (directory, ...arguments_) => {
+    const result = original.mkdirSync(directory, ...arguments_)
+    if (path.resolve(directory) === archiveDirectory) {
+      events.push(['mkdir', archiveDirectory])
+    }
+    return result
+  }
+  fs.linkSync = (source, destination) => {
+    events.push(['link', path.resolve(destination)])
+    return original.linkSync(source, destination)
+  }
+  fs.renameSync = (source, destination) => {
+    events.push(['rename', path.resolve(destination)])
+    return original.renameSync(source, destination)
+  }
+  let result
+  try {
+    result = compactRegistry({
+      registryPath,
+      expectedRevision: 2,
+      coordinatorTaskId: 'coordinator'
+    })
+  } finally {
+    Object.assign(fs, original)
+  }
+  assert.equal(result.decision, 'allow', result.reason)
+  const mkdirIndex = events.findIndex(([kind]) => kind === 'mkdir')
+  const linkIndex = events.findIndex(([kind]) => kind === 'link')
+  const registryRenameIndex = events.findIndex(
+    ([kind, target]) => kind === 'rename' && target === registryPath
+  )
+  assert.ok(mkdirIndex >= 0)
+  assert.ok(linkIndex > mkdirIndex)
+  assert.ok(
+    events
+      .slice(mkdirIndex + 1, linkIndex)
+      .some(
+        ([kind, target]) => kind === 'fsync' && target === registryDirectory
+      )
+  )
+  assert.ok(
+    events
+      .slice(linkIndex + 1, registryRenameIndex)
+      .some(([kind, target]) => kind === 'fsync' && target === archiveDirectory)
+  )
+  assert.ok(
+    events
+      .slice(registryRenameIndex + 1)
+      .some(
+        ([kind, target]) => kind === 'fsync' && target === registryDirectory
+      )
+  )
 })

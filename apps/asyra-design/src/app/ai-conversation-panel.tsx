@@ -40,8 +40,9 @@ const DRAWING_DETAIL_SELECTION_INTENTS: Readonly<
   Record<AiDrawingDetailOptionId, string>
 > = Object.freeze({
   [AiDrawingDetailOptionIds.BALANCED]:
-    AiDrawingDetailSelectionIntents.BALANCED_ZH,
-  [AiDrawingDetailOptionIds.MAXIMUM]: AiDrawingDetailSelectionIntents.MAXIMUM_ZH
+    AiDrawingDetailSelectionIntents.BALANCED_REFERENCE,
+  [AiDrawingDetailOptionIds.MAXIMUM]:
+    AiDrawingDetailSelectionIntents.MAXIMUM_REFERENCE
 })
 
 const stopAgentCancelActivationPropagation = (event: SyntheticEvent): void => {
