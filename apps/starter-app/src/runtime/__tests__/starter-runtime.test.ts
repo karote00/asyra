@@ -42,6 +42,8 @@ const saveWrapper = async (
 const settleProjection = async (): Promise<void> => {
   await Promise.resolve()
   await Promise.resolve()
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  await Promise.resolve()
 }
 
 describe('starter runtime canonical App path', () => {
@@ -174,7 +176,100 @@ describe('starter runtime canonical App path', () => {
     unsubscribe()
   })
 
-  it('reports storage write failures without claiming a save', async () => {
+  it('does not throw when browser storage is unavailable during runtime creation', async () => {
+    const originalDescriptor = Object.getOwnPropertyDescriptor(
+      window,
+      'localStorage'
+    )
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      get() {
+        throw new DOMException('Storage denied', 'SecurityError')
+      }
+    })
+
+    try {
+      const runtime = createStarterRuntime()
+      const result = await runtime.save()
+      expect(result.ok).toBe(false)
+      expect(result.message).toContain('Storage denied')
+      await runtime.dispose()
+    } finally {
+      if (originalDescriptor) {
+        Object.defineProperty(window, 'localStorage', originalDescriptor)
+      }
+    }
+  })
+
+  it('uses publication-scoped projection updates for normal actions and history replay', async () => {
+    const runtime = createStarterRuntime({ storage: new MemoryStorage() })
+    const container = document.createElement('div')
+    await runtime.start(container, { width: 320, height: 240 })
+
+    const fullRead = vi.spyOn(runtime.core, 'getAllElementData')
+    const initialRefreshCount = runtime.projection.refreshCount
+    const firstId = runtime.feature.addItem({
+      title: 'First item',
+      status: 'todo'
+    })
+    await settleProjection()
+    expect(runtime.projection.refreshCount).toBe(initialRefreshCount + 1)
+    expect(fullRead).not.toHaveBeenCalled()
+
+    const afterFirstAdd = runtime.projection.refreshCount
+    const secondId = runtime.feature.addItem({
+      title: 'Second item',
+      status: 'todo'
+    })
+    await settleProjection()
+    expect(runtime.projection.refreshCount).toBe(afterFirstAdd + 1)
+    expect(fullRead).not.toHaveBeenCalled()
+    const firstBeforeEdit = runtime.projection
+      .getSnapshot()
+      .find((item) => item.id === firstId)
+    expect(firstBeforeEdit).toBeDefined()
+
+    const beforeEdit = runtime.projection.refreshCount
+    runtime.feature.editItem(secondId, { status: 'doing' })
+    await settleProjection()
+    expect(runtime.projection.refreshCount).toBe(beforeEdit + 1)
+    expect(fullRead).not.toHaveBeenCalled()
+    expect(
+      runtime.projection.getSnapshot().find((item) => item.id === firstId)
+    ).toBe(firstBeforeEdit)
+    expect(
+      runtime.projection.getSnapshot().find((item) => item.id === secondId)
+    ).toMatchObject({ title: 'Second item', status: 'doing' })
+
+    const beforeUndo = runtime.projection.refreshCount
+    await runtime.undo()
+    await settleProjection()
+    expect(runtime.projection.refreshCount).toBe(beforeUndo + 1)
+    expect(fullRead).not.toHaveBeenCalled()
+    expect(
+      runtime.projection.getSnapshot().find((item) => item.id === secondId)
+    ).toMatchObject({ title: 'Second item', status: 'todo' })
+
+    const beforeRedo = runtime.projection.refreshCount
+    await runtime.redo()
+    await settleProjection()
+    expect(runtime.projection.refreshCount).toBe(beforeRedo + 1)
+    expect(fullRead).not.toHaveBeenCalled()
+    expect(
+      runtime.projection.getSnapshot().find((item) => item.id === secondId)
+    ).toMatchObject({ title: 'Second item', status: 'doing' })
+
+    const saved = await runtime.save()
+    expect(saved.ok).toBe(true)
+    const beforeLoadRefresh = runtime.projection.refreshCount
+    expect(await runtime.reload()).toMatchObject({ ok: true })
+    expect(runtime.projection.refreshCount).toBe(beforeLoadRefresh + 1)
+    expect(fullRead).toHaveBeenCalledTimes(1)
+
+    await runtime.dispose()
+  })
+
+  it('reports storage write failures without claiming a save', () => {
     const core = {
       version: '1.0.0',
       sceneTree: { workspace: '', workspaceList: [], elements: {} },
@@ -187,6 +282,8 @@ describe('starter runtime canonical App path', () => {
       }
     }
 
-    expect(() => saveCoreDocument(storage, core)).toThrow('quota exceeded')
+    const result = saveCoreDocument(storage, core)
+    expect(result.ok).toBe(false)
+    expect(result.message).toContain('quota exceeded')
   })
 })

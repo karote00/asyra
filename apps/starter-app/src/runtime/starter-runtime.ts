@@ -9,13 +9,12 @@ import core, {
 import type { CoreRawData } from '@asyra/utils'
 import {
   IDTypes,
-  SharedDataChannelNames,
   id,
   type ElementRawData,
   type PropertyComponentRawData,
   type PropertySchema
 } from '@asyra/utils'
-import { applyPreset, PresetProfiles } from '@asyra/preset'
+import { applyPreset, PresetDefaults, PresetProfiles } from '@asyra/preset'
 import {
   ITEM_COMPONENT_TYPE,
   ITEM_PROPERTY_NAME,
@@ -48,6 +47,7 @@ export interface StarterRuntime {
   readonly core: Core
   readonly feature: ItemCommandApi
   readonly projection: StarterProjectionStore
+  readonly storageStatus: string | null
   start(
     container: HTMLElement,
     options?: { width?: number; height?: number }
@@ -88,7 +88,29 @@ const assertTitle = (title: unknown): string => {
 const runActionTransaction = <T>(action: () => T): T =>
   runTransaction(action, { failureKind: 'handler-error' })
 
+const storageFailureMessage = (error: unknown): string =>
+  error instanceof Error ? error.message : String(error)
+
+const unavailableStorage = (reason: string): StarterStorage => ({
+  unavailableReason: reason,
+  getItem() {
+    throw new Error(reason)
+  },
+  setItem() {
+    throw new Error(reason)
+  }
+})
+
 const createItemRenderStrategy = () => {
+  const itemIndexFromId = (value: string): number => {
+    const match = /^item-(\d+)$/u.exec(value)
+    if (!match) {
+      return 0
+    }
+    const sequence = Number.parseInt(match[1] ?? '1', 10)
+    return Number.isFinite(sequence) && sequence > 0 ? sequence - 1 : 0
+  }
+
   return (
     graphic: {
       clear(): void
@@ -98,10 +120,20 @@ const createItemRenderStrategy = () => {
       x: number
       y: number
     },
-    data: { id: string; status?: unknown }
+    data: {
+      id: string
+      status?: unknown
+      x?: unknown
+      y?: unknown
+      width?: unknown
+      height?: unknown
+    }
   ): void => {
-    const offset = Number.parseInt(data.id.replace(/\D/g, '').slice(-2), 10)
-    const index = Number.isFinite(offset) ? offset : 0
+    const index = itemIndexFromId(data.id)
+    const x = typeof data.x === 'number' ? data.x : 24
+    const y = typeof data.y === 'number' ? data.y : 24 + index * 44
+    const width = typeof data.width === 'number' ? data.width : 160
+    const height = typeof data.height === 'number' ? data.height : 72
     const status = isItemStatus(data.status) ? data.status : 'todo'
     const colors: Record<ItemStatus, number> = {
       todo: 0xf7f2e8,
@@ -109,11 +141,11 @@ const createItemRenderStrategy = () => {
       done: 0xdff5df
     }
     graphic.clear()
-    graphic.rect(0, 0, 160, 72)
+    graphic.rect(0, 0, width, height)
     graphic.fill(colors[status])
     graphic.stroke({ color: 0x27312f, width: 2 })
-    graphic.x = 24 + (index % 3) * 184
-    graphic.y = 24 + Math.floor(index / 3) * 96
+    graphic.x = x
+    graphic.y = y
   }
 }
 
@@ -157,78 +189,83 @@ const createEmptyCoreDocument = (): CoreRawData =>
     props: {}
   }) as unknown as CoreRawData
 
-const createItemApi = (core: Core): ItemCommandApi => ({
-  addItem(input = {}) {
-    const title = assertTitle(input.title ?? 'Untitled item')
-    const status = assertStatus(input.status ?? 'todo')
-    return runActionTransaction(() => {
-      const elementId = id(ITEM_COMPONENT_TYPE)
-      const propertyId = id(IDTypes.PROPS)
-      const element: ElementRawData = {
-        id: elementId,
-        type: ITEM_COMPONENT_TYPE,
-        name: title,
-        parentId: core.getCurrentWorkspaceId(),
-        visible: true,
-        lock: false,
-        props: {
-          [ITEM_PROPERTY_NAME]: propertyId
+const createItemApi = (core: Core): ItemCommandApi => {
+  let nextOrdinal = 0
+  return {
+    addItem(input = {}) {
+      const title = assertTitle(input.title ?? 'Untitled item')
+      const status = assertStatus(input.status ?? 'todo')
+      return runActionTransaction(() => {
+        const ordinal = nextOrdinal
+        nextOrdinal += 1
+        const elementId = id(ITEM_COMPONENT_TYPE)
+        const propertyId = id(IDTypes.PROPS)
+        const element: ElementRawData = {
+          id: elementId,
+          type: ITEM_COMPONENT_TYPE,
+          name: title,
+          parentId: core.getCurrentWorkspaceId(),
+          visible: true,
+          lock: false,
+          x: 24,
+          y: 24 + ordinal * 44,
+          width: 160,
+          height: 72,
+          props: {
+            [ITEM_PROPERTY_NAME]: propertyId
+          }
+        } as unknown as ElementRawData
+        const property: PropertyComponentRawData = {
+          id: propertyId,
+          type: ITEM_PROPERTY_TYPE,
+          title,
+          status
+        } as PropertyComponentRawData
+        const [createdId] = core.createElementsInParentFromCanonicalData(
+          [element],
+          [property],
+          core.getCurrentWorkspaceId()
+        )
+        if (!createdId) {
+          throw new Error('Item creation did not return an element id.')
         }
-      } as unknown as ElementRawData
-      const property: PropertyComponentRawData = {
-        id: propertyId,
-        type: ITEM_PROPERTY_TYPE,
-        title,
-        status
-      } as PropertyComponentRawData
-      const [createdId] = core.createElementsInParentFromCanonicalData(
-        [element],
-        [property],
-        core.getCurrentWorkspaceId()
-      )
-      if (!createdId) {
-        throw new Error('Item creation did not return an element id.')
+        return createdId
+      })
+    },
+    editItem(id, update) {
+      const values: Record<string, string> = {}
+      if (update.title !== undefined) {
+        values.title = assertTitle(update.title)
       }
-      return createdId
-    })
-  },
-  editItem(id, update) {
-    const values: Record<string, string> = {}
-    if (update.title !== undefined) {
-      values.title = assertTitle(update.title)
-    }
-    if (update.status !== undefined) {
-      values.status = assertStatus(update.status)
-    }
-    if (Object.keys(values).length === 0) {
-      return Object.freeze([])
-    }
+      if (update.status !== undefined) {
+        values.status = assertStatus(update.status)
+      }
+      if (Object.keys(values).length === 0) {
+        return Object.freeze([])
+      }
 
-    return runActionTransaction(() =>
-      core.updateElementProperties([
-        {
-          elementId: id,
-          values
-        }
-      ])
-    )
+      return runActionTransaction(() =>
+        core.updateElementProperties([
+          {
+            elementId: id,
+            values
+          }
+        ])
+      )
+    }
   }
-})
+}
 
 const createFeatureApi = (
   api: ItemCommandApi,
-  onCommandComplete: () => void
+  _onCommandComplete: () => void
 ): ItemCommandApi => {
   const commandApi: ItemCommandApi = {
     addItem(input) {
-      const id = api.addItem(input)
-      onCommandComplete()
-      return id
+      return api.addItem(input)
     },
     editItem(id, update) {
-      const updated = api.editItem(id, update)
-      onCommandComplete()
-      return updated
+      return api.editItem(id, update)
     }
   }
   const registration = defineFeature<ItemCommandApi>(
@@ -246,7 +283,13 @@ const createFeatureApi = (
   }) as ItemCommandApi & { dispose: () => boolean }
 }
 
-const defaultStorage = (): StarterStorage => window.localStorage
+const defaultStorage = (): StarterStorage => {
+  try {
+    return window.localStorage
+  } catch (error) {
+    return unavailableStorage(storageFailureMessage(error))
+  }
+}
 
 export const createStarterRuntime = (
   options: StarterRuntimeOptions = {}
@@ -258,19 +301,14 @@ export const createStarterRuntime = (
   const disposeCallbacks: (() => void)[] = []
 
   registerStarterSchema(core, createItemPropertySchema())
-  core.registerSharedDataChannel(
-    SharedDataChannelNames.SCENE_TREE,
-    core.createLocalSharedDataChannel()
-  )
-  core.registerSharedDataChannel(
-    SharedDataChannelNames.PROPS,
-    core.createLocalSharedDataChannel()
-  )
   core.setLoadSource({
     name: 'starter-empty-document',
     load: async () => createEmptyCoreDocument()
   })
-  applyPreset(core, { profile: PresetProfiles['2D'], defaults: [] })
+  applyPreset(core, {
+    profile: PresetProfiles['2D'],
+    defaults: [PresetDefaults.BASIC_SHAPES, PresetDefaults.VIEWPORT]
+  })
   core.registerRuntimeCleanup('starter-app-projection', () => {
     projection.dispose()
   })
@@ -282,7 +320,29 @@ export const createStarterRuntime = (
   ) as ItemCommandApi & {
     dispose?: () => boolean
   }
-  disposeCallbacks.push(core.subscribeToSharedPublication(refreshProjection))
+  let projectionFlushTimer: ReturnType<typeof setTimeout> | undefined
+  const pendingPublications: Parameters<
+    StarterProjectionStore['refreshFromPublication']
+  >[0][] = []
+  disposeCallbacks.push(
+    core.subscribeToSharedPublication((publication) => {
+      pendingPublications.push(publication)
+      if (projectionFlushTimer !== undefined) {
+        return
+      }
+      projectionFlushTimer = setTimeout(() => {
+        projectionFlushTimer = undefined
+        projection.refreshFromPublications(pendingPublications.splice(0))
+      }, 0)
+    })
+  )
+  disposeCallbacks.push(() => {
+    if (projectionFlushTimer !== undefined) {
+      clearTimeout(projectionFlushTimer)
+      projectionFlushTimer = undefined
+    }
+    pendingPublications.length = 0
+  })
   const fileLoadSubscription = subscribeToFileLoadComplete(() => {
     options.onLoadAccepted?.()
     refreshProjection()
@@ -293,6 +353,7 @@ export const createStarterRuntime = (
     core,
     feature,
     projection,
+    storageStatus: storage.unavailableReason ?? null,
     async start(container, startOptions = {}) {
       if (disposed) {
         throw new Error('Starter runtime is disposed.')
@@ -309,14 +370,12 @@ export const createStarterRuntime = (
         return
       }
       await undoWithRenderPolicy({ mode: 'atomic' })
-      refreshProjection()
     },
     async redo() {
       if (disposed) {
         return
       }
       await redoWithRenderPolicy({ mode: 'atomic' })
-      refreshProjection()
     },
     async save() {
       if (disposed) {
@@ -359,7 +418,7 @@ export const createStarterRuntime = (
       disposeCallbacks.splice(0).forEach((dispose) => dispose())
       projection.dispose()
       feature.dispose?.()
-      await core.destroy()
+      await core.resetRuntime()
     }
   }
 }

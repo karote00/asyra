@@ -37,7 +37,7 @@ const useStarterRuntime = () => {
           return
         }
         setReady(true)
-        setMessage('Ready')
+        setMessage(runtime.storageStatus ?? 'Ready')
       })
       .catch((error: unknown) => {
         if (!active) {

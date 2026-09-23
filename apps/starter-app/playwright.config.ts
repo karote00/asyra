@@ -1,6 +1,9 @@
 import { defineConfig, devices } from '@playwright/test'
 
 const baseUrl = process.env.STARTER_APP_URL ?? 'http://127.0.0.1:5192'
+const appUrl = new URL(baseUrl)
+const appHost = appUrl.hostname
+const appPort = appUrl.port || (appUrl.protocol === 'https:' ? '443' : '80')
 
 export default defineConfig({
   testDir: './e2e',
@@ -12,7 +15,7 @@ export default defineConfig({
     trace: 'on-first-retry'
   },
   webServer: {
-    command: 'yarn dev --host 127.0.0.1 --port 5192',
+    command: `yarn dev --host ${appHost} --port ${appPort}`,
     url: baseUrl,
     reuseExistingServer: !process.env.CI,
     timeout: 60_000

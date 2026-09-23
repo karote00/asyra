@@ -6,6 +6,7 @@ import {
 } from '../domain/item-domain.js'
 
 export interface StarterStorage {
+  readonly unavailableReason?: string
   getItem(key: string): string | null
   setItem(key: string, value: string): void
 }
@@ -25,13 +26,20 @@ export const saveCoreDocument = (
   storage: StarterStorage,
   core: CoreRawData
 ): SaveResult => {
-  const wrapper = createStarterDocumentWrapper(core)
-  const serialized = JSON.stringify(wrapper)
-  storage.setItem(STARTER_STORAGE_SLOT, serialized)
-  return {
-    ok: true,
-    message: `Saved at ${wrapper.savedAt}`,
-    savedAt: wrapper.savedAt
+  try {
+    const wrapper = createStarterDocumentWrapper(core)
+    const serialized = JSON.stringify(wrapper)
+    storage.setItem(STARTER_STORAGE_SLOT, serialized)
+    return {
+      ok: true,
+      message: `Saved at ${wrapper.savedAt}`,
+      savedAt: wrapper.savedAt
+    }
+  } catch (error) {
+    return {
+      ok: false,
+      message: error instanceof Error ? error.message : String(error)
+    }
   }
 }
 
