@@ -529,7 +529,7 @@ one bounded slice without completing the whole task or adoption program.
 | --- | --- | --- |
 | 1 - Reconcile contracts | This plan, existing entry/README/site plans, directly relevant public-entry authorities | In progress. Example-link repair is recorded above. README/homepage baseline is recorded at `b44be9e77`; the current root README composition and six-chapter homepage authority are implemented and locally testable at that baseline, but README desktop/narrow media-present/media-missing rendering evidence remains pending. PR #245, not closed PR #244, records the starter-readiness documentation. This correction records canonical starter source naming, projection/load/save obligations, and release/generation/consumer owner boundaries. Runtime proof, complete `docs:readme:check`, support/community, FieldScope claim reconciliation, merge/publication/deployment, and public activation remain separate. Documentation PR only; no runtime or site behavior changes. |
 | 2 - Minimal canonical App | `apps/starter-app`, workspace `@asyra/starter-app`, and direct app-local tests/docs | Implemented in child PR #247. Validation recorded on the PR: naming guard via Node entrypoints, `yarn workspace @asyra/starter-app test`, `typecheck`, `lint`, `react:build`, and `test:e2e`; `git diff --check --cached` passed. E2E launched the real Vite App at `http://127.0.0.1:5192` in desktop and narrow Chrome projects and exercised add/edit/status/save/undo/redo/reload. CI remains pending until PR checks report. This slice does not create CLI/template/release/public activation/community/FieldScope/Design AI surfaces and does not complete the adoption program. |
-| 3 - CLI and standalone template | Generic CLI, generation/release integration, canonical source instructions and generated output | Safe generation, supported package managers, public imports, independent install/build/typecheck/test, canonical behavior, no workspace hoisting dependency, template parity. Replace the current retired generic-starter test contract in the same coherent slice that introduces the successor public `create-asyra-app` path. Depends on task 2. No registry publication. |
+| 3 - CLI and standalone template | Public `create-asyra-app` CLI, `create-app/starter-app`, `release-configs/starter-app.json`, generated `create-app/starter-app/template`, and directly affected release/generation tests | Implemented locally in `codex/adoption-task-3-cli-starter` from `origin/codex/adoption-onboarding` at `8cbbc4468`; child PR pending. Depends on merged Task 2 PR #247 and shared prompt/pre-push rules from #248, both verified in this base by content. Validation: naming guard, focused CLI/template tests, starter App test/typecheck/lint/react:build, `yarn lint:ci`, template sync, `yarn release:packages`, and packed-artifact `yarn release:template --prod=starter-app` passed. Packed-template evidence reported `READY` for install, typecheck, lint, build, test, and startup-smoke on Node `v24.13.0` with Yarn `4.3.1`. Registry evidence is not produced because registry publication is not authorized. No tag, release, merge, deployment, homepage activation, Task 4 AI-first exercise, or unrelated product work. |
 | 4 - AI-first starter onboarding | Canonical starter AGENTS/docs/tests and generated sync | One bounded priority-field extension preserves mutation, Undo, projection and saved-data compatibility through formal tests. Record whether the exercise was actually performed; instructions alone are not proof. Depends on task 3. No runtime AI provider. |
 | 5 - Entry routing and product evidence | Root README, public docs/llms generators, existing homepage entry points and verified case evidence | Generic / Design / advanced hierarchy, current links, truthful App evidence, preserved visual/accessibility contracts. Reconcile only remaining README/site plan work. Depends on tasks 3-4; public activation waits for verified CLI availability. |
 | 6 - Community and support | SUPPORT.md, canonical support generators/validators, directly affected App release wording | Synchronized policy, private security route, no SLA or implied PR acceptance. Confirm Discussions availability before publishing active links. Sim reporting path may change; remaining release obligations stay explicit. Depends on task 1; remains sequential by default. |
@@ -542,14 +542,91 @@ This sequencing plan is not an Inspector contract or a runtime implementation
 allowlist. Split a task further only for a concrete owner/readiness issue, not
 to create more administrative work.
 
+### Task 3 bounded contract - CLI and standalone template
+
+Objective and completion condition: provide a safe public `create-asyra-app`
+CLI that copies the canonical generated Starter template into a standalone
+project, installs with a supported package manager, and reports clear next
+steps. The committed generated template must be synchronized from
+`apps/starter-app` through the existing release-template owner and must pass the
+generated-template consumer readiness owner without relying on monorepo
+hoisting, `workspace:*`, source aliases, or unpublished registry state.
+
+Authorized mutation scope:
+
+- `docs/ai/framework/plans/adoption-entry-and-onboarding-program-plan.md` only
+  for this Task 3 contract, Task 2/3 status, and the prompt contract wording
+  that now references #248's common rules.
+- `create-app/starter-app/**` for the directly maintained CLI package,
+  executable, README/LICENSE, and generated `template/**` output.
+- `release-configs/starter-app.json` for the Starter release-template input.
+- `apps/starter-app` only for release-source metadata or script values required
+  to generate the standalone template from the canonical source without changing
+  the Task 2 runtime behavior.
+- Direct tests and release owner wiring needed to admit this App into existing
+  generation/consumer checks, including `scripts/__tests__/create-app-cli.test.mjs`
+  and `scripts/__tests__/release-template-readiness.test.mjs`.
+- Workspace metadata only if required for the new CLI workspace to install and
+  validate.
+
+Required product cases and formal tests:
+
+- CLI name/path validation rejects empty, absolute, nested, dot, and parent
+  directory targets before copying.
+- Existing destination directories are never overwritten.
+- Missing template, copy, install, and unsupported package-manager failures are
+  reported with actionable error text and non-zero exit.
+- Declared package-manager modes cover `yarn`, `npm`, and `pnpm` with the
+  correct lockfile, install command, and start command. The tests may stub the
+  package managers for CLI behavior, but the generated-template readiness gate
+  owns the real Yarn consumer proof.
+- The generated template is source/template synchronized from
+  `apps/starter-app`, contains only public `@asyra/*` imports, uses frozen
+  package versions for packed-artifact verification, and contains no
+  `workspace:*`, source-alias, or monorepo-only scripts.
+- The packed-artifact generated consumer completes install, typecheck, lint,
+  test, build, and startup smoke under `tmp/`, with evidence identified as
+  local packed-artifact evidence. Registry evidence remains unavailable until a
+  separately authorized publication and registry verification stage.
+
+Required gates for this slice:
+
+- Baseline and final naming gate:
+  `node --test scripts/__tests__/brand-neutral-code.test.mjs scripts/__tests__/display-name-separators.test.mjs`
+  or `yarn lint:naming` when using the root script.
+- Focused CLI/generation tests:
+  `node --test scripts/__tests__/create-app-cli.test.mjs scripts/__tests__/release-template-readiness.test.mjs`.
+- Starter App preservation gates:
+  `yarn workspace @asyra/starter-app test`, `typecheck`, `lint`, and
+  `react:build`.
+- Template sync:
+  `yarn release:app --prod=starter-app` after source/config changes and
+  `yarn release:app:check --prod=starter-app` before commit/push.
+- Packed-artifact consumer readiness:
+  `yarn release:packages` followed by `yarn release:template --prod=starter-app`.
+- Final pre-push review:
+  `git diff --check`, staged diff review, source commit verification, then push
+  only under the user's explicit PR authorization.
+
+Exclusions and stop conditions: do not perform Task 4, public homepage routing,
+community/support policy, Design AI work, Framework runtime contract changes,
+registry publication, release tagging, deployment, merge, or any workaround
+that changes the generated app to rely on local workspaces. Stop and report if
+the current package versions or public package exports cannot support the
+standalone template through packed artifacts, or if the registry evidence is
+requested before publication is authorized.
+
 ## Prompt and review contract
 
-Each task prompt must include the accepted predecessor/base, a small list of
-owner documents, objective, allowed mutation families, exclusions, observable
-product cases, frozen validation commands, and stop conditions. Read only the
-rules required by that task's triage level. Use a feature branch and preserve
-other tasks' dirty work. Follow generated-artifact and naming rules where they
-apply; never hand-edit generated templates as source.
+Task prompts now rely on the shared #248 rule contract in `AGENTS.md`,
+`docs/ai/framework/rules/bounded-task-scope-and-closure.md`, and
+`docs/ai/workflows/git-commit-push-policy.md` for recurring execution
+requirements such as worktree safety, scoped local validation before every push,
+and common handoff format. A task prompt should select the plan path and task,
+state accepted predecessor/base, task-specific owner documents, objective,
+allowed mutation families, exclusions, product cases, gates, stop conditions,
+and any explicitly authorized remote operation. Do not re-copy the common rules
+into every prompt.
 
 Implementation handoff reports the PR and source commit, changed behavior,
 exact gates and results, limitations, and any external operations not performed.
