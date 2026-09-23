@@ -293,28 +293,32 @@ starter completion.
   command path that already wraps those helpers. It must verify add, edit,
   Undo, Redo, projection refresh, and explicit serialization through the normal
   caller path, not by editing Factory history directly.
-- Save/Reload: use explicit `core.save()` for a portable document snapshot; it
-  is not an automatic durability acknowledgement and must not be scheduled from
-  every transaction. The V1 App owns the selected local-storage/export slot,
-  writes only after `core.save()` resolves and the App storage/export operation
-  succeeds, and reports that App-level success explicitly. Storage/export
-  failure is an App UI error and must not be reported as a saved document. Save
-  hooks may stamp the starter document envelope/version, but Core still owns
-  package snapshot assembly and does no provider I/O.
-- Reload acceptance: read untrusted data from the App storage/import owner, run
-  the App version/load hook chain through `core.preflightLoad(...)` for
-  diagnostics, and call `core.load(...)` only when the App accepts the target.
-  The App accepts the current V1 starter version and any explicitly listed V1
-  migration inputs. Unknown starter versions are rejected by App policy before
-  `core.load(...)`; do not rely on Core to reject unknown App versions because
-  Core's migration contract passes through unmatched versions after synchronous
-  hooks. Malformed Core payload shapes can fall back through Core normalization
-  and package validators; invalid Item status or missing App-owned fields follow
-  the Props/App validator fallback only when that fallback is the declared V1
-  policy; invalid Scene hierarchy is rejected before package apply. Every
-  accepted reload must rebuild the projection through the `fileLoadComplete`
-  path above, and every rejected reload must leave the current document and
-  projection unchanged.
+- Save/Reload V1: use explicit `core.save()` and one App-owned browser
+  `localStorage` slot, `starter-app.document.v1`. V1 does not add export/import
+  UI and does not schedule save from every transaction. Save builds an
+  App-owned wrapper `{ appDocumentVersion: 1, savedAt, core }`, where `core` is
+  the detached `CoreRawData` returned by `core.save()`, then writes that wrapper
+  to the single slot. The UI may show "saved" only after `localStorage.setItem`
+  succeeds. Quota, serialization, unavailable-storage, or write failures are
+  App UI errors and must not be reported as saved. Core still owns package
+  snapshot assembly and performs no provider I/O.
+- Reload acceptance V1: read only `starter-app.document.v1`; parse JSON; require
+  an object wrapper with `appDocumentVersion === 1`, a string `savedAt`, and an
+  object `core` payload. Missing slot is a user-visible "nothing saved yet"
+  state and does not mutate the current document. JSON parse failure, malformed
+  wrapper shape, unknown `appDocumentVersion`, missing `core`, or a non-object
+  `core` payload are rejected by App admission before `core.preflightLoad(...)`.
+  After wrapper admission, run `core.preflightLoad(wrapper.core)`. Any thrown
+  load hook, invalid Scene hierarchy, or non-empty Core/package diagnostic list
+  rejects the reload, shows the diagnostic/error summary, and preserves the
+  current document and projection. In particular, invalid Item status, missing
+  `title`/`status`, malformed App property payloads, and damaged hierarchy are
+  rejected for V1 rather than accepted through fallback. Core normalization and
+  package validation remain the source of diagnostics; the App's V1 admission
+  decides whether those diagnostics are acceptable. V1 accepts only a clean
+  current-version document. Every accepted reload then calls `core.load(...)`,
+  rebuilds the projection through the `fileLoadComplete` path above, and reports
+  success only after load returns.
 
 ### Direct API and formal-test evidence
 
@@ -391,16 +395,40 @@ slice.
   Outputs are copied template files, standalone README/LICENSE, exact
   `@asyra/*` dependency versions, Node/Yarn metadata, and cleaned scripts/files.
   The script may be used only after the successor release config exists.
-- Consumer-readiness owner: `scripts/release-readiness.js` and its tests for
-  framework clean/registry consumers. Inputs are validated framework package
-  artifacts or registry versions and the clean-consumer fixture. Outputs are
-  temporary project-local consumer directories under `tmp/` and executed install
-  or readiness commands. This does not prove a generated starter template unless
-  the CLI/template slice adds a matching generated-app consumer command.
+- Framework clean/registry consumer owner: `scripts/release-readiness.js`,
+  invoked as `yarn release:consumer` for packed artifacts and
+  `yarn release:consumer:registry` for public registry packages. Inputs are
+  validated Framework package artifacts under `tmp/framework-release-artifacts`
+  or registry versions plus the clean-consumer fixture. Outputs are
+  project-local consumer directories under `tmp/`, install/typecheck/build/test
+  evidence, and release evidence JSON. This owner proves Framework packages,
+  not generated starter templates.
+- Generated-template consumer owner: `scripts/release-template-readiness.js`,
+  invoked today as `yarn release:template --prod=asyra-design`. Inputs are a
+  release config (`release-configs/<app>.json`), committed generated template,
+  Framework release metadata, and packed artifacts under
+  `tmp/framework-release-artifacts`. Outputs are a temporary generated-template
+  consumer under `tmp/`, install/typecheck/lint/build/test/startup-smoke
+  phases, installed-package identity checks, and generated-template evidence.
+  This owner already exists and should be reused for the starter once the
+  starter release config and generated template exist. Starter-specific work is
+  to add `release-configs/starter-app.json`, the generated template target, CLI
+  package wiring, and any starter-specific smoke expectations; it is not to
+  invent a second generated-template readiness tool.
+- Create-app release/publication owner: `scripts/release-create-app.js` owns
+  the selected CLI release sequence through
+  `yarn release:create-app --prod=<app>`, beginning with
+  `yarn release:consumer:registry`, then `yarn release:app`,
+  `yarn release:validate`, `npm pack ./create-app/<app> --dry-run --json`, and
+  finally `scripts/publish-create-app.js`. `scripts/publish-create-app.js`
+  publishes `create-app/<app>` and creates the CLI package tag. `scripts/release-full.js`
+  composes Framework publication first and create-app publication second. These
+  are existing owners and remain separate explicit operations requiring user
+  authorization; this plan does not run them.
 - Publication boundary: registry publication, push, tags, release records, live
   site routing, and production deployment are external operations requiring
-  separate authorization. This adoption plan may name their owners but does not
-  perform or imply them.
+  separate authorization. This adoption plan may name their existing owners but
+  does not perform or imply them.
 
 ### Next implementation task contract
 
@@ -433,9 +461,20 @@ Acceptance for that task:
     `yarn lint:naming` when Yarn install state is available, otherwise the
     direct Node entrypoint from package.json:
     `node --test scripts/__tests__/brand-neutral-code.test.mjs scripts/__tests__/display-name-separators.test.mjs`.
-  - New starter App tests: next task adds the app-local script and runs the
-    actual command it adds. There is no existing `@asyra/starter-app` workspace
-    command at this baseline.
+  - Planned, added by next App task: `yarn workspace @asyra/starter-app test`
+    for focused App behavior tests covering startup, add/edit, invalid status,
+    invalid reload data, Undo/Redo, projection refresh, Save, Reload, and
+    dispose.
+  - Planned, added by next App task:
+    `yarn workspace @asyra/starter-app typecheck`.
+  - Planned, added by next App task:
+    `yarn workspace @asyra/starter-app react:build`.
+  - Planned, added by next App task:
+    `yarn workspace @asyra/starter-app lint` if the new workspace defines an
+    app-local lint script; otherwise run the repository lint only if the slice
+    changes shared lint-owned surfaces. These planned commands are part of the
+    next task's package.json/workspace metadata work and do not exist at this
+    baseline.
   - If package owner contracts are touched, run the directly relevant existing
     package tests listed in "Direct API and formal-test evidence"; otherwise
     cite them as read evidence only.
