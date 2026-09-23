@@ -1,5 +1,5 @@
 import { SharedDataChannelNames } from '@asyra/utils'
-import type { Core } from '@asyra/core'
+import { getPropertyComponentAccessor, type Core } from '@asyra/core'
 import type { SharedPublication } from '@asyra/core'
 import {
   ITEM_COMPONENT_TYPE,
@@ -167,7 +167,7 @@ export class StarterProjectionStore {
     ) {
       return undefined
     }
-    const fields = computed as Record<string, unknown>
+    const fields = this.readItemFields(data, computed)
     const title = fields.title
     const status = fields.status
     if (!isValidItemTitle(title) || !isItemStatus(status)) {
@@ -178,6 +178,34 @@ export class StarterProjectionStore {
       title,
       status
     })
+  }
+
+  private readItemFields(
+    data: object,
+    computed: object
+  ): Record<string, unknown> {
+    const computedFields = computed as Record<string, unknown>
+    if (
+      isValidItemTitle(computedFields.title) &&
+      isItemStatus(computedFields.status)
+    ) {
+      return computedFields
+    }
+
+    const props = (data as { props?: unknown }).props
+    if (!props || typeof props !== 'object') {
+      return computedFields
+    }
+    const propertyId = (props as Record<string, unknown>)[ITEM_PROPERTY_NAME]
+    if (typeof propertyId !== 'string') {
+      return computedFields
+    }
+    const saved = getPropertyComponentAccessor()
+      .getPropertyById(propertyId)
+      ?.save() as unknown
+    return saved && typeof saved === 'object'
+      ? (saved as Record<string, unknown>)
+      : computedFields
   }
 
   private recordPropertyOwner(elementId: string, data: unknown): void {

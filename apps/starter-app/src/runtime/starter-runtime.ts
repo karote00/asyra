@@ -1,20 +1,24 @@
 import core, {
   type Core,
+  createOverlayLayerRegistration,
   defineFeature,
   redoWithRenderPolicy,
   runTransaction,
   subscribeToFileLoadComplete,
-  undoWithRenderPolicy
+  undoWithRenderPolicy,
+  type OverlayCanvas,
+  type RenderLayerRegistration
 } from '@asyra/core'
 import type { CoreRawData } from '@asyra/utils'
 import {
   IDTypes,
+  SharedDataChannelNames,
   id,
   type ElementRawData,
   type PropertyComponentRawData,
   type PropertySchema
 } from '@asyra/utils'
-import { applyPreset, PresetDefaults, PresetProfiles } from '@asyra/preset'
+import { applyPreset, PresetProfiles } from '@asyra/preset'
 import {
   ITEM_COMPONENT_TYPE,
   ITEM_PROPERTY_NAME,
@@ -24,6 +28,7 @@ import {
   createItemPropertySchema,
   isItemStatus,
   normalizeItemTitle,
+  type ItemProjection,
   type ItemStatus
 } from '../domain/item-domain.js'
 import { StarterProjectionStore } from './projection-store.js'
@@ -101,51 +106,125 @@ const unavailableStorage = (reason: string): StarterStorage => ({
   }
 })
 
-const createItemRenderStrategy = () => {
-  const itemIndexFromId = (value: string): number => {
-    const match = /^item-(\d+)$/u.exec(value)
-    if (!match) {
-      return 0
-    }
-    const sequence = Number.parseInt(match[1] ?? '1', 10)
-    return Number.isFinite(sequence) && sequence > 0 ? sequence - 1 : 0
+const STARTER_RENDER_LAYER_NAME = 'starter-app.items'
+const STARTER_RENDER_FRAME_KEY = 'starter-app.render-frame'
+
+const ITEM_RENDER_COLORS: Record<ItemStatus, number> = {
+  todo: 0xf7f2e8,
+  doing: 0xd6ebff,
+  done: 0xdff5df
+}
+
+class StarterItemRenderLayer {
+  readonly registration: RenderLayerRegistration
+  private pendingItems: readonly ItemProjection[] | null = null
+  private disposed = false
+
+  constructor(private readonly invalidate: () => void) {
+    this.registration = createOverlayLayerRegistration({
+      name: STARTER_RENDER_LAYER_NAME,
+      zIndex: 0,
+      update: (canvas) => this.flush(canvas)
+    })
   }
 
+  submit(items: readonly ItemProjection[]): void {
+    if (this.disposed) {
+      return
+    }
+    this.pendingItems = items
+    this.invalidate()
+  }
+
+  dispose(): void {
+    if (this.disposed) {
+      return
+    }
+    this.disposed = true
+    this.pendingItems = null
+  }
+
+  private flush(canvas: OverlayCanvas): boolean {
+    const items = this.pendingItems
+    if (!items || this.disposed) {
+      return false
+    }
+    canvas.clear()
+    items.forEach((item, index) => {
+      const x = 24
+      const y = 24 + index * 44
+      canvas.polygon(
+        [
+          { x, y },
+          { x: x + 160, y },
+          { x: x + 160, y: y + 72 },
+          { x, y: y + 72 }
+        ],
+        ITEM_RENDER_COLORS[item.status],
+        { color: 0x27312f, width: 2 }
+      )
+    })
+    this.pendingItems = null
+    return true
+  }
+}
+
+const registerStarterRenderLayer = (
+  core: Core,
+  projection: StarterProjectionStore
+): (() => void) => {
+  let renderRevision = 0
+  core.defineSystemProperty(STARTER_RENDER_FRAME_KEY, renderRevision, {
+    runtime: true,
+    silent: true
+  })
+  const layer = new StarterItemRenderLayer(() => {
+    renderRevision += 1
+    core.setSystemProperty(STARTER_RENDER_FRAME_KEY, renderRevision)
+  })
+  core.registerRenderLayer(layer.registration)
+  const unsubscribe = projection.subscribe((items) => layer.submit(items))
+  layer.submit(projection.getSnapshot())
+  return () => {
+    unsubscribe()
+    core.unregisterRenderLayer(STARTER_RENDER_LAYER_NAME)
+    layer.dispose()
+  }
+}
+
+const registerStarterSharedDataChannels = (core: Core): (() => void) => {
+  const ownedChannels: string[] = []
+  ;[SharedDataChannelNames.SCENE_TREE, SharedDataChannelNames.PROPS].forEach(
+    (name) => {
+      if (core.hasSharedDataChannel(name)) {
+        return
+      }
+      core.registerSharedDataChannel(name, core.createLocalSharedDataChannel())
+      ownedChannels.push(name)
+    }
+  )
+  return () => {
+    ;[...ownedChannels].reverse().forEach((name) => {
+      core.unregisterSharedDataChannel(name)
+    })
+  }
+}
+
+const createItemRenderStrategy = () => {
   return (
     graphic: {
       clear(): void
       rect(x: number, y: number, width: number, height: number): void
       fill(color: number): void
       stroke(options: { color: number; width: number }): void
-      x: number
-      y: number
     },
-    data: {
-      id: string
-      status?: unknown
-      x?: unknown
-      y?: unknown
-      width?: unknown
-      height?: unknown
-    }
+    data: { status?: unknown }
   ): void => {
-    const index = itemIndexFromId(data.id)
-    const x = typeof data.x === 'number' ? data.x : 24
-    const y = typeof data.y === 'number' ? data.y : 24 + index * 44
-    const width = typeof data.width === 'number' ? data.width : 160
-    const height = typeof data.height === 'number' ? data.height : 72
     const status = isItemStatus(data.status) ? data.status : 'todo'
-    const colors: Record<ItemStatus, number> = {
-      todo: 0xf7f2e8,
-      doing: 0xd6ebff,
-      done: 0xdff5df
-    }
     graphic.clear()
-    graphic.rect(0, 0, width, height)
-    graphic.fill(colors[status])
+    graphic.rect(0, 0, 160, 72)
+    graphic.fill(ITEM_RENDER_COLORS[status])
     graphic.stroke({ color: 0x27312f, width: 2 })
-    graphic.x = x
-    graphic.y = y
   }
 }
 
@@ -305,9 +384,10 @@ export const createStarterRuntime = (
     name: 'starter-empty-document',
     load: async () => createEmptyCoreDocument()
   })
+  disposeCallbacks.push(registerStarterSharedDataChannels(core))
   applyPreset(core, {
     profile: PresetProfiles['2D'],
-    defaults: [PresetDefaults.BASIC_SHAPES, PresetDefaults.VIEWPORT]
+    defaults: []
   })
   core.registerRuntimeCleanup('starter-app-projection', () => {
     projection.dispose()
@@ -348,6 +428,7 @@ export const createStarterRuntime = (
     refreshProjection()
   })
   disposeCallbacks.push(() => fileLoadSubscription.unsubscribe())
+  disposeCallbacks.push(registerStarterRenderLayer(core, projection))
 
   return {
     core,
