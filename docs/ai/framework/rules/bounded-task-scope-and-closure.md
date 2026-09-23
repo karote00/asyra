@@ -47,6 +47,51 @@ When a material expansion is required, stop and request direction. Do not treat
 replanning, a failing gate, an Inspector boundary, documentation sync, or a
 newly discovered candidate as implicit authorization.
 
+## Contract Placement and Short Task Prompts
+
+Keep each instruction at its existing semantic owner instead of copying it
+into every task prompt:
+
+- **Project rules** own recurring safety and execution requirements, including
+  branch/worktree safety, test-first fixes, dependency approval, agent opt-in
+  and validation before every push. `AGENTS.md` routes to these owners; the
+  Git workflow at `docs/ai/workflows/git-commit-push-policy.md` owns pre-push
+  validation. Do not create a competing checklist in each plan.
+- **The existing plan or product contract** owns task-specific outcomes,
+  implementation boundaries, prerequisites, integration branch, direct owners,
+  observable cases, required gates, exclusions and stop conditions. Record
+  task progress there without claiming completion from a prompt or pending CI.
+- **The task prompt** selects the plan path and exact task/section, identifies
+  the intended base and accepted predecessors, and states any task-specific
+  constraints and explicitly authorized remote operations. Repository defaults
+  apply without being copied into the prompt. A plan's mention of push, merge,
+  release or deployment is not user authorization to perform it.
+
+A referenced task contract satisfies the bounded-contract requirement only
+when the executing agent reads it and verifies it exists in the chosen base,
+its prerequisites are integrated, and its scope and acceptance checks are
+sufficient to execute. A task-table label or broad objective alone is not a
+contract. Resolve missing or contradictory requirements before editing; do not
+guess them, import an unmerged plan into another branch, or expand scope merely
+to make a short prompt executable. Plans need no new matrices or governance
+documents to meet this requirement.
+
+For a task with an adequate existing contract, a short handoff can be:
+
+```text
+Execute <plan path>, Task <identifier>, following AGENTS.md and that contract.
+Verify <accepted predecessor> is integrated, then create a project-local
+worktree and feature branch from the latest <intended remote base>.
+Task-specific constraints: <only constraints not already covered by the rules>.
+Authorized operations: <explicit user-authorized operations and PR base>.
+Report the PR/source revision, validation results and remaining limitations.
+```
+
+Model/effort selection, when requested, belongs outside the executable prompt
+so the user can configure it before starting the task. Do not make a task depend
+on switching its own running model. Keep tool-specific settings out of product
+contracts.
+
 ## Rule Applicability
 
 Apply a specialized rule only to the behavior or contract it governs.

@@ -20,7 +20,9 @@ These rules apply to every task without requiring additional document reads:
   behavior. Follow `docs/ai/framework/CODING_STANDARDS.md`.
 - On a non-main feature branch, local commits are allowed at completed,
   validated step/stage boundaries. Never push unless the user explicitly
-  requests the remote operation. Follow
+  requests the remote operation. Before every push, including review fixes to
+  an existing PR, pass the applicable local checks for the version being pushed;
+  failed or unavailable required checks block the push. Follow
   `docs/ai/workflows/git-commit-push-policy.md`.
 - Create new linked worktrees under the main repository's `.worktrees/`
   directory, never inside `.git/`. Follow the worktree location and collision
@@ -84,6 +86,8 @@ These rules apply to every task without requiring additional document reads:
   deploying.
 - Freeze a bounded task contract before editing. Reading may expand to resolve
   risk, but rules and discoveries must not independently expand mutation scope.
+  Task prompts may reference an existing plan's explicit task contract instead
+  of repeating project rules; verify that contract exists in the chosen base.
   Follow `docs/ai/framework/rules/bounded-task-scope-and-closure.md`.
 - For every bug fix, first verify whether existing formal tests detect the bug; if not, add or strengthen the formal regression test before implementation.
 - Follow the Critical Rules section in this file.
