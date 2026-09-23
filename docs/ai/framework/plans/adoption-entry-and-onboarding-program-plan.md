@@ -308,17 +308,31 @@ starter completion.
   state and does not mutate the current document. JSON parse failure, malformed
   wrapper shape, unknown `appDocumentVersion`, missing `core`, or a non-object
   `core` payload are rejected by App admission before `core.preflightLoad(...)`.
-  After wrapper admission, run `core.preflightLoad(wrapper.core)`. Any thrown
-  load hook, invalid Scene hierarchy, or non-empty Core/package diagnostic list
-  rejects the reload, shows the diagnostic/error summary, and preserves the
-  current document and projection. In particular, invalid Item status, missing
-  `title`/`status`, malformed App property payloads, and damaged hierarchy are
-  rejected for V1 rather than accepted through fallback. Core normalization and
-  package validation remain the source of diagnostics; the App's V1 admission
-  decides whether those diagnostics are acceptable. V1 accepts only a clean
-  current-version document. Every accepted reload then calls `core.load(...)`,
-  rebuilds the projection through the `fileLoadComplete` path above, and reports
-  success only after load returns.
+  Before Core preflight or load, the App-owned V1 domain admission hook inspects
+  the raw App Item components in `wrapper.core.props` with the same domain
+  predicates used by the runtime Item property schema: required `title` string,
+  required `status` string, and allowed status values. It returns the unchanged
+  Core document on success and throws an App-domain load error on failure. Do
+  not duplicate a second set of status/title rules in Reload code; share the
+  planned App predicate module with the property schema registration. This hook
+  is synchronous and side-effect free, and it runs before any Props fallback can
+  assign default values.
+- Core/package structural validation remains separate from App-domain
+  admission. Core preflight still owns malformed Core shape diagnostics,
+  package registration diagnostics, and Scene Tree hierarchy rejection; App
+  domain admission owns Item `title`/`status` presence and status eligibility.
+  Props Manager's current preflight path validates component map/type/id and
+  registration, while field-level schema fallback happens when property
+  components load. Therefore a structurally valid Item payload can have no Core
+  preflight diagnostics while still being domain-invalid for V1. After wrapper
+  and App-domain admission, run `core.preflightLoad(wrapper.core)`. Any thrown
+  App-domain error, thrown load hook, invalid Scene hierarchy, or non-empty
+  Core/package diagnostic list rejects the reload, shows the App-domain or
+  structural diagnostic/error summary, and preserves the current document,
+  history, and projection. V1 accepts only a clean current-version document.
+  Every accepted reload then calls `core.load(...)`, rebuilds the projection
+  through the `fileLoadComplete` path above, and reports success only after load
+  returns.
 
 ### Direct API and formal-test evidence
 
@@ -348,6 +362,8 @@ starter completion.
 - Explicit persistence and load validation:
   `docs/ai/framework/packages/persistence.md`,
   `docs/public/start/custom-composition.md`,
+  `packages/props-manager/src/manager/props-manager.ts`,
+  `packages/props-manager/src/components/base.ts`,
   `packages/core/src/__tests__/transaction-persistence.test.ts`, and
   `packages/core/src/__tests__/load-validation.test.ts`.
 - Preset/provider composition:
@@ -451,6 +467,13 @@ Acceptance for that task:
 - Save returns a versioned `CoreRawData` snapshot and Reload validates,
   reports errors, applies only accepted data, and preserves document-version
   behavior.
+- V1 reload regression cases must include structurally valid Core/Props/Scene
+  payloads whose package preflight can report no diagnostics but whose App Item
+  domain data is invalid. Invalid status, missing `title`, and missing `status`
+  must each reject before `core.load(...)`, leave document/history/projection
+  unchanged, and show an App-domain error. A valid V1 round trip must accept,
+  call `core.load(...)`, refresh through `fileLoadComplete`, and preserve Item
+  data.
 - Focused gates should include the new App unit/integration tests plus the
   relevant existing package tests named above if implementation touches their
   owner contract. Full visual, 7076, release, or generated-template gates are
