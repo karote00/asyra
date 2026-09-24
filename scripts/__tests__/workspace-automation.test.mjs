@@ -3,7 +3,7 @@ import { spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 import test from 'node:test'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 
 import { createWorkspaceDevAllPlan } from '../dev-all-plan.js'
 import {
@@ -781,3 +781,63 @@ test('Board, render timing and functional E2E have independent required jobs', (
   const main = readText('.github/workflows/main.yml')
   assert.match(main, /FLOW_E2E_RESULT: \$\{\{ needs\.design-e2e\.result \}\}/)
 })
+
+test(
+  'Starter build entries produce one Framework dependency build and valid artifacts',
+  { timeout: 240_000 },
+  async () => {
+    const runBuild = (args) => {
+      const result = spawnSync('yarn', args, {
+        cwd: repositoryRoot,
+        encoding: 'utf8',
+        maxBuffer: 8 * 1024 * 1024,
+        timeout: 120_000
+      })
+      const output = `${result.stdout ?? ''}\n${result.stderr ?? ''}`
+      assert.equal(result.status, 0, output.slice(-4000))
+      return output
+    }
+
+    const assertOneUtilsBuild = (output, entry) => {
+      const count = (
+        output.match(
+          /@asyra\/utils:build:utils: cache bypass, force executing/gu
+        ) ?? []
+      ).length
+      assert.equal(count, 1, `${entry} rebuilt @asyra/utils ${count} times`)
+    }
+
+    const orchestrated = runBuild([
+      'turbo',
+      'run',
+      'react:build',
+      '--filter',
+      '@asyra/starter-app',
+      '--concurrency=1'
+    ])
+    assertOneUtilsBuild(orchestrated, 'Turbo-orchestrated react:build')
+
+    const standalone = runBuild(['workspace', '@asyra/starter-app', 'build'])
+    assertOneUtilsBuild(standalone, 'direct Starter build')
+
+    assert.equal(
+      fs.existsSync(
+        path.join(repositoryRoot, 'apps/starter-app/dist/frontend/index.html')
+      ),
+      true
+    )
+    const utils = await import(
+      pathToFileURL(path.join(repositoryRoot, 'packages/utils/dist/index.js'))
+    )
+    const props = await import(
+      pathToFileURL(
+        path.join(
+          repositoryRoot,
+          'packages/props-manager/dist/components/base.js'
+        )
+      )
+    )
+    assert.equal(typeof utils.Setter, 'function')
+    assert.equal(typeof props.default, 'function')
+  }
+)
