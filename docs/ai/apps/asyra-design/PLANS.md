@@ -68,3 +68,10 @@ Never record completed plans here.
 - This file is routing-only. Do not record or derive product semantics,
   implementation progress, test results, or completion evidence here.
 - Do not consult `plans/completed/**` for the active task.
+
+## Planned - complete Text authoring
+
+- [Complete Text authoring](plans/text-authoring-plan.md) - documentation-only plan
+  requested 2026-09-24. Completes manual toolbar/shortcuts, Canvas editing, Property
+  Panel, sizing, IME/focus, history and documentation around the existing native
+  Text foundation. Implementation is not activated by this entry.
