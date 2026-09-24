@@ -101,6 +101,77 @@ describe('starter runtime canonical App path', () => {
     }
   })
 
+  it('commits one move, replays it, and restores its saved position', async () => {
+    const storage = new MemoryStorage()
+    const runtime = createStarterRuntime({ storage })
+    const container = document.createElement('div')
+    try {
+      await runtime.start(container, { width: 800, height: 510 })
+      const itemId = runtime.feature.addItem({ title: 'Movable' })
+      await settleProjection()
+      const beforeMoveDepth = runtime.core.getUndoHistoryDepth()
+      runtime.feature.moveItem(itemId, { x: 64, y: 82 })
+      await settleProjection()
+      expect(runtime.core.getUndoHistoryDepth()).toBe(beforeMoveDepth + 1)
+      expect(runtime.projection.getSnapshot()[0]?.offset).toEqual({
+        x: 64,
+        y: 82
+      })
+      expect(getStarterItemRenderBounds(0, 800, { x: 64, y: 82 }).x).toBe(
+        getStarterItemRenderBounds(0, 800).x + 64
+      )
+      expect(findItemProperty(await runtime.core.save())).toMatchObject({
+        offsetX: 64,
+        offsetY: 82
+      })
+
+      await runtime.undo()
+      await settleProjection()
+      expect(runtime.projection.getSnapshot()[0]?.offset).toBeUndefined()
+      await runtime.redo()
+      await settleProjection()
+      expect(runtime.projection.getSnapshot()[0]?.offset).toEqual({
+        x: 64,
+        y: 82
+      })
+
+      expect((await runtime.save()).ok).toBe(true)
+      runtime.feature.moveItem(itemId, { x: 100, y: 110 })
+      await settleProjection()
+      expect((await runtime.reload()).ok).toBe(true)
+      expect(runtime.projection.getSnapshot()[0]?.offset).toEqual({
+        x: 64,
+        y: 82
+      })
+
+      const beforeInvalid = await runtime.core.save()
+      expect(() =>
+        runtime.feature.moveItem(itemId, { x: Number.NaN, y: 0 })
+      ).toThrow('position')
+      expect(await runtime.core.save()).toEqual(beforeInvalid)
+      const invalidSaved = clone(beforeInvalid)
+      findItemProperty(invalidSaved).offsetX = 'bad'
+      storage.setItem(
+        STARTER_STORAGE_SLOT,
+        JSON.stringify(createStarterDocumentWrapper(invalidSaved))
+      )
+      expect((await runtime.reload()).ok).toBe(false)
+      expect(await runtime.core.save()).toEqual(beforeInvalid)
+
+      const legacySaved = clone(beforeInvalid)
+      delete findItemProperty(legacySaved).offsetX
+      delete findItemProperty(legacySaved).offsetY
+      storage.setItem(
+        STARTER_STORAGE_SLOT,
+        JSON.stringify(createStarterDocumentWrapper(legacySaved))
+      )
+      expect((await runtime.reload()).ok).toBe(true)
+      expect(runtime.projection.getSnapshot()[0]?.offset).toBeUndefined()
+    } finally {
+      await runtime.dispose()
+    }
+  })
+
   it('starts, edits, replays history, reloads admitted data, and disposes projections', async () => {
     const storage = new MemoryStorage()
     const loadAccepted = vi.fn()

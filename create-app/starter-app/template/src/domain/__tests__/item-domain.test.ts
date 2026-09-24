@@ -84,4 +84,31 @@ describe('starter item domain admission', () => {
       )
     ).toThrow('invalid status')
   })
+
+  it('admits legacy missing offsets and rejects invalid present offsets', () => {
+    expect(() => assertStarterDomainData(coreDocument())).not.toThrow()
+    const schema = createItemPropertySchema()
+    expect(
+      schema.fields.find((field) => field.key === 'offsetX')?.validate?.(12)
+    ).toBe(true)
+    expect(
+      schema.fields
+        .find((field) => field.key === 'offsetY')
+        ?.validate?.(Infinity)
+    ).toBe(false)
+    for (const invalid of [Infinity, '12', null]) {
+      expect(() =>
+        assertStarterDomainData(
+          coreDocument({
+            id: 'property-1',
+            type: ITEM_PROPERTY_TYPE,
+            title: 'First item',
+            status: 'todo',
+            offsetX: invalid,
+            offsetY: 0
+          })
+        )
+      ).toThrow('invalid position')
+    }
+  })
 })

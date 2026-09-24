@@ -26,6 +26,7 @@ import {
   STARTER_FEATURE_NAME,
   StarterDomainError,
   createItemPropertySchema,
+  isValidItemOffset,
   isItemStatus,
   normalizeItemTitle,
   type ItemFieldExtension,
@@ -55,6 +56,7 @@ interface ItemCommandApi extends Record<string, unknown> {
       fields?: Record<string, unknown>
     }
   ): readonly string[]
+  moveItem(id: string, offset: { x: number; y: number }): readonly string[]
 }
 
 export interface StarterRuntime {
@@ -67,6 +69,10 @@ export interface StarterRuntime {
     options?: { width?: number; height?: number }
   ): Promise<void>
   resize(width: number, height: number): void
+  previewItemPosition(
+    id: string | null,
+    offset?: { x: number; y: number }
+  ): void
   undo(): Promise<void>
   redo(): Promise<void>
   save(): Promise<SaveResult>
@@ -173,15 +179,29 @@ export interface StarterItemRenderBounds {
 
 export const getStarterItemRenderBounds = (
   index: number,
-  viewportWidth = 800
+  viewportWidth = 800,
+  offset?: Readonly<{ x: number; y: number }>,
+  viewportHeight?: number
 ): StarterItemRenderBounds => {
   const narrow = viewportWidth < 760
   const width = narrow ? 150 : 218
   const height = narrow ? 94 : 124
   if (viewportWidth < 340) {
     return {
-      x: 24,
-      y: 86 + index * 126,
+      x: Math.max(
+        0,
+        Math.min(
+          viewportWidth - Math.min(width, viewportWidth - 48),
+          24 + (offset?.x ?? 0)
+        )
+      ),
+      y: Math.max(
+        0,
+        Math.min(
+          (viewportHeight ?? Infinity) - height,
+          86 + index * 126 + (offset?.y ?? 0)
+        )
+      ),
       width: Math.min(width, viewportWidth - 48),
       height
     }
@@ -193,8 +213,21 @@ export const getStarterItemRenderBounds = (
   const yOffsets = narrow ? [90, 140, 255] : [135, 110, 315]
   const cycleHeight = narrow ? 330 : 430
   return {
-    x: Math.round((viewportWidth - width) * (xFractions[position] ?? 0)),
-    y: (yOffsets[position] ?? 90) + cycle * cycleHeight,
+    x: Math.max(
+      0,
+      Math.min(
+        viewportWidth - width,
+        Math.round((viewportWidth - width) * (xFractions[position] ?? 0)) +
+          (offset?.x ?? 0)
+      )
+    ),
+    y: Math.max(
+      0,
+      Math.min(
+        (viewportHeight ?? Infinity) - height,
+        (yOffsets[position] ?? 90) + cycle * cycleHeight + (offset?.y ?? 0)
+      )
+    ),
     width,
     height
   }
@@ -232,6 +265,8 @@ class StarterItemRenderLayer {
   private currentItems: readonly ItemProjection[] = []
   private viewportWidth = 800
   private viewportHeight = 510
+  private preview: { id: string; offset: { x: number; y: number } } | null =
+    null
   private disposed = false
 
   constructor(private readonly invalidate: () => void) {
@@ -255,6 +290,11 @@ class StarterItemRenderLayer {
     if (this.viewportWidth === width && this.viewportHeight === height) return
     this.viewportWidth = width
     this.viewportHeight = height
+    this.submit(this.currentItems)
+  }
+
+  setPreview(id: string | null, offset?: { x: number; y: number }): void {
+    this.preview = id && offset ? { id, offset } : null
     this.submit(this.currentItems)
   }
 
@@ -289,7 +329,9 @@ class StarterItemRenderLayer {
     items.forEach((item, index) => {
       const { x, y, width, height } = getStarterItemRenderBounds(
         index,
-        this.viewportWidth
+        this.viewportWidth,
+        this.preview?.id === item.id ? this.preview.offset : item.offset,
+        this.viewportHeight
       )
       canvas.polygon(
         [
@@ -319,7 +361,11 @@ class StarterItemRenderLayer {
 const registerStarterRenderLayer = (
   core: Core,
   projection: StarterProjectionStore
-): { resize(width: number, height: number): void; dispose(): void } => {
+): {
+  resize(width: number, height: number): void
+  setPreview(id: string | null, offset?: { x: number; y: number }): void
+  dispose(): void
+} => {
   let renderRevision = 0
   core.defineSystemProperty(STARTER_RENDER_FRAME_KEY, renderRevision, {
     runtime: true,
@@ -335,6 +381,9 @@ const registerStarterRenderLayer = (
   return {
     resize(width, height) {
       layer.resize(width, height)
+    },
+    setPreview(id, offset) {
+      layer.setPreview(id, offset)
     },
     dispose() {
       unsubscribe()
@@ -370,6 +419,8 @@ const registerStarterSchema = (
   const propertyKeys = [
     'title',
     'status',
+    'offsetX',
+    'offsetY',
     ...(itemField ? [itemField.key] : [])
   ]
   core.definePropertyComponent({
@@ -377,6 +428,8 @@ const registerStarterSchema = (
     defaults: {
       title: 'Untitled item',
       status: 'todo',
+      offsetX: 0,
+      offsetY: 0,
       ...(itemField ? { [itemField.key]: itemField.defaultValue } : {})
     },
     persistKeys: propertyKeys,
@@ -436,6 +489,8 @@ const createItemApi = (
           type: ITEM_PROPERTY_TYPE,
           title,
           status,
+          offsetX: 0,
+          offsetY: 0,
           ...fields
         } as PropertyComponentRawData
         const [createdId] = core.createElementsInParentFromCanonicalData(
@@ -470,6 +525,19 @@ const createItemApi = (
           }
         ])
       )
+    },
+    moveItem(id, offset) {
+      if (!isValidItemOffset(offset.x) || !isValidItemOffset(offset.y)) {
+        throw new StarterDomainError(
+          'item-position',
+          'Item position must be finite numbers.'
+        )
+      }
+      return runActionTransaction(() =>
+        core.updateElementProperties([
+          { elementId: id, values: { offsetX: offset.x, offsetY: offset.y } }
+        ])
+      )
     }
   }
 }
@@ -484,6 +552,9 @@ const createFeatureApi = (
     },
     editItem(id, update) {
       return api.editItem(id, update)
+    },
+    moveItem(id, offset) {
+      return api.moveItem(id, offset)
     }
   }
   const registration = defineFeature<ItemCommandApi>(
@@ -596,6 +667,10 @@ export const createStarterRuntime = (
       if (disposed) return
       core.resizeRenderer(width, height)
       renderLayer.resize(width, height)
+    },
+    previewItemPosition(id, offset) {
+      if (disposed) return
+      renderLayer.setPreview(id, offset)
     },
     async undo() {
       if (disposed) {

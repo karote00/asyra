@@ -15,6 +15,7 @@ export interface ItemProjection {
   readonly id: string
   readonly title: string
   readonly status: ItemStatus
+  readonly offset?: Readonly<{ x: number; y: number }>
   readonly fields?: Readonly<Record<string, string>>
 }
 
@@ -49,6 +50,9 @@ export const isValidItemTitle = (value: unknown): value is string =>
 
 export const normalizeItemTitle = (value: string): string => value.trim()
 
+export const isValidItemOffset = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isFinite(value)
+
 export const createItemPropertySchema = (
   itemField?: ItemFieldExtension
 ): PropertySchema => ({
@@ -65,6 +69,18 @@ export const createItemPropertySchema = (
       kind: 'string',
       defaultValue: 'todo',
       validate: isItemStatus
+    },
+    {
+      key: 'offsetX',
+      kind: 'number',
+      defaultValue: 0,
+      validate: isValidItemOffset
+    },
+    {
+      key: 'offsetY',
+      kind: 'number',
+      defaultValue: 0,
+      validate: isValidItemOffset
     },
     ...(itemField
       ? [
@@ -143,6 +159,19 @@ export const assertStarterDomainData = (
       throw new StarterDomainError(
         'item-status',
         `Item property "${propertyId}" has an invalid status.`
+      )
+    }
+    const hasOffsetX = Object.hasOwn(rawProperty, 'offsetX')
+    const hasOffsetY = Object.hasOwn(rawProperty, 'offsetY')
+    if (
+      hasOffsetX !== hasOffsetY ||
+      (hasOffsetX &&
+        (!isValidItemOffset(rawProperty.offsetX) ||
+          !isValidItemOffset(rawProperty.offsetY)))
+    ) {
+      throw new StarterDomainError(
+        'item-position',
+        `Item property "${propertyId}" has an invalid position.`
       )
     }
     if (

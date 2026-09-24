@@ -170,3 +170,44 @@ test('selects a canvas Item and edits through one inspector', async ({
       .getByRole('button', { name: 'Doing' })
   ).toHaveAttribute('aria-pressed', 'true')
 })
+
+test('drags an Item as one action and restores its position', async ({
+  page
+}, testInfo) => {
+  await page.goto('/')
+  await expect(page.getByText('Ready')).toBeVisible()
+  await page.getByRole('button', { name: 'Add item' }).click()
+  const item = page.getByRole('button', { name: 'Item 1', exact: true })
+  const original = await item.boundingBox()
+  expect(original).not.toBeNull()
+  await item.dragTo(page.locator('.render-stage'), {
+    targetPosition: { x: 140, y: 280 }
+  })
+  await expect(page.getByText(/^Moved item/)).toBeVisible()
+  const moved = await item.boundingBox()
+  expect(moved).not.toBeNull()
+  expect(Math.abs((moved?.x ?? 0) - (original?.x ?? 0))).toBeGreaterThan(10)
+  expect(Math.abs((moved?.y ?? 0) - (original?.y ?? 0))).toBeGreaterThan(10)
+  await page.screenshot({
+    path: testInfo.outputPath(`starter-drag-${testInfo.project.name}.png`),
+    fullPage: true
+  })
+
+  await page.getByRole('button', { name: 'Undo' }).click()
+  await expect
+    .poll(async () => (await item.boundingBox())?.x)
+    .toBeCloseTo(original?.x ?? 0, 0)
+  await page.getByRole('button', { name: 'Redo' }).click()
+  await expect
+    .poll(async () => (await item.boundingBox())?.x)
+    .toBeCloseTo(moved?.x ?? 0, 0)
+  await page.getByRole('button', { name: 'Save' }).click()
+  await expect(page.getByText(/^Saved at /)).toBeVisible()
+  await item.dragTo(page.locator('.render-stage'), {
+    targetPosition: { x: 70, y: 280 }
+  })
+  await page.getByRole('button', { name: 'Reload' }).click()
+  await expect
+    .poll(async () => (await item.boundingBox())?.x)
+    .toBeCloseTo(moved?.x ?? 0, 0)
+})
