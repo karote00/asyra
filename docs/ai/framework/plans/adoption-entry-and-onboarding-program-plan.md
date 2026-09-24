@@ -9,14 +9,13 @@ specialized authorities and must link back here instead of becoming competing
 program plans. Existing runtime, App, release, and homepage authorities continue
 to own their exact behavior until an explicitly scoped task reconciles them.
 
-Task 1 is partially in progress. The stale example-link child PR recorded below
-completed one bounded documentation repair. The 2026-09-23
-`codex/adoption-entry-contracts` baseline records the current root README and
-homepage authority only. The starter-readiness documentation slice is one
-merged result from PR #245; the earlier PR #244 was closed and must not be
-counted as a second delivery. Minimal runtime proof, community policy, and
-later public activation work remain pending and require their own bounded task
-slices.
+Tasks 1-6 have integrated child results through PR #252 at
+`4b8015f6e01e5eaeba1227132e8dffbe076fa64b`. PR #244 was closed without
+merge; PR #245 is the single starter-readiness documentation result. Task 7
+has completed local integration validation on that exact source, as recorded
+below. Public CLI activation, current website deployment, independent coding
+agent evidence, and release operations remain separate; the adoption journey
+is not DONE.
 
 The user selected sequential, separate conversations with PR review between
 tasks to control usage. This agreement supersedes the original proposal's
@@ -527,13 +526,76 @@ one bounded slice without completing the whole task or adoption program.
 
 | Task | Bounded result and owners | Acceptance and dependency |
 | --- | --- | --- |
-| 1 - Reconcile contracts | This plan, existing entry/README/site plans, directly relevant public-entry authorities | In progress. Example-link repair is recorded above. README/homepage baseline is recorded at `b44be9e77`; the current root README composition and six-chapter homepage authority are implemented and locally testable at that baseline, but README desktop/narrow media-present/media-missing rendering evidence remains pending. PR #245, not closed PR #244, records the starter-readiness documentation. This correction records canonical starter source naming, projection/load/save obligations, and release/generation/consumer owner boundaries. Runtime proof, complete `docs:readme:check`, support/community, FieldScope claim reconciliation, merge/publication/deployment, and public activation remain separate. Documentation PR only; no runtime or site behavior changes. |
-| 2 - Minimal canonical App | `apps/starter-app`, workspace `@asyra/starter-app`, and direct app-local tests/docs | Implemented in child PR #247. Validation recorded on the PR: naming guard via Node entrypoints, `yarn workspace @asyra/starter-app test`, `typecheck`, `lint`, `react:build`, and `test:e2e`; `git diff --check --cached` passed. E2E launched the real Vite App at `http://127.0.0.1:5192` in desktop and narrow Chrome projects and exercised add/edit/status/save/undo/redo/reload. CI remains pending until PR checks report. This slice does not create CLI/template/release/public activation/community/FieldScope/Design AI surfaces and does not complete the adoption program. |
+| 1 - Reconcile contracts | This plan, existing entry/README/site plans, directly relevant public-entry authorities | The example-link repair and merged PRs #243/#245 established the entry and Starter-readiness documentation baseline; #244 was closed without merge. Tasks 2-6 subsequently supplied the Starter runtime, CLI/template, README/site entry, FieldScope evidence wording, and support policy. Task 5 recorded desktop/narrow README rendering with media present/unavailable. The composite README gate remains blocked by unrelated Design drift, and publication/deployment remain open; this row does not mark the public journey complete. |
+| 2 - Minimal canonical App | `apps/starter-app`, workspace `@asyra/starter-app`, and direct app-local tests/docs | Merged in child PR #247 at `407fd9c833889ce04ee8bdde3934b4076320435f`. The integrated App is revalidated in Task 7 below. This slice alone did not create the CLI/template, release, or public activation. |
 | 3 - CLI and standalone template | Public `create-asyra-app` CLI, `create-app/starter-app`, `release-configs/starter-app.json`, generated `create-app/starter-app/template`, and directly affected release/generation tests | Merged in child PR #249 at `b1dcfa106b44a0f3b56ee605612b072e2dfb3602` into `codex/adoption-onboarding`; Task 4 starts from that exact integrated head. Task 3's local validation covered naming, focused CLI/template tests, Starter test/typecheck/lint/react:build, root lint, template sync, package artifacts, and packed-artifact template consumer install/typecheck/lint/build/test/startup smoke. This records Task 3 integration, not registry publication or public activation. |
 | 4 - AI-first starter onboarding | Canonical Starter AGENTS/onboarding/prompt, opt-in priority exercise and formal tests, generated template sync | Merged in child PR #250 at `b785160c5645212509d3e1ca1ed4e8647922961c` into `codex/adoption-onboarding`. The priority tests failed before implementation and then passed through the App schema, Feature/API transaction, projection and Save/Reload owners. Starter test/typecheck/lint/build, desktop/narrow E2E, CLI/template tests, root lint, naming, template sync and packed-artifact generated consumer passed locally. The consumer reported `READY` for install/typecheck/lint/build/test/startup smoke on Node `v24.13.0` and Yarn `4.3.1`. No independent fresh coding-agent conversation or registry verification was performed; no AI provider was added. |
 | 5 - Entry routing and product evidence | Root README, public docs/llms generators, existing homepage entry points and verified case evidence | Merged in child PR #251 at `fb7050f9a43a3f00fb73a6028457c1abfc24051b` into `codex/adoption-onboarding`. The merge commit contains the Task 5 source, generated documentation, validators, and tests. Registry publication and Starter public activation remain pending. Task 5's local gates and the unrelated Design template drift are recorded in the bounded contract below; this integration does not claim a completed composite `docs:readme:check`, release, publication, or deployment. |
-| 6 - Community and support | SUPPORT.md, canonical support generators/validators, directly affected App release wording | Implemented locally from integrated Task 5 head `fb7050f9a43a3f00fb73a6028457c1abfc24051b`. GitHub repository metadata reports Discussions disabled on 2026-09-24, including a recheck after implementation; no active Discussions link is published. Focused support/docs tests, package README and public documentation generation/check/validation, naming, and lint passed locally. Composite `docs:readme:check` passed its applicable README stages and stopped at the unchanged Design template drift (15 files); it did not pass overall. Private security reporting stays in SECURITY.md. Sim maintenance and release obligations remain open; child PR review, CI, and integration are separate states. |
-| 7 - Integrated readiness and release handoff | Affected gate results, release records, this plan and index | Review all PRs and exact integrated source; verify standalone consumption, generated docs/templates, relevant site routes and links. Identify external operations separately. Public command and live destinations must work before claiming the adoption journey delivered. |
+| 6 - Community and support | SUPPORT.md, canonical support generators/validators, directly affected App release wording | Merged in child PR #252 at `4b8015f6e01e5eaeba1227132e8dffbe076fa64b`. GitHub Discussions remained disabled on the Task 7 recheck; no inactive link is published. Integrated support and generated-doc checks are recorded below. Sim maintenance and safety obligations remain open. |
+| 7 - Integrated readiness and release handoff | Affected gate results, this plan and index | Local integration validation completed at `4b8015f6e01e5eaeba1227132e8dffbe076fa64b`; details and public blockers are recorded below. Child PR review/CI, registry publication, deployment, and public adoption delivery remain separate. |
+
+### Task 7 integration validation and release handoff
+
+Frozen source and scope: `origin/codex/adoption-onboarding` at
+`4b8015f6e01e5eaeba1227132e8dffbe076fa64b` (PR #252 merge), Node
+`v24.13.0`, Yarn `4.3.1`, 2026-09-24. GitHub metadata confirms PRs #247 and
+#249-#252 merged into that integration branch. Discovery was limited to this
+plan; canonical Starter; generic CLI/template and their direct generators;
+README, public docs/llms, three website entry cards, support policy, and formal
+tests. Only this plan and its existing index may change. Product code, Design
+template/runtime/release flow, dependencies, repository settings, publication,
+tagging, and deployment are excluded. An in-scope gate failure, a changed
+source SHA, or an unreviewable evidence mismatch stops release handoff; the
+known unrelated Design template drift is reported separately.
+
+Local results on the frozen source:
+
+- **Passed:** naming; 47 focused CLI/template/README/public-doc/support tests;
+  Starter 13 tests (including opt-in priority), typecheck, lint, build, and two
+  desktop/narrow E2E cases covering add/edit/status, Undo/Redo, Save/Reload;
+  Starter template sync; package README and public docs/llms freshness and
+  validation; website 97 passing contract/unit tests (15 skipped by their
+  existing conditions), typecheck, lint, production build, 46-page route smoke,
+  and 37 related desktop/mobile/reduced-motion/no-JavaScript E2E cases; root
+  lint with 0 errors and 79 existing warnings. The formal packed CLI test checks
+  bundled template assets and safe CLI behavior; the canonical source/template
+  check passed.
+- **Passed, distinct consumer evidence:** `yarn release:packages` packed 19
+  Framework packages; `yarn release:consumer` reported `READY` for 19 packed
+  packages through install/typecheck/build/test;
+  `yarn release:template --prod=starter-app` reported `READY` for the generated
+  standalone app through install/typecheck/lint/build/test/startup smoke. Its
+  formal contract rejects workspace/hoisted/source-alias resolution. Separately,
+  `yarn release:consumer:registry` reported `READY` for 19 currently published
+  Framework packages through install/typecheck/build/test. This is Framework
+  registry evidence, not a registry-installed Starter CLI or public release.
+- **Failed as expected:** composite `yarn docs:readme:check` passed applicable
+  package README and README validation stages, then stopped at the unchanged
+  Asyra Design generated-template drift (15 differing files). The applicable
+  `docs:readme:packages:check`, `docs:readme:validate`,
+  `docs:public:check`, and `docs:public:validate` passed separately. No Design
+  template synchronization or full Design validation was performed.
+- **Public state, read-only:** npm returned 404 for `create-asyra-app`.
+  GitHub Discussions is disabled. The public Framework homepage, `/docs`,
+  `/asyra-design`, both maintained guide destinations, and the live Design
+  product returned HTTP 200, but the deployed homepage and `/docs` did not yet
+  contain the integrated Generic Starter entry/source anchor. Local route/E2E
+  success does not establish deployment of this source.
+- **Not performed:** an independent fresh coding-agent onboarding task;
+  registry-installed generated Starter/CLI consumer; release publication,
+  tagging, deployment, merge of this Task 7 child PR, or post-PR CI. Existing
+  opt-in priority tests are product behavior evidence, not independent agent
+  success evidence.
+
+Integration validation is locally complete for this frozen source. Before the
+public adoption journey can be marked delivered, a separately authorized
+release must publish `create-asyra-app` and prove a registry-installed generated
+Starter consumer at the released versions; the integrated website/docs must be
+deployed and their three entry destinations rechecked live; Discussions may be
+activated only by an authorized repository-setting change and then its public
+policy/link revalidated; the independent coding-agent case and pending review/CI
+must be reported on their own evidence. The Design drift requires its own owner
+to restore the composite docs gate before a release that requires that gate.
 
 Task 1 selects one durable adoption-contract owner; later tasks link to it
 instead of creating competing authorities. Exact implementation flows and

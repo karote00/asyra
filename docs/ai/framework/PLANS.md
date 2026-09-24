@@ -13,19 +13,16 @@ worktrees, and child PRs targeting `codex/adoption-onboarding`. Review and
 validate each child before authorized integration. No multi-agent delegation
 is authorized.
 
-The program is the single adoption journey owner. Its first task is in progress:
-one child PR repaired stale example links, PR #243 recorded the current
-README/homepage baseline, and PR #245 recorded the starter-readiness
-documentation. The current documentation state freezes the next minimal
-canonical App source as `apps/starter-app` / `@asyra/starter-app`, with
-supported Core/Preset startup, App-owned Item data, Feature/App API
-transactions, projection, Undo/Redo, explicit Save/Reload, and mapped
-release/generation/consumer ownership boundaries. This is document readiness,
-not runtime proof. The complete `docs:readme:check` gate, README
-desktop/narrow media-present/media-missing rendering evidence, community
-policy, FieldScope claim reconciliation, integration review, merge,
-publication and deployment remain separate states with their own bounded task
-contracts.
+Tasks 1-6 have integrated child results through PR #252 at
+`4b8015f6e01e5eaeba1227132e8dffbe076fa64b`. Task 7's local integration
+validation on that exact source is recorded in the adoption plan: Starter,
+CLI/template, packed and registry Framework consumers, documentation, support,
+and website gates passed at their stated boundaries. The composite
+`docs:readme:check` still fails at unrelated Asyra Design template drift.
+`create-asyra-app` is unpublished, the live website does not yet show the
+integrated Starter entry, and Discussions is disabled. Review/CI, independent
+coding-agent evidence, publication, deployment, and public delivery remain
+separate; the program is not DONE.
 
 ## Active Public Entry Experience Plans
 
