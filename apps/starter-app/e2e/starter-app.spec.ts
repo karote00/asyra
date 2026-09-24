@@ -211,3 +211,137 @@ test('drags an Item as one action and restores its position', async ({
     .poll(async () => (await item.boundingBox())?.x)
     .toBeCloseTo(moved?.x ?? 0, 0)
 })
+
+test('commits a title draft before canvas selection and preserves edit then drag history', async ({
+  page
+}) => {
+  await page.goto('/')
+  await expect(page.getByText('Ready')).toBeVisible()
+  await page.getByRole('button', { name: 'Add item' }).click()
+  await page.getByRole('button', { name: 'Add item' }).click()
+  const title = page.getByRole('textbox', { name: 'Title' })
+  const first = page.getByRole('button', { name: 'Item 1', exact: true })
+  await expect(title).toHaveValue('Item 2')
+
+  await title.fill('Draft before selection')
+  await first.click()
+  await expect(
+    page.getByRole('button', { name: 'Select Draft before selection' })
+  ).toBeVisible()
+  await page
+    .getByRole('button', { name: 'Select Draft before selection' })
+    .click()
+  await expect(title).toHaveValue('Draft before selection')
+
+  await title.fill('Draft before drag')
+  const beforeDrag = await first.boundingBox()
+  await first.dragTo(page.locator('.render-stage'), {
+    targetPosition: { x: 140, y: 280 }
+  })
+  await expect(
+    page.getByRole('button', { name: 'Select Draft before drag' })
+  ).toBeVisible()
+  const afterDrag = await first.boundingBox()
+  expect(Math.abs((afterDrag?.x ?? 0) - (beforeDrag?.x ?? 0))).toBeGreaterThan(
+    10
+  )
+
+  await page.getByRole('button', { name: 'Undo' }).click()
+  await expect
+    .poll(async () => (await first.boundingBox())?.x)
+    .toBeCloseTo(beforeDrag?.x ?? 0, 0)
+  await expect(
+    page.getByRole('button', { name: 'Select Draft before drag' })
+  ).toBeVisible()
+  await page.getByRole('button', { name: 'Undo' }).click()
+  await expect(
+    page.getByRole('button', { name: 'Select Draft before selection' })
+  ).toBeVisible()
+})
+
+test('rejects an invalid title draft on canvas selection', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.getByText('Ready')).toBeVisible()
+  await page.getByRole('button', { name: 'Add item' }).click()
+  await page.getByRole('button', { name: 'Add item' }).click()
+  const title = page.getByRole('textbox', { name: 'Title' })
+  await expect(title).toHaveValue('Item 2')
+  await title.fill('   ')
+  await page.getByRole('button', { name: 'Item 1', exact: true }).click()
+  await expect(page.getByRole('status')).toContainText(
+    'Item title is required.'
+  )
+  await expect(
+    page.getByRole('button', { name: 'Select Item 2' })
+  ).toBeVisible()
+  await page.getByRole('button', { name: 'Select Item 2' }).click()
+  await expect(page.getByRole('textbox', { name: 'Title' })).toHaveValue(
+    'Item 2'
+  )
+})
+
+test('touch drag commits once and pointer cancellation restores the last position', async ({
+  page
+}, testInfo) => {
+  test.skip(
+    testInfo.project.name !== 'narrow',
+    'touch path uses the narrow viewport'
+  )
+  await page.goto('/')
+  await expect(page.getByText('Ready')).toBeVisible()
+  await page.getByRole('button', { name: 'Add item' }).click()
+  const item = page.getByRole('button', { name: 'Item 1', exact: true })
+  const start = await item.boundingBox()
+  expect(start).not.toBeNull()
+  const session = await page.context().newCDPSession(page)
+  const point = (x: number, y: number) => ({ x, y, id: 1 })
+  const x = (start?.x ?? 0) + 40
+  const y = (start?.y ?? 0) + 40
+  await session.send('Input.dispatchTouchEvent', {
+    type: 'touchStart',
+    touchPoints: [point(x, y)]
+  })
+  await session.send('Input.dispatchTouchEvent', {
+    type: 'touchMove',
+    touchPoints: [point(x + 45, y + 50)]
+  })
+  await session.send('Input.dispatchTouchEvent', {
+    type: 'touchEnd',
+    touchPoints: []
+  })
+  await expect(page.getByText(/^Moved item/)).toBeVisible()
+  const moved = await item.boundingBox()
+  expect(Math.abs((moved?.x ?? 0) - (start?.x ?? 0))).toBeGreaterThan(10)
+
+  const movedX = (moved?.x ?? 0) + 40
+  const movedY = (moved?.y ?? 0) + 40
+  await session.send('Input.dispatchTouchEvent', {
+    type: 'touchStart',
+    touchPoints: [point(movedX, movedY)]
+  })
+  await session.send('Input.dispatchTouchEvent', {
+    type: 'touchMove',
+    touchPoints: [point(movedX - 35, movedY + 35)]
+  })
+  await expect
+    .poll(async () => (await item.boundingBox())?.x)
+    .not.toBeCloseTo(moved?.x ?? 0, 0)
+  await session.send('Input.dispatchTouchEvent', {
+    type: 'touchCancel',
+    touchPoints: []
+  })
+  await expect
+    .poll(async () => (await item.boundingBox())?.x)
+    .toBeCloseTo(moved?.x ?? 0, 0)
+  await page.screenshot({
+    path: testInfo.outputPath('starter-touch-cancel-narrow.png'),
+    fullPage: true
+  })
+  await page.getByRole('button', { name: 'Undo' }).click()
+  await expect
+    .poll(async () => (await item.boundingBox())?.x)
+    .toBeCloseTo(start?.x ?? 0, 0)
+  await expect(page.getByRole('button', { name: 'Undo' })).toBeEnabled()
+  await page.getByRole('button', { name: 'Undo' }).click()
+  await expect(item).toHaveCount(0)
+})

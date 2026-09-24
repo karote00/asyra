@@ -212,7 +212,6 @@ const CanvasItem = ({
       }}
       onPointerDown={(event) => {
         if (event.button !== 0) return
-        onSelect()
         drag.current = {
           pointerId: event.pointerId,
           startX: event.clientX,
@@ -262,11 +261,13 @@ const CanvasItem = ({
             session.offset.y === (item.offset?.y ?? 0))
         ) {
           cancelDrag()
+          onSelect()
           return
         }
         try {
           runtime.feature.moveItem(item.id, session.offset)
           onMove('Moved item - unsaved changes')
+          onSelect()
         } catch (error) {
           cancelDrag()
           onMove(errorMessage(error))
