@@ -4,6 +4,7 @@ import type { SharedPublication } from '@asyra/core'
 import {
   ITEM_COMPONENT_TYPE,
   ITEM_PROPERTY_NAME,
+  type ItemFieldExtension,
   type ItemProjection,
   isItemStatus,
   isValidItemTitle
@@ -20,7 +21,10 @@ export class StarterProjectionStore {
   refreshCount = 0
   lateRefreshCount = 0
 
-  constructor(private readonly core: Core) {}
+  constructor(
+    private readonly core: Core,
+    private readonly itemField?: ItemFieldExtension
+  ) {}
 
   getSnapshot(): readonly ItemProjection[] {
     return this.items
@@ -145,7 +149,10 @@ export class StarterProjectionStore {
     if (
       previous &&
       previous.title === next.title &&
-      previous.status === next.status
+      previous.status === next.status &&
+      (!this.itemField ||
+        previous.fields?.[this.itemField.key] ===
+          next.fields?.[this.itemField.key])
     ) {
       return false
     }
@@ -173,10 +180,26 @@ export class StarterProjectionStore {
     if (!isValidItemTitle(title) || !isItemStatus(status)) {
       return undefined
     }
+    let fieldValue: unknown
+    if (this.itemField) {
+      fieldValue = Object.hasOwn(fields, this.itemField.key)
+        ? fields[this.itemField.key]
+        : this.itemField.defaultValue
+    }
+    if (this.itemField && !this.itemField.validate(fieldValue)) {
+      return undefined
+    }
     return Object.freeze({
       id: elementId,
       title,
-      status
+      status,
+      ...(this.itemField
+        ? {
+            fields: Object.freeze({
+              [this.itemField.key]: fieldValue as string
+            })
+          }
+        : {})
     })
   }
 
@@ -187,7 +210,9 @@ export class StarterProjectionStore {
     const computedFields = computed as Record<string, unknown>
     if (
       isValidItemTitle(computedFields.title) &&
-      isItemStatus(computedFields.status)
+      isItemStatus(computedFields.status) &&
+      (!this.itemField ||
+        this.itemField.validate(computedFields[this.itemField.key]))
     ) {
       return computedFields
     }
