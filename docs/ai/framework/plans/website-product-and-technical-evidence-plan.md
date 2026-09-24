@@ -36,6 +36,16 @@ Direct evidence at this baseline:
   `/docs/start/custom-composition`, `/docs/start/create-design-app`, and
   `/atlas`.
 
+Task 5's local entry revision keeps the same six-chapter story, product proof,
+three-card resource structure, and Atlas link. The cards now route in order to
+`/docs#generic-starter-source`, `/docs/start/create-design-app`, and
+`/docs/start/custom-composition`. The Starter card identifies source and
+onboarding availability while its public CLI remains unpublished. Direct
+homepage tests, 46-route smoke, and 18 desktop/mobile browser cases passed;
+entry screenshots remain under the Task 5 worktree's
+`apps/asyra-framework-site/test-results/platform/`. This is local review
+evidence, not deployment or product-owner acceptance.
+
 This records the current implemented and formally covered homepage baseline. It
 does not claim final product-owner acceptance of every visual detail, integrated
 CI completion, deployment, or future adoption-entry readiness. If that

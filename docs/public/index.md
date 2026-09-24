@@ -12,20 +12,50 @@ supported Headless Core API in the current release.
 
 ## Choose your path
 
-Building your own App? Start with
-[the Core App implementation guide](start/custom-composition.md#build-one-complete-data-path).
-It connects transaction completion to incremental persistence, scoped UI
-subscriptions, reusable computation and runtime replacement. Read it before
-implementing autosave and projection subscriptions.
+Begin with the small Generic Starter source if you want one editable Item path,
+use the complete Design product when you want a working design tool, or move
+to advanced composition when your product needs a different Framework assembly.
+The remaining Concepts, Extend, and Reference sections explain the owners
+behind each path.
 
-The public documentation uses five paths so readers can tell whether they are
-starting from an official product, learning the architecture, extending their
-own domain, or replacing a Framework boundary.
+### Generic Starter source
+
+The [Starter source](../../apps/starter-app/README.md) is a small App-owned Item
+example with title/status editing, Undo/Redo, and explicit Save/Reload. Its
+[onboarding guide](../../apps/starter-app/docs/ONBOARDING.md) and
+[opt-in priority exercise](../../apps/starter-app/docs/PRIORITY_EXERCISE.md)
+show a coding agent changing App source through the existing Feature, API,
+transaction, projection, and persistence owners. The App does not include an AI
+runtime or provider for that exercise.
+
+`create-asyra-app` is not yet published to the public npm registry. The source
+and generated template can be inspected in this repository; a public Starter
+installation command is not active.
+
+### Complete Design product
+
+Use [create-asyra-design-app](start/create-design-app.md) for an immediately
+editable design tool whose App-owned behavior you can replace. The
+[Asyra Design case study](cases/asyra-design.md) identifies the Framework,
+Preset, App, and backend owners of that product.
+
+### Advanced composition
+
+Use [custom composition](start/custom-composition.md#build-one-complete-data-path)
+when you deliberately need a different Core App assembly. That guide covers
+transaction publications, persistence, scoped UI subscriptions, computation
+reuse, and runtime lifecycle. The [official 2D Preset](start/preset-2d.md)
+is a selectable baseline, not a universal product behavior.
+
+The public documentation also uses five sections so readers can find the
+architecture, app extensions, and exact package contracts after choosing a
+starting path.
 
 ### Start
 
-Use [create-asyra-design-app](start/create-design-app.md) when you want a
-complete design-tool product that you or an AI coding agent can extend. Use the
+Use the source-available Generic Starter above for a small editable example,
+or [create-asyra-design-app](start/create-design-app.md) for a published,
+complete design-tool product. Use the
 [official 2D Preset](start/preset-2d.md) when you are building a visual product
 from Framework packages and want Asyra's maintained baseline. Read the
 [Asyra Design case study](cases/asyra-design.md) to see how the official app

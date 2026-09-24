@@ -76,22 +76,22 @@ export function HomeResources() {
           <div className="mt-12 grid gap-10 md:grid-cols-3">
             {[
               {
-                title: 'Compose your foundation',
-                body: 'Choose the browser and Core capabilities your product needs. Your app owns its schemas, rules and interface.',
-                href: '/docs/start/custom-composition',
-                link: 'Composition guide'
+                title: 'Generic Starter',
+                body: 'Begin with a small editable Item App. Source and coding-agent guidance are available; its CLI is not yet published to the public npm registry.',
+                href: '/docs#generic-starter-source',
+                link: 'Explore Starter source'
               },
               {
-                title: 'Start from a working app',
-                body: 'Use the maintained design-app starter, then adapt its features and domain to your product.',
+                title: 'Complete Design product',
+                body: 'Start from the maintained, editable design tool and adapt its App-owned features and domain to your product.',
                 href: '/docs/start/create-design-app',
                 link: 'Create a design app'
               },
               {
-                title: 'Inspect the architecture',
-                body: 'Explore runtime routes, responsibility boundaries and the contracts behind the framework.',
-                href: '/atlas',
-                link: 'Runtime Atlas'
+                title: 'Advanced composition',
+                body: 'Assemble the Core and browser capabilities your product needs, then inspect their owner flows in Runtime Atlas.',
+                href: '/docs/start/custom-composition',
+                link: 'Composition guide'
               }
             ].map((item) => (
               <article
@@ -114,6 +114,12 @@ export function HomeResources() {
               </article>
             ))}
           </div>
+          <a
+            href="/atlas"
+            className="mt-10 inline-flex min-h-11 items-center border-b border-current pb-2 text-base"
+          >
+            Inspect Runtime Atlas →
+          </a>
         </div>
       </section>
     </>

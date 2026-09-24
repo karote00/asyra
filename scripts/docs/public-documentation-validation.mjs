@@ -120,6 +120,25 @@ export const validateMarkdownLinks = ({ filePath, repositoryRoot, source }) => {
   return localLinkCount
 }
 
+export const validateStarterEntry = ({ source }) => {
+  if (
+    !source.includes(
+      'create-asyra-app` is not yet published to the public npm registry'
+    )
+  ) {
+    throw new Error('Public overview must state the unpublished Starter status')
+  }
+  if (
+    /\b(?:npx\s+create-asyra-app|npm\s+create\s+asyra-app|yarn\s+create\s+asyra-app)\b|https:\/\/www\.npmjs\.com\/package\/create-asyra-app/iu.test(
+      source
+    )
+  ) {
+    throw new Error(
+      'Public overview exposes an unpublished Starter command or installation CTA'
+    )
+  }
+}
+
 export const validatePublicImportMentions = ({ apiIndex, pageId, source }) => {
   const packagesByName = new Map(
     apiIndex.packages.map((packageRecord) => [
@@ -364,6 +383,7 @@ export const validatePublicDocumentation = async ({ repositoryRoot }) => {
   for (const page of content.pages) {
     const filePath = path.join(root, 'docs/public', page.path)
     const source = fs.readFileSync(filePath, 'utf8')
+    if (page.id === 'overview') validateStarterEntry({ source })
     const removedPattern = REMOVED_EXAMPLE_PATTERNS.find((pattern) =>
       pattern.test(source)
     )

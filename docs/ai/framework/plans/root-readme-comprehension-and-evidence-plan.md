@@ -24,6 +24,17 @@ activation must be reconciled through the
 [Adoption Entry and Onboarding Program](adoption-entry-and-onboarding-program-plan.md),
 which owns the overall adoption journey.
 
+Task 5 locally reviewed the new Starter / Design / advanced entry hierarchy
+from integration head `b785160c5`. GitHub's GFM renderer produced the README
+fragment, then a local browser captured desktop (1200px) and narrow (390px)
+views with images present and unavailable. Inspected captures remain in the
+Task 5 worktree under
+`apps/asyra-framework-site/test-results/readme-*-{top,entry,evidence}.png`.
+Headings, links, alt text and captions remain readable without horizontal
+overflow. The complete `docs:readme:check` passes its package README and
+public README stages, then fails at pre-existing Asyra Design generated-template
+drift (15 files). Task 5 does not claim the full gate.
+
 This plan follows the completed
 [Asyra Public README and Entrypoint Alignment Plan](completed/asyra-public-readme-and-entrypoint-alignment-plan.md).
 That plan remains the authority for the public README inventory, owner mapping,
@@ -270,13 +281,9 @@ Split the current broad domain story into three explicit levels:
   the README with meaningful alternative text and captions.
 - Locally verified by focused README contract checks and direct public README
   validation entrypoints. Product-owner review remains separate.
-- Pending visual acceptance: preserve the original README rendering
-  responsibility for GitHub-compatible desktop and narrow layouts, with media
-  present and with media unavailable. If a future README change alters layout,
-  media, image dimensions, captions, or the first-screen hierarchy, that task
-  must either cite committed visual evidence for this matrix or mark the matrix
-  pending. The responsibility belongs to the README change owner and is not
-  deferred to a later adoption redesign.
+- Task 5 executed the GitHub-compatible desktop/narrow, media-present and
+  media-unavailable matrix noted above. Future README layout or media changes
+  require renewed rendering evidence for their own diff.
 
 ### Stage 4: Close contracts and validate
 
@@ -316,8 +323,8 @@ Split the current broad domain story into three explicit levels:
   this plan or README.
 - GitHub-compatible rendering review remains required when README layout or
   media changes again, covering desktop and narrow layouts plus media-present
-  and media-unavailable states. Current baseline status: pending visual
-  evidence unless a future task cites committed artifacts from that matrix.
+  and media-unavailable states. Task 5's local evidence path is recorded above;
+  the full README gate remains blocked by unrelated Design template drift.
 - Product-owner review, merge, public release, and generic-starter activation
   are separate adoption program states.
 - No package, App, CLI, Framework runtime, or website behavior changes are

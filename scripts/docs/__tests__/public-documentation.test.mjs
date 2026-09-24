@@ -119,6 +119,12 @@ test('llms discovery is public-only and states the current/future boundary', asy
   assert.match(llms, /41 public Markdown pages/)
   assert.match(llms, /Current: browser\/Core/)
   assert.match(llms, /Future: Headless Core and Core Kernel/)
+  assert.match(
+    llms,
+    /Generic Starter source is available; create-asyra-app is not yet published to the public npm registry/u
+  )
+  assert.match(llms, /docs\/public\/index\.md#generic-starter-source/u)
+  assert.doesNotMatch(llms, /(?:npx|npm create|yarn create) create-asyra-app/u)
   assert.doesNotMatch(llms, /docs\/ai\//)
   assert.doesNotMatch(llms, /AI_PROVIDER_API_KEY|ws:\/\/|package-private/)
   assert.equal((llms.match(/^- \[/gm) ?? []).length, 41)

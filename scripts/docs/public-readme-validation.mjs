@@ -249,6 +249,18 @@ export const validateReadmeLearningSurface = ({ source, sourcePath }) => {
   }
 }
 
+export const validateStarterPublicationState = ({ source, sourcePath }) => {
+  if (
+    /\b(?:npx\s+create-asyra-app|npm\s+create\s+asyra-app|yarn\s+create\s+asyra-app)\b|https:\/\/www\.npmjs\.com\/package\/create-asyra-app/iu.test(
+      source
+    )
+  ) {
+    throw new Error(
+      `${sourcePath} exposes an unpublished Starter command or installation CTA`
+    )
+  }
+}
+
 const validatePackageReadme = ({ packageRecord, source, sourcePath }) => {
   if (!source.startsWith(`# \`${packageRecord.name}\`\n`)) {
     throw new Error(`${sourcePath} title must be ${packageRecord.name}`)
@@ -277,6 +289,9 @@ export const validatePublicReadmes = async ({ repositoryRoot }) => {
       source,
       sourcePath: surface.path
     })
+    if (surface.id === 'root') {
+      validateStarterPublicationState({ source, sourcePath: surface.path })
+    }
     const publicMentionSource =
       surface.id === 'asyra-design'
         ? source.replaceAll(

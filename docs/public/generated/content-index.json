@@ -1,7 +1,7 @@
 {
   "pages": [
     {
-      "contentSha256": "64a854fecee1c9eb02748d9e2e8b4d7a66d6bf989f0c7bbfa9d3485ac75c9794",
+      "contentSha256": "09b5c9d12fcc3e2148a667d28b3a8579b487a56f44553c8507184b7f822bb5fd",
       "description": "Build domain-owned information products whose visual, collaborative, persistent, and AI-facing capabilities remain composable.",
       "headings": [
         {
@@ -11,6 +11,18 @@
         {
           "depth": 2,
           "title": "Choose your path"
+        },
+        {
+          "depth": 3,
+          "title": "Generic Starter source"
+        },
+        {
+          "depth": 3,
+          "title": "Complete Design product"
+        },
+        {
+          "depth": 3,
+          "title": "Advanced composition"
         },
         {
           "depth": 3,
@@ -54,7 +66,7 @@
       "path": "index.md",
       "section": "Overview",
       "title": "Asyra Framework",
-      "wordCount": 658
+      "wordCount": 836
     },
     {
       "contentSha256": "f646e736122a5332a52f3e06e26083447f19b031d4ce119270a5d80a741e5ddd",
