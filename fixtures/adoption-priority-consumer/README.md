@@ -23,13 +23,11 @@ records the source, local packed dependency setup, and test evidence. The
 bundled onboarding and exercise documents are the original generated entry
 documents used at the start of the exercise.
 
-## Commands
+## Reproduce the packed consumer
 
-```bash
-yarn install
-yarn test
-yarn typecheck
-yarn lint
-yarn react:build
-yarn start
-```
+This directory retains the generated source and formal tests. It is not an
+installed Yarn project: it intentionally omits `yarn.lock`, `node_modules`,
+build output, and packed tarballs. Run the complete commands in
+[VERIFICATION.md](VERIFICATION.md) from the repository root. They create a
+fresh, standalone Yarn consumer under project `tmp/`, install the locally
+packed Framework packages, apply this fixture's source, and run its checks.
