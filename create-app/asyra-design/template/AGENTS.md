@@ -38,6 +38,18 @@ in [`docs/framework.md`](docs/framework.md) for Framework contracts.
 - Do not commit secrets, generated browser evidence, test reports, or local
   service data.
 
+## Local environment files
+
+- Local `.env` files are persistent local configuration: use and preserve them.
+  Never delete or clear them as test/task cleanup, and never stage, commit, or
+  push them to Git. If missing, create `.env` from `.env.example`; never overwrite
+  an existing local file with the example.
+- Keep non-secret, portable configuration synchronized to `.env.example`.
+  For real secrets such as API keys, include only the variable name and an empty
+  value in `.env.example`; retain the actual value in local `.env` for continued
+  use. Keep machine-specific paths in local `.env`. Treat `.env.example` as a
+  setup template, not a test fixture.
+
 ## Verification
 
 Run the narrow test for the changed owner first, then the standalone gates:

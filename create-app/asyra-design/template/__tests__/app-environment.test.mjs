@@ -1,4 +1,7 @@
 import assert from 'node:assert/strict'
+import { execFileSync } from 'node:child_process'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import test from 'node:test'
 import { URL } from 'node:url'
 
@@ -78,4 +81,32 @@ test('invalid app URL and collaboration port fail before startup', () => {
       }),
     /COLLABORATION_WS_PORT/
   )
+})
+
+test('document backend startup commands load the local environment file', (t) => {
+  const directory = mkdtempSync(
+    fileURLToPath(new URL('./startup-environment-', import.meta.url))
+  )
+  t.after(() => rmSync(directory, { recursive: true, force: true }))
+  writeFileSync(`${directory}/.env`, 'DOCUMENT_BACKEND_PORT=43219\n')
+  const manifest = JSON.parse(
+    readFileSync(new URL('../package.json', import.meta.url), 'utf8')
+  )
+  for (const name of ['document:backend', 'document:backend:start']) {
+    const command = manifest.scripts[name].split(' && ').at(-1).split(' ')
+    assert.equal(command.shift(), 'node')
+    command.pop()
+    const environment = { ...process.env }
+    delete environment.DOCUMENT_BACKEND_PORT
+    const output = execFileSync(
+      process.execPath,
+      [...command, '-p', 'process.env.DOCUMENT_BACKEND_PORT'],
+      {
+        cwd: directory,
+        env: environment,
+        encoding: 'utf8'
+      }
+    )
+    assert.equal(output.trim(), '43219')
+  }
 })

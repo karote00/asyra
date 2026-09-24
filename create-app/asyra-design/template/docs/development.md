@@ -23,6 +23,23 @@ yarn collaboration:server
 yarn start
 ```
 
+## Local environment
+
+Before starting services, copy `.env.example` to `.env` in the App directory
+(`apps/asyra-design` in the monorepo, or the generated project root):
+
+```bash
+cp .env.example .env
+```
+
+All three service commands above load this local file. The example configures
+local collaboration, document persistence and Codex subscription access. Install
+Codex and sign in, then select a model available to your account using
+`AI_PROVIDER_MODEL`. Set `AI_PROVIDER_EXECUTABLE` to an absolute executable path
+if `codex` is not available on PATH. Existing shell environment values take
+precedence. Keep machine-specific settings and secrets in `.env`; never commit it.
+The example is setup documentation, not a test fixture.
+
 ## Common changes
 
 - New tool or command: add a registered Feature, centralize identifiers, route
