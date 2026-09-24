@@ -6,6 +6,7 @@ import {
   ITEM_PROPERTY_NAME,
   type ItemFieldExtension,
   type ItemProjection,
+  isValidItemOffset,
   isItemStatus,
   isValidItemTitle
 } from '../domain/item-domain.js'
@@ -150,6 +151,8 @@ export class StarterProjectionStore {
       previous &&
       previous.title === next.title &&
       previous.status === next.status &&
+      previous.offset?.x === next.offset?.x &&
+      previous.offset?.y === next.offset?.y &&
       (!this.itemField ||
         previous.fields?.[this.itemField.key] ===
           next.fields?.[this.itemField.key])
@@ -189,10 +192,18 @@ export class StarterProjectionStore {
     if (this.itemField && !this.itemField.validate(fieldValue)) {
       return undefined
     }
+    const offsetX = fields.offsetX ?? 0
+    const offsetY = fields.offsetY ?? 0
+    if (!isValidItemOffset(offsetX) || !isValidItemOffset(offsetY)) {
+      return undefined
+    }
     return Object.freeze({
       id: elementId,
       title,
       status,
+      ...(offsetX !== 0 || offsetY !== 0
+        ? { offset: Object.freeze({ x: offsetX, y: offsetY }) }
+        : {}),
       ...(this.itemField
         ? {
             fields: Object.freeze({

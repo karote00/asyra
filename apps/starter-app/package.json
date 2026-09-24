@@ -12,7 +12,7 @@
     "dev": "vite",
     "build": "yarn build:dependencies && tsc --noEmit && vite build",
     "build:dependencies": "../../node_modules/.bin/turbo run build:preset --filter @asyra/preset",
-    "react:build": "yarn build",
+    "react:build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:local": "vitest run",
