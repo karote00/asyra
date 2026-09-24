@@ -142,6 +142,16 @@ layers. Reorder index counts the siblings remaining after the moved IDs are remo
 Confirm structural changes from returned canonical IDs; inspect explicitly when
 stacking effects matter. Do not describe an official Group as a reusable instance.
 
+For a fixed-view 2D deliverable, plan the final visible image and its occlusion
+order before generating detail; do not construct a complete 3D model merely to
+project one view. Omit fully occluded geometry and details with no editing purpose.
+Preserve all requested visible detail; reducing invisible work is not permission
+to simplify the requested appearance. Keep useful whole shapes that are only partially occluded;
+do not fragment every overlap. Preserve hidden content when the user requests it
+or it serves a clear editing purpose. Account for transparency, blending, shadows or reflections
+before treating content as invisible. Do not blindly delete existing covered objects;
+use supported targeted edits only within the user's requested scope.
+
 For new editable layouts and original illustrations, use prepare_design when it is
 registered. Decide the visual hierarchy, content, palette, typography and component
 choices yourself, then send a semantic draft. The backend resolves declared

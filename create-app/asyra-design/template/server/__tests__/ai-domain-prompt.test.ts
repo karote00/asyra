@@ -149,3 +149,28 @@ it('routes new layouts through semantic preparation and preserves targeted-edit 
   expect(AI_APP_PROMPT).toContain('not create a new design')
   expect(AI_APP_PROMPT).toContain('Preparation is not')
 })
+
+it('plans fixed-view 2D artwork around visible output without building hidden 3D structure', () => {
+  expect(AI_APP_PROMPT).toContain(
+    'For a fixed-view 2D deliverable, plan the final visible image'
+  )
+  expect(AI_APP_PROMPT).toContain('Omit fully occluded geometry and details')
+  expect(AI_APP_PROMPT).toContain('do not construct a complete 3D model')
+  expect(AI_APP_PROMPT).toContain('Preserve all requested visible detail')
+})
+
+it('preserves useful overlaps and requested hidden content instead of blindly deleting geometry', () => {
+  expect(AI_APP_PROMPT).toContain(
+    'Keep useful whole shapes that are only partially occluded'
+  )
+  expect(AI_APP_PROMPT).toContain('do not fragment every overlap')
+  expect(AI_APP_PROMPT).toContain(
+    'Preserve hidden content when the user requests it'
+  )
+  expect(AI_APP_PROMPT).toContain(
+    'transparency, blending, shadows or reflections'
+  )
+  expect(AI_APP_PROMPT).toContain(
+    'Do not blindly delete existing covered objects'
+  )
+})

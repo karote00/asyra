@@ -59,3 +59,15 @@ from the final prepared batch. Failures keep intent and attachments for recovery
 Reference replacement uses one registered action and one ordinary transaction: insert
 complete replacement, remove only the old target, and roll back together on failure.
 App UI text is English; user and model-authored content preserve their language.
+
+
+## Visible content planning
+
+For fixed-view 2D output, the server-owned App prompt asks AI to plan visible
+content and occlusion before generating detail. Fully hidden geometry without an
+editing purpose should be omitted, without simplifying requested visible detail.
+Partially covered whole shapes and useful overlaps remain valid; do not fragment
+every overlap. Preserve hidden content requested by the user or needed for editing.
+Transparency, blending, shadows and reflections can make otherwise covered content
+contribute to the result. This is a planning policy, not automatic backend culling
+or permission to delete existing covered objects.
