@@ -19,6 +19,9 @@ validation on that exact source is recorded in the adoption plan: Starter,
 CLI/template, packed and registry Framework consumers, documentation, support,
 and website gates passed at their stated boundaries. The composite
 `docs:readme:check` still fails at unrelated Asyra Design template drift.
+PR #253 CI failed in the render-performance build and a separate Flow Inspector
+test; PR #254 carries the isolated Starter build-owner repair and awaits review
+and CI. The Task 7 handoff remains blocked pending exact integrated validation.
 `create-asyra-app` is unpublished, the live website does not yet show the
 integrated Starter entry, and Discussions is disabled. Review/CI, independent
 coding-agent evidence, publication, deployment, and public delivery remain

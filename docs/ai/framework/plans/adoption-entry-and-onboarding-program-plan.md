@@ -13,9 +13,10 @@ Tasks 1-6 have integrated child results through PR #252 at
 `4b8015f6e01e5eaeba1227132e8dffbe076fa64b`. PR #244 was closed without
 merge; PR #245 is the single starter-readiness documentation result. Task 7
 has completed local integration validation on that exact source, as recorded
-below. Public CLI activation, current website deployment, independent coding
-agent evidence, and release operations remain separate; the adoption journey
-is not DONE.
+below. Child PR #253's CI has failed and its integration is blocked;
+the separate build-owner fix is PR #254. Public CLI activation, current website
+deployment, independent coding-agent evidence, and release operations remain
+separate; the adoption journey is not DONE.
 
 The user selected sequential, separate conversations with PR review between
 tasks to control usage. This agreement supersedes the original proposal's
@@ -532,7 +533,7 @@ one bounded slice without completing the whole task or adoption program.
 | 4 - AI-first starter onboarding | Canonical Starter AGENTS/onboarding/prompt, opt-in priority exercise and formal tests, generated template sync | Merged in child PR #250 at `b785160c5645212509d3e1ca1ed4e8647922961c` into `codex/adoption-onboarding`. The priority tests failed before implementation and then passed through the App schema, Feature/API transaction, projection and Save/Reload owners. Starter test/typecheck/lint/build, desktop/narrow E2E, CLI/template tests, root lint, naming, template sync and packed-artifact generated consumer passed locally. The consumer reported `READY` for install/typecheck/lint/build/test/startup smoke on Node `v24.13.0` and Yarn `4.3.1`. No independent fresh coding-agent conversation or registry verification was performed; no AI provider was added. |
 | 5 - Entry routing and product evidence | Root README, public docs/llms generators, existing homepage entry points and verified case evidence | Merged in child PR #251 at `fb7050f9a43a3f00fb73a6028457c1abfc24051b` into `codex/adoption-onboarding`. The merge commit contains the Task 5 source, generated documentation, validators, and tests. Registry publication and Starter public activation remain pending. Task 5's local gates and the unrelated Design template drift are recorded in the bounded contract below; this integration does not claim a completed composite `docs:readme:check`, release, publication, or deployment. |
 | 6 - Community and support | SUPPORT.md, canonical support generators/validators, directly affected App release wording | Merged in child PR #252 at `4b8015f6e01e5eaeba1227132e8dffbe076fa64b`. GitHub Discussions remained disabled on the Task 7 recheck; no inactive link is published. Integrated support and generated-doc checks are recorded below. Sim maintenance and safety obligations remain open. |
-| 7 - Integrated readiness and release handoff | Affected gate results, this plan and index | Local integration validation completed at `4b8015f6e01e5eaeba1227132e8dffbe076fa64b`; details and public blockers are recorded below. Child PR review/CI, registry publication, deployment, and public adoption delivery remain separate. |
+| 7 - Integrated readiness and release handoff | Affected gate results, this plan and index | Local integration validation completed at `4b8015f6e01e5eaeba1227132e8dffbe076fa64b`; details and public blockers are recorded below. Child PR #253 CI failed; the separate Starter build-owner repair is PR #254, pending its own review/CI. Integration, registry publication, deployment, and public adoption delivery remain separate. |
 
 ### Task 7 integration validation and release handoff
 
@@ -593,9 +594,25 @@ release must publish `create-asyra-app` and prove a registry-installed generated
 Starter consumer at the released versions; the integrated website/docs must be
 deployed and their three entry destinations rechecked live; Discussions may be
 activated only by an authorized repository-setting change and then its public
-policy/link revalidated; the independent coding-agent case and pending review/CI
+policy/link revalidated; the independent coding-agent case and CI/review outcomes
 must be reported on their own evidence. The Design drift requires its own owner
 to restore the composite docs gate before a release that requires that gate.
+
+PR #253 CI on `dc35222eb610d3181ae7caf4c597b41dcbc13cb1` completed with
+failures, so this local handoff is **not** an integrated or CI-ready delivery.
+In run `35983934121`, render-performance job `107582066413` failed during
+Design Vite build, before performance tests, because the built Props Manager
+imported the runtime `Setter` class from a `@asyra/utils/dist` output that did
+not export it at that instant. The separate PR #254, based on the same
+integration head, addresses the confirmed duplicate Starter dependency build;
+its real-build regression measured two `@asyra/utils` executions before the
+repair and one afterward, with valid artifacts. PR #254 is unmerged and its CI
+is independent. PR #253 also had a separate `validate` failure at
+`tools/flow-inspector/control-plane/__tests__/agent-task.test.cjs:363`
+(`29 !== 30`); `flow-ci` failed in aggregation, and Framework release readiness
+was skipped. These failures are not repaired or waived by this document update.
+Review the exact CI outcomes and retest the integrated source after any
+authorized merges before claiming Task 7 handoff or public delivery complete.
 
 Task 1 selects one durable adoption-contract owner; later tasks link to it
 instead of creating competing authorities. Exact implementation flows and
