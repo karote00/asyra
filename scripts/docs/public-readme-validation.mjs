@@ -7,12 +7,16 @@ import { fileURLToPath, URL } from 'node:url'
 import { validatePublicImportMentions } from './public-documentation-validation.mjs'
 import { checkPublicDocumentation } from './public-documentation.mjs'
 import { readApprovedReadmeInputs } from './public-readme-inputs.mjs'
+import {
+  validateCommunityPolicy,
+  validateSupportPolicyCorpus
+} from './support-policy-validation.mjs'
 
 const REPOSITORY_URL = 'https://github.com/karote00/asyra'
 const VERIFIED_PUBLIC_LINKS = new Set([
   'https://asyra-design.vercel.app/?fileId=demo'
 ])
-const REQUIRED_POLICY =
+const DESIGN_POLICY =
   'This repository does not accept external issues or contributions'
 
 const REQUIRED_HEADINGS = Object.freeze({
@@ -231,8 +235,10 @@ export const validateReadmeNamedImports = ({
   }
 }
 
-export const validateReadmePolicy = ({ source, sourcePath }) => {
-  if (!source.includes(REQUIRED_POLICY)) {
+export const validateReadmePolicy = ({ id, source, sourcePath }) => {
+  if (id === 'root' || id.startsWith('@asyra/')) {
+    validateCommunityPolicy({ discussionsEnabled: false, source, sourcePath })
+  } else if (!source.includes(DESIGN_POLICY)) {
     throw new Error(`${sourcePath} is missing the public support policy`)
   }
   const invitation = INVITATION_PATTERNS.find((pattern) => pattern.test(source))
@@ -276,6 +282,7 @@ const validatePackageReadme = ({ packageRecord, source, sourcePath }) => {
 
 export const validatePublicReadmes = async ({ repositoryRoot }) => {
   const root = path.resolve(repositoryRoot)
+  validateSupportPolicyCorpus({ repositoryRoot: root })
   const inputs = await readApprovedReadmeInputs({ repositoryRoot: root })
   const documentation = await checkPublicDocumentation({ repositoryRoot: root })
   let linkCount = 0
@@ -284,7 +291,7 @@ export const validatePublicReadmes = async ({ repositoryRoot }) => {
     const filePath = path.join(root, surface.path)
     const source = fs.readFileSync(filePath, 'utf8')
     validateHeadings({ id: surface.id, source, sourcePath: surface.path })
-    validateReadmePolicy({ source, sourcePath: surface.path })
+    validateReadmePolicy({ id: surface.id, source, sourcePath: surface.path })
     validateReadmeLearningSurface({
       source,
       sourcePath: surface.path

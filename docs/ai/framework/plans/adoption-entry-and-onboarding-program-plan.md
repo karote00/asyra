@@ -531,8 +531,8 @@ one bounded slice without completing the whole task or adoption program.
 | 2 - Minimal canonical App | `apps/starter-app`, workspace `@asyra/starter-app`, and direct app-local tests/docs | Implemented in child PR #247. Validation recorded on the PR: naming guard via Node entrypoints, `yarn workspace @asyra/starter-app test`, `typecheck`, `lint`, `react:build`, and `test:e2e`; `git diff --check --cached` passed. E2E launched the real Vite App at `http://127.0.0.1:5192` in desktop and narrow Chrome projects and exercised add/edit/status/save/undo/redo/reload. CI remains pending until PR checks report. This slice does not create CLI/template/release/public activation/community/FieldScope/Design AI surfaces and does not complete the adoption program. |
 | 3 - CLI and standalone template | Public `create-asyra-app` CLI, `create-app/starter-app`, `release-configs/starter-app.json`, generated `create-app/starter-app/template`, and directly affected release/generation tests | Merged in child PR #249 at `b1dcfa106b44a0f3b56ee605612b072e2dfb3602` into `codex/adoption-onboarding`; Task 4 starts from that exact integrated head. Task 3's local validation covered naming, focused CLI/template tests, Starter test/typecheck/lint/react:build, root lint, template sync, package artifacts, and packed-artifact template consumer install/typecheck/lint/build/test/startup smoke. This records Task 3 integration, not registry publication or public activation. |
 | 4 - AI-first starter onboarding | Canonical Starter AGENTS/onboarding/prompt, opt-in priority exercise and formal tests, generated template sync | Merged in child PR #250 at `b785160c5645212509d3e1ca1ed4e8647922961c` into `codex/adoption-onboarding`. The priority tests failed before implementation and then passed through the App schema, Feature/API transaction, projection and Save/Reload owners. Starter test/typecheck/lint/build, desktop/narrow E2E, CLI/template tests, root lint, naming, template sync and packed-artifact generated consumer passed locally. The consumer reported `READY` for install/typecheck/lint/build/test/startup smoke on Node `v24.13.0` and Yarn `4.3.1`. No independent fresh coding-agent conversation or registry verification was performed; no AI provider was added. |
-| 5 - Entry routing and product evidence | Root README, public docs/llms generators, existing homepage entry points and verified case evidence | In progress from integrated Task 4 head `b785160c5`. Entry copy, source links, generated docs, validators, and formal tests are locally implemented. Registry returned 404 for `create-asyra-app`; Starter public activation remains pending. Registry `latest` for `create-asyra-design-app` was `0.5.12` with a published tarball. Focused docs tests, public generation/validation, website build/unit/route/18 browser cases, and README visual matrix passed locally. Full `docs:readme:check` was executed and stopped at Asyra Design generated-template drift (15 files) outside Task 5; its applicable README and public documentation components passed separately. Do not mark the composite gate passed or synchronize Design output for this task. Child PR review, CI, integration, release, publication, and deployment remain separate states. |
-| 6 - Community and support | SUPPORT.md, canonical support generators/validators, directly affected App release wording | Synchronized policy, private security route, no SLA or implied PR acceptance. Confirm Discussions availability before publishing active links. Sim reporting path may change; remaining release obligations stay explicit. Depends on task 1; remains sequential by default. |
+| 5 - Entry routing and product evidence | Root README, public docs/llms generators, existing homepage entry points and verified case evidence | Merged in child PR #251 at `fb7050f9a43a3f00fb73a6028457c1abfc24051b` into `codex/adoption-onboarding`. The merge commit contains the Task 5 source, generated documentation, validators, and tests. Registry publication and Starter public activation remain pending. Task 5's local gates and the unrelated Design template drift are recorded in the bounded contract below; this integration does not claim a completed composite `docs:readme:check`, release, publication, or deployment. |
+| 6 - Community and support | SUPPORT.md, canonical support generators/validators, directly affected App release wording | Implemented locally from integrated Task 5 head `fb7050f9a43a3f00fb73a6028457c1abfc24051b`. GitHub repository metadata reports Discussions disabled on 2026-09-24, including a recheck after implementation; no active Discussions link is published. Focused support/docs tests, package README and public documentation generation/check/validation, naming, and lint passed locally. Composite `docs:readme:check` passed its applicable README stages and stopped at the unchanged Design template drift (15 files); it did not pass overall. Private security reporting stays in SECURITY.md. Sim maintenance and release obligations remain open; child PR review, CI, and integration are separate states. |
 | 7 - Integrated readiness and release handoff | Affected gate results, release records, this plan and index | Review all PRs and exact integrated source; verify standalone consumption, generated docs/templates, relevant site routes and links. Identify external operations separately. Public command and live destinations must work before claiming the adoption journey delivered. |
 
 Task 1 selects one durable adoption-contract owner; later tasks link to it
@@ -764,6 +764,68 @@ Design full build/E2E/clean-consumer gates, package publication, public CLI
 activation, deployment, tag, release, or merge. Publication and any active public installation CTA require separate
 authorization and fresh registry proof. This task may commit, push, and open
 one child PR against `codex/adoption-onboarding` under the user's authorization.
+
+### Task 6 bounded contract - community and support
+
+Baseline and fixed discovery: start from `origin/codex/adoption-onboarding` at
+`fb7050f9a43a3f00fb73a6028457c1abfc24051b`, which includes merged PR #251.
+Read the existing root README support section, SECURITY.md, Framework release
+support and public support guide, the package README generator and README/public
+documentation validators, and the directly affected Sim candidate/release
+support text. Check the repository's Discussions setting and destination through
+read-only GitHub metadata before writing an active link. The setting was disabled
+on 2026-09-24; no working Discussions destination is established. After this
+discovery pass, inspect only these sources, their direct generated consumers,
+negative cases, and the gates below.
+
+Objective and policy: publish one clear repository support policy in SUPPORT.md.
+GitHub Discussions is the intended public community/general-help channel, but
+while disabled, state that it is unavailable and provide no guessed or inactive
+URL. External pull requests are not accepted by default; GitHub Issues are not
+the general public support channel. Suspected vulnerabilities follow the
+existing private GitHub advisory route in SECURITY.md. Participation creates no
+SLA, response deadline, or maintenance promise. Sim's current local-candidate
+review still uses its agreed coordinator; a later public channel decision may
+use Discussions but cannot satisfy its named maintenance owner, serious-finding
+notification/withdrawal/correction process, or safety/release gates by itself.
+
+Authorized mutation scope: this plan's Task 5/6 status and Task 6 contract;
+SUPPORT.md; the root README support paragraph; Framework/public support policy
+text and the public content source map; the package README generator and its
+generator-produced package README outputs; directly related README/public docs
+validators and tests; and narrow support/reporting wording in Sim candidate and
+first-release documents. A pending empty Changeset may record this mixed
+documentation/generator change. Existing package/runtime/API identities and
+release states remain unchanged.
+
+Formal acceptance cases: root, public guide, SUPPORT.md and generated package
+README policies agree on the planned Discussions channel and its currently
+disabled state; no inactive Discussions URL is published; validators reject
+general-Issue or external-PR invitations and an absent private security route;
+the security route remains private and points to SECURITY.md; external links
+newly authored in rendered Markdown use new-tab and safe-rel attributes; Sim
+candidate text keeps the private pilot coordinator and all G8 maintenance and
+serious-finding responsibilities open. Tests cover both enabled/disabled policy
+inputs so a later settings change requires an explicit, verified update.
+
+Required local gates after the final edit: `yarn lint:naming` before and after
+identifier-bearing changes; focused docs generator, README/public documentation
+validation, and Sim release-policy tests; `yarn docs:readme:packages`,
+`yarn docs:readme:packages:check`, `yarn docs:readme:validate`,
+`yarn docs:public`, `yarn docs:public:check`, and
+`yarn docs:public:validate`; applicable `yarn lint:ci`, `git diff --check`,
+staged review, and exact-base `yarn changeset:pr:check`. Run the composite
+`yarn docs:readme:check` once and report any Design-template-only failure as
+such; its individual applicable components must pass. Revalidate the current
+head before each push and report CI separately.
+
+Stop conditions and exclusions: stop if PR #251 is not integrated, an in-scope
+required gate fails, or the private security route is unavailable. If
+Discussions remains disabled, deliver conservative wording and report the
+repository-setting action for the user; do not change settings or invent a
+link. No Design runtime, AI panel, Design template or release-flow edits; no
+Design full verification; no product feature repair, Task 7, Starter public
+activation, merge, publication, tag, release, or deployment.
 
 ## Prompt and review contract
 

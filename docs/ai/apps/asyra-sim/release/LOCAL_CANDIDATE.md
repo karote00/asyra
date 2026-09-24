@@ -176,8 +176,11 @@ the original verified binary; preserve original artifacts and label it clearly.
 Use `BUILD.json`, `DEPENDENCIES.json`, `THIRD_PARTY_NOTICES.txt` and `SHA256SUMS`
 to identify this candidate. Provide version, OS/browser, minimal synthetic input,
 expected/actual behavior and reproducible steps to the person coordinating your
-local review. A public issue/security channel, maintenance owner and response
-policy have not been authorized; do not send secrets to a guessed address.
+local review. The repository's intended general-help channel, GitHub Discussions,
+is not enabled yet; general Issues are not the reporting route. Suspected
+vulnerabilities follow the private path in
+[SECURITY.md](../../../../../SECURITY.md). A Sim maintenance owner and response
+policy remain unapproved. Do not send confidential data to a public channel.
 Free software does not promise an SLA or unlimited immediate support.
 
 The 2026-09-12 audit of the exact-source independent consumer lock at

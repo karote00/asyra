@@ -7,6 +7,7 @@ import ts from 'typescript'
 
 import { readPublicContentContract } from './public-content-contract.mjs'
 import { checkPublicDocumentation } from './public-documentation.mjs'
+import { validateCommunityPolicy } from './support-policy-validation.mjs'
 
 const BUILD_HEADINGS = Object.freeze([
   '## Prerequisites',
@@ -384,6 +385,13 @@ export const validatePublicDocumentation = async ({ repositoryRoot }) => {
     const filePath = path.join(root, 'docs/public', page.path)
     const source = fs.readFileSync(filePath, 'utf8')
     if (page.id === 'overview') validateStarterEntry({ source })
+    if (page.id === 'reference/support-release') {
+      validateCommunityPolicy({
+        discussionsEnabled: false,
+        source,
+        sourcePath: `docs/public/${page.path}`
+      })
+    }
     const removedPattern = REMOVED_EXAMPLE_PATTERNS.find((pattern) =>
       pattern.test(source)
     )

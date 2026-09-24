@@ -30,6 +30,7 @@ test('README policy rejects missing policy and external contribution invitations
   assert.throws(
     () =>
       validateReadmePolicy({
+        id: 'asyra-design',
         source: 'Use and fork this package.',
         sourcePath: 'README.md'
       }),
@@ -38,6 +39,7 @@ test('README policy rejects missing policy and external contribution invitations
   assert.throws(
     () =>
       validateReadmePolicy({
+        id: 'asyra-design',
         source:
           'This repository does not accept external issues or contributions. Pull requests are welcome.',
         sourcePath: 'README.md'

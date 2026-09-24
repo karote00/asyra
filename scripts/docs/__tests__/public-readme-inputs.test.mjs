@@ -223,7 +223,7 @@ test('root README follows the product-to-proof reader journey', () => {
   assert.match(readme, /19 public `@asyra\/\*` ESM packages/u)
   assert.match(readme, /Node\.js 24\.x/u)
   assert.match(readme, /Production `3D`, `HYBRID`/u)
-  assert.match(readme, /does not accept external issues or contributions/u)
+  assert.match(readme, /External pull requests are not accepted by\s+default/u)
   assert.doesNotMatch(
     readme,
     /Runtime Atlas|release candidates|does not independently authorize a release|Yarn 4\.3\.1/u
