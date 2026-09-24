@@ -30,4 +30,5 @@ handing off changes:
 | Lint | `yarn lint` | `npm run lint` |
 | Build | `yarn react:build` | `npm run react:build` |
 
-The default App remains title/status-only; the priority example is opt-in.
+The default App owns title, status and position offsets; the priority example is
+opt-in.

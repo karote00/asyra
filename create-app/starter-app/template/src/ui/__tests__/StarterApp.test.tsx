@@ -33,7 +33,7 @@ describe('StarterApp storage failures', () => {
       })
 
       expect(host.textContent).toContain('Storage denied')
-      expect(host.textContent).toContain('Starter App')
+      expect(host.textContent).toContain('Item board')
     } finally {
       await act(async () => {
         root.unmount()

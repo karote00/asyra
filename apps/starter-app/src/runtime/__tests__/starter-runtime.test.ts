@@ -50,18 +50,126 @@ const settleProjection = async (): Promise<void> => {
 }
 
 describe('starter runtime canonical App path', () => {
-  it('lays out rendered starter items with complete non-overlapping bounds', () => {
-    const bounds = [0, 1, 2].map((index) => getStarterItemRenderBounds(index))
+  it('replays Add through one Undo and Redo with canonical evidence', async () => {
+    const runtime = createStarterRuntime({ storage: new MemoryStorage() })
+    const container = document.createElement('div')
+    try {
+      await runtime.start(container, { width: 320, height: 390 })
+      const firstId = runtime.feature.addItem({ title: 'First' })
+      const secondId = runtime.feature.addItem({ title: 'Second' })
+      await settleProjection()
+      expect(runtime.projection.getSnapshot().map((item) => item.id)).toEqual([
+        firstId,
+        secondId
+      ])
+      expect(runtime.core.getUndoHistoryDepth()).toBe(2)
 
-    bounds.forEach((item) => {
-      expect(item.width).toBeGreaterThan(0)
-      expect(item.height).toBeGreaterThan(0)
-    })
-    bounds.slice(1).forEach((item, index) => {
-      const previous = bounds[index]
-      const gap = item.y - (previous.y + previous.height)
-      expect(gap).toBeGreaterThan(0)
-    })
+      await runtime.undo()
+      await settleProjection()
+      expect(runtime.projection.getSnapshot().map((item) => item.id)).toEqual([
+        firstId
+      ])
+      await runtime.redo()
+      await settleProjection()
+      expect(runtime.projection.getSnapshot().map((item) => item.id)).toEqual([
+        firstId,
+        secondId
+      ])
+    } finally {
+      await runtime.dispose()
+    }
+  })
+
+  it('lays out rendered Items without overlap at desktop and narrow widths', () => {
+    for (const viewportWidth of [800, 364, 294]) {
+      const bounds = Array.from({ length: 9 }, (_, index) =>
+        getStarterItemRenderBounds(index, viewportWidth)
+      )
+      bounds.forEach((item, index) => {
+        expect(item.width).toBeGreaterThan(0)
+        expect(item.height).toBeGreaterThan(0)
+        expect(item.x + item.width).toBeLessThanOrEqual(viewportWidth)
+        bounds.slice(index + 1).forEach((other) => {
+          const separated =
+            item.x + item.width <= other.x ||
+            other.x + other.width <= item.x ||
+            item.y + item.height <= other.y ||
+            other.y + other.height <= item.y
+          expect(separated).toBe(true)
+        })
+      })
+    }
+  })
+
+  it('commits one move, replays it, and restores its saved position', async () => {
+    const storage = new MemoryStorage()
+    const runtime = createStarterRuntime({ storage })
+    const container = document.createElement('div')
+    try {
+      await runtime.start(container, { width: 800, height: 510 })
+      const itemId = runtime.feature.addItem({ title: 'Movable' })
+      await settleProjection()
+      const beforeMoveDepth = runtime.core.getUndoHistoryDepth()
+      runtime.feature.moveItem(itemId, { x: 64, y: 82 })
+      await settleProjection()
+      expect(runtime.core.getUndoHistoryDepth()).toBe(beforeMoveDepth + 1)
+      expect(runtime.projection.getSnapshot()[0]?.offset).toEqual({
+        x: 64,
+        y: 82
+      })
+      expect(getStarterItemRenderBounds(0, 800, { x: 64, y: 82 }).x).toBe(
+        getStarterItemRenderBounds(0, 800).x + 64
+      )
+      expect(findItemProperty(await runtime.core.save())).toMatchObject({
+        offsetX: 64,
+        offsetY: 82
+      })
+
+      await runtime.undo()
+      await settleProjection()
+      expect(runtime.projection.getSnapshot()[0]?.offset).toBeUndefined()
+      await runtime.redo()
+      await settleProjection()
+      expect(runtime.projection.getSnapshot()[0]?.offset).toEqual({
+        x: 64,
+        y: 82
+      })
+
+      expect((await runtime.save()).ok).toBe(true)
+      runtime.feature.moveItem(itemId, { x: 100, y: 110 })
+      await settleProjection()
+      expect((await runtime.reload()).ok).toBe(true)
+      expect(runtime.projection.getSnapshot()[0]?.offset).toEqual({
+        x: 64,
+        y: 82
+      })
+
+      const beforeInvalid = await runtime.core.save()
+      expect(() =>
+        runtime.feature.moveItem(itemId, { x: Number.NaN, y: 0 })
+      ).toThrow('position')
+      expect(await runtime.core.save()).toEqual(beforeInvalid)
+      const invalidSaved = clone(beforeInvalid)
+      findItemProperty(invalidSaved).offsetX = 'bad'
+      storage.setItem(
+        STARTER_STORAGE_SLOT,
+        JSON.stringify(createStarterDocumentWrapper(invalidSaved))
+      )
+      expect((await runtime.reload()).ok).toBe(false)
+      expect(await runtime.core.save()).toEqual(beforeInvalid)
+
+      const legacySaved = clone(beforeInvalid)
+      delete findItemProperty(legacySaved).offsetX
+      delete findItemProperty(legacySaved).offsetY
+      storage.setItem(
+        STARTER_STORAGE_SLOT,
+        JSON.stringify(createStarterDocumentWrapper(legacySaved))
+      )
+      expect((await runtime.reload()).ok).toBe(true)
+      expect(runtime.projection.getSnapshot()[0]?.offset).toBeUndefined()
+    } finally {
+      await runtime.dispose()
+    }
   })
 
   it('starts, edits, replays history, reloads admitted data, and disposes projections', async () => {
@@ -87,6 +195,10 @@ describe('starter runtime canonical App path', () => {
     expect(runtime.projection.getSnapshot()).toEqual([
       { id: itemId, title: 'First item', status: 'todo' }
     ])
+    expect(runtime.core.getUndoHistoryDepth()).toBe(1)
+    const beforeResize = await runtime.core.save()
+    runtime.resize(294, 390)
+    expect(await runtime.core.save()).toEqual(beforeResize)
     expect(runtime.core.getUndoHistoryDepth()).toBe(1)
 
     runtime.feature.editItem(itemId, {
