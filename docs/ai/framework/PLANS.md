@@ -4,6 +4,31 @@ Never record completed plans here.
 
 This file tracks framework planning topics and points to detailed references.
 
+## Adoption and Onboarding Program
+
+The [Adoption Entry and Onboarding Program](plans/adoption-entry-and-onboarding-program-plan.md)
+coordinates result-first entry, the generic starter, AI onboarding, product
+evidence, and community policy. Use one agent per bounded task, separate
+worktrees, and child PRs targeting `codex/adoption-onboarding`. Review and
+validate each child before authorized integration. No multi-agent delegation
+is authorized.
+
+Tasks 1-6 have integrated child results through PR #252 at
+`4b8015f6e01e5eaeba1227132e8dffbe076fa64b`; #254/#255 subsequently
+integrated the Starter build-owner repair and approved visual/drag board at
+`86674ccc21ead7ad73f1fe57cb602258efbc6f63`. The adoption plan records
+Task 7's refreshed integration validation and release handoff on that product
+source, including retained exact-input consumer evidence and newly run Starter
+gates. The original #253 CI failures are historical; its later pre-sync head,
+#254, and #255 completed their reported checks, while the updated #253 head
+still needs review and exact-head CI. The composite `docs:readme:check` remains
+blocked by unrelated Asyra Design template drift.
+
+`create-asyra-app` is unpublished, the live website does not yet show the
+integrated Starter entry, and Discussions is disabled. Review/CI, independent
+coding-agent evidence, publication, deployment, and public delivery remain
+separate; the program is not DONE.
+
 ## Active Public Entry Experience Plans
 
 These plans improve how new visitors understand and verify the existing public
@@ -12,20 +37,24 @@ or unsupported capability claims.
 
 1. Root README comprehension and evidence
 
-- Reorder the repository entry around real product proof, a concrete value
-  comparison, one verified public Feature, supported starting paths, ownership,
-  and current support.
+- Current baseline has already reordered the repository entry around real
+  product proof, a concrete value comparison, one verified public Feature,
+  supported starting paths, ownership, and current support.
 - Preserve the accepted public README inventory, generated-surface ownership,
   contribution policy, and validation contracts.
+- The README text/validator baseline is recorded, but visual rendering evidence
+  for desktop and narrow layouts with media present and media unavailable is
+  pending unless a future task cites committed artifacts for that matrix.
 - Plan:
   `docs/ai/framework/plans/root-readme-comprehension-and-evidence-plan.md`
 
 2. Website product and technical evidence
 
-- Preserve the accepted result-first landing identity while adding current
-  product, code, ownership, and readiness evidence.
-- Rebalance or consolidate conceptual sections instead of extending the page
-  with more unverified abstraction.
+- Current homepage authority is the accepted six-chapter spatial story at `/`,
+  with product evidence and three build/evaluate entries following it.
+- Treat the older product-and-technical-evidence and five-chapter brand-story
+  sections as version background unless a new homepage task explicitly changes
+  the current spatial-story contract.
 - Plan:
   `docs/ai/framework/plans/website-product-and-technical-evidence-plan.md`
 

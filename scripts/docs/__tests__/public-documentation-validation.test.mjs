@@ -7,7 +7,8 @@ import { fileURLToPath } from 'node:url'
 import {
   validateMarkdownLinks,
   validatePublicDocumentation,
-  validatePublicImportMentions
+  validatePublicImportMentions,
+  validateStarterEntry
 } from '../public-documentation-validation.mjs'
 
 const repositoryRoot = path.resolve(
@@ -35,6 +36,32 @@ test('public guides do not retain malformed copy fragments', () => {
   )
 
   assert.doesNotMatch(hierarchyGuide, /\bThe public\s+The\b/)
+})
+
+test('public overview routes Starter source, Design, and advanced composition without an unpublished command', () => {
+  const overview = fs.readFileSync(
+    path.join(repositoryRoot, 'docs/public/index.md'),
+    'utf8'
+  )
+  const starter = overview.indexOf('### Generic Starter source')
+  const design = overview.indexOf('### Complete Design product')
+  const advanced = overview.indexOf('### Advanced composition')
+  assert.ok(starter > 0 && starter < design && design < advanced)
+  assert.match(overview, /apps\/starter-app\/docs\/ONBOARDING\.md/u)
+  assert.match(overview, /not yet published to the public npm registry/u)
+  assert.match(overview, /does not include an AI\s+runtime/u)
+  assert.doesNotMatch(
+    overview,
+    /(?:npx|npm create|yarn create) create-asyra-app/u
+  )
+  assert.doesNotThrow(() => validateStarterEntry({ source: overview }))
+  assert.throws(
+    () =>
+      validateStarterEntry({
+        source: `${overview}\nnpx create-asyra-app my-app`
+      }),
+    /unpublished Starter command/u
+  )
 })
 
 test('link validation rejects missing and escaping targets', () => {

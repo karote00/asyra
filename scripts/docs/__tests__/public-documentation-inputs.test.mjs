@@ -60,6 +60,7 @@ test('documentation authority rules are explicit, bounded, and public-safe', asy
   assert.deepEqual(authority.allowedRootFiles, [
     'LICENSE',
     'SECURITY.md',
+    'SUPPORT.md',
     'package.json'
   ])
   assert.deepEqual(authority.allowedPlanFiles, [

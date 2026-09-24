@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
-import { spawnSync } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 import test from 'node:test'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 
 import { createWorkspaceDevAllPlan } from '../dev-all-plan.js'
 import {
@@ -781,3 +781,161 @@ test('Board, render timing and functional E2E have independent required jobs', (
   const main = readText('.github/workflows/main.yml')
   assert.match(main, /FLOW_E2E_RESULT: \$\{\{ needs\.design-e2e\.result \}\}/)
 })
+
+const runOwnedBuildCommand = (command, args, { githubActions, timeoutMs }) =>
+  new Promise((resolve, reject) => {
+    const env = { ...process.env, CI: 'true', FORCE_COLOR: '0' }
+    if (githubActions) env.GITHUB_ACTIONS = 'true'
+    else delete env.GITHUB_ACTIONS
+    const child = spawn(command, args, {
+      cwd: repositoryRoot,
+      env,
+      detached: true,
+      stdio: ['ignore', 'pipe', 'pipe']
+    })
+    let output = ''
+    let timedOut = false
+    let oversized = false
+    const killGroup = () => {
+      if (!child.pid) return
+      try {
+        process.kill(-child.pid, 'SIGKILL')
+      } catch (error) {
+        if (error.code !== 'ESRCH') throw error
+      }
+    }
+    const timer = setTimeout(() => {
+      timedOut = true
+      killGroup()
+    }, timeoutMs)
+    const append = (data) => {
+      output += data.toString()
+      if (output.length > 8 * 1024 * 1024) {
+        oversized = true
+        killGroup()
+      }
+    }
+    child.stdout.on('data', append)
+    child.stderr.on('data', append)
+    child.once('error', (error) => {
+      clearTimeout(timer)
+      reject(error)
+    })
+    child.once('close', (code) => {
+      clearTimeout(timer)
+      if (timedOut || oversized) {
+        const error = new Error(
+          timedOut ? `${command} timed out` : `${command} output exceeded limit`
+        )
+        error.output = output
+        reject(error)
+      } else resolve({ code, output })
+    })
+  })
+
+const countUtilsBuildExecutions = (output) =>
+  output.split(/\r?\n/u).filter((line) =>
+    // Turbo emits task starts as stream lines locally and group headers in CI.
+    /@asyra\/utils:build:utils: cache bypass, force executing|::group::@asyra\/utils:build:utils/u.test(
+      line
+    )
+  ).length
+
+test('build execution counter includes nested local and CI task starts', () => {
+  const outer =
+    '@asyra/utils:build:utils: cache bypass, force executing a6eb2e98342a9a8d'
+  const nestedLocal = `@asyra/starter-app:react:build: ${outer}`
+  const nestedCi =
+    '@asyra/starter-app:react:build: ::group::@asyra/utils:build:utils'
+  assert.equal(countUtilsBuildExecutions(`${outer}\n${nestedLocal}`), 2)
+  assert.equal(countUtilsBuildExecutions(`${outer}\n${nestedCi}`), 2)
+  assert.equal(countUtilsBuildExecutions(outer), 1)
+})
+
+test('a timed-out build command terminates its descendant process', async () => {
+  let failure
+  try {
+    await runOwnedBuildCommand(
+      'sh',
+      ['-c', 'sleep 30 & echo "descendant=$!"; wait'],
+      { githubActions: false, timeoutMs: 100 }
+    )
+  } catch (error) {
+    failure = error
+  }
+  assert.match(failure?.message ?? '', /timed out/u)
+  const descendantPid = Number(failure.output.match(/descendant=(\d+)/u)?.[1])
+  assert.ok(Number.isInteger(descendantPid) && descendantPid > 0)
+  let status = ''
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    status = spawnSync('ps', ['-o', 'stat=', '-p', String(descendantPid)], {
+      encoding: 'utf8'
+    }).stdout.trim()
+    if (status === '' || status.startsWith('Z')) break
+    await new Promise((resolve) => setTimeout(resolve, 50))
+  }
+  assert.ok(status === '' || status.startsWith('Z'), status)
+})
+
+test(
+  'Starter build entries execute each Framework dependency once with valid artifacts',
+  { timeout: 300_000 },
+  async () => {
+    const runBuild = async (args, githubActions) => {
+      const result = await runOwnedBuildCommand('yarn', args, {
+        githubActions,
+        timeoutMs: 120_000
+      })
+      assert.equal(result.code, 0, result.output.slice(-4000))
+      return result.output
+    }
+    const assertOneUtilsBuild = (output, entry) => {
+      const count = countUtilsBuildExecutions(output)
+      assert.equal(count, 1, `${entry} rebuilt @asyra/utils ${count} times`)
+    }
+
+    for (const githubActions of [false, true]) {
+      const environment = githubActions ? 'GitHub Actions' : 'local'
+      const orchestrated = await runBuild(
+        [
+          'turbo',
+          'run',
+          'react:build',
+          '--filter',
+          '@asyra/starter-app',
+          '--concurrency=1',
+          '--log-order=stream',
+          '--log-prefix=task'
+        ],
+        githubActions
+      )
+      assertOneUtilsBuild(orchestrated, `${environment} Turbo react:build`)
+
+      const standalone = await runBuild(
+        ['workspace', '@asyra/starter-app', 'build'],
+        githubActions
+      )
+      assertOneUtilsBuild(standalone, `${environment} direct Starter build`)
+    }
+
+    assert.equal(
+      fs.existsSync(
+        path.join(repositoryRoot, 'apps/starter-app/dist/frontend/index.html')
+      ),
+      true
+    )
+    const utils = await import(
+      pathToFileURL(path.join(repositoryRoot, 'packages/utils/dist/index.js'))
+    )
+    const props = await import(
+      pathToFileURL(
+        path.join(
+          repositoryRoot,
+          'packages/props-manager/dist/components/base.js'
+        )
+      )
+    )
+    assert.equal(typeof utils.Setter, 'function')
+    assert.equal(typeof props.default, 'function')
+  }
+)

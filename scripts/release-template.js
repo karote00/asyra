@@ -74,6 +74,9 @@ const DEST_DIR = CHECK ? CHECK_DIRECTORY : CONFIGURED_DEST_DIR
 const CLEAN_FILES = config.cleanFiles || []
 const REMOVE_SCRIPTS = config.removeScripts || []
 const REMOVE_SCRIPT_ARGUMENTS = config.removeScriptArguments || {}
+const SCRIPT_OVERRIDES = config.scriptOverrides || {}
+const STANDALONE_VITEST_CONFIG = config.standaloneVitestConfig === true
+const PACKABLE_GITIGNORE = config.packableGitignore === true
 const SOURCE_README = path.join(SRC_DIR, 'README.md')
 const SOURCE_EXAMPLE_ENVIRONMENT = path.join(SRC_DIR, '.env.example')
 const TEMPLATE_LICENSE = config.license
@@ -235,6 +238,12 @@ if (!fs.existsSync(pkgPath)) {
         ([scriptName]) => !REMOVE_SCRIPTS.includes(scriptName)
       )
     )
+    for (const [scriptName, scriptValue] of Object.entries(SCRIPT_OVERRIDES)) {
+      if (typeof scriptValue !== 'string') {
+        throw new Error(`Script override for ${scriptName} must be a string`)
+      }
+      pkg.scripts[scriptName] = scriptValue
+    }
     for (const [scriptName, scriptArguments] of Object.entries(
       REMOVE_SCRIPT_ARGUMENTS
     )) {
@@ -356,6 +365,23 @@ export default tseslint.config(
 fs.writeFileSync(eslintConfigDest, eslintConfigContent)
 if (VERBOSE) console.log('Created eslint.config.js for template')
 
+if (STANDALONE_VITEST_CONFIG) {
+  const vitestConfigDest = path.join(DEST_DIR, 'vitest.config.ts')
+  const vitestConfigContent = `import { defineConfig } from 'vitest/config'
+
+export default defineConfig({
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
+    setupFiles: ['./src/runtime/__tests__/setup-canvas.ts']
+  }
+})
+`
+  fs.writeFileSync(vitestConfigDest, vitestConfigContent)
+  if (VERBOSE) console.log('Created standalone vitest.config.ts')
+}
+
 // ----------------------
 // Copy root Prettier config
 // ----------------------
@@ -375,6 +401,10 @@ const gitignoreDest = path.join(DEST_DIR, '.gitignore')
 if (fs.existsSync(gitignoreSrc)) {
   fse.copySync(gitignoreSrc, gitignoreDest)
   if (VERBOSE) console.log('Copied .gitignore to template')
+  if (PACKABLE_GITIGNORE) {
+    fse.copySync(gitignoreSrc, path.join(DEST_DIR, 'gitignore'))
+    if (VERBOSE) console.log('Copied packable gitignore to template')
+  }
 }
 
 const IGNORED_COMPARISON_DIRECTORIES = new Set([

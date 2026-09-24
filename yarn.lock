@@ -457,6 +457,26 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@asyra/starter-app@workspace:apps/starter-app":
+  version: 0.0.0-use.local
+  resolution: "@asyra/starter-app@workspace:apps/starter-app"
+  dependencies:
+    "@asyra/core": "workspace:*"
+    "@asyra/preset": "workspace:*"
+    "@asyra/utils": "workspace:*"
+    "@types/node": "npm:^24.13.3"
+    "@types/react": "npm:^19.2.18"
+    "@types/react-dom": "npm:^19.2.5"
+    "@vitejs/plugin-react": "npm:^4.7.0"
+    jsdom: "npm:^27.4.0"
+    react: "npm:^19.2.8"
+    react-dom: "npm:^19.2.8"
+    typescript: "npm:^5.7.2"
+    vite: "npm:^6.4.3"
+    vitest: "npm:^3.2.6"
+  languageName: unknown
+  linkType: soft
+
 "@asyra/system-context@workspace:*, @asyra/system-context@workspace:packages/system-context":
   version: 0.0.0-use.local
   resolution: "@asyra/system-context@workspace:packages/system-context"
@@ -5485,6 +5505,14 @@ __metadata:
   checksum: 10c0/0382a9ed13208f8bfc22ca2f62b364855207dffdb73dc26e150ade78c3093f1cf56172df2dd460c8caf2afa91c0ed4ec8a88c62f8f9cd1cf423d26506aa8797a
   languageName: node
   linkType: hard
+
+"create-asyra-app@workspace:create-app/starter-app":
+  version: 0.0.0-use.local
+  resolution: "create-asyra-app@workspace:create-app/starter-app"
+  bin:
+    create-asyra-app: ./bin/index.js
+  languageName: unknown
+  linkType: soft
 
 "create-asyra-design-app@workspace:create-app/asyra-design":
   version: 0.0.0-use.local

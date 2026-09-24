@@ -42,13 +42,18 @@ credential access, network request, timer, listener, or Feature registration
 exists. Apps own provider/backend policy, permissions, confirmation, action
 executors, and transactions.
 
-## Security reporting
+## Community and security reporting
 
-Report suspected vulnerabilities through the repository's
-[private GitHub security advisory](https://github.com/karote00/asyra/security/advisories/new).
-Do not disclose vulnerability details, credentials, provider tokens, document
-contents, or personal data in a public issue. This repository does not promise
-support through public issues or pull requests.
+GitHub Discussions is the intended public channel for community conversation and
+general help. Discussions is not enabled for this repository yet, so there is
+currently no public community support destination. GitHub Issues are not a
+general public support channel. External pull requests are not accepted by
+default. Community participation creates no SLA or response deadline.
+
+For suspected vulnerabilities, follow the repository's
+[security policy](../../../SECURITY.md) and submit a private GitHub security
+advisory. Do not disclose vulnerability details, credentials, provider tokens,
+document contents, or personal data publicly.
 
 ## Migration and deprecation
 
@@ -95,6 +100,7 @@ software is provided without warranty under the terms in the repository
 ## Canonical sources
 
 - [Framework release support](../../ai/framework/RELEASE_SUPPORT.md)
+- [Community and support policy](../../../SUPPORT.md)
 - [Security policy](../../../SECURITY.md)
 - [MIT License](../../../LICENSE)
 - [Runtime roadmap](../learn/runtime-boundaries-roadmap.md)

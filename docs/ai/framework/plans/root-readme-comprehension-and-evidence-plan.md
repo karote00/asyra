@@ -2,7 +2,38 @@
 
 ## Status
 
-Planned. Implementation has not started.
+Partially implemented and locally verified at adoption baseline
+`b44be9e77b6a742ad8094da008b4122c06d51a2a` on 2026-09-23. The current root
+`README.md` already contains the product-first composition this plan originally
+requested: Asyra Design product proof, 7,076-element evidence, one
+conventional-versus-Asyra comparison, a maintained Undo/Redo Feature excerpt,
+supported package-first and complete Design product starting paths, ownership
+boundaries, current support, and explicit non-capabilities.
+
+The implemented README shape is covered by existing public README validators and
+contract tests, including `scripts/docs/__tests__/public-readme-inputs.test.mjs`.
+The full `yarn docs:readme:check` gate additionally runs package README
+freshness, public README validation, `release:app:check --prod=asyra-design`,
+and public-documentation freshness. The #243 local Node checks covered focused
+README input/validation entrypoints only; they did not execute that complete
+Yarn gate because this worktree did not have Yarn install state. This is an
+implementation and local verification baseline, not a claim that every stage
+below has completed review, merge, publication, visual review, or the later
+adoption journey. Future README changes for the generic starter or public
+activation must be reconciled through the
+[Adoption Entry and Onboarding Program](adoption-entry-and-onboarding-program-plan.md),
+which owns the overall adoption journey.
+
+Task 5 locally reviewed the new Starter / Design / advanced entry hierarchy
+from integration head `b785160c5`. GitHub's GFM renderer produced the README
+fragment, then a local browser captured desktop (1200px) and narrow (390px)
+views with images present and unavailable. Inspected captures remain in the
+Task 5 worktree under
+`apps/asyra-framework-site/test-results/readme-*-{top,entry,evidence}.png`.
+Headings, links, alt text and captions remain readable without horizontal
+overflow. The complete `docs:readme:check` passes its package README and
+public README stages, then fails at pre-existing Asyra Design generated-template
+drift (15 files). Task 5 does not claim the full gate.
 
 This plan follows the completed
 [Asyra Public README and Entrypoint Alignment Plan](completed/asyra-public-readme-and-entrypoint-alignment-plan.md).
@@ -31,7 +62,7 @@ rollback, canonical state, projection, persistence, and support boundaries. Its
 first half nevertheless asks a new reader to understand several abstract
 concepts primarily through prose and Mermaid diagrams.
 
-The missing communication layers are:
+The original missing communication layers were:
 
 - direct product evidence showing a real product built with Asyra;
 - a concrete comparison between repeated conventional product plumbing and one
@@ -42,6 +73,12 @@ The missing communication layers are:
   and
 - a shorter reader journey from first impression to the correct supported
   starting point.
+
+At the adoption baseline, the current README implements each layer above with
+existing product evidence and public-entry constraints. Remaining work is
+review, integration tracking, and later updates for adoption artifacts that do
+not exist yet, especially the generic `create-asyra-app` path. Do not revert to
+the older "not started" status merely because later adoption tasks remain open.
 
 ## Bounded Task Contract
 
@@ -63,7 +100,12 @@ The missing communication layers are:
 - **Required gates:** focused root README contract tests, full public README
   check, public-documentation freshness check, link validation, copy-style
   validation, Markdown rendering review on GitHub-compatible desktop and narrow
-  layouts, and a final bounded diff review.
+  layouts, and a final bounded diff review. The text/semantic checks and local
+  Node validators have existing baseline evidence; the GitHub-compatible
+  desktop/narrow rendering review remains the README owner's responsibility
+  whenever README layout or media changes. No existing evidence was found in
+  this bounded repair proving the desktop/narrow, media-present/media-missing
+  rendering matrix, so that visual acceptance is pending rather than completed.
 - **Excluded:** package README rewrites, App or CLI README rewrites, Framework or
   App behavior changes, new public APIs, new packages, website implementation,
   production deployment, and unsupported future capability claims.
@@ -213,36 +255,46 @@ Split the current broad domain story into three explicit levels:
 
 ### Stage 1: Freeze claims and evidence
 
-- Map each proposed section to its public source of truth.
-- Select the one real-product proof and one minimal Feature proof.
-- Record the current README assertions that must remain true.
+- Implemented at baseline: proposed sections map to current public support,
+  release, Asyra Design, public Feature, and README validation owners.
+- Implemented at baseline: the real-product proof is Asyra Design, including
+  the 7,076-element sample and CRDT evidence; the minimal Feature proof is the
+  maintained Undo/Redo Feature excerpt.
+- Implemented at baseline: current README assertions are covered by
+  `scripts/docs/__tests__/public-readme-inputs.test.mjs` and
+  `scripts/docs/public-readme-validation.mjs`.
 - Stop before composition if either proof is unavailable or misleading.
 
 ### Stage 2: Produce a text-first README composition
 
-- Reorder and compress existing content before adding media.
-- Implement the comparison and supported-path sections with semantic Markdown or
-  minimal GitHub-safe HTML.
-- Confirm that the text-only reading still tells the complete story.
-- Run focused README assertions and link checks.
+- Implemented at baseline: README opens with `Build product features, not
+  infrastructure`, provides product proof before internal architecture detail,
+  and uses GitHub-safe Markdown/HTML for links and media.
+- Implemented at baseline: comparison and supported-path sections are present.
+- Verified at baseline by the existing focused README assertions and link
+  validation. Future generic-starter activation remains out of scope for this
+  completed slice.
 
 ### Stage 3: Add reviewed product evidence
 
-- Add only the approved media and accessible caption.
-- Review desktop, narrow viewport, light presentation, dark presentation, and
-  image-unavailable reading.
-- Verify that the image proves a claim rather than merely decorating the page.
+- Implemented at baseline: committed Asyra Design product evidence appears in
+  the README with meaningful alternative text and captions.
+- Locally verified by focused README contract checks and direct public README
+  validation entrypoints. Product-owner review remains separate.
+- Task 5 executed the GitHub-compatible desktop/narrow, media-present and
+  media-unavailable matrix noted above. Future README layout or media changes
+  require renewed rendering evidence for their own diff.
 
 ### Stage 4: Close contracts and validate
 
-- Update focused root README tests for the new semantic anchors while removing
-  assertions that encoded superseded wording rather than durable behavior.
-- Run `yarn docs:readme:check` and all directly affected copy and release-record
-  tests.
-- Regenerate only the formally owned freshness artifact if required by the
-  accepted documentation workflow.
-- Review the final diff for unsupported claims, duplication, broken links,
-  accidental downstream README changes, and unnecessary file weight.
+- Implemented at baseline: focused root README tests assert the new semantic
+  anchors and reject retired entry surfaces.
+- Required local validation for this baseline remains the complete
+  `yarn docs:readme:check` plus final bounded diff review. The #243 work ran
+  focused Node checks for the README inputs/validation surface; record those as
+  executed checks only, not as a complete equivalent to the Yarn gate.
+- Product-owner review, merge state, public release, and later adoption-entry
+  updates remain separate states.
 
 ## Acceptance Cases
 
@@ -264,13 +316,16 @@ Split the current broad domain story into three explicit levels:
 
 ## Definition of Done
 
-- The root README completes the target reader journey with fewer abstract
-  paragraphs before the first concrete proof.
-- Product, comparison, code, architecture, and support evidence each serve a
-  distinct reader question.
-- Every visible claim and example is traceable to a maintained current owner.
-- All root and corpus-level public README gates pass.
-- GitHub-compatible visual review passes at desktop and narrow widths with and
-  without media.
+- Baseline implementation satisfies the target reader journey, distinct product,
+  comparison, code, architecture and support evidence, and traceability to
+  maintained current owners.
+- All root and corpus-level public README gates must pass for any new change to
+  this plan or README.
+- GitHub-compatible rendering review remains required when README layout or
+  media changes again, covering desktop and narrow layouts plus media-present
+  and media-unavailable states. Task 5's local evidence path is recorded above;
+  the full README gate remains blocked by unrelated Design template drift.
+- Product-owner review, merge, public release, and generic-starter activation
+  are separate adoption program states.
 - No package, App, CLI, Framework runtime, or website behavior changes are
-  included.
+  authorized by this plan.
