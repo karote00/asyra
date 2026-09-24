@@ -25,7 +25,15 @@ test('package README generator owns the exact release package set', async () => 
     assert.doesNotMatch(readme.content, /examples:run|docs\/examples/)
     assert.match(
       readme.content,
-      /This repository does not accept external issues or contributions/
+      /External pull requests are not accepted by\s+default/u
+    )
+    assert.match(
+      readme.content,
+      /href="https:\/\/github\.com\/karote00\/asyra\/blob\/main\/SUPPORT\.md" target="_blank" rel="noopener noreferrer"/u
+    )
+    assert.match(
+      readme.content,
+      /href="https:\/\/github\.com\/karote00\/asyra\/blob\/main\/SECURITY\.md" target="_blank" rel="noopener noreferrer"/u
     )
   })
 })

@@ -278,13 +278,14 @@ Node does not establish a supported Headless Core or server/worker lifecycle.
 
 Asyra is publicly available for use, learning, inspection, and forking.
 
-**This repository does not accept external issues or contributions, including
-pull requests.**
+GitHub Discussions is the intended public channel for community conversation and
+general help. Discussions is not enabled for this repository yet, so there is
+currently no public community support destination. GitHub Issues are not a
+general public support channel. External pull requests are not accepted by
+default. Community participation creates no SLA or response deadline.
 
-The codebase is intentionally curated as one cohesive reference implementation
-for Communication-Driven Development and AI-assisted workflows.
-
-For security-sensitive reports, follow [SECURITY.md](SECURITY.md).
+Read [SUPPORT.md](SUPPORT.md) for the current policy. For suspected
+vulnerabilities, follow [SECURITY.md](SECURITY.md) and report privately.
 
 ## License
 
