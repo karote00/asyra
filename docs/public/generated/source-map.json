@@ -2,7 +2,7 @@
   "pages": [
     {
       "id": "overview",
-      "pageSha256": "64a854fecee1c9eb02748d9e2e8b4d7a66d6bf989f0c7bbfa9d3485ac75c9794",
+      "pageSha256": "09b5c9d12fcc3e2148a667d28b3a8579b487a56f44553c8507184b7f822bb5fd",
       "sources": [
         {
           "path": "docs/ai/framework/FRAMEWORK_ESSENTIALS.md",

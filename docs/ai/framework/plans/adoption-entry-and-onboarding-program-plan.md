@@ -530,8 +530,8 @@ one bounded slice without completing the whole task or adoption program.
 | 1 - Reconcile contracts | This plan, existing entry/README/site plans, directly relevant public-entry authorities | In progress. Example-link repair is recorded above. README/homepage baseline is recorded at `b44be9e77`; the current root README composition and six-chapter homepage authority are implemented and locally testable at that baseline, but README desktop/narrow media-present/media-missing rendering evidence remains pending. PR #245, not closed PR #244, records the starter-readiness documentation. This correction records canonical starter source naming, projection/load/save obligations, and release/generation/consumer owner boundaries. Runtime proof, complete `docs:readme:check`, support/community, FieldScope claim reconciliation, merge/publication/deployment, and public activation remain separate. Documentation PR only; no runtime or site behavior changes. |
 | 2 - Minimal canonical App | `apps/starter-app`, workspace `@asyra/starter-app`, and direct app-local tests/docs | Implemented in child PR #247. Validation recorded on the PR: naming guard via Node entrypoints, `yarn workspace @asyra/starter-app test`, `typecheck`, `lint`, `react:build`, and `test:e2e`; `git diff --check --cached` passed. E2E launched the real Vite App at `http://127.0.0.1:5192` in desktop and narrow Chrome projects and exercised add/edit/status/save/undo/redo/reload. CI remains pending until PR checks report. This slice does not create CLI/template/release/public activation/community/FieldScope/Design AI surfaces and does not complete the adoption program. |
 | 3 - CLI and standalone template | Public `create-asyra-app` CLI, `create-app/starter-app`, `release-configs/starter-app.json`, generated `create-app/starter-app/template`, and directly affected release/generation tests | Merged in child PR #249 at `b1dcfa106b44a0f3b56ee605612b072e2dfb3602` into `codex/adoption-onboarding`; Task 4 starts from that exact integrated head. Task 3's local validation covered naming, focused CLI/template tests, Starter test/typecheck/lint/react:build, root lint, template sync, package artifacts, and packed-artifact template consumer install/typecheck/lint/build/test/startup smoke. This records Task 3 integration, not registry publication or public activation. |
-| 4 - AI-first starter onboarding | Canonical Starter AGENTS/onboarding/prompt, opt-in priority exercise and formal tests, generated template sync | Implemented in child PR #250 from integrated Task 3 head `b1dcfa106`; CI remains separate from local validation. The priority tests failed before implementation and then passed through the App schema, Feature/API transaction, projection and Save/Reload owners. Starter test/typecheck/lint/build, desktop/narrow E2E, CLI/template tests, root lint, naming, template sync and packed-artifact generated consumer passed locally. The consumer reported `READY` for install/typecheck/lint/build/test/startup smoke on Node `v24.13.0` and Yarn `4.3.1`. No independent fresh coding-agent conversation or registry verification was performed; no AI provider was added. |
-| 5 - Entry routing and product evidence | Root README, public docs/llms generators, existing homepage entry points and verified case evidence | Generic / Design / advanced hierarchy, current links, truthful App evidence, preserved visual/accessibility contracts. Reconcile only remaining README/site plan work. Depends on tasks 3-4; public activation waits for verified CLI availability. |
+| 4 - AI-first starter onboarding | Canonical Starter AGENTS/onboarding/prompt, opt-in priority exercise and formal tests, generated template sync | Merged in child PR #250 at `b785160c5645212509d3e1ca1ed4e8647922961c` into `codex/adoption-onboarding`. The priority tests failed before implementation and then passed through the App schema, Feature/API transaction, projection and Save/Reload owners. Starter test/typecheck/lint/build, desktop/narrow E2E, CLI/template tests, root lint, naming, template sync and packed-artifact generated consumer passed locally. The consumer reported `READY` for install/typecheck/lint/build/test/startup smoke on Node `v24.13.0` and Yarn `4.3.1`. No independent fresh coding-agent conversation or registry verification was performed; no AI provider was added. |
+| 5 - Entry routing and product evidence | Root README, public docs/llms generators, existing homepage entry points and verified case evidence | In progress from integrated Task 4 head `b785160c5`. Entry copy, source links, generated docs, validators, and formal tests are locally implemented. Registry returned 404 for `create-asyra-app`; Starter public activation remains pending. Registry `latest` for `create-asyra-design-app` was `0.5.12` with a published tarball. Focused docs tests, public generation/validation, website build/unit/route/18 browser cases, and README visual matrix passed locally. Full `docs:readme:check` was executed and stopped at Asyra Design generated-template drift (15 files) outside Task 5; its applicable README and public documentation components passed separately. Do not mark the composite gate passed or synchronize Design output for this task. Child PR review, CI, integration, release, publication, and deployment remain separate states. |
 | 6 - Community and support | SUPPORT.md, canonical support generators/validators, directly affected App release wording | Synchronized policy, private security route, no SLA or implied PR acceptance. Confirm Discussions availability before publishing active links. Sim reporting path may change; remaining release obligations stay explicit. Depends on task 1; remains sequential by default. |
 | 7 - Integrated readiness and release handoff | Affected gate results, release records, this plan and index | Review all PRs and exact integrated source; verify standalone consumption, generated docs/templates, relevant site routes and links. Identify external operations separately. Public command and live destinations must work before claiming the adoption journey delivered. |
 
@@ -682,6 +682,88 @@ example cannot remain a small App-owned opt-in exercise without copying the
 whole App or adding a second template tool, report the concrete tradeoff before
 expanding scope. Stop if a required local gate cannot pass; CI is not the
 diagnostic owner.
+
+### Task 5 bounded contract - entry routing and product evidence
+
+Baseline: `origin/codex/adoption-onboarding` at `b785160c5645212509d3e1ca1ed4e8647922961c`,
+which includes merged PR #250. The public npm registry returned 404 for
+`create-asyra-app` on 2026-09-24; the local packed-artifact result from Task 3/4
+does not establish registry availability. Recheck the registry before public
+activation in a separately authorized release slice.
+
+Objective and observable completion: root README, public documentation
+discovery, and the existing homepage resource section explain the Generic
+Starter, complete Design product, and advanced composition in that order.
+Every active link resolves to an existing, applicable destination. The
+unpublished Starter has a source-and-guidance path but no public install
+command or active installation CTA. Product examples identify what Framework
+supplies and what each App owns, with current maturity limits.
+
+Authorized mutation scope: this plan's Task 4/5 status and this contract;
+`README.md`; `docs/public/index.md` and the public `llms.txt` generator source;
+generator-produced documentation indexes and website `llms.txt` only through
+`yarn docs:public`; `apps/asyra-framework-site/components/home-resources.tsx`;
+direct README, public documentation, and homepage tests and validators; and
+short evidence updates to the existing root README and homepage plans. One
+pending empty Changeset records this mixed documentation/site change for the
+repository's PR gate without versioning a package. The
+six-chapter story, product image, other routes, Framework/App functionality,
+and the fixed public page inventory remain unchanged.
+
+Fixed discovery and proof: inspect the current entry sources and destination
+files/routes, Starter onboarding/priority source and tests, the published
+Design CLI registry identity/version and integrated Design case/source and
+product evidence tests, FieldScope crop and Sim workbench source/tests,
+current support guide, public documentation generator/validators, and the
+homepage contract/Inspector. Registry queries are read-only. The published
+version, integrated source, and another task's uncommitted Design work are
+distinct evidence; never use pending AI-panel work to support public claims.
+After edits begin, review only these direct contracts, consumers, negative
+claims, and gates.
+
+Acceptance cases and permanent tests:
+
+- README and docs present Starter source/onboarding before the published Design
+  CLI and advanced composition, with distinct suitability and live destinations.
+- Registry-unpublished status remains explicit; validators reject a public
+  `create-asyra-app` execution command or installation CTA until a later
+  release-owned activation changes the contract and tests.
+- Coding-agent source edits and the opt-in priority exercise are described as
+  App-owned extension, never as built-in AI runtime behavior.
+- Design's editable 2D product proof, FieldScope's implemented crops, and Sim's
+  local development workbench are grounded in direct source/tests. No official
+  production 3D Preset, built-in physics, or industrial safety is inferred.
+- Public docs generation and both `llms.txt` copies remain synchronized. The
+  homepage keeps the existing resource composition, native navigation,
+  responsive presentation, reduced-motion and no-JavaScript contracts.
+
+Required local gates after the last relevant edit: `yarn lint:naming` before
+identifier-bearing changes and at closure; focused README/docs and homepage
+tests; `yarn docs:public`, `yarn docs:public:check`,
+`yarn docs:public:validate`, and the applicable README components
+`yarn docs:readme:packages:check` and `yarn docs:readme:validate`. Execute the
+requested full `yarn docs:readme:check` and report its exact result. Its bundled
+`release:app:check --prod=asyra-design` compares a Design template that another
+task is actively changing; a failure there is not a Task 5 pass or a Task 5
+mutation authorization. Do not rerun that unrelated Design gate before push.
+The applicable website gates are
+`test:local`, scoped lint, typecheck, production build, public route smoke,
+and focused desktop/mobile Playwright navigation, reduced-motion, no-JS, and
+visual review; GitHub-compatible README desktop/narrow media-present and
+media-unavailable captures; root `yarn lint:ci`; `git diff --check`, staged
+review, and the exact-base Changeset PR check where applicable. Repeat the
+affected local gates before each push; CI on the exact PR head is a separate
+reported state.
+
+Stop conditions and exclusions: stop on a missing or contradictory homepage
+Inspector/active product contract, unusable destination, or an in-scope required
+local gate failure. Do not expand into Task 6 support policy, product code, Framework
+refactoring, a new public documentation page/inventory, a separate agent
+exercise, Asyra Design runtime/AI panel/template/generation/release work,
+Design full build/E2E/clean-consumer gates, package publication, public CLI
+activation, deployment, tag, release, or merge. Publication and any active public installation CTA require separate
+authorization and fresh registry proof. This task may commit, push, and open
+one child PR against `codex/adoption-onboarding` under the user's authorization.
 
 ## Prompt and review contract
 

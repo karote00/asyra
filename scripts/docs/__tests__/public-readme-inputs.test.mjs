@@ -150,12 +150,29 @@ test('root README follows the product-to-proof reader journey', () => {
   assert.equal(featureExcerpt, undoRedoSource.trim())
   assert.match(readme, /Build a transaction-safe Feature/u)
   assert.match(readme, /## Choose your starting point/u)
+  const starterEntry = readme.indexOf('### Generic Starter')
+  const designEntry = readme.indexOf('### Complete design product')
+  const advancedEntry = readme.indexOf('### Advanced composition')
+  assert.ok(starterEntry > 0 && starterEntry < designEntry)
+  assert.ok(designEntry < advancedEntry)
+  assert.match(readme, /apps\/starter-app\/README\.md/u)
+  assert.match(readme, /apps\/starter-app\/docs\/ONBOARDING\.md/u)
+  assert.match(readme, /apps\/starter-app\/docs\/PRIORITY_EXERCISE\.md/u)
+  assert.match(readme, /not yet published to the public npm registry/u)
+  assert.doesNotMatch(
+    readme,
+    /(?:npx|npm create|yarn create) create-asyra-app/u
+  )
+  assert.doesNotMatch(
+    readme,
+    /built-in AI runtime|built-in physics|industrial safety guarantee/iu
+  )
   assert.match(readme, /npm install @asyra\/core/u)
   assert.match(
     readme,
     /npx create-asyra-design-app my-product --package-manager=npm[\s\S]*npm run start/u
   )
-  assert.doesNotMatch(readme, /create-asyra-app|one React homepage/u)
+  assert.doesNotMatch(readme, /one React homepage/u)
   assert.match(readme, /Build product features, not infrastructure/u)
   assert.match(
     readme,
@@ -178,6 +195,29 @@ test('root README follows the product-to-proof reader journey', () => {
   )
   assert.doesNotMatch(readme, /flowchart (TD|LR)/u)
   assert.match(readme, /### Built and demonstrated today/u)
+  assert.match(readme, /editable 2D and\s+3D tools/u)
+  assert.match(readme, /FieldScope[\s\S]*?cucumber and tomato crops/u)
+  assert.match(readme, /Asyra Sim[\s\S]*?development checkpoint/u)
+  assert.match(readme, /apps\/fieldscope\/src\/domain\/crop-layout\.ts/u)
+  assert.match(readme, /apps\/asyra-sim\/README\.md/u)
+  assert.doesNotMatch(readme, /FieldScope[^\n]*no plants/u)
+  assert.match(
+    fs.readFileSync(
+      path.join(
+        repositoryRoot,
+        'apps/fieldscope/src/domain/__tests__/crop-layout.test.ts'
+      ),
+      'utf8'
+    ),
+    /plants both cultivars at 20 cm spacing/u
+  )
+  assert.match(
+    fs.readFileSync(
+      path.join(repositoryRoot, 'apps/asyra-sim/README.md'),
+      'utf8'
+    ),
+    /Development checkpoint, not R0/u
+  )
   assert.match(readme, /### Compose your domain/u)
   assert.match(readme, /### Not turnkey modules/u)
   assert.match(readme, /19 public `@asyra\/\*` ESM packages/u)
