@@ -24,9 +24,12 @@ gates. The original #253 CI failures are historical; its later pre-sync head,
 still needs review and exact-head CI. The composite `docs:readme:check` remains
 blocked by unrelated Asyra Design template drift.
 
+The independent single-agent priority onboarding run from `main` is recorded
+in the adoption plan with a retained generated consumer and formal tests.
+
 `create-asyra-app` is unpublished, the live website does not yet show the
 integrated Starter entry, and Discussions is disabled. Review/CI, independent
-coding-agent evidence, publication, deployment, and public delivery remain
+coding-agent review/CI, publication, deployment, and public delivery remain
 separate; the program is not DONE.
 
 ## Active Public Entry Experience Plans

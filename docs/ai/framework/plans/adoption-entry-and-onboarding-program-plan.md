@@ -17,9 +17,9 @@ title-draft review fix (#255) subsequently integrated at
 `f518874e805ac598a0dd4ce85e8f5e1f732e3943` and
 `86674ccc21ead7ad73f1fe57cb602258efbc6f63`. Task 7 integration
 validation and handoff are recorded below; its documentation PR #253 remains
-in review. Public CLI activation, current website deployment, independent
-coding-agent evidence, and release operations remain separate; the adoption
-journey is not DONE.
+in review. Public CLI activation, current website deployment, and release
+operations remain separate. Independent coding-agent evidence was still pending
+at that handoff; the adoption journey is not DONE.
 
 The user selected sequential, separate conversations with PR review between
 tasks to control usage. This agreement supersedes the original proposal's
@@ -640,6 +640,36 @@ activated only by an authorized repository-setting change and then its public
 policy/link revalidated; the independent coding-agent case and CI/review outcomes
 must be reported on their own evidence. The Design drift requires its own owner
 to restore the composite docs gate before a release that requires that gate.
+
+### Independent AI onboarding verification from main
+
+A separate single-agent conversation started from fetched `origin/main` at
+`e550e87b29824f72a1430eb34eac98f18c33235d`, after the adoption work had
+reached main. Its PR base is `main`, not the former adoption integration branch.
+The agent read the adoption plan's independent-verification scope and the
+generated Starter's `AGENTS.md`, `docs/ONBOARDING.md`, and unchanged
+`docs/PRIORITY_AGENT_PROMPT.md`. It generated a standalone Yarn consumer with
+the local CLI and used the existing local package-packing flow for Framework
+dependencies. The retained consumer and formal tests are in
+`fixtures/adoption-priority-consumer/`; its `VERIFICATION.md` records the exact
+commands and evidence boundary.
+
+The prompt was completed without an extra human hint or a private monorepo
+source import. Three new formal assertions failed before implementation:
+two default-runtime cases rejected priority as an unsupported field and the UI
+had no Priority control. After the consumer-only edit, 21/21 tests passed,
+including the original title/status/drag cases, as did consumer typecheck,
+lint, and build. The live generated page showed Normal on creation, High on
+edit, Normal/High through Undo/Redo, and saved High after Reload. Formal tests
+also prove that a legal V1 Item missing priority loads as Normal and a present
+invalid value is rejected before Core preflight/load without changing the
+document, history, or projection. No public document or API blocker was found.
+
+This is local CLI generation and packed Framework consumer evidence. It is
+distinct from installing `create-asyra-app` from npm or publishing the edited
+consumer. Registry distribution, website deployment, review/CI, and community
+activation remain unfinished; this result does not mark the adoption program
+DONE.
 
 Historical CI detail: #253 head `dc35222eb610d3181ae7caf4c597b41dcbc13cb1`
 failed in run `35983934121`. Render-performance job `107582066413` failed during
