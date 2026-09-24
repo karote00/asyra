@@ -66,6 +66,7 @@ export interface StarterRuntime {
     container: HTMLElement,
     options?: { width?: number; height?: number }
   ): Promise<void>
+  resize(width: number, height: number): void
   undo(): Promise<void>
   redo(): Promise<void>
   save(): Promise<SaveResult>
@@ -163,12 +164,6 @@ const unavailableStorage = (reason: string): StarterStorage => ({
 
 const STARTER_RENDER_LAYER_NAME = 'starter-app.items'
 const STARTER_RENDER_FRAME_KEY = 'starter-app.render-frame'
-const STARTER_ITEM_RENDER_X = 24
-const STARTER_ITEM_RENDER_Y = 24
-const STARTER_ITEM_RENDER_WIDTH = 160
-const STARTER_ITEM_RENDER_HEIGHT = 72
-const STARTER_ITEM_RENDER_STEP = 88
-
 export interface StarterItemRenderBounds {
   readonly x: number
   readonly y: number
@@ -177,23 +172,66 @@ export interface StarterItemRenderBounds {
 }
 
 export const getStarterItemRenderBounds = (
-  index: number
-): StarterItemRenderBounds => ({
-  x: STARTER_ITEM_RENDER_X,
-  y: STARTER_ITEM_RENDER_Y + index * STARTER_ITEM_RENDER_STEP,
-  width: STARTER_ITEM_RENDER_WIDTH,
-  height: STARTER_ITEM_RENDER_HEIGHT
-})
+  index: number,
+  viewportWidth = 800
+): StarterItemRenderBounds => {
+  const narrow = viewportWidth < 760
+  const width = narrow ? 150 : 218
+  const height = narrow ? 94 : 124
+  if (viewportWidth < 340) {
+    return {
+      x: 24,
+      y: 86 + index * 126,
+      width: Math.min(width, viewportWidth - 48),
+      height
+    }
+  }
+
+  const position = index % 3
+  const cycle = Math.floor(index / 3)
+  const xFractions = narrow ? [0.05, 0.94, 0.19] : [0.1, 0.55, 0.34]
+  const yOffsets = narrow ? [90, 140, 255] : [135, 110, 315]
+  const cycleHeight = narrow ? 330 : 430
+  return {
+    x: Math.round((viewportWidth - width) * (xFractions[position] ?? 0)),
+    y: (yOffsets[position] ?? 90) + cycle * cycleHeight,
+    width,
+    height
+  }
+}
+
+export const getStarterRenderHeight = (
+  itemCount: number,
+  viewportWidth = 800
+): number => {
+  const last =
+    itemCount > 0
+      ? getStarterItemRenderBounds(itemCount - 1, viewportWidth)
+      : null
+  return Math.max(
+    viewportWidth < 760 ? 390 : 510,
+    last ? last.y + last.height + 46 : 0
+  )
+}
 
 const ITEM_RENDER_COLORS: Record<ItemStatus, number> = {
-  todo: 0xf7f2e8,
-  doing: 0xd6ebff,
-  done: 0xdff5df
+  todo: 0xffffff,
+  doing: 0xffffff,
+  done: 0xffffff
+}
+
+const ITEM_STATUS_COLORS: Record<ItemStatus, number> = {
+  todo: 0x9bad9f,
+  doing: 0xd49a55,
+  done: 0x2c8073
 }
 
 class StarterItemRenderLayer {
   readonly registration: RenderLayerRegistration
   private pendingItems: readonly ItemProjection[] | null = null
+  private currentItems: readonly ItemProjection[] = []
+  private viewportWidth = 800
+  private viewportHeight = 510
   private disposed = false
 
   constructor(private readonly invalidate: () => void) {
@@ -208,8 +246,16 @@ class StarterItemRenderLayer {
     if (this.disposed) {
       return
     }
+    this.currentItems = items
     this.pendingItems = items
     this.invalidate()
+  }
+
+  resize(width: number, height: number): void {
+    if (this.viewportWidth === width && this.viewportHeight === height) return
+    this.viewportWidth = width
+    this.viewportHeight = height
+    this.submit(this.currentItems)
   }
 
   dispose(): void {
@@ -226,8 +272,25 @@ class StarterItemRenderLayer {
       return false
     }
     canvas.clear()
+    for (let x = 28; x < this.viewportWidth; x += 28) {
+      canvas.line(
+        { x, y: 0 },
+        { x, y: this.viewportHeight },
+        { color: 0xeef2ed, width: 1 }
+      )
+    }
+    for (let y = 28; y < this.viewportHeight; y += 28) {
+      canvas.line(
+        { x: 0, y },
+        { x: this.viewportWidth, y },
+        { color: 0xeef2ed, width: 1 }
+      )
+    }
     items.forEach((item, index) => {
-      const { x, y, width, height } = getStarterItemRenderBounds(index)
+      const { x, y, width, height } = getStarterItemRenderBounds(
+        index,
+        this.viewportWidth
+      )
       canvas.polygon(
         [
           { x, y },
@@ -236,7 +299,16 @@ class StarterItemRenderLayer {
           { x, y: y + height }
         ],
         ITEM_RENDER_COLORS[item.status],
-        { color: 0x27312f, width: 2 }
+        { color: 0xb8cbc1, width: 1 }
+      )
+      canvas.polygon(
+        [
+          { x, y },
+          { x: x + width, y },
+          { x: x + width, y: y + 4 },
+          { x, y: y + 4 }
+        ],
+        ITEM_STATUS_COLORS[item.status]
       )
     })
     this.pendingItems = null
@@ -247,7 +319,7 @@ class StarterItemRenderLayer {
 const registerStarterRenderLayer = (
   core: Core,
   projection: StarterProjectionStore
-): (() => void) => {
+): { resize(width: number, height: number): void; dispose(): void } => {
   let renderRevision = 0
   core.defineSystemProperty(STARTER_RENDER_FRAME_KEY, renderRevision, {
     runtime: true,
@@ -260,10 +332,15 @@ const registerStarterRenderLayer = (
   core.registerRenderLayer(layer.registration)
   const unsubscribe = projection.subscribe((items) => layer.submit(items))
   layer.submit(projection.getSnapshot())
-  return () => {
-    unsubscribe()
-    core.unregisterRenderLayer(STARTER_RENDER_LAYER_NAME)
-    layer.dispose()
+  return {
+    resize(width, height) {
+      layer.resize(width, height)
+    },
+    dispose() {
+      unsubscribe()
+      core.unregisterRenderLayer(STARTER_RENDER_LAYER_NAME)
+      layer.dispose()
+    }
   }
 }
 
@@ -282,24 +359,6 @@ const registerStarterSharedDataChannels = (core: Core): (() => void) => {
     ;[...ownedChannels].reverse().forEach((name) => {
       core.unregisterSharedDataChannel(name)
     })
-  }
-}
-
-const createItemRenderStrategy = () => {
-  return (
-    graphic: {
-      clear(): void
-      rect(x: number, y: number, width: number, height: number): void
-      fill(color: number): void
-      stroke(options: { color: number; width: number }): void
-    },
-    data: { status?: unknown }
-  ): void => {
-    const status = isItemStatus(data.status) ? data.status : 'todo'
-    graphic.clear()
-    graphic.rect(0, 0, STARTER_ITEM_RENDER_WIDTH, STARTER_ITEM_RENDER_HEIGHT)
-    graphic.fill(ITEM_RENDER_COLORS[status])
-    graphic.stroke({ color: 0x27312f, width: 2 })
   }
 }
 
@@ -334,8 +393,7 @@ const registerStarterSchema = (
         alias: propertyKeys,
         schema: itemSchema
       }
-    ],
-    renderStrategy: createItemRenderStrategy()
+    ]
   })
 }
 
@@ -354,15 +412,12 @@ const createItemApi = (
   core: Core,
   itemField?: ItemFieldExtension
 ): ItemCommandApi => {
-  let nextOrdinal = 0
   return {
     addItem(input = {}) {
       const title = assertTitle(input.title ?? 'Untitled item')
       const status = assertStatus(input.status ?? 'todo')
       const fields = assertItemFields(input.fields, itemField, true)
       return runActionTransaction(() => {
-        const ordinal = nextOrdinal
-        nextOrdinal += 1
         const elementId = id(ITEM_COMPONENT_TYPE)
         const propertyId = id(IDTypes.PROPS)
         const element: ElementRawData = {
@@ -372,10 +427,6 @@ const createItemApi = (
           parentId: core.getCurrentWorkspaceId(),
           visible: true,
           lock: false,
-          x: 24,
-          y: 24 + ordinal * 44,
-          width: 160,
-          height: 72,
           props: {
             [ITEM_PROPERTY_NAME]: propertyId
           }
@@ -521,7 +572,8 @@ export const createStarterRuntime = (
     refreshProjection()
   })
   disposeCallbacks.push(() => fileLoadSubscription.unsubscribe())
-  disposeCallbacks.push(registerStarterRenderLayer(core, projection))
+  const renderLayer = registerStarterRenderLayer(core, projection)
+  disposeCallbacks.push(() => renderLayer.dispose())
 
   return {
     core,
@@ -533,11 +585,17 @@ export const createStarterRuntime = (
         throw new Error('Starter runtime is disposed.')
       }
       await core.start(container, {
-        backgroundColor: 0xf3f6f2,
+        backgroundColor: 0xfbfcf9,
         width: startOptions.width ?? 800,
         height: startOptions.height ?? 480
       })
+      renderLayer.resize(startOptions.width ?? 800, startOptions.height ?? 480)
       refreshProjection()
+    },
+    resize(width, height) {
+      if (disposed) return
+      core.resizeRenderer(width, height)
+      renderLayer.resize(width, height)
     },
     async undo() {
       if (disposed) {

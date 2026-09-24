@@ -1,6 +1,8 @@
 # Extend the Starter Item
 
-The default screen has one Item with `title` and `status`. It uses React as a
+The default screen starts with an empty document. Add an Item, select it on the
+2D canvas or in the Item list, and edit its `title` and `status` in the
+inspector. It uses React as a
 shell and a supported 2D provider, while Core and its registered owners hold
 the document. Start with `src/domain/item-domain.ts` for Item values, schema,
 and saved-data admission. Trace `src/runtime/starter-runtime.ts` before editing
@@ -21,7 +23,9 @@ Feature scheduling priority.
 handles shared publications for add/edit/Undo/Redo and refreshes from Core on
 accepted Reload. React subscribes to those rows; it must not become a second
 editable Item source. A text input may temporarily hold incomplete text until
-its Feature command commits.
+its Feature command commits. The App-owned overlay layer paints cards from
+the same projection, while selection remains transient UI state and does not
+create a transaction.
 
 `src/runtime/storage.ts` writes an explicit versioned Core snapshot. Reload
 parses the wrapper, validates App Item fields, then uses Core preflight and

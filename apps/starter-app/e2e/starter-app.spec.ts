@@ -2,8 +2,6 @@ import { expect, test, type Locator, type Page } from '@playwright/test'
 
 interface StarterCanvasMetrics {
   readonly totalInk: number
-  readonly rowInk: readonly number[]
-  readonly gapInk: readonly number[]
 }
 
 const measureStarterCanvas = async (
@@ -23,23 +21,20 @@ const measureStarterCanvas = async (
       surface.height = image.naturalHeight
       const context = surface.getContext('2d')
       if (!context || !box) {
-        return {
-          totalInk: 0,
-          rowInk: [0, 0, 0],
-          gapInk: [Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY]
-        }
+        return { totalInk: 0 }
       }
       context.drawImage(image, 0, 0)
       const pixels = context.getImageData(0, 0, surface.width, surface.height)
       const scaleX = surface.width / window.innerWidth
       const scaleY = surface.height / window.innerHeight
-      const rowInk = [0, 0, 0]
-      const gapInk = [0, 0]
       let totalInk = 0
       const isBackground = (red: number, green: number, blue: number) =>
-        Math.abs(red - 243) <= 3 &&
-        Math.abs(green - 246) <= 3 &&
-        Math.abs(blue - 242) <= 3
+        (Math.abs(red - 251) <= 3 &&
+          Math.abs(green - 252) <= 3 &&
+          Math.abs(blue - 249) <= 3) ||
+        (Math.abs(red - 238) <= 3 &&
+          Math.abs(green - 242) <= 3 &&
+          Math.abs(blue - 237) <= 3)
       for (
         let y = Math.floor(box.y * scaleY);
         y < Math.ceil((box.y + box.height) * scaleY);
@@ -59,31 +54,13 @@ const measureStarterCanvas = async (
             continue
           }
           const xCss = x / scaleX - box.x
-          const yCss = y / scaleY - box.y
           if (xCss < 20 || xCss > 190) {
             continue
           }
           totalInk += 1
-          ;[
-            [20, 100],
-            [108, 188],
-            [196, 276]
-          ].forEach(([start, end], row) => {
-            if (yCss >= start && yCss <= end) {
-              rowInk[row] += 1
-            }
-          })
-          ;[
-            [100, 108],
-            [188, 196]
-          ].forEach(([start, end], gap) => {
-            if (yCss >= start && yCss <= end) {
-              gapInk[gap] += 1
-            }
-          })
         }
       }
-      return { totalInk, rowInk, gapInk }
+      return { totalInk }
     },
     {
       imageDataUrl: `data:image/png;base64,${screenshot.toString('base64')}`,
@@ -97,25 +74,28 @@ test('supports canonical item editing and responsive layout', async ({
 }, testInfo) => {
   await page.goto('/')
 
-  await expect(page.getByRole('heading', { name: 'Starter App' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Items' })).toBeVisible()
   await expect(page.getByText('Ready')).toBeVisible()
   const canvas = page.locator('#starter-render-host canvas')
   await expect(canvas).toBeVisible()
 
-  await page.getByRole('button', { name: 'Add' }).click()
-  const titleField = page.getByRole('textbox').first()
-  const firstStatus = page.getByLabel(/^Status for /).first()
+  await page.getByRole('button', { name: 'Add item' }).click()
+  const titleField = page.getByRole('textbox', { name: 'Title' })
+  const firstStatus = page.getByRole('group', { name: 'Status' })
   await expect(titleField).toHaveValue('Item 1')
-  await page.getByRole('button', { name: 'Add' }).click()
-  await page.getByRole('button', { name: 'Add' }).click()
-  await expect(page.getByRole('textbox')).toHaveCount(3)
+  await page.getByRole('button', { name: 'Add item' }).click()
+  await page.getByRole('button', { name: 'Add item' }).click()
+  await expect(
+    page.getByRole('button', { name: 'Select Item 3' })
+  ).toBeVisible()
+  await page.getByRole('button', { name: 'Item 1', exact: true }).click()
 
   await titleField.fill('Inspectable starter item')
   await titleField.press('Enter')
-  await expect(page.getByText('Updated title')).toBeVisible()
+  await expect(page.getByText(/^Updated title/)).toBeVisible()
 
   await firstStatus.getByRole('button', { name: 'Doing' }).click()
-  await expect(page.getByText('Updated status')).toBeVisible()
+  await expect(page.getByText(/^Updated status/)).toBeVisible()
   await expect(firstStatus.getByRole('button', { name: 'Doing' })).toHaveClass(
     /active/
   )
@@ -142,23 +122,51 @@ test('supports canonical item editing and responsive layout', async ({
   await expect
     .poll(async () => (await measureStarterCanvas(page, canvas)).totalInk)
     .toBeGreaterThan(500)
-  await expect
-    .poll(async () =>
-      (await measureStarterCanvas(page, canvas)).rowInk.every(
-        (count) => count > 300
-      )
-    )
-    .toBe(true)
-  await expect
-    .poll(async () =>
-      (await measureStarterCanvas(page, canvas)).gapInk.every(
-        (count) => count < 25
-      )
-    )
-    .toBe(true)
 
   await page.screenshot({
     path: testInfo.outputPath(`starter-${testInfo.project.name}.png`),
     fullPage: true
   })
+})
+
+test('selects a canvas Item and edits through one inspector', async ({
+  page
+}) => {
+  await page.goto('/')
+  await expect(page.getByText('Select an Item to edit')).toBeVisible()
+  await page.getByRole('button', { name: 'Add item' }).click()
+  await page.getByRole('button', { name: 'Add item' }).click()
+  await page.getByRole('button', { name: 'Item 1', exact: true }).click()
+  await page.getByRole('button', { name: 'Undo' }).click()
+  await expect(page.getByRole('button', { name: 'Select Item 2' })).toHaveCount(
+    0
+  )
+  await page.getByRole('button', { name: 'Redo' }).click()
+  await expect(
+    page.getByRole('button', { name: 'Select Item 2' })
+  ).toBeVisible()
+  await expect(page.getByRole('textbox', { name: 'Title' })).toHaveValue(
+    'Item 1'
+  )
+  await page.getByRole('textbox', { name: 'Title' }).fill('Selected on canvas')
+  await page.getByRole('textbox', { name: 'Title' }).press('Enter')
+  await expect(
+    page.getByRole('button', { name: 'Selected on canvas', exact: true })
+  ).toBeVisible()
+  await page
+    .getByRole('group', { name: 'Status' })
+    .getByRole('button', { name: 'Doing' })
+    .click()
+  await page.getByRole('button', { name: 'Undo' }).click()
+  await expect(
+    page
+      .getByRole('group', { name: 'Status' })
+      .getByRole('button', { name: 'Todo' })
+  ).toHaveAttribute('aria-pressed', 'true')
+  await page.getByRole('button', { name: 'Redo' }).click()
+  await expect(
+    page
+      .getByRole('group', { name: 'Status' })
+      .getByRole('button', { name: 'Doing' })
+  ).toHaveAttribute('aria-pressed', 'true')
 })
