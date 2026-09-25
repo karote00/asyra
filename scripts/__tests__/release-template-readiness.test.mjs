@@ -205,35 +205,18 @@ test('generated template consumer path is constrained to one project tmp child',
 test('generated template uses only frozen public framework entrypoints', () => {
   const contract = validateGeneratedTemplateContract({
     repositoryRoot,
-    appName: 'asyra-design'
+    appName: 'starter-app'
   })
 
   assert.ok(contract.importCount > 0)
   assert.deepEqual(contract.importedPackageNames, [
-    '@asyra/ai-agent-runtime',
-    '@asyra/collaboration',
     '@asyra/core',
-    '@asyra/design-system',
-    '@asyra/factory',
-    '@asyra/feature-system',
-    '@asyra/input-system',
     '@asyra/preset',
-    '@asyra/reactive-events',
-    '@asyra/ui-context',
     '@asyra/utils'
   ])
   assert.deepEqual(contract.packageNames, [
-    '@asyra/ai-agent-runtime',
-    '@asyra/collaboration',
     '@asyra/core',
-    '@asyra/design-system',
-    '@asyra/factory',
-    '@asyra/feature-system',
-    '@asyra/input-system',
     '@asyra/preset',
-    '@asyra/reactive-events',
-    '@asyra/render',
-    '@asyra/ui-context',
     '@asyra/utils'
   ])
 
@@ -272,7 +255,7 @@ test('generated template replaces framework resolution with packed artifacts', (
   try {
     const prepared = prepareGeneratedTemplateConsumer({
       repositoryRoot,
-      appName: 'asyra-design',
+      appName: 'starter-app',
       consumerDirectory,
       artifactDirectory
     })
@@ -311,7 +294,7 @@ test('registry-installed generated app preserves exact public framework resoluti
   )
   const contract = validateGeneratedTemplateContract({
     repositoryRoot,
-    appName: 'asyra-design'
+    appName: 'starter-app'
   })
 
   try {
@@ -341,7 +324,7 @@ test('registry-installed generated app preserves exact public framework resoluti
 
     const evidence = validateRegistryInstalledGeneratedApp({
       repositoryRoot,
-      appName: 'asyra-design',
+      appName: 'starter-app',
       generatedAppDirectory
     })
 
@@ -367,7 +350,7 @@ test('registry-installed generated app preserves exact public framework resoluti
       () =>
         validateRegistryInstalledGeneratedApp({
           repositoryRoot,
-          appName: 'asyra-design',
+          appName: 'starter-app',
           generatedAppDirectory
         }),
       /public registry dependency contract/
@@ -390,14 +373,14 @@ test('generated template runner owns install, compile, build, test, smoke, and c
   )
   const contract = validateGeneratedTemplateContract({
     repositoryRoot,
-    appName: 'asyra-design'
+    appName: 'starter-app'
   })
   const commands = []
   let smokeDirectory
 
   const evidence = await verifyGeneratedTemplate({
     repositoryRoot,
-    appName: 'asyra-design',
+    appName: 'starter-app',
     artifactDirectory,
     consumerDirectory,
     evidenceDirectory,
