@@ -31,10 +31,14 @@
 - `VITE_COLLABORATION_WS_URL` identifies the browser's WebSocket
   service endpoint. It is independent from the app origin because the app and
   WebSocket server are separate services.
-- the App server owns `AI_PROVIDER_ENDPOINT`, `AI_PROVIDER_MODEL`, and
-  `AI_PROVIDER_API_KEY`. Ordinary Agent
-  requests require all three; the browser receives none of them and contains
-  neither the App domain prompt nor the backend image-tool catalog.
+- the App server owns `AI_PROVIDER_BACKEND` and `AI_PROVIDER_MODEL`. The
+  default HTTP backend also requires `AI_PROVIDER_ENDPOINT` and
+  `AI_PROVIDER_API_KEY`. The explicit `local-codex` backend uses the user's
+  installed native executable and subscription login, with loopback/origin
+  admission and one tool-free ephemeral process per request. Credentials stay
+  with Codex; no account identity or server configuration enters the browser.
+  See [Local AI provider](specs/local-ai-provider.md) for lifecycle, failure,
+  and capability contracts. Neither backend changes canonical runtime owners.
 - the exact `crdt-7076` backend sample bypasses AI provider configuration and
   model execution, returning its checked-in ordered `AiActionBatch` directly.
 - RenderApp does not parse build-tool or test-runner configuration.

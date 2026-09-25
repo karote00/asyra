@@ -9,6 +9,7 @@ import type {
   RenderEngineObjectType,
   RenderEnginePaint,
   RenderEnginePoint,
+  RenderEngineTextOperation,
   RenderEngineQueryResult,
   RenderEngineResourceDescriptor,
   RenderEngineResourceHandle
@@ -992,6 +993,12 @@ export class RenderGraphics extends RenderContainer {
   rect(x: number, y: number, width: number, height: number): this {
     this.drawOperations.push({ type: 'rect', x, y, width, height })
     this.includeBounds(x, y, width, height)
+    return this.markDrawDirty()
+  }
+
+  text(value: Omit<RenderEngineTextOperation, 'type'>): this {
+    this.drawOperations.push({ ...value, type: 'text' })
+    this.includeBounds(value.x, value.y, value.width, value.height)
     return this.markDrawDirty()
   }
 

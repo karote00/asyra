@@ -23,6 +23,10 @@ Normalize raw keyboard/mouse/pointer input into framework input events.
 
 - Input-system publishes normalized events; it does not choose business outcomes.
 - Key maps should be configurable by app domain.
+- Wheel events merge their own modifier flags with currently held keys for that
+  event's matching and normalized payload. Trackpad pinch can supply `ctrlKey`
+  without a keyboard event. These flags never mutate held-key state or survive
+  into later events. Consumers retain ownership of 2D/3D pan and zoom policy.
 - Event contracts must stay stable and typed.
 - Pointer input can be temporarily blocked when render interaction capture is active.
 - App-owned surfaces decide whether a native `contextmenu` event is handled and
@@ -37,6 +41,10 @@ Normalize raw keyboard/mouse/pointer input into framework input events.
   boundary. Keyboard listeners belong to `host`; pointer/wheel listeners belong
   to `pointerTarget`, defaulting to `host`. Repeating the same pair is
   idempotent.
+- Keyboard key release bookkeeping runs in host capture phase even when an
+  app-owned editor stops propagation. Capture only clears the released key and
+  its timer; it neither prevents native editing nor dispatches combinations.
+  Shortcut dispatch remains in bubble phase so editor isolation is preserved.
 - `switchWatchedElement(element)` derives the element's owning `Window`. A
   target/document switch removes exact prior listeners before attaching the new
   host/target pair.

@@ -1,3 +1,4 @@
+import { createBasicApiActions } from './basic-api-actions'
 import type {
   AiProvider,
   AiRuntimeOptions,
@@ -5,7 +6,14 @@ import type {
   AiTransactionRunner,
   CreateAiAgentRuntimeInput
 } from '@asyra/ai-agent-runtime'
+import { createDesignReviewAction } from './review-action'
+import { createArrangementAction } from './arrangement-action'
+import { createOrganizationAction } from './organization-action'
+import { createDesignEditAction } from './design-edit-action'
+import { createDocumentContextAction } from './context-action'
+import { createAiInspectionAction } from './inspection'
 import { createAiActions } from './actions'
+import { createPreparedDesignAction } from './design-actions'
 import {
   createAiConfirmationHandler,
   type AiConfirmationRequest
@@ -26,10 +34,20 @@ export interface CreateAiRuntimeInputOptions {
 export const createAiRuntimeInput = (
   options: CreateAiRuntimeInputOptions
 ): CreateAiAgentRuntimeInput => ({
-  actionDefinitions: createAiActions(),
+  actionDefinitions: [
+    ...createBasicApiActions(),
+    ...createAiActions(),
+    createPreparedDesignAction(),
+    createDocumentContextAction(),
+    createDesignEditAction(),
+    createOrganizationAction(),
+    createArrangementAction(),
+    createDesignReviewAction(),
+    createAiInspectionAction()
+  ],
   confirmationHandler: createAiConfirmationHandler(options.requestConfirmation),
   contextProvider: createAiContextProvider(),
-  options: options.runtimeOptions,
+  options: { ...options.runtimeOptions, failurePolicy: 'preserve-progress' },
   ownedResources: options.ownedResources,
   permissionPolicy: createAiPermissionPolicy(options.permissionRules),
   provider: options.provider,

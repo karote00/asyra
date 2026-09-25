@@ -4,7 +4,9 @@ Never record completed plans here.
 
 ## Current Status
 
-- No highest-priority Asyra Design plan is currently active.
+- Active: [Editable Design Agent](plans/ai-design-agent-plan.md), including the
+  accepted [AI Conversation Experience](plans/ai-conversation-experience-plan.md) contracts.
+  Implementation is in progress under the plan’s bounded owner stages.
 - Most recently completed canonical App plan:
   `plans/completed/trusted-publication-and-crdt-7076-flow-realignment-plan.md`.
 - The completed plan retains the accepted one-time canonical data admission,
@@ -66,3 +68,10 @@ Never record completed plans here.
 - This file is routing-only. Do not record or derive product semantics,
   implementation progress, test results, or completion evidence here.
 - Do not consult `plans/completed/**` for the active task.
+
+## Planned - complete Text authoring
+
+- [Complete Text authoring](plans/text-authoring-plan.md) - documentation-only plan
+  requested 2026-09-24. Completes manual toolbar/shortcuts, Canvas editing, Property
+  Panel, sizing, IME/focus, history and documentation around the existing native
+  Text foundation. Implementation is not activated by this entry.

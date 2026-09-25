@@ -1,4 +1,5 @@
 import Header from '../header'
+import TextProperties from '../text'
 import Position from '../position'
 import Dimension from '../dimension'
 import Rotation from '../rotation'
@@ -25,6 +26,7 @@ const ElementPropertiesPanel = ({ title }: { title: string }) => {
         <Rotation />
       </div>
 
+      <TextProperties />
       <SectionDivider />
 
       {/* Fill section */}

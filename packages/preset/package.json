@@ -23,6 +23,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./group-bounds": {
+      "types": "./dist/group-bounds.d.ts",
+      "import": "./dist/group-bounds.js",
+      "default": "./dist/group-bounds.js"
     }
   },
   "files": [

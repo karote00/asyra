@@ -291,7 +291,9 @@ test('release template excludes local runtime data directories', () => {
     '__tests__/playwright-config.test.mjs',
     'server/__tests__/action-batch.test.ts',
     'src/ai/__tests__/detailed-tabby.test.ts',
-    'src/common-apis/element/__tests__/vector-parent-creation.test.ts'
+    'src/common-apis/element/__tests__/vector-parent-creation.test.ts',
+    'e2e/ai-conversation-flow.spec.ts',
+    'server/__tests__/basic-api-contracts.test.ts'
   ])
 
   const releaseTemplate = readFileSync(
@@ -385,7 +387,8 @@ test('Asyra Design keeps the large CRDT fixture out of the generated template', 
     'test:server-response-harness': [
       'server/__tests__/action-batch.test.ts',
       'test-data/ai-drawing/__tests__/action-batch-interceptor.test.ts',
-      'src/ai/__tests__/detailed-tabby.test.ts'
+      'src/ai/__tests__/detailed-tabby.test.ts',
+      'server/__tests__/basic-api-contracts.test.ts'
     ],
     'test:local': [
       '__tests__/prepared-server-response-artifacts.test.mjs',
@@ -530,10 +533,13 @@ test('generated template contains required public files and no repository-only s
   )
   assert.equal(existsSync(path.join(templateRoot, '.env')), false)
   assert.equal(existsSync(path.join(templateRoot, '.env.example')), true)
-  assert.equal(
-    existsSync(path.join(repositoryRoot, 'apps/asyra-design', '.env')),
-    false
+  const trackedEnvironment = spawnSync(
+    'git',
+    ['ls-files', '--', 'apps/asyra-design/.env'],
+    { cwd: repositoryRoot, encoding: 'utf8' }
   )
+  assert.equal(trackedEnvironment.status, 0)
+  assert.equal(trackedEnvironment.stdout.trim(), '')
   assert.equal(
     existsSync(path.join(repositoryRoot, 'apps/asyra-design', '.env.example')),
     true
@@ -988,7 +994,10 @@ test('canonical Asyra Design source uses workspace Framework dependencies during
   for (const [packageName, version] of frameworkDependencies) {
     assert.equal(version, 'workspace:*', packageName)
   }
-  assert.equal(manifest.scripts?.typecheck, 'tsc -p tsconfig.typecheck.json')
+  assert.equal(
+    manifest.scripts?.typecheck,
+    'tsc -p tsconfig.typecheck.json && tsc -p tsconfig.ai-server.json'
+  )
 
   const typecheckConfig = JSON.parse(
     readFileSync(

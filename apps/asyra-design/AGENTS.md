@@ -27,7 +27,22 @@ in [`docs/framework.md`](docs/framework.md) for Framework contracts.
 - Cross-package imports use public `@asyra/package-name` entrypoints; do not use
   package internals or deep relative paths.
 
+## Group and Frame semantics
+
+Keep both registered. Group organizes children and derives its bounds from their
+geometry. Frame owns independent dimensions and may supply its own background.
+Choose by intent, never by hierarchy depth; either may contain either. AI tools
+must expose this choice explicitly. Do not promise unsupported clipping,
+constraints, live Auto Layout, borders or corner radii. Current semantic
+row/column/grid preparation computes positions once, not a live layout engine.
+See `docs/architecture.md` and the upstream design-preparation specification.
+
 ## Change discipline
+
+- Before adding behavior or capability checks, identify the semantic owner and
+  inspect existing public APIs, App APIs, utils, and registries. Use authoritative
+  capability queries instead of local component-type lists; preserve intentionally
+  type-specific behavior and test custom capability providers.
 
 - For a bug fix, first prove whether a formal test detects the failure. Add or
   strengthen that test before changing production code when it does not.
@@ -37,6 +52,18 @@ in [`docs/framework.md`](docs/framework.md) for Framework contracts.
   registries under `src/constants` or `src/config`.
 - Do not commit secrets, generated browser evidence, test reports, or local
   service data.
+
+## Local environment files
+
+- Local `.env` files are persistent local configuration: use and preserve them.
+  Never delete or clear them as test/task cleanup, and never stage, commit, or
+  push them to Git. If missing, create `.env` from `.env.example`; never overwrite
+  an existing local file with the example.
+- Keep non-secret, portable configuration synchronized to `.env.example`.
+  For real secrets such as API keys, include only the variable name and an empty
+  value in `.env.example`; retain the actual value in local `.env` for continued
+  use. Keep machine-specific paths in local `.env`. Treat `.env.example` as a
+  setup template, not a test fixture.
 
 ## Verification
 

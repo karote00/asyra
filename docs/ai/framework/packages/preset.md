@@ -19,6 +19,15 @@ transform-only property capability for position, dimension, rotation, scale,
 and skew. Transform deltas retain existing path/fill/stroke/hit geometry;
 selection and path-edit overlays continue to follow the same Render result.
 
+Solid nonzero compound Vector contours are projected into disjoint winding-filled
+regions. Opposite winding leaves transparent holes; same winding stays filled
+once, including nested islands and intersecting contours. Curves remain canonical
+editable controls. Render-only adaptive subdivision uses a 0.05 local-unit
+flatness bound and a 16-level recursion guard. One prepared geometry supplies
+both fill faces and hit testing per strategy invocation; transform-only updates
+continue to reuse the existing Render projection. Single contours, gradients,
+evenodd projection and strokes retain their existing routes.
+
 ## Public Contract
 
 ```ts
@@ -228,7 +237,7 @@ Render projection. Preset also exports the ID-driven Group adapters defined by
   an official Group and that operation's contract requires normalization.
   Selecting or hovering a Group remains read-only.
 - `projectGroupGeometryPropertyUpdates(core, updates,
-  explicitGroupElementIds)` receives the caller-resolved official Group target
+explicitGroupElementIds)` receives the caller-resolved official Group target
   ids explicitly. An empty Group-id list returns the updates unchanged without
   reading Scene Tree or computed data.
 - Preset owns 2D coordinate normalization and direct-child Group bounds for the
@@ -251,3 +260,12 @@ Render projection. Preset also exports the ID-driven Group adapters defined by
 - failed apply leaves no stale registration, property, event, selection,
   channel, observer, subscription, layer, or provider;
 - no 3D/Hybrid runtime is imported or bundled.
+
+## Pure Group bounds entrypoint
+
+`@asyra/preset/group-bounds` exports `deriveGroupBounds` and `GroupBounds` without
+loading Core, Render, DOM or component registration. It is the same bounds owner
+used by ordinary Preset Group operations and server-side design preparation.
+The runtime root export remains available. Empty input returns zero bounds;
+nonfinite rectangle values are rejected. This helper measures rectangles only;
+it does not apply transactions, normalize hierarchy or register components.

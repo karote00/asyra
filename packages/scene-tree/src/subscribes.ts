@@ -1,7 +1,7 @@
 import {
   EventTypes,
   getTransactionReplayMode,
-  subscribeToEventBatches,
+  subscribeToAppliedEventBatches,
   subscribeToSynchronousEvent,
   subscribeToSynchronousEventBatch,
   subscribeToSceneTreeInit,
@@ -287,7 +287,7 @@ export const initSceneTreeSubscribes = () => {
     }
   )
 
-  subscribeToEventBatches((events) => {
+  subscribeToAppliedEventBatches((events) => {
     const sourcePropertyIds: string[] = []
     const seenPropertyIds = new Set<string>()
     const appendPropertyId = (propertyId: string): void => {

@@ -340,3 +340,13 @@ core.registerRenderInteractionHandler('gradient-handle-1', {
 - `@asyra/render` and `@asyra/render-engine-pixi` do not depend on one another.
 - A custom engine passes the shared contract adapter without framework package
   changes.
+
+### Native-resolution inspection
+
+`captureElementSnapshot(elementId, maxDimension, options)` forwards optional
+`nativeResolution` and target-local `region` through Core and Render to the engine.
+Native captures use one output pixel per local unit; fractional bounds are enclosed.
+A region must be finite, positive, and inside the target. Oversized native captures
+fail before extraction instead of downsampling. Existing explicitly bounded captures
+without `nativeResolution` retain their scaling behavior for other consumers.
+The query changes no canonical state or viewport and caches no images.

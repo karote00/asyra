@@ -44,7 +44,7 @@ test('frontend production bundle contains only the formal HTTP Agent provider', 
 
   assert.equal(
     moduleIds.some((moduleId) =>
-      /[/\\](?:samples[/\\]crdt-7076|server[/\\](?:action-batch|ai-domain-prompt|ai-model-provider)|src[/\\]ai[/\\](?:app-prompt\.ts|fixtures|mode\.ts|server-response-inbox\.ts))/.test(
+      /[/\\](?:samples[/\\]crdt-7076|server[/\\](?:action-batch|ai-domain-prompt|ai-model-provider|local-ai-provider)|src[/\\]ai[/\\](?:app-prompt\.ts|fixtures|mode\.ts|server-response-inbox\.ts))/.test(
         moduleId
       )
     ),
@@ -57,7 +57,10 @@ test('frontend production bundle contains only the formal HTTP Agent provider', 
     'Draw only the cat from the reference image',
     'registered App actions and image tools supplied with the current request',
     'whole-image-raster-vectorization',
-    'server-response-inbox'
+    'server-response-inbox',
+    'AI_PROVIDER_BACKEND',
+    'AI_PROVIDER_EXECUTABLE',
+    'local-codex'
   ].forEach((marker) => {
     assert.equal(
       bundledCode.includes(marker),

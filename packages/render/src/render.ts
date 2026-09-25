@@ -3,6 +3,8 @@ import {
   assertRenderEngineCapabilities,
   type RenderEngine,
   type RenderEngineProvider,
+  type RenderEngineSnapshotResult,
+  type RenderEngineBounds,
   type RenderEngineObjectHandle
 } from '@asyra/render-engine'
 import {
@@ -64,6 +66,11 @@ export interface RenderApplication {
   render: () => void
 }
 
+export interface RenderContentMeasurement {
+  readonly elementId: string
+  readonly bounds: RenderEngineBounds | null
+}
+
 class Render {
   app: RenderApplication | null = null
   viewport: ViewportLayer
@@ -121,6 +128,62 @@ class Render {
 
   getEngine(): RenderEngine | null {
     return this.engine ?? this.providedEngine
+  }
+
+  measureElementContentBounds(
+    elementIds: readonly string[]
+  ): RenderContentMeasurement[] {
+    if (
+      !Array.isArray(elementIds) ||
+      !elementIds.length ||
+      elementIds.length > 200 ||
+      new Set(elementIds).size !== elementIds.length ||
+      elementIds.some(
+        (id) => typeof id !== 'string' || !id.length || id.length > 256
+      )
+    )
+      throw new Error('Content measurement requires 1..200 unique element IDs')
+    const engine = this.requireEngine()
+    assertRenderEngineCapabilities(engine, [
+      RenderEngineCapabilities.LOCAL_CONTENT_BOUNDS
+    ])
+    this.flushFrame()
+    return elementIds.map((elementId) => {
+      const object = this.viewport.getElementById(elementId)?.getEngineHandle()
+      if (!object) return { elementId, bounds: null }
+      const result = engine.query({ type: 'get-local-content-bounds', object })
+      if (
+        result.type !== 'bounds' ||
+        !Object.values(result.bounds).every(Number.isFinite) ||
+        result.bounds.width < 0 ||
+        result.bounds.height < 0
+      )
+        throw new Error('Invalid native content bounds')
+      return { elementId, bounds: { ...result.bounds } }
+    })
+  }
+
+  captureElementSnapshot(
+    elementId: string,
+    maxDimension = 1024,
+    options?: Pick<
+      import('@asyra/render-engine').RenderEngineSnapshotQuery,
+      'nativeResolution' | 'region'
+    >
+  ): RenderEngineSnapshotResult {
+    const engine = this.requireEngine()
+    assertRenderEngineCapabilities(engine, [RenderEngineCapabilities.SNAPSHOT])
+    this.flushFrame()
+    const object = this.viewport.getElementById(elementId)?.getEngineHandle()
+    if (!object) throw new Error('Snapshot target is unavailable')
+    const result = engine.query({
+      type: 'snapshot',
+      object,
+      maxDimension,
+      ...options
+    })
+    if (result.type !== 'snapshot') throw new Error('Invalid snapshot result')
+    return result
   }
 
   start(): void {

@@ -27,7 +27,8 @@ export interface GenericHttpAiProviderOptions {
   readonly endpoint: string
   readonly fetch?: AiFetch
   readonly headers?: Readonly<Record<string, string>>
-  readonly timeoutMs?: number
+  /** Omit for the default deadline; null disables the deadline. */
+  readonly timeoutMs?: number | null
 }
 
 export interface GenericHttpAiProvider extends AiProvider {
@@ -107,7 +108,8 @@ const validateEndpoint = (value: string): string => {
   return endpoint
 }
 
-const validateTimeout = (value: number | undefined): number => {
+const validateTimeout = (value: number | null | undefined): number | null => {
+  if (value === null) return null
   const timeoutMs = value ?? DEFAULT_TIMEOUT_MS
   if (
     !Number.isFinite(timeoutMs) ||
@@ -259,7 +261,7 @@ class DefaultGenericHttpAiProvider implements GenericHttpAiProvider {
   private readonly endpoint: string
   private readonly fetch: AiFetch
   private readonly headers: Readonly<Record<string, string>>
-  private readonly timeoutMs: number
+  private readonly timeoutMs: number | null
   private readonly attempts = new Set<ProviderAttempt>()
   private disposed = false
 
@@ -299,10 +301,13 @@ class DefaultGenericHttpAiProvider implements GenericHttpAiProvider {
     options.signal.addEventListener('abort', abortTransport, {
       once: true
     })
-    const timeout = setTimeout(() => {
-      attempt.timedOut = true
-      attempt.controller.abort()
-    }, this.timeoutMs)
+    const timeout =
+      this.timeoutMs === null
+        ? undefined
+        : setTimeout(() => {
+            attempt.timedOut = true
+            attempt.controller.abort()
+          }, this.timeoutMs)
 
     let abortWaitListener: (() => void) | undefined
     const aborted = new Promise<never>((_resolve, reject) => {
@@ -318,7 +323,7 @@ class DefaultGenericHttpAiProvider implements GenericHttpAiProvider {
       }
 
       cleaned = true
-      clearTimeout(timeout)
+      if (timeout !== undefined) clearTimeout(timeout)
       options.signal.removeEventListener('abort', abortTransport)
       if (abortWaitListener) {
         attempt.controller.signal.removeEventListener(

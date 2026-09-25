@@ -11,7 +11,8 @@ import type {
   RemoveElementsChange,
   SceneTreeRawData
 } from '@asyra/utils'
-import { publishEvent, publishEventsToObservers } from '../event-bus.js'
+import { publishEvent } from '../event-bus.js'
+import { publishLocalProjectionEvents } from '../app/publish.js'
 import { EventTypes } from '../types.js'
 import type {
   UpdateComputedDataBatchEvent,
@@ -26,7 +27,7 @@ export const publishLocalComputedDataEvents = (
     | UpdateComputedDataPatchEvent
   )[]
 ): void => {
-  publishEventsToObservers(events)
+  publishLocalProjectionEvents(events)
 }
 
 export const sceneTreeInit = () => {

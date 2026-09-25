@@ -27,6 +27,77 @@ const createFeature = (
   execute: vi.fn(execute)
 })
 
+it('keeps inherited reference images out of text replies while retaining provider context across answers and retry', async () => {
+  const attachment = {
+    dataUrl: 'data:image/png;base64,YQ==',
+    mediaType: 'image/png' as const,
+    name: 'reference.png',
+    size: 1
+  }
+  const question = executed(
+    {
+      action: 'request_drawing_detail_choice',
+      clarification: {
+        kind: 'drawing-detail',
+        optionIds: ['balanced', 'maximum']
+      },
+      status: 'no-change'
+    },
+    'request_drawing_detail_choice'
+  )
+  const pending = createDeferred<unknown>()
+  const feature = createFeature(
+    vi
+      .fn()
+      .mockResolvedValueOnce(question)
+      .mockImplementationOnce(() => pending.promise)
+      .mockResolvedValueOnce({
+        status: 'failed',
+        stage: 'provider',
+        code: 'AI_PROVIDER_TRANSPORT_FAILED'
+      })
+      .mockResolvedValue({ status: 'executed', actionResults: [] })
+  )
+  const controller = createAiConversationController({
+    feature,
+    getElementType: vi.fn()
+  })
+  await controller.submit({
+    intent: 'Draw the reference at 240 by 240',
+    attachments: [attachment]
+  })
+  const answer = controller.submit('That is fine')
+  expect(controller.getSnapshot().activeTurn?.attachments).toEqual([])
+  expect(feature.execute).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      metadata: expect.objectContaining({ imageAttachments: [attachment] })
+    })
+  )
+  pending.resolve(question)
+  expect((await answer).attachments).toEqual([])
+  const failed = await controller.submit('Balanced, please')
+  expect(failed.attachments).toEqual([])
+  expect(feature.execute).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      metadata: expect.objectContaining({ imageAttachments: [attachment] })
+    })
+  )
+  await controller.retry(failed.turnId)
+  expect(feature.execute).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      metadata: expect.objectContaining({ imageAttachments: [attachment] })
+    })
+  )
+  await controller.submit('Draw a new circle')
+  expect(feature.execute).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      metadata: expect.not.objectContaining({
+        imageAttachments: expect.anything()
+      })
+    })
+  )
+})
+
 describe('Asyra Design AI conversation controller', () => {
   it('retains ordered safe progress with the settled turn and brackets history correlation', async () => {
     const history = {
@@ -97,13 +168,17 @@ describe('Asyra Design AI conversation controller', () => {
       getElementType: vi.fn(() => 'oval')
     })
 
-    await expect(controller.submit('  畫一個貓臉  ')).resolves.toMatchObject({
+    await expect(
+      controller.submit('  draw a cat face  ')
+    ).resolves.toMatchObject({
       conversationId: 'conversation-a',
-      intent: '畫一個貓臉',
+      intent: 'draw a cat face',
       outcome: 'success',
       turnId: 'conversation-a:turn:1'
     })
-    await expect(controller.submit('把眼睛放大一點')).resolves.toMatchObject({
+    await expect(
+      controller.submit('make the eyes bigger')
+    ).resolves.toMatchObject({
       conversationId: 'conversation-a',
       turnId: 'conversation-a:turn:2'
     })
@@ -141,7 +216,7 @@ describe('Asyra Design AI conversation controller', () => {
     }
     const settlement = controller.submit({
       attachments: [sourceAttachment],
-      intent: '  請依照這張圖繪製  '
+      intent: '  draw from this image  '
     })
 
     const active = controller.getSnapshot().activeTurn
@@ -153,13 +228,13 @@ describe('Asyra Design AI conversation controller', () => {
           size: 5
         }
       ],
-      intent: '請依照這張圖繪製'
+      intent: 'draw from this image'
     })
     expect(Object.isFrozen(active?.attachments)).toBe(true)
     expect(Object.isFrozen(active?.attachments[0])).toBe(true)
     expect(feature.execute).toHaveBeenCalledWith(
       expect.objectContaining({
-        intent: '請依照這張圖繪製',
+        intent: 'draw from this image',
         metadata: expect.objectContaining({
           imageAttachments: [
             {
@@ -187,7 +262,7 @@ describe('Asyra Design AI conversation controller', () => {
           name: 'tabby.png'
         }
       ],
-      intent: '請依照這張圖繪製'
+      intent: 'draw from this image'
     })
   })
 
@@ -263,6 +338,35 @@ describe('Asyra Design AI conversation controller', () => {
     ])
   })
 
+  it('excludes approval waiting from execution duration', async () => {
+    let time = 1000
+    const feature = createFeature(async ({ progressObserver }) => {
+      time = 1500
+      progressObserver({
+        attempt: 1,
+        phase: 'confirmation',
+        summary: 'Waiting for confirmation'
+      })
+      time = 11500
+      progressObserver({
+        attempt: 1,
+        phase: 'execution',
+        summary: 'Applying changes'
+      })
+      time = 12000
+      return executed({ status: 'complete' })
+    })
+    const controller = createAiConversationController({
+      feature,
+      getElementType: vi.fn(),
+      now: () => time
+    })
+    await expect(controller.submit('draw')).resolves.toMatchObject({
+      durationMs: 1000,
+      waitingDurationMs: 10000
+    })
+  })
+
   it('contains presentation observer failures without changing turn execution', async () => {
     const feature = createFeature(async () =>
       executed({
@@ -300,8 +404,8 @@ describe('Asyra Design AI conversation controller', () => {
     await expect(controller.submit('   ')).rejects.toMatchObject({
       code: 'AI_CONVERSATION_INVALID_INTENT'
     })
-    const first = controller.submit('畫一個貓臉')
-    await expect(controller.submit('第二個回合')).rejects.toEqual(
+    const first = controller.submit('draw a cat face')
+    await expect(controller.submit('second turn')).rejects.toEqual(
       expect.objectContaining<Partial<AiConversationError>>({
         code: 'AI_CONVERSATION_TURN_ACTIVE'
       })
@@ -327,7 +431,7 @@ describe('Asyra Design AI conversation controller', () => {
       targetTypes.get(elementId)
     )
     const feature = createFeature(async (request) => {
-      if (request.intent === '畫一個貓臉') {
+      if (request.intent === 'draw a cat face') {
         return executed({
           appliedElementIds: [
             'face-1',
@@ -360,14 +464,14 @@ describe('Asyra Design AI conversation controller', () => {
       getElementType
     })
 
-    await controller.submit('畫一個貓臉')
+    await controller.submit('draw a cat face')
     targetTypes.delete('whisker-gone')
-    await controller.submit('把眼睛放大一點')
+    await controller.submit('make the eyes bigger')
 
     expect(feature.execute).toHaveBeenNthCalledWith(
       2,
       expect.objectContaining({
-        intent: '把眼睛放大一點',
+        intent: 'make the eyes bigger',
         metadata: {
           aiTargets: {
             compositionId: 'group-1',
@@ -460,7 +564,7 @@ describe('Asyra Design AI conversation controller', () => {
       feature,
       getElementType: vi.fn()
     })
-    const settlement = controller.submit('畫一個貓臉')
+    const settlement = controller.submit('draw a cat face')
 
     expect(controller.cancel('user-cancelled')).toBe(true)
     expect(feature.cancel).toHaveBeenCalledWith('user-cancelled')
@@ -544,4 +648,169 @@ describe('Asyra Design AI conversation controller', () => {
       outcome
     })
   })
+})
+
+it('rejects stale or unknown reply targets before provider work', async () => {
+  const feature = createFeature(async () => executed({ status: 'no-change' }))
+  const conversation = createAiConversationController({
+    feature,
+    getElementType: vi.fn()
+  })
+  const first = await conversation.submit('Draw a 240x240 logo')
+  await conversation.submit('Another request')
+  for (const replyToTurnId of [first.turnId, 'unknown']) {
+    await expect(
+      conversation.submit({ intent: 'Balanced', replyToTurnId })
+    ).rejects.toMatchObject({ code: 'AI_CONVERSATION_INVALID_REPLY' })
+  }
+  expect(feature.execute).toHaveBeenCalledTimes(2)
+})
+
+describe('conversation recovery admission', () => {
+  it('rejects replay of a partially applied result', async () => {
+    const controller = createAiConversationController({
+      feature: {
+        cancel: () => false,
+        execute: async () => ({
+          status: 'executed',
+          actionResults: [
+            {
+              actionName: 'insert_vector_composition',
+              result: { status: 'partial' }
+            }
+          ]
+        })
+      },
+      getElementType: () => undefined
+    })
+    const turn = await controller.submit('draw')
+    await expect(controller.retry(turn.turnId)).rejects.toMatchObject({
+      code: 'AI_CONVERSATION_UNSAFE_RETRY'
+    })
+  })
+})
+
+it('retains native design targets and revalidates each distinct object once per follow-up', async () => {
+  const types = new Map([
+    ['f', 'frame'],
+    ['t', 'text'],
+    ['r', 'rect'],
+    ['w', 'workspace']
+  ])
+  const getElementType = vi.fn((id: string) => types.get(id))
+  const feature = createFeature(async (request) =>
+    request.intent === 'create'
+      ? executed(
+          {
+            compositionId: 'f',
+            roleToElementIds: {
+              root: ['f'],
+              heading: ['t'],
+              card: ['r'],
+              duplicate: ['t'],
+              invalid: ['w']
+            },
+            appliedElementIds: ['f', 't', 'r'],
+            status: 'complete'
+          },
+          'apply_prepared_design'
+        )
+      : executed({ status: 'no-change' })
+  )
+  const controller = createAiConversationController({ feature, getElementType })
+  await controller.submit('create')
+  getElementType.mockClear()
+  await controller.submit('Revise the heading')
+  expect(feature.execute).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      metadata: expect.objectContaining({
+        aiTargets: {
+          compositionId: 'f',
+          roleToElementIds: {
+            root: ['f'],
+            heading: ['t'],
+            card: ['r'],
+            duplicate: ['t']
+          }
+        }
+      })
+    })
+  )
+  expect(getElementType).toHaveBeenCalledTimes(4)
+  types.delete('t')
+  await controller.submit('Organize the remaining design')
+  expect(feature.execute).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      metadata: expect.objectContaining({
+        aiTargets: {
+          compositionId: 'f',
+          roleToElementIds: { root: ['f'], card: ['r'] }
+        }
+      })
+    })
+  )
+})
+
+it('starts new conversations without losing prior messages or target context', async () => {
+  let id = 0
+  const feature = createFeature(async () =>
+    executed(
+      {
+        compositionId: 'f',
+        roleToElementIds: { heading: ['t'] },
+        status: 'complete'
+      },
+      'apply_prepared_design'
+    )
+  )
+  const controller = createAiConversationController({
+    feature,
+    getElementType: (id) => (id === 'f' ? 'frame' : 'text'),
+    createConversationId: () => `chat-${++id}`
+  })
+  await controller.submit('Create the first design')
+  const first = controller.getSnapshot()
+  controller.newConversation()
+  expect(controller.getSnapshot()).toMatchObject({
+    conversationId: 'chat-2',
+    settledTurns: [],
+    targetHints: { compositionId: null, roleToElementIds: {} }
+  })
+  controller.newConversation()
+  expect(controller.getSnapshot().conversationId).toBe('chat-2')
+  controller.selectConversation(first.conversationId)
+  expect(controller.getSnapshot().settledTurns).toEqual(first.settledTurns)
+  expect(controller.getSnapshot().targetHints).toEqual(first.targetHints)
+  await controller.submit('Revise the heading')
+  expect(controller.getSnapshot().settledTurns[1].turnId).toBe('chat-1:turn:2')
+  expect(() => controller.selectConversation('missing')).toThrow()
+})
+it('guards navigation during work and keeps navigation snapshots stable during progress', async () => {
+  const pending = createDeferred<unknown>()
+  let progress:
+    | Parameters<AiConversationFeature['execute']>[0]['progressObserver']
+    | undefined
+  const feature = createFeature((request) => {
+    progress = request.progressObserver
+    return pending.promise
+  })
+  const controller = createAiConversationController({
+    feature,
+    getElementType: () => undefined
+  })
+  const listener = vi.fn()
+  controller.subscribeNavigation(listener)
+  const task = controller.submit('Draw a scene')
+  const snapshot = controller.getNavigationSnapshot(),
+    calls = listener.mock.calls.length
+  progress?.({ stage: 'requesting', status: 'running' } as never)
+  expect(controller.getNavigationSnapshot()).toBe(snapshot)
+  expect(listener).toHaveBeenCalledTimes(calls)
+  expect(() => controller.newConversation()).toThrow()
+  expect(() => controller.selectConversation(snapshot.conversationId)).toThrow()
+  pending.resolve(executed({ status: 'no-change' }))
+  await task
+  expect(controller.getNavigationSnapshot().busy).toBe(false)
+  await controller.dispose()
+  expect(() => controller.newConversation()).toThrow()
 })

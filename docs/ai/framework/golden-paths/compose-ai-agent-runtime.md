@@ -156,9 +156,8 @@ Render, Collaboration, or borrowed providers.
   arguments. Permission and execution receive the exact same arguments
   identity; confirmation and terminal preview receive only the redacted
   bounded summary.
-- Denial or cancellation opens no transaction.
-- One accepted multi-action batch opens one transaction and produces one
-  intended undo entry.
+- Denial or cancellation rolls back the invocation transaction without committing a rejected batch.
+- One invocation opens one transaction around sequential complete batches and produces one intended undo entry. Each batch repeats permission and confirmation.
 - A resolved app-owned recoverable partial result may commit successful sibling
   mutations in that same undo entry.
 - A rejected/throwing executor is fatal and rolls back without an accepted
@@ -171,3 +170,10 @@ Render, Collaboration, or borrowed providers.
 
 Executable reference:
 `docs/public/build/ai-actions.md`.
+
+A provider may await `options.executeBatch(preparedBatch)` while its original
+`requestActionBatch` is pending. The callback returns actual redacted action
+results and refreshed context. It is sequential, invocation-bound and retired at
+provider settlement. Do not repeat acknowledged batches in the final return.
+No provider retry is allowed after a batch is admitted. Domain tools, preparation
+and capability-limit messages remain App/backend policy.

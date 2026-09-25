@@ -67,3 +67,15 @@ export * from './events/index.js'
 export * from './selection/channels.js'
 export * from './selection/ids.js'
 export * from './vector/synthetic-handle.js'
+export {
+  TEXT_COMPONENT_TYPE,
+  TEXT_COMPONENT_DEFINITION,
+  TEXT_RENDER_STRATEGY
+} from './components/text.js'
+export {
+  TEXT_PROPERTY_TYPE,
+  TEXT_PROPERTY_SCHEMA,
+  TEXT_PROPERTY_DEFINITION,
+  DEFAULT_TEXT_DATA,
+  type TextData
+} from './props/components/text-component.js'
