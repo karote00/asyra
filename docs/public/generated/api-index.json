@@ -484,7 +484,7 @@
       "publicEntries": [
         "."
       ],
-      "version": "0.5.4"
+      "version": "0.5.5"
     },
     {
       "entries": [
@@ -1659,7 +1659,7 @@
         "./canvas-pipeline-debugger",
         "./contracts"
       ],
-      "version": "0.5.6"
+      "version": "0.5.7"
     },
     {
       "entries": [
@@ -2113,7 +2113,7 @@
         ".",
         "./index.css"
       ],
-      "version": "0.5.4"
+      "version": "0.5.5"
     },
     {
       "entries": [
@@ -2354,7 +2354,7 @@
       "publicEntries": [
         "."
       ],
-      "version": "0.5.3"
+      "version": "0.5.4"
     },
     {
       "entries": [
@@ -2570,7 +2570,7 @@
       "publicEntries": [
         "."
       ],
-      "version": "0.5.3"
+      "version": "0.5.4"
     },
     {
       "entries": [
@@ -2666,7 +2666,7 @@
       "publicEntries": [
         "."
       ],
-      "version": "0.5.4"
+      "version": "0.5.5"
     },
     {
       "entries": [
@@ -2711,7 +2711,7 @@
       "publicEntries": [
         "."
       ],
-      "version": "0.5.2"
+      "version": "0.5.3"
     },
     {
       "entries": [
@@ -3057,7 +3057,7 @@
       "publicEntries": [
         "."
       ],
-      "version": "0.5.7"
+      "version": "0.5.8"
     },
     {
       "entries": [
@@ -3400,7 +3400,7 @@
       "publicEntries": [
         "."
       ],
-      "version": "0.5.3"
+      "version": "0.5.4"
     },
     {
       "entries": [
@@ -3769,7 +3769,7 @@
       "publicEntries": [
         "."
       ],
-      "version": "0.5.3"
+      "version": "0.5.4"
     },
     {
       "entries": [
@@ -4345,7 +4345,7 @@
         ".",
         "./canvas-pipeline-debugger"
       ],
-      "version": "0.5.6"
+      "version": "0.5.7"
     },
     {
       "entries": [
@@ -4862,7 +4862,7 @@
       "publicEntries": [
         "."
       ],
-      "version": "0.5.3"
+      "version": "0.5.4"
     },
     {
       "entries": [
@@ -4916,7 +4916,7 @@
       "publicEntries": [
         "."
       ],
-      "version": "0.5.2"
+      "version": "0.5.3"
     },
     {
       "entries": [
@@ -4952,7 +4952,7 @@
       "publicEntries": [
         "."
       ],
-      "version": "0.5.2"
+      "version": "0.5.3"
     },
     {
       "entries": [
@@ -5022,7 +5022,7 @@
       "publicEntries": [
         "."
       ],
-      "version": "0.5.3"
+      "version": "0.5.4"
     },
     {
       "entries": [
@@ -5800,7 +5800,7 @@
       "publicEntries": [
         "."
       ],
-      "version": "0.5.1"
+      "version": "0.5.2"
     }
   ],
   "schemaVersion": 1

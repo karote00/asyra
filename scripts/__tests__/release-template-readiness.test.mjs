@@ -9,12 +9,30 @@ import { fileURLToPath } from 'node:url'
 import { readFrameworkReleaseSource } from '../framework-release-packages.js'
 import {
   DEFAULT_TEMPLATE_CONSUMER_DIRECTORY,
+  assertTemplateFrameworkVersionsMatch,
   prepareGeneratedTemplateConsumer,
   resolveTemplateConsumerDirectory,
   validateGeneratedTemplateContract,
   validateRegistryInstalledGeneratedApp,
   verifyGeneratedTemplate
 } from '../release-template-readiness.js'
+
+test('template release readiness rejects dependencies outside the frozen Framework set', () => {
+  assert.doesNotThrow(() =>
+    assertTemplateFrameworkVersionsMatch(
+      { '@asyra/collaboration': '0.5.5' },
+      new Map([['@asyra/collaboration', { version: '0.5.5' }]])
+    )
+  )
+  assert.throws(
+    () =>
+      assertTemplateFrameworkVersionsMatch(
+        { '@asyra/collaboration': '0.5.4' },
+        new Map([['@asyra/collaboration', { version: '0.5.5' }]])
+      ),
+    /must use frozen version 0\.5\.5, found 0\.5\.4/u
+  )
+})
 
 const repositoryRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),

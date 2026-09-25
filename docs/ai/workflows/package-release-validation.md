@@ -76,6 +76,9 @@ provide `clean`.
 - the committed Turbo graph against workspace manifests;
 - root/CI/deployment command wiring;
 - release command ordering and restoration behavior;
+- that a committed generated template remains standalone with exact package
+  pins without requiring Framework source-version parity between release
+  stages;
 - the non-mutating generated-template synchronization command contract;
 - monorepo unit, integration, and contract test placement through
   `scripts/__tests__/test-file-placement.test.mjs`.
@@ -145,9 +148,13 @@ template. The third builds the framework dependency graph, compiles that
 generated template against those local builds, and removes its temporary build
 output. General feature/refactor PR CI does not require current template parity;
 that would expand ordinary source work into generated output contrary to the
-generated-artifact rule. `release:validate` owns the synchronization check and
-reuses its immediately preceding clean framework build for the same template
-compilation.
+generated-artifact rule. Exact dependency equality against the frozen
+Framework release set is checked by `release:template` and the release
+validation path when template/CLI readiness is required. A prior-stage template
+may therefore retain older exact package pins; it cannot pass the later
+readiness check until synchronized with the frozen release set.
+`release:validate` owns the synchronization check and reuses its immediately
+preceding clean framework build for the same template compilation.
 
 ## Release Validation and Publication Boundary
 

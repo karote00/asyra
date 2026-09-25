@@ -776,18 +776,7 @@ test('generated template manifest is standalone on the supported release runtime
     manifest.dependencies ?? {}
   )) {
     if (!packageName.startsWith('@asyra/')) continue
-    const sourceManifest = JSON.parse(
-      readFileSync(
-        path.join(
-          repositoryRoot,
-          'packages',
-          packageName.slice('@asyra/'.length),
-          'package.json'
-        ),
-        'utf8'
-      )
-    )
-    assert.equal(version, sourceManifest.version)
+    assert.match(version, /^\d+\.\d+\.\d+$/u, packageName)
   }
 
   const exampleEnvironment = readFileSync(
