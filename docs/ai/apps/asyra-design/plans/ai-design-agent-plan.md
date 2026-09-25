@@ -221,7 +221,7 @@ are pending or required functionality is absent. Do not merge or publish package
 
 ## Scope, costs and stop conditions
 
-Authorized owners: Design App AI/server/conversation/UI/native primitives needed
+Authorized owners: Asyra Design AI/server/conversation/UI/native primitives needed
 for these design cases, their direct framework dependencies where canonical
 capabilities are missing, formal tests, specs/Inspector, docs and generated template.
 No repository-wide cleanup, third-party account integration, executable-site
@@ -1368,3 +1368,23 @@ SVG reports unsupported without raster substitution. Gates: focused provider,
 reference/prompt/download tests, Inspector, naming, types, lint, build, template parity.
 Self-review: no fallback artwork, fixed-domain routing, forced drawing method,
 provider model change, or claims that prompt assertions prove live task quality.
+
+
+### CI integration - 2026-09-25
+
+Rebased PR #223 onto main `2bc5db655`, preserving the current AI implementation.
+Regenerated documentation digests and the standalone template for main's package
+versions. Synchronized release assertions with the monorepo-only API contract
+test exclusion; local `.env` is allowed but must remain untracked. The backend
+import check admits only the documented pure Group bounds entrypoint and verifies
+its bundled graph contains no runtime dependency.
+
+Validation: `test:ai` (339), `test:server-response-harness` (428), App `test:local`
+(409 Vitest cases), runtime boundary (8), release automation (33), and conversation
+E2E (19) pass. Repository script suite's other 269 cases passed before the three
+release assertion corrections; the corrected 33-case file passed afterward.
+Typecheck, workspace build (24 tasks), lint (no errors), naming, docs/readme,
+dependency, template synchronization, Framework clean consumer (19 packages),
+and generated-template consumer (12 packages, six phases) pass. Browser evidence
+was rerun after Vite reloads from concurrent build/file changes invalidated the
+earlier runs. Exact-head changeset admission and remote CI remain delivery gates.

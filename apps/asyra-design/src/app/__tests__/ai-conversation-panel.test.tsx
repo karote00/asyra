@@ -985,7 +985,7 @@ describe('AI Agent conversation panel intent boundary', () => {
     const settledMessage = screen.getByTestId('ai-agent-message')
     expect(settledMessage.tagName).toBe('ARTICLE')
     expect(settledMessage.getAttribute('data-outcome')).toBe('success')
-    expect(screen.getByText('畫一個貓臉', { selector: 'p' })).toBeTruthy()
+    expect(screen.getByText('draw a cat face', { selector: 'p' })).toBeTruthy()
     expect(screen.getByText('Reviewing the drawing')).toBeTruthy()
     expect(screen.getByText('Reshaping the tail')).toBeTruthy()
     expect(screen.queryByText('Applying changes')).toBeNull()
@@ -1116,7 +1116,7 @@ describe('AI Agent conversation panel intent boundary', () => {
       await act(async () => {
         await conversation.submit({
           attachments: withAttachment ? [referenceAttachment] : [],
-          intent: '請依照這張圖繪製'
+          intent: 'draw from this image'
         })
       })
 
@@ -1131,7 +1131,10 @@ describe('AI Agent conversation panel intent boundary', () => {
       expect(feature.execute.mock.calls[1][0]).toMatchObject({
         intent: expectedIntent,
         metadata: {
-          replyTo: { intent: '請依照這張圖繪製', turnId: expect.any(String) },
+          replyTo: {
+            intent: 'draw from this image',
+            turnId: expect.any(String)
+          },
           ...(withAttachment ? { imageAttachments: [referenceAttachment] } : {})
         }
       })

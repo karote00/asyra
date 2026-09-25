@@ -353,7 +353,7 @@ describe('App context-menu composition', () => {
   })
 
   it('retains an active turn when an external toggle closes the panel', () => {
-    aiMocks.activeTurn = { intent: '畫一個貓臉' }
+    aiMocks.activeTurn = { intent: 'draw a cat face' }
     render(<App ai={createAi()} groupCommandPlatform="macos" />)
     const toolbarButton = screen.getByRole('button', {
       name: 'Agent toolbar'
