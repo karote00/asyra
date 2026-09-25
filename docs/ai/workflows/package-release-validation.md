@@ -173,6 +173,16 @@ preceding clean Framework build for the same template compilation. The
 Framework-only validation path does not synchronize, compare, or build an app
 template.
 
+After the Framework versions are published, a Generic Starter registry
+consumer check can use the actual `npm pack` CLI tarball before the CLI itself
+is published. Run the packed CLI through both its npm and Yarn creation paths,
+then verify each fresh consumer's Framework packages resolve from the public
+npm registry in its lockfile and are installed as non-symlink package
+directories. Run the consumer's formal tests, typecheck, lint, production
+build, and applicable Starter interaction tests. Bind the recorded results to
+the source SHA and CLI tarball SHA-256. An HTTP response or the Framework-only
+registry consumer does not prove this generated Starter path.
+
 ## Release Validation and Publication Boundary
 
 ```bash
