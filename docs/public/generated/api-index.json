@@ -151,6 +151,7 @@
             "AiActionDefinition",
             "AiActionDescription",
             "AiActionExecutionBatch",
+            "AiActionExecutionError",
             "AiActionExecutionResult",
             "AiActionRegistry",
             "AiActionRegistryError",
@@ -3069,6 +3070,19 @@
             "resolveSyntheticVectorHandlePosition",
             "ungroupElement"
           ]
+        },
+        {
+          "members": [
+            "height",
+            "width",
+            "x",
+            "y"
+          ],
+          "path": "./group-bounds",
+          "symbols": [
+            "GroupBounds",
+            "deriveGroupBounds"
+          ]
         }
       ],
       "frameworkDependencies": [
@@ -3083,7 +3097,8 @@
       "guidePath": "docs/public/reference/packages/preset.md",
       "name": "@asyra/preset",
       "publicEntries": [
-        "."
+        ".",
+        "./group-bounds"
       ],
       "version": "0.5.8"
     },
@@ -3692,10 +3707,13 @@
             "issueDetachedTransactionOwnerBatch",
             "moveElements",
             "providers",
+            "publishAppliedEventBatch",
+            "publishCommittedEventsToObservers",
             "publishEvent",
             "publishEventToObservers",
             "publishEventsToObservers",
             "publishLocalComputedDataEvents",
+            "publishLocalProjectionEvents",
             "redo",
             "redoWithRenderPolicy",
             "registerEventDefinitions",
@@ -3730,6 +3748,7 @@
             "subscribeToAddElement",
             "subscribeToAddElements",
             "subscribeToAddProperty",
+            "subscribeToAppliedEventBatches",
             "subscribeToChangeSubtree",
             "subscribeToEmitInitRender",
             "subscribeToEndTransaction",
@@ -4461,6 +4480,7 @@
             "missingCapabilities",
             "modifiers",
             "name",
+            "nativeResolution",
             "normalize",
             "object",
             "objectType",
@@ -4479,6 +4499,7 @@
             "radius",
             "radiusX",
             "radiusY",
+            "region",
             "repeat",
             "replace",
             "replaceAll",

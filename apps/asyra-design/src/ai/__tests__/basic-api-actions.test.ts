@@ -73,3 +73,31 @@ it('cancels before dispatch and preserves null/false and owner failures', async 
     action.execute({ elementId: 'v', closed: true }, context)
   ).rejects.toThrow('owner failure')
 })
+
+it('reports completed basic writes and no-change reads or rejected writes', async () => {
+  const method = vi.fn()
+  const actions = createBasicApiActions(() => ({
+    core: { getElementData: method },
+    element: { setVectorClosed: method },
+    selection: {},
+    hierarchy: {},
+    viewport: {},
+    fill: {},
+    stroke: {}
+  }))
+  const context = { signal: new AbortController().signal }
+  const write = actions.find((a) => a.name === 'api_element_setVectorClosed')
+  const read = actions.find((a) => a.name === 'api_core_getElementData')
+  if (!write || !read) throw new Error('Missing API actions')
+  expect(await write.execute({}, context)).toMatchObject({ status: 'complete' })
+  method.mockReturnValueOnce(false)
+  expect(await write.execute({}, context)).toMatchObject({
+    status: 'no-change'
+  })
+  method.mockReturnValueOnce(null)
+  expect(await write.execute({}, context)).toMatchObject({
+    status: 'no-change'
+  })
+  method.mockReturnValueOnce({ id: 'v' })
+  expect(await read.execute({}, context)).toMatchObject({ status: 'no-change' })
+})

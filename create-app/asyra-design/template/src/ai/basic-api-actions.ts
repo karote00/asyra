@@ -53,6 +53,12 @@ export const createBasicApiActions = (
       else if (contract.effect === 'write' && typeof value === 'string')
         elementId = value
       return {
+        status:
+          (contract.effect === 'write' || contract.effect === 'delete') &&
+          value !== false &&
+          value !== null
+            ? 'complete'
+            : 'no-change',
         value: value ?? null,
         ...(elementId ? { elementId } : {})
       }

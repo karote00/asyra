@@ -847,9 +847,9 @@ for (const width of [360, 1280]) {
             message: event.message
           }) + '\n'
         )
-        await expect(status).toHaveText(event.label)
+        await expect(status).toHaveText(event.message ?? event.label)
         await expect(current).toHaveCount(1)
-        await expect(current).toHaveText(event.label)
+        await expect(current).toHaveText(event.message ?? event.label)
         expect(await originalRow.evaluate((row) => row.isConnected)).toBe(true)
         await expect(firstRow).toHaveText(originalText)
         expect(
@@ -886,7 +886,7 @@ for (const width of [360, 1280]) {
             )
         )
       expect(Math.max(...rowGaps) - Math.min(...rowGaps)).toBeLessThan(1)
-      await expect(current).toContainText('Adjusting element visibility')
+      await expect(current).toContainText('正在隱藏右下角的標記。')
       await page
         .getByTestId('ai-agent-panel')
         .screenshot({ path: testInfo.outputPath('current-activity.png') })
@@ -1012,7 +1012,7 @@ for (const width of [360, 1280]) {
       await expect(current).toHaveCount(0)
       await expect(page.getByText('Result', { exact: true })).toHaveCount(0)
       await expect(page.getByLabel('Operational progress')).toContainText(
-        'Adjusting element visibility'
+        '正在隱藏右下角的標記。'
       )
       await page
         .getByTestId('ai-agent-panel')

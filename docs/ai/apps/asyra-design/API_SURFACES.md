@@ -833,7 +833,9 @@ remains available without a cumulative review quota. The model reviews the actua
 and explains unresolved constraints rather than reporting unconditional success.
 
 The local-only `record_design_review` tool records a pre-mutation plan and a
-post-render assessment. It never mutates the canvas. Criteria express user intent,
+post-render assessment. Its published schema requires method, references (an empty
+array is valid), criteria and detailRequired for the plan; structure/visual phases
+require inspectionIds and checks. It never mutates the canvas. Criteria express user intent,
 including intentionally rough or minimal results; detailed inspection is conditional.
 Inspection receipts carry opaque IDs and a mutation revision. The backend checks
 current evidence IDs, criterion coverage and pass/fail/unverified judgments before
@@ -858,6 +860,27 @@ return value under `value` (including null/false); null is not proof of a succes
 mutation. Existing Runtime permission, confirmation and transaction boundaries apply.
 Deletion contracts require confirmation by default.
 
+Each Core, Design and Vector API contract has its own named `const`, declared with
+`defineBasicApi({ owner, method, effect, parameters, description })`. The exported
+catalogue in each file explicitly lists those constants; do not generate individual
+API declarations through array spreads or `.map()`. Shared schemas keep descriptive
+names and schema helpers retain their original imports rather than aliases like `id`.
+`parameters` is an ordered array of `{ name, schema, optional? }`; declaration order
+matches the public method signature, and omitted `optional` means required.
+
+```ts
+const getElementComputedDataApi = defineBasicApi({
+  owner: 'core',
+  method: 'getElementComputedData',
+  effect: 'read',
+  parameters: [
+    { name: 'elementId', schema: apiString },
+    { name: 'fields', schema: apiIds, optional: true }
+  ],
+  description: 'Read selected computed fields.'
+})
+```
+
 The local backend exposes `describe_design_apis` for a compact index or requested
 schemas. Execute discovered operations through `execute_design_batch`; do not send
 hundreds of individual schemas on every model request. High-level design tools remain
@@ -874,3 +897,8 @@ including translated containers, through both AI batches and ordinary common API
 Object and point identities survive, with one Undo/Redo entry for the operation.
 Accepted canonical batches update local computed projections synchronously so the
 next action reads current coordinates; commit observers remain transaction-buffered.
+
+Basic action receipts preserve the owner return value and include the conversation
+status contract: successful write/delete execution reports `complete`; reads, view
+and selection operations, or writes returning `false`/`null`, report `no-change`.
+Thrown owner errors remain failures; completion is not a visual-quality verdict.

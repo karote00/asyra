@@ -1519,3 +1519,167 @@ test('local subscription reproduces a named logo through reference tools without
     })
   }
 })
+
+test('local subscription discovers APIs to reflect and center an existing vector', async ({
+  page
+}, testInfo) => {
+  test.skip(process.env.E2E_LOCAL_AI !== 'true', 'Requires local subscription')
+  test.setTimeout(240_000)
+  const frames = await captureProviderFrames(
+    page,
+    testInfo.outputPath('action-batch.ndjson')
+  )
+  await page.goto(createTestDocumentIdentity().url)
+  await waitForAppReady(page)
+  const fixture = await page.evaluate(async () => {
+    const { elementApis, transactionApis, selectionApis } =
+      await import('../src/common-apis')
+    const { core } = await import('../src/testing/runtime-access')
+    const id = transactionApis.runTransaction(() =>
+      elementApis.createVectorElementFromSinglePoint('a', { x: 20, y: 20 })
+    )
+    if (!id) throw new Error('Missing vector')
+    const parentId = transactionApis.runTransaction(() => {
+      elementApis.appendVectorAnchorPoint(id, {
+        id: 'b',
+        x: 80,
+        y: 30,
+        type: 'sharp',
+        inHandle: null,
+        outHandle: null
+      })
+      elementApis.appendVectorAnchorPoint(id, {
+        id: 'c',
+        x: 30,
+        y: 70,
+        type: 'sharp',
+        inHandle: null,
+        outHandle: null
+      })
+      const parent = core.createElementInParent(
+        {
+          type: 'frame',
+          name: 'Test container',
+          x: 0,
+          y: 0,
+          width: 300,
+          height: 200
+        },
+        core.getCurrentWorkspaceId()
+      )
+      core.moveElements({
+        elementIds: [id],
+        targetParentId: parent,
+        targetIndex: 0
+      })
+      return parent
+    })
+    elementApis.patchElementProperties(
+      [
+        {
+          elementId: id,
+          records: [
+            {
+              key: 'strokes',
+              set: {
+                'test-stroke': {
+                  style: 'solid',
+                  position: 'center',
+                  width: 2,
+                  dash: 20,
+                  gap: 20,
+                  fill: {
+                    kind: 'solid',
+                    defaultColorFormat: 'hex',
+                    colorFormat: 'hex',
+                    color: '#111111',
+                    opacity: 1,
+                    visible: true,
+                    gradient: null
+                  },
+                  joinType: 'miter',
+                  capType: 'butt',
+                  miterAngle: 28.96
+                }
+              }
+            }
+          ]
+        }
+      ],
+      { undoable: false }
+    )
+    selectionApis.selectElements([id])
+    return {
+      id,
+      parentId,
+      before: elementApis.getVectorAnchorPoints(id),
+      count: core.getCanonicalElementCount()
+    }
+  })
+  const depth = await getUndoHistoryDepth(page)
+  await page.getByRole('button', { name: 'Open Agent' }).click()
+  await expect(page.getByText('Local AI connected')).toBeVisible({
+    timeout: 15_000
+  })
+  const prompt =
+    '把選取的向量左右翻轉，保留原本的物件，完成後將它置中於父容器。'
+  await page.getByLabel('Message Agent').fill(prompt)
+  const started = Date.now()
+  await page.getByRole('button', { name: 'Send', exact: true }).click()
+  const message = page.getByTestId('ai-agent-message').last()
+  await expect(message).not.toHaveAttribute('data-outcome', 'active', {
+    timeout: 210_000
+  })
+  const state = await page.evaluate(async (id) => {
+    const { elementApis } = await import('../src/common-apis')
+    const { core } = await import('../src/testing/runtime-access')
+    return {
+      points: elementApis.getVectorAnchorPoints(id),
+      count: core.getCanonicalElementCount(),
+      data: core.getElementData(id)
+    }
+  }, fixture.id)
+  await writeFile(
+    testInfo.outputPath('live-vector-evidence.json'),
+    JSON.stringify(
+      {
+        prompt,
+        elapsedMs: Date.now() - started,
+        fixture,
+        state,
+        reply: await message.innerText()
+      },
+      null,
+      2
+    )
+  )
+  await writeFile(testInfo.outputPath('action-batch.ndjson'), frames.join(''))
+  await page.screenshot({ path: testInfo.outputPath('live-vector-result.png') })
+  await expect(message).toHaveAttribute('data-outcome', 'success')
+  expect(state.count).toBe(fixture.count)
+  expect(state.points.map((p) => p.id)).toEqual(fixture.before.map((p) => p.id))
+  const xs = state.points.map((p) => p.x)
+  const ys = state.points.map((p) => p.y)
+  expect((Math.min(...xs) + Math.max(...xs)) / 2).toBeCloseTo(150, 5)
+  expect((Math.min(...ys) + Math.max(...ys)) / 2).toBeCloseTo(100, 5)
+  for (let i = 1; i < state.points.length; i++) {
+    expect(state.points[i].x - state.points[0].x).toBeCloseTo(
+      -(fixture.before[i].x - fixture.before[0].x),
+      5
+    )
+    expect(state.points[i].y - state.points[0].y).toBeCloseTo(
+      fixture.before[i].y - fixture.before[0].y,
+      5
+    )
+  }
+  expect(await getUndoHistoryDepth(page)).toBe(depth + 1)
+  await undo(page)
+  const restored = await page.evaluate(
+    async (id) =>
+      (await import('../src/common-apis')).elementApis.getVectorAnchorPoints(
+        id
+      ),
+    fixture.id
+  )
+  expect(restored).toEqual(fixture.before)
+})

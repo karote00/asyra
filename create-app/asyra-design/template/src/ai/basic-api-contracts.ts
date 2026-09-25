@@ -36,22 +36,40 @@ export const apiArray = (items: unknown) => ({ type: 'array', items })
 export const apiPosition = apiObject({ x: apiNumber, y: apiNumber })
 export const apiIds = apiArray(apiString)
 export const apiRecord = { type: 'object', additionalProperties: true }
-export const defineBasicApi = (
-  owner: BasicApiOwner,
-  method: string,
-  effect: BasicApiEffect,
-  properties: Record<string, unknown> = {},
-  description = '',
-  optional: readonly string[] = []
-): BasicApiContract => ({
+/** Declaration order is the public method's positional argument order. */
+export interface BasicApiParameterDefinition {
+  name: string
+  schema: Record<string, unknown>
+  optional?: boolean
+}
+
+export interface BasicApiDefinition {
+  owner: BasicApiOwner
+  method: string
+  effect: BasicApiEffect
+  parameters: readonly BasicApiParameterDefinition[]
+  description?: string
+}
+
+export const defineBasicApi = ({
+  owner,
+  method,
+  effect,
+  parameters,
+  description = ''
+}: BasicApiDefinition): BasicApiContract => ({
   owner,
   method,
   effect,
   name: `api_${owner}_${method}`,
   description: `${owner}.${method}. ${description} Uses the existing public API. Event/history suppression options are not model inputs.`,
-  parameters: Object.keys(properties),
+  parameters: parameters.map((parameter) => parameter.name),
   inputSchema: apiObject(
-    properties,
-    Object.keys(properties).filter((name) => !optional.includes(name))
+    Object.fromEntries(
+      parameters.map((parameter) => [parameter.name, parameter.schema])
+    ),
+    parameters
+      .filter((parameter) => !parameter.optional)
+      .map((parameter) => parameter.name)
   )
 })

@@ -1,3 +1,4 @@
+import { operationInputIssue } from './operation-input-schema'
 import {
   basicApiContracts,
   getBasicApiContract
@@ -419,6 +420,11 @@ export const createLocalOperationTools = (
         })
       }
       if (canInspect && name === AiDesignToolIds.RECORD_DESIGN_REVIEW) {
+        const issue = operationInputIssue(
+          args,
+          designReviewDefinition.inputSchema
+        )
+        if (issue) throw new LocalOperationPreparationError(issue)
         try {
           return JSON.stringify(designReview.record(args))
         } catch (error) {

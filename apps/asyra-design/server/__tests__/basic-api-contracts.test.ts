@@ -1,3 +1,8 @@
+import {
+  defineBasicApi,
+  apiString,
+  apiNumber
+} from '../../src/ai/basic-api-contracts'
 import { basicApiDispositions } from '../../src/ai/basic-api-dispositions'
 import { expect, it } from 'vitest'
 import ts from 'typescript'
@@ -201,4 +206,60 @@ it('admits typed vector batches and rejects malformed geometry and history suppr
       basicApiContracts
     )
   ).toThrow()
+})
+
+it('keeps declared parameter order while excluding optional fields from required inputs', () => {
+  const contract = defineBasicApi({
+    owner: 'core',
+    method: 'getElementComputedData',
+    effect: 'read',
+    parameters: [
+      { name: 'elementId', schema: apiString },
+      {
+        name: 'fields',
+        schema: { type: 'array', items: apiString },
+        optional: true
+      }
+    ],
+    description: 'Read selected fields.'
+  })
+  expect(contract.parameters).toEqual(['elementId', 'fields'])
+  expect(contract.inputSchema).toEqual({
+    type: 'object',
+    additionalProperties: false,
+    properties: {
+      elementId: apiString,
+      fields: { type: 'array', items: apiString }
+    },
+    required: ['elementId']
+  })
+  expect(contract.name).toBe('api_core_getElementComputedData')
+  // Numeric-looking names must also retain declaration order, not object-key ordering.
+  expect(
+    defineBasicApi({
+      owner: 'core',
+      method: 'ordered',
+      effect: 'read',
+      parameters: [
+        { name: '2', schema: apiNumber },
+        { name: '1', schema: apiNumber }
+      ]
+    }).parameters
+  ).toEqual(['2', '1'])
+})
+
+it('supports parameterless APIs without allowing undeclared model arguments', () => {
+  const contract = defineBasicApi({
+    owner: 'core',
+    method: 'getCurrentWorkspaceId',
+    effect: 'read',
+    parameters: []
+  })
+  expect(contract.parameters).toEqual([])
+  expect(contract.inputSchema).toEqual({
+    type: 'object',
+    properties: {},
+    required: [],
+    additionalProperties: false
+  })
 })

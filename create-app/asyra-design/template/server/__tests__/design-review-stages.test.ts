@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import { createLocalDesignReview } from '../local-design-review'
+import {
+  createLocalDesignReview,
+  designReviewDefinition
+} from '../local-design-review'
+import { operationInputIssue } from '../operation-input-schema'
 const plan = {
   phase: 'plan',
   method: 'Construct a requested view',
@@ -258,3 +262,23 @@ it.each(
     ).toMatchObject({ accepted: true, deferredDetails: [] })
   }
 )
+
+it('advertises required plan and inspection fields before tool execution', () => {
+  const schema = designReviewDefinition.inputSchema
+  for (const field of ['method', 'references', 'criteria', 'detailRequired']) {
+    const input = Object.fromEntries(
+      Object.entries(plan).filter(([key]) => key !== field)
+    )
+    expect(operationInputIssue(input, schema), field).toBeDefined()
+  }
+  expect(operationInputIssue(plan, schema)).toBeUndefined()
+  for (const phase of ['structure', 'visual']) {
+    expect(operationInputIssue({ phase }, schema)).toBeDefined()
+    expect(
+      operationInputIssue(
+        { phase, inspectionIds: ['current'], checks: [check('Viewpoint')] },
+        schema
+      )
+    ).toBeUndefined()
+  }
+})

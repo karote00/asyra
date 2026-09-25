@@ -1365,7 +1365,13 @@ it('retains the whole drawing review target after a child refinement', async () 
       {
         phase: 'visual',
         inspectionIds: [overview, detail],
-        checks: []
+        checks: [
+          {
+            requirement: 'Reflective glass',
+            status: 'pass',
+            evidence: 'Old inspection'
+          }
+        ]
       },
       signal
     )
@@ -1698,4 +1704,29 @@ it('executes discovered APIs in a batch and rejects unknown lookup names', async
       signal
     )
   ).rejects.toThrow('Unknown')
+})
+
+it('reports exact review input fields before stateful evidence validation', async () => {
+  const tools = createLocalOperationTools(
+    [
+      {
+        name: AiActionNames.INSPECT_DRAWING,
+        description: 'Inspect',
+        inputSchema: {}
+      }
+    ],
+    { modelActions: (a) => a, resolveBatch: (b) => b },
+    async () => ({ actionResults: [], context: {} })
+  )
+  await expect(
+    tools.call(
+      AiDesignToolIds.RECORD_DESIGN_REVIEW,
+      {
+        phase: 'visual',
+        inspectionIds: ['current'],
+        checks: [{ status: 'pass', evidence: 'Visible' }]
+      },
+      new AbortController().signal
+    )
+  ).rejects.toThrow('checks[0].requirement')
 })

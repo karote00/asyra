@@ -17,6 +17,16 @@ export const designReviewDefinition = {
     type: 'object',
     additionalProperties: false,
     required: ['phase'],
+    oneOf: [
+      {
+        properties: { phase: { const: 'plan' } },
+        required: ['method', 'references', 'criteria', 'detailRequired']
+      },
+      {
+        properties: { phase: { enum: ['structure', 'visual'] } },
+        required: ['inspectionIds', 'checks']
+      }
+    ],
     properties: {
       phase: { type: 'string', enum: ['plan', 'structure', 'visual'] },
       method: { type: 'string', maxLength: 1000 },
