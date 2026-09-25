@@ -170,6 +170,18 @@ test('release template exposes a non-mutating synchronization check', () => {
   )
 })
 
+test('general README checks do not force a selected app template to synchronize', () => {
+  const manifest = JSON.parse(
+    readFileSync(path.join(repositoryRoot, 'package.json'), 'utf8')
+  )
+  const command = manifest.scripts['docs:readme:check']
+
+  assert.match(command, /docs:readme:packages:check/u)
+  assert.match(command, /docs:readme:validate/u)
+  assert.match(command, /docs:public:check/u)
+  assert.doesNotMatch(command, /release:app:check|--prod=/u)
+})
+
 test('generated app exposes reproducible standalone lint tooling', () => {
   const rootManifest = JSON.parse(
     readFileSync(path.join(repositoryRoot, 'package.json'), 'utf8')
@@ -791,6 +803,133 @@ test('generated template manifest is standalone on the supported release runtime
     /^VITE_COLLABORATION_WS_URL=ws:\/\/127\.0\.0\.1:4101\/collaboration$/m
   )
   assert.doesNotMatch(exampleEnvironment, /(?:SECRET|TOKEN|PASSWORD|API_KEY)=/i)
+})
+
+test('template generation pins the selected Framework set and detects fixture drift', () => {
+  const fixtureRoot = mkdtempSync(
+    path.join(repositoryRoot, 'tmp', 'release-template-generator-fixture-')
+  )
+  const appName = 'fixture-app'
+  const appSource = path.join(fixtureRoot, 'apps', appName)
+  const template = path.join(fixtureRoot, 'create-app', appName, 'template')
+  const generatorPath = path.join(repositoryRoot, 'scripts/release-template.js')
+
+  try {
+    writeFileSync(
+      path.join(fixtureRoot, 'package.json'),
+      JSON.stringify({ devDependencies: { prettier: '3.2.5' } })
+    )
+    mkdirSync(path.join(fixtureRoot, 'release-configs'), { recursive: true })
+    writeFileSync(
+      path.join(fixtureRoot, 'release-configs', `${appName}.json`),
+      JSON.stringify({
+        src: `apps/${appName}`,
+        dest: `create-app/${appName}/template`
+      })
+    )
+    mkdirSync(path.join(fixtureRoot, 'packages', 'core'), { recursive: true })
+    writeFileSync(
+      path.join(fixtureRoot, 'packages', 'core', 'package.json'),
+      JSON.stringify({ name: '@asyra/core', version: '1.2.4' })
+    )
+    mkdirSync(appSource, { recursive: true })
+    writeFileSync(
+      path.join(appSource, 'package.json'),
+      JSON.stringify({
+        name: appName,
+        dependencies: { '@asyra/core': 'workspace:*' },
+        scripts: { start: 'vite dev' }
+      })
+    )
+    writeFileSync(path.join(appSource, 'README.md'), '# Fixture app\n')
+    writeFileSync(
+      path.join(appSource, '.env.example'),
+      'APP_URL=http://localhost\n'
+    )
+
+    const runGenerator = (check = false) =>
+      spawnSync(
+        process.execPath,
+        [generatorPath, `--prod=${appName}`, ...(check ? ['--check'] : [])],
+        { cwd: fixtureRoot, encoding: 'utf8' }
+      )
+
+    const generated = runGenerator()
+    assert.equal(generated.status, 0, generated.stderr || generated.stdout)
+
+    const manifestPath = path.join(template, 'package.json')
+    const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
+    assert.equal(manifest.dependencies['@asyra/core'], '1.2.4')
+    assert.deepEqual(manifest.engines, { node: '24.x' })
+    assert.equal(manifest.packageManager, 'yarn@4.3.1')
+    assert.equal(manifest.scripts.start, 'vite dev')
+    assert.doesNotMatch(
+      JSON.stringify(manifest),
+      /workspace:|(?:link|portal):/u
+    )
+
+    const frameworkManifestPath = path.join(
+      fixtureRoot,
+      'packages',
+      'core',
+      'package.json'
+    )
+    const frameworkManifest = JSON.parse(
+      readFileSync(frameworkManifestPath, 'utf8')
+    )
+    frameworkManifest.version = '1.2.5'
+    writeFileSync(
+      frameworkManifestPath,
+      `${JSON.stringify(frameworkManifest, null, 2)}\n`
+    )
+    const priorStageManifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
+    assert.equal(priorStageManifest.dependencies['@asyra/core'], '1.2.4')
+    assert.match(
+      priorStageManifest.dependencies['@asyra/core'],
+      /^\d+\.\d+\.\d+$/u
+    )
+    assert.deepEqual(priorStageManifest.engines, { node: '24.x' })
+    assert.equal(priorStageManifest.packageManager, 'yarn@4.3.1')
+    assert.equal(priorStageManifest.scripts.start, 'vite dev')
+    assert.doesNotMatch(
+      JSON.stringify(priorStageManifest),
+      /workspace:|(?:link|portal):/u
+    )
+
+    const priorStageCheck = runGenerator(true)
+    assert.notEqual(priorStageCheck.status, 0)
+    assert.match(
+      priorStageCheck.stderr + priorStageCheck.stdout,
+      /Generated template is stale/u
+    )
+
+    const synchronized = runGenerator()
+    assert.equal(
+      synchronized.status,
+      0,
+      synchronized.stderr || synchronized.stdout
+    )
+    assert.equal(
+      JSON.parse(readFileSync(manifestPath, 'utf8')).dependencies[
+        '@asyra/core'
+      ],
+      '1.2.5'
+    )
+    const synchronizedCheck = runGenerator(true)
+    assert.equal(
+      synchronizedCheck.status,
+      0,
+      synchronizedCheck.stderr || synchronizedCheck.stdout
+    )
+
+    manifest.dependencies['@asyra/core'] = '1.2.3'
+    writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`)
+    const stale = runGenerator(true)
+    assert.notEqual(stale.status, 0)
+    assert.match(stale.stderr + stale.stdout, /Generated template is stale/u)
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true })
+  }
 })
 
 test('canonical Asyra Design source uses workspace Framework dependencies during development', () => {

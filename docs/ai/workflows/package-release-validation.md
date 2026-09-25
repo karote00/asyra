@@ -83,6 +83,11 @@ provide `clean`.
 - monorepo unit, integration, and contract test placement through
   `scripts/__tests__/test-file-placement.test.mjs`.
 
+The general `docs:readme:check` command checks package READMEs and public
+documentation. It does not select an App or impose that App's generated
+template version on unrelated work. Template synchronization belongs to the
+explicit target release validation commands below.
+
 `yarn deps:validate` separately verifies declared workspace dependencies for
 source imports. It does not replace build, clean, generated-template, or
 release validation.

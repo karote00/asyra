@@ -20,17 +20,17 @@ import {
 test('template release readiness rejects dependencies outside the frozen Framework set', () => {
   assert.doesNotThrow(() =>
     assertTemplateFrameworkVersionsMatch(
-      { '@asyra/collaboration': '0.5.5' },
-      new Map([['@asyra/collaboration', { version: '0.5.5' }]])
+      { '@asyra/collaboration': '1.2.4' },
+      new Map([['@asyra/collaboration', { version: '1.2.4' }]])
     )
   )
   assert.throws(
     () =>
       assertTemplateFrameworkVersionsMatch(
-        { '@asyra/collaboration': '0.5.4' },
-        new Map([['@asyra/collaboration', { version: '0.5.5' }]])
+        { '@asyra/collaboration': '1.2.3' },
+        new Map([['@asyra/collaboration', { version: '1.2.4' }]])
       ),
-    /must use frozen version 0\.5\.5, found 0\.5\.4/u
+    /must use frozen version 1\.2\.4, found 1\.2\.3/u
   )
 })
 
