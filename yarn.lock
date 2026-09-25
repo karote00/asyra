@@ -118,6 +118,7 @@ __metadata:
     playwright: "npm:^1.62.1"
     react: "npm:^19.2.8"
     react-dom: "npm:^19.2.8"
+    sharp: "npm:0.35.4"
     tailwindcss: "npm:^4.3.3"
     typescript: "npm:^5.7.2"
     vite: "npm:^6.4.3"
@@ -9333,7 +9334,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"sharp@npm:^0.35.3":
+"sharp@npm:0.35.4, sharp@npm:^0.35.3":
   version: 0.35.4
   resolution: "sharp@npm:0.35.4"
   dependencies:

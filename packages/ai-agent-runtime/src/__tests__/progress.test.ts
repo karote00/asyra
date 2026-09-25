@@ -92,6 +92,35 @@ const phases = (updates: readonly AiRuntimeProgressUpdate[]) =>
   updates.map((update) => update.phase)
 
 describe('AI runtime operational progress', () => {
+  it('reports the specific action summary when that action starts executing', async () => {
+    const updates: AiRuntimeProgressUpdate[] = []
+    const batch = candidateActionBatch()
+    const runtime = createAiAgentRuntime(
+      runtimeInput({
+        provider: {
+          requestActionBatch: async () => ({
+            ...batch,
+            actions: batch.actions.map((action) => ({
+              ...action,
+              summary: 'Smoothing the outlines'
+            }))
+          })
+        }
+      })
+    )
+    await runtime.run({
+      intent: 'smooth',
+      signal: new AbortController().signal,
+      progressObserver: (update) => updates.push(update)
+    })
+    expect(
+      updates.find((update) => update.phase === 'execution')
+    ).toMatchObject({
+      summary: 'Smoothing the outlines',
+      tool: 'set_element_visibility'
+    })
+  })
+
   it('emits ordered frozen operational phases with only safe detached metadata', async () => {
     const updates: AiRuntimeProgressUpdate[] = []
     const runtime = createAiAgentRuntime(runtimeInput())
@@ -142,7 +171,8 @@ describe('AI runtime operational progress', () => {
         attempt: 1,
         phase: 'execution',
         batchId: 'batch-1',
-        summary: 'Applying changes'
+        tool: 'set_element_visibility',
+        summary: 'Preparing the drawing'
       },
       {
         actionCount: 1,
@@ -371,4 +401,38 @@ describe('AI runtime operational progress', () => {
     await Promise.resolve()
     expect(updates).toHaveLength(countAfterDispose)
   })
+})
+
+it('forwards bounded provider tool progress only during the owning request', async () => {
+  const updates: AiRuntimeProgressUpdate[] = []
+  let report:
+    | ((event: { tool: string; status: 'running' | 'completed' }) => void)
+    | undefined
+  const runtime = createAiAgentRuntime(
+    runtimeInput({
+      provider: {
+        requestActionBatch: async (_input, options) => {
+          report = options.onProgress
+          report?.({ tool: 'vectorizer', status: 'running' })
+          return candidateActionBatch()
+        }
+      }
+    })
+  )
+  await runtime.run({
+    intent: 'draw',
+    signal: new AbortController().signal,
+    progressObserver: (update) => updates.push(update)
+  })
+  expect(updates).toContainEqual(
+    expect.objectContaining({
+      phase: 'provider',
+      tool: 'vectorizer',
+      toolStatus: 'running'
+    })
+  )
+  const count = updates.length
+  report?.({ tool: 'vectorizer', status: 'completed' })
+  expect(updates).toHaveLength(count)
+  await runtime.dispose()
 })

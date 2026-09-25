@@ -21,7 +21,8 @@
     "test:server-response-harness": [
       "server/__tests__/action-batch.test.ts",
       "test-data/ai-drawing/__tests__/action-batch-interceptor.test.ts",
-      "src/ai/__tests__/detailed-tabby.test.ts"
+      "src/ai/__tests__/detailed-tabby.test.ts",
+      "server/__tests__/basic-api-contracts.test.ts"
     ],
     "test:local": [
       "__tests__/prepared-server-response-artifacts.test.mjs",
@@ -60,6 +61,8 @@
     "__tests__/playwright-config.test.mjs",
     "server/__tests__/action-batch.test.ts",
     "src/ai/__tests__/detailed-tabby.test.ts",
-    "src/common-apis/element/__tests__/vector-parent-creation.test.ts"
+    "src/common-apis/element/__tests__/vector-parent-creation.test.ts",
+    "e2e/ai-conversation-flow.spec.ts",
+    "server/__tests__/basic-api-contracts.test.ts"
   ]
 }

@@ -93,3 +93,5 @@ export {
 
 export default render
 export { Render }
+
+export type { RenderContentMeasurement } from './render.js'

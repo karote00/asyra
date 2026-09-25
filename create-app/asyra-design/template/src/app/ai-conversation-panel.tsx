@@ -1,11 +1,15 @@
+import { AiConversationNavigation } from './ai-conversation-navigation'
+import { AiConnectionStatus } from './ai-connection-status'
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type ChangeEvent,
   type DragEvent,
   type FormEvent,
+  type ReactNode,
   type SyntheticEvent
 } from 'react'
 import type {
@@ -13,22 +17,22 @@ import type {
   AiConfirmationSnapshot
 } from '../ai/confirmation'
 import type {
+  AiActiveTurn,
   AiConversationController,
   AiConversationSnapshot,
   AiImageAttachment,
   AiImageMediaType
 } from '../ai/conversation'
 import {
-  projectAiDrawingDetailChoice,
+  canRetryAiTurn,
+  projectAiActivity,
+  formatElapsedTime,
+  projectAiQuestion,
   summarizeAiTurn,
   type AiDrawingDetailChoice,
   type AiDrawingDetailOptionId
 } from '../ai/presentation'
-import {
-  AiDrawingDetailOptionIds,
-  AiDrawingDetailSelectionIntents,
-  AiDocumentInteractionTargetProps
-} from '../constants'
+import { AiDocumentInteractionTargetProps } from '../constants'
 
 const ACCEPTED_IMAGE_TYPES = new Set<AiImageMediaType>([
   'image/jpeg',
@@ -36,15 +40,24 @@ const ACCEPTED_IMAGE_TYPES = new Set<AiImageMediaType>([
   'image/webp'
 ])
 
-const DRAWING_DETAIL_SELECTION_INTENTS: Readonly<
-  Record<AiDrawingDetailOptionId, string>
-> = Object.freeze({
-  [AiDrawingDetailOptionIds.BALANCED]:
-    AiDrawingDetailSelectionIntents.BALANCED_ZH,
-  [AiDrawingDetailOptionIds.MAXIMUM]: AiDrawingDetailSelectionIntents.MAXIMUM_ZH
-})
+const ActiveDuration = ({ turn }: { readonly turn?: AiActiveTurn }) => {
+  const [now, setNow] = useState(() => performance.now())
+  useEffect(() => {
+    const timer = setInterval(() => setNow(performance.now()), 1000)
+    return () => clearInterval(timer)
+  }, [])
+  return (
+    <span>
+      {formatElapsedTime(
+        (turn?.waitingSinceMs ?? now) -
+          (turn?.startedAtMs ?? now) -
+          (turn?.waitingDurationMs ?? 0)
+      )}
+    </span>
+  )
+}
 
-const stopAgentCancelActivationPropagation = (event: SyntheticEvent): void => {
+const stopAgentInteractionPropagation = (event: SyntheticEvent): void => {
   event.stopPropagation()
 }
 
@@ -121,24 +134,20 @@ const DrawingDetailChoiceCard = ({
   const content = (
     <>
       <div className="flex items-start justify-between gap-2">
-        <p className="m-0 text-[11px] font-semibold text-[#f0edff]">
+        <p className="m-0 text-[12px] font-semibold text-[#f0edff]">
           {choice.label}
         </p>
-        <span className="shrink-0 rounded bg-[#383443] px-1.5 py-0.5 text-[8px] uppercase tracking-wide text-[#c7bfff]">
-          {choice.id}
-        </span>
+        {onChoose ? (
+          <span aria-hidden="true" className="text-[12px] text-[#c7bfff]">
+            Choose →
+          </span>
+        ) : null}
       </div>
-      <div className="mt-1 flex flex-wrap gap-x-2 text-[9px] leading-4 text-[#b9b6c4]">
-        <span>
-          {choice.elementCount.toLocaleString('en-US')} editable elements
-        </span>
-        <span>{choice.pointCountLabel}</span>
-      </div>
-      <p className="mb-0 mt-1 text-[9px] leading-4 text-[#aaa6b3]">
+      <p className="mb-0 mt-1 text-[12px] leading-4 text-[#aaa6b3]">
         {choice.description}
       </p>
       {choice.resourceWarning ? (
-        <p className="mb-0 mt-1.5 rounded bg-[#3a2f24] px-2 py-1.5 text-[9px] leading-4 text-[#f1c58f]">
+        <p className="mb-0 mt-1.5 rounded bg-[#3a2f24] px-2 py-1.5 text-[12px] leading-4 text-[#f1c58f]">
           {choice.resourceWarning}
         </p>
       ) : null}
@@ -171,15 +180,23 @@ export interface AiConversationPanelProps {
   readonly onClose: () => void
 }
 
-export const AiConversationPanel = ({
-  confirmation,
+const AiConversationPanelLayout = ({
   conversation,
-  onClose
-}: AiConversationPanelProps) => {
-  const conversationBodyRef = useRef<HTMLElement>(null)
+  onClose,
+  children
+}: AiConversationPanelProps & {
+  readonly children: ReactNode
+}) => {
   const imageInputRef = useRef<HTMLInputElement>(null)
   const promptRef = useRef<HTMLTextAreaElement>(null)
   const [draft, setDraft] = useState('')
+  const [aiAvailable, setAiAvailable] = useState(true)
+  const drafts = useRef(
+    new Map<
+      string,
+      { text: string; attachments: readonly AiImageAttachment[] }
+    >()
+  )
   const [draftAttachments, setDraftAttachments] = useState<
     readonly AiImageAttachment[]
   >([])
@@ -187,29 +204,17 @@ export const AiConversationPanel = ({
   const [draggingImages, setDraggingImages] = useState(false)
   const [conversationSnapshot, setConversationSnapshot] =
     useState<AiConversationSnapshot>(() => conversation.getSnapshot())
-  const [confirmationSnapshot, setConfirmationSnapshot] =
-    useState<AiConfirmationSnapshot>(() => confirmation.getSnapshot())
 
   useEffect(
     () => conversation.subscribe(setConversationSnapshot),
     [conversation]
   )
-  useEffect(
-    () => confirmation.subscribe(setConfirmationSnapshot),
-    [confirmation]
-  )
   useEffect(() => {
     promptRef.current?.focus({ preventScroll: true })
   }, [])
-  useEffect(() => {
-    const body = conversationBodyRef.current
-    if (body) {
-      body.scrollTop = body.scrollHeight
-    }
-  }, [confirmationSnapshot, conversationSnapshot])
 
   const active = conversationSnapshot.activeTurn !== null
-  const canSend = draft.trim().length > 0 && !active
+  const canSend = draft.trim().length > 0 && !active && aiAvailable
 
   const addImageFiles = useCallback(
     async (files: FileList | readonly File[]) => {
@@ -277,7 +282,7 @@ export const AiConversationPanel = ({
     (event: FormEvent) => {
       event.preventDefault()
       const intent = draft.trim()
-      if (!intent || conversation.getSnapshot().activeTurn) {
+      if (!intent || !aiAvailable || conversation.getSnapshot().activeTurn) {
         return
       }
       const settlement = conversation.submit({
@@ -291,260 +296,93 @@ export const AiConversationPanel = ({
       }
       void settlement.catch(() => undefined)
     },
-    [conversation, draft, draftAttachments]
+    [conversation, draft, draftAttachments, aiAvailable]
   )
 
-  const submitDrawingDetailChoice = useCallback(
-    (
-      turnId: string,
-      attachments: readonly AiImageAttachment[],
-      optionId: AiDrawingDetailOptionId
-    ) => {
-      const snapshot = conversation.getSnapshot()
-      const latestSettled =
-        snapshot.settledTurns[snapshot.settledTurns.length - 1]
-      if (
-        snapshot.disposed ||
-        snapshot.activeTurn ||
-        latestSettled?.turnId !== turnId ||
-        attachments.length === 0
-      ) {
-        return
-      }
-      try {
-        const settlement = conversation.submit({
-          attachments,
-          intent: DRAWING_DETAIL_SELECTION_INTENTS[optionId]
-        })
-        void settlement.catch(() => undefined)
-      } catch {
-        // The controller remains the authority for active/disposed rejection.
-      }
-    },
-    [conversation]
-  )
+  const navigateConversation = (id: string | null) => {
+    drafts.current.set(conversation.getSnapshot().conversationId, {
+      text: draft,
+      attachments: draftAttachments
+    })
+    if (id === null) conversation.newConversation()
+    else conversation.selectConversation(id)
+    const restored = drafts.current.get(
+      conversation.getSnapshot().conversationId
+    )
+    setDraft(restored?.text ?? '')
+    setDraftAttachments(restored?.attachments ?? [])
+    setAttachmentError(null)
+    promptRef.current?.focus({ preventScroll: true })
+  }
 
   const close = useCallback(() => {
-    if (conversation.getSnapshot().activeTurn) {
-      conversation.cancel('panel-closed')
-    }
     onClose()
-  }, [conversation, onClose])
-
-  const pendingConfirmation = confirmationSnapshot.pending
+  }, [onClose])
 
   return (
     <aside
+      {...AiDocumentInteractionTargetProps.AGENT_INTERFACE}
+      onClick={stopAgentInteractionPropagation}
+      onKeyDown={stopAgentInteractionPropagation}
+      onKeyUp={stopAgentInteractionPropagation}
+      onMouseDown={stopAgentInteractionPropagation}
+      onMouseUp={stopAgentInteractionPropagation}
+      onPointerDown={stopAgentInteractionPropagation}
+      onPointerUp={stopAgentInteractionPropagation}
+      onTouchEnd={stopAgentInteractionPropagation}
+      onTouchStart={stopAgentInteractionPropagation}
+      onWheel={stopAgentInteractionPropagation}
       aria-label="Agent conversation"
+      tabIndex={-1}
       aria-modal="false"
-      className="fixed bottom-0 right-0 top-10 z-50 flex w-[384px] max-w-[calc(100vw-24px)] flex-col overflow-hidden border-l border-[#45464b] bg-[#202124] text-[#f5f5f5] shadow-[-18px_0_48px_rgba(0,0,0,0.32)]"
+      className="fixed bottom-0 right-0 top-10 z-50 flex w-[384px] max-w-[calc(100vw-24px)] flex-col overflow-hidden select-text border-l border-[#45464b] bg-[#202124] text-[12px] text-[#f5f5f5] shadow-[-18px_0_48px_rgba(0,0,0,0.32)]"
       data-testid="ai-agent-panel"
       role="complementary"
     >
-      <header className="flex items-center justify-between border-b border-[#38393e] px-4 py-3">
-        <span
-          aria-hidden="true"
-          className="grid h-7 w-7 place-items-center rounded-lg bg-[#7c5cff] text-[11px] font-bold text-white"
-        >
-          AI
-        </span>
+      <header className="relative flex items-center justify-between border-b border-[#38393e] px-4 py-3">
+        <AiConversationNavigation
+          conversation={conversation}
+          onNavigate={navigateConversation}
+        />
         <button
           aria-label="Close Agent panel"
-          className="grid h-7 w-7 place-items-center rounded-md border-0 bg-transparent text-lg text-[#b8b9c0] hover:bg-[#303136] hover:text-white"
+          className="grid h-6 w-6 shrink-0 place-items-center rounded border-0 bg-transparent text-[#b8b9c0] hover:bg-[#303136] hover:text-white"
           onClick={close}
           type="button"
         >
-          ×
+          <svg
+            aria-hidden="true"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          >
+            <path d="m5.5 5.5 13 13m0-13-13 13" />
+          </svg>
         </button>
       </header>
 
-      <section
-        aria-live="polite"
-        className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 py-4"
-        ref={conversationBodyRef}
+      <div
+        aria-label="Your AI subscription"
+        className="shrink-0 border-b border-[#454052] bg-[#282530] px-4 py-3"
+        role="note"
       >
-        {conversationSnapshot.settledTurns.length === 0 && !active ? (
-          <div className="rounded-lg border border-[#393a40] bg-[#27282d] p-3 text-[11px] leading-5 text-[#c9cad0]">
-            Add or drop a reference image, then ask the Agent to draw it. You
-            can refine the same objects in later turns.
-          </div>
-        ) : null}
+        <p className="m-0 text-[12px] font-medium leading-5 text-[#e0d9ff]">
+          Your AI subscription
+        </p>
+        <p className="m-0 mt-1 text-[12px] leading-[18px] text-[#c7c4d0]">
+          Local AI uses your own subscription and counts toward its usage
+          limits. Asyra Design does not provide an AI subscription.
+        </p>
+      </div>
 
-        {conversationSnapshot.settledTurns.map((turn, turnIndex) => {
-          const summary = summarizeAiTurn(turn)
-          const drawingDetailChoice = projectAiDrawingDetailChoice(turn)
-          const canChooseDrawingDetail =
-            drawingDetailChoice !== null &&
-            turnIndex === conversationSnapshot.settledTurns.length - 1 &&
-            turn.attachments.length > 0 &&
-            !active &&
-            !conversationSnapshot.disposed
-          return (
-            <article
-              className="flex flex-col gap-2"
-              data-outcome={turn.outcome}
-              data-testid="ai-agent-message"
-              data-turn-id={turn.turnId}
-              key={turn.turnId}
-            >
-              <div
-                aria-label="Your message"
-                className="ml-8 flex flex-col gap-2 rounded-lg rounded-tr-sm bg-[#34353b] px-3 py-2"
-              >
-                {turn.attachments.length > 0 ? (
-                  <ImageAttachmentStrip attachments={turn.attachments} />
-                ) : null}
-                <p className="m-0 text-[11px] leading-5 text-[#f1f1f3]">
-                  {turn.intent}
-                </p>
-              </div>
-              <div
-                aria-label="Agent response"
-                className="mr-5 rounded-lg rounded-tl-sm border border-[#454153] bg-[#29272f] px-3 py-2.5"
-              >
-                {turn.progress.length > 0 ? (
-                  <ol
-                    aria-label="Operational progress"
-                    className="mb-2 flex list-none flex-col gap-1 p-0"
-                  >
-                    {turn.progress.map((update, index) => (
-                      <li
-                        className="flex items-center gap-2 text-[9px] text-[#a9a7b1]"
-                        key={`${turn.turnId}:${update.phase}:${index}`}
-                      >
-                        <span
-                          aria-hidden="true"
-                          className="h-1 w-1 rounded-full bg-[#8272ce]"
-                        />
-                        {update.summary}
-                      </li>
-                    ))}
-                  </ol>
-                ) : null}
-                <p className="m-0 text-[11px] leading-5 text-[#e1dff0]">
-                  {summary.message}
-                </p>
-                {drawingDetailChoice ? (
-                  <ul
-                    aria-label="Drawing detail options"
-                    className="mb-0 mt-2 flex list-none flex-col gap-2 p-0"
-                  >
-                    {drawingDetailChoice.choices.map((choice) => (
-                      <DrawingDetailChoiceCard
-                        choice={choice}
-                        key={choice.id}
-                        onChoose={
-                          canChooseDrawingDetail
-                            ? () =>
-                                submitDrawingDetailChoice(
-                                  turn.turnId,
-                                  turn.attachments,
-                                  choice.id
-                                )
-                            : undefined
-                        }
-                      />
-                    ))}
-                  </ul>
-                ) : null}
-                <p
-                  aria-label="Elapsed time"
-                  className="mb-0 mt-1 text-[9px] text-[#8f8c9b]"
-                >
-                  {summary.durationLabel}
-                </p>
-              </div>
-            </article>
-          )
-        })}
-
-        {active ? (
-          <div className="rounded-lg border border-[#514a78] bg-[#29263a] p-3">
-            <div className="mb-1 flex items-center gap-2 text-[11px] font-medium text-[#ded8ff]">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#9f8cff]" />
-              Working on your request
-            </div>
-            <p className="m-0 truncate text-[10px] text-[#aaa5c5]">
-              {conversationSnapshot.activeTurn?.intent}
-            </p>
-            {conversationSnapshot.activeTurn?.attachments.length ? (
-              <div className="mt-2">
-                <ImageAttachmentStrip
-                  attachments={conversationSnapshot.activeTurn.attachments}
-                />
-              </div>
-            ) : null}
-            {conversationSnapshot.activeTurn?.progress.length ? (
-              <ol
-                aria-label="Current operational progress"
-                className="mb-0 mt-2 flex list-none flex-col gap-1 border-t border-[#413c5a] pt-2 pl-0"
-              >
-                {conversationSnapshot.activeTurn.progress.map(
-                  (update, index) => (
-                    <li
-                      className="flex items-center gap-2 text-[9px] text-[#bbb6d1]"
-                      key={`${update.phase}:${index}`}
-                    >
-                      <span
-                        aria-hidden="true"
-                        className="h-1 w-1 rounded-full bg-[#9f8cff]"
-                      />
-                      {update.summary}
-                    </li>
-                  )
-                )}
-              </ol>
-            ) : null}
-          </div>
-        ) : null}
-
-        {pendingConfirmation ? (
-          <div
-            aria-label="AI action confirmation"
-            className="rounded-lg border border-[#7b5b38] bg-[#30281f] p-3"
-          >
-            <p className="m-0 text-[11px] font-semibold text-[#ffd7a3]">
-              Confirm action
-            </p>
-            <p className="mb-2 mt-1 text-[11px] leading-5 text-[#e8dfd3]">
-              {pendingConfirmation.summary.message}
-            </p>
-            <div className="mb-3 flex gap-1.5 text-[9px] uppercase tracking-wide">
-              {pendingConfirmation.summary.destructive ? (
-                <span className="rounded bg-[#5a3028] px-1.5 py-0.5 text-[#ffb3a3]">
-                  Destructive
-                </span>
-              ) : null}
-              <span className="rounded bg-[#3c3a32] px-1.5 py-0.5 text-[#d8d1b6]">
-                Undoable
-              </span>
-              <span className="rounded bg-[#31363a] px-1.5 py-0.5 text-[#b9c5cd]">
-                No external effect
-              </span>
-            </div>
-            <div className="flex justify-end gap-2">
-              <button
-                className="rounded-md border border-[#5a5b62] bg-transparent px-3 py-1.5 text-[10px] text-[#dadbe0] hover:bg-[#37383d]"
-                onClick={() => confirmation.resolve(false)}
-                type="button"
-              >
-                Deny
-              </button>
-              <button
-                className="rounded-md border border-[#8d7bff] bg-[#745cff] px-3 py-1.5 text-[10px] font-medium text-white hover:bg-[#856fff]"
-                onClick={() => confirmation.resolve(true)}
-                type="button"
-              >
-                Allow
-              </button>
-            </div>
-          </div>
-        ) : null}
-      </section>
-
+      {children}
       <form
         aria-label="Agent message form"
-        className={`border-t p-3 transition-colors ${
+        className={`shrink-0 border-t p-3 transition-colors ${
           draggingImages ? 'border-[#8d7bff] bg-[#282536]' : 'border-[#38393e]'
         }`}
         data-testid="agent-image-drop-target"
@@ -565,6 +403,7 @@ export const AiConversationPanel = ({
         onDrop={dropImages}
         onSubmit={submit}
       >
+        <AiConnectionStatus onAvailabilityChange={setAiAvailable} />
         <input
           accept="image/png,image/jpeg,image/webp"
           aria-label="Choose images"
@@ -597,72 +436,425 @@ export const AiConversationPanel = ({
         ) : null}
         {attachmentError ? (
           <p
-            className="mb-2 mt-0 rounded-md border border-[#765052] bg-[#342426] px-2 py-1.5 text-[10px] text-[#ffc0c3]"
+            className="mb-2 mt-0 rounded-md border border-[#765052] bg-[#342426] px-2 py-1.5 text-[12px] text-[#ffc0c3]"
             role="alert"
           >
             {attachmentError}
           </p>
         ) : null}
-        <label className="sr-only" htmlFor="ai-agent-input">
-          Message Agent
-        </label>
-        <textarea
-          aria-label="Message Agent"
-          className="min-h-[72px] w-full resize-none rounded-lg border border-[#46474e] bg-[#18191c] px-3 py-2 text-[11px] leading-5 text-white outline-none placeholder:text-[#777982] focus:border-[#806cff]"
-          data-ai-agent-prompt="true"
-          disabled={active}
-          id="ai-agent-input"
-          onChange={(event) => setDraft(event.target.value)}
-          placeholder="Describe a drawing or refinement…"
-          ref={promptRef}
-          value={draft}
-        />
-        <div className="mt-2 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <button
-              aria-label="Add image"
-              className="rounded-md border border-[#46474e] bg-[#27282d] px-2 py-1.5 text-[10px] text-[#c7c8ce] enabled:hover:border-[#696b74] enabled:hover:bg-[#303136] disabled:cursor-not-allowed disabled:text-[#6f7077]"
-              disabled={active}
-              onClick={() => imageInputRef.current?.click()}
-              type="button"
-            >
-              + Image
-            </button>
-            <span className="text-[9px] text-[#81838b]">Agent ready</span>
-          </div>
-          <div className="flex items-center gap-2">
-            {active ? (
+        <div className="rounded-lg border border-[#46474e] bg-[#18191c] focus-within:border-[#806cff]">
+          <label className="sr-only" htmlFor="ai-agent-input">
+            Message Agent
+          </label>
+          <textarea
+            aria-label="Message Agent"
+            className="block min-h-[72px] w-full resize-none rounded-t-lg border-0 bg-transparent px-3 py-2 text-[12px] leading-5 text-white outline-none placeholder:text-[#777982]"
+            data-ai-agent-prompt="true"
+            id="ai-agent-input"
+            onChange={(event) => setDraft(event.target.value)}
+            onKeyDown={(event) => event.stopPropagation()}
+            onKeyUp={(event) => event.stopPropagation()}
+            placeholder="Describe a drawing or refinement…"
+            ref={promptRef}
+            value={draft}
+          />
+          <div className="flex items-center justify-between gap-2 px-2 pb-2">
+            <div className="flex items-center gap-2">
               <button
-                {...AiDocumentInteractionTargetProps.AGENT_CANCEL}
-                aria-label="Cancel request"
-                className="rounded-md border border-[#6c4d4d] bg-[#382727] px-3 py-1.5 text-[10px] text-[#ffb8b8] hover:bg-[#472e2e]"
-                onClick={(event) => {
-                  stopAgentCancelActivationPropagation(event)
-                  conversation.cancel('user-cancelled')
-                }}
-                onKeyDown={stopAgentCancelActivationPropagation}
-                onKeyUp={stopAgentCancelActivationPropagation}
-                onMouseDown={stopAgentCancelActivationPropagation}
-                onMouseUp={stopAgentCancelActivationPropagation}
-                onPointerDown={stopAgentCancelActivationPropagation}
-                onPointerUp={stopAgentCancelActivationPropagation}
-                onTouchEnd={stopAgentCancelActivationPropagation}
-                onTouchStart={stopAgentCancelActivationPropagation}
+                aria-label="Add image"
+                className="h-7 rounded-md border border-transparent bg-transparent px-2 text-[12px] text-[#c7c8ce] enabled:hover:border-[#696b74] enabled:hover:bg-[#303136] disabled:cursor-not-allowed disabled:text-[#6f7077]"
+                disabled={active}
+                onClick={() => imageInputRef.current?.click()}
                 type="button"
               >
-                Cancel
+                + Image
               </button>
-            ) : null}
-            <button
-              className="rounded-md border border-[#8d7bff] bg-[#745cff] px-3 py-1.5 text-[10px] font-medium text-white enabled:hover:bg-[#856fff] disabled:cursor-not-allowed disabled:border-[#44454b] disabled:bg-[#303136] disabled:text-[#777982]"
-              disabled={!canSend}
-              type="submit"
-            >
-              Send
-            </button>
+            </div>
+            <div className="flex items-center gap-2">
+              {active ? (
+                <button
+                  {...AiDocumentInteractionTargetProps.AGENT_CANCEL}
+                  aria-label="Cancel request"
+                  disabled={conversationSnapshot.activeTurn?.stopping}
+                  className="rounded-md border border-[#6c4d4d] bg-[#382727] px-3 py-1.5 text-[12px] text-[#ffb8b8] hover:bg-[#472e2e]"
+                  onClick={(event) => {
+                    stopAgentInteractionPropagation(event)
+                    conversation.cancel('user-cancelled')
+                  }}
+                  onKeyDown={stopAgentInteractionPropagation}
+                  onKeyUp={stopAgentInteractionPropagation}
+                  onMouseDown={stopAgentInteractionPropagation}
+                  onMouseUp={stopAgentInteractionPropagation}
+                  onPointerDown={stopAgentInteractionPropagation}
+                  onPointerUp={stopAgentInteractionPropagation}
+                  onTouchEnd={stopAgentInteractionPropagation}
+                  onTouchStart={stopAgentInteractionPropagation}
+                  type="button"
+                >
+                  Stop
+                </button>
+              ) : null}
+              <button
+                className="h-7 rounded-md border border-[#8d7bff] bg-[#745cff] px-3 text-[12px] font-medium text-white enabled:hover:bg-[#856fff] disabled:cursor-not-allowed disabled:border-[#44454b] disabled:bg-[#303136] disabled:text-[#777982]"
+                disabled={!canSend}
+                type="submit"
+              >
+                Send
+              </button>
+            </div>
           </div>
         </div>
       </form>
     </aside>
+  )
+}
+
+const AiConversationFeed = ({
+  conversation,
+  confirmation
+}: Pick<AiConversationPanelProps, 'conversation' | 'confirmation'>) => {
+  const conversationBodyRef = useRef<HTMLElement>(null)
+  const followLatestRef = useRef(true)
+  const [showJump, setShowJump] = useState(false)
+  const [conversationSnapshot, setConversationSnapshot] = useState(() =>
+    conversation.getSnapshot()
+  )
+  const [confirmationSnapshot, setConfirmationSnapshot] =
+    useState<AiConfirmationSnapshot>(() => confirmation.getSnapshot())
+  useEffect(
+    () => conversation.subscribe(setConversationSnapshot),
+    [conversation]
+  )
+  useEffect(
+    () => confirmation.subscribe(setConfirmationSnapshot),
+    [confirmation]
+  )
+  const syncScrollPosition = useCallback(() => {
+    const body = conversationBodyRef.current
+    if (!body) return
+    const atBottom = body.scrollHeight - body.scrollTop - body.clientHeight <= 1
+    followLatestRef.current = atBottom
+    setShowJump(!atBottom)
+  }, [])
+  const active = conversationSnapshot.activeTurn !== null
+  // Follow before paint can emit scroll events for the newly grown content.
+  // Otherwise those events can mistake layout growth for reading older messages.
+  useLayoutEffect(() => {
+    const body = conversationBodyRef.current
+    if (body && followLatestRef.current) {
+      body.scrollTop = body.scrollHeight
+      setShowJump(false)
+    }
+  }, [confirmationSnapshot, conversationSnapshot])
+
+  const submitDrawingDetailChoice = useCallback(
+    (turnId: string, optionId: AiDrawingDetailOptionId) => {
+      const snapshot = conversation.getSnapshot()
+      const latestSettled =
+        snapshot.settledTurns[snapshot.settledTurns.length - 1]
+      if (
+        snapshot.disposed ||
+        snapshot.activeTurn ||
+        latestSettled?.turnId !== turnId
+      ) {
+        return
+      }
+      try {
+        const settlement = conversation.submit({
+          intent: optionId === 'maximum' ? 'Maximum detail' : 'Balanced detail',
+          detailOption: optionId,
+          replyToTurnId: turnId
+        })
+        void settlement.catch(() => undefined)
+      } catch {
+        // The controller remains the authority for active/disposed rejection.
+      }
+    },
+    [conversation]
+  )
+
+  const pendingConfirmation = confirmationSnapshot.pending
+  const turns = [...conversationSnapshot.settledTurns]
+  const timeline = conversationSnapshot.activeTurn
+    ? [...turns, conversationSnapshot.activeTurn]
+    : turns
+
+  return (
+    <>
+      <section
+        aria-label="Conversation messages"
+        onScroll={syncScrollPosition}
+        className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 py-4"
+        ref={conversationBodyRef}
+      >
+        {conversationSnapshot.settledTurns.length === 0 && !active ? (
+          <div className="rounded-lg border border-[#393a40] bg-[#27282d] p-3 text-[12px] leading-5 text-[#c9cad0]">
+            Describe what you would like to draw, or add a reference image. You
+            can refine the result in later turns.
+          </div>
+        ) : null}
+
+        {timeline.map((turn) => {
+          const settled = 'outcome' in turn ? turn : null
+          const summary = settled ? summarizeAiTurn(settled) : null
+          const question = settled ? projectAiQuestion(settled) : null
+          const answer = timeline.find(
+            (entry) => entry.replyToTurnId === turn.turnId
+          )
+          const canAnswer =
+            question &&
+            !answer &&
+            !active &&
+            turns.at(-1)?.turnId === turn.turnId
+          let questionStatus = 'Superseded'
+          if (answer) questionStatus = 'Answered'
+          if (canAnswer) questionStatus = 'Waiting for your answer'
+          const latest = timeline.at(-1)?.turnId === turn.turnId
+          const stopping = !settled && conversationSnapshot.activeTurn?.stopping
+          const activity = projectAiActivity(turn.progress, {
+            outcome: settled?.outcome,
+            awaitingAnswer: Boolean(question),
+            stopping: Boolean(stopping),
+            awaitingApproval: !settled && Boolean(pendingConfirmation)
+          })
+          return (
+            <article
+              className="flex min-w-0 flex-col gap-3"
+              data-testid="ai-agent-message"
+              data-outcome={settled?.outcome ?? 'active'}
+              data-turn-id={turn.turnId}
+              key={turn.turnId}
+            >
+              <div
+                aria-label="Your message"
+                data-message-role="user"
+                className="flex max-w-[88%] min-w-0 self-end flex-col gap-2 rounded-2xl rounded-tr-sm bg-[#34353b] px-3 py-2.5"
+              >
+                {turn.attachments.length > 0 ? (
+                  <ImageAttachmentStrip attachments={turn.attachments} />
+                ) : null}
+                <p className="m-0 whitespace-pre-wrap break-words text-[12px] leading-5 text-[#f1f1f3]">
+                  {turn.intent}
+                </p>
+              </div>
+              <div
+                aria-label="Agent response"
+                data-message-role="assistant"
+                className="min-w-0 self-stretch py-1 pr-3 text-[12px] leading-5 text-[#e1dff0]"
+              >
+                <details
+                  className="mt-2 text-[12px] text-[#96939f]"
+                  onToggle={syncScrollPosition}
+                >
+                  <summary
+                    aria-label="Work history"
+                    className="cursor-pointer border-b border-[#393a40] pb-2"
+                  >
+                    {settled ? (
+                      <>Worked for {summary?.durationLabel}</>
+                    ) : (
+                      <>
+                        Working for{' '}
+                        <span aria-label="Elapsed time">
+                          <ActiveDuration
+                            turn={conversationSnapshot.activeTurn ?? undefined}
+                          />
+                        </span>
+                      </>
+                    )}
+                  </summary>
+                  <ol
+                    aria-label="Operational progress"
+                    className="my-1 list-none space-y-1 pl-3"
+                  >
+                    {activity.entries.flatMap((entry, index) => {
+                      const lines =
+                        entry.message && entry.message !== entry.label
+                          ? [entry.label, entry.message]
+                          : [entry.label]
+                      return lines.map((line, lineIndex) => (
+                        <li
+                          key={`${turn.turnId}:${index}:${lineIndex}`}
+                          aria-current={
+                            !settled &&
+                            entry === activity.current &&
+                            lineIndex === lines.length - 1
+                              ? 'step'
+                              : undefined
+                          }
+                          className="whitespace-pre-wrap break-words py-1"
+                        >
+                          {line}
+                        </li>
+                      ))
+                    })}
+                  </ol>
+                </details>
+                {!settled ? (
+                  <div
+                    role="status"
+                    aria-label="Current activity"
+                    className="mt-3 text-[#b9b2d4]"
+                  >
+                    {activity.current.message || activity.current.label}
+                  </div>
+                ) : null}
+                {confirmationSnapshot.decisions
+                  ?.filter((decision) => decision.turnId === turn.turnId)
+                  .map((decision) => (
+                    <p
+                      className="my-2 text-[12px] text-[#aaa6b3]"
+                      key={decision.confirmationId}
+                    >
+                      {decision.accepted ? 'Approved' : 'Declined'}:{' '}
+                      {decision.summary.message}
+                    </p>
+                  ))}
+                {question ? (
+                  <section
+                    aria-label="Question"
+                    className="mt-4 border-l-2 border-[#8d7bff] pl-3"
+                  >
+                    <p className="m-0 whitespace-pre-wrap break-words">
+                      {question.message}
+                    </p>
+                    <p className="mb-0 mt-1 text-[12px] text-[#aaa6b3]">
+                      {questionStatus}
+                    </p>
+                    {answer ? (
+                      <p className="my-1 text-[12px] text-[#c7bfff]">
+                        Selected: {answer.intent}
+                      </p>
+                    ) : null}
+                    {canAnswer ? (
+                      <ul
+                        aria-label="Drawing detail options"
+                        className="mb-0 mt-2 flex list-none flex-col gap-2 p-0"
+                      >
+                        {question.choices.map((choice) => (
+                          <DrawingDetailChoiceCard
+                            choice={choice}
+                            key={choice.id}
+                            onChoose={() =>
+                              submitDrawingDetailChoice(turn.turnId, choice.id)
+                            }
+                          />
+                        ))}
+                      </ul>
+                    ) : null}
+                  </section>
+                ) : null}
+                {settled && !question ? (
+                  <p className="mb-0 mt-2 whitespace-pre-wrap break-words">
+                    {summary?.message}
+                  </p>
+                ) : null}
+                {settled && latest && !active && canRetryAiTurn(settled) ? (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button
+                      className="rounded-md border border-[#625586] px-3 py-1.5 text-[12px] hover:bg-[#302b3e]"
+                      type="button"
+                      onClick={() =>
+                        void conversation
+                          .retry(turn.turnId)
+                          .catch(() => undefined)
+                      }
+                    >
+                      Try again
+                    </button>
+                  </div>
+                ) : null}
+                {settled && !question && settled.completedAtMs !== undefined ? (
+                  <div className="mt-3 flex justify-start text-[12px] text-[#96939f]">
+                    <time
+                      aria-label="Completed at"
+                      dateTime={new Date(settled.completedAtMs).toISOString()}
+                      title={new Date(settled.completedAtMs).toLocaleString()}
+                    >
+                      {new Date(settled.completedAtMs).toLocaleTimeString(
+                        undefined,
+                        {
+                          hour: 'numeric',
+                          minute: '2-digit'
+                        }
+                      )}
+                    </time>
+                  </div>
+                ) : null}
+              </div>
+            </article>
+          )
+        })}
+
+        {pendingConfirmation ? (
+          <div
+            aria-label="AI action confirmation"
+            className="rounded-lg border border-[#7b5b38] bg-[#30281f] p-3"
+          >
+            <p className="m-0 text-[12px] font-semibold text-[#ffd7a3]">
+              Confirm action
+            </p>
+            <p className="mb-2 mt-1 text-[12px] leading-5 text-[#e8dfd3]">
+              {pendingConfirmation.summary.message}
+            </p>
+            <div className="mb-3 flex gap-1.5 text-[12px] uppercase tracking-wide">
+              {pendingConfirmation.summary.destructive ? (
+                <span className="rounded bg-[#5a3028] px-1.5 py-0.5 text-[#ffb3a3]">
+                  Destructive
+                </span>
+              ) : null}
+              <span className="rounded bg-[#3c3a32] px-1.5 py-0.5 text-[#d8d1b6]">
+                Undoable
+              </span>
+              <span className="rounded bg-[#31363a] px-1.5 py-0.5 text-[#b9c5cd]">
+                No external effect
+              </span>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                className="rounded-md border border-[#5a5b62] bg-transparent px-3 py-1.5 text-[12px] text-[#dadbe0] hover:bg-[#37383d]"
+                onClick={() => confirmation.resolve(false)}
+                type="button"
+              >
+                Decline
+              </button>
+              <button
+                className="rounded-md border border-[#8d7bff] bg-[#745cff] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#856fff]"
+                onClick={() => confirmation.resolve(true)}
+                type="button"
+              >
+                Approve
+              </button>
+            </div>
+          </div>
+        ) : null}
+      </section>
+
+      {showJump ? (
+        <button
+          className="mx-auto mb-2 rounded-full border border-[#514a68] bg-[#292630] px-3 py-1 text-[12px]"
+          type="button"
+          onClick={() => {
+            followLatestRef.current = true
+            setShowJump(false)
+            const body = conversationBodyRef.current
+            if (body) body.scrollTop = body.scrollHeight
+          }}
+        >
+          Jump to latest
+        </button>
+      ) : null}
+    </>
+  )
+}
+
+export const AiConversationPanel = (props: AiConversationPanelProps) => {
+  return (
+    <AiConversationPanelLayout {...props}>
+      <AiConversationFeed
+        conversation={props.conversation}
+        confirmation={props.confirmation}
+      />
+    </AiConversationPanelLayout>
   )
 }

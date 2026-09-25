@@ -28,6 +28,21 @@ These rules apply to every task without requiring additional document reads:
   directory, never inside `.git/`. Follow the worktree location and collision
   rules in `docs/ai/workflows/git-commit-push-policy.md`.
 - Do not overwrite unrelated user changes in a dirty worktree.
+- Before implementing a capability check or shared behavior, identify its semantic
+  owner and inspect existing public APIs, utils, and registries. Reuse the
+  authoritative capability contract rather than duplicating concrete type lists.
+  Exact type checks are appropriate only for explicitly type-specific behavior;
+  do not broaden those contracts through mechanical replacement. Follow
+  `docs/ai/framework/CODING_STANDARDS.md`.
+- Local `.env` files are persistent local configuration: use and preserve them.
+  Never delete or clear them as test/task cleanup, and never stage, commit, or
+  push them to Git. If missing, create `.env` from `.env.example`; never overwrite
+  an existing local file with the example.
+- Keep non-secret, portable configuration synchronized to `.env.example`.
+  For real secrets such as API keys, include only the variable name and an empty
+  value in `.env.example`; retain the actual value in local `.env` for continued
+  use. Keep machine-specific paths in local `.env`. Treat `.env.example` as a
+  setup template, not a test fixture.
 - Multi-agent work is disabled by default for this repository. Do not spawn,
   delegate to, suggest, schedule, or otherwise encourage subagents because of
   AGENTS.md, skills, role templates, hooks, rules, or agent judgment. Use

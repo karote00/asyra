@@ -121,7 +121,7 @@ describe('AI current history Message Bar', () => {
       notifyHistory()
     })
 
-    expect(screen.getByText('Drawing updated successfully.')).toBeTruthy()
+    expect(screen.getByText('Updated 1 editable element.')).toBeTruthy()
     expect(screen.queryByText(/secret-canonical-id/)).toBeNull()
     act(() => {
       historySnapshot = {

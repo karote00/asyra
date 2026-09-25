@@ -69,7 +69,7 @@
       "wordCount": 836
     },
     {
-      "contentSha256": "f646e736122a5332a52f3e06e26083447f19b031d4ce119270a5d80a741e5ddd",
+      "contentSha256": "87bbd0e550649031f529d345f1bfc49fa364450e15fabc5fe7025640aa11232f",
       "description": "Begin with the maintained Asyra Design product template and extend it as an app owner.",
       "headings": [
         {
@@ -114,6 +114,10 @@
         },
         {
           "depth": 2,
+          "title": "Optional local AI subscription"
+        },
+        {
+          "depth": 2,
           "title": "Validate before extending further"
         },
         {
@@ -134,7 +138,7 @@
       "path": "start/create-design-app.md",
       "section": "Start",
       "title": "Create a complete design app",
-      "wordCount": 595
+      "wordCount": 682
     },
     {
       "contentSha256": "fe0dc685c5f70631bfabd32ae2594b9fb5da59959821ad2df46d1361de0394c4",
@@ -1071,7 +1075,7 @@
       "wordCount": 525
     },
     {
-      "contentSha256": "a8d4ddc1ee7a644cc804d5873a283c6791c4cb99053cabad53e8bffd946919a3",
+      "contentSha256": "bbc0b535f8841bb3e58c076ce64e03c25510d65cc97bdc643619f900b423416b",
       "description": "Expose bounded action schemas and permissions so AI intent uses the same canonical transaction paths as people.",
       "headings": [
         {
@@ -1121,6 +1125,10 @@
         {
           "depth": 2,
           "title": "Next"
+        },
+        {
+          "depth": 2,
+          "title": "Sequential backend operations"
         }
       ],
       "id": "build/ai-actions",
@@ -1131,7 +1139,7 @@
       "path": "build/ai-actions.md",
       "section": "Extend",
       "title": "Build registered AI actions",
-      "wordCount": 505
+      "wordCount": 597
     },
     {
       "contentSha256": "45dbd214f148ec37a72b7352baaa4632267c78b6a0132902532639c160d4c5cd",
@@ -1317,7 +1325,7 @@
       "wordCount": 399
     },
     {
-      "contentSha256": "3b8910534a98b9460f57ed54fe8ad900ae672f29c383558403209b7ef9dc32fd",
+      "contentSha256": "181850c14032cc9e4f8cec2c8e1124f7c3df3443a357ae0b8c9994ee6d0a9cb1",
       "description": "The strict composition facade for Framework capabilities and lifecycle.",
       "headings": [
         {
@@ -1362,6 +1370,10 @@
         },
         {
           "depth": 2,
+          "title": "Rendered subtree inspection"
+        },
+        {
+          "depth": 2,
           "title": "Canonical sources and release inventory"
         }
       ],
@@ -1373,7 +1385,7 @@
       "path": "reference/packages/core.md",
       "section": "Reference",
       "title": "@asyra/core",
-      "wordCount": 672
+      "wordCount": 726
     },
     {
       "contentSha256": "c2bc81415b3770b776ecd0b282c3889325c76a75a26bdb2d50be5a85b84b042d",
@@ -1671,7 +1683,7 @@
       "wordCount": 372
     },
     {
-      "contentSha256": "ef420f8ace24da15019404adf8c0c43f6ac9d8c4028dc6d7bacc623ee043dc9a",
+      "contentSha256": "aaf77100ea84e00a87f4731d25edcc1b6cf58d4f0bb3d044321ddfb4eeea09cf",
       "description": "Optional official design-tool baseline with selectable defaults and replaceable providers.",
       "headings": [
         {
@@ -1727,7 +1739,7 @@
       "path": "reference/packages/preset.md",
       "section": "Reference",
       "title": "@asyra/preset",
-      "wordCount": 436
+      "wordCount": 468
     },
     {
       "contentSha256": "28f044123e1b6f60c18a4f39910a2560f4301026e8850f1c4e91557fa5d5ac8e",
@@ -1848,7 +1860,7 @@
       "wordCount": 381
     },
     {
-      "contentSha256": "981df10323d75fbf2e242af7c4070f39e377f59466471e5b400b345d655004b0",
+      "contentSha256": "8d14600f2148d974b2f1f247dffbdbcc2f46325ff854849960376f317bae8f88",
       "description": "Projection, render-layer registration, interaction bridges, and renderer orchestration.",
       "headings": [
         {
@@ -1893,6 +1905,10 @@
         },
         {
           "depth": 2,
+          "title": "Rendered subtree inspection"
+        },
+        {
+          "depth": 2,
           "title": "Canonical sources and release inventory"
         }
       ],
@@ -1904,10 +1920,10 @@
       "path": "reference/packages/render.md",
       "section": "Reference",
       "title": "@asyra/render",
-      "wordCount": 485
+      "wordCount": 529
     },
     {
-      "contentSha256": "212eb15123459dc4528adbc539861a4575ea7979da639ce6c339f7d18c854fcc",
+      "contentSha256": "8cb722dd37096748fdb51f7bf88bc473ff306611915b01ec460bad19875fdbdb",
       "description": "Public engine-provider contract that keeps renderer implementations replaceable.",
       "headings": [
         {
@@ -1952,6 +1968,10 @@
         },
         {
           "depth": 2,
+          "title": "Rendered subtree inspection"
+        },
+        {
+          "depth": 2,
           "title": "Canonical sources and release inventory"
         }
       ],
@@ -1963,10 +1983,10 @@
       "path": "reference/packages/render-engine.md",
       "section": "Reference",
       "title": "@asyra/render-engine",
-      "wordCount": 374
+      "wordCount": 460
     },
     {
-      "contentSha256": "5ced80e9d45c5efe14eb632d25c82ba5e2f729b4f95ec7059bba41881d29c95d",
+      "contentSha256": "6b1da10bd572467992694c5e0ae923f7d803b97db81d494b35b37b4c2a69c34f",
       "description": "Official optional Pixi provider for the current browser-based 2D baseline.",
       "headings": [
         {
@@ -2011,6 +2031,10 @@
         },
         {
           "depth": 2,
+          "title": "Rendered subtree inspection"
+        },
+        {
+          "depth": 2,
           "title": "Canonical sources and release inventory"
         }
       ],
@@ -2022,7 +2046,7 @@
       "path": "reference/packages/render-engine-pixi.md",
       "section": "Reference",
       "title": "@asyra/render-engine-pixi",
-      "wordCount": 352
+      "wordCount": 427
     },
     {
       "contentSha256": "4f8bc35fd5435934068a2ed81aa578f788edb6d866b2495cf83ba852deb74231",

@@ -205,6 +205,8 @@ class Core implements CoreAPIs {
 
   setupInputSystem!: InputSystemAPIs['setupInputSystem']
 
+  measureElementContentBounds!: RenderAPIs['measureElementContentBounds']
+  captureElementSnapshot!: RenderAPIs['captureElementSnapshot']
   initRender!: RenderAPIs['initRender']
   renderIsReady!: RenderAPIs['renderIsReady']
   registerRenderLayer!: RenderAPIs['registerRenderLayer']

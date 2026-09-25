@@ -352,7 +352,7 @@ describe('App context-menu composition', () => {
     expect(screen.getByLabelText('Agent conversation')).toBeTruthy()
   })
 
-  it('cancels an active turn when an external toggle closes the panel', () => {
+  it('retains an active turn when an external toggle closes the panel', () => {
     aiMocks.activeTurn = { intent: 'draw a cat face' }
     render(<App ai={createAi()} groupCommandPlatform="macos" />)
     const toolbarButton = screen.getByRole('button', {
@@ -362,7 +362,6 @@ describe('App context-menu composition', () => {
     fireEvent.click(toolbarButton)
     fireEvent.click(toolbarButton)
 
-    expect(aiMocks.cancel).toHaveBeenCalledOnce()
-    expect(aiMocks.cancel).toHaveBeenCalledWith('panel-closed')
+    expect(aiMocks.cancel).not.toHaveBeenCalled()
   })
 })

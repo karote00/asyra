@@ -4,7 +4,7 @@ import {
   type PointerEvent,
   useCallback
 } from 'react'
-import type { ElementRawData } from '@asyra/utils'
+import { EntityTypes, type ElementRawData } from '@asyra/utils'
 import { ICON_SIZE } from '../constants'
 import { useElementData } from '../providers'
 import { setHoveredElementId } from '../controllers/hovered-element'
@@ -21,7 +21,7 @@ interface ElementData {
   isSelected: boolean
   isHovered: boolean
   depth: number
-  isGroup: boolean
+  canExpand: boolean
   isExpanded: boolean
   dropState: 'before' | 'inside' | 'after' | 'invalid' | null
   onToggleGroup: (groupId: string) => void
@@ -41,7 +41,7 @@ const Element = ({
   isSelected,
   isHovered,
   depth,
-  isGroup,
+  canExpand,
   isExpanded,
   dropState,
   onToggleGroup,
@@ -126,14 +126,14 @@ const Element = ({
       data-testid={`element-item-${id}`}
       data-layer-element="true"
       data-layer-element-id={id}
-      data-layer-is-group={isGroup}
+      data-layer-is-group={type === EntityTypes.GROUP}
       data-layer-drag-eligible={!lock}
       data-layer-drop-state={dropState ?? undefined}
       data-selected={isSelected}
       data-layer-depth={depth}
     >
       <div className="flex items-center min-w-0">
-        {isGroup ? (
+        {canExpand ? (
           <GroupDisclosure
             groupId={id}
             isExpanded={isExpanded}

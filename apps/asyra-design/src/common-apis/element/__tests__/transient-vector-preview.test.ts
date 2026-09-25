@@ -11,6 +11,26 @@ const mocks = vi.hoisted(() => ({
 vi.mock('../../../contexts', () => ({
   default: {
     getSystemProperty: mocks.getSystemProperty,
+    getElementData: (id: string) => {
+      const element = mocks.getElementById(id)
+      return element ? { id, type: element.get('type') } : undefined
+    },
+    getElementComputedData: (id: string) =>
+      mocks.getElementById(id)?.getAllComputedData?.(),
+    elementSourceToWorkspace: (
+      _id: string,
+      position: { x: number; y: number }
+    ) => ({ ...position }),
+    workspaceToElementSource: (
+      _id: string,
+      position: { x: number; y: number }
+    ) => ({ ...position }),
+    projectLocalComputedDataForElements: (ids: readonly string[]) =>
+      mocks.projectLocalComputedDataFromPropertyIds(
+        ids.flatMap((id) =>
+          mocks.getElementById(id).props.getCanonicalRootPropertyIds()
+        )
+      ),
     patchLocalComputedData: mocks.patchLocalComputedData,
     projectLocalComputedDataFromPropertyIds:
       mocks.projectLocalComputedDataFromPropertyIds
