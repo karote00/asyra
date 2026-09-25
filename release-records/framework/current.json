@@ -1,0 +1,136 @@
+{
+  "schemaVersion": 1,
+  "status": "pending-publication",
+  "sourceBaseSha": "9fda2e7b68f3eef133dfd11e7843d1857209959c",
+  "sourceChangesets": ["asyra-sim-runtime-lifecycle.md"],
+  "packages": [
+    {
+      "name": "@asyra/core",
+      "oldVersion": "0.5.6",
+      "newVersion": "0.5.7",
+      "type": "patch",
+      "changesets": [0],
+      "reason": "direct Changeset"
+    },
+    {
+      "name": "@asyra/factory",
+      "oldVersion": "0.5.3",
+      "newVersion": "0.5.4",
+      "type": "patch",
+      "changesets": [0],
+      "reason": "direct Changeset"
+    },
+    {
+      "name": "@asyra/feature-system",
+      "oldVersion": "0.5.3",
+      "newVersion": "0.5.4",
+      "type": "patch",
+      "changesets": [0],
+      "reason": "direct Changeset"
+    },
+    {
+      "name": "@asyra/input-system",
+      "oldVersion": "0.5.4",
+      "newVersion": "0.5.5",
+      "type": "patch",
+      "changesets": [0],
+      "reason": "direct Changeset"
+    },
+    {
+      "name": "@asyra/preset",
+      "oldVersion": "0.5.7",
+      "newVersion": "0.5.8",
+      "type": "patch",
+      "changesets": [0],
+      "reason": "direct Changeset"
+    },
+    {
+      "name": "@asyra/props-manager",
+      "oldVersion": "0.5.3",
+      "newVersion": "0.5.4",
+      "type": "patch",
+      "changesets": [0],
+      "reason": "direct Changeset"
+    },
+    {
+      "name": "@asyra/render",
+      "oldVersion": "0.5.6",
+      "newVersion": "0.5.7",
+      "type": "patch",
+      "changesets": [0],
+      "reason": "direct Changeset"
+    },
+    {
+      "name": "@asyra/scene-tree",
+      "oldVersion": "0.5.3",
+      "newVersion": "0.5.4",
+      "type": "patch",
+      "changesets": [0],
+      "reason": "direct Changeset"
+    },
+    {
+      "name": "@asyra/selection",
+      "oldVersion": "0.5.2",
+      "newVersion": "0.5.3",
+      "type": "patch",
+      "changesets": [0],
+      "reason": "direct Changeset"
+    },
+    {
+      "name": "@asyra/system-context",
+      "oldVersion": "0.5.2",
+      "newVersion": "0.5.3",
+      "type": "patch",
+      "changesets": [0],
+      "reason": "direct Changeset"
+    },
+    {
+      "name": "@asyra/ui-context",
+      "oldVersion": "0.5.3",
+      "newVersion": "0.5.4",
+      "type": "patch",
+      "changesets": [0],
+      "reason": "direct Changeset"
+    },
+    {
+      "name": "@asyra/utils",
+      "oldVersion": "0.5.1",
+      "newVersion": "0.5.2",
+      "type": "patch",
+      "changesets": [0],
+      "reason": "direct Changeset"
+    },
+    {
+      "name": "@asyra/collaboration",
+      "oldVersion": "0.5.4",
+      "newVersion": "0.5.5",
+      "type": "patch",
+      "changesets": [],
+      "reason": "patch propagation from updated Framework dependencies per Changesets config"
+    },
+    {
+      "name": "@asyra/design-system",
+      "oldVersion": "0.5.4",
+      "newVersion": "0.5.5",
+      "type": "patch",
+      "changesets": [],
+      "reason": "patch propagation from updated Framework dependencies per Changesets config"
+    },
+    {
+      "name": "@asyra/persistence",
+      "oldVersion": "0.5.2",
+      "newVersion": "0.5.3",
+      "type": "patch",
+      "changesets": [],
+      "reason": "patch propagation from updated Framework dependencies per Changesets config"
+    },
+    {
+      "name": "@asyra/reactive-events",
+      "oldVersion": "0.5.3",
+      "newVersion": "0.5.4",
+      "type": "patch",
+      "changesets": [],
+      "reason": "patch propagation from updated Framework dependencies per Changesets config"
+    }
+  ]
+}

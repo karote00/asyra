@@ -21,10 +21,12 @@ const validationParent = path.join(repositoryRoot, 'tmp')
 
 const args = process.argv.slice(2)
 let appName
+let frameworkOnly = false
 let printPlan = false
 
 for (const arg of args) {
   if (arg.startsWith('--prod=')) appName = arg.split('=')[1]
+  else if (arg === '--framework') frameworkOnly = true
   else if (arg === '--plan') printPlan = true
   else {
     console.error(`Unknown argument: ${arg}`)
@@ -32,8 +34,8 @@ for (const arg of args) {
   }
 }
 
-if (!appName) {
-  console.error('Must specify --prod=<app-name>')
+if (Boolean(appName) === frameworkOnly) {
+  console.error('Specify exactly one of --framework or --prod=<app-name>')
   process.exit(1)
 }
 
@@ -51,9 +53,13 @@ const commands = [
   'yarn lint:ci',
   'yarn test:ci',
   'yarn deps:validate',
-  'yarn workspace @asyra/asyra-design test:e2e:collaboration',
-  `yarn release:app:check --prod=${appName}`,
-  `yarn release:app:build --prod=${appName} --prebuilt`
+  ...(!frameworkOnly
+    ? [
+        'yarn workspace @asyra/asyra-design test:e2e:collaboration',
+        `yarn release:app:check --prod=${appName}`,
+        `yarn release:app:build --prod=${appName} --prebuilt`
+      ]
+    : [])
 ]
 const collaborationValidationCommand =
   'yarn workspace @asyra/asyra-design test:e2e:collaboration'
