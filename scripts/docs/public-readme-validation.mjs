@@ -257,13 +257,24 @@ export const validateReadmeLearningSurface = ({ source, sourcePath }) => {
 
 export const validateStarterPublicationState = ({ source, sourcePath }) => {
   if (
-    /\b(?:npx\s+create-asyra-app|npm\s+create\s+asyra-app|yarn\s+create\s+asyra-app)\b|https:\/\/www\.npmjs\.com\/package\/create-asyra-app/iu.test(
-      source
+    !source.includes('npx create-asyra-app@0.1.0 my-app --package-manager=npm')
+  ) {
+    throw new Error(`${sourcePath} must provide the published Starter command`)
+  }
+  if (!source.includes('Node.js 24') || !/npm or Yarn/u.test(source)) {
+    throw new Error(
+      `${sourcePath} must state the Starter runtime and package managers`
+    )
+  }
+  if (
+    /\b(?:npx\s+create-asyra-app|npm\s+create\s+asyra-app|yarn\s+create\s+asyra-app|pnpm\s+(?:create|dlx)\s+create-asyra-app)\b/iu.test(
+      source.replaceAll(
+        'npx create-asyra-app@0.1.0 my-app --package-manager=npm',
+        ''
+      )
     )
   ) {
-    throw new Error(
-      `${sourcePath} exposes an unpublished Starter command or installation CTA`
-    )
+    throw new Error(`${sourcePath} contains an unsupported Starter command`)
   }
 }
 

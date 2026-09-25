@@ -149,9 +149,18 @@ shows how a coding agent can extend App-owned source through the same Feature,
 API, transaction, projection, and persistence path. This is source-editing
 guidance, not an AI service or agent running inside the App.
 
-`create-asyra-app` is not yet published to the public npm registry. The
-maintained source and generated template are available for repository review;
-there is no public installation command for this Starter yet.
+Create a fresh project with the published
+<a href="https://www.npmjs.com/package/create-asyra-app" target="_blank" rel="noopener noreferrer">create-asyra-app package</a>
+using Node.js 24 and npm or Yarn:
+
+```bash
+npx create-asyra-app@0.1.0 my-app --package-manager=npm
+cd my-app
+npm run start
+```
+
+The CLI installs the generated project's dependencies. It also supports Yarn;
+see the [CLI package guide](create-app/starter-app/README.md) for its options.
 
 ### Complete design product
 
