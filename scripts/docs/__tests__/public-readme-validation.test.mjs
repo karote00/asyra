@@ -65,34 +65,29 @@ test('README learning surfaces reject retired example runners and source links',
   }
 })
 
-test('unpublished Starter entry rejects public execution and installation CTAs', () => {
+test('published Starter entry requires the tested CLI version, Node runtime, and package managers', () => {
   const source =
-    'Generic Starter source is available. create-asyra-app is not yet published to the public npm registry.'
+    'npx create-asyra-app@0.1.0 my-app --package-manager=npm; Node.js 24; npm or Yarn'
   assert.doesNotThrow(() =>
     validateStarterPublicationState({ source, sourcePath: 'README.md' })
   )
-  for (const command of [
-    'npx create-asyra-app my-app',
-    'npm create asyra-app my-app',
-    'yarn create asyra-app my-app'
+  for (const invalidSource of [
+    source.replace('@0.1.0', ''),
+    source.replace('Node.js 24', 'Node.js 22'),
+    source.replace('npm or Yarn', 'pnpm'),
+    `${source}; npx create-asyra-app my-app`,
+    `${source}; npx create-asyra-app@0.2.0 my-app --package-manager=npm`,
+    `${source}; pnpm dlx create-asyra-app my-app`
   ]) {
     assert.throws(
       () =>
         validateStarterPublicationState({
-          source: `${source}\n${command}`,
+          source: invalidSource,
           sourcePath: 'README.md'
         }),
-      /unpublished Starter command/u
+      /published Starter command|runtime and package managers|unsupported Starter command/u
     )
   }
-  assert.throws(
-    () =>
-      validateStarterPublicationState({
-        source: `${source}\n[Install Starter](https://www.npmjs.com/package/create-asyra-app)`,
-        sourcePath: 'README.md'
-      }),
-    /unpublished Starter command/u
-  )
 })
 
 test('README link validation rejects missing and unverified destinations', () => {

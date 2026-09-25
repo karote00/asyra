@@ -38,7 +38,7 @@ test('public guides do not retain malformed copy fragments', () => {
   assert.doesNotMatch(hierarchyGuide, /\bThe public\s+The\b/)
 })
 
-test('public overview routes Starter source, Design, and advanced composition without an unpublished command', () => {
+test('public overview routes the published Starter, Design, and advanced composition', () => {
   const overview = fs.readFileSync(
     path.join(repositoryRoot, 'docs/public/index.md'),
     'utf8'
@@ -48,19 +48,36 @@ test('public overview routes Starter source, Design, and advanced composition wi
   const advanced = overview.indexOf('### Advanced composition')
   assert.ok(starter > 0 && starter < design && design < advanced)
   assert.match(overview, /apps\/starter-app\/docs\/ONBOARDING\.md/u)
-  assert.match(overview, /not yet published to the public npm registry/u)
-  assert.match(overview, /does not include an AI\s+runtime/u)
-  assert.doesNotMatch(
+  assert.match(
     overview,
-    /(?:npx|npm create|yarn create) create-asyra-app/u
+    /npx create-asyra-app@0\.1\.0 my-app --package-manager=npm/u
   )
+  assert.match(overview, /Node\.js 24 and npm or Yarn/u)
+  assert.match(overview, /does not include an AI\s+runtime/u)
   assert.doesNotThrow(() => validateStarterEntry({ source: overview }))
+  assert.throws(
+    () =>
+      validateStarterEntry({
+        source: overview.replace(
+          'npx create-asyra-app@0.1.0 my-app --package-manager=npm',
+          'npx create-asyra-app my-app'
+        )
+      }),
+    /published Starter command/u
+  )
   assert.throws(
     () =>
       validateStarterEntry({
         source: `${overview}\nnpx create-asyra-app my-app`
       }),
-    /unpublished Starter command/u
+    /unsupported Starter command/u
+  )
+  assert.throws(
+    () =>
+      validateStarterEntry({
+        source: `${overview}\nnpx create-asyra-app@0.2.0 my-app --package-manager=npm`
+      }),
+    /unsupported Starter command/u
   )
 })
 

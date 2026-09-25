@@ -28,9 +28,19 @@ show a coding agent changing App source through the existing Feature, API,
 transaction, projection, and persistence owners. The App does not include an AI
 runtime or provider for that exercise.
 
-`create-asyra-app` is not yet published to the public npm registry. The source
-and generated template can be inspected in this repository; a public Starter
-installation command is not active.
+Create a fresh project with the published
+[create-asyra-app package](https://www.npmjs.com/package/create-asyra-app)
+using Node.js 24 and npm or Yarn:
+
+```bash
+npx create-asyra-app@0.1.0 my-app --package-manager=npm
+cd my-app
+npm run start
+```
+
+The CLI installs the generated project's dependencies. Its template pins the
+published Framework packages; the [Starter source](../../apps/starter-app/README.md)
+and onboarding material remain available for inspection and extension.
 
 ### Complete Design product
 

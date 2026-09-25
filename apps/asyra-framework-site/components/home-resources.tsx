@@ -77,7 +77,7 @@ export function HomeResources() {
             {[
               {
                 title: 'Generic Starter',
-                body: 'Begin with a small editable Item App. Source and coding-agent guidance are available; its CLI is not yet published to the public npm registry.',
+                body: 'Begin with a small editable Item App. The published CLI creates projects from its source and coding-agent guidance.',
                 href: '/docs#generic-starter-source',
                 link: 'Explore Starter source'
               },

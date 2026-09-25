@@ -21,6 +21,16 @@ in review. Public CLI activation, current website deployment, and release
 operations remain separate. Independent coding-agent evidence was still pending
 at that handoff; the adoption journey is not DONE.
 
+Current release-entry status on 2026-09-26: `create-asyra-app@0.1.0` is
+published on the public npm registry. Its registry integrity matches the
+previously validated CLI tarball (`sha512-D+iT/bgZNN0x+9DMuWPNcSeZljoWJp1fFkxbdorv7+43fYEa9no05rmf2ODAhH9wyOfdQnp6KKXR/ob30s9wNQ==`);
+that CLI tarball's SHA-256 is
+`07ceb4be1d13d197a170f2e3907a3d621b2c3c64b99e2113093d5db4d5f2df77`.
+The README, AI discovery, and homepage entry changes are on this main-based
+branch for review and merge. Website deployment remains pending, as do
+independent community/discussion decisions and the remaining original adoption
+acceptance items. This entry update does not mark the program DONE.
+
 The user selected sequential, separate conversations with PR review between
 tasks to control usage. This agreement supersedes the original proposal's
 multi-agent delegation and autonomous execution across all workstreams.
@@ -534,9 +544,10 @@ one bounded slice without completing the whole task or adoption program.
 | 2 - Minimal canonical App | `apps/starter-app`, workspace `@asyra/starter-app`, and direct app-local tests/docs | Merged in child PR #247 at `407fd9c833889ce04ee8bdde3934b4076320435f`. The integrated App is revalidated in Task 7 below. This slice alone did not create the CLI/template, release, or public activation. |
 | 3 - CLI and standalone template | Public `create-asyra-app` CLI, `create-app/starter-app`, `release-configs/starter-app.json`, generated `create-app/starter-app/template`, and directly affected release/generation tests | Merged in child PR #249 at `b1dcfa106b44a0f3b56ee605612b072e2dfb3602` into `codex/adoption-onboarding`; Task 4 starts from that exact integrated head. Task 3's local validation covered naming, focused CLI/template tests, Starter test/typecheck/lint/react:build, root lint, template sync, package artifacts, and packed-artifact template consumer install/typecheck/lint/build/test/startup smoke. This records Task 3 integration, not registry publication or public activation. |
 | 4 - AI-first starter onboarding | Canonical Starter AGENTS/onboarding/prompt, opt-in priority exercise and formal tests, generated template sync | Merged in child PR #250 at `b785160c5645212509d3e1ca1ed4e8647922961c` into `codex/adoption-onboarding`. The priority tests failed before implementation and then passed through the App schema, Feature/API transaction, projection and Save/Reload owners. Starter test/typecheck/lint/build, desktop/narrow E2E, CLI/template tests, root lint, naming, template sync and packed-artifact generated consumer passed locally. The consumer reported `READY` for install/typecheck/lint/build/test/startup smoke on Node `v24.13.0` and Yarn `4.3.1`. No independent fresh coding-agent conversation or registry verification was performed; no AI provider was added. |
-| 5 - Entry routing and product evidence | Root README, public docs/llms generators, existing homepage entry points and verified case evidence | Merged in child PR #251 at `fb7050f9a43a3f00fb73a6028457c1abfc24051b` into `codex/adoption-onboarding`. The merge commit contains the Task 5 source, generated documentation, validators, and tests. Registry publication and Starter public activation remain pending. Task 5's local gates and the unrelated Design template drift are recorded in the bounded contract below; this integration does not claim a completed composite `docs:readme:check`, release, publication, or deployment. |
+| 5 - Entry routing and product evidence | Root README, public docs/llms generators, existing homepage entry points and verified case evidence | Merged in child PR #251 at `fb7050f9a43a3f00fb73a6028457c1abfc24051b` into `codex/adoption-onboarding`. The merge commit contains the Task 5 source, generated documentation, validators, and tests. At that integration point, Registry publication and Starter public activation remained pending. Task 5's local gates and the unrelated Design template drift are recorded in the bounded contract below; this integration does not claim a completed composite `docs:readme:check`, release, publication, or deployment. |
 | 6 - Community and support | SUPPORT.md, canonical support generators/validators, directly affected App release wording | Merged in child PR #252 at `4b8015f6e01e5eaeba1227132e8dffbe076fa64b`. GitHub Discussions remained disabled on the Task 7 recheck; no inactive link is published. Integrated support and generated-doc checks are recorded below. Sim maintenance and safety obligations remain open. |
 | 7 - Integrated readiness and release handoff | Affected gate results, this plan and index | Integration validation and handoff record refreshed for `86674ccc21ead7ad73f1fe57cb602258efbc6f63` after #254/#255 merged. Child PR #253 remains open for review and exact-head CI. Registry publication, deployment, independent agent evidence, and public adoption delivery remain separate. |
+| 8 - Published Starter public entry | README, homepage card, generated public docs/llms, and release-entry status in this plan | CLI `0.1.0` has been published. This PR updates current installation guidance and proves the published registry CLI consumer. Website deployment, community decision, and remaining program acceptance remain pending; do not mark the overall program DONE. |
 
 ### Task 7 integration validation and release handoff
 
@@ -699,10 +710,59 @@ packages and 6 phases. The initial Starter workspace build required the root
 Framework build first because this fresh worktree had no local package outputs.
 
 This evidence resolves the Framework-version and generated-consumer blocker
-recorded in PR #257 for the tested source and tarball. The CLI package itself
-is still unpublished to npm; publishing it, merging this PR, deployment, and
-the remaining adoption-program evidence are separate states. In particular,
-this verification does not mark the adoption program DONE.
+recorded in PR #257 for the tested source and tarball. At the time of this
+verification record, the CLI package itself was still unpublished to npm;
+later publication and current-entry activation are tracked separately below.
+This verification did not mark the adoption program DONE.
+
+### Published Starter entry and npm CLI verification
+
+Source baseline: `origin/main` at
+`c14d5040cdb19e2cd3d5d962a711101b853dde1b` (2026-09-26). On that source,
+the public registry reports `create-asyra-app@0.1.0` with integrity
+`sha512-D+iT/bgZNN0x+9DMuWPNcSeZljoWJp1fFkxbdorv7+43fYEa9no05rmf2ODAhH9wyOfdQnp6KKXR/ob30s9wNQ==`
+and tarball URL
+`https://registry.npmjs.org/create-asyra-app/-/create-asyra-app-0.1.0.tgz`.
+The integrity matches the previously validated CLI tarball, whose SHA-256 is
+`07ceb4be1d13d197a170f2e3907a3d621b2c3c64b99e2113093d5db4d5f2df77`.
+
+Using Node `v24.13.0` and npm `10.8.2`, the exact `npx
+create-asyra-app@0.1.0 my-app --package-manager=npm` path created a fresh
+consumer after disabling npm's workspace discovery for this monorepo checkout.
+An initial run with workspace discovery enabled resolved no executable in
+this repository context; the same public npx command succeeded with
+`npm_config_workspaces=false`. A separate `npm install
+create-asyra-app@0.1.0` also installed the registry CLI and its binary generated
+a consumer. Its lockfile records the registry tarball URL, exact integrity,
+version `0.1.0`, and Node `24.x` engine. The README-path npm and Yarn consumers
+were both generated from the registry CLI; both installed the generated
+Framework dependencies from the public registry. No repo bin, local CLI
+tarball, or workspace link was used for either generated consumer.
+
+The README-path consumer installed `@asyra/core@0.5.7`,
+`@asyra/preset@0.5.8`, and `@asyra/utils@0.5.2`; its lockfile resolves those
+packages from `https://registry.npmjs.org`, and the installed directories are
+not symlinks. It passed 16/16 tests, typecheck, lint, and production build.
+The existing Starter Playwright interaction suite ran against both generated
+consumers on desktop and narrow viewports: each run had 11 passed and 1 skipped
+by its existing condition. They exercised item editing, Undo/Redo, Save/Reload,
+canvas dragging, title-draft history, and pointer cancellation. The Yarn
+consumer also passed 16/16 tests, typecheck, lint, and production build.
+
+This result proves the published npm CLI and Framework registry consumer path
+for the source above. The README, homepage card, public overview, generated
+llms indexes, and this plan are updated in a main-based PR. Website deployment,
+community or Discussions decision, independent coding-agent evidence, and the
+remaining original adoption acceptance are still open; the program is not
+DONE.
+
+Homepage verification for this entry edit: site `test:local` passed 97 tests
+with 15 existing conditional skips; typecheck, lint, and production build
+passed. Focused homepage routing E2E passed all 3 cases, including 1440px and
+390px views, no-JavaScript/reduced-motion routing, the pinned npm command, and
+the npm link's new-tab security attributes. The desktop and narrow screenshots
+of both the entry card and destination docs content were inspected. The command
+code block remains horizontally scrollable at the narrow viewport.
 
 Historical CI detail: #253 head `dc35222eb610d3181ae7caf4c597b41dcbc13cb1`
 failed in run `35983934121`. Render-performance job `107582066413` failed during
