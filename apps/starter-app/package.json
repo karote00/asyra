@@ -24,13 +24,13 @@
     "@asyra/core": "workspace:*",
     "@asyra/preset": "workspace:*",
     "@asyra/utils": "workspace:*",
-    "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
   },
   "devDependencies": {
     "@types/node": "^24.13.3",
-    "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^4.7.0",
     "jsdom": "^27.4.0",
     "typescript": "^5.7.2",

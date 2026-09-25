@@ -43,7 +43,7 @@
   },
   "dependencies": {
     "@asyra/render-engine": "workspace:*",
-    "pixi.js": "^8.20.1"
+    "pixi.js": "^8.21.0"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^3.2.6",
