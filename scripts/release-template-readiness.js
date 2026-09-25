@@ -123,6 +123,20 @@ const collectFrameworkImports = (templateDirectory) => {
   return imports
 }
 
+export const assertTemplateFrameworkVersionsMatch = (
+  declaredDependencies,
+  packagesByName
+) => {
+  for (const [packageName, version] of Object.entries(declaredDependencies)) {
+    const releasePackage = packagesByName.get(packageName)
+    if (releasePackage && version !== releasePackage.version) {
+      throw new Error(
+        `${packageName} must use frozen version ${releasePackage.version}, found ${version}`
+      )
+    }
+  }
+}
+
 export const validateGeneratedTemplateContract = ({
   repositoryRoot,
   appName
@@ -183,14 +197,7 @@ export const validateGeneratedTemplateContract = ({
     }
   }
 
-  for (const [packageName, version] of Object.entries(declaredDependencies)) {
-    const releasePackage = packagesByName.get(packageName)
-    if (releasePackage && version !== releasePackage.version) {
-      throw new Error(
-        `${packageName} must use frozen version ${releasePackage.version}, found ${version}`
-      )
-    }
-  }
+  assertTemplateFrameworkVersionsMatch(declaredDependencies, packagesByName)
 
   const packageNames = Object.keys(declaredDependencies)
     .filter((packageName) => packagesByName.has(packageName))

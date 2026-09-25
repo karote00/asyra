@@ -1,5 +1,13 @@
 # @asyra/collaboration
 
+## 0.5.5
+
+### Patch Changes
+
+- Updated dependencies [22883b1]
+  - @asyra/factory@0.5.4
+  - @asyra/utils@0.5.2
+
 ## 0.5.4
 
 ### Patch Changes

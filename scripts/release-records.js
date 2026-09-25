@@ -62,7 +62,6 @@ const COMPLETED_READINESS_PLAN =
   'docs/ai/framework/plans/completed/framework-release-readiness-and-closeout-plan.md'
 const READINESS_INSPECTOR =
   'tools/flow-inspector/inspectors/framework-release-readiness-flow-inspector.data.cjs'
-
 const readJson = (filePath) => JSON.parse(fs.readFileSync(filePath, 'utf8'))
 
 const parseStableVersion = (name, version) => {

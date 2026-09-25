@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { execFileSync } from 'node:child_process'
+import { createHash } from 'node:crypto'
 import fs from 'node:fs'
 import { builtinModules } from 'node:module'
 import path from 'node:path'
@@ -12,6 +13,9 @@ import { readFrameworkReleaseSource } from './framework-release-packages.js'
 
 export const DEFAULT_RELEASE_ARTIFACT_DIRECTORY =
   'tmp/framework-release-artifacts'
+
+export const packageArtifactIntegrity = (filePath) =>
+  `sha512-${createHash('sha512').update(fs.readFileSync(filePath)).digest('base64')}`
 
 const freeze = (value) => {
   if (!value || typeof value !== 'object' || Object.isFrozen(value)) {
@@ -380,6 +384,7 @@ export const validateFrameworkReleasePackageArtifacts = ({
       packageName: record.packageName,
       version: record.version,
       tarballPath: record.tarballPath,
+      integrity: packageArtifactIntegrity(record.tarballPath),
       fileCount: entries.length,
       publicPaths: [...new Set(publicPaths)].sort(),
       internalDependencies: Object.keys(dependencyFields)
