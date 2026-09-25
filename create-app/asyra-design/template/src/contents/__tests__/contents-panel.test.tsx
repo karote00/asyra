@@ -72,6 +72,13 @@ const mocks = vi.hoisted(() => {
   }
 })
 
+vi.mock('../../common-apis/element', () => ({
+  elementApis: {
+    isContainerType: (type: string) =>
+      ['group', 'frame', 'workspace', 'custom-container'].includes(type)
+  }
+}))
+
 vi.mock('@tanstack/react-virtual', async (importOriginal) => {
   const actual =
     await importOriginal<typeof import('@tanstack/react-virtual')>()
@@ -160,6 +167,7 @@ import Contents from '../contents-panel'
 import { projectVisibleLayerRows } from '../layer-hierarchy'
 
 const resetLayerFixture = () => {
+  mocks.elementDataMap.group.type = 'group'
   mocks.flattenedIds = [...mocks.baseFlattenedIds]
   mocks.selection.clear()
   mocks.useRealVirtualizer = false
@@ -205,6 +213,23 @@ describe('Layers pointer hierarchy presentation', () => {
     expect(screen.queryByTestId('layers-group-button')).toBeNull()
     expect(screen.queryByTestId('layers-ungroup-button')).toBeNull()
   })
+
+  it.each(['frame', 'custom-container'])(
+    'folds and unfolds %s through its visible disclosure control',
+    (containerType) => {
+      mocks.elementDataMap.group.type = containerType
+      render(<Contents />)
+      const toggle = screen.getByTestId('layers-group-toggle-group')
+      expect(screen.queryByTestId('element-item-child')).not.toBeNull()
+      fireEvent.click(toggle)
+      expect(toggle.getAttribute('aria-expanded')).toBe('false')
+      expect(screen.queryByTestId('element-item-child')).toBeNull()
+      fireEvent.click(toggle)
+      expect(toggle.getAttribute('aria-expanded')).toBe('true')
+      expect(screen.queryByTestId('element-item-child')).not.toBeNull()
+      expect(mocks.start).not.toHaveBeenCalled()
+    }
+  )
 
   it('uses Tailwind spacing for row indentation and content padding', () => {
     render(<Contents />)

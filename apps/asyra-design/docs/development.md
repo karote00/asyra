@@ -103,6 +103,44 @@ unavailable records visible when calculating averages; do not interpret missing
 usage as free work. These token records do not establish subscription percentage
 or monetary cost. Provider outcome does not certify final document settlement.
 
+### Drawing execution diagnostics
+
+Each local request also emits `ai_request_trace` JSON lines in the same server log.
+Use the usage record's `requestId` to find the matching sequence of tool starts,
+completions/failures, native research notifications and final settlement. Tool calls
+include a `callId`, total duration, queue time, execution time, returned text bytes
+and image counts; inputs/results are bounded allowlisted summaries. Prepared-design
+receipts separate admission, object creation and cooperative-host yield waits (`cooperativeYieldMs`). The usage
+record's `timing` contains unioned `observedToolAndResearchMs` (overlapping calls
+count once) and `unattributedMs`. The latter includes unobserved provider/model/
+network/orchestration time, not measured thinking. Tool time can include approval
+waits; cooperative-host yield wait is not GPU presentation time.
+Reference URLs retain origin/path only. Array summaries include total count and
+truncation; they are not complete source data. No raw prompt, private reasoning,
+credentials, image bytes or coordinate arrays are retained. Review observations
+may contain design content, so treat local logs as private debugging evidence.
+
+`record_design_review` records the chosen method, sources, criteria and detail
+requirement before drawing. Its visual phase records model judgments against
+current rendered inspection IDs. Read these with preparation findings and actual
+operation receipts to distinguish reference/import failures, geometry preparation,
+unsupported methods, failed quality criteria and missing visual evidence. A
+successful tool call or provider settlement does not certify drawing quality.
+New mutations invalidate prior inspection evidence. Detailed work needs a full
+composition view and a distinct detail element; current native inspection supports
+element snapshots, not arbitrary region crops. This is not a photorealistic renderer
+or an objective visual similarity scorer. Unmet criteria remain explicit.
+
+For example, with the development server log redirected inside the project:
+
+```sh
+rg 'REQUEST_ID' tmp/local-codex/manual-ai-panel-server.log
+```
+
+Replace `REQUEST_ID` with the value from the relevant usage record. Keep server
+stdout if using another launch command; diagnostics do not create a second database
+or send telemetry. Earlier runs cannot be reconstructed retroactively.
+
 ### Native backgrounds before tracing
 
 Local AI can use `vectorize_image_layers` after deciding that a solid native
@@ -159,3 +197,18 @@ required, including in faithful mode.
 Activity keeps one fixed-height current label above the append-only history.
 Detailed messages appear only in the history, so changing message length does
 not reposition existing rows.
+
+### AI reference resolution
+
+Research imports original raster URLs and preserves source pixel dimensions.
+No thumbnail substitution or automatic resizing is allowed. Resource admission
+limits return an explicit failure. SVG is not supported by the raster importer;
+it must not be silently replaced by a PNG thumbnail. Canvas inspection uses native
+pixels, with explicit regions for large drawings. A region is partial evidence,
+not certification of the complete composition.
+
+AI research uses native live web search without a fixed site list or search adapter.
+The App only downloads original image URLs selected by the model, with the existing
+public-network, MIME, size and decoding checks. Failure codes identify the rejected
+stage and explicitly direct continued research. A successfully imported image must
+still fit the user's request; unsuitable content is not a reason to end the task.

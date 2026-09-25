@@ -17,6 +17,7 @@ test('the Agent applies editable text, hierarchy and curves in one durable Undo'
   await page.setViewportSize({ width: 1600, height: 1000 })
   const identity = createTestDocumentIdentity()
   const design = prepareDesign({
+    type: 'frame',
     name: 'Field Notes',
     x: 40,
     y: 40,

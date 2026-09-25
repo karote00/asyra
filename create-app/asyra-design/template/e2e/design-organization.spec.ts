@@ -17,6 +17,7 @@ test('Agent organization preserves artwork and each request is one durable Undo'
   await page.setViewportSize({ width: 1600, height: 1000 })
   const identity = createTestDocumentIdentity()
   const design = prepareDesign({
+    type: 'frame',
     name: 'Organization fixture',
     x: 60,
     y: 60,

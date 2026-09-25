@@ -67,7 +67,6 @@ export const createDesignArranger =
       !['horizontal', 'vertical'].includes(request.axis) ||
       !Array.isArray(request.elementIds) ||
       request.elementIds.length < 2 ||
-      request.elementIds.length > 200 ||
       request.elementIds.some(
         (id) => typeof id !== 'string' || !id.length || id.length > 256
       ) ||

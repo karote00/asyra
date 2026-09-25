@@ -57,7 +57,6 @@ export const createDesignOrganizer =
       !['group', 'ungroup', 'reorder'].includes(request.operation) ||
       !Array.isArray(request.elementIds) ||
       !request.elementIds.length ||
-      request.elementIds.length > 200 ||
       request.elementIds.some(
         (id) => typeof id !== 'string' || !id.length || id.length > 256
       ) ||

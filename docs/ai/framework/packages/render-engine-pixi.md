@@ -68,6 +68,13 @@ with review metadata, without changing the target or viewport.
 Unsupported capabilities and initialization failures do not emit fallback
 surface output or a successful ready result.
 
+Raster-pattern descriptors map source texels into normalized object bounds:
+`scale: { x: 1 / width, y: 1 / height }` covers one complete object. The Pixi
+adapter uses local texture space and converts texel scale into normalized
+texture scale exactly once. Procedural gradients use the same mapping. This
+preserves the vector contour's alpha and gradient across object sizes and zoom;
+source texture dimensions and canonical geometry are unchanged.
+
 ## Dependency Boundary
 
 - depends on `@asyra/render-engine` and `pixi.js`;

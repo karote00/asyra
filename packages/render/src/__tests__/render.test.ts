@@ -77,12 +77,19 @@ describe('Render', () => {
       value: new Set([...engine.capabilities, 'snapshot'])
     })
     const flush = vi.spyOn(render, 'flushFrame')
-    expect(render.captureElementSnapshot('drawing', 1024)).toEqual(expected)
+    expect(
+      render.captureElementSnapshot('drawing', 1024, {
+        nativeResolution: true,
+        region: expected.bounds
+      })
+    ).toEqual(expected)
     expect(flush).toHaveBeenCalledOnce()
     expect(engine.query).toHaveBeenCalledWith({
       type: 'snapshot',
       object: element.getEngineHandle(),
-      maxDimension: 1024
+      maxDimension: 1024,
+      nativeResolution: true,
+      region: expected.bounds
     })
     render.viewport.getElementById = vi.fn(() => undefined)
     expect(() => render.captureElementSnapshot('missing', 1024)).toThrow()

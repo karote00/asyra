@@ -116,7 +116,7 @@ const messageForSummary = (
   const count = affectedCount ?? 'the selected'
   switch (actionKind) {
     case 'replace':
-      return 'Replace the previous drawing with the prepared vector drawing. You can undo this change.'
+      return 'Replace the current drawing on the canvas. This request creates one Undo step. Previous steps remain available through Undo.'
     case 'create':
       return `Create ${count} editable elements.`
     case 'delete':

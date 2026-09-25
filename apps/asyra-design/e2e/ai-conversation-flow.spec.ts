@@ -1,4 +1,5 @@
 import { createServer, type ServerResponse } from 'node:http'
+import { prepareDesign } from '../server/design-preparation'
 import { expect, test } from '@playwright/test'
 import { createPreparedDrawingArtifact } from './action-batch-interceptor'
 import {
@@ -208,6 +209,27 @@ test('text answers keep the original reference only on its message and typing ne
   await composer.fill('Draw this reference at 240 by 240')
   await page.getByRole('button', { name: 'Send', exact: true }).click()
   await expect(page.getByText('Waiting for your answer')).toBeVisible()
+  await expect(page.getByLabel('Completed at')).toHaveCount(0)
+  await expect(page.getByLabel('Question')).toBeVisible()
+  expect(
+    await page.getByLabel('Operational progress').evaluate((list) => {
+      const question = document.querySelector('[aria-label="Question"]')
+      return Boolean(
+        question &&
+        list.compareDocumentPosition(question) &
+          Node.DOCUMENT_POSITION_FOLLOWING
+      )
+    })
+  ).toBe(true)
+  const firstActivity = page
+    .getByTestId('ai-agent-message')
+    .first()
+    .locator('details')
+  await firstActivity.locator('summary').click()
+  const priorActivity = await firstActivity
+    .getByRole('listitem')
+    .allTextContents()
+  expect(priorActivity).toContain('Reviewing the drawing')
   await composer.fill('Yes, keep the dimensions')
   await page.getByRole('button', { name: 'Send', exact: true }).click()
   await expect(page.getByTestId('ai-agent-message')).toHaveCount(2)
@@ -221,6 +243,14 @@ test('text answers keep the original reference only on its message and typing ne
   await expect(
     page.getByLabel('Your message').last().getByRole('img')
   ).toHaveCount(0)
+  await expect(firstActivity).toHaveAttribute('open', '')
+  await expect(firstActivity.getByRole('listitem')).toHaveText(priorActivity)
+  const nextActivity = page
+    .getByTestId('ai-agent-message')
+    .last()
+    .locator('details')
+  await nextActivity.locator('summary').click()
+  await expect(nextActivity.getByRole('list')).toBeVisible()
   expect(requests[1].metadata.imageAttachments).toEqual(
     requests[0].metadata.imageAttachments
   )
@@ -355,9 +385,10 @@ for (const width of [360, 1280]) {
     await expect(message).toHaveAttribute('data-outcome', 'active')
     release()
     await expect(message).toHaveAttribute('data-outcome', 'failed')
-    await expect(
-      message.getByRole('status', { name: 'Request status' })
-    ).toContainText('Request finished')
+    await expect(message.getByLabel('Completed at')).toHaveAttribute(
+      'datetime',
+      /.+/
+    )
     await expect(message).toContainText('timed out')
     expect(await getCoreDocumentDigest(page)).toEqual(before)
     await expect(page.getByLabel('Current AI history action')).toHaveCount(0)
@@ -382,9 +413,10 @@ for (const width of [360, 1280]) {
       'data-outcome',
       'success'
     )
-    await expect(
-      page.getByRole('status', { name: 'Request status' }).last()
-    ).toContainText('Request finished')
+    await expect(page.getByLabel('Completed at').last()).toHaveAttribute(
+      'datetime',
+      /.+/
+    )
     expect(await getUndoHistoryDepth(page)).toBe(depth + 1)
     const ids = await page.evaluate(async () => {
       const { core } = await import('../src/testing/runtime-access')
@@ -657,9 +689,10 @@ for (const width of [360, 1280]) {
       page.getByRole('button', { name: 'Try again', exact: true })
     ).toHaveCount(0)
     expect(receipts).toHaveLength(2)
-    await expect(
-      page.getByRole('status', { name: 'Request status' }).last()
-    ).toContainText('Request finished')
+    await expect(page.getByLabel('Completed at').last()).toHaveAttribute(
+      'datetime',
+      /.+/
+    )
     expect(await getUndoHistoryDepth(page)).toBe(depth + 1)
     const after = await getCoreDocumentDigest(page)
     expect(after).not.toEqual(before)
@@ -716,12 +749,40 @@ for (const width of [360, 1280]) {
       await page.getByRole('button', { name: 'Send', exact: true }).click()
       await connection
       if (!response) throw new Error('Missing stream')
-      await page.getByText('Activity', { exact: true }).click()
+      await page.getByLabel('Work history').click()
       const status = page.getByRole('status', { name: 'Current activity' })
       const current = page
         .getByLabel('Operational progress')
         .locator('[aria-current="step"]')
+      await expect(
+        page.getByLabel('Design context', { exact: true })
+      ).toHaveCount(0)
       const events = [
+        {
+          tool: 'research_design_context',
+          status: 'running',
+          label: 'Researching design context'
+        },
+        {
+          tool: 'research_design_context',
+          status: 'completed',
+          label: 'Researching design context'
+        },
+        {
+          tool: 'search_reference_images',
+          status: 'running',
+          label: 'Researching design context'
+        },
+        {
+          tool: 'search_reference_images',
+          status: 'completed',
+          label: 'Researching design context'
+        },
+        {
+          tool: 'import_reference_image',
+          status: 'running',
+          label: 'Researching design context'
+        },
         {
           tool: 'vtracer',
           status: 'running',
@@ -730,12 +791,32 @@ for (const width of [360, 1280]) {
         {
           tool: 'vtracer',
           status: 'completed',
-          label: 'Reviewing the results'
+          label: 'Converting artwork to vectors'
         },
         {
           tool: 'analyze_vector',
           status: 'completed',
-          label: 'Reviewing the results'
+          label: 'Converting artwork to vectors'
+        },
+        {
+          tool: 'prepare_design',
+          status: 'running',
+          label: 'Drawing and refining'
+        },
+        {
+          tool: 'prepare_design',
+          status: 'completed',
+          label: 'Drawing and refining'
+        },
+        {
+          tool: 'inspect_drawing',
+          status: 'running',
+          label: 'Drawing and refining'
+        },
+        {
+          tool: 'update_design_element',
+          status: 'running',
+          label: 'Drawing and refining'
         },
         {
           tool: 'set_element_visibility',
@@ -766,9 +847,9 @@ for (const width of [360, 1280]) {
             message: event.message
           }) + '\n'
         )
-        await expect(status).toHaveText(event.message ?? event.label)
+        await expect(status).toHaveText(event.label)
         await expect(current).toHaveCount(1)
-        await expect(current).toHaveText(event.message ?? event.label)
+        await expect(current).toHaveText(event.label)
         expect(await originalRow.evaluate((row) => row.isConnected)).toBe(true)
         await expect(firstRow).toHaveText(originalText)
         expect(
@@ -782,6 +863,16 @@ for (const width of [360, 1280]) {
           page.getByText('Running a tool', { exact: true })
         ).toHaveCount(0)
       }
+      await expect(
+        page
+          .getByLabel('Operational progress')
+          .getByText('Researching design context', { exact: true })
+      ).toHaveCount(1)
+      await expect(
+        page
+          .getByLabel('Operational progress')
+          .getByText('Drawing and refining', { exact: true })
+      ).toHaveCount(1)
       const rowGaps = await page
         .getByLabel('Operational progress')
         .locator('li')
@@ -795,7 +886,7 @@ for (const width of [360, 1280]) {
             )
         )
       expect(Math.max(...rowGaps) - Math.min(...rowGaps)).toBeLessThan(1)
-      await expect(current).toContainText('正在隱藏右下角的標記。')
+      await expect(current).toContainText('Adjusting element visibility')
       await page
         .getByTestId('ai-agent-panel')
         .screenshot({ path: testInfo.outputPath('current-activity.png') })
@@ -854,6 +945,10 @@ for (const width of [360, 1280]) {
       })
       // Real layout regression: collapsing a long history at scrollTop zero
       // must clear the jump affordance without relying on a scroll event.
+      const rowsBeforeLoop = await page
+        .getByLabel('Operational progress')
+        .locator('li')
+        .count()
       for (let index = 0; index < 24; index++) {
         response.write(
           JSON.stringify({
@@ -865,7 +960,7 @@ for (const width of [360, 1280]) {
       }
       await expect(
         page.getByLabel('Operational progress').locator('li')
-      ).toHaveCount(74)
+      ).toHaveCount(rowsBeforeLoop + 1)
       response.end(
         JSON.stringify({
           type: 'result',
@@ -890,26 +985,10 @@ for (const width of [360, 1280]) {
         'no-change'
       )
       await expect(status).toHaveCount(0)
-      const bell = page
-        .getByRole('status', { name: 'Request status' })
-        .locator('svg')
-      await expect(bell).toHaveAttribute('width', '12')
-      await expect(bell).toHaveAttribute('height', '12')
-      const animation = await bell.evaluate((element) => {
-        const style = getComputedStyle(element)
-        return [style.animationDuration, style.animationIterationCount]
-      })
-      expect(animation).toEqual(['1s', '1'])
-      await expect
-        .poll(() =>
-          bell.evaluate((element) =>
-            element
-              .getAnimations()
-              .every((animation) => animation.playState === 'finished')
-          )
-        )
-        .toBe(true)
-      await expect(bell).toBeVisible()
+      const completionTime = page.getByLabel('Completed at')
+      await expect(completionTime).toBeVisible()
+      await expect(completionTime).toHaveText(/\d{1,2}:\d{2}/)
+      await expect(completionTime.locator('svg')).toHaveCount(0)
       const fontSizes = await page
         .getByTestId('ai-agent-panel')
         .evaluate((panel) =>
@@ -925,16 +1004,15 @@ for (const width of [360, 1280]) {
         )
       expect([...new Set(fontSizes)]).toEqual(['12px'])
 
-      await expect(
-        page.getByRole('status', { name: 'Request status' })
-      ).toContainText('Request finished')
-      await expect(
-        page.getByRole('status', { name: 'Request status' })
-      ).toBeInViewport()
+      await expect(page.getByLabel('Completed at')).toHaveAttribute(
+        'datetime',
+        /.+/
+      )
+      await expect(page.getByLabel('Completed at')).toBeInViewport()
       await expect(current).toHaveCount(0)
-      await expect(page.getByText('Result', { exact: true })).toBeVisible()
+      await expect(page.getByText('Result', { exact: true })).toHaveCount(0)
       await expect(page.getByLabel('Operational progress')).toContainText(
-        '正在隱藏右下角的標記。'
+        'Adjusting element visibility'
       )
       await page
         .getByTestId('ai-agent-panel')
@@ -945,7 +1023,7 @@ for (const width of [360, 1280]) {
       await expect(
         page.getByRole('button', { name: 'Jump to latest' })
       ).toBeVisible()
-      await page.getByText('Activity', { exact: true }).click()
+      await page.getByLabel('Work history').click()
       await expect(
         page.getByRole('button', { name: 'Jump to latest' })
       ).toHaveCount(0)
@@ -974,7 +1052,7 @@ for (const width of [360, 1280]) {
       await page
         .getByTestId('ai-agent-panel')
         .screenshot({ path: testInfo.outputPath('selected-result-text.png') })
-      await page.getByText('Activity', { exact: true }).click()
+      await page.getByLabel('Work history').click()
       await expect(
         page.getByRole('button', { name: 'Jump to latest' })
       ).toBeVisible()
@@ -987,5 +1065,393 @@ for (const width of [360, 1280]) {
       server.closeAllConnections()
       await new Promise<void>((resolve) => server.close(() => resolve()))
     }
+  })
+}
+
+for (const width of [360, 1280]) {
+  test(`icon conversation navigation preserves drafts at ${width}px`, async ({
+    page
+  }, testInfo) => {
+    await page.setViewportSize({ width: 1280, height: 720 })
+    let requests = 0
+    await page.route('**/api/ai/status', (route) =>
+      route.fulfill({ json: { state: 'ready' } })
+    )
+    await page.route('**/api/ai/action-batch', (route) => {
+      requests++
+      return route.fulfill({
+        json: {
+          batchId: 'navigation-result',
+          actions: [
+            {
+              id: 'report',
+              name: 'report_outcome',
+              arguments: {
+                outcome: 'completed',
+                message: 'No canvas changes were needed.'
+              },
+              summary: 'Report result'
+            }
+          ]
+        }
+      })
+    })
+    await page.goto(createTestDocumentIdentity().url)
+    await waitForAppReady(page)
+    await page.setViewportSize({ width, height: 720 })
+    await page.getByRole('button', { name: 'Open Agent' }).click()
+    const panel = page.getByTestId('ai-agent-panel')
+    const header = panel.locator('header')
+    const toggle = header.getByRole('button', {
+      name: 'Toggle conversation history'
+    })
+    const create = header.getByRole('button', { name: 'New conversation' })
+    const close = header.getByRole('button', { name: 'Close Agent panel' })
+    await expect(header.locator('select')).toHaveCount(0)
+    await expect(header).toHaveText('')
+    const positions = []
+    for (const button of [toggle, create, close]) {
+      const bounds = await button.boundingBox()
+      if (!bounds) throw new Error('Missing navigation icon')
+      expect(bounds.width).toBe(24)
+      expect(bounds.height).toBe(24)
+      positions.push(bounds.x)
+      await expect(button.locator('svg')).toHaveAttribute(
+        'viewBox',
+        '0 0 24 24'
+      )
+    }
+    expect(positions[1] - positions[0]).toBe(32)
+    expect(positions[2]).toBeGreaterThan(positions[1] + 24)
+    const composer = page.getByLabel('Message Agent')
+    await composer.fill('First design')
+    await page.getByRole('button', { name: 'Send', exact: true }).click()
+    await expect(page.getByTestId('ai-agent-message')).toHaveAttribute(
+      'data-outcome',
+      'no-change'
+    )
+    await composer.fill('Unsent first draft')
+    await create.click()
+    await expect(composer).toBeEmpty()
+    await composer.fill('Unsent second draft')
+    await toggle.click()
+    const history = page.getByRole('region', { name: 'Conversation history' })
+    await expect(history).toBeVisible()
+    await expect(
+      history.getByRole('button', { name: 'First design', exact: true })
+    ).toBeVisible()
+    await panel.screenshot({
+      path: testInfo.outputPath('conversation-history.png')
+    })
+    await history
+      .getByRole('button', { name: 'First design', exact: true })
+      .click()
+    await expect(history).toHaveCount(0)
+    await expect(composer).toHaveValue('Unsent first draft')
+    await toggle.click()
+    await history
+      .getByRole('button', { name: 'New conversation', exact: true })
+      .click()
+    await expect(composer).toHaveValue('Unsent second draft')
+    await toggle.click()
+    await history.getByRole('button').first().focus()
+    await page.keyboard.press('Escape')
+    await expect(history).toHaveCount(0)
+    await expect(toggle).toBeFocused()
+    await panel.screenshot({
+      path: testInfo.outputPath('conversation-header.png')
+    })
+    expect(requests).toBe(1)
+    await close.click()
+    await expect(panel).toHaveCount(0)
+  })
+}
+
+test('panel text selection supports native copy after canvas focus', async ({
+  page,
+  context
+}) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+  await page.route('**/api/ai/status', (route) =>
+    route.fulfill({ json: { state: 'ready' } })
+  )
+  await page.goto(createTestDocumentIdentity().url)
+  await waitForAppReady(page)
+  await page.getByRole('button', { name: 'Open Agent' }).click()
+  await page
+    .getByTestId('canvas-render-container')
+    .locator('canvas')
+    .click({ position: { x: 300, y: 250 } })
+  const title = page.getByText('Your AI subscription', { exact: true })
+  const bounds = await title.boundingBox()
+  if (!bounds) throw new Error('Missing panel text')
+  await page.mouse.move(bounds.x + 1, bounds.y + bounds.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(
+    bounds.x + bounds.width - 1,
+    bounds.y + bounds.height / 2,
+    { steps: 12 }
+  )
+  await page.mouse.up()
+  const selected = await page.evaluate(() => window.getSelection()?.toString())
+  expect(selected).toBe('Your AI subscription')
+  await page.evaluate(() => navigator.clipboard.writeText('before-panel-copy'))
+  await page.keyboard.press('ControlOrMeta+c')
+  await expect
+    .poll(() => page.evaluate(() => navigator.clipboard.readText()))
+    .toBe(selected)
+  const composer = page.getByLabel('Message Agent')
+  await composer.fill('Copy composer text')
+  await composer.press('ControlOrMeta+a')
+  await composer.press('ControlOrMeta+c')
+  await expect
+    .poll(() => page.evaluate(() => navigator.clipboard.readText()))
+    .toBe('Copy composer text')
+  await page
+    .getByRole('button', { name: 'Toggle conversation history' })
+    .click()
+  await expect(
+    page.getByRole('heading', { name: 'Conversation history' })
+  ).toHaveCount(0)
+})
+
+test('trackpad pinch zooms while ordinary wheel pans before and during AI work', async ({
+  page
+}) => {
+  let finish: (() => void) | undefined
+  const pending = new Promise<void>((resolve) => {
+    finish = resolve
+  })
+  await page.route('**/api/ai/status', (route) =>
+    route.fulfill({ json: { state: 'ready' } })
+  )
+  await page.route('**/api/ai/action-batch', async (route) => {
+    await pending
+    await route.fulfill({
+      json: {
+        batchId: 'pinch-result',
+        actions: [
+          {
+            id: 'report',
+            name: 'report_outcome',
+            arguments: {
+              outcome: 'completed',
+              message: 'No canvas changes were needed.'
+            },
+            summary: 'Report result'
+          }
+        ]
+      }
+    })
+  })
+  await page.goto(createTestDocumentIdentity().url)
+  await waitForAppReady(page)
+  const canvas = page.getByTestId('canvas-render-container').locator('canvas')
+  await page.keyboard.press('r')
+  await canvas.click({ position: { x: 500, y: 350 } })
+  await page.keyboard.press('v')
+  const zoom = page.getByTestId('zoom-level')
+  const exercise = async () => {
+    const before = Number(await zoom.getAttribute('data-value'))
+    await canvas.dispatchEvent('wheel', {
+      ctrlKey: true,
+      deltaY: -10,
+      clientX: 450,
+      clientY: 300,
+      bubbles: true,
+      cancelable: true
+    })
+    await expect
+      .poll(async () => Number(await zoom.getAttribute('data-value')))
+      .toBeGreaterThan(before)
+    const enlarged = await zoom.getAttribute('data-value')
+    const positionBefore = await page.evaluate(async () =>
+      (await import('../src/testing/runtime-access')).core.getSystemProperty(
+        'viewportPosition'
+      )
+    )
+    await canvas.dispatchEvent('wheel', {
+      deltaY: 20,
+      clientX: 450,
+      clientY: 300,
+      bubbles: true,
+      cancelable: true
+    })
+    await expect(zoom).toHaveAttribute('data-value', enlarged ?? '')
+    await expect
+      .poll(() =>
+        page.evaluate(async () =>
+          (
+            await import('../src/testing/runtime-access')
+          ).core.getSystemProperty('viewportPosition')
+        )
+      )
+      .not.toEqual(positionBefore)
+    await canvas.dispatchEvent('wheel', {
+      ctrlKey: true,
+      deltaY: 10,
+      clientX: 450,
+      clientY: 300,
+      bubbles: true,
+      cancelable: true
+    })
+    await expect
+      .poll(async () => Number(await zoom.getAttribute('data-value')))
+      .toBeLessThan(Number(enlarged))
+  }
+  try {
+    await exercise()
+    await page.getByRole('button', { name: 'Open Agent' }).click()
+    await page.getByLabel('Message Agent').fill('Keep working')
+    await page.getByRole('button', { name: 'Send', exact: true }).click()
+    await expect(page.getByTestId('ai-agent-message')).toHaveAttribute(
+      'data-outcome',
+      'active'
+    )
+    await exercise()
+    await page.getByLabel('Message Agent').focus()
+    await canvas.click({ position: { x: 300, y: 200 } })
+    await expect(page.getByLabel('Message Agent')).not.toBeFocused()
+    const beforeFit = await zoom.getAttribute('data-value')
+    await page.keyboard.press('Meta+1')
+    await expect(zoom).not.toHaveAttribute('data-value', beforeFit ?? '')
+    const fitted = await zoom.getAttribute('data-value')
+    await exercise()
+    await page.keyboard.press('Control+1')
+    await expect(zoom).toHaveAttribute('data-value', fitted ?? '')
+  } finally {
+    finish?.()
+  }
+  await expect(page.getByTestId('ai-agent-message')).toHaveAttribute(
+    'data-outcome',
+    'no-change'
+  )
+})
+
+for (const width of [360, 1280]) {
+  test(`native Frame revisions keep independent Undo history and explain a rejected revision at ${width}px`, async ({
+    page
+  }, testInfo) => {
+    const initial = prepareDesign(
+      {
+        type: 'frame',
+        name: 'Original design',
+        width: 240,
+        height: 240,
+        children: [
+          {
+            key: 'shape',
+            type: 'oval',
+            name: 'Original circle',
+            width: 100,
+            height: 100,
+            fill: '#008060'
+          }
+        ]
+      },
+      'revision-frame'
+    )
+    const second = drawing('revision-two')
+    const third = drawing('revision-three')
+    let requests = 0
+    await page.route('**/api/ai/status', (route) =>
+      route.fulfill({ json: { state: 'ready' } })
+    )
+    await page.route('**/api/ai/action-batch', (route) => {
+      requests++
+      const request = route.request().postDataJSON()
+      const previous = [
+        null,
+        initial.rootId,
+        second.groupDescriptor.id,
+        third.groupDescriptor.id
+      ][requests - 1]
+      if (requests > 1)
+        expect(request.metadata.aiTargets.compositionId).toBe(previous)
+      let action = {
+        id: 'draw',
+        name: 'apply_prepared_design',
+        arguments: { design: initial } as unknown,
+        summary: 'Create the design'
+      }
+      if (requests > 1)
+        action = {
+          id: 'revise',
+          name: 'replace_vector_composition',
+          arguments: {
+            compositionId: requests === 4 ? 'missing-target' : previous,
+            drawing: requests === 2 ? second : third
+          },
+          summary: 'Revise the drawing'
+        }
+      return route.fulfill({
+        json: { batchId: `revision-${requests}`, actions: [action] }
+      })
+    })
+    await page.goto(createTestDocumentIdentity().url)
+    await waitForAppReady(page)
+    await page.setViewportSize({ width, height: 800 })
+    const snapshots = [await getCoreDocumentDigest(page)]
+    const depth = await getUndoHistoryDepth(page)
+    await page.getByRole('button', { name: 'Open Agent' }).click()
+    for (let i = 1; i <= 3; i++) {
+      await page.getByLabel('Message Agent').fill(`Drawing revision ${i}`)
+      await page.getByRole('button', { name: 'Send', exact: true }).click()
+      if (i > 1) {
+        await expect(
+          page
+            .getByText('Previous steps remain available through Undo.', {
+              exact: false
+            })
+            .last()
+        ).toBeVisible()
+        await page.getByRole('button', { name: 'Approve', exact: true }).click()
+      }
+      await expect(page.getByTestId('ai-agent-message').last()).toHaveAttribute(
+        'data-outcome',
+        'success'
+      )
+      expect(await getUndoHistoryDepth(page)).toBe(depth + i)
+      snapshots.push(await getCoreDocumentDigest(page))
+    }
+    await page
+      .getByLabel('Message Agent')
+      .fill('Revise a target that has gone away')
+    await page.getByRole('button', { name: 'Send', exact: true }).click()
+    await page.getByRole('button', { name: 'Approve', exact: true }).click()
+    const failed = page.getByTestId('ai-agent-message').last()
+    await expect(failed).toHaveAttribute('data-outcome', 'partial')
+    await expect(failed).toContainText(
+      'The original drawing is missing or is not an editable composition. Select the drawing to revise and try again.'
+    )
+    const explanation = failed.getByText(
+      /The original drawing is missing or is not an editable composition/
+    )
+    await expect(explanation).toBeInViewport()
+    await failed.getByLabel('Work history').click()
+    await expect(
+      failed.getByRole('list', { name: 'Operational progress' })
+    ).not.toContainText('Finished')
+    await expect(failed.getByText('Result', { exact: true })).toHaveCount(0)
+    await expect(
+      page.getByRole('status', { name: 'Current activity' })
+    ).toHaveCount(0)
+    expect(await getCoreDocumentDigest(page)).toEqual(snapshots[3])
+    expect(await getUndoHistoryDepth(page)).toBe(depth + 3)
+    await page.getByRole('button', { name: 'Jump to latest' }).click()
+    await expect(explanation).toBeInViewport({ ratio: 1 })
+    await page
+      .getByTestId('ai-agent-panel')
+      .screenshot({ path: testInfo.outputPath('revision-failure.png') })
+    await page.getByRole('button', { name: 'Close Agent panel' }).click()
+    for (let i = 2; i >= 0; i--) {
+      await undo(page)
+      expect(await getCoreDocumentDigest(page)).toEqual(snapshots[i])
+    }
+    for (let i = 1; i <= 3; i++) {
+      await redo(page)
+      expect(await getCoreDocumentDigest(page)).toEqual(snapshots[i])
+    }
+    expect(requests).toBe(4)
   })
 }

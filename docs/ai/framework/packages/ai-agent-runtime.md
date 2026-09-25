@@ -224,3 +224,19 @@ unknown and cannot report committed progress. No retry occurs after a batch star
 Execution progress is emitted per action at execution start, with the registered
 action name in `tool` and the bounded redacted action summary in `summary`.
 Consumers may map absent/non-text summaries to their own activity labels.
+
+### HTTP provider deadline
+
+`GenericHttpAiProviderOptions.timeoutMs` accepts a positive finite integer or
+`null`. Omission keeps the existing default deadline; `null` explicitly disables
+only the elapsed-time deadline. Caller abort and provider disposal still abort
+the transport and release request resources, including during body parsing.
+
+### Safe execution failure explanations
+
+Registered executors can throw `AiActionExecutionError` with a static, bounded
+public explanation and recovery guidance. Runtime preserves that message with
+`AI_EXECUTION_FAILED` and stage `execution`; ordinary errors still receive the
+generic execution-failure message. Never wrap raw provider/transport/canonical
+exception text in this class. Failure policy, failed-action identity and transaction
+settlement remain authoritative and unchanged.

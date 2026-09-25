@@ -57,6 +57,7 @@ export interface AiActiveTurn {
 }
 
 export interface AiSettledTurn {
+  readonly completedAtMs?: number
   readonly requestAttachments?: readonly AiImageAttachment[]
   readonly waitingDurationMs?: number
   readonly replyToTurnId?: string
@@ -718,6 +719,7 @@ export const createAiConversationController = (
       const elapsedMs =
         finishedAtMs - currentTurn.startedAtMs - waitingDurationMs
       const settled = Object.freeze({
+        completedAtMs: Date.now(),
         attachments,
         requestAttachments,
         replyToTurnId,

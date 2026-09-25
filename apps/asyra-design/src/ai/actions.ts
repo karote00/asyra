@@ -1,3 +1,4 @@
+import { AiActionExecutionError } from '@asyra/ai-agent-runtime'
 import { PREPARED_DRAWING_INPUT_SCHEMA } from './prepared-drawing-schema'
 import type {
   AiActionDefinition,
@@ -195,14 +196,15 @@ export class AiActionError extends Error {
   }
 }
 
-export class AiCompositionError extends Error {
-  readonly code = 'AI_APP_COMPOSITION_INCONSISTENT' as const
-
+export class AiCompositionError extends AiActionExecutionError {
   constructor(message: string) {
     super(message)
     this.name = 'AiCompositionError'
   }
 }
+
+const isCompositionType = (type: string | undefined): boolean =>
+  type === 'group' || type === 'frame'
 
 const createCompositionElements = (
   descriptors: readonly PreparedElementDescriptor[],
@@ -724,14 +726,14 @@ const createCompositionActions = (
 
   const remove: AiActionDefinition<RemoveAiCompositionArgs> = Object.freeze({
     description:
-      'Remove the current AI composition Group through the ordinary subtree boundary.',
+      'Remove the referenced AI composition Group or Frame through the ordinary subtree boundary.',
     execute: async (
       args: RemoveAiCompositionArgs,
       context: AiExecutionContext
     ) => {
       assertNotAborted(context)
       const targetType = apis.getElementType(args.compositionId)
-      if (targetType !== 'group') {
+      if (!isCompositionType(targetType)) {
         return Object.freeze({
           action: AiActionNames.REMOVE_AI_COMPOSITION,
           appliedElementIds: Object.freeze([]),
@@ -745,7 +747,7 @@ const createCompositionActions = (
         })
       }
       assertNotAborted(context)
-      if (apis.getElementType(args.compositionId) !== 'group') {
+      if (apis.getElementType(args.compositionId) !== targetType) {
         return Object.freeze({
           action: AiActionNames.REMOVE_AI_COMPOSITION,
           appliedElementIds: Object.freeze([]),
@@ -807,12 +809,13 @@ const createCompositionActions = (
       context: AiExecutionContext
     ) => {
       assertNotAborted(context)
+      const targetType = apis.getElementType(args.compositionId)
       if (
-        apis.getElementType(args.compositionId) !== 'group' ||
+        !isCompositionType(targetType) ||
         args.compositionId === args.drawing.groupDescriptor.id
       )
         throw new AiCompositionError(
-          'The previous drawing is no longer available for replacement.'
+          'The original drawing is missing or is not an editable composition. Select the drawing to revise and try again.'
         )
       const result = (await insert.execute(args.drawing, context)) as {
         status: string
@@ -820,18 +823,20 @@ const createCompositionActions = (
       }
       if (result.status !== 'complete')
         throw new AiCompositionError(
-          'The replacement is incomplete; the previous drawing is preserved.'
+          'The new drawing was only partly created. The original drawing is still on the canvas; review both before continuing.'
         )
       assertNotAborted(context)
-      if (apis.getElementType(args.compositionId) !== 'group')
-        throw new AiCompositionError('The replacement target changed.')
+      if (apis.getElementType(args.compositionId) !== targetType)
+        throw new AiCompositionError(
+          'The original drawing changed during this revision. Review the canvas and select the drawing again.'
+        )
       const removal = (await remove.execute(
         { compositionId: args.compositionId },
         context
       )) as { status: string }
       if (removal.status !== 'complete')
         throw new AiCompositionError(
-          'The previous drawing could not be replaced.'
+          'The new drawing was created, but the original could not be removed. Review the two drawings before continuing.'
         )
       return Object.freeze({
         ...result,

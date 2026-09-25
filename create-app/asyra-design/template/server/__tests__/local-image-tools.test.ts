@@ -203,7 +203,7 @@ describe('local provider image tools', () => {
       measure.mockRestore()
     }
   })
-  it('bounds analysis calls and rejects forged receipts, stale sources and cancellation', async () => {
+  it('continues analysis calls and rejects forged receipts, stale sources and cancellation', async () => {
     const tools = createLocalImageTools(
       { metadata: { imageAttachments: [attachment, attachment] } },
       async () =>
@@ -294,8 +294,8 @@ describe('local provider image tools', () => {
           signal
         )
       )
-    ).toMatchObject({ available: false })
-    // Exhausting analysis must not discard the original vector drawing.
+    ).toHaveProperty('analysisId')
+    // Repeated analysis must not discard the original vector drawing.
     const {
       analysisIds: _receipt,
       componentMappings: _mappings,
@@ -305,7 +305,7 @@ describe('local provider image tools', () => {
       tools.resolveBatch(batch(vector)).actions[0].arguments
     ).toMatchObject({ elementCount: 1 })
   })
-  it('reserves a shared candidate budget before parallel jobs start and cancels queued work', async () => {
+  it('cancels queued work beyond the former request-wide candidate ceiling', async () => {
     const tools = createLocalImageTools(
       { metadata: { imageAttachments: [attachment] } },
       async () =>
@@ -331,7 +331,7 @@ describe('local provider image tools', () => {
     }
     const measure = vi.spyOn(analysis, 'analyzeVectorComponents')
     try {
-      const jobs = Array.from({ length: 8 }, () =>
+      const jobs = Array.from({ length: 9 }, () =>
         tools.call(
           AiImageToolIds.ANALYZE_VECTOR_COMPONENTS,
           selection,
@@ -340,15 +340,6 @@ describe('local provider image tools', () => {
       )
       const settled = Promise.allSettled(jobs)
       expect(measure).not.toHaveBeenCalled()
-      expect(
-        JSON.parse(
-          await tools.call(
-            AiImageToolIds.ANALYZE_VECTOR_COMPONENTS,
-            selection,
-            controller.signal
-          )
-        )
-      ).toMatchObject({ available: false })
       controller.abort()
       expect(
         (await settled).every((result) => result.status === 'rejected')
@@ -657,7 +648,7 @@ describe('contour review tool integration', () => {
     ).rejects.toThrow()
   })
 
-  it('caps the derived-artifact chain at three generations', async () => {
+  it('preserves source displacement bounds beyond three generations', async () => {
     const tools = createLocalImageTools(
       {
         metadata: {
@@ -701,15 +692,12 @@ describe('contour review tool integration', () => {
           signal
         )
       )
-      if (generation === 3) expect(result).toMatchObject({ available: false })
-      else {
-        expect(result.maxDisplacementPx).toBeLessThanOrEqual(0.5)
-        current = result
-      }
+      expect(result.maxDisplacementPx).toBeLessThanOrEqual(0.5)
+      current = result
     }
   })
 
-  it('reserves the shared review budget before concurrent jobs and refuses invalid selection', async () => {
+  it('allows more than 128 contour reviews and refuses invalid selection', async () => {
     const tools = setup(),
       original = await source(tools),
       signal = new AbortController().signal
@@ -725,8 +713,8 @@ describe('contour review tool integration', () => {
       )
     )
     const results = (await Promise.all(requests)).map((s) => JSON.parse(s))
-    expect(results.filter((r) => r.reviewId)).toHaveLength(128)
-    expect(results[128]).toMatchObject({ available: false })
+    expect(results.filter((r) => r.reviewId)).toHaveLength(129)
+    expect(results[128].reviewId).toBeTruthy()
     await expect(
       tools.call(
         AiImageToolIds.REVIEW_VECTOR_CONTOURS,

@@ -20,7 +20,6 @@ export const ContourReviewLimits = Object.freeze({
   pathsPerCall: 16,
   segmentsPerPath: 2048,
   proposals: 64,
-  generations: 3,
   displacementPx: 0.5,
   smoothAngleDegrees: 30
 })

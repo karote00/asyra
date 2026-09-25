@@ -88,12 +88,18 @@ test('native text stays editable and survives undo, redo and save', async ({
       await new Promise<void>((resolve) =>
         requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
       )
-      snapshots.push(core.captureElementSnapshot('native-text-example', 1024))
+      snapshots.push(
+        core.captureElementSnapshot('native-text-example', 1024, {
+          nativeResolution: true
+        })
+      )
     }
     viewportApis.zoomFit()
     return snapshots
   })
   for (const [index, capture] of captures.entries()) {
+    expect(capture.width).toBe(capture.bounds.width)
+    expect(capture.height).toBe(capture.bounds.height)
     await writeFile(
       testInfo.outputPath(`text-capture-${index}.png`),
       Buffer.from(capture.dataUrl.split(',')[1], 'base64')

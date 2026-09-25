@@ -1,13 +1,29 @@
 import type { PreparedElementDescriptor } from '../common-apis/element/types'
 
+// Supported semantic wire kinds, not a replacement for Core's runtime capability
+// registry. Extending this format requires preparation and admission support.
+export const DesignContainerTypes = ['group', 'frame'] as const
+export const DesignNodeTypes = [
+  ...DesignContainerTypes,
+  'rect',
+  'oval',
+  'text',
+  'vector'
+] as const
+export const isDesignContainerType = (type: unknown): boolean =>
+  DesignContainerTypes.some((kind) => kind === type)
+
 export const PREPARED_DESIGN_VERSION = 1 as const
 export const DesignPreparationLimits = Object.freeze({
   nodes: 1000,
+  expandedNodes: 10000,
+  expandedPathCommands: 200000,
   depth: 12,
   textCharacters: 100000,
   pathCommands: 20000,
   dimension: 100000,
-  artifacts: 8
+  relations: 256,
+  checks: 64
 })
 export interface PreparedDesignEntry {
   readonly key: string
@@ -24,6 +40,14 @@ export type DesignFinding =
       bottom: number
     }>
   | Readonly<{ kind: 'text-metrics-required'; key: string }>
+  | Readonly<{
+      kind: 'requirement'
+      key: string
+      property: string
+      expected: number
+      actual: number
+      tolerance: number
+    }>
 export interface PreparedDesign {
   readonly version: typeof PREPARED_DESIGN_VERSION
   readonly rootId: string

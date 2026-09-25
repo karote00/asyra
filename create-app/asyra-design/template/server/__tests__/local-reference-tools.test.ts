@@ -1,141 +1,8 @@
-import { describe, expect, it, vi } from 'vitest'
+import { expect, it, vi } from 'vitest'
 import sharp from 'sharp'
 import { createLocalReferenceTools } from '../local-reference-tools'
 import { createLocalImageTools } from '../local-image-tools'
 import { localToolContent } from '../local-operation-tools'
-
-const candidate = {
-  pageid: 1,
-  title: 'File:Example.svg',
-  imageinfo: [
-    {
-      thumburl:
-        'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Example.svg/960px-Example.svg.png',
-      descriptionurl: 'https://commons.wikimedia.org/wiki/File:Example.svg',
-      extmetadata: { LicenseShortName: { value: 'CC0' } }
-    }
-  ]
-}
-
-describe('reference research and import', () => {
-  it('finds and imports a visual reference without an attachment, then traces and prepares it', async () => {
-    const png = await sharp({
-      create: { width: 8, height: 8, channels: 4, background: '#00aa00' }
-    })
-      .png()
-      .toBuffer()
-    const fetcher = vi.fn(async (url: string | URL) =>
-      String(url).startsWith('https://upload.')
-        ? new Response(png, { headers: { 'content-type': 'image/png' } })
-        : Response.json({ query: { pages: [candidate] } })
-    )
-    const images = createLocalImageTools(
-      {},
-      vi.fn(
-        async () =>
-          '<svg width="8" height="8"><path d="M0,0L8,0L8,8Z" fill="#00aa00"/></svg>'
-      )
-    )
-    const tools = createLocalReferenceTools(
-      images.addReference,
-      fetcher as typeof fetch
-    )
-    const signal = new AbortController().signal
-    const search = JSON.parse(
-      await tools.call(
-        'search_reference_images',
-        { query: 'Example logo' },
-        signal
-      )
-    )
-    expect(search.candidates[0].sourceUrl).toContain(
-      'commons.wikimedia.org/wiki/'
-    )
-    const imported = await tools.call(
-      'import_reference_image',
-      { referenceId: search.candidates[0].referenceId },
-      signal
-    )
-    const receipt = JSON.parse(imported)
-    expect(receipt.attachmentIndex).toBe(0)
-    expect(
-      localToolContent(imported).some((item) => item.type === 'inputImage')
-    ).toBe(true)
-    const artifact = JSON.parse(
-      await images.call(
-        'vtracer',
-        {
-          attachmentIndex: 0,
-          plan: { strategy: 'preserve-vectors', reason: 'Irregular foreground' }
-        },
-        signal
-      )
-    )
-    expect(artifact.imageArtifactId).toBeTruthy()
-    expect(
-      images.modelActions([
-        {
-          name: 'insert_vector_composition',
-          description: 'Draw',
-          inputSchema: { type: 'object' }
-        }
-      ])[0]?.inputSchema
-    ).toHaveProperty('anyOf')
-  })
-
-  it('rejects unselected URLs and private or redirected downloads', async () => {
-    const fetcher = vi.fn(async () =>
-      Response.json({
-        query: {
-          pages: [
-            {
-              ...candidate,
-              imageinfo: [
-                {
-                  ...candidate.imageinfo[0],
-                  thumburl: 'http://127.0.0.1/private'
-                }
-              ]
-            }
-          ]
-        }
-      })
-    )
-    const tools = createLocalReferenceTools(vi.fn(), fetcher as typeof fetch)
-    const signal = new AbortController().signal
-    expect(
-      JSON.parse(
-        await tools.call('search_reference_images', { query: 'logo' }, signal)
-      ).candidates
-    ).toEqual([])
-    expect(
-      JSON.parse(
-        await tools.call(
-          'import_reference_image',
-          { referenceId: 'http://localhost' },
-          signal
-        )
-      ).available
-    ).toBe(false)
-    expect(fetcher).toHaveBeenCalledTimes(2)
-  })
-
-  it('bounds searches and surfaces network failure without inventing a reference', async () => {
-    const fetcher = vi.fn(async () => {
-      throw new Error('private network detail')
-    })
-    const tools = createLocalReferenceTools(vi.fn(), fetcher as typeof fetch)
-    for (let i = 0; i < 5; i++) {
-      const result = await tools.call(
-        'search_reference_images',
-        { query: 'logo' },
-        new AbortController().signal
-      )
-      expect(result).not.toContain('private network detail')
-    }
-    expect(fetcher.mock.calls.length).toBeLessThanOrEqual(6)
-  })
-})
 
 it('imports a native-research URL through the safe downloader once per request', async () => {
   const png = await sharp({
@@ -147,7 +14,7 @@ it('imports a native-research URL through the safe downloader once per request',
     async () => new Response(png, { headers: { 'content-type': 'image/png' } })
   )
   const add = vi.fn(() => 0)
-  const tools = createLocalReferenceTools(add, vi.fn(), download)
+  const tools = createLocalReferenceTools(add, download)
   const args = {
     imageUrl: 'https://brand.example/logo.png',
     sourceUrl: 'https://brand.example/brand'
@@ -159,4 +26,180 @@ it('imports a native-research URL through the safe downloader once per request',
   expect(await tools.call('import_reference_image', args, signal)).toBe(result)
   expect(download).toHaveBeenCalledOnce()
   expect(add).toHaveBeenCalledOnce()
+})
+
+it('does not authorize an invented approximation after reference import fails', async () => {
+  const tools = createLocalReferenceTools(vi.fn(), vi.fn())
+  const result = JSON.parse(
+    await tools.call(
+      'import_reference_image',
+      { referenceId: 'missing' },
+      new AbortController().signal
+    )
+  )
+  expect(result.available).toBe(false)
+  expect(result.message).toContain(
+    'do not substitute an invented or inspired drawing'
+  )
+})
+
+it('does not replace an SVG source with a publisher raster thumbnail', async () => {
+  const download = vi.fn()
+  const tools = createLocalReferenceTools(vi.fn(), download)
+  const receipt = JSON.parse(
+    await tools.call(
+      'import_reference_image',
+      {
+        imageUrl:
+          'https://upload.wikimedia.org/wikipedia/commons/a/ab/Example.svg',
+        sourceUrl: 'https://commons.wikimedia.org/wiki/File:Example.svg'
+      },
+      new AbortController().signal
+    )
+  )
+  expect(receipt.available).toBe(false)
+  expect(receipt.message).toContain('SVG')
+  expect(download).not.toHaveBeenCalled()
+})
+
+it('preserves original reference dimensions through import and native image delivery', async () => {
+  const png = await sharp({
+    create: { width: 1800, height: 1200, channels: 4, background: '#123456' }
+  })
+    .png()
+    .toBuffer()
+  const addReference = vi.fn((_image: { dataUrl: string }) => 0)
+  const tools = createLocalReferenceTools(
+    addReference,
+    async () => new Response(png, { headers: { 'content-type': 'image/png' } })
+  )
+  const result = await tools.call(
+    'import_reference_image',
+    {
+      imageUrl: 'https://example.com/original.png',
+      sourceUrl: 'https://example.com/source'
+    },
+    new AbortController().signal
+  )
+  const receipt = JSON.parse(result)
+  expect(receipt.actionResults[0].result.image).toMatchObject({
+    width: 1800,
+    height: 1200
+  })
+  expect(
+    localToolContent(result).filter((item) => item.type === 'inputImage')
+  ).toHaveLength(1)
+  const bytes = Buffer.from(
+    addReference.mock.calls[0][0].dataUrl.split(',')[1],
+    'base64'
+  )
+  expect(await sharp(bytes).metadata()).toMatchObject({
+    width: 1800,
+    height: 1200
+  })
+})
+
+it('keeps source failure recoverable and permits a different public source in the same request', async () => {
+  const png = await sharp({
+    create: { width: 8, height: 8, channels: 4, background: '#fff' }
+  })
+    .png()
+    .toBuffer()
+  const download = vi
+    .fn()
+    .mockResolvedValueOnce(new Response('missing', { status: 404 }))
+    .mockResolvedValueOnce(
+      new Response(png, { headers: { 'content-type': 'image/png' } })
+    )
+  const addReference = vi.fn(() => 0)
+  const tools = createLocalReferenceTools(addReference, download)
+  const signal = new AbortController().signal
+  const failed = JSON.parse(
+    await tools.call(
+      'import_reference_image',
+      {
+        imageUrl: 'https://first.example/image.png',
+        sourceUrl: 'https://first.example/'
+      },
+      signal
+    )
+  )
+  expect(failed).toMatchObject({
+    available: false,
+    recoverable: true,
+    code: 'REFERENCE_DOWNLOAD_FAILED'
+  })
+  expect(failed.nextStep).toContain('different source')
+  expect(addReference).not.toHaveBeenCalled()
+  const success = JSON.parse(
+    await tools.call(
+      'import_reference_image',
+      {
+        imageUrl: 'https://second.example/image.png',
+        sourceUrl: 'https://second.example/'
+      },
+      signal
+    )
+  )
+  expect(success.attachmentIndex).toBe(0)
+  expect(success.nextStep).toContain('unsuitable')
+  expect(success.nextStep).toContain('continue research')
+})
+
+it('offers direct import only and has no source-specific search tool', () => {
+  const tools = createLocalReferenceTools(vi.fn(), vi.fn())
+  expect(tools.definitions.map((tool) => tool.name)).toEqual([
+    'import_reference_image'
+  ])
+  expect(tools.definitions[0].inputSchema).toMatchObject({
+    required: ['imageUrl', 'sourceUrl']
+  })
+})
+
+it('imports and traces an original public reference without source-specific lookup', async () => {
+  const png = await sharp({
+    create: { width: 8, height: 8, channels: 4, background: '#fff' }
+  })
+    .png()
+    .toBuffer()
+  const convert = vi.fn(
+    async () =>
+      '<svg width="8" height="8"><path d="M0,0L8,0L8,8Z" fill="#00aa00"/></svg>'
+  )
+  const images = createLocalImageTools({}, convert)
+  const download = vi.fn(
+    async () => new Response(png, { headers: { 'content-type': 'image/png' } })
+  )
+  const tools = createLocalReferenceTools(images.addReference, download)
+  const signal = new AbortController().signal
+  const receipt = JSON.parse(
+    await tools.call(
+      'import_reference_image',
+      {
+        imageUrl: 'https://publisher.example/original.png',
+        sourceUrl: 'https://publisher.example/reference'
+      },
+      signal
+    )
+  )
+  expect(receipt.attachmentIndex).toBe(0)
+  expect(download).toHaveBeenCalledWith(
+    'https://publisher.example/original.png',
+    signal
+  )
+  const result = JSON.parse(
+    await images.call(
+      'vtracer',
+      {
+        attachmentIndex: 0,
+        plan: {
+          strategy: 'preserve-vectors',
+          reason: 'Preserve the source artwork.'
+        }
+      },
+      signal
+    )
+  )
+  expect(result.imageArtifactId).toBeDefined()
+  expect(convert).toHaveBeenCalledOnce()
 })

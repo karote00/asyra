@@ -251,7 +251,7 @@ export const LOCAL_VECTOR_REFERENCE_SCHEMA = {
       type: 'array',
       items: { type: 'string' },
       minItems: 1,
-      maxItems: LocalComponentAnalysisLimits.callsPerRequest,
+      maxItems: LocalComponentAnalysisLimits.receiptIdsPerCall,
       uniqueItems: true,
       description:
         'Required for componentMappings or ovalPathIds. Use same-request analysis receipts for this artifact and only select eligible path/component pairs.'

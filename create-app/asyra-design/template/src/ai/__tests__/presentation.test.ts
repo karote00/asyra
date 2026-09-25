@@ -211,33 +211,38 @@ describe('capability outcomes', () => {
 })
 
 describe('shared current activity and activity history', () => {
-  it('collapses only consecutive identical visible activity and preserves distinct messages', () => {
-    const completed = {
+  it('keeps one entry per research or drawing loop and preserves phase transitions', () => {
+    const tool = (name: string, toolStatus: 'running' | 'completed') => ({
       attempt: 1,
       phase: 'provider' as const,
-      tool: 'vtracer',
-      toolStatus: 'completed' as const,
-      summary: 'Tool completed'
-    }
+      tool: name,
+      toolStatus,
+      summary: 'Tool'
+    })
     const updates = [
-      completed,
-      { ...completed, tool: 'analyze_vector' },
-      { ...completed, message: 'First finding' },
-      { ...completed, message: 'First finding' },
-      { ...completed, message: 'Second finding' },
-      { attempt: 1, phase: 'context' as const, summary: 'Context' },
-      completed
+      tool('research_design_context', 'running'),
+      tool('research_design_context', 'completed'),
+      tool('search_reference_images', 'running'),
+      tool('search_reference_images', 'completed'),
+      tool('import_reference_image', 'running'),
+      tool('import_reference_image', 'completed'),
+      tool('prepare_design', 'running'),
+      tool('prepare_design', 'completed'),
+      tool('inspect_drawing', 'running'),
+      tool('inspect_drawing', 'completed'),
+      { attempt: 1, phase: 'resolution' as const, summary: 'Resolve' },
+      { attempt: 1, phase: 'permission' as const, summary: 'Check' },
+      tool('update_design_element', 'running'),
+      tool('update_design_element', 'completed'),
+      tool('review_design', 'running'),
+      tool('research_design_context', 'running')
     ]
-    const projection = projectAiActivity(updates)
-    expect(projection.entries).toEqual([
-      { label: 'Reviewing the results' },
-      { label: 'Reviewing the results', message: 'First finding' },
-      { label: 'Reviewing the results', message: 'Second finding' },
-      { label: 'Reviewing the drawing' },
-      { label: 'Reviewing the results' }
+    expect(projectAiActivity(updates).entries).toEqual([
+      { label: 'Researching design context' },
+      { label: 'Drawing and refining' },
+      { label: 'Researching design context' }
     ])
-    expect(projection.current).toBe(projection.entries.at(-1))
-    expect(updates).toHaveLength(7)
+    expect(updates).toHaveLength(16)
   })
 
   it('reuses the latest activity description without exposing tools or AI wait states', () => {
@@ -260,8 +265,7 @@ describe('shared current activity and activity history', () => {
     ])
     expect(projection.entries.map((entry) => entry.label)).toEqual([
       'Reviewing the drawing',
-      'Converting artwork to vectors',
-      'Reviewing the results'
+      'Converting artwork to vectors'
     ])
     expect(projection.current).toBe(projection.entries.at(-1))
   })
@@ -273,13 +277,13 @@ describe('shared current activity and activity history', () => {
         tool: 'set_element_visibility',
         toolStatus: 'running' as const,
         summary: 'Running a tool',
-        message: '正在隱藏 TM'
+        message: 'Hiding the mark'
       }
     ]
     const projection = projectAiActivity(updates)
     expect(projection.current).toMatchObject({
       label: 'Adjusting element visibility',
-      message: '正在隱藏 TM'
+      message: 'Hiding the mark'
     })
     for (const [state, label] of [
       [{ stopping: true }, 'Stopping…'],
@@ -370,8 +374,8 @@ it('shows concise execution descriptions instead of Applying changes', () => {
 
 it('names design preparation and application without exposing backend identifiers', () => {
   for (const [tool, label] of [
-    ['prepare_design', 'Preparing the design'],
-    ['apply_prepared_design', 'Adding the design']
+    ['prepare_design', 'Drawing and refining'],
+    ['apply_prepared_design', 'Drawing and refining']
   ]) {
     const projection = projectAiActivity([
       {
@@ -383,4 +387,60 @@ it('names design preparation and application without exposing backend identifier
     ])
     expect(projection.current.label).toBe(label)
   }
+})
+
+it('preserves model operation messages regardless of language', () => {
+  const updates = [
+    {
+      attempt: 1,
+      phase: 'provider' as const,
+      tool: 'read_design_context',
+      toolStatus: 'running' as const,
+      summary: '讀取目前選取',
+      message: '讀取目前選取'
+    }
+  ]
+  const result = projectAiActivity(updates)
+  expect(result.entries).toEqual([
+    { label: 'Reading the design', message: '讀取目前選取' }
+  ])
+  expect(updates[0].message).toBe('讀取目前選取')
+})
+
+it('does not append Finished after a failed execution retained partial progress', () => {
+  const result = projectAiActivity(
+    [
+      {
+        attempt: 1,
+        phase: 'execution',
+        tool: AiActionNames.REPLACE_VECTOR_COMPOSITION,
+        summary: 'Replacing the drawing'
+      },
+      { attempt: 1, phase: 'settled', outcome: 'failed', summary: 'Failed' }
+    ],
+    { outcome: 'partial' }
+  )
+  expect(result.entries.map((entry) => entry.label)).toEqual([
+    'Replacing the drawing',
+    'Failed'
+  ])
+})
+
+it('explains the actual failed step with the safe public reason and recovery', () => {
+  expect(
+    summarizeAiTurn({
+      ...turn('partial'),
+      result: {
+        status: 'failed',
+        stage: 'execution',
+        code: 'AI_EXECUTION_FAILED',
+        failedAction: AiActionNames.REPLACE_VECTOR_COMPOSITION,
+        message:
+          'The revision target no longer exists. Select the drawing again.',
+        transaction: { status: 'committed' }
+      }
+    }).message
+  ).toBe(
+    'Replacing the drawing could not be completed. The revision target no longer exists. Select the drawing again. Changes already applied have been kept.'
+  )
 })

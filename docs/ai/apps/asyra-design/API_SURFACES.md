@@ -829,8 +829,17 @@ See `specs/design-preparation.md` and `specs/editable-text.md`.
 
 Ordinary drawing mutations return measurements before rendered captures. Concrete
 text overflow can be corrected before another image is captured; read-only review
-remains available after the mutation budget. The model reviews the actual image
+remains available without a cumulative review quota. The model reviews the actual image
 and explains unresolved constraints rather than reporting unconditional success.
+
+The local-only `record_design_review` tool records a pre-mutation plan and a
+post-render assessment. It never mutates the canvas. Criteria express user intent,
+including intentionally rough or minimal results; detailed inspection is conditional.
+Inspection receipts carry opaque IDs and a mutation revision. The backend checks
+current evidence IDs, criterion coverage and pass/fail/unverified judgments before
+admitting a completed report; the model owns semantic assessment. A later mutation
+invalidates the old verdict. Tool/research/review diagnostics share request IDs with
+usage logs; bounded summaries exclude image bytes, geometry, credentials and reasoning.
 
 Conversation `newConversation()` / `selectConversation(id)` retain document-session
 messages, target hints and turn identities without canvas writes. Active execution
@@ -838,3 +847,30 @@ blocks navigation. `subscribeNavigation` / `getNavigationSnapshot` project only
 identity, title and busy state; progress does not rebuild this navigation projection.
 The panel preserves unsent drafts on switches while mounted. Reloading the document
 starts a new conversation runtime.
+
+### Basic API action catalogue
+
+`src/ai/basic-api-catalog.ts` combines data-only contracts for public Core and App
+common APIs. Names are `api_<owner>_<method>`; inputs use the actual method's named
+parameters in signature order. Executors call the existing owner without copying
+geometry or accepting event/history suppression flags. Results retain the owner's
+return value under `value` (including null/false); null is not proof of a successful
+mutation. Existing Runtime permission, confirmation and transaction boundaries apply.
+Deletion contracts require confirmation by default.
+
+The local backend exposes `describe_design_apis` for a compact index or requested
+schemas. Execute discovered operations through `execute_design_batch`; do not send
+hundreds of individual schemas on every model request. High-level design tools remain
+compositions/conveniences and do not define the entire capability surface.
+
+`basic-api-dispositions.ts` explicitly classifies registration, live host resources,
+subscriptions, replay and transient-session entry points. These are not executable
+model paths. Existing equivalents (parent-ID creation, rendered inspection) are named.
+The permanent coverage test reads actual TypeScript public members and checks every
+entry, method existence and positional parameter contract.
+
+The browser contract exercises sequential workspace-valued node/handle reflection,
+including translated containers, through both AI batches and ordinary common APIs.
+Object and point identities survive, with one Undo/Redo entry for the operation.
+Accepted canonical batches update local computed projections synchronously so the
+next action reads current coordinates; commit observers remain transaction-buffered.

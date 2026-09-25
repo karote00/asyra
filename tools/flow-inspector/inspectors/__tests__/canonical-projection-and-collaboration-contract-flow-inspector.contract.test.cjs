@@ -782,6 +782,8 @@ test('computed data is a local-only Render projection', () => {
   )
 
   assert.match(computed, /UPDATE_COMPUTED_DATA/)
+  assert.match(computed, /synchronously.*before the next API read/i)
+  assert.match(computed, /does not project those batches twice/i)
   assert.match(computed, /property.*local.*computed.*Render/i)
   assert.match(computed, /animation.*local/i)
   assert.match(computed, /accepts no EVENT_OPTIONS/i)
@@ -811,7 +813,7 @@ test('computed data is a local-only Render projection', () => {
   assert.match(factory, /computed.*forbidden|must not.*computed/i)
   assert.match(
     stateContracts(),
-    /points[\s\S]{0,420}canonical owner:[\s\S]{0,180}property component[\s\S]{0,520}transient[\s\S]{0,180}local\s+computed\s+preview/i
+    /points[\s\S]{0,420}canonical owner:[\s\S]{0,180}property component[\s\S]{0,520}canonical Props/i
   )
 })
 

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
   AI_REDACTED_VALUE,
+  AiActionExecutionError,
   AiProviderError,
   createAiAgentRuntime,
   type AiActionBatch,
@@ -705,4 +706,40 @@ describe('AI runtime invocation lifecycle', () => {
       stage: 'runtime'
     })
   })
+})
+
+it('preserves an explicitly public executor failure reason without exposing ordinary errors', async () => {
+  for (const known of [true, false]) {
+    const transaction = transactionEvidence()
+    const message =
+      'The revision target no longer exists. Select the drawing again.'
+    const runtime = createAiAgentRuntime(
+      runtimeInput({
+        options: { failurePolicy: 'preserve-progress' },
+        transactionRunner: transaction.runner,
+        actionDefinitions: [
+          visibilityAction(
+            vi.fn(async () => {
+              if (known) throw new AiActionExecutionError(message)
+              throw new Error('private execution details')
+            })
+          )
+        ]
+      })
+    )
+    const result = await runtime.run({
+      intent: 'revise',
+      signal: new AbortController().signal
+    })
+    expect(result).toMatchObject({
+      status: 'failed',
+      stage: 'execution',
+      code: 'AI_EXECUTION_FAILED',
+      message: known ? message : 'AI action execution failed.',
+      failedAction: 'set_element_visibility',
+      transaction: { status: 'committed' }
+    })
+    expect(transaction.commits).toBe(1)
+    expect(JSON.stringify(result)).not.toContain('private execution details')
+  }
 })

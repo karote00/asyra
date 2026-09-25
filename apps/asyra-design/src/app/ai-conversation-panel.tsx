@@ -1,7 +1,4 @@
-import {
-  AiConversationNavigation,
-  AiSelectionContext
-} from './ai-conversation-navigation'
+import { AiConversationNavigation } from './ai-conversation-navigation'
 import { AiConnectionStatus } from './ai-connection-status'
 import {
   useCallback,
@@ -59,32 +56,6 @@ const ActiveDuration = ({ turn }: { readonly turn?: AiActiveTurn }) => {
     </span>
   )
 }
-
-const TurnCompletionStatus = () => (
-  <span
-    role="status"
-    aria-label="Request status"
-    title="Request finished"
-    className="inline-flex shrink-0 items-center text-[#c7bfff]"
-  >
-    <svg
-      aria-hidden="true"
-      width="12"
-      height="12"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="origin-top animate-[conversation-bell_1s_ease-in-out_1] motion-reduce:animate-none"
-    >
-      <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
-      <path d="M10 21h4" />
-    </svg>
-    <span className="sr-only">Request finished</span>
-  </span>
-)
 
 const stopAgentInteractionPropagation = (event: SyntheticEvent): void => {
   event.stopPropagation()
@@ -362,29 +333,35 @@ const AiConversationPanelLayout = ({
       onTouchStart={stopAgentInteractionPropagation}
       onWheel={stopAgentInteractionPropagation}
       aria-label="Agent conversation"
+      tabIndex={-1}
       aria-modal="false"
       className="fixed bottom-0 right-0 top-10 z-50 flex w-[384px] max-w-[calc(100vw-24px)] flex-col overflow-hidden select-text border-l border-[#45464b] bg-[#202124] text-[12px] text-[#f5f5f5] shadow-[-18px_0_48px_rgba(0,0,0,0.32)]"
       data-testid="ai-agent-panel"
       role="complementary"
     >
-      <header className="flex items-center justify-between border-b border-[#38393e] px-4 py-3">
-        <span
-          aria-hidden="true"
-          className="grid h-7 w-7 place-items-center rounded-lg bg-[#7c5cff] text-[12px] font-bold text-white"
-        >
-          AI
-        </span>
+      <header className="relative flex items-center justify-between border-b border-[#38393e] px-4 py-3">
         <AiConversationNavigation
           conversation={conversation}
           onNavigate={navigateConversation}
         />
         <button
           aria-label="Close Agent panel"
-          className="grid h-7 w-7 place-items-center rounded-md border-0 bg-transparent text-[12px] text-[#b8b9c0] hover:bg-[#303136] hover:text-white"
+          className="grid h-6 w-6 shrink-0 place-items-center rounded border-0 bg-transparent text-[#b8b9c0] hover:bg-[#303136] hover:text-white"
           onClick={close}
           type="button"
         >
-          ×
+          <svg
+            aria-hidden="true"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          >
+            <path d="m5.5 5.5 13 13m0-13-13 13" />
+          </svg>
         </button>
       </header>
 
@@ -403,7 +380,6 @@ const AiConversationPanelLayout = ({
       </div>
 
       {children}
-      <AiSelectionContext />
       <form
         aria-label="Agent message form"
         className={`shrink-0 border-t p-3 transition-colors ${
@@ -637,6 +613,7 @@ const AiConversationFeed = ({
           const stopping = !settled && conversationSnapshot.activeTurn?.stopping
           const activity = projectAiActivity(turn.progress, {
             outcome: settled?.outcome,
+            awaitingAnswer: Boolean(question),
             stopping: Boolean(stopping),
             awaitingApproval: !settled && Boolean(pendingConfirmation)
           })
@@ -665,37 +642,63 @@ const AiConversationFeed = ({
                 data-message-role="assistant"
                 className="min-w-0 self-stretch py-1 pr-3 text-[12px] leading-5 text-[#e1dff0]"
               >
+                <details
+                  className="mt-2 text-[12px] text-[#96939f]"
+                  onToggle={syncScrollPosition}
+                >
+                  <summary
+                    aria-label="Work history"
+                    className="cursor-pointer border-b border-[#393a40] pb-2"
+                  >
+                    {settled ? (
+                      <>Worked for {summary?.durationLabel}</>
+                    ) : (
+                      <>
+                        Working for{' '}
+                        <span aria-label="Elapsed time">
+                          <ActiveDuration
+                            turn={conversationSnapshot.activeTurn ?? undefined}
+                          />
+                        </span>
+                      </>
+                    )}
+                  </summary>
+                  <ol
+                    aria-label="Operational progress"
+                    className="my-1 list-none space-y-1 pl-3"
+                  >
+                    {activity.entries.flatMap((entry, index) => {
+                      const lines =
+                        entry.message && entry.message !== entry.label
+                          ? [entry.label, entry.message]
+                          : [entry.label]
+                      return lines.map((line, lineIndex) => (
+                        <li
+                          key={`${turn.turnId}:${index}:${lineIndex}`}
+                          aria-current={
+                            !settled &&
+                            entry === activity.current &&
+                            lineIndex === lines.length - 1
+                              ? 'step'
+                              : undefined
+                          }
+                          className="whitespace-pre-wrap break-words py-1"
+                        >
+                          {line}
+                        </li>
+                      ))
+                    })}
+                  </ol>
+                </details>
                 {!settled ? (
                   <div
                     role="status"
                     aria-label="Current activity"
-                    className="flex items-start gap-2 text-[#b9b2d4]"
+                    className="mt-3 text-[#b9b2d4]"
                   >
-                    {!pendingConfirmation ? (
-                      <span
-                        aria-hidden="true"
-                        className="mt-2 h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-[#9f8cff]"
-                      />
-                    ) : null}
-                    <span
-                      className="min-w-0 truncate"
-                      title={activity.current.message || activity.current.label}
-                    >
-                      {activity.current.message || activity.current.label}
-                    </span>
+                    {activity.current.message || activity.current.label}
                   </div>
-                ) : (
-                  <div>
-                    {!question ? (
-                      <p className="mb-1 mt-0 text-[12px] text-[#96939f]">
-                        Result
-                      </p>
-                    ) : null}
-                    <p className="m-0 whitespace-pre-wrap break-words">
-                      {summary?.message}
-                    </p>
-                  </div>
-                )}
+                ) : null}
                 {confirmationSnapshot.decisions
                   ?.filter((decision) => decision.turnId === turn.turnId)
                   .map((decision) => (
@@ -708,7 +711,13 @@ const AiConversationFeed = ({
                     </p>
                   ))}
                 {question ? (
-                  <>
+                  <section
+                    aria-label="Question"
+                    className="mt-4 border-l-2 border-[#8d7bff] pl-3"
+                  >
+                    <p className="m-0 whitespace-pre-wrap break-words">
+                      {question.message}
+                    </p>
                     <p className="mb-0 mt-1 text-[12px] text-[#aaa6b3]">
                       {questionStatus}
                     </p>
@@ -733,41 +742,12 @@ const AiConversationFeed = ({
                         ))}
                       </ul>
                     ) : null}
-                  </>
+                  </section>
                 ) : null}
-                {!question && (turn.progress.length > 0 || !settled) ? (
-                  <details
-                    className="mt-2 text-[12px] text-[#96939f]"
-                    onToggle={syncScrollPosition}
-                  >
-                    <summary className="cursor-pointer">Activity</summary>
-                    <ol
-                      aria-label="Operational progress"
-                      className="my-1 list-none space-y-1 pl-3"
-                    >
-                      {activity.entries.flatMap((entry, index) => {
-                        const lines =
-                          entry.message && entry.message !== entry.label
-                            ? [entry.label, entry.message]
-                            : [entry.label]
-                        return lines.map((line, lineIndex) => (
-                          <li
-                            key={`${turn.turnId}:${index}:${lineIndex}`}
-                            aria-current={
-                              !settled &&
-                              entry === activity.current &&
-                              lineIndex === lines.length - 1
-                                ? 'step'
-                                : undefined
-                            }
-                            className="whitespace-pre-wrap break-words py-1"
-                          >
-                            {line}
-                          </li>
-                        ))
-                      })}
-                    </ol>
-                  </details>
+                {settled && !question ? (
+                  <p className="mb-0 mt-2 whitespace-pre-wrap break-words">
+                    {summary?.message}
+                  </p>
                 ) : null}
                 {settled && latest && !active && canRetryAiTurn(settled) ? (
                   <div className="mt-3 flex flex-wrap gap-2">
@@ -784,21 +764,23 @@ const AiConversationFeed = ({
                     </button>
                   </div>
                 ) : null}
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  {settled && !question ? <TurnCompletionStatus /> : null}
-                  <span
-                    aria-label="Elapsed time"
-                    className="text-[12px] text-[#96939f]"
-                  >
-                    {settled ? (
-                      summary?.durationLabel
-                    ) : (
-                      <ActiveDuration
-                        turn={conversationSnapshot.activeTurn ?? undefined}
-                      />
-                    )}
-                  </span>
-                </div>
+                {settled && !question && settled.completedAtMs !== undefined ? (
+                  <div className="mt-3 flex justify-start text-[12px] text-[#96939f]">
+                    <time
+                      aria-label="Completed at"
+                      dateTime={new Date(settled.completedAtMs).toISOString()}
+                      title={new Date(settled.completedAtMs).toLocaleString()}
+                    >
+                      {new Date(settled.completedAtMs).toLocaleTimeString(
+                        undefined,
+                        {
+                          hour: 'numeric',
+                          minute: '2-digit'
+                        }
+                      )}
+                    </time>
+                  </div>
+                ) : null}
               </div>
             </article>
           )

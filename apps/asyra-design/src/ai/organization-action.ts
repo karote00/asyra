@@ -20,7 +20,6 @@ export const createOrganizationAction = (
       elementIds: {
         type: 'array',
         minItems: 1,
-        maxItems: 200,
         uniqueItems: true,
         items: { type: 'string', minLength: 1, maxLength: 256 }
       },

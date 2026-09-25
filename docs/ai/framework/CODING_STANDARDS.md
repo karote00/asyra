@@ -19,6 +19,25 @@
 
 ## Registry and Extension Standards
 
+### Capability semantics before implementation
+
+- First identify the capability being queried and its canonical owner, then
+  inspect existing public APIs, App APIs, utils, and registration contracts before
+  writing a helper or condition. Reuse the authoritative contract when equivalent.
+- Capability checks (for example, whether an element can contain children) must
+  consume the registered capability through the public owner API. Do not maintain
+  a consumer-local list of concrete component types or infer capability from a
+  display icon/name.
+- A similarly named utility is not sufficient evidence of equivalent semantics.
+  Verify support for custom registrations, inheritance and the current runtime
+  contract before choosing it; a builtin-only type predicate cannot substitute
+  for an extensible capability query.
+- Compare an exact type only when the behavior is deliberately specific to that
+  type. Do not mechanically replace type-specific geometry, admission, or
+  permission checks with a broader capability check.
+- Regression tests for extensible capability consumers must cover a registered
+  custom type and a non-capable type, not only the current builtin types.
+
 - Prefer shared registry utility for map-like register/get/has/unregister behavior.
 - Registry names must reflect ownership, not UI assumptions.
 - If behavior is package-specific, wrap shared utility rather than forking patterns.

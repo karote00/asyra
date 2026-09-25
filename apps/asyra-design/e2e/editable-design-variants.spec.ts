@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import sharp from 'sharp'
 import { prepareDesign } from '../server/design-preparation'
 import {
   createTestDocumentIdentity,
@@ -37,6 +38,7 @@ const rect = (
   fill: string
 ) => ({ key, name: key, type: 'rect', x, y, width, height, fill })
 const coffee = {
+  type: 'frame',
   name: 'Lento Coffee',
   x: 30,
   y: 30,
@@ -165,6 +167,7 @@ const coffee = {
   ]
 }
 const mobile = {
+  type: 'frame',
   name: 'Daily focus',
   x: 30,
   y: 30,
@@ -211,6 +214,7 @@ const mobile = {
   ]
 }
 const saas = {
+  type: 'frame',
   name: 'Orbit workspace',
   x: 30,
   y: 30,
@@ -258,6 +262,7 @@ const saas = {
   ]
 }
 const landscape = {
+  type: 'frame',
   name: 'Quiet night',
   x: 30,
   y: 30,
@@ -334,7 +339,80 @@ const landscape = {
   ]
 }
 
+const gradients = {
+  type: 'frame',
+  name: 'Native gradient materials',
+  width: 760,
+  height: 240,
+  fill: '#ffffff',
+  children: ['diagonal', 'horizontal', 'vertical', 'translucent'].map(
+    (name, i) => ({
+      key: name,
+      name,
+      type: 'rect',
+      x: 20 + i * 185,
+      y: 20,
+      width: 165,
+      height: 200,
+      fill: {
+        gradientType: 'linear',
+        gradientHandles: [
+          { x: 0, y: 0 },
+          { x: i === 2 ? 0 : 1, y: i === 1 ? 0 : 1 }
+        ],
+        gradientStops: [
+          { position: 0, color: '#123344', opacity: 1 },
+          { position: 0.5, color: '#ccf4ff', opacity: 1 },
+          { position: 1, color: '#246677', opacity: i === 3 ? 0 : 1 }
+        ]
+      }
+    })
+  )
+}
+
+const vectorGradients = {
+  type: 'frame',
+  name: 'Vector gradient projection',
+  width: 520,
+  height: 240,
+  fill: '#ffffff',
+  children: ['rect', 'vector'].map((type, i) => ({
+    key: type,
+    name: type,
+    type,
+    x: 20 + i * 260,
+    y: 20,
+    width: 200,
+    height: 200,
+    ...(type === 'vector'
+      ? {
+          rings: [
+            [
+              { x: 30, y: 0 },
+              { x: 200, y: 20 },
+              { x: 170, y: 200 },
+              { x: 0, y: 180 }
+            ]
+          ]
+        }
+      : {}),
+    fill: {
+      gradientType: 'linear',
+      gradientHandles: [
+        { x: 0, y: 0 },
+        { x: 1, y: 0 }
+      ],
+      gradientStops: [
+        { position: 0, color: '#000000', opacity: 1 },
+        { position: 1, color: '#ffffff', opacity: 1 }
+      ]
+    }
+  }))
+}
+
 for (const [name, draft] of Object.entries({
+  gradients,
+  vectorGradients,
   coffee,
   saas,
   mobile,
@@ -356,7 +434,10 @@ for (const [name, draft] of Object.entries({
             {
               id: 'create',
               name: 'apply_prepared_design',
-              arguments: { design },
+              arguments: {
+                design,
+                ...(name === 'vectorGradients' ? { response: 'compact' } : {})
+              },
               summary: `Create ${name} design`
             }
           ]
@@ -375,7 +456,15 @@ for (const [name, draft] of Object.entries({
       'data-outcome',
       'success'
     )
-    await expect(page.getByLabel('Design context')).toHaveText('1 selected')
+    await expect
+      .poll(() =>
+        page.evaluate(async () => [
+          ...(
+            await import('../src/common-apis/selection')
+          ).selectionApis.getSelectedIds()
+        ])
+      )
+      .toEqual([design.rootId])
     expect(await getUndoHistoryDepth(page)).toBe(before + 1)
     const evidence = await page.evaluate(
       async ({ rootId, entries }) => {
@@ -383,14 +472,15 @@ for (const [name, draft] of Object.entries({
         const { reviewDesign } =
           await import('../src/common-apis/design-review')
         return {
-          review: reviewDesign(rootId),
+          review: await reviewDesign(rootId),
           nodes: entries.map(({ descriptor }) => ({
             id: descriptor.id,
             type: core.getElementData(descriptor.id)?.type,
             values: core.getElementComputedData(descriptor.id, [
               'width',
               'height',
-              'text'
+              'text',
+              'fills'
             ])
           }))
         }
@@ -403,6 +493,14 @@ for (const [name, draft] of Object.entries({
     })
     for (const [i, entry] of design.entries.entries()) {
       expect(evidence.nodes[i].type).toBe(entry.descriptor.type)
+      if ((name === 'gradients' || name === 'vectorGradients') && i > 0)
+        expect(evidence.nodes[i].values?.fills).toEqual([
+          expect.objectContaining({
+            kind: 'gradient',
+            opacity: 1,
+            gradient: entry.descriptor.fills?.[0].gradient
+          })
+        ])
       if (entry.descriptor.type === 'text')
         expect(evidence.nodes[i].values?.text).toBe(entry.descriptor.text)
     }
@@ -417,9 +515,48 @@ for (const [name, draft] of Object.entries({
       ).selectionApis.clearSelection()
       ;(await import('../src/common-apis/viewport')).viewportApis.zoomFit()
     })
-    await page.screenshot({
+    const screenshot = await page.screenshot({
       path: testInfo.outputPath(`${name}.png`),
       fullPage: false
     })
+    if (name === 'vectorGradients') {
+      const points = await page.evaluate(
+        async (ids) => {
+          const { core } = await import('../src/testing/runtime-access')
+          const { viewportApis } = await import('../src/common-apis/viewport')
+          return ids.flatMap((id) => {
+            const data = core.getElementComputedData(id, [
+              'x',
+              'y',
+              'width',
+              'height'
+            ])
+            return [0.2, 0.35, 0.5, 0.65, 0.8].map((fraction) => ({
+              id,
+              fraction,
+              ...viewportApis.getCanvasPositionFromWorkspace({
+                x: data.x + data.width * fraction,
+                y: data.y + data.height * 0.5
+              })
+            }))
+          })
+        },
+        design.entries.slice(1).map((entry) => entry.descriptor.id)
+      )
+      const pixels = await sharp(screenshot)
+        .ensureAlpha()
+        .raw()
+        .toBuffer({ resolveWithObject: true })
+      for (const point of points) {
+        const offset =
+          (Math.round(point.y) * pixels.info.width + Math.round(point.x)) * 4
+        const rgb = [...pixels.data.subarray(offset, offset + 3)]
+        for (const channel of rgb)
+          expect(
+            Math.abs(channel - point.fraction * 255),
+            JSON.stringify({ point, rgb })
+          ).toBeLessThan(25)
+      }
+    }
   })
 }

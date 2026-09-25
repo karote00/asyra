@@ -1,5 +1,5 @@
 import type { AiActionDefinition } from '@asyra/ai-agent-runtime'
-import { waitForCooperativePaint } from '@asyra/core'
+import { yieldToCooperativeHost } from '@asyra/core'
 import {
   elementApis,
   hierarchyApis,
@@ -38,8 +38,12 @@ const defaultApis: PreparedDesignApis = {
 }
 export const createPreparedDesignAction = (
   apis: PreparedDesignApis = defaultApis,
-  paint: () => Promise<void> = waitForCooperativePaint
-): AiActionDefinition<{ design: PreparedDesign }> => ({
+  yieldToHost: () => Promise<void> = yieldToCooperativeHost,
+  now: () => number = () => performance.now()
+): AiActionDefinition<{
+  design: PreparedDesign
+  response?: 'compact' | 'full'
+}> => ({
   name: AiActionNames.APPLY_PREPARED_DESIGN,
   description:
     'Apply a server-prepared editable design with native text, shapes and illustration paths. Use the backend preparation receipt; never invent canonical descriptors.',
@@ -47,10 +51,24 @@ export const createPreparedDesignAction = (
     type: 'object',
     additionalProperties: false,
     required: ['design'],
-    properties: { design: { type: 'object' } }
+    properties: {
+      design: { type: 'object' },
+      response: { type: 'string', enum: ['compact', 'full'] }
+    }
   },
   execute: async (args, { signal }) => {
+    if (
+      args.response !== undefined &&
+      args.response !== 'compact' &&
+      args.response !== 'full'
+    )
+      throw new Error('Invalid design response mode.')
+    const startedAt = now()
     const design = admitPreparedDesign(args.design)
+    const admissionMs = now() - startedAt
+    let createMs = 0,
+      cooperativeYieldMs = 0,
+      sliceCount = 0
     const workspaceId = apis.getWorkspaceId()
     if (!workspaceId) throw new Error('The target workspace is unavailable.')
     const checkCurrent = (parentId: string) => {
@@ -71,6 +89,7 @@ export const createPreparedDesignAction = (
         throw new Error('A design object already exists.')
     }
     const appliedElementIds: string[] = []
+    let appliedElementCount = 0
     let offset = 0
     while (offset < design.entries.length) {
       const parentId = design.entries[offset].parentId ?? workspaceId
@@ -95,7 +114,10 @@ export const createPreparedDesignAction = (
         points += count
         offset++
       }
+      const createStartedAt = now()
       const ids = apis.create(descriptors, parentId)
+      createMs += now() - createStartedAt
+      sliceCount++
       if (
         !ids ||
         ids.length !== descriptors.length ||
@@ -104,19 +126,34 @@ export const createPreparedDesignAction = (
         throw new Error(
           'Design creation did not preserve its object identities.'
         )
-      appliedElementIds.push(...ids)
-      await paint()
+      appliedElementCount += ids.length
+      if (args.response !== 'compact') appliedElementIds.push(...ids)
+      const yieldStartedAt = now()
+      await yieldToHost()
+      cooperativeYieldMs += now() - yieldStartedAt
     }
     checkCurrent(workspaceId ?? '')
     apis.select([design.rootId])
     return {
       status: 'complete',
+      timing: {
+        admissionMs,
+        createMs,
+        cooperativeYieldMs,
+        totalMs: now() - startedAt,
+        sliceCount,
+        elementCount: appliedElementCount
+      },
       compositionId: design.rootId,
-      appliedElementIds,
-      keyToId: design.keyToId,
-      roleToElementIds: Object.fromEntries(
-        Object.entries(design.keyToId).map(([key, id]) => [key, [id]])
-      )
+      ...(args.response === 'compact'
+        ? { appliedElementCount }
+        : {
+            appliedElementIds,
+            keyToId: design.keyToId,
+            roleToElementIds: Object.fromEntries(
+              Object.entries(design.keyToId).map(([key, id]) => [key, [id]])
+            )
+          })
     }
   }
 })

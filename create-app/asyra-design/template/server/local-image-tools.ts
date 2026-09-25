@@ -64,16 +64,13 @@ export const createLocalImageTools = (
       maxDisplacementPx?: number
     }
   >()
-  let decompositionCalls = 0
-  let analysisPathCount = 0
-  let analysisCalls = 0
   let analysisQueue = Promise.resolve()
   const definitions = [
     {
       type: 'function',
       name: AiImageToolIds.REVIEW_VECTOR_CONTOURS,
       description:
-        'Measure selected contour straightness and tangent breaks before drawing. Supply quality.mode (faithful preserves source irregularities; cleanup permits bounded edits) and final drawing targetSize. Faithful reviews have no cleanup proposals. Cleanup is limited to 0.5 source pixels AND 0.5 output drawing pixels; viewport zoom is irrelevant. Returns an opaque reviewId and bounded straighten/smooth-join proposals with source-pixel locations, metrics and limitations, never coordinate arrays. You decide intent: a small kink can be an intentional corner. Up to 16 selected paths, sharing the request analysis budget. Compound/unsafe contours are report-only; no proposal does not establish visual correctness.',
+        'Measure selected contour straightness and tangent breaks before drawing. Supply quality.mode (faithful preserves source irregularities; cleanup permits bounded edits) and final drawing targetSize. Faithful reviews have no cleanup proposals. Cleanup is limited to 0.5 source pixels AND 0.5 output drawing pixels; viewport zoom is irrelevant. Returns an opaque reviewId and bounded straighten/smooth-join proposals with source-pixel locations, metrics and limitations, never coordinate arrays. You decide intent: a small kink can be an intentional corner. Up to 16 selected paths per call. Compound/unsafe contours are report-only; no proposal does not establish visual correctness.',
       inputSchema: {
         type: 'object',
         additionalProperties: false,
@@ -95,7 +92,7 @@ export const createLocalImageTools = (
       type: 'function',
       name: AiImageToolIds.APPLY_CONTOUR_REFINEMENTS,
       description:
-        'Apply an explicit non-overlapping subset of same-request contour proposals. Creates a NEW artifact without touching the canvas; use its returned imageArtifactId in existing drawing actions. Retains anchors, fills, order and coordinate frame; validates combined topology and <=0.5 source-pixel displacement against the original trace across at most three generations. Returns before/after evidence. Rejected proposals do not change any artifact. Choose according to the original reference; metrics cannot certify visual fidelity.',
+        'Apply an explicit non-overlapping subset of same-request contour proposals. Creates a NEW artifact without touching the canvas; use its returned imageArtifactId in existing drawing actions. Retains anchors, fills, order and coordinate frame; validates combined topology and <=0.5 source-pixel displacement against the original trace across all refinements. Returns before/after evidence. Rejected proposals do not change any artifact. Choose according to the original reference; metrics cannot certify visual fidelity.',
       inputSchema: {
         type: 'object',
         additionalProperties: false,
@@ -173,7 +170,7 @@ export const createLocalImageTools = (
     {
       type: 'function',
       name: AiImageToolIds.ANALYZE_VECTOR_COMPONENTS,
-      description: `Read-only geometric analysis of up to ${limits.pathsPerCall} plausible path candidates from a current-request vector artifact. Up to ${limits.callsPerRequest} independent calls and ${limits.pathsPerRequest} total candidate paths may be submitted per request without awaiting earlier replies. Prefer submitting all candidates from the same artifact in one call; the backend schedules bounded jobs. Await all relevant results before selecting conversions. Returns analysisId, contour identities, fit errors, topology limitations and eligible registered components. You decide whether a conversion improves the intended result; no automatic drawing or segmentation occurs. List the required receipt IDs in analysisIds when selecting componentMappings; independent reports may be combined. Preserve vectors when no suitable conversion exists.`,
+      description: `Read-only geometric analysis of up to ${limits.pathsPerCall} plausible path candidates from a current-request vector artifact. Independent calls may be submitted concurrently within the provider in-flight limit, without a request-total quota. Prefer submitting all candidates from the same artifact in one call; the backend schedules bounded jobs. Await all relevant results before selecting conversions. Returns analysisId, contour identities, fit errors, topology limitations and eligible registered components. You decide whether a conversion improves the intended result; no automatic drawing or segmentation occurs. List the required receipt IDs in analysisIds when selecting componentMappings; independent reports may be combined. Preserve vectors when no suitable conversion exists.`,
       inputSchema: {
         type: 'object',
         additionalProperties: false,
@@ -279,7 +276,7 @@ export const createLocalImageTools = (
             if (
               !Array.isArray(receiptIds) ||
               !receiptIds.length ||
-              receiptIds.length > limits.callsPerRequest ||
+              receiptIds.length > limits.receiptIdsPerCall ||
               new Set(receiptIds).size !== receiptIds.length ||
               receiptIds.some((id) => typeof id !== 'string')
             )
@@ -372,18 +369,7 @@ export const createLocalImageTools = (
           )
         )
           throw new Error('Unknown contour source')
-        if (
-          analysisCalls >= limits.callsPerRequest ||
-          analysisPathCount + args.pathIds.length > limits.pathsPerRequest
-        )
-          return JSON.stringify({
-            available: false,
-            message:
-              'Analysis budget reached. Use existing evidence or explain the remaining limitation.'
-          })
         const quality = resolveContourQuality(artifact, args.quality)
-        analysisCalls++
-        analysisPathCount += args.pathIds.length
         const pathIds = args.pathIds as string[]
         const task = analysisQueue.then(async () => {
           const parts: ReturnType<typeof reviewVectorContours>[] = []
@@ -462,12 +448,6 @@ export const createLocalImageTools = (
           original: source,
           generation: 0
         }
-        if (lineage.generation >= ContourReviewLimits.generations)
-          return JSON.stringify({
-            available: false,
-            message:
-              'Contour refinement limit reached. Use existing artifacts and report remaining differences.'
-          })
         await yieldToEventLoop()
         const result = applyContourRefinements(
           source,
@@ -518,18 +498,6 @@ export const createLocalImageTools = (
           new Set(args.pathIds).size !== args.pathIds.length
         )
           throw new Error('Invalid analysis selection')
-        if (
-          analysisCalls >= limits.callsPerRequest ||
-          analysisPathCount + args.pathIds.length > limits.pathsPerRequest
-        )
-          return JSON.stringify({
-            available: false,
-            message:
-              'The analysis limit has been reached. Use existing results or explain remaining constraints.'
-          })
-        // Reserve before any await so parallel submissions cannot oversubscribe.
-        analysisCalls++
-        analysisPathCount += args.pathIds.length
         const pathIds = [...args.pathIds] as string[]
         const task = analysisQueue.then(async () => {
           let report: ReturnType<typeof analyzeVectorComponents> | undefined
@@ -634,11 +602,6 @@ export const createLocalImageTools = (
         name === AiImageToolIds.VECTORIZE_IMAGE_LAYERS ||
         representationPlan?.strategy === 'separate-background'
       ) {
-        if (decompositionCalls >= 4)
-          throw new Error(
-            'Image separation limit reached. Use existing results or explain the remaining limitation.'
-          )
-        decompositionCalls++
         const layers = await separateImageBackground(
           bytes,
           String(attachment.mediaType),

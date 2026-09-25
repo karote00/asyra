@@ -55,6 +55,7 @@ interface MockGradientRecord {
 }
 
 interface MockPatternRecord {
+  textureSpace?: string
   texture: MockTextureRecord
   repeat: string
   transform?: MockMatrixRecord
@@ -324,10 +325,15 @@ vi.mock('pixi.js', () => {
   class MockTexture {
     static readonly WHITE = new MockTexture('white')
     readonly destroy = vi.fn()
-    readonly width = 256
-    readonly height = 256
+    readonly width: number
+    readonly height: number
 
     constructor(readonly source: unknown) {
+      const options = source as {
+        source?: { options?: { width?: number; height?: number } }
+      }
+      this.width = options?.source?.options?.width ?? 256
+      this.height = options?.source?.options?.height ?? 256
       pixiState.textures.push(this)
     }
 
@@ -385,6 +391,7 @@ vi.mock('pixi.js', () => {
   }
 
   class MockFillPattern {
+    textureSpace = 'global'
     transform?: MockMatrix
     readonly setTransform = vi.fn((transform: MockMatrix) => {
       this.transform = transform
@@ -863,6 +870,63 @@ describe('PixiRenderEngine', () => {
     expect(() =>
       engine.query({ type: 'get-local-content-bounds', object })
     ).toThrow()
+    engine.destroy()
+  })
+
+  it('preserves native pixels and captures explicit regions without downsampling', async () => {
+    const engine = new PixiRenderEngine()
+    await engine.initialize({ host: {}, width: 800, height: 600 })
+    const { object } = engine.execute({
+      type: 'create-object',
+      requestId: 'native-snapshot',
+      objectType: 'graphics'
+    })
+    if (!object) throw new Error('Missing target')
+    engine.execute({
+      type: 'update-object',
+      object,
+      properties: { width: 4000, height: 2000 }
+    })
+    const extract = pixiState.applications[0].renderer.extract.canvas
+    expect(() =>
+      engine.query({
+        type: 'snapshot',
+        object,
+        maxDimension: 1024,
+        nativeResolution: true
+      })
+    ).toThrow('Native-resolution snapshot exceeds')
+    expect(extract).not.toHaveBeenCalled()
+    const region = { x: 1200, y: 300, width: 800, height: 600 }
+    extract.mockReturnValueOnce({
+      width: 800,
+      height: 600,
+      toDataURL: () => 'data:image/png;base64,cG5n'
+    })
+    expect(
+      engine.query({
+        type: 'snapshot',
+        object,
+        maxDimension: 1024,
+        nativeResolution: true,
+        region
+      })
+    ).toMatchObject({ width: 800, height: 600, bounds: region })
+    expect(extract).toHaveBeenCalledWith(
+      expect.objectContaining({
+        resolution: 1,
+        frame: expect.objectContaining(region)
+      })
+    )
+    expect(() =>
+      engine.query({
+        type: 'snapshot',
+        object,
+        maxDimension: 1024,
+        nativeResolution: true,
+        region: { ...region, x: 3999 }
+      })
+    ).toThrow('inside target bounds')
     engine.destroy()
   })
 
@@ -1352,9 +1416,10 @@ describe('PixiRenderEngine', () => {
     expect(pixiState.gradients[0].transform).toBeDefined()
     expect(pixiState.patterns).toHaveLength(1)
     expect(pixiState.patterns[0].repeat).toBe('no-repeat')
+    expect(pixiState.patterns[0].textureSpace).toBe('local')
     expect(pixiState.patterns[0].transform?.operations).toContainEqual({
       type: 'scale',
-      args: [0.25, 0.125]
+      args: [1, 1]
     })
     expect(pixiState.graphics[0].drawOperations.slice(-2)[0]?.args[0]).toBe(
       pixiState.gradients[0]

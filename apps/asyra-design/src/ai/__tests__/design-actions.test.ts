@@ -9,6 +9,7 @@ import type { PreparedDesign } from '../prepared-design'
 const fixture = () =>
   prepareDesign(
     {
+      type: 'frame',
       name: 'Editorial page',
       width: 800,
       height: 600,
@@ -77,6 +78,61 @@ describe('prepared editable design application', () => {
     })
     expect(paint).toHaveBeenCalledTimes(3)
   })
+  it('applies an expanded detail stage in ordered cooperative slices through one action', async () => {
+    const design = prepareDesign(
+      {
+        type: 'group',
+        name: 'Repeated facade',
+        projection: {
+          azimuth: 0,
+          elevation: 0,
+          scale: 1,
+          originX: 0,
+          originY: 20
+        },
+        children: [
+          {
+            type: 'pattern',
+            key: 'panes',
+            name: 'Panes',
+            origin: { x: 0, y: 0, z: 0 },
+            axes: [{ count: 1200, step: { x: 10, y: 0, z: 0 } }],
+            faces: [
+              {
+                key: 'face',
+                name: 'Face',
+                fill: '#123456',
+                vertices: [
+                  { x: 0, y: 0, z: 0 },
+                  { x: 8, y: 0, z: 0 },
+                  { x: 8, y: 0, z: 8 },
+                  { x: 0, y: 0, z: 8 }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      'large-stage'
+    )
+    const api = apis(),
+      paint = vi.fn(async () => undefined)
+    const result = await createPreparedDesignAction(api, paint).execute(
+      { design },
+      context()
+    )
+    expect(result).toMatchObject({
+      status: 'complete',
+      timing: { elementCount: 1201, sliceCount: 39 }
+    })
+    const calls = vi.mocked(api.create).mock.calls
+    expect(calls.flatMap(([entries]) => entries.map((e) => e.id))).toEqual(
+      design.entries.map((e) => e.descriptor.id)
+    )
+    expect(calls.every(([entries]) => entries.length <= 32)).toBe(true)
+    expect(api.select).toHaveBeenCalledExactlyOnceWith([design.rootId])
+    expect(paint).toHaveBeenCalledTimes(39)
+  })
   it.each([
     (d: ReturnType<typeof mutable>) => {
       d.version = 99
@@ -119,6 +175,7 @@ describe('prepared editable design application', () => {
       JSON.parse(
         JSON.stringify(
           prepareDesign({
+            type: 'frame',
             name: 'Illustration',
             width: 200,
             height: 200,
@@ -233,6 +290,7 @@ describe('prepared editable design application', () => {
     const api = apis(),
       paint = vi.fn(async () => undefined)
     const design: PreparedDesign = prepareDesign({
+      type: 'frame',
       name: 'Library',
       width: 1000,
       height: 1000,
@@ -262,4 +320,134 @@ it('registers prepared application with the conversation runtime', async () => {
   expect(
     input.actionDefinitions.some((a) => a.name === 'apply_prepared_design')
   ).toBe(true)
+})
+
+describe('mixed container prepared application', () => {
+  it.each([false, true])(
+    'applies a Group root (empty=%s) with ordinary canonical batches',
+    async (empty) => {
+      const design = prepareDesign({
+        type: 'group',
+        name: 'Artwork',
+        children: empty
+          ? []
+          : [
+              {
+                key: 'region',
+                type: 'frame',
+                name: 'Region',
+                width: 100,
+                height: 80,
+                children: [
+                  {
+                    key: 'parts',
+                    type: 'group',
+                    name: 'Parts',
+                    children: [
+                      {
+                        key: 'shape',
+                        type: 'rect',
+                        name: 'Shape',
+                        x: 10,
+                        y: 20,
+                        width: 30,
+                        height: 40
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+      })
+      const api = apis()
+      await createPreparedDesignAction(api, async () => undefined).execute(
+        { design },
+        context()
+      )
+      expect(api.create).toHaveBeenCalled()
+      expect(api.select).toHaveBeenCalledWith([design.rootId])
+    }
+  )
+  it('rejects forged Group backgrounds rather than pretending they render', async () => {
+    const design = JSON.parse(
+      JSON.stringify(prepareDesign({ type: 'group', name: 'Empty' }))
+    )
+    design.entries[0].descriptor.fills = [
+      {
+        id: `${design.rootId}-fill`,
+        type: 'fill',
+        kind: 'solid',
+        color: '#ffffff',
+        opacity: 1,
+        visible: true,
+        colorFormat: 'hex',
+        defaultColorFormat: 'hex',
+        gradient: null
+      }
+    ]
+    const api = apis()
+    await expect(
+      createPreparedDesignAction(api).execute({ design }, context())
+    ).rejects.toThrow()
+    expect(api.create).not.toHaveBeenCalled()
+  })
+})
+
+it('measures canonical creation separately from cooperative paint waits', async () => {
+  let clock = 0
+  const api = apis()
+  api.create = vi.fn((entries) => {
+    clock += 3
+    return entries.map((d) => d.id)
+  })
+  const paint = vi.fn(async () => {
+    clock += 5
+  })
+  const action = createPreparedDesignAction(api, paint, () => clock)
+  const result = await action.execute({ design: fixture() }, context())
+  expect(result).toMatchObject({
+    timing: {
+      admissionMs: 0,
+      createMs: 9,
+      cooperativeYieldMs: 15,
+      totalMs: 24,
+      sliceCount: 3,
+      elementCount: 3
+    }
+  })
+})
+
+it('yields to the host without requiring animation frames between prepared batches', async () => {
+  const frame = vi.fn((callback: FrameRequestCallback) => {
+    callback(0)
+    return 1
+  })
+  const yieldToHost = vi.fn(async () => undefined)
+  vi.stubGlobal('requestAnimationFrame', frame)
+  vi.stubGlobal('scheduler', { yield: yieldToHost })
+  try {
+    await createPreparedDesignAction(apis()).execute(
+      { design: fixture() },
+      context()
+    )
+    expect(frame).not.toHaveBeenCalled()
+    expect(yieldToHost).toHaveBeenCalledTimes(3)
+  } finally {
+    vi.unstubAllGlobals()
+  }
+})
+
+it('returns compact identity evidence without constructing full mapping receipts', async () => {
+  const result = await createPreparedDesignAction(
+    apis(),
+    async () => undefined
+  ).execute({ design: fixture(), response: 'compact' }, context())
+  expect(result).toMatchObject({
+    status: 'complete',
+    compositionId: fixture().rootId,
+    appliedElementCount: 3
+  })
+  expect(result).not.toHaveProperty('appliedElementIds')
+  expect(result).not.toHaveProperty('keyToId')
+  expect(result).not.toHaveProperty('roleToElementIds')
 })

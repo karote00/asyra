@@ -20,6 +20,7 @@ export {
   AI_ACTION_BATCH_TRANSACTION_LABEL,
   AiConfirmationError,
   AiExecutionError,
+  AiActionExecutionError,
   AiPermissionError,
   AiTransactionError,
   confirmAiActionBatch,

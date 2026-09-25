@@ -6,7 +6,7 @@ export const createDesignReviewAction = (
 ): AiActionDefinition<{ elementId: string }> => ({
   name: AiActionNames.REVIEW_DESIGN,
   description:
-    'Read-only deterministic review of up to 200 nodes: measure real text content against its layout box and check unrotated child bounds. No screenshot. Fix concrete findings using current IDs, then review again before visual inspection. Complete means the bounded checks ran, not that design quality or brief compliance passed. Truncation and unavailable checks must not be reported as full verification.',
+    'Read-only deterministic review of the complete target subtree in cooperative chunks: measure real text content against its layout box and check unrotated child bounds. No screenshot. Fix concrete findings using current IDs, then review again before visual inspection. Complete means the supported checks ran, not that design quality or brief compliance passed. Truncation and unavailable checks must not be reported as full verification.',
   inputSchema: {
     type: 'object',
     additionalProperties: false,
@@ -15,6 +15,6 @@ export const createDesignReviewAction = (
   },
   execute: async ({ elementId }, { signal }) => {
     if (signal.aborted) throw new Error('Design review cancelled.')
-    return review(elementId)
+    return review(elementId, signal)
   }
 })

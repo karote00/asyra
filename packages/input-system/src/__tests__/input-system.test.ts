@@ -343,6 +343,65 @@ describe('InputSystem', () => {
     expect(inputSystem['activeKeys'].has('leftMouseMove')).toBe(false)
   })
 
+  it('normalizes wheel-local modifiers without leaking pinch into later input', () => {
+    vi.spyOn(keyMap, 'isModifierKeys').mockRestore()
+    const received = vi.fn()
+    const ctrlOnly = vi.fn()
+    const canvas = document.createElement('canvas')
+    inputSystem.attachBrowserHost(window, canvas)
+    inputSystem.registry.register('test.wheel', [
+      { type: InputType.WHEEL, keys: [PointerKey.WHEEL] }
+    ])
+    inputSystem.registry.register('test.ctrl-wheel', [
+      {
+        type: InputType.WHEEL,
+        keys: [PointerKey.WHEEL],
+        modifiers: [ModifierKey.CTRL]
+      }
+    ])
+    inputSystem.on('test.wheel', received)
+    inputSystem.on('test.ctrl-wheel', ctrlOnly)
+    try {
+      canvas.dispatchEvent(
+        new WheelEvent('wheel', {
+          ctrlKey: true,
+          deltaY: -10,
+          cancelable: true
+        })
+      )
+      expect(received).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          modifiers: expect.objectContaining({ ctrl: true })
+        })
+      )
+      expect(ctrlOnly).toHaveBeenCalledOnce()
+      canvas.dispatchEvent(
+        new WheelEvent('wheel', { deltaY: 10, cancelable: true })
+      )
+      expect(received).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          modifiers: { ctrl: false, meta: false, alt: false, shift: false }
+        })
+      )
+      expect(ctrlOnly).toHaveBeenCalledOnce()
+      canvas.dispatchEvent(
+        new WheelEvent('wheel', {
+          metaKey: true,
+          shiftKey: true,
+          altKey: true,
+          deltaY: 10
+        })
+      )
+      expect(received).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          modifiers: { ctrl: false, meta: true, alt: true, shift: true }
+        })
+      )
+    } finally {
+      inputSystem.dispose()
+    }
+  })
+
   // Test handleWheel
   it('should prevent default and trigger checkCombinations for wheel event', () => {
     vi.spyOn(keyMap, 'isSpecialEvent').mockReturnValue(true) // Mock as special event

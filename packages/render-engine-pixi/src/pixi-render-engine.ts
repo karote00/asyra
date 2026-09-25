@@ -278,6 +278,22 @@ export class PixiRenderEngine implements RenderEngine {
           bounds.height <= 0
         )
           throw new Error('Snapshot target has no finite visible bounds')
+        if (query.region) {
+          const region = query.region
+          if (
+            ![region.x, region.y, region.width, region.height].every(
+              Number.isFinite
+            ) ||
+            region.width <= 0 ||
+            region.height <= 0 ||
+            region.x < local.x ||
+            region.y < local.y ||
+            region.x + region.width > local.x + local.width ||
+            region.y + region.height > local.y + local.height
+          )
+            throw new RangeError('Snapshot region must be inside target bounds')
+          Object.assign(bounds, region)
+        }
         // Pixi truncates extraction frames to whole local units before applying
         // resolution. Enclose fractional content explicitly and report the same
         // frame so image pixels and review coordinates describe one region.
@@ -285,10 +301,19 @@ export class PixiRenderEngine implements RenderEngine {
           Math.max(1, Math.ceil(size - Number.EPSILON * Math.max(1, size) * 4))
         bounds.width = enclosingSize(bounds.width)
         bounds.height = enclosingSize(bounds.height)
-        const resolution = Math.min(
-          4,
-          query.maxDimension / Math.max(bounds.width, bounds.height)
+        if (
+          query.nativeResolution &&
+          Math.max(bounds.width, bounds.height) > query.maxDimension
         )
+          throw new RangeError(
+            'Native-resolution snapshot exceeds the capture limit; request a region within the limit. No downsampling was performed.'
+          )
+        const resolution = query.nativeResolution
+          ? 1
+          : Math.min(
+              4,
+              query.maxDimension / Math.max(bounds.width, bounds.height)
+            )
         const canvas = this.withSnapshotTextResolution(target, resolution, () =>
           app.renderer.extract.canvas({
             target,
@@ -311,6 +336,9 @@ export class PixiRenderEngine implements RenderEngine {
           canvas.height < 1 ||
           canvas.width > query.maxDimension ||
           canvas.height > query.maxDimension ||
+          (query.nativeResolution &&
+            (canvas.width !== bounds.width ||
+              canvas.height !== bounds.height)) ||
           !dataUrl?.startsWith('data:image/png;base64,') ||
           dataUrl.length > 8 * 1024 * 1024
         )

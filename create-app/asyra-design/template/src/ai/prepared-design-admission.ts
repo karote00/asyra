@@ -1,6 +1,9 @@
+import { isDesignGradient } from './design-fill'
 import { TEXT_PROPERTY_SCHEMA } from '@asyra/preset'
 import {
   DesignPreparationLimits as limits,
+  DesignNodeTypes,
+  isDesignContainerType,
   PREPARED_DESIGN_VERSION,
   type PreparedDesign
 } from './prepared-design'
@@ -152,14 +155,15 @@ export function admitPreparedDesign(input: unknown): PreparedDesign {
   check(
     Array.isArray(input.entries) &&
       input.entries.length > 0 &&
-      input.entries.length <= limits.nodes
+      input.entries.length <= limits.expandedNodes
   )
   check(
     record(input.keyToId) &&
       Object.keys(input.keyToId).length === input.entries.length
   )
   check(
-    Array.isArray(input.findings) && input.findings.length <= limits.nodes * 2
+    Array.isArray(input.findings) &&
+      input.findings.length <= limits.expandedNodes * 2
   )
   const parents = new Map<string, { type: string; depth: number }>(),
     semanticKeys = new Set<string>(),
@@ -194,7 +198,7 @@ export function admitPreparedDesign(input: unknown): PreparedDesign {
     claim(d.id)
     check(
       typeof d.type === 'string' &&
-        ['frame', 'rect', 'oval', 'text', 'vector'].includes(d.type)
+        DesignNodeTypes.some((type) => type === d.type)
     )
     check(
       typeof d.name === 'string' &&
@@ -207,22 +211,26 @@ export function admitPreparedDesign(input: unknown): PreparedDesign {
       finite(d.x) &&
         finite(d.y) &&
         finite(d.width, limits.dimension) &&
-        Number(d.width) > 0 &&
+        (d.type === 'group' ? Number(d.width) >= 0 : Number(d.width) > 0) &&
         finite(d.height, limits.dimension) &&
-        Number(d.height) > 0
+        (d.type === 'group' ? Number(d.height) >= 0 : Number(d.height) > 0)
     )
     let depth = 1
     if (index === 0)
       check(
         entry.parentId === null &&
-          d.type === 'frame' &&
+          isDesignContainerType(d.type) &&
           d.id === input.rootId &&
           entry.key === '$root'
       )
     else {
       check(typeof entry.parentId === 'string')
       const parent = parents.get(entry.parentId)
-      check(parent && parent.type === 'frame' && parent.depth < limits.depth)
+      check(
+        parent &&
+          isDesignContainerType(parent.type) &&
+          parent.depth < limits.depth
+      )
       depth = parent.depth + 1
     }
     const props = ['position', 'dimension']
@@ -248,6 +256,7 @@ export function admitPreparedDesign(input: unknown): PreparedDesign {
       props.push('fills')
       fields.push('fills')
       check(Array.isArray(d.fills) && d.fills.length <= 1)
+      if (d.type === 'group') check(d.fills.length === 0)
       for (const f of d.fills) {
         check(
           record(f) &&
@@ -266,7 +275,7 @@ export function admitPreparedDesign(input: unknown): PreparedDesign {
         check(
           f.id === `${d.id}-fill` &&
             f.type === 'fill' &&
-            f.kind === 'solid' &&
+            (f.kind === 'solid' || f.kind === 'gradient') &&
             f.opacity === 1 &&
             f.visible === true
         )
@@ -275,14 +284,17 @@ export function admitPreparedDesign(input: unknown): PreparedDesign {
             /^#[0-9a-f]{6}$/i.test(f.color) &&
             f.colorFormat === 'hex' &&
             f.defaultColorFormat === 'hex' &&
-            f.gradient === null
+            (f.kind === 'solid'
+              ? f.gradient === null
+              : isDesignGradient(f.gradient))
         )
         claim(f.id)
       }
-      if (d.type === 'frame') {
+      if (isDesignContainerType(d.type)) {
         fields.push('children')
         check(Array.isArray(d.children) && d.children.length === 0)
-      } else {
+      }
+      if (d.type !== 'frame') {
         props.push('strokes')
         fields.push('strokes')
         check(Array.isArray(d.strokes) && d.strokes.length === 0)
@@ -297,7 +309,7 @@ export function admitPreparedDesign(input: unknown): PreparedDesign {
         check(record(nodes))
         Object.keys(nodes).forEach(claim)
       }
-      check(pointCount <= limits.pathCommands)
+      check(pointCount <= limits.expandedPathCommands)
     }
     check(
       keysOnly(d, fields) &&

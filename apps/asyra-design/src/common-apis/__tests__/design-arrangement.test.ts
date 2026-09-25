@@ -180,3 +180,20 @@ describe('native design arrangement', () => {
     expect(apis.apply).not.toHaveBeenCalled()
   })
 })
+
+it('aligns more than 200 siblings in one canonical patch batch', () => {
+  const { arrange, records, geometry, apis } = fixture()
+  const ids = Array.from({ length: 250 }, (_, i) => `item-${i}`)
+  for (const [i, id] of ids.entries()) {
+    records[id] = { type: 'rect', parentId: 'f' }
+    geometry[id] = { x: i, y: 0, width: 10, height: 10 }
+  }
+  arrange({
+    operation: 'align',
+    axis: 'horizontal',
+    alignment: 'start',
+    elementIds: ids
+  })
+  expect(apis.apply).toHaveBeenCalledTimes(1)
+  expect(apis.apply.mock.calls[0][0]).toHaveLength(249)
+})

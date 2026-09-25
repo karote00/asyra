@@ -214,8 +214,11 @@ const createPatternResource = (
   scale: GradientPoint = { x: 1 / texture.width, y: 1 / texture.height }
 ): PixiOwnedResource => {
   const pattern = new FillPattern(texture, repeat)
+  // Descriptors map source texels into normalized object bounds. Pixi local
+  // patterns already normalize the texture, so convert that scale once here.
+  pattern.textureSpace = 'local'
   const matrix = new Matrix()
-  matrix.scale(scale.x, scale.y)
+  matrix.scale(scale.x * texture.width, scale.y * texture.height)
   pattern.setTransform(matrix)
   return {
     value: pattern,

@@ -1,3 +1,4 @@
+import { basicApiPermissionRules } from './basic-api-catalog'
 import {
   createAiAgentRuntime,
   type AiAgentRuntime,
@@ -45,6 +46,7 @@ export const createAiStartup = (
     runtime = createAiAgentRuntime(
       createAiRuntimeInput({
         permissionRules: {
+          ...basicApiPermissionRules,
           [AiActionNames.APPLY_PREPARED_DESIGN]: 'allow',
           [AiActionNames.ORGANIZE_DESIGN]: 'allow',
           [AiActionNames.ARRANGE_DESIGN]: 'allow',

@@ -1,6 +1,16 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { EntityTypes, type ElementRawData } from '@asyra/utils'
-import { projectVisibleLayerRows } from '../layer-hierarchy'
+import {
+  projectExpandedLayerRow,
+  projectVisibleLayerRows
+} from '../layer-hierarchy'
+
+vi.mock('../../common-apis/element', () => ({
+  elementApis: {
+    isContainerType: (type: string) =>
+      ['group', 'frame', 'workspace', 'custom-container'].includes(type)
+  }
+}))
 
 const element = (
   id: string,
@@ -25,16 +35,38 @@ const elementDataMap = {
 const flattenedIds = ['root', 'child', 'nested', 'leaf', 'sibling']
 
 describe('canonical Layers hierarchy projection', () => {
+  it('uses registered container capability for custom types in both projection paths', () => {
+    const data = {
+      root: element('root', 'workspace', 'custom-container'),
+      leaf: element('leaf', 'root', 'custom-leaf')
+    }
+    expect(projectExpandedLayerRow('root', data)).toMatchObject({
+      canExpand: true
+    })
+    expect(projectExpandedLayerRow('leaf', data)).toMatchObject({
+      canExpand: false
+    })
+    expect(
+      projectVisibleLayerRows(['root', 'leaf'], data, new Set()).rows
+    ).toEqual([
+      { id: 'root', depth: 0, canExpand: true, isExpanded: true },
+      { id: 'leaf', depth: 1, canExpand: false, isExpanded: false }
+    ])
+    expect(
+      projectVisibleLayerRows(['root', 'leaf'], data, new Set(['root'])).rows
+    ).toEqual([{ id: 'root', depth: 0, canExpand: true, isExpanded: false }])
+  })
+
   it('preserves parent-before-descendant order and derives exact depth', () => {
     expect(
       projectVisibleLayerRows(flattenedIds, elementDataMap, new Set())
     ).toEqual({
       rows: [
-        { id: 'root', depth: 0, isGroup: true, isExpanded: true },
-        { id: 'child', depth: 1, isGroup: false, isExpanded: false },
-        { id: 'nested', depth: 1, isGroup: true, isExpanded: true },
-        { id: 'leaf', depth: 2, isGroup: false, isExpanded: false },
-        { id: 'sibling', depth: 0, isGroup: false, isExpanded: false }
+        { id: 'root', depth: 0, canExpand: true, isExpanded: true },
+        { id: 'child', depth: 1, canExpand: false, isExpanded: false },
+        { id: 'nested', depth: 1, canExpand: true, isExpanded: true },
+        { id: 'leaf', depth: 2, canExpand: false, isExpanded: false },
+        { id: 'sibling', depth: 0, canExpand: false, isExpanded: false }
       ],
       error: null
     })
@@ -45,10 +77,10 @@ describe('canonical Layers hierarchy projection', () => {
       projectVisibleLayerRows(flattenedIds, elementDataMap, new Set(['nested']))
     ).toEqual({
       rows: [
-        { id: 'root', depth: 0, isGroup: true, isExpanded: true },
-        { id: 'child', depth: 1, isGroup: false, isExpanded: false },
-        { id: 'nested', depth: 1, isGroup: true, isExpanded: false },
-        { id: 'sibling', depth: 0, isGroup: false, isExpanded: false }
+        { id: 'root', depth: 0, canExpand: true, isExpanded: true },
+        { id: 'child', depth: 1, canExpand: false, isExpanded: false },
+        { id: 'nested', depth: 1, canExpand: true, isExpanded: false },
+        { id: 'sibling', depth: 0, canExpand: false, isExpanded: false }
       ],
       error: null
     })
@@ -77,9 +109,9 @@ describe('canonical Layers hierarchy projection', () => {
       )
     ).toEqual({
       rows: [
-        { id: 'restored', depth: 0, isGroup: true, isExpanded: true },
-        { id: 'child', depth: 1, isGroup: false, isExpanded: false },
-        { id: 'empty', depth: 0, isGroup: true, isExpanded: true }
+        { id: 'restored', depth: 0, canExpand: true, isExpanded: true },
+        { id: 'child', depth: 1, canExpand: false, isExpanded: false },
+        { id: 'empty', depth: 0, canExpand: true, isExpanded: true }
       ],
       error: null
     })
@@ -111,8 +143,8 @@ describe('canonical Layers hierarchy projection', () => {
       projectVisibleLayerRows(wideFlattenedIds, wideElementDataMap, new Set())
     ).toMatchObject({
       rows: expect.arrayContaining([
-        { id: 'root', depth: 0, isGroup: true, isExpanded: true },
-        { id: 'child-63', depth: 1, isGroup: false, isExpanded: false }
+        { id: 'root', depth: 0, canExpand: true, isExpanded: true },
+        { id: 'child-63', depth: 1, canExpand: false, isExpanded: false }
       ]),
       error: null
     })
@@ -138,4 +170,39 @@ describe('canonical Layers hierarchy projection', () => {
       projectVisibleLayerRows(['root', 'child'], cyclicMap, new Set())
     ).toMatchObject({ rows: [], error: expect.stringMatching(/cycle/i) })
   })
+})
+
+it('exposes nested frame disclosure in both expanded and collapsed projections', () => {
+  const data = {
+    ...elementDataMap,
+    nested: element('nested', 'root', EntityTypes.FRAME)
+  }
+  expect(projectExpandedLayerRow('nested', data)).toMatchObject({
+    canExpand: true,
+    isExpanded: true
+  })
+  expect(
+    projectVisibleLayerRows(flattenedIds, data, new Set()).rows.find(
+      (row) => row.id === 'nested'
+    )
+  ).toMatchObject({ canExpand: true, isExpanded: true })
+  const collapsed = projectVisibleLayerRows(
+    flattenedIds,
+    data,
+    new Set(['nested'])
+  )
+  expect(collapsed.rows.map((row) => row.id)).toEqual([
+    'root',
+    'child',
+    'nested',
+    'sibling'
+  ])
+  expect(collapsed.rows.find((row) => row.id === 'nested')?.isExpanded).toBe(
+    false
+  )
+  expect(
+    projectVisibleLayerRows(flattenedIds, data, new Set()).rows.map(
+      (row) => row.id
+    )
+  ).toEqual(flattenedIds)
 })

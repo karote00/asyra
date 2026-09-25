@@ -251,6 +251,8 @@ export type RenderEngineSnapshotQuery = Readonly<{
   type: 'snapshot'
   object: RenderEngineObjectHandle
   maxDimension: number
+  nativeResolution?: boolean
+  region?: RenderEngineBounds
 }>
 
 export type RenderEngineSnapshotResult = Readonly<{

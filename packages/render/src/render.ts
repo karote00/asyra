@@ -165,14 +165,23 @@ class Render {
 
   captureElementSnapshot(
     elementId: string,
-    maxDimension = 1024
+    maxDimension = 1024,
+    options?: Pick<
+      import('@asyra/render-engine').RenderEngineSnapshotQuery,
+      'nativeResolution' | 'region'
+    >
   ): RenderEngineSnapshotResult {
     const engine = this.requireEngine()
     assertRenderEngineCapabilities(engine, [RenderEngineCapabilities.SNAPSHOT])
     this.flushFrame()
     const object = this.viewport.getElementById(elementId)?.getEngineHandle()
     if (!object) throw new Error('Snapshot target is unavailable')
-    const result = engine.query({ type: 'snapshot', object, maxDimension })
+    const result = engine.query({
+      type: 'snapshot',
+      object,
+      maxDimension,
+      ...options
+    })
     if (result.type !== 'snapshot') throw new Error('Invalid snapshot result')
     return result
   }

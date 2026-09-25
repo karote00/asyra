@@ -41,7 +41,10 @@ import type {
   UpdateComputedDataEvent,
   UpdateComputedDataPatchEvent
 } from '@asyra/reactive-events'
-import { subscribeToEventBatches } from '@asyra/reactive-events'
+import {
+  subscribeToEventBatches,
+  subscribeToAppliedEventBatches
+} from '@asyra/reactive-events'
 import type { PresetCoreAPIs, PresetDependencies } from '../types.js'
 import { createCleanupReporter } from '../cleanup-reporter.js'
 import { deriveGroupBounds, type GroupBounds } from '../components/group.js'
@@ -1771,34 +1774,37 @@ export const registerDefaultDataChannelObservers = (
       registerObserver(canonicalPropertyDataChannelObserver)
     }
 
-    if (renderSceneEnabled || uiContextEnabled) {
+    const localComputedChangesFromEvents = (events: readonly AllEvent[]) =>
+      events.flatMap((event) => {
+        const computedEvent = toLocalComputedProjectionEvent(event)
+        if (!computedEvent) return []
+        const change = toLocalComputedSceneTreeChange(computedEvent)
+        return change ? [change] : []
+      })
+    if (renderSceneEnabled) {
+      eventSubscriptions.push(
+        subscribeToAppliedEventBatches((events) => {
+          if (!disposed)
+            updateRenderSceneTreeBatch(localComputedChangesFromEvents(events))
+        })
+      )
+      cleanupReporter.report()
+    }
+    if (uiContextEnabled) {
       eventSubscriptions.push(
         subscribeToEventBatches((events) => {
-          if (disposed) {
-            return
-          }
-          const localComputedChanges = events.flatMap((event) => {
-            const computedEvent = toLocalComputedProjectionEvent(event)
-            if (!computedEvent) {
-              return []
-            }
-            const change = toLocalComputedSceneTreeChange(computedEvent)
-            return change ? [change] : []
-          })
-          if (renderSceneEnabled) {
-            updateRenderSceneTreeBatch(localComputedChanges)
-          }
-          if (uiContextEnabled && localComputedChanges.length > 0) {
-            localComputedChanges.forEach((change) => {
-              handleUIContextSceneTreeChange(
-                change,
-                core,
-                deps,
-                uiContextSyncLifetime
-              )
-            })
-            flushPendingUIContextSync(uiContextSyncLifetime, core, deps)
-          }
+          if (disposed) return
+          const changes = localComputedChangesFromEvents(events)
+          if (changes.length === 0) return
+          changes.forEach((change) =>
+            handleUIContextSceneTreeChange(
+              change,
+              core,
+              deps,
+              uiContextSyncLifetime
+            )
+          )
+          flushPendingUIContextSync(uiContextSyncLifetime, core, deps)
         })
       )
       cleanupReporter.report()

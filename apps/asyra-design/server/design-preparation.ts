@@ -1,10 +1,15 @@
+import { isDesignFill, isDesignGradient } from '../src/ai/design-fill'
+import { deriveGroupBounds } from '@asyra/preset/group-bounds'
 import { randomUUID } from 'node:crypto'
+import { constructDesign } from './design-construction'
 import {
   measureVectorPath,
   type LocalVectorArtifact
 } from './local-vector-artifact'
 import {
   DesignPreparationLimits as limits,
+  DesignNodeTypes,
+  isDesignContainerType,
   DesignTextDefaults,
   DesignTextValidators,
   PREPARED_DESIGN_VERSION,
@@ -13,7 +18,33 @@ import {
   type DesignFinding
 } from '../src/ai/prepared-design'
 
-type NodeKind = 'frame' | 'rect' | 'oval' | 'text' | 'vector'
+type AnalyzedDesign = PreparedDesign & {
+  readonly layoutReview?: Readonly<{
+    textBoxOverlaps: readonly Readonly<{
+      firstKey: string
+      secondKey: string
+      width: number
+      height: number
+    }>[]
+    truncated: boolean
+  }>
+  readonly review?: Readonly<{
+    intent: string
+    viewpoint: string
+    sources: readonly string[]
+    assumptions: readonly string[]
+    checks: readonly Readonly<{
+      key: string
+      property: string
+      expected: number
+      actual: number
+      tolerance: number
+      passed: boolean
+    }>[]
+  }>
+}
+
+type NodeKind = (typeof DesignNodeTypes)[number]
 type IllustrationRings = LocalVectorArtifact['paths'][number]['rings']
 type Layout = 'absolute' | 'row' | 'column' | 'grid'
 type DraftNode = Record<string, unknown> & {
@@ -31,6 +62,7 @@ type DraftNode = Record<string, unknown> & {
   align: 'start' | 'center' | 'end'
   children: DraftNode[]
   rings?: IllustrationRings
+  vectorBounds?: { x: number; y: number; width: number; height: number }
 }
 const record = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -70,26 +102,44 @@ const admitDraft = (input: unknown): DraftNode => {
     characters = 0,
     pathPoints = 0
   const keys = new Set<string>()
+  // Rings are immutable within this synchronous preparation. Pattern instances
+  // share template rings, while each new call owns a fresh measurement lifetime.
+  const vectorBounds = new WeakMap<
+    IllustrationRings,
+    ReturnType<typeof measureVectorPath>['bounds']
+  >()
   const admit = (
     source: unknown,
     depth: number,
     parentLayout: Layout,
     root = false
   ): DraftNode => {
-    if (!record(source) || depth > limits.depth || ++count > limits.nodes)
+    if (
+      !record(source) ||
+      depth > limits.depth ||
+      ++count > limits.expandedNodes
+    )
       return fail('node/depth limit')
-    const type = root ? 'frame' : source.type
-    if (!['frame', 'rect', 'oval', 'text', 'vector'].includes(String(type)))
+    const type = source.type
+    if (
+      !DesignNodeTypes.some((kind) => kind === type) ||
+      (root && !isDesignContainerType(type))
+    )
       return fail('unsupported component')
     const allowed = [
-      ...commonKeys.filter((key) => type !== 'text' || key !== 'fill'),
+      ...commonKeys.filter((key) =>
+        type === 'group'
+          ? !['width', 'height', 'fill'].includes(key)
+          : type !== 'text' || key !== 'fill'
+      ),
       ...(type === 'frame' ? containerKeys : []),
+      ...(type === 'group' ? ['children'] : []),
       ...(type === 'text' ? textKeys : []),
       ...(type === 'vector' ? ['rings'] : [])
     ]
     if (Object.keys(source).some((key) => !allowed.includes(key)))
       return fail('unknown field')
-    if (root && (source.type !== undefined || source.key !== undefined))
+    if (root && source.key !== undefined)
       return fail('root identity is server-owned')
     const key = root ? '$root' : source.key
     if (
@@ -111,10 +161,7 @@ const admitDraft = (input: unknown): DraftNode => {
       (source.x !== undefined || source.y !== undefined)
     )
       return fail('flow child position')
-    if (
-      source.fill !== undefined &&
-      (typeof source.fill !== 'string' || !/^#[0-9a-f]{6}$/i.test(source.fill))
-    )
+    if (source.fill !== undefined && !isDesignFill(source.fill))
       return fail('fill')
     if (type === 'text') {
       if (typeof source.text !== 'string') return fail('missing text')
@@ -136,7 +183,7 @@ const admitDraft = (input: unknown): DraftNode => {
           return fail('vector control')
         finite(value.x, 'vector x')
         finite(value.y, 'vector y')
-        if (++pathPoints > limits.pathCommands)
+        if (++pathPoints > limits.expandedPathCommands)
           return fail('vector point limit')
       }
       for (const ring of source.rings) {
@@ -179,13 +226,17 @@ const admitDraft = (input: unknown): DraftNode => {
       return fail('grid columns')
     if (source.children !== undefined && !Array.isArray(source.children))
       return fail('children')
-    return {
+    const node: DraftNode = {
       ...source,
       key,
       type: type as NodeKind,
       name: source.name,
-      width: finite(source.width, 'width', Number.MIN_VALUE),
-      height: finite(source.height, 'height', Number.MIN_VALUE),
+      width:
+        type === 'group' ? 0 : finite(source.width, 'width', Number.MIN_VALUE),
+      height:
+        type === 'group'
+          ? 0
+          : finite(source.height, 'height', Number.MIN_VALUE),
       x: finite(source.x ?? 0, 'x'),
       y: finite(source.y ?? 0, 'y'),
       padding: finite(source.padding ?? 0, 'padding'),
@@ -197,6 +248,46 @@ const admitDraft = (input: unknown): DraftNode => {
         admit(child, depth + 1, layout as Layout)
       )
     }
+    if (type === 'vector') {
+      if (!node.rings) return fail('missing vector rings')
+      let b = vectorBounds.get(node.rings)
+      if (!b) {
+        b = measureVectorPath({
+          id: key,
+          fill: typeof node.fill === 'string' ? node.fill : '#000000',
+          rings: node.rings,
+          bounds: { x: 0, y: 0, width: node.width, height: node.height },
+          pointCount: 0
+        }).bounds
+        vectorBounds.set(node.rings, b)
+      }
+      if (
+        b.width <= 0 ||
+        b.height <= 0 ||
+        b.x < 0 ||
+        b.y < 0 ||
+        b.x + b.width > node.width ||
+        b.y + b.height > node.height
+      )
+        fail('vector exceeds declared bounds')
+      node.vectorBounds = b
+      node.x += b.x
+      node.y += b.y
+      node.width = b.width
+      node.height = b.height
+    }
+    if (type === 'group') {
+      const bounds = deriveGroupBounds(node.children)
+      node.x += bounds.x
+      node.y += bounds.y
+      node.width = finite(bounds.width, 'group width')
+      node.height = finite(bounds.height, 'group height')
+      for (const child of node.children) {
+        child.x -= bounds.x
+        child.y -= bounds.y
+      }
+    }
+    return node
   }
   return admit(input, 1, 'absolute', true)
 }
@@ -204,8 +295,9 @@ const admitDraft = (input: unknown): DraftNode => {
 export const prepareDesign = (
   input: unknown,
   identity: string = randomUUID()
-): PreparedDesign => {
-  const root = admitDraft(input)
+): AnalyzedDesign => {
+  const { draft, brief } = constructDesign(input)
+  const root = admitDraft(draft)
   const entries: PreparedDesignEntry[] = [],
     findings: DesignFinding[] = []
   const keyToId: Record<string, string> = Object.create(null)
@@ -242,7 +334,7 @@ export const prepareDesign = (
       props: Object.fromEntries(
         propertyNames.map((name) => [name, `${id}-${name}`])
       ),
-      ...(node.type === 'frame' ? { children: [] } : {}),
+      ...(isDesignContainerType(node.type) ? { children: [] } : {}),
       ...(node.type === 'text'
         ? Object.fromEntries(
             textKeys.map((key) => [
@@ -252,51 +344,40 @@ export const prepareDesign = (
             ])
           )
         : {
-            fills:
-              typeof node.fill === 'string'
-                ? [
-                    {
-                      id: `${id}-fill`,
-                      type: 'fill',
-                      kind: 'solid',
-                      color: node.fill,
-                      opacity: 1,
-                      visible: true,
-                      colorFormat: 'hex',
-                      defaultColorFormat: 'hex',
-                      gradient: null
-                    }
-                  ]
-                : [],
+            fills: isDesignFill(node.fill)
+              ? [
+                  {
+                    id: `${id}-fill`,
+                    type: 'fill',
+                    kind: isDesignGradient(node.fill) ? 'gradient' : 'solid',
+                    color:
+                      typeof node.fill === 'string'
+                        ? node.fill
+                        : node.fill.gradientStops[0].color,
+                    opacity: 1,
+                    visible: true,
+                    colorFormat: 'hex',
+                    defaultColorFormat: 'hex',
+                    gradient: isDesignGradient(node.fill)
+                      ? structuredClone(node.fill)
+                      : null
+                  }
+                ]
+              : [],
             ...(node.type === 'frame' ? {} : { strokes: [] })
           })
     } as PreparedDesignEntry['descriptor']
     if (node.type === 'vector') {
       const rings = node.rings
       if (!rings) return fail('missing vector rings')
-      const measured = measureVectorPath({
-        id,
-        fill: String(node.fill ?? '#000000'),
-        rings,
-        bounds: { x: 0, y: 0, width: node.width, height: node.height },
-        pointCount: 0
-      })
-      const b = measured.bounds
-      if (
-        b.width <= 0 ||
-        b.height <= 0 ||
-        b.x < 0 ||
-        b.y < 0 ||
-        b.x + b.width > node.width ||
-        b.y + b.height > node.height
-      )
-        fail('vector exceeds declared bounds')
+      const b = node.vectorBounds
+      if (!b) return fail('missing measured vector bounds')
       const points: Record<string, unknown> = {},
         segments: Record<string, unknown> = {},
         networks: Record<string, unknown> = {}
       const workspacePoint = (p: { x: number; y: number }) => ({
-        x: parentX + x + p.x,
-        y: parentY + y + p.y
+        x: parentX + x + p.x - b.x,
+        y: parentY + y + p.y - b.y
       })
       rings.forEach((ring, ringIndex) => {
         const pointIds = ring.map((anchor, index) => {
@@ -347,8 +428,8 @@ export const prepareDesign = (
         }
       })
       Object.assign(descriptor, {
-        x: x + b.x,
-        y: y + b.y,
+        x,
+        y,
         width: b.width,
         height: b.height,
         points,
@@ -436,13 +517,75 @@ export const prepareDesign = (
         right: Math.max(0, cx + child.width - node.width),
         bottom: Math.max(0, cy + child.height - node.height)
       }
-      if (Object.values(overflow).some((value) => value > 0))
+      if (
+        node.type === 'frame' &&
+        Object.values(overflow).some((value) => value > 0)
+      )
         findings.push({ kind: 'overflow', key: child.key, ...overflow })
       visit(child, id, cx, cy, parentX + x, parentY + y)
     })
   }
   visit(root, null, root.x, root.y)
+  // Box intersections are advisory: actual glyphs and artistic intent require review.
+  const textByParent = new Map<string | null, PreparedDesignEntry[]>()
+  for (const entry of entries) {
+    if (entry.descriptor.type !== 'text') continue
+    const siblings = textByParent.get(entry.parentId) ?? []
+    siblings.push(entry)
+    textByParent.set(entry.parentId, siblings)
+  }
+  const textBoxOverlaps: {
+    firstKey: string
+    secondKey: string
+    width: number
+    height: number
+  }[] = []
+  let truncated = false
+  scan: for (const siblings of textByParent.values()) {
+    siblings.sort((a, b) => Number(a.descriptor.x) - Number(b.descriptor.x))
+    for (let i = 0; i < siblings.length; i++) {
+      const a = siblings[i].descriptor
+      for (let j = i + 1; j < siblings.length; j++) {
+        const b = siblings[j].descriptor
+        if (Number(b.x) >= Number(a.x) + Number(a.width)) break
+        const width =
+          Math.min(
+            Number(a.x) + Number(a.width),
+            Number(b.x) + Number(b.width)
+          ) - Number(b.x)
+        const height =
+          Math.min(
+            Number(a.y) + Number(a.height),
+            Number(b.y) + Number(b.height)
+          ) - Math.max(Number(a.y), Number(b.y))
+        if (width <= 0 || height <= 0) continue
+        if (textBoxOverlaps.length === limits.checks) {
+          truncated = true
+          break scan
+        }
+        textBoxOverlaps.push({
+          firstKey: siblings[i].key,
+          secondKey: siblings[j].key,
+          width,
+          height
+        })
+      }
+    }
+  }
+  const byKey = new Map(entries.map((entry) => [entry.key, entry.descriptor]))
+  const checks = (brief?.checks ?? []).map((check) => {
+    const actual = Number(byKey.get(check.key)?.[check.property])
+    const passed =
+      Number.isFinite(actual) &&
+      Math.abs(actual - check.expected) <= check.tolerance
+    if (!passed) findings.push({ kind: 'requirement', ...check, actual })
+    return { ...check, actual, passed }
+  })
   return freeze({
+    ...(brief ? { review: { ...brief, checks } } : {}),
+    ...(textBoxOverlaps.length
+      ? { layoutReview: { textBoxOverlaps, truncated } }
+      : {}),
     version: PREPARED_DESIGN_VERSION,
     rootId: entries[0].descriptor.id,
     entries,
@@ -457,16 +600,30 @@ export const createDesignPreparationSession = (
   const artifacts = new Map<string, PreparedDesign>()
   return {
     prepare(input: unknown) {
-      if (artifacts.size >= limits.artifacts)
-        throw new Error('Design preparation limit reached')
       const artifactId = randomUUID()
-      const artifact = compile(input, artifactId)
+      const { review, layoutReview, ...compiled } = compile(input, artifactId)
+      const artifact = freeze(compiled)
       artifacts.set(artifactId, artifact)
       return {
         artifactId,
         elementCount: artifact.entries.length,
-        findings: artifact.findings
+        findings: artifact.findings,
+        applicable: artifact.findings.every(
+          (f) => f.kind === 'text-metrics-required'
+        ),
+        ...(review ? { review } : {}),
+        ...(layoutReview ? { layoutReview } : {})
       }
+    },
+    release(artifactIds: readonly string[]) {
+      const releasedArtifactIds: string[] = [],
+        missingArtifactIds: string[] = []
+      for (const artifactId of new Set(artifactIds))
+        (artifacts.delete(artifactId)
+          ? releasedArtifactIds
+          : missingArtifactIds
+        ).push(artifactId)
+      return { releasedArtifactIds, missingArtifactIds }
     },
     resolve(artifactId: string): PreparedDesign {
       const artifact = artifacts.get(artifactId)

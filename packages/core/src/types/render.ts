@@ -23,7 +23,11 @@ export interface RenderRawAPIs {
   ) => import('@asyra/render').RenderContentMeasurement[]
   captureElementSnapshot: (
     elementId: string,
-    maxDimension?: number
+    maxDimension?: number,
+    options?: Pick<
+      import('@asyra/render-engine').RenderEngineSnapshotQuery,
+      'nativeResolution' | 'region'
+    >
   ) => import('@asyra/render-engine').RenderEngineSnapshotResult
   initRender: (width: number, height: number, color: number) => Promise<unknown>
   renderIsReady: () => void

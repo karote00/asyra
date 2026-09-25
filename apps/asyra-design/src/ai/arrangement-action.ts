@@ -10,7 +10,7 @@ export const createArrangementAction = (
 ): AiActionDefinition<DesignArrangementRequest> => ({
   name: AiActionNames.ARRANGE_DESIGN,
   description:
-    'Align or evenly distribute 2..200 current siblings after reading their context. Uses native projected bounds along parent-local horizontal/vertical axes. Align start/center/end within the selection bounds. Distribute in current spatial order: omit gap to preserve outer extent, or specify a nonnegative gap keeping the first edge fixed. Preserves sizes, styles and layer order. Inspect the result.',
+    'Align or evenly distribute current siblings after reading their context. Uses native projected bounds along parent-local horizontal/vertical axes. Align start/center/end within the selection bounds. Distribute in current spatial order: omit gap to preserve outer extent, or specify a nonnegative gap keeping the first edge fixed. Preserves sizes, styles and layer order. Inspect the result.',
   inputSchema: {
     type: 'object',
     additionalProperties: false,
@@ -21,7 +21,6 @@ export const createArrangementAction = (
       elementIds: {
         type: 'array',
         minItems: 2,
-        maxItems: 200,
         uniqueItems: true,
         items: { type: 'string', minLength: 1, maxLength: 256 }
       },

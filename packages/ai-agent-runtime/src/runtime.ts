@@ -100,6 +100,22 @@ export class AiExecutionError extends Error {
   }
 }
 
+/** Registered executors may explicitly expose a bounded, safe explanation.
+ * Never construct this from raw provider, transport, or canonical exceptions. */
+export class AiActionExecutionError extends Error {
+  readonly code = 'AI_EXECUTION_FAILED' as const
+  readonly stage = 'execution' as const
+
+  constructor(publicMessage: string) {
+    super(
+      publicMessage.trim() && publicMessage.length <= 1000
+        ? publicMessage
+        : 'AI action execution failed.'
+    )
+    this.name = 'AiActionExecutionError'
+  }
+}
+
 export interface AiRuntimeOwnedResource {
   dispose(): void | Promise<void>
 }
@@ -672,7 +688,10 @@ const stableFailure = (
       stage: error.stage
     }
   }
-  if (error instanceof AiExecutionError) {
+  if (
+    error instanceof AiExecutionError ||
+    error instanceof AiActionExecutionError
+  ) {
     return {
       code: error.code,
       message: error.message,

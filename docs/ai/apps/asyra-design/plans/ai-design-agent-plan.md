@@ -562,7 +562,6 @@ hasOwnProperty.call form rather than changing runtime/compiler targets. Updated
 optional argument. No other existing query callers were changed. Next App context
 queries can consume this bounded observation instead of cloning full vectors.
 
-
 ### Execution card - read-document-context
 
 Owner: App document observation. Spec: design-preparation context and targeted
@@ -596,7 +595,6 @@ Gates: read action cancellation and forwarding; provider read followed by outcom
 without inspection or downgrade; bounded app/server types, lint and naming.
 Stop if routing requires a new transaction or permission mechanism.
 
-
 Document-context route evidence: App AI suite 228 passed across 34 files;
 operation/prompt tests 23 passed, including context reads after all six visual
 review attempts. App/server typecheck and scoped lint pass; naming 11 passed.
@@ -606,10 +604,9 @@ Read-only route does not capture screenshots, consume correction attempts, or
 reject final read operations as unreviewed writes. Prompt documents bounded
 selection/children observations and warns against replacing truncated text.
 Artifacts: tmp/local-codex/context-action-{ai-suite,server,types,naming}.log and
- document-context-{green,null-red,lint}.log. No paid calls, commit or push in this
+document-context-{green,null-red,lint}.log. No paid calls, commit or push in this
 slice. Next: canonical targeted edit and organization owners; native text visual
 resolution and broader plan acceptance remain open.
-
 
 ### Execution card - revise-design-element
 
@@ -634,7 +631,6 @@ This is deterministic action transport, not a paid/live model quality claim.
 Direct consumer review also found context using color instead of native textColor;
 a failing canonical-field test precedes the read-owner correction.
 
-
 Targeted mutation progress: 248 App AI tests pass (36 files), app/server types
 pass, scoped lint and naming pass. Common edit tests cover whole-request rejection,
 parent locks, unchanged values, literal text and partial retention. The context
@@ -658,7 +654,6 @@ No successful browser/visual closure, commit or push is claimed for this slice.
 Relevant logs: targeted-edit-{ai-suite,types,server,browser}.log. The browser HTML
 report contains durable-edit-differences and durable-edit-transport attachments.
 
-
 ### Execution card - record-and-deliver-transaction-batch identity correction
 
 Evidence changes the bounded next step: editing after reload collides with already
@@ -681,7 +676,6 @@ Factory tests/build, collaboration tests, targeted-edit browser durability and
 existing Core transaction integration. Stop if wire consumers parse ID syntax;
 review those direct consumers before claiming compatibility.
 
-
 Publication identity correction evidence: new two-runtime collision and namespace
 work-count tests fail before the producer change. Factory 259 tests, Collaboration
 69 tests and Core hierarchy transaction 17 tests pass. Factory build, scoped lint
@@ -693,7 +687,6 @@ edits after reload persist and survive another reload, with sibling identity/dat
 and one Undo/Redo preserved. Screenshot targeted-edit.png inspected: correct updated
 heading and composition, but native text remains blurry at 154% zoom. Native text
 render resolution remains an open visual-quality requirement. No push yet.
-
 
 ### Execution card - materialize-native-text screen resolution
 
@@ -712,7 +705,6 @@ flush/pan, clear/destroy cleanup, bounded resolution, package tests/build, actua
 editable-design browser screenshot after 154% zoom and native text E2E. Snapshot
 extraction continues its existing bounded protocol; this slice proves screen quality.
 
-
 Screen text resolution evidence: the new zoom/DPR regression failed before the
 engine change. All 22 Pixi tests pass, including inherited scale, zero work for
 stable flush/pan, release after clear and both texture edge/area budgets. Engine
@@ -725,7 +717,6 @@ Playwright servers exited; port 3000 is free. Snapshot-specific resolution at a
 different extraction scale has not been proved by this screen-quality slice.
 Next product owner: organization operations (group, ungroup, reorder/reparent and
 alignment/spacing), then deterministic review/convergence and varied full flows.
-
 
 ### Execution card - organize-design-hierarchy
 
@@ -750,7 +741,6 @@ Gates: bad args/duplicates/locks/membership no writes, native owner routing, act
 read counts/fresh next-call reads, canonical order receipt; AI and provider tests,
 types/lint, browser grouping/ungroup/reorder with one Undo and stable native data.
 
-
 ### User-requested pause - Codex restart (2026-09-23)
 
 Work is paused at the user's request. Preserve all uncommitted changes in
@@ -773,7 +763,6 @@ flows and UI evidence; documentation and generated-template synchronization; fin
 validation, scoped review, commits and push to PR 223, then latest-HEAD CI success.
 The complete goal is not delivered. Unrelated multi-agent configuration belongs
 to the separate task and must remain untouched.
-
 
 ### Resumed - organization evidence
 
@@ -805,7 +794,6 @@ Gates: all axes/alignment edges, unequal sizes/gaps, invalid/locked no-write,
 work counts/fresh reads, wrapper cancellation, native browser positions and Undo.
 Stop if canonical projection cannot provide finite parent-local bounds.
 
-
 Arrangement slice evidence: 22 admission/position/work-count tests, one wrapper
 cancellation test and runtime/startup checks pass (26 total). App typecheck and
 focused ESLint pass. Organization E2E extended with top alignment and explicit
@@ -816,7 +804,6 @@ Native position publication is plural; group property preparation runs once when
 target groups need it. No screenshot/renderer mutation, hierarchy or style writes.
 Next slice: native content measurement and deterministic design review before
 subjective screenshot review. Complete goal and remote delivery remain open.
-
 
 ### Execution card - query-native-content-bounds
 
@@ -832,7 +819,6 @@ world bounds, no extraction, destroyed/foreign handle rejection, engine tests/bu
 Following segment exposes one-flush plural measurement through Render/Core, then
 App review; those segments must have their own execution cards before edits.
 
-
 Native content query: regression failed before implementation; 20 Pixi tests and
 10 neutral engine tests now pass, with builds passing. Recording engine rejects
 actual measurement and does not advertise its capability. No image extraction.
@@ -847,7 +833,6 @@ cache. Bound types exported from Render; Core only forwards. Boundary Render
 render.ts/index.ts/direct tests, Core render request/types/create-apis/core.ts
 and forwarding tests. Test admission no flush, work counts, detached results,
 missing targets and unsupported engine; build Render/Core. No App heuristic.
-
 
 Content observation: 50 Render tests and 7 Core facade tests pass; Render/Core
 builds pass. Native-text browser proof passes in 14.8s: real content bounds differ
@@ -870,7 +855,6 @@ missing canonical/measurement evidence; report incomplete rather than success.
 This segment adds the read-only operation; automatic correction scheduling is the
 following provider owner segment, not silently changed here.
 
-
 Current-design review: 31 focused App/provider tests pass. Native-text E2E passes
 in 14.4s: shrinking the box to 20px yields a concrete text-overflow finding; Undo
 removes it. The operation is read-only and does not consume screenshot attempts.
@@ -891,7 +875,6 @@ overflow skips image and prevents completion; corrected next pass captures image
 cycle limit prevents more writes but permits reads. Existing image-only providers
 keep their current flow. No new tool capability is invented if review is absent.
 
-
 Provider review scheduling: red tests proved image capture previously ran before
 measurements and the cheap-correction path was absent. Now 24 focused tests pass:
 mutation -> deterministic review -> image only after text overflow is resolved;
@@ -899,7 +882,6 @@ eight cheap cycles, six images, reads still allowed; known overflow cannot final
 completed. Issues are retained per measured text ID, so reviewing an unrelated
 object cannot erase a known failure. Typecheck and focused lint pass. This is
 measurement-driven ordering, not a claim of subjective design perfection.
-
 
 AI suite: 294 tests pass across 42 files. Server suite: 281 passed, one usage
 privacy assertion falsely matched `bad` inside a random UUID. Replaced the broad
@@ -916,7 +898,6 @@ each distinct ID once per revalidation call, fresh on the next request; no retai
 cache. Boundary conversation.ts/direct tests and conversation spec. Gates: native
 frame/text/rect continuity, deletion invalidation, request-local observation counts,
 existing conversation recovery and disposal tests. No geometry or UI changes here.
-
 
 General target continuity: 19 conversation tests pass after retaining semantic
 prepared-design receipts and current non-workspace targets. Duplicate role references
@@ -937,7 +918,6 @@ Inspector. Gates: new resets targets, return restores history and revalidates ID
 active/disposed guards, stable navigation identity during progress, existing tests.
 UI wiring and draft preservation are the next presentation segment.
 
-
 Navigation controller: 21 conversation tests pass, including new/history state,
 per-conversation IDs and target restoration, active/disposed guards and stable
 navigation snapshots during progress.
@@ -954,14 +934,12 @@ Boundary panel, small navigation/context components, component tests, formal E2E
 Gates: draft restoration, no send on switch, history messages restored, active
 controls disabled, existing panel tests, actual narrow/desktop screenshots.
 
-
 Panel navigation: 28 component tests pass. Desktop and 360px panel navigation E2E
 passes (2 cases, 11.9s): per-conversation draft restoration, no extra provider call,
 no canvas write, controls in viewport and subscription notice. Inspected screenshots.
 Narrow setup follows the existing suite: initialize desktop canvas then resize;
 it does not establish mobile cold-start support for the whole design tool. Use
 viewport screenshots (not full-page overflow width) for final narrow evidence.
-
 
 ### Execution card - apply-prepared-design / varied product evidence
 
@@ -1141,3 +1119,252 @@ Remaining delivery condition: commit and push this bounded implementation to
 PR #223, verify its latest HEAD and every required CI result, then notify review.
 No merge, registry release, live paid-model evaluation, or unrelated multi-agent
 configuration change is part of this delivery.
+
+### Integration checkpoint - current main
+
+Commit `700d9fa2c` was pushed to PR #223. GitHub could not start PR CI because
+main's English-text normalization conflicted with the panel and two tests.
+Integrate main without rewriting history: preserve the current conversation
+behavior and adopt the translated fixture text; regenerate the App template.
+App 401 tests, typechecking and lint pass after conflict resolution. Browser
+conversation regression and latest merged-HEAD CI remain the delivery gates.
+
+Integration verification: all 15 conversation/navigation browser cases passed.
+The naming gate identified a generic product name in this plan; corrected to
+Asyra Design. No new behavior was introduced by the merge.
+
+### Reference retrieval correction - September 23
+
+Revised bounded slice: `request-backend-action-batch`, provider-owned reference
+retrieval in `server/local-reference-tools.ts` and its direct tests. Live API
+evidence returns the requested logo on `thumb.wikimedia.org`; the existing exact
+host admission silently discarded that candidate. This supersedes further prompt
+changes as the next repair. Admit the current Wikimedia thumbnail host without
+wildcards, keep all existing image/size/redirect/credential boundaries, and prove
+search -> import -> trace with both supported hosts plus spoofed-host negatives.
+Finish with the existing real text-only logo E2E, visual inspection, focused server
+tests, lint/typecheck/naming and template parity. No brand-specific lookup, forced
+source, renderer, geometry or transaction changes. Self-review: the live candidate
+is inside the declared Wikimedia retrieval owner; no new capability or dependency
+is needed. Successful retrieval is not itself visual fidelity approval.
+
+Visual evidence revised this slice: transport passed but a historical logo was
+selected. Keep version selection with the model, require current identity before
+mutation, and let the existing importer resolve exact Wikimedia SVG file URLs
+through the publisher's API instead of model-guessed PNG paths. This uses the
+same bounded retrieval owner, hosts, raster validation and request-local cache;
+negative thumbnail-host tests remain mandatory. The real logo screenshot is the
+version-selection gate, not merely the existing success/action-count assertions.
+
+Verification: the real text-only 480x480 logo E2E passed in 1.9 minutes; visual
+inspection confirmed the current siren identity, editable paths and an Oval
+background. Provider protocol handling now accepts a registered, App-issued
+tool's failed completion so the model can correct recoverable preparation errors;
+unknown tool/call identities remain rejected. The realistic failure fixture
+exposed six failures before that correction. Server tests: 295 passed, one
+opt-in test skipped; the separate real-provider browser test passed. Typecheck,
+lint, naming, template parity and diff whitespace checks passed. This proves
+the exercised reference-to-drawing flow, not pixel-perfect tracing for all logos.
+
+### Execution card - settled conversation feedback
+
+Bounded task: clear ended activity headlines/Result heading, keep authored replies
+and actionable failure explanations, enforce English activity, clarify replacement
+history and verify native Frame-to-vector revisions with independent Undo entries.
+Owners are conversation presentation, composition execution and its failure result;
+no renderer, tracing, geometry algorithm, provider transport or unrelated UI changes.
+
+First owner: `conversation-lifecycle` (conversation experience spec, lifecycle and
+multi-step execution; Inspector conditions/inputs/bypasses at that step). Consume
+existing progress and authoritative settlement only; output English activity and
+retained result, never canonical writes or raw exception text. App presentation,
+panel and confirmation are allowed contributors. Boundary: their existing files,
+direct tests/E2E and spec/Inspector. No cache: one progress projection per render.
+Tests first cover non-English messages, partial failure terminal status, hidden
+Result heading and retained reply, replacement confirmation explaining independent
+Undo. Gates: focused unit tests, typecheck/lint, browser screenshots. Stop on any
+need to change model or drawing semantics in this segment. Later composition and
+failure-contract segments require their own owner check before edits.
+
+Conversation projection slice: 50 tests pass after red proofs (8 initial failures
+and one final-message ordering failure). Existing progress remains immutable; no
+new state owner or cache. Rechecked lifecycle inputs and UI-only boundary.
+
+### Execution card - actionable execution failure
+
+Owner: `resolve-server-prepared-action-batch`, existing registered executor and
+bounded result handoff (Inspector conditions, implementationBoundary). Spec:
+conversation experience multi-step execution / sanitized failure. Inputs remain
+registered action exceptions and existing execution evidence; output is a bounded,
+explicitly App-authored public failure reason plus failed action and authoritative
+transaction disposition. Unknown errors remain redacted to generic failures.
+Add the neutral `AiActionExecutionError` opt-in contract in runtime.ts/index.ts;
+no domain codes, raw exception forwarding, retry, transaction or geometry change.
+No persisted identities change. Tests: known public failure passes through while
+unknown exception text remains hidden and retain-progress still commits once.
+Consumer presentation uses only this stable runtime failure contract. Boundary:
+runtime, direct lifecycle tests, App presentation/tests and package/spec/Inspector.
+Stop if unrelated errors or execution policy would need changing.
+
+Execution failure slice: new public-message regression failed first; all 92 runtime
+tests and 16 presentation tests now pass, including private-error suppression.
+Runtime build passes. Neutral opt-in exception does not alter transaction policy.
+
+### Execution card - native composition revision
+
+Owner: `stage-local-interactive-composition`; inputs are the current context target
+and complete backend-prepared drawing. Outputs are canonical insertion/removal
+receipts, preserving one invocation transaction. The newer native design producer
+returns a Frame composition; reference tracing returns a Group. Both must be
+accepted as explicitly targeted roots. Workspace/leaf/missing/self targets remain
+rejected before writes; insertion precedes old-root removal; incomplete insertion
+keeps the old root and follows existing preserve-progress settlement.
+
+The Inspector's old replacement rollback sentence conflicts with the active
+multi-step failure-retention specification and the runtime step; repair that
+in-scope sentence before implementation. No new transaction, geometry, policy or
+parallel history owner. Boundary: actions.ts, direct composition tests, existing
+conversation E2E, spec/Inspector. Failure owner remains this executor, with safe
+static reasons through the tested public-error contract. Gates: Frame and Group
+replacement, rejected targets, partial insertion, two sequential revisions with
+per-turn canonical Undo/Redo and visible failure explanation. Stop if Core replay
+needs an unrelated change. No profiling/cache changes.
+
+Native revision closure: Frame rejection and public reason cases failed first;
+39 composition tests pass after the owner fix. Browser cases at 360px and 1280px
+prove initial native Frame plus two replacements create exactly three History
+entries; Undo restores each previous canonical digest and Redo restores each
+revision. A fourth missing-target request leaves the document and History depth
+unchanged and shows its safe cause below Activity. No live model invocation was
+used. Reviewed both revision-failure.png panel screenshots at localhost:3000 after
+Jump to latest: English history, one Failed terminal, visible recovery text, no
+Result/current headline, unchanged 12px bell. The existing retained-progress
+failure/Undo browser case also passes. App AI 311, runtime 92 and Inspector 22 tests
+pass; App typecheck/build, scoped ESLint and naming pass. Original model fidelity
+and unknown historical exception causes are not established by these fixtures.
+
+## 2026-09-24 - Structured construction and measurable review
+
+Bounded task: improve general editable design preparation with an optional structured
+brief, declarative sibling/parent geometric relations, and shared orthographic
+projection of explicitly supplied planar faces. AI owns content, source selection,
+style, face ordering and assumptions; the server computes requested relationships.
+No new dependencies, paid service, Framework/renderer change, transaction change,
+new UI, push or CI monitor. Existing dirty work is preserved. This is not a claim
+of arbitrary-design quality or inferred 3D reconstruction.
+
+Step Execution Card - request-backend-action-batch:
+- Authority: design-preparation.md semantic preparation and construction sections;
+  Inspector request-backend-action-batch inputs, conditions, server boundary and
+  failure owner. Contract update is part of this authorized construction change.
+- Inputs: bounded semantic draft, optional brief/checks, same-parent relations,
+  shared camera and explicit 3D face vertices. No document snapshot or hidden lookup.
+- Outputs: existing immutable PreparedDesign plus compact requirement measurements
+  and assumptions. Only applicable artifacts resolve to existing batch actions.
+- Conditions: registered prepare_design/apply_prepared_design; old drafts remain
+  valid. No projection without explicit camera. Failed checks prevent artifact
+  application; meaningful revision remains possible within eight attempts.
+- Allowed: server preparation, local tool schema/prompt, direct tests and docs;
+  generated template only through the generator. Forbidden: UI geometry, new
+  canonical types, renderer patches, landmark-specific rules or new execution path.
+- Lifetime: prepare once per request artifact; resolve reuses exact artifact; changed
+  input creates a fresh artifact. No extra cache.
+- Cases: landing-page constraints; projected building faces; sibling dependencies;
+  cycles/duplicate targets/unknown references; invalid/nonfinite/oversized input;
+  unmet brief checks; immutable receipts and post-apply inspection.
+- Gates: test-first server tests, provider contract tests, naming, scoped lint,
+  typecheck/build, Inspector contracts, real-app fixture rendering and Undo,
+  template parity. Visual evidence is distinct from real-model quality.
+- Stop: requirement outside this boundary, contradictory contracts, or third
+  repeated focused failure; revise approach within this contract before proceeding.
+
+Visual gate refinement within request-backend-action-batch: the live editorial
+case put a 44px title at y=369 and body at y=404, a 9px text-box intersection
+missed by per-element overflow review. Add bounded same-parent text-box overlap
+warnings to the server preparation receipt (not canonical descriptors). These
+are advisory because box intersection alone does not establish glyph collision
+or artistic intent. AI must resolve unintended collisions before applying; actual
+browser visual review remains required. Direct cases cover 9px intersection,
+touching edges, separate parents, decorative shapes, bounded output and immutable
+resolve without recomputation. No Framework or browser review owner changes.
+
+Validation checkpoint (not overall design-quality completion): 312 server tests
+pass with one optional live unit skipped; App AI 311 and Inspector 22 pass;
+typecheck, naming, scoped lint and production build pass (existing chunk-size
+warning). Structured editorial and correctly oriented pavilion E2E cases pass
+canonical dimensions, review and one Undo/Redo with inspected screenshots.
+A first live editorial run completed but visual inspection found overlapping
+text; formal tests then reproduced the 9px box collision before its receipt fix.
+The subsequent live run produced a page but returned partial after the existing
+review-cycle limit while adjusting CTA text centering. The strict live success
+assertion remains failed; it was not relaxed or repeatedly retried. See
+`tmp/local-codex/design-construction-browser-reviewed.log` and
+`apps/asyra-design/test-results/structured-design-reviewed/`.
+This server construction slice does not establish stable end-to-end aesthetic
+convergence. Further work must investigate the actual review/action feedback and
+centering corrections before changing limits or claiming full design delivery.
+No push, dependency addition, renderer mutation or transaction changes in this slice.
+
+## User-directed iteration - Stop controls request lifetime
+
+The user explicitly requests removal of every execution-count limit. The prior
+review-scheduling proposal is superseded. Same Inspector owner
+request-backend-action-batch: remove request-total limits on tool operations,
+inspection/measurement, preparation, reference search/import, image decomposition,
+analysis and contour generations. Keep canonical validation, original-source
+geometric error bounds, per-call payload/CPU limits, queue serialization and bounded
+in-flight provider calls. No total request timer; readiness and individual I/O
+watchdogs remain separate service-health guards. Stop/abort must still cancel active
+and queued work. No permission, renderer or Undo changes. Formal cases exceed
+former limits, preserve old artifacts, retain invalid-input rejection, prove abort
+and final-review honesty, followed by full server gates and one live layout check.
+This explicit user scope update authorizes server tool scheduling, direct tests,
+related prompt/spec/Inspector and generated-template synchronization only.
+
+User-directed lifetime change validated: server suite 315 pass (one optional live
+unit skipped), provider-specific suite 64 pass, Inspector 22 and naming 11 pass;
+App typecheck, scoped lint, production build and generated-template parity pass.
+The live browser layout now completes successfully, with no overlapping sibling
+text boxes, no measured overflow and one Undo entry; both structured fixtures also
+pass (3 E2E cases total, 3.1m). Inspected live-layout.png in
+`apps/asyra-design/test-results/structured-design-unlimited/`: readable three-card
+editorial layout and centered CTA. This supersedes the earlier quota-related
+partial result, without claiming arbitrary-design fidelity.
+
+Regression evidence covers 170 serial tool calls, preparation beyond eight,
+inspection beyond six, measurement beyond eight, analysis beyond 128, refinement
+beyond three generations, searches beyond three, decomposition beyond four,
+queued cancellation and rejected oversized input. A subsequent protocol regression
+proved cumulative traffic over 32 MiB succeeds while single-message/unfinished
+buffer bounds still reject oversized data. No cumulative stderr retention. The
+final protocol-only change passed the full server suite after the live run.
+
+Manual localhost:3000 server restarted; readiness returns ready. Listener PID is
+recorded in tmp/local-codex/manual-ai-panel-server.pid. No user-tab refresh, push,
+CI monitoring, dependency addition or transaction/renderer change performed.
+
+### Reference-research recovery iteration - 2026-09-24
+
+The observed request `32f1a86b-091b-443d-b8e6-df0673b982c9` stopped after
+source-local failures. The user then explicitly removed fixed search sources and
+methods. This replaces the candidate-filter repair: remove the Wikimedia search
+adapter and candidate-ID import path; use native live web research without domain
+preferences and import original public HTTPS image URLs through the existing safe
+downloader. Keep the legacy activity identity only for saved history presentation.
+
+Owner: `request-backend-action-batch`; files: reference adapter, provider tool
+registration/configuration, domain prompt, direct tests/docs and generated template.
+Input: native research plus original user requirements. Output: original-resolution
+reference or recoverable source-local failure. No renderer, transaction, model,
+dependency, resolution reduction or remote-operation changes. A failed or unsuitable
+source requires a different source/query/method, not a request for publicly available
+material. Detailed style is not automatically exact reproduction. Stop for a concrete
+user-only input/capability blocker, cancellation, or completion; do not add a quota.
+
+Formal cases: no custom search tool advertised; native live search enabled; original
+public URLs from arbitrary domains import/trace; same-request failed source then
+successful alternate; structured recoverable failure; preserved dimensions/cache;
+SVG reports unsupported without raster substitution. Gates: focused provider,
+reference/prompt/download tests, Inspector, naming, types, lint, build, template parity.
+Self-review: no fallback artwork, fixed-domain routing, forced drawing method,
+provider model change, or claims that prompt assertions prove live task quality.

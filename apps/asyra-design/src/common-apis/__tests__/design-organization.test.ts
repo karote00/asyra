@@ -113,3 +113,14 @@ describe('canonical design organization', () => {
     expect(apis.group).not.toHaveBeenCalled()
   })
 })
+
+it('groups a complete known sibling set in one native operation rather than making artificial groups of 200', () => {
+  const { organize, records, apis } = fixture()
+  const ids = Array.from({ length: 250 }, (_, i) => `item-${i}`)
+  records.frame.children = ids
+  for (const id of ids) records[id] = { type: 'rect', parentId: 'frame' }
+  expect(organize({ operation: 'group', elementIds: ids }).elementIds).toEqual(
+    ids
+  )
+  expect(apis.group).toHaveBeenCalledExactlyOnceWith(ids)
+})

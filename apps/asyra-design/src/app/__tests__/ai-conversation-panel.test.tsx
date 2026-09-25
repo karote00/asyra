@@ -8,11 +8,15 @@ import {
   fireEvent,
   render,
   screen,
-  waitFor
+  waitFor,
+  within
 } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AiConversationPanel } from '../ai-conversation-panel'
-import { createAiConversationController } from '../../ai/conversation'
+import {
+  type AiConversationFeatureRequest,
+  createAiConversationController
+} from '../../ai/conversation'
 import { createAiConfirmationBroker } from '../../ai/confirmation'
 import { createDeferred } from '../../ai/__tests__/deferred'
 import {
@@ -59,6 +63,60 @@ describe('AI Agent conversation panel intent boundary', () => {
     vi.restoreAllMocks()
   })
 
+  it('does not show a redundant canvas or selection context caption', () => {
+    const harness = createPanelHarness()
+    render(
+      <AiConversationPanel
+        confirmation={harness.confirmation}
+        conversation={harness.conversation}
+        onClose={vi.fn()}
+      />
+    )
+    expect(screen.queryByLabelText('Design context')).toBeNull()
+    expect(screen.queryByText('Canvas')).toBeNull()
+  })
+
+  it('uses icon navigation and a toggleable title list with keyboard dismissal', () => {
+    const harness = createPanelHarness()
+    const onClose = vi.fn()
+    render(
+      <AiConversationPanel
+        confirmation={harness.confirmation}
+        conversation={harness.conversation}
+        onClose={onClose}
+      />
+    )
+    expect(screen.queryByRole('combobox')).toBeNull()
+    const toggle = screen.getByRole('button', {
+      name: 'Toggle conversation history'
+    })
+    const create = screen.getByRole('button', { name: 'New conversation' })
+    const close = screen.getByRole('button', { name: 'Close Agent panel' })
+    for (const button of [toggle, create, close]) {
+      expect(button.textContent).toBe('')
+      expect(button.querySelector('svg')?.getAttribute('width')).toBe('24')
+      expect(button.querySelector('svg')?.getAttribute('height')).toBe('24')
+    }
+    expect(toggle.getAttribute('aria-expanded')).toBe('false')
+    fireEvent.click(toggle)
+    expect(toggle.getAttribute('aria-expanded')).toBe('true')
+    const history = screen.getByRole('region', { name: 'Conversation history' })
+    expect(history.querySelector('[aria-current="true"]')).toBeTruthy()
+    fireEvent.keyDown(history, { key: 'Escape' })
+    expect(
+      screen.queryByRole('region', { name: 'Conversation history' })
+    ).toBeNull()
+    expect(document.activeElement).toBe(toggle)
+    expect(onClose).not.toHaveBeenCalled()
+    fireEvent.click(toggle)
+    fireEvent.click(toggle)
+    expect(
+      screen.queryByRole('region', { name: 'Conversation history' })
+    ).toBeNull()
+    fireEvent.click(close)
+    expect(onClose).toHaveBeenCalledOnce()
+  })
+
   it('navigates history without sending and preserves each unsent draft', async () => {
     const harness = createPanelHarness()
     render(
@@ -75,7 +133,7 @@ describe('AI Agent conversation panel intent boundary', () => {
       screen.getByRole('button', { name: 'New conversation' })
     ).toHaveProperty('disabled', true)
     expect(
-      screen.getByRole('combobox', { name: 'Conversation history' })
+      screen.getByRole('button', { name: 'Toggle conversation history' })
     ).toHaveProperty('disabled', true)
     await act(async () => {
       harness.pending.resolve({ status: 'executed', actionResults: [] })
@@ -88,18 +146,27 @@ describe('AI Agent conversation panel intent boundary', () => {
     fireEvent.change(screen.getByLabelText('Message Agent'), {
       target: { value: 'Second draft' }
     })
-    fireEvent.change(
-      screen.getByRole('combobox', { name: 'Conversation history' }),
-      { target: { value: 'panel-conversation' } }
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Toggle conversation history' })
     )
+    fireEvent.click(
+      screen.getByRole('button', { name: 'First design', exact: true })
+    )
+    expect(
+      screen.queryByRole('region', { name: 'Conversation history' })
+    ).toBeNull()
     expect(screen.getByLabelText('Message Agent')).toHaveProperty(
       'value',
       'First draft'
     )
     expect(screen.getByText('First design', { selector: 'p' })).toBeTruthy()
-    fireEvent.change(
-      screen.getByRole('combobox', { name: 'Conversation history' }),
-      { target: { value: 'panel-conversation-2' } }
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Toggle conversation history' })
+    )
+    fireEvent.click(
+      within(
+        screen.getByRole('region', { name: 'Conversation history' })
+      ).getByRole('button', { name: 'New conversation', exact: true })
     )
     expect(screen.getByLabelText('Message Agent')).toHaveProperty(
       'value',
@@ -134,6 +201,16 @@ describe('AI Agent conversation panel intent boundary', () => {
     expect(
       screen.getByRole('status', { name: 'Current activity' }).textContent
     ).toBe('Separating drawing layers')
+    const disclosure = screen.getByLabelText('Work history')
+    expect(disclosure.textContent).toMatch(/^Working for /)
+    expect(disclosure.textContent).not.toContain('Separating drawing layers')
+    expect(screen.queryByText('Activity', { exact: true })).toBeNull()
+    const liveStatus = screen.getByRole('status', { name: 'Current activity' })
+    expect(liveStatus.closest('details')).toBeNull()
+    expect(
+      disclosure.compareDocumentPosition(liveStatus) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy()
     const list = screen.getByLabelText('Operational progress')
     expect([...list.children].map((row) => row.textContent)).toEqual([
       'Reviewing the results',
@@ -156,7 +233,7 @@ describe('AI Agent conversation panel intent boundary', () => {
       void harness.conversation.submit('Draw')
     })
     const body = screen.getByRole('region', { name: 'Conversation messages' })
-    const details = screen.getByText('Activity').closest('details')
+    const details = screen.getByLabelText('Work history').closest('details')
     if (!details) throw new Error('Missing Activity disclosure')
     let height = 1200
     Object.defineProperties(body, {
@@ -197,7 +274,7 @@ describe('AI Agent conversation panel intent boundary', () => {
     ['cancelled', 'Stopped'],
     ['no-change', 'No changes']
   ] as const)(
-    'shows a persistent, accessible %s outcome beside its duration',
+    'shows the recorded local completion time for a %s outcome',
     async (outcome) => {
       const harness = createPanelHarness()
       const request = harness.conversation.submit('Draw')
@@ -221,13 +298,21 @@ describe('AI Agent conversation panel intent boundary', () => {
           onClose={vi.fn()}
         />
       )
-      const status = screen.getByRole('status', { name: 'Request status' })
-      expect(status.textContent).toBe('Request finished')
-      expect(status.querySelector('svg')?.getAttribute('width')).toBe('12')
-      expect(status.querySelector('svg')?.getAttribute('height')).toBe('12')
+      expect(screen.queryByText('Result', { exact: true })).toBeNull()
       expect(
-        status.parentElement?.querySelector('[aria-label="Elapsed time"]')
-      ).toBeTruthy()
+        screen.getByLabelText('Agent response').textContent?.trim()
+      ).not.toBe('')
+      const time = screen.getByLabelText('Completed at')
+      expect(time.tagName).toBe('TIME')
+      expect(time.getAttribute('datetime')).toBe(
+        new Date(snapshot.settledTurns[0].completedAtMs ?? NaN).toISOString()
+      )
+      expect(time.textContent).toMatch(/\d{1,2}:\d{2}/)
+      expect(screen.queryByTitle('Request finished')).toBeNull()
+      expect(screen.getByLabelText('Work history').textContent).toMatch(
+        /^Worked for /
+      )
+      expect(time.parentElement?.className).toContain('justify-start')
       expect(
         screen.queryByRole('status', { name: 'Current activity' })
       ).toBeNull()
@@ -377,8 +462,8 @@ describe('AI Agent conversation panel intent boundary', () => {
       await harness.pending.promise
     })
     expect(
-      screen.getByRole('status', { name: 'Request status' }).textContent
-    ).toContain('Request finished')
+      screen.getByLabelText('Completed at').getAttribute('datetime')
+    ).toBeTruthy()
     expect(screen.getByText(/timed out/)).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Edit request' })).toBeNull()
@@ -409,6 +494,94 @@ describe('AI Agent conversation panel intent boundary', () => {
     fireEvent.change(input, { target: { value: 'second' } })
     expect((send as HTMLButtonElement).disabled).toBe(true)
     expect(harness.feature.execute).toHaveBeenCalledOnce()
+  })
+
+  it('keeps clarification activity as a separate retained segment after answering', async () => {
+    const harness = createPanelHarness()
+    harness.feature.execute = vi
+      .fn()
+      .mockImplementationOnce(async (request: AiConversationFeatureRequest) => {
+        request.progressObserver({
+          attempt: 1,
+          phase: 'context',
+          summary: 'Reviewing the drawing'
+        })
+        return {
+          status: 'executed',
+          actionResults: [
+            {
+              actionName: 'request_clarification',
+              result: {
+                status: 'no-change',
+                clarification: { kind: 'question', question: 'Which scale?' }
+              }
+            }
+          ]
+        }
+      })
+      .mockImplementationOnce((request: AiConversationFeatureRequest) => {
+        request.progressObserver({
+          attempt: 1,
+          phase: 'provider',
+          summary: 'Planning the drawing'
+        })
+        return harness.pending.promise
+      })
+    render(
+      <AiConversationPanel
+        confirmation={harness.confirmation}
+        conversation={harness.conversation}
+        onClose={vi.fn()}
+      />
+    )
+    await act(async () => {
+      await harness.conversation.submit('Draw a tower')
+    })
+    const first = screen.getByTestId('ai-agent-message')
+    const originalActivity = within(first).getByRole('list', {
+      name: 'Operational progress',
+      hidden: true
+    })
+    expect(originalActivity.textContent).toContain('Reviewing the drawing')
+    expect(originalActivity.textContent).not.toContain('Finished')
+    const question = within(first).getByText('Which scale?')
+    expect(
+      originalActivity.compareDocumentPosition(question) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy()
+    expect(screen.queryByLabelText('Completed at')).toBeNull()
+
+    fireEvent.click(within(first).getByLabelText('Work history'))
+    const originalRows = [...originalActivity.children]
+    fireEvent.change(screen.getByLabelText('Message Agent'), {
+      target: { value: 'One cm per pixel' }
+    })
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Send', exact: true }))
+    })
+    expect(
+      screen.getAllByRole('list', {
+        name: 'Operational progress',
+        hidden: true
+      })
+    ).toHaveLength(2)
+    expect(
+      within(first).getByRole('list', {
+        name: 'Operational progress',
+        hidden: true
+      })
+    ).toBe(originalActivity)
+    expect([...originalActivity.children]).toEqual(originalRows)
+    expect(originalActivity.closest('details')?.open).toBe(true)
+    await act(async () => {
+      harness.pending.resolve({ status: 'executed', actionResults: [] })
+    })
+    expect(
+      screen.getAllByRole('list', {
+        name: 'Operational progress',
+        hidden: true
+      })
+    ).toHaveLength(2)
   })
 
   it('keeps failed continuation context in history without duplicating composer attachments', async () => {
@@ -816,7 +989,7 @@ describe('AI Agent conversation panel intent boundary', () => {
     expect(screen.getByText('Reviewing the drawing')).toBeTruthy()
     expect(screen.getByText('Reshaping the tail')).toBeTruthy()
     expect(screen.queryByText('Applying changes')).toBeNull()
-    expect(screen.getByText('1.3s')).toBeTruthy()
+    expect(screen.queryByText('1.3s')).toBeNull()
     expect(screen.queryByText('You')).toBeNull()
     expect(screen.queryByText(/secret-action-id/)).toBeNull()
     expect(screen.queryByText(/secret-canonical-id/)).toBeNull()
@@ -969,4 +1142,44 @@ describe('AI Agent conversation panel intent boundary', () => {
       expect(screen.queryAllByRole('img')).toHaveLength(withAttachment ? 1 : 0)
     }
   )
+})
+
+it('keeps the final failure explanation after expanded activity, where the reader finishes', async () => {
+  const harness = createPanelHarness()
+  const request = harness.conversation.submit('Revise drawing')
+  ;(
+    harness.feature.execute.mock.calls as unknown as [
+      [AiConversationFeatureRequest]
+    ]
+  )[0][0].progressObserver({
+    attempt: 1,
+    phase: 'execution',
+    tool: 'replace_vector_composition',
+    summary: 'Replacing the drawing'
+  })
+  harness.pending.resolve({
+    status: 'failed',
+    stage: 'execution',
+    transaction: { status: 'committed' },
+    failedAction: 'replace_vector_composition'
+  })
+  await request
+  render(
+    <AiConversationPanel
+      confirmation={harness.confirmation}
+      conversation={harness.conversation}
+      onClose={vi.fn()}
+    />
+  )
+  const activity = screen.getByRole('list', {
+    name: 'Operational progress',
+    hidden: true
+  })
+  const result = screen.getByText(
+    /Replacing the drawing could not be completed/
+  )
+  expect(
+    activity.compareDocumentPosition(result) & Node.DOCUMENT_POSITION_FOLLOWING
+  ).toBeTruthy()
+  cleanup()
 })

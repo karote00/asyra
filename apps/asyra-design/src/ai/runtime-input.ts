@@ -1,3 +1,4 @@
+import { createBasicApiActions } from './basic-api-actions'
 import type {
   AiProvider,
   AiRuntimeOptions,
@@ -34,6 +35,7 @@ export const createAiRuntimeInput = (
   options: CreateAiRuntimeInputOptions
 ): CreateAiAgentRuntimeInput => ({
   actionDefinitions: [
+    ...createBasicApiActions(),
     ...createAiActions(),
     createPreparedDesignAction(),
     createDocumentContextAction(),

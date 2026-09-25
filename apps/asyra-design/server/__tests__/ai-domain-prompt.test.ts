@@ -6,6 +6,22 @@ import {
   AI_OPERATION_INSTRUCTIONS
 } from '../ai-domain-prompt'
 
+it('separates a requested visual style from medium and recoverable review findings', () => {
+  expect(AI_APP_PROMPT).toContain(
+    'A style reference describes visible appearance'
+  )
+  expect(AI_APP_PROMPT).toContain(
+    'Do not infer a requirement for a different output medium'
+  )
+  expect(AI_OPERATION_INSTRUCTIONS).toContain(
+    'A failed visual check is a correction task'
+  )
+  expect(AI_OPERATION_INSTRUCTIONS).toContain(
+    'identify the specific unavailable operation'
+  )
+  expect(AI_OPERATION_INSTRUCTIONS).not.toContain('stop execution on failure.')
+})
+
 describe('Asyra Design backend-owned AI domain prompt', () => {
   it('defines the registered App action and image-tool policy on the server', () => {
     expect(AI_APP_PROMPT).toMatch(/Asyra Design/)
@@ -119,7 +135,7 @@ it('requires concise decisions and only material clarification without dropping 
   expect(AI_APP_PROMPT).toContain('one short question')
   expect(AI_APP_PROMPT).toContain('one short factual sentence')
   expect(AI_APP_PROMPT).toContain('Required App approvals remain')
-  expect(AI_OPERATION_INSTRUCTIONS).toContain('include a short English message')
+  expect(AI_OPERATION_INSTRUCTIONS).toContain('include a short message')
   expect(AI_OPERATION_INSTRUCTIONS).toContain('Stage 1 - data review')
   expect(AI_OPERATION_INSTRUCTIONS).toContain('Stage 2 - visual review')
 })
@@ -150,6 +166,114 @@ it('routes new layouts through semantic preparation and preserves targeted-edit 
   expect(AI_APP_PROMPT).toContain('Preparation is not')
 })
 
+it('distinguishes research and editable drawing from raster generation and tool installation', () => {
+  expect(AI_APP_PROMPT).toContain('Research may use native web search')
+  expect(AI_APP_PROMPT).toContain(
+    'does not prohibit creating editable drawings'
+  )
+  expect(AI_APP_PROMPT).toContain(
+    'A discovered tool is not an installed or callable tool'
+  )
+})
+
+it('preserves reference fidelity rather than silently switching a logo to an original illustration', () => {
+  expect(AI_APP_PROMPT).toContain(
+    'Named existing logos and requested reproductions are reference-dependent'
+  )
+  expect(AI_APP_PROMPT).toContain(
+    'Do not silently switch to an inspired or approximate original illustration'
+  )
+  expect(AI_APP_PROMPT).toContain(
+    'An imported reference must go through the registered vectorization workflow'
+  )
+})
+
+it('requires current identity verification before reproducing an unspecified brand logo', () => {
+  expect(AI_APP_PROMPT).toContain(
+    'Use the current brand identity unless the user requests a historical version'
+  )
+  expect(AI_APP_PROMPT).toContain('Resolve the version before drawing')
+})
+
+it('allows reimagining while prioritizing evidence for existing subjects and preserving requested viewpoint', () => {
+  expect(AI_APP_PROMPT).toContain(
+    'For a concrete existing subject, research design context first'
+  )
+  expect(AI_APP_PROMPT).toContain(
+    'For original or open-ended requests, you may reimagine from the outset'
+  )
+  expect(AI_APP_PROMPT).toContain(
+    'If suitable design context cannot be found, you may reimagine'
+  )
+  expect(AI_APP_PROMPT).toContain(
+    'Subject identity and requested viewpoint are separate requirements'
+  )
+  expect(AI_APP_PROMPT).toContain(
+    'A reimagined result is not a verified reproduction'
+  )
+})
+
+it('requires structured design decisions and measured review without claiming geometric proof of beauty', () => {
+  expect(AI_APP_PROMPT).toContain('include a compact brief')
+  expect(AI_APP_PROMPT).toContain('total height alone does not verify')
+  expect(AI_APP_PROMPT).toContain('Use relations for proportional native sizes')
+  expect(AI_APP_PROMPT).toContain('one shared projection')
+  expect(AI_APP_PROMPT).toContain('a preparation receipt describes the')
+  expect(AI_APP_PROMPT).toContain(
+    'Passing numeric checks does not certify beauty'
+  )
+})
+
+it('does not instruct the model to stop at a request-total iteration quota', () => {
+  const prompt =
+    AI_APP_PROMPT +
+    AI_OPERATION_INSTRUCTIONS +
+    JSON.stringify(AI_IMAGE_TOOL_CATALOG)
+  expect(prompt).toContain('no App-imposed total request duration')
+  expect(prompt).not.toMatch(
+    /at most six inspections|eight.*attempts|three generations|128 total candidate paths|32 tool calls/i
+  )
+})
+
+it('treats unusable references as research recovery, not task failure', () => {
+  expect(AI_APP_PROMPT).toContain(
+    'A failed or unsuitable reference is a source-local failure, not a task-level blocker'
+  )
+  expect(AI_APP_PROMPT).toContain(
+    'change search terms, source domains, or supported acquisition methods'
+  )
+  expect(AI_APP_PROMPT).toContain(
+    'Do not ask the user to provide public reference material merely because'
+  )
+  expect(AI_APP_PROMPT).toContain(
+    'Detailed style alone does not request exact reproduction'
+  )
+  expect(AI_APP_PROMPT).not.toContain(
+    'if none succeeds, explain the reference limitation and request an image'
+  )
+})
+
+it('uses native research without a Wikimedia-specific tool or candidate IDs', () => {
+  expect(AI_APP_PROMPT).not.toContain('search_reference_images')
+  expect(AI_APP_PROMPT).toContain('imageUrl and sourceUrl')
+})
+
+it('does not prescribe a language for model messages', () => {
+  expect(AI_APP_PROMPT + AI_OPERATION_INSTRUCTIONS).not.toMatch(
+    /English|English-only/
+  )
+})
+
+it('distinguishes composition previews from native detail and recoverable evidence errors', () => {
+  expect(AI_APP_PROMPT).toContain(
+    'elementsTruncated refers only to object summaries'
+  )
+  expect(AI_APP_PROMPT).toContain('target-local regions')
+  expect(AI_APP_PROMPT).toContain(
+    'inspection receipt error does not mean drawing is unsupported'
+  )
+})
+
 it('plans fixed-view 2D artwork around visible output without building hidden 3D structure', () => {
   expect(AI_APP_PROMPT).toContain(
     'For a fixed-view 2D deliverable, plan the final visible image'
@@ -173,4 +297,56 @@ it('preserves useful overlaps and requested hidden content instead of blindly de
   expect(AI_APP_PROMPT).toContain(
     'Do not blindly delete existing covered objects'
   )
+})
+
+it('delegates deterministic calculation and defers only intermediate image checks', () => {
+  expect(AI_APP_PROMPT).toContain(
+    'Separate design decisions from deterministic calculation'
+  )
+  expect(AI_APP_PROMPT).toContain('Reuse valid prepared artifactIds')
+  expect(AI_APP_PROMPT).toContain('Do not invent a repetition or caching tool')
+  expect(AI_OPERATION_INSTRUCTIONS).toContain('inspection="defer"')
+  expect(AI_OPERATION_INSTRUCTIONS).toContain(
+    'Continue applying ready independent artifacts'
+  )
+  expect(AI_OPERATION_INSTRUCTIONS).toContain(
+    'Deferred images never waive final visual review'
+  )
+})
+
+it('uses staged construction and compact patterns without sacrificing requested finish', () => {
+  expect(AI_APP_PROMPT).toContain('structureCriteria')
+  expect(AI_APP_PROMPT).toContain('phase=structure')
+  expect(AI_APP_PROMPT).toContain('pattern')
+  expect(AI_APP_PROMPT).toContain('regressions')
+  expect(AI_APP_PROMPT).toContain(
+    'Do not equate fewer objects with better performance'
+  )
+})
+
+it('uses priority and progressive detail without precomputing deferred geometry or weakening final quality', () => {
+  for (const policy of [
+    'coarse global pass',
+    'likely occluded',
+    'deferredDetails',
+    'deferredChecks',
+    'instanceRanges',
+    'Do not precompute deferred geometry',
+    'not one model round trip per region',
+    'LoD controls intermediate work'
+  ])
+    expect(AI_APP_PROMPT).toContain(policy)
+})
+
+it('chooses construction and refinement by the requested image rather than a viewpoint keyword', () => {
+  expect(AI_APP_PROMPT).toContain(
+    'A three-quarter view specifies appearance, not a 3D construction'
+  )
+  expect(AI_APP_PROMPT).toContain('Choose native 2D vector rings')
+  expect(AI_OPERATION_INSTRUCTIONS).toContain('edit supported')
+  expect(AI_OPERATION_INSTRUCTIONS).toContain(
+    'update_design_element cannot change vector path points'
+  )
+  expect(AI_OPERATION_INSTRUCTIONS).toContain('identify the superseded IDs')
+  expect(AI_OPERATION_INSTRUCTIONS).toContain('transparent/material overlays')
 })

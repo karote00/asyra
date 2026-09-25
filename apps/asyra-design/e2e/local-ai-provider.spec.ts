@@ -1461,3 +1461,61 @@ test('backend contour refinement renders the measured straight edge with one Und
   await redo(page)
   expect(await getCoreDocumentDigest(page)).toEqual(after)
 })
+
+test('local subscription reproduces a named logo through reference tools without an attachment', async ({
+  page
+}, testInfo) => {
+  test.skip(
+    process.env.E2E_LOCAL_AI !== 'true',
+    'Requires an explicitly enabled local subscription'
+  )
+  test.setTimeout(330_000)
+  const frames = await captureProviderFrames(
+    page,
+    testInfo.outputPath('reference-handoff.ndjson')
+  )
+  await page.goto(createTestDocumentIdentity().url)
+  await waitForAppReady(page)
+  const before = await getCoreDocumentDigest(page)
+  await page.getByRole('button', { name: 'Open Agent' }).click()
+  await expect(page.getByText('Local AI connected')).toBeVisible({
+    timeout: 15_000
+  })
+  await page
+    .getByLabel('Message Agent')
+    .fill('幫我畫星巴克的 logo，尺寸 480*480 px')
+  await page.getByRole('button', { name: 'Send', exact: true }).click()
+  try {
+    const result = page.getByTestId('ai-agent-message').last()
+    await expect(result).toHaveAttribute(
+      'data-outcome',
+      /success|partial|no-change|failed|cancelled/,
+      { timeout: 305_000 }
+    )
+    const events = frames
+      .join('')
+      .split('\n')
+      .filter(Boolean)
+      .map((line) => JSON.parse(line))
+    expect(events).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          type: 'activity',
+          tool: 'import_reference_image',
+          status: 'completed'
+        }),
+        expect.objectContaining({
+          type: 'activity',
+          tool: 'vtracer',
+          status: 'completed'
+        })
+      ])
+    )
+    await expect(result).toHaveAttribute('data-outcome', 'success')
+    expect(await getCoreDocumentDigest(page)).not.toEqual(before)
+  } finally {
+    await page.screenshot({
+      path: testInfo.outputPath('named-logo-result.png')
+    })
+  }
+})

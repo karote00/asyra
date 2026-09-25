@@ -651,6 +651,14 @@ See `packages/collaboration.md` and
     transaction-end source boundaries; the hierarchy is publication → ordered
     slices → channel batches → ordered payload deliveries; `artifactId` is
     opaque transport correlation and not a local History-artifact reference)
+  - `subscribeToAppliedEventBatches(handler)` is the local derived-state route:
+    accepted canonical batches synchronously refresh computed state before the
+    next API read, even inside an open transaction. Replay/rollback refreshes it
+    through the same route. It must not publish history, collaboration or persistence.
+    Render consumes this applied route for current coordinate queries. Computed
+    UI notifications wait for successful transaction finalization; rollback discards
+    pending notifications and projects restored values through inverse replay.
+    Committed observer delivery does not repeat applied projection work.
   - ordinary transaction observer evidence is buffered until transaction-owner
     finalization succeeds, then released once as one ordered batch across owner
     evidence batches; rollback or owner-finalization failure releases no prefix

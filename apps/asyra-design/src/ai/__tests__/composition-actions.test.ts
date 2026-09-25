@@ -1718,35 +1718,38 @@ describe('Asyra Design AI composition action execution', () => {
 })
 
 describe('atomic reference replacement', () => {
-  it('prepares and inserts the replacement before removing only the old composition', async () => {
-    const apis = actionApis()
-    apis.getElementType.mockReturnValue('group')
-    apis.removeSubtree.mockReturnValue({ removed: ['old-composition'] })
-    const replacement = actionByName('replace_vector_composition', apis, {
-      waitForPaint: async () => undefined,
-      yieldToHost: async () => undefined
-    })
-    const drawing = createServerPreparedCompositionArtifact({
-      compositionRole: 'replacement',
-      items: [ovalItem()],
-      parent: 'workspace'
-    })
-    const result = await replacement.execute(
-      { compositionId: 'old-composition', drawing },
-      executionContext()
-    )
-    expect(
-      apis.createCompositionGroup.mock.invocationCallOrder[0]
-    ).toBeLessThan(apis.removeSubtree.mock.invocationCallOrder[0])
-    expect(apis.removeSubtree).toHaveBeenCalledWith(
-      'old-composition',
-      mutationOptions
-    )
-    expect(result).toMatchObject({
-      status: 'complete',
-      compositionId: drawing.groupDescriptor.id
-    })
-  })
+  it.each(['group', 'frame'])(
+    'prepares and inserts the replacement before removing only the old %s composition',
+    async (type) => {
+      const apis = actionApis()
+      apis.getElementType.mockReturnValue(type)
+      apis.removeSubtree.mockReturnValue({ removed: ['old-composition'] })
+      const replacement = actionByName('replace_vector_composition', apis, {
+        waitForPaint: async () => undefined,
+        yieldToHost: async () => undefined
+      })
+      const drawing = createServerPreparedCompositionArtifact({
+        compositionRole: 'replacement',
+        items: [ovalItem()],
+        parent: 'workspace'
+      })
+      const result = await replacement.execute(
+        { compositionId: 'old-composition', drawing },
+        executionContext()
+      )
+      expect(
+        apis.createCompositionGroup.mock.invocationCallOrder[0]
+      ).toBeLessThan(apis.removeSubtree.mock.invocationCallOrder[0])
+      expect(apis.removeSubtree).toHaveBeenCalledWith(
+        'old-composition',
+        mutationOptions
+      )
+      expect(result).toMatchObject({
+        status: 'complete',
+        compositionId: drawing.groupDescriptor.id
+      })
+    }
+  )
 
   it('never removes the old composition when replacement insertion fails', async () => {
     const apis = actionApis()
@@ -1772,3 +1775,29 @@ describe('atomic reference replacement', () => {
     expect(apis.removeSubtree).not.toHaveBeenCalled()
   })
 })
+
+it.each(['workspace', 'vector', undefined])(
+  'rejects a %s replacement root with a public reason before writes',
+  async (type) => {
+    const apis = actionApis()
+    apis.getElementType.mockReturnValue(type)
+    const action = actionByName('replace_vector_composition', apis)
+    const drawing = createServerPreparedCompositionArtifact({
+      compositionRole: 'replacement',
+      items: [ovalItem()],
+      parent: 'workspace'
+    })
+    await expect(
+      action.execute(
+        { compositionId: 'old-composition', drawing },
+        executionContext()
+      )
+    ).rejects.toMatchObject({
+      code: 'AI_EXECUTION_FAILED',
+      message:
+        'The original drawing is missing or is not an editable composition. Select the drawing to revise and try again.'
+    })
+    expect(apis.createCompositionGroup).not.toHaveBeenCalled()
+    expect(apis.removeSubtree).not.toHaveBeenCalled()
+  }
+)

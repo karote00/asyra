@@ -29,6 +29,35 @@ const batch: AiActionBatch = {
 }
 
 describe('server action-batch provider', () => {
+  it('does not stop a long request at five minutes and still supports Stop', async () => {
+    vi.useFakeTimers()
+    const controller = new AbortController()
+    let transport: AbortSignal | undefined
+    const provider = createServerActionBatchProvider({
+      fetch: async (_url, init) => {
+        transport = init.signal
+        return new Promise<never>(() => undefined)
+      }
+    })
+    try {
+      const pending = provider.requestActionBatch(input, {
+        signal: controller.signal
+      })
+      const checked = expect(pending).rejects.toMatchObject({
+        code: 'AI_PROVIDER_ABORTED'
+      })
+      await vi.advanceTimersByTimeAsync(60 * 60 * 1000)
+      expect(transport?.aborted).toBe(false)
+      controller.abort()
+      await checked
+      expect(transport?.aborted).toBe(true)
+    } finally {
+      controller.abort()
+      provider.dispose()
+      vi.useRealTimers()
+    }
+  })
+
   it('posts the exact Agent request to the one same-origin backend endpoint', async () => {
     const phases: string[] = []
     const unsubscribe = subscribeToBrowserDragPhases((name) =>
@@ -185,6 +214,115 @@ it.each([
 )
 
 describe('sequential server prepared batch transport', () => {
+  it('decodes split UTF-8 and multiple frames in a single chunk in order', async () => {
+    const frame = JSON.stringify({
+      type: 'activity',
+      tool: 'prepare_design',
+      status: 'completed',
+      message: '繪製'
+    })
+    const bytes = new TextEncoder().encode(
+      frame + '\n' + JSON.stringify({ type: 'result', batch }) + '\n'
+    )
+    const split = bytes.indexOf(0xe7) + 1
+    const stream = new ReadableStream({
+      start(controller) {
+        controller.enqueue(bytes.slice(0, split))
+        controller.enqueue(bytes.slice(split))
+        controller.close()
+      }
+    })
+    const provider = createServerActionBatchProvider({
+      fetch: (async () =>
+        new Response(stream, {
+          headers: { 'content-type': 'application/x-ndjson' }
+        })) as never
+    })
+    const onProgress = vi.fn()
+    try {
+      await expect(
+        provider.requestActionBatch(input, {
+          signal: new AbortController().signal,
+          onProgress
+        })
+      ).resolves.toEqual(batch)
+      expect(onProgress).toHaveBeenCalledWith({
+        tool: 'prepare_design',
+        status: 'completed',
+        message: '繪製'
+      })
+    } finally {
+      provider.dispose()
+    }
+  })
+  it('continues past 64 MiB of complete frames without a cumulative quota', async () => {
+    const encoder = new TextEncoder()
+    const frame = encoder.encode(
+      JSON.stringify({
+        type: 'activity',
+        tool: 'prepare_design',
+        status: 'completed',
+        padding: 'x'.repeat(1024 * 1024)
+      }) + '\n'
+    )
+    let sent = 0
+    const stream = new ReadableStream({
+      pull(controller) {
+        if (sent++ < 65) controller.enqueue(frame)
+        else {
+          controller.enqueue(
+            encoder.encode(JSON.stringify({ type: 'result', batch }) + '\n')
+          )
+          controller.close()
+        }
+      }
+    })
+    const provider = createServerActionBatchProvider({
+      fetch: (async () =>
+        new Response(stream, {
+          headers: { 'content-type': 'application/x-ndjson' }
+        })) as never
+    })
+    const onProgress = vi.fn()
+    try {
+      await expect(
+        provider.requestActionBatch(input, {
+          signal: new AbortController().signal,
+          onProgress
+        })
+      ).resolves.toEqual(batch)
+      expect(onProgress).toHaveBeenCalledTimes(65)
+    } finally {
+      provider.dispose()
+    }
+  })
+
+  it('still rejects an oversized unfinished frame across chunks', async () => {
+    const chunk = new TextEncoder().encode('x'.repeat(1024 * 1024))
+    let sent = 0
+    const stream = new ReadableStream({
+      pull(controller) {
+        if (sent++ < 65) controller.enqueue(chunk)
+        else controller.close()
+      }
+    })
+    const provider = createServerActionBatchProvider({
+      fetch: (async () =>
+        new Response(stream, {
+          headers: { 'content-type': 'application/x-ndjson' }
+        })) as never
+    })
+    try {
+      await expect(
+        provider.requestActionBatch(input, {
+          signal: new AbortController().signal
+        })
+      ).rejects.toMatchObject({ code: 'AI_PROVIDER_MALFORMED_RESPONSE' })
+    } finally {
+      provider.dispose()
+    }
+  })
+
   it('acknowledges only after the runtime executor returns its actual result', async () => {
     const receiptToken = '12345678-1234-1234-1234-123456789abc'
     const receipt = { actionResults: [], context: { actual: true } }

@@ -16,7 +16,6 @@ import {
 import type { AiToolProgress } from './action-batch-protocol'
 
 export { ACTION_BATCH_ENDPOINT } from './action-batch-endpoint'
-export const ACTION_BATCH_TIMEOUT_MS = 300_000
 
 const backendFailure = (code: unknown): AiProviderError => {
   if (code === 'ACTION_BATCH_MODEL_TIMEOUT')
@@ -121,15 +120,22 @@ const readActivityStream = async (
     while (!signal.aborted) {
       const { value, done } = await reader.read()
       if (done) break
-      bytes += value.byteLength
-      if (bytes > 64 * 1024 * 1024)
-        throw backendFailure('ACTION_BATCH_MODEL_INVALID_RESPONSE')
-      buffer += decoder.decode(value, { stream: true })
-      let index: number
-      while ((index = buffer.indexOf('\n')) >= 0) {
-        const line = buffer.slice(0, index)
-        buffer = buffer.slice(index + 1)
-        if (line.trim()) await consume(line)
+      let offset = 0
+      while (offset < value.byteLength) {
+        const newline = value.indexOf(10, offset)
+        const end = newline < 0 ? value.byteLength : newline
+        const segment = value.subarray(offset, end)
+        bytes += segment.byteLength
+        if (bytes > 64 * 1024 * 1024)
+          throw backendFailure('ACTION_BATCH_MODEL_INVALID_RESPONSE')
+        buffer += decoder.decode(segment, { stream: true })
+        offset = end + 1
+        if (newline >= 0) {
+          buffer += decoder.decode()
+          if (buffer.trim()) await consume(buffer)
+          buffer = ''
+          bytes = 0
+        }
       }
     }
     buffer += decoder.decode()
@@ -162,7 +168,7 @@ export const createServerActionBatchProvider = (
         })
       const provider = createGenericHttpAiProvider({
         endpoint: ACTION_BATCH_ENDPOINT,
-        timeoutMs: ACTION_BATCH_TIMEOUT_MS,
+        timeoutMs: null,
         headers: {
           accept: 'application/x-ndjson, application/json',
           ...(requestOptions.executeBatch

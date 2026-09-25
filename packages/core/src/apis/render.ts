@@ -21,7 +21,11 @@ export interface RenderRequests {
   ) => import('@asyra/render').RenderContentMeasurement[]
   captureElementSnapshot: (
     elementId: string,
-    maxDimension?: number
+    maxDimension?: number,
+    options?: Pick<
+      import('@asyra/render-engine').RenderEngineSnapshotQuery,
+      'nativeResolution' | 'region'
+    >
   ) => import('@asyra/render-engine').RenderEngineSnapshotResult
   initRender: (width: number, height: number, color: number) => Promise<unknown>
   getViewportPosition: () => PositionData
@@ -65,8 +69,15 @@ export const createRenderAPIs = (requests: RenderRequests) => {
     measureElementContentBounds(elementIds: readonly string[]) {
       return requests.measureElementContentBounds(elementIds)
     },
-    captureElementSnapshot(elementId: string, maxDimension?: number) {
-      return requests.captureElementSnapshot(elementId, maxDimension)
+    captureElementSnapshot(
+      elementId: string,
+      maxDimension?: number,
+      options?: Pick<
+        import('@asyra/render-engine').RenderEngineSnapshotQuery,
+        'nativeResolution' | 'region'
+      >
+    ) {
+      return requests.captureElementSnapshot(elementId, maxDimension, options)
     },
     renderIsReady() {
       renderIsReady()

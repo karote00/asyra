@@ -348,7 +348,7 @@ it('rejects forged media and oversized decoded dimensions before tracing', async
   }
 })
 
-it('bounds repeated decomposition and reuses a completed artifact during multiple preparations', async () => {
+it('continues beyond four decompositions and reuses artifacts during multiple preparations', async () => {
   const convert = vi.fn(
     async () =>
       '<svg width="12" height="12"><path d="M4,4L8,4L8,8L4,8Z" fill="#FFFFFF"/></svg>'
@@ -368,10 +368,11 @@ it('bounds repeated decomposition and reuses a completed artifact during multipl
     tools.resolveBatch(batch(result.imageArtifactId))
     tools.resolveBatch(batch(result.imageArtifactId))
   }
-  await expect(
-    tools.call('vectorize_image_layers', options, signal())
-  ).rejects.toThrow(/limit/)
-  expect(convert).toHaveBeenCalledTimes(4)
+  const fifth = JSON.parse(
+    await tools.call('vectorize_image_layers', options, signal())
+  )
+  expect(fifth.imageArtifactId).toBeTruthy()
+  expect(convert).toHaveBeenCalledTimes(5)
 })
 
 it('uses an explicitly selected flat foreground palette to separate antialiased background edges', async () => {

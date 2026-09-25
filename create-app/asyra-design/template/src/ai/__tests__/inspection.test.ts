@@ -76,12 +76,16 @@ it('bounds metadata reads and captures once per invocation without reusing old i
   const first = inspectionApis.inspect('group')
   expect(first).toMatchObject({
     available: true,
-    truncated: true,
+    elementsTruncated: true,
+    imageScope: 'overview',
     image: { dataUrl: 'first' }
   })
   expect(first.elements).toHaveLength(200)
   expect(core.getElementComputedData).toHaveBeenCalledTimes(200)
   expect(core.captureElementSnapshot).toHaveBeenCalledOnce()
+  expect(core.captureElementSnapshot).toHaveBeenCalledWith('group', 1024, {
+    nativeResolution: false
+  })
   expect(inspectionApis.inspect('group')).toMatchObject({
     image: { dataUrl: 'second' }
   })
@@ -90,4 +94,59 @@ it('bounds metadata reads and captures once per invocation without reusing old i
     throw new Error('Unsupported renderer')
   })
   expect(inspectionApis.inspect('group')).toMatchObject({ available: false })
+})
+
+it('forwards an explicit native region without describing it as the whole drawing', async () => {
+  const region = { x: 0, y: 0, width: 80, height: 60 }
+  const inspect = vi.fn(() => ({ available: true, partial: true }))
+  await createAiInspectionAction(inspect).execute(
+    { elementId: 'group', region },
+    { signal: new AbortController().signal } as never
+  )
+  expect(inspect).toHaveBeenCalledWith('group', region)
+  core.captureElementSnapshot.mockReturnValue({ dataUrl: 'region' })
+  expect(inspectionApis.inspect('group', region)).toMatchObject({
+    available: true,
+    partial: true
+  })
+  expect(core.captureElementSnapshot).toHaveBeenLastCalledWith('group', 1024, {
+    nativeResolution: true,
+    region
+  })
+})
+
+it('keeps overview and native detail capture separate without mutating source geometry', async () => {
+  core.getElementData.mockReturnValue({ type: 'group', children: [] })
+  core.getElementComputedData.mockReturnValue({
+    x: 0,
+    y: 0,
+    width: 20000,
+    height: 10000
+  })
+  core.captureElementSnapshot.mockReturnValue({
+    dataUrl: 'overview',
+    width: 1024,
+    height: 512,
+    bounds: { x: 0, y: 0, width: 20000, height: 10000 }
+  })
+  expect(inspectionApis.inspect('drawing')).toMatchObject({
+    imageScope: 'overview',
+    elementsTruncated: false,
+    partial: false
+  })
+  expect(core.captureElementSnapshot).toHaveBeenLastCalledWith(
+    'drawing',
+    1024,
+    { nativeResolution: false }
+  )
+  const inspect = vi.fn(() => ({ available: true }))
+  await createAiInspectionAction(inspect).execute(
+    { elementId: 'window', view: 'detail' },
+    { signal: new AbortController().signal } as never
+  )
+  expect(inspect).toHaveBeenCalledWith('window', undefined, 'detail')
+  inspectionApis.inspect('window', undefined, 'detail')
+  expect(core.captureElementSnapshot).toHaveBeenLastCalledWith('window', 1024, {
+    nativeResolution: true
+  })
 })

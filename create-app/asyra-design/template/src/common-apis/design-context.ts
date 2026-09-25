@@ -1,7 +1,9 @@
 import core from '../contexts'
 
 export interface DesignContextQuery {
-  scope: 'selection' | 'children'
+  scope: 'selection' | 'children' | 'ids'
+  elementIds?: string[]
+  fields?: string[]
   parentId?: string
   offset?: number
   limit?: number
@@ -24,7 +26,7 @@ interface DesignContextSource {
     fields: readonly string[]
   ): Record<string, unknown> | undefined
 }
-const fields = Object.freeze([
+export const designContextFields = Object.freeze([
   'x',
   'y',
   'width',
@@ -49,9 +51,17 @@ export const createDesignContextReader =
       typeof query !== 'object' ||
       Array.isArray(query) ||
       Object.keys(query).some(
-        (key) => !['scope', 'parentId', 'offset', 'limit'].includes(key)
+        (key) =>
+          ![
+            'scope',
+            'parentId',
+            'offset',
+            'limit',
+            'elementIds',
+            'fields'
+          ].includes(key)
       ) ||
-      !['selection', 'children'].includes(query.scope) ||
+      !['selection', 'children', 'ids'].includes(query.scope) ||
       (query.parentId !== undefined &&
         (query.scope !== 'children' ||
           typeof query.parentId !== 'string' ||
@@ -59,14 +69,33 @@ export const createDesignContextReader =
           query.parentId.length > 256))
     )
       throw new Error('Invalid document context query.')
+    if (
+      (query.scope === 'ids' &&
+        (!Array.isArray(query.elementIds) ||
+          !query.elementIds.length ||
+          query.elementIds.some(
+            (id) => typeof id !== 'string' || !id.length || id.length > 256
+          ) ||
+          new Set(query.elementIds).size !== query.elementIds.length)) ||
+      (query.scope !== 'ids' && query.elementIds !== undefined) ||
+      (query.fields !== undefined &&
+        (!Array.isArray(query.fields) ||
+          query.fields.some((field) => !designContextFields.includes(field)) ||
+          new Set(query.fields).size !== query.fields.length))
+    )
+      throw new Error('Invalid document context targets or fields.')
+    const fields = query.fields ?? []
+    const elementIds = query.elementIds ?? []
     const offset = query.offset === undefined ? 0 : query.offset
-    const limit = query.limit === undefined ? 50 : query.limit
+    const limit =
+      query.limit ?? (query.scope === 'ids' ? elementIds.length : 50)
     if (
       !Number.isSafeInteger(offset) ||
       offset < 0 ||
       !Number.isInteger(limit) ||
       limit < 1 ||
-      limit > 200
+      (query.limit !== undefined && limit > 200) ||
+      query.limit === null
     )
       throw new Error('Invalid document context page.')
     const parentId =
@@ -74,9 +103,10 @@ export const createDesignContextReader =
         ? (query.parentId ?? source.getCurrentWorkspaceId() ?? null)
         : null
     const parent = parentId ? source.getElementData(parentId) : undefined
-    const available = query.scope === 'selection' || Boolean(parent)
+    const available = query.scope !== 'children' || Boolean(parent)
     let ids: string[] = []
-    if (query.scope === 'selection') ids = source.getSelectedElementIds()
+    if (query.scope === 'ids') ids = elementIds
+    else if (query.scope === 'selection') ids = source.getSelectedElementIds()
     else if (Array.isArray(parent?.children))
       ids = parent.children.filter((id): id is string => typeof id === 'string')
     const missingIds: string[] = []
@@ -97,7 +127,9 @@ export const createDesignContextReader =
         missingIds.push(id)
         continue
       }
-      const computed = source.getElementComputedData(id, fields) ?? {}
+      const computed = fields.length
+        ? (source.getElementComputedData(id, fields) ?? {})
+        : {}
       const properties: Record<string, unknown> = {}
       const truncatedFields: string[] = []
       for (const field of fields) {

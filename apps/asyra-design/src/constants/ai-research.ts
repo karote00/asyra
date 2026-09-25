@@ -1,5 +1,6 @@
 /** App research tool identities and safe provider activity identity. */
 export const AiReferenceToolIds = Object.freeze({
+  // Historical activity identity only; never register it as a callable tool.
   SEARCH_REFERENCE_IMAGES: 'search_reference_images',
   IMPORT_REFERENCE_IMAGE: 'import_reference_image'
 } as const)

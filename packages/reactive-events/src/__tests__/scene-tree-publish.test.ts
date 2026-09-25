@@ -1,5 +1,7 @@
+import { runTransaction } from '../app/publish.js'
 import { describe, expect, it, vi } from 'vitest'
 import {
+  subscribeToAppliedEventBatches,
   subscribeToEventBatches,
   subscribeToSynchronousEvent
 } from '../event-bus.js'
@@ -32,6 +34,40 @@ type LocalComputedBatchPublishers = typeof sceneTreeEvents & {
 }
 
 describe('scene-tree publishers', () => {
+  it('updates applied projections immediately but not committed UI inside a transaction', () => {
+    const applied = vi.fn()
+    const committed = vi.fn()
+    const a = subscribeToAppliedEventBatches((events) => {
+      if (
+        events.some((event) => event.type === EventTypes.UPDATE_COMPUTED_DATA)
+      )
+        applied(events)
+    })
+    const b = subscribeToEventBatches((events) => {
+      if (
+        events.some((event) => event.type === EventTypes.UPDATE_COMPUTED_DATA)
+      )
+        committed(events)
+    })
+    try {
+      runTransaction(() => {
+        sceneTreeEvents.publishLocalComputedDataEvents([
+          {
+            type: EventTypes.UPDATE_COMPUTED_DATA,
+            payload: { id: 'vector', key: 'x', before: 0, after: 48 }
+          } as UpdateComputedDataEvent
+        ])
+        expect(applied).toHaveBeenCalledTimes(1)
+        expect(committed).not.toHaveBeenCalled()
+      })
+      expect(applied).toHaveBeenCalledTimes(1)
+      expect(committed).toHaveBeenCalledTimes(1)
+    } finally {
+      a.unsubscribe()
+      b.unsubscribe()
+    }
+  })
+
   it('does not expose shared computed command event types', () => {
     expect(
       Object.keys(EventTypes).filter((eventName) =>

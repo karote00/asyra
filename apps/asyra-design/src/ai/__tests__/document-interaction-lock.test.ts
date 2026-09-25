@@ -18,6 +18,57 @@ describe('Asyra Design AI document interaction lock', () => {
     document.body.replaceChildren()
   })
 
+  it('releases composer focus on a blocked canvas click and admits fit shortcuts without admitting edits', () => {
+    const viewport = markTarget(
+      document.createElement('div'),
+      AiDocumentInteractionTargets.VIEWPORT_NAVIGATION
+    )
+    const canvas = document.createElement('canvas')
+    viewport.append(canvas)
+    const panel = markTarget(
+      document.createElement('div'),
+      AiDocumentInteractionTargets.AGENT_INTERFACE
+    )
+    const composer = document.createElement('textarea')
+    panel.append(composer)
+    document.body.append(viewport, panel)
+    composer.focus()
+    const edit = vi.fn()
+    canvas.addEventListener('mousedown', edit)
+    const navigation = vi.fn()
+    document.body.addEventListener('keydown', navigation)
+    const release = createDocumentInteractionLock().acquire()
+    try {
+      canvas.dispatchEvent(
+        new MouseEvent('mousedown', { bubbles: true, cancelable: true })
+      )
+      expect(document.activeElement).not.toBe(composer)
+      expect(edit).not.toHaveBeenCalled()
+      for (const modifier of ['metaKey', 'ctrlKey']) {
+        document.body.dispatchEvent(
+          new KeyboardEvent('keydown', {
+            bubbles: true,
+            cancelable: true,
+            code: 'Digit1',
+            [modifier]: true
+          })
+        )
+      }
+      expect(navigation).toHaveBeenCalledTimes(2)
+      document.body.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          bubbles: true,
+          cancelable: true,
+          code: 'Delete'
+        })
+      )
+      expect(navigation).toHaveBeenCalledTimes(2)
+    } finally {
+      release()
+      document.body.removeEventListener('keydown', navigation)
+    }
+  })
+
   it('allows viewport wheel navigation and Agent cancellation while blocking other DOM interaction', () => {
     const viewport = markTarget(
       document.createElement('div'),

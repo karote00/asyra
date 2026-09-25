@@ -438,7 +438,8 @@ class InputSystem {
 
   private checkCombinations(
     type: InputType,
-    pointerData: PointerEventData = DefaultPointerEventData
+    pointerData: PointerEventData = DefaultPointerEventData,
+    activeModifiers = this.getActiveModifiers(this.activeKeys)
   ) {
     const currentKeys = Array.from(this.activeKeys).filter((key) => {
       if (this.keyMap.isModifierKeys(key)) {
@@ -452,7 +453,6 @@ class InputSystem {
       }
       return POINTER_KEYS.has(key) && key !== SpecialEvent.WHEEL
     })
-    const activeModifiers = this.getActiveModifiers(this.activeKeys)
     const allModifiers = this.getAllModifiers(activeModifiers)
     for (const eventName of this.registry.getEventNames()) {
       const combos = this.registry.getCombinations(eventName)
@@ -533,7 +533,14 @@ class InputSystem {
         button: MouseButton.MIDDLE
       }
 
-      this.checkCombinations(InputType.WHEEL, wheelData)
+      // Trackpad pinch supplies ctrlKey on the wheel event without a keydown.
+      // Keep these modifiers local to this event; never latch them into keys.
+      const modifiers = new Set(this.getActiveModifiers(this.activeKeys))
+      if (event.ctrlKey) modifiers.add(ModifierKey.CTRL)
+      if (event.metaKey) modifiers.add(ModifierKey.META)
+      if (event.shiftKey) modifiers.add(ModifierKey.SHIFT)
+      if (event.altKey) modifiers.add(ModifierKey.ALT)
+      this.checkCombinations(InputType.WHEEL, wheelData, [...modifiers])
 
       // Remove wheel key immediately as scrolling is continuous
       this.activeKeys.delete(key)

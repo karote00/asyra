@@ -28,6 +28,12 @@ These rules apply to every task without requiring additional document reads:
   directory, never inside `.git/`. Follow the worktree location and collision
   rules in `docs/ai/workflows/git-commit-push-policy.md`.
 - Do not overwrite unrelated user changes in a dirty worktree.
+- Before implementing a capability check or shared behavior, identify its semantic
+  owner and inspect existing public APIs, utils, and registries. Reuse the
+  authoritative capability contract rather than duplicating concrete type lists.
+  Exact type checks are appropriate only for explicitly type-specific behavior;
+  do not broaden those contracts through mechanical replacement. Follow
+  `docs/ai/framework/CODING_STANDARDS.md`.
 - Local `.env` files are persistent local configuration: use and preserve them.
   Never delete or clear them as test/task cleanup, and never stage, commit, or
   push them to Git. If missing, create `.env` from `.env.example`; never overwrite
