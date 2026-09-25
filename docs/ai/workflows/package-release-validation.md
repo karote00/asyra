@@ -127,6 +127,22 @@ portal, patch, source-directory, or resolution substitution, and records the
 registry lockfile checksums before running the same typecheck, build, and
 behavior gates as the artifact consumer.
 
+For the Generic Starter CLI, pre-publication consumer evidence has a separate
+boundary: synchronize `starter-app`, pack `create-asyra-app`, install and invoke
+the CLI **from that tarball**, and let the generated npm and Yarn projects
+resolve all Framework packages from the public registry. Keep each generated
+project under project-local `tmp/`, outside the workspace graph, with its own
+lockfile and `node_modules`. Inspect the packed bin/template and registry
+integrities; run the generated project's tests, typecheck, lint, build, HTTP
+startup smoke, and the formal Add/Edit, Undo/Redo, Save/Reload behavior cases.
+A served HTML shell alone is not a working runtime. The current candidate's
+exact commands, artifact checksum, results, and registry blocker are recorded
+in the [adoption handoff](../framework/plans/adoption-entry-and-onboarding-program-plan.md#generic-starter-cli-release-preflight-from-main-2026-09-25).
+
+This is local CLI tarball plus registry Framework evidence. A registry-installed
+`create-asyra-app` consumer is a later, distinct gate after an authorized CLI
+publication; neither this preflight nor `release:consumer:registry` can claim it.
+
 ## Generated App Template
 
 Only `create-app/<app>/template` is generated output. The surrounding CLI
