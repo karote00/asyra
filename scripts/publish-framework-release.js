@@ -4,108 +4,288 @@ import { execFileSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { validateFrameworkReleasePlan } from './release-records.js'
+import {
+  FRAMEWORK_RELEASE_PACKAGE_NAMES,
+  readFrameworkReleaseSource
+} from './framework-release-packages.js'
+import {
+  FRAMEWORK_ARTIFACT_HANDOFF,
+  FRAMEWORK_VALIDATION_POINTER,
+  validateFrameworkReleaseArtifactManifest
+} from './framework-release-artifacts.js'
+import {
+  DEFAULT_RELEASE_ARTIFACT_DIRECTORY,
+  packageArtifactIntegrity,
+  validateFrameworkReleasePackageArtifacts
+} from './release-package-artifacts.js'
 
-const runCommand = (command, args, { cwd, encoding = 'utf8' } = {}) =>
+const runCommandDefault = (command, args, { cwd, encoding = 'utf8' } = {}) =>
   execFileSync(command, args, { cwd, encoding, stdio: 'pipe' })
 
-export const createFrameworkPublishOrder = ({ repositoryRoot, record }) => {
-  const byName = new Map(
-    record.packages.map((release) => [release.name, release])
-  )
+export const createFrameworkPublishOrder = ({ packages }) => {
+  const byName = new Map(packages.map((record) => [record.name, record]))
   const ordered = []
   const visiting = new Set()
   const visited = new Set()
-  const visit = (release) => {
-    if (visited.has(release.name)) return
-    if (visiting.has(release.name)) {
-      throw new Error(`Framework release dependency cycle at ${release.name}`)
+  const visit = (record) => {
+    if (visited.has(record.name)) return
+    if (visiting.has(record.name)) {
+      throw new Error(`Framework release dependency cycle at ${record.name}`)
     }
-    visiting.add(release.name)
-    const directory = release.name.slice('@asyra/'.length)
-    const manifest = JSON.parse(
-      fs.readFileSync(
-        path.join(repositoryRoot, 'packages', directory, 'package.json'),
-        'utf8'
-      )
-    )
-    if (manifest.version !== release.newVersion) {
-      throw new Error(
-        `${release.name} manifest ${manifest.version} does not match release record ${release.newVersion}`
-      )
+    visiting.add(record.name)
+    const dependencyNames = new Set([
+      ...Object.keys(record.dependencies ?? {}),
+      ...Object.keys(record.peerDependencies ?? {})
+    ])
+    for (const dependencyName of dependencyNames) {
+      const dependency = byName.get(dependencyName)
+      if (dependency) visit(dependency)
     }
-    for (const dependencyName of Object.keys(manifest.dependencies ?? {})) {
-      const dependencyRelease = byName.get(dependencyName)
-      if (dependencyRelease) visit(dependencyRelease)
-    }
-    visiting.delete(release.name)
-    visited.add(release.name)
-    ordered.push({ ...release, directory })
+    visiting.delete(record.name)
+    visited.add(record.name)
+    ordered.push(record)
   }
-  record.packages.forEach(visit)
+  packages.forEach(visit)
   return ordered
+}
+
+const isNotFound = (error) => {
+  const errorText = `${error?.stderr ?? ''}\n${error?.message ?? ''}`
+  return error?.code === 'E404' || /\bE404\b/u.test(errorText)
+}
+
+const assertPackageSet = (packages, allowedPackageNames) => {
+  const names = packages.map(({ name }) => name)
+  const duplicateNames = names.filter(
+    (name, index) => names.indexOf(name) !== index
+  )
+  if (duplicateNames.length) {
+    throw new Error(`Duplicate Framework release package: ${duplicateNames[0]}`)
+  }
+  const unexpected = names.filter((name) => !allowedPackageNames.includes(name))
+  if (unexpected.length) {
+    throw new Error(`${unexpected[0]} is outside the Framework allowlist`)
+  }
+  const missing = allowedPackageNames.filter((name) => !names.includes(name))
+  if (missing.length) {
+    throw new Error(
+      `Framework release package set is incomplete: ${missing.join(', ')}`
+    )
+  }
+}
+
+export const publishFrameworkReleasePackages = ({
+  repositoryRoot,
+  sourceCommitSha,
+  packages,
+  artifacts,
+  allowedPackageNames = FRAMEWORK_RELEASE_PACKAGE_NAMES,
+  validateArtifacts,
+  runCommand = runCommandDefault
+}) => {
+  const resolvedRoot = path.resolve(repositoryRoot)
+  if (!/^[a-f0-9]{40}$/u.test(sourceCommitSha ?? '')) {
+    throw new Error('Framework release source commit is invalid')
+  }
+  assertPackageSet(packages, allowedPackageNames)
+  if (validateArtifacts) validateArtifacts()
+
+  const artifactByName = new Map(
+    artifacts.map((artifact) => [artifact.name, artifact])
+  )
+  if (artifactByName.size !== packages.length) {
+    throw new Error(
+      'Framework release artifact set does not match the package set'
+    )
+  }
+  const releasePackages = packages.map((pkg) => {
+    const artifact = artifactByName.get(pkg.name)
+    if (
+      !artifact ||
+      artifact.version !== pkg.version ||
+      !fs.existsSync(artifact.tarballPath) ||
+      packageArtifactIntegrity(artifact.tarballPath) !== artifact.integrity
+    ) {
+      throw new Error(
+        `Validated artifact is missing or changed for ${pkg.name}`
+      )
+    }
+    return { ...pkg, artifact }
+  })
+  const ordered = createFrameworkPublishOrder({ packages: releasePackages })
+
+  const currentCommit = runCommand('git', ['rev-parse', 'HEAD'], {
+    cwd: resolvedRoot
+  }).trim()
+  if (currentCommit !== sourceCommitSha) {
+    throw new Error('Framework source commit changed after artifact validation')
+  }
+
+  const registryVersions = new Map()
+  for (const pkg of ordered) {
+    const spec = `${pkg.name}@${pkg.version}`
+    try {
+      const version = runCommand('npm', ['view', spec, 'version'], {
+        cwd: resolvedRoot
+      }).trim()
+      if (version !== pkg.version) {
+        throw new Error(
+          `Registry returned unexpected version ${version} for ${spec}`
+        )
+      }
+      registryVersions.set(spec, version)
+    } catch (error) {
+      if (!isNotFound(error)) throw error
+      registryVersions.set(spec, '')
+    }
+  }
+
+  const publishCandidates = ordered.filter(
+    (pkg) => !registryVersions.get(`${pkg.name}@${pkg.version}`)
+  )
+  const tagBySpec = new Map()
+  for (const pkg of publishCandidates) {
+    const spec = `${pkg.name}@${pkg.version}`
+    const existingTag = runCommand('git', ['tag', '--list', spec], {
+      cwd: resolvedRoot
+    }).trim()
+    if (existingTag) {
+      throw new Error(
+        `Release tag already exists for unpublished version ${spec}`
+      )
+    }
+    tagBySpec.set(spec, spec)
+  }
+
+  const published = []
+  const skipped = ordered.filter((pkg) =>
+    registryVersions.get(`${pkg.name}@${pkg.version}`)
+  )
+  for (const pkg of publishCandidates) {
+    const spec = `${pkg.name}@${pkg.version}`
+    runCommand(
+      'npm',
+      ['publish', pkg.artifact.tarballPath, '--access', 'public'],
+      {
+        cwd: resolvedRoot
+      }
+    )
+    runCommand('git', ['tag', tagBySpec.get(spec), sourceCommitSha], {
+      cwd: resolvedRoot
+    })
+    published.push({ name: pkg.name, version: pkg.version })
+  }
+  return {
+    skipped: skipped.map(({ name, version }) => ({ name, version })),
+    published
+  }
+}
+
+const readJson = (filePath) => JSON.parse(fs.readFileSync(filePath, 'utf8'))
+
+const readValidatedRelease = ({ repositoryRoot, pointerPath }) => {
+  const pointer = readJson(pointerPath)
+  const validationRoot = path.resolve(pointer.validationRoot)
+  const temporaryRoot = path.join(repositoryRoot, 'tmp')
+  if (
+    pointer.status !== 'PASS' ||
+    path.dirname(validationRoot) !== temporaryRoot ||
+    !path.basename(validationRoot).startsWith('release-validation-')
+  ) {
+    throw new Error('Framework validation workspace pointer is invalid')
+  }
+  const sourceCommitSha = execFileSync('git', ['rev-parse', 'HEAD'], {
+    cwd: repositoryRoot,
+    encoding: 'utf8'
+  }).trim()
+  if (sourceCommitSha !== pointer.sourceCommitSha) {
+    throw new Error('Source commit changed after Framework validation')
+  }
+
+  const source = readFrameworkReleaseSource({ repositoryRoot: validationRoot })
+  const validated = validateFrameworkReleasePackageArtifacts({
+    repositoryRoot: validationRoot,
+    artifactDirectory: DEFAULT_RELEASE_ARTIFACT_DIRECTORY
+  })
+  const consumerEvidencePath = path.join(
+    validationRoot,
+    'tmp/framework-release-evidence/clean-consumer.json'
+  )
+  const consumerEvidence = readJson(consumerEvidencePath)
+  const handoffPath = path.join(
+    validationRoot,
+    DEFAULT_RELEASE_ARTIFACT_DIRECTORY,
+    FRAMEWORK_ARTIFACT_HANDOFF
+  )
+  const handoff = readJson(handoffPath)
+  const packages = source.packages.map((pkg) => ({
+    name: pkg.name,
+    version: pkg.version,
+    dependencies: pkg.dependencies
+  }))
+  validateFrameworkReleaseArtifactManifest({
+    manifest: handoff,
+    currentCommitSha: sourceCommitSha,
+    packages: validated.packages,
+    consumerEvidence
+  })
+  const artifacts = validated.packages.map((pkg) => ({
+    name: pkg.packageName,
+    version: pkg.version,
+    tarballPath: pkg.tarballPath,
+    integrity: pkg.integrity
+  }))
+  const expectedArtifacts = new Map(artifacts.map((item) => [item.name, item]))
+  for (const pkg of packages) {
+    const artifact = expectedArtifacts.get(pkg.name)
+    if (!artifact || artifact.version !== pkg.version) {
+      throw new Error(
+        `Packed artifact does not match ${pkg.name}@${pkg.version}`
+      )
+    }
+  }
+  return { sourceCommitSha, packages, artifacts }
 }
 
 export const publishFrameworkRelease = ({
   repositoryRoot,
-  recordPath,
-  runCommand: run = runCommand
+  validationPointer = FRAMEWORK_VALIDATION_POINTER,
+  runCommand = runCommandDefault
 }) => {
   const resolvedRoot = path.resolve(repositoryRoot)
-  const absoluteRecordPath = path.resolve(resolvedRoot, recordPath)
-  const relativeRecordPath = path.relative(resolvedRoot, absoluteRecordPath)
+  const pointerPath = path.resolve(resolvedRoot, validationPointer)
   if (
-    relativeRecordPath.startsWith('..') ||
-    path.isAbsolute(relativeRecordPath)
+    path.dirname(pointerPath) !== path.join(resolvedRoot, 'tmp') ||
+    path.basename(pointerPath) !== path.basename(FRAMEWORK_VALIDATION_POINTER)
   ) {
-    throw new Error('Framework release record must be inside the repository')
+    throw new Error(
+      'Framework validation pointer must be the project tmp handoff'
+    )
   }
-  const record = validateFrameworkReleasePlan({
+  const { sourceCommitSha, packages, artifacts } = readValidatedRelease({
     repositoryRoot: resolvedRoot,
-    recordPath: relativeRecordPath
+    pointerPath
   })
-  const ordered = createFrameworkPublishOrder({
+  return publishFrameworkReleasePackages({
     repositoryRoot: resolvedRoot,
-    record
+    sourceCommitSha,
+    packages,
+    artifacts,
+    validateArtifacts: () => {
+      const pointer = readJson(pointerPath)
+      const validationRoot = path.resolve(pointer.validationRoot)
+      const evidence = readJson(
+        path.join(
+          validationRoot,
+          'tmp/framework-release-evidence/clean-consumer.json'
+        )
+      )
+      if (evidence.status !== 'READY') {
+        throw new Error('Framework packed consumer gate did not pass')
+      }
+    },
+    runCommand
   })
-
-  for (const release of ordered) {
-    const spec = `${release.name}@${release.newVersion}`
-    let publishedVersion
-    try {
-      publishedVersion = run('npm', ['view', spec, 'version'], {
-        cwd: resolvedRoot
-      }).trim()
-    } catch (error) {
-      const errorText = `${error.stderr ?? ''}${error.message ?? ''}`
-      if (!/E404/u.test(errorText)) throw error
-      publishedVersion = ''
-    }
-    if (publishedVersion && publishedVersion !== release.newVersion) {
-      throw new Error(
-        `Registry returned unexpected version ${publishedVersion} for ${spec}`
-      )
-    }
-    if (!publishedVersion) {
-      run(
-        'npm',
-        ['publish', `./packages/${release.directory}`, '--access', 'public'],
-        { cwd: resolvedRoot }
-      )
-    }
-    const tag = `${spec}`
-    const existingTag = run('git', ['tag', '--list', tag], {
-      cwd: resolvedRoot
-    }).trim()
-    if (!existingTag) {
-      run('git', ['tag', tag, 'HEAD'], { cwd: resolvedRoot })
-    }
-  }
-  return ordered.map(({ name, oldVersion, newVersion }) => ({
-    name,
-    oldVersion,
-    newVersion
-  }))
 }
 
 const isDirectExecution =
@@ -114,22 +294,21 @@ const isDirectExecution =
 
 if (isDirectExecution) {
   const args = process.argv.slice(2)
-  const recordArgument = args.find((arg) => arg.startsWith('--record='))
-  const recordPath = recordArgument?.slice('--record='.length)
+  const validationArgument = args.find((arg) => arg.startsWith('--validation='))
+  const validationPointer = validationArgument?.slice('--validation='.length)
   if (args.includes('--plan')) {
-    process.stdout.write(`${JSON.stringify({ record: recordPath }, null, 2)}\n`)
+    process.stdout.write(
+      `${JSON.stringify({ validation: FRAMEWORK_VALIDATION_POINTER }, null, 2)}\n`
+    )
     process.exit(0)
   }
-  if (!recordPath || args.some((arg) => arg !== recordArgument)) {
-    console.error(
-      'Must specify --record=<version-controlled-framework-release-record>'
-    )
+  if (!validationPointer || args.some((arg) => arg !== validationArgument)) {
+    console.error(`Must specify --validation=${FRAMEWORK_VALIDATION_POINTER}`)
     process.exit(1)
   }
-
   const repositoryRoot = path.resolve(
     path.dirname(fileURLToPath(import.meta.url)),
     '..'
   )
-  publishFrameworkRelease({ repositoryRoot, recordPath })
+  publishFrameworkRelease({ repositoryRoot, validationPointer })
 }

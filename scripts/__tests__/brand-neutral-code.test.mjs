@@ -144,7 +144,6 @@ const lowercaseIdentityOwnerPaths = new Set([
   'scripts/__tests__/workspace-automation.test.mjs',
   'scripts/release-records.js'
 ])
-const releaseProvenanceRecordPath = 'release-records/framework/current.json'
 const brandOwnedCodePrefixes = Object.freeze([
   'apps/asyra-framework-site/',
   'tools/flow-inspector/'
@@ -157,10 +156,6 @@ const capitalizedBrandIdentifierPattern = new RegExp(
 const isAllowedPublicIdentity = (token, line, filePath) => {
   const escapedToken = token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   const relativePath = path.relative(repositoryRoot, filePath)
-  // Release records persist exact source identifiers as evidence, not code names.
-  if (relativePath === releaseProvenanceRecordPath) {
-    return true
-  }
   if (
     retainedWireIdentityOwnerPaths.has(relativePath) &&
     retainedWireIdentities.has(token) &&

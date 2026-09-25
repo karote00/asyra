@@ -12,8 +12,6 @@ import {
 import path from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
-import { publishFrameworkRelease } from '../publish-framework-release.js'
-import { FRAMEWORK_RELEASE_PLAN_PATH } from '../release-records.js'
 
 const repositoryRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -38,20 +36,21 @@ test('full release keeps Framework and create-app publication in ordered stages'
   })
 })
 
-test('Framework release publishes only its captured Changesets release plan', () => {
+test('Framework release publishes only validated Framework package artifacts', () => {
   const plan = readPlan('scripts/release-framework.js')
 
   assert.deepEqual(plan, {
     prepare: [
-      'yarn release:validate --framework',
-      'yarn bump:workspace --env=release',
-      'yarn release:ranges:check'
+      'yarn release:validate --framework --preserve',
+      'node scripts/framework-release-artifacts.js --prepare'
     ],
     publish: [
-      'node scripts/publish-framework-release.js --record=release-records/framework/current.json'
+      'node scripts/publish-framework-release.js --validation=tmp/framework-release-validation.json'
     ],
-    verify: ['yarn release:consumer:registry'],
-    finally: ['yarn bump:workspace --env=dev']
+    verify: [
+      'yarn release:consumer:registry',
+      'node scripts/framework-release-artifacts.js --cleanup'
+    ]
   })
 })
 
@@ -85,82 +84,17 @@ test('release publishers enforce separate Framework allowlist and CLI roots', ()
     'utf8'
   )
 
-  assert.match(frameworkPublisher, /validateFrameworkReleasePlan/)
+  assert.match(frameworkPublisher, /FRAMEWORK_RELEASE_PACKAGE_NAMES/)
   assert.match(releaseRecords, /FRAMEWORK_RELEASE_PACKAGE_NAMES/)
-  assert.match(frameworkPublisher, /\.\/packages\/\$\{release\.directory\}/)
+  assert.match(frameworkPublisher, /pkg\.artifact\.tarballPath/u)
+  assert.match(frameworkPublisher, /npm', \['view', spec, 'version'/)
+  assert.doesNotMatch(
+    frameworkPublisher,
+    /release-records\/framework\/current\.json/
+  )
   assert.doesNotMatch(frameworkPublisher, /create-app/)
   assert.match(createAppPublisher, /path\.resolve\('create-app', product\)/)
   assert.doesNotMatch(createAppPublisher, /FRAMEWORK_RELEASE_PACKAGE_NAMES/)
-})
-
-test('Framework publisher uses the durable exact set and supports safe retry', () => {
-  const commands = []
-  const published = publishFrameworkRelease({
-    repositoryRoot,
-    recordPath: FRAMEWORK_RELEASE_PLAN_PATH,
-    runCommand: (command, args) => {
-      commands.push([command, ...args])
-      if (command === 'npm' && args[0] === 'view') {
-        const packageName = args[1].slice(0, args[1].lastIndexOf('@'))
-        if (packageName === '@asyra/core') return '0.5.7\n'
-        const error = new Error('registry package version missing')
-        error.stderr = Buffer.from('npm ERR! code E404')
-        throw error
-      }
-      return ''
-    }
-  })
-
-  assert.equal(published.length, 16)
-  assert.ok(published.some(({ name }) => name === '@asyra/collaboration'))
-  assert.ok(published.every(({ name }) => name !== '@asyra/flow-inspector'))
-  assert.equal(
-    commands.filter(
-      ([command, action]) => command === 'npm' && action === 'publish'
-    ).length,
-    15
-  )
-  assert.ok(
-    commands.some(
-      ([command, action, spec]) =>
-        command === 'git' && action === 'tag' && spec === '@asyra/core@0.5.7'
-    )
-  )
-  assert.equal(
-    commands.some((args) =>
-      args.some((value) => /create-app|apps\//u.test(value))
-    ),
-    false
-  )
-})
-
-test('Framework publisher rejects a missing release-set member before side effects', () => {
-  mkdirSync(path.join(repositoryRoot, 'tmp'), { recursive: true })
-  const tempDirectory = mkdtempSync(
-    path.join(repositoryRoot, 'tmp', 'invalid-framework-release-record-')
-  )
-  const recordPath = path.join(tempDirectory, 'invalid.json')
-  const invalidRecord = JSON.parse(
-    readFileSync(path.join(repositoryRoot, FRAMEWORK_RELEASE_PLAN_PATH), 'utf8')
-  )
-  invalidRecord.packages[0].name = '@asyra/flow-inspector'
-  writeFileSync(recordPath, JSON.stringify(invalidRecord))
-  const commands = []
-
-  try {
-    assert.throws(
-      () =>
-        publishFrameworkRelease({
-          repositoryRoot,
-          recordPath: path.relative(repositoryRoot, recordPath),
-          runCommand: (...args) => commands.push(args)
-        }),
-      /forbidden or duplicate package/u
-    )
-    assert.deepEqual(commands, [])
-  } finally {
-    rmSync(tempDirectory, { recursive: true, force: true })
-  }
 })
 
 test('release validation covers build, tests, dependencies, collaboration, and generated template', () => {
@@ -195,6 +129,24 @@ test('Framework validation is app-independent and does not generate or build app
     'yarn deps:validate'
   ])
   assert.doesNotMatch(plan.join('\n'), /release:app|test:e2e:collaboration/u)
+})
+
+test('Framework release validation can preserve its successful isolated build for packing', () => {
+  const plan = readPlan('scripts/release-validate.js', [
+    '--framework',
+    '--preserve'
+  ])
+
+  assert.deepEqual(plan, [
+    'yarn install --immutable',
+    'yarn security:audit',
+    'yarn gen:turbo:check',
+    'yarn clean',
+    'yarn react:build',
+    'yarn lint:ci',
+    'yarn test:ci',
+    'yarn deps:validate'
+  ])
 })
 
 test('public release gates high-severity dependency advisories', () => {

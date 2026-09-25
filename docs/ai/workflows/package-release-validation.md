@@ -114,14 +114,15 @@ dependencies. `release:records` freezes the candidate versions, public support
 documents, package READMEs, Changesets configuration, and the distinction
 between readiness and publication.
 
-The version PR commits `release-records/framework/current.json`, an exact
-Changesets-derived package set with the source base SHA, consumed Changeset IDs,
-old/new versions, and direct or dependency-propagation reasons. The Framework
-publisher reads this record after merge; it never reconstructs a release set
-from the now-empty Changesets directory. A retry checks each exact package
-version in the registry, skips versions already published, and continues the
-recorded set in dependency order. A missing, malformed, or mismatched record
-fails closed.
+The version PR commits the Framework package manifests and changelogs computed
+from its pending Changesets, including Changesets' dependency propagation. After
+that PR merges, the separately authorized Framework stage uses the fixed
+`packages/*` allowlist and each manifest's exact version as its release set. It
+checks all exact versions in the registry before publishing any package, skips
+versions already present, and publishes only missing versions from the same
+validated tarballs used by the local packed-consumer gate. Registry errors other
+than an exact-version `E404` fail the stage. The stage does not require pending
+Changesets to remain after the version PR.
 
 Historical prerequisite decisions are resolved from Framework
 `decisions/releases/unreleased.md` and all direct `vX.Y.Z.md` archive files,
@@ -210,23 +211,23 @@ an active `dev:all`, app server, or package watcher is not interrupted and
 cannot rewrite artifacts during validation.
 
 `release:framework` validates Framework packages without entering an App or
-template stage, converts workspace dependency ranges, publishes only the
-version-controlled release record in dependency order, restores `workspace:*`,
-and then proves the published set through the registry-only consumer.
+template stage. It preserves the isolated validation workspace, builds and packs
+the Framework packages there, checks workspace dependency ranges, and runs the
+packed consumer against those tarballs. After a separate invocation following
+merge and publication authorization, it publishes those exact validated
+tarballs in dependency order and proves the versions through the registry-only
+consumer. On failure it retains the isolated artifacts for diagnosis; successful
+registry verification cleans them up.
 
 `release:create-app` begins with that registry-only Framework proof, regenerates
 and validates the selected app template, verifies the CLI pack inventory, and
 publishes only `create-app/<app>`. It never discovers or publishes Framework
 workspaces. `release:full` is the explicit synchronized orchestration: it runs
 the Framework stage first and enters the create-app stage only after Framework
-publication and registry verification succeed. The committed
-`release-records/framework/current.json` preserves the exact Changesets-derived
-set across the version PR; the publisher does not recalculate it after those
-Changesets have been consumed.
+publication and registry verification succeed. This app stage remains separate
+from the Framework version PR and Framework package publication stage.
 
-Once exact release ranges have been applied, the Framework stage restores
-`workspace:*` in a `finally` path whether validation or publication succeeds or
-fails. The generic unscoped `changeset publish` command is not a project release
+The generic unscoped `changeset publish` command is not a project release
 entrypoint because it would also select any unrelated unpublished public
 workspace, including a manually versioned create-app CLI.
 

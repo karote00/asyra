@@ -12,15 +12,16 @@ if (args.some((arg) => arg !== '--plan')) {
 
 const releasePlan = {
   prepare: [
-    'yarn release:validate --framework',
-    'yarn bump:workspace --env=release',
-    'yarn release:ranges:check'
+    'yarn release:validate --framework --preserve',
+    'node scripts/framework-release-artifacts.js --prepare'
   ],
   publish: [
-    'node scripts/publish-framework-release.js --record=release-records/framework/current.json'
+    'node scripts/publish-framework-release.js --validation=tmp/framework-release-validation.json'
   ],
-  verify: ['yarn release:consumer:registry'],
-  finally: ['yarn bump:workspace --env=dev']
+  verify: [
+    'yarn release:consumer:registry',
+    'node scripts/framework-release-artifacts.js --cleanup'
+  ]
 }
 
 if (printPlan) {
@@ -33,18 +34,8 @@ const run = (command) => {
   execSync(command, { stdio: 'inherit' })
 }
 
-let exactRangesApplied = false
-try {
-  for (const command of releasePlan.prepare) {
-    run(command)
-    if (command === 'yarn bump:workspace --env=release') {
-      exactRangesApplied = true
-    }
-  }
-  releasePlan.publish.forEach(run)
-  releasePlan.verify.forEach(run)
-} finally {
-  if (exactRangesApplied) releasePlan.finally.forEach(run)
-}
+for (const command of releasePlan.prepare) run(command)
+releasePlan.publish.forEach(run)
+releasePlan.verify.forEach(run)
 
 console.log('\nFramework release completed')

@@ -62,9 +62,6 @@ const COMPLETED_READINESS_PLAN =
   'docs/ai/framework/plans/completed/framework-release-readiness-and-closeout-plan.md'
 const READINESS_INSPECTOR =
   'tools/flow-inspector/inspectors/framework-release-readiness-flow-inspector.data.cjs'
-export const FRAMEWORK_RELEASE_PLAN_PATH =
-  'release-records/framework/current.json'
-
 const readJson = (filePath) => JSON.parse(fs.readFileSync(filePath, 'utf8'))
 
 const parseStableVersion = (name, version) => {
@@ -196,10 +193,6 @@ export const validateFrameworkReleaseRecords = ({ repositoryRoot }) => {
     )
   }
 
-  const frameworkReleasePlan = validateFrameworkReleasePlan({
-    repositoryRoot: resolvedRoot
-  })
-
   return {
     status: 'PASS',
     releaseFamily,
@@ -208,92 +201,10 @@ export const validateFrameworkReleaseRecords = ({ repositoryRoot }) => {
     packages,
     excludedVersions,
     pendingChangesets: readPendingChangesets(resolvedRoot),
-    frameworkReleasePlan,
     gate5ReadinessStatus: 'READY',
     releaseDecision: 'PENDING',
     publicationAuthorized: false
   }
-}
-
-export const validateFrameworkReleasePlan = ({
-  repositoryRoot,
-  recordPath = FRAMEWORK_RELEASE_PLAN_PATH
-}) => {
-  const resolvedRoot = path.resolve(repositoryRoot)
-  const absoluteRecordPath = path.resolve(resolvedRoot, recordPath)
-  if (!fs.existsSync(absoluteRecordPath)) {
-    throw new Error(`Missing durable Framework release plan: ${recordPath}`)
-  }
-  const record = readJson(absoluteRecordPath)
-  if (
-    record.schemaVersion !== 1 ||
-    record.status !== 'pending-publication' ||
-    !/^[a-f0-9]{40}$/u.test(record.sourceBaseSha ?? '') ||
-    !Array.isArray(record.sourceChangesets) ||
-    record.sourceChangesets.length === 0 ||
-    !Array.isArray(record.packages) ||
-    record.packages.length === 0
-  ) {
-    throw new Error(
-      'Framework release plan has an invalid header or empty release set'
-    )
-  }
-  const allowed = new Set(FRAMEWORK_RELEASE_PACKAGE_NAMES)
-  const sourceChangesets = new Set(record.sourceChangesets)
-  if (sourceChangesets.size !== record.sourceChangesets.length) {
-    throw new Error(
-      'Framework release plan contains duplicate source Changesets'
-    )
-  }
-  const seen = new Set()
-  for (const entry of record.packages) {
-    if (!allowed.has(entry.name) || seen.has(entry.name)) {
-      throw new Error(
-        `Framework release plan has forbidden or duplicate package ${entry.name}`
-      )
-    }
-    seen.add(entry.name)
-    const before = parseStableVersion(entry.name, entry.oldVersion)
-    const after = parseStableVersion(entry.name, entry.newVersion)
-    if (
-      before.family !== after.family ||
-      before.major !== after.major ||
-      before.minor !== after.minor ||
-      after.patch <= before.patch ||
-      !['patch', 'minor', 'major'].includes(entry.type) ||
-      entry.type !== 'patch' ||
-      typeof entry.reason !== 'string' ||
-      entry.reason.length === 0 ||
-      !Array.isArray(entry.changesets) ||
-      entry.changesets.some(
-        (changesetIndex) =>
-          !Number.isInteger(changesetIndex) ||
-          changesetIndex < 0 ||
-          changesetIndex >= record.sourceChangesets.length
-      )
-    ) {
-      throw new Error(
-        `Framework release plan has invalid version or reason for ${entry.name}`
-      )
-    }
-    const directory = entry.name.slice('@asyra/'.length)
-    const manifest = readJson(
-      path.join(resolvedRoot, 'packages', directory, 'package.json')
-    )
-    if (manifest.version !== entry.newVersion) {
-      throw new Error(
-        `${entry.name} manifest ${manifest.version} does not match durable release plan ${entry.newVersion}`
-      )
-    }
-  }
-  for (const changeset of record.sourceChangesets) {
-    if (typeof changeset !== 'string' || !/^[a-z0-9-]+\.md$/u.test(changeset)) {
-      throw new Error(
-        `Framework release plan has invalid source Changeset ${changeset}`
-      )
-    }
-  }
-  return record
 }
 
 const isDirectExecution =

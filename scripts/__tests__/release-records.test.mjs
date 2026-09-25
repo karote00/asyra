@@ -3,11 +3,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
-import {
-  FRAMEWORK_RELEASE_PLAN_PATH,
-  validateFrameworkReleasePlan,
-  validateFrameworkReleaseRecords
-} from '../release-records.js'
+import { validateFrameworkReleaseRecords } from '../release-records.js'
 
 const repositoryRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -66,35 +62,6 @@ test('release records derive Framework and excluded-owner versions from manifest
   assert.equal(result.gate5ReadinessStatus, 'READY')
   assert.equal(result.releaseDecision, 'PENDING')
   assert.equal(result.publicationAuthorized, false)
-  assert.equal(result.frameworkReleasePlan.packages.length, 16)
-  assert.equal(result.frameworkReleasePlan.sourceChangesets.length, 1)
-  assert.ok(
-    result.frameworkReleasePlan.packages.every(({ type }) => type === 'patch')
-  )
-  assert.equal(
-    result.frameworkReleasePlan.packages.filter(({ changesets }) =>
-      changesets.includes(0)
-    ).length,
-    12
-  )
-  assert.equal(
-    result.frameworkReleasePlan.packages.filter(
-      ({ changesets }) => changesets.length === 0
-    ).length,
-    4
-  )
-  assert.ok(
-    result.frameworkReleasePlan.packages.every(
-      ({ name }) => name !== '@asyra/flow-inspector'
-    )
-  )
-  assert.equal(
-    validateFrameworkReleasePlan({ repositoryRoot }).packages.length,
-    16
-  )
-  assert.ok(
-    fs.existsSync(path.join(repositoryRoot, FRAMEWORK_RELEASE_PLAN_PATH))
-  )
 })
 
 test('public release docs link current support while release records derive manifest-owned candidates', () => {
