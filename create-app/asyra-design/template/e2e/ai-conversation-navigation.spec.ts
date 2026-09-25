@@ -41,7 +41,7 @@ for (const width of [360, 1440]) {
     await expect(
       page.getByRole('note', { name: 'Your AI subscription' })
     ).toBeVisible()
-    await expect(page.getByLabel('Design context')).toHaveText('Canvas')
+    await expect(page.getByLabel('Design context')).toHaveCount(0)
     await page
       .getByLabel('Message Agent')
       .fill('Give me design advice without drawing.')
@@ -50,28 +50,35 @@ for (const width of [360, 1440]) {
       'data-outcome',
       'no-change'
     )
-    const history = page.getByRole('combobox', { name: 'Conversation history' })
-    const firstId = await history.inputValue()
+    const toggleHistory = page.getByRole('button', {
+      name: 'Toggle conversation history'
+    })
+    const history = page.getByRole('region', { name: 'Conversation history' })
+    const openConversation = async (name: string) => {
+      await toggleHistory.click()
+      await expect(history).toBeVisible()
+      await history.getByRole('button', { name, exact: true }).click()
+      await expect(history).toHaveCount(0)
+    }
     await page.getByLabel('Message Agent').fill('Unsent first draft')
     await page.getByRole('button', { name: 'New conversation' }).click()
     await expect(page.getByLabel('Message Agent')).toHaveValue('')
     await expect(page.getByTestId('ai-agent-message')).toHaveCount(0)
-    const secondId = await history.inputValue()
     await page.getByLabel('Message Agent').fill('Unsent second draft')
-    await history.selectOption(firstId)
+    await openConversation('Give me design advice without drawing.')
     await expect(page.getByLabel('Message Agent')).toHaveValue(
       'Unsent first draft'
     )
     await expect(page.getByTestId('ai-agent-message')).toHaveCount(1)
-    await history.selectOption(secondId)
+    await openConversation('New conversation')
     await expect(page.getByLabel('Message Agent')).toHaveValue(
       'Unsent second draft'
     )
-    await history.selectOption(firstId)
+    await openConversation('Give me design advice without drawing.')
     expect(requests).toBe(1)
     expect(await getCoreDocumentDigest(page)).toEqual(before)
     for (const control of [
-      history,
+      toggleHistory,
       page.getByRole('button', { name: 'New conversation' }),
       page.getByRole('button', { name: 'Send', exact: true }),
       page.getByLabel('Message Agent')

@@ -1388,3 +1388,19 @@ dependency, template synchronization, Framework clean consumer (19 packages),
 and generated-template consumer (12 packages, six phases) pass. Browser evidence
 was rerun after Vite reloads from concurrent build/file changes invalidated the
 earlier runs. Exact-head changeset admission and remote CI remain delivery gates.
+
+
+### CI follow-up - 2026-09-26
+
+Remote head `067f61093` passed production artifacts, Inspector board, render
+performance and collaboration E2E. Its remaining failures were a stale conversation
+navigation test expecting the removed context label/select control and an outdated
+Inspector workspace bundle. Navigation now uses the current history buttons while
+retaining draft/canvas/viewport assertions; regenerate the bundle from existing
+contracts without changing their semantics.
+
+Local validation after these corrections: complete `yarn test:ci --concurrency=2`
+passes (25 tasks); Inspector contracts pass (100 cases); functional Playwright
+passes (190 cases, 12 conditionally gated cases skipped). The browser run was isolated
+from build-producing repository tests. Navigation typecheck and lint pass. These
+changes affect tests/generated projections only, not drawing behavior.
