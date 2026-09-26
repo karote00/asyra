@@ -125,3 +125,25 @@
   An empty ongoing log is a release-cut condition, not a general packaging rule.
 - Permanent regressions cover first-release, mixed ongoing/archived, multiple
   version and missing-evidence cases. Published history is unchanged.
+
+## 2026-09-26 — Complete Root README Comprehension and Evidence
+
+- The full `yarn docs:readme:check` passed for main source
+  `3e9bdc0488a0d1b53430abb44fc7cfbf79bff043`. Current GitHub GFM screenshots
+  were captured and inspected for desktop and narrow layouts with media loaded
+  and unavailable; all twelve images are retained beside the completed plan.
+- Close the plan because its reader-journey, gate, and visual-evidence
+  conditions are satisfied. Future README layout/media edits require renewed
+  validation and screenshots for their own source diff.
+- Completed record: `../../plans/completed/root-readme-comprehension-and-evidence-plan.md`.
+
+## 2026-09-26 — Complete Adoption Entry and Onboarding Program
+
+- Tasks 1-8 are integrated. The public Starter CLI and README/site entry are
+  published and live; independent onboarding evidence is retained; the
+  composite README gate passed; and the current README visual matrix is
+  committed with its completed evidence plan.
+- Close the program with all in-scope acceptance conditions satisfied.
+  GitHub Discussions settings remain user-owned. Sim maintenance and controlled
+  hardware benchmarking remain independent work outside this program.
+- Completed record: `../../plans/completed/adoption-entry-and-onboarding-program-plan.md`.

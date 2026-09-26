@@ -15,21 +15,50 @@ merge; PR #245 is the single starter-readiness documentation result. The
 Starter build-owner repair (#254) and approved visual board with dragging and
 title-draft review fix (#255) subsequently integrated at
 `f518874e805ac598a0dd4ce85e8f5e1f732e3943` and
-`86674ccc21ead7ad73f1fe57cb602258efbc6f63`. Task 7 integration
-validation and handoff are recorded below; its documentation PR #253 remains
-in review. Public CLI activation, current website deployment, and release
-operations remain separate. Independent coding-agent evidence was still pending
-at that handoff; the adoption journey is not DONE.
+`86674ccc21ead7ad73f1fe57cb602258efbc6f63`. PR #253 later merged with all
+reported checks successful, and parent PR #242 integrated the adoption work
+into main. The independent AI onboarding verification is recorded below.
+Completed on 2026-09-26. Tasks 1-8 and the overall Adoption program acceptance
+are complete. The composite `yarn docs:readme:check` passed on 2026-09-26 from
+main source `3e9bdc0488a0d1b53430abb44fc7cfbf79bff043`, and the current README
+visual matrix is committed with the completed Root README plan. Task 8's
+published Starter entry, website deployment, and live routes were also verified
+on 2026-09-26. Earlier Task 5/7 runs reported 15 Asyra Design generated-template
+differences; those are historical results, not a current failure or repair
+estimate. Discussions settings remain user-owned and outside this program's
+closeout. Sim maintenance and controlled hardware benchmarks are independent
+follow-up work, not Adoption acceptance conditions.
+
+## Completion record
+
+- **Decision:** close the Adoption program after integration of Tasks 1-8 and
+  verification of the public Starter release, website entry, onboarding path,
+  README gate, and current README visual matrix.
+- **Outcome:** `create-asyra-app@0.1.0` is published; the production website
+  entry and routes are live; independent coding-agent onboarding evidence is
+  retained below; and the full README gate passed on main source
+  `3e9bdc0488a0d1b53430abb44fc7cfbf79bff043`.
+- **Exit criteria:** Tasks 1-8 have integrated results; parent PR #242 and
+  child PR #253 are merged; publication and live route evidence is retained;
+  `yarn docs:readme:check` passed; and the current desktop/narrow, media-loaded/
+  unavailable README matrix is committed with the completed Root README plan.
+- GitHub Discussions settings are user-owned and outside this program.
+  Sim maintenance and controlled hardware benchmarks remain independent work.
 
 Current release-entry status on 2026-09-26: `create-asyra-app@0.1.0` is
 published on the public npm registry. Its registry integrity matches the
 previously validated CLI tarball (`sha512-D+iT/bgZNN0x+9DMuWPNcSeZljoWJp1fFkxbdorv7+43fYEa9no05rmf2ODAhH9wyOfdQnp6KKXR/ob30s9wNQ==`);
 that CLI tarball's SHA-256 is
 `07ceb4be1d13d197a170f2e3907a3d621b2c3c64b99e2113093d5db4d5f2df77`.
-The README, AI discovery, and homepage entry changes are on this main-based
-branch for review and merge. Website deployment remains pending, as do
-independent community/discussion decisions and the remaining original adoption
-acceptance items. This entry update does not mark the program DONE.
+The README, AI discovery, and homepage entry changes merged in PR #260 at
+`6fdc917a8df201159946e2c946232ae9e2d08ad7`. Task 8's website production
+deployment and live Starter entry are verified below. No Task 8 acceptance
+item remains open. The composite README gate passed on 2026-09-26, and the root
+README plan's current visual matrix is committed and linked from its completed
+record. The 15 Design generated-template differences were reported by earlier
+Task 5/7 runs only; the current gate passed.
+GitHub Discussions settings are user-owned and outside this Codex task; they do
+not block this plan's closeout.
 
 The user selected sequential, separate conversations with PR review between
 tasks to control usage. This agreement supersedes the original proposal's
@@ -76,14 +105,15 @@ multi-agent delegation and autonomous execution across all workstreams.
   `golden-paths/README.md` implementation playbook. Local validation confirmed
   the target file exists, the scoped stale-link search is clean, and the public
   documentation/readme validation scripts pass through their Node entrypoints.
-  This records a bounded part of task 1 only; task 1 remains pending.
+  This was a bounded part of Task 1 at the #243 stage; Task 1's integrated
+  outcome is recorded in the completed task summary below.
 - Child PR #243 `codex/adoption-entry-contracts`: merged at
   `0065d1504ac34889ded7adaea494e0d6f34b8262` and recorded the README/homepage
   baseline. Its Node validation covered focused public README inputs and
   validation entrypoints, not the complete `yarn docs:readme:check` chain.
-  Visual evidence for GitHub-compatible desktop/narrow rendering with and
-  without media was not found in this bounded repair, so README visual
-  acceptance remains pending rather than completed.
+  At the #243 stage, GitHub-compatible desktop/narrow rendering evidence with
+  and without media was not available, so visual acceptance remained pending
+  then. The current matrix is retained with the completed Root README plan.
 - Child PR #244 `codex/adoption-starter-readiness` was closed without a merge.
   Child PR #245 `codex/adoption-starter-readiness-docs` is the merged
   starter-readiness documentation result at
@@ -123,7 +153,7 @@ closed by default; Issues are not the public support channel. Security follows
 SECURITY.md. Community access creates no SLA and does not close Sim maintenance
 or safety obligations.
 
-## Current evidence and unresolved baseline
+## Initial read-only assessment (historical)
 
 The initial read-only assessment found:
 
@@ -176,12 +206,13 @@ Task 1 README/homepage baseline recorded from
   resurrect the retired factory film, five-chapter brand story, separate
   architecture explainer, PoC comic, or missing attachment description as the
   current homepage authority without a new product-owner decision.
-- Remaining task 1 gaps after this README/homepage slice: minimal runtime
-  proof, complete public README gate execution, README rendering evidence,
-  community/support reconciliation, FieldScope source claims, and any integrated
-  validation after child PRs merge. Release/generation/consumer ownership is
-  mapped below, but later implementation slices must still execute their actual
-  commands.
+- The initial task 1 assessment and Task 5/7 check results are historical. At
+  that time, the composite README check reported 15 unrelated Asyra Design
+  template differences, and Task 5's twelve visual captures were ignored local
+  artifacts. The composite check passed on 2026-09-26; the current desktop/
+  narrow README visual matrix is now committed with the completed Root README
+  plan at [the retained Root README completion record](root-readme-comprehension-and-evidence-plan.md).
+  Neither item changed the bounded Starter public-entry implementation.
 
 ## Relationship to Design AI work
 
@@ -540,16 +571,16 @@ one bounded slice without completing the whole task or adoption program.
 
 | Task | Bounded result and owners | Acceptance and dependency |
 | --- | --- | --- |
-| 1 - Reconcile contracts | This plan, existing entry/README/site plans, directly relevant public-entry authorities | The example-link repair and merged PRs #243/#245 established the entry and Starter-readiness documentation baseline; #244 was closed without merge. Tasks 2-6 subsequently supplied the Starter runtime, CLI/template, README/site entry, FieldScope evidence wording, and support policy. Task 5 recorded desktop/narrow README rendering with media present/unavailable. The composite README gate remains blocked by unrelated Design drift, and publication/deployment remain open; this row does not mark the public journey complete. |
+| 1 - Reconcile contracts | This plan, existing entry/README/site plans, directly relevant public-entry authorities | The example-link repair and merged PRs #243/#245 established the entry and Starter-readiness documentation baseline; #244 was closed without merge. Tasks 2-8 supplied the Starter runtime, registry CLI/template, README/site entry, FieldScope evidence wording, support policy, and live public activation. The composite `yarn docs:readme:check` passed on 2026-09-26 for main source `3e9bdc0488a0d1b53430abb44fc7cfbf79bff043`. The current desktop/narrow README matrix with media loaded/unavailable is committed beside the completed Root README plan and linked there. Publication and deployment are complete. |
 | 2 - Minimal canonical App | `apps/starter-app`, workspace `@asyra/starter-app`, and direct app-local tests/docs | Merged in child PR #247 at `407fd9c833889ce04ee8bdde3934b4076320435f`. The integrated App is revalidated in Task 7 below. This slice alone did not create the CLI/template, release, or public activation. |
 | 3 - CLI and standalone template | Public `create-asyra-app` CLI, `create-app/starter-app`, `release-configs/starter-app.json`, generated `create-app/starter-app/template`, and directly affected release/generation tests | Merged in child PR #249 at `b1dcfa106b44a0f3b56ee605612b072e2dfb3602` into `codex/adoption-onboarding`; Task 4 starts from that exact integrated head. Task 3's local validation covered naming, focused CLI/template tests, Starter test/typecheck/lint/react:build, root lint, template sync, package artifacts, and packed-artifact template consumer install/typecheck/lint/build/test/startup smoke. This records Task 3 integration, not registry publication or public activation. |
 | 4 - AI-first starter onboarding | Canonical Starter AGENTS/onboarding/prompt, opt-in priority exercise and formal tests, generated template sync | Merged in child PR #250 at `b785160c5645212509d3e1ca1ed4e8647922961c` into `codex/adoption-onboarding`. The priority tests failed before implementation and then passed through the App schema, Feature/API transaction, projection and Save/Reload owners. Starter test/typecheck/lint/build, desktop/narrow E2E, CLI/template tests, root lint, naming, template sync and packed-artifact generated consumer passed locally. The consumer reported `READY` for install/typecheck/lint/build/test/startup smoke on Node `v24.13.0` and Yarn `4.3.1`. No independent fresh coding-agent conversation or registry verification was performed; no AI provider was added. |
-| 5 - Entry routing and product evidence | Root README, public docs/llms generators, existing homepage entry points and verified case evidence | Merged in child PR #251 at `fb7050f9a43a3f00fb73a6028457c1abfc24051b` into `codex/adoption-onboarding`. The merge commit contains the Task 5 source, generated documentation, validators, and tests. At that integration point, Registry publication and Starter public activation remained pending. Task 5's local gates and the unrelated Design template drift are recorded in the bounded contract below; this integration does not claim a completed composite `docs:readme:check`, release, publication, or deployment. |
-| 6 - Community and support | SUPPORT.md, canonical support generators/validators, directly affected App release wording | Merged in child PR #252 at `4b8015f6e01e5eaeba1227132e8dffbe076fa64b`. GitHub Discussions remained disabled on the Task 7 recheck; no inactive link is published. Integrated support and generated-doc checks are recorded below. Sim maintenance and safety obligations remain open. |
-| 7 - Integrated readiness and release handoff | Affected gate results, this plan and index | Integration validation and handoff record refreshed for `86674ccc21ead7ad73f1fe57cb602258efbc6f63` after #254/#255 merged. Child PR #253 remains open for review and exact-head CI. Registry publication, deployment, independent agent evidence, and public adoption delivery remain separate. |
-| 8 - Published Starter public entry | README, homepage card, generated public docs/llms, release-entry status, and a pending empty Changeset | CLI `0.1.0` has been published. This PR updates current installation guidance and proves the published registry CLI consumer. Website deployment, community decision, and remaining program acceptance remain pending; do not mark the overall program DONE. |
+| 5 - Entry routing and product evidence | Root README, public docs/llms generators, existing homepage entry points and verified case evidence | Merged in child PR #251 at `fb7050f9a43a3f00fb73a6028457c1abfc24051b` into `codex/adoption-onboarding`. The merge commit contains the Task 5 source, generated documentation, validators, and tests. At that integration point, Registry publication and Starter public activation remained pending. The Task 5/7 gate result is historical; the composite `docs:readme:check` passed on 2026-09-26, and current screenshots are linked from the completed Root README plan. |
+| 6 - Community and support | SUPPORT.md, canonical support generators/validators, directly affected App release wording | Merged in child PR #252 at `4b8015f6e01e5eaeba1227132e8dffbe076fa64b`. GitHub Discussions was disabled on the Task 7 recheck; no inactive link is published. Integrated support and generated-doc checks are recorded below. Sim maintenance and safety obligations remain in their independent workstream and are not Adoption acceptance conditions. |
+| 7 - Integrated readiness and release handoff | Affected gate results, this plan and index | Integration validation and handoff record refreshed for `86674ccc21ead7ad73f1fe57cb602258efbc6f63` after #254/#255 merged. PR #253 merged at `a492b786b785769ba88b5c186a366cb618ebfc4c` with all reported checks successful; parent PR #242 merged to main at `e550e87b29824f72a1430eb34eac98f18c33235d`. Independent onboarding evidence is recorded below. The current `yarn docs:readme:check` passed on 2026-09-26, and the updated Root README visual matrix is retained with its completed plan. Earlier 15-file Design drift output remains a dated Task 5/7 result only. |
+| 8 - Published Starter public entry | README, homepage card, generated public docs/llms, release-entry status, and live deployment evidence | Completed on 2026-09-26. PR #260 integrated the published `create-asyra-app@0.1.0` installation path; the non-noop production deployment and live homepage/docs/source/onboarding/npm destinations are verified below. No Task 8 acceptance item remains open. |
 
-### Task 7 integration validation and release handoff
+### Task 7 integration validation and release handoff (2026-09-24 snapshot)
 
 Initial frozen source and scope: `origin/codex/adoption-onboarding` at
 `4b8015f6e01e5eaeba1227132e8dffbe076fa64b` (PR #252 merge), Node
@@ -585,10 +616,11 @@ Initial local results on `4b8015f6e01e5eaeba1227132e8dffbe076fa64b`:
   `yarn release:consumer:registry` reported `READY` for 19 currently published
   Framework packages through install/typecheck/build/test. This is Framework
   registry evidence, not a registry-installed Starter CLI or public release.
-- **Failed as expected:** composite `yarn docs:readme:check` passed applicable
-  package README and README validation stages, then stopped at the unchanged
-  Asyra Design generated-template drift (15 differing files). The applicable
-  `docs:readme:packages:check`, `docs:readme:validate`,
+- **Failed as expected (Task 7 run):** composite `yarn docs:readme:check` passed
+  applicable package README and README validation stages, then reported 15
+  differing Asyra Design generated-template files. This is the result of that
+  run, not a current count of differences or a confirmed repair scope. The
+  applicable `docs:readme:packages:check`, `docs:readme:validate`,
   `docs:public:check`, and `docs:public:validate` passed separately. No Design
   template synchronization or full Design validation was performed.
 - **Public state, read-only:** npm returned 404 for `create-asyra-app`.
@@ -640,17 +672,18 @@ unchanged package inputs; neither is a registry-installed Starter CLI result.
   Starter command/entry. Local and packed consumers do not establish a
   registry-installed CLI or website deployment.
 
-Task 7 integration validation and its release handoff record are complete for
-the tested product source. Review and integration of #253, publication,
-deployment, and independent agent evidence remain separate. Before the
-public adoption journey can be marked delivered, a separately authorized
-release must publish `create-asyra-app` and prove a registry-installed generated
-Starter consumer at the released versions; the integrated website/docs must be
-deployed and their three entry destinations rechecked live; Discussions may be
-activated only by an authorized repository-setting change and then its public
-policy/link revalidated; the independent coding-agent case and CI/review outcomes
-must be reported on their own evidence. The Design drift requires its own owner
-to restore the composite docs gate before a release that requires that gate.
+Task 7's original handoff listed review of #253, registry publication, website
+deployment, independent-agent evidence, and the composite README gate as separate
+follow-ups. The first four are now evidenced: #253 and parent #242 merged with
+successful checks, `create-asyra-app@0.1.0` and its registry consumer are
+verified, the live website entry is recorded under Task 8, and the independent
+AI onboarding result is retained below. Task 8 and the overall Adoption
+program are complete. The composite README check passed on 2026-09-26 and the
+current visual matrix is committed beside the completed Root README plan.
+Task 7's older run recorded 15 unrelated Asyra Design generated-template
+differences; that historical result is not a current count or repair scope.
+GitHub Discussions settings are user-owned and outside this Codex task; they
+were not a closeout blocker.
 
 ### Independent AI onboarding verification from main
 
@@ -678,9 +711,10 @@ document, history, or projection. No public document or API blocker was found.
 
 This is local CLI generation and packed Framework consumer evidence. It is
 distinct from installing `create-asyra-app` from npm or publishing the edited
-consumer. Registry distribution, website deployment, review/CI, and community
-activation remain unfinished; this result does not mark the adoption program
-DONE.
+consumer. At the time of this verification, registry distribution, website
+deployment, review/CI, and community activation remained unfinished. Later
+registry and website outcomes are recorded below; this local result alone did
+not mark the adoption program DONE.
 
 ### Generic Starter registry consumer verification
 
@@ -751,10 +785,11 @@ consumer also passed 16/16 tests, typecheck, lint, and production build.
 
 This result proves the published npm CLI and Framework registry consumer path
 for the source above. The README, homepage card, public overview, generated
-llms indexes, and this plan are updated in a main-based PR. Website deployment,
-community or Discussions decision, independent coding-agent evidence, and the
-remaining original adoption acceptance are still open; the program is not
-DONE.
+llms indexes, and this plan were updated in PR #260. Production deployment and
+the live entry are verified below. This completes Task 8 and contributes to the
+completed Adoption program; the composite README gate and visual matrix closeout
+evidence are recorded in the completion status above. Discussions settings are
+user-owned and not a closeout blocker.
 
 Homepage verification for this entry edit: site `test:local` passed 97 tests
 with 15 existing conditional skips; typecheck, lint, and production build
@@ -763,6 +798,29 @@ passed. Focused homepage routing E2E passed all 3 cases, including 1440px and
 the npm link's new-tab security attributes. The desktop and narrow screenshots
 of both the entry card and destination docs content were inspected. The command
 code block remains horizontally scrollable at the narrow viewport.
+
+Task 8 production activation was verified read-only on 2026-09-26. The
+<a href="https://github.com/karote00/asyra/actions/runs/36218261819" target="_blank" rel="noopener noreferrer">Manual App Release - Asyra Website run</a>
+used main SHA `6fdc917a8df201159946e2c946232ae9e2d08ad7`; its plan selected
+`asyra-framework` with `release: true` and `forced: false`, so this was not a
+no-op. GitHub Deployment `6674692486` targets `app-production`, ref `main`, and
+the same SHA; its final status is `success` at 2026-09-26 04:38:17 UTC. The
+publish job is
+<a href="https://github.com/karote00/asyra/actions/runs/36218261819/job/108338714990" target="_blank" rel="noopener noreferrer">recorded here</a>.
+The run's release plan identifies `asyra-framework.vercel.app` as the stable
+Production host, and that public URL displayed the Generic Starter homepage
+card and linked documentation. The live
+<a href="https://asyra-framework.vercel.app/docs#generic-starter-source" target="_blank" rel="noopener noreferrer">Starter documentation section</a>
+links to the main-branch Starter source, onboarding guide, and published npm
+package. It shows
+`npx create-asyra-app@0.1.0 my-app --package-manager=npm`; the
+<a href="https://www.npmjs.com/package/create-asyra-app/v/0.1.0" target="_blank" rel="noopener noreferrer">npm 0.1.0 page</a>
+confirms that version is public. The homepage, docs overview, custom-composition
+guide, Starter README, and onboarding guide opened successfully. This closes
+the website deployment/live-entry portion of Task 8 and the Adoption program.
+The composite README gate and current visual matrix evidence are recorded in
+the completed plan status above. Discussions settings are a separate
+user-owned action and are not a blocker.
 
 Historical CI detail: #253 head `dc35222eb610d3181ae7caf4c597b41dcbc13cb1`
 failed in run `35983934121`. Render-performance job `107582066413` failed during
@@ -800,9 +858,10 @@ hoisting, `workspace:*`, source aliases, or unpublished registry state.
 
 Authorized mutation scope:
 
-- `docs/ai/framework/plans/adoption-entry-and-onboarding-program-plan.md` only
-  for this Task 3 contract, Task 2/3 status, and the prompt contract wording
-  that now references #248's common rules.
+- The then-active Adoption plan, now retained at
+  `docs/ai/framework/plans/completed/adoption-entry-and-onboarding-program-plan.md`,
+  only for this Task 3 contract, Task 2/3 status, and the prompt contract
+  wording that now references #248's common rules.
 - `create-app/starter-app/**` for the directly maintained CLI package,
   executable, README/LICENSE, and generated `template/**` output.
 - `release-configs/starter-app.json` for the Starter release-template input.
