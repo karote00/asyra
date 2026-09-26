@@ -4,30 +4,6 @@ Never record completed plans here.
 
 This file tracks framework planning topics and points to detailed references.
 
-## Completed Adoption and Onboarding Program
-
-The [Adoption Entry and Onboarding Program](plans/completed/adoption-entry-and-onboarding-program-plan.md)
-completed Tasks 1-8 and the overall adoption acceptance on 2026-09-26. Its
-record retains the integration history, published Starter evidence, live
-website routes, independent onboarding verification, full README gate result,
-and links to the current desktop/narrow visual matrix. GitHub Discussions
-settings remain user-owned and outside closeout; Sim maintenance and controlled
-hardware benchmarks are independent follow-up work.
-
-Tasks 1-6 have integrated child results through PR #252 at
-`4b8015f6e01e5eaeba1227132e8dffbe076fa64b`; #254/#255 subsequently
-integrated the Starter build-owner repair and approved visual/drag board at
-`86674ccc21ead7ad73f1fe57cb602258efbc6f63`. PR #253 merged with all reported
-checks successful, and parent PR #242 merged the adoption integration into main
-at `e550e87b29824f72a1430eb34eac98f18c33235d`. The independent single-agent
-priority onboarding run from main is complete and has a retained generated
-consumer and formal tests.
-
-Task 8 is complete: `create-asyra-app@0.1.0` is published; PR #260 integrated
-the public README/AI discovery/homepage entry; and the website production
-deployment and live Starter/documentation routes are verified in the adoption
-plan. No Task 8 acceptance item remains open.
-
 ## Active Public Entry Experience Plans
 
 These plans improve how new visitors understand and verify the existing public
@@ -43,12 +19,6 @@ or unsupported capability claims.
   the current spatial-story contract.
 - Plan:
   `docs/ai/framework/plans/website-product-and-technical-evidence-plan.md`
-
-## Completed Public Entry Plans
-
-- [Root README Comprehension and Evidence](plans/completed/root-readme-comprehension-and-evidence-plan.md)
-  completed on 2026-09-26. The composite README gate passed and the current
-  desktop/narrow, media-loaded/unavailable evidence is committed with its plan.
 
 ## Active Pre-Release Blockers
 
