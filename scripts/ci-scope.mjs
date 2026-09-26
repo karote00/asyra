@@ -166,6 +166,10 @@ function classifyChanges(changedPaths, manifests) {
       selected.add('framework')
       continue
     }
+    if (changedPath.startsWith('docs/ai/workflows/')) {
+      selected.add('framework')
+      continue
+    }
     if (changedPath.startsWith('docs/ai/apps/asyra-design/')) {
       selected.add('design')
       continue
