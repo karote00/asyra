@@ -8,7 +8,11 @@ command.
 
 PR validation is independent of hosting. Ready PRs require `validate`,
 `framework-release-readiness`, `e2e-tests`, `collaboration-e2e-tests`, and
-`production-artifact-tests`. Draft jobs remain deferred until ready for review.
+`production-artifact-tests`. `validate` is the total aggregation check;
+`shared-validation` supplies its common prerequisites and runs the conditional
+create-app package archive check. Framework release readiness is selected for
+affected Framework packages and release-validation owner scripts. Draft jobs
+remain deferred until ready for review.
 Vercel statuses from older Git-integrated deployments are historical evidence,
 not merge prerequisites or proof that CI passed.
 
@@ -35,6 +39,10 @@ the form:
 Package-specific task names must not use a `^build:<package>` dependency.
 Turbo interprets `^` as the named task on every dependency package, which is
 not the Asyra package-specific task contract.
+
+CI runs each selected workspace's canonical build task and dependency closure
+to completion before invoking `test:ci`. The test task has no build dependency,
+so it must not be scheduled alongside the build task in a single Turbo run.
 
 Commands:
 
