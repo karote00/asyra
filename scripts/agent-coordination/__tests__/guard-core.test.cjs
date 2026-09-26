@@ -1379,8 +1379,14 @@ test('a real combined-source invariant failure cannot become integration evidenc
 
 test('CLI reads one JSON request and emits a machine-readable decision', () => {
   const root = makeTemporaryDirectory()
+  const baselineHead = initializeRepository(root)
   const registryPath = registryPathFor(root)
-  register(registryPath, 0, makeTask(root))
+  register(registryPath, 0, makeTask(root, { baselineHead }))
+  const { dispatch } = require('../guard-core.cjs')
+  assert.equal(
+    dispatch('select-coordinated', { repoRoot: root, taskId: 'task-a' }).decision,
+    'allow'
+  )
   const cli = path.resolve(__dirname, '..', 'guard.cjs')
   const result = spawnSync(process.execPath, [cli, 'check'], {
     cwd: projectRoot,
@@ -1941,4 +1947,259 @@ test('compact fsyncs each new directory entry before publishing the live registr
         ([kind, target]) => kind === 'fsync' && target === registryDirectory
       )
   )
+})
+
+function stableStringify(value) {
+  if (Array.isArray(value)) return JSON.stringify(value.map((item) => JSON.parse(stableStringify(item))))
+  if (value && typeof value === 'object') return JSON.stringify(Object.fromEntries(Object.keys(value).sort().map((key) => [key, JSON.parse(stableStringify(value[key]))])))
+  return JSON.stringify(value)
+}
+
+function initializeLocalTask(root, overrides = {}) {
+  const baselineHead = initializeRepository(root)
+  const task = makeTask(root, {
+    baselineHead,
+    expectedFileDigests: {
+      'src/owner.cjs': digest("module.exports = 'base';\n")
+    },
+    ...overrides
+  })
+  const { dispatch } = require('../guard-core.cjs')
+  const result = dispatch('init-task-local', { repoRoot: root, task })
+  assert.equal(result.decision, 'allow', result.reason)
+  return task
+}
+
+test('task-local admission ignores absent, corrupt, and incompatible global history', () => {
+  const root = makeTemporaryDirectory()
+  const task = initializeLocalTask(root)
+  const statePath = registryPathFor(root)
+  const { dispatch } = require('../guard-core.cjs')
+  const event = {
+    taskId: task.id,
+    cwd: root,
+    toolName: 'apply_patch',
+    toolInput:
+      "*** Begin Patch\n*** Update File: src/owner.cjs\n@@\n-module.exports = 'base';\n+module.exports = 'changed';\n*** End Patch"
+  }
+
+  for (const globalState of [
+    null,
+    'not json',
+    JSON.stringify({
+      version: 2,
+      revision: 2640,
+      tasks: { historical: { id: 'historical', worktree: root, state: 'active' } }
+    })
+  ]) {
+    if (globalState === null) fs.rmSync(statePath, { force: true })
+    else {
+      fs.mkdirSync(path.dirname(statePath), { recursive: true })
+      fs.writeFileSync(statePath, globalState)
+    }
+    const result = dispatch('pre-tool', { repoRoot: root, ...event })
+    assert.equal(result.decision, 'allow', result.reason)
+    assert.equal(result.details.taskId, task.id)
+    assert.deepEqual(result.details.approvedPaths, [
+      { path: 'src/owner.cjs', expectedDigest: digest("module.exports = 'base';\n") }
+    ])
+  }
+})
+
+test('task-local admission still denies dangerous and out-of-scope writes', () => {
+  const root = makeTemporaryDirectory()
+  initializeLocalTask(root, {
+    allowedPathPrefixes: ['src/', 'tmp/agent-coordination/']
+  })
+  const { dispatch } = require('../guard-core.cjs')
+  const dangerous = dispatch('pre-tool', {
+    repoRoot: root,
+    taskId: 'task-a',
+    cwd: root,
+    toolName: 'Bash',
+    toolInput: { command: 'rm -rf .' }
+  })
+  assert.equal(dangerous.decision, 'deny')
+  assert.equal(dangerous.code, 'destructive_command')
+
+  const outsideScope = dispatch('pre-tool', {
+    repoRoot: root,
+    taskId: 'task-a',
+    cwd: root,
+    toolName: 'apply_patch',
+    toolInput:
+      '*** Begin Patch\n*** Add File: package.json\n+{}\n*** End Patch'
+  })
+  assert.equal(outsideScope.decision, 'deny')
+  assert.equal(outsideScope.code, 'path_out_of_scope')
+
+  const guardState = dispatch('pre-tool', {
+    repoRoot: root,
+    taskId: 'task-a',
+    cwd: root,
+    toolName: 'apply_patch',
+    toolInput:
+      '*** Begin Patch\n*** Update File: tmp/agent-coordination/task.json\n@@\n-{}\n+{}\n*** End Patch'
+  })
+  assert.equal(guardState.decision, 'deny')
+  assert.equal(guardState.code, 'guard_state_protected')
+})
+
+test('task-local mode has an actionable missing-state denial and keeps commit gates', () => {
+  const root = makeTemporaryDirectory()
+  const { dispatch } = require('../guard-core.cjs')
+  const missing = dispatch('pre-tool', {
+    repoRoot: root,
+    taskId: 'task-a',
+    cwd: root,
+    toolName: 'apply_patch',
+    toolInput: '*** Begin Patch\n*** Add File: src/new.cjs\n+{}\n*** End Patch'
+  })
+  assert.equal(missing.decision, 'deny')
+  assert.equal(missing.code, 'task_state_missing')
+  assert.match(missing.reason, /init-task-local/)
+
+  const task = initializeLocalTask(root)
+  fs.writeFileSync(path.join(root, 'src/owner.cjs'), "module.exports = 'staged';\n")
+  const taskModePath = path.join(root, 'tmp/agent-coordination/task.json')
+  const localState = JSON.parse(fs.readFileSync(taskModePath, 'utf8'))
+  localState.task.expectedFileDigests['src/owner.cjs'] = digest(
+    "module.exports = 'staged';\n"
+  )
+  fs.writeFileSync(taskModePath, JSON.stringify(localState))
+  git(root, ['add', 'src/owner.cjs'])
+  const result = dispatch('pre-commit', {
+    repoRoot: root,
+    taskId: task.id,
+    cwd: root
+  })
+  assert.equal(result.decision, 'deny')
+  assert.equal(result.code, 'evidence_mismatch')
+
+  const directCommit = dispatch('pre-tool', {
+    repoRoot: root,
+    cwd: root,
+    toolName: 'Bash',
+    toolInput: { command: 'git commit -m "blocked without exact evidence"' }
+  })
+  assert.equal(directCommit.decision, 'deny')
+  assert.equal(directCommit.code, 'evidence_mismatch')
+})
+
+test('damaged local state fails closed and recovers only against exact bytes and preimages', () => {
+  const root = makeTemporaryDirectory()
+  const task = initializeLocalTask(root)
+  const { dispatch } = require('../guard-core.cjs')
+  const statePath = path.join(root, 'tmp/agent-coordination/task.json')
+  const damaged = '{ damaged local task state'
+  fs.writeFileSync(statePath, damaged)
+  const denied = dispatch('pre-tool', {
+    repoRoot: root,
+    taskId: task.id,
+    cwd: root,
+    toolName: 'apply_patch',
+    toolInput: '*** Begin Patch\n*** Add File: src/new.cjs\n+{}\n*** End Patch'
+  })
+  assert.equal(denied.decision, 'deny')
+  assert.equal(denied.code, 'invalid_task_state')
+  assert.match(denied.reason, /recover-task-local/)
+
+  const staleRecovery = dispatch('recover-task-local', {
+    repoRoot: root,
+    expectedStateDigest: digest('different bytes'),
+    task
+  })
+  assert.equal(staleRecovery.decision, 'deny')
+  assert.equal(staleRecovery.code, 'stale_task_state')
+  const recovered = dispatch('recover-task-local', {
+    repoRoot: root,
+    expectedStateDigest: digest(damaged),
+    task
+  })
+  assert.equal(recovered.decision, 'allow', recovered.reason)
+  assert.equal(dispatch('context', { repoRoot: root }).details.mode, 'task-local')
+})
+
+test('task-local lifecycle updates cannot widen authority or claim stale evidence', () => {
+  const root = makeTemporaryDirectory()
+  const task = initializeLocalTask(root)
+  const { dispatch } = require('../guard-core.cjs')
+  const state = dispatch('context', { repoRoot: root }).details.registry.tasks[task.id]
+  const widened = dispatch('update-task-local', {
+    repoRoot: root,
+    expectedTaskDigest: digest(stableStringify(state)),
+    update: { allowedPathPrefixes: [''] }
+  })
+  assert.equal(widened.decision, 'deny')
+  assert.equal(widened.code, 'task_authority_immutable')
+
+  const currentDigest = digest(stableStringify(state))
+  const evidence = dispatch('update-task-local', {
+    repoRoot: root,
+    expectedTaskDigest: currentDigest,
+    update: {
+      state: 'ready',
+      evidence: {
+        head: 'b'.repeat(40),
+        tree: 'c'.repeat(40),
+        gates: { focused: { status: 'passed', head: 'b'.repeat(40), tree: 'c'.repeat(40) } }
+      },
+      review: { status: 'passed', head: 'b'.repeat(40), tree: 'c'.repeat(40) }
+    }
+  })
+  assert.equal(evidence.decision, 'deny')
+  assert.notEqual(evidence.code, 'task_local_updated')
+})
+
+test('task-local stop persists at most one continuation and respects an explicit stop', () => {
+  const root = makeTemporaryDirectory()
+  const task = initializeLocalTask(root)
+  const { dispatch } = require('../guard-core.cjs')
+  const first = dispatch('stop', {
+    repoRoot: root,
+    taskId: task.id,
+    cwd: root,
+    pending: true
+  })
+  assert.equal(first.decision, 'continue')
+  const second = dispatch('stop', {
+    repoRoot: root,
+    taskId: task.id,
+    cwd: root,
+    pending: true
+  })
+  assert.equal(second.decision, 'stop')
+  assert.equal(second.code, 'continuation_exhausted')
+  const stopped = dispatch('stop', {
+    repoRoot: root,
+    taskId: task.id,
+    cwd: root,
+    userStop: true
+  })
+  assert.equal(stopped.code, 'explicit_user_stop')
+})
+test('explicit coordinated mode continues to validate the shared registry', () => {
+  const root = makeTemporaryDirectory()
+  const baselineHead = initializeRepository(root)
+  const registryPath = registryPathFor(root)
+  const task = makeTask(root, { baselineHead })
+  register(registryPath, 0, task)
+  const { dispatch } = require('../guard-core.cjs')
+  const selected = dispatch('select-coordinated', {
+    repoRoot: root,
+    taskId: task.id
+  })
+  assert.equal(selected.decision, 'allow', selected.reason)
+
+  fs.writeFileSync(registryPath, JSON.stringify({ version: 2, revision: 2640, tasks: {} }))
+  const result = dispatch('pre-tool', {
+    repoRoot: root,
+    taskId: task.id,
+    cwd: root,
+    toolName: 'apply_patch',
+    toolInput:
+      '*** Begin Patch\n*** Add File: src/new.cjs\n+{}\n*** End Patch'
+  })
+  assert.equal(result.decision, 'deny')
+  assert.equal(result.code, 'invalid_registry')
 })

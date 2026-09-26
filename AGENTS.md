@@ -50,10 +50,12 @@ These rules apply to every task without requiring additional document reads:
   the current task. The opt-in role templates live under
   `docs/ai/workflows/multi-agent-templates/`, not in active Codex config.
 - For coordinated multi-agent writes, register the task and follow
-  `docs/ai/workflows/agent-coordination-guards.md`. Hook installation, native
-  activation, task completion and PR integration are separate states. Never
-  treat a pending CI run as completed delivery or silently refresh unknown file
-  changes into an accepted task snapshot.
+  `docs/ai/workflows/agent-coordination-guards.md`. A normal single-agent task
+  in an isolated worktree uses task-local state without registering shared
+  history. Hook installation, native activation, task completion and PR
+  integration are separate states. Never treat a pending CI run as completed
+  delivery or silently refresh unknown file changes into an accepted task
+  snapshot.
 - For new apps and app feature/refactor work, read
   `docs/public/start/custom-composition.md` (the reusable App implementation
   guide) and

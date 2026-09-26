@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
+  copyFileSync,
   existsSync,
   readFileSync,
   readdirSync,
@@ -333,4 +334,183 @@ test('unknown native result shapes never bless changed file expectations', () =>
   assert.equal(operationSucceeded({ exit_code: 1 }), false)
   assert.equal(operationSucceeded({ exit_code: 0 }), true)
   assert.equal(operationSucceeded({ success: true }), true)
+})
+
+test('native task-local hooks ignore invalid shared history and advance only their local snapshot', (t) => {
+  const require = createRequire(import.meta.url)
+  const core = require('../agent-coordination/guard-core.cjs')
+  const temporaryRoot = path.resolve('tmp')
+  mkdirSync(temporaryRoot, { recursive: true })
+  const root = mkdtempSync(path.join(temporaryRoot, 'native-task-local-'))
+  t.after(() => rmSync(root, { recursive: true, force: true }))
+  const git = (...args) =>
+    execFileSync('git', args, {
+      cwd: root,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe']
+    }).trim()
+  git('init', '-q', '-b', 'codex/task-local-proof')
+  git('config', 'user.name', 'Hook Test')
+  git('config', 'user.email', 'hook@example.test')
+  mkdirSync(path.join(root, 'src'))
+  writeFileSync(path.join(root, 'src/value.txt'), 'before\n')
+  git('add', 'src/value.txt')
+  git('commit', '-qm', 'baseline')
+  const hash = (text) => createHash('sha256').update(text).digest('hex')
+  const task = {
+    id: 'task-local-proof',
+    agentId: null,
+    coordinator: false,
+    kind: 'goal',
+    integrationTargetTaskId: null,
+    worktree: root,
+    branch: 'codex/task-local-proof',
+    baselineHead: git('rev-parse', 'HEAD'),
+    allowedPathPrefixes: ['src/'],
+    allowedExactFiles: [],
+    protectedContractPaths: [],
+    allowedContractEdits: [],
+    expectedFileDigests: { 'src/value.txt': hash('before\n') },
+    approvedCommands: [],
+    semanticOwners: ['task-local/proof'],
+    dependsOn: [],
+    state: 'active',
+    requiredGates: ['focused'],
+    evidence: null,
+    review: null,
+    continuations: 0
+  }
+  mkdirSync(path.join(root, 'scripts/agent-coordination'), { recursive: true })
+  for (const relative of [
+    'agent-hook-adapter.mjs',
+    'agent-coordination/guard.cjs',
+    'agent-coordination/guard-core.cjs'
+  ]) {
+    copyFileSync(new URL(`../${relative}`, import.meta.url), path.join(root, 'scripts', relative))
+  }
+  mkdirSync(path.join(root, 'tmp/agent-coordination'), { recursive: true })
+  const globalPath = path.join(root, 'tmp/agent-coordination/state.json')
+  writeFileSync(globalPath, '{ incompatible history')
+  const native = (event) =>
+    JSON.parse(
+      execFileSync(process.execPath, [path.join(root, 'scripts/agent-hook-adapter.mjs')], {
+        cwd: root,
+        input: JSON.stringify(event),
+        encoding: 'utf8'
+      })
+    )
+  native({
+    hook_event_name: 'PostToolUse',
+    tool_use_id: 'read-without-task-mode',
+    cwd: root,
+    tool_name: 'Bash',
+    tool_input: { command: 'pwd' },
+    tool_response: { success: true }
+  })
+  assert.equal(existsSync(path.join(root, 'tmp/agent-coordination/receipts')), false)
+  const uninitializedProductWrite = native({
+    hook_event_name: 'PreToolUse',
+    tool_use_id: 'uninitialized-product-write',
+    cwd: root,
+    tool_name: 'apply_patch',
+    tool_input: {
+      command: `*** Begin Patch\n*** Add File: ${root}/src/new.txt\n+new\n*** End Patch`
+    }
+  })
+  assert.equal(
+    uninitializedProductWrite.hookSpecificOutput.permissionDecision,
+    'deny'
+  )
+  const uninitializedDangerousCommand = native({
+    hook_event_name: 'PreToolUse',
+    tool_use_id: 'uninitialized-dangerous-command',
+    cwd: root,
+    tool_name: 'Bash',
+    tool_input: { command: 'rm -rf .' }
+  })
+  assert.equal(
+    uninitializedDangerousCommand.hookSpecificOutput.permissionDecision,
+    'deny'
+  )
+  const request = { mode: 'init-task-local', repoRoot: root, task }
+  const requestText = JSON.stringify(request)
+  const requestEvent = {
+    hook_event_name: 'PreToolUse',
+    tool_use_id: 'task-request-init',
+    cwd: root,
+    tool_name: 'apply_patch',
+    tool_input: {
+      command: `*** Begin Patch\n*** Add File: tmp/agent-coordination/requests/task-local.json\n+${requestText}\n*** End Patch`
+    }
+  }
+  assert.deepEqual(native(requestEvent), {})
+  mkdirSync(path.join(root, 'tmp/agent-coordination/requests'), { recursive: true })
+  writeFileSync(
+    path.join(root, 'tmp/agent-coordination/requests/task-local.json'),
+    `${requestText}\n`
+  )
+  assert.deepEqual(
+    native({
+      ...requestEvent,
+      hook_event_name: 'PostToolUse',
+      tool_response: { success: true }
+    }),
+    {}
+  )
+  const initCommand =
+    'node scripts/agent-coordination/guard.cjs init-task-local < tmp/agent-coordination/requests/task-local.json'
+  assert.deepEqual(
+    native({
+      hook_event_name: 'PreToolUse',
+      tool_use_id: 'task-local-init-command',
+      cwd: root,
+      tool_name: 'Bash',
+      tool_input: { command: initCommand }
+    }),
+    {}
+  )
+  const initialized = JSON.parse(
+    execFileSync(
+      process.execPath,
+      [path.join(root, 'scripts/agent-coordination/guard.cjs'), 'init-task-local'],
+      { cwd: root, input: JSON.stringify(request), encoding: 'utf8' }
+    )
+  )
+  assert.equal(initialized.decision, 'allow', initialized.reason)
+  assert.deepEqual(
+    native({
+      hook_event_name: 'PostToolUse',
+      tool_use_id: 'task-local-init-command',
+      cwd: root,
+      tool_name: 'Bash',
+      tool_input: { command: initCommand },
+      tool_response: { success: true }
+    }),
+    {}
+  )
+  const event = {
+    hook_event_name: 'PreToolUse',
+    tool_use_id: 'local-hook-proof',
+    cwd: root,
+    tool_name: 'apply_patch',
+    tool_input: {
+      command: `*** Begin Patch\n*** Update File: ${root}/src/value.txt\n@@\n-before\n+after\n*** End Patch`
+    }
+  }
+  assert.deepEqual(native(event), {})
+  writeFileSync(path.join(root, 'src/value.txt'), 'after\n')
+  assert.deepEqual(
+    native({
+      ...event,
+      hook_event_name: 'PostToolUse',
+      tool_response: { success: true }
+    }),
+    {}
+  )
+  const localState = JSON.parse(
+    readFileSync(path.join(root, 'tmp/agent-coordination/task.json'), 'utf8')
+  )
+  assert.equal(localState.mode, 'task-local')
+  assert.equal(localState.task.expectedFileDigests['src/value.txt'], hash('after\n'))
+  assert.equal(readFileSync(globalPath, 'utf8'), '{ incompatible history')
 })
