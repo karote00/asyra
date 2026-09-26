@@ -65,6 +65,11 @@ jobs:
         # Each workspace also owns test workers; avoid multiplying both pools.
         run: yarn test:ci --concurrency=2
 
+      - name: Profile FieldScope numerical owners
+        if: success()
+        # Preserve elapsed guards while removing Turbo and workspace contention.
+        run: yarn workspace @asyra/fieldscope test:profiles
+
       - name: Verify Flow Inspector core proof
         env:
           FLOW_CI_BASE: ${{ github.event.pull_request.base.sha || github.sha }}
