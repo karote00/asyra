@@ -19,11 +19,13 @@ title-draft review fix (#255) subsequently integrated at
 reported checks successful, and parent PR #242 integrated the adoption work
 into main. The independent AI onboarding verification is recorded below.
 Task 8's published Starter entry, website deployment, and live routes were
-verified on 2026-09-26 and are complete. Two existing program conditions remain:
-the composite `yarn docs:readme:check` is blocked by 15 Asyra Design template
-differences, and the root README plan still requires durable committed evidence
-for its desktop/narrow, media-present/unavailable visual matrix. The screenshots
-remain in the Task 5 worktree but `.gitignore` excludes them from commits.
+verified on 2026-09-26 and are complete. Two program evidence gaps remain: the
+recorded Task 5/7 `yarn docs:readme:check` attempts reported 15 Asyra Design
+generated-template differences after applicable package README stages passed,
+and no later passing result is recorded; the root README visual matrix also
+lacks durable committed evidence. The Task 5 record identifies 12 screenshots
+in its worktree, excluded from commits by `.gitignore`. This evidence does not
+establish that the same 15 differences remain or that 15 files need correction.
 Discussions settings are a separate user-owned action and are not a Codex
 Adoption closeout condition.
 
@@ -35,10 +37,11 @@ that CLI tarball's SHA-256 is
 The README, AI discovery, and homepage entry changes merged in PR #260 at
 `6fdc917a8df201159946e2c946232ae9e2d08ad7`. Task 8's website production
 deployment and live Starter entry are verified below. No Task 8 acceptance
-item remains open. The separate composite README gate is still blocked by the
-Design template drift recorded above. The root README plan also still awaits
-committed artifacts for its visual matrix; the existing images are local
-ignored files in the Task 5 worktree. The overall plan is therefore not DONE.
+item remains open. The composite README gate has no passing result recorded
+after the Task 5/7 attempts reported 15 Design generated-template differences.
+The root README plan also awaits committed artifacts for its visual matrix; the
+Task 5 record identifies local screenshots excluded by `.gitignore`. The
+overall plan is therefore not DONE.
 GitHub Discussions settings are user-owned and outside this Codex task; they do
 not block this plan's closeout.
 
@@ -600,10 +603,11 @@ Initial local results on `4b8015f6e01e5eaeba1227132e8dffbe076fa64b`:
   `yarn release:consumer:registry` reported `READY` for 19 currently published
   Framework packages through install/typecheck/build/test. This is Framework
   registry evidence, not a registry-installed Starter CLI or public release.
-- **Failed as expected:** composite `yarn docs:readme:check` passed applicable
-  package README and README validation stages, then stopped at the unchanged
-  Asyra Design generated-template drift (15 differing files). The applicable
-  `docs:readme:packages:check`, `docs:readme:validate`,
+- **Failed as expected (Task 7 run):** composite `yarn docs:readme:check` passed
+  applicable package README and README validation stages, then reported 15
+  differing Asyra Design generated-template files. This is the result of that
+  run, not a current count of differences or a confirmed repair scope. The
+  applicable `docs:readme:packages:check`, `docs:readme:validate`,
   `docs:public:check`, and `docs:public:validate` passed separately. No Design
   template synchronization or full Design validation was performed.
 - **Public state, read-only:** npm returned 404 for `create-asyra-app`.
@@ -661,13 +665,15 @@ follow-ups. The first four are now evidenced: #253 and parent #242 merged with
 successful checks, `create-asyra-app@0.1.0` and its registry consumer are
 verified, the live website entry is recorded under Task 8, and the independent
 AI onboarding result is retained below. Task 8 is complete. Two program-level
-conditions remain: Task 7's evidence records that `yarn docs:readme:check`
-stopped on 15 unrelated Asyra Design generated-template differences after its
-applicable package README stages passed; and the root README plan still awaits
-committed artifacts for its visual matrix. The first belongs to the Design
-owner; the existing screenshots for the second are ignored local files in the
-Task 5 worktree. GitHub Discussions settings are a separate user-owned action,
-outside this Codex task and not a closeout blocker.
+evidence gaps remain: Task 7's recorded `yarn docs:readme:check` attempt
+reported 15 unrelated Asyra Design generated-template differences after
+applicable package README stages passed, and no later passing result is
+recorded; the root README plan still awaits committed artifacts for its visual
+matrix. The Task 5 record identifies screenshots excluded from commits by
+`.gitignore`. These records do not establish a current count of Design
+differences or how many files would need correction. GitHub Discussions
+settings are a separate user-owned action, outside this Codex task and not a
+closeout blocker.
 
 ### Independent AI onboarding verification from main
 
@@ -771,8 +777,9 @@ This result proves the published npm CLI and Framework registry consumer path
 for the source above. The README, homepage card, public overview, generated
 llms indexes, and this plan were updated in PR #260. Production deployment and
 the live entry are verified below. This completes Task 8; the overall plan
-remains active only for the composite README gate described in the current
-status. Discussions settings are user-owned and not a closeout blocker.
+remains active for the composite README gate's missing passing evidence and the
+root README visual matrix's missing committed artifacts, as described in the
+current status. Discussions settings are user-owned and not a closeout blocker.
 
 Homepage verification for this entry edit: site `test:local` passed 97 tests
 with 15 existing conditional skips; typecheck, lint, and production build
@@ -801,8 +808,10 @@ package. It shows
 confirms that version is public. The homepage, docs overview, custom-composition
 guide, Starter README, and onboarding guide opened successfully. This closes
 the website deployment/live-entry portion of Task 8. The overall Adoption
-plan remains active for the composite README gate described above; Discussions
-settings are a separate user-owned action and are not a blocker.
+plan remains active because the composite README gate has no later passing
+result recorded and the root README visual matrix still lacks committed
+artifacts; see the status above. Discussions settings are a separate
+user-owned action and are not a blocker.
 
 Historical CI detail: #253 head `dc35222eb610d3181ae7caf4c597b41dcbc13cb1`
 failed in run `35983934121`. Render-performance job `107582066413` failed during
