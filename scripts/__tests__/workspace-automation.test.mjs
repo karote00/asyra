@@ -158,7 +158,7 @@ test('CI schedules discovered workspaces through one bounded build-then-test mat
   const workflow = readText('.github/workflows/main.yml')
   const scripts = readJSON('package.json').scripts
 
-  assert.match(workflow, /run: yarn test:scripts/)
+  assert.match(workflow, /node scripts\/run-ci-checks\.mjs/)
   assert.match(
     workflow,
     /workspace: \$\{\{ fromJson\(needs\.scope\.outputs\.workspace_matrix\) \}\}/
@@ -870,7 +870,7 @@ test('shared CI builds Framework declarations before public documentation checks
     .split('\n  shared-validation:\n')[1]
     .split('\n  workspace-validation:\n')[0]
   const buildStep = sharedJob.indexOf('Build Framework declarations')
-  const scriptsTest = sharedJob.indexOf('run: yarn test:scripts')
+  const scriptsTest = sharedJob.indexOf('node scripts/run-ci-checks.mjs')
 
   assert.ok(buildStep >= 0 && buildStep < scriptsTest)
   assert.match(

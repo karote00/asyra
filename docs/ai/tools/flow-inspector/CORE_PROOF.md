@@ -462,17 +462,30 @@ Changeset, repository-script, and document validation without selecting
 unrelated workspace suites. Unknown paths remain blockers.
 
 Scope evidence identifies the repository, base, candidate HEAD, integration
-revision, GitHub run, and run attempt. The final job requires the exact same
-identity and requires every selected producer to succeed while every
-unselected category producer remains skipped. Known docs-only changes still run
+revision, GitHub run, and run attempt. Its versioned execution plan records
+lint, repository script tests, naming, framework declarations, workspace test
+selection, and four E2E suites in one relationship map. Full validation selects
+all declared checks. Incremental validation runs lint on changed applicable
+files, repository script tests for declared script-owner inputs, supported
+Vitest related tests for existing source/test inputs, and only the E2E suite
+owners selected by changed paths. Configurations, fixtures, deleted or renamed
+test inputs, unsupported runners, and shared inputs retain the complete owner
+suite. The final job requires the same identity and plan/map digests, requires
+every selected producer to succeed, and requires every unselected producer to
+remain skipped. Missing selected outputs and zero-evidence results cannot pass.
+Known docs-only changes still run
 shared validation and the applicable document-owner check; Flow Inspector
 contract documentation selects its tool contract suite. A rerun with a
 different attempt cannot reuse the previous attempt's scope evidence: rerun the
 entire workflow so all producers emit evidence for the new attempt. Missing scope output, unknown
 paths, missing jobs, unexpected jobs, failure, cancellation, and skipped
 selected work all fail the total check. Shared validation (security audit,
-dependency and Turbo validation, lint, Changeset admission, and repository
-script tests) remains required for every non-draft run.
+dependency and Turbo validation, Changeset admission, and the planned lint,
+repository script, and naming checks) remains required for every non-draft run.
+Framework declarations are produced only when their declared check is selected.
+Each E2E suite reports its own result; selected suites must succeed and
+unselected suites must remain skipped. The functional and collaboration suites
+also emit exact case evidence for the fixed Design inventory.
 Changes to Framework release-validation scripts also select
 `framework-release-readiness`, even when no package workspace changed.
 `create-app/<app>` is outside the workspace graph; affected CLI package

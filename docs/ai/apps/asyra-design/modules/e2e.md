@@ -104,6 +104,12 @@ test:e2e:balanced-ai-correctness` runs that heavy case explicitly with one
   does not prevent functional evidence collection, but a failed contract job
   still fails the reusable workflow and its required `flow-ci` aggregate. No
   correctness gate is optional.
+- The main CI workflow passes an explicit list of selected suites to the
+  reusable workflow. Full validation selects collaboration, Flow Inspector
+  board, functional, and render-contract suites. Incremental validation selects
+  the suite matching the changed E2E spec; shared workflow/setup inputs select
+  every suite. The final aggregate requires one successful result for each
+  selected suite and a skipped result for each unselected suite.
 - `E2E_SUITE=render-contracts` and `E2E_SUITE=functional` select the bounded
   slice in `scripts/run-e2e.sh`; the default `all` keeps local full-suite behavior. All
   slices preserve PID-owned service startup, readiness, fail-fast and cleanup.

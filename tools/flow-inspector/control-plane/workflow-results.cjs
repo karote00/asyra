@@ -35,6 +35,12 @@ const identityKeys = [
   'run',
   'attempt'
 ]
+const e2eSuiteNames = [
+  'collaboration',
+  'flow-inspector-board',
+  'functional',
+  'render-contracts'
+]
 const hash = (value) => createHash('sha256').update(value).digest('hex')
 function classify(observations, reportValid) {
   if (
@@ -128,11 +134,13 @@ function aggregate(envelopes, identity, jobs, scopeEvidence) {
     )
   if (!validIdentity)
     blockers.push('Expected execution identity is unavailable')
-  const designSelected = jobs.designSelected === 'true'
+  const selectedSuites =
+    scopeEvidence?.relationshipMap?.executionPlan?.checks?.e2e?.selected ?? []
   const scope = aggregateScope(scopeEvidence, identity, jobs)
   blockers.push(...scope.blockers)
   const cases = inventory.map((c) => {
-    if (!designSelected)
+    const ownerSuite = c.producer === 'design' ? 'functional' : 'collaboration'
+    if (!selectedSuites.includes(ownerSuite))
       return {
         id: c.id,
         owner: 'apps/asyra-design',
@@ -175,10 +183,34 @@ function aggregate(envelopes, identity, jobs, scopeEvidence) {
   })
   if (jobs.validate !== 'success')
     blockers.push('validate: prerequisite did not succeed')
-  if (designSelected && jobs.e2e !== 'success')
-    blockers.push('e2e: prerequisite did not succeed')
-  if (!designSelected && jobs.e2e !== 'skipped')
+  if (selectedSuites.length > 0 && jobs.e2e !== 'success')
+    blockers.push('e2e: selected suite workflow did not succeed')
+  if (selectedSuites.length === 0 && jobs.e2e !== 'skipped')
     blockers.push('e2e: unselected producer did not remain skipped')
+  const suiteResults = jobs.e2eSuiteResults
+  if (
+    !suiteResults ||
+    JSON.stringify(Object.keys(suiteResults).sort()) !==
+      JSON.stringify(e2eSuiteNames.slice().sort())
+  ) {
+    blockers.push('e2e: suite result set is missing or unexpected')
+  } else {
+    for (const suite of e2eSuiteNames) {
+      const result = suiteResults[suite]
+      if (selectedSuites.includes(suite)) {
+        if (result !== 'success')
+          blockers.push(`e2e ${suite}: selected suite did not succeed`)
+      } else if (
+        selectedSuites.length === 0 &&
+        jobs.e2e === 'skipped' &&
+        (result === '' || result === undefined || result === 'skipped')
+      ) {
+        continue
+      } else if (result !== 'skipped') {
+        blockers.push(`e2e ${suite}: unselected suite did not remain skipped`)
+      }
+    }
+  }
   let status = 'passed'
   if (cases.some((c) => c.status === 'failed') || scope.status === 'failed')
     status = 'failed'
@@ -202,6 +234,8 @@ function aggregate(envelopes, identity, jobs, scopeEvidence) {
         'frameworkRelease',
         'createAppReadiness',
         'e2e',
+        'e2eSuiteResults',
+        'frameworkDeclarations',
         'designForwarder',
         'collaborationForwarder'
       ].map((name) => [name, jobs[name] ?? 'missing'])
@@ -221,11 +255,78 @@ function aggregateScope(evidence, identity, jobs) {
       /^[a-f0-9]{40}$/.test(identity[key] ?? '')
     )
   const relationshipMap = evidence?.relationshipMap
+  const executionPlan = relationshipMap?.executionPlan
   const matrix = relationshipMap?.workspaceMatrix
   const graph = relationshipMap?.workspaceGraph
   const unique = (values) => new Set(values).size === values.length
+  const validWorkspaceTests = (selection) =>
+    selection &&
+    ['full', 'related', 'not-selected'].includes(selection.mode) &&
+    Array.isArray(selection.inputs) &&
+    selection.inputs.every((file) => typeof file === 'string') &&
+    typeof selection.reason === 'string' &&
+    (selection.mode !== 'related' ||
+      (selection.inputs.length > 0 &&
+        selection.runner?.command === 'vitest' &&
+        Array.isArray(selection.runner.args) &&
+        selection.runner.args.every((arg) => typeof arg === 'string')))
+  const lintSelection = executionPlan?.checks?.lint
+  const repositoryScriptSelection = executionPlan?.checks?.repositoryScripts
+  const namingSelection = executionPlan?.checks?.naming
+  const frameworkDeclarationSelection =
+    executionPlan?.checks?.frameworkDeclarations
+  const e2eSelection = executionPlan?.checks?.e2e
+  const validExecutionPlan =
+    executionPlan?.version === 1 &&
+    ['full', 'incremental'].includes(executionPlan.mode) &&
+    Array.isArray(executionPlan.changedPaths) &&
+    executionPlan.changedPaths.every((file) => typeof file === 'string') &&
+    Array.isArray(executionPlan.unknownRelations) &&
+    Array.isArray(executionPlan.checks?.workspaces) &&
+    lintSelection &&
+    ['full', 'files', 'not-selected'].includes(lintSelection.mode) &&
+    Array.isArray(lintSelection.inputs) &&
+    repositoryScriptSelection &&
+    ['full', 'not-selected'].includes(repositoryScriptSelection.mode) &&
+    repositoryScriptSelection.command === 'test:scripts' &&
+    Array.isArray(repositoryScriptSelection.inputs) &&
+    namingSelection &&
+    ['full', 'not-selected'].includes(namingSelection.mode) &&
+    namingSelection.command === 'lint:naming' &&
+    Array.isArray(namingSelection.inputs) &&
+    frameworkDeclarationSelection &&
+    ['full', 'not-selected'].includes(frameworkDeclarationSelection.mode) &&
+    Array.isArray(frameworkDeclarationSelection.tasks) &&
+    e2eSelection &&
+    Array.isArray(e2eSelection.selected) &&
+    unique(e2eSelection.selected) &&
+    Array.isArray(e2eSelection.notSelected) &&
+    unique(e2eSelection.notSelected) &&
+    [...e2eSelection.selected, ...e2eSelection.notSelected].every((name) =>
+      e2eSuiteNames.includes(name)
+    ) &&
+    new Set([...e2eSelection.selected, ...e2eSelection.notSelected]).size ===
+      e2eSuiteNames.length &&
+    e2eSuiteNames.every(
+      (name) =>
+        e2eSelection.selected.includes(name) !==
+        e2eSelection.notSelected.includes(name)
+    ) &&
+    (executionPlan.mode !== 'full' ||
+      (lintSelection.mode === 'full' &&
+        repositoryScriptSelection.mode === 'full' &&
+        namingSelection.mode === 'full' &&
+        frameworkDeclarationSelection.mode === 'full' &&
+        executionPlan.checks.workspaces.every(
+          (workspace) => workspace.tests?.mode === 'full'
+        ) &&
+        e2eSelection.selected.length === e2eSuiteNames.length))
   const validMap =
     relationshipMap?.version === 1 &&
+    validExecutionPlan &&
+    JSON.stringify(evidence?.executionPlan) === JSON.stringify(executionPlan) &&
+    JSON.stringify(executionPlan.unknownRelations) ===
+      JSON.stringify(relationshipMap.unknownPaths) &&
     Array.isArray(relationshipMap.workspaceRoots) &&
     relationshipMap.workspaceRoots.length > 0 &&
     relationshipMap.workspaceRoots.every(
@@ -301,6 +402,7 @@ function aggregateScope(evidence, identity, jobs) {
         entry.directory === workspace.directory &&
         entry.buildTask === workspace.buildTask &&
         entry.testTask === workspace.testTask &&
+        validWorkspaceTests(entry.testSelection) &&
         /^[a-f0-9]{16}$/.test(entry.artifactId ?? '') &&
         hash(entry.name).startsWith(entry.artifactId)
       )
@@ -317,10 +419,22 @@ function aggregateScope(evidence, identity, jobs) {
         .filter(({ directory }) => directory.startsWith('packages/'))
         .map(({ name }) => name)
     : []
-  const expectedFrameworkDeclarationTasks = validGraph
-    ? graph
-        .filter(({ group }) => group === 'packages')
-        .map(({ name, buildTask }) => ({ workspace: name, task: buildTask }))
+  const expectedFrameworkDeclarationTasks = validExecutionPlan
+    ? frameworkDeclarationSelection.tasks
+    : []
+  const expectedWorkspacePlan = validMatrix
+    ? matrix.map((entry) => {
+        const planned = executionPlan.checks.workspaces.find(
+          ({ workspace }) => workspace === entry.name
+        )
+        return (
+          planned &&
+          planned.directory === entry.directory &&
+          planned.buildTask === entry.buildTask &&
+          planned.testTask === entry.testTask &&
+          JSON.stringify(planned.tests) === JSON.stringify(entry.testSelection)
+        )
+      })
     : []
   const admitted =
     validIdentity &&
@@ -328,21 +442,31 @@ function aggregateScope(evidence, identity, jobs) {
     identityKeys.every((key) => evidence.identity?.[key] === identity[key]) &&
     validMap &&
     validMatrix &&
+    expectedWorkspacePlan.length === matrix.length &&
+    expectedWorkspacePlan.every(Boolean) &&
+    JSON.stringify(executionPlan.checks.workspaces) ===
+      JSON.stringify(
+        matrix.map((entry) =>
+          executionPlan.checks.workspaces.find(
+            ({ workspace }) => workspace === entry.name
+          )
+        )
+      ) &&
+    JSON.stringify(frameworkDeclarationSelection.tasks) ===
+      JSON.stringify(relationshipMap.frameworkDeclarationTasks) &&
     evidence.relationshipMapDigest === hash(JSON.stringify(relationshipMap)) &&
     JSON.stringify(relationshipMap.frameworkDeclarationTasks) ===
       JSON.stringify(expectedFrameworkDeclarationTasks) &&
     JSON.stringify(evidence.frameworkPackages) ===
       JSON.stringify(expectedFrameworkPackages) &&
+    JSON.stringify(jobs.executionPlan) === JSON.stringify(executionPlan) &&
     evidence.frameworkReleaseRequired ===
       relationshipMap.frameworkReleaseRequired &&
     JSON.stringify(evidence.createAppPackages) ===
       JSON.stringify(relationshipMap.createAppPackages) &&
     evidence.designE2ERequired === relationshipMap.designE2ERequired &&
     relationshipMap.designE2ERequired ===
-      matrix.some(
-        ({ directory }) =>
-          directory === relationshipMap.designE2EWorkspaceDirectory
-      ) &&
+      e2eSelection.selected.some((suite) => suite !== 'flow-inspector-board') &&
     relationshipMap.designE2ERequired === (jobs.designSelected === 'true') &&
     relationshipMap.flowInspectorValidationRequired ===
       matrix.some(
@@ -355,6 +479,69 @@ function aggregateScope(evidence, identity, jobs) {
   if (!admitted)
     blockers.push(
       'CI relationship map is missing, unknown, malformed, or belongs to another run attempt'
+    )
+
+  const selectedCheckResults = jobs.selectedCheckResults
+  const expectedCheckNames = ['lint', 'repositoryScripts', 'naming']
+  const expectedExecutionPlanDigest = validExecutionPlan
+    ? hash(JSON.stringify(executionPlan))
+    : ''
+  const checkResultsValid =
+    admitted &&
+    selectedCheckResults?.version === 1 &&
+    identityKeys.every(
+      (key) => selectedCheckResults.identity?.[key] === identity[key]
+    ) &&
+    selectedCheckResults.relationshipMapDigest ===
+      evidence.relationshipMapDigest &&
+    selectedCheckResults.executionPlanDigest === expectedExecutionPlanDigest &&
+    selectedCheckResults.checks &&
+    JSON.stringify(Object.keys(selectedCheckResults.checks).sort()) ===
+      JSON.stringify(expectedCheckNames.slice().sort()) &&
+    expectedCheckNames.every((name) => {
+      const selection = executionPlan.checks[name]
+      const result = selectedCheckResults.checks[name]
+      if (
+        !result ||
+        result.mode !== selection.mode ||
+        JSON.stringify(result.inputs) !== JSON.stringify(selection.inputs)
+      )
+        return false
+      if (selection.mode === 'not-selected')
+        return result.status === 'not-selected'
+      if (name === 'lint') {
+        if (
+          result.status === 'not-selected' &&
+          selection.mode === 'files' &&
+          result.reason === 'no-applicable-files'
+        )
+          return (
+            Array.isArray(result.executedFiles) &&
+            result.executedFiles.length === 0
+          )
+        return (
+          result.status === 'passed' &&
+          Array.isArray(result.executedFiles) &&
+          result.executedFiles.length > 0 &&
+          (selection.mode !== 'files' ||
+            result.executedFiles.every((file) =>
+              selection.inputs.includes(file)
+            ))
+        )
+      }
+      return result.status === 'passed'
+    })
+  if (!checkResultsValid)
+    blockers.push(
+      'selected-checks: missing, stale, or mismatched execution results'
+    )
+  const declarationsSelected =
+    executionPlan?.checks?.frameworkDeclarations?.mode === 'full'
+  if (declarationsSelected && jobs.frameworkDeclarationResult !== 'success')
+    blockers.push('framework-declarations: selected build did not succeed')
+  if (!declarationsSelected && jobs.frameworkDeclarationResult !== 'skipped')
+    blockers.push(
+      'framework-declarations: unselected build did not remain skipped'
     )
 
   const selectedMatrix = validMatrix ? relationshipMap.workspaceMatrix : []
@@ -404,11 +591,26 @@ function aggregateScope(evidence, identity, jobs) {
       record.directory === entry.directory &&
       record.buildTask === entry.buildTask &&
       record.testTask === entry.testTask &&
+      JSON.stringify(record.testSelection) ===
+        JSON.stringify(entry.testSelection) &&
       record.status === 'success' &&
       record.buildStatus === 'success' &&
-      record.testStatus === 'success' &&
+      record.testStatus ===
+        (entry.testSelection.mode === 'not-selected'
+          ? 'not-selected'
+          : 'success') &&
       JSON.stringify(record.taskSequence) ===
-        JSON.stringify([entry.buildTask, entry.testTask])
+        JSON.stringify(
+          entry.testSelection.mode === 'not-selected'
+            ? [entry.buildTask]
+            : [entry.buildTask, entry.testTask]
+        ) &&
+      (entry.testSelection.mode === 'not-selected'
+        ? record.testResult === undefined
+        : record.testResult?.mode === entry.testSelection.mode &&
+          (entry.testSelection.mode !== 'related' ||
+            JSON.stringify(record.testResult.inputs) ===
+              JSON.stringify(entry.testSelection.inputs)))
     if (!recordValid)
       blockers.push(entry.name + ': invalid or unsuccessful matrix result')
   }
@@ -442,6 +644,16 @@ function aggregateScope(evidence, identity, jobs) {
       blockers.push(name + ': required forwarder did not succeed')
   const failed =
     jobs.validate === 'failure' ||
+    jobs.e2e === 'failure' ||
+    Object.entries(jobs.e2eSuiteResults ?? {}).some(
+      ([suite, result]) =>
+        executionPlan?.checks?.e2e?.selected?.includes(suite) &&
+        result === 'failure'
+    ) ||
+    Object.values(jobs.selectedCheckResults?.checks ?? {}).some(
+      (result) => result?.status === 'failed'
+    ) ||
+    (declarationsSelected && jobs.frameworkDeclarationResult === 'failure') ||
     (selectedMatrix.length > 0 && matrixResult === 'failure') ||
     (flowInspectorSelected && jobs.flowInspectorValidation === 'failure') ||
     resultRecords.some(
@@ -470,6 +682,7 @@ function aggregateScope(evidence, identity, jobs) {
         ].sort()
       : [],
     jobs,
+    executionPlan: executionPlan ?? null,
     blockers
   }
 }
@@ -493,6 +706,19 @@ function summary(result) {
     '| --- | --- |',
     ...Object.entries(result.producerResults ?? {}).map(
       ([name, status]) => '| ' + name + ' | ' + status + ' |'
+    ),
+    ...Object.entries(result.jobs?.selectedCheckResults?.checks ?? {}).map(
+      ([name, check]) => '| ' + name + ' | ' + check.status + ' |'
+    ),
+    ...(result.jobs?.frameworkDeclarationResult
+      ? [
+          '| Framework declarations | ' +
+            result.jobs.frameworkDeclarationResult +
+            ' |'
+        ]
+      : []),
+    ...Object.entries(result.jobs?.e2eSuiteResults ?? {}).map(
+      ([name, status]) => '| E2E ' + name + ' | ' + (status || 'missing') + ' |'
     ),
     '',
     '### Design evidence',
@@ -552,6 +778,26 @@ if (require.main === module) {
       createAppReadiness: process.env.FLOW_CREATE_APP_READINESS_RESULT,
       designForwarder: process.env.FLOW_DESIGN_FORWARDER_RESULT,
       collaborationForwarder: process.env.FLOW_COLLABORATION_FORWARDER_RESULT
+    }
+    try {
+      jobs.executionPlan = JSON.parse(process.env.FLOW_EXECUTION_PLAN ?? '')
+    } catch {
+      jobs.executionPlan = null
+    }
+    try {
+      jobs.selectedCheckResults = JSON.parse(
+        process.env.FLOW_SELECTED_CHECK_RESULTS ?? ''
+      )
+    } catch {
+      jobs.selectedCheckResults = null
+    }
+    jobs.frameworkDeclarationResult =
+      process.env.FLOW_FRAMEWORK_DECLARATION_RESULT
+    jobs.e2eSuiteResults = {
+      functional: process.env.FLOW_E2E_FUNCTIONAL_RESULT,
+      collaboration: process.env.FLOW_E2E_COLLABORATION_RESULT,
+      'flow-inspector-board': process.env.FLOW_E2E_BOARD_RESULT,
+      'render-contracts': process.env.FLOW_E2E_RENDER_CONTRACTS_RESULT
     }
     let workspaceResults = []
     const workspaceResultsDirectory = process.env.FLOW_WORKSPACE_RESULTS_DIR

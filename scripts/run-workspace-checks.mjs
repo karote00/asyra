@@ -15,7 +15,16 @@ function validateWorkspaceEntry(workspace) {
     !workspaceDirectoryPattern.test(workspace.directory ?? '') ||
     !/^[a-z0-9]+$/.test(workspace.artifactId ?? '') ||
     !/^build(?::[a-z0-9-]+)?$|^react:build$/.test(workspace.buildTask ?? '') ||
-    workspace.testTask !== 'test:ci'
+    workspace.testTask !== 'test:ci' ||
+    !['full', 'related', 'not-selected'].includes(
+      workspace.testSelection?.mode
+    ) ||
+    typeof workspace.testSelection?.reason !== 'string' ||
+    !Array.isArray(workspace.testSelection?.inputs) ||
+    (workspace.testSelection.mode === 'related' &&
+      (workspace.testSelection.inputs.length === 0 ||
+        workspace.testSelection.runner?.command !== 'vitest' ||
+        !Array.isArray(workspace.testSelection.runner.args)))
   )
     throw new Error('Invalid workspace matrix entry')
   const expectedArtifactId = crypto
@@ -56,6 +65,7 @@ async function executeWorkspaceChecks(
     directory: workspace.directory,
     buildTask: workspace.buildTask,
     testTask: workspace.testTask,
+    testSelection: workspace.testSelection,
     buildStatus: 'pending',
     testStatus: 'pending',
     taskSequence: [],
@@ -72,8 +82,17 @@ async function executeWorkspaceChecks(
     return record
   }
   try {
+    if (workspace.testSelection.mode === 'not-selected') {
+      record.testStatus = 'not-selected'
+      record.status = 'success'
+      return record
+    }
     record.taskSequence.push(workspace.testTask)
-    await runTask(workspace.name, workspace.testTask)
+    record.testResult = await runTask(
+      workspace.name,
+      workspace.testTask,
+      workspace.testSelection
+    )
     record.testStatus = 'success'
     record.status = 'success'
   } catch {
@@ -110,12 +129,34 @@ async function main() {
   const record = await executeWorkspaceChecks(workspace, {
     identity,
     relationshipMapDigest,
-    runTask: (name, task) =>
+    runTask: (name, task, selection) => {
+      if (task === 'test:ci' && selection.mode === 'related') {
+        const files = selection.inputs.map((file) =>
+          path.resolve(repositoryRoot, file)
+        )
+        execFileSync(
+          'yarn',
+          [
+            'workspace',
+            name,
+            'vitest',
+            'related',
+            '--run',
+            ...selection.runner.args,
+            '--passWithNoTests=false',
+            ...files
+          ],
+          { cwd: repositoryRoot, stdio: 'inherit' }
+        )
+        return { mode: 'related', inputs: selection.inputs }
+      }
       execFileSync(
         'yarn',
         ['turbo', 'run', task, `--filter=${name}`, '--concurrency=2'],
         { cwd: repositoryRoot, stdio: 'inherit' }
       )
+      return { mode: 'full' }
+    }
   })
   writeWorkspaceResult(record, workspace.artifactId, repositoryRoot)
   console.log(JSON.stringify(record))

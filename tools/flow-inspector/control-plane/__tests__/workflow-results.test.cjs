@@ -24,6 +24,7 @@ function workspaceEntry(
     directory,
     buildTask,
     testTask: 'test:ci',
+    testSelection: { mode: 'full', inputs: [], reason: 'test fixture' },
     artifactId: createHash('sha256').update(name).digest('hex').slice(0, 16)
   }
 }
@@ -31,6 +32,12 @@ function makeScope({
   identity: scopeIdentity = identity,
   workspaceMatrix = [
     workspaceEntry('@asyra/asyra-design', 'apps/asyra-design')
+  ],
+  e2eSuites = [
+    'collaboration',
+    'flow-inspector-board',
+    'functional',
+    'render-contracts'
   ],
   createAppPackages = [],
   frameworkReleaseRequired = false,
@@ -41,6 +48,65 @@ function makeScope({
     group: entry.directory.split('/')[0],
     dependencies: []
   }))
+  const frameworkDeclarationTasks = graph
+    .filter(({ group }) => group === 'packages')
+    .map(({ name, buildTask }) => ({ workspace: name, task: buildTask }))
+  const executionPlan = {
+    version: 1,
+    mode:
+      e2eSuites.length === 4 &&
+      workspaceMatrix.every(
+        ({ testSelection }) => testSelection.mode === 'full'
+      )
+        ? 'full'
+        : 'incremental',
+    changedPaths: [],
+    unknownRelations: unknownPaths,
+    checks: {
+      lint: { mode: 'full', inputs: [], reason: 'test fixture' },
+      repositoryScripts: {
+        mode: 'full',
+        command: 'test:scripts',
+        inputs: [],
+        reason: 'test fixture'
+      },
+      naming: {
+        mode: 'full',
+        command: 'lint:naming',
+        inputs: [],
+        reason: 'test fixture'
+      },
+      frameworkDeclarations: {
+        mode:
+          e2eSuites.length === 4 &&
+          workspaceMatrix.every(
+            ({ testSelection }) => testSelection.mode === 'full'
+          )
+            ? 'full'
+            : 'not-selected',
+        tasks: frameworkDeclarationTasks,
+        reason: 'test fixture'
+      },
+      workspaces: workspaceMatrix.map((entry) => ({
+        workspace: entry.name,
+        directory: entry.directory,
+        buildTask: entry.buildTask,
+        testTask: entry.testTask,
+        reason: 'direct-owner-input',
+        tests: entry.testSelection
+      })),
+      e2e: {
+        selected: e2eSuites,
+        notSelected: [
+          'collaboration',
+          'flow-inspector-board',
+          'functional',
+          'render-contracts'
+        ].filter((suite) => !e2eSuites.includes(suite)),
+        reason: 'test fixture'
+      }
+    }
+  }
   const relationshipMap = {
     version: 1,
     workspaceRoots: ['apps', 'packages', 'tools'],
@@ -48,12 +114,11 @@ function makeScope({
     excludedRoots: { 'create-app': 'archive-readiness' },
     workspaceGraph: graph,
     dependencyEdges: [],
-    frameworkDeclarationTasks: graph
-      .filter(({ group }) => group === 'packages')
-      .map(({ name, buildTask }) => ({ workspace: name, task: buildTask })),
+    frameworkDeclarationTasks,
     changedWorkspaceNames: workspaceMatrix.map(({ name }) => name),
     affectedWorkspaceNames: workspaceMatrix.map(({ name }) => name),
     workspaceMatrix,
+    executionPlan,
     sharedValidationRequired: true,
     frameworkReleaseRequired,
     createAppPackages,
@@ -62,8 +127,8 @@ function makeScope({
     flowInspectorValidationRequired: workspaceMatrix.some(
       ({ directory }) => directory === 'tools/flow-inspector'
     ),
-    designE2ERequired: workspaceMatrix.some(
-      ({ directory }) => directory === 'apps/asyra-design'
+    designE2ERequired: e2eSuites.some(
+      (suite) => suite !== 'flow-inspector-board'
     ),
     unknownPaths
   }
@@ -76,6 +141,7 @@ function makeScope({
       .digest('hex'),
     affectedWorkspaces: workspaceMatrix.map(({ name }) => name),
     workspaceMatrix,
+    executionPlan,
     frameworkPackages: workspaceMatrix
       .filter(({ directory }) => directory.startsWith('packages/'))
       .map(({ name }) => name),
@@ -127,7 +193,40 @@ function envelopes() {
     collect(report([1, 2]), 'collaboration', identity)
   ]
 }
+function checkResultsFor(scope) {
+  const plan = scope.relationshipMap.executionPlan
+  return {
+    version: 1,
+    identity: scope.identity,
+    relationshipMapDigest: scope.relationshipMapDigest,
+    executionPlanDigest: createHash('sha256')
+      .update(JSON.stringify(plan))
+      .digest('hex'),
+    checks: Object.fromEntries(
+      ['lint', 'repositoryScripts', 'naming'].map((name) => {
+        const selection = plan.checks[name]
+        return [
+          name,
+          {
+            status:
+              selection.mode === 'not-selected' ? 'not-selected' : 'passed',
+            mode: selection.mode,
+            inputs: selection.inputs,
+            ...(name === 'lint' && selection.mode !== 'not-selected'
+              ? {
+                  executedFiles: selection.inputs.length
+                    ? selection.inputs
+                    : ['scripts/ci-scope.mjs']
+                }
+              : {})
+          }
+        ]
+      })
+    )
+  }
+}
 function workspaceResult(entry, scope, result = {}) {
+  const selection = entry.testSelection
   return {
     version: 1,
     identity: scope.identity,
@@ -136,9 +235,16 @@ function workspaceResult(entry, scope, result = {}) {
     directory: entry.directory,
     buildTask: entry.buildTask,
     testTask: entry.testTask,
+    testSelection: entry.testSelection,
     buildStatus: 'success',
-    testStatus: 'success',
-    taskSequence: [entry.buildTask, entry.testTask],
+    testStatus: selection.mode === 'not-selected' ? 'not-selected' : 'success',
+    taskSequence:
+      selection.mode === 'not-selected'
+        ? [entry.buildTask]
+        : [entry.buildTask, entry.testTask],
+    ...(selection.mode === 'not-selected'
+      ? {}
+      : { testResult: { mode: selection.mode, inputs: selection.inputs } }),
     status: 'success',
     ...result
   }
@@ -148,17 +254,63 @@ function assess(records = envelopes(), jobs = {}, scope = designScopeEvidence) {
   const matrixResults = selectedScope.relationshipMap.workspaceMatrix.map(
     (entry) => workspaceResult(entry, selectedScope)
   )
+  const plan = selectedScope.relationshipMap.executionPlan
+  const selectedSuites = plan.checks.e2e.selected
+  const defaultCheckResults = Object.fromEntries(
+    ['lint', 'repositoryScripts', 'naming'].map((name) => {
+      const selection = plan.checks[name]
+      return [
+        name,
+        {
+          status: selection.mode === 'not-selected' ? 'not-selected' : 'passed',
+          mode: selection.mode,
+          inputs: selection.inputs,
+          ...(name === 'lint' && selection.mode !== 'not-selected'
+            ? {
+                executedFiles: selection.inputs.length
+                  ? selection.inputs
+                  : ['scripts/ci-scope.mjs']
+              }
+            : {})
+        }
+      ]
+    })
+  )
+  const defaultSuiteResults = Object.fromEntries(
+    [
+      'collaboration',
+      'flow-inspector-board',
+      'functional',
+      'render-contracts'
+    ].map((suite) => [
+      suite,
+      selectedSuites.includes(suite) ? 'success' : 'skipped'
+    ])
+  )
   return aggregate(
     records,
     identity,
     {
       validate: 'success',
-      e2e: selectedScope.relationshipMap.designE2ERequired
-        ? 'success'
-        : 'skipped',
+      e2e: selectedSuites.length ? 'success' : 'skipped',
       designSelected: selectedScope.relationshipMap.designE2ERequired
         ? 'true'
         : 'false',
+      executionPlan: plan,
+      selectedCheckResults: {
+        version: 1,
+        identity: selectedScope.identity,
+        relationshipMapDigest: selectedScope.relationshipMapDigest,
+        executionPlanDigest: createHash('sha256')
+          .update(JSON.stringify(plan))
+          .digest('hex'),
+        checks: defaultCheckResults
+      },
+      frameworkDeclarationResult:
+        plan.checks.frameworkDeclarations.mode === 'full'
+          ? 'success'
+          : 'skipped',
+      e2eSuiteResults: defaultSuiteResults,
       workspaceValidation: 'success',
       flowInspectorValidation: selectedScope.relationshipMap
         .flowInspectorValidationRequired
@@ -176,7 +328,7 @@ function assess(records = envelopes(), jobs = {}, scope = designScopeEvidence) {
 }
 test('all exact Design cases pass only after successful dependencies', () => {
   const r = assess()
-  assert.equal(r.status, 'passed')
+  assert.equal(r.status, 'passed', r.blockers.join('; '))
   assert.equal(r.cases.length, 3)
 })
 test('selected CI scopes require success and unselected scopes must be skipped', () => {
@@ -192,7 +344,7 @@ test('selected CI scopes require success and unselected scopes must be skipped',
   )
 })
 test('a documented owner with no affected workspace requires the app job to stay skipped', () => {
-  const documentationScope = makeScope({ workspaceMatrix: [] })
+  const documentationScope = makeScope({ workspaceMatrix: [], e2eSuites: [] })
   assert.equal(
     assess(
       envelopes(),
@@ -240,6 +392,7 @@ test('Framework changes require the package release gate and actual consumers', 
 test('non-workspace release owners require their actual workflow gates', () => {
   const createAppScope = makeScope({
     workspaceMatrix: [],
+    e2eSuites: [],
     createAppPackages: ['create-app/asyra-design']
   })
   assert.equal(
@@ -269,7 +422,11 @@ test('non-workspace release owners require their actual workflow gates', () => {
   )
 
   const releaseToolScope = {
-    ...makeScope({ workspaceMatrix: [], frameworkReleaseRequired: true })
+    ...makeScope({
+      workspaceMatrix: [],
+      e2eSuites: [],
+      frameworkReleaseRequired: true
+    })
   }
   assert.equal(
     assess(
@@ -299,8 +456,17 @@ test('non-workspace release owners require their actual workflow gates', () => {
 })
 
 test('Changesets and root documentation pass only through shared validation', () => {
-  const sharedScope = makeScope({ workspaceMatrix: [] })
+  const sharedScope = makeScope({ workspaceMatrix: [], e2eSuites: [] })
   const sharedJobs = {
+    executionPlan: sharedScope.executionPlan,
+    selectedCheckResults: checkResultsFor(sharedScope),
+    frameworkDeclarationResult: 'skipped',
+    e2eSuiteResults: {
+      collaboration: 'skipped',
+      'flow-inspector-board': 'skipped',
+      functional: 'skipped',
+      'render-contracts': 'skipped'
+    },
     designSelected: 'false',
     e2e: 'skipped',
     workspaceValidation: 'skipped',
@@ -317,7 +483,7 @@ test('Changesets and root documentation pass only through shared validation', ()
     path.join(root, '.github/workflows/main.yml'),
     'utf8'
   )
-  assert.match(main, /run: yarn test:scripts/)
+  assert.match(main, /node scripts\/run-ci-checks\.mjs/)
   assert.match(main, /run: yarn changeset:pr:check/)
 })
 
@@ -329,11 +495,35 @@ test('formal path owners reach their selected gates through the final aggregate'
   const createAppManifests = readCreateAppManifests(root)
   const jobsFor = (scope, missingSelectedGate = false) => {
     const selected = scope.relationshipMap.workspaceMatrix
+    const plan = scope.relationshipMap.executionPlan
+    const selectedE2E = plan.checks.e2e.selected
     const designSelected = scope.relationshipMap.designE2ERequired
     return Object.fromEntries([
       ['validate', 'success'],
-      ['e2e', designSelected ? 'success' : 'skipped'],
+      ['e2e', selectedE2E.length ? 'success' : 'skipped'],
       ['designSelected', designSelected ? 'true' : 'false'],
+      ['executionPlan', plan],
+      ['selectedCheckResults', checkResultsFor(scope)],
+      [
+        'frameworkDeclarationResult',
+        plan.checks.frameworkDeclarations.mode === 'full'
+          ? 'success'
+          : 'skipped'
+      ],
+      [
+        'e2eSuiteResults',
+        Object.fromEntries(
+          [
+            'collaboration',
+            'flow-inspector-board',
+            'functional',
+            'render-contracts'
+          ].map((suite) => [
+            suite,
+            selectedE2E.includes(suite) ? 'success' : 'skipped'
+          ])
+        )
+      ],
       ['workspaceValidation', selected.length ? 'success' : 'skipped'],
       [
         'flowInspectorValidation',
@@ -406,7 +596,7 @@ test('dynamic workspace matrix requires exact run-bound build and test evidence'
     '@fixture/unnamed-consumer',
     'apps/unnamed-consumer'
   )
-  const scope = makeScope({ workspaceMatrix: [workspace] })
+  const scope = makeScope({ workspaceMatrix: [workspace], e2eSuites: [] })
   const record = (buildStatus = 'success', testStatus = 'success') =>
     workspaceResult(workspace, scope, {
       buildStatus,
@@ -424,6 +614,15 @@ test('dynamic workspace matrix requires exact run-bound build and test evidence'
     validate: 'success',
     e2e: 'skipped',
     designSelected: 'false',
+    executionPlan: scope.executionPlan,
+    selectedCheckResults: checkResultsFor(scope),
+    frameworkDeclarationResult: 'skipped',
+    e2eSuiteResults: {
+      collaboration: 'skipped',
+      'flow-inspector-board': 'skipped',
+      functional: 'skipped',
+      'render-contracts': 'skipped'
+    },
     frameworkRelease: 'skipped',
     createAppReadiness: 'skipped',
     flowInspectorValidation: 'skipped',
@@ -531,6 +730,55 @@ test('dynamic workspace matrix requires exact run-bound build and test evidence'
   )
 })
 
+test('selected E2E suites require exact outcomes and unselected suites stay skipped', () => {
+  const scope = makeScope({ e2eSuites: ['collaboration'] })
+  const incomplete = assess(envelopes(), { e2eSuiteResults: {} }, scope)
+  assert.notEqual(incomplete.status, 'passed')
+
+  const results = {
+    'flow-inspector-board': 'skipped',
+    'render-contracts': 'skipped',
+    functional: 'skipped',
+    collaboration: 'success'
+  }
+  const complete = assess(envelopes(), { e2eSuiteResults: results }, scope)
+  assert.equal(complete.status, 'passed')
+  assert.equal(
+    complete.cases.find(({ id }) => id === 'design.delete')?.status,
+    'not-selected'
+  )
+  assert.notEqual(
+    assess(
+      envelopes(),
+      { e2eSuiteResults: { ...results, collaboration: 'skipped' } },
+      scope
+    ).status,
+    'passed'
+  )
+  assert.notEqual(
+    assess(
+      envelopes(),
+      { e2eSuiteResults: { ...results, functional: 'success' } },
+      scope
+    ).status,
+    'passed'
+  )
+})
+
+test('selected lint cannot pass without at least one executed-file result', () => {
+  const scope = makeScope()
+  const emptyResult = checkResultsFor(scope)
+  emptyResult.checks.lint.executedFiles = []
+  assert.notEqual(
+    assess(envelopes(), { selectedCheckResults: emptyResult }, scope).status,
+    'passed'
+  )
+  assert.notEqual(
+    assess(envelopes(), { selectedCheckResults: null }, scope).status,
+    'passed'
+  )
+})
+
 test('workflow wires non-workspace owners to their concrete readiness producers', () => {
   const root = path.resolve(__dirname, '../../../..')
   const main = fs.readFileSync(
@@ -593,10 +841,13 @@ test('Inspector fixes the complete scoped aggregate owner, route, and artifact c
     'tracked Changesets and root documentation inputs',
     'versioned CI relationship policy and discovered documentation roots',
     'run-scoped CI scope evidence',
-    'completed shared validation and dynamic per-workspace build/test result records',
+    'versioned execution plan for lint, repository scripts, naming, workspace tests, framework declarations, and E2E suites',
+    'run-bound outcomes for selected lint, repository scripts, naming, and framework declaration checks',
+    'completed dynamic per-workspace build/test result records',
     'selected Flow Inspector validation outcome',
     'Framework release-tool readiness and selected package release outcome',
     'non-workspace create-app package directories and conditional archive-step outcome',
+    'per-suite E2E results for functional, collaboration, Flow Inspector board, and render contracts',
     'Design E2E producer envelopes and required forwarder results',
     'GitHub repository, base, head, integration, run and attempt identity'
   ])
@@ -611,6 +862,18 @@ test('Inspector fixes the complete scoped aggregate owner, route, and artifact c
   assert.ok(
     step.conditions.some((condition) =>
       /unknown.*fail the total/iu.test(condition)
+    )
+  )
+  assert.ok(
+    step.conditions.some((condition) =>
+      /one derived execution plan.*lint.*repository script tests.*naming/iu.test(
+        condition
+      )
+    )
+  )
+  assert.ok(
+    step.conditions.some((condition) =>
+      /zero-evidence.*cannot pass/iu.test(condition)
     )
   )
   assert.ok(
@@ -668,6 +931,7 @@ test('Inspector fixes the complete scoped aggregate owner, route, and artifact c
   assert.ok(
     step.implementationBoundary.includes('scripts/run-workspace-checks.mjs')
   )
+  assert.ok(step.implementationBoundary.includes('scripts/run-ci-checks.mjs'))
   assert.ok(
     step.implementationBoundary.includes('scripts/__tests__/ci-scope.test.mjs')
   )
@@ -893,7 +1157,7 @@ test('existing required E2E check names succeed for producers or declared skips'
         env: {
           PATH: process.env.PATH,
           FLOW_PRODUCER_RESULT: result,
-          DESIGN_SELECTED: selected,
+          E2E_SUITE_SELECTED: selected,
           DESIGN_E2E_WORKFLOW_RESULT: workflowResult
         }
       })
@@ -969,6 +1233,10 @@ test('CLI retains missing reports as unverified and exits nonzero on incomplete 
       ...env,
       FLOW_RESULT_INTEGRATION: currentIdentity.integration,
       FLOW_SCOPE_EVIDENCE: JSON.stringify(currentScope),
+      FLOW_EXECUTION_PLAN: JSON.stringify(currentScope.executionPlan),
+      FLOW_SELECTED_CHECK_RESULTS: JSON.stringify(
+        checkResultsFor(currentScope)
+      ),
       FLOW_WORKSPACE_VALIDATION_RESULT: 'success',
       FLOW_WORKSPACE_RESULTS_DIR: workspaceResultsDirectory,
       FLOW_FRAMEWORK_RELEASE_RESULT: 'skipped',
@@ -978,6 +1246,11 @@ test('CLI retains missing reports as unverified and exits nonzero on incomplete 
       FLOW_COLLABORATION_FORWARDER_RESULT: 'success',
       FLOW_VALIDATE_RESULT: 'success',
       FLOW_E2E_RESULT: 'success',
+      FLOW_FRAMEWORK_DECLARATION_RESULT: 'success',
+      FLOW_E2E_FUNCTIONAL_RESULT: 'success',
+      FLOW_E2E_COLLABORATION_RESULT: 'success',
+      FLOW_E2E_BOARD_RESULT: 'success',
+      FLOW_E2E_RENDER_CONTRACTS_RESULT: 'success',
       FLOW_DESIGN_SELECTED: 'true',
       FLOW_DESIGN_EVIDENCE: JSON.stringify(
         collect(report([0]), 'design', currentIdentity)
@@ -990,7 +1263,7 @@ test('CLI retains missing reports as unverified and exits nonzero on incomplete 
       env: completeRun,
       encoding: 'utf8'
     })
-    assert.equal(complete.status, 0)
+    assert.equal(complete.status, 0, complete.stdout.slice(0, 2500))
     assert.equal(JSON.parse(complete.stdout).status, 'passed')
     for (const [outcome, expectedStatus] of [
       ['success', 'passed'],
@@ -1012,6 +1285,17 @@ test('CLI retains missing reports as unverified and exits nonzero on incomplete 
         env: {
           ...completeRun,
           FLOW_SCOPE_EVIDENCE: JSON.stringify(selectedCreateAppScope),
+          FLOW_EXECUTION_PLAN: JSON.stringify(
+            selectedCreateAppScope.executionPlan
+          ),
+          FLOW_SELECTED_CHECK_RESULTS: JSON.stringify(
+            checkResultsFor(selectedCreateAppScope)
+          ),
+          FLOW_FRAMEWORK_DECLARATION_RESULT: 'success',
+          FLOW_E2E_FUNCTIONAL_RESULT: 'success',
+          FLOW_E2E_COLLABORATION_RESULT: 'success',
+          FLOW_E2E_BOARD_RESULT: 'success',
+          FLOW_E2E_RENDER_CONTRACTS_RESULT: 'success',
           FLOW_CREATE_APP_READINESS_RESULT: outcome
         },
         encoding: 'utf8'
@@ -1041,7 +1325,7 @@ test('CLI retains missing reports as unverified and exits nonzero on incomplete 
       encoding: 'utf8'
     })
     assert.equal(result.status, 1)
-    assert.equal(JSON.parse(result.stdout).status, 'unverified')
+    assert.equal(JSON.parse(result.stdout).status, 'failed')
     assert.match(
       fs.readFileSync(summary, 'utf8'),
       /design.delete \| unverified/

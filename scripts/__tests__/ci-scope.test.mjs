@@ -1,5 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { createHash } from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -10,6 +11,7 @@ import {
   readWorkspaceManifests
 } from '../ci-scope.mjs'
 import { executeWorkspaceChecks } from '../run-workspace-checks.mjs'
+import { executeSelectedChecks } from '../run-ci-checks.mjs'
 
 const repositoryRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -25,6 +27,88 @@ test('an app change selects its package scripts and dependent workspace consumer
   assert.deepEqual(names(result), ['@asyra/asyra-design'])
   assert.equal(result.designE2ERequired, true)
   assert.deepEqual(result.unknownPaths, [])
+})
+
+test('CI check selection narrows changed test inputs and declares E2E suites', () => {
+  const collaboration = classifyChanges(
+    ['apps/asyra-design/e2e/collaboration.spec.ts'],
+    manifests
+  )
+  assert.deepEqual(
+    collaboration.relationshipMap.executionPlan.checks.e2e.selected,
+    ['collaboration']
+  )
+
+  const source = classifyChanges(['packages/core/src/index.ts'], manifests)
+  assert.deepEqual(
+    source.relationshipMap.executionPlan.checks.workspaces.find(
+      ({ workspace }) => workspace === '@asyra/core'
+    ).tests.inputs,
+    ['packages/core/src/index.ts']
+  )
+  assert.deepEqual(source.relationshipMap.executionPlan.checks.lint.inputs, [
+    'packages/core/src/index.ts'
+  ])
+  assert.equal(
+    source.relationshipMap.executionPlan.checks.workspaces.find(
+      ({ workspace }) => workspace === '@asyra/asyra-design'
+    ).tests.mode,
+    'full'
+  )
+  assert.deepEqual(source.relationshipMap.executionPlan.checks.e2e.selected, [
+    'collaboration',
+    'functional',
+    'render-contracts'
+  ])
+})
+
+test('shared setup selects all E2E suites and fixture changes keep full owner tests', () => {
+  const shared = classifyChanges(['yarn.lock'], manifests)
+  assert.deepEqual(shared.relationshipMap.executionPlan.checks.e2e.selected, [
+    'collaboration',
+    'flow-inspector-board',
+    'functional',
+    'render-contracts'
+  ])
+
+  const fixture = classifyChanges(
+    ['packages/core/src/__tests__/fixtures/scene.json'],
+    manifests
+  )
+  assert.equal(
+    fixture.relationshipMap.executionPlan.checks.workspaces.find(
+      ({ workspace }) => workspace === '@asyra/core'
+    ).tests.mode,
+    'full'
+  )
+})
+
+test('deleted, renamed, configuration, and fixture inputs keep full test ownership', () => {
+  for (const input of [
+    'packages/core/src/__tests__/removed-case.test.ts',
+    'packages/core/src/renamed-module.ts',
+    'packages/core/vitest.config.ts',
+    'packages/core/src/__tests__/fixtures/scene.json'
+  ]) {
+    const scope = classifyChanges([input], manifests)
+    const core = scope.relationshipMap.executionPlan.checks.workspaces.find(
+      ({ workspace }) => workspace === '@asyra/core'
+    )
+    assert.equal(core.tests.mode, 'full', input)
+  }
+})
+
+test('repository scripts tests select their declared input owner only', () => {
+  const appChange = classifyChanges(['apps/fieldscope/src/main.tsx'], manifests)
+  assert.equal(
+    appChange.relationshipMap.executionPlan.checks.repositoryScripts.mode,
+    'not-selected'
+  )
+  const helperChange = classifyChanges(['scripts/ci-scope.mjs'], manifests)
+  assert.equal(
+    helperChange.relationshipMap.executionPlan.checks.repositoryScripts.mode,
+    'full'
+  )
 })
 
 test('Framework changes follow declared workspace edges transitively', () => {
@@ -206,6 +290,7 @@ test('a failed workspace build prevents its test task from running', async () =>
     directory: 'packages/failed-build',
     buildTask: 'build:failed-build',
     testTask: 'test:ci',
+    testSelection: { mode: 'full', inputs: [], reason: 'test fixture' },
     artifactId: 'c1ee386690afbe71'
   }
   const record = await executeWorkspaceChecks(entry, {
@@ -222,8 +307,90 @@ test('a failed workspace build prevents its test task from running', async () =>
   assert.equal(record.status, 'failed')
 })
 
+test('workspace execution preserves the selected Vitest related inputs', async () => {
+  const entry = {
+    name: '@sample/related-workspace',
+    directory: 'packages/related-workspace',
+    buildTask: 'build:related-workspace',
+    testTask: 'test:ci',
+    testSelection: {
+      mode: 'related',
+      inputs: ['packages/related-workspace/src/index.ts'],
+      reason: 'Vitest related-file graph',
+      runner: { command: 'vitest', args: [], hasTestGuard: false }
+    },
+    artifactId: createHash('sha256')
+      .update('@sample/related-workspace')
+      .digest('hex')
+      .slice(0, 16)
+  }
+  const executed = []
+  const record = await executeWorkspaceChecks(entry, {
+    relationshipMapDigest: 'a'.repeat(64),
+    identity: {},
+    runTask: async (workspace, task, selection) => {
+      executed.push({ workspace, task, selection })
+    }
+  })
+
+  assert.equal(executed[1].task, 'test:ci')
+  assert.deepEqual(executed[1].selection, entry.testSelection)
+  assert.deepEqual(record.testSelection, entry.testSelection)
+  assert.equal(record.status, 'success')
+})
+
+test('selected CI checks run only planned owners and record declared skips', async () => {
+  const calls = []
+  const result = await executeSelectedChecks(
+    {
+      version: 1,
+      mode: 'incremental',
+      changedPaths: ['apps/fieldscope/src/main.tsx'],
+      unknownRelations: [],
+      checks: {
+        lint: {
+          mode: 'files',
+          inputs: ['apps/fieldscope/src/main.tsx'],
+          reason: 'changed-files'
+        },
+        repositoryScripts: {
+          mode: 'not-selected',
+          command: 'test:scripts',
+          inputs: [],
+          reason: 'no-script-owner-inputs'
+        },
+        naming: {
+          mode: 'full',
+          command: 'lint:naming',
+          inputs: ['apps/fieldscope/src/main.tsx'],
+          reason: 'cross-file-name-and-persisted-identity-contract'
+        },
+        workspaces: [],
+        e2e: { selected: [], notSelected: [] }
+      }
+    },
+    {
+      lint: async (plan) => calls.push(['lint', plan]),
+      repositoryScripts: async (plan) => calls.push(['scripts', plan]),
+      naming: async (plan) => calls.push(['naming', plan])
+    }
+  )
+
+  assert.deepEqual(
+    calls.map(([owner]) => owner),
+    ['lint', 'naming']
+  )
+  assert.equal(result.checks.repositoryScripts.status, 'not-selected')
+  assert.equal(result.checks.lint.status, 'passed')
+  assert.equal(result.checks.naming.status, 'passed')
+})
+
 test('shared build and workflow inputs select every discovered workspace', () => {
-  for (const input of ['turbo.base.json', '.github/workflows/main.yml']) {
+  for (const input of [
+    'turbo.base.json',
+    '.github/workflows/main.yml',
+    'scripts/run-ci-checks.mjs'
+  ]) {
     const result = classifyChanges([input], manifests)
     assert.deepEqual(names(result), [...manifests.keys()].sort(), input)
     assert.equal(result.frameworkReleaseRequired, true, input)

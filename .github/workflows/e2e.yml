@@ -6,6 +6,9 @@ on:
       run_balanced_ai_correctness:
         type: boolean
         default: false
+      selected_suites:
+        type: string
+        default: '["collaboration","flow-inspector-board","functional","render-contracts"]'
     outputs:
       design-result:
         value: ${{ jobs.e2e-tests.result }}
@@ -15,6 +18,10 @@ on:
         value: ${{ jobs.e2e-tests.outputs.evidence }}
       collaboration-evidence:
         value: ${{ jobs.collaboration-e2e-tests.outputs.evidence }}
+      board-result:
+        value: ${{ jobs.flow-inspector-board.result }}
+      render-contracts-result:
+        value: ${{ jobs.render-contracts.result }}
   workflow_dispatch:
     inputs:
       run_balanced_ai_correctness:
@@ -22,6 +29,11 @@ on:
         required: false
         type: boolean
         default: false
+      selected_suites:
+        description: JSON array of E2E suites to run
+        required: false
+        type: string
+        default: '["collaboration","flow-inspector-board","functional","render-contracts"]'
   schedule:
     - cron: '0 18 * * *'
 
@@ -34,7 +46,7 @@ concurrency:
 
 jobs:
   flow-inspector-board:
-    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    if: ${{ contains(fromJSON(inputs.selected_suites || '["collaboration","flow-inspector-board","functional","render-contracts"]'), 'flow-inspector-board') && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -65,7 +77,7 @@ jobs:
         run: node --test --test-concurrency=1 tools/flow-inspector/control-plane/__tests__/board*.test.cjs
 
   render-contracts:
-    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    if: ${{ contains(fromJSON(inputs.selected_suites || '["collaboration","flow-inspector-board","functional","render-contracts"]'), 'render-contracts') && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -105,7 +117,7 @@ jobs:
       FLOW_RESULT_INTEGRATION: ${{ github.sha }}
       FLOW_RESULT_RUN: ${{ github.run_id }}
       FLOW_RESULT_ATTEMPT: ${{ github.run_attempt }}
-    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    if: ${{ contains(fromJSON(inputs.selected_suites || '["collaboration","flow-inspector-board","functional","render-contracts"]'), 'functional') && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -161,7 +173,7 @@ jobs:
       FLOW_RESULT_INTEGRATION: ${{ github.sha }}
       FLOW_RESULT_RUN: ${{ github.run_id }}
       FLOW_RESULT_ATTEMPT: ${{ github.run_attempt }}
-    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    if: ${{ contains(fromJSON(inputs.selected_suites || '["collaboration","flow-inspector-board","functional","render-contracts"]'), 'collaboration') && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
 

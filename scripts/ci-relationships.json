@@ -16,6 +16,7 @@
     "scripts/gen-turbo.js",
     "scripts/ci-scope.mjs",
     "scripts/ci-relationships.json",
+    "scripts/run-ci-checks.mjs",
     "scripts/run-workspace-checks.mjs"
   ],
   "sharedInputPatterns": [".github/workflows/**"],
@@ -33,6 +34,35 @@
     ".changeset/**",
     "docs/ai/framework/**",
     "docs/ai/workflows/**"
+  ],
+  "lintFullInputPaths": [
+    "eslint.config.js",
+    ".gitignore",
+    "package.json",
+    "yarn.lock",
+    ".yarnrc.yml",
+    "tsconfig.json",
+    "eslint.config.mjs"
+  ],
+  "repositoryScriptsInputPatterns": [
+    "scripts/**",
+    ".github/workflows/**",
+    ".changeset/**",
+    "docs/**",
+    "package.json",
+    "yarn.lock",
+    ".yarnrc.yml",
+    "apps/**/package.json",
+    "packages/**/package.json",
+    "tools/**/package.json",
+    "create-app/**/package.json",
+    "scripts/ci-relationships.json"
+  ],
+  "e2eSuites": [
+    { "id": "collaboration", "specs": ["collaboration.spec.ts", "collaboration-ai-agent-video.spec.ts"] },
+    { "id": "render-contracts", "specs": ["render-delta-performance.spec.ts"] },
+    { "id": "functional", "specs": [] },
+    { "id": "flow-inspector-board", "specs": [] }
   ],
   "workspaceInputRules": [
     {
