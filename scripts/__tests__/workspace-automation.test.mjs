@@ -136,21 +136,11 @@ test('PR workflows skip Draft jobs and run when the PR becomes ready', () => {
     }
     const jobs = workflow.split('\njobs:\n')[1].split(/(?=^ {2}[\w-]+:\n)/m)
     for (const job of jobs.filter((block) => block.trim())) {
-      if (
-        /^ {2}(flow-ci|e2e-tests|collaboration-e2e-tests):/.test(job) &&
-        workflowPath === '.github/workflows/main.yml'
-      ) {
-        assert.match(
-          job,
-          /^ {4}if: \$\{\{ always\(\) && \(github.event_name != 'pull_request' \|\| github.event.pull_request.draft == false\) \}\}$/m
-        )
-      } else {
-        assert.match(
-          job,
-          /^ {4}if: github.event_name != 'pull_request' \|\| github.event.pull_request.draft == false$/m,
-          `${workflowPath}: ${job.split('\n')[0]}`
-        )
-      }
+      assert.match(
+        job,
+        /^ {4}if: .*github\.event\.pull_request\.draft == false/m,
+        `${workflowPath}: ${job.split('\n')[0]}`
+      )
     }
   }
 })
@@ -164,11 +154,31 @@ test('Draft filtering preserves non-PR CI triggers and label validation', () => 
   assert.match(e2e, /^ {2}schedule:\n {4}- cron: '0 18 \* \* \*'/m)
 })
 
-test('CI bounds workspace test concurrency without dropping test owners', () => {
+test('CI schedules discovered workspaces through one bounded build-then-test matrix', () => {
   const workflow = readText('.github/workflows/main.yml')
   const scripts = readJSON('package.json').scripts
 
-  assert.match(workflow, /^\s+run: yarn test:ci --concurrency=2$/m)
+  assert.match(workflow, /run: yarn test:scripts/)
+  assert.match(
+    workflow,
+    /workspace: \$\{\{ fromJson\(needs\.scope\.outputs\.workspace_matrix\) \}\}/
+  )
+  assert.match(workflow, /run: node scripts\/run-workspace-checks\.mjs/)
+  assert.doesNotMatch(workflow, /yarn turbo run test:ci react:build/)
+  const jobs = workflow.split('\njobs:\n')[1].split(/(?=^ {2}[\w-]+:\n)/m)
+  const workspaceJob = jobs.find((block) =>
+    block.startsWith('  workspace-validation:')
+  )
+  assert.ok(workspaceJob)
+  const jobName = workspaceJob.match(/^ {4}name: (.+)$/m)?.[1]
+  assert.equal(jobName, '${{ matrix.workspace.directory }}')
+  assert.doesNotMatch(
+    jobName,
+    /matrix\.workspace\.(?:buildTask|testTask|artifactId)/
+  )
+  assert.match(workspaceJob, /strategy:\n\s+fail-fast: false/)
+  assert.match(workspaceJob, /max-parallel: 4/)
+  assert.match(workspaceJob, /actions\/upload-artifact@/)
   assert.equal(scripts['test:ci'], 'yarn test:scripts && turbo run test:ci')
 })
 
@@ -833,6 +843,45 @@ test('Board, render contracts and functional E2E have independent required jobs'
   }
   const main = readText('.github/workflows/main.yml')
   assert.match(main, /FLOW_E2E_RESULT: \$\{\{ needs\.design-e2e\.result \}\}/)
+})
+
+test('scope discovery checkout includes the accepted Git base required by CI evidence', () => {
+  const workflow = readText('.github/workflows/main.yml')
+  const scopeJob = workflow
+    .split('\n  scope:\n')[1]
+    .split('\n  shared-validation:\n')[0]
+
+  assert.match(scopeJob, /fetch-depth: 0/)
+})
+
+test('Flow Inspector CI proof checkout includes the accepted verifier baseline', () => {
+  const workflow = readText('.github/workflows/main.yml')
+  const flowJob = workflow
+    .split('\n  flow-inspector-validation:\n')[1]
+    .split('\n  framework-release-readiness:\n')[0]
+
+  assert.match(flowJob, /fetch-depth: 0/)
+  assert.match(flowJob, /persist-credentials: false/)
+})
+
+test('shared CI builds Framework declarations before public documentation checks', () => {
+  const workflow = readText('.github/workflows/main.yml')
+  const sharedJob = workflow
+    .split('\n  shared-validation:\n')[1]
+    .split('\n  workspace-validation:\n')[0]
+  const buildStep = sharedJob.indexOf('Build Framework declarations')
+  const scriptsTest = sharedJob.indexOf('run: yarn test:scripts')
+
+  assert.ok(buildStep >= 0 && buildStep < scriptsTest)
+  assert.match(
+    sharedJob,
+    /FRAMEWORK_DECLARATION_TASKS: \$\{\{ needs\.scope\.outputs\.framework_declaration_tasks \}\}/
+  )
+  assert.match(sharedJob, /yarn turbo run "\$\{tasks\[@\]\}"/)
+  assert.doesNotMatch(
+    sharedJob,
+    /build:(?:ai-agent-runtime|collaboration|core|factory)/
+  )
 })
 
 const runOwnedBuildCommand = (command, args, { githubActions, timeoutMs }) =>

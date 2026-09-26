@@ -358,18 +358,63 @@ exclusions above describe their original activation, not this later grant.
 
 ## Final workflow aggregation
 
-The `flow-ci` GitHub job waits for `validate` and the reusable Design E2E
-workflow, and runs even when a dependency fails. It consumes their completed
-results; it does not analyze runtime source or execute a second test suite.
+The existing `validate` GitHub check is the single aggregate result for selected CI scopes
+and applicable Flow Inspector evidence. It waits for scope classification,
+`shared-validation`, the dynamic workspace matrix, applicable specialized
+readiness jobs, Framework release readiness, and the reusable Design E2E
+workflow. It runs after failures or skips and validates producer evidence; it
+does not run a second workspace suite. The scope classifier discovers first
+level workspaces under `apps/`, `packages/`, and `tools/` from their manifests.
+Manifest dependency edges select every downstream consumer transitively, using
+the union of base and candidate manifests so deleted and renamed workspaces
+retain their previous consumers. Each selected workspace runs its manifest
+canonical build task to completion before its `test:ci` task begins. Unknown
+paths or invalid workspace contracts cannot produce a passing total.
+
+One versioned relationship map drives path classification, workspace matrix
+scheduling, specialized gates, and final aggregation. It recognizes `.changeset/`
+metadata and tracked root documents as shared validation inputs. Public docs
+select the configured site workspace; app, package, and tool docs map to their
+matching workspace where that relationship is defined. First-level docs roots
+are discovered dynamically, and unowned documentation uses shared validation.
+Unknown paths remain blockers. Root build/workspace/workflow inputs select all
+discovered workspaces instead of a maintained owner-name list.
+
+Scope evidence identifies the repository, base, candidate HEAD, integration
+revision, GitHub run, and run attempt. The final job requires the exact same
+identity and requires every selected producer to succeed while every
+unselected producer remains skipped. Known docs-only changes still run
+shared validation and the applicable document-owner check; Flow Inspector
+contract documentation selects its tool contract suite. A rerun with a
+different attempt cannot reuse the previous attempt's scope evidence: rerun the
+entire workflow so all producers emit evidence for the new attempt. Missing scope output, unknown
+paths, missing jobs, unexpected jobs, failure, cancellation, and skipped
+selected work all fail the total check. Shared validation (security audit,
+dependency and Turbo validation, lint, Changeset admission, and repository
+script tests) remains required for every non-draft run.
+Changes to Framework release-validation scripts also select
+`framework-release-readiness`, even when no package workspace changed.
+`create-app/<app>` is outside the workspace graph; affected CLI package
+directories select the conditional `npm pack --dry-run --json` step inside
+`validate`, and the aggregate requires that step's result.
 The existing Factory proof remains an independent producer. A successful
 Factory job does not establish Design conformance.
 
 The existing required check names `e2e-tests` and `collaboration-e2e-tests`
 remain available as result-forwarding jobs after the reusable workflow settles.
-Each requires its actual producer job's exported result to equal `success`;
-failure, cancellation, skipping or absent output fails the forwarding check.
-These jobs do not rerun tests or replace case evidence. They preserve existing
-repository rules without changing protection or bypassing required checks.
+When Design is selected, each requires its actual producer job's exported
+result to equal `success`; failure, cancellation, skipping or absent output
+fails the forwarding check. When Design is not selected, the producer must be
+skipped and the forwarding job succeeds only after checking that workflow-level
+skip. The named forwarding checks therefore complete for both selected and
+explicitly unselected scopes; their status cannot remain pending due to an
+inapplicable Design suite.
+These jobs do not rerun tests or replace case evidence. The aggregate uses the
+existing required `validate` check name, so the active ruleset can block on the
+selected category and release results without a new remote check-name change.
+The Design case aggregator runs only when scope selects Design. For other
+scopes it records the Design cases as not selected while the fixed total still
+requires the applicable selected CI jobs to complete.
 
 The bounded Design mapping contains the existing single-element Delete case
 and two collaboration Delete cases (connected windows and nested Group removal).
@@ -469,7 +514,6 @@ React, naming, lint, typecheck/build and latest implementation PR CI must pass.
 Offline fixtures are labeled and never replace live provider evidence. No model,
 external test PR, provider reconciliation or new baseline is activated.
 
-
 ### Work admission before execution
 
 A separate `admit` target decision reserves one task UUID for an unchanged work
@@ -516,7 +560,6 @@ prerequisite/scope/source/actor/identity rejection before execution, legacy-task
 compatibility, failure then correction with retained attempts, no cross-HEAD
 aggregation or automatic acceptance, and API/CLI parity. Existing security,
 Factory proof and browser gates remain mandatory.
-
 
 The Board's Prepare task action first records admission against the selected
 completed baseline proof, then fills the existing task form with that reserved
