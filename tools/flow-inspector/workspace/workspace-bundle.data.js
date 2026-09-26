@@ -36611,10 +36611,12 @@
             "ownerPackage": "tools/flow-inspector/control-plane",
             "purpose": "Observational CI aggregation",
             "inputs": [
-              "base/head changed paths and workspace manifests/dependency graph",
+              "base/head changed paths and discovered apps/packages/tools workspace manifests/dependency graph",
               "tracked Changesets and root documentation inputs",
+              "versioned CI relationship policy and discovered documentation roots",
               "run-scoped CI scope evidence",
-              "completed shared validation and selected category producer outcomes",
+              "completed shared validation and dynamic per-workspace build/test result records",
+              "selected Flow Inspector validation outcome",
               "Framework release-tool readiness and selected package release outcome",
               "non-workspace create-app package directories and conditional archive-step outcome",
               "Design E2E producer envelopes and required forwarder results",
@@ -36626,11 +36628,11 @@
               "artifact:workflow-result-summary"
             ],
             "conditions": [
-              "Derive changed paths from Git base/head and classify them against checked-out workspace package manifests, dependency edges, the canonical build scripts in those manifests, and the fixed formal-input owner map. Root lockfile, workspace, build and workflow inputs select all five validation scopes. Propagate Framework changes to every dependent consumer, including Fieldscope and Starter App; never infer scope from a folder name alone. Recognized .changeset metadata and tracked root documents select shared contract validation without selecting unrelated workspace suites. Unknown paths, missing build tasks, or unclassified consumers invalidate scope and fail the total even when conservative jobs ran.",
-              "Run shared validation for every non-draft change. For each selected category workspace, run its canonical build task and dependency closure to completion before starting test:ci; do not schedule test:ci alongside builds because it has no build dependency. Run category suites only when scope evidence lists affected workspaces. Run Framework release readiness when Framework packages or its release-validation owner inputs are affected, even when the changed input is not a workspace. create-app CLI packages are outside the workspace graph; list affected package directories and require the conditional npm pack archive check inside shared validation. Export that step outcome and require the aggregate to observe success when selected and skipped when unselected. Docs-only changes still require shared validation and applicable document-owner checks; Flow Inspector documentation selects the Flow Inspector contract suite.",
+              "Derive changed paths from Git base/head and classify them against discovered first-level apps/packages/tools workspace manifests, their declared dependency edges, manifest canonical build/test scripts, and the versioned CI relationship policy. Derive affected consumers transitively from the union of base and head dependency edges so deletions and renames preserve old consumers. Root shared inputs select every discovered workspace. Public documentation selects its configured site workspace; docs under app/package/tool roots select their matching workspace when defined, and other discovered documentation roots require shared validation. Never infer workspace ownership from a fixed workspace-name category list. Unknown paths, missing build/test tasks, or unclassified consumers invalidate scope and fail the total even if conservative jobs ran.",
+              "Use this single derived relationship map for classification, dynamic matrix scheduling, specialized gate selection, and final aggregation. For each selected workspace, run its manifest canonical build task to completion before starting test:ci; do not schedule test:ci alongside builds because it has no build dependency. Bind each workspace result to the map digest and the same repository/base/head/integration/run/attempt identity, and require an exact one-to-one result for every matrix entry with the build-before-test sequence. Missing, duplicate, unexpected, stale, failed, or omitted matrix evidence cannot pass. Run Framework release readiness when Framework workspaces or release-validation owner inputs are affected. create-app CLI packages remain outside the workspace graph; list affected package directories and require the conditional npm pack archive check inside shared validation. Docs-only changes still require shared validation and applicable document-owner checks; Flow Inspector documentation selects its control-plane validation suite.",
               "Use the existing required validate GitHub check as the one canonical aggregate, with shared-validation as its common prerequisite producer, so selected category, release and create-app results remain merge-blocking under the current check contract.",
               "Bind scope evidence, each selected producer and the final result to the same repository, base, candidate head, integration revision, run id and run attempt. GitHub reruns require rerunning the entire workflow; evidence from a prior attempt cannot complete a later attempt.",
-              "One canonical aggregate consumes scope evidence, completed shared/category/release/E2E results, exact fixed Design case envelopes and required forwarder results. Every selected producer must succeed; every explicitly unselected category must be skipped. Missing, failed, cancelled, unknown or unexpectedly skipped selected work fails the total. Existing E2E forwarders must themselves succeed for selected and unselected scopes; an unselected reusable E2E workflow must report skipped, while selected producers must report success and provide exact case evidence.",
+              "One canonical aggregate consumes scope evidence, shared validation, exact dynamic workspace result records, selected Flow Inspector and release results, exact fixed Design case envelopes and required forwarder results. Every selected producer must succeed; every explicitly unselected producer must be skipped. Missing, failed, cancelled, unknown or unexpectedly skipped selected work fails the total. Existing E2E forwarders must themselves succeed for selected and unselected scopes; an unselected reusable E2E workflow must report skipped, while selected producers must report success and provide exact case evidence.",
               "Validate the exact Design case inventory and every attempt outcome. Preserve confirmed assertion failures; missing or invalid case evidence is unverified. Job success is not case evidence or accepted conformance."
             ],
             "bypasses": [
@@ -36638,8 +36640,8 @@
             ],
             "allowedContributors": [
               "GitHub Actions scope, producer and forwarding job results bound to the workflow run",
-              "Git diff of base/head changed paths with checked-out workspace package manifests and dependency edges",
-              "fixed formal path-to-owner map for Changesets, root documents, release validation inputs and create-app packages",
+              "Git diff of base/head changed paths with checked-out workspace manifests and base/head dependency edges",
+              "versioned shared/documentation/release/create-app relationship policy and dynamically discovered documentation roots",
               "existing Playwright JSON reporter and exact fixed-case collector"
             ],
             "forbiddenContributors": [
@@ -36656,7 +36658,9 @@
               "tools/flow-inspector/control-plane/__tests__/workflow-results.test.cjs",
               "tools/flow-inspector/control-plane/__tests__/board.test.cjs",
               "scripts/ci-scope.mjs",
+              "scripts/ci-relationships.json",
               "scripts/__tests__/ci-scope.test.mjs",
+              "scripts/run-workspace-checks.mjs",
               ".github/workflows/main.yml",
               ".github/workflows/e2e.yml",
               "scripts/run-e2e.sh",

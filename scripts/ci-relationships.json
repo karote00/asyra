@@ -1,0 +1,76 @@
+{
+  "version": 1,
+  "workspaceRoots": ["apps", "packages", "tools"],
+  "excludedRoots": {
+    "create-app": "archive-readiness"
+  },
+  "sharedInputPaths": [
+    "package.json",
+    "yarn.lock",
+    ".yarnrc.yml",
+    "turbo.base.json",
+    "turbo.json",
+    "eslint.config.js",
+    "eslint.config.mjs",
+    "tsconfig.json",
+    "scripts/gen-turbo.js",
+    "scripts/ci-scope.mjs",
+    "scripts/ci-relationships.json",
+    "scripts/run-workspace-checks.mjs"
+  ],
+  "sharedInputPatterns": [".github/workflows/**"],
+  "rootDocumentationPaths": [
+    "README.md",
+    "SUPPORT.md",
+    "SECURITY.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "RELEASE_NOTES.md",
+    "AGENTS.md"
+  ],
+  "sharedValidationPatterns": [
+    ".changeset/**",
+    "docs/ai/framework/**",
+    "docs/ai/workflows/**"
+  ],
+  "workspaceInputRules": [
+    {
+      "pattern": "scripts/**",
+      "workspaceDirectory": "tools/flow-inspector"
+    },
+    {
+      "pattern": ".changeset/**",
+      "workspaceDirectory": "tools/flow-inspector"
+    },
+    {
+      "pattern": "docs/public/**",
+      "workspaceDirectory": "apps/asyra-framework-site"
+    },
+    {
+      "pattern": "docs/ai/apps/{slug}/**",
+      "workspaceDirectory": "apps/{slug}"
+    },
+    {
+      "pattern": "docs/ai/packages/{slug}/**",
+      "workspaceDirectory": "packages/{slug}"
+    },
+    {
+      "pattern": "docs/ai/tools/{slug}/**",
+      "workspaceDirectory": "tools/{slug}"
+    }
+  ],
+  "frameworkReleaseReadinessPaths": [
+    "scripts/framework-release-artifacts.js",
+    "scripts/framework-release-packages.js",
+    "scripts/release-package-artifacts.js",
+    "scripts/release-packages.mjs",
+    "scripts/release-readiness.js",
+    "scripts/release-records.js",
+    "scripts/release-template-readiness.js",
+    "scripts/release-validate.js",
+    "scripts/release-validation-environment.js",
+    "scripts/release-validation-workspace.js"
+  ],
+  "designE2EWorkspaceDirectory": "apps/asyra-design",
+  "flowInspectorValidationWorkspaceDirectory": "tools/flow-inspector"
+}

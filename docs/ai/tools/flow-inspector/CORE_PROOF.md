@@ -360,26 +360,30 @@ exclusions above describe their original activation, not this later grant.
 
 The existing `validate` GitHub check is the single aggregate result for selected CI scopes
 and applicable Flow Inspector evidence. It waits for scope classification,
-the `shared-validation` producer, Framework, Design, Sim, Website, development
-tools, Framework release readiness, and the reusable Design E2E workflow. It runs after failures
-or skips and consumes completed job results; it does not analyze runtime source
-or execute a second test suite. An app-only change runs that app's tests/build
-and downstream consumers reached through declared workspace dependencies. A
-Framework workspace change also selects dependent apps, including the existing
-Fieldscope and Starter App consumers. Root lockfile,
-workspace, build, and workflow configuration changes select all five scopes.
-Unknown paths fail scope classification and cannot produce a passing total.
+`shared-validation`, the dynamic workspace matrix, applicable specialized
+readiness jobs, Framework release readiness, and the reusable Design E2E
+workflow. It runs after failures or skips and validates producer evidence; it
+does not run a second workspace suite. The scope classifier discovers first
+level workspaces under `apps/`, `packages/`, and `tools/` from their manifests.
+Manifest dependency edges select every downstream consumer transitively, using
+the union of base and candidate manifests so deleted and renamed workspaces
+retain their previous consumers. Each selected workspace runs its manifest
+canonical build task to completion before its `test:ci` task begins. Unknown
+paths or invalid workspace contracts cannot produce a passing total.
 
-The fixed path-owner map recognizes `.changeset/` release metadata and the
-tracked root documents (`README.md`, `SUPPORT.md`, `SECURITY.md`, `LICENSE`,
-`CHANGELOG.md`, `RELEASE_NOTES.md`, and `AGENTS.md`). These paths use shared
-Changeset, repository-script, and document validation without selecting
-unrelated workspace suites. Unknown paths remain blockers.
+One versioned relationship map drives path classification, workspace matrix
+scheduling, specialized gates, and final aggregation. It recognizes `.changeset/`
+metadata and tracked root documents as shared validation inputs. Public docs
+select the configured site workspace; app, package, and tool docs map to their
+matching workspace where that relationship is defined. First-level docs roots
+are discovered dynamically, and unowned documentation uses shared validation.
+Unknown paths remain blockers. Root build/workspace/workflow inputs select all
+discovered workspaces instead of a maintained owner-name list.
 
 Scope evidence identifies the repository, base, candidate HEAD, integration
 revision, GitHub run, and run attempt. The final job requires the exact same
 identity and requires every selected producer to succeed while every
-unselected category producer remains skipped. Known docs-only changes still run
+unselected producer remains skipped. Known docs-only changes still run
 shared validation and the applicable document-owner check; Flow Inspector
 contract documentation selects its tool contract suite. A rerun with a
 different attempt cannot reuse the previous attempt's scope evidence: rerun the
@@ -510,7 +514,6 @@ React, naming, lint, typecheck/build and latest implementation PR CI must pass.
 Offline fixtures are labeled and never replace live provider evidence. No model,
 external test PR, provider reconciliation or new baseline is activated.
 
-
 ### Work admission before execution
 
 A separate `admit` target decision reserves one task UUID for an unchanged work
@@ -557,7 +560,6 @@ prerequisite/scope/source/actor/identity rejection before execution, legacy-task
 compatibility, failure then correction with retained attempts, no cross-HEAD
 aggregation or automatic acceptance, and API/CLI parity. Existing security,
 Factory proof and browser gates remain mandatory.
-
 
 The Board's Prepare task action first records admission against the selected
 completed baseline proof, then fills the existing task form with that reserved

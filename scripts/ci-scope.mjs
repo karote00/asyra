@@ -1,51 +1,49 @@
+import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { execFileSync } from 'node:child_process'
 
-const appOwners = new Map([
-  ['@asyra/asyra-design', 'design'],
-  ['@asyra/asyra-sim', 'sim'],
-  ['@asyra/asyra-framework-site', 'website']
-])
-const frameworkConsumers = new Set(['@asyra/fieldscope', '@asyra/starter-app'])
-const categories = ['framework', 'design', 'sim', 'website', 'tools']
-const sharedPaths = new Set([
-  'package.json',
-  'yarn.lock',
-  '.yarnrc.yml',
-  'turbo.base.json',
-  'turbo.json',
-  'eslint.config.js',
-  'eslint.config.mjs',
-  'tsconfig.json',
-  'scripts/gen-turbo.js'
-])
-const rootDocumentationPaths = new Set([
-  'README.md',
-  'SUPPORT.md',
-  'SECURITY.md',
-  'LICENSE',
-  'CHANGELOG.md',
-  'RELEASE_NOTES.md',
-  'AGENTS.md'
-])
-const frameworkReleaseInputs = new Set([
-  'scripts/framework-release-artifacts.js',
-  'scripts/framework-release-packages.js',
-  'scripts/release-package-artifacts.js',
-  'scripts/release-packages.mjs',
-  'scripts/release-readiness.js',
-  'scripts/release-records.js',
-  'scripts/release-template-readiness.js',
-  'scripts/release-validate.js',
-  'scripts/release-validation-environment.js',
-  'scripts/release-validation-workspace.js'
-])
+const scriptDirectory = path.dirname(fileURLToPath(import.meta.url))
+const relationshipPolicy = JSON.parse(
+  fs.readFileSync(path.join(scriptDirectory, 'ci-relationships.json'), 'utf8')
+)
+const workspaceNamePattern = /^(?:@[a-z0-9][a-z0-9-]*\/)?[a-z0-9][a-z0-9-]*$/
+const workspaceBuildTaskCandidates = (name) => [
+  `build:${name.split('/').pop()}`,
+  'react:build',
+  'build'
+]
+
+function workspaceEntry(group, slug, manifest) {
+  if (
+    typeof manifest.name !== 'string' ||
+    !workspaceNamePattern.test(manifest.name)
+  )
+    throw new Error(
+      `Workspace manifest has an invalid name: ${group}/${slug}/package.json`
+    )
+  const scripts = manifest.scripts ?? {}
+  return {
+    name: manifest.name,
+    directory: `${group}/${slug}`,
+    group,
+    buildTask: workspaceBuildTaskCandidates(manifest.name).find(
+      (task) => scripts[task]
+    ),
+    testTask: scripts['test:ci'] ? 'test:ci' : undefined,
+    dependencies: new Set([
+      ...Object.keys(manifest.dependencies ?? {}),
+      ...Object.keys(manifest.devDependencies ?? {}),
+      ...Object.keys(manifest.peerDependencies ?? {}),
+      ...Object.keys(manifest.optionalDependencies ?? {})
+    ])
+  }
+}
 
 function readWorkspaceManifests(root) {
   const manifests = new Map()
-  for (const group of ['packages', 'apps', 'tools', 'create-app']) {
+  for (const group of relationshipPolicy.workspaceRoots) {
     const directory = path.join(root, group)
     if (!fs.existsSync(directory)) continue
     for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
@@ -53,223 +51,420 @@ function readWorkspaceManifests(root) {
       const manifestPath = path.join(directory, entry.name, 'package.json')
       if (!fs.existsSync(manifestPath)) continue
       const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'))
-      if (
-        typeof manifest.name !== 'string' ||
-        !/^(?:@[a-z0-9][a-z0-9-]*\/)?[a-z0-9][a-z0-9-]*$/.test(manifest.name)
-      )
-        throw new Error(
-          `Workspace manifest has an invalid name: ${manifestPath}`
-        )
-      manifests.set(manifest.name, {
-        name: manifest.name,
-        directory: `${group}/${entry.name}`,
-        buildTask: [
-          `build:${manifest.name.split('/').pop()}`,
-          'react:build',
-          'build'
-        ].find((task) => manifest.scripts?.[task]),
-        dependencies: new Set([
-          ...Object.keys(manifest.dependencies ?? {}),
-          ...Object.keys(manifest.devDependencies ?? {}),
-          ...Object.keys(manifest.peerDependencies ?? {})
-        ])
-      })
+      const workspace = workspaceEntry(group, entry.name, manifest)
+      if (manifests.has(workspace.name))
+        throw new Error(`Duplicate workspace name: ${workspace.name}`)
+      manifests.set(workspace.name, workspace)
     }
   }
   return manifests
 }
 
-function workspaceForPath(changedPath, manifests) {
-  const matches = [...manifests.values()]
-    .filter(
-      (workspace) =>
-        changedPath.startsWith(workspace.directory + '/') ||
-        changedPath === workspace.directory
+function readWorkspaceManifestsAtCommit(commit, repositoryRoot) {
+  if (!/^[a-f0-9]{40}$/.test(commit ?? '')) return new Map()
+  const files = execFileSync(
+    'git',
+    [
+      'ls-tree',
+      '-r',
+      '--name-only',
+      '-z',
+      commit,
+      '--',
+      ...relationshipPolicy.workspaceRoots
+    ],
+    { cwd: repositoryRoot, encoding: 'utf8' }
+  )
+    .split('\0')
+    .filter((file) =>
+      relationshipPolicy.workspaceRoots.some((group) =>
+        new RegExp(`^${group}/[^/]+/package\\.json$`).test(file)
+      )
     )
-    .sort((left, right) => right.directory.length - left.directory.length)
-  return matches[0]
+  const manifests = new Map()
+  for (const file of files) {
+    const [, group, slug] =
+      file.match(/^([^/]+)\/([^/]+)\/package\.json$/) ?? []
+    if (!group || relationshipPolicy.excludedRoots[group]) continue
+    const manifest = JSON.parse(
+      execFileSync('git', ['show', `${commit}:${file}`], {
+        cwd: repositoryRoot,
+        encoding: 'utf8'
+      })
+    )
+    const workspace = workspaceEntry(group, slug, manifest)
+    if (manifests.has(workspace.name))
+      throw new Error(`Duplicate baseline workspace name: ${workspace.name}`)
+    manifests.set(workspace.name, workspace)
+  }
+  return manifests
 }
 
-function downstreamWorkspaces(changedNames, manifests) {
-  const affected = new Set(changedNames)
+function readCreateAppManifests(root) {
+  const group = Object.keys(relationshipPolicy.excludedRoots)[0]
+  const directory = path.join(root, group)
+  if (!fs.existsSync(directory)) return new Map()
+  const manifests = new Map()
+  for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue
+    const manifestPath = path.join(directory, entry.name, 'package.json')
+    if (!fs.existsSync(manifestPath)) continue
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'))
+    if (typeof manifest.name === 'string')
+      manifests.set(manifest.name, {
+        name: manifest.name,
+        directory: `${group}/${entry.name}`
+      })
+  }
+  return manifests
+}
+
+function readCreateAppManifestsAtCommit(commit, repositoryRoot) {
+  if (!/^[a-f0-9]{40}$/.test(commit ?? '')) return new Map()
+  const group = Object.keys(relationshipPolicy.excludedRoots)[0]
+  const files = execFileSync(
+    'git',
+    ['ls-tree', '-r', '--name-only', '-z', commit, '--', group],
+    { cwd: repositoryRoot, encoding: 'utf8' }
+  )
+    .split('\0')
+    .filter((file) => new RegExp(`^${group}/[^/]+/package\\.json$`).test(file))
+  const manifests = new Map()
+  for (const file of files) {
+    const [, slug] =
+      file.match(new RegExp(`^${group}/([^/]+)/package\\.json$`)) ?? []
+    const manifest = JSON.parse(
+      execFileSync('git', ['show', `${commit}:${file}`], {
+        cwd: repositoryRoot,
+        encoding: 'utf8'
+      })
+    )
+    if (typeof manifest.name === 'string')
+      manifests.set(manifest.name, {
+        name: manifest.name,
+        directory: `${group}/${slug}`
+      })
+  }
+  return manifests
+}
+
+function readDocumentationDirectories(root) {
+  const directory = path.join(root, 'docs')
+  if (!fs.existsSync(directory)) return []
+  return fs
+    .readdirSync(directory, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => `docs/${entry.name}`)
+    .sort()
+}
+
+function readDocumentationDirectoriesAtCommit(commit, repositoryRoot) {
+  if (!/^[a-f0-9]{40}$/.test(commit ?? '')) return []
+  return execFileSync('git', ['ls-tree', '-z', commit, '--', 'docs/'], {
+    cwd: repositoryRoot,
+    encoding: 'utf8'
+  })
+    .split('\0')
+    .filter(Boolean)
+    .filter((entry) => entry.startsWith('040000 tree '))
+    .map((entry) => entry.slice(entry.indexOf('\t') + 1))
+    .filter((entry) => /^docs\/[^/]+$/.test(entry))
+    .sort()
+}
+
+function workspaceForPath(changedPath, manifests) {
+  return [...manifests.values()]
+    .filter(
+      (workspace) =>
+        changedPath === workspace.directory ||
+        changedPath.startsWith(workspace.directory + '/')
+    )
+    .sort((left, right) => right.directory.length - left.directory.length)[0]
+}
+
+function matchesPattern(changedPath, pattern) {
+  const expression = pattern
+    .split(/(\*\*|\{slug\})/)
+    .map((part) => {
+      if (part === '**') return '.*'
+      if (part === '{slug}') return '([a-z0-9]+(?:-[a-z0-9]+)*)'
+      return part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    })
+    .join('')
+  const match = changedPath.match(new RegExp(`^${expression}$`))
+  return match ? { matched: true, slug: match[1] } : { matched: false }
+}
+
+function manifestGraph(headManifests, baseManifests) {
+  const allNames = new Set([...headManifests.keys(), ...baseManifests.keys()])
+  const edges = new Map()
+  for (const source of ['base', 'head']) {
+    const manifests = source === 'base' ? baseManifests : headManifests
+    for (const workspace of manifests.values()) {
+      for (const dependency of workspace.dependencies) {
+        if (!allNames.has(dependency)) continue
+        const key = `${dependency}\0${workspace.name}`
+        const sources = edges.get(key) ?? new Set()
+        sources.add(source)
+        edges.set(key, sources)
+      }
+    }
+  }
+  return [...edges]
+    .map(([key, sources]) => {
+      const [dependency, consumer] = key.split('\0')
+      return { dependency, consumer, sources: [...sources].sort() }
+    })
+    .sort((left, right) =>
+      `${left.dependency}\0${left.consumer}`.localeCompare(
+        `${right.dependency}\0${right.consumer}`
+      )
+    )
+}
+
+function digest(value) {
+  return crypto.createHash('sha256').update(JSON.stringify(value)).digest('hex')
+}
+
+function classifyChanges(
+  changedPaths,
+  headManifests,
+  baseManifests = headManifests,
+  createAppManifests = new Map(),
+  baseCreateAppManifests = createAppManifests,
+  documentationRoots = readDocumentationDirectories(process.cwd()),
+  baseDocumentationRoots = documentationRoots
+) {
+  const unknownPaths = []
+  const changedWorkspaceNames = new Set()
+  const changedCreateAppDirectories = new Set()
+  const releasePaths = new Set(
+    relationshipPolicy.frameworkReleaseReadinessPaths
+  )
+  const allManifestViews = [headManifests, baseManifests]
+  const createAppViews = [createAppManifests, baseCreateAppManifests]
+  const recognizedDocumentationRoots = new Set([
+    ...documentationRoots,
+    ...baseDocumentationRoots
+  ])
+  const sharedInputs = new Set(relationshipPolicy.sharedInputPaths)
+  let selectEveryWorkspace = changedPaths.length === 0
+  let frameworkReleaseRequired = false
+
+  for (const changedPath of changedPaths) {
+    const workspace = allManifestViews
+      .map((manifests) => workspaceForPath(changedPath, manifests))
+      .find(Boolean)
+    if (workspace) {
+      changedWorkspaceNames.add(workspace.name)
+      if (workspace.group === 'packages') frameworkReleaseRequired = true
+      continue
+    }
+
+    const createApp = createAppViews
+      .map((manifests) => workspaceForPath(changedPath, manifests))
+      .find(Boolean)
+    if (createApp) {
+      changedCreateAppDirectories.add(createApp.directory)
+      continue
+    }
+
+    if (sharedInputs.has(changedPath)) {
+      selectEveryWorkspace = true
+      continue
+    }
+    if (
+      relationshipPolicy.sharedInputPatterns.some(
+        (pattern) => matchesPattern(changedPath, pattern).matched
+      )
+    ) {
+      selectEveryWorkspace = true
+      continue
+    }
+    if (relationshipPolicy.rootDocumentationPaths.includes(changedPath))
+      continue
+
+    let matchedSharedContract = false
+    for (const pattern of relationshipPolicy.sharedValidationPatterns) {
+      if (matchesPattern(changedPath, pattern).matched) {
+        matchedSharedContract = true
+        break
+      }
+    }
+    if (matchedSharedContract) {
+      if (changedPath.startsWith('.changeset/')) {
+        const tool = [...headManifests.values()].find(
+          ({ directory }) => directory === 'tools/flow-inspector'
+        )
+        if (tool) changedWorkspaceNames.add(tool.name)
+      }
+      continue
+    }
+
+    const releasePath = [...releasePaths].some(
+      (pattern) => matchesPattern(changedPath, pattern).matched
+    )
+    if (releasePath) frameworkReleaseRequired = true
+
+    let matchedWorkspaceInput = false
+    for (const rule of relationshipPolicy.workspaceInputRules) {
+      const matched = matchesPattern(changedPath, rule.pattern)
+      if (!matched.matched) continue
+      const directory = rule.workspaceDirectory.replace('{slug}', matched.slug)
+      const consumer = [...headManifests.values()].find(
+        (entry) => entry.directory === directory
+      )
+      if (!consumer) {
+        unknownPaths.push(
+          `Unresolved CI input consumer: ${changedPath} -> ${directory}`
+        )
+      } else {
+        changedWorkspaceNames.add(consumer.name)
+      }
+      matchedWorkspaceInput = true
+      break
+    }
+    if (matchedWorkspaceInput) continue
+
+    if (
+      changedPath.startsWith('docs/') &&
+      (recognizedDocumentationRoots.has(
+        changedPath.split('/').slice(0, 2).join('/')
+      ) ||
+        /^docs\/[^/]+$/.test(changedPath))
+    )
+      continue
+
+    if (releasePath) continue
+    unknownPaths.push(changedPath)
+  }
+
+  const dependencyEdges = manifestGraph(headManifests, baseManifests)
+  const affectedNames = new Set(changedWorkspaceNames)
+  if (selectEveryWorkspace)
+    for (const name of headManifests.keys()) affectedNames.add(name)
+
   let changed = true
   while (changed) {
     changed = false
-    for (const workspace of manifests.values()) {
-      if (
-        !affected.has(workspace.name) &&
-        [...workspace.dependencies].some((dependency) =>
-          affected.has(dependency)
-        )
-      ) {
-        affected.add(workspace.name)
+    for (const { dependency, consumer } of dependencyEdges) {
+      if (affectedNames.has(dependency) && !affectedNames.has(consumer)) {
+        affectedNames.add(consumer)
         changed = true
       }
     }
   }
-  return affected
-}
-
-function classifyChanges(changedPaths, manifests) {
-  const selected = new Set()
-  const changedWorkspaces = new Set()
-  const documentationWorkspaces = new Set()
-  const websiteDocumentationWorkspaces = new Set()
-  const unknownPaths = []
-  const releaseReadinessInputs = new Set()
-  let allCategories = false
-
-  for (const changedPath of changedPaths) {
-    const workspace = workspaceForPath(changedPath, manifests)
-    if (workspace) {
-      changedWorkspaces.add(workspace.name)
-      if (
-        workspace.name.startsWith('@asyra/') &&
-        workspace.directory.startsWith('packages/')
-      )
-        selected.add('framework')
-      else if (appOwners.has(workspace.name))
-        selected.add(appOwners.get(workspace.name))
-      else if (frameworkConsumers.has(workspace.name)) selected.add('framework')
-      else if (workspace.directory.startsWith('tools/')) selected.add('tools')
-      else if (workspace.directory.startsWith('create-app/'))
-        selected.add('framework')
-      else unknownPaths.push(changedPath)
-      continue
-    }
-
-    if (
-      sharedPaths.has(changedPath) ||
-      changedPath.startsWith('.github/workflows/')
-    ) {
-      allCategories = true
-      continue
-    }
-    if (changedPath.startsWith('.changeset/')) {
-      selected.add('framework')
-      selected.add('tools')
-      continue
-    }
-    if (rootDocumentationPaths.has(changedPath)) {
-      selected.add('framework')
-      continue
-    }
-    if (frameworkReleaseInputs.has(changedPath)) {
-      releaseReadinessInputs.add(changedPath)
-    }
-    if (/^(scripts|\.github|\.yarn|docs\/ai\/tools)\//.test(changedPath)) {
-      selected.add('tools')
-      if (changedPath.startsWith('docs/ai/tools/flow-inspector/'))
-        documentationWorkspaces.add('@asyra/flow-inspector')
-      continue
-    }
-    if (changedPath.startsWith('docs/ai/framework/')) {
-      selected.add('framework')
-      continue
-    }
-    if (changedPath.startsWith('docs/ai/workflows/')) {
-      selected.add('framework')
-      continue
-    }
-    if (changedPath.startsWith('docs/ai/apps/asyra-design/')) {
-      selected.add('design')
-      continue
-    }
-    if (changedPath.startsWith('docs/ai/apps/asyra-sim/')) {
-      selected.add('sim')
-      continue
-    }
-    if (changedPath.startsWith('docs/ai/apps/fieldscope/')) {
-      selected.add('framework')
-      continue
-    }
-    if (/^(docs\/public|apps\/asyra-framework-site)\//.test(changedPath)) {
-      selected.add('website')
-      if (changedPath.startsWith('docs/public/'))
-        websiteDocumentationWorkspaces.add('@asyra/asyra-framework-site')
-      continue
-    }
-    unknownPaths.push(changedPath)
-  }
-
-  if (allCategories) for (const category of categories) selected.add(category)
-  const affectedWorkspaces = downstreamWorkspaces(changedWorkspaces, manifests)
-  for (const name of affectedWorkspaces) {
-    const workspace = manifests.get(name)
-    if (
-      workspace?.directory.startsWith('apps/') &&
-      !appOwners.has(name) &&
-      !frameworkConsumers.has(name)
-    )
-      unknownPaths.push(`Unclassified app consumer: ${name}`)
-  }
-  if (allCategories || unknownPaths.length || changedPaths.length === 0)
-    for (const name of manifests.keys()) affectedWorkspaces.add(name)
-  for (const name of affectedWorkspaces) {
-    const category = appOwners.get(name)
-    if (category) selected.add(category)
-  }
   if (unknownPaths.length)
-    for (const category of categories) selected.add(category)
-  if (changedPaths.length === 0)
-    for (const category of categories) selected.add(category)
+    for (const name of headManifests.keys()) affectedNames.add(name)
 
-  const workspacesByCategory = Object.fromEntries(
-    categories.map((category) => [
-      category,
-      [
-        ...affectedWorkspaces,
-        ...documentationWorkspaces,
-        ...websiteDocumentationWorkspaces
-      ]
-        .filter((name, index, allNames) => allNames.indexOf(name) === index)
-        .filter((name) => {
-          const workspace = manifests.get(name)
-          if (category === 'framework')
-            return (
-              workspace?.directory.startsWith('packages/') ||
-              frameworkConsumers.has(name)
-            )
-          if (category === 'tools')
-            return workspace?.directory.startsWith('tools/')
-          return appOwners.get(name) === category
-        })
+  const affectedWorkspaces = [...headManifests.values()]
+    .filter(({ name }) => affectedNames.has(name))
+    .sort((left, right) => left.name.localeCompare(right.name))
+  for (const workspace of affectedWorkspaces) {
+    if (!workspace.buildTask)
+      unknownPaths.push(
+        `Workspace has no canonical build task: ${workspace.name}`
+      )
+    if (!workspace.testTask)
+      unknownPaths.push(
+        `Workspace has no canonical CI test task: ${workspace.name}`
+      )
+  }
+
+  const workspaceMatrix = affectedWorkspaces
+    .filter((workspace) => workspace.buildTask && workspace.testTask)
+    .map(({ name, directory, buildTask, testTask }) => ({
+      name,
+      directory,
+      buildTask,
+      testTask,
+      artifactId: crypto
+        .createHash('sha256')
+        .update(name)
+        .digest('hex')
+        .slice(0, 16)
+    }))
+  const changedNames = [...changedWorkspaceNames].sort()
+  const affectedNamesInHead = affectedWorkspaces.map(({ name }) => name)
+  const frameworkPackages = affectedWorkspaces
+    .filter(({ group }) => group === 'packages')
+    .map(({ name }) => name)
+  if (frameworkPackages.length) frameworkReleaseRequired = true
+
+  const createAppPackages = [...new Set(changedCreateAppDirectories)].sort()
+  if (createAppPackages.length === 0) {
+    const currentCreateAppPaths = [...createAppManifests.values()].map(
+      ({ directory }) => directory
+    )
+    const baseCreateAppPaths = [...baseCreateAppManifests.values()].map(
+      ({ directory }) => directory
+    )
+    for (const changedPath of changedPaths)
+      for (const directory of [...currentCreateAppPaths, ...baseCreateAppPaths])
+        if (changedPath.startsWith(directory + '/'))
+          changedCreateAppDirectories.add(directory)
+  }
+  const resolvedCreateAppPackages = [
+    ...new Set(changedCreateAppDirectories)
+  ].sort()
+  const workspaceGraph = [...headManifests.values()]
+    .map(({ name, directory, group, buildTask, testTask, dependencies }) => ({
+      name,
+      directory,
+      group,
+      buildTask,
+      testTask,
+      dependencies: [...dependencies]
+        .filter((dependency) => headManifests.has(dependency))
         .sort()
-    ])
-  )
-  for (const category of ['framework', 'design', 'sim', 'website'])
-    for (const name of workspacesByCategory[category])
-      if (!manifests.get(name)?.buildTask)
-        unknownPaths.push(`Workspace has no canonical build task: ${name}`)
-  const buildTasksByCategory = Object.fromEntries(
-    categories.map((category) => [
-      category,
-      workspacesByCategory[category]
-        .map((name) => manifests.get(name))
-        .filter((workspace) => workspace?.buildTask)
-        .map(({ name, buildTask }) => ({ workspace: name, task: buildTask }))
-    ])
-  )
-  const frameworkPackages = [...affectedWorkspaces]
-    .filter((name) => manifests.get(name)?.directory.startsWith('packages/'))
-    .sort()
-  const createAppPackages = [...affectedWorkspaces]
-    .filter((name) => manifests.get(name)?.directory.startsWith('create-app/'))
-    .map((name) => manifests.get(name).directory)
-    .sort()
-  const frameworkReleaseRequired =
-    frameworkPackages.length > 0 || releaseReadinessInputs.size > 0
+    }))
+    .sort((left, right) => left.name.localeCompare(right.name))
+  const frameworkDeclarationTasks = workspaceGraph
+    .filter(({ group }) => group === 'packages')
+    .map(({ name, buildTask }) => ({ workspace: name, task: buildTask }))
+
+  const relationshipMap = {
+    version: 1,
+    workspaceRoots: [...relationshipPolicy.workspaceRoots],
+    documentationRoots: [...recognizedDocumentationRoots].sort(),
+    excludedRoots: relationshipPolicy.excludedRoots,
+    workspaceGraph,
+    dependencyEdges,
+    frameworkDeclarationTasks,
+    changedWorkspaceNames: changedNames,
+    affectedWorkspaceNames: affectedNamesInHead,
+    workspaceMatrix,
+    sharedValidationRequired: true,
+    frameworkReleaseRequired,
+    createAppPackages: resolvedCreateAppPackages,
+    designE2EWorkspaceDirectory: relationshipPolicy.designE2EWorkspaceDirectory,
+    designE2ERequired: workspaceMatrix.some(
+      ({ directory }) =>
+        directory === relationshipPolicy.designE2EWorkspaceDirectory
+    ),
+    flowInspectorValidationWorkspaceDirectory:
+      relationshipPolicy.flowInspectorValidationWorkspaceDirectory,
+    flowInspectorValidationRequired: workspaceMatrix.some(
+      ({ directory }) =>
+        directory ===
+        relationshipPolicy.flowInspectorValidationWorkspaceDirectory
+    ),
+    unknownPaths: [...new Set(unknownPaths)].sort()
+  }
 
   return {
-    categories: categories.filter((category) => selected.has(category)),
-    changedWorkspaces: [...changedWorkspaces].sort(),
-    affectedWorkspaces: [...affectedWorkspaces].sort(),
-    workspacesByCategory,
-    buildTasksByCategory,
+    relationshipMap,
+    relationshipMapDigest: digest(relationshipMap),
+    affectedWorkspaces: affectedNamesInHead,
+    workspaceMatrix,
+    workspaceGroups: [
+      ...new Set(affectedWorkspaces.map(({ group }) => group))
+    ].sort(),
     frameworkPackages,
-    createAppPackages,
+    createAppPackages: resolvedCreateAppPackages,
     frameworkReleaseRequired,
-    unknownPaths: [...unknownPaths].sort()
+    designE2ERequired: relationshipMap.designE2ERequired,
+    unknownPaths: relationshipMap.unknownPaths
   }
 }
 
@@ -280,9 +475,7 @@ function loadChangedPaths(base, head) {
   return execFileSync(
     'git',
     ['diff', '--no-renames', '--name-only', '-z', `${base}...${head}`],
-    {
-      encoding: 'utf8'
-    }
+    { encoding: 'utf8' }
   )
     .split('\0')
     .filter(Boolean)
@@ -292,16 +485,19 @@ function main() {
   const root = process.cwd()
   const base = process.env.CI_SCOPE_BASE
   const head = process.env.CI_SCOPE_HEAD
-  const changedPaths = loadChangedPaths(
-    process.env.CI_SCOPE_DIFF_BASE ?? base,
-    head
-  )
+  const diffBase = process.env.CI_SCOPE_DIFF_BASE ?? base
+  const changedPaths = loadChangedPaths(diffBase, head)
   const classification = classifyChanges(
     changedPaths,
-    readWorkspaceManifests(root)
+    readWorkspaceManifests(root),
+    readWorkspaceManifestsAtCommit(diffBase, root),
+    readCreateAppManifests(root),
+    readCreateAppManifestsAtCommit(diffBase, root),
+    readDocumentationDirectories(root),
+    readDocumentationDirectoriesAtCommit(diffBase, root)
   )
   const evidence = {
-    version: 1,
+    version: 2,
     identity: {
       repository: process.env.GITHUB_REPOSITORY ?? 'local',
       base,
@@ -317,29 +513,31 @@ function main() {
   const outputPath = process.env.GITHUB_OUTPUT
   if (outputPath) {
     fs.appendFileSync(outputPath, `evidence=${JSON.stringify(evidence)}\n`)
-    for (const category of categories) {
-      fs.appendFileSync(
-        outputPath,
-        `${category}=${classification.categories.includes(category)}\n`
-      )
-      fs.appendFileSync(
-        outputPath,
-        `${category}_workspaces=${classification.workspacesByCategory[category].join(' ')}\n`
-      )
-      fs.appendFileSync(
-        outputPath,
-        `${category}_build_tasks=${classification.buildTasksByCategory[category]
-          .map(({ task }) => task)
-          .join(' ')}\n`
-      )
-    }
     fs.appendFileSync(
       outputPath,
-      `framework_packages=${classification.frameworkPackages.join(' ')}\n`
+      `workspace_matrix=${JSON.stringify(classification.workspaceMatrix)}\n`
+    )
+    fs.appendFileSync(
+      outputPath,
+      `relationship_map_digest=${classification.relationshipMapDigest}\n`
+    )
+    fs.appendFileSync(
+      outputPath,
+      `framework_declaration_tasks=${classification.relationshipMap.frameworkDeclarationTasks
+        .map(({ task }) => task)
+        .join(' ')}\n`
     )
     fs.appendFileSync(
       outputPath,
       `framework_release_required=${classification.frameworkReleaseRequired}\n`
+    )
+    fs.appendFileSync(
+      outputPath,
+      `design_e2e_required=${classification.designE2ERequired}\n`
+    )
+    fs.appendFileSync(
+      outputPath,
+      `flow_inspector_validation_required=${classification.relationshipMap.flowInspectorValidationRequired}\n`
     )
     fs.appendFileSync(
       outputPath,
@@ -354,7 +552,16 @@ function main() {
   if (classification.unknownPaths.length) process.exitCode = 1
 }
 
-export { classifyChanges, readWorkspaceManifests }
+export {
+  classifyChanges,
+  readWorkspaceManifests,
+  readWorkspaceManifestsAtCommit,
+  readCreateAppManifests,
+  readCreateAppManifestsAtCommit,
+  readDocumentationDirectories,
+  readDocumentationDirectoriesAtCommit,
+  digest
+}
 
 if (
   process.argv[1] &&

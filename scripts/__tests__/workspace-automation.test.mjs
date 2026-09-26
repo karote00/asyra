@@ -154,54 +154,25 @@ test('Draft filtering preserves non-PR CI triggers and label validation', () => 
   assert.match(e2e, /^ {2}schedule:\n {4}- cron: '0 18 \* \* \*'/m)
 })
 
-test('CI bounds workspace test concurrency without dropping test owners', () => {
+test('CI schedules discovered workspaces through one bounded build-then-test matrix', () => {
   const workflow = readText('.github/workflows/main.yml')
   const scripts = readJSON('package.json').scripts
 
   assert.match(workflow, /run: yarn test:scripts/)
-  for (const [buildTask, workspace] of [
-    ['react:build', '@asyra/asyra-design'],
-    ['react:build', '@asyra/asyra-sim'],
-    ['build:asyra-framework-site', '@asyra/asyra-framework-site']
-  ]) {
-    const build = `yarn turbo run ${buildTask} --filter=${workspace} --concurrency=2`
-    const test = `yarn turbo run test:ci --filter=${workspace} --concurrency=2`
-    assert.ok(
-      workflow.indexOf(build) >= 0,
-      `${workspace} has an explicit build`
-    )
-    assert.ok(
-      workflow.indexOf(test) > workflow.indexOf(build),
-      `${workspace} tests run after its build`
-    )
-  }
   assert.match(
     workflow,
-    /FRAMEWORK_BUILD_TASKS: \$\{\{ needs\.scope\.outputs\.framework_build_tasks \}\}/
+    /workspace: \$\{\{ fromJson\(needs\.scope\.outputs\.workspace_matrix\) \}\}/
   )
-  assert.match(
-    workflow,
-    /yarn turbo run "\$\{tasks\[@\]\}" "\$\{filters\[@\]\}" --concurrency=2/
-  )
-  assert.match(
-    workflow,
-    /yarn turbo run test:ci "\$\{args\[@\]\}" --concurrency=2/
-  )
+  assert.match(workflow, /run: node scripts\/run-workspace-checks\.mjs/)
   assert.doesNotMatch(workflow, /yarn turbo run test:ci react:build/)
   const jobs = workflow.split('\njobs:\n')[1].split(/(?=^ {2}[\w-]+:\n)/m)
-  for (const name of ['framework', 'design', 'sim', 'website', 'tools']) {
-    const job = jobs.find((block) => block.startsWith(`  ${name}:`))
-    assert.ok(job, `${name} validation job exists`)
-    const yarnSetup = job.indexOf(
-      'run: corepack enable && yarn set version 4.3.1'
-    )
-    const nodeSetup = job.indexOf('uses: actions/setup-node@')
-    const install = job.indexOf('run: yarn install --immutable')
-    assert.ok(
-      yarnSetup >= 0 && yarnSetup < nodeSetup && nodeSetup < install,
-      `${name} enables the pinned Yarn through Corepack before setup-node cache detection`
-    )
-  }
+  const workspaceJob = jobs.find((block) =>
+    block.startsWith('  workspace-validation:')
+  )
+  assert.ok(workspaceJob)
+  assert.match(workspaceJob, /strategy:\n\s+fail-fast: false/)
+  assert.match(workspaceJob, /max-parallel: 4/)
+  assert.match(workspaceJob, /actions\/upload-artifact@/)
   assert.equal(scripts['test:ci'], 'yarn test:scripts && turbo run test:ci')
 })
 
@@ -868,47 +839,33 @@ test('Board, render contracts and functional E2E have independent required jobs'
   assert.match(main, /FLOW_E2E_RESULT: \$\{\{ needs\.design-e2e\.result \}\}/)
 })
 
-test('Tools CI checkout includes the accepted Git base required by CI evidence', () => {
+test('scope discovery checkout includes the accepted Git base required by CI evidence', () => {
   const workflow = readText('.github/workflows/main.yml')
-  const toolsJob = workflow
-    .split('\n  tools:\n')[1]
-    .split('\n  framework-release-readiness:\n')[0]
+  const scopeJob = workflow
+    .split('\n  scope:\n')[1]
+    .split('\n  shared-validation:\n')[0]
 
-  assert.match(toolsJob, /fetch-depth: 0/)
+  assert.match(scopeJob, /fetch-depth: 0/)
 })
 
 test('shared CI builds Framework declarations before public documentation checks', () => {
   const workflow = readText('.github/workflows/main.yml')
   const sharedJob = workflow
     .split('\n  shared-validation:\n')[1]
-    .split('\n  framework:\n')[0]
+    .split('\n  workspace-validation:\n')[0]
   const buildStep = sharedJob.indexOf('Build Framework declarations')
   const scriptsTest = sharedJob.indexOf('run: yarn test:scripts')
 
   assert.ok(buildStep >= 0 && buildStep < scriptsTest)
-  for (const task of [
-    'build:ai-agent-runtime',
-    'build:collaboration',
-    'build:core',
-    'build:design-system',
-    'build:factory',
-    'build:feature-system',
-    'build:input-system',
-    'build:persistence',
-    'build:preset',
-    'build:props-manager',
-    'build:reactive-events',
-    'build:render',
-    'build:render-engine',
-    'build:render-engine-pixi',
-    'build:scene-tree',
-    'build:selection',
-    'build:system-context',
-    'build:ui-context',
-    'build:utils'
-  ]) {
-    assert.ok(sharedJob.includes(task), `Missing Framework build task ${task}`)
-  }
+  assert.match(
+    sharedJob,
+    /FRAMEWORK_DECLARATION_TASKS: \$\{\{ needs\.scope\.outputs\.framework_declaration_tasks \}\}/
+  )
+  assert.match(sharedJob, /yarn turbo run "\$\{tasks\[@\]\}"/)
+  assert.doesNotMatch(
+    sharedJob,
+    /build:(?:ai-agent-runtime|collaboration|core|factory)/
+  )
 })
 
 const runOwnedBuildCommand = (command, args, { githubActions, timeoutMs }) =>

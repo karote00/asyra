@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 const fs = require('node:fs')
+const path = require('node:path')
 const { execFileSync } = require('node:child_process')
 const { createHash } = require('node:crypto')
 const inventory = Object.freeze(
@@ -128,6 +129,8 @@ function aggregate(envelopes, identity, jobs, scopeEvidence) {
   if (!validIdentity)
     blockers.push('Expected execution identity is unavailable')
   const designSelected = jobs.designSelected === 'true'
+  const scope = aggregateScope(scopeEvidence, identity, jobs)
+  blockers.push(...scope.blockers)
   const cases = inventory.map((c) => {
     if (!designSelected)
       return {
@@ -176,8 +179,6 @@ function aggregate(envelopes, identity, jobs, scopeEvidence) {
     blockers.push('e2e: prerequisite did not succeed')
   if (!designSelected && jobs.e2e !== 'skipped')
     blockers.push('e2e: unselected producer did not remain skipped')
-  const scope = aggregateScope(scopeEvidence, identity, jobs)
-  blockers.push(...scope.blockers)
   let status = 'passed'
   if (cases.some((c) => c.status === 'failed') || scope.status === 'failed')
     status = 'failed'
@@ -192,15 +193,12 @@ function aggregate(envelopes, identity, jobs, scopeEvidence) {
     identity,
     status,
     cases,
-    categories: scope.categories,
+    workspaceGroups: scope.workspaceGroups,
     producerResults: Object.fromEntries(
       [
         'validate',
-        'framework',
-        'design',
-        'sim',
-        'website',
-        'tools',
+        'workspaceValidation',
+        'flowInspectorValidation',
         'frameworkRelease',
         'createAppReadiness',
         'e2e',
@@ -222,59 +220,205 @@ function aggregateScope(evidence, identity, jobs) {
     ['base', 'head', 'integration'].every((key) =>
       /^[a-f0-9]{40}$/.test(identity[key] ?? '')
     )
-  const admitted =
-    validIdentity &&
-    evidence?.version === 1 &&
-    identityKeys.every((key) => evidence.identity?.[key] === identity[key]) &&
-    Array.isArray(evidence.categories) &&
-    evidence.categories.length > 0 &&
-    evidence.categories.every((category) =>
-      ['framework', 'design', 'sim', 'website', 'tools'].includes(category)
+  const relationshipMap = evidence?.relationshipMap
+  const matrix = relationshipMap?.workspaceMatrix
+  const graph = relationshipMap?.workspaceGraph
+  const unique = (values) => new Set(values).size === values.length
+  const validMap =
+    relationshipMap?.version === 1 &&
+    Array.isArray(relationshipMap.workspaceRoots) &&
+    relationshipMap.workspaceRoots.length > 0 &&
+    relationshipMap.workspaceRoots.every(
+      (root) => typeof root === 'string' && /^[a-z][a-z0-9-]*$/.test(root)
     ) &&
-    new Set(evidence.categories).size === evidence.categories.length &&
-    evidence.workspacesByCategory &&
-    Array.isArray(evidence.frameworkPackages) &&
-    evidence.frameworkPackages.every(
-      (name) => typeof name === 'string' && name.startsWith('@asyra/')
+    new Set(relationshipMap.workspaceRoots).size ===
+      relationshipMap.workspaceRoots.length &&
+    relationshipMap.excludedRoots &&
+    relationshipMap.excludedRoots['create-app'] === 'archive-readiness' &&
+    Array.isArray(relationshipMap.documentationRoots) &&
+    relationshipMap.documentationRoots.every((root) =>
+      /^docs\/[a-z0-9][a-z0-9-]*$/.test(root)
     ) &&
-    new Set(evidence.frameworkPackages).size ===
-      evidence.frameworkPackages.length &&
-    typeof evidence.frameworkReleaseRequired === 'boolean' &&
-    (evidence.frameworkPackages.length === 0 ||
-      evidence.frameworkReleaseRequired) &&
-    Array.isArray(evidence.createAppPackages) &&
-    evidence.createAppPackages.every((directory) =>
+    unique(relationshipMap.documentationRoots) &&
+    Array.isArray(graph) &&
+    Array.isArray(relationshipMap.dependencyEdges) &&
+    Array.isArray(relationshipMap.changedWorkspaceNames) &&
+    Array.isArray(relationshipMap.affectedWorkspaceNames) &&
+    Array.isArray(matrix) &&
+    typeof relationshipMap.sharedValidationRequired === 'boolean' &&
+    relationshipMap.sharedValidationRequired &&
+    typeof relationshipMap.frameworkReleaseRequired === 'boolean' &&
+    Array.isArray(relationshipMap.frameworkDeclarationTasks) &&
+    typeof relationshipMap.designE2ERequired === 'boolean' &&
+    typeof relationshipMap.designE2EWorkspaceDirectory === 'string' &&
+    relationshipMap.workspaceRoots.some((root) =>
+      relationshipMap.designE2EWorkspaceDirectory.startsWith(root + '/')
+    ) &&
+    typeof relationshipMap.flowInspectorValidationWorkspaceDirectory ===
+      'string' &&
+    relationshipMap.workspaceRoots.some((root) =>
+      relationshipMap.flowInspectorValidationWorkspaceDirectory.startsWith(
+        root + '/'
+      )
+    ) &&
+    typeof relationshipMap.flowInspectorValidationRequired === 'boolean' &&
+    Array.isArray(relationshipMap.createAppPackages) &&
+    relationshipMap.createAppPackages.every((directory) =>
       /^create-app\/[a-z0-9][a-z0-9-]*$/.test(directory)
     ) &&
-    new Set(evidence.createAppPackages).size ===
-      evidence.createAppPackages.length &&
-    ['framework', 'design', 'sim', 'website', 'tools'].every((category) =>
-      Array.isArray(evidence.workspacesByCategory[category])
+    Array.isArray(relationshipMap.unknownPaths) &&
+    relationshipMap.unknownPaths.length === 0
+  const validGraph =
+    validMap &&
+    graph.every(
+      (workspace) =>
+        workspace &&
+        typeof workspace.name === 'string' &&
+        /^[a-z0-9][a-z0-9-]*$|^@[a-z0-9][a-z0-9-]*\/[a-z0-9][a-z0-9-]*$/.test(
+          workspace.name
+        ) &&
+        typeof workspace.directory === 'string' &&
+        relationshipMap.workspaceRoots.some((root) =>
+          workspace.directory.startsWith(root + '/')
+        ) &&
+        typeof workspace.group === 'string' &&
+        typeof workspace.buildTask === 'string' &&
+        typeof workspace.testTask === 'string' &&
+        workspace.testTask === 'test:ci' &&
+        Array.isArray(workspace.dependencies)
     ) &&
-    Array.isArray(evidence.unknownPaths) &&
-    evidence.unknownPaths.length === 0
+    unique(graph.map(({ name }) => name)) &&
+    unique(graph.map(({ directory }) => directory))
+  const graphByName = new Map(
+    validGraph ? graph.map((workspace) => [workspace.name, workspace]) : []
+  )
+  const validMatrix =
+    validGraph &&
+    matrix.every((entry) => {
+      const workspace = graphByName.get(entry?.name)
+      return (
+        workspace &&
+        entry.directory === workspace.directory &&
+        entry.buildTask === workspace.buildTask &&
+        entry.testTask === workspace.testTask &&
+        /^[a-f0-9]{16}$/.test(entry.artifactId ?? '') &&
+        hash(entry.name).startsWith(entry.artifactId)
+      )
+    }) &&
+    unique(matrix.map(({ name }) => name)) &&
+    unique(matrix.map(({ artifactId }) => artifactId)) &&
+    JSON.stringify(relationshipMap.affectedWorkspaceNames) ===
+      JSON.stringify(matrix.map(({ name }) => name)) &&
+    JSON.stringify(evidence?.workspaceMatrix) === JSON.stringify(matrix) &&
+    JSON.stringify(evidence?.affectedWorkspaces) ===
+      JSON.stringify(matrix.map(({ name }) => name))
+  const expectedFrameworkPackages = validMatrix
+    ? matrix
+        .filter(({ directory }) => directory.startsWith('packages/'))
+        .map(({ name }) => name)
+    : []
+  const expectedFrameworkDeclarationTasks = validGraph
+    ? graph
+        .filter(({ group }) => group === 'packages')
+        .map(({ name, buildTask }) => ({ workspace: name, task: buildTask }))
+    : []
+  const admitted =
+    validIdentity &&
+    evidence?.version === 2 &&
+    identityKeys.every((key) => evidence.identity?.[key] === identity[key]) &&
+    validMap &&
+    validMatrix &&
+    evidence.relationshipMapDigest === hash(JSON.stringify(relationshipMap)) &&
+    JSON.stringify(relationshipMap.frameworkDeclarationTasks) ===
+      JSON.stringify(expectedFrameworkDeclarationTasks) &&
+    JSON.stringify(evidence.frameworkPackages) ===
+      JSON.stringify(expectedFrameworkPackages) &&
+    evidence.frameworkReleaseRequired ===
+      relationshipMap.frameworkReleaseRequired &&
+    JSON.stringify(evidence.createAppPackages) ===
+      JSON.stringify(relationshipMap.createAppPackages) &&
+    evidence.designE2ERequired === relationshipMap.designE2ERequired &&
+    relationshipMap.designE2ERequired ===
+      matrix.some(
+        ({ directory }) =>
+          directory === relationshipMap.designE2EWorkspaceDirectory
+      ) &&
+    relationshipMap.designE2ERequired === (jobs.designSelected === 'true') &&
+    relationshipMap.flowInspectorValidationRequired ===
+      matrix.some(
+        ({ directory }) =>
+          directory ===
+          relationshipMap.flowInspectorValidationWorkspaceDirectory
+      ) &&
+    JSON.stringify(relationshipMap.unknownPaths) === '[]' &&
+    JSON.stringify(evidence.unknownPaths) === '[]'
   if (!admitted)
     blockers.push(
-      'CI scope evidence is missing, unknown, or belongs to another run attempt'
+      'CI relationship map is missing, unknown, malformed, or belongs to another run attempt'
     )
-  const categories = ['framework', 'design', 'sim', 'website', 'tools']
-  for (const category of categories) {
-    const result = jobs[category]
-    const expected =
-      admitted &&
-      evidence.categories.includes(category) &&
-      evidence.workspacesByCategory[category].length > 0
-    if (expected && result !== 'success')
-      blockers.push(
-        category +
-          ': selected validation did not succeed (' +
-          (result || 'missing') +
-          ')'
-      )
-    if (!expected && result !== 'skipped')
-      blockers.push(category + ': unselected validation did not remain skipped')
+
+  const selectedMatrix = validMatrix ? relationshipMap.workspaceMatrix : []
+  const expectedNames = selectedMatrix.map(({ name }) => name)
+  const resultRecords = Array.isArray(jobs.workspaceResults)
+    ? jobs.workspaceResults
+    : []
+  const matrixResult = jobs.workspaceValidation
+  if (selectedMatrix.length > 0 && matrixResult !== 'success')
+    blockers.push(
+      'workspace-validation: selected matrix did not succeed (' +
+        (matrixResult || 'missing') +
+        ')'
+    )
+  if (selectedMatrix.length === 0 && matrixResult !== 'skipped')
+    blockers.push(
+      'workspace-validation: unselected matrix did not remain skipped'
+    )
+  const flowInspectorSelected =
+    admitted && relationshipMap.flowInspectorValidationRequired
+  if (flowInspectorSelected && jobs.flowInspectorValidation !== 'success')
+    blockers.push('flow-inspector-validation: selected checks did not succeed')
+  if (!flowInspectorSelected && jobs.flowInspectorValidation !== 'skipped')
+    blockers.push(
+      'flow-inspector-validation: unselected check did not remain skipped'
+    )
+
+  const byWorkspace = new Map()
+  for (const record of resultRecords) {
+    if (!record || typeof record.workspace !== 'string') continue
+    const entries = byWorkspace.get(record.workspace) ?? []
+    entries.push(record)
+    byWorkspace.set(record.workspace, entries)
   }
-  const frameworkReleaseSelected = admitted && evidence.frameworkReleaseRequired
+  for (const entry of selectedMatrix) {
+    const records = byWorkspace.get(entry.name) ?? []
+    if (records.length !== 1) {
+      blockers.push(entry.name + ': missing or duplicate matrix result')
+      continue
+    }
+    const record = records[0]
+    const recordValid =
+      admitted &&
+      record.version === 1 &&
+      identityKeys.every((key) => record.identity?.[key] === identity[key]) &&
+      record.relationshipMapDigest === evidence.relationshipMapDigest &&
+      record.directory === entry.directory &&
+      record.buildTask === entry.buildTask &&
+      record.testTask === entry.testTask &&
+      record.status === 'success' &&
+      record.buildStatus === 'success' &&
+      record.testStatus === 'success' &&
+      JSON.stringify(record.taskSequence) ===
+        JSON.stringify([entry.buildTask, entry.testTask])
+    if (!recordValid)
+      blockers.push(entry.name + ': invalid or unsuccessful matrix result')
+  }
+  if (
+    resultRecords.some((record) => !expectedNames.includes(record?.workspace))
+  )
+    blockers.push('workspace-validation: unexpected matrix result')
+
+  const frameworkReleaseSelected =
+    admitted && relationshipMap.frameworkReleaseRequired
   if (frameworkReleaseSelected && jobs.frameworkRelease !== 'success')
     blockers.push(
       'framework-release-readiness: selected release gate did not succeed'
@@ -283,7 +427,8 @@ function aggregateScope(evidence, identity, jobs) {
     blockers.push(
       'framework-release-readiness: unselected release gate did not remain skipped'
     )
-  const createAppSelected = admitted && evidence.createAppPackages.length > 0
+  const createAppSelected =
+    admitted && relationshipMap.createAppPackages.length > 0
   if (createAppSelected && jobs.createAppReadiness !== 'success')
     blockers.push(
       'create-app-readiness: selected package check did not succeed'
@@ -297,12 +442,14 @@ function aggregateScope(evidence, identity, jobs) {
       blockers.push(name + ': required forwarder did not succeed')
   const failed =
     jobs.validate === 'failure' ||
-    (admitted &&
-      evidence.categories.some(
-        (category) =>
-          evidence.workspacesByCategory[category].length > 0 &&
-          jobs[category] === 'failure'
-      )) ||
+    (selectedMatrix.length > 0 && matrixResult === 'failure') ||
+    (flowInspectorSelected && jobs.flowInspectorValidation === 'failure') ||
+    resultRecords.some(
+      (record) =>
+        record?.status === 'failed' ||
+        record?.buildStatus === 'failure' ||
+        record?.testStatus === 'failure'
+    ) ||
     (frameworkReleaseSelected && jobs.frameworkRelease === 'failure') ||
     (createAppSelected && jobs.createAppReadiness === 'failure') ||
     jobs.designForwarder === 'failure' ||
@@ -315,7 +462,13 @@ function aggregateScope(evidence, identity, jobs) {
     version: 1,
     identity,
     status,
-    categories: admitted ? evidence.categories : [],
+    workspaceGroups: admitted
+      ? [
+          ...new Set(
+            selectedMatrix.map(({ directory }) => directory.split('/')[0])
+          )
+        ].sort()
+      : [],
     jobs,
     blockers
   }
@@ -392,16 +545,40 @@ if (require.main === module) {
       validate: process.env.FLOW_VALIDATE_RESULT,
       e2e: process.env.FLOW_E2E_RESULT,
       designSelected: process.env.FLOW_DESIGN_SELECTED,
-      framework: process.env.FLOW_SCOPE_FRAMEWORK_RESULT,
-      design: process.env.FLOW_SCOPE_DESIGN_RESULT,
-      sim: process.env.FLOW_SCOPE_SIM_RESULT,
-      website: process.env.FLOW_SCOPE_WEBSITE_RESULT,
-      tools: process.env.FLOW_SCOPE_TOOLS_RESULT,
+      workspaceValidation: process.env.FLOW_WORKSPACE_VALIDATION_RESULT,
+      flowInspectorValidation:
+        process.env.FLOW_FLOW_INSPECTOR_VALIDATION_RESULT,
       frameworkRelease: process.env.FLOW_FRAMEWORK_RELEASE_RESULT,
       createAppReadiness: process.env.FLOW_CREATE_APP_READINESS_RESULT,
       designForwarder: process.env.FLOW_DESIGN_FORWARDER_RESULT,
       collaborationForwarder: process.env.FLOW_COLLABORATION_FORWARDER_RESULT
     }
+    let workspaceResults = []
+    const workspaceResultsDirectory = process.env.FLOW_WORKSPACE_RESULTS_DIR
+    if (workspaceResultsDirectory) {
+      try {
+        workspaceResults = fs
+          .readdirSync(workspaceResultsDirectory)
+          .filter((file) => file.endsWith('.json'))
+          .sort()
+          .map((file) => {
+            try {
+              return JSON.parse(
+                fs.readFileSync(
+                  path.join(workspaceResultsDirectory, file),
+                  'utf8'
+                )
+              )
+            } catch {
+              return null
+            }
+          })
+      } catch {
+        /* Missing matrix artifacts remain unverified. */
+      }
+    }
+    jobs.workspaceValidation = process.env.FLOW_WORKSPACE_VALIDATION_RESULT
+    jobs.workspaceResults = workspaceResults
     const result = aggregate(envelopes, runtimeIdentity(), jobs, scope)
     fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary(result))
     console.log(JSON.stringify(result, null, 2))
