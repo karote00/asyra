@@ -188,6 +188,20 @@ test('CI bounds workspace test concurrency without dropping test owners', () => 
     /yarn turbo run test:ci "\$\{args\[@\]\}" --concurrency=2/
   )
   assert.doesNotMatch(workflow, /yarn turbo run test:ci react:build/)
+  const jobs = workflow.split('\njobs:\n')[1].split(/(?=^ {2}[\w-]+:\n)/m)
+  for (const name of ['framework', 'design', 'sim', 'website', 'tools']) {
+    const job = jobs.find((block) => block.startsWith(`  ${name}:`))
+    assert.ok(job, `${name} validation job exists`)
+    const yarnSetup = job.indexOf(
+      'run: corepack enable && yarn set version 4.3.1'
+    )
+    const nodeSetup = job.indexOf('uses: actions/setup-node@')
+    const install = job.indexOf('run: yarn install --immutable')
+    assert.ok(
+      yarnSetup >= 0 && yarnSetup < nodeSetup && nodeSetup < install,
+      `${name} enables the pinned Yarn through Corepack before setup-node cache detection`
+    )
+  }
   assert.equal(scripts['test:ci'], 'yarn test:scripts && turbo run test:ci')
 })
 

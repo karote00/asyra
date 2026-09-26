@@ -117,11 +117,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Setup Yarn
+        run: corepack enable && yarn set version 4.3.1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
           cache: yarn
-      - run: corepack enable && yarn set version 4.3.1 && yarn install --immutable
+      - run: yarn install --immutable
       - name: Build affected Framework workspaces
         env:
           FRAMEWORK_WORKSPACES: ${{ needs.scope.outputs.framework_workspaces }}
@@ -146,11 +148,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Setup Yarn
+        run: corepack enable && yarn set version 4.3.1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
           cache: yarn
-      - run: corepack enable && yarn set version 4.3.1 && yarn install --immutable
+      - run: yarn install --immutable
       - run: yarn turbo run react:build --filter=@asyra/asyra-design --concurrency=2
       - run: yarn turbo run test:ci --filter=@asyra/asyra-design --concurrency=2
 
@@ -160,11 +164,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Setup Yarn
+        run: corepack enable && yarn set version 4.3.1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
           cache: yarn
-      - run: corepack enable && yarn set version 4.3.1 && yarn install --immutable
+      - run: yarn install --immutable
       - run: yarn turbo run react:build --filter=@asyra/asyra-sim --concurrency=2
       - run: yarn turbo run test:ci --filter=@asyra/asyra-sim --concurrency=2
 
@@ -174,11 +180,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Setup Yarn
+        run: corepack enable && yarn set version 4.3.1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
           cache: yarn
-      - run: corepack enable && yarn set version 4.3.1 && yarn install --immutable
+      - run: yarn install --immutable
       - run: yarn turbo run build:asyra-framework-site --filter=@asyra/asyra-framework-site --concurrency=2
       - run: yarn turbo run test:ci --filter=@asyra/asyra-framework-site --concurrency=2
 
@@ -188,11 +196,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Setup Yarn
+        run: corepack enable && yarn set version 4.3.1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
           cache: yarn
-      - run: corepack enable && yarn set version 4.3.1 && yarn install --immutable
+      - run: yarn install --immutable
       - name: Test Flow Inspector and control-plane contracts
         env:
           TOOLS_WORKSPACES: ${{ needs.scope.outputs.tools_workspaces }}
