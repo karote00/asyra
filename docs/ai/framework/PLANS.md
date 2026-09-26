@@ -4,14 +4,15 @@ Never record completed plans here.
 
 This file tracks framework planning topics and points to detailed references.
 
-## Adoption and Onboarding Program
+## Completed Adoption and Onboarding Program
 
-The [Adoption Entry and Onboarding Program](plans/adoption-entry-and-onboarding-program-plan.md)
-coordinates result-first entry, the generic starter, AI onboarding, product
-evidence, and community policy. Use one agent per bounded task, separate
-worktrees, and child PRs targeting `codex/adoption-onboarding`. Review and
-validate each child before authorized integration. No multi-agent delegation
-is authorized.
+The [Adoption Entry and Onboarding Program](plans/completed/adoption-entry-and-onboarding-program-plan.md)
+completed Tasks 1-8 and the overall adoption acceptance on 2026-09-26. Its
+record retains the integration history, published Starter evidence, live
+website routes, independent onboarding verification, full README gate result,
+and links to the current desktop/narrow visual matrix. GitHub Discussions
+settings remain user-owned and outside closeout; Sim maintenance and controlled
+hardware benchmarks are independent follow-up work.
 
 Tasks 1-6 have integrated child results through PR #252 at
 `4b8015f6e01e5eaeba1227132e8dffbe076fa64b`; #254/#255 subsequently
@@ -27,37 +28,13 @@ the public README/AI discovery/homepage entry; and the website production
 deployment and live Starter/documentation routes are verified in the adoption
 plan. No Task 8 acceptance item remains open.
 
-The overall plan remains active for two evidence gaps. The recorded Task 5/7
-`yarn docs:readme:check` attempts passed their applicable package README stages
-before reporting 15 unrelated Asyra Design generated-template differences; no
-later passing result is recorded, so the composite gate lacks passing evidence.
-The root README visual matrix also lacks durable, committed artifacts: the Task
-5 record identifies 12 screenshots in its worktree, ignored by `.gitignore`.
-The current evidence does not establish that the same 15 differences remain or
-that 15 files need correction. GitHub Discussions settings are a separate
-user-owned action, outside this Codex task and not a closeout blocker. See
-`plans/adoption-entry-and-onboarding-program-plan.md` for the retained evidence.
-
 ## Active Public Entry Experience Plans
 
 These plans improve how new visitors understand and verify the existing public
 Framework. They do not authorize Framework behavior changes, new public APIs,
 or unsupported capability claims.
 
-1. Root README comprehension and evidence
-
-- Current baseline has already reordered the repository entry around real
-  product proof, a concrete value comparison, one verified public Feature,
-  supported starting paths, ownership, and current support.
-- Preserve the accepted public README inventory, generated-surface ownership,
-  contribution policy, and validation contracts.
-- The README text/validator baseline is recorded, but visual rendering evidence
-  for desktop and narrow layouts with media present and media unavailable is
-  pending unless a future task cites committed artifacts for that matrix.
-- Plan:
-  `docs/ai/framework/plans/root-readme-comprehension-and-evidence-plan.md`
-
-2. Website product and technical evidence
+1. Website product and technical evidence
 
 - Current homepage authority is the accepted six-chapter spatial story at `/`,
   with product evidence and three build/evaluate entries following it.
@@ -66,6 +43,12 @@ or unsupported capability claims.
   the current spatial-story contract.
 - Plan:
   `docs/ai/framework/plans/website-product-and-technical-evidence-plan.md`
+
+## Completed Public Entry Plans
+
+- [Root README Comprehension and Evidence](plans/completed/root-readme-comprehension-and-evidence-plan.md)
+  completed on 2026-09-26. The composite README gate passed and the current
+  desktop/narrow, media-loaded/unavailable evidence is committed with its plan.
 
 ## Active Pre-Release Blockers
 

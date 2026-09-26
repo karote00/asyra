@@ -2,41 +2,56 @@
 
 ## Status
 
-Partially implemented and locally verified at adoption baseline
-`b44be9e77b6a742ad8094da008b4122c06d51a2a` on 2026-09-23. The current root
-`README.md` already contains the product-first composition this plan originally
-requested: Asyra Design product proof, 7,076-element evidence, one
-conventional-versus-Asyra comparison, a maintained Undo/Redo Feature excerpt,
-supported package-first and complete Design product starting paths, ownership
-boundaries, current support, and explicit non-capabilities.
+Completed on 2026-09-26. At main source commit
+<a href="https://github.com/karote00/asyra/blob/3e9bdc0488a0d1b53430abb44fc7cfbf79bff043/README.md"
+target="_blank" rel="noopener noreferrer">`3e9bdc0488a0d1b53430abb44fc7cfbf79bff043`</a>,
+the root `README.md` contains the
+product-first composition, published Generic Starter path, current product
+evidence, ownership boundaries, support policy, and explicit non-capabilities.
+The required composite `yarn docs:readme:check` passed against that source on
+2026-09-26. Its output confirmed 19 public package READMEs, 23 valid README
+surfaces with 119 links, and current public documentation across 41 pages and
+19 packages.
 
-The implemented README shape is covered by existing public README validators and
-contract tests, including `scripts/docs/__tests__/public-readme-inputs.test.mjs`.
-The full `yarn docs:readme:check` gate additionally runs package README
-freshness, public README validation, `release:app:check --prod=asyra-design`,
-and public-documentation freshness. The #243 local Node checks covered focused
-README input/validation entrypoints only; they did not execute that complete
-Yarn gate because this worktree did not have Yarn install state. This is an
-implementation and local verification baseline, not a claim that every stage
-below has completed review, merge, publication, visual review, or the later
-adoption journey. Future README changes for the generic starter or public
-activation must be reconciled through the
-[Adoption Entry and Onboarding Program](adoption-entry-and-onboarding-program-plan.md),
-which owns the overall adoption journey.
+The visual matrix was regenerated from GitHub's GFM rendering of that exact
+commit with installed Chrome in headless mode. Desktop (1200x1000) and narrow
+(390x844) captures cover media loaded and unavailable, with top, entry-path,
+and product-evidence views. The media-loaded views had all three README images
+loaded; media-unavailable views showed image alt text. The document width
+matched each viewport, with no page-level horizontal overflow. All twelve
+inspected PNGs are retained beside this completed plan under
+[`root-readme-comprehension-and-evidence/visual-evidence/3e9bdc0/`](root-readme-comprehension-and-evidence/visual-evidence/3e9bdc0/).
 
-Task 5 locally reviewed the new Starter / Design / advanced entry hierarchy
-from integration head `b785160c5`. GitHub's GFM renderer produced the README
-fragment, then a local browser captured desktop (1200px) and narrow (390px)
-views with images present and unavailable. Inspected captures remain in the
-Task 5 worktree under
-`apps/asyra-framework-site/test-results/readme-*-{top,entry,evidence}.png`.
-Headings, links, alt text and captions remain readable without horizontal
-overflow. The complete `docs:readme:check` passes its package README and
-public README stages, then fails at pre-existing Asyra Design generated-template
-drift (15 files). Task 5 does not claim the full gate.
+The earlier Task 5 gate result below is historical: it reported 15 Design
+template differences on that run. The 2026-09-26 composite gate passed, so the
+historical count is not a current failure or a repair estimate. Future README
+changes must renew the gate and visual review for their own source diff. The
+[Adoption Entry and Onboarding Program](adoption-entry-and-onboarding-program-plan.md)
+owns the overall adoption journey.
+
+| View                                 | Top                                                                                                           | Entry path                                                                                                      | Product evidence                                                                                                   |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Desktop 1200x1000, media loaded      | [PNG](root-readme-comprehension-and-evidence/visual-evidence/3e9bdc0/current-readme-desktop-media-top.png)    | [PNG](root-readme-comprehension-and-evidence/visual-evidence/3e9bdc0/current-readme-desktop-media-entry.png)    | [PNG](root-readme-comprehension-and-evidence/visual-evidence/3e9bdc0/current-readme-desktop-media-evidence.png)    |
+| Desktop 1200x1000, media unavailable | [PNG](root-readme-comprehension-and-evidence/visual-evidence/3e9bdc0/current-readme-desktop-no-media-top.png) | [PNG](root-readme-comprehension-and-evidence/visual-evidence/3e9bdc0/current-readme-desktop-no-media-entry.png) | [PNG](root-readme-comprehension-and-evidence/visual-evidence/3e9bdc0/current-readme-desktop-no-media-evidence.png) |
+| Narrow 390x844, media loaded         | [PNG](root-readme-comprehension-and-evidence/visual-evidence/3e9bdc0/current-readme-narrow-media-top.png)     | [PNG](root-readme-comprehension-and-evidence/visual-evidence/3e9bdc0/current-readme-narrow-media-entry.png)     | [PNG](root-readme-comprehension-and-evidence/visual-evidence/3e9bdc0/current-readme-narrow-media-evidence.png)     |
+| Narrow 390x844, media unavailable    | [PNG](root-readme-comprehension-and-evidence/visual-evidence/3e9bdc0/current-readme-narrow-no-media-top.png)  | [PNG](root-readme-comprehension-and-evidence/visual-evidence/3e9bdc0/current-readme-narrow-no-media-entry.png)  | [PNG](root-readme-comprehension-and-evidence/visual-evidence/3e9bdc0/current-readme-narrow-no-media-evidence.png)  |
+
+## Completion record
+
+- **Decision:** close this plan after the composite README gate and current
+  visual evidence both passed for the integrated README source.
+- **Outcome:** the README entry hierarchy, product evidence, links and
+  media-unavailable alt text were reviewed at desktop and narrow widths. The
+  full README gate passed; all twelve current-source screenshots are linked
+  above and stored with this completed record.
+- **Exit criteria:** the required composite gate passed; the four desktop/
+  narrow and media-loaded/unavailable cases were captured and inspected; the
+  page did not overflow either viewport; the evidence paths resolve.
+- Future README layout or media edits still require the same checks for their
+  own source diff.
 
 This plan follows the completed
-[Asyra Public README and Entrypoint Alignment Plan](completed/asyra-public-readme-and-entrypoint-alignment-plan.md).
+[Asyra Public README and Entrypoint Alignment Plan](asyra-public-readme-and-entrypoint-alignment-plan.md).
 That plan remains the authority for the public README inventory, owner mapping,
 generated surfaces, link validation, support facts, and contribution policy.
 This plan changes only the root README's communication design within those
@@ -97,15 +112,12 @@ the older "not started" status merely because later adoption tasks remain open.
 - **Required evidence:** every product image, code example, capability statement,
   package count, command, URL, and support statement resolves to a maintained
   current owner.
-- **Required gates:** focused root README contract tests, full public README
-  check, public-documentation freshness check, link validation, copy-style
-  validation, Markdown rendering review on GitHub-compatible desktop and narrow
-  layouts, and a final bounded diff review. The text/semantic checks and local
-  Node validators have existing baseline evidence; the GitHub-compatible
-  desktop/narrow rendering review remains the README owner's responsibility
-  whenever README layout or media changes. No existing evidence was found in
-  this bounded repair proving the desktop/narrow, media-present/media-missing
-  rendering matrix, so that visual acceptance is pending rather than completed.
+- **Required gates:** focused root README contract tests, the full public
+  README check, public-documentation freshness, link validation, copy-style
+  validation, GitHub-compatible desktop/narrow rendering with media loaded and
+  unavailable, and a final bounded diff review. The composite README check
+  passed on 2026-09-26; the completed visual matrix is linked above. New README
+  layout or media edits require renewed rendering review for their source diff.
 - **Excluded:** package README rewrites, App or CLI README rewrites, Framework or
   App behavior changes, new public APIs, new packages, website implementation,
   production deployment, and unsupported future capability claims.
@@ -268,19 +280,20 @@ Split the current broad domain story into three explicit levels:
 ### Stage 2: Produce a text-first README composition
 
 - Implemented at baseline: README opens with `Build product features, not
-  infrastructure`, provides product proof before internal architecture detail,
+infrastructure`, provides product proof before internal architecture detail,
   and uses GitHub-safe Markdown/HTML for links and media.
 - Implemented at baseline: comparison and supported-path sections are present.
 - Verified at baseline by the existing focused README assertions and link
-  validation. Future generic-starter activation remains out of scope for this
-  completed slice.
+  validation. Generic Starter activation was outside this README slice at that
+  time and was later delivered under Adoption Task 8.
 
 ### Stage 3: Add reviewed product evidence
 
 - Implemented at baseline: committed Asyra Design product evidence appears in
   the README with meaningful alternative text and captions.
 - Locally verified by focused README contract checks and direct public README
-  validation entrypoints. Product-owner review remains separate.
+  validation entrypoints. Product-owner review and integration were completed
+  later through PR #260, as recorded in the Adoption completion plan.
 - Task 5 executed the GitHub-compatible desktop/narrow, media-present and
   media-unavailable matrix noted above. Future README layout or media changes
   require renewed rendering evidence for their own diff.
@@ -289,12 +302,12 @@ Split the current broad domain story into three explicit levels:
 
 - Implemented at baseline: focused root README tests assert the new semantic
   anchors and reject retired entry surfaces.
-- Required local validation for this baseline remains the complete
-  `yarn docs:readme:check` plus final bounded diff review. The #243 work ran
-  focused Node checks for the README inputs/validation surface; record those as
-  executed checks only, not as a complete equivalent to the Yarn gate.
-- Product-owner review, merge state, public release, and later adoption-entry
-  updates remain separate states.
+- The #243 work ran focused Node checks for the README inputs/validation
+  surface; those are not treated as the full gate. The complete
+  `yarn docs:readme:check` passed on 2026-09-26 for source commit
+  `3e9bdc0488a0d1b53430abb44fc7cfbf79bff043`.
+- Product-owner review and merge completed through PR #260; the public release
+  and later Generic Starter entry are recorded in the completed Adoption plan.
 
 ## Acceptance Cases
 
@@ -321,11 +334,11 @@ Split the current broad domain story into three explicit levels:
   maintained current owners.
 - All root and corpus-level public README gates must pass for any new change to
   this plan or README.
-- GitHub-compatible rendering review remains required when README layout or
-  media changes again, covering desktop and narrow layouts plus media-present
-  and media-unavailable states. Task 5's local evidence path is recorded above;
-  the full README gate remains blocked by unrelated Design template drift.
-- Product-owner review, merge, public release, and generic-starter activation
-  are separate adoption program states.
+- GitHub-compatible rendering review passed for source commit
+  `3e9bdc0488a0d1b53430abb44fc7cfbf79bff043`; the twelve committed captures are
+  linked above. New README layout or media changes require renewed desktop and
+  narrow review with media loaded and unavailable.
+- Product-owner review and merge completed through PR #260. The public release
+  and Generic Starter activation are verified in the completed Adoption plan.
 - No package, App, CLI, Framework runtime, or website behavior changes are
   authorized by this plan.
