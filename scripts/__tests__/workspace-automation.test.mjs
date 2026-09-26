@@ -546,6 +546,7 @@ test('render timing limits are observations while deterministic work stays block
   const render = readText(
     'apps/asyra-design/e2e/render-delta-performance.spec.ts'
   )
+  const contracts = readText('apps/asyra-design/e2e/render-contracts.mjs')
   const mechanical = readText(
     'apps/asyra-sim/e2e/__tests__/mechanical-review.spec.ts'
   )
@@ -563,10 +564,18 @@ test('render timing limits are observations while deterministic work stays block
     'first sample timing must remain observational'
   )
   assert.match(render, /RENDER_DELTA_TIMING_OBSERVATION/)
-  assert.match(render, /fullRehydrateCallsDuringDelta\)\.toBe\(0\)/)
-  assert.match(render, /renderSnapshotDeltaApplies\)\.toBe\(SAMPLE_FRAMES\)/)
-  assert.match(render, /elementSaveCallsDuringDelta\)[\s\S]*SAMPLE_FRAMES/)
-  assert.match(render, /computedSnapshotCallsDuringDelta\)[\s\S]*SAMPLE_FRAMES/)
+  assert.match(render, /assertRenderDeltaContracts\(summary, SAMPLE_FRAMES\)/)
+  assert.match(contracts, /summary\.fullRehydrateCallsDuringDelta, 0/)
+  assert.match(contracts, /summary\.renderSnapshotDeltaApplies, sampleFrames/)
+  assert.match(
+    contracts,
+    /summary\.elementSaveCallsDuringDelta <= sampleFrames/
+  )
+  assert.match(
+    contracts,
+    /summary\.computedSnapshotCallsDuringDelta <= sampleFrames \+ 1/
+  )
+  assert.match(contracts, /summary\.strategyGeometrySteadyState\.count/)
   assert.match(render, /geometryStrategyCount\)\.toBe\(0\)/)
   assert.doesNotMatch(mechanical, /metrics\.p95Ms\)\.toBeLessThan\(100\)/)
   assert.match(mechanical, /frame-timing\.json/)

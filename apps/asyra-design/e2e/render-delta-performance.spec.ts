@@ -1,5 +1,6 @@
 import { writeFile } from 'node:fs/promises'
 import { expect, test } from '@playwright/test'
+import { assertRenderDeltaContracts } from './render-contracts.mjs'
 import { summarize, summarizeStrategyGeometry } from './render-profile.mjs'
 
 import {
@@ -38,13 +39,6 @@ const WARMUP_FRAMES = 12
 const DENSE_POINT_COUNT = 56
 const DENSE_TRANSFORM_POINT_COUNT = 7_001
 const SELF_INTERSECTION_STEP = 3
-const expectPhaseSampleCount = (
-  phase: PhaseMeasurements,
-  expectedCount = SAMPLE_FRAMES
-) => {
-  expect(phase.count).toBe(expectedCount)
-}
-
 test.describe('Render delta correctness and work contracts', () => {
   test.beforeEach(async ({ page }) => {
     captureBrowserErrors(page)
@@ -470,26 +464,9 @@ test.describe('Render delta correctness and work contracts', () => {
     )
 
     expect(rawProfile.warmupStrategySamples).toHaveLength(WARMUP_FRAMES)
-    expect(summary.sampleFrames).toBe(SAMPLE_FRAMES)
-    expect(summary.fullRehydrateCallsDuringDelta).toBe(0)
-    // These all-owner counts include canonical/UI consumers. Render's own
-    // authoritative read is the separately instrumented seed count above.
-    expect(summary.elementSaveCallsDuringDelta).toBeLessThanOrEqual(
-      SAMPLE_FRAMES
-    )
-    expect(summary.computedSnapshotCallsDuringDelta).toBeLessThanOrEqual(
-      SAMPLE_FRAMES + 1
-    )
-    expect(summary.renderSnapshotDeltaApplies).toBe(SAMPLE_FRAMES)
-    expectPhaseSampleCount(summary.fullRehydrateReference)
-    expectPhaseSampleCount(summary.sceneTree)
-    expectPhaseSampleCount(summary.renderSnapshot)
-    expectPhaseSampleCount(summary.strategyGeometry)
-    expectPhaseSampleCount(
-      summary.strategyGeometrySteadyState,
-      SAMPLE_FRAMES - 1
-    )
-    expectPhaseSampleCount(summary.engineHandoff)
+    // Keep all-owner call counts, delta applications, and phase sample counts
+    // blocking while leaving their elapsed times observational.
+    assertRenderDeltaContracts(summary, SAMPLE_FRAMES)
 
     const visualReviewState = await page.evaluate(async (elementId) => {
       // E2E-only access to the currently composed framework runtime.
