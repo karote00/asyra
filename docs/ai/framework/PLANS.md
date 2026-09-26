@@ -20,6 +20,19 @@ or unsupported capability claims.
 - Plan:
   `docs/ai/framework/plans/website-product-and-technical-evidence-plan.md`
 
+## Active Adoption Entry Program
+
+- [Adoption Entry and Onboarding Program](
+  plans/adoption-entry-and-onboarding-program-plan.md)
+  - ACTIVE. Tasks 1-8 and their recorded Starter, CLI, AI onboarding,
+    publication, README gate and screenshot results remain complete.
+  - The bounded remaining sequence is FieldScope fact correction (delivered in
+    the current corrective PR), primary Generic Starter entry routing and
+    regression coverage, cross-domain FieldScope/Asyra Sim README evidence with
+    direct website validation, then separately authorized production deployment
+    and page acceptance.
+  - The independent Root README evidence plan remains completed.
+
 ## Active Pre-Release Blockers
 
 None.

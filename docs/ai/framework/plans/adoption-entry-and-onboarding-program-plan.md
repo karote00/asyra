@@ -18,18 +18,50 @@ title-draft review fix (#255) subsequently integrated at
 `86674ccc21ead7ad73f1fe57cb602258efbc6f63`. PR #253 later merged with all
 reported checks successful, and parent PR #242 integrated the adoption work
 into main. The independent AI onboarding verification is recorded below.
-Completed on 2026-09-26. Tasks 1-8 and the overall Adoption program acceptance
-are complete. The composite `yarn docs:readme:check` passed on 2026-09-26 from
-main source `3e9bdc0488a0d1b53430abb44fc7cfbf79bff043`, and the current README
-visual matrix is committed with the completed Root README plan. Task 8's
-published Starter entry, website deployment, and live routes were also verified
-on 2026-09-26. Earlier Task 5/7 runs reported 15 Asyra Design generated-template
-differences; those are historical results, not a current failure or repair
-estimate. Discussions settings remain user-owned and outside this program's
-closeout. Sim maintenance and controlled hardware benchmarks are independent
-follow-up work, not Adoption acceptance conditions.
+**Current status: ACTIVE - bounded remaining Adoption work.** PR #263 merged at
+`12052c6a6480ee9d74820abf0935a79074bc8261` and recorded Tasks 1-8 as complete.
+Post-merge comparison against the original user request found three outcomes
+that were not included in that closeout: FieldScope's current crop state was
+described incorrectly, the primary homepage Start building links still route to
+the custom-composition guide instead of Generic Starter, and the root README
+product evidence does not yet include the requested cross-domain FieldScope
+and Asyra Sim examples. The correction and remaining sequence below supersede
+the program-level completion claim; the integrated Task 1-8 results and their
+evidence remain valid. The independent Root README plan remains completed.
 
-## Completion record
+### Remaining Adoption sequence
+
+1. **FieldScope facts and Adoption status** - correct the stale FieldScope
+   README and restore this plan to active status with the bounded follow-up
+   sequence. Completed in this corrective PR; PR integration remains a separate
+   gate. The current crop owners are `apps/fieldscope/src/domain/crop-layout.ts`
+   and `crop-models.ts`, with formal evidence in
+   `apps/fieldscope/src/domain/__tests__/crop-layout.test.ts` and
+   `crop-models.test.ts`. The robot boundary remains in
+   `docs/ai/apps/fieldscope/specs/harvest-robot.md`.
+2. **Primary Starter entry** - route both primary homepage Start building
+   links to Generic Starter and add focused regression coverage. Preserve the
+   accepted six-chapter spatial story without redesigning it.
+3. **Cross-domain product evidence** - add verifiable FieldScope and Asyra Sim
+   product examples to the root README, then validate the directly affected
+   website experience.
+4. **Production activation and acceptance** - only after separate user
+   authorization, deploy the accepted website through GitHub Actions and verify
+   the production page before closing Adoption.
+
+Starter, CLI, AI onboarding, publication, README gate and screenshot work from
+Tasks 1-8 remains complete and must not be repeated. GitHub Discussions is not
+part of this sequence. Adoption remains open until steps 2-4 are accepted; the
+final production deployment requires its own authorization.
+
+### Previous completion assessment (historical; superseded)
+
+The following records the 2026-09-26 closeout decision made after PR #263. Its
+statements about completed implementation, publication, README checks and
+screenshots remain historical evidence; its conclusion that the whole Adoption
+program was complete is superseded by the bounded remaining sequence above.
+
+## Previous completion record
 
 - **Decision:** close the Adoption program after integration of Tasks 1-8 and
   verification of the public Starter release, website entry, onboarding path,
@@ -167,8 +199,10 @@ The initial read-only assessment found:
   described supersession notice. Establish the actual accepted homepage baseline
   before changing its routes; do not reconstruct a presumed six-chapter design.
 - Support wording is enforced by generators and tests, not only README prose.
-- FieldScope's README says there are no plants. Verify current source and tests
-  before correcting that statement or making crop claims.
+- FieldScope's README said there were no plants. The current correction uses
+  `apps/fieldscope/src/domain/crop-layout.ts` and `crop-models.ts`, with formal
+  evidence in `apps/fieldscope/src/domain/__tests__/crop-layout.test.ts` and
+  `crop-models.test.ts`; this initial observation remains historical.
 
 These are observations from the initial local inspection, not an assertion about
 the latest remote main. Task 1 must record its exact baseline commit once.
@@ -859,7 +893,7 @@ hoisting, `workspace:*`, source aliases, or unpublished registry state.
 Authorized mutation scope:
 
 - The then-active Adoption plan, now retained at
-  `docs/ai/framework/plans/completed/adoption-entry-and-onboarding-program-plan.md`,
+  `docs/ai/framework/plans/adoption-entry-and-onboarding-program-plan.md`,
   only for this Task 3 contract, Task 2/3 status, and the prompt contract
   wording that now references #248's common rules.
 - `create-app/starter-app/**` for the directly maintained CLI package,

@@ -26,7 +26,7 @@ The earlier Task 5 gate result below is historical: it reported 15 Design
 template differences on that run. The 2026-09-26 composite gate passed, so the
 historical count is not a current failure or a repair estimate. Future README
 changes must renew the gate and visual review for their own source diff. The
-[Adoption Entry and Onboarding Program](adoption-entry-and-onboarding-program-plan.md)
+[Adoption Entry and Onboarding Program](../adoption-entry-and-onboarding-program-plan.md)
 owns the overall adoption journey.
 
 | View                                 | Top                                                                                                           | Entry path                                                                                                      | Product evidence                                                                                                   |
