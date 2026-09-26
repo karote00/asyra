@@ -1384,7 +1384,8 @@ test('CLI reads one JSON request and emits a machine-readable decision', () => {
   register(registryPath, 0, makeTask(root, { baselineHead }))
   const { dispatch } = require('../guard-core.cjs')
   assert.equal(
-    dispatch('select-coordinated', { repoRoot: root, taskId: 'task-a' }).decision,
+    dispatch('select-coordinated', { repoRoot: root, taskId: 'task-a' })
+      .decision,
     'allow'
   )
   const cli = path.resolve(__dirname, '..', 'guard.cjs')
@@ -1950,8 +1951,18 @@ test('compact fsyncs each new directory entry before publishing the live registr
 })
 
 function stableStringify(value) {
-  if (Array.isArray(value)) return JSON.stringify(value.map((item) => JSON.parse(stableStringify(item))))
-  if (value && typeof value === 'object') return JSON.stringify(Object.fromEntries(Object.keys(value).sort().map((key) => [key, JSON.parse(stableStringify(value[key]))])))
+  if (Array.isArray(value))
+    return JSON.stringify(
+      value.map((item) => JSON.parse(stableStringify(item)))
+    )
+  if (value && typeof value === 'object')
+    return JSON.stringify(
+      Object.fromEntries(
+        Object.keys(value)
+          .sort()
+          .map((key) => [key, JSON.parse(stableStringify(value[key]))])
+      )
+    )
   return JSON.stringify(value)
 }
 
@@ -1989,7 +2000,9 @@ test('task-local admission ignores absent, corrupt, and incompatible global hist
     JSON.stringify({
       version: 2,
       revision: 2640,
-      tasks: { historical: { id: 'historical', worktree: root, state: 'active' } }
+      tasks: {
+        historical: { id: 'historical', worktree: root, state: 'active' }
+      }
     })
   ]) {
     if (globalState === null) fs.rmSync(statePath, { force: true })
@@ -2001,7 +2014,10 @@ test('task-local admission ignores absent, corrupt, and incompatible global hist
     assert.equal(result.decision, 'allow', result.reason)
     assert.equal(result.details.taskId, task.id)
     assert.deepEqual(result.details.approvedPaths, [
-      { path: 'src/owner.cjs', expectedDigest: digest("module.exports = 'base';\n") }
+      {
+        path: 'src/owner.cjs',
+        expectedDigest: digest("module.exports = 'base';\n")
+      }
     ])
   }
 })
@@ -2027,8 +2043,7 @@ test('task-local admission still denies dangerous and out-of-scope writes', () =
     taskId: 'task-a',
     cwd: root,
     toolName: 'apply_patch',
-    toolInput:
-      '*** Begin Patch\n*** Add File: package.json\n+{}\n*** End Patch'
+    toolInput: '*** Begin Patch\n*** Add File: package.json\n+{}\n*** End Patch'
   })
   assert.equal(outsideScope.decision, 'deny')
   assert.equal(outsideScope.code, 'path_out_of_scope')
@@ -2060,7 +2075,10 @@ test('task-local mode has an actionable missing-state denial and keeps commit ga
   assert.match(missing.reason, /init-task-local/)
 
   const task = initializeLocalTask(root)
-  fs.writeFileSync(path.join(root, 'src/owner.cjs'), "module.exports = 'staged';\n")
+  fs.writeFileSync(
+    path.join(root, 'src/owner.cjs'),
+    "module.exports = 'staged';\n"
+  )
   const taskModePath = path.join(root, 'tmp/agent-coordination/task.json')
   const localState = JSON.parse(fs.readFileSync(taskModePath, 'utf8'))
   localState.task.expectedFileDigests['src/owner.cjs'] = digest(
@@ -2117,14 +2135,19 @@ test('damaged local state fails closed and recovers only against exact bytes and
     task
   })
   assert.equal(recovered.decision, 'allow', recovered.reason)
-  assert.equal(dispatch('context', { repoRoot: root }).details.mode, 'task-local')
+  assert.equal(
+    dispatch('context', { repoRoot: root }).details.mode,
+    'task-local'
+  )
 })
 
 test('task-local lifecycle updates cannot widen authority or claim stale evidence', () => {
   const root = makeTemporaryDirectory()
   const task = initializeLocalTask(root)
   const { dispatch } = require('../guard-core.cjs')
-  const state = dispatch('context', { repoRoot: root }).details.registry.tasks[task.id]
+  const state = dispatch('context', { repoRoot: root }).details.registry.tasks[
+    task.id
+  ]
   const widened = dispatch('update-task-local', {
     repoRoot: root,
     expectedTaskDigest: digest(stableStringify(state)),
@@ -2142,7 +2165,13 @@ test('task-local lifecycle updates cannot widen authority or claim stale evidenc
       evidence: {
         head: 'b'.repeat(40),
         tree: 'c'.repeat(40),
-        gates: { focused: { status: 'passed', head: 'b'.repeat(40), tree: 'c'.repeat(40) } }
+        gates: {
+          focused: {
+            status: 'passed',
+            head: 'b'.repeat(40),
+            tree: 'c'.repeat(40)
+          }
+        }
       },
       review: { status: 'passed', head: 'b'.repeat(40), tree: 'c'.repeat(40) }
     }
@@ -2191,14 +2220,16 @@ test('explicit coordinated mode continues to validate the shared registry', () =
   })
   assert.equal(selected.decision, 'allow', selected.reason)
 
-  fs.writeFileSync(registryPath, JSON.stringify({ version: 2, revision: 2640, tasks: {} }))
+  fs.writeFileSync(
+    registryPath,
+    JSON.stringify({ version: 2, revision: 2640, tasks: {} })
+  )
   const result = dispatch('pre-tool', {
     repoRoot: root,
     taskId: task.id,
     cwd: root,
     toolName: 'apply_patch',
-    toolInput:
-      '*** Begin Patch\n*** Add File: src/new.cjs\n+{}\n*** End Patch'
+    toolInput: '*** Begin Patch\n*** Add File: src/new.cjs\n+{}\n*** End Patch'
   })
   assert.equal(result.decision, 'deny')
   assert.equal(result.code, 'invalid_registry')

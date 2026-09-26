@@ -29,9 +29,11 @@ they do not open, migrate or validate shared history.
 
 With no selected mode, hooks allow only bounded read commands, a new JSON
 request file under `tmp/agent-coordination/requests/`, and the exact guard
-command that consumes that request. The new request declares
-`mode: "task-local"`, the current absolute `repoRoot`, and the complete `task`
-record. Add it with a single `apply_patch`, then run
+command that consumes that request. The bootstrap request declares the
+operation as `mode: "init-task-local"`, plus the current absolute `repoRoot`
+and complete `task` record. This operation name is distinct from the selected
+state mode `task-local`. Add the request with
+one `apply_patch`, then run
 `node scripts/agent-coordination/guard.cjs init-task-local < tmp/agent-coordination/requests/<name>.json`.
 The hook validates the request before allowing either operation; its post-tool
 receipt checks the exact bytes written. The initializer verifies the current
@@ -54,7 +56,8 @@ contributors to one resource. Register the versioned record in the shared
 `tmp/agent-coordination/state.json` in the shared repository root with `node
 scripts/agent-coordination/guard.cjs register`, one JSON request on stdin and
 the observed `expectedRevision`. Create a new request declaring
-`mode: "coordinated"`, `repoRoot` and the registered `taskId`, then explicitly
+`mode: "select-coordinated"`, `repoRoot` and the registered `taskId`. This
+operation name is distinct from selected state mode `coordinated`. Explicitly
 select it in that worktree with
 `node scripts/agent-coordination/guard.cjs select-coordinated < tmp/agent-coordination/requests/<name>.json`.
 That selector lives in the worktree-local `task.json`;
@@ -85,13 +88,45 @@ which `update-task-local` requires for lifecycle/evidence updates. Those updates
 cannot change scope or file snapshots, and readiness evidence must match the
 current Git head and staged tree. Predeclare
 `tmp/agent-coordination/requests/task-lifecycle.json` as an allowed exact file
-with an `absent` preimage, and add the exact command
-`node scripts/agent-coordination/guard.cjs update-task-local < tmp/agent-coordination/requests/task-lifecycle.json`
-to `approvedCommands`. Write the request there with `repoRoot`, the current
-`taskDigest`, and only the allowed lifecycle/evidence fields, then run that
-command. Guard-owned `task.json`, `state.json`, receipt and lock paths cannot be
-changed through ordinary task writes. Resolve existing state before
-initializing a reviewed replacement; do not silently widen a task.
+with an `absent` preimage. After other product writes are complete, read
+`taskDigest` from `context` and write a JSON request there using this exact
+schema:
+
+```json
+{
+  "repoRoot": "/absolute/path/to/worktree",
+  "expectedTaskDigest": "<taskDigest returned by context>",
+  "update": {
+    "state": "active"
+  }
+}
+```
+
+`expectedTaskDigest` is the request field name; `update` contains only the
+lifecycle fields being changed (`state`, `evidence`, `review`, or
+`continuations`). For `ready` or `complete`, include exact passing gate evidence
+and review for the current head and staged tree.
+
+The `taskDigest` intentionally ignores only the current digest value of this
+fixed lifecycle request file, while retaining its path and all other task
+fields and file digests. That lets the request carry the digest it read before
+its own post-hook refresh. Changes to another declared file, task authority,
+state or evidence still make the request stale. The pre-hook verifies the
+request file's registered preimage and exact SHA-256, then admits only this
+fixed command:
+
+```text
+node scripts/agent-coordination/guard.cjs update-task-local --request tmp/agent-coordination/requests/task-lifecycle.json --sha256 <sha256-of-exact-request-bytes>
+```
+
+There is no shell redirection or general command approval for this route. The
+CLI rechecks the exact request bytes and `expectedTaskDigest` under task-local
+compare-and-swap; the post-hook verifies the matching request and resulting
+state. If the request is stale, reread `context`, review the changed task state,
+and write a new request. Guard-owned `task.json`, `state.json`, receipt and
+lock paths cannot be changed through ordinary task writes. Resolve existing
+state before initializing a reviewed replacement; do not silently widen a
+task.
 
 ## Bounded registry history
 

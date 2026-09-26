@@ -8,6 +8,8 @@ const { spawnSync } = require('node:child_process')
 const VERSION = 1
 const CURRENT_REGISTRY_VERSION = 2
 const TASK_MODE_VERSION = 1
+const TASK_LIFECYCLE_REQUEST_PATH =
+  'tmp/agent-coordination/requests/task-lifecycle.json'
 const ARCHIVE_SEGMENT_VERSION = 1
 const MAXIMUM_REGISTRY_BYTES = 2 * 1024 * 1024
 const MAXIMUM_TASKS = 256
@@ -753,7 +755,10 @@ function validateTaskModePath(repoRoot) {
   const existingParent = nearestExistingPath(path.dirname(modePath))
   if (existingParent) {
     const realParent = fs.realpathSync(existingParent)
-    if (!isWithin(root, realParent) || path.resolve(existingParent) !== realParent)
+    if (
+      !isWithin(root, realParent) ||
+      path.resolve(existingParent) !== realParent
+    )
       fail('invalid_task_state', 'Task state path crosses a symlink.')
   }
   if (fs.existsSync(modePath)) {
@@ -777,22 +782,34 @@ function readTaskMode(repoRoot, registryRoot = repoRoot) {
   if (!stat.isFile() || stat.isSymbolicLink())
     fail('invalid_task_state', 'Task mode state must be a regular file.')
   if (stat.size > MAXIMUM_REGISTRY_BYTES)
-    fail('invalid_task_state', 'Task mode state exceeds the bounded size limit.')
+    fail(
+      'invalid_task_state',
+      'Task mode state exceeds the bounded size limit.'
+    )
   let state
   try {
     state = JSON.parse(fs.readFileSync(modePath, 'utf8'))
   } catch {
-    fail('invalid_task_state', 'Task mode state JSON could not be read. Inspect it, then use the hash-bound `recover-task-local` route with the reviewed scope and current file preimages.')
+    fail(
+      'invalid_task_state',
+      'Task mode state JSON could not be read. Inspect it, then use the hash-bound `recover-task-local` route with the reviewed scope and current file preimages.'
+    )
   }
   if (!state || state.version !== TASK_MODE_VERSION) {
-    fail('invalid_task_state', 'Task mode state version is incompatible. Inspect it, then use the hash-bound `recover-task-local` route only if it is damaged task-local state.')
+    fail(
+      'invalid_task_state',
+      'Task mode state version is incompatible. Inspect it, then use the hash-bound `recover-task-local` route only if it is damaged task-local state.'
+    )
   }
   if (state.mode === 'task-local') {
     let task
     try {
       task = normalizeTask(state.task)
     } catch {
-      fail('invalid_task_state', 'Task-local scope is invalid. Inspect it, then use the hash-bound `recover-task-local` route with the reviewed scope and matching file preimages.')
+      fail(
+        'invalid_task_state',
+        'Task-local scope is invalid. Inspect it, then use the hash-bound `recover-task-local` route with the reviewed scope and matching file preimages.'
+      )
     }
     if (task.worktree !== root)
       fail('worktree_mismatch', 'Task-local state belongs to another worktree.')
@@ -814,14 +831,23 @@ function readTaskMode(repoRoot, registryRoot = repoRoot) {
       }
     }
   }
-  if (state.mode === 'coordinated' && TASK_ID_PATTERN.test(state.taskId || '')) {
+  if (
+    state.mode === 'coordinated' &&
+    TASK_ID_PATTERN.test(state.taskId || '')
+  ) {
     const registry = loadRegistry(registryPathForRepo(registryRoot))
     const task = taskFor(registry, state.taskId)
     if (task.worktree !== root)
-      fail('worktree_mismatch', 'Selected coordinated task belongs to another worktree.')
+      fail(
+        'worktree_mismatch',
+        'Selected coordinated task belongs to another worktree.'
+      )
     return { mode: 'coordinated', taskId: task.id, registry }
   }
-  fail('invalid_task_state', 'Task mode state must select task-local or coordinated mode. If this file is damaged task-local state, use the hash-bound `recover-task-local` route after reviewing its bytes and scope.')
+  fail(
+    'invalid_task_state',
+    'Task mode state must select task-local or coordinated mode. If this file is damaged task-local state, use the hash-bound `recover-task-local` route after reviewing its bytes and scope.'
+  )
 }
 
 function writeTaskMode(repoRoot, state) {
@@ -835,7 +861,10 @@ function writeTaskMode(repoRoot, state) {
     })
   } catch (error) {
     if (error.code === 'EEXIST')
-      fail('task_state_exists', 'Task mode state already exists; it was not replaced.')
+      fail(
+        'task_state_exists',
+        'Task mode state already exists; it was not replaced.'
+      )
     throw error
   }
   return allow('task_mode_selected', `${state.mode} mode selected.`, {
@@ -865,7 +894,10 @@ function withTaskModeLock(repoRoot, update) {
     descriptor = fs.openSync(lockPath, 'wx', 0o600)
   } catch (error) {
     if (error.code === 'EEXIST')
-      fail('task_state_locked', 'Task-local state update is already in progress.')
+      fail(
+        'task_state_locked',
+        'Task-local state update is already in progress.'
+      )
     throw error
   }
   try {
@@ -877,7 +909,11 @@ function withTaskModeLock(repoRoot, update) {
 }
 
 function taskDigest(task) {
-  return sha256(stableStringify(task))
+  const expectedFileDigests = { ...task.expectedFileDigests }
+  if (Object.hasOwn(expectedFileDigests, TASK_LIFECYCLE_REQUEST_PATH))
+    expectedFileDigests[TASK_LIFECYCLE_REQUEST_PATH] =
+      'lifecycle-request-content'
+  return sha256(stableStringify({ ...task, expectedFileDigests }))
 }
 
 function taskAuthorityDigest(task) {
@@ -898,14 +934,20 @@ function completeTaskLocalWrite({ repoRoot, event }) {
     withTaskModeLock(repoRoot, (taskModePath) => {
       const context = readTaskMode(repoRoot)
       if (context.mode !== 'task-local')
-        fail('coordinated_completion_required', 'Shared task writes use the coordinated completion route.')
+        fail(
+          'coordinated_completion_required',
+          'Shared task writes use the coordinated completion route.'
+        )
       const checked = checkTask({
         registryPath: registryPathForRepo(repoRoot),
         event,
         taskContext: context.registry,
         taskMode: context.mode
       })
-      if (checked.decision !== 'allow' || !checked.details?.digestUpdates?.length)
+      if (
+        checked.decision !== 'allow' ||
+        !checked.details?.digestUpdates?.length
+      )
         return checked
       const task = { ...context.registry.tasks[context.taskId] }
       task.expectedFileDigests = { ...task.expectedFileDigests }
@@ -917,13 +959,87 @@ function completeTaskLocalWrite({ repoRoot, event }) {
         mode: 'task-local',
         task: candidate
       })
-      return allow('task_local_write_complete', 'Updated only the authorized task-local file snapshots.', {
-        mode: 'task-local',
-        taskId: candidate.id,
-        digestUpdates: checked.details.digestUpdates
-      })
+      return allow(
+        'task_local_write_complete',
+        'Updated only the authorized task-local file snapshots.',
+        {
+          mode: 'task-local',
+          taskId: candidate.id,
+          digestUpdates: checked.details.digestUpdates
+        }
+      )
     })
   )
+}
+
+function prepareTaskLocalUpdate({
+  repoRoot,
+  previous,
+  expectedTaskDigest,
+  update
+}) {
+  if (expectedTaskDigest !== taskDigest(previous))
+    fail(
+      'stale_task_state',
+      'Task-local state changed; reread it before updating.'
+    )
+  if (!update || typeof update !== 'object' || Array.isArray(update))
+    fail('invalid_task_update', 'Task-local update must be an object.')
+  const allowedFields = new Set([
+    'state',
+    'evidence',
+    'review',
+    'continuations'
+  ])
+  if (Object.keys(update).some((key) => !allowedFields.has(key)))
+    fail(
+      'task_authority_immutable',
+      'Task-local updates cannot change task authority or file snapshots.'
+    )
+  if (
+    Object.hasOwn(update, 'continuations') &&
+    update.continuations < previous.continuations
+  ) {
+    fail(
+      'continuation_regression',
+      'Task-local continuation count cannot decrease.'
+    )
+  }
+  const candidate = normalizeTask({ ...previous, ...update })
+  if (
+    !sameAuthority(previous, candidate) ||
+    !expectedDigestKeysUnchanged(previous, candidate)
+  )
+    fail(
+      'task_authority_immutable',
+      'Task-local update changed immutable task authority.'
+    )
+  const evidenceUpdate =
+    Object.hasOwn(update, 'evidence') ||
+    Object.hasOwn(update, 'review') ||
+    ['ready', 'complete'].includes(candidate.state)
+  const state = currentGitState(candidate, repoRoot, { staged: evidenceUpdate })
+  if (
+    candidate.evidence &&
+    (candidate.evidence.head !== state.head ||
+      candidate.evidence.tree !== state.tree)
+  )
+    fail(
+      'evidence_mismatch',
+      'Task-local evidence must match the current head and tree.'
+    )
+  if (
+    candidate.review &&
+    (candidate.review.head !== state.head ||
+      candidate.review.tree !== state.tree)
+  )
+    fail(
+      'review_evidence_mismatch',
+      'Task-local review must match the current head and tree.'
+    )
+  if (['ready', 'complete'].includes(candidate.state))
+    assertExactEvidence(candidate, state.head, state.tree)
+  return candidate
 }
 
 function updateTaskLocal({ repoRoot, expectedTaskDigest, update }) {
@@ -931,65 +1047,177 @@ function updateTaskLocal({ repoRoot, expectedTaskDigest, update }) {
     withTaskModeLock(repoRoot, (taskModePath) => {
       const context = readTaskMode(repoRoot)
       if (context.mode !== 'task-local')
-        fail('coordinated_update_required', 'Shared tasks use the coordinated registry update route.')
+        fail(
+          'coordinated_update_required',
+          'Shared tasks use the coordinated registry update route.'
+        )
       const previous = context.registry.tasks[context.taskId]
-      if (expectedTaskDigest !== taskDigest(previous))
-        fail('stale_task_state', 'Task-local state changed; reread it before updating.')
-      if (!update || typeof update !== 'object' || Array.isArray(update))
-        fail('invalid_task_update', 'Task-local update must be an object.')
-      const allowedFields = new Set(['state', 'evidence', 'review', 'continuations'])
-      if (Object.keys(update).some((key) => !allowedFields.has(key)))
-        fail('task_authority_immutable', 'Task-local updates cannot change task authority or file snapshots.')
-      if (
-        Object.hasOwn(update, 'continuations') &&
-        update.continuations < previous.continuations
-      ) {
-        fail('continuation_regression', 'Task-local continuation count cannot decrease.')
-      }
-      const candidate = normalizeTask({ ...previous, ...update })
-      if (!sameAuthority(previous, candidate) || !expectedDigestKeysUnchanged(previous, candidate))
-        fail('task_authority_immutable', 'Task-local update changed immutable task authority.')
-      const evidenceUpdate =
-        Object.hasOwn(update, 'evidence') ||
-        Object.hasOwn(update, 'review') ||
-        ['ready', 'complete'].includes(candidate.state)
-      const state = currentGitState(candidate, repoRoot, {
-        staged: evidenceUpdate
+      const candidate = prepareTaskLocalUpdate({
+        repoRoot,
+        previous,
+        expectedTaskDigest,
+        update
       })
-      if (candidate.evidence && (candidate.evidence.head !== state.head || candidate.evidence.tree !== state.tree))
-        fail('evidence_mismatch', 'Task-local evidence must match the current head and tree.')
-      if (candidate.review && (candidate.review.head !== state.head || candidate.review.tree !== state.tree))
-        fail('review_evidence_mismatch', 'Task-local review must match the current head and tree.')
-      if (['ready', 'complete'].includes(candidate.state))
-        assertExactEvidence(candidate, state.head, state.tree)
-      replaceTaskMode(taskModePath, { version: TASK_MODE_VERSION, mode: 'task-local', task: candidate })
-      return allow('task_local_updated', 'Updated the permitted task lifecycle or evidence fields.', {
-        taskId: candidate.id,
-        taskDigest: taskDigest(candidate),
-        state: candidate.state
+      replaceTaskMode(taskModePath, {
+        version: TASK_MODE_VERSION,
+        mode: 'task-local',
+        task: candidate
       })
+      return allow(
+        'task_local_updated',
+        'Updated the permitted task lifecycle or evidence fields.',
+        {
+          taskId: candidate.id,
+          taskDigest: taskDigest(candidate),
+          state: candidate.state
+        }
+      )
     })
   )
+}
+
+function loadTaskLocalUpdateRequest({
+  repoRoot,
+  task,
+  requestPath,
+  expectedRequestDigest
+}) {
+  if (requestPath !== TASK_LIFECYCLE_REQUEST_PATH)
+    fail(
+      'invalid_task_update_request',
+      'Lifecycle updates require the fixed task-lifecycle request path.'
+    )
+  const loaded = readBootstrapRequest(
+    repoRoot,
+    requestPath,
+    expectedRequestDigest
+  )
+  if (realDirectory(loaded.request.repoRoot, 'repoRoot') !== repoRoot)
+    fail('worktree_mismatch', 'Lifecycle request must name this task worktree.')
+  const resolved = resolveTaskPath(task, repoRoot, requestPath)
+  const allowed =
+    task.allowedExactFiles.includes(resolved.relativePath) ||
+    task.allowedPathPrefixes.some((prefix) =>
+      resolved.relativePath.startsWith(prefix)
+    )
+  if (
+    !allowed ||
+    !Object.hasOwn(task.expectedFileDigests, resolved.relativePath)
+  )
+    fail(
+      'path_out_of_scope',
+      'Lifecycle request path is not declared in this task scope and snapshot.'
+    )
+  if (
+    currentDigest(resolved.absolute) !==
+    task.expectedFileDigests[resolved.relativePath]
+  )
+    fail(
+      'unexpected_file_digest',
+      'Lifecycle request changed outside its registered preimage.'
+    )
+  if (typeof loaded.request.expectedTaskDigest !== 'string')
+    fail(
+      'invalid_task_update_request',
+      'Lifecycle request requires expectedTaskDigest.'
+    )
+  const candidate = prepareTaskLocalUpdate({
+    repoRoot,
+    previous: task,
+    expectedTaskDigest: loaded.request.expectedTaskDigest,
+    update: loaded.request.update
+  })
+  return {
+    request: loaded.request,
+    requestPath,
+    requestDigest: loaded.digest,
+    expectedTaskDigest: loaded.request.expectedTaskDigest,
+    resultTaskDigest: taskDigest(candidate),
+    candidate
+  }
+}
+
+function taskLocalUpdateCommand(command) {
+  const escapedPath = TASK_LIFECYCLE_REQUEST_PATH.replace(
+    /[.*+?^${}()|[\]\\]/g,
+    '\\$&'
+  )
+  const match = new RegExp(
+    `^node scripts/agent-coordination/guard\\.cjs update-task-local --request ${escapedPath} --sha256 ([a-f0-9]{64})$`
+  ).exec(command)
+  return match
+    ? { requestPath: TASK_LIFECYCLE_REQUEST_PATH, requestDigest: match[1] }
+    : null
+}
+
+function validateTaskLocalUpdateCompletion({
+  repoRoot,
+  requestPath,
+  requestDigest,
+  expectedTaskDigest,
+  resultTaskDigest
+}) {
+  return asDecision(() => {
+    const context = readTaskMode(repoRoot)
+    if (context.mode !== 'task-local')
+      fail(
+        'coordinated_update_required',
+        'Lifecycle completion requires task-local mode.'
+      )
+    const task = context.registry.tasks[context.taskId]
+    const loaded = readBootstrapRequest(repoRoot, requestPath, requestDigest)
+    if (loaded.request.expectedTaskDigest !== expectedTaskDigest)
+      fail(
+        'task_update_receipt_mismatch',
+        'Lifecycle request no longer matches its pre-tool authority digest.'
+      )
+    if (taskDigest(task) !== resultTaskDigest)
+      fail(
+        'task_update_result_mismatch',
+        'Task-local state does not match the preflighted lifecycle update.'
+      )
+    return allow(
+      'task_local_update_verified',
+      'Lifecycle update matches the exact preflighted request and resulting task state.'
+    )
+  })
 }
 
 function initializeTaskLocal({ repoRoot, task }) {
   return asDecision(() => {
     const root = realDirectory(repoRoot, 'repoRoot')
     const candidate = validateTaskLocalTask(root, task)
-    return writeTaskMode(root, { version: TASK_MODE_VERSION, mode: 'task-local', task: candidate })
+    return writeTaskMode(root, {
+      version: TASK_MODE_VERSION,
+      mode: 'task-local',
+      task: candidate
+    })
   })
 }
 
 function validateTaskLocalTask(root, task) {
   const candidate = normalizeTask(task)
-  if (candidate.worktree !== root || candidate.coordinator || candidate.kind === 'subpr' || candidate.dependsOn.length) {
-    fail('invalid_task_local', 'Task-local state requires this worktree, no coordinator authority, no sub-PR target and no dependencies.')
+  if (
+    candidate.worktree !== root ||
+    candidate.coordinator ||
+    candidate.kind === 'subpr' ||
+    candidate.dependsOn.length
+  ) {
+    fail(
+      'invalid_task_local',
+      'Task-local state requires this worktree, no coordinator authority, no sub-PR target and no dependencies.'
+    )
   }
   currentGitState(candidate, root)
-  for (const [relativePath, expectedDigest] of Object.entries(candidate.expectedFileDigests)) {
+  for (const [relativePath, expectedDigest] of Object.entries(
+    candidate.expectedFileDigests
+  )) {
     const { absolute } = resolveTaskPath(candidate, root, relativePath)
     if (currentDigest(absolute) !== expectedDigest)
-      fail('initial_snapshot_mismatch', `${relativePath} does not match its declared initial snapshot.`)
+      fail(
+        'initial_snapshot_mismatch',
+        `${relativePath} does not match its declared initial snapshot.`
+      )
   }
   return candidate
 }
@@ -998,28 +1226,48 @@ function validateCoordinatedSelection(root, registryRoot, taskId) {
   const registry = loadRegistry(registryPathForRepo(registryRoot))
   const task = taskFor(registry, taskId)
   if (task.worktree !== root)
-    fail('worktree_mismatch', 'Selected coordinated task belongs to another worktree.')
+    fail(
+      'worktree_mismatch',
+      'Selected coordinated task belongs to another worktree.'
+    )
   currentGitState(task, root)
   return task
 }
 
 function validateBootstrapRequest(root, registryRoot, mode, request) {
   if (realDirectory(request && request.repoRoot, 'repoRoot') !== root)
-    fail('worktree_mismatch', 'Bootstrap request must name the selected worktree.')
+    fail(
+      'worktree_mismatch',
+      'Bootstrap request must name the selected worktree.'
+    )
   if (mode === 'init-task-local') {
     if (fs.existsSync(taskModePathForRepo(root)))
-      fail('task_state_exists', 'Task mode state already exists; use the bounded recovery route if it is damaged.')
+      fail(
+        'task_state_exists',
+        'Task mode state already exists; use the bounded recovery route if it is damaged.'
+      )
     const task = validateTaskLocalTask(root, request.task)
     return { mode, taskId: task.id }
   }
   if (mode === 'recover-task-local') {
-    const task = validateRecoveryRequest(root, request.expectedStateDigest, request.task)
+    const task = validateRecoveryRequest(
+      root,
+      request.expectedStateDigest,
+      request.task
+    )
     return { mode, taskId: task.id }
   }
   if (mode === 'select-coordinated') {
     if (fs.existsSync(taskModePathForRepo(root)))
-      fail('task_state_exists', 'Task mode state already exists; it was not replaced.')
-    const task = validateCoordinatedSelection(root, registryRoot, request.taskId)
+      fail(
+        'task_state_exists',
+        'Task mode state already exists; it was not replaced.'
+      )
+    const task = validateCoordinatedSelection(
+      root,
+      registryRoot,
+      request.taskId
+    )
     return { mode, taskId: task.id }
   }
   fail('invalid_bootstrap', 'Unsupported task-mode bootstrap operation.')
@@ -1032,8 +1280,13 @@ function bootstrapRequestPath(root, requestedPath) {
     ? path.resolve(requestedPath)
     : path.resolve(root, requestedPath)
   const relative = path.relative(root, absolute).split(path.sep).join('/')
-  if (!/^tmp\/agent-coordination\/requests\/[A-Za-z0-9._-]+\.json$/.test(relative))
-    fail('invalid_path', 'Bootstrap requests must use the fixed task request directory.')
+  if (
+    !/^tmp\/agent-coordination\/requests\/[A-Za-z0-9._-]+\.json$/.test(relative)
+  )
+    fail(
+      'invalid_path',
+      'Bootstrap requests must use the fixed task request directory.'
+    )
   const existing = nearestExistingPath(path.dirname(absolute))
   if (!existing || !isWithin(root, fs.realpathSync(existing)))
     fail('invalid_path', 'Bootstrap request path leaves its worktree.')
@@ -1044,18 +1297,28 @@ function bootstrapRequestPath(root, requestedPath) {
 
 function readBootstrapRequest(root, requestedPath, expectedDigest) {
   const { absolute } = bootstrapRequestPath(root, requestedPath)
-  if (!fs.existsSync(absolute)) fail('missing_bootstrap_request', 'Bootstrap request file is missing.')
+  if (!fs.existsSync(absolute))
+    fail('missing_bootstrap_request', 'Bootstrap request file is missing.')
   const stat = fs.lstatSync(absolute)
   if (!stat.isFile() || stat.isSymbolicLink() || stat.size > 1024 * 1024)
-    fail('invalid_bootstrap_request', 'Bootstrap request must be a bounded regular file.')
+    fail(
+      'invalid_bootstrap_request',
+      'Bootstrap request must be a bounded regular file.'
+    )
   const bytes = fs.readFileSync(absolute)
   if (expectedDigest && sha256(bytes) !== expectedDigest)
-    fail('bootstrap_request_changed', 'Bootstrap request bytes changed after preflight.')
+    fail(
+      'bootstrap_request_changed',
+      'Bootstrap request bytes changed after preflight.'
+    )
   let request
   try {
     request = JSON.parse(bytes.toString('utf8'))
   } catch {
-    fail('invalid_bootstrap_request', 'Bootstrap request must contain valid JSON.')
+    fail(
+      'invalid_bootstrap_request',
+      'Bootstrap request must contain valid JSON.'
+    )
   }
   return { request, digest: sha256(bytes), absolute }
 }
@@ -1063,33 +1326,60 @@ function readBootstrapRequest(root, requestedPath, expectedDigest) {
 function taskRequestAddedByPatch(root, event) {
   if (!toolNameKey(event && event.toolName).includes('applypatch')) return null
   if (realDirectory(event.cwd, 'event.cwd') !== root)
-    fail('worktree_mismatch', 'Bootstrap patch cwd does not match its task worktree.')
+    fail(
+      'worktree_mismatch',
+      'Bootstrap patch cwd does not match its task worktree.'
+    )
   const patch = event && event.toolInput
   if (typeof patch !== 'string') return null
   const lines = patch.split(/\r?\n/)
-  if (lines[0] !== '*** Begin Patch' || lines[lines.length - 1] !== '*** End Patch')
-    fail('invalid_bootstrap_request', 'Bootstrap patch must contain one complete patch block.')
-  const headers = lines.filter((line) => /^\*\*\* (?:(?:Add|Update|Delete) File|Move to): /.test(line))
-  if (headers.length !== 1 || !/^\*\*\* Add File: /.test(headers[0])) return null
+  if (
+    lines[0] !== '*** Begin Patch' ||
+    lines[lines.length - 1] !== '*** End Patch'
+  )
+    fail(
+      'invalid_bootstrap_request',
+      'Bootstrap patch must contain one complete patch block.'
+    )
+  const headers = lines.filter((line) =>
+    /^\*\*\* (?:(?:Add|Update|Delete) File|Move to): /.test(line)
+  )
+  if (headers.length !== 1 || !/^\*\*\* Add File: /.test(headers[0]))
+    return null
   const requestPath = headers[0].slice('*** Add File: '.length)
   const { absolute, relative } = bootstrapRequestPath(root, requestPath)
-  if (fs.existsSync(absolute)) fail('unexpected_file_digest', 'Bootstrap request target already exists.')
+  if (fs.existsSync(absolute))
+    fail('unexpected_file_digest', 'Bootstrap request target already exists.')
   const headerIndex = lines.indexOf(headers[0])
   const endIndex = lines.lastIndexOf('*** End Patch')
   if (headerIndex !== 1 || endIndex !== lines.length - 1)
-    fail('invalid_bootstrap_request', 'Bootstrap request patch may contain only one add operation.')
+    fail(
+      'invalid_bootstrap_request',
+      'Bootstrap request patch may contain only one add operation.'
+    )
   const body = lines.slice(headerIndex + 1, endIndex)
   if (body.some((line) => !line.startsWith('+')))
-    fail('invalid_bootstrap_request', 'Bootstrap request patch may only add new JSON lines.')
+    fail(
+      'invalid_bootstrap_request',
+      'Bootstrap request patch may only add new JSON lines.'
+    )
   const requestText = `${body.map((line) => line.slice(1)).join('\n')}\n`
   let request
   try {
     request = JSON.parse(requestText)
   } catch {
-    fail('invalid_bootstrap_request', 'Added task request must contain valid JSON.')
+    fail(
+      'invalid_bootstrap_request',
+      'Added task request must contain valid JSON.'
+    )
   }
   const mode = request && request.mode
-  const selected = validateBootstrapRequest(root, sharedRegistryRoot(root), mode, request)
+  const selected = validateBootstrapRequest(
+    root,
+    sharedRegistryRoot(root),
+    mode,
+    request
+  )
   return { ...selected, path: relative, digest: sha256(requestText) }
 }
 
@@ -1099,52 +1389,124 @@ function evaluateBootstrapPreTool({ repoRoot, event }) {
     const command = commandFromInput(event && event.toolInput)
     if (command !== null) {
       const destructive = destructiveCommandReason(command)
-      if (destructive) fail('destructive_command', `Denied destructive shell command: ${destructive}.`)
-      if (targetsMain(command) || isDirectIntegrationCommand(command) || isDirectCommitCommand(command))
-        fail('task_state_missing', 'Initialize or explicitly select task mode before this operation.')
-      if (isCheapReadCommand(command)) return allow('read_only', 'Recognized bounded read-only command.')
-      const match = /^node scripts\/agent-coordination\/guard\.cjs (init-task-local|recover-task-local|select-coordinated) < (tmp\/agent-coordination\/requests\/[A-Za-z0-9._-]+\.json)$/.exec(command)
-      if (!match) fail('task_state_missing', 'Initialize or explicitly select task mode before writes or opaque commands.')
+      if (destructive)
+        fail(
+          'destructive_command',
+          `Denied destructive shell command: ${destructive}.`
+        )
+      if (
+        targetsMain(command) ||
+        isDirectIntegrationCommand(command) ||
+        isDirectCommitCommand(command)
+      )
+        fail(
+          'task_state_missing',
+          'Initialize or explicitly select task mode before this operation.'
+        )
+      if (isCheapReadCommand(command))
+        return allow('read_only', 'Recognized bounded read-only command.')
+      const match =
+        /^node scripts\/agent-coordination\/guard\.cjs (init-task-local|recover-task-local|select-coordinated) < (tmp\/agent-coordination\/requests\/[A-Za-z0-9._-]+\.json)$/.exec(
+          command
+        )
+      if (!match)
+        fail(
+          'task_state_missing',
+          'Initialize or explicitly select task mode before writes or opaque commands.'
+        )
       const loaded = readBootstrapRequest(root, match[2])
-      const selected = validateBootstrapRequest(root, sharedRegistryRoot(root), match[1], loaded.request)
+      const selected = validateBootstrapRequest(
+        root,
+        sharedRegistryRoot(root),
+        match[1],
+        loaded.request
+      )
       if (loaded.request.mode !== match[1])
-        fail('invalid_bootstrap_request', 'Command and declared bootstrap mode do not match.')
-      return allow('task_mode_bootstrap', 'Exact task-mode initialization or selection command is validated.', {
-        bootstrap: {
-          ...selected, mode: match[1],
-          path: path.relative(root, loaded.absolute).split(path.sep).join('/'),
-          digest: loaded.digest
+        fail(
+          'invalid_bootstrap_request',
+          'Command and declared bootstrap mode do not match.'
+        )
+      return allow(
+        'task_mode_bootstrap',
+        'Exact task-mode initialization or selection command is validated.',
+        {
+          bootstrap: {
+            ...selected,
+            mode: match[1],
+            path: path
+              .relative(root, loaded.absolute)
+              .split(path.sep)
+              .join('/'),
+            digest: loaded.digest
+          }
         }
-      })
+      )
     }
     const added = taskRequestAddedByPatch(root, event)
-    if (!added) fail('task_state_missing', 'Only a new, validated task request file may be written before task mode is selected.')
-    return allow('task_request_approved', 'Validated task request may be created at the fixed bootstrap path.', {
-      bootstrap: added
-    })
+    if (!added)
+      fail(
+        'task_state_missing',
+        'Only a new, validated task request file may be written before task mode is selected.'
+      )
+    return allow(
+      'task_request_approved',
+      'Validated task request may be created at the fixed bootstrap path.',
+      {
+        bootstrap: added
+      }
+    )
   })
 }
 
-function validateBootstrapFile({ repoRoot, registryRoot, mode, requestPath, expectedDigest }) {
+function validateBootstrapFile({
+  repoRoot,
+  registryRoot,
+  mode,
+  requestPath,
+  expectedDigest
+}) {
   return asDecision(() => {
     const root = realDirectory(repoRoot, 'repoRoot')
     const loaded = readBootstrapRequest(root, requestPath, expectedDigest)
     if (loaded.request.mode !== mode)
-      fail('invalid_bootstrap_request', 'Command and declared bootstrap mode do not match.')
+      fail(
+        'invalid_bootstrap_request',
+        'Command and declared bootstrap mode do not match.'
+      )
     const modePath = taskModePathForRepo(root)
     let selected
     if (fs.existsSync(modePath)) {
-      const context = readTaskMode(root, registryRoot || sharedRegistryRoot(root))
-      const requestedTaskId = mode === 'init-task-local' || mode === 'recover-task-local'
-        ? loaded.request.task && loaded.request.task.id
-        : loaded.request.taskId
-      if (context.mode !== (mode === 'select-coordinated' ? 'coordinated' : 'task-local') || context.taskId !== requestedTaskId)
-        fail('bootstrap_task_mismatch', 'Initialized task mode does not match the successful bootstrap request.')
+      const context = readTaskMode(
+        root,
+        registryRoot || sharedRegistryRoot(root)
+      )
+      const requestedTaskId =
+        mode === 'init-task-local' || mode === 'recover-task-local'
+          ? loaded.request.task && loaded.request.task.id
+          : loaded.request.taskId
+      if (
+        context.mode !==
+          (mode === 'select-coordinated' ? 'coordinated' : 'task-local') ||
+        context.taskId !== requestedTaskId
+      )
+        fail(
+          'bootstrap_task_mismatch',
+          'Initialized task mode does not match the successful bootstrap request.'
+        )
       selected = { mode: context.mode, taskId: context.taskId }
     } else {
-      selected = validateBootstrapRequest(root, registryRoot || sharedRegistryRoot(root), mode, loaded.request)
+      selected = validateBootstrapRequest(
+        root,
+        registryRoot || sharedRegistryRoot(root),
+        mode,
+        loaded.request
+      )
     }
-    return allow('bootstrap_request_verified', 'Bootstrap request still matches its preflight bytes.', selected)
+    return allow(
+      'bootstrap_request_verified',
+      'Bootstrap request still matches its preflight bytes.',
+      selected
+    )
   })
 }
 
@@ -1153,12 +1515,20 @@ function recoverTaskLocal({ repoRoot, expectedStateDigest, task }) {
     const root = realDirectory(repoRoot, 'repoRoot')
     return withTaskModeLock(root, (modePath) => {
       const candidate = validateRecoveryRequest(root, expectedStateDigest, task)
-      replaceTaskMode(modePath, { version: TASK_MODE_VERSION, mode: 'task-local', task: candidate })
-      return allow('task_local_recovered', 'Recovered only from the exact inspected state bytes and matching current file preimages.', {
+      replaceTaskMode(modePath, {
+        version: TASK_MODE_VERSION,
         mode: 'task-local',
-        taskId: candidate.id,
-        taskDigest: taskDigest(candidate)
+        task: candidate
       })
+      return allow(
+        'task_local_recovered',
+        'Recovered only from the exact inspected state bytes and matching current file preimages.',
+        {
+          mode: 'task-local',
+          taskId: candidate.id,
+          taskDigest: taskDigest(candidate)
+        }
+      )
     })
   })
 }
@@ -1166,10 +1536,19 @@ function recoverTaskLocal({ repoRoot, expectedStateDigest, task }) {
 function validateRecoveryRequest(root, expectedStateDigest, task) {
   const modePath = validateTaskModePath(root)
   if (!fs.existsSync(modePath))
-    fail('task_state_missing', 'Task-local state is missing; use init-task-local instead.')
+    fail(
+      'task_state_missing',
+      'Task-local state is missing; use init-task-local instead.'
+    )
   const existing = fs.readFileSync(modePath)
-  if (!DIGEST_PATTERN.test(expectedStateDigest || '') || sha256(existing) !== expectedStateDigest)
-    fail('stale_task_state', 'Damaged task state changed; reread it before recovery.')
+  if (
+    !DIGEST_PATTERN.test(expectedStateDigest || '') ||
+    sha256(existing) !== expectedStateDigest
+  )
+    fail(
+      'stale_task_state',
+      'Damaged task state changed; reread it before recovery.'
+    )
   let parsed
   try {
     parsed = JSON.parse(existing.toString('utf8'))
@@ -1177,13 +1556,23 @@ function validateRecoveryRequest(root, expectedStateDigest, task) {
     parsed = null
   }
   if (parsed?.mode === 'coordinated')
-    fail('coordinated_state_recovery_denied', 'Coordinated mode state must be restored through its shared registry workflow.')
+    fail(
+      'coordinated_state_recovery_denied',
+      'Coordinated mode state must be restored through its shared registry workflow.'
+    )
   if (parsed?.version === TASK_MODE_VERSION && parsed?.mode === 'task-local') {
     try {
       normalizeTask(parsed.task)
-      fail('task_state_not_corrupt', 'Valid task-local state cannot be replaced by recovery.')
+      fail(
+        'task_state_not_corrupt',
+        'Valid task-local state cannot be replaced by recovery.'
+      )
     } catch (error) {
-      if (!(error instanceof GuardError) || error.code === 'task_state_not_corrupt') throw error
+      if (
+        !(error instanceof GuardError) ||
+        error.code === 'task_state_not_corrupt'
+      )
+        throw error
     }
   }
   const candidate = validateTaskLocalTask(root, task)
@@ -1194,7 +1583,11 @@ function selectCoordinated({ repoRoot, registryRoot = repoRoot, taskId }) {
   return asDecision(() => {
     const root = realDirectory(repoRoot, 'repoRoot')
     validateCoordinatedSelection(root, registryRoot, taskId)
-    return writeTaskMode(root, { version: TASK_MODE_VERSION, mode: 'coordinated', taskId })
+    return writeTaskMode(root, {
+      version: TASK_MODE_VERSION,
+      mode: 'coordinated',
+      taskId
+    })
   })
 }
 
@@ -1589,7 +1982,10 @@ function authorizePath(task, cwd, requestedPath, operation) {
   const resolved = resolveTaskPath(task, cwd, requestedPath)
   const { relativePath, absolute } = resolved
   if (isGuardStatePath(relativePath))
-    fail('guard_state_protected', `${relativePath} is owned by the coordination guard.`)
+    fail(
+      'guard_state_protected',
+      `${relativePath} is owned by the coordination guard.`
+    )
   const allowed =
     task.allowedExactFiles.includes(relativePath) ||
     task.allowedPathPrefixes.some((prefix) => relativePath.startsWith(prefix))
@@ -2133,7 +2529,7 @@ function requireWritableTask(
   return { task, cwd: effectiveCwd || task.worktree }
 }
 
-function evaluatePreTool({ registryPath, event, taskContext }) {
+function evaluatePreTool({ registryPath, event, taskContext, taskMode }) {
   return asDecision(() => {
     const registry = taskContext || loadRegistry(registryPath)
     const toolName = event && event.toolName
@@ -2190,6 +2586,27 @@ function evaluatePreTool({ registryPath, event, taskContext }) {
             taskId: coordinator.id,
             registryRevision: registry.revision,
             inputHash: hashToolInput(toolName, toolInput),
+            approvedPaths: []
+          }
+        )
+      }
+      const taskLocalUpdate =
+        taskMode === 'task-local' && taskLocalUpdateCommand(command)
+      if (taskLocalUpdate) {
+        const task = taskFor(registry, event.taskId)
+        const request = loadTaskLocalUpdateRequest({
+          repoRoot: task.worktree,
+          task,
+          requestPath: taskLocalUpdate.requestPath,
+          expectedRequestDigest: taskLocalUpdate.requestDigest
+        })
+        return allow(
+          'task_local_update_approved',
+          'Exact task-local lifecycle request is validated.',
+          {
+            taskId: task.id,
+            mode: 'task-local-update',
+            ...request,
             approvedPaths: []
           }
         )
@@ -2686,17 +3103,18 @@ function evaluateStop({ registryPath, event, taskContext, taskMode }) {
       )
     }
     const updated = { ...task, continuations: 1 }
-    const registered = taskMode === 'task-local'
-      ? updateTaskLocal({
-          repoRoot: task.worktree,
-          expectedTaskDigest: taskDigest(task),
-          update: { continuations: updated.continuations }
-        })
-      : registerTask({
-          registryPath,
-          expectedRevision: registry.revision,
-          task: updated
-        })
+    const registered =
+      taskMode === 'task-local'
+        ? updateTaskLocal({
+            repoRoot: task.worktree,
+            expectedTaskDigest: taskDigest(task),
+            update: { continuations: updated.continuations }
+          })
+        : registerTask({
+            registryPath,
+            expectedRevision: registry.revision,
+            task: updated
+          })
     if (registered.decision !== 'allow') {
       return stop(
         'continuation_cas_failed',
@@ -2723,59 +3141,152 @@ function registryPathForRepo(repoRoot) {
 
 function sharedRegistryRoot(repoRoot) {
   const root = realDirectory(repoRoot, 'repoRoot')
-  const result = spawnSync('git', ['rev-parse', '--path-format=absolute', '--git-common-dir'], {
-    cwd: root, encoding: 'utf8', timeout: 5000
-  })
+  const result = spawnSync(
+    'git',
+    ['rev-parse', '--path-format=absolute', '--git-common-dir'],
+    {
+      cwd: root,
+      encoding: 'utf8',
+      timeout: 5000
+    }
+  )
   if (result.status !== 0) return root
   return path.dirname(realDirectory(result.stdout.trim(), 'gitCommonDir'))
 }
 
 function dispatch(command, input) {
   const repoRoot = input && input.repoRoot
-  const registryRoot = (input && input.registryRoot) ||
+  const registryRoot =
+    (input && input.registryRoot) ||
     (['register', 'compact', 'history'].includes(command)
       ? repoRoot
       : sharedRegistryRoot(repoRoot))
   const registryPath = registryPathForRepo(registryRoot)
   switch (command) {
-    case 'init-task-local': return initializeTaskLocal(input || {})
-    case 'recover-task-local': return recoverTaskLocal(input || {})
-    case 'select-coordinated': return selectCoordinated({ ...(input || {}), registryRoot })
-    case 'context': return asDecision(() => {
-      const context = readTaskMode(repoRoot, registryRoot)
-      return allow('task_mode_selected', 'The explicit task mode is valid.', {
-        mode: context.mode, taskId: context.taskId,
-        taskDigest: taskDigest(context.registry.tasks[context.taskId]), registry: context.registry
+    case 'init-task-local':
+      return initializeTaskLocal(input || {})
+    case 'recover-task-local':
+      return recoverTaskLocal(input || {})
+    case 'select-coordinated':
+      return selectCoordinated({ ...(input || {}), registryRoot })
+    case 'context':
+      return asDecision(() => {
+        const context = readTaskMode(repoRoot, registryRoot)
+        return allow('task_mode_selected', 'The explicit task mode is valid.', {
+          mode: context.mode,
+          taskId: context.taskId,
+          taskDigest: taskDigest(context.registry.tasks[context.taskId]),
+          registry: context.registry
+        })
       })
-    })
-    case 'bootstrap-pre-tool': return evaluateBootstrapPreTool({ repoRoot, event: input && input.event })
-    case 'validate-bootstrap-request': return validateBootstrapFile({
-      repoRoot, registryRoot, mode: input && input.mode,
-      requestPath: input && input.requestPath, expectedDigest: input && input.expectedDigest
-    })
-    case 'complete-write': return completeTaskLocalWrite({ repoRoot, event: input })
-    case 'update-task-local': return updateTaskLocal(input || {})
-    case 'register': return registerTask({ registryPath, expectedRevision: input.expectedRevision, task: input.task })
-    case 'compact': return compactRegistry({ registryPath, expectedRevision: input.expectedRevision, coordinatorTaskId: input.coordinatorTaskId })
-    case 'history': return readArchivedTask({ registryPath, taskId: input.taskId })
-    case 'check': case 'pre-tool': case 'pre-commit': case 'stop': return asDecision(() => {
-      const context = readTaskMode(repoRoot, registryRoot)
-      const event = { ...input, taskId: context.taskId }
-      if (command === 'check') return checkTask({ registryPath, event, taskContext: context.registry, taskMode: context.mode })
-      if (command === 'pre-tool') {
-        const result = evaluatePreTool({ registryPath, event, taskContext: context.registry })
-        if (context.mode === 'task-local' && result.decision === 'allow') result.details = {
-          ...result.details, taskMode: context.mode,
-          taskAuthorityDigest: taskAuthorityDigest(context.registry.tasks[context.taskId]),
-          expectedDigestPaths: Object.keys(context.registry.tasks[context.taskId].expectedFileDigests).sort()
+    case 'bootstrap-pre-tool':
+      return evaluateBootstrapPreTool({ repoRoot, event: input && input.event })
+    case 'validate-bootstrap-request':
+      return validateBootstrapFile({
+        repoRoot,
+        registryRoot,
+        mode: input && input.mode,
+        requestPath: input && input.requestPath,
+        expectedDigest: input && input.expectedDigest
+      })
+    case 'complete-write':
+      return completeTaskLocalWrite({ repoRoot, event: input })
+    case 'update-task-local': {
+      if (!input.requestPath) return updateTaskLocal(input || {})
+      return asDecision(() => {
+        const context = readTaskMode(repoRoot, registryRoot)
+        if (context.mode !== 'task-local')
+          fail(
+            'coordinated_update_required',
+            'Shared tasks use the coordinated registry update route.'
+          )
+        const task = context.registry.tasks[context.taskId]
+        const request = loadTaskLocalUpdateRequest({
+          repoRoot,
+          task,
+          requestPath: input.requestPath,
+          expectedRequestDigest: input.expectedRequestDigest
+        })
+        return updateTaskLocal({
+          repoRoot,
+          expectedTaskDigest: request.expectedTaskDigest,
+          update: request.request.update
+        })
+      })
+    }
+    case 'validate-task-local-update':
+      return validateTaskLocalUpdateCompletion({
+        repoRoot,
+        requestPath: input && input.requestPath,
+        requestDigest: input && input.requestDigest,
+        expectedTaskDigest: input && input.expectedTaskDigest,
+        resultTaskDigest: input && input.resultTaskDigest
+      })
+    case 'register':
+      return registerTask({
+        registryPath,
+        expectedRevision: input.expectedRevision,
+        task: input.task
+      })
+    case 'compact':
+      return compactRegistry({
+        registryPath,
+        expectedRevision: input.expectedRevision,
+        coordinatorTaskId: input.coordinatorTaskId
+      })
+    case 'history':
+      return readArchivedTask({ registryPath, taskId: input.taskId })
+    case 'check':
+    case 'pre-tool':
+    case 'pre-commit':
+    case 'stop':
+      return asDecision(() => {
+        const context = readTaskMode(repoRoot, registryRoot)
+        const event = { ...input, taskId: context.taskId }
+        if (command === 'check')
+          return checkTask({
+            registryPath,
+            event,
+            taskContext: context.registry,
+            taskMode: context.mode
+          })
+        if (command === 'pre-tool') {
+          const result = evaluatePreTool({
+            registryPath,
+            event,
+            taskContext: context.registry,
+            taskMode: context.mode
+          })
+          if (context.mode === 'task-local' && result.decision === 'allow')
+            result.details = {
+              ...result.details,
+              taskMode: context.mode,
+              taskAuthorityDigest: taskAuthorityDigest(
+                context.registry.tasks[context.taskId]
+              ),
+              expectedDigestPaths: Object.keys(
+                context.registry.tasks[context.taskId].expectedFileDigests
+              ).sort()
+            }
+          return result
         }
-        return result
-      }
-      if (command === 'pre-commit') return evaluatePreCommit({ registryPath, event, taskContext: context.registry })
-      return evaluateStop({ registryPath, event, taskContext: context.registry, taskMode: context.mode })
-    })
-    case 'integration': return evaluateIntegration({ registryPath, event: input })
-    default: return deny('invalid_command', 'Unknown coordination guard command.')
+        if (command === 'pre-commit')
+          return evaluatePreCommit({
+            registryPath,
+            event,
+            taskContext: context.registry
+          })
+        return evaluateStop({
+          registryPath,
+          event,
+          taskContext: context.registry,
+          taskMode: context.mode
+        })
+      })
+    case 'integration':
+      return evaluateIntegration({ registryPath, event: input })
+    default:
+      return deny('invalid_command', 'Unknown coordination guard command.')
   }
 }
 

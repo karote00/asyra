@@ -42,7 +42,9 @@ function receiptPath(event, worktreeRoot, { create = true } = {}) {
   while (!existsSync(existingParent)) {
     const ancestor = path.dirname(existingParent)
     if (ancestor === existingParent)
-      throw new Error('Coordination state directory has no worktree-owned ancestor')
+      throw new Error(
+        'Coordination state directory has no worktree-owned ancestor'
+      )
     existingParent = ancestor
   }
   const realExistingParent = realpathSync(existingParent)
@@ -261,7 +263,10 @@ export function evaluateNativeHook(event) {
       const receipt = JSON.parse(readFileSync(receiptFile, 'utf8'))
       if (receipt.taskMode === 'bootstrap') {
         if (!operationSucceeded(event.tool_response))
-          return { systemMessage: 'Task bootstrap request did not complete successfully; task mode remains unselected.' }
+          return {
+            systemMessage:
+              'Task bootstrap request did not complete successfully; task mode remains unselected.'
+          }
         if (receipt.inputIdentity !== inputIdentity(event))
           throw new Error('Task bootstrap receipt mismatch')
         const verified = invokeGuard(
@@ -275,6 +280,35 @@ export function evaluateNativeHook(event) {
         )
         if (verified.decision === 'allow') unlinkSync(receiptFile)
         return adaptHook(event, verified)
+      }
+      if (receipt.taskMode === 'task-local-update') {
+        if (!operationSucceeded(event.tool_response)) {
+          unlinkSync(receiptFile)
+          return {
+            systemMessage:
+              'Task-local lifecycle update failed; the prior task state remains authoritative.'
+          }
+        }
+        if (receipt.inputIdentity !== inputIdentity(event))
+          throw new Error('Task-local update receipt mismatch')
+        const verified = invokeGuard(
+          'validate-task-local-update',
+          receipt.lifecycleUpdate,
+          worktreeRoot
+        )
+        if (verified.decision === 'allow') unlinkSync(receiptFile)
+        return adaptHook(event, verified)
+      }
+      if (receipt.taskMode === 'approved-command') {
+        if (receipt.inputIdentity !== inputIdentity(event))
+          throw new Error('Approved command receipt mismatch')
+        unlinkSync(receiptFile)
+        return operationSucceeded(event.tool_response)
+          ? {}
+          : {
+              systemMessage:
+                'Approved command failed; task file snapshots were not refreshed.'
+            }
       }
     }
   }
@@ -395,17 +429,41 @@ export function evaluateNativeHook(event) {
   if (
     mode === 'pre-tool' &&
     result.decision === 'allow' &&
-    result.details?.approvedPaths?.length
+    (result.details?.approvedPaths?.length ||
+      result.code === 'task_local_update_approved' ||
+      result.code === 'approved_command')
   ) {
-    writeFileSync(
-      receiptPath(event, worktreeRoot),
-      JSON.stringify({
+    let receiptDetails = {
+      taskId,
+      inputIdentity: inputIdentity(event),
+      taskMode: context.details.mode,
+      preflight: result.details
+    }
+    if (result.code === 'task_local_update_approved') {
+      receiptDetails = {
         taskId,
         inputIdentity: inputIdentity(event),
-        taskMode: context.details.mode,
-        preflight: result.details
-      }),
-      { flag: 'wx' }
+        taskMode: 'task-local-update',
+        lifecycleUpdate: {
+          requestPath: result.details.requestPath,
+          requestDigest: result.details.requestDigest,
+          expectedTaskDigest: result.details.expectedTaskDigest,
+          resultTaskDigest: result.details.resultTaskDigest
+        }
+      }
+    } else if (result.code === 'approved_command') {
+      receiptDetails = {
+        taskId,
+        inputIdentity: inputIdentity(event),
+        taskMode: 'approved-command'
+      }
+    }
+    writeFileSync(
+      receiptPath(event, worktreeRoot),
+      JSON.stringify(receiptDetails),
+      {
+        flag: 'wx'
+      }
     )
   }
   if (
@@ -424,10 +482,14 @@ export function evaluateNativeHook(event) {
       const task = structuredClone(registry.tasks[taskId])
       for (const update of result.details.digestUpdates)
         task.expectedFileDigests[update.path] = update.digest
-      const updated = invokeGuard('register', {
-        expectedRevision: result.details.registryRevision,
-        task: { ...task, id: taskId }
-      }, repoRoot)
+      const updated = invokeGuard(
+        'register',
+        {
+          expectedRevision: result.details.registryRevision,
+          task: { ...task, id: taskId }
+        },
+        repoRoot
+      )
       if (updated.decision !== 'allow') return adaptHook(event, updated)
     }
     unlinkSync(receiptPath(event, worktreeRoot))

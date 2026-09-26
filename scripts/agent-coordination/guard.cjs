@@ -44,7 +44,29 @@ process.stdin.on('end', () => {
   }
   let result
   try {
-    result = dispatch(process.argv[2], parsed)
+    const command = process.argv[2]
+    const arguments_ = process.argv.slice(3)
+    if (command === 'update-task-local') {
+      if (
+        arguments_.length !== 4 ||
+        arguments_[0] !== '--request' ||
+        arguments_[2] !== '--sha256'
+      ) {
+        throw new Error(
+          'update-task-local requires --request <path> --sha256 <digest>.'
+        )
+      }
+      parsed = {
+        ...parsed,
+        requestPath: arguments_[1],
+        expectedRequestDigest: arguments_[3]
+      }
+    } else if (arguments_.length > 0) {
+      throw new Error(
+        'This guard command does not accept command-line arguments.'
+      )
+    }
+    result = dispatch(command, parsed)
   } catch {
     result = {
       version: VERSION,
