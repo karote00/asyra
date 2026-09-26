@@ -3,6 +3,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const { execFileSync } = require('node:child_process')
 const { createHash } = require('node:crypto')
+const { gunzipSync } = require('node:zlib')
 const inventory = Object.freeze(
   [
     {
@@ -763,7 +764,10 @@ if (require.main === module) {
     })
     let scope = null
     try {
-      scope = JSON.parse(process.env.FLOW_SCOPE_EVIDENCE ?? '')
+      const compressed = process.env.FLOW_SCOPE_EVIDENCE_GZIP
+      scope = compressed
+        ? JSON.parse(gunzipSync(Buffer.from(compressed, 'base64')).toString())
+        : JSON.parse(process.env.FLOW_SCOPE_EVIDENCE ?? '')
     } catch {
       /* Missing scope evidence remains unverified. */
     }
@@ -779,11 +783,7 @@ if (require.main === module) {
       designForwarder: process.env.FLOW_DESIGN_FORWARDER_RESULT,
       collaborationForwarder: process.env.FLOW_COLLABORATION_FORWARDER_RESULT
     }
-    try {
-      jobs.executionPlan = JSON.parse(process.env.FLOW_EXECUTION_PLAN ?? '')
-    } catch {
-      jobs.executionPlan = null
-    }
+    jobs.executionPlan = scope?.relationshipMap?.executionPlan ?? null
     try {
       jobs.selectedCheckResults = JSON.parse(
         process.env.FLOW_SELECTED_CHECK_RESULTS ?? ''

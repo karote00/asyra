@@ -6,6 +6,7 @@ const path = require('node:path')
 const { collect, aggregate } = require('../workflow-results.cjs')
 const proofFlow = require('../../inspectors/flow-inspector-core-proof-flow-inspector.data.cjs')
 const { createHash } = require('node:crypto')
+const { gzipSync } = require('node:zlib')
 const identity = {
   repository: 'karote00/asyra',
   base: 'a'.repeat(40),
@@ -1101,6 +1102,11 @@ test('workflow waits on reusable producers and always collects after failed test
     /FLOW_VALIDATE_RESULT: \$\{\{ needs\.shared-validation\.result \}\}/
   )
   assert.match(main, /uses: \.\/.github\/workflows\/e2e.yml/)
+  assert.match(
+    main,
+    /FLOW_SCOPE_EVIDENCE_GZIP:.*needs\.scope\.outputs\.evidence_gzip/
+  )
+  assert.doesNotMatch(main, /FLOW_SCOPE_EVIDENCE:|FLOW_EXECUTION_PLAN:/)
   assert.match(e2e, /workflow_call:/)
   assert.doesNotMatch(e2e.split('permissions:')[0], /pull_request:/)
   assert.equal((e2e.match(/if: \$\{\{ always\(\) \}\}/g) || []).length, 2)
@@ -1232,8 +1238,9 @@ test('CLI retains missing reports as unverified and exits nonzero on incomplete 
     const completeRun = {
       ...env,
       FLOW_RESULT_INTEGRATION: currentIdentity.integration,
-      FLOW_SCOPE_EVIDENCE: JSON.stringify(currentScope),
-      FLOW_EXECUTION_PLAN: JSON.stringify(currentScope.executionPlan),
+      FLOW_SCOPE_EVIDENCE_GZIP: gzipSync(
+        Buffer.from(JSON.stringify(currentScope))
+      ).toString('base64'),
       FLOW_SELECTED_CHECK_RESULTS: JSON.stringify(
         checkResultsFor(currentScope)
       ),
@@ -1284,10 +1291,9 @@ test('CLI retains missing reports as unverified and exits nonzero on incomplete 
       const aggregated = spawnSync(process.execPath, [cli, 'aggregate'], {
         env: {
           ...completeRun,
-          FLOW_SCOPE_EVIDENCE: JSON.stringify(selectedCreateAppScope),
-          FLOW_EXECUTION_PLAN: JSON.stringify(
-            selectedCreateAppScope.executionPlan
-          ),
+          FLOW_SCOPE_EVIDENCE_GZIP: gzipSync(
+            Buffer.from(JSON.stringify(selectedCreateAppScope))
+          ).toString('base64'),
           FLOW_SELECTED_CHECK_RESULTS: JSON.stringify(
             checkResultsFor(selectedCreateAppScope)
           ),
