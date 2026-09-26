@@ -868,6 +868,15 @@ test('Board, render contracts and functional E2E have independent required jobs'
   assert.match(main, /FLOW_E2E_RESULT: \$\{\{ needs\.design-e2e\.result \}\}/)
 })
 
+test('Tools CI checkout includes the accepted Git base required by CI evidence', () => {
+  const workflow = readText('.github/workflows/main.yml')
+  const toolsJob = workflow
+    .split('\n  tools:\n')[1]
+    .split('\n  framework-release-readiness:\n')[0]
+
+  assert.match(toolsJob, /fetch-depth: 0/)
+})
+
 const runOwnedBuildCommand = (command, args, { githubActions, timeoutMs }) =>
   new Promise((resolve, reject) => {
     const env = { ...process.env, CI: 'true', FORCE_COLOR: '0' }
