@@ -16,9 +16,50 @@ permissions:
   contents: read
 
 jobs:
-  validate:
+  scope:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
+    outputs:
+      evidence: ${{ steps.scope.outputs.evidence }}
+      framework: ${{ steps.scope.outputs.framework }}
+      design: ${{ steps.scope.outputs.design }}
+      sim: ${{ steps.scope.outputs.sim }}
+      website: ${{ steps.scope.outputs.website }}
+      tools: ${{ steps.scope.outputs.tools }}
+      framework_workspaces: ${{ steps.scope.outputs.framework_workspaces }}
+      framework_build_tasks: ${{ steps.scope.outputs.framework_build_tasks }}
+      framework_packages: ${{ steps.scope.outputs.framework_packages }}
+      framework_release_required: ${{ steps.scope.outputs.framework_release_required }}
+      create_app_packages: ${{ steps.scope.outputs.create_app_packages }}
+      design_workspaces: ${{ steps.scope.outputs.design_workspaces }}
+      design_build_tasks: ${{ steps.scope.outputs.design_build_tasks }}
+      sim_workspaces: ${{ steps.scope.outputs.sim_workspaces }}
+      sim_build_tasks: ${{ steps.scope.outputs.sim_build_tasks }}
+      website_workspaces: ${{ steps.scope.outputs.website_workspaces }}
+      website_build_tasks: ${{ steps.scope.outputs.website_build_tasks }}
+      tools_workspaces: ${{ steps.scope.outputs.tools_workspaces }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+      - name: Classify changed workspaces and consumers
+        id: scope
+        env:
+          CI_SCOPE_BASE: ${{ github.event.pull_request.base.sha || github.sha }}
+          CI_SCOPE_DIFF_BASE: ${{ github.event.pull_request.base.sha || github.event.before || github.sha }}
+          CI_SCOPE_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: node scripts/ci-scope.mjs
+
+  shared-validation:
+    if: ${{ always() && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
+    needs: scope
+    runs-on: ubuntu-latest
+    outputs:
+      create_app_result: ${{ steps.create_app.outcome }}
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -54,30 +95,118 @@ jobs:
       - name: Validate turbo.json
         run: yarn gen:turbo:check
 
-      - name: Build React
-        run: yarn react:build
-
       - name: Lint
         run: yarn lint:ci
 
-      - name: Test
-        if: success()
-        # Each workspace also owns test workers; avoid multiplying both pools.
-        run: yarn test:ci --concurrency=2
+      - name: Test repository scripts
+        run: yarn test:scripts
 
-      - name: Verify Flow Inspector core proof
+      - name: Validate affected create-app package archives
+        id: create_app
+        if: ${{ needs.scope.outputs.create_app_packages != '' }}
         env:
-          FLOW_CI_BASE: ${{ github.event.pull_request.base.sha || github.sha }}
-          FLOW_CI_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
-          FLOW_CI_EMIT_EVIDENCE: '1'
+          CREATE_APP_PACKAGES: ${{ needs.scope.outputs.create_app_packages }}
         run: |
-          node --test --test-concurrency=1 tools/flow-inspector/control-plane/__tests__/{contracts,snapshot,runner,evidence,store,service,server,mapping,cli,evolution,ci-context,ci-evidence,operations,agent-contract,agent-provider,agent-transport,agent-task,agent-verifier,pr-review,github-delivery,workflow-results,flow-target}.test.cjs
-          node tools/flow-inspector/control-plane/cli.cjs prove
-          node tools/flow-inspector/control-plane/cli.cjs ci-trial
+          for package_directory in $CREATE_APP_PACKAGES; do
+            npm pack --dry-run --json "./$package_directory" > /dev/null
+          done
+
+  framework:
+    needs: scope
+    if: ${{ always() && needs.scope.outputs.framework_workspaces != '' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: yarn
+      - run: corepack enable && yarn set version 4.3.1 && yarn install --immutable
+      - name: Build affected Framework workspaces
+        env:
+          FRAMEWORK_WORKSPACES: ${{ needs.scope.outputs.framework_workspaces }}
+          FRAMEWORK_BUILD_TASKS: ${{ needs.scope.outputs.framework_build_tasks }}
+        run: |
+          filters=()
+          for workspace in $FRAMEWORK_WORKSPACES; do filters+=("--filter=$workspace"); done
+          tasks=()
+          for task in $FRAMEWORK_BUILD_TASKS; do tasks+=("$task"); done
+          if [ ${#filters[@]} -gt 0 ] && [ ${#tasks[@]} -gt 0 ]; then yarn turbo run "${tasks[@]}" "${filters[@]}" --concurrency=2; fi
+      - name: Test affected Framework workspaces
+        env:
+          FRAMEWORK_WORKSPACES: ${{ needs.scope.outputs.framework_workspaces }}
+        run: |
+          args=()
+          for workspace in $FRAMEWORK_WORKSPACES; do args+=("--filter=$workspace"); done
+          if [ ${#args[@]} -gt 0 ]; then yarn turbo run test:ci "${args[@]}" --concurrency=2; fi
+
+  design:
+    needs: scope
+    if: ${{ always() && needs.scope.outputs.design_workspaces != '' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: yarn
+      - run: corepack enable && yarn set version 4.3.1 && yarn install --immutable
+      - run: yarn turbo run react:build --filter=@asyra/asyra-design --concurrency=2
+      - run: yarn turbo run test:ci --filter=@asyra/asyra-design --concurrency=2
+
+  sim:
+    needs: scope
+    if: ${{ always() && needs.scope.outputs.sim_workspaces != '' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: yarn
+      - run: corepack enable && yarn set version 4.3.1 && yarn install --immutable
+      - run: yarn turbo run react:build --filter=@asyra/asyra-sim --concurrency=2
+      - run: yarn turbo run test:ci --filter=@asyra/asyra-sim --concurrency=2
+
+  website:
+    needs: scope
+    if: ${{ always() && needs.scope.outputs.website_workspaces != '' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: yarn
+      - run: corepack enable && yarn set version 4.3.1 && yarn install --immutable
+      - run: yarn turbo run build:asyra-framework-site --filter=@asyra/asyra-framework-site --concurrency=2
+      - run: yarn turbo run test:ci --filter=@asyra/asyra-framework-site --concurrency=2
+
+  tools:
+    needs: scope
+    if: ${{ always() && needs.scope.outputs.tools_workspaces != '' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: yarn
+      - run: corepack enable && yarn set version 4.3.1 && yarn install --immutable
+      - name: Test Flow Inspector and control-plane contracts
+        env:
+          TOOLS_WORKSPACES: ${{ needs.scope.outputs.tools_workspaces }}
+        run: |
+          if [[ "$TOOLS_WORKSPACES" == *"@asyra/flow-inspector"* ]] || [ -z "$TOOLS_WORKSPACES" ]; then
+            yarn workspace @asyra/flow-inspector test:ci
+            node --test --test-concurrency=1 tools/flow-inspector/control-plane/__tests__/{contracts,snapshot,runner,evidence,store,service,server,mapping,cli,evolution,ci-context,ci-evidence,operations,agent-contract,agent-provider,agent-transport,agent-task,agent-verifier,pr-review,github-delivery,workflow-results,flow-target}.test.cjs
+            node tools/flow-inspector/control-plane/cli.cjs prove
+            node tools/flow-inspector/control-plane/cli.cjs ci-trial
+          fi
 
   framework-release-readiness:
-    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
-    needs: validate
+    if: ${{ always() && needs.scope.outputs.framework_release_required == 'true' && needs.shared-validation.result == 'success' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
+    needs: [scope, shared-validation]
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -111,35 +240,42 @@ jobs:
         run: yarn release:records
 
   design-e2e:
-    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    if: ${{ always() && needs.scope.outputs.design_workspaces != '' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
+    needs: scope
     uses: ./.github/workflows/e2e.yml
     with:
       run_balanced_ai_correctness: ${{ inputs.run_balanced_ai_correctness || false }}
 
   e2e-tests:
-    needs: design-e2e
+    needs: [scope, design-e2e]
     if: ${{ always() && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
     runs-on: ubuntu-latest
     timeout-minutes: 1
     env:
       FLOW_PRODUCER_RESULT: ${{ needs.design-e2e.outputs.design-result }}
+      DESIGN_SELECTED: ${{ needs.scope.outputs.design_workspaces != '' }}
+      DESIGN_E2E_WORKFLOW_RESULT: ${{ needs.design-e2e.result }}
     steps:
-      - name: Require successful Design E2E producer
-        run: test "$FLOW_PRODUCER_RESULT" = success
+      - name: Require selected Design E2E producer
+        run: |
+          if [ "$DESIGN_SELECTED" = true ]; then test "$DESIGN_E2E_WORKFLOW_RESULT" = success && test "$FLOW_PRODUCER_RESULT" = success; else test "$DESIGN_E2E_WORKFLOW_RESULT" = skipped; fi
 
   collaboration-e2e-tests:
-    needs: design-e2e
+    needs: [scope, design-e2e]
     if: ${{ always() && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
     runs-on: ubuntu-latest
     timeout-minutes: 1
     env:
       FLOW_PRODUCER_RESULT: ${{ needs.design-e2e.outputs.collaboration-result }}
+      DESIGN_SELECTED: ${{ needs.scope.outputs.design_workspaces != '' }}
+      DESIGN_E2E_WORKFLOW_RESULT: ${{ needs.design-e2e.result }}
     steps:
-      - name: Require successful collaboration E2E producer
-        run: test "$FLOW_PRODUCER_RESULT" = success
+      - name: Require selected collaboration E2E producer
+        run: |
+          if [ "$DESIGN_SELECTED" = true ]; then test "$DESIGN_E2E_WORKFLOW_RESULT" = success && test "$FLOW_PRODUCER_RESULT" = success; else test "$DESIGN_E2E_WORKFLOW_RESULT" = skipped; fi
 
-  flow-ci:
-    needs: [validate, design-e2e]
+  validate:
+    needs: [scope, shared-validation, framework, design, sim, website, tools, framework-release-readiness, design-e2e, e2e-tests, collaboration-e2e-tests]
     if: ${{ always() && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -150,8 +286,19 @@ jobs:
       FLOW_RESULT_INTEGRATION: ${{ github.sha }}
       FLOW_RESULT_RUN: ${{ github.run_id }}
       FLOW_RESULT_ATTEMPT: ${{ github.run_attempt }}
-      FLOW_VALIDATE_RESULT: ${{ needs.validate.result }}
+      FLOW_SCOPE_EVIDENCE: ${{ needs.scope.outputs.evidence }}
+      FLOW_SCOPE_FRAMEWORK_RESULT: ${{ needs.framework.result }}
+      FLOW_SCOPE_DESIGN_RESULT: ${{ needs.design.result }}
+      FLOW_SCOPE_SIM_RESULT: ${{ needs.sim.result }}
+      FLOW_SCOPE_WEBSITE_RESULT: ${{ needs.website.result }}
+      FLOW_SCOPE_TOOLS_RESULT: ${{ needs.tools.result }}
+      FLOW_FRAMEWORK_RELEASE_RESULT: ${{ needs.framework-release-readiness.result }}
+      FLOW_CREATE_APP_READINESS_RESULT: ${{ needs.shared-validation.outputs.create_app_result }}
+      FLOW_DESIGN_FORWARDER_RESULT: ${{ needs.e2e-tests.result }}
+      FLOW_COLLABORATION_FORWARDER_RESULT: ${{ needs.collaboration-e2e-tests.result }}
+      FLOW_VALIDATE_RESULT: ${{ needs.shared-validation.result }}
       FLOW_E2E_RESULT: ${{ needs.design-e2e.result }}
+      FLOW_DESIGN_SELECTED: ${{ needs.scope.outputs.design_workspaces != '' }}
       FLOW_DESIGN_EVIDENCE: ${{ needs.design-e2e.outputs.design-evidence }}
       FLOW_COLLABORATION_EVIDENCE: ${{ needs.design-e2e.outputs.collaboration-evidence }}
     steps:
@@ -159,5 +306,5 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
-      - name: Aggregate completed flow results
+      - name: Aggregate selected CI scope and completed flow results
         run: node tools/flow-inspector/control-plane/workflow-results.cjs aggregate

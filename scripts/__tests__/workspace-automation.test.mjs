@@ -136,21 +136,11 @@ test('PR workflows skip Draft jobs and run when the PR becomes ready', () => {
     }
     const jobs = workflow.split('\njobs:\n')[1].split(/(?=^ {2}[\w-]+:\n)/m)
     for (const job of jobs.filter((block) => block.trim())) {
-      if (
-        /^ {2}(flow-ci|e2e-tests|collaboration-e2e-tests):/.test(job) &&
-        workflowPath === '.github/workflows/main.yml'
-      ) {
-        assert.match(
-          job,
-          /^ {4}if: \$\{\{ always\(\) && \(github.event_name != 'pull_request' \|\| github.event.pull_request.draft == false\) \}\}$/m
-        )
-      } else {
-        assert.match(
-          job,
-          /^ {4}if: github.event_name != 'pull_request' \|\| github.event.pull_request.draft == false$/m,
-          `${workflowPath}: ${job.split('\n')[0]}`
-        )
-      }
+      assert.match(
+        job,
+        /^ {4}if: .*github\.event\.pull_request\.draft == false/m,
+        `${workflowPath}: ${job.split('\n')[0]}`
+      )
     }
   }
 })
@@ -168,7 +158,36 @@ test('CI bounds workspace test concurrency without dropping test owners', () => 
   const workflow = readText('.github/workflows/main.yml')
   const scripts = readJSON('package.json').scripts
 
-  assert.match(workflow, /^\s+run: yarn test:ci --concurrency=2$/m)
+  assert.match(workflow, /run: yarn test:scripts/)
+  for (const [buildTask, workspace] of [
+    ['react:build', '@asyra/asyra-design'],
+    ['react:build', '@asyra/asyra-sim'],
+    ['build:asyra-framework-site', '@asyra/asyra-framework-site']
+  ]) {
+    const build = `yarn turbo run ${buildTask} --filter=${workspace} --concurrency=2`
+    const test = `yarn turbo run test:ci --filter=${workspace} --concurrency=2`
+    assert.ok(
+      workflow.indexOf(build) >= 0,
+      `${workspace} has an explicit build`
+    )
+    assert.ok(
+      workflow.indexOf(test) > workflow.indexOf(build),
+      `${workspace} tests run after its build`
+    )
+  }
+  assert.match(
+    workflow,
+    /FRAMEWORK_BUILD_TASKS: \$\{\{ needs\.scope\.outputs\.framework_build_tasks \}\}/
+  )
+  assert.match(
+    workflow,
+    /yarn turbo run "\$\{tasks\[@\]\}" "\$\{filters\[@\]\}" --concurrency=2/
+  )
+  assert.match(
+    workflow,
+    /yarn turbo run test:ci "\$\{args\[@\]\}" --concurrency=2/
+  )
+  assert.doesNotMatch(workflow, /yarn turbo run test:ci react:build/)
   assert.equal(scripts['test:ci'], 'yarn test:scripts && turbo run test:ci')
 })
 

@@ -36538,7 +36538,7 @@
           {
             "id": "ci-trial-workflow",
             "kind": "source",
-            "label": "CI trial workflow - not required-check enforcement",
+            "label": "Scoped CI aggregate - repository protection not verified",
             "href": "../../../.github/workflows/main.yml"
           }
         ],
@@ -36611,7 +36611,13 @@
             "ownerPackage": "tools/flow-inspector/control-plane",
             "purpose": "Observational CI aggregation",
             "inputs": [
-              "completed validate and Design E2E job results",
+              "base/head changed paths and workspace manifests/dependency graph",
+              "tracked Changesets and root documentation inputs",
+              "run-scoped CI scope evidence",
+              "completed shared validation and selected category producer outcomes",
+              "Framework release-tool readiness and selected package release outcome",
+              "non-workspace create-app package directories and conditional archive-step outcome",
+              "Design E2E producer envelopes and required forwarder results",
               "fixed Design Delete case inventory",
               "Playwright raw case reports",
               "GitHub repository, base, head, integration, run and attempt identity"
@@ -36620,30 +36626,45 @@
               "artifact:workflow-result-summary"
             ],
             "conditions": [
-              "Wait for all declared producer jobs even on failure. Validate exact case inventory, all attempt outcomes and matching execution identity. Preserve confirmed failures; missing or invalid evidence is unverified. Job success is not case evidence or accepted conformance. Preserve existing required E2E check names by forwarding only exact successful producer results; missing, failed, cancelled or skipped results cannot pass."
+              "Derive changed paths from Git base/head and classify them against checked-out workspace package manifests, dependency edges, the canonical build scripts in those manifests, and the fixed formal-input owner map. Root lockfile, workspace, build and workflow inputs select all five validation scopes. Propagate Framework changes to every dependent consumer, including Fieldscope and Starter App; never infer scope from a folder name alone. Recognized .changeset metadata and tracked root documents select shared contract validation without selecting unrelated workspace suites. Unknown paths, missing build tasks, or unclassified consumers invalidate scope and fail the total even when conservative jobs ran.",
+              "Run shared validation for every non-draft change. For each selected category workspace, run its canonical build task and dependency closure to completion before starting test:ci; do not schedule test:ci alongside builds because it has no build dependency. Run category suites only when scope evidence lists affected workspaces. Run Framework release readiness when Framework packages or its release-validation owner inputs are affected, even when the changed input is not a workspace. create-app CLI packages are outside the workspace graph; list affected package directories and require the conditional npm pack archive check inside shared validation. Export that step outcome and require the aggregate to observe success when selected and skipped when unselected. Docs-only changes still require shared validation and applicable document-owner checks; Flow Inspector documentation selects the Flow Inspector contract suite.",
+              "Use the existing required validate GitHub check as the one canonical aggregate, with shared-validation as its common prerequisite producer, so selected category, release and create-app results remain merge-blocking under the current check contract.",
+              "Bind scope evidence, each selected producer and the final result to the same repository, base, candidate head, integration revision, run id and run attempt. GitHub reruns require rerunning the entire workflow; evidence from a prior attempt cannot complete a later attempt.",
+              "One canonical aggregate consumes scope evidence, completed shared/category/release/E2E results, exact fixed Design case envelopes and required forwarder results. Every selected producer must succeed; every explicitly unselected category must be skipped. Missing, failed, cancelled, unknown or unexpectedly skipped selected work fails the total. Existing E2E forwarders must themselves succeed for selected and unselected scopes; an unselected reusable E2E workflow must report skipped, while selected producers must report success and provide exact case evidence.",
+              "Validate the exact Design case inventory and every attempt outcome. Preserve confirmed assertion failures; missing or invalid case evidence is unverified. Job success is not case evidence or accepted conformance."
             ],
             "bypasses": [
-              "No skipped, missing, mismatched or failed evidence becomes a pass."
+              "No unknown scope, stale attempt, missing evidence, selected-job skip or failed producer becomes a pass. Only an evidence-declared unselected producer may skip."
             ],
             "allowedContributors": [
-              "GitHub Actions job dependencies and outputs",
-              "existing Playwright JSON reporter"
+              "GitHub Actions scope, producer and forwarding job results bound to the workflow run",
+              "Git diff of base/head changed paths with checked-out workspace package manifests and dependency edges",
+              "fixed formal path-to-owner map for Changesets, root documents, release validation inputs and create-app packages",
+              "existing Playwright JSON reporter and exact fixed-case collector"
             ],
             "forbiddenContributors": [
               "runtime source analysis",
               "candidate-selected case inventory",
               "accepted baseline mutation",
-              "provider success substituted for assertions"
+              "provider success substituted for assertions",
+              "prior-attempt evidence reused after a workflow rerun",
+              "unknown changed paths treated as an empty scope"
             ],
             "cacheDimensions": [],
             "implementationBoundary": [
               "tools/flow-inspector/control-plane/workflow-results.cjs",
               "tools/flow-inspector/control-plane/__tests__/workflow-results.test.cjs",
               "tools/flow-inspector/control-plane/__tests__/board.test.cjs",
+              "scripts/ci-scope.mjs",
+              "scripts/__tests__/ci-scope.test.mjs",
               ".github/workflows/main.yml",
               ".github/workflows/e2e.yml",
               "scripts/run-e2e.sh",
-              "scripts/__tests__/workspace-automation.test.mjs"
+              "scripts/__tests__/workspace-automation.test.mjs",
+              "scripts/release-package-artifacts.js",
+              "create-app/asyra-design/package.json",
+              "tools/flow-inspector/inspectors/flow-inspector-core-proof-flow-inspector.data.cjs",
+              "tools/flow-inspector/workspace/workspace-bundle.data.js"
             ],
             "specRefs": [
               "#final-workflow-aggregation"
@@ -37301,7 +37322,7 @@
             "id": "aggregate-workflow-results-terminal",
             "from": "aggregate-workflow-results",
             "kind": "terminal",
-            "predicate": "Declared producer jobs have settled and their evidence has been assessed.",
+            "predicate": "Scope classification and all applicable shared/category/release/E2E/forwarder producers have settled and matching-attempt evidence has been assessed.",
             "producedArtifacts": [
               "artifact:workflow-result-summary"
             ]
@@ -37547,7 +37568,7 @@
           },
           {
             "id": "artifact:workflow-result-summary",
-            "title": "Workflow result summary",
+            "title": "Scoped CI and Design workflow result summary",
             "ownerStepId": "aggregate-workflow-results",
             "channel": "github-check",
             "consumerStepIds": [],

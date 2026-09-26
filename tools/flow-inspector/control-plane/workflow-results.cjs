@@ -116,7 +116,7 @@ function collect(report, producer, identity) {
     cases
   }
 }
-function aggregate(envelopes, identity, jobs) {
+function aggregate(envelopes, identity, jobs, scopeEvidence) {
   const blockers = []
   const validIdentity =
     identityKeys.every(
@@ -127,7 +127,16 @@ function aggregate(envelopes, identity, jobs) {
     )
   if (!validIdentity)
     blockers.push('Expected execution identity is unavailable')
+  const designSelected = jobs.designSelected === 'true'
   const cases = inventory.map((c) => {
+    if (!designSelected)
+      return {
+        id: c.id,
+        owner: 'apps/asyra-design',
+        file: 'apps/asyra-design/e2e/' + c.file,
+        title: c.title,
+        status: 'not-selected'
+      }
     const records = Array.isArray(envelopes)
       ? envelopes.filter((e) => e?.producer === c.producer)
       : []
@@ -161,21 +170,154 @@ function aggregate(envelopes, identity, jobs) {
       status
     }
   })
-  for (const name of ['validate', 'e2e'])
-    if (jobs[name] !== 'success')
-      blockers.push(name + ': prerequisite did not succeed')
+  if (jobs.validate !== 'success')
+    blockers.push('validate: prerequisite did not succeed')
+  if (designSelected && jobs.e2e !== 'success')
+    blockers.push('e2e: prerequisite did not succeed')
+  if (!designSelected && jobs.e2e !== 'skipped')
+    blockers.push('e2e: unselected producer did not remain skipped')
+  const scope = aggregateScope(scopeEvidence, identity, jobs)
+  blockers.push(...scope.blockers)
   let status = 'passed'
-  if (cases.some((c) => c.status === 'failed')) status = 'failed'
-  else if (blockers.length || cases.some((c) => c.status !== 'passed'))
+  if (cases.some((c) => c.status === 'failed') || scope.status === 'failed')
+    status = 'failed'
+  else if (
+    blockers.length ||
+    cases.some((c) => c.status !== 'passed' && c.status !== 'not-selected') ||
+    scope.status !== 'passed'
+  )
     status = 'unverified'
   return {
     version: 1,
     identity,
     status,
     cases,
+    categories: scope.categories,
+    producerResults: Object.fromEntries(
+      [
+        'validate',
+        'framework',
+        'design',
+        'sim',
+        'website',
+        'tools',
+        'frameworkRelease',
+        'createAppReadiness',
+        'e2e',
+        'designForwarder',
+        'collaborationForwarder'
+      ].map((name) => [name, jobs[name] ?? 'missing'])
+    ),
     blockers,
     acceptedBaselineChanged: false,
     protectedEvidence: false
+  }
+}
+function aggregateScope(evidence, identity, jobs) {
+  const blockers = []
+  const validIdentity =
+    identityKeys.every(
+      (key) => typeof identity[key] === 'string' && identity[key].length > 0
+    ) &&
+    ['base', 'head', 'integration'].every((key) =>
+      /^[a-f0-9]{40}$/.test(identity[key] ?? '')
+    )
+  const admitted =
+    validIdentity &&
+    evidence?.version === 1 &&
+    identityKeys.every((key) => evidence.identity?.[key] === identity[key]) &&
+    Array.isArray(evidence.categories) &&
+    evidence.categories.length > 0 &&
+    evidence.categories.every((category) =>
+      ['framework', 'design', 'sim', 'website', 'tools'].includes(category)
+    ) &&
+    new Set(evidence.categories).size === evidence.categories.length &&
+    evidence.workspacesByCategory &&
+    Array.isArray(evidence.frameworkPackages) &&
+    evidence.frameworkPackages.every(
+      (name) => typeof name === 'string' && name.startsWith('@asyra/')
+    ) &&
+    new Set(evidence.frameworkPackages).size ===
+      evidence.frameworkPackages.length &&
+    typeof evidence.frameworkReleaseRequired === 'boolean' &&
+    (evidence.frameworkPackages.length === 0 ||
+      evidence.frameworkReleaseRequired) &&
+    Array.isArray(evidence.createAppPackages) &&
+    evidence.createAppPackages.every((directory) =>
+      /^create-app\/[a-z0-9][a-z0-9-]*$/.test(directory)
+    ) &&
+    new Set(evidence.createAppPackages).size ===
+      evidence.createAppPackages.length &&
+    ['framework', 'design', 'sim', 'website', 'tools'].every((category) =>
+      Array.isArray(evidence.workspacesByCategory[category])
+    ) &&
+    Array.isArray(evidence.unknownPaths) &&
+    evidence.unknownPaths.length === 0
+  if (!admitted)
+    blockers.push(
+      'CI scope evidence is missing, unknown, or belongs to another run attempt'
+    )
+  const categories = ['framework', 'design', 'sim', 'website', 'tools']
+  for (const category of categories) {
+    const result = jobs[category]
+    const expected =
+      admitted &&
+      evidence.categories.includes(category) &&
+      evidence.workspacesByCategory[category].length > 0
+    if (expected && result !== 'success')
+      blockers.push(
+        category +
+          ': selected validation did not succeed (' +
+          (result || 'missing') +
+          ')'
+      )
+    if (!expected && result !== 'skipped')
+      blockers.push(category + ': unselected validation did not remain skipped')
+  }
+  const frameworkReleaseSelected = admitted && evidence.frameworkReleaseRequired
+  if (frameworkReleaseSelected && jobs.frameworkRelease !== 'success')
+    blockers.push(
+      'framework-release-readiness: selected release gate did not succeed'
+    )
+  if (!frameworkReleaseSelected && jobs.frameworkRelease !== 'skipped')
+    blockers.push(
+      'framework-release-readiness: unselected release gate did not remain skipped'
+    )
+  const createAppSelected = admitted && evidence.createAppPackages.length > 0
+  if (createAppSelected && jobs.createAppReadiness !== 'success')
+    blockers.push(
+      'create-app-readiness: selected package check did not succeed'
+    )
+  if (!createAppSelected && jobs.createAppReadiness !== 'skipped')
+    blockers.push(
+      'create-app-readiness: unselected package check did not remain skipped'
+    )
+  for (const name of ['designForwarder', 'collaborationForwarder'])
+    if (jobs[name] !== 'success')
+      blockers.push(name + ': required forwarder did not succeed')
+  const failed =
+    jobs.validate === 'failure' ||
+    (admitted &&
+      evidence.categories.some(
+        (category) =>
+          evidence.workspacesByCategory[category].length > 0 &&
+          jobs[category] === 'failure'
+      )) ||
+    (frameworkReleaseSelected && jobs.frameworkRelease === 'failure') ||
+    (createAppSelected && jobs.createAppReadiness === 'failure') ||
+    jobs.designForwarder === 'failure' ||
+    jobs.collaborationForwarder === 'failure'
+  const passed = admitted && blockers.length === 0
+  let status = 'unverified'
+  if (passed) status = 'passed'
+  else if (failed) status = 'failed'
+  return {
+    version: 1,
+    identity,
+    status,
+    categories: admitted ? evidence.categories : [],
+    jobs,
+    blockers
   }
 }
 function runtimeIdentity() {
@@ -191,6 +333,16 @@ function summary(result) {
     '## Flow CI - ' + result.status,
     '',
     'Observational results; no accepted baseline or protected delivery authorization.',
+    '',
+    '### Selected validation producers',
+    '',
+    '| Producer | Result |',
+    '| --- | --- |',
+    ...Object.entries(result.producerResults ?? {}).map(
+      ([name, status]) => '| ' + name + ' | ' + status + ' |'
+    ),
+    '',
+    '### Design evidence',
     '',
     '| Case | Result |',
     '| --- | --- |',
@@ -230,10 +382,27 @@ if (require.main === module) {
         return null
       }
     })
-    const result = aggregate(envelopes, runtimeIdentity(), {
+    let scope = null
+    try {
+      scope = JSON.parse(process.env.FLOW_SCOPE_EVIDENCE ?? '')
+    } catch {
+      /* Missing scope evidence remains unverified. */
+    }
+    const jobs = {
       validate: process.env.FLOW_VALIDATE_RESULT,
-      e2e: process.env.FLOW_E2E_RESULT
-    })
+      e2e: process.env.FLOW_E2E_RESULT,
+      designSelected: process.env.FLOW_DESIGN_SELECTED,
+      framework: process.env.FLOW_SCOPE_FRAMEWORK_RESULT,
+      design: process.env.FLOW_SCOPE_DESIGN_RESULT,
+      sim: process.env.FLOW_SCOPE_SIM_RESULT,
+      website: process.env.FLOW_SCOPE_WEBSITE_RESULT,
+      tools: process.env.FLOW_SCOPE_TOOLS_RESULT,
+      frameworkRelease: process.env.FLOW_FRAMEWORK_RELEASE_RESULT,
+      createAppReadiness: process.env.FLOW_CREATE_APP_READINESS_RESULT,
+      designForwarder: process.env.FLOW_DESIGN_FORWARDER_RESULT,
+      collaborationForwarder: process.env.FLOW_COLLABORATION_FORWARDER_RESULT
+    }
+    const result = aggregate(envelopes, runtimeIdentity(), jobs, scope)
     fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary(result))
     console.log(JSON.stringify(result, null, 2))
     process.exitCode = result.status === 'passed' ? 0 : 1
