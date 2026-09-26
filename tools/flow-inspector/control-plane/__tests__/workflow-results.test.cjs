@@ -6,7 +6,6 @@ const path = require('node:path')
 const { collect, aggregate } = require('../workflow-results.cjs')
 const proofFlow = require('../../inspectors/flow-inspector-core-proof-flow-inspector.data.cjs')
 const { createHash } = require('node:crypto')
-const { gzipSync } = require('node:zlib')
 const identity = {
   repository: 'karote00/asyra',
   base: 'a'.repeat(40),
@@ -1102,11 +1101,18 @@ test('workflow waits on reusable producers and always collects after failed test
     /FLOW_VALIDATE_RESULT: \$\{\{ needs\.shared-validation\.result \}\}/
   )
   assert.match(main, /uses: \.\/.github\/workflows\/e2e.yml/)
-  assert.match(
-    main,
-    /FLOW_SCOPE_EVIDENCE_GZIP:.*needs\.scope\.outputs\.evidence_gzip/
-  )
+  assert.match(main, /name: ci-scope-evidence/)
+  assert.match(main, /FLOW_SCOPE_EVIDENCE_FILE: ci-scope-evidence\.json/)
   assert.doesNotMatch(main, /FLOW_SCOPE_EVIDENCE:|FLOW_EXECUTION_PLAN:/)
+  assert.doesNotMatch(main, /FLOW_SCOPE_EVIDENCE_GZIP:/)
+  const validateEnvironment = main.slice(
+    main.indexOf('  validate:'),
+    main.indexOf('    steps:', main.indexOf('  validate:'))
+  )
+  assert.doesNotMatch(
+    validateEnvironment,
+    /FLOW_(?:SCOPE|DESIGN|COLLABORATION)_EVIDENCE/
+  )
   assert.match(e2e, /workflow_call:/)
   assert.doesNotMatch(e2e.split('permissions:')[0], /pull_request:/)
   assert.equal((e2e.match(/if: \$\{\{ always\(\) \}\}/g) || []).length, 2)
@@ -1227,6 +1233,8 @@ test('CLI retains missing reports as unverified and exits nonzero on incomplete 
     }
     const workspaceResultsDirectory = path.join(directory, 'workspace-results')
     fs.mkdirSync(workspaceResultsDirectory)
+    const scopeEvidenceFile = path.join(directory, 'scope-evidence.json')
+    fs.writeFileSync(scopeEvidenceFile, JSON.stringify(currentScope))
     const designWorkspace = currentScope.workspaceMatrix[0]
     fs.writeFileSync(
       path.join(
@@ -1238,9 +1246,7 @@ test('CLI retains missing reports as unverified and exits nonzero on incomplete 
     const completeRun = {
       ...env,
       FLOW_RESULT_INTEGRATION: currentIdentity.integration,
-      FLOW_SCOPE_EVIDENCE_GZIP: gzipSync(
-        Buffer.from(JSON.stringify(currentScope))
-      ).toString('base64'),
+      FLOW_SCOPE_EVIDENCE_FILE: scopeEvidenceFile,
       FLOW_SELECTED_CHECK_RESULTS: JSON.stringify(
         checkResultsFor(currentScope)
       ),
@@ -1282,6 +1288,10 @@ test('CLI retains missing reports as unverified and exits nonzero on incomplete 
         createAppPackages: ['create-app/asyra-design']
       })
       fs.writeFileSync(
+        scopeEvidenceFile,
+        JSON.stringify(selectedCreateAppScope)
+      )
+      fs.writeFileSync(
         path.join(
           workspaceResultsDirectory,
           `${designWorkspace.artifactId}.json`
@@ -1291,9 +1301,7 @@ test('CLI retains missing reports as unverified and exits nonzero on incomplete 
       const aggregated = spawnSync(process.execPath, [cli, 'aggregate'], {
         env: {
           ...completeRun,
-          FLOW_SCOPE_EVIDENCE_GZIP: gzipSync(
-            Buffer.from(JSON.stringify(selectedCreateAppScope))
-          ).toString('base64'),
+          FLOW_SCOPE_EVIDENCE_FILE: scopeEvidenceFile,
           FLOW_SELECTED_CHECK_RESULTS: JSON.stringify(
             checkResultsFor(selectedCreateAppScope)
           ),

@@ -3,7 +3,6 @@ const fs = require('node:fs')
 const path = require('node:path')
 const { execFileSync } = require('node:child_process')
 const { createHash } = require('node:crypto')
-const { gunzipSync } = require('node:zlib')
 const inventory = Object.freeze(
   [
     {
@@ -764,10 +763,9 @@ if (require.main === module) {
     })
     let scope = null
     try {
-      const compressed = process.env.FLOW_SCOPE_EVIDENCE_GZIP
-      scope = compressed
-        ? JSON.parse(gunzipSync(Buffer.from(compressed, 'base64')).toString())
-        : JSON.parse(process.env.FLOW_SCOPE_EVIDENCE ?? '')
+      scope = JSON.parse(
+        fs.readFileSync(process.env.FLOW_SCOPE_EVIDENCE_FILE ?? '', 'utf8')
+      )
     } catch {
       /* Missing scope evidence remains unverified. */
     }

@@ -3,7 +3,6 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { execFileSync } from 'node:child_process'
-import { gzipSync } from 'node:zlib'
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url))
 const relationshipPolicy = JSON.parse(
@@ -819,10 +818,9 @@ function main() {
   }
   const outputPath = process.env.GITHUB_OUTPUT
   if (outputPath) {
-    fs.appendFileSync(outputPath, `evidence=${JSON.stringify(evidence)}\n`)
-    fs.appendFileSync(
-      outputPath,
-      `evidence_gzip=${gzipSync(Buffer.from(JSON.stringify(evidence))).toString('base64')}\n`
+    fs.writeFileSync(
+      path.join(root, 'ci-scope-evidence.json'),
+      `${JSON.stringify(evidence)}\n`
     )
     fs.appendFileSync(
       outputPath,
