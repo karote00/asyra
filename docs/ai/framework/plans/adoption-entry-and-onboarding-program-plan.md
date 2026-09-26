@@ -26,10 +26,11 @@ published on the public npm registry. Its registry integrity matches the
 previously validated CLI tarball (`sha512-D+iT/bgZNN0x+9DMuWPNcSeZljoWJp1fFkxbdorv7+43fYEa9no05rmf2ODAhH9wyOfdQnp6KKXR/ob30s9wNQ==`);
 that CLI tarball's SHA-256 is
 `07ceb4be1d13d197a170f2e3907a3d621b2c3c64b99e2113093d5db4d5f2df77`.
-The README, AI discovery, and homepage entry changes are on this main-based
-branch for review and merge. Website deployment remains pending, as do
-independent community/discussion decisions and the remaining original adoption
-acceptance items. This entry update does not mark the program DONE.
+The README, AI discovery, and homepage entry changes merged in PR #260 at
+`6fdc917a8df201159946e2c946232ae9e2d08ad7`. Task 8's website production
+deployment and live Starter entry are verified below. Community/Discussions
+decisions and remaining original adoption acceptance items are still open; this
+does not mark the program DONE.
 
 The user selected sequential, separate conversations with PR review between
 tasks to control usage. This agreement supersedes the original proposal's
@@ -547,7 +548,7 @@ one bounded slice without completing the whole task or adoption program.
 | 5 - Entry routing and product evidence | Root README, public docs/llms generators, existing homepage entry points and verified case evidence | Merged in child PR #251 at `fb7050f9a43a3f00fb73a6028457c1abfc24051b` into `codex/adoption-onboarding`. The merge commit contains the Task 5 source, generated documentation, validators, and tests. At that integration point, Registry publication and Starter public activation remained pending. Task 5's local gates and the unrelated Design template drift are recorded in the bounded contract below; this integration does not claim a completed composite `docs:readme:check`, release, publication, or deployment. |
 | 6 - Community and support | SUPPORT.md, canonical support generators/validators, directly affected App release wording | Merged in child PR #252 at `4b8015f6e01e5eaeba1227132e8dffbe076fa64b`. GitHub Discussions remained disabled on the Task 7 recheck; no inactive link is published. Integrated support and generated-doc checks are recorded below. Sim maintenance and safety obligations remain open. |
 | 7 - Integrated readiness and release handoff | Affected gate results, this plan and index | Integration validation and handoff record refreshed for `86674ccc21ead7ad73f1fe57cb602258efbc6f63` after #254/#255 merged. Child PR #253 remains open for review and exact-head CI. Registry publication, deployment, independent agent evidence, and public adoption delivery remain separate. |
-| 8 - Published Starter public entry | README, homepage card, generated public docs/llms, release-entry status, and a pending empty Changeset | CLI `0.1.0` has been published. This PR updates current installation guidance and proves the published registry CLI consumer. Website deployment, community decision, and remaining program acceptance remain pending; do not mark the overall program DONE. |
+| 8 - Published Starter public entry | README, homepage card, generated public docs/llms, release-entry status, and a pending empty Changeset | CLI `0.1.0` has been published. PR #260 updates current installation guidance and proves the published registry CLI consumer. The production deployment and live Starter entry are verified above. Community/Discussions decision and remaining program acceptance remain pending; do not mark the overall program DONE. |
 
 ### Task 7 integration validation and release handoff
 
@@ -751,8 +752,8 @@ consumer also passed 16/16 tests, typecheck, lint, and production build.
 
 This result proves the published npm CLI and Framework registry consumer path
 for the source above. The README, homepage card, public overview, generated
-llms indexes, and this plan are updated in a main-based PR. Website deployment,
-community or Discussions decision, independent coding-agent evidence, and the
+llms indexes, and this plan were updated in PR #260. Production deployment and
+the live entry are verified below. Community or Discussions decisions and the
 remaining original adoption acceptance are still open; the program is not
 DONE.
 
@@ -763,6 +764,28 @@ passed. Focused homepage routing E2E passed all 3 cases, including 1440px and
 the npm link's new-tab security attributes. The desktop and narrow screenshots
 of both the entry card and destination docs content were inspected. The command
 code block remains horizontally scrollable at the narrow viewport.
+
+Task 8 production activation was verified read-only on 2026-09-26. The
+<a href="https://github.com/karote00/asyra/actions/runs/36218261819" target="_blank" rel="noopener noreferrer">Manual App Release - Asyra Website run</a>
+used main SHA `6fdc917a8df201159946e2c946232ae9e2d08ad7`; its plan selected
+`asyra-framework` with `release: true` and `forced: false`, so this was not a
+no-op. GitHub Deployment `6674692486` targets `app-production`, ref `main`, and
+the same SHA; its final status is `success` at 2026-09-26 04:38:17 UTC. The
+publish job is
+<a href="https://github.com/karote00/asyra/actions/runs/36218261819/job/108338714990" target="_blank" rel="noopener noreferrer">recorded here</a>.
+The run's release plan identifies `asyra-framework.vercel.app` as the stable
+Production host, and that public URL displayed the Generic Starter homepage
+card and linked documentation. The live
+<a href="https://asyra-framework.vercel.app/docs#generic-starter-source" target="_blank" rel="noopener noreferrer">Starter documentation section</a>
+links to the main-branch Starter source, onboarding guide, and published npm
+package. It shows
+`npx create-asyra-app@0.1.0 my-app --package-manager=npm`; the
+<a href="https://www.npmjs.com/package/create-asyra-app/v/0.1.0" target="_blank" rel="noopener noreferrer">npm 0.1.0 page</a>
+confirms that version is public. The homepage, docs overview, custom-composition
+guide, Starter README, and onboarding guide opened successfully. This closes
+the website deployment/live-entry portion of Task 8; the overall Adoption
+program remains open for the community/Discussions decision and remaining
+original acceptance items.
 
 Historical CI detail: #253 head `dc35222eb610d3181ae7caf4c597b41dcbc13cb1`
 failed in run `35983934121`. Render-performance job `107582066413` failed during
