@@ -223,10 +223,12 @@ test('a failed workspace build prevents its test task from running', async () =>
 })
 
 test('shared build and workflow inputs select every discovered workspace', () => {
-  const result = classifyChanges(['turbo.base.json'], manifests)
-  assert.deepEqual(names(result), [...manifests.keys()].sort())
-  assert.equal(result.frameworkReleaseRequired, true)
-  assert.deepEqual(result.unknownPaths, [])
+  for (const input of ['turbo.base.json', '.github/workflows/main.yml']) {
+    const result = classifyChanges([input], manifests)
+    assert.deepEqual(names(result), [...manifests.keys()].sort(), input)
+    assert.equal(result.frameworkReleaseRequired, true, input)
+    assert.deepEqual(result.unknownPaths, [], input)
+  }
 })
 
 test('explicit documentation relationships select their actual workspace consumers', () => {
@@ -264,6 +266,19 @@ test('shared contract documents and tracked root documents require shared valida
     const result = classifyChanges([input], manifests)
     assert.equal(result.relationshipMap.sharedValidationRequired, true, input)
     assert.deepEqual(names(result), [], input)
+    assert.deepEqual(result.unknownPaths, [], input)
+  }
+})
+
+test('non-workflow GitHub configuration and templates use the shared CI owner', () => {
+  for (const input of [
+    '.github/dependabot.yml',
+    '.github/pull_request_template.md',
+    '.github/app-production-environment.json'
+  ]) {
+    const result = classifyChanges([input], manifests)
+    assert.deepEqual(result.workspaceMatrix, [], input)
+    assert.equal(result.relationshipMap.sharedValidationRequired, true, input)
     assert.deepEqual(result.unknownPaths, [], input)
   }
 })

@@ -29,6 +29,7 @@
     "AGENTS.md"
   ],
   "sharedValidationPatterns": [
+    ".github/**",
     ".changeset/**",
     "docs/ai/framework/**",
     "docs/ai/workflows/**"
