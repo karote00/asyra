@@ -784,7 +784,10 @@ if (require.main === module) {
     jobs.executionPlan = scope?.relationshipMap?.executionPlan ?? null
     try {
       jobs.selectedCheckResults = JSON.parse(
-        process.env.FLOW_SELECTED_CHECK_RESULTS ?? ''
+        fs.readFileSync(
+          process.env.FLOW_SELECTED_CHECK_RESULTS_FILE ?? '',
+          'utf8'
+        )
       )
     } catch {
       jobs.selectedCheckResults = null

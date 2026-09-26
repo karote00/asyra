@@ -1103,6 +1103,12 @@ test('workflow waits on reusable producers and always collects after failed test
   assert.match(main, /uses: \.\/.github\/workflows\/e2e.yml/)
   assert.match(main, /name: ci-scope-evidence/)
   assert.match(main, /FLOW_SCOPE_EVIDENCE_FILE: ci-scope-evidence\.json/)
+  assert.match(main, /name: ci-selected-check-results/)
+  assert.match(
+    main,
+    /FLOW_SELECTED_CHECK_RESULTS_FILE: ci-selected-check-results\.json/
+  )
+  assert.doesNotMatch(main, /FLOW_SELECTED_CHECK_RESULTS:/)
   assert.doesNotMatch(main, /FLOW_SCOPE_EVIDENCE:|FLOW_EXECUTION_PLAN:/)
   assert.doesNotMatch(main, /FLOW_SCOPE_EVIDENCE_GZIP:/)
   const validateJob = main.slice(main.indexOf('  validate:'))
@@ -1233,6 +1239,14 @@ test('CLI retains missing reports as unverified and exits nonzero on incomplete 
     fs.mkdirSync(workspaceResultsDirectory)
     const scopeEvidenceFile = path.join(directory, 'scope-evidence.json')
     fs.writeFileSync(scopeEvidenceFile, JSON.stringify(currentScope))
+    const selectedCheckResultsFile = path.join(
+      directory,
+      'selected-check-results.json'
+    )
+    fs.writeFileSync(
+      selectedCheckResultsFile,
+      JSON.stringify(checkResultsFor(currentScope))
+    )
     const designWorkspace = currentScope.workspaceMatrix[0]
     fs.writeFileSync(
       path.join(
@@ -1245,9 +1259,7 @@ test('CLI retains missing reports as unverified and exits nonzero on incomplete 
       ...env,
       FLOW_RESULT_INTEGRATION: currentIdentity.integration,
       FLOW_SCOPE_EVIDENCE_FILE: scopeEvidenceFile,
-      FLOW_SELECTED_CHECK_RESULTS: JSON.stringify(
-        checkResultsFor(currentScope)
-      ),
+      FLOW_SELECTED_CHECK_RESULTS_FILE: selectedCheckResultsFile,
       FLOW_WORKSPACE_VALIDATION_RESULT: 'success',
       FLOW_WORKSPACE_RESULTS_DIR: workspaceResultsDirectory,
       FLOW_FRAMEWORK_RELEASE_RESULT: 'skipped',
@@ -1290,6 +1302,10 @@ test('CLI retains missing reports as unverified and exits nonzero on incomplete 
         JSON.stringify(selectedCreateAppScope)
       )
       fs.writeFileSync(
+        selectedCheckResultsFile,
+        JSON.stringify(checkResultsFor(selectedCreateAppScope))
+      )
+      fs.writeFileSync(
         path.join(
           workspaceResultsDirectory,
           `${designWorkspace.artifactId}.json`
@@ -1300,9 +1316,7 @@ test('CLI retains missing reports as unverified and exits nonzero on incomplete 
         env: {
           ...completeRun,
           FLOW_SCOPE_EVIDENCE_FILE: scopeEvidenceFile,
-          FLOW_SELECTED_CHECK_RESULTS: JSON.stringify(
-            checkResultsFor(selectedCreateAppScope)
-          ),
+          FLOW_SELECTED_CHECK_RESULTS_FILE: selectedCheckResultsFile,
           FLOW_FRAMEWORK_DECLARATION_RESULT: 'success',
           FLOW_E2E_FUNCTIONAL_RESULT: 'success',
           FLOW_E2E_COLLABORATION_RESULT: 'success',

@@ -158,7 +158,9 @@ async function main() {
   result.identity = identity
   result.relationshipMapDigest = relationshipMapDigest
   const serialized = JSON.stringify(result)
-  if (process.env.GITHUB_OUTPUT)
+  if (process.env.CI_CHECK_RESULTS_FILE)
+    fs.writeFileSync(process.env.CI_CHECK_RESULTS_FILE, `${serialized}\n`)
+  else if (process.env.GITHUB_OUTPUT)
     fs.appendFileSync(process.env.GITHUB_OUTPUT, `result=${serialized}\n`)
   if (process.env.GITHUB_STEP_SUMMARY)
     fs.appendFileSync(
