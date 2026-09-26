@@ -10,7 +10,7 @@ import {
   waitForAppReady
 } from './test-utils'
 
-interface PhaseBudget {
+interface PhaseMeasurements {
   count: number
   totalMs: number
   p50Ms: number
@@ -18,21 +18,19 @@ interface PhaseBudget {
   maxMs: number
 }
 
-type PhaseBudgetLimit = Pick<PhaseBudget, 'totalMs' | 'p95Ms' | 'maxMs'>
-
 interface RenderDeltaProfileSummary {
   sampleFrames: number
   fullRehydrateCallsDuringDelta: number
   renderSnapshotDeltaApplies: number
   elementSaveCallsDuringDelta: number
   computedSnapshotCallsDuringDelta: number
-  sceneTree: PhaseBudget
-  fullRehydrateReference: PhaseBudget
-  renderSnapshot: PhaseBudget
-  strategyGeometry: PhaseBudget
+  sceneTree: PhaseMeasurements
+  fullRehydrateReference: PhaseMeasurements
+  renderSnapshot: PhaseMeasurements
+  strategyGeometry: PhaseMeasurements
   strategyGeometryFirstSampleMs: number
-  strategyGeometrySteadyState: PhaseBudget
-  engineHandoff: PhaseBudget
+  strategyGeometrySteadyState: PhaseMeasurements
+  engineHandoff: PhaseMeasurements
 }
 
 const SAMPLE_FRAMES = 12
@@ -40,27 +38,14 @@ const WARMUP_FRAMES = 12
 const DENSE_POINT_COUNT = 56
 const DENSE_TRANSFORM_POINT_COUNT = 7_001
 const SELF_INTERSECTION_STEP = 3
-const PHASE_BUDGETS = {
-  sceneTree: { totalMs: 24, p95Ms: 4, maxMs: 6 },
-  renderSnapshot: { totalMs: 6, p95Ms: 1, maxMs: 2 },
-  strategyGeometry: { totalMs: 24, p95Ms: 4, maxMs: 8 },
-  strategyGeometrySteadyState: { totalMs: 18, p95Ms: 4, maxMs: 6 },
-  engineHandoff: { totalMs: 18, p95Ms: 3, maxMs: 5 }
-} satisfies Record<string, PhaseBudgetLimit>
-const CRITICAL_PATH_P95_BUDGET_MS = 12
-
-const expectPhaseWithinBudget = (
-  phase: PhaseBudget,
-  budget: PhaseBudgetLimit,
+const expectPhaseSampleCount = (
+  phase: PhaseMeasurements,
   expectedCount = SAMPLE_FRAMES
 ) => {
   expect(phase.count).toBe(expectedCount)
-  expect(phase.totalMs).toBeLessThanOrEqual(budget.totalMs)
-  expect(phase.p95Ms).toBeLessThanOrEqual(budget.p95Ms)
-  expect(phase.maxMs).toBeLessThanOrEqual(budget.maxMs)
 }
 
-test.describe('Render delta performance budget', () => {
+test.describe('Render delta correctness and work contracts', () => {
   test.beforeEach(async ({ page }) => {
     captureBrowserErrors(page)
 
@@ -73,7 +58,7 @@ test.describe('Render delta performance budget', () => {
     expect(getCapturedBrowserErrors(page)).toEqual([])
   })
 
-  test('profiles the current dense-vector owner phases without adding cache semantics', async ({
+  test('preserves dense-vector work contracts and reports owner phase timings', async ({
     page
   }, testInfo) => {
     test.setTimeout(120_000)
@@ -437,6 +422,8 @@ test.describe('Render delta performance budget', () => {
     await writeFile(
       profilePath,
       JSON.stringify({
+        interpretation:
+          'observation only; no controlled reference host or cross-version baseline',
         browser: page.context().browser()?.version(),
         metricsBefore,
         metricsAfter,
@@ -466,9 +453,16 @@ test.describe('Render delta performance budget', () => {
       engineHandoff: summarize(rawProfile.engineSamples)
     }
 
-    // This single bounded line is the formal profiling artifact consumed in CI.
+    // Timing values are diagnostic observations; they do not establish a
+    // performance pass without a controlled reference host and baseline.
     // eslint-disable-next-line no-console
-    console.info(`RENDER_DELTA_PROFILE ${JSON.stringify(summary)}`)
+    console.info(
+      `RENDER_DELTA_TIMING_OBSERVATION ${JSON.stringify({
+        interpretation:
+          'observation only; no controlled reference host or cross-version baseline',
+        summary
+      })}`
+    )
     // Keep the bounded samples in CI logs even when artifact upload is unavailable.
     // eslint-disable-next-line no-console
     console.info(
@@ -477,8 +471,6 @@ test.describe('Render delta performance budget', () => {
 
     expect(rawProfile.warmupStrategySamples).toHaveLength(WARMUP_FRAMES)
     expect(summary.sampleFrames).toBe(SAMPLE_FRAMES)
-    expect(summary.fullRehydrateReference.count).toBe(SAMPLE_FRAMES)
-    expect(summary.fullRehydrateReference.totalMs).toBeGreaterThan(0)
     expect(summary.fullRehydrateCallsDuringDelta).toBe(0)
     // These all-owner counts include canonical/UI consumers. Render's own
     // authoritative read is the separately instrumented seed count above.
@@ -489,30 +481,15 @@ test.describe('Render delta performance budget', () => {
       SAMPLE_FRAMES + 1
     )
     expect(summary.renderSnapshotDeltaApplies).toBe(SAMPLE_FRAMES)
-    expectPhaseWithinBudget(summary.sceneTree, PHASE_BUDGETS.sceneTree)
-    expectPhaseWithinBudget(
-      summary.renderSnapshot,
-      PHASE_BUDGETS.renderSnapshot
-    )
-    expectPhaseWithinBudget(
-      summary.strategyGeometry,
-      PHASE_BUDGETS.strategyGeometry
-    )
-    expect(summary.strategyGeometryFirstSampleMs).toBeLessThanOrEqual(
-      PHASE_BUDGETS.strategyGeometry.maxMs
-    )
-    expectPhaseWithinBudget(
+    expectPhaseSampleCount(summary.fullRehydrateReference)
+    expectPhaseSampleCount(summary.sceneTree)
+    expectPhaseSampleCount(summary.renderSnapshot)
+    expectPhaseSampleCount(summary.strategyGeometry)
+    expectPhaseSampleCount(
       summary.strategyGeometrySteadyState,
-      PHASE_BUDGETS.strategyGeometrySteadyState,
       SAMPLE_FRAMES - 1
     )
-    expectPhaseWithinBudget(summary.engineHandoff, PHASE_BUDGETS.engineHandoff)
-    expect(
-      summary.sceneTree.p95Ms +
-        summary.renderSnapshot.p95Ms +
-        summary.strategyGeometry.p95Ms +
-        summary.engineHandoff.p95Ms
-    ).toBeLessThanOrEqual(CRITICAL_PATH_P95_BUDGET_MS)
+    expectPhaseSampleCount(summary.engineHandoff)
 
     const visualReviewState = await page.evaluate(async (elementId) => {
       // E2E-only access to the currently composed framework runtime.
@@ -933,11 +910,12 @@ test.describe('Render delta performance budget', () => {
     expect(moveProfile.moveSamples.length).toBeGreaterThan(0)
     expect(moveProfile.geometryStrategyCount).toBe(0)
 
-    // One bounded line is the reviewable performance artifact for the exact
-    // 7,001-point pointer-drag state used by the screenshots below.
+    // Keep one bounded timing observation for this exact transform path.
     // eslint-disable-next-line no-console
     console.info(
-      `DENSE_VECTOR_TRANSFORM_PROFILE ${JSON.stringify({
+      `DENSE_VECTOR_TRANSFORM_TIMING_OBSERVATION ${JSON.stringify({
+        interpretation:
+          'observation only; no controlled reference host or cross-version baseline',
         pointCount: moveProfile.pointCount,
         moveUpdates: moveProfile.moveSamples.length,
         moveTotalMs: Number(

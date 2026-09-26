@@ -542,12 +542,47 @@ test('ordinary E2E uses the diagnostic-enabled app runtime after the workspace b
   assert.match(runner, /kill "\$E2E_COLLABORATION_SERVER_PID"/)
 })
 
-test('CI isolates the render performance budget before parallel functional E2E', () => {
+test('render timing limits are observations while deterministic work stays blocking', () => {
+  const render = readText(
+    'apps/asyra-design/e2e/render-delta-performance.spec.ts'
+  )
+  const mechanical = readText(
+    'apps/asyra-sim/e2e/__tests__/mechanical-review.spec.ts'
+  )
+
+  assert.ok(
+    !/PHASE_BUDGETS|CRITICAL_PATH_P95_BUDGET_MS|expectPhaseWithinBudget\(/.test(
+      render
+    ),
+    'render timings must not use absolute phase budgets as blockers'
+  )
+  assert.ok(
+    !/strategyGeometryFirstSampleMs\)[\s\S]{0,100}toBeLessThanOrEqual/.test(
+      render
+    ),
+    'first sample timing must remain observational'
+  )
+  assert.match(render, /RENDER_DELTA_TIMING_OBSERVATION/)
+  assert.match(render, /fullRehydrateCallsDuringDelta\)\.toBe\(0\)/)
+  assert.match(render, /renderSnapshotDeltaApplies\)\.toBe\(SAMPLE_FRAMES\)/)
+  assert.match(render, /elementSaveCallsDuringDelta\)[\s\S]*SAMPLE_FRAMES/)
+  assert.match(render, /computedSnapshotCallsDuringDelta\)[\s\S]*SAMPLE_FRAMES/)
+  assert.match(render, /geometryStrategyCount\)\.toBe\(0\)/)
+  assert.doesNotMatch(mechanical, /metrics\.p95Ms\)\.toBeLessThan\(100\)/)
+  assert.match(mechanical, /frame-timing\.json/)
+})
+
+test('render contract E2E keeps CI Chromium isolated and local Chrome available', () => {
   const runner = readText('scripts/run-e2e.sh')
 
   assert.match(
     runner,
-    /E2E_RENDER_PERFORMANCE_BROWSER=chromium \\\s*yarn workspace @asyra\/asyra-design playwright test --config playwright\.config\.ts e2e\/render-delta-performance\.spec\.ts --workers=1/
+    /if \[ "\$\{CI:-\}" = "true" \]; then[\s\S]*E2E_RENDER_PERFORMANCE_BROWSER=chromium \\\s*yarn workspace @asyra\/asyra-design playwright test --config playwright\.config\.ts e2e\/render-delta-performance\.spec\.ts --workers=1[\s\S]*else[\s\S]*yarn workspace @asyra\/asyra-design playwright test --config playwright\.config\.ts e2e\/render-delta-performance\.spec\.ts --workers=1[\s\S]*fi/
+  )
+  assert.match(runner, /render-contracts/)
+  assert.match(
+    runner,
+    /Running render contracts and collecting timing observations/
   )
   assert.match(runner, /E2E_SKIP_PERFORMANCE=true yarn test:e2e/)
 })
@@ -762,19 +797,28 @@ test('workspace version planning materializes release ranges without changing fi
   )
 })
 
-test('Board, render timing and functional E2E have independent required jobs', () => {
+test('Board, render contracts and functional E2E have independent required jobs', () => {
   const workflow = readText('.github/workflows/e2e.yml')
   const jobs = workflow.split('\njobs:\n')[1].split(/(?=^ {2}[\w-]+:\n)/m)
   const board = jobs.find((job) => job.startsWith('  flow-inspector-board:'))
-  const timing = jobs.find((job) => job.startsWith('  render-performance:'))
+  const renderContracts = jobs.find((job) =>
+    job.startsWith('  render-contracts:')
+  )
   const functional = jobs.find((job) => job.startsWith('  e2e-tests:'))
   assert.ok(board, 'Board must report its own result')
-  assert.ok(timing, 'timing must report its own result')
+  assert.ok(
+    renderContracts,
+    'render correctness/work contracts must report their own result'
+  )
   assert.match(board, /node --test --test-concurrency=1 .*board\*\.test\.cjs/)
-  assert.match(timing, /E2E_SUITE: performance/)
+  assert.match(renderContracts, /E2E_SUITE: render-contracts/)
+  assert.match(
+    renderContracts,
+    /Run render contracts and collect timing observations/
+  )
   assert.match(functional, /E2E_SUITE: functional/)
   assert.doesNotMatch(functional, /Verify Flow Inspector board/)
-  for (const job of [board, timing, functional]) {
+  for (const job of [board, renderContracts, functional]) {
     assert.doesNotMatch(job, /continue-on-error: true/)
     assert.doesNotMatch(job, /^ {4}needs:/m)
   }

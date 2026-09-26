@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { summarize, summarizeStrategyGeometry } from '../e2e/render-profile.mjs'
 
-test('p95 remains distinct from the independently enforced maximum', () => {
+test('p95 remains distinct from the separately reported maximum', () => {
   const result = summarize([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
   assert.equal(result.p95Ms, 11)
   assert.equal(result.maxMs, 12)
