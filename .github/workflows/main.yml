@@ -98,6 +98,16 @@ jobs:
       - name: Lint
         run: yarn lint:ci
 
+      - name: Build Framework declarations
+        run: >-
+          yarn turbo run
+          build:ai-agent-runtime build:collaboration build:core build:design-system
+          build:factory build:feature-system build:input-system build:persistence
+          build:preset build:props-manager build:reactive-events build:render
+          build:render-engine build:render-engine-pixi build:scene-tree
+          build:selection build:system-context build:ui-context build:utils
+          --concurrency=2
+
       - name: Test repository scripts
         run: yarn test:scripts
 
