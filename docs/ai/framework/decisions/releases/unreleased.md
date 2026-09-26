@@ -125,3 +125,46 @@
   An empty ongoing log is a release-cut condition, not a general packaging rule.
 - Permanent regressions cover first-release, mixed ongoing/archived, multiple
   version and missing-evidence cases. Published history is unchanged.
+
+## 2026-09-26 — Complete Root README Comprehension and Evidence
+
+- The full `yarn docs:readme:check` passed for main source
+  `3e9bdc0488a0d1b53430abb44fc7cfbf79bff043`. Current GitHub GFM screenshots
+  were captured and inspected for desktop and narrow layouts with media loaded
+  and unavailable; all twelve images are retained beside the completed plan.
+- Close the plan because its reader-journey, gate, and visual-evidence
+  conditions are satisfied. Future README layout/media edits require renewed
+  validation and screenshots for their own source diff.
+- Completed record: `../../plans/completed/root-readme-comprehension-and-evidence-plan.md`.
+
+## 2026-09-26 — Complete Adoption Entry and Onboarding Program
+
+- Tasks 1-8 are integrated. The public Starter CLI and README/site entry are
+  published and live; independent onboarding evidence is retained; the
+  composite README gate passed; and the current README visual matrix is
+  committed with its completed evidence plan.
+- Close the program with all in-scope acceptance conditions satisfied.
+  GitHub Discussions settings remain user-owned. Sim maintenance and controlled
+  hardware benchmarking remain independent work outside this program.
+- Historical closeout record, now superseded:
+  `../../plans/adoption-entry-and-onboarding-program-plan.md`.
+
+## 2026-09-26 — Correct Adoption Closeout Scope
+
+- PR #263 (`12052c6a6480ee9d74820abf0935a79074bc8261`) correctly integrated
+  the recorded Tasks 1-8 deliverables, including the published Starter CLI,
+  onboarding evidence, README gate and screenshots. Its Adoption-wide closeout
+  was premature against the original request: the FieldScope README still said
+  there were no plants; the primary Start building links still bypassed Generic
+  Starter; and the homepage `HomeResources` product-evidence section still
+  showed Asyra Design alone. The root README already contained FieldScope and
+  Asyra Sim examples.
+- Restore Adoption as an active, bounded program. The FieldScope facts/status
+  correction is delivered first; primary Starter routing with regression tests
+  follows; then add cross-domain examples to homepage `HomeResources` and
+  validate the directly affected website experience. A final GitHub Actions
+  production deployment and page acceptance require separate user
+  authorization. Preserve the completed Tasks 1-8 evidence and keep the
+  independent Root README plan completed.
+- Corrected active record:
+  `../../plans/adoption-entry-and-onboarding-program-plan.md`.
