@@ -69,6 +69,37 @@ test('a shared lockfile change selects all validation owners', () => {
   ])
 })
 
+test('the Turbo base config selects every build and release readiness owner', () => {
+  const baseConfig = classifyChanges(['turbo.base.json'], manifests)
+  const generatedConfig = classifyChanges(['turbo.json'], manifests)
+
+  assert.deepEqual(baseConfig.categories, [
+    'framework',
+    'design',
+    'sim',
+    'website',
+    'tools'
+  ])
+  assert.deepEqual(baseConfig.unknownPaths, [])
+  assert.deepEqual(
+    baseConfig.workspacesByCategory,
+    generatedConfig.workspacesByCategory
+  )
+  assert.deepEqual(
+    baseConfig.buildTasksByCategory,
+    generatedConfig.buildTasksByCategory
+  )
+  assert.deepEqual(
+    baseConfig.frameworkPackages,
+    generatedConfig.frameworkPackages
+  )
+  assert.deepEqual(
+    baseConfig.createAppPackages,
+    generatedConfig.createAppPackages
+  )
+  assert.equal(baseConfig.frameworkReleaseRequired, true)
+})
+
 test('the Website and tool source changes remain independently scoped', () => {
   const website = classifyChanges(
     ['apps/asyra-framework-site/app/page.tsx'],
@@ -143,6 +174,18 @@ test('contract documentation selects its owner without scheduling app suites', (
   )
   assert.deepEqual(result.categories, ['design'])
   assert.deepEqual(result.workspacesByCategory.design, [])
+})
+
+test('Fieldscope app documentation selects shared Framework validation only', () => {
+  const result = classifyChanges(
+    ['docs/ai/apps/fieldscope/PLANS.md'],
+    manifests
+  )
+
+  assert.deepEqual(result.categories, ['framework'])
+  assert.deepEqual(result.workspacesByCategory.framework, [])
+  assert.equal(result.frameworkReleaseRequired, false)
+  assert.deepEqual(result.unknownPaths, [])
 })
 
 test('shared workflow guidance selects Framework shared validation', () => {
