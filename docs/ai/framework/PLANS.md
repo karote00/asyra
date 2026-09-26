@@ -27,10 +27,12 @@ the public README/AI discovery/homepage entry; and the website production
 deployment and live Starter/documentation routes are verified in the adoption
 plan. No Task 8 acceptance item remains open.
 
-The overall plan remains active for one recorded program-level gate:
+The overall plan remains active for two existing conditions. First,
 `yarn docs:readme:check` stopped on 15 unrelated Asyra Design generated-template
-differences after its applicable package README stages passed. The Design owner
-owns that correction. GitHub Discussions settings are a separate user-owned
+differences after its applicable package README stages passed. Second, the root
+README visual matrix still needs durable committed artifacts; its 12 existing
+screenshots remain ignored files in the Task 5 worktree. The Design owner owns
+the template correction. GitHub Discussions settings are a separate user-owned
 action, outside this Codex task and not a closeout blocker. See
 `plans/adoption-entry-and-onboarding-program-plan.md` for the retained evidence.
 
