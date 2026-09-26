@@ -156,13 +156,15 @@
   onboarding evidence, README gate and screenshots. Its Adoption-wide closeout
   was premature against the original request: the FieldScope README still said
   there were no plants; the primary Start building links still bypassed Generic
-  Starter; and root README product evidence still lacked FieldScope and Asyra
-  Sim examples.
+  Starter; and the homepage `HomeResources` product-evidence section still
+  showed Asyra Design alone. The root README already contained FieldScope and
+  Asyra Sim examples.
 - Restore Adoption as an active, bounded program. The FieldScope facts/status
   correction is delivered first; primary Starter routing with regression tests
-  follows; then cross-domain README evidence and direct website validation; a
-  final GitHub Actions production deployment and page acceptance require
-  separate user authorization. Preserve the completed Tasks 1-8 evidence and
-  keep the independent Root README plan completed.
+  follows; then add cross-domain examples to homepage `HomeResources` and
+  validate the directly affected website experience. A final GitHub Actions
+  production deployment and page acceptance require separate user
+  authorization. Preserve the completed Tasks 1-8 evidence and keep the
+  independent Root README plan completed.
 - Corrected active record:
   `../../plans/adoption-entry-and-onboarding-program-plan.md`.

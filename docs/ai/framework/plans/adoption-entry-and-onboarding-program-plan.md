@@ -23,11 +23,13 @@ into main. The independent AI onboarding verification is recorded below.
 Post-merge comparison against the original user request found three outcomes
 that were not included in that closeout: FieldScope's current crop state was
 described incorrectly, the primary homepage Start building links still route to
-the custom-composition guide instead of Generic Starter, and the root README
-product evidence does not yet include the requested cross-domain FieldScope
-and Asyra Sim examples. The correction and remaining sequence below supersede
-the program-level completion claim; the integrated Task 1-8 results and their
-evidence remain valid. The independent Root README plan remains completed.
+the custom-composition guide instead of Generic Starter, and the homepage's
+`HomeResources` product-evidence section still presents Asyra Design alone,
+without the requested cross-domain FieldScope and Asyra Sim examples. The root
+README already contains both examples. The correction and remaining sequence
+below supersede the program-level completion claim; the integrated Task 1-8
+results and their evidence remain valid. The independent Root README plan
+remains completed.
 
 ### Remaining Adoption sequence
 
@@ -42,9 +44,10 @@ evidence remain valid. The independent Root README plan remains completed.
 2. **Primary Starter entry** - route both primary homepage Start building
    links to Generic Starter and add focused regression coverage. Preserve the
    accepted six-chapter spatial story without redesigning it.
-3. **Cross-domain product evidence** - add verifiable FieldScope and Asyra Sim
-   product examples to the root README, then validate the directly affected
-   website experience.
+3. **Cross-domain homepage product evidence** - add verifiable FieldScope and
+   Asyra Sim examples to the homepage `HomeResources` section, then validate
+   the directly affected website experience. Both examples already appear in
+   the completed root README evidence.
 4. **Production activation and acceptance** - only after separate user
    authorization, deploy the accepted website through GitHub Actions and verify
    the production page before closing Adoption.
@@ -245,7 +248,7 @@ Task 1 README/homepage baseline recorded from
   template differences, and Task 5's twelve visual captures were ignored local
   artifacts. The composite check passed on 2026-09-26; the current desktop/
   narrow README visual matrix is now committed with the completed Root README
-  plan at [the retained Root README completion record](root-readme-comprehension-and-evidence-plan.md).
+  plan at [the Root README completion record](completed/root-readme-comprehension-and-evidence-plan.md).
   Neither item changed the bounded Starter public-entry implementation.
 
 ## Relationship to Design AI work
