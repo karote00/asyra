@@ -38,7 +38,7 @@ test('practical resources preserve real evidence and three distinct building ent
   assert.match(content, /loading="lazy"/)
   assert.doesNotMatch(content, /<h1|poc-story|action-film|drawTower|drawHouse/)
 })
-test('homepage routes source-available Starter before Design and advanced composition', async () => {
+test('homepage routes the published Starter before Design and advanced composition', async () => {
   const content = await read('components/home-resources.tsx')
   const starter = content.indexOf("title: 'Generic Starter'")
   const design = content.indexOf("title: 'Complete Design product'")
@@ -46,15 +46,8 @@ test('homepage routes source-available Starter before Design and advanced compos
   assert.ok(starter > 0 && starter < design)
   assert.ok(design < advanced)
   assert.match(content, /href: '\/docs#generic-starter-source'/u)
-  assert.match(content, /public npm registry/u)
-  assert.doesNotMatch(
-    content,
-    /(?:npx|npm create|yarn create) create-asyra-app/u
-  )
-  assert.doesNotMatch(
-    content,
-    /href: ['"]https:\/\/www\.npmjs\.com\/package\/create-asyra-app/u
-  )
+  assert.match(content, /published CLI/u)
+  assert.doesNotMatch(content, /not yet published/u)
 })
 test('primary navigation and page semantics survive without JavaScript', async () => {
   const story = await read('components/spatial-story.tsx')

@@ -27,10 +27,11 @@ blocked by unrelated Asyra Design template drift.
 The independent single-agent priority onboarding run from `main` is recorded
 in the adoption plan with a retained generated consumer and formal tests.
 
-`create-asyra-app` is unpublished, the live website does not yet show the
-integrated Starter entry, and Discussions is disabled. Review/CI, independent
-coding-agent review/CI, publication, deployment, and public delivery remain
-separate; the program is not DONE.
+`create-asyra-app@0.1.0` is published and its public README/AI discovery entry
+activation is in review. Website deployment remains pending. Community and
+discussion activation require a separate decision; independent coding-agent
+evidence and other original acceptance items also remain open. The program is
+not DONE.
 
 ## Active Public Entry Experience Plans
 

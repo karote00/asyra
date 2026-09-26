@@ -123,20 +123,26 @@ export const validateMarkdownLinks = ({ filePath, repositoryRoot, source }) => {
 
 export const validateStarterEntry = ({ source }) => {
   if (
-    !source.includes(
-      'create-asyra-app` is not yet published to the public npm registry'
-    )
-  ) {
-    throw new Error('Public overview must state the unpublished Starter status')
-  }
-  if (
-    /\b(?:npx\s+create-asyra-app|npm\s+create\s+asyra-app|yarn\s+create\s+asyra-app)\b|https:\/\/www\.npmjs\.com\/package\/create-asyra-app/iu.test(
-      source
-    )
+    !source.includes('npx create-asyra-app@0.1.0 my-app --package-manager=npm')
   ) {
     throw new Error(
-      'Public overview exposes an unpublished Starter command or installation CTA'
+      'Public overview must provide the published Starter command'
     )
+  }
+  if (!source.includes('Node.js 24') || !source.includes('npm or Yarn')) {
+    throw new Error(
+      'Public overview must state the Starter runtime and package managers'
+    )
+  }
+  if (
+    /\b(?:npx\s+create-asyra-app|npm\s+create\s+asyra-app|yarn\s+create\s+asyra-app|pnpm\s+(?:create|dlx)\s+create-asyra-app)\b/iu.test(
+      source.replaceAll(
+        'npx create-asyra-app@0.1.0 my-app --package-manager=npm',
+        ''
+      )
+    )
+  ) {
+    throw new Error('Public overview contains an unsupported Starter command')
   }
 }
 

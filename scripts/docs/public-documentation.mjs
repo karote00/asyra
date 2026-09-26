@@ -185,7 +185,7 @@ const serializeLlms = ({ contentIndex }) => {
     'Current: browser/Core composition, official 2D Preset, and engine-neutral CUSTOM composition.',
     'Future: Headless Core and Core Kernel for non-visible and machine-facing products; no current public API or delivery date.',
     '',
-    'Generic Starter source is available; create-asyra-app is not yet published to the public npm registry. See docs/public/index.md#generic-starter-source for source and onboarding links.',
+    'Create a Generic Starter project with `npx create-asyra-app@0.1.0 my-app --package-manager=npm` on Node.js 24; npm and Yarn are supported. See docs/public/index.md#generic-starter-source for source and onboarding links.',
     'Use create-asyra-design-app for a ready-to-use design-tool product, or install @asyra/core for advanced composition. Use Extend for app-owned product behavior, and Customize when replacing Framework composition or providers.',
     'Treat app domain schemas, permissions, migration, retrieval, services, and product rules as app-owned.',
     '',

@@ -158,11 +158,12 @@ test('root README follows the product-to-proof reader journey', () => {
   assert.match(readme, /apps\/starter-app\/README\.md/u)
   assert.match(readme, /apps\/starter-app\/docs\/ONBOARDING\.md/u)
   assert.match(readme, /apps\/starter-app\/docs\/PRIORITY_EXERCISE\.md/u)
-  assert.match(readme, /not yet published to the public npm registry/u)
-  assert.doesNotMatch(
+  assert.match(
     readme,
-    /(?:npx|npm create|yarn create) create-asyra-app/u
+    /npx create-asyra-app@0\.1\.0 my-app --package-manager=npm/u
   )
+  assert.match(readme, /Node\.js 24 and npm or Yarn/u)
+  assert.doesNotMatch(readme, /not yet published to the public npm registry/u)
   assert.doesNotMatch(
     readme,
     /built-in AI runtime|built-in physics|industrial safety guarantee/iu
