@@ -21,7 +21,7 @@ Their Git connections are removed during cutover, and repository configurations
 also disable automatic Git deployment. A push, PR or merge does not request an
 App deployment. Package registry publication remains a separate workflow.
 
-## Workspace Build Graph
+## Workspace Build Graph and CI Scope
 
 Each framework package keeps its canonical package-specific build command,
 such as `build:factory` or `build:collaboration`. Asyra Design uses
@@ -39,6 +39,33 @@ the form:
 Package-specific task names must not use a `^build:<package>` dependency.
 Turbo interprets `^` as the named task on every dependency package, which is
 not the Asyra package-specific task contract.
+
+`scripts/ci-relationships.json` is the single CI relationship policy.
+`scripts/ci-scope.mjs` discovers first-level workspaces under `apps/`,
+`packages/`, and `tools/`, and reads each workspace's declared dependencies and
+canonical build/test scripts. The same versioned relationship map produces the
+affected workspace matrix and the evidence consumed by the final `validate`
+aggregate. Dependency edges from both the base and candidate revisions are
+included, so a removed or renamed workspace still selects its former
+downstream consumers. New workspace names do not require CI job or owner-list
+edits.
+
+Documentation roots are discovered at the first level under `docs/`. Public
+documentation selects the configured website workspace; docs under app,
+package, or tool roots map to their corresponding workspace when defined.
+Other known documentation changes receive shared validation. Root shared
+inputs select all discovered workspaces. `create-app/*` stays outside this
+graph and retains its conditional package archive check. Framework release,
+Design E2E, Flow Inspector, and release readiness remain specialized gates
+selected by the same relationship map.
+
+The workflow schedules selected workspaces through a dynamic matrix. Each
+matrix entry executes its manifest-defined canonical build to completion and
+then `test:ci` sequentially. It uploads a run-bound result record; the `validate`
+aggregate checks the exact selected matrix, relationship-map digest, execution
+identity, task order, and every required job outcome. A missing matrix result,
+omitted workspace, failed task, or skipped selected gate cannot satisfy the
+required aggregate.
 
 CI runs each selected workspace's canonical build task and dependency closure
 to completion before invoking `test:ci`. The test task has no build dependency,
