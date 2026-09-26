@@ -877,6 +877,40 @@ test('Tools CI checkout includes the accepted Git base required by CI evidence',
   assert.match(toolsJob, /fetch-depth: 0/)
 })
 
+test('shared CI builds Framework declarations before public documentation checks', () => {
+  const workflow = readText('.github/workflows/main.yml')
+  const sharedJob = workflow
+    .split('\n  shared-validation:\n')[1]
+    .split('\n  framework:\n')[0]
+  const buildStep = sharedJob.indexOf('Build Framework declarations')
+  const scriptsTest = sharedJob.indexOf('run: yarn test:scripts')
+
+  assert.ok(buildStep >= 0 && buildStep < scriptsTest)
+  for (const task of [
+    'build:ai-agent-runtime',
+    'build:collaboration',
+    'build:core',
+    'build:design-system',
+    'build:factory',
+    'build:feature-system',
+    'build:input-system',
+    'build:persistence',
+    'build:preset',
+    'build:props-manager',
+    'build:reactive-events',
+    'build:render',
+    'build:render-engine',
+    'build:render-engine-pixi',
+    'build:scene-tree',
+    'build:selection',
+    'build:system-context',
+    'build:ui-context',
+    'build:utils'
+  ]) {
+    assert.ok(sharedJob.includes(task), `Missing Framework build task ${task}`)
+  }
+})
+
 const runOwnedBuildCommand = (command, args, { githubActions, timeoutMs }) =>
   new Promise((resolve, reject) => {
     const env = { ...process.env, CI: 'true', FORCE_COLOR: '0' }
