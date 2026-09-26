@@ -144,6 +144,17 @@ test('contract documentation selects its owner without scheduling app suites', (
   assert.deepEqual(result.categories, ['design'])
   assert.deepEqual(result.workspacesByCategory.design, [])
 })
+
+test('shared workflow guidance selects Framework shared validation', () => {
+  const result = classifyChanges(
+    ['docs/ai/workflows/package-release-validation.md'],
+    manifests
+  )
+  assert.deepEqual(result.categories, ['framework'])
+  assert.deepEqual(result.workspacesByCategory.framework, [])
+  assert.equal(result.frameworkReleaseRequired, false)
+  assert.deepEqual(result.unknownPaths, [])
+})
 test('Flow Inspector contract documentation schedules its owner contract suite', () => {
   const result = classifyChanges(
     ['docs/ai/tools/flow-inspector/CORE_PROOF.md'],
