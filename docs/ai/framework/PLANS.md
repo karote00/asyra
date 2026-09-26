@@ -16,22 +16,23 @@ is authorized.
 Tasks 1-6 have integrated child results through PR #252 at
 `4b8015f6e01e5eaeba1227132e8dffbe076fa64b`; #254/#255 subsequently
 integrated the Starter build-owner repair and approved visual/drag board at
-`86674ccc21ead7ad73f1fe57cb602258efbc6f63`. The adoption plan records
-Task 7's refreshed integration validation and release handoff on that product
-source, including retained exact-input consumer evidence and newly run Starter
-gates. The original #253 CI failures are historical; its later pre-sync head,
-#254, and #255 completed their reported checks, while the updated #253 head
-still needs review and exact-head CI. The composite `docs:readme:check` remains
-blocked by unrelated Asyra Design template drift.
+`86674ccc21ead7ad73f1fe57cb602258efbc6f63`. PR #253 merged with all reported
+checks successful, and parent PR #242 merged the adoption integration into main
+at `e550e87b29824f72a1430eb34eac98f18c33235d`. The independent single-agent
+priority onboarding run from main is complete and has a retained generated
+consumer and formal tests.
 
-The independent single-agent priority onboarding run from `main` is recorded
-in the adoption plan with a retained generated consumer and formal tests.
+Task 8 is complete: `create-asyra-app@0.1.0` is published; PR #260 integrated
+the public README/AI discovery/homepage entry; and the website production
+deployment and live Starter/documentation routes are verified in the adoption
+plan. No Task 8 acceptance item remains open.
 
-`create-asyra-app@0.1.0` is published and its public README/AI discovery entry
-activation is in review. Website deployment remains pending. Community and
-discussion activation require a separate decision; independent coding-agent
-evidence and other original acceptance items also remain open. The program is
-not DONE.
+The overall plan remains active for one recorded program-level gate:
+`yarn docs:readme:check` stopped on 15 unrelated Asyra Design generated-template
+differences after its applicable package README stages passed. The Design owner
+owns that correction. GitHub Discussions settings are a separate user-owned
+action, outside this Codex task and not a closeout blocker. See
+`plans/adoption-entry-and-onboarding-program-plan.md` for the retained evidence.
 
 ## Active Public Entry Experience Plans
 
