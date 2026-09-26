@@ -1105,14 +1105,12 @@ test('workflow waits on reusable producers and always collects after failed test
   assert.match(main, /FLOW_SCOPE_EVIDENCE_FILE: ci-scope-evidence\.json/)
   assert.doesNotMatch(main, /FLOW_SCOPE_EVIDENCE:|FLOW_EXECUTION_PLAN:/)
   assert.doesNotMatch(main, /FLOW_SCOPE_EVIDENCE_GZIP:/)
-  const validateEnvironment = main.slice(
-    main.indexOf('  validate:'),
-    main.indexOf('    steps:', main.indexOf('  validate:'))
+  const validateJob = main.slice(main.indexOf('  validate:'))
+  const validateEnvironment = validateJob.slice(
+    0,
+    validateJob.indexOf('    steps:')
   )
-  assert.doesNotMatch(
-    validateEnvironment,
-    /FLOW_(?:SCOPE|DESIGN|COLLABORATION)_EVIDENCE/
-  )
+  assert.doesNotMatch(validateEnvironment, /FLOW_/)
   assert.match(e2e, /workflow_call:/)
   assert.doesNotMatch(e2e.split('permissions:')[0], /pull_request:/)
   assert.equal((e2e.match(/if: \$\{\{ always\(\) \}\}/g) || []).length, 2)
