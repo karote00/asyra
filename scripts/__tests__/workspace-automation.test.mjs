@@ -848,6 +848,16 @@ test('scope discovery checkout includes the accepted Git base required by CI evi
   assert.match(scopeJob, /fetch-depth: 0/)
 })
 
+test('Flow Inspector CI proof checkout includes the accepted verifier baseline', () => {
+  const workflow = readText('.github/workflows/main.yml')
+  const flowJob = workflow
+    .split('\n  flow-inspector-validation:\n')[1]
+    .split('\n  framework-release-readiness:\n')[0]
+
+  assert.match(flowJob, /fetch-depth: 0/)
+  assert.match(flowJob, /persist-credentials: false/)
+})
+
 test('shared CI builds Framework declarations before public documentation checks', () => {
   const workflow = readText('.github/workflows/main.yml')
   const sharedJob = workflow
