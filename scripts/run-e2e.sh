@@ -3,7 +3,7 @@ set -euo pipefail
 
 E2E_SUITE="${E2E_SUITE:-all}"
 case "$E2E_SUITE" in
-  all|functional|performance) ;;
+  all|functional|render-contracts) ;;
   *) echo "Unknown E2E_SUITE: $E2E_SUITE" >&2; exit 2 ;;
 esac
 
@@ -110,12 +110,16 @@ echo "Step 9: Waiting for App server to be ready..."
 npx wait-on "$E2E_APP_URL" --timeout 60000
 
 # Independent CI jobs use the same PID-owned services and cleanup guards.
-if [ "$E2E_SUITE" = "performance" ] || { [ "$E2E_SUITE" = "all" ] && [ "${CI:-}" = "true" ]; }; then
-  echo "Running isolated render performance gate..."
-  E2E_RENDER_PERFORMANCE_BROWSER=chromium \
+if [ "$E2E_SUITE" = "render-contracts" ] || { [ "$E2E_SUITE" = "all" ] && [ "${CI:-}" = "true" ]; }; then
+  echo "Running render contracts and collecting timing observations..."
+  if [ "${CI:-}" = "true" ]; then
+    E2E_RENDER_PERFORMANCE_BROWSER=chromium \
+      yarn workspace @asyra/asyra-design playwright test --config playwright.config.ts e2e/render-delta-performance.spec.ts --workers=1
+  else
     yarn workspace @asyra/asyra-design playwright test --config playwright.config.ts e2e/render-delta-performance.spec.ts --workers=1
+  fi
 fi
-if [ "$E2E_SUITE" = "performance" ]; then
+if [ "$E2E_SUITE" = "render-contracts" ]; then
   exit 0
 fi
 

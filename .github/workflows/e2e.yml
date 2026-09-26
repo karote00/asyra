@@ -64,7 +64,7 @@ jobs:
           FLOW_PROOF_URL: http://127.0.0.1:4318
         run: node --test --test-concurrency=1 tools/flow-inspector/control-plane/__tests__/board*.test.cjs
 
-  render-performance:
+  render-contracts:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -90,9 +90,9 @@ jobs:
       - name: Install Playwright browsers
         run: yarn workspace @asyra/asyra-design playwright install --with-deps chromium
 
-      - name: Run isolated render timing and geometry gates
+      - name: Run render contracts and collect timing observations
         env:
-          E2E_SUITE: performance
+          E2E_SUITE: render-contracts
         run: bash scripts/run-e2e.sh
 
   e2e-tests:

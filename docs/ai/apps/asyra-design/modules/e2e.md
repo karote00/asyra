@@ -99,21 +99,22 @@ test:e2e:balanced-ai-correctness` runs that heavy case explicitly with one
 - pull-request and manual CI use one deterministic worker, line reporting, no
   retry, and stop after the first product failure; scheduled CI retains one
   retry and completes the suite without the first-failure cap
-- CI runs Board acceptance, Render timing, and functional Design tests as
-  independent jobs in the reusable E2E workflow. A failed Board or timing job
-  does not prevent functional evidence collection, but still fails the reusable
-  workflow and its required `flow-ci` aggregate. No gate is optional.
-- `E2E_SUITE=performance` and `E2E_SUITE=functional` select the bounded slice in
-  `scripts/run-e2e.sh`; the default `all` keeps local full-suite behavior. All
+- CI runs Board acceptance, Render correctness/work contracts, and functional
+  Design tests as independent jobs in the reusable E2E workflow. A failed Board or contract job
+  does not prevent functional evidence collection, but a failed contract job
+  still fails the reusable workflow and its required `flow-ci` aggregate. No
+  correctness gate is optional.
+- `E2E_SUITE=render-contracts` and `E2E_SUITE=functional` select the bounded
+  slice in `scripts/run-e2e.sh`; the default `all` keeps local full-suite behavior. All
   slices preserve PID-owned service startup, readiness, fail-fast and cleanup.
-- the isolated timing gate sets `E2E_RENDER_PERFORMANCE_BROWSER=chromium` so
-  the ordinary config uses Playwright's installed Chromium binary; the
-  remaining functional suite continues to use the configured Google Chrome
-  channel
+- CI's render-contract job sets `E2E_RENDER_PERFORMANCE_BROWSER=chromium` to
+  use its installed Playwright Chromium. The local render-contract command uses
+  the installed Google Chrome channel in headless mode and does not download a
+  browser.
 - after creating the dense-vector fixture, the timing test waits for the active
   Collaboration session and publication outbox to become idle before installing
   phase timers; setup publication work is excluded without changing the normal
-  App composition or timing thresholds
+  App composition or measured workload
 - pull-request CI resolves the balanced AI heavy gate from the exact
   base-to-head changed paths in
   `scripts/balanced-ai-correctness-scope.mjs`; unrelated changes and scheduled
@@ -125,20 +126,25 @@ test:e2e:balanced-ai-correctness` runs that heavy case explicitly with one
   Warm-up completion is checked, the measured counters are reset at one explicit
   boundary, and both sets of strategy timings are retained. The first measured
   sample is reported as `strategyGeometryFirstSampleMs`, not as a cold start.
-  All existing total/p95/max budgets remain unchanged; measured outliers are
-  neither removed nor retried. Pure summary regression tests retain injected
-  isolated and sustained slow samples.
-- every timing run writes `render-profile-samples.json` before assertions,
+  Phase total/p95/max values, including the former 5 ms engine handoff maximum,
+  are diagnostic observations. They no longer block the general CI or local
+  render-contract suite. The suite still blocks on sample counts, delta apply
+  counts, rehydrate/save/snapshot work, geometry strategy execution, and exact
+  snapshot correctness. Measured outliers are neither removed nor retried.
+- The repository has no controlled render benchmark host or cross-version
+  comparison harness. Timing output is not evidence of a performance pass and
+  this policy does not establish that performance regressions are absent.
+  Reference-hardware benchmarking remains an explicit validation gap.
+- every render profile run writes `render-profile-samples.json` before assertions,
   including raw samples, phase timestamps, browser version and CDP performance
   metrics. `RENDER_DELTA_SAMPLES` retains the bounded warm-up/measured samples in
   CI logs. `E2E_RENDER_PERFORMANCE_TRACE=true` explicitly enables a Chrome V8/GC
   trace for diagnosis; trace overhead is not part of the default gate.
-- the bounded 12-frame profile uses the lower sample quantile for p50/p95 and
-  retains a separate max assertion, preventing p95 from degenerating into the
-  same single-sample oracle while preserving every formal threshold
+- the bounded 12-frame profile reports the lower sample quantile for p50/p95
+  and separately reports max; these values describe this run only
 - superseded runs for the same pull request or ref are cancelled, and all browser
-  jobs install only Chromium; the timing gate consumes that exact managed
-  binary while the functional suites keep their configured Chrome channel
+  jobs install only Chromium; the render-contract job consumes that exact
+  managed binary while functional suites keep their configured Chrome channel
 - the 7,076-element two-actor Agent recording remains the explicit
   `RUN_AI_CRDT_VIDEO=1` resource gate and is not materialized by
   default ordinary or collaboration CI
