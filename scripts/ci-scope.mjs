@@ -14,6 +14,7 @@ const sharedPaths = new Set([
   'package.json',
   'yarn.lock',
   '.yarnrc.yml',
+  'turbo.base.json',
   'turbo.json',
   'eslint.config.js',
   'eslint.config.mjs',
@@ -176,6 +177,10 @@ function classifyChanges(changedPaths, manifests) {
     }
     if (changedPath.startsWith('docs/ai/apps/asyra-sim/')) {
       selected.add('sim')
+      continue
+    }
+    if (changedPath.startsWith('docs/ai/apps/fieldscope/')) {
+      selected.add('framework')
       continue
     }
     if (/^(docs\/public|apps\/asyra-framework-site)\//.test(changedPath)) {

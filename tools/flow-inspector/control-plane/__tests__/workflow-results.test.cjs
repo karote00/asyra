@@ -256,31 +256,37 @@ test('formal path owners reach their selected gates through the final aggregate'
     await import('../../../../scripts/ci-scope.mjs')
   const root = path.resolve(__dirname, '../../../..')
   const manifests = readWorkspaceManifests(root)
-  const jobsFor = (scope, missingSelectedGate = false) => ({
-    validate: 'success',
-    e2e: 'skipped',
-    designSelected: 'false',
-    framework: 'skipped',
-    design: 'skipped',
-    sim: 'skipped',
-    website: 'skipped',
-    tools: 'skipped',
-    frameworkRelease:
-      scope.frameworkReleaseRequired && !missingSelectedGate
-        ? 'success'
-        : 'skipped',
-    createAppReadiness:
-      scope.createAppPackages.length > 0 && !missingSelectedGate
-        ? 'success'
-        : 'skipped',
-    designForwarder: 'success',
-    collaborationForwarder: 'success'
-  })
+  const jobsFor = (scope, missingSelectedGate = false) =>
+    Object.fromEntries([
+      ['validate', 'success'],
+      ['e2e', 'skipped'],
+      ['designSelected', 'false'],
+      ...['framework', 'design', 'sim', 'website', 'tools'].map((category) => [
+        category,
+        scope.workspacesByCategory[category].length > 0 ? 'success' : 'skipped'
+      ]),
+      [
+        'frameworkRelease',
+        scope.frameworkReleaseRequired && !missingSelectedGate
+          ? 'success'
+          : 'skipped'
+      ],
+      [
+        'createAppReadiness',
+        scope.createAppPackages.length > 0 && !missingSelectedGate
+          ? 'success'
+          : 'skipped'
+      ],
+      ['designForwarder', 'success'],
+      ['collaborationForwarder', 'success']
+    ])
   for (const changedPath of [
     '.changeset/example.md',
     'README.md',
     'create-app/asyra-design/package.json',
-    'scripts/release-package-artifacts.js'
+    'scripts/release-package-artifacts.js',
+    'turbo.base.json',
+    'docs/ai/apps/fieldscope/PLANS.md'
   ]) {
     const scope = {
       version: 1,
@@ -288,11 +294,16 @@ test('formal path owners reach their selected gates through the final aggregate'
       ...classifyChanges([changedPath], manifests)
     }
     assert.deepEqual(scope.unknownPaths, [], changedPath)
-    assert.equal(
-      aggregate([], identity, jobsFor(scope), scope).status,
-      'passed',
-      changedPath
-    )
+    const result = aggregate([], identity, jobsFor(scope), scope)
+    assert.equal(result.status, 'passed', changedPath)
+    assert.equal(result.producerResults.validate, 'success', changedPath)
+    for (const category of ['framework', 'design', 'sim', 'website', 'tools']) {
+      assert.equal(
+        result.producerResults[category],
+        scope.workspacesByCategory[category].length > 0 ? 'success' : 'skipped',
+        `${changedPath} ${category} producer`
+      )
+    }
     if (scope.frameworkReleaseRequired || scope.createAppPackages.length > 0)
       assert.equal(
         aggregate([], identity, jobsFor(scope, true), scope).status,
