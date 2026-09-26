@@ -12,8 +12,11 @@ the development server and E2E tests share `APP_URL`.
 
 Each bay is confirmed at 6.3m of beds/drains plus 0.35m on each side,
 for a 7m total. Interior adjoining margins combine into 0.7m passages;
-post placement affects usable clearance. This stage has no plants, robot,
-collision/damage simulation or live machine connection yet.
+post placement affects usable clearance. The workspace models cucumber and
+tomato crops and includes a parked robot concept/design workspace with
+conservative lane and energy assessments. It does not simulate patrol or
+harvesting, physical dynamics, robot/crop collision or damage, or connect to
+live equipment.
 
 ## Vercel Deployment
 

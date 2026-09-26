@@ -50,10 +50,9 @@ This directory stores completed framework plans by category so `PLANS.md` stays 
 - Completed Input System environment-neutrality prerequisite:
   - `input-system-environment-neutrality-plan.md`
 
-8. Adoption and root README evidence
+8. Root README evidence
 
 - Completed 2026-09-26:
-  - `adoption-entry-and-onboarding-program-plan.md`
   - `root-readme-comprehension-and-evidence-plan.md`
   - Current root README visual evidence is stored under
     `root-readme-comprehension-and-evidence/visual-evidence/`.
