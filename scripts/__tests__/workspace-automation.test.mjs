@@ -170,6 +170,12 @@ test('CI schedules discovered workspaces through one bounded build-then-test mat
     block.startsWith('  workspace-validation:')
   )
   assert.ok(workspaceJob)
+  const jobName = workspaceJob.match(/^ {4}name: (.+)$/m)?.[1]
+  assert.equal(jobName, '${{ matrix.workspace.directory }}')
+  assert.doesNotMatch(
+    jobName,
+    /matrix\.workspace\.(?:buildTask|testTask|artifactId)/
+  )
   assert.match(workspaceJob, /strategy:\n\s+fail-fast: false/)
   assert.match(workspaceJob, /max-parallel: 4/)
   assert.match(workspaceJob, /actions\/upload-artifact@/)
