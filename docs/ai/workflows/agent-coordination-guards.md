@@ -120,13 +120,15 @@ node scripts/agent-coordination/guard.cjs update-task-local --request tmp/agent-
 ```
 
 There is no shell redirection or general command approval for this route. The
-CLI rechecks the exact request bytes and `expectedTaskDigest` under task-local
-compare-and-swap; the post-hook verifies the matching request and resulting
-state. If the request is stale, reread `context`, review the changed task state,
-and write a new request. Guard-owned `task.json`, `state.json`, receipt and
-lock paths cannot be changed through ordinary task writes. Resolve existing
-state before initializing a reviewed replacement; do not silently widen a
-task.
+CLI reads the worktree-local task state and fixed request directly from its
+current directory, so this command takes no stdin. Other guard commands retain
+their JSON-on-stdin interface. The CLI rechecks the exact request bytes and
+`expectedTaskDigest` under task-local compare-and-swap; the post-hook verifies
+the matching request and resulting state. If the request is stale, reread
+`context`, review the changed task state, and write a new request. Guard-owned
+`task.json`, `state.json`, receipt and lock paths cannot be changed through
+ordinary task writes. Resolve existing state before initializing a reviewed
+replacement; do not silently widen a task.
 
 ## Bounded registry history
 

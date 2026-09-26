@@ -7,10 +7,11 @@ import {
   readdirSync,
   mkdirSync,
   mkdtempSync,
+  unlinkSync,
   writeFileSync,
   rmSync
 } from 'node:fs'
-import { execFileSync } from 'node:child_process'
+import { execFileSync, spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { createRequire } from 'node:module'
 import path from 'node:path'
@@ -545,6 +546,20 @@ test('native task-local hooks ignore invalid shared history and advance only the
   const lifecyclePath = path.join(root, lifecycleRelativePath)
   const lifecycleCommand = (text) =>
     `node scripts/agent-coordination/guard.cjs update-task-local --request ${lifecycleRelativePath} --sha256 ${hash(text)}`
+  const runLifecycleCli = (arguments_) => {
+    const child = spawnSync(
+      process.execPath,
+      [guardPath, 'update-task-local', ...arguments_],
+      {
+        cwd: root,
+        encoding: 'utf8',
+        timeout: 1000,
+        stdio: ['ignore', 'pipe', 'pipe']
+      }
+    )
+    assert.equal(child.error, undefined, child.error?.message)
+    return { ...child, result: JSON.parse(child.stdout) }
+  }
   const writeLifecycleRequest = (request, priorText, toolUseId) => {
     const text = `${JSON.stringify(request, null, 2)}\n`
     const content = text.split('\n').filter(Boolean)
@@ -748,6 +763,35 @@ test('native task-local hooks ignore invalid shared history and advance only the
     'lifecycle-request-ready'
   )
   assert.equal(context().details.taskDigest, validRequest.expectedTaskDigest)
+  const missingArguments = runLifecycleCli([])
+  assert.equal(missingArguments.status, 2)
+  assert.equal(missingArguments.result.code, 'invalid_input')
+  const malformedDigest = runLifecycleCli([
+    '--request',
+    lifecycleRelativePath,
+    '--sha256',
+    'not-a-sha256'
+  ])
+  assert.equal(malformedDigest.status, 2)
+  assert.equal(malformedDigest.result.code, 'invalid_input')
+  const changedDigest = runLifecycleCli([
+    '--request',
+    lifecycleRelativePath,
+    '--sha256',
+    '0'.repeat(64)
+  ])
+  assert.equal(changedDigest.status, 2)
+  assert.equal(changedDigest.result.code, 'bootstrap_request_changed')
+  unlinkSync(lifecyclePath)
+  const missingRequest = runLifecycleCli([
+    '--request',
+    lifecycleRelativePath,
+    '--sha256',
+    hash(lifecycleText)
+  ])
+  assert.equal(missingRequest.status, 2)
+  assert.equal(missingRequest.result.code, 'missing_bootstrap_request')
+  writeFileSync(lifecyclePath, lifecycleText)
   const updateCommand = lifecycleCommand(lifecycleText)
   assert.deepEqual(
     native({
@@ -759,24 +803,12 @@ test('native task-local hooks ignore invalid shared history and advance only the
     }),
     {}
   )
-  const updateResult = JSON.parse(
-    execFileSync(
-      process.execPath,
-      [
-        path.join(root, 'scripts/agent-coordination/guard.cjs'),
-        'update-task-local',
-        '--request',
-        lifecycleRelativePath,
-        '--sha256',
-        hash(lifecycleText)
-      ],
-      {
-        cwd: root,
-        input: JSON.stringify({ repoRoot: root, registryRoot: root }),
-        encoding: 'utf8'
-      }
-    )
-  )
+  const updateResult = runLifecycleCli([
+    '--request',
+    lifecycleRelativePath,
+    '--sha256',
+    hash(lifecycleText)
+  ]).result
   assert.equal(updateResult.decision, 'allow', updateResult.reason)
   assert.deepEqual(
     native({
@@ -819,4 +851,5 @@ test('coordination workflow documents exact bootstrap and lifecycle request sche
   assert.ok(workflow.includes('`mode: "select-coordinated"`'))
   assert.match(workflow, /expectedTaskDigest/)
   assert.match(workflow, /"update": \{/)
+  assert.match(workflow, /this command takes no stdin/)
 })
