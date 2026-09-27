@@ -1,4 +1,4 @@
 ---
 ---
 
-Keep task-local coordination tooling and its lifecycle CLI validation current.
+Remove the project-owned agent task registration system and retain only stateless Git safety hooks.

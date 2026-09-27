@@ -368,6 +368,9 @@ test('Active docs do not replace the Asyra Design name with a generic label', ()
   })
     .split('\0')
     .filter(Boolean)
+    .filter((relativePath) =>
+      fs.existsSync(path.join(repositoryRoot, relativePath))
+    )
     .filter((relativePath) => {
       const segments = relativePath.split('/')
       return !segments.some((segment) =>
