@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import {
+  existsSync,
   mkdirSync,
   readFileSync,
   realpathSync,
@@ -32,15 +33,34 @@ function inputIdentity(event) {
     .digest('hex')
 }
 
-function receiptPath(event) {
+function receiptPath(event, worktreeRoot, { create = true } = {}) {
   if (typeof event.tool_use_id !== 'string' || !event.tool_use_id)
     throw new Error('Missing native tool-use identity')
-  const parent = path.join(repoRoot, 'tmp/agent-coordination')
-  if (realpathSync(parent) !== parent)
+  const root = realpathSync(worktreeRoot)
+  const parent = path.join(root, 'tmp/agent-coordination')
+  let existingParent = parent
+  while (!existsSync(existingParent)) {
+    const ancestor = path.dirname(existingParent)
+    if (ancestor === existingParent)
+      throw new Error(
+        'Coordination state directory has no worktree-owned ancestor'
+      )
+    existingParent = ancestor
+  }
+  const realExistingParent = realpathSync(existingParent)
+  const relativeParent = path.relative(root, realExistingParent)
+  if (
+    realExistingParent !== existingParent ||
+    relativeParent.startsWith('..') ||
+    path.isAbsolute(relativeParent)
+  )
+    throw new Error('Coordination state directory crosses a symlink')
+  if (create) mkdirSync(parent, { recursive: true })
+  if (existsSync(parent) && realpathSync(parent) !== parent)
     throw new Error('Coordination state directory must not be a symlink')
   const directory = path.join(parent, 'receipts')
-  mkdirSync(directory, { recursive: true })
-  if (realpathSync(directory) !== directory)
+  if (create) mkdirSync(directory, { recursive: true })
+  if (existsSync(directory) && realpathSync(directory) !== directory)
     throw new Error('Receipt directory must not be a symlink')
   return path.join(
     directory,
@@ -48,15 +68,19 @@ function receiptPath(event) {
   )
 }
 
-function invokeGuard(mode, request) {
+function invokeGuard(mode, request, worktreeRoot = repoRoot) {
   let output
   try {
     output = execFileSync(
       process.execPath,
       [path.join(repoRoot, 'scripts/agent-coordination/guard.cjs'), mode],
       {
-        cwd: repoRoot,
-        input: JSON.stringify({ ...request, repoRoot }),
+        cwd: worktreeRoot,
+        input: JSON.stringify({
+          ...request,
+          repoRoot: worktreeRoot,
+          registryRoot: repoRoot
+        }),
         encoding: 'utf8',
         timeout: 2500,
         maxBuffer: maximumInputBytes,
@@ -74,6 +98,34 @@ function invokeGuard(mode, request) {
   )
     throw new Error('Invalid coordination guard response')
   return result
+}
+
+function worktreeRootForEvent(event) {
+  const patch = absolutePatch(event)
+  const directories = patch?.paths.length
+    ? patch.paths.map((target) => path.dirname(target))
+    : [event.tool_input?.workdir ?? event.tool_input?.cwd ?? event.cwd]
+  const roots = directories.map((directory) => {
+    if (!path.isAbsolute(directory))
+      throw new Error('Task worktree selection requires an absolute directory')
+    let existingDirectory = directory
+    while (!existsSync(existingDirectory)) {
+      const parent = path.dirname(existingDirectory)
+      if (parent === existingDirectory)
+        throw new Error('Task worktree directory does not exist')
+      existingDirectory = parent
+    }
+    return execFileSync('git', ['rev-parse', '--show-toplevel'], {
+      cwd: existingDirectory,
+      encoding: 'utf8',
+      timeout: 1000,
+      stdio: ['ignore', 'pipe', 'pipe']
+    }).trim()
+  })
+  const uniqueRoots = [...new Set(roots.map((root) => realpathSync(root)))]
+  if (uniqueRoots.length !== 1)
+    throw new Error('Tool input crosses multiple Git worktrees')
+  return uniqueRoots[0]
 }
 
 function canonicalDirectory(value) {
@@ -204,24 +256,149 @@ export function adaptHook(event, result) {
 }
 
 export function evaluateNativeHook(event) {
-  const registry = JSON.parse(
-    readFileSync(
-      path.join(repoRoot, 'tmp/agent-coordination/state.json'),
-      'utf8'
-    )
-  )
+  const worktreeRoot = worktreeRootForEvent(event)
+  if (event.hook_event_name === 'PostToolUse' && event.tool_use_id) {
+    const receiptFile = receiptPath(event, worktreeRoot, { create: false })
+    if (existsSync(receiptFile)) {
+      const receipt = JSON.parse(readFileSync(receiptFile, 'utf8'))
+      if (receipt.taskMode === 'bootstrap') {
+        if (!operationSucceeded(event.tool_response))
+          return {
+            systemMessage:
+              'Task bootstrap request did not complete successfully; task mode remains unselected.'
+          }
+        if (receipt.inputIdentity !== inputIdentity(event))
+          throw new Error('Task bootstrap receipt mismatch')
+        const verified = invokeGuard(
+          'validate-bootstrap-request',
+          {
+            mode: receipt.bootstrap.mode,
+            requestPath: receipt.bootstrap.path,
+            expectedDigest: receipt.bootstrap.digest
+          },
+          worktreeRoot
+        )
+        if (verified.decision === 'allow') unlinkSync(receiptFile)
+        return adaptHook(event, verified)
+      }
+      if (receipt.taskMode === 'task-local-update') {
+        if (!operationSucceeded(event.tool_response)) {
+          unlinkSync(receiptFile)
+          return {
+            systemMessage:
+              'Task-local lifecycle update failed; the prior task state remains authoritative.'
+          }
+        }
+        if (receipt.inputIdentity !== inputIdentity(event))
+          throw new Error('Task-local update receipt mismatch')
+        const verified = invokeGuard(
+          'validate-task-local-update',
+          receipt.lifecycleUpdate,
+          worktreeRoot
+        )
+        if (verified.decision === 'allow') unlinkSync(receiptFile)
+        return adaptHook(event, verified)
+      }
+      if (receipt.taskMode === 'approved-command') {
+        if (receipt.inputIdentity !== inputIdentity(event))
+          throw new Error('Approved command receipt mismatch')
+        unlinkSync(receiptFile)
+        return operationSucceeded(event.tool_response)
+          ? {}
+          : {
+              systemMessage:
+                'Approved command failed; task file snapshots were not refreshed.'
+            }
+      }
+    }
+  }
+  const context = invokeGuard('context', {}, worktreeRoot)
+  if (context.decision !== 'allow') {
+    if (
+      event.hook_event_name === 'PreToolUse' &&
+      ['task_state_missing', 'invalid_task_state'].includes(context.code)
+    ) {
+      const patch = absolutePatch(event)
+      const bootstrap = invokeGuard(
+        'bootstrap-pre-tool',
+        {
+          event: {
+            cwd: worktreeRoot,
+            toolName: event.tool_name,
+            toolInput: patch?.command ?? event.tool_input
+          }
+        },
+        worktreeRoot
+      )
+      if (bootstrap.decision !== 'allow') return adaptHook(event, bootstrap)
+      if (bootstrap.details?.bootstrap) {
+        writeFileSync(
+          receiptPath(event, worktreeRoot),
+          JSON.stringify({
+            taskId: bootstrap.details.bootstrap.taskId,
+            inputIdentity: inputIdentity(event),
+            taskMode: 'bootstrap',
+            bootstrap: bootstrap.details.bootstrap
+          }),
+          { flag: 'wx' }
+        )
+      }
+      return adaptHook(event, bootstrap)
+    }
+    if (
+      event.hook_event_name === 'PostToolUse' &&
+      ['task_state_missing', 'invalid_task_state'].includes(context.code)
+    ) {
+      if (!operationSucceeded(event.tool_response))
+        return {
+          systemMessage:
+            'Task bootstrap request did not complete successfully; task mode remains unselected.'
+        }
+      const receiptFile = receiptPath(event, worktreeRoot, { create: false })
+      if (!existsSync(receiptFile)) return adaptHook(event, context)
+      const receipt = JSON.parse(readFileSync(receiptFile, 'utf8'))
+      if (
+        receipt.taskMode !== 'bootstrap' ||
+        receipt.inputIdentity !== inputIdentity(event)
+      )
+        throw new Error('Task bootstrap receipt mismatch')
+      const verified = invokeGuard(
+        'validate-bootstrap-request',
+        {
+          mode: receipt.bootstrap.mode,
+          requestPath: receipt.bootstrap.path,
+          expectedDigest: receipt.bootstrap.digest
+        },
+        worktreeRoot
+      )
+      if (verified.decision === 'allow') unlinkSync(receiptFile)
+      return adaptHook(event, verified)
+    }
+    return adaptHook(event, context)
+  }
+  const registry = context.details.registry
   const request = normalizeCoreEvent(event, registry)
-  const { taskId } = request
+  let { taskId } = request
+  if (patchText(event) !== undefined && taskId !== context.details.taskId)
+    return adaptHook(event, {
+      decision: 'deny',
+      code: 'worktree_task_mismatch',
+      reason: 'Patch targets do not belong to the explicitly selected task.'
+    })
+  taskId = context.details.taskId
+  request.taskId = taskId
+  let receipt
   let mode = 'check'
   if (event.hook_event_name === 'PreToolUse') mode = 'pre-tool'
   if (['Stop', 'SubagentStop'].includes(event.hook_event_name)) {
     // A shared parent session/cwd is not an agent identity. Never continue a
     // different task because a subagent could not be matched.
     if (!taskId)
-      return {
-        systemMessage:
-          'Coordination guard: no unique task binding; completion has not been certified.'
-      }
+      return adaptHook(event, {
+        decision: 'deny',
+        code: 'missing_task',
+        reason: 'No task is selected for this worktree.'
+      })
     mode = 'stop'
   }
   if (mode === 'check' && !taskId) return {}
@@ -231,7 +408,13 @@ export function evaluateNativeHook(event) {
         systemMessage:
           'Coordination guard: write outcome is not explicitly successful; file expectations were not refreshed.'
       }
-    const receipt = JSON.parse(readFileSync(receiptPath(event), 'utf8'))
+    const receiptFile = receiptPath(event, worktreeRoot, { create: false })
+    if (!existsSync(receiptFile))
+      return {
+        systemMessage:
+          'Coordination guard: no matching pre-tool receipt exists; file expectations were not refreshed.'
+      }
+    receipt = JSON.parse(readFileSync(receiptFile, 'utf8'))
     if (
       receipt.taskId !== taskId ||
       receipt.inputIdentity !== inputIdentity(event)
@@ -242,20 +425,45 @@ export function evaluateNativeHook(event) {
       preflight: receipt.preflight
     })
   }
-  const result = invokeGuard(mode, request)
+  const result = invokeGuard(mode, request, worktreeRoot)
   if (
     mode === 'pre-tool' &&
     result.decision === 'allow' &&
-    result.details?.approvedPaths?.length
+    (result.details?.approvedPaths?.length ||
+      result.code === 'task_local_update_approved' ||
+      result.code === 'approved_command')
   ) {
-    writeFileSync(
-      receiptPath(event),
-      JSON.stringify({
+    let receiptDetails = {
+      taskId,
+      inputIdentity: inputIdentity(event),
+      taskMode: context.details.mode,
+      preflight: result.details
+    }
+    if (result.code === 'task_local_update_approved') {
+      receiptDetails = {
         taskId,
         inputIdentity: inputIdentity(event),
-        preflight: result.details
-      }),
-      { flag: 'wx' }
+        taskMode: 'task-local-update',
+        lifecycleUpdate: {
+          requestPath: result.details.requestPath,
+          requestDigest: result.details.requestDigest,
+          expectedTaskDigest: result.details.expectedTaskDigest,
+          resultTaskDigest: result.details.resultTaskDigest
+        }
+      }
+    } else if (result.code === 'approved_command') {
+      receiptDetails = {
+        taskId,
+        inputIdentity: inputIdentity(event),
+        taskMode: 'approved-command'
+      }
+    }
+    writeFileSync(
+      receiptPath(event, worktreeRoot),
+      JSON.stringify(receiptDetails),
+      {
+        flag: 'wx'
+      }
     )
   }
   if (
@@ -263,15 +471,28 @@ export function evaluateNativeHook(event) {
     result.decision === 'allow' &&
     result.details?.digestUpdates?.length
   ) {
-    const task = structuredClone(registry.tasks[taskId])
-    for (const update of result.details.digestUpdates)
-      task.expectedFileDigests[update.path] = update.digest
-    const updated = invokeGuard('register', {
-      expectedRevision: result.details.registryRevision,
-      task: { ...task, id: taskId }
-    })
-    if (updated.decision !== 'allow') return adaptHook(event, updated)
-    unlinkSync(receiptPath(event))
+    if (receipt.taskMode === 'task-local') {
+      const updated = invokeGuard(
+        'complete-write',
+        { ...request, operationSucceeded: true, preflight: receipt.preflight },
+        worktreeRoot
+      )
+      if (updated.decision !== 'allow') return adaptHook(event, updated)
+    } else {
+      const task = structuredClone(registry.tasks[taskId])
+      for (const update of result.details.digestUpdates)
+        task.expectedFileDigests[update.path] = update.digest
+      const updated = invokeGuard(
+        'register',
+        {
+          expectedRevision: result.details.registryRevision,
+          task: { ...task, id: taskId }
+        },
+        repoRoot
+      )
+      if (updated.decision !== 'allow') return adaptHook(event, updated)
+    }
+    unlinkSync(receiptPath(event, worktreeRoot))
   }
   return adaptHook(event, result)
 }

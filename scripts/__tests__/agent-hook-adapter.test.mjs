@@ -1,15 +1,17 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
+  copyFileSync,
   existsSync,
   readFileSync,
   readdirSync,
   mkdirSync,
   mkdtempSync,
+  unlinkSync,
   writeFileSync,
   rmSync
 } from 'node:fs'
-import { execFileSync } from 'node:child_process'
+import { execFileSync, spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { createRequire } from 'node:module'
 import path from 'node:path'
@@ -333,4 +335,521 @@ test('unknown native result shapes never bless changed file expectations', () =>
   assert.equal(operationSucceeded({ exit_code: 1 }), false)
   assert.equal(operationSucceeded({ exit_code: 0 }), true)
   assert.equal(operationSucceeded({ success: true }), true)
+})
+
+test('native task-local hooks ignore invalid shared history and advance only their local snapshot', (t) => {
+  const temporaryRoot = path.resolve('tmp')
+  mkdirSync(temporaryRoot, { recursive: true })
+  const root = mkdtempSync(path.join(temporaryRoot, 'native-task-local-'))
+  t.after(() => rmSync(root, { recursive: true, force: true }))
+  const git = (...args) =>
+    execFileSync('git', args, {
+      cwd: root,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe']
+    }).trim()
+  git('init', '-q', '-b', 'codex/task-local-proof')
+  git('config', 'user.name', 'Hook Test')
+  git('config', 'user.email', 'hook@example.test')
+  mkdirSync(path.join(root, 'src'))
+  writeFileSync(path.join(root, 'src/value.txt'), 'before\n')
+  git('add', 'src/value.txt')
+  git('commit', '-qm', 'baseline')
+  const hash = (text) => createHash('sha256').update(text).digest('hex')
+  const task = {
+    id: 'task-local-proof',
+    agentId: null,
+    coordinator: false,
+    kind: 'goal',
+    integrationTargetTaskId: null,
+    worktree: root,
+    branch: 'codex/task-local-proof',
+    baselineHead: git('rev-parse', 'HEAD'),
+    allowedPathPrefixes: ['src/'],
+    allowedExactFiles: ['tmp/agent-coordination/requests/task-lifecycle.json'],
+    protectedContractPaths: [],
+    allowedContractEdits: [],
+    expectedFileDigests: {
+      'src/value.txt': hash('before\n'),
+      'tmp/agent-coordination/requests/task-lifecycle.json': 'absent'
+    },
+    approvedCommands: ['git add -- src/value.txt'],
+    semanticOwners: ['task-local/proof'],
+    dependsOn: [],
+    state: 'active',
+    requiredGates: ['focused'],
+    evidence: null,
+    review: null,
+    continuations: 0
+  }
+  mkdirSync(path.join(root, 'scripts/agent-coordination'), { recursive: true })
+  for (const relative of [
+    'agent-hook-adapter.mjs',
+    'agent-coordination/guard.cjs',
+    'agent-coordination/guard-core.cjs'
+  ]) {
+    copyFileSync(
+      new URL(`../${relative}`, import.meta.url),
+      path.join(root, 'scripts', relative)
+    )
+  }
+  mkdirSync(path.join(root, 'tmp/agent-coordination'), { recursive: true })
+  const globalPath = path.join(root, 'tmp/agent-coordination/state.json')
+  writeFileSync(globalPath, '{ incompatible history')
+  const native = (event) =>
+    JSON.parse(
+      execFileSync(
+        process.execPath,
+        [path.join(root, 'scripts/agent-hook-adapter.mjs')],
+        {
+          cwd: root,
+          input: JSON.stringify(event),
+          encoding: 'utf8'
+        }
+      )
+    )
+  native({
+    hook_event_name: 'PostToolUse',
+    tool_use_id: 'read-without-task-mode',
+    cwd: root,
+    tool_name: 'Bash',
+    tool_input: { command: 'pwd' },
+    tool_response: { success: true }
+  })
+  assert.equal(
+    existsSync(path.join(root, 'tmp/agent-coordination/receipts')),
+    false
+  )
+  const uninitializedProductWrite = native({
+    hook_event_name: 'PreToolUse',
+    tool_use_id: 'uninitialized-product-write',
+    cwd: root,
+    tool_name: 'apply_patch',
+    tool_input: {
+      command: `*** Begin Patch\n*** Add File: ${root}/src/new.txt\n+new\n*** End Patch`
+    }
+  })
+  assert.equal(
+    uninitializedProductWrite.hookSpecificOutput.permissionDecision,
+    'deny'
+  )
+  const uninitializedDangerousCommand = native({
+    hook_event_name: 'PreToolUse',
+    tool_use_id: 'uninitialized-dangerous-command',
+    cwd: root,
+    tool_name: 'Bash',
+    tool_input: { command: 'rm -rf .' }
+  })
+  assert.equal(
+    uninitializedDangerousCommand.hookSpecificOutput.permissionDecision,
+    'deny'
+  )
+  const request = { mode: 'init-task-local', repoRoot: root, task }
+  const requestText = JSON.stringify(request)
+  const requestEvent = {
+    hook_event_name: 'PreToolUse',
+    tool_use_id: 'task-request-init',
+    cwd: root,
+    tool_name: 'apply_patch',
+    tool_input: {
+      command: `*** Begin Patch\n*** Add File: tmp/agent-coordination/requests/task-local.json\n+${requestText}\n*** End Patch`
+    }
+  }
+  assert.deepEqual(native(requestEvent), {})
+  mkdirSync(path.join(root, 'tmp/agent-coordination/requests'), {
+    recursive: true
+  })
+  writeFileSync(
+    path.join(root, 'tmp/agent-coordination/requests/task-local.json'),
+    `${requestText}\n`
+  )
+  assert.deepEqual(
+    native({
+      ...requestEvent,
+      hook_event_name: 'PostToolUse',
+      tool_response: { success: true }
+    }),
+    {}
+  )
+  const initCommand =
+    'node scripts/agent-coordination/guard.cjs init-task-local < tmp/agent-coordination/requests/task-local.json'
+  assert.deepEqual(
+    native({
+      hook_event_name: 'PreToolUse',
+      tool_use_id: 'task-local-init-command',
+      cwd: root,
+      tool_name: 'Bash',
+      tool_input: { command: initCommand }
+    }),
+    {}
+  )
+  const initialized = JSON.parse(
+    execFileSync(
+      process.execPath,
+      [
+        path.join(root, 'scripts/agent-coordination/guard.cjs'),
+        'init-task-local'
+      ],
+      { cwd: root, input: JSON.stringify(request), encoding: 'utf8' }
+    )
+  )
+  assert.equal(initialized.decision, 'allow', initialized.reason)
+  assert.deepEqual(
+    native({
+      hook_event_name: 'PostToolUse',
+      tool_use_id: 'task-local-init-command',
+      cwd: root,
+      tool_name: 'Bash',
+      tool_input: { command: initCommand },
+      tool_response: { success: true }
+    }),
+    {}
+  )
+  const event = {
+    hook_event_name: 'PreToolUse',
+    tool_use_id: 'local-hook-proof',
+    cwd: root,
+    tool_name: 'apply_patch',
+    tool_input: {
+      command: `*** Begin Patch\n*** Update File: ${root}/src/value.txt\n@@\n-before\n+after\n*** End Patch`
+    }
+  }
+  assert.deepEqual(native(event), {})
+  writeFileSync(path.join(root, 'src/value.txt'), 'after\n')
+  assert.deepEqual(
+    native({
+      ...event,
+      hook_event_name: 'PostToolUse',
+      tool_response: { success: true }
+    }),
+    {}
+  )
+  const localState = JSON.parse(
+    readFileSync(path.join(root, 'tmp/agent-coordination/task.json'), 'utf8')
+  )
+  assert.equal(localState.mode, 'task-local')
+  assert.equal(
+    localState.task.expectedFileDigests['src/value.txt'],
+    hash('after\n')
+  )
+  const guardPath = path.join(root, 'scripts/agent-coordination/guard.cjs')
+  const context = () =>
+    JSON.parse(
+      execFileSync(process.execPath, [guardPath, 'context'], {
+        cwd: root,
+        input: JSON.stringify({ repoRoot: root, registryRoot: root }),
+        encoding: 'utf8'
+      })
+    )
+  const lifecycleRelativePath =
+    'tmp/agent-coordination/requests/task-lifecycle.json'
+  const lifecyclePath = path.join(root, lifecycleRelativePath)
+  const lifecycleCommand = (text) =>
+    `node scripts/agent-coordination/guard.cjs update-task-local --request ${lifecycleRelativePath} --sha256 ${hash(text)}`
+  const runLifecycleCli = (arguments_) => {
+    const child = spawnSync(
+      process.execPath,
+      [guardPath, 'update-task-local', ...arguments_],
+      {
+        cwd: root,
+        encoding: 'utf8',
+        timeout: 1000,
+        stdio: ['ignore', 'pipe', 'pipe']
+      }
+    )
+    assert.equal(child.error, undefined, child.error?.message)
+    return { ...child, result: JSON.parse(child.stdout) }
+  }
+  const writeLifecycleRequest = (request, priorText, toolUseId) => {
+    const text = `${JSON.stringify(request, null, 2)}\n`
+    const content = text.split('\n').filter(Boolean)
+    const patchBody = priorText
+      ? [
+          '*** Update File: ' + lifecycleRelativePath,
+          '@@',
+          ...priorText
+            .split('\n')
+            .filter(Boolean)
+            .map((line) => `-${line}`),
+          ...content.map((line) => `+${line}`)
+        ]
+      : [
+          '*** Add File: ' + lifecycleRelativePath,
+          ...content.map((line) => `+${line}`)
+        ]
+    const preflight = {
+      hook_event_name: 'PreToolUse',
+      tool_use_id: toolUseId,
+      cwd: root,
+      tool_name: 'apply_patch',
+      tool_input: {
+        command: `*** Begin Patch\n${patchBody.join('\n')}\n*** End Patch`
+      }
+    }
+    assert.deepEqual(native(preflight), {})
+    writeFileSync(lifecyclePath, text)
+    assert.deepEqual(
+      native({
+        ...preflight,
+        hook_event_name: 'PostToolUse',
+        tool_response: { success: true }
+      }),
+      {}
+    )
+    return text
+  }
+  const beforeLifecycleRequest = context().details.taskDigest
+  let lifecycleText = writeLifecycleRequest(
+    {
+      repoRoot: root,
+      expectedTaskDigest: beforeLifecycleRequest,
+      update: { state: 'active' }
+    },
+    null,
+    'lifecycle-request-create'
+  )
+  assert.equal(context().details.taskDigest, beforeLifecycleRequest)
+
+  const secondProductWrite = {
+    hook_event_name: 'PreToolUse',
+    tool_use_id: 'local-hook-second-write',
+    cwd: root,
+    tool_name: 'apply_patch',
+    tool_input: {
+      command: `*** Begin Patch\n*** Update File: ${root}/src/value.txt\n@@\n-after\n+after-again\n*** End Patch`
+    }
+  }
+  assert.deepEqual(native(secondProductWrite), {})
+  writeFileSync(path.join(root, 'src/value.txt'), 'after-again\n')
+  assert.deepEqual(
+    native({
+      ...secondProductWrite,
+      hook_event_name: 'PostToolUse',
+      tool_response: { success: true }
+    }),
+    {}
+  )
+  const freshTaskDigest = context().details.taskDigest
+  assert.notEqual(freshTaskDigest, beforeLifecycleRequest)
+  const staleLifecycle = native({
+    hook_event_name: 'PreToolUse',
+    tool_use_id: 'stale-lifecycle-update',
+    cwd: root,
+    tool_name: 'Bash',
+    tool_input: { command: lifecycleCommand(lifecycleText) }
+  })
+  assert.equal(staleLifecycle.hookSpecificOutput.permissionDecision, 'deny')
+  assert.match(
+    staleLifecycle.hookSpecificOutput.permissionDecisionReason,
+    /stale_task_state/
+  )
+  const redirectedLifecycleCommand = native({
+    hook_event_name: 'PreToolUse',
+    tool_use_id: 'lifecycle-redirect-denied',
+    cwd: root,
+    tool_name: 'Bash',
+    tool_input: {
+      command:
+        'node scripts/agent-coordination/guard.cjs update-task-local < tmp/agent-coordination/requests/task-lifecycle.json'
+    }
+  })
+  assert.equal(
+    redirectedLifecycleCommand.hookSpecificOutput.permissionDecision,
+    'deny'
+  )
+
+  const outOfScope = native({
+    hook_event_name: 'PreToolUse',
+    tool_use_id: 'task-local-out-of-scope',
+    cwd: root,
+    tool_name: 'apply_patch',
+    tool_input: {
+      command: `*** Begin Patch\n*** Add File: package.json\n+{}\n*** End Patch`
+    }
+  })
+  assert.equal(outOfScope.hookSpecificOutput.permissionDecision, 'deny')
+  const dangerous = native({
+    hook_event_name: 'PreToolUse',
+    tool_use_id: 'task-local-dangerous-command',
+    cwd: root,
+    tool_name: 'Bash',
+    tool_input: { command: 'rm -rf .' }
+  })
+  assert.equal(dangerous.hookSpecificOutput.permissionDecision, 'deny')
+
+  const refreshedRequest = {
+    repoRoot: root,
+    expectedTaskDigest: freshTaskDigest,
+    update: { state: 'active' }
+  }
+  lifecycleText = writeLifecycleRequest(
+    refreshedRequest,
+    lifecycleText,
+    'lifecycle-request-refresh'
+  )
+  assert.equal(context().details.taskDigest, freshTaskDigest)
+  assert.equal(
+    JSON.parse(
+      readFileSync(path.join(root, 'tmp/agent-coordination/task.json'), 'utf8')
+    ).task.expectedFileDigests['src/value.txt'],
+    hash('after-again\n')
+  )
+
+  const stageCommand = 'git add -- src/value.txt'
+  assert.deepEqual(
+    native({
+      hook_event_name: 'PreToolUse',
+      tool_use_id: 'stage-product-change',
+      cwd: root,
+      tool_name: 'Bash',
+      tool_input: { command: stageCommand }
+    }),
+    {}
+  )
+  git('add', '--', 'src/value.txt')
+  assert.deepEqual(
+    native({
+      hook_event_name: 'PostToolUse',
+      tool_use_id: 'stage-product-change',
+      cwd: root,
+      tool_name: 'Bash',
+      tool_input: { command: stageCommand },
+      tool_response: { success: true }
+    }),
+    {}
+  )
+
+  const head = git('rev-parse', 'HEAD')
+  const tree = git('write-tree')
+  const missingGateRequest = {
+    repoRoot: root,
+    expectedTaskDigest: context().details.taskDigest,
+    update: {
+      state: 'ready',
+      evidence: { head, tree, gates: {} },
+      review: { status: 'passed', head, tree }
+    }
+  }
+  lifecycleText = writeLifecycleRequest(
+    missingGateRequest,
+    lifecycleText,
+    'lifecycle-missing-gate'
+  )
+  const missingGateCommand = native({
+    hook_event_name: 'PreToolUse',
+    tool_use_id: 'lifecycle-missing-gate-command',
+    cwd: root,
+    tool_name: 'Bash',
+    tool_input: { command: lifecycleCommand(lifecycleText) }
+  })
+  assert.equal(missingGateCommand.hookSpecificOutput.permissionDecision, 'deny')
+
+  const validRequest = {
+    repoRoot: root,
+    expectedTaskDigest: context().details.taskDigest,
+    update: {
+      state: 'ready',
+      evidence: {
+        head,
+        tree,
+        gates: { focused: { status: 'passed', head, tree } }
+      },
+      review: { status: 'passed', head, tree }
+    }
+  }
+  lifecycleText = writeLifecycleRequest(
+    validRequest,
+    lifecycleText,
+    'lifecycle-request-ready'
+  )
+  assert.equal(context().details.taskDigest, validRequest.expectedTaskDigest)
+  const missingArguments = runLifecycleCli([])
+  assert.equal(missingArguments.status, 2)
+  assert.equal(missingArguments.result.code, 'invalid_input')
+  const malformedDigest = runLifecycleCli([
+    '--request',
+    lifecycleRelativePath,
+    '--sha256',
+    'not-a-sha256'
+  ])
+  assert.equal(malformedDigest.status, 2)
+  assert.equal(malformedDigest.result.code, 'invalid_input')
+  const changedDigest = runLifecycleCli([
+    '--request',
+    lifecycleRelativePath,
+    '--sha256',
+    '0'.repeat(64)
+  ])
+  assert.equal(changedDigest.status, 2)
+  assert.equal(changedDigest.result.code, 'bootstrap_request_changed')
+  unlinkSync(lifecyclePath)
+  const missingRequest = runLifecycleCli([
+    '--request',
+    lifecycleRelativePath,
+    '--sha256',
+    hash(lifecycleText)
+  ])
+  assert.equal(missingRequest.status, 2)
+  assert.equal(missingRequest.result.code, 'missing_bootstrap_request')
+  writeFileSync(lifecyclePath, lifecycleText)
+  const updateCommand = lifecycleCommand(lifecycleText)
+  assert.deepEqual(
+    native({
+      hook_event_name: 'PreToolUse',
+      tool_use_id: 'lifecycle-update-command',
+      cwd: root,
+      tool_name: 'Bash',
+      tool_input: { command: updateCommand }
+    }),
+    {}
+  )
+  const updateResult = runLifecycleCli([
+    '--request',
+    lifecycleRelativePath,
+    '--sha256',
+    hash(lifecycleText)
+  ]).result
+  assert.equal(updateResult.decision, 'allow', updateResult.reason)
+  assert.deepEqual(
+    native({
+      hook_event_name: 'PostToolUse',
+      tool_use_id: 'lifecycle-update-command',
+      cwd: root,
+      tool_name: 'Bash',
+      tool_input: { command: updateCommand },
+      tool_response: { success: true }
+    }),
+    {}
+  )
+  const readyTask = context().details.registry.tasks[task.id]
+  assert.equal(readyTask.state, 'ready')
+  assert.deepEqual(readyTask.evidence, validRequest.update.evidence)
+  assert.deepEqual(readyTask.review, validRequest.update.review)
+
+  assert.deepEqual(
+    native({
+      hook_event_name: 'PreToolUse',
+      tool_use_id: 'task-local-commit-admission',
+      cwd: root,
+      tool_name: 'Bash',
+      tool_input: { command: 'git commit -m "validated task-local proof"' }
+    }),
+    {}
+  )
+  assert.equal(readFileSync(globalPath, 'utf8'), '{ incompatible history')
+})
+
+test('coordination workflow documents exact bootstrap and lifecycle request schema', () => {
+  const workflow = readFileSync(
+    new URL(
+      '../../docs/ai/workflows/agent-coordination-guards.md',
+      import.meta.url
+    ),
+    'utf8'
+  )
+  assert.ok(workflow.includes('`mode: "init-task-local"`'))
+  assert.ok(workflow.includes('`mode: "select-coordinated"`'))
+  assert.match(workflow, /expectedTaskDigest/)
+  assert.match(workflow, /"update": \{/)
+  assert.match(workflow, /this command takes no stdin/)
 })

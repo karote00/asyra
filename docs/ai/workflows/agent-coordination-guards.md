@@ -19,17 +19,56 @@ multi-agent tools or starting subagents.
 
 ## Task boundary
 
-The coordinator registers one versioned task before enabling its writes. The
-record binds its worktree, branch, baseline, allowed files, expected file bytes,
-contract-change exceptions, semantic owners, dependencies and completion gates.
-State lives in `tmp/agent-coordination/state.json`; it is local execution data,
-not a source-of-truth product contract or a file to commit.
+Every write needs an explicit task mode and a task record bound to one worktree,
+branch, baseline, allowed paths, exact expected file bytes, contract-change
+exceptions and completion gates. A normal single-agent task in its own isolated
+worktree uses task-local mode. It stores one validated snapshot at
+`tmp/agent-coordination/task.json` inside that worktree. Admission, write
+completion, lifecycle checks and pre-commit validation read only this snapshot;
+they do not open, migrate or validate shared history.
 
-Use `node scripts/agent-coordination/guard.cjs register` with a single JSON
-request on stdin and the observed `expectedRevision`. Concurrent registration
-uses a short metadata lock and revision comparison. A stale request is rejected;
-it must be reread and reconsidered, not automatically retried with a new number.
-The lock does not serialize independent implementation or test work.
+With no selected mode, hooks allow only bounded read commands, a new JSON
+request file under `tmp/agent-coordination/requests/`, and the exact guard
+command that consumes that request. The bootstrap request declares the
+operation as `mode: "init-task-local"`, plus the current absolute `repoRoot`
+and complete `task` record. This operation name is distinct from the selected
+state mode `task-local`. Add the request with
+one `apply_patch`, then run
+`node scripts/agent-coordination/guard.cjs init-task-local < tmp/agent-coordination/requests/<name>.json`.
+The hook validates the request before allowing either operation; its post-tool
+receipt checks the exact bytes written. The initializer verifies the current
+worktree and branch, checks the baseline is an ancestor of `HEAD`, checks every
+declared initial preimage against its current bytes or `absent`, and creates
+`task.json` without replacing an existing file. Declare every file that may
+change in `expectedFileDigests`; add-file targets use `absent`.
+
+Missing task state denies product writes with this bounded initialization
+route. Corrupt local state also denies writes. `recover-task-local` requires the
+exact SHA-256 of the inspected damaged state bytes plus a reviewed task record
+whose branch, baseline and file preimages still validate. It will not replace
+valid state or a coordinated-mode selector. Put that request in the same fixed
+request directory and run the exact `recover-task-local` command through the
+hook.
+
+Use shared coordination only when work needs cross-task information, such as a
+sub-PR/goal relationship, dependencies, shared semantic ownership or multiple
+contributors to one resource. Register the versioned record in the shared
+`tmp/agent-coordination/state.json` in the shared repository root with `node
+scripts/agent-coordination/guard.cjs register`, one JSON request on stdin and
+the observed `expectedRevision`. Create a new request declaring
+`mode: "select-coordinated"`, `repoRoot` and the registered `taskId`. This
+operation name is distinct from selected state mode `coordinated`. Explicitly
+select it in that worktree with
+`node scripts/agent-coordination/guard.cjs select-coordinated < tmp/agent-coordination/requests/<name>.json`.
+That selector lives in the worktree-local `task.json`;
+only coordinated mode reads and validates the shared registry. If the shared
+registry is missing, damaged or incompatible, coordinated work remains denied.
+Do not repair it by resetting history or guessing fields for old tasks.
+
+Shared registration uses a short metadata lock and revision comparison. A
+stale request is rejected; reread and reconsider it rather than automatically
+retrying with a new number. The lock does not serialize independent
+implementation or test work.
 
 Use `kind: "local"` for administration or research that has no PR relationship.
 A paused or blocked coordinator on the repository root may still add/update an
@@ -39,11 +78,57 @@ preimage-checked patch, then invoke exactly
 Register a reusable request path with an `absent` expected digest before its
 first write. This recovery route does not enable ordinary paused-task writes.
 
-Only one active writer owns a worktree. Distinct worktrees may proceed in
+Only one active writer owns a worktree. Distinct task-local worktrees use
+separate snapshots. In coordinated mode, distinct worktrees may proceed in
 parallel when their declared semantic owners do not conflict. Shared ownership
-requires an explicit dependency and completion of the predecessor. To change
-an immutable task scope, retire the old task and register its replacement after
-coordinator review; do not silently widen a worker's task.
+requires an explicit dependency and completion of the predecessor. A task-local
+record's scope and file membership are immutable. `node
+scripts/agent-coordination/guard.cjs context` reports its current `taskDigest`,
+which `update-task-local` requires for lifecycle/evidence updates. Those updates
+cannot change scope or file snapshots, and readiness evidence must match the
+current Git head and staged tree. Predeclare
+`tmp/agent-coordination/requests/task-lifecycle.json` as an allowed exact file
+with an `absent` preimage. After other product writes are complete, read
+`taskDigest` from `context` and write a JSON request there using this exact
+schema:
+
+```json
+{
+  "repoRoot": "/absolute/path/to/worktree",
+  "expectedTaskDigest": "<taskDigest returned by context>",
+  "update": {
+    "state": "active"
+  }
+}
+```
+
+`expectedTaskDigest` is the request field name; `update` contains only the
+lifecycle fields being changed (`state`, `evidence`, `review`, or
+`continuations`). For `ready` or `complete`, include exact passing gate evidence
+and review for the current head and staged tree.
+
+The `taskDigest` intentionally ignores only the current digest value of this
+fixed lifecycle request file, while retaining its path and all other task
+fields and file digests. That lets the request carry the digest it read before
+its own post-hook refresh. Changes to another declared file, task authority,
+state or evidence still make the request stale. The pre-hook verifies the
+request file's registered preimage and exact SHA-256, then admits only this
+fixed command:
+
+```text
+node scripts/agent-coordination/guard.cjs update-task-local --request tmp/agent-coordination/requests/task-lifecycle.json --sha256 <sha256-of-exact-request-bytes>
+```
+
+There is no shell redirection or general command approval for this route. The
+CLI reads the worktree-local task state and fixed request directly from its
+current directory, so this command takes no stdin. Other guard commands retain
+their JSON-on-stdin interface. The CLI rechecks the exact request bytes and
+`expectedTaskDigest` under task-local compare-and-swap; the post-hook verifies
+the matching request and resulting state. If the request is stale, reread
+`context`, review the changed task state, and write a new request. Guard-owned
+`task.json`, `state.json`, receipt and lock paths cannot be changed through
+ordinary task writes. Resolve existing state before initializing a reviewed
+replacement; do not silently widen a task.
 
 ## Bounded registry history
 
@@ -93,6 +178,11 @@ assertion is semantically strong enough; independent review still owns that.
   digest updates for exactly that operation's paths. It never adopts all dirty
   files or restores unexpected changes. Unknown native success formats leave
   expectations unchanged and require explicit review.
+- Task-local preflight receipts bind task authority, lifecycle state, exact
+  preimage paths and input. `complete-write` serializes the post-tool update in
+  that worktree and refreshes only paths from its matching receipt. A missing,
+  changed or replayed receipt fails closed. Independently completed paths keep
+  separate snapshots; a same-path preimage conflict remains denied.
 - `pre-commit` checks the staged scope and exact evidence. `integration` checks
   the registered sub-PR/goal relationship, source and target revisions, review,
   dependencies and required gate evidence. These commands do not execute Git
@@ -120,9 +210,11 @@ this checked path is not covered by this guard.
 
 ## Native Codex adapter
 
-`.codex/hooks.json` invokes `scripts/agent-hook-adapter.mjs`. Hook commands resolve
-the common repository directory so linked worktrees use the same reviewed
-guard. The adapter maps native hook output to supported denial/continuation
+`.codex/hooks.json` invokes `scripts/agent-hook-adapter.mjs` from the common
+repository directory. The adapter resolves the actual worktree from the native
+execution directory or exact patch targets, reads that worktree's explicit
+`task.json` mode, and routes to its task-local state or selected shared
+registry. It maps native hook output to supported denial/continuation
 shapes and converts core failures into an explicit pre-tool denial. It never
 uses unsupported `permissionDecision: "ask"` as an escalation mechanism.
 
@@ -138,7 +230,9 @@ directory before core validation. This routing does not authenticate the writer.
 
 Per-tool preflight receipts bind a tool-use ID and exact input to the task's
 preimages. Only a matching, explicitly successful post-tool event may update
-those paths through registry compare-and-swap. A post-tool warning cannot undo
+those paths. Coordinated mode keeps the shared registry's explicit revision
+checks. Task-local mode updates only its worktree snapshot under a short local
+lock; unrelated task records are not inspected. A post-tool warning cannot undo
 an operation that already happened. Receipts contain no full conversation,
 environment variables, authentication material or test logs.
 
