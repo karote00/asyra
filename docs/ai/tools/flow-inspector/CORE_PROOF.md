@@ -466,11 +466,13 @@ revision, GitHub run, and run attempt. Its versioned execution plan records
 lint, repository script tests, naming, framework declarations, workspace test
 selection, and four E2E suites in one relationship map. Full validation selects
 all declared checks. Incremental validation runs lint on changed applicable
-files, repository script tests for declared script-owner inputs, supported
-Vitest related tests for existing source/test inputs, and only the E2E suite
-owners selected by changed paths. Configurations, fixtures, deleted or renamed
-test inputs, unsupported runners, and shared inputs retain the complete owner
-suite. The final job requires the same identity and plan/map digests, requires
+files, repository script tests for declared repository-test inputs, supported
+Vitest related tests only for source/test inputs owned by the consumer
+workspace, and only the E2E suite owners selected by changed paths. Transitive
+dependency-source inputs, configurations, fixtures, deleted or renamed test
+inputs, unsupported runners, and shared inputs retain the complete owner suite.
+Unknown path relations also select repository script tests while remaining a
+CI blocker. The final job requires the same identity and plan/map digests, requires
 every selected producer to succeed, and requires every unselected producer to
 remain skipped. Missing selected outputs and zero-evidence results cannot pass.
 Known docs-only changes still run

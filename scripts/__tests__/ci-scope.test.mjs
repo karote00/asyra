@@ -98,15 +98,96 @@ test('deleted, renamed, configuration, and fixture inputs keep full test ownersh
   }
 })
 
-test('repository scripts tests select their declared input owner only', () => {
+test('transitive package sources select the consumer owner suite, not Vitest related', async () => {
+  const upstreamOnly = classifyChanges(
+    ['packages/utils/src/index.ts'],
+    manifests
+  )
+  const mixed = classifyChanges(
+    ['packages/core/src/index.ts', 'packages/utils/src/index.ts'],
+    manifests
+  )
+  const coreInputs = [upstreamOnly, mixed].map(
+    (scope) =>
+      scope.relationshipMap.executionPlan.checks.workspaces.find(
+        ({ workspace }) => workspace === '@asyra/core'
+      ).tests
+  )
+
+  assert.deepEqual(
+    coreInputs.map(({ mode }) => mode),
+    ['full', 'full']
+  )
+  const coreWorkspace = upstreamOnly.relationshipMap.workspaceMatrix.find(
+    ({ name }) => name === '@asyra/core'
+  )
+  const runnerCalls = []
+  await executeWorkspaceChecks(coreWorkspace, {
+    identity: {},
+    relationshipMapDigest: 'a'.repeat(64),
+    runTask: async (workspace, task, selection) => {
+      runnerCalls.push({ workspace, task, selection })
+    }
+  })
+  assert.deepEqual(runnerCalls, [
+    {
+      workspace: '@asyra/core',
+      task: coreWorkspace.buildTask,
+      selection: undefined
+    },
+    {
+      workspace: '@asyra/core',
+      task: 'test:ci',
+      selection: coreWorkspace.testSelection
+    }
+  ])
+  assert.ok(
+    fs
+      .readFileSync(
+        path.join(
+          repositoryRoot,
+          'packages/core/src/__tests__/element-selection-api.test.ts'
+        ),
+        'utf8'
+      )
+      .includes("from '@asyra/utils'")
+  )
+})
+
+test('repository scripts tests follow declared repository input roots', () => {
   const appChange = classifyChanges(['apps/fieldscope/src/main.tsx'], manifests)
   assert.equal(
     appChange.relationshipMap.executionPlan.checks.repositoryScripts.mode,
-    'not-selected'
+    'full'
   )
   const helperChange = classifyChanges(['scripts/ci-scope.mjs'], manifests)
   assert.equal(
     helperChange.relationshipMap.executionPlan.checks.repositoryScripts.mode,
+    'full'
+  )
+})
+
+test('repository scripts suite follows repository data read by its formal tests', () => {
+  for (const input of [
+    '.github/dependabot.yml',
+    'apps/asyra-design/vite.config.ts',
+    'apps/asyra-design/src/index.css',
+    'apps/asyra-design/docs/development.md'
+  ]) {
+    const scope = classifyChanges([input], manifests)
+    assert.equal(
+      scope.relationshipMap.executionPlan.checks.repositoryScripts.mode,
+      'full',
+      input
+    )
+  }
+
+  const unknown = classifyChanges(
+    ['new-root/consumer-contract.json'],
+    manifests
+  )
+  assert.equal(
+    unknown.relationshipMap.executionPlan.checks.repositoryScripts.mode,
     'full'
   )
 })

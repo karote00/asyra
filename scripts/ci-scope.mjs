@@ -516,6 +516,12 @@ function classifyChanges(
           isVitestRelatedInput(changedPath) &&
           fs.existsSync(path.join(process.cwd(), changedPath))
       )
+      const relatedInputsAreConsumerOwned = ownerPaths.every((changedPath) => {
+        const pathOwner = allManifestViews
+          .map((manifests) => workspaceForPath(changedPath, manifests))
+          .find(Boolean)
+        return pathOwner?.name === name
+      })
       const e2eOnlyInputs =
         ownerPaths.length > 0 &&
         ownerPaths.every(
@@ -550,7 +556,8 @@ function classifyChanges(
       else if (
         relatedInputs.length > 0 &&
         relatedInputs.length === ownerPaths.length &&
-        testRunner
+        testRunner &&
+        relatedInputsAreConsumerOwned
       )
         testSelection = {
           mode: 'related',
@@ -652,6 +659,12 @@ function classifyChanges(
       )
     )
     .sort()
+  const repositoryScriptsRequired =
+    repositoryScriptsInputs.length > 0 || unknownPaths.length > 0
+  let repositoryScriptsReason = 'no-script-owner-inputs'
+  if (unknownPaths.length) repositoryScriptsReason = 'unknown-input-owner'
+  else if (repositoryScriptsInputs.length)
+    repositoryScriptsReason = 'declared-repository-test-inputs'
   const namingInputs = [...new Set(changedPaths)]
     .filter(
       (changedPath) =>
@@ -682,12 +695,12 @@ function classifyChanges(
         reason: lintReason
       },
       repositoryScripts: {
-        mode: repositoryScriptsInputs.length ? 'full' : 'not-selected',
+        mode: repositoryScriptsRequired ? 'full' : 'not-selected',
         command: 'test:scripts',
-        inputs: repositoryScriptsInputs,
-        reason: repositoryScriptsInputs.length
-          ? 'script-owner-inputs'
-          : 'no-script-owner-inputs'
+        inputs: unknownPaths.length
+          ? [...new Set([...repositoryScriptsInputs, ...changedPaths])].sort()
+          : repositoryScriptsInputs,
+        reason: repositoryScriptsReason
       },
       naming: {
         mode:
