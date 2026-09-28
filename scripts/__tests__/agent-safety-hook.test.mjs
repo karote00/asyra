@@ -32,6 +32,22 @@ function makeRepository(branch) {
   return { root, git }
 }
 
+function makeLinkedWorktree(t, branch) {
+  const { root, git } = makeRepository('main')
+  const container = mkdtempSync(path.join(temporaryRoot, 'agent-safety-link-'))
+  const linkedRoot = path.join(container, 'feature')
+  git('worktree', 'add', '-q', '-b', branch, linkedRoot, 'HEAD')
+  t.after(() => {
+    execFileSync('git', ['worktree', 'remove', '--force', linkedRoot], {
+      cwd: root,
+      stdio: 'ignore'
+    })
+    rmSync(container, { recursive: true, force: true })
+    rmSync(root, { recursive: true, force: true })
+  })
+  return { root, linkedRoot }
+}
+
 function invokeHook(root, event) {
   const result = spawnSync(process.execPath, [hookPath], {
     cwd: root,
@@ -159,7 +175,6 @@ test('main-branch writes and independently unsafe Git commands remain denied', (
     'git restore tracked.txt',
     'git push --force origin HEAD',
     'git push origin HEAD:main',
-    'git merge main',
     'git status&&git reset --hard HEAD~1',
     'git branch --force main HEAD~1',
     'git switch -C main'
@@ -170,6 +185,46 @@ test('main-branch writes and independently unsafe Git commands remain denied', (
       command
     )
   }
+})
+
+test('tool workdir and file targets resolve to a linked feature worktree', (t) => {
+  const { root, linkedRoot } = makeLinkedWorktree(t, 'codex/linked-feature')
+
+  assert.deepEqual(
+    preTool(root, 'Bash', {
+      workdir: linkedRoot,
+      command: 'git status --short'
+    }),
+    {}
+  )
+  assert.deepEqual(
+    preTool(root, 'Write', {
+      path: path.join(linkedRoot, 'tracked.txt'),
+      content: 'updated in the feature worktree\n'
+    }),
+    {}
+  )
+})
+
+test('merge source and destination branch determine main protection', (t) => {
+  const { root, linkedRoot } = makeLinkedWorktree(t, 'codex/merge-destination')
+
+  assert.deepEqual(
+    preTool(root, 'Bash', {
+      workdir: linkedRoot,
+      command: 'git merge main'
+    }),
+    {}
+  )
+  assert.equal(
+    permissionDecision(
+      preTool(root, 'Bash', {
+        workdir: root,
+        command: 'git merge codex/merge-destination'
+      })
+    ),
+    'deny'
+  )
 })
 
 test('the project keeps native hooks for stateless write safety only', () => {

@@ -40,6 +40,25 @@ function gitWorktreeRoot(cwd) {
   }
 }
 
+function gitCommonDirectory(cwd) {
+  const result = spawnSync(
+    'git',
+    ['rev-parse', '--path-format=absolute', '--git-common-dir'],
+    {
+      cwd,
+      encoding: 'utf8',
+      timeout: 1000,
+      stdio: ['ignore', 'pipe', 'ignore']
+    }
+  )
+  if (result.status !== 0) return null
+  try {
+    return realpathSync(result.stdout.trim())
+  } catch {
+    return null
+  }
+}
+
 function gitCommandDirectory(command, cwd) {
   const tokens = command.match(/(?:[^\s"']+|"[^"]*"|'[^']*')+/g) || []
   if (path.basename((tokens[0] || '').replace(/^['"]|['"]$/g, '')) !== 'git')
@@ -156,9 +175,6 @@ function destructiveCommandReason(command) {
 
 function targetsMain(command) {
   return (
-    /\bgit\b[^\n;&|]*\bmerge\b[^\n;&|]*(?:^|\s)(?:main|master)(?:\s|$)/i.test(
-      command
-    ) ||
     /\bgit\b[^\n;&|]*\bpush\b[^\n;&|]*(?::|\s)(?:main|master|refs\/heads\/(?:main|master))(?:\s|$)/i.test(
       command
     ) ||
@@ -259,7 +275,9 @@ function evaluate(event) {
     return deny('Cannot verify the current Git worktree.')
   }
   const eventWorktree = gitWorktreeRoot(eventCwd)
-  if (!eventWorktree) return deny('Cannot verify the current Git worktree.')
+  const repositoryDirectory = gitCommonDirectory(eventCwd)
+  if (!eventWorktree || !repositoryDirectory)
+    return deny('Cannot verify the current Git worktree.')
 
   let cwd
   try {
@@ -269,31 +287,39 @@ function evaluate(event) {
   } catch {
     return deny('Cannot verify the current Git worktree.')
   }
-  const projectWorktree = gitWorktreeRoot(cwd)
-  if (!projectWorktree) return deny('Cannot verify the current Git worktree.')
-  if (projectWorktree !== eventWorktree)
-    return deny('Tools must stay within the current Git worktree.')
+  const operationRepository = gitCommonDirectory(cwd)
+  if (!operationRepository)
+    return deny('Cannot verify the current Git worktree.')
+  if (operationRepository !== repositoryDirectory)
+    return deny('Tools must stay within the current Git repository.')
   const targets = writeTargets(event)
   if (
     ['apply_patch', 'Edit', 'Write'].includes(event.tool_name) &&
     targets.length === 0
   )
     return deny('Cannot verify the target path of this file operation.')
-  for (const target of targets) {
-    if (targetWorktreeRoot(target, cwd) !== projectWorktree)
-      return deny('File changes must stay within the current Git worktree.')
+  const targetWorktrees = targets.map((target) =>
+    targetWorktreeRoot(target, cwd)
+  )
+  for (const worktree of targetWorktrees) {
+    if (!worktree || gitCommonDirectory(worktree) !== repositoryDirectory)
+      return deny('File changes must stay within the current Git repository.')
   }
-  const branch = gitBranch(cwd)
+  if (new Set(targetWorktrees).size > 1)
+    return deny('One file operation must stay within one Git worktree.')
+  const operationWorktree = targetWorktrees[0] || gitWorktreeRoot(cwd)
+  if (!operationWorktree)
+    return deny('Cannot verify the operation Git worktree.')
+  const branch = gitBranch(operationWorktree)
   if (!branch) return deny('Cannot verify the current Git branch.')
-  let commandBranch = branch
   if (typeof command === 'string') {
     for (const segment of command.split(/\s*&&\s*/)) {
       const commandDirectory = gitCommandDirectory(segment, cwd)
       if (!commandDirectory)
         return deny('Cannot verify the Git command worktree.')
-      if (gitWorktreeRoot(commandDirectory) !== projectWorktree)
-        return deny('Git commands must stay within the current worktree.')
-      commandBranch = gitBranch(commandDirectory)
+      if (gitCommonDirectory(commandDirectory) !== repositoryDirectory)
+        return deny('Git commands must stay within the current Git repository.')
+      const commandBranch = gitBranch(commandDirectory)
       if (!commandBranch) return deny('Cannot verify the Git command branch.')
       if (
         ['main', 'master'].includes(commandBranch) &&
