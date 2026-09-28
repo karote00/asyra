@@ -7,6 +7,8 @@ import type { SimRuntime } from '../../../init/bootstrap'
 import { LivePreview } from '../live-preview'
 import { RecordedPlaybackEvidence } from '../recorded-playback-evidence'
 import type { PlaybackView } from '../playback-view'
+import { sampleSnapshot } from '../../../analysis/live/sample'
+import { jointValuesAt } from '../../../domain/workcell'
 
 function recordedRun(state: 'clear' | 'finding') {
   const snapshot = liveFixture()
@@ -129,4 +131,71 @@ it('checks an unclassified pose before a recorded witness and fences old live de
 
   preview.dispose()
   await preview.completion
+})
+
+it('updates the target pose immediately and clears feedback from the previous pose while its exact check is pending', async () => {
+  const input = liveFixture()
+  let notify: () => void = () => undefined
+  let state: LiveState = { status: 'idle', sample: null, error: null }
+  let signal: AbortSignal | undefined
+  const open = vi.fn(
+    (_input: unknown, _time: number, options: { signal: AbortSignal }) =>
+      new Promise<void>((resolve) => {
+        signal = options.signal
+        signal.addEventListener('abort', () => resolve(), { once: true })
+      })
+  )
+  const api = {
+    open,
+    sample: vi.fn(),
+    getState: () => state,
+    subscribe: (listener: () => void) => {
+      notify = listener
+      return () => undefined
+    }
+  } as unknown as SimRuntime['features']['live']
+  const publish = vi.fn<(view: PlaybackView) => void>()
+  const preview = new LivePreview(
+    input.workcell,
+    input.trajectory,
+    input.interval,
+    () => input,
+    api,
+    publish
+  )
+
+  preview.sample(0, { discontinuity: false })
+  await Promise.resolve()
+
+  const evidence = runOfficialClearanceMethod(sampleSnapshot(input, 0))
+  state = {
+    status: 'ready',
+    sample: {
+      time: 0,
+      pairs: evidence.pairs,
+      totalPairCount: input.pairs.length,
+      complete: true,
+      error: null
+    },
+    error: null
+  }
+  notify()
+  const acceptedView = publish.mock.lastCall?.[0]
+  expect(acceptedView?.feedback?.kind).not.toBe('checking')
+
+  const target = 3.872
+  preview.sample(target, { discontinuity: true })
+
+  expect(publish.mock.lastCall?.[0]).toMatchObject({
+    time: target,
+    pendingTime: target,
+    feedback: { kind: 'checking' }
+  })
+  expect(publish.mock.lastCall?.[0].joints).toEqual(
+    jointValuesAt(input.trajectory, target)
+  )
+
+  preview.dispose()
+  await preview.completion
+  expect(signal?.aborted).toBe(true)
 })

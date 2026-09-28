@@ -100,7 +100,7 @@ it.each(['duplicate', 'wrong time', 'contradiction', 'deadline'])(
   }
 )
 
-it('fences provisional output after a seek while retaining the original in-flight deadline', async () => {
+it('fences provisional output after a seek but retains validated terminal evidence for its input', async () => {
   const input = liveFixture(true)
   const worker = new WorkerStub()
   const runner = new LivePlaybackRunner(() => worker as unknown as Worker)
@@ -119,7 +119,8 @@ it('fences provisional output after a seek while retaining the original in-fligh
   expect(runner.getState().sample).toBeNull()
   expect(runner.getRecords()).toHaveLength(0)
   worker.emit({ type: LiveMessages.RESULT, id: 1, time: 4, evidence })
-  expect(runner.getRecords()).toHaveLength(0)
+  expect(runner.getRecords().map((sample) => sample.time)).toEqual([4])
+  expect(runner.getState().sample).toBeNull()
   abort.abort()
   await task
 })
@@ -198,6 +199,109 @@ it('does not repeat a geometry query for a checked sample in the same input life
   expect(calls).toBe(1)
 })
 
+it('serves an exact cached target during unrelated work and retains valid stale output without publishing it', async () => {
+  const input = liveFixture()
+  const firstWorker = new WorkerStub()
+  const secondWorker = new WorkerStub()
+  const factory = vi
+    .fn<() => Worker>()
+    .mockReturnValueOnce(firstWorker as unknown as Worker)
+    .mockReturnValueOnce(secondWorker as unknown as Worker)
+  const runner = new LivePlaybackRunner(factory)
+  const retained = runner.prepare('revision-1', () => input)
+  const firstAbort = new AbortController()
+  const first = runner.open(retained, 4, firstAbort.signal)
+
+  firstWorker.emit({ type: LiveMessages.READY })
+  firstWorker.emit({
+    type: LiveMessages.RESULT,
+    id: 1,
+    time: 4,
+    evidence: runOfficialClearanceMethod(sampleSnapshot(retained, 4))
+  })
+  firstAbort.abort()
+  await first
+
+  const secondAbort = new AbortController()
+  const second = runner.open(retained, 0, secondAbort.signal)
+  secondWorker.emit({ type: LiveMessages.READY })
+  runner.sample(4, true)
+
+  expect(runner.getState()).toMatchObject({
+    status: 'ready',
+    sample: { time: 4 }
+  })
+  expect(
+    secondWorker.postMessage.mock.calls.filter(
+      ([message]) => message.type === LiveMessages.SAMPLE
+    )
+  ).toHaveLength(1)
+
+  secondWorker.emit({
+    type: LiveMessages.RESULT,
+    id: 1,
+    time: 0,
+    evidence: runOfficialClearanceMethod(sampleSnapshot(retained, 0))
+  })
+
+  expect(runner.getState()).toMatchObject({
+    status: 'ready',
+    sample: { time: 4 }
+  })
+  expect(
+    runner
+      .getRecords()
+      .map((sample) => sample.time)
+      .sort()
+  ).toEqual([0, 4])
+  expect(
+    secondWorker.postMessage.mock.calls.filter(
+      ([message]) => message.type === LiveMessages.SAMPLE
+    )
+  ).toHaveLength(1)
+
+  secondAbort.abort()
+  await second
+})
+
+it('shares an identical in-flight query and retains its exact result for the pending seek', async () => {
+  vi.useFakeTimers()
+
+  const input = liveFixture()
+  const worker = new WorkerStub()
+  const runner = new LivePlaybackRunner(
+    () => worker as unknown as Worker,
+    undefined,
+    Date.now
+  )
+  const abort = new AbortController()
+  const task = runner.open(input, 0, abort.signal)
+
+  worker.emit({ type: LiveMessages.READY })
+  runner.sample(0, true)
+  worker.emit({
+    type: LiveMessages.RESULT,
+    id: 1,
+    time: 0,
+    evidence: runOfficialClearanceMethod(sampleSnapshot(input, 0))
+  })
+  await vi.advanceTimersByTimeAsync(LIVE_LIMITS.samplePeriodMs)
+
+  expect(
+    worker.postMessage.mock.calls.filter(
+      ([message]) => message.type === LiveMessages.SAMPLE
+    )
+  ).toHaveLength(1)
+  expect(runner.getState()).toMatchObject({
+    status: 'ready',
+    sample: { time: 0 }
+  })
+
+  abort.abort()
+  await task
+  expect(vi.getTimerCount()).toBe(0)
+})
+
 it('reuses owner-admitted samples across Play lifetimes with zero new Workers, then invalidates on replacement', async () => {
   const worker = new WorkerStub()
   const factory = vi.fn(() => worker as unknown as Worker)
@@ -217,7 +321,10 @@ it('reuses owner-admitted samples across Play lifetimes with zero new Workers, t
   abort.abort()
   await first
 
-  const create = vi.fn(liveFixture)
+  const changedInput = structuredClone(liveFixture())
+  changedInput.snapshotId = 'changed-threshold-revision'
+  changedInput.rule.minimumClearance += 0.125
+  const create = vi.fn(() => changedInput)
   const retained = runner.prepare('revision-1', create)
   const nextAbort = new AbortController()
   const next = runner.open(retained, 4, nextAbort.signal)
@@ -236,7 +343,11 @@ it('reuses owner-admitted samples across Play lifetimes with zero new Workers, t
 
   const replacement = runner.prepare('revision-2', create)
   expect(replacement).not.toBe(input)
+  expect(replacement.rule.minimumClearance).toBe(
+    changedInput.rule.minimumClearance
+  )
   expect(create).toHaveBeenCalledOnce()
+  expect(runner.getRecords('revision-1')).toHaveLength(0)
 
   runner.dispose()
 })
@@ -270,7 +381,7 @@ it('does not reuse cached evidence for a detached input with the same snapshot I
   await next
 })
 
-it('sends geometry once, retains only the latest time and discards pre-seek/retired output', async () => {
+it('sends geometry once, retains latest time and caches valid pre-seek output without publishing it', async () => {
   vi.useFakeTimers()
 
   const input = liveFixture()
@@ -299,6 +410,7 @@ it('sends geometry once, retains only the latest time and discards pre-seek/reti
   })
 
   expect(runner.getState().sample).toBeNull()
+  expect(runner.getRecords().map((sample) => sample.time)).toEqual([0])
 
   await vi.advanceTimersByTimeAsync(LIVE_LIMITS.samplePeriodMs)
 
@@ -316,6 +428,12 @@ it('sends geometry once, retains only the latest time and discards pre-seek/reti
   })
 
   expect(runner.getState().sample?.time).toBe(4)
+  expect(
+    runner
+      .getRecords()
+      .map((sample) => sample.time)
+      .sort()
+  ).toEqual([0, 4])
 
   const late = worker.onmessage
 

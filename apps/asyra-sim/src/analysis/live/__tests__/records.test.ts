@@ -3,6 +3,24 @@ import { LiveEvidenceRecords } from '../records'
 import { LIVE_LIMITS } from '../protocol'
 import { liveFixture } from './fixtures'
 
+it('reuses an exact point only and does not treat a nearby time as covered', () => {
+  const records = new LiveEvidenceRecords()
+  const input = liveFixture()
+  const sample = {
+    time: 2,
+    pairs: [],
+    totalPairCount: input.pairs.length,
+    complete: false,
+    error: 'unchecked pairs remain unknown'
+  }
+
+  records.replace(input, 'current')
+  records.record(input, sample)
+
+  expect(records.get(2)).toBe(sample)
+  expect(records.get(2.0001)).toBeUndefined()
+})
+
 it('bounds exact-time observations, rejects retired owners and does not leak another experiment records', () => {
   const records = new LiveEvidenceRecords()
   const input = liveFixture()

@@ -299,19 +299,44 @@ check and at most one latest pending time. Forward playback protects crossed
 canonical keyframes until checked before catching up to the latest playhead;
 optional intermediate samples may be coalesced. An explicit seek resets this
 progress and checks its exact target, not the skipped interval. Continuous Play
-never waits for a solve. Manual seeking keeps the slider responsive while an
-existing displayed pose and its feedback remain paired until the latest target's
-calculation or recorded-evidence lookup completes. The notice names the pending
-target separately. Manual seeking does not clear existing feedback or present
-intermediate pair-progress states; compute the next state, then replace it.
-New target geometry and its accepted feedback are presented atomically, also
-when the target is earlier than the displayed pose. No prior evidence is applied
-to the target pose. Before any accepted feedback, preview the target with an
-explicit checking state; failure displays that target with an explicit error.
+never waits for a solve. Each slider drag/click synchronously submits its exact
+target time and updates the preview pose from the canonical trajectory. Rendering
+observes that updated preview state; it never waits for analysis. Feedback is
+scoped to the pose it describes: a new unchecked target shows checking/unknown
+state and cannot inherit findings from the previous pose. The latest target is
+authoritative for presentation, while late results may be retained under the
+unchanged admitted input if they validate for their own exact time.
+
+Reuse only evidence that exactly covers the requested time: an exact sampled
+point or a certified interval containing that time. A point witness says
+nothing about neighboring times, and an unresolved interval remains unknown.
+The live analysis owner retains bounded exact-time samples for its admitted
+input. The Preview UI derives a query index from the selected immutable
+run's per-pair evidence; that index adds no evidence authority and is retired
+with its run/input selection. A finding leaf is usable only at its exact
+witness time, a clear query requires certificates for every required pair, and
+missing pairs or gaps remain unknown. Input, method, trajectory, scope,
+threshold, numerical-setting or geometry changes retire affected evidence.
+Identical in-flight queries may share work, but cancellation and stale-delivery
+fencing remain in force. A cache hit is served without waiting behind unrelated
+analysis work.
+
+After a foreground target is served, the owner may try to certify an adjacent
+gap with the existing continuous interval method. Evidence may be joined only
+when the method proves the entire interval and required pair information agrees.
+Point witnesses remain points; a finding leaf does not establish finding status
+throughout its interval. If the interval method cannot prove coverage within its
+bounded work, keep the gap unknown. Adaptive subdivision uses motion and returned
+certificates to decide where to spend work; declared time tolerance is a
+subdivision stopping precision, never permission to treat an unchecked gap as
+known. Overall feedback remains incomplete while any required pair or queried
+time lacks evidence. Background gap work never delays the foreground target or
+creates an unlimited queue.
+
 The selected method must support static queries; missing or incompatible
-methods fail explicitly without substitution. Worker creation is lazy on a
-cache miss. Each sample has bounded work,
-wall time and evidence, and malformed output fails closed.
+methods fail explicitly without substitution. Worker creation is lazy on an
+evidence miss. Each foreground sample and background interval attempt has
+bounded work, wall time and evidence, and malformed output fails closed.
 
 Publish validated collision or clearance evidence while other pair checks are
 still running; do not wait for terminal sample storage or report construction.
@@ -350,11 +375,12 @@ contact patch, or structural simulation. Whole-body highlights identify the
 parts from the latest accepted sample, not a computed contact region or proof
 of contact at every intervening frame. During forward motion the highlight
 remains visible until newer feedback supersedes it; the notice identifies the
-checked time and explicitly labels earlier-pose evidence. Manual seeking retains
-only the existing displayed pose/feedback pair, not a warning attached
-to new unchecked geometry. Pending work must not flash that pair back to normal
-appearance. Accept only the latest seek target; late responses cannot replace
-it. Exact cached evidence switches the pair without a checking/reset frame.
+checked time and explicitly labels earlier-pose evidence. Manual seeking
+immediately presents the target pose with checking/unknown feedback while its
+exact query is pending. It drops the previous pose's highlights rather than
+attaching them to new unchecked geometry. Accept only the latest seek target;
+late responses cannot replace its feedback. Exact cached evidence presents the
+target pose and matching feedback without a checking/reset frame.
 Future evidence never colors an earlier displayed pose. Explicit Pause still
 freezes the current frame rather than snapping to an earlier checked frame.
 Frozen formal pair replay
@@ -372,9 +398,12 @@ simultaneous collision/clearance/unresolved pairs, severity precedence only on a
 shared body, all-pair detail access, and live/cached/recorded presentation parity,
 explicit Pause without snapping, latest-sample highlighting and exact-pose checks,
 cold forward/backward manual seeks through continuous clearance and collision,
-atomic pose/feedback handoff without normal-color gaps, latest-target/error
-handling and cached-seek parity,
-latest-only backpressure, exact-time reuse with no Worker work, cache invalidation,
+immediate target-pose updates while analysis is pending, target-scoped feedback
+without stale highlights, latest-target/error handling and exact cached-seek
+parity, latest-only backpressure, exact-point and certified-interval reuse with
+no redundant Worker work, explicit gap queries, point-evidence non-expansion,
+foreground-before-background scheduling, fully proven interval merging,
+unresolved-gap preservation, cache invalidation,
 known formal evidence reuse without recomputation and missing-pose checks before
 later witnesses, cancellation/replacement/late output, invalid input,
 unchanged history/report data, original/native shape identity, localized UI

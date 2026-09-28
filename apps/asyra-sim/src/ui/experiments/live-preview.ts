@@ -59,10 +59,8 @@ export class LivePreview {
     this.awaitingSeek = options.discontinuity
 
     if (options.discontinuity) {
-      // Compute the next state without resetting the existing presentation.
-      if (this.feedback.kind === 'checking') {
-        this.presentedTime = time
-      }
+      this.presentedTime = time
+      this.feedback = checkingFeedback()
       this.lastSample = null
       this.checkedTime = null
       this.anchorTime = time

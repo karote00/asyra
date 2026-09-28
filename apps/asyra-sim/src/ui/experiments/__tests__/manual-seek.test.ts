@@ -4,7 +4,7 @@ import { playbackHighlight } from '../playback-highlight'
 import { seekFixture } from './seek-fixture'
 
 it.each(['clearance', 'collision'] as const)(
-  'keeps a checked pose and %s paired through cold forward and backward seeks',
+  'presents each cold seek target immediately without carrying prior %s feedback',
   async (kind) => {
     const f = seekFixture()
 
@@ -23,16 +23,19 @@ it.each(['clearance', 'collision'] as const)(
         f.preview.sample(target, { discontinuity: true })
 
         expect(f.latest()).toMatchObject({
-          time: previous.time,
+          time: target,
           pendingTime: target,
-          feedback: { kind, checkedTime: previous.time }
+          feedback: { kind: 'checking' }
         })
-        expect(f.latest().joints).toEqual(previous.joints)
+        expect(f.latest().joints).toEqual(
+          jointValuesAt(f.input.trajectory, target)
+        )
+        expect(f.latest().time).not.toBe(previous.time)
 
         const pendingPublications = f.publish.mock.calls.length
         f.deliver(target, kind, true)
         expect(f.publish).toHaveBeenCalledTimes(pendingPublications)
-        expect(f.latest().time).toBe(previous.time)
+        expect(f.latest().time).toBe(target)
 
         f.deliver(target, kind)
         expect(f.latest()).toMatchObject({
@@ -44,8 +47,12 @@ it.each(['clearance', 'collision'] as const)(
         )
 
         for (const [view] of f.publish.mock.calls.slice(before)) {
-          expect(view.feedback?.checkedTime).toBe(view.time)
-          expect(playbackHighlight(view)?.colors).toEqual(colors)
+          if (view.feedback?.kind === 'checking') {
+            expect(playbackHighlight(view)).toBeUndefined()
+          } else {
+            expect(view.feedback?.checkedTime).toBe(view.time)
+            expect(playbackHighlight(view)?.colors).toEqual(colors)
+          }
         }
       }
 
@@ -70,7 +77,11 @@ it('only presents the latest target, then removes the warning on an actually cle
     f.deliver(4.1, 'collision', true)
     f.deliver(4.1, 'collision')
 
-    expect(f.latest()).toMatchObject({ time: 4, pendingTime: 2 })
+    expect(f.latest()).toMatchObject({
+      time: 2,
+      pendingTime: 2,
+      feedback: { kind: 'checking' }
+    })
 
     f.deliver(2, 'clear')
     expect(f.latest()).toMatchObject({
@@ -85,7 +96,7 @@ it('only presents the latest target, then removes the warning on an actually cle
   }
 })
 
-it('preserves the currently displayed state when a manual seek follows forward Play', async () => {
+it('updates the target pose immediately when a manual seek follows forward Play', async () => {
   const f = seekFixture()
 
   try {
@@ -98,11 +109,12 @@ it('preserves the currently displayed state when a manual seek follows forward P
     f.preview.sample(2, { discontinuity: true })
 
     expect(f.latest()).toMatchObject({
-      time: displayed.time,
-      joints: displayed.joints,
+      time: 2,
+      joints: jointValuesAt(f.input.trajectory, 2),
       pendingTime: 2,
-      feedback: displayed.feedback
+      feedback: { kind: 'checking' }
     })
+    expect(f.latest().time).not.toBe(displayed.time)
     f.deliver(2, 'clear')
     expect(f.latest()).toMatchObject({ time: 2, feedback: { kind: 'clear' } })
   } finally {

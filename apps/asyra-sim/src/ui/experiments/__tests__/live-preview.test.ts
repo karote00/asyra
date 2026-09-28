@@ -85,9 +85,9 @@ it.each(['checking', 'ready'] as const)(
 
     preview.sample(1, { ...options, discontinuity: true })
     expect(publish.mock.lastCall?.[0]).toMatchObject({
-      time: 3.51,
+      time: 1,
       pendingTime: 1,
-      feedback: { checkedTime: 3.2, kind: 'collision' }
+      feedback: { checkedTime: null, kind: 'checking' }
     })
 
     preview.dispose()

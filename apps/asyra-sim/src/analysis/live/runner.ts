@@ -166,7 +166,7 @@ export class LivePlaybackRunner {
       )
 
     const drain = () => {
-      if (retired || inFlight || pending === null || pace) return
+      if (retired || pending === null) return
 
       const cached = this.records.get(pending)
 
@@ -176,6 +176,8 @@ export class LivePlaybackRunner {
 
         return
       }
+
+      if (inFlight || pace) return
 
       if (!worker) {
         try {
@@ -324,8 +326,9 @@ export class LivePlaybackRunner {
         inFlight = null
         progress = null
 
+        this.records.record(snapshot, sample)
+
         if (response.id >= minimumId) {
-          this.records.record(snapshot, sample)
           this.publish({ status: 'ready', sample, error: sample.error })
         }
 
