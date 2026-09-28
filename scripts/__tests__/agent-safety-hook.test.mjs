@@ -204,6 +204,63 @@ test('tool workdir and file targets resolve to a linked feature worktree', (t) =
     }),
     {}
   )
+  assert.deepEqual(
+    preTool(root, 'apply_patch', {
+      command: `*** Begin Patch\n*** Update File: ${path.join(linkedRoot, 'tracked.txt')}\n@@\n-base\n+patched\n*** End Patch`
+    }),
+    {}
+  )
+})
+
+test('mixed-worktree patches and targets in another repository are denied', (t) => {
+  const { root, git } = makeRepository('main')
+  const linkedContainer = mkdtempSync(
+    path.join(temporaryRoot, 'agent-safety-mixed-')
+  )
+  const linkedRoot = path.join(linkedContainer, 'feature')
+  const secondLinkedRoot = path.join(linkedContainer, 'second-feature')
+  git('worktree', 'add', '-q', '-b', 'codex/mixed-targets', linkedRoot, 'HEAD')
+  git(
+    'worktree',
+    'add',
+    '-q',
+    '-b',
+    'codex/second-feature',
+    secondLinkedRoot,
+    'HEAD'
+  )
+  t.after(() => {
+    execFileSync('git', ['worktree', 'remove', '--force', secondLinkedRoot], {
+      cwd: root,
+      stdio: 'ignore'
+    })
+    execFileSync('git', ['worktree', 'remove', '--force', linkedRoot], {
+      cwd: root,
+      stdio: 'ignore'
+    })
+    rmSync(linkedContainer, { recursive: true, force: true })
+    rmSync(root, { recursive: true, force: true })
+  })
+  const { root: otherRoot } = makeRepository('codex/different-repository')
+  t.after(() => rmSync(otherRoot, { recursive: true, force: true }))
+
+  assert.equal(
+    permissionDecision(
+      preTool(root, 'apply_patch', {
+        command: `*** Begin Patch\n*** Update File: ${path.join(linkedRoot, 'tracked.txt')}\n@@\n-base\n+one\n*** Update File: ${path.join(secondLinkedRoot, 'tracked.txt')}\n@@\n-base\n+two\n*** End Patch`
+      })
+    ),
+    'deny'
+  )
+  assert.equal(
+    permissionDecision(
+      preTool(root, 'Write', {
+        path: path.join(otherRoot, 'tracked.txt'),
+        content: 'outside repository\n'
+      })
+    ),
+    'deny'
+  )
 })
 
 test('merge source and destination branch determine main protection', (t) => {
