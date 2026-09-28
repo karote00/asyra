@@ -194,6 +194,27 @@ export class LivePlaybackRunner {
       finish(
         'Live check failed or exceeded its resource deadline. No clear result is available.'
       )
+    const abandonBackgroundInterval = () => {
+      if (inFlight?.kind !== 'interval') {
+        fail()
+        return
+      }
+
+      clearTimeout(watchdog)
+      watchdog = undefined
+      inFlight = null
+      progress = null
+      ready = false
+      const abandonedWorker = worker
+      worker = null
+      if (abandonedWorker) {
+        abandonedWorker.onmessage = null
+        abandonedWorker.onerror = null
+        abandonedWorker.onmessageerror = null
+        abandonedWorker.terminate()
+      }
+      drain()
+    }
 
     const queueAdjacentGap = (time: number) => {
       if (
@@ -249,12 +270,23 @@ export class LivePlaybackRunner {
 
       if (!worker) {
         try {
-          worker = this.workerFactory()
-          worker.onmessage = receive
-          worker.onerror = fail
-          worker.onmessageerror = fail
+          const createdWorker = this.workerFactory()
+          worker = createdWorker
+          createdWorker.onmessage = (event) => {
+            if (worker === createdWorker) receive(event)
+          }
+          createdWorker.onerror = () => {
+            if (worker !== createdWorker) return
+            if (inFlight?.kind === 'interval') abandonBackgroundInterval()
+            else fail()
+          }
+          createdWorker.onmessageerror = () => {
+            if (worker !== createdWorker) return
+            if (inFlight?.kind === 'interval') abandonBackgroundInterval()
+            else fail()
+          }
           watchdog = setTimeout(fail, LIVE_LIMITS.startupDurationMs)
-          worker.postMessage({ type: LiveMessages.OPEN, snapshot })
+          createdWorker.postMessage({ type: LiveMessages.OPEN, snapshot })
         } catch {
           fail()
         }
@@ -281,7 +313,7 @@ export class LivePlaybackRunner {
         inFlight = { kind: 'interval', id: ++nextId, interval }
         progress = null
         watchdog = setTimeout(
-          fail,
+          abandonBackgroundInterval,
           Math.min(
             snapshot.budget.maxDurationMs,
             LIVE_LIMITS.sampleDurationMs
@@ -298,7 +330,7 @@ export class LivePlaybackRunner {
             )
           })
         } catch {
-          fail()
+          abandonBackgroundInterval()
         }
         return
       }
@@ -360,6 +392,8 @@ export class LivePlaybackRunner {
       }
 
       drain()
+      if (pending !== null && inFlight?.kind === 'interval')
+        abandonBackgroundInterval()
     }
 
     const receive = (event: MessageEvent<unknown>) => {

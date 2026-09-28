@@ -359,6 +359,10 @@ it as soon as the bounded query settles. Do not create an accumulating queue.
 The Analysis owner joins validated per-pair interval leaves only when their
 coverage does not conflict with retained evidence. A query may use a clear leaf
 throughout its certified bounds, or a finding only at its exact witness time.
+An unresolved interval leaf does not block a later overlapping query from
+refining that coverage. Compare proven claims throughout the overlap: compatible
+claims may coexist, while a conflict between clear coverage and an exact finding
+witness is rejected and never converted into a valid result.
 Point witnesses remain points; a finding leaf does not establish finding status
 throughout its interval. Missing pairs, gaps, overlap conflicts, and unresolved
 leaves remain unknown. If the interval method cannot prove coverage within its
@@ -372,6 +376,12 @@ The selected method must support static queries; missing or incompatible
 methods fail explicitly without substitution. Worker creation is lazy on an
 evidence miss. Each foreground sample and background interval attempt has
 bounded work, wall time and evidence, and malformed output fails closed.
+An optional background interval timeout, explicit incomplete/error result, or
+Worker failure leaves that coverage unknown and keeps the live lifetime
+available for later exact samples. A new foreground target cancels active
+optional interval work and is served by a fresh Worker when needed; late output
+from the retired Worker is ignored. Invalid response identity/schema or
+contradictory accepted proof still fails closed.
 
 Publish validated collision or clearance evidence while other pair checks are
 still running; do not wait for terminal sample storage or report construction.
@@ -445,10 +455,13 @@ known formal evidence reuse without recomputation and missing-pose checks before
 later witnesses, adjacent-gap scheduling after foreground completion, bounded
 interval evaluation and retained-gap counts, per-pair interval admission, exact
 finding-witness reuse without interval expansion, unknown-gap preservation,
-conflicting-overlap rejection, cancellation/replacement/late output, invalid
-input, unchanged state and record revision notifications for materially equal
-values, unchanged history/report data, original/native shape identity, localized UI
-updates and fixed panel sizes in both themes. Completion requires these owner
+overlapping unresolved-coverage refinement and proven-overlap rejection,
+cancellation/replacement/late output, foreground preemption of background work,
+nonfatal optional interval deadline handling, indexed changing-time lookup work
+for interval and leaf bounds, invalid input, unchanged state and record revision
+notifications for materially equal values, unchanged history/report data,
+original/native shape identity, localized UI updates and fixed panel sizes in
+both themes. Completion requires these owner
 tests plus normal-App browser playback and inspected screenshots, not a formal
 report alone.
 

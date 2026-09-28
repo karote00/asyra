@@ -93,6 +93,40 @@ function partialWitnessInterval(
   }
 }
 
+function unresolvedInterval(
+  input: ReturnType<typeof liveFixture>,
+  interval: readonly [number, number]
+) {
+  return {
+    version: 1 as const,
+    snapshotId: input.snapshotId,
+    method: { id: input.method.id, version: input.method.version },
+    coverage: 'partial' as const,
+    evaluations: input.pairs.length,
+    pairs: input.pairs.map((pair) => ({
+      pairId: pair.id,
+      evidence: {
+        leaves: [
+          {
+            start: interval[0],
+            end: interval[1],
+            lower: 0,
+            upper: null,
+            witnessTime: null,
+            penetration: false,
+            state: 'unresolved' as const,
+            reason: 'The bounded interval query remained unresolved.'
+          }
+        ],
+        lower: 0,
+        upper: null,
+        coverage: 'partial' as const,
+        evaluations: 1
+      }
+    }))
+  }
+}
+
 afterEach(() => vi.useRealTimers())
 
 it('admits the latest pending pose within 50 ms when the previous check has completed', async () => {
@@ -540,6 +574,313 @@ it('shows an interval witness without treating missing pair coverage as a cached
     }
   })
 
+  abort.abort()
+  await task
+})
+
+it('keeps the live lifetime when an exact sample refines an unresolved interval gap', async () => {
+  vi.useFakeTimers()
+  const input = liveFixture()
+  const worker = new WorkerStub()
+  const runner = new LivePlaybackRunner(
+    () => worker as unknown as Worker,
+    undefined,
+    Date.now
+  )
+  const abort = new AbortController()
+  const task = runner.open(input, 0, abort.signal)
+  worker.emit({ type: LiveMessages.READY })
+  worker.emit({
+    type: LiveMessages.RESULT,
+    id: 1,
+    time: 0,
+    evidence: runOfficialClearanceMethod(sampleSnapshot(input, 0))
+  })
+  runner.sample(4)
+  await vi.advanceTimersByTimeAsync(LIVE_LIMITS.samplePeriodMs)
+  worker.emit({
+    type: LiveMessages.RESULT,
+    id: 2,
+    time: 4,
+    evidence: runOfficialClearanceMethod(sampleSnapshot(input, 4))
+  })
+  worker.emit({
+    type: LiveMessages.INTERVAL_RESULT,
+    id: 3,
+    interval: [0, 4],
+    evidence: unresolvedInterval(input, [0, 4])
+  })
+
+  runner.sample(2, true)
+  await vi.advanceTimersByTimeAsync(LIVE_LIMITS.samplePeriodMs)
+  worker.emit({
+    type: LiveMessages.RESULT,
+    id: 4,
+    time: 2,
+    evidence: runOfficialClearanceMethod(sampleSnapshot(input, 2))
+  })
+
+  expect(worker.postMessage).toHaveBeenLastCalledWith({
+    type: LiveMessages.INTERVAL,
+    id: 5,
+    interval: [0, 2],
+    maxIntervals: LIVE_LIMITS.maxBackgroundIntervalEvaluations
+  })
+  worker.emit({
+    type: LiveMessages.INTERVAL_RESULT,
+    id: 5,
+    interval: [0, 2],
+    evidence: certifiedClearInterval(input, [0, 2])
+  })
+
+  expect(runner.getState()).toMatchObject({
+    status: 'ready',
+    sample: { time: 2, complete: true },
+    error: null
+  })
+  abort.abort()
+  await task
+})
+
+it('preempts an in-flight optional interval for the latest foreground sample and fences its late result', async () => {
+  vi.useFakeTimers()
+  const input = liveFixture()
+  const workers: WorkerStub[] = []
+  const runner = new LivePlaybackRunner(
+    () => {
+      const worker = new WorkerStub()
+      workers.push(worker)
+      return worker as unknown as Worker
+    },
+    undefined,
+    Date.now
+  )
+  const abort = new AbortController()
+  const task = runner.open(input, 0, abort.signal)
+  const backgroundWorker = workers[0]
+  backgroundWorker.emit({ type: LiveMessages.READY })
+  backgroundWorker.emit({
+    type: LiveMessages.RESULT,
+    id: 1,
+    time: 0,
+    evidence: runOfficialClearanceMethod(sampleSnapshot(input, 0))
+  })
+  runner.sample(4)
+  await vi.advanceTimersByTimeAsync(LIVE_LIMITS.samplePeriodMs)
+  backgroundWorker.emit({
+    type: LiveMessages.RESULT,
+    id: 2,
+    time: 4,
+    evidence: runOfficialClearanceMethod(sampleSnapshot(input, 4))
+  })
+  expect(backgroundWorker.postMessage).toHaveBeenLastCalledWith(
+    expect.objectContaining({ type: LiveMessages.INTERVAL, id: 3 })
+  )
+  const lateIntervalDelivery = backgroundWorker.onmessage
+  runner.sample(2, true)
+
+  expect(backgroundWorker.terminate).toHaveBeenCalledOnce()
+  expect(workers).toHaveLength(2)
+  const foregroundWorker = workers[1]
+  expect(foregroundWorker.postMessage.mock.calls[0][0]).toMatchObject({
+    type: LiveMessages.OPEN,
+    snapshot: { snapshotId: input.snapshotId }
+  })
+
+  lateIntervalDelivery?.(
+    new MessageEvent('message', {
+      data: {
+        type: LiveMessages.INTERVAL_RESULT,
+        id: 3,
+        interval: [0, 4],
+        evidence: certifiedClearInterval(input, [0, 4])
+      }
+    }) as MessageEvent
+  )
+  foregroundWorker.emit({ type: LiveMessages.READY })
+  await vi.advanceTimersByTimeAsync(LIVE_LIMITS.samplePeriodMs)
+  expect(foregroundWorker.postMessage).toHaveBeenLastCalledWith({
+    type: LiveMessages.SAMPLE,
+    id: 4,
+    time: 2
+  })
+  expect(runner.getState()).toMatchObject({ status: 'checking', error: null })
+
+  foregroundWorker.emit({
+    type: LiveMessages.RESULT,
+    id: 4,
+    time: 2,
+    evidence: runOfficialClearanceMethod(sampleSnapshot(input, 2))
+  })
+  expect(runner.getState()).toMatchObject({
+    status: 'ready',
+    sample: { time: 2, complete: true },
+    error: null
+  })
+  abort.abort()
+  await task
+})
+
+it('treats background interval watchdog expiry as optional work failure', async () => {
+  vi.useFakeTimers()
+  const input = liveFixture()
+  const workers: WorkerStub[] = []
+  const runner = new LivePlaybackRunner(
+    () => {
+      const worker = new WorkerStub()
+      workers.push(worker)
+      return worker as unknown as Worker
+    },
+    undefined,
+    Date.now
+  )
+  const abort = new AbortController()
+  let settled = false
+  const task = runner.open(input, 0, abort.signal).finally(() => {
+    settled = true
+  })
+  const backgroundWorker = workers[0]
+  backgroundWorker.emit({ type: LiveMessages.READY })
+  backgroundWorker.emit({
+    type: LiveMessages.RESULT,
+    id: 1,
+    time: 0,
+    evidence: runOfficialClearanceMethod(sampleSnapshot(input, 0))
+  })
+  runner.sample(4)
+  await vi.advanceTimersByTimeAsync(LIVE_LIMITS.samplePeriodMs)
+  backgroundWorker.emit({
+    type: LiveMessages.RESULT,
+    id: 2,
+    time: 4,
+    evidence: runOfficialClearanceMethod(sampleSnapshot(input, 4))
+  })
+
+  await vi.advanceTimersByTimeAsync(
+    LIVE_LIMITS.sampleDurationMs + LIVE_LIMITS.responseGraceMs
+  )
+  expect(settled).toBe(false)
+  expect(backgroundWorker.terminate).toHaveBeenCalledOnce()
+  expect(runner.getState()).toMatchObject({ status: 'ready', error: null })
+
+  runner.sample(2, true)
+  expect(workers).toHaveLength(2)
+  workers[1].emit({ type: LiveMessages.READY })
+  await vi.advanceTimersByTimeAsync(LIVE_LIMITS.samplePeriodMs)
+  expect(workers[1].postMessage).toHaveBeenLastCalledWith({
+    type: LiveMessages.SAMPLE,
+    id: 4,
+    time: 2
+  })
+  abort.abort()
+  await task
+})
+
+it('keeps the live lifetime when the optional background interval Worker fails', async () => {
+  vi.useFakeTimers()
+  const input = liveFixture()
+  const workers: WorkerStub[] = []
+  const runner = new LivePlaybackRunner(
+    () => {
+      const worker = new WorkerStub()
+      workers.push(worker)
+      return worker as unknown as Worker
+    },
+    undefined,
+    Date.now
+  )
+  const abort = new AbortController()
+  const task = runner.open(input, 0, abort.signal)
+  const backgroundWorker = workers[0]
+  backgroundWorker.emit({ type: LiveMessages.READY })
+  backgroundWorker.emit({
+    type: LiveMessages.RESULT,
+    id: 1,
+    time: 0,
+    evidence: runOfficialClearanceMethod(sampleSnapshot(input, 0))
+  })
+  runner.sample(4)
+  await vi.advanceTimersByTimeAsync(LIVE_LIMITS.samplePeriodMs)
+  backgroundWorker.emit({
+    type: LiveMessages.RESULT,
+    id: 2,
+    time: 4,
+    evidence: runOfficialClearanceMethod(sampleSnapshot(input, 4))
+  })
+  backgroundWorker.onerror?.()
+
+  expect(backgroundWorker.terminate).toHaveBeenCalledOnce()
+  expect(runner.getState()).toMatchObject({ status: 'ready', error: null })
+  runner.sample(2, true)
+  const foregroundWorker = workers[1]
+  foregroundWorker.emit({ type: LiveMessages.READY })
+  await vi.advanceTimersByTimeAsync(LIVE_LIMITS.samplePeriodMs)
+  expect(foregroundWorker.postMessage.mock.calls.at(-1)?.[0]).toMatchObject({
+    type: LiveMessages.SAMPLE,
+    time: 2
+  })
+  foregroundWorker.emit({
+    type: LiveMessages.RESULT,
+    id: 4,
+    time: 2,
+    evidence: runOfficialClearanceMethod(sampleSnapshot(input, 2))
+  })
+  expect(runner.getState()).toMatchObject({ status: 'ready', error: null })
+  abort.abort()
+  await task
+})
+
+it('preserves unknown coverage after an explicit optional interval error', async () => {
+  vi.useFakeTimers()
+  const input = liveFixture()
+  const worker = new WorkerStub()
+  const runner = new LivePlaybackRunner(
+    () => worker as unknown as Worker,
+    undefined,
+    Date.now
+  )
+  const abort = new AbortController()
+  const task = runner.open(input, 0, abort.signal)
+  worker.emit({ type: LiveMessages.READY })
+  worker.emit({
+    type: LiveMessages.RESULT,
+    id: 1,
+    time: 0,
+    evidence: runOfficialClearanceMethod(sampleSnapshot(input, 0))
+  })
+  runner.sample(4)
+  await vi.advanceTimersByTimeAsync(LIVE_LIMITS.samplePeriodMs)
+  worker.emit({
+    type: LiveMessages.RESULT,
+    id: 2,
+    time: 4,
+    evidence: runOfficialClearanceMethod(sampleSnapshot(input, 4))
+  })
+  worker.emit({
+    type: LiveMessages.INTERVAL_ERROR,
+    id: 3,
+    interval: [0, 4]
+  })
+
+  expect(runner.getState()).toMatchObject({
+    status: 'ready',
+    sample: { time: 4, complete: true },
+    error: null
+  })
+  runner.sample(2, true)
+  await vi.advanceTimersByTimeAsync(LIVE_LIMITS.samplePeriodMs)
+  expect(worker.postMessage.mock.calls.at(-1)?.[0]).toMatchObject({
+    type: LiveMessages.SAMPLE,
+    id: 4,
+    time: 2
+  })
+  worker.emit({
+    type: LiveMessages.RESULT,
+    id: 4,
+    time: 2,
+    evidence: runOfficialClearanceMethod(sampleSnapshot(input, 2))
+  })
+  expect(runner.getState()).toMatchObject({ status: 'ready', error: null })
   abort.abort()
   await task
 })
