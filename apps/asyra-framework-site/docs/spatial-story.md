@@ -4,11 +4,23 @@
 
 The accepted six-chapter green story is the only homepage at `/`. Remove the
 `/story` route entirely; it returns 404. Keep the story choreography and building
-example intact. Follow it with the real Asyra Design product evidence, three
-practical documentation/Atlas entry points, the closing invitation, and the
-shared navigation footer. The primary menu is native HTML and remains usable
-without JavaScript. Do not repeat the retired film, five-chapter narrative,
-PoC comic or separate architecture explainer on the homepage.
+example intact. Follow it with real product evidence for Asyra Design,
+FieldScope, and Asyra Sim, three practical documentation/Atlas entry points,
+the closing invitation, and the shared navigation footer. The primary menu is
+native HTML and remains usable without JavaScript. Do not repeat the retired
+film, five-chapter narrative, PoC comic or separate architecture explainer on
+the homepage.
+
+The product cases must describe current App-owned work only. Asyra Design keeps
+its editable 2D product proof. FieldScope may show its cucumber and tomato
+greenhouse models and conservative robot lane/energy assessments; it does not
+simulate robot patrol or harvesting, physical dynamics, or live equipment.
+Asyra Sim may show its synthetic robot-workcell editing and trajectory analysis
+workbench; label it as a development checkpoint, not an R0 release or a basis
+for production or safety approval. Each case links to a real product screen or
+direct source/test evidence. Preserve product maturity limits, open external
+links in a new tab, and keep the three existing Starter, Design, and advanced
+composition destinations unchanged.
 
 The scope is the website route composition, story shell, resource sections,
 direct tests, current landing contract and its existing Inspector. Framework

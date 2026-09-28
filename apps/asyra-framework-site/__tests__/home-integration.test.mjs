@@ -38,6 +38,49 @@ test('practical resources preserve real evidence and three distinct building ent
   assert.match(content, /loading="lazy"/)
   assert.doesNotMatch(content, /<h1|poc-story|action-film|drawTower|drawHouse/)
 })
+test('homepage product evidence covers Design, FieldScope and Sim with verified scope and limits', async () => {
+  const content = await read('components/home-resources.tsx')
+  for (const product of ['Asyra Design', 'FieldScope', 'Asyra Sim'])
+    assert.ok(content.includes(product), `Missing ${product} product case`)
+  for (const claim of [
+    /cucumber and tomato crops/u,
+    /lane and energy assessments/u,
+    /does not simulate robot patrol or harvesting/u,
+    /physical\s+dynamics/u,
+    /Development checkpoint - not R0/u,
+    /not for\s+production or safety-critical approval/u
+  ])
+    assert.match(content, claim)
+  for (const destination of [
+    'https://github.com/karote00/asyra/blob/main/apps/fieldscope/src/domain/__tests__/crop-layout.test.ts',
+    'https://asyra-sim.vercel.app',
+    'https://github.com/karote00/asyra/blob/main/apps/asyra-sim/src/features/__tests__/analysis.test.ts'
+  ]) {
+    assert.ok(
+      content.includes(destination),
+      `Missing evidence destination: ${destination}`
+    )
+    const linkStart = content.indexOf(`href="${destination}"`)
+    assert.ok(linkStart >= 0, `Missing link href: ${destination}`)
+    const link = content.slice(linkStart, linkStart + 400)
+    assert.match(link, /target="_blank"/u)
+    assert.match(link, /rel="noopener noreferrer"/u)
+  }
+  await Promise.all([
+    access(
+      new URL(
+        '../../fieldscope/src/domain/__tests__/crop-layout.test.ts',
+        import.meta.url
+      )
+    ),
+    access(
+      new URL(
+        '../../asyra-sim/src/features/__tests__/analysis.test.ts',
+        import.meta.url
+      )
+    )
+  ])
+})
 test('homepage routes the published Starter before Design and advanced composition', async () => {
   const content = await read('components/home-resources.tsx')
   const starter = content.indexOf("title: 'Generic Starter'")

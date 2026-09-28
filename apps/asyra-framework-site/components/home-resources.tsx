@@ -6,56 +6,128 @@ export function HomeResources() {
         aria-labelledby="product-evidence-title"
         className="relative z-20 border-t border-[#183f35]/15 bg-[#f4f1e7] px-6 py-20 lg:px-[8vw] lg:py-28"
       >
-        <div className="mx-auto grid max-w-[1440px] items-center gap-10 lg:grid-cols-[.8fr_1.2fr] lg:gap-20">
-          <div>
-            <p className="text-[12px] uppercase tracking-[.2em] opacity-80">
-              Built with Asyra
-            </p>
-            <h2
-              id="product-evidence-title"
-              className="pt-5 font-serif text-[40px] leading-[1.08] lg:text-[54px]"
-            >
-              See the foundation
-              <br />
-              at work.
-            </h2>
-            <p className="max-w-md pt-6 text-base leading-relaxed opacity-75">
-              Asyra Design brings editable layers, app-owned tools, history and
-              persistence together in a working design product.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-6 text-base">
-              <a
-                data-site-cta=""
-                href="https://asyra-design.vercel.app/?fileId=demo"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex min-h-11 items-center border-b border-current pb-2"
+        <div className="mx-auto max-w-[1440px]">
+          <div className="grid items-center gap-10 lg:grid-cols-[.8fr_1.2fr] lg:gap-20">
+            <div>
+              <p className="text-[12px] uppercase tracking-[.2em] opacity-80">
+                Built with Asyra
+              </p>
+              <h2
+                id="product-evidence-title"
+                className="pt-5 font-serif text-[40px] leading-[1.08] lg:text-[54px]"
               >
-                Try the live product ↗
-              </a>
-              <a
-                data-site-cta=""
-                href="/asyra-design"
-                className="inline-flex min-h-11 items-center border-b border-current pb-2"
-              >
-                Read the product case →
-              </a>
+                See the foundation
+                <br />
+                at work.
+              </h2>
+              <p className="max-w-md pt-6 text-base leading-relaxed opacity-75">
+                Asyra Design brings editable layers, app-owned tools, history
+                and persistence together in a working design product.
+              </p>
+              <div className="mt-8 flex flex-wrap gap-6 text-base">
+                <a
+                  data-site-cta=""
+                  href="https://asyra-design.vercel.app/?fileId=demo"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex min-h-11 items-center border-b border-current pb-2"
+                >
+                  Try the live product ↗
+                </a>
+                <a
+                  data-site-cta=""
+                  href="/asyra-design"
+                  className="inline-flex min-h-11 items-center border-b border-current pb-2"
+                >
+                  Read the product case →
+                </a>
+              </div>
             </div>
+            <figure className="m-0 overflow-hidden rounded-xl border border-[#183f35]/20 bg-[#183f35] shadow-xl">
+              <img
+                src="/product-evidence/asyra-design-7076-product-evidence.webp"
+                alt="Asyra Design with a 7,076-element editable vector drawing and its layer tree"
+                width={1280}
+                height={720}
+                loading="lazy"
+                decoding="async"
+                className="block h-auto w-full"
+              />
+              <figcaption className="px-5 py-4 text-xs text-[#f4f1e7]">
+                7,076 elements. Every one remains editable.
+              </figcaption>
+            </figure>
           </div>
-          <figure className="m-0 overflow-hidden rounded-xl border border-[#183f35]/20 bg-[#183f35] shadow-xl">
-            <img
-              src="/product-evidence/asyra-design-7076-product-evidence.webp"
-              alt="Asyra Design with a 7,076-element editable vector drawing and its layer tree"
-              width={1280}
-              height={720}
-              loading="lazy"
-              decoding="async"
-              className="block h-auto w-full"
-            />
-            <figcaption className="px-5 py-4 text-xs text-[#f4f1e7]">
-              7,076 elements. Every one remains editable.
-            </figcaption>
-          </figure>
+          <div className="mt-12 grid gap-x-12 gap-y-10 border-t border-[#183f35]/20 pt-8 md:grid-cols-2">
+            <article className="flex flex-col items-start">
+              <p className="text-[12px] uppercase tracking-[.18em] opacity-70">
+                Greenhouse modeling
+              </p>
+              <h3 className="m-0 pt-3 font-serif text-[26px] leading-tight">
+                FieldScope
+              </h3>
+              <p className="pt-4 text-base leading-relaxed opacity-80">
+                Model cucumber and tomato crops in a greenhouse, with a parked
+                robot concept and conservative lane and energy assessments.
+              </p>
+              <p className="flex-1 pt-3 text-sm leading-relaxed opacity-70">
+                It does not simulate robot patrol or harvesting, physical
+                dynamics, or live equipment.
+              </p>
+              <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-sm">
+                <a
+                  href="https://github.com/karote00/asyra/blob/main/apps/fieldscope/src/domain/crop-layout.ts"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex min-h-11 items-center border-b border-current pb-1"
+                >
+                  Crop model source ↗
+                </a>
+                <a
+                  href="https://github.com/karote00/asyra/blob/main/apps/fieldscope/src/domain/__tests__/crop-layout.test.ts"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex min-h-11 items-center border-b border-current pb-1"
+                >
+                  Crop layout tests ↗
+                </a>
+              </div>
+            </article>
+            <article className="flex flex-col items-start">
+              <p className="text-[12px] uppercase tracking-[.18em] opacity-70">
+                Development checkpoint - not R0
+              </p>
+              <h3 className="m-0 pt-3 font-serif text-[26px] leading-tight">
+                Asyra Sim
+              </h3>
+              <p className="pt-4 text-base leading-relaxed opacity-80">
+                Edit synthetic six-axis workcells, review robot trajectories,
+                and compare geometry-analysis runs in a browser-local workbench.
+              </p>
+              <p className="flex-1 pt-3 text-sm leading-relaxed opacity-70">
+                Analysis is not independently certified and is not for
+                production or safety-critical approval.
+              </p>
+              <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-sm">
+                <a
+                  href="https://asyra-sim.vercel.app"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex min-h-11 items-center border-b border-current pb-1"
+                >
+                  Open the workbench ↗
+                </a>
+                <a
+                  href="https://github.com/karote00/asyra/blob/main/apps/asyra-sim/src/features/__tests__/analysis.test.ts"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex min-h-11 items-center border-b border-current pb-1"
+                >
+                  Analysis tests ↗
+                </a>
+              </div>
+            </article>
+          </div>
         </div>
       </section>
       <section
