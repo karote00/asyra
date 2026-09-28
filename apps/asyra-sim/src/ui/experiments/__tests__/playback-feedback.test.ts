@@ -105,7 +105,7 @@ it('keeps unresolved pairs visible alongside known findings without inventing th
   )
 })
 
-it('keeps the last checked parts highlighted during forward playback without applying future evidence', () => {
+it('keeps the last checked parts highlighted until newer evidence supersedes it in either time direction', () => {
   const input = liveFixture()
   const view: PlaybackView = {
     workcell: input.workcell,
@@ -144,7 +144,7 @@ it('keeps the last checked parts highlighted during forward playback without app
     expect(playbackHighlight({ ...view, time: 4 + frame / 60 })).toBe(highlight)
   }
 
-  expect(playbackHighlight({ ...view, time: 3.99 })).toBeUndefined()
+  expect(playbackHighlight({ ...view, time: 3.99 })).toBe(highlight)
 
   if (!view.feedback) throw new Error('Missing fixture feedback')
   expect(

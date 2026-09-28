@@ -87,8 +87,11 @@ it.each(['checking', 'ready'] as const)(
     expect(publish.mock.lastCall?.[0]).toMatchObject({
       time: 1,
       pendingTime: 1,
-      feedback: { checkedTime: null, kind: 'checking' }
+      feedback: { checkedTime: 3.2, kind: 'collision' }
     })
+    expect(
+      playbackHighlight(publish.mock.lastCall?.[0] ?? null)?.colors.size
+    ).toBe(2)
 
     preview.dispose()
     await preview.completion

@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-test('timeline dragging updates the target pose and feedback without keeping prior findings', async ({
+test('timeline dragging keeps last checked feedback until valid target evidence arrives', async ({
   page
 }, info) => {
   test.setTimeout(45_000)
@@ -48,26 +48,31 @@ test('timeline dragging updates the target pose and feedback without keeping pri
   await expect(feedback).toHaveAttribute('data-pose-matches', 'true')
 
   await page.evaluate(() => {
-    const notice = document.querySelector('[data-testid="playback-feedback"]')
-
-    if (!notice) throw new Error('Missing playback feedback')
+    if (!document.querySelector('[data-testid="playback-feedback"]'))
+      throw new Error('Missing playback feedback')
 
     const frames: {
       kind: string | null
       matches: string | null
       pendingTime: string | null
+      height: number
       text: string
     }[] = []
-    const capture = () =>
+    const capture = () => {
+      const notice = document.querySelector('[data-testid="playback-feedback"]')
+
+      if (!notice) return
       frames.push({
         kind: notice.getAttribute('data-kind'),
         matches: notice.getAttribute('data-pose-matches'),
         pendingTime: notice.getAttribute('data-pending-time'),
+        height: notice.getBoundingClientRect().height,
         text: notice.textContent ?? ''
       })
+    }
     const observer = new MutationObserver(capture)
 
-    observer.observe(notice, {
+    observer.observe(document.body, {
       subtree: true,
       childList: true,
       characterData: true,
@@ -90,6 +95,7 @@ test('timeline dragging updates the target pose and feedback without keeping pri
         kind: string | null
         matches: string | null
         pendingTime: string | null
+        height: number
         text: string
       }[]
       observer: MutationObserver
@@ -98,21 +104,27 @@ test('timeline dragging updates the target pose and feedback without keeping pri
     trace.observer.disconnect()
     return trace.frames
   })
+  expect(frames.length).toBeGreaterThan(0)
+  expect(frames.every((frame) => frame.kind !== 'checking')).toBe(true)
   expect(
     frames.some(
       (frame) =>
-        frame.kind === 'checking' ||
-        (frame.text.includes(`Checked ${second.toFixed(4)} s`) &&
-          frame.matches === 'true')
+        frame.kind === 'collision' &&
+        frame.matches === 'false' &&
+        frame.text.includes(`Checked ${first.toFixed(4)} s`)
     )
   ).toBe(true)
+  const heights = frames.map((frame) => frame.height)
   expect(
-    frames.every(
-      (frame) =>
-        frame.kind === 'checking' ||
-        frame.text.includes(`Checked ${second.toFixed(4)} s`)
-    )
+    Math.max(...heights) - Math.min(...heights),
+    `Feedback card heights: ${heights.join(', ')}`
+  ).toBeLessThanOrEqual(24)
+  expect(
+    frames.every((frame) => frame.text.includes('Collision - gripper'))
   ).toBe(true)
+  expect(frames.at(-1)?.text.includes(`Checked ${second.toFixed(4)} s`)).toBe(
+    true
+  )
 
   const observations = page.getByTestId('live-observations').locator('summary')
   const recorded = await observations.textContent()
@@ -132,7 +144,7 @@ test('timeline dragging updates the target pose and feedback without keeping pri
       component: 'Sim Preview timeline control',
       firstTarget: first,
       secondTarget: second,
-      pendingFeedbackObserved: true,
+      previousEvidenceRetainedUntilTargetCheck: true,
       staleFindingAppliedToTarget: false,
       liveWorkerCount: workers.length,
       reusedRecordCount: recorded,

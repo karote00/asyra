@@ -60,7 +60,6 @@ export class LivePreview {
 
     if (options.discontinuity) {
       this.presentedTime = time
-      this.feedback = checkingFeedback()
       this.lastSample = null
       this.checkedTime = null
       this.anchorTime = time
@@ -156,7 +155,7 @@ export class LivePreview {
             this.presentedTime = this.time
             this.awaitingSeek = false
             this.feedback = {
-              ...checkingFeedback(),
+              ...this.feedback,
               kind: 'error',
               message: state.error ?? 'Live check unavailable'
             }
@@ -200,7 +199,7 @@ export class LivePreview {
         this.presentedTime = this.time
         this.awaitingSeek = false
         this.feedback = {
-          ...checkingFeedback(),
+          ...this.feedback,
           kind: 'error',
           message:
             error instanceof Error ? error.message : 'Live check unavailable'

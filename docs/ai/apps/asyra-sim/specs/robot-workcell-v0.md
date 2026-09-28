@@ -312,11 +312,12 @@ optional intermediate samples may be coalesced. An explicit seek resets this
 progress and checks its exact target, not the skipped interval. Continuous Play
 never waits for a solve. Each slider drag/click synchronously submits its exact
 target time and updates the preview pose from the canonical trajectory. Rendering
-observes that updated preview state; it never waits for analysis. Feedback is
-scoped to the pose it describes: a new unchecked target shows checking/unknown
-state and cannot inherit findings from the previous pose. The latest target is
-authoritative for presentation, while late results may be retained under the
-unchanged admitted input if they validate for their own exact time.
+observes that updated preview state; it never waits for analysis. While a new
+target is unchecked, retain the last valid feedback and identify its checked
+time; do not present it as evidence for the target pose. With no accepted
+evidence, show checking/unknown. The latest target is authoritative for
+replacement, while late results may be retained under the unchanged admitted
+input if they validate for their own exact time.
 
 Reuse only evidence that exactly covers the requested time: an exact sampled
 point or a certified interval containing that time. A point witness says
@@ -418,15 +419,21 @@ report, including when a compact notice only previews some pairs.
 Whole-part highlighting is the MVP output. It is not a damage model, computed
 contact patch, or structural simulation. Whole-body highlights identify the
 parts from the latest accepted sample, not a computed contact region or proof
-of contact at every intervening frame. During forward motion the highlight
-remains visible until newer feedback supersedes it; the notice identifies the
-checked time and explicitly labels earlier-pose evidence. Manual seeking
-immediately presents the target pose with checking/unknown feedback while its
-exact query is pending. It drops the previous pose's highlights rather than
-attaching them to new unchecked geometry. Accept only the latest seek target;
-late responses cannot replace its feedback. Exact cached evidence presents the
-target pose and matching feedback without a checking/reset frame.
-Future evidence never colors an earlier displayed pose. Explicit Pause still
+of contact at every intervening frame. During playback and manual seeking,
+retain the last valid evidence, its checked time, pair details and highlights
+while a new target is pending. The target pose and selected time still update
+immediately. Label retained information as last-checked evidence; never
+describe it as current contact or as the previous frame. This applies in
+either time direction, including evidence checked after the displayed target.
+Replace the retained evidence only when valid evidence for the latest target
+and same playback input lifetime arrives. Exact cached evidence presents the
+target and matching feedback directly. A latest-target failure remains visible
+as an error while preserving last-checked time and highlights; no result from a
+retired input lifetime may be retained or shown. With no accepted evidence,
+show checking/unknown. Feedback, card content and highlight appearance stay
+stable across pending target changes except for the target pose/time
+indication; only a material accepted result or explicit failure changes
+evidence presentation. Explicit Pause still
 freezes the current frame rather than snapping to an earlier checked frame.
 Frozen formal pair replay
 also identifies both bodies; its evidence remains historical and unchanged.
@@ -443,9 +450,9 @@ simultaneous collision/clearance/unresolved pairs, severity precedence only on a
 shared body, all-pair detail access, and live/cached/recorded presentation parity,
 explicit Pause without snapping, latest-sample highlighting and exact-pose checks,
 cold forward/backward manual seeks through continuous clearance and collision,
-immediate target-pose updates while analysis is pending, target-scoped feedback
-without stale highlights, latest-target/error handling and exact cached-seek
-parity, latest-only backpressure, exact-point and certified-interval reuse with
+immediate target-pose updates while analysis is pending, stable last-checked
+feedback and highlights through forward/backward seeks, latest-target/error
+handling and exact cached-seek parity, latest-only backpressure, exact-point and certified-interval reuse with
 no redundant Worker work, explicit gap queries, point-evidence non-expansion,
 foreground-before-background scheduling, fully proven interval merging,
 unresolved-gap preservation, bounded interval-leaf query work, separated state

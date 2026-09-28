@@ -133,7 +133,7 @@ it('checks an unclassified pose before a recorded witness and fences old live de
   await preview.completion
 })
 
-it('updates the target pose immediately and clears feedback from the previous pose while its exact check is pending', async () => {
+it('updates the target pose immediately while retaining the last checked feedback until the exact check is accepted', async () => {
   const input = liveFixture()
   let notify: () => void = () => undefined
   let state: LiveState = { status: 'idle', sample: null, error: null }
@@ -145,9 +145,10 @@ it('updates the target pose immediately and clears feedback from the previous po
         signal.addEventListener('abort', () => resolve(), { once: true })
       })
   )
+  const request = vi.fn()
   const api = {
     open,
-    sample: vi.fn(),
+    sample: request,
     getState: () => state,
     subscribe: (listener: () => void) => {
       notify = listener
@@ -184,16 +185,31 @@ it('updates the target pose immediately and clears feedback from the previous po
   expect(acceptedView?.feedback?.kind).not.toBe('checking')
 
   const target = 3.872
+  const notifications = publish.mock.calls.length
   preview.sample(target, { discontinuity: true })
 
   expect(publish.mock.lastCall?.[0]).toMatchObject({
     time: target,
     pendingTime: target,
-    feedback: { kind: 'checking' }
+    feedback: { checkedTime: 0 }
   })
   expect(publish.mock.lastCall?.[0].joints).toEqual(
     jointValuesAt(input.trajectory, target)
   )
+  expect(publish.mock.lastCall?.[0].feedback).toBe(acceptedView?.feedback)
+  expect(publish).toHaveBeenCalledTimes(notifications + 1)
+  expect(request).toHaveBeenCalledWith(target, true)
+
+  state = { status: 'error', sample: null, error: 'Target failed' }
+  notify()
+  expect(publish.mock.lastCall?.[0]).toMatchObject({
+    time: target,
+    feedback: {
+      checkedTime: 0,
+      kind: 'error',
+      message: 'Target failed'
+    }
+  })
 
   preview.dispose()
   await preview.completion

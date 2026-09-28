@@ -6,12 +6,7 @@ export function playbackHighlight(
 ): PartHighlight | undefined {
   const feedback = view?.feedback
 
-  if (
-    view &&
-    feedback &&
-    feedback.checkedTime !== null &&
-    feedback.checkedTime <= view.time
-  ) {
+  if (view && feedback && feedback.checkedTime !== null) {
     return feedback.highlight
   }
 
