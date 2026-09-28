@@ -251,6 +251,8 @@ export async function bootstrap(
         ...guardCommands(
           {
             getRecords: live.getRecords,
+            getDiagnostics: live.getDiagnostics,
+            recordPreviewPublication: live.recordPreviewPublication,
             getState: live.getState,
             subscribe: live.subscribe,
             subscribeRecords: live.subscribeRecords,

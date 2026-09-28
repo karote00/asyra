@@ -50,6 +50,8 @@ function runtime() {
           error: null
         })),
         getRecords: vi.fn(() => []),
+        getDiagnostics: vi.fn(() => []),
+        recordPreviewPublication: vi.fn(),
         prepare: vi.fn(),
         subscribe: vi.fn(() => vi.fn()),
         subscribeRecords: vi.fn(() => vi.fn()),

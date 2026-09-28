@@ -41,6 +41,8 @@ export function installLivePlaybackFeature(
     prepare: (key: string, create: () => ExperimentSnapshot) =>
       service.prepare(key, create),
     getRecords: service.getRecords,
+    getDiagnostics: service.getDiagnostics,
+    recordPreviewPublication: service.recordPreviewPublication,
     sample: (time: number, discontinuity = false) =>
       service.sample(time, discontinuity),
     getState: service.getState,

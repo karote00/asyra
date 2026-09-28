@@ -29,6 +29,7 @@ it.each(['checking', 'ready'] as const)(
       witnessTime: 3.2
     })
     if (status === 'checking') sample.complete = false
+    sample.diagnosticId = 22
 
     let state: LiveState = { status: 'idle', sample: null, error: null }
     let notify: () => void = () => undefined
@@ -41,6 +42,7 @@ it.each(['checking', 'ready'] as const)(
         }
       },
       getState: () => state,
+      recordPreviewPublication: vi.fn(),
       open: (
         _input: unknown,
         _time: number,
@@ -72,6 +74,16 @@ it.each(['checking', 'ready'] as const)(
 
     expect(publish.mock.lastCall?.[0].time).toBe(3.37)
     expect(publish.mock.lastCall?.[0].feedback?.checkedTime).toBe(3.2)
+    if (status === 'ready') {
+      const feedback = publish.mock.lastCall?.[0].feedback
+      expect(api.recordPreviewPublication).toHaveBeenCalledWith(
+        22,
+        3.37,
+        3.2,
+        feedback?.kind,
+        feedback?.issues.map((issue) => issue.pairId)
+      )
+    }
     expect(
       playbackHighlight(publish.mock.lastCall?.[0] ?? null)?.colors.size
     ).toBe(2)

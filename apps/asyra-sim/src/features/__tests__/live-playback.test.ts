@@ -26,6 +26,8 @@ it('owns a non-mutating cancellable live task and detaches input before service 
         })
     ),
     sample: vi.fn(),
+    getDiagnostics: vi.fn(() => []),
+    recordPreviewPublication: vi.fn(),
     getState: vi.fn(),
     subscribe: vi.fn(),
     dispose: vi.fn()
@@ -33,6 +35,15 @@ it('owns a non-mutating cancellable live task and detaches input before service 
   const api = installLivePlaybackFeature(
     core,
     service as unknown as LivePlaybackRunner
+  )
+  expect(api.getDiagnostics()).toEqual([])
+  api.recordPreviewPublication(1, 4, 4, 'clear', [])
+  expect(service.recordPreviewPublication).toHaveBeenCalledWith(
+    1,
+    4,
+    4,
+    'clear',
+    []
   )
   const stateChanged = vi.fn()
   const recordsChanged = vi.fn()

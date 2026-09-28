@@ -135,6 +135,23 @@ it('admits one input lifetime and executes static samples without a report or ca
   ])
   expect(messages[1]).toMatchObject({ id: 1, time: 4 })
   expect(messages[1]).not.toHaveProperty('runId')
+  expect(messages[1]).toMatchObject({
+    diagnostic: {
+      snapshotId: input.snapshotId,
+      experimentRevision: input.source.experimentRevision,
+      methodId: input.method.id,
+      methodVersion: input.method.version,
+      sampleTime: 4,
+      minimumClearance: input.rule.minimumClearance,
+      distanceTolerance: input.method.settings.distanceTolerance,
+      timeTolerance: input.method.settings.timeTolerance,
+      maxIntervals: input.budget.maxIntervals,
+      stopCause: 'completed',
+      completedPairCount: input.pairs.length,
+      partialPairCount: 0,
+      missingPairCount: 0
+    }
+  })
   expect(input).toEqual(before)
 
   await expect(
@@ -198,6 +215,61 @@ it('bounds each sample deadline independently and leaves exhaustion explicitly i
     type: LiveMessages.ERROR,
     id: 1,
     time: 4,
-    pairs: []
+    pairs: [],
+    diagnostic: {
+      stopCause: 'deadline',
+      checkpoint: 'method-execution',
+      errorMessage: 'Live sample deadline exceeded',
+      missingPairCount: liveFixture().pairs.length
+    }
+  })
+})
+
+it('returns a compact trace when a sample stops before all pair proofs arrive', async () => {
+  const input = liveFixture()
+  const original = INSTALLED_METHOD_CATALOG.resolve(
+    input.method.id,
+    input.method.version
+  )
+  const evidence = runOfficialClearanceMethod(sampleSnapshot(input, 4))
+  const completedPair = evidence.pairs[0]
+  if (!completedPair) throw new Error('Missing completed pair fixture')
+  const execute: MethodRegistration['execute'] = async (_snapshot, context) => {
+    context.emitPair(completedPair)
+    throw new Error('sample executor failed')
+  }
+  const messages: LiveResponse[] = []
+  const host = new LiveWorkerHost(
+    createMethodCatalog([{ ...original, execute }]),
+    (message) => messages.push(message),
+    () => 10
+  )
+
+  await host.handle({ type: LiveMessages.OPEN, snapshot: input })
+  await host.handle({ type: LiveMessages.SAMPLE, id: 17, time: 4 })
+
+  const response = messages.at(-1)
+  expect(response).toMatchObject({
+    type: LiveMessages.ERROR,
+    id: 17,
+    time: 4,
+    diagnostic: {
+      requestId: 17,
+      snapshotId: input.snapshotId,
+      experimentRevision: input.source.experimentRevision,
+      methodId: input.method.id,
+      methodVersion: input.method.version,
+      sampleTime: 4,
+      effectiveDurationMs: Math.min(
+        input.budget.maxDurationMs,
+        LIVE_LIMITS.sampleDurationMs
+      ),
+      configuredDurationMs: input.budget.maxDurationMs,
+      elapsedMs: 0,
+      stopCause: 'executor-error',
+      errorMessage: 'sample executor failed',
+      completedPairIds: [completedPair.pairId],
+      missingPairIds: input.pairs.slice(1).map((pair) => pair.id)
+    }
   })
 })

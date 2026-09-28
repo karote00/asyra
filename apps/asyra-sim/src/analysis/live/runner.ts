@@ -9,7 +9,10 @@ import {
   LIVE_LIMITS,
   LiveMessages,
   type LiveResponse,
-  type LiveState
+  type LiveState,
+  type LiveDiagnosticRecord,
+  type LiveSampleDiagnostic,
+  type LiveSample
 } from './protocol'
 import {
   incompleteLiveSample,
@@ -23,6 +26,119 @@ const createWorker = () =>
   new Worker(new URL('./playback.worker.ts', import.meta.url), {
     type: 'module'
   })
+const EMPTY_DIAGNOSTICS: readonly LiveDiagnosticRecord[] = Object.freeze([])
+
+const diagnosticKeys = [
+  'requestId',
+  'snapshotId',
+  'candidateId',
+  'experimentId',
+  'experimentRevision',
+  'methodId',
+  'methodVersion',
+  'sampleTime',
+  'minimumClearance',
+  'distanceTolerance',
+  'timeTolerance',
+  'maxIterations',
+  'methodParameters',
+  'configuredDurationMs',
+  'effectiveDurationMs',
+  'maxIntervals',
+  'acceptedEvaluations',
+  'availableEvaluations',
+  'completedEvaluations',
+  'completedPairCount',
+  'partialPairCount',
+  'missingPairCount',
+  'pairIdsTruncated',
+  'elapsedMs',
+  'checkpoint',
+  'stopCause',
+  'errorName',
+  'errorMessage',
+  'completedPairIds',
+  'partialPairIds',
+  'missingPairIds'
+] as const
+
+function isLiveSampleDiagnostic(value: unknown): value is LiveSampleDiagnostic {
+  if (
+    !hasExactOwnKeys(value, diagnosticKeys) ||
+    !Number.isSafeInteger(value.requestId) ||
+    typeof value.snapshotId !== 'string' ||
+    value.snapshotId.length > 256 ||
+    typeof value.candidateId !== 'string' ||
+    value.candidateId.length > 256 ||
+    typeof value.experimentId !== 'string' ||
+    value.experimentId.length > 256 ||
+    !Number.isSafeInteger(value.experimentRevision) ||
+    typeof value.methodId !== 'string' ||
+    value.methodId.length > 256 ||
+    typeof value.methodVersion !== 'string' ||
+    value.methodVersion.length > 128 ||
+    !Number.isFinite(value.sampleTime) ||
+    !Number.isFinite(value.minimumClearance) ||
+    !Number.isFinite(value.distanceTolerance) ||
+    !Number.isFinite(value.timeTolerance) ||
+    !Number.isSafeInteger(value.maxIterations) ||
+    !value.methodParameters ||
+    typeof value.methodParameters !== 'object' ||
+    Array.isArray(value.methodParameters) ||
+    Object.keys(value.methodParameters).length > 32 ||
+    !Object.entries(value.methodParameters).every(
+      ([key, parameter]) =>
+        key.length <= 128 &&
+        (typeof parameter === 'boolean' ||
+          (typeof parameter === 'number' && Number.isFinite(parameter)) ||
+          (typeof parameter === 'string' && parameter.length <= 200))
+    ) ||
+    !Number.isFinite(value.configuredDurationMs) ||
+    !Number.isFinite(value.effectiveDurationMs) ||
+    !Number.isSafeInteger(value.maxIntervals) ||
+    !Number.isSafeInteger(value.acceptedEvaluations) ||
+    !Number.isSafeInteger(value.availableEvaluations) ||
+    !(
+      value.completedEvaluations === null ||
+      Number.isSafeInteger(value.completedEvaluations)
+    ) ||
+    !Number.isSafeInteger(value.completedPairCount) ||
+    !Number.isSafeInteger(value.partialPairCount) ||
+    !Number.isSafeInteger(value.missingPairCount) ||
+    typeof value.pairIdsTruncated !== 'boolean' ||
+    !Number.isFinite(value.elapsedMs) ||
+    typeof value.checkpoint !== 'string' ||
+    value.checkpoint.length > 80 ||
+    ![
+      'completed',
+      'deadline',
+      'executor-error',
+      'validation-error',
+      'transport-error'
+    ].includes(value.stopCause as string) ||
+    !(
+      value.errorName === null ||
+      (typeof value.errorName === 'string' && value.errorName.length <= 80)
+    ) ||
+    !(
+      value.errorMessage === null ||
+      (typeof value.errorMessage === 'string' &&
+        value.errorMessage.length <= 240)
+    )
+  )
+    return false
+
+  const validIds = (ids: unknown) =>
+    Array.isArray(ids) &&
+    ids.length <= LIVE_LIMITS.maxDiagnosticPairIds &&
+    ids.every((id) => typeof id === 'string' && id.length <= 256)
+
+  return (
+    validIds(value.completedPairIds) &&
+    validIds(value.partialPairIds) &&
+    validIds(value.missingPairIds)
+  )
+}
 
 /** A Feature-owned live lifetime, not a report runner or a render scheduler. */
 export class LivePlaybackRunner {
@@ -34,6 +150,9 @@ export class LivePlaybackRunner {
   private stop: (() => void) | null = null
   private closed = false
   private readonly records = new LiveEvidenceRecords()
+  private diagnosticKey: string | null = null
+  private diagnostics: readonly LiveDiagnosticRecord[] = Object.freeze([])
+  private diagnosticSequence = 0
   private readonly attemptedIntervalGaps = new Set<string>()
   private backgroundIntervalCount = 0
 
@@ -45,6 +164,46 @@ export class LivePlaybackRunner {
 
   getState = () => this.state
   getRecords = (key?: string) => this.records.getAll(key)
+  getDiagnostics = (key?: string) =>
+    key === undefined || key === this.diagnosticKey
+      ? this.diagnostics
+      : EMPTY_DIAGNOSTICS
+
+  recordPreviewPublication = (
+    diagnosticId: number,
+    time: number,
+    checkedTime: number,
+    feedbackKind: string,
+    issuePairIds: readonly string[]
+  ) => {
+    const index = this.diagnostics.findIndex(
+      (record) => record.diagnosticId === diagnosticId
+    )
+    if (index < 0) return
+    if (this.diagnostics[index]?.previewPublication) return
+
+    this.diagnostics = Object.freeze(
+      this.diagnostics.map((record, position) =>
+        position === index
+          ? Object.freeze({
+              ...record,
+              previewPublication: Object.freeze({
+                time,
+                checkedTime,
+                feedbackKind,
+                issuePairCount: issuePairIds.length,
+                issuePairIdsTruncated:
+                  issuePairIds.length > LIVE_LIMITS.maxDiagnosticPairIds,
+                issuePairIds: Object.freeze(
+                  [...issuePairIds].slice(0, LIVE_LIMITS.maxDiagnosticPairIds)
+                )
+              })
+            })
+          : record
+      )
+    )
+    this.publishRecordsRevision()
+  }
 
   setNotificationPublishers(
     publishStateRevision: () => void,
@@ -92,6 +251,39 @@ export class LivePlaybackRunner {
     this.publishStateRevision()
   }
 
+  private recordDiagnostic(
+    diagnosticId: number,
+    worker: LiveSampleDiagnostic,
+    requestStartedAt: number,
+    runnerOutcome: LiveDiagnosticRecord['runnerOutcome'],
+    runnerError: string | null
+  ) {
+    const immutableWorker = Object.freeze({
+      ...worker,
+      methodParameters: Object.freeze({ ...worker.methodParameters }),
+      completedPairIds: Object.freeze([...worker.completedPairIds]),
+      partialPairIds: Object.freeze([...worker.partialPairIds]),
+      missingPairIds: Object.freeze([...worker.missingPairIds])
+    })
+    const record: LiveDiagnosticRecord = Object.freeze({
+      diagnosticId,
+      worker: immutableWorker,
+      requestElapsedMs: Math.max(0, this.now() - requestStartedAt),
+      runnerOutcome,
+      runnerError,
+      previewPublication: null
+    })
+    this.diagnostics = Object.freeze(
+      [
+        ...this.diagnostics.filter(
+          (item) => item.diagnosticId !== diagnosticId
+        ),
+        record
+      ].slice(-LIVE_LIMITS.maxRecordedDiagnostics)
+    )
+    this.publishRecordsRevision()
+  }
+
   private replaceRecords(
     input: ExperimentSnapshot | null,
     key: string | null = null
@@ -102,6 +294,8 @@ export class LivePlaybackRunner {
     if (!sameInput) {
       this.attemptedIntervalGaps.clear()
       this.backgroundIntervalCount = 0
+      this.diagnosticKey = input ? key : null
+      this.diagnostics = Object.freeze([])
     }
 
     if (changed) this.publishRecordsRevision()
@@ -156,7 +350,7 @@ export class LivePlaybackRunner {
     let pendingInterval: readonly [number, number] | null = null
     let latestTime = initialTime
     let inFlight:
-      | { kind: 'sample'; id: number; time: number }
+      | { kind: 'sample'; id: number; time: number; startedAt: number }
       | { kind: 'interval'; id: number; interval: readonly [number, number] }
       | null = null
     let progress: LivePairProgress | null = null
@@ -346,7 +540,12 @@ export class LivePlaybackRunner {
         return
       }
 
-      inFlight = { kind: 'sample', id: ++nextId, time: pending }
+      inFlight = {
+        kind: 'sample',
+        id: ++nextId,
+        time: pending,
+        startedAt: this.now()
+      }
       progress = new LivePairProgress(sampleSnapshot(snapshot, pending))
       pending = null
       lastSent = this.now()
@@ -403,8 +602,10 @@ export class LivePlaybackRunner {
     const receive = (event: MessageEvent<unknown>) => {
       if (retired) return
 
+      let responseMessage: unknown
       try {
         const message = event.data
+        responseMessage = message
 
         measureWorkerPayload(message)
 
@@ -490,10 +691,23 @@ export class LivePlaybackRunner {
           response.type !== LiveMessages.ERROR
         )
           throw new Error('Unknown live sample response')
+        const hasDiagnostic = Object.hasOwn(message, 'diagnostic')
         const keys =
           response.type === LiveMessages.RESULT
-            ? ['type', 'id', 'time', 'evidence']
-            : ['type', 'id', 'time', 'pairs']
+            ? [
+                'type',
+                'id',
+                'time',
+                'evidence',
+                ...(hasDiagnostic ? ['diagnostic'] : [])
+              ]
+            : [
+                'type',
+                'id',
+                'time',
+                'pairs',
+                ...(hasDiagnostic ? ['diagnostic'] : [])
+              ]
 
         if (
           !hasExactOwnKeys(message, keys) ||
@@ -502,7 +716,22 @@ export class LivePlaybackRunner {
         )
           throw new Error('Mismatched live response')
 
-        let sample
+        const workerDiagnostic =
+          hasDiagnostic &&
+          (response.type === LiveMessages.RESULT ||
+            response.type === LiveMessages.ERROR)
+            ? response.diagnostic
+            : undefined
+        if (
+          workerDiagnostic !== undefined &&
+          (!isLiveSampleDiagnostic(workerDiagnostic) ||
+            workerDiagnostic.requestId !== response.id ||
+            workerDiagnostic.sampleTime !== response.time)
+        )
+          throw new Error('Invalid live sample diagnostic')
+        const requestStartedAt = inFlight.startedAt
+
+        let sample: LiveSample
 
         if (response.type === LiveMessages.PROGRESS) {
           if (
@@ -517,7 +746,7 @@ export class LivePlaybackRunner {
           if (response.id >= minimumId)
             this.publish({
               status: 'checking',
-              sample: progress.sample(),
+              sample: { ...progress.sample(), requestId: response.id },
               error: null
             })
 
@@ -525,14 +754,21 @@ export class LivePlaybackRunner {
         }
 
         if (response.type === LiveMessages.RESULT)
-          sample = validateLiveEvidence(
-            snapshot,
-            response.time,
-            response.evidence
-          )
+          sample = {
+            ...validateLiveEvidence(snapshot, response.time, response.evidence),
+            requestId: response.id
+          }
         else if (response.type === LiveMessages.ERROR)
-          sample = incompleteLiveSample(snapshot, response.time, response.pairs)
+          sample = {
+            ...incompleteLiveSample(snapshot, response.time, response.pairs),
+            requestId: response.id
+          }
         else throw new Error('Unknown live response')
+
+        const diagnosticId = workerDiagnostic
+          ? ++this.diagnosticSequence
+          : undefined
+        if (diagnosticId !== undefined) sample = { ...sample, diagnosticId }
 
         progress.assertConsistent(sample.pairs)
         clearTimeout(watchdog)
@@ -540,6 +776,14 @@ export class LivePlaybackRunner {
         progress = null
 
         if (this.records.record(snapshot, sample)) this.publishRecordsRevision()
+        if (workerDiagnostic && diagnosticId !== undefined)
+          this.recordDiagnostic(
+            diagnosticId,
+            workerDiagnostic,
+            requestStartedAt,
+            sample.complete ? 'complete' : 'incomplete',
+            null
+          )
         const accepted = this.records.get(sample.time) ?? sample
         if (pending === null) queueAdjacentGap(sample.time)
 
@@ -552,7 +796,31 @@ export class LivePlaybackRunner {
         }
 
         drain()
-      } catch {
+      } catch (error) {
+        if (
+          inFlight?.kind === 'sample' &&
+          responseMessage &&
+          typeof responseMessage === 'object' &&
+          Object.hasOwn(responseMessage, 'diagnostic') &&
+          isLiveSampleDiagnostic(
+            (responseMessage as { diagnostic?: unknown }).diagnostic
+          ) &&
+          (responseMessage as { diagnostic: LiveSampleDiagnostic }).diagnostic
+            .requestId === inFlight.id &&
+          (responseMessage as { diagnostic: LiveSampleDiagnostic }).diagnostic
+            .sampleTime === inFlight.time
+        )
+          this.recordDiagnostic(
+            ++this.diagnosticSequence,
+            (responseMessage as { diagnostic: LiveSampleDiagnostic })
+              .diagnostic,
+            inFlight.startedAt,
+            'rejected',
+            (error instanceof Error ? error.message : String(error)).slice(
+              0,
+              240
+            )
+          )
         fail()
       }
     }

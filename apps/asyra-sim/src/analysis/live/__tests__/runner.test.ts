@@ -129,6 +129,81 @@ function unresolvedInterval(
 
 afterEach(() => vi.useRealTimers())
 
+it('retains a validated worker trace and its first Preview publication under the input identity', async () => {
+  vi.useFakeTimers()
+  const input = liveFixture()
+  const worker = new WorkerStub()
+  const runner = new LivePlaybackRunner(() => worker as unknown as Worker)
+  const snapshot = runner.prepare('experiment-input', () => input)
+  const abort = new AbortController()
+  const task = runner.open(snapshot, 4, abort.signal)
+  worker.emit({ type: LiveMessages.READY })
+  const diagnostic = {
+    requestId: 1,
+    snapshotId: input.snapshotId,
+    candidateId: input.source.candidateId,
+    experimentId: input.source.experimentId,
+    experimentRevision: input.source.experimentRevision,
+    methodId: input.method.id,
+    methodVersion: input.method.version,
+    sampleTime: 4,
+    minimumClearance: input.rule.minimumClearance,
+    distanceTolerance: input.method.settings.distanceTolerance,
+    timeTolerance: input.method.settings.timeTolerance,
+    maxIterations: input.method.settings.maxIterations,
+    methodParameters: input.method.settings.parameters ?? {},
+    configuredDurationMs: input.budget.maxDurationMs,
+    effectiveDurationMs: LIVE_LIMITS.sampleDurationMs,
+    maxIntervals: input.budget.maxIntervals,
+    acceptedEvaluations: 0,
+    availableEvaluations: input.budget.maxIntervals,
+    completedEvaluations: null,
+    completedPairCount: 0,
+    partialPairCount: 0,
+    missingPairCount: input.pairs.length,
+    pairIdsTruncated: false,
+    elapsedMs: 9,
+    checkpoint: 'method-execution',
+    stopCause: 'executor-error',
+    errorName: 'Error',
+    errorMessage: 'sample executor failed',
+    completedPairIds: [],
+    partialPairIds: [],
+    missingPairIds: input.pairs.map((pair) => pair.id)
+  } as const
+
+  worker.emit({
+    type: LiveMessages.ERROR,
+    id: 1,
+    time: 4,
+    pairs: [],
+    diagnostic
+  })
+
+  expect(runner.getDiagnostics('experiment-input')).toMatchObject([
+    {
+      worker: diagnostic,
+      runnerOutcome: 'incomplete',
+      runnerError: null,
+      previewPublication: null
+    }
+  ])
+  runner.recordPreviewPublication(1, 4, 4, 'unresolved', [])
+  expect(
+    runner.getDiagnostics('experiment-input')[0]?.previewPublication
+  ).toEqual({
+    time: 4,
+    checkedTime: 4,
+    feedbackKind: 'unresolved',
+    issuePairCount: 0,
+    issuePairIdsTruncated: false,
+    issuePairIds: []
+  })
+
+  abort.abort()
+  await task
+})
+
 it('admits the latest pending pose within 50 ms when the previous check has completed', async () => {
   vi.useFakeTimers()
   const input = liveFixture()
