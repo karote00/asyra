@@ -15,18 +15,28 @@ The product cases must describe current App-owned work only. Asyra Design keeps
 its editable 2D product proof. FieldScope may show its cucumber and tomato
 greenhouse models and conservative robot lane/energy assessments; it does not
 simulate robot patrol or harvesting, physical dynamics, or live equipment.
-Asyra Sim may show its synthetic robot-workcell editing and trajectory analysis
-workbench; label it as a development checkpoint, not an R0 release or a basis
-for production or safety approval. Each case links to a real product screen or
-direct source/test evidence. Preserve product maturity limits, open external
-links in a new tab, and keep the three existing Starter, Design, and advanced
-composition destinations unchanged.
+FieldScope's homepage image is an actual App screen showing the current four-bay
+greenhouse, planted rows and aisle view. Asyra Sim may show its synthetic
+robot-workcell editing and trajectory analysis workbench; label it as a
+development checkpoint, not an R0 release or a basis for production or safety
+approval. Its homepage image is an actual Asyra Sim screen showing the default
+synthetic six-axis workcell, hierarchy and inspector. Both screenshots were
+captured from source revision
+`54d95e995fe2cb7cd84f18d140127171b917ffa6`, at device scale 1, and resized
+without cropping to 1280 x 853 WebP. FieldScope was captured at 1440 x 900 in
+the aisle view with modeled crops visible; Asyra Sim was captured at 1440 x 960
+with the default workcell, grid on and no selected part. These screens show
+current modeled scenes, not connected or calibrated equipment. Each case also
+links to direct source/test evidence. Preserve product maturity limits, open
+external links in a new tab, and keep the three existing Starter, Design, and
+advanced composition destinations unchanged.
 
 The scope is the website route composition, story shell, resource sections,
 direct tests, current landing contract and its existing Inspector. Framework
 and Design behavior, supporting pages and dependencies are unchanged. Reuse the
 existing feature worktree and PR; remote CI must pass before requesting review.
-Never merge. No additional artwork is needed for this integration.
+Never merge. Product images remain direct, proportion-preserving screenshots of
+the two Apps, without composite or generated content.
 
 The owner gap is the narrative timeline: chapter boundaries previously reset
 object identity, camera and composition. One persistent desktop scene now owns

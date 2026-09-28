@@ -66,6 +66,20 @@ export function HomeResources() {
               <h3 className="m-0 pt-3 font-serif text-[26px] leading-tight">
                 FieldScope
               </h3>
+              <figure className="m-0 mt-4 w-full overflow-hidden rounded-lg border border-[#183f35]/15 bg-white">
+                <img
+                  src="/product-evidence/fieldscope-greenhouse.webp"
+                  alt="FieldScope greenhouse aisle with modeled cucumber and tomato crop rows"
+                  width={1280}
+                  height={853}
+                  loading="lazy"
+                  decoding="async"
+                  className="block aspect-[3/2] w-full object-contain"
+                />
+                <figcaption className="px-3 py-2 text-xs leading-relaxed opacity-70">
+                  Current four-bay greenhouse scene with planted crop rows.
+                </figcaption>
+              </figure>
               <p className="pt-4 text-base leading-relaxed opacity-80">
                 Model cucumber and tomato crops in a greenhouse, with a parked
                 robot concept and conservative lane and energy assessments.
@@ -100,6 +114,20 @@ export function HomeResources() {
               <h3 className="m-0 pt-3 font-serif text-[26px] leading-tight">
                 Asyra Sim
               </h3>
+              <figure className="m-0 mt-4 w-full overflow-hidden rounded-lg border border-[#183f35]/15 bg-white">
+                <img
+                  src="/product-evidence/asyra-sim-workcell.webp"
+                  alt="Asyra Sim synthetic six-axis robot workcell with fixture post and table"
+                  width={1280}
+                  height={853}
+                  loading="lazy"
+                  decoding="async"
+                  className="block aspect-[3/2] w-full object-contain"
+                />
+                <figcaption className="px-3 py-2 text-xs leading-relaxed opacity-70">
+                  Synthetic example workcell - not production equipment.
+                </figcaption>
+              </figure>
               <p className="pt-4 text-base leading-relaxed opacity-80">
                 Edit synthetic six-axis workcells, review robot trajectories,
                 and compare geometry-analysis runs in a browser-local workbench.

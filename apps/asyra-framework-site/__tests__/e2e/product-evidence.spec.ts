@@ -22,6 +22,37 @@ for (const width of [320, 390, 1440]) {
     await expect(section).toContainText('Development checkpoint - not R0')
     await expect(section).toContainText('not independently certified')
 
+    for (const [name, src] of [
+      ['FieldScope', '/product-evidence/fieldscope-greenhouse.webp'],
+      ['Asyra Sim', '/product-evidence/asyra-sim-workcell.webp']
+    ]) {
+      const card = section
+        .getByRole('heading', { name, level: 3 })
+        .locator('xpath=..')
+      const image = card.getByRole('img')
+      await expect(image).toHaveAttribute('src', src)
+      await expect(image).toBeVisible()
+      const imageState = await image.evaluate((element: HTMLImageElement) => ({
+        loaded: element.complete && element.naturalWidth > 0,
+        objectFit: getComputedStyle(element).objectFit,
+        ratio: element.naturalWidth / element.naturalHeight,
+        box: element.getBoundingClientRect().toJSON()
+      }))
+      expect(imageState.loaded, `${name} screenshot did not load`).toBe(true)
+      expect(imageState.objectFit).toBe('contain')
+      expect(imageState.ratio).toBeGreaterThan(1.2)
+      expect(
+        Math.abs(imageState.box.width / imageState.box.height - 1.5)
+      ).toBeLessThan(0.02)
+      expect(imageState.box.x).toBeGreaterThanOrEqual(0)
+      expect(imageState.box.x + imageState.box.width).toBeLessThanOrEqual(
+        width + 1
+      )
+      expect(imageState.box.width).toBeGreaterThanOrEqual(
+        width < 768 ? 250 : 300
+      )
+    }
+
     for (const [name, href] of [
       [
         'Crop model source ↗',
@@ -88,7 +119,20 @@ for (const width of [320, 390, 1440]) {
       const cardBox = await card.boundingBox()
       if (!cardBox) throw new Error(`Missing ${name} case card`)
       expect(cardBox.y).toBeGreaterThanOrEqual(80)
-      expect(cardBox.y + cardBox.height).toBeLessThanOrEqual(960)
+      const image = card.getByRole('img')
+      const text = image.locator('xpath=../following-sibling::p[1]')
+      const link = card.getByRole('link').first()
+      const imageBox = await image.boundingBox()
+      const textBox = await text.boundingBox()
+      const linkBox = await link.boundingBox()
+      if (!imageBox || !textBox || !linkBox)
+        throw new Error(`Incomplete ${name} evidence card`)
+      expect(imageBox.y + imageBox.height).toBeLessThanOrEqual(textBox.y)
+      expect(textBox.y + textBox.height).toBeLessThanOrEqual(linkBox.y)
+      for (const locator of [heading, image, text, link]) {
+        await locator.scrollIntoViewIfNeeded()
+        await expect(locator).toBeInViewport()
+      }
       expect(
         await heading.evaluate((element) => {
           const bounds = element.getBoundingClientRect()
@@ -103,5 +147,8 @@ for (const width of [320, 390, 1440]) {
         path: testInfo.outputPath(`product-evidence-${file}-${width}.png`)
       })
     }
+    await section.screenshot({
+      path: testInfo.outputPath(`homepage-product-evidence-${width}.png`)
+    })
   })
 }

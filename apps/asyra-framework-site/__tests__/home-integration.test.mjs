@@ -81,6 +81,31 @@ test('homepage product evidence covers Design, FieldScope and Sim with verified 
     )
   ])
 })
+test('homepage FieldScope and Sim cases include real product screenshots', async () => {
+  const content = await read('components/home-resources.tsx')
+  for (const [name, file, alt] of [
+    [
+      'FieldScope',
+      'public/product-evidence/fieldscope-greenhouse.webp',
+      'FieldScope greenhouse aisle with modeled cucumber and tomato crop rows'
+    ],
+    [
+      'Asyra Sim',
+      'public/product-evidence/asyra-sim-workcell.webp',
+      'Asyra Sim synthetic six-axis robot workcell with fixture post and table'
+    ]
+  ]) {
+    assert.ok(
+      content.includes(file.replace('public', '')),
+      `${name} image is missing`
+    )
+    assert.ok(
+      content.includes(`alt="${alt}"`),
+      `${name} image needs a descriptive alt`
+    )
+    await access(new URL(`../${file}`, import.meta.url))
+  }
+})
 test('homepage routes the published Starter before Design and advanced composition', async () => {
   const content = await read('components/home-resources.tsx')
   const starter = content.indexOf("title: 'Generic Starter'")
