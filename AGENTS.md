@@ -49,13 +49,11 @@ These rules apply to every task without requiring additional document reads:
   multi-agent tools only when the user explicitly asks for multi-agent work in
   the current task. The opt-in role templates live under
   `docs/ai/workflows/multi-agent-templates/`, not in active Codex config.
-- For coordinated multi-agent writes, register the task and follow
-  `docs/ai/workflows/agent-coordination-guards.md`. A normal single-agent task
-  in an isolated worktree uses task-local state without registering shared
-  history. Hook installation, native activation, task completion and PR
-  integration are separate states. Never treat a pending CI run as completed
-  delivery or silently refresh unknown file changes into an accepted task
-  snapshot.
+- Use one active writer per worktree and preserve changes you did not create.
+  Run the required tests and quality gates before local commits. Local commits,
+  remote pushes, PR creation, merges, publication and deployment remain
+  separate operations with the authorization described in
+  `docs/ai/workflows/git-commit-push-policy.md`.
 - For new apps and app feature/refactor work, read
   `docs/public/start/custom-composition.md` (the reusable App implementation
   guide) and
