@@ -176,3 +176,69 @@ it('reuses only all-pair clear certificates, including their boundaries, and nev
 
   expect(missing.at(1)).toBeUndefined()
 })
+
+it('queries immutable interval leaves with bounded binary-search work across time changes', () => {
+  const snapshot = liveFixture()
+  const result = structuredClone(
+    completeAnalysisResult(snapshot, runOfficialClearanceMethod(snapshot), {
+      runId: 'recorded',
+      startedAt: 0,
+      endedAt: 1
+    })
+  )
+  const leafCount = 128
+  const reads = new Map<string, { value: number }>()
+
+  for (const pair of result.pairEvidence) {
+    const leaves = Array.from({ length: leafCount }, (_, index) => ({
+      start: (8 * index) / leafCount,
+      end: (8 * (index + 1)) / leafCount,
+      lower: 1,
+      upper: 1,
+      witnessTime: null,
+      penetration: false,
+      state: 'clear' as const,
+      reason: 'certificate'
+    }))
+    const pairReads = { value: 0 }
+    const indexedLeaves = new Proxy(leaves, {
+      get(target, property, receiver) {
+        if (typeof property === 'string' && /^\d+$/u.test(property))
+          pairReads.value += 1
+
+        return Reflect.get(target, property, receiver)
+      }
+    })
+
+    Object.assign(pair.evidence, {
+      coverage: 'complete',
+      leaves: indexedLeaves
+    })
+    reads.set(pair.pairId, pairReads)
+  }
+
+  const evidence = new RecordedPlaybackEvidence({ snapshot, result })
+  const readCount = (pairId: string) => reads.get(pairId)?.value ?? 0
+  const baselines = new Map(
+    result.pairEvidence.map((pair) => [pair.pairId, readCount(pair.pairId)])
+  )
+
+  for (let query = 0; query < 40; query += 1) {
+    const time = (8 * (query + 0.5)) / 40
+
+    expect(evidence.at(time)).toMatchObject({
+      kind: 'clear',
+      checkedTime: time,
+      complete: true
+    })
+  }
+
+  for (const pair of result.pairEvidence) {
+    const queryReads =
+      readCount(pair.pairId) - (baselines.get(pair.pairId) ?? 0)
+    const logarithmicBound = 40 * (Math.ceil(Math.log2(leafCount)) + 4)
+
+    expect(queryReads).toBeGreaterThan(0)
+    expect(queryReads).toBeLessThanOrEqual(logarithmicBound)
+  }
+})

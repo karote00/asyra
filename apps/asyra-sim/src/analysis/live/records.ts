@@ -16,7 +16,7 @@ export class LiveEvidenceRecords {
     { sample: LiveSample; bytes: number }
   >()
   private bytes = 0
-  private values: readonly LiveSample[] = Object.freeze([])
+  private values: readonly LiveSample[] = EMPTY_RECORDS
 
   getAll = (key?: string) =>
     key === undefined || key === this.key ? this.values : EMPTY_RECORDS
@@ -30,11 +30,15 @@ export class LiveEvidenceRecords {
   }
 
   replace(input: ExperimentSnapshot | null, key: string | null = null) {
+    const changed = this.values.length > 0
+
     this.input = input
     this.key = key
     this.samples.clear()
     this.bytes = 0
-    this.values = Object.freeze([])
+    this.values = EMPTY_RECORDS
+
+    return changed
   }
 
   get(time: number) {
@@ -45,8 +49,11 @@ export class LiveEvidenceRecords {
     if (!this.owns(input))
       throw new Error('Retired live input cannot record evidence')
 
-    const bytes = measureWorkerPayload(sample)
     const previous = this.samples.get(sample.time)
+
+    if (previous?.sample === sample) return false
+
+    const bytes = measureWorkerPayload(sample)
 
     if (previous) {
       this.bytes -= previous.bytes
@@ -70,5 +77,7 @@ export class LiveEvidenceRecords {
     this.values = Object.freeze(
       [...this.samples.values()].map((item) => item.sample)
     )
+
+    return true
   }
 }

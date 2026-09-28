@@ -292,6 +292,16 @@ historical evidence, never silently applied to changed inputs. Live observations
 are labelled as sampled records, not full-path reports, and do not replace the
 continuous-coverage gate for a formal report.
 
+The analysis owner stores accepted exact-time samples in its bounded
+`LiveEvidenceRecords` lifetime. It publishes transient state and record changes
+through separate scalar Core UI property revisions; evidence stays
+analysis-owned and is never copied into a UI property for notification. Worker
+progress and playback target changes may advance the state revision, but only a
+changed accepted-record projection or clearing existing records advances the
+records revision. Re-recording the same sample object leaves the stable records
+array and revision unchanged. Core's deep `isEqual` check therefore sees scalar
+revision values instead of full sample or report data.
+
 The App owns one non-mutating, cancellable Feature task and at most one bounded Worker
 for the current playback inputs. Admit and send detached inputs once per
 playback lifetime; request only sampled times afterward. Keep one in-flight
@@ -320,6 +330,17 @@ threshold, numerical-setting or geometry changes retire affected evidence.
 Identical in-flight queries may share work, but cancellation and stale-delivery
 fencing remain in force. A cache hit is served without waiting behind unrelated
 analysis work.
+
+The playback pose and selected time are a separate transient Preview
+projection. Changing `t` immediately updates that pose and never changes the
+records revision. `LiveObservations` subscribes only to records revision, so
+worker progress and slider movement do not rebuild its sample list. A selected
+saved Run's immutable interval evidence is indexed once for the playback
+lifetime; each time query binary-searches its ordered per-pair leaves. Do not
+rebuild or deep-compare the interval report on each target change. Reuse only an
+exact live point or saved evidence certified at that time for every required
+pair; a missing point or interval gap goes to the live analysis owner for an
+exact query and remains unknown until validated evidence arrives.
 
 After a foreground target is served, the owner may try to certify an adjacent
 gap with the existing continuous interval method. Evidence may be joined only
@@ -403,7 +424,9 @@ without stale highlights, latest-target/error handling and exact cached-seek
 parity, latest-only backpressure, exact-point and certified-interval reuse with
 no redundant Worker work, explicit gap queries, point-evidence non-expansion,
 foreground-before-background scheduling, fully proven interval merging,
-unresolved-gap preservation, cache invalidation,
+unresolved-gap preservation, bounded interval-leaf query work, separated state
+and record revision notifications, unchanged-record revision reuse, input
+invalidation, cache invalidation,
 known formal evidence reuse without recomputation and missing-pose checks before
 later witnesses, cancellation/replacement/late output, invalid input,
 unchanged history/report data, original/native shape identity, localized UI

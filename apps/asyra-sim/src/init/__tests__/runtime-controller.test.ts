@@ -52,6 +52,7 @@ function runtime() {
         getRecords: vi.fn(() => []),
         prepare: vi.fn(),
         subscribe: vi.fn(() => vi.fn()),
+        subscribeRecords: vi.fn(() => vi.fn()),
         cancel: vi.fn(() => false),
         open: vi.fn(),
         sample: vi.fn()

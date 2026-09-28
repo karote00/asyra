@@ -7,7 +7,15 @@ import { installLivePlaybackFeature } from '../live-playback'
 it('owns a non-mutating cancellable live task and detaches input before service execution', async () => {
   let received: ExperimentSnapshot | undefined
   let signal: AbortSignal | undefined
+  let notifyState: (() => void) | undefined
+  let notifyRecords: (() => void) | undefined
   const service = {
+    setNotificationPublishers: vi.fn(
+      (state: () => void, records: () => void) => {
+        notifyState = state
+        notifyRecords = records
+      }
+    ),
     capture: (input: ExperimentSnapshot) => structuredClone(input),
     open: vi.fn(
       (input: ExperimentSnapshot, _time: number, owned: AbortSignal) =>
@@ -26,6 +34,28 @@ it('owns a non-mutating cancellable live task and detaches input before service 
     core,
     service as unknown as LivePlaybackRunner
   )
+  const stateChanged = vi.fn()
+  const recordsChanged = vi.fn()
+  const stopState = api.subscribe(stateChanged)
+  const stopRecords = api.subscribeRecords(recordsChanged)
+  stateChanged.mockClear()
+  recordsChanged.mockClear()
+
+  notifyState?.()
+  expect(stateChanged).toHaveBeenCalledOnce()
+  expect(recordsChanged).not.toHaveBeenCalled()
+  expect(core.getUIProperty('live-playback.state-revision')).toBe(1)
+  expect(core.getUIProperty('live-playback.records-revision')).toBe(0)
+
+  notifyRecords?.()
+  expect(stateChanged).toHaveBeenCalledOnce()
+  expect(recordsChanged).toHaveBeenCalledOnce()
+  expect(core.getUIProperty('live-playback.state-revision')).toBe(1)
+  expect(core.getUIProperty('live-playback.records-revision')).toBe(1)
+
+  stopState()
+  stopRecords()
+
   const input = { snapshotId: 'frozen' } as ExperimentSnapshot
   const external = new AbortController()
   const before = core.getUndoHistoryDepth()

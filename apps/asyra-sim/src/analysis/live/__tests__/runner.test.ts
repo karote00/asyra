@@ -162,11 +162,13 @@ it('does not repeat a geometry query for a checked sample in the same input life
 
   const input = liveFixture()
   const worker = new WorkerStub()
+  const publishRecordsRevision = vi.fn()
   const runner = new LivePlaybackRunner(
     () => worker as unknown as Worker,
     undefined,
     Date.now
   )
+  runner.setNotificationPublishers(vi.fn(), publishRecordsRevision)
   const abort = new AbortController()
   const task = runner.open(input, 4, abort.signal)
 
@@ -186,6 +188,7 @@ it('does not repeat a geometry query for a checked sample in the same input life
   )
 
   worker.emit({ type: LiveMessages.RESULT, id: 1, time: 4, evidence })
+  expect(publishRecordsRevision).toHaveBeenCalledOnce()
   runner.sample(4)
   await vi.advanceTimersByTimeAsync(LIVE_LIMITS.samplePeriodMs)
 
@@ -197,6 +200,7 @@ it('does not repeat a geometry query for a checked sample in the same input life
   await task
 
   expect(calls).toBe(1)
+  expect(publishRecordsRevision).toHaveBeenCalledOnce()
 })
 
 it('serves an exact cached target during unrelated work and retains valid stale output without publishing it', async () => {
@@ -264,6 +268,53 @@ it('serves an exact cached target during unrelated work and retains valid stale 
   await second
 })
 
+it('publishes state and exact-record revisions separately from target changes and provisional progress', async () => {
+  const input = liveFixture()
+  const worker = new WorkerStub()
+  const publishStateRevision = vi.fn()
+  const publishRecordsRevision = vi.fn()
+  const runner = new LivePlaybackRunner(() => worker as unknown as Worker)
+  runner.setNotificationPublishers(publishStateRevision, publishRecordsRevision)
+  const abort = new AbortController()
+  const task = runner.open(input, 0, abort.signal)
+
+  worker.emit({ type: LiveMessages.READY })
+  publishStateRevision.mockClear()
+  publishRecordsRevision.mockClear()
+
+  const evidence = runOfficialClearanceMethod(sampleSnapshot(input, 0))
+  worker.emit({
+    type: LiveMessages.PROGRESS,
+    id: 1,
+    time: 0,
+    pairs: [evidence.pairs[0]]
+  })
+
+  expect(publishStateRevision).toHaveBeenCalled()
+  expect(publishRecordsRevision).not.toHaveBeenCalled()
+
+  publishStateRevision.mockClear()
+  runner.sample(4, true)
+
+  expect(publishStateRevision).toHaveBeenCalled()
+  expect(publishRecordsRevision).not.toHaveBeenCalled()
+
+  publishRecordsRevision.mockClear()
+  worker.emit({
+    type: LiveMessages.RESULT,
+    id: 1,
+    time: 0,
+    evidence
+  })
+
+  expect(publishRecordsRevision).toHaveBeenCalledOnce()
+  expect(runner.getRecords().map((sample) => sample.time)).toEqual([0])
+  expect(runner.getState().sample).toBeNull()
+
+  abort.abort()
+  await task
+})
+
 it('shares an identical in-flight query and retains its exact result for the pending seek', async () => {
   vi.useFakeTimers()
 
@@ -306,6 +357,8 @@ it('reuses owner-admitted samples across Play lifetimes with zero new Workers, t
   const worker = new WorkerStub()
   const factory = vi.fn(() => worker as unknown as Worker)
   const runner = new LivePlaybackRunner(factory)
+  const publishRecordsRevision = vi.fn()
+  runner.setNotificationPublishers(vi.fn(), publishRecordsRevision)
   const input = runner.prepare('revision-1', liveFixture)
   const abort = new AbortController()
   const first = runner.open(input, 4, abort.signal)
@@ -348,6 +401,7 @@ it('reuses owner-admitted samples across Play lifetimes with zero new Workers, t
   )
   expect(create).toHaveBeenCalledOnce()
   expect(runner.getRecords('revision-1')).toHaveLength(0)
+  expect(publishRecordsRevision).toHaveBeenCalledTimes(2)
 
   runner.dispose()
 })

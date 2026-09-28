@@ -253,6 +253,7 @@ export async function bootstrap(
             getRecords: live.getRecords,
             getState: live.getState,
             subscribe: live.subscribe,
+            subscribeRecords: live.subscribeRecords,
             cancel: live.cancel
           },
           assertLive

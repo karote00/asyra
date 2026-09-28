@@ -26,7 +26,8 @@ const createWorker = () =>
 /** A Feature-owned live lifetime, not a report runner or a render scheduler. */
 export class LivePlaybackRunner {
   private state: LiveState = { status: 'idle', sample: null, error: null }
-  private readonly listeners = new Set<() => void>()
+  private publishStateRevision: () => void = () => undefined
+  private publishRecordsRevision: () => void = () => undefined
   private request: ((time: number, discontinuity: boolean) => void) | null =
     null
   private stop: (() => void) | null = null
@@ -41,6 +42,14 @@ export class LivePlaybackRunner {
 
   getState = () => this.state
   getRecords = (key?: string) => this.records.getAll(key)
+
+  setNotificationPublishers(
+    publishStateRevision: () => void,
+    publishRecordsRevision: () => void
+  ) {
+    this.publishStateRevision = publishStateRevision
+    this.publishRecordsRevision = publishRecordsRevision
+  }
 
   capture(input: ExperimentSnapshot) {
     return this.records.owns(input) ? input : structuredClone(input)
@@ -57,29 +66,29 @@ export class LivePlaybackRunner {
 
     const input = admitSnapshotExecution(create(), this.methods)
 
-    this.records.replace(input, key)
+    this.replaceRecords(input, key)
 
     return input
   }
 
   invalidate() {
     this.stop?.()
-    this.records.replace(null)
+    this.replaceRecords(null)
     this.publish({ status: 'idle', sample: null, error: null })
-  }
-
-  subscribe = (listener: () => void) => {
-    this.listeners.add(listener)
-
-    return () => {
-      this.listeners.delete(listener)
-    }
   }
 
   private publish(state: LiveState) {
     this.state = Object.freeze(state)
+    this.publishStateRevision()
+  }
 
-    for (const listener of this.listeners) listener()
+  private replaceRecords(
+    input: ExperimentSnapshot | null,
+    key: string | null = null
+  ) {
+    const changed = this.records.replace(input, key)
+
+    if (changed) this.publishRecordsRevision()
   }
 
   sample(time: number, discontinuity = false) {
@@ -102,7 +111,7 @@ export class LivePlaybackRunner {
       snapshot = this.records.owns(input)
         ? input
         : admitSnapshotExecution(input, this.methods)
-      if (!this.records.owns(snapshot)) this.records.replace(snapshot)
+      if (!this.records.owns(snapshot)) this.replaceRecords(snapshot)
       sampleSnapshot(snapshot, initialTime)
 
       if (
@@ -326,7 +335,7 @@ export class LivePlaybackRunner {
         inFlight = null
         progress = null
 
-        this.records.record(snapshot, sample)
+        if (this.records.record(snapshot, sample)) this.publishRecordsRevision()
 
         if (response.id >= minimumId) {
           this.publish({ status: 'ready', sample, error: sample.error })
@@ -348,7 +357,6 @@ export class LivePlaybackRunner {
   dispose() {
     this.closed = true
     this.stop?.()
-    this.records.replace(null)
-    this.listeners.clear()
+    this.replaceRecords(null)
   }
 }

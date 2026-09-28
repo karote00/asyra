@@ -14,9 +14,13 @@ it('reuses an exact point only and does not treat a nearby time as covered', () 
     error: 'unchecked pairs remain unknown'
   }
 
-  records.replace(input, 'current')
-  records.record(input, sample)
+  expect(records.replace(input, 'current')).toBe(false)
+  expect(records.record(input, sample)).toBe(true)
 
+  const values = records.getAll()
+
+  expect(records.record(input, sample)).toBe(false)
+  expect(records.getAll()).toBe(values)
   expect(records.get(2)).toBe(sample)
   expect(records.get(2.0001)).toBeUndefined()
 })

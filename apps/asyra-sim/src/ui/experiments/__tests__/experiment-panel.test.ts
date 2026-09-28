@@ -96,7 +96,11 @@ const experiment = {
 const runtime = {
   experimentInputs: new ExperimentInputReader(),
   features: {
-    live: { subscribe: () => () => undefined, getRecords: () => emptyRecords }
+    live: {
+      subscribe: () => () => undefined,
+      subscribeRecords: () => () => undefined,
+      getRecords: () => emptyRecords
+    }
   },
   getExperiments: vi.fn(() => [structuredClone(experiment)]),
   getMethodDescriptors: () => [

@@ -8,7 +8,7 @@ export function LiveObservations({ identity }: { identity: string }) {
 
   const api = runtime.features.live
 
-  const records = useSyncExternalStore(api.subscribe, () =>
+  const records = useSyncExternalStore(api.subscribeRecords, () =>
     api.getRecords(identity)
   )
 
