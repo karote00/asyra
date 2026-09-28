@@ -154,6 +154,76 @@ it('presents the same cached sample again after seeking without stale checking f
   expect(publish).toHaveBeenCalledTimes(count)
 })
 
+it('shows only an exact interval witness during a pending seek', async () => {
+  const input = liveFixture()
+  const intervalSample = structuredClone(
+    validateLiveEvidence(
+      input,
+      2,
+      runOfficialClearanceMethod(sampleSnapshot(input, 2))
+    )
+  )
+  Object.assign(intervalSample.pairs[0].evidence.leaves[0], {
+    state: 'finding',
+    penetration: true,
+    witnessTime: 2
+  })
+  Object.assign(intervalSample, {
+    complete: false,
+    evidenceOrigin: 'interval'
+  })
+
+  let state: LiveState = { status: 'idle', sample: null, error: null }
+  let notify: () => void = () => undefined
+  const api = {
+    subscribe: (listener: () => void) => {
+      notify = listener
+      return () => {
+        notify = () => undefined
+      }
+    },
+    getState: () => state,
+    open: (_input: unknown, _time: number, options: { signal: AbortSignal }) =>
+      new Promise<void>((resolve) => {
+        options.signal.addEventListener('abort', () => resolve(), {
+          once: true
+        })
+      }),
+    sample: vi.fn()
+  } as unknown as SimRuntime['features']['live']
+  const publish = vi.fn<(value: PlaybackView) => void>()
+  const preview = new LivePreview(
+    input.workcell,
+    input.trajectory,
+    input.interval,
+    () => input,
+    api,
+    publish
+  )
+
+  preview.sample(2, { discontinuity: true })
+  await Promise.resolve()
+  state = {
+    status: 'checking',
+    sample: { ...intervalSample, time: 1 },
+    error: null
+  }
+  notify()
+  expect(publish.mock.lastCall?.[0].feedback?.kind).toBe('checking')
+
+  state = { status: 'checking', sample: intervalSample, error: null }
+  notify()
+
+  expect(publish.mock.lastCall?.[0]).toMatchObject({
+    time: 2,
+    pendingTime: 2,
+    feedback: { kind: 'collision', checkedTime: 2, complete: false }
+  })
+
+  preview.dispose()
+  await preview.completion
+})
+
 it('does not coalesce a crossed trajectory keyframe when animation jumps ahead of the worker', async () => {
   const input = liveFixture()
   const initial = validateLiveEvidence(

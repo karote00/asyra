@@ -8,9 +8,12 @@ export const LiveMessages = {
   OPEN: 'open',
   READY: 'ready',
   SAMPLE: 'sample',
+  INTERVAL: 'interval',
   PROGRESS: 'progress',
   RESULT: 'result',
-  ERROR: 'error'
+  ERROR: 'error',
+  INTERVAL_RESULT: 'interval-result',
+  INTERVAL_ERROR: 'interval-error'
 } as const
 
 export const LIVE_LIMITS = Object.freeze({
@@ -18,12 +21,20 @@ export const LIVE_LIMITS = Object.freeze({
   sampleDurationMs: 500,
   startupDurationMs: 10_000,
   responseGraceMs: 250,
-  maxRecordedSamples: 256
+  maxRecordedSamples: 256,
+  maxBackgroundIntervals: 16,
+  maxBackgroundIntervalEvaluations: 64
 })
 
 export type LiveRequest =
   | { type: typeof LiveMessages.OPEN; snapshot: ExperimentSnapshot }
   | { type: typeof LiveMessages.SAMPLE; id: number; time: number }
+  | {
+      type: typeof LiveMessages.INTERVAL
+      id: number
+      interval: readonly [number, number]
+      maxIntervals: number
+    }
 
 export type LiveResponse =
   | { type: typeof LiveMessages.READY }
@@ -45,6 +56,17 @@ export type LiveResponse =
       time: number
       pairs: readonly MethodPairEvidence[]
     }
+  | {
+      type: typeof LiveMessages.INTERVAL_RESULT
+      id: number
+      interval: readonly [number, number]
+      evidence: MethodEvidence
+    }
+  | {
+      type: typeof LiveMessages.INTERVAL_ERROR
+      id: number
+      interval: readonly [number, number]
+    }
 
 export interface LiveSample {
   time: number
@@ -52,6 +74,7 @@ export interface LiveSample {
   totalPairCount: number
   complete: boolean
   error: string | null
+  evidenceOrigin?: 'interval'
 }
 
 export interface LiveState {

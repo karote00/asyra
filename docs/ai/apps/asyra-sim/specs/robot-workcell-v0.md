@@ -292,15 +292,16 @@ historical evidence, never silently applied to changed inputs. Live observations
 are labelled as sampled records, not full-path reports, and do not replace the
 continuous-coverage gate for a formal report.
 
-The analysis owner stores accepted exact-time samples in its bounded
-`LiveEvidenceRecords` lifetime. It publishes transient state and record changes
+The analysis owner stores accepted exact-time samples and certified background
+interval leaves in its bounded `LiveEvidenceRecords` input lifetime. It publishes transient state and evidence changes
 through separate scalar Core UI property revisions; evidence stays
 analysis-owned and is never copied into a UI property for notification. Worker
-progress and playback target changes may advance the state revision, but only a
-changed accepted-record projection or clearing existing records advances the
-records revision. Re-recording the same sample object leaves the stable records
-array and revision unchanged. Core's deep `isEqual` check therefore sees scalar
-revision values instead of full sample or report data.
+progress and playback target changes advance the state revision only when its
+published status, error or sample values change. Only materially changed
+accepted evidence or clearing existing evidence advances the records revision.
+Re-recording an equivalent sample leaves the stable records array and revision
+unchanged. Core's deep `isEqual` check therefore sees scalar revision values
+instead of full sample or report data.
 
 The App owns one non-mutating, cancellable Feature task and at most one bounded Worker
 for the current playback inputs. Admit and send detached inputs once per
@@ -320,8 +321,10 @@ unchanged admitted input if they validate for their own exact time.
 Reuse only evidence that exactly covers the requested time: an exact sampled
 point or a certified interval containing that time. A point witness says
 nothing about neighboring times, and an unresolved interval remains unknown.
-The live analysis owner retains bounded exact-time samples for its admitted
-input. The Preview UI derives a query index from the selected immutable
+The live analysis owner retains bounded exact-time samples and validated
+interval leaves for its admitted input. A partial interval projection may show
+its proven pairs while the owner continues an exact foreground check for missing
+pairs. The Preview UI derives a query index from the selected immutable
 run's per-pair evidence; that index adds no evidence authority and is retired
 with its run/input selection. A finding leaf is usable only at its exact
 witness time, a clear query requires certificates for every required pair, and
@@ -337,22 +340,33 @@ records revision. `LiveObservations` subscribes only to records revision, so
 worker progress and slider movement do not rebuild its sample list. A selected
 saved Run's immutable interval evidence is indexed once for the playback
 lifetime; each time query binary-searches its ordered per-pair leaves. Do not
-rebuild or deep-compare the interval report on each target change. Reuse only an
-exact live point or saved evidence certified at that time for every required
-pair; a missing point or interval gap goes to the live analysis owner for an
-exact query and remains unknown until validated evidence arrives.
+rebuild or deep-compare the interval report on each target change. Reuse an
+exact live point, live interval leaves certified at that time, or saved evidence
+certified at that time. Clear feedback requires evidence for every required
+pair; a finding is usable only at its exact witness, and other gaps go to the
+live analysis owner for an exact query and remain unknown until validated
+evidence arrives.
 
-After a foreground target is served, the owner may try to certify an adjacent
-gap with the existing continuous interval method. Evidence may be joined only
-when the method proves the entire interval and required pair information agrees.
+After a foreground target is served, the owner attempts one background continuous
+interval query between it and the nearest accepted exact-time sample. Keep at
+most one pending gap, admit background work only after foreground work, and cap
+each input lifetime at 16 attempts and each query at 64 interval evaluations
+(or the smaller configured interval budget). Foreground requests remain
+latest-only; the UI pose never waits for analysis. When a foreground request
+arrives during a background query, retain only that latest request and dispatch
+it as soon as the bounded query settles. Do not create an accumulating queue.
+
+The Analysis owner joins validated per-pair interval leaves only when their
+coverage does not conflict with retained evidence. A query may use a clear leaf
+throughout its certified bounds, or a finding only at its exact witness time.
 Point witnesses remain points; a finding leaf does not establish finding status
-throughout its interval. If the interval method cannot prove coverage within its
-bounded work, keep the gap unknown. Adaptive subdivision uses motion and returned
+throughout its interval. Missing pairs, gaps, overlap conflicts, and unresolved
+leaves remain unknown. If the interval method cannot prove coverage within its
+bounded work, preserve unknown. Adaptive subdivision uses motion and returned
 certificates to decide where to spend work; declared time tolerance is a
 subdivision stopping precision, never permission to treat an unchecked gap as
 known. Overall feedback remains incomplete while any required pair or queried
-time lacks evidence. Background gap work never delays the foreground target or
-creates an unlimited queue.
+time lacks evidence.
 
 The selected method must support static queries; missing or incompatible
 methods fail explicitly without substitution. Worker creation is lazy on an
@@ -428,8 +442,12 @@ unresolved-gap preservation, bounded interval-leaf query work, separated state
 and record revision notifications, unchanged-record revision reuse, input
 invalidation, cache invalidation,
 known formal evidence reuse without recomputation and missing-pose checks before
-later witnesses, cancellation/replacement/late output, invalid input,
-unchanged history/report data, original/native shape identity, localized UI
+later witnesses, adjacent-gap scheduling after foreground completion, bounded
+interval evaluation and retained-gap counts, per-pair interval admission, exact
+finding-witness reuse without interval expansion, unknown-gap preservation,
+conflicting-overlap rejection, cancellation/replacement/late output, invalid
+input, unchanged state and record revision notifications for materially equal
+values, unchanged history/report data, original/native shape identity, localized UI
 updates and fixed panel sizes in both themes. Completion requires these owner
 tests plus normal-App browser playback and inspected screenshots, not a formal
 report alone.

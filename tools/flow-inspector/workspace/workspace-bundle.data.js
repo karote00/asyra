@@ -11062,26 +11062,29 @@
               "artifact:snapshot",
               "artifact:method-evidence",
               "Feature-owned abort signal",
-              "latest requested playback time"
+              "latest requested playback time",
+              "one adjacent interval gap between admitted live evidence points after foreground service"
             ],
             "outputs": [
               "artifact:live-feedback"
             ],
             "conditions": [
               "Own one cancellable non-mutating Feature task and at most one Worker for detached playback inputs. Admit the snapshot once at each trust boundary and require the exact installed method static capability. Create the Worker lazily only for missing sample evidence.",
-              "Send full inputs once per lifetime, then sampled times only. Resolve exact recorded-time hits before pacing or unrelated in-flight work; a cache hit never starts analysis. Bound concurrency to one in-flight request and one latest pending time; deadline, byte, work and evidence limits remain enforced.",
+              "Send full inputs once per lifetime, then exact sample times or one bounded adjacent-gap interval task. Resolve exact recorded-time hits before pacing or unrelated in-flight work; a cache hit never starts analysis. Foreground sampling has one in-flight request and one latest pending time. Background interval work has at most one pending gap and is admitted only after foreground service; neither path grows an unbounded queue. Deadline, byte, work and evidence limits remain enforced.",
               "Create an optional installed executor once for the admitted Worker input, otherwise invoke the exact stateless entry. Admit requests at most every 50 ms; slow work coalesces pending times without growing a queue or changing the animation clock.",
-              "Validate each returned static sample against its admitted snapshot, request identity, exact time and pair evidence. Retain a validated superseded result only in that unchanged input lifetime at its exact query time; unvisited pairs and failed or incomplete samples remain unknown. Never create a formal run, verdict, report or history entry.",
-              "Keep accepted samples and exact-time lookup in the bounded LiveEvidenceRecords analysis owner. Notify through distinct scalar Core UI property revisions for transient state and records; advance records revision only when accepted records materially change or existing records are cleared. Do not put samples or reports in revision properties or deep-compare them on target-time changes.",
+              "Validate each returned static sample or interval result against its admitted snapshot, request identity, exact query bounds and pair evidence. Retain validated superseded results only in that unchanged input lifetime. Join interval leaves only when their complete coverage and per-pair evidence agree; findings remain limited to their exact witness. Unvisited pairs, gaps, and failed or incomplete interval work remain unknown. Never create a formal run, verdict, report or history entry.",
+              "Keep accepted samples and certified interval leaves in the bounded LiveEvidenceRecords analysis owner. Notify through distinct scalar Core UI property revisions for transient state and records; advance records revision only when accepted evidence materially changes or existing evidence is cleared. Do not put samples or reports in revision properties or deep-compare them on target-time changes.",
               "Publish the first validated finding and first penetration immediately, batching later findings at the bounded progress cadence. Validate progress at both trust boundaries with incremental global limits and require terminal consistency. Provisional evidence neither releases in-flight ownership nor resets its watchdog nor enters reusable records. Evidence admission does not assemble a formal report.",
+              "After foreground target service, attempt the nearest gap between accepted exact samples using the installed continuous-interval capability. Enforce the lifetime and evaluation caps from the product spec. While interval work runs, retain at most the latest foreground target and dispatch it as soon as that bounded work settles; do not accumulate a target or gap queue.",
               "Seeking fences older progress/results from presentation without discarding validated evidence for the unchanged input lifetime. Cancellation, input replacement, visibility suspension and runtime cleanup terminate owned work and reject late delivery. A slow sample never becomes evidence for a newer displayed pose."
             ],
             "bypasses": [
-              "Missing capability, invalid input or unacknowledged warnings produce explicit unavailable feedback, never a substitute method or a clear result."
+              "Missing static capability, invalid input or unacknowledged warnings produce explicit unavailable feedback, never a substitute method or a clear result. Missing continuous-motion capability skips optional background gap work and preserves those times as unknown."
             ],
             "allowedContributors": [
               "owned Web Worker",
               "installed static method execution",
+              "installed continuous-interval method execution for bounded adjacent gaps",
               "existing snapshot and evidence validators"
             ],
             "forbiddenContributors": [
@@ -11091,7 +11094,7 @@
               "formal report retention"
             ],
             "cacheDimensions": [
-              "one current owner-admitted input lifetime, including source geometry, trajectory, scope, method, settings and thresholds; exact sampled time for at most 256 bounded live records"
+              "one current owner-admitted input lifetime, including source geometry, trajectory, scope, method, settings and thresholds; bounded exact samples and certified adjacent interval leaves within the live evidence byte and leaf budgets"
             ],
             "implementationBoundary": [
               "apps/asyra-sim/src/analysis/live/**",
@@ -11202,7 +11205,7 @@
               "App-generated trajectory text starts with known canonical units; new external CSV receives column suggestions with undeclared units. Editing current source text retains existing units and valid mappings without an additional notice or confirmation; missing mapped columns retire only affected declarations, and another CSV requires fresh declarations. Strict JSON keeps its own declarations. Present CSV time and joint mappings as Name, Target (source CSV column) and Unit rows without a visible heading row, preserving full field accessibility and values; wrap long names. Present the clearance label and input inline. The current source-read artifact and storage conversion preview are shared through review and draft acceptance; source, mapping, unit, workcell, cancellation or lifetime changes invalidate acceptance and late reads. UI displays bounded owner-produced conversion values and never converts values itself. Completing an inline trajectory text, mapping or unit edit persists bounded authored source through one existing editing Feature even when executable validation fails, without Apply. Display current diagnostics during input. Invalid input and interval ordering/coverage errors block current playback/preflight/formal analysis, while independent fields remain editable. Inline trajectory edits preserve the authored interval instead of resetting it to source endpoints; changed coverage produces timing diagnostics. Result freshness and recorded reuse compare the same resolved definition, never authored metadata against a normalized snapshot. Its own canonical acknowledgement preserves raw source text and unit declarations; external canonical replay resets the projection. New file imports require explicit Import trajectory acceptance of the same valid preview. Pending commits prevent duplicate submission. Preview and discard never change canonical state.",
               "Preserve all accepted pair issues in live, cached and recorded feedback. Overall severity never removes clearance or unresolved pairs. Prepare whole-part appearance once per evidence update and reuse it during display frames; red wins only for a body that also participates in a colliding pair. List each pair with its own state and expose every issue through compact expandable details; do not infer damage, contact regions or structural response.",
               "Forward live sampling protects crossed canonical trajectory keyframes until checked, then coalesces optional intermediate times toward the current playhead. Keep only the latest playhead and accepted sample progress, never a queue of display frames. A seek resets the sampling anchor. Narrow viewport feedback is compact until the user expands Details.",
-              "During continuous Play, project validated provisional collision feedback immediately while the live owner is still checking other pairs. Do not advance completed-sample progress, infer full scope, or wait for sample recording; terminal evidence alone advances the protected sampling anchor. Manual seeking immediately presents the requested target pose with checking/unknown feedback, then replaces that feedback only with exact target evidence; do not retain previous-pose findings or show intermediate pair progress on new geometry.",
+              "During continuous Play, project validated provisional collision feedback immediately while the live owner is still checking other pairs. Do not advance completed-sample progress, infer full scope, or wait for sample recording; terminal evidence alone advances the protected sampling anchor. Manual seeking immediately presents the requested target pose with checking/unknown feedback. While the exact foreground sample is pending, project interval evidence only when its query time exactly equals the requested target and its evidence origin is the validated interval ledger; retain unknown state for all pairs without proof. Terminal exact target evidence replaces the partial projection. Do not retain previous-pose findings or show intermediate pair progress on new geometry.",
               "One playback controller consumes the latest submitted playhead and derives its pose immediately from the canonical trajectory. Slider drag/click never waits for analysis or rendering. Feedback is scoped to the pose it describes: an unchecked latest target shows checking/unknown state and never inherits findings from another pose; failed latest-target work shows error. Exact recorded/live evidence is presented immediately without resetting the feedback state. Late results for the same unchanged analysis input may be retained by the live owner at their exact query identity, but cannot replace newer target feedback. Never apply future evidence to an earlier displayed pose. Finding intervals are not continuous contact and witnesses are not first-contact times. Collision feedback never pauses or seeks the clock. Explicit Pause freezes the current frame and requests its exact pose. Keep latest checked parts highlighted during forward motion until newer feedback supersedes them, identifying checked time and earlier-pose evidence without claiming exact current contact. Present scope and unknown/error states and matching sampled observations. Cancel stale work on seek, edits, replacement, hidden page, formal analysis or leaving playback. Preserve fixed panels, property-level subscriptions and unchanged history/report data.",
               "Keep Preview pose/time publication separate from live analysis record state. Use the existing Core UI property API only for scalar state-revision and records-revision values; the underlying evidence remains owned by LiveEvidenceRecords and saved Run records. LiveObservations subscribes to records revision, not worker-state revision. Manual target changes and progressive feedback never advance records revision. Build the selected Run interval index once per immutable lifetime; each target query binary-searches per-pair leaves and never rebuilds or deep-compares the full interval/report data.",
               "Keep camera state in the viewport subtree. Read-only workbench projection refreshes on canonical revision, selected candidate or runtime identity; local panels and playback never reread unchanged canonical model or retained runs. The retained projection has one current entry, preserves error output, and owns no editable state.",
@@ -11645,7 +11648,7 @@
             "from": "method",
             "to": "live",
             "kind": "normal",
-            "predicate": "The selected installed method returns evidence for the requested static sample.",
+            "predicate": "The selected installed method returns evidence for the requested static sample or one bounded continuous interval gap; each result is validated against its exact query and admitted input.",
             "producedArtifacts": [
               "artifact:method-evidence"
             ]
@@ -11655,7 +11658,7 @@
             "from": "live",
             "to": "ui",
             "kind": "normal",
-            "predicate": "Sample feedback is current for this playback lifetime and includes its checked time. The live analysis owner retains exact samples; Core UI properties publish separate scalar revisions for state and changed records, never full evidence objects.",
+            "predicate": "Sample feedback is current for this playback lifetime and includes its checked time. The live analysis owner retains exact samples and fully validated interval leaves; Core UI properties publish separate scalar revisions for state and materially changed evidence, never full evidence objects. Unknown gaps stay unknown and finding leaves remain limited to their witnesses.",
             "producedArtifacts": [
               "artifact:live-feedback"
             ]
@@ -11665,7 +11668,7 @@
             "from": "live",
             "to": "project",
             "kind": "normal",
-            "predicate": "Accepted sample identities describe the latest checked parts in this current playback lifetime. Preserve simultaneous per-body collision and clearance colors from accepted pair issues; other contacts never suppress a pair. Forward motion may retain their highlight with an explicit earlier-pose label until superseded. Manual seeking submits the target time and updates its pose immediately with checking/unknown feedback; only exact latest-target evidence may add findings. Previous-pose or late evidence never colors newly requested geometry. A target-time change updates the transient pose projection without changing the records revision; only evidence admission or clearing existing records publishes that separate revision. No current-contact or contact-region geometry is inferred.",
+            "predicate": "Accepted sample or interval evidence describes only the exact checked pose or certified interval coverage. Preserve simultaneous per-body collision and clearance colors from accepted pair issues; other contacts never suppress a pair. Forward motion may retain their highlight with an explicit earlier-pose label until superseded. Manual seeking submits the target time and updates its pose immediately with checking/unknown feedback; only evidence applicable at the exact target, including an exact witness or clear interval certificate, may add findings. A finding interval does not imply contact away from its witness. Previous-pose or late evidence never colors newly requested geometry. A target-time change updates the transient pose projection without changing the records revision; only evidence admission or clearing existing records publishes that separate revision. No current-contact or contact-region geometry is inferred.",
             "producedArtifacts": [
               "artifact:live-feedback"
             ]

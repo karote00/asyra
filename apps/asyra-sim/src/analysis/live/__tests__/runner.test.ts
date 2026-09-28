@@ -17,6 +17,82 @@ class WorkerStub {
   }
 }
 
+function certifiedClearInterval(
+  input: ReturnType<typeof liveFixture>,
+  interval: readonly [number, number]
+) {
+  return {
+    version: 1 as const,
+    snapshotId: input.snapshotId,
+    method: { id: input.method.id, version: input.method.version },
+    coverage: 'complete' as const,
+    evaluations: input.pairs.length,
+    pairs: input.pairs.map((pair) => ({
+      pairId: pair.id,
+      evidence: {
+        leaves: [
+          {
+            start: interval[0],
+            end: interval[1],
+            lower: 100,
+            upper: 100,
+            witnessTime: null,
+            penetration: false,
+            state: 'clear' as const,
+            reason: 'The interval is certified clear.'
+          }
+        ],
+        lower: 100,
+        upper: 100,
+        coverage: 'complete' as const,
+        evaluations: 1
+      }
+    }))
+  }
+}
+
+function partialWitnessInterval(
+  input: ReturnType<typeof liveFixture>,
+  interval: readonly [number, number],
+  witnessTime: number
+) {
+  return {
+    version: 1 as const,
+    snapshotId: input.snapshotId,
+    method: { id: input.method.id, version: input.method.version },
+    coverage: 'partial' as const,
+    evaluations: input.pairs.length,
+    pairs: input.pairs.map((pair, index) => {
+      const finding = index === 0
+      const upper = finding ? 0 : null
+      const state = finding ? ('finding' as const) : ('unresolved' as const)
+      return {
+        pairId: pair.id,
+        evidence: {
+          leaves: [
+            {
+              start: interval[0],
+              end: interval[1],
+              lower: 0,
+              upper,
+              witnessTime: finding ? witnessTime : null,
+              penetration: finding,
+              state,
+              reason: finding
+                ? 'A sampled witness is inside the certified interval.'
+                : 'The bounded interval query remained unresolved.'
+            }
+          ],
+          lower: 0,
+          upper,
+          coverage: finding ? ('complete' as const) : ('partial' as const),
+          evaluations: 1
+        }
+      }
+    })
+  }
+}
+
 afterEach(() => vi.useRealTimers())
 
 it('admits the latest pending pose within 50 ms when the previous check has completed', async () => {
@@ -101,7 +177,7 @@ it.each(['duplicate', 'wrong time', 'contradiction', 'deadline'])(
 )
 
 it('fences provisional output after a seek but retains validated terminal evidence for its input', async () => {
-  const input = liveFixture(true)
+  const input = liveFixture()
   const worker = new WorkerStub()
   const runner = new LivePlaybackRunner(() => worker as unknown as Worker)
   const abort = new AbortController()
@@ -310,6 +386,159 @@ it('publishes state and exact-record revisions separately from target changes an
   expect(publishRecordsRevision).toHaveBeenCalledOnce()
   expect(runner.getRecords().map((sample) => sample.time)).toEqual([0])
   expect(runner.getState().sample).toBeNull()
+
+  abort.abort()
+  await task
+})
+
+it('does not publish another state revision when a seek leaves live state materially unchanged', async () => {
+  const input = liveFixture()
+  const worker = new WorkerStub()
+  const publishStateRevision = vi.fn()
+  const runner = new LivePlaybackRunner(() => worker as unknown as Worker)
+  runner.setNotificationPublishers(publishStateRevision, vi.fn())
+  const abort = new AbortController()
+  const task = runner.open(input, 0, abort.signal)
+  worker.emit({ type: LiveMessages.READY })
+  publishStateRevision.mockClear()
+
+  runner.sample(1, true)
+
+  expect(runner.getState()).toEqual({
+    status: 'checking',
+    sample: null,
+    error: null
+  })
+  expect(publishStateRevision).not.toHaveBeenCalled()
+
+  abort.abort()
+  await task
+})
+
+it('queues one adjacent interval certification only after its foreground samples finish', async () => {
+  vi.useFakeTimers()
+  const input = liveFixture()
+  const worker = new WorkerStub()
+  const runner = new LivePlaybackRunner(
+    () => worker as unknown as Worker,
+    undefined,
+    Date.now
+  )
+  const publishRecordsRevision = vi.fn()
+  runner.setNotificationPublishers(vi.fn(), publishRecordsRevision)
+  const abort = new AbortController()
+  const task = runner.open(input, 0, abort.signal)
+  worker.emit({ type: LiveMessages.READY })
+  worker.emit({
+    type: LiveMessages.RESULT,
+    id: 1,
+    time: 0,
+    evidence: runOfficialClearanceMethod(sampleSnapshot(input, 0))
+  })
+
+  runner.sample(4)
+  await vi.advanceTimersByTimeAsync(LIVE_LIMITS.samplePeriodMs)
+  expect(worker.postMessage).toHaveBeenLastCalledWith({
+    type: LiveMessages.SAMPLE,
+    id: 2,
+    time: 4
+  })
+  worker.emit({
+    type: LiveMessages.RESULT,
+    id: 2,
+    time: 4,
+    evidence: runOfficialClearanceMethod(sampleSnapshot(input, 4))
+  })
+
+  expect(worker.postMessage).toHaveBeenLastCalledWith({
+    type: 'interval',
+    id: 3,
+    interval: [0, 4],
+    maxIntervals: LIVE_LIMITS.maxBackgroundIntervalEvaluations
+  })
+  publishRecordsRevision.mockClear()
+
+  worker.emit({
+    type: 'interval-result',
+    id: 3,
+    interval: [0, 4],
+    evidence: certifiedClearInterval(input, [0, 4])
+  })
+  expect(publishRecordsRevision).toHaveBeenCalledOnce()
+  const sampleRequests = worker.postMessage.mock.calls.filter(
+    ([message]) => message.type === LiveMessages.SAMPLE
+  )
+  runner.sample(2, true)
+  expect(
+    worker.postMessage.mock.calls.filter(
+      ([message]) => message.type === LiveMessages.SAMPLE
+    )
+  ).toHaveLength(sampleRequests.length)
+  expect(runner.getState()).toMatchObject({
+    status: 'ready',
+    sample: { time: 2, complete: true },
+    error: null
+  })
+  expect(publishRecordsRevision).toHaveBeenCalledOnce()
+
+  abort.abort()
+  await task
+})
+
+it('shows an interval witness without treating missing pair coverage as a cached exact sample', async () => {
+  vi.useFakeTimers()
+  const input = liveFixture()
+  const worker = new WorkerStub()
+  const runner = new LivePlaybackRunner(
+    () => worker as unknown as Worker,
+    undefined,
+    Date.now
+  )
+  const abort = new AbortController()
+  const task = runner.open(input, 0, abort.signal)
+  worker.emit({ type: LiveMessages.READY })
+  worker.emit({
+    type: LiveMessages.RESULT,
+    id: 1,
+    time: 0,
+    evidence: runOfficialClearanceMethod(sampleSnapshot(input, 0))
+  })
+  runner.sample(4)
+  await vi.advanceTimersByTimeAsync(LIVE_LIMITS.samplePeriodMs)
+  worker.emit({
+    type: LiveMessages.RESULT,
+    id: 2,
+    time: 4,
+    evidence: runOfficialClearanceMethod(sampleSnapshot(input, 4))
+  })
+  worker.emit({
+    type: LiveMessages.INTERVAL_RESULT,
+    id: 3,
+    interval: [0, 4],
+    evidence: partialWitnessInterval(input, [0, 4], 2)
+  })
+
+  runner.sample(2, true)
+  await vi.advanceTimersByTimeAsync(LIVE_LIMITS.samplePeriodMs)
+
+  expect(worker.postMessage).toHaveBeenLastCalledWith({
+    type: LiveMessages.SAMPLE,
+    id: 4,
+    time: 2
+  })
+  expect(runner.getState()).toMatchObject({
+    status: 'checking',
+    sample: {
+      time: 2,
+      complete: false,
+      pairs: [
+        {
+          pairId: input.pairs[0].id,
+          evidence: { leaves: [{ state: 'finding', witnessTime: 2 }] }
+        }
+      ]
+    }
+  })
 
   abort.abort()
   await task

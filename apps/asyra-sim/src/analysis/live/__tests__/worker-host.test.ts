@@ -5,7 +5,7 @@ import { runOfficialClearanceMethod } from '../../methods/official-method'
 import { sampleSnapshot } from '../sample'
 import { INSTALLED_METHOD_CATALOG } from '../../../extensions/installed-methods'
 import { LiveWorkerHost } from '../worker-host'
-import { LiveMessages, type LiveResponse } from '../protocol'
+import { LIVE_LIMITS, LiveMessages, type LiveResponse } from '../protocol'
 import { liveFixture } from './fixtures'
 
 it('publishes an admitted collision before the remaining method work finishes', async () => {
@@ -106,6 +106,43 @@ it('admits one input lifetime and executes static samples without a report or ca
   await expect(
     host.handle({ type: LiveMessages.SAMPLE, id: 3, time: 9 })
   ).rejects.toThrow()
+})
+
+it('runs one bounded continuous interval query through the installed method and returns admitted leaves', async () => {
+  const messages: LiveResponse[] = []
+  const host = new LiveWorkerHost(INSTALLED_METHOD_CATALOG, (message) =>
+    messages.push(message)
+  )
+  const input = liveFixture(true)
+
+  await host.handle({ type: LiveMessages.OPEN, snapshot: input })
+  await host.handle({
+    type: LiveMessages.INTERVAL,
+    id: 1,
+    interval: [0, 4],
+    maxIntervals: LIVE_LIMITS.maxBackgroundIntervalEvaluations
+  })
+
+  const response = messages.at(-1)
+  expect(response).toMatchObject({
+    type: LiveMessages.INTERVAL_RESULT,
+    id: 1,
+    interval: [0, 4]
+  })
+  if (response?.type !== LiveMessages.INTERVAL_RESULT)
+    throw new Error('Missing interval evidence')
+  expect(response.evidence.pairs).toHaveLength(input.pairs.length)
+  expect(response.evidence.evaluations).toBeLessThanOrEqual(
+    LIVE_LIMITS.maxBackgroundIntervalEvaluations
+  )
+  await expect(
+    host.handle({
+      type: LiveMessages.INTERVAL,
+      id: 2,
+      interval: [4, 8],
+      maxIntervals: LIVE_LIMITS.maxBackgroundIntervalEvaluations + 1
+    })
+  ).rejects.toThrow('Invalid live interval request')
 })
 
 it('bounds each sample deadline independently and leaves exhaustion explicitly incomplete', async () => {

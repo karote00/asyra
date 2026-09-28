@@ -10,6 +10,7 @@ import type {
 import { admitSnapshotExecution } from '../../extensions/execution-admission'
 import { hasExactOwnKeys } from '../../domain/records'
 import { measureWorkerPayload } from '../worker-protocol'
+import { validateMethodEvidence } from '../result'
 import { LIVE_LIMITS, LiveMessages, type LiveResponse } from './protocol'
 import { sampleSnapshot, validateLiveEvidence } from './sample'
 import { LivePairProgress } from './pair-progress'
@@ -54,22 +55,67 @@ export class LiveWorkerHost {
       return
     }
 
+    const sampleRequest =
+      hasExactOwnKeys(input, ['type', 'id', 'time']) &&
+      input.type === LiveMessages.SAMPLE &&
+      typeof input.time === 'number'
+    const intervalRequest =
+      hasExactOwnKeys(input, ['type', 'id', 'interval', 'maxIntervals']) &&
+      input.type === LiveMessages.INTERVAL &&
+      Array.isArray(input.interval) &&
+      input.interval.length === 2 &&
+      typeof input.maxIntervals === 'number'
+
     if (
       !this.snapshot ||
       !this.execute ||
       this.busy ||
-      !hasExactOwnKeys(input, ['type', 'id', 'time']) ||
-      input.type !== LiveMessages.SAMPLE ||
+      (!sampleRequest && !intervalRequest) ||
       !Number.isSafeInteger(input.id) ||
       typeof input.id !== 'number' ||
-      input.id <= this.lastId ||
-      typeof input.time !== 'number'
+      input.id <= this.lastId
     )
       throw new Error('Invalid live sample request')
 
-    const snapshot = sampleSnapshot(this.snapshot, input.time)
+    const isInterval = intervalRequest
+    if (
+      isInterval &&
+      !this.methods.resolve(
+        this.snapshot.method.id,
+        this.snapshot.method.version
+      ).descriptor.supportsMotion
+    )
+      throw new Error('Selected method does not support live interval checks')
+
+    const interval = isInterval
+      ? (input.interval as readonly [number, number])
+      : undefined
+    const maxIntervals = isInterval
+      ? (input as { maxIntervals: number }).maxIntervals
+      : 0
+    if (
+      interval &&
+      (!Number.isFinite(interval[0]) ||
+        !Number.isFinite(interval[1]) ||
+        interval[0] >= interval[1] ||
+        interval[0] < this.snapshot.interval[0] ||
+        interval[1] > this.snapshot.interval[1] ||
+        !Number.isInteger(maxIntervals) ||
+        maxIntervals < 1 ||
+        maxIntervals > LIVE_LIMITS.maxBackgroundIntervalEvaluations ||
+        maxIntervals > this.snapshot.budget.maxIntervals)
+    )
+      throw new Error('Invalid live interval request')
+
+    const snapshot = interval
+      ? {
+          ...this.snapshot,
+          interval,
+          budget: { ...this.snapshot.budget, maxIntervals }
+        }
+      : sampleSnapshot(this.snapshot, input.time as number)
     const id = input.id
-    const time = input.time
+    const time = interval ? interval[0] : (input.time as number)
     const deadline =
       this.now() +
       Math.min(snapshot.budget.maxDurationMs, LIVE_LIMITS.sampleDurationMs)
@@ -97,6 +143,7 @@ export class LiveWorkerHost {
         checkpoint,
         emitPair: (pair) => {
           checkpoint()
+          if (interval) return
 
           const admitted = progress.append(pair)
           const finding = admitted.evidence.leaves.some(
@@ -131,18 +178,30 @@ export class LiveWorkerHost {
       })
 
       checkpoint()
-      const sample = validateLiveEvidence(snapshot, time, evidence)
-      progress.assertConsistent(sample.pairs)
+      if (!interval) {
+        const sample = validateLiveEvidence(snapshot, time, evidence)
+        progress.assertConsistent(sample.pairs)
+      } else validateMethodEvidence(snapshot, evidence)
       measureWorkerPayload(evidence)
       checkpoint()
-      this.post({ type: LiveMessages.RESULT, id, time, evidence })
+      if (interval) {
+        this.post({
+          type: LiveMessages.INTERVAL_RESULT,
+          id,
+          interval,
+          evidence
+        })
+      } else this.post({ type: LiveMessages.RESULT, id, time, evidence })
     } catch {
-      this.post({
-        type: LiveMessages.ERROR,
-        id,
-        time,
-        pairs: progress.values()
-      })
+      if (interval)
+        this.post({ type: LiveMessages.INTERVAL_ERROR, id, interval })
+      else
+        this.post({
+          type: LiveMessages.ERROR,
+          id,
+          time,
+          pairs: progress.values()
+        })
     } finally {
       settled = true
       this.busy = false

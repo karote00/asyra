@@ -4,6 +4,7 @@ import { INSTALLED_METHOD_CATALOG } from '../../extensions/installed-methods'
 import { admitSnapshotExecution } from '../../extensions/execution-admission'
 import { hasExactOwnKeys } from '../../domain/records'
 import { measureWorkerPayload } from '../worker-protocol'
+import { validateMethodEvidence } from '../result'
 import {
   LIVE_LIMITS,
   LiveMessages,
@@ -33,6 +34,8 @@ export class LivePlaybackRunner {
   private stop: (() => void) | null = null
   private closed = false
   private readonly records = new LiveEvidenceRecords()
+  private readonly attemptedIntervalGaps = new Set<string>()
+  private backgroundIntervalCount = 0
 
   constructor(
     private readonly workerFactory = createWorker,
@@ -78,6 +81,13 @@ export class LivePlaybackRunner {
   }
 
   private publish(state: LiveState) {
+    if (
+      this.state.status === state.status &&
+      this.state.error === state.error &&
+      this.state.sample === state.sample
+    )
+      return
+
     this.state = Object.freeze(state)
     this.publishStateRevision()
   }
@@ -86,7 +96,13 @@ export class LivePlaybackRunner {
     input: ExperimentSnapshot | null,
     key: string | null = null
   ) {
+    const sameInput = input !== null && this.records.owns(input)
     const changed = this.records.replace(input, key)
+
+    if (!sameInput) {
+      this.attemptedIntervalGaps.clear()
+      this.backgroundIntervalCount = 0
+    }
 
     if (changed) this.publishRecordsRevision()
   }
@@ -137,7 +153,12 @@ export class LivePlaybackRunner {
     let nextId = 0
     let minimumId = 0
     let pending: number | null = initialTime
-    let inFlight: { id: number; time: number } | null = null
+    let pendingInterval: readonly [number, number] | null = null
+    let latestTime = initialTime
+    let inFlight:
+      | { kind: 'sample'; id: number; time: number }
+      | { kind: 'interval'; id: number; interval: readonly [number, number] }
+      | null = null
     let progress: LivePairProgress | null = null
     let lastSent = -Infinity
     let pace: ReturnType<typeof setTimeout> | undefined
@@ -174,17 +195,55 @@ export class LivePlaybackRunner {
         'Live check failed or exceeded its resource deadline. No clear result is available.'
       )
 
-    const drain = () => {
-      if (retired || pending === null) return
-
-      const cached = this.records.get(pending)
-
-      if (cached) {
-        pending = null
-        this.publish({ status: 'ready', sample: cached, error: cached.error })
-
+    const queueAdjacentGap = (time: number) => {
+      if (
+        !this.methods.resolve(snapshot.method.id, snapshot.method.version)
+          .descriptor.supportsMotion ||
+        this.backgroundIntervalCount >= LIVE_LIMITS.maxBackgroundIntervals
+      )
         return
+
+      const times = this.records
+        .getAll()
+        .map((sample) => sample.time)
+        .sort((a, b) => a - b)
+      const index = times.indexOf(time)
+      const before = times[index - 1]
+      const after = times[index + 1]
+      let neighbor: number | undefined
+      if (before === undefined) neighbor = after
+      else if (after === undefined) neighbor = before
+      else neighbor = time - before <= after - time ? before : after
+      if (neighbor === undefined || neighbor === time) return
+
+      const range = [
+        Math.min(time, neighbor),
+        Math.max(time, neighbor)
+      ] as const
+      const key = `${range[0]}:${range[1]}`
+      if (
+        this.attemptedIntervalGaps.has(key) ||
+        this.records.hasInterval(range)
+      )
+        return
+
+      pendingInterval = range
+    }
+
+    const drain = () => {
+      if (retired) return
+
+      if (pending !== null) {
+        const cached = this.records.getAt(pending)
+
+        if (cached && (this.records.get(pending) || cached.complete)) {
+          pending = null
+          this.publish({ status: 'ready', sample: cached, error: cached.error })
+        } else if (cached)
+          this.publish({ status: 'checking', sample: cached, error: null })
       }
+
+      if (pending === null && pendingInterval === null) return
 
       if (inFlight || pace) return
 
@@ -205,6 +264,45 @@ export class LivePlaybackRunner {
 
       if (!ready) return
 
+      if (pending === null) {
+        const interval = pendingInterval
+        if (!interval) return
+        const key = `${interval[0]}:${interval[1]}`
+        if (
+          this.attemptedIntervalGaps.has(key) ||
+          this.backgroundIntervalCount >= LIVE_LIMITS.maxBackgroundIntervals
+        ) {
+          pendingInterval = null
+          return
+        }
+        this.attemptedIntervalGaps.add(key)
+        this.backgroundIntervalCount++
+        pendingInterval = null
+        inFlight = { kind: 'interval', id: ++nextId, interval }
+        progress = null
+        watchdog = setTimeout(
+          fail,
+          Math.min(
+            snapshot.budget.maxDurationMs,
+            LIVE_LIMITS.sampleDurationMs
+          ) + LIVE_LIMITS.responseGraceMs
+        )
+        try {
+          worker.postMessage({
+            type: LiveMessages.INTERVAL,
+            id: inFlight.id,
+            interval,
+            maxIntervals: Math.min(
+              LIVE_LIMITS.maxBackgroundIntervalEvaluations,
+              snapshot.budget.maxIntervals
+            )
+          })
+        } catch {
+          fail()
+        }
+        return
+      }
+
       const delay = LIVE_LIMITS.samplePeriodMs - (this.now() - lastSent)
 
       if (delay > 0) {
@@ -216,7 +314,7 @@ export class LivePlaybackRunner {
         return
       }
 
-      inFlight = { id: ++nextId, time: pending }
+      inFlight = { kind: 'sample', id: ++nextId, time: pending }
       progress = new LivePairProgress(sampleSnapshot(snapshot, pending))
       pending = null
       lastSent = this.now()
@@ -228,7 +326,11 @@ export class LivePlaybackRunner {
       )
 
       try {
-        worker.postMessage({ type: LiveMessages.SAMPLE, ...inFlight })
+        worker.postMessage({
+          type: LiveMessages.SAMPLE,
+          id: inFlight.id,
+          time: inFlight.time
+        })
       } catch {
         fail()
       }
@@ -246,6 +348,7 @@ export class LivePlaybackRunner {
       }
 
       pending = time
+      latestTime = time
 
       if (discontinuity) {
         minimumId = nextId + 1
@@ -281,10 +384,74 @@ export class LivePlaybackRunner {
           return
         }
 
-        if (!inFlight || !progress || !message || typeof message !== 'object')
+        if (!inFlight || !message || typeof message !== 'object')
           throw new Error('Unexpected live response')
 
         const response = message as LiveResponse
+        if (inFlight.kind === 'interval') {
+          if (
+            response.type !== LiveMessages.INTERVAL_RESULT &&
+            response.type !== LiveMessages.INTERVAL_ERROR
+          )
+            throw new Error('Unknown live interval response')
+          const keys =
+            response.type === LiveMessages.INTERVAL_RESULT
+              ? ['type', 'id', 'interval', 'evidence']
+              : ['type', 'id', 'interval']
+          if (
+            !hasExactOwnKeys(message, keys) ||
+            response.id !== inFlight.id ||
+            response.interval[0] !== inFlight.interval[0] ||
+            response.interval[1] !== inFlight.interval[1]
+          )
+            throw new Error('Mismatched live interval response')
+
+          clearTimeout(watchdog)
+          inFlight = null
+          if (response.type === LiveMessages.INTERVAL_RESULT) {
+            const intervalSnapshot = {
+              ...snapshot,
+              interval: response.interval,
+              budget: {
+                ...snapshot.budget,
+                maxIntervals: Math.min(
+                  LIVE_LIMITS.maxBackgroundIntervalEvaluations,
+                  snapshot.budget.maxIntervals
+                )
+              }
+            }
+            const admitted = {
+              ...response.evidence,
+              pairs: validateMethodEvidence(intervalSnapshot, response.evidence)
+            }
+            if (
+              this.records.recordInterval(snapshot, response.interval, admitted)
+            )
+              this.publishRecordsRevision()
+            if (pending === null) {
+              const cached = this.records.getAt(latestTime)
+              if (cached)
+                this.publish({
+                  status: 'ready',
+                  sample: cached,
+                  error: cached.error
+                })
+            }
+          } else if (response.type !== LiveMessages.INTERVAL_ERROR) {
+            throw new Error('Unknown live interval response')
+          }
+          drain()
+          return
+        }
+
+        if (!progress || inFlight.kind !== 'sample')
+          throw new Error('Invalid live sample state')
+        if (
+          response.type !== LiveMessages.PROGRESS &&
+          response.type !== LiveMessages.RESULT &&
+          response.type !== LiveMessages.ERROR
+        )
+          throw new Error('Unknown live sample response')
         const keys =
           response.type === LiveMessages.RESULT
             ? ['type', 'id', 'time', 'evidence']
@@ -292,7 +459,6 @@ export class LivePlaybackRunner {
 
         if (
           !hasExactOwnKeys(message, keys) ||
-          response.type === LiveMessages.READY ||
           response.id !== inFlight.id ||
           response.time !== inFlight.time
         )
@@ -336,9 +502,15 @@ export class LivePlaybackRunner {
         progress = null
 
         if (this.records.record(snapshot, sample)) this.publishRecordsRevision()
+        const accepted = this.records.get(sample.time) ?? sample
+        if (pending === null) queueAdjacentGap(sample.time)
 
         if (response.id >= minimumId) {
-          this.publish({ status: 'ready', sample, error: sample.error })
+          this.publish({
+            status: 'ready',
+            sample: accepted,
+            error: accepted.error
+          })
         }
 
         drain()

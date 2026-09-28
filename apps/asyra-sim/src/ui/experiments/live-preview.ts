@@ -167,7 +167,9 @@ export class LivePreview {
           ) {
             if (
               this.seeking &&
-              (state.sample.time !== this.time || state.status !== 'ready')
+              (state.sample.time !== this.time ||
+                (state.status !== 'ready' &&
+                  state.sample.evidenceOrigin !== 'interval'))
             )
               return
 
