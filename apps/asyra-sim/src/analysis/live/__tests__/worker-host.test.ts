@@ -79,6 +79,43 @@ it('creates one installed executor per admitted Worker input, with fresh per-sam
   expect(() => execute.mock.calls[0][1].checkpoint()).toThrow()
 })
 
+it('reuses complete same-pose pairs and checks only pairs still missing evidence', async () => {
+  const input = liveFixture()
+  const original = INSTALLED_METHOD_CATALOG.resolve(
+    input.method.id,
+    input.method.version
+  )
+  const fullEvidence = runOfficialClearanceMethod(sampleSnapshot(input, 4))
+  const acceptedPair = fullEvidence.pairs[0]
+  if (!acceptedPair) throw new Error('Missing retained pair fixture')
+  const execute = vi.fn<MethodRegistration['execute']>((snapshot, context) =>
+    runOfficialClearanceMethod(snapshot, context.checkpoint, context.emitPair)
+  )
+  const messages: LiveResponse[] = []
+  const host = new LiveWorkerHost(
+    createMethodCatalog([{ ...original, execute }]),
+    (message) => messages.push(message)
+  )
+
+  await host.handle({ type: LiveMessages.OPEN, snapshot: input })
+  await host.handle({
+    type: LiveMessages.SAMPLE,
+    id: 1,
+    time: 4,
+    acceptedPairs: [acceptedPair]
+  })
+
+  expect(execute.mock.calls[0]?.[0].pairs.map((pair) => pair.id)).toEqual(
+    input.pairs.slice(1).map((pair) => pair.id)
+  )
+  const result = messages.at(-1)
+  expect(result?.type).toBe(LiveMessages.RESULT)
+  if (result?.type !== LiveMessages.RESULT)
+    throw new Error('Missing merged sample result')
+  expect(result.evidence.pairs).toHaveLength(input.pairs.length)
+  expect(result.evidence.pairs[0]).toEqual(acceptedPair)
+})
+
 it('admits one input lifetime and executes static samples without a report or canonical mutation', async () => {
   const messages: LiveResponse[] = []
   const input = liveFixture()

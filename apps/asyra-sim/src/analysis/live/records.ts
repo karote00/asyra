@@ -384,6 +384,36 @@ export class LiveEvidenceRecords {
     return sample
   }
 
+  getReusablePairsAt(time: number): readonly MethodPairEvidence[] {
+    const sample = this.getAt(time)
+    if (!sample) return []
+
+    return sample.pairs.flatMap((pair) => {
+      const leaf = proofLeafAt(pair, time)
+      if (!leaf || pair.evidence.coverage !== 'complete') return []
+
+      return [
+        {
+          pairId: pair.pairId,
+          evidence: {
+            leaves: [
+              {
+                ...leaf,
+                start: time,
+                end: time,
+                witnessTime: leaf.state === 'finding' ? time : null
+              }
+            ],
+            lower: leaf.lower,
+            upper: leaf.upper,
+            coverage: 'complete' as const,
+            evaluations: pair.evidence.evaluations
+          }
+        }
+      ]
+    })
+  }
+
   evidenceAt(time: number): readonly MethodPairEvidence[] {
     const selected = this.evidenceByPair
     const touched = this.evidencePairIndexes
@@ -520,13 +550,46 @@ export class LiveEvidenceRecords {
 
     const previous = this.samples.get(sample.time)
 
+    let accepted = sample
+
+    if (previous) {
+      assertBoundaryAgreement(previous.sample.pairs, sample.pairs, sample.time)
+      const incomingById = new Map(
+        sample.pairs.map((pair) => [pair.pairId, pair])
+      )
+      const previousById = new Map(
+        previous.sample.pairs.map((pair) => [pair.pairId, pair])
+      )
+      const pairs = input.pairs.flatMap(({ id }) => {
+        const incoming = incomingById.get(id)
+        const retained = previousById.get(id)
+        if (!incoming) return retained ? [retained] : []
+        if (!retained) return [incoming]
+        if (hasProof(incoming, sample.time)) return [incoming]
+        if (hasProof(retained, sample.time)) return [retained]
+        return [incoming]
+      })
+      const complete =
+        pairs.length === input.pairs.length &&
+        pairs.every(
+          (pair) =>
+            pair.evidence.coverage === 'complete' && hasProof(pair, sample.time)
+        )
+      accepted = Object.freeze({
+        ...sample,
+        pairs,
+        complete,
+        error: complete ? null : (sample.error ?? previous.sample.error)
+      })
+    }
+
     forEachIntervalAt(this.intervalIndex, sample.time, (interval) =>
-      assertBoundaryAgreement(interval.pairs, sample.pairs, sample.time)
+      assertBoundaryAgreement(interval.pairs, accepted.pairs, sample.time)
     )
 
-    if (previous && sameLiveSample(previous.sample, sample)) return false
+    if (previous && sameLiveSample(previous.sample, accepted)) return false
 
-    const bytes = measureWorkerPayload(sample)
+    const bytes = measureWorkerPayload(accepted)
 
     if (previous) {
       this.bytes -= previous.bytes
@@ -546,7 +609,7 @@ export class LiveEvidenceRecords {
       this.bytes -= first[1].bytes
     }
 
-    this.samples.set(sample.time, { sample, bytes })
+    this.samples.set(sample.time, { sample: accepted, bytes })
     this.bytes += bytes
     this.values = Object.freeze(
       [...this.samples.values()].map((item) => item.sample)

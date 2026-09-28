@@ -313,6 +313,61 @@ it('does not repeat a geometry query for a checked sample in the same input life
   expect(publishRecordsRevision).toHaveBeenCalledOnce()
 })
 
+it('rechecks an incomplete exact pose while retaining its accepted pair evidence', async () => {
+  vi.useFakeTimers()
+  const input = liveFixture()
+  const worker = new WorkerStub()
+  const runner = new LivePlaybackRunner(() => worker as unknown as Worker)
+  const abort = new AbortController()
+  const task = runner.open(input, 4, abort.signal)
+  worker.emit({ type: LiveMessages.READY })
+
+  const complete = runOfficialClearanceMethod(sampleSnapshot(input, 4))
+  const acceptedPair = complete.pairs[0]
+  if (!acceptedPair) throw new Error('Missing accepted pair fixture')
+  worker.emit({
+    type: LiveMessages.ERROR,
+    id: 1,
+    time: 4,
+    pairs: [acceptedPair]
+  })
+
+  expect(runner.getRecords()[0]).toMatchObject({ complete: false, time: 4 })
+  runner.sample(4, true)
+  await vi.advanceTimersByTimeAsync(LIVE_LIMITS.samplePeriodMs)
+
+  expect(runner.getState()).toMatchObject({
+    status: 'checking',
+    sample: { complete: false, time: 4, pairs: [acceptedPair] }
+  })
+  expect(
+    worker.postMessage.mock.calls.filter(
+      ([message]) => message.type === LiveMessages.SAMPLE
+    )
+  ).toHaveLength(2)
+  const retryRequest = worker.postMessage.mock.calls.at(-1)?.[0]
+  expect(retryRequest.acceptedPairs).toMatchObject([
+    { pairId: acceptedPair.pairId, evidence: { coverage: 'complete' } }
+  ])
+
+  const additionalPair = complete.pairs[1]
+  if (!additionalPair) throw new Error('Missing additional pair fixture')
+  worker.emit({
+    type: LiveMessages.ERROR,
+    id: 2,
+    time: 4,
+    pairs: [additionalPair]
+  })
+  expect(runner.getRecords()[0]).toMatchObject({
+    complete: false,
+    time: 4,
+    pairs: [acceptedPair, additionalPair]
+  })
+
+  abort.abort()
+  await task
+})
+
 it('serves an exact cached target during unrelated work and retains valid stale output without publishing it', async () => {
   const input = liveFixture()
   const firstWorker = new WorkerStub()
@@ -522,6 +577,8 @@ it('queues one adjacent interval certification only after its foreground samples
 it('shows an interval witness without treating missing pair coverage as a cached exact sample', async () => {
   vi.useFakeTimers()
   const input = liveFixture()
+  const witnessPairId = input.pairs[0]?.id
+  if (!witnessPairId) throw new Error('Missing witness pair fixture')
   const worker = new WorkerStub()
   const runner = new LivePlaybackRunner(
     () => worker as unknown as Worker,
@@ -555,11 +612,18 @@ it('shows an interval witness without treating missing pair coverage as a cached
   runner.sample(2, true)
   await vi.advanceTimersByTimeAsync(LIVE_LIMITS.samplePeriodMs)
 
-  expect(worker.postMessage).toHaveBeenLastCalledWith({
+  const sampleRequest = worker.postMessage.mock.calls.at(-1)?.[0]
+  expect(sampleRequest).toMatchObject({
     type: LiveMessages.SAMPLE,
     id: 4,
     time: 2
   })
+  expect(sampleRequest.acceptedPairs).toMatchObject([
+    {
+      pairId: witnessPairId,
+      evidence: { leaves: [{ start: 2, end: 2, witnessTime: 2 }] }
+    }
+  ])
   expect(runner.getState()).toMatchObject({
     status: 'checking',
     sample: {

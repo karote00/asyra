@@ -283,8 +283,10 @@ formal evidence that the entire trajectory is clear.
 ### Live playback feedback
 
 The analysis owner retains the current admitted experiment input and bounded
-sample records for reuse by Play and the analysis panel. Replaying an already
-checked time does not invoke a method or allocate a Worker. Input, method,
+sample records for reuse by Play and the analysis panel. Replaying a complete
+checked time does not invoke a method or allocate a Worker. An incomplete exact
+sample retains complete pair proofs and rechecks only pairs still missing
+proof; it remains incomplete until every required pair has proof. Input, method,
 trajectory, scope, threshold or numerical-setting changes invalidate current
 records; committed document changes conservatively retire this input lifetime.
 No same-name or same-ID match grants reuse. Immutable saved reports are kept as
@@ -393,6 +395,12 @@ to partial delivery. Complete immutable geometry preparation may be reused
 within the owning Worker; poses and numerical evidence are recomputed with
 fresh invocation budgets. No reduced geometry or real-time guarantee is implied.
 
+For an incomplete exact sample, the owner may pass validated complete same-pose
+pair proofs back to the same Worker lifetime. The Worker validates those proofs,
+queries only pairs still missing proof, and combines the retained and new pair
+evidence under the original aggregate work and evidence limits. Partial or
+unresolved pair evidence is rechecked and never closes unknown coverage.
+
 The viewport shows checking, established collision, clearance issue, no issue
 at the checked sample, or unresolved/error. Always identify the checked time
 and sampled scope; unchecked times are not clear. Collision feedback never
@@ -408,13 +416,17 @@ Established colliding bodies use a dedicated red highlight distinct from
 selection. Clearance findings use an amber highlight; unresolved output must
 not be presented as collision or safety. Preserve every pair's own finding:
 collision, clearance and unresolved issues coexist in the same feedback. The
-overall warning title may use the highest severity, but must not filter other
-issues or their highlights. A body participating in both a collision and a
-clearance pair is red; clearance-only bodies remain amber. The pair list keeps
-both relationships and their labels. Unresolved pairs stay explicitly unknown,
-not contact-colored. Live, cached and recorded evidence use the same presentation
-rule. Detailed pair information remains accessible without requiring a formal
-report, including when a compact notice only previews some pairs.
+primary title shows Collision detected only with validated penetration evidence.
+Otherwise incomplete required-pair coverage shows Not fully checked, even when
+known clearance findings are present. Clearance warning requires complete
+coverage at the checked pose and at least one clearance finding. These titles
+never filter other issues or their highlights. A body participating in both a
+collision and a clearance pair is red; clearance-only bodies remain amber. The
+pair list keeps both relationships and their labels. Unresolved pairs stay
+explicitly unknown, not contact-colored. Live, cached and recorded evidence use
+the same presentation rule. Detailed pair information remains accessible
+without requiring a formal report, including when a compact notice only previews
+some pairs.
 
 Whole-part highlighting is the MVP output. It is not a damage model, computed
 contact patch, or structural simulation. Whole-body highlights identify the
@@ -448,12 +460,16 @@ Formal cases cover a collision during Play before any run, clear endpoints,
 clearance versus penetration versus unresolved, uninterrupted collision playback,
 simultaneous collision/clearance/unresolved pairs, severity precedence only on a
 shared body, all-pair detail access, and live/cached/recorded presentation parity,
+incomplete samples with clearance findings use the incomplete title while
+retaining pair details; observed penetration remains the collision title;
 explicit Pause without snapping, latest-sample highlighting and exact-pose checks,
 cold forward/backward manual seeks through continuous clearance and collision,
 immediate target-pose updates while analysis is pending, stable last-checked
 feedback and highlights through forward/backward seeks, latest-target/error
-handling and exact cached-seek parity, latest-only backpressure, exact-point and certified-interval reuse with
-no redundant Worker work, explicit gap queries, point-evidence non-expansion,
+handling and exact cached-seek parity, latest-only backpressure, exact-point and
+certified-interval reuse with no redundant Worker work, partial exact-sample
+retry preserving and reusing complete pair proofs while querying missing pairs,
+explicit gap queries, point-evidence non-expansion,
 foreground-before-background scheduling, fully proven interval merging,
 unresolved-gap preservation, bounded interval-leaf query work, separated state
 and record revision notifications, unchanged-record revision reuse, input

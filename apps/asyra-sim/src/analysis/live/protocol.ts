@@ -30,6 +30,12 @@ export type LiveRequest =
   | { type: typeof LiveMessages.OPEN; snapshot: ExperimentSnapshot }
   | { type: typeof LiveMessages.SAMPLE; id: number; time: number }
   | {
+      type: typeof LiveMessages.SAMPLE
+      id: number
+      time: number
+      acceptedPairs: readonly MethodPairEvidence[]
+    }
+  | {
       type: typeof LiveMessages.INTERVAL
       id: number
       interval: readonly [number, number]

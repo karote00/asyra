@@ -147,6 +147,13 @@ it('joins adjacent certified interval leaves but a finding remains usable only a
   expect(
     insideFindingLeaf.some((pair) => pair.pairId === input.pairs[0].id)
   ).toBe(false)
+  expect(records.getReusablePairsAt(2)).toMatchObject([
+    {
+      pairId: input.pairs[0].id,
+      evidence: { leaves: [{ start: 2, end: 2, witnessTime: 2 }] }
+    }
+  ])
+  expect(records.getReusablePairsAt(3)).toEqual([])
   expect(
     insideClearLeaf.find((pair) => pair.pairId === input.pairs[0].id)?.evidence
       .leaves[0]

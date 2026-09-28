@@ -257,7 +257,7 @@ export class LivePlaybackRunner {
       if (pending !== null) {
         const cached = this.records.getAt(pending)
 
-        if (cached && (this.records.get(pending) || cached.complete)) {
+        if (cached?.complete) {
           pending = null
           this.publish({ status: 'ready', sample: cached, error: cached.error })
         } else if (cached)
@@ -358,11 +358,15 @@ export class LivePlaybackRunner {
       )
 
       try {
-        worker.postMessage({
+        const acceptedPairs = this.records.getReusablePairsAt(inFlight.time)
+        const message = {
           type: LiveMessages.SAMPLE,
           id: inFlight.id,
-          time: inFlight.time
-        })
+          time: inFlight.time,
+          ...(acceptedPairs.length ? { acceptedPairs } : {})
+        }
+        measureWorkerPayload(message)
+        worker.postMessage(message)
       } catch {
         fail()
       }

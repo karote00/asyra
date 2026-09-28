@@ -10,7 +10,10 @@ import type {
 import { admitSnapshotExecution } from '../../extensions/execution-admission'
 import { hasExactOwnKeys } from '../../domain/records'
 import { measureWorkerPayload } from '../worker-protocol'
-import { validateMethodEvidence } from '../result'
+import {
+  validateMethodEvidence,
+  validatePartialMethodEvidence
+} from '../result'
 import { LIVE_LIMITS, LiveMessages, type LiveResponse } from './protocol'
 import { sampleSnapshot, validateLiveEvidence } from './sample'
 import { LivePairProgress } from './pair-progress'
@@ -56,9 +59,12 @@ export class LiveWorkerHost {
     }
 
     const sampleRequest =
-      hasExactOwnKeys(input, ['type', 'id', 'time']) &&
+      (hasExactOwnKeys(input, ['type', 'id', 'time']) ||
+        hasExactOwnKeys(input, ['type', 'id', 'time', 'acceptedPairs'])) &&
       input.type === LiveMessages.SAMPLE &&
-      typeof input.time === 'number'
+      typeof input.time === 'number' &&
+      (!Object.hasOwn(input, 'acceptedPairs') ||
+        Array.isArray(input.acceptedPairs))
     const intervalRequest =
       hasExactOwnKeys(input, ['type', 'id', 'interval', 'maxIntervals']) &&
       input.type === LiveMessages.INTERVAL &&
@@ -114,12 +120,22 @@ export class LiveWorkerHost {
           budget: { ...this.snapshot.budget, maxIntervals }
         }
       : sampleSnapshot(this.snapshot, input.time as number)
+    const acceptedPairs = interval
+      ? []
+      : validatePartialMethodEvidence(
+          snapshot,
+          (input as { acceptedPairs?: readonly MethodPairEvidence[] })
+            .acceptedPairs ?? []
+        )
+    if (acceptedPairs.some((pair) => pair.evidence.coverage !== 'complete'))
+      throw new Error('Retained live pairs must be complete')
     const id = input.id
     const time = interval ? interval[0] : (input.time as number)
     const deadline =
       this.now() +
       Math.min(snapshot.budget.maxDurationMs, LIVE_LIMITS.sampleDurationMs)
     const progress = new LivePairProgress(snapshot)
+    for (const pair of acceptedPairs) progress.append(pair)
     let pending: MethodPairEvidence[] = []
     let lastSent = -Infinity
     let sentCollision = false
@@ -138,44 +154,109 @@ export class LiveWorkerHost {
     this.lastId = id
 
     try {
-      const evidence = await this.execute(snapshot, {
-        signal: abort.signal,
-        checkpoint,
-        emitPair: (pair) => {
-          checkpoint()
-          if (interval) return
+      const acceptedIds = new Set(acceptedPairs.map((pair) => pair.pairId))
+      const missingPairs = snapshot.pairs.filter(
+        (pair) => !acceptedIds.has(pair.id)
+      )
+      const acceptedEvaluations = acceptedPairs.reduce(
+        (sum, pair) => sum + pair.evidence.evaluations,
+        0
+      )
+      const remainingBudget = snapshot.budget.maxIntervals - acceptedEvaluations
+      let newlyChecked: readonly MethodPairEvidence[] = []
+      let evaluations = 0
 
-          const admitted = progress.append(pair)
-          const finding = admitted.evidence.leaves.some(
-            (leaf) => leaf.state === 'finding'
-          )
-          const collision = admitted.evidence.leaves.some(
-            (leaf) => leaf.penetration
-          )
-
-          if (finding) pending.push(admitted)
-
-          const now = this.now()
-          if (
-            pending.length &&
-            ((collision && !sentCollision) ||
-              now - lastSent >= EXPERIMENT_RESOURCE_PROFILE.progressIntervalMs)
-          ) {
-            const message: LiveResponse = {
-              type: LiveMessages.PROGRESS,
-              id,
-              time,
-              pairs: pending
-            }
-            measureWorkerPayload(message)
-            checkpoint()
-            this.post(message)
-            pending = []
-            lastSent = now
-            sentCollision ||= collision
-          }
+      if (missingPairs.length && remainingBudget > 0) {
+        const missingSnapshot = {
+          ...snapshot,
+          pairs: missingPairs,
+          budget: { ...snapshot.budget, maxIntervals: remainingBudget }
         }
+        const result = await this.execute(missingSnapshot, {
+          signal: abort.signal,
+          checkpoint,
+          emitPair: (pair) => {
+            checkpoint()
+            if (interval) return
+
+            const admitted = progress.append(pair)
+            const finding = admitted.evidence.leaves.some(
+              (leaf) => leaf.state === 'finding'
+            )
+            const collision = admitted.evidence.leaves.some(
+              (leaf) => leaf.penetration
+            )
+
+            if (finding) pending.push(admitted)
+
+            const now = this.now()
+            if (
+              pending.length &&
+              ((collision && !sentCollision) ||
+                now - lastSent >=
+                  EXPERIMENT_RESOURCE_PROFILE.progressIntervalMs)
+            ) {
+              const message: LiveResponse = {
+                type: LiveMessages.PROGRESS,
+                id,
+                time,
+                pairs: pending
+              }
+              measureWorkerPayload(message)
+              checkpoint()
+              this.post(message)
+              pending = []
+              lastSent = now
+              sentCollision ||= collision
+            }
+          }
+        })
+        newlyChecked = validateMethodEvidence(missingSnapshot, result)
+        evaluations = result.evaluations
+      } else if (missingPairs.length) {
+        newlyChecked = missingPairs.map((pair) => ({
+          pairId: pair.id,
+          evidence: {
+            leaves: [
+              {
+                start: snapshot.interval[0],
+                end: snapshot.interval[1],
+                lower: 0,
+                upper: null,
+                witnessTime: null,
+                penetration: false,
+                state: 'unresolved' as const,
+                reason:
+                  'The sample budget was consumed by retained pair evidence.'
+              }
+            ],
+            lower: 0,
+            upper: null,
+            coverage: 'partial' as const,
+            evaluations: 0
+          }
+        }))
+        for (const pair of newlyChecked) progress.append(pair)
+      }
+
+      const pairsById = new Map(
+        [...acceptedPairs, ...newlyChecked].map((pair) => [pair.pairId, pair])
+      )
+      const pairs = snapshot.pairs.map((pair) => {
+        const evidence = pairsById.get(pair.id)
+        if (!evidence) throw new Error('Live sample omitted a required pair')
+        return evidence
       })
+      const evidence = {
+        version: 1 as const,
+        snapshotId: snapshot.snapshotId,
+        method: { id: snapshot.method.id, version: snapshot.method.version },
+        coverage: pairs.some((pair) => pair.evidence.coverage !== 'complete')
+          ? ('partial' as const)
+          : ('complete' as const),
+        evaluations: acceptedEvaluations + evaluations,
+        pairs
+      }
 
       checkpoint()
       if (!interval) {

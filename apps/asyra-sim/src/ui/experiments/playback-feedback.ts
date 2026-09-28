@@ -54,9 +54,9 @@ export function feedbackFromIssues(
 
   let kind: PlaybackFeedback['kind'] = 'clear'
 
-  if (!input.complete || unknowns.length) kind = 'unresolved'
-  if (clearances.length) kind = 'clearance'
   if (collisions.length) kind = 'collision'
+  else if (!input.complete || unknowns.length) kind = 'unresolved'
+  else if (clearances.length) kind = 'clearance'
 
   return {
     ...input,

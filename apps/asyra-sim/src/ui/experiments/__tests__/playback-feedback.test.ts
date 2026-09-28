@@ -105,6 +105,55 @@ it('keeps unresolved pairs visible alongside known findings without inventing th
   )
 })
 
+it('puts incomplete coverage ahead of clearance while keeping observed collision decisive', () => {
+  const issues = [
+    {
+      pairId: 'near',
+      kind: 'clearance' as const,
+      bodyIds: ['part', 'table'] as const,
+      name: 'part - table'
+    },
+    {
+      pairId: 'unknown',
+      kind: 'unresolved' as const,
+      bodyIds: ['arm', 'post'] as const,
+      name: 'arm - post'
+    }
+  ]
+
+  expect(
+    feedbackFromIssues(
+      {
+        checkedTime: 4,
+        complete: false,
+        totalPairCount: 3,
+        message: 'Unchecked pairs remain unknown.'
+      },
+      issues
+    )
+  ).toMatchObject({ kind: 'unresolved', complete: false })
+
+  expect(
+    feedbackFromIssues(
+      {
+        checkedTime: 4,
+        complete: false,
+        totalPairCount: 3,
+        message: 'Unchecked pairs remain unknown.'
+      },
+      [
+        {
+          pairId: 'contact',
+          kind: 'collision',
+          bodyIds: ['tool', 'table'],
+          name: 'tool - table'
+        },
+        ...issues
+      ]
+    )
+  ).toMatchObject({ kind: 'collision', complete: false })
+})
+
 it('keeps the last checked parts highlighted until newer evidence supersedes it in either time direction', () => {
   const input = liveFixture()
   const view: PlaybackView = {
