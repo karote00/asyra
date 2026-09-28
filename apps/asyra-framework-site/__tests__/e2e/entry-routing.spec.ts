@@ -1,5 +1,31 @@
 import { expect, test } from '@playwright/test'
 
+test('primary Start building CTAs route to Generic Starter source', async ({
+  page
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto('/')
+  const startBuildingCtas = page.getByRole('link', {
+    name: /Start building/
+  })
+  await expect(startBuildingCtas).toHaveCount(2)
+  for (let index = 0; index < 2; index += 1) {
+    await expect(startBuildingCtas.nth(index)).toHaveAttribute(
+      'href',
+      '/docs#generic-starter-source'
+    )
+    await startBuildingCtas.nth(index).click()
+    await expect(page).toHaveURL(/\/docs#generic-starter-source$/)
+    await expect(
+      page.getByRole('heading', { name: 'Generic Starter source' })
+    ).toBeVisible()
+    await expect(
+      page.getByText('npx create-asyra-app@0.1.0 my-app --package-manager=npm')
+    ).toBeVisible()
+    if (index === 0) await page.goto('/')
+  }
+})
+
 for (const width of [1440, 390]) {
   test(`entry cards route to maintained guidance at ${width}px`, async ({
     page

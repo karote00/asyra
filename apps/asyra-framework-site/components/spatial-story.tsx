@@ -439,7 +439,7 @@ function StoryChapter({ index }: { index: number }) {
         )}
         {index === 5 && (
           <a
-            href="/docs/start/custom-composition"
+            href="/docs#generic-starter-source"
             className="mt-8 inline-flex items-center gap-8 rounded-full bg-[#183f35] px-6 py-3 text-[15px] text-[#f4f1e7]!"
           >
             Start building <span>↗</span>
@@ -652,7 +652,7 @@ export function SpatialStory({
           <a
             className="inline-flex min-h-11 items-center font-medium"
             data-site-cta=""
-            href="/docs/start/custom-composition"
+            href="/docs#generic-starter-source"
           >
             Start building ↗
           </a>
