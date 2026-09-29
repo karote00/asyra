@@ -31,6 +31,10 @@ Use this skill when requests include:
 2. Locate active plan entry in `PLANS.md` and detailed plan file path.
 3. Locate decision log target (`decisions/releases/unreleased.md` in matching scope).
 4. Confirm the plan's required completion evidence and final decision.
+5. Read `docs/ai/workflows/task-context.md`. Confirm the task is a whole-plan
+   closeout, identify its closeout owner and reviewed source commit, and verify
+   all required plan tasks are complete. A child-task completion is insufficient.
+   A self-declared SHA in a PR body is not proof of review approval.
 
 ## Deterministic Procedure
 
@@ -45,6 +49,9 @@ Use this skill when requests include:
 - Move/rename detailed plan to `plans/completed/`.
 - Ensure active plans list no longer points to non-completed location.
 - Keep completion date + final decision + implementation summary + exit criteria.
+- Preserve the reviewed plan text and append the concise closeout section from
+  `task-context.md`, including the reviewed source SHA. Implementation or
+  acceptance changes after that source require another review before closeout.
 
 3. Append decision history entry:
 

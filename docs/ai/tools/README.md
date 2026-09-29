@@ -6,6 +6,9 @@ become product dependencies merely because they inspect or validate them.
 
 Current tools:
 
+- [`agent-evals/`](agent-evals/README.md) - repository-agent task fixtures,
+  evidence verification, semantic review, and failure summaries.
+
 - [`flow-inspector/`](flow-inspector/README.md) - static architecture contract
   viewer and the planned workflow control plane.
 
